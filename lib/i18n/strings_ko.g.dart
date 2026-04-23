@@ -297,6 +297,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get updates => '업데이트';
 	@override String get updateAvailable => '사용 가능한 업데이트 있음';
 	@override String get checkForUpdates => '업데이트 확인';
+	@override String get autoCheckUpdatesOnStartup => '시작 시 자동으로 업데이트 확인';
+	@override String get autoCheckUpdatesOnStartupDescription => '시작 시 새 버전이 있으면 알림 표시';
 	@override String get validationErrorEnterNumber => '유효한 숫자를 입력하세요';
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => '기간은 ${min}과 ${max} ${unit} 사이여야 합니다';
 	@override String shortcutAlreadyAssigned({required Object action}) => '단축키가 이미 ${action}에 할당 되었습니다';
@@ -1589,6 +1591,8 @@ extension on TranslationsKo {
 			'settings.updates' => '업데이트',
 			'settings.updateAvailable' => '사용 가능한 업데이트 있음',
 			'settings.checkForUpdates' => '업데이트 확인',
+			'settings.autoCheckUpdatesOnStartup' => '시작 시 자동으로 업데이트 확인',
+			'settings.autoCheckUpdatesOnStartupDescription' => '시작 시 새 버전이 있으면 알림 표시',
 			'settings.validationErrorEnterNumber' => '유효한 숫자를 입력하세요',
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => '기간은 ${min}과 ${max} ${unit} 사이여야 합니다',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => '단축키가 이미 ${action}에 할당 되었습니다',
@@ -1932,10 +1936,10 @@ extension on TranslationsKo {
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '「${title}」의 메타데이터를 새로고침 하시겠습니까?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '${title}의 휴지통을 비우시겠습니까?',
 			'libraries.manageLibraries' => '미디어 라이브러리 관리',
-			'libraries.sort' => '정렬',
-			'libraries.sortBy' => '정렬 기준',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.sort' => '정렬',
+			'libraries.sortBy' => '정렬 기준',
 			'libraries.filters' => '필터',
 			'libraries.confirmActionMessage' => '이 작업을 실행 하시겠습니까?',
 			'libraries.showLibrary' => '미디어 라이브러리 표시',

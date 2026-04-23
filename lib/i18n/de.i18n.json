@@ -177,6 +177,8 @@
     "updates": "Updates",
     "updateAvailable": "Update verfügbar",
     "checkForUpdates": "Nach Updates suchen",
+    "autoCheckUpdatesOnStartup": "Beim Start automatisch nach Updates suchen",
+    "autoCheckUpdatesOnStartupDescription": "Benachrichtigung anzeigen, wenn beim Start eine neue Version verfügbar ist",
     "validationErrorEnterNumber": "Bitte eine gültige Zahl eingeben",
     "validationErrorDuration": "Dauer muss zwischen ${min} und ${max} ${unit} liegen",
     "shortcutAlreadyAssigned": "Tastenkürzel bereits zugewiesen an ${action}",

@@ -177,6 +177,8 @@
     "updates": "アップデート",
     "updateAvailable": "アップデート利用可能",
     "checkForUpdates": "アップデートを確認",
+    "autoCheckUpdatesOnStartup": "起動時にアップデートを自動的に確認",
+    "autoCheckUpdatesOnStartupDescription": "起動時に新しいバージョンが利用可能な場合に通知を表示",
     "validationErrorEnterNumber": "有効な数値を入力してください",
     "validationErrorDuration": "時間は${min}から${max} ${unit}の間である必要があります",
     "shortcutAlreadyAssigned": "ショートカットは既に${action}に割り当てられています",

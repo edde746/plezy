@@ -177,6 +177,8 @@
     "updates": "Atualizações",
     "updateAvailable": "Atualização Disponível",
     "checkForUpdates": "Verificar Atualizações",
+    "autoCheckUpdatesOnStartup": "Verificar atualizações automaticamente ao iniciar",
+    "autoCheckUpdatesOnStartupDescription": "Mostrar uma notificação quando uma nova versão estiver disponível ao iniciar",
     "validationErrorEnterNumber": "Insira um número válido",
     "validationErrorDuration": "A duração deve ser entre ${min} e ${max} ${unit}",
     "shortcutAlreadyAssigned": "Atalho já atribuído a ${action}",

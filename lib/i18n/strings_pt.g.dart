@@ -297,6 +297,8 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get updates => 'Atualizações';
 	@override String get updateAvailable => 'Atualização Disponível';
 	@override String get checkForUpdates => 'Verificar Atualizações';
+	@override String get autoCheckUpdatesOnStartup => 'Verificar atualizações automaticamente ao iniciar';
+	@override String get autoCheckUpdatesOnStartupDescription => 'Mostrar uma notificação quando uma nova versão estiver disponível ao iniciar';
 	@override String get validationErrorEnterNumber => 'Insira um número válido';
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'A duração deve ser entre ${min} e ${max} ${unit}';
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Atalho já atribuído a ${action}';
@@ -1589,6 +1591,8 @@ extension on TranslationsPt {
 			'settings.updates' => 'Atualizações',
 			'settings.updateAvailable' => 'Atualização Disponível',
 			'settings.checkForUpdates' => 'Verificar Atualizações',
+			'settings.autoCheckUpdatesOnStartup' => 'Verificar atualizações automaticamente ao iniciar',
+			'settings.autoCheckUpdatesOnStartupDescription' => 'Mostrar uma notificação quando uma nova versão estiver disponível ao iniciar',
 			'settings.validationErrorEnterNumber' => 'Insira um número válido',
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'A duração deve ser entre ${min} e ${max} ${unit}',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Atalho já atribuído a ${action}',
@@ -1932,10 +1936,10 @@ extension on TranslationsPt {
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Tem certeza que deseja atualizar os metadados de "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Tem certeza que deseja esvaziar a lixeira de "${title}"?',
 			'libraries.manageLibraries' => 'Gerenciar Bibliotecas',
-			'libraries.sort' => 'Ordenar',
-			'libraries.sortBy' => 'Ordenar Por',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.sort' => 'Ordenar',
+			'libraries.sortBy' => 'Ordenar Por',
 			'libraries.filters' => 'Filtros',
 			'libraries.confirmActionMessage' => 'Tem certeza que deseja realizar esta ação?',
 			'libraries.showLibrary' => 'Mostrar biblioteca',

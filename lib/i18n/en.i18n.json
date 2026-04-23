@@ -177,6 +177,8 @@
     "updates": "Updates",
     "updateAvailable": "Update Available",
     "checkForUpdates": "Check for Updates",
+    "autoCheckUpdatesOnStartup": "Automatically check for updates on startup",
+    "autoCheckUpdatesOnStartupDescription": "Show a notification when a new version is available at launch",
     "validationErrorEnterNumber": "Please enter a valid number",
     "validationErrorDuration": "Duration must be between ${min} and ${max} ${unit}",
     "shortcutAlreadyAssigned": "Shortcut already assigned to ${action}",

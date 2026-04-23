@@ -297,6 +297,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get updates => 'Updates';
 	@override String get updateAvailable => 'Update verfügbar';
 	@override String get checkForUpdates => 'Nach Updates suchen';
+	@override String get autoCheckUpdatesOnStartup => 'Beim Start automatisch nach Updates suchen';
+	@override String get autoCheckUpdatesOnStartupDescription => 'Benachrichtigung anzeigen, wenn beim Start eine neue Version verfügbar ist';
 	@override String get validationErrorEnterNumber => 'Bitte eine gültige Zahl eingeben';
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'Dauer muss zwischen ${min} und ${max} ${unit} liegen';
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Tastenkürzel bereits zugewiesen an ${action}';
@@ -1589,6 +1591,8 @@ extension on TranslationsDe {
 			'settings.updates' => 'Updates',
 			'settings.updateAvailable' => 'Update verfügbar',
 			'settings.checkForUpdates' => 'Nach Updates suchen',
+			'settings.autoCheckUpdatesOnStartup' => 'Beim Start automatisch nach Updates suchen',
+			'settings.autoCheckUpdatesOnStartupDescription' => 'Benachrichtigung anzeigen, wenn beim Start eine neue Version verfügbar ist',
 			'settings.validationErrorEnterNumber' => 'Bitte eine gültige Zahl eingeben',
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'Dauer muss zwischen ${min} und ${max} ${unit} liegen',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Tastenkürzel bereits zugewiesen an ${action}',
@@ -1932,10 +1936,10 @@ extension on TranslationsDe {
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Metadaten für „${title}“ wirklich aktualisieren?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Papierkorb für „${title}“ wirklich leeren?',
 			'libraries.manageLibraries' => 'Mediatheken verwalten',
-			'libraries.sort' => 'Sortieren',
-			'libraries.sortBy' => 'Sortieren nach',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.sort' => 'Sortieren',
+			'libraries.sortBy' => 'Sortieren nach',
 			'libraries.filters' => 'Filter',
 			'libraries.confirmActionMessage' => 'Aktion wirklich durchführen?',
 			'libraries.showLibrary' => 'Mediathek anzeigen',

@@ -297,6 +297,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get updates => '更新';
 	@override String get updateAvailable => '有可用更新';
 	@override String get checkForUpdates => '检查更新';
+	@override String get autoCheckUpdatesOnStartup => '启动时自动检查更新';
+	@override String get autoCheckUpdatesOnStartupDescription => '启动时如有新版本可用则显示通知';
 	@override String get validationErrorEnterNumber => '请输入一个有效的数字';
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => '时长必须介于 ${min} 和 ${max} ${unit} 之间';
 	@override String shortcutAlreadyAssigned({required Object action}) => '快捷键已被分配给 ${action}';
@@ -1589,6 +1591,8 @@ extension on TranslationsZh {
 			'settings.updates' => '更新',
 			'settings.updateAvailable' => '有可用更新',
 			'settings.checkForUpdates' => '检查更新',
+			'settings.autoCheckUpdatesOnStartup' => '启动时自动检查更新',
+			'settings.autoCheckUpdatesOnStartupDescription' => '启动时如有新版本可用则显示通知',
 			'settings.validationErrorEnterNumber' => '请输入一个有效的数字',
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => '时长必须介于 ${min} 和 ${max} ${unit} 之间',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => '快捷键已被分配给 ${action}',
@@ -1932,10 +1936,10 @@ extension on TranslationsZh {
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '确定要刷新 “${title}” 的元数据吗？',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '确定要清空 “${title}” 的回收站吗？',
 			'libraries.manageLibraries' => '管理媒体库',
-			'libraries.sort' => '排序',
-			'libraries.sortBy' => '排序依据',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.sort' => '排序',
+			'libraries.sortBy' => '排序依据',
 			'libraries.filters' => '筛选器',
 			'libraries.confirmActionMessage' => '确定要执行此操作吗？',
 			'libraries.showLibrary' => '显示媒体库',

@@ -177,6 +177,8 @@
     "updates": "更新",
     "updateAvailable": "有可用更新",
     "checkForUpdates": "检查更新",
+    "autoCheckUpdatesOnStartup": "启动时自动检查更新",
+    "autoCheckUpdatesOnStartupDescription": "启动时如有新版本可用则显示通知",
     "validationErrorEnterNumber": "请输入一个有效的数字",
     "validationErrorDuration": "时长必须介于 ${min} 和 ${max} ${unit} 之间",
     "shortcutAlreadyAssigned": "快捷键已被分配给 ${action}",

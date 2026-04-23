@@ -177,6 +177,8 @@
     "updates": "Mises à jour",
     "updateAvailable": "Mise à jour disponible",
     "checkForUpdates": "Vérifier les mises à jour",
+    "autoCheckUpdatesOnStartup": "Vérifier automatiquement les mises à jour au démarrage",
+    "autoCheckUpdatesOnStartupDescription": "Afficher une notification lorsqu'une nouvelle version est disponible au démarrage",
     "validationErrorEnterNumber": "Veuillez saisir un numéro valide",
     "validationErrorDuration": "La durée doit être comprise entre ${min} et ${max} ${unit}",
     "shortcutAlreadyAssigned": "Raccourci déjà attribué à ${action}",

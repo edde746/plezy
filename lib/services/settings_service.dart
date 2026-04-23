@@ -83,6 +83,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyCustomDownloadPathType = 'custom_download_path_type';
   static const String _keyDownloadOnWifiOnly = 'download_on_wifi_only';
   static const String _keyAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
+  static const String _keyAutoCheckUpdatesOnStartup = 'auto_check_updates_on_startup';
   static const String _prefixWatchedThreshold = 'watched_threshold_';
   static const String _keyVideoPlayerNavigationEnabled = 'video_player_navigation_enabled';
   static const String _keyShowPerformanceOverlay = 'show_performance_overlay';
@@ -994,6 +995,14 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyDownloadOnWifiOnly) ?? false;
   }
 
+  Future<void> setAutoCheckUpdatesOnStartup(bool value) async {
+    await prefs.setBool(_keyAutoCheckUpdatesOnStartup, value);
+  }
+
+  bool getAutoCheckUpdatesOnStartup() {
+    return prefs.getBool(_keyAutoCheckUpdatesOnStartup) ?? true;
+  }
+
   // Auto-remove watched downloads
   Future<void> setAutoRemoveWatchedDownloads(bool value) async {
     await prefs.setBool(_keyAutoRemoveWatchedDownloads, value);
@@ -1486,6 +1495,7 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyCustomDownloadPath),
       prefs.remove(_keyCustomDownloadPathType),
       prefs.remove(_keyDownloadOnWifiOnly),
+      prefs.remove(_keyAutoCheckUpdatesOnStartup),
       prefs.remove(_keyVideoPlayerNavigationEnabled),
       prefs.remove(_keyShowPerformanceOverlay),
       prefs.remove(_keyAutoHidePerformanceOverlay),

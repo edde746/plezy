@@ -177,6 +177,8 @@
     "updates": "Aggiornamenti",
     "updateAvailable": "Aggiornamento disponibile",
     "checkForUpdates": "Controlla aggiornamenti",
+    "autoCheckUpdatesOnStartup": "Controlla automaticamente gli aggiornamenti all'avvio",
+    "autoCheckUpdatesOnStartupDescription": "Mostra una notifica quando è disponibile una nuova versione all'avvio",
     "validationErrorEnterNumber": "Inserisci un numero valido",
     "validationErrorDuration": "la durata deve essere compresa tra ${min} e ${max} ${unit}",
     "shortcutAlreadyAssigned": "Scorciatoia già assegnata a ${action}",

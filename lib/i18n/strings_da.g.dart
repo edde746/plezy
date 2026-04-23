@@ -297,6 +297,8 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String get updates => 'Opdateringer';
 	@override String get updateAvailable => 'Opdatering tilgængelig';
 	@override String get checkForUpdates => 'Søg efter opdateringer';
+	@override String get autoCheckUpdatesOnStartup => 'Søg automatisk efter opdateringer ved opstart';
+	@override String get autoCheckUpdatesOnStartupDescription => 'Vis en notifikation, når en ny version er tilgængelig ved opstart';
 	@override String get validationErrorEnterNumber => 'Indtast et gyldigt tal';
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'Varighed skal være mellem ${min} og ${max} ${unit}';
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Genvej allerede tildelt til ${action}';
@@ -1589,6 +1591,8 @@ extension on TranslationsDa {
 			'settings.updates' => 'Opdateringer',
 			'settings.updateAvailable' => 'Opdatering tilgængelig',
 			'settings.checkForUpdates' => 'Søg efter opdateringer',
+			'settings.autoCheckUpdatesOnStartup' => 'Søg automatisk efter opdateringer ved opstart',
+			'settings.autoCheckUpdatesOnStartupDescription' => 'Vis en notifikation, når en ny version er tilgængelig ved opstart',
 			'settings.validationErrorEnterNumber' => 'Indtast et gyldigt tal',
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'Varighed skal være mellem ${min} og ${max} ${unit}',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Genvej allerede tildelt til ${action}',
@@ -1932,10 +1936,10 @@ extension on TranslationsDa {
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Er du sikker på, at du vil opdatere metadata for "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Er du sikker på, at du vil tømme papirkurven for "${title}"?',
 			'libraries.manageLibraries' => 'Administrer biblioteker',
-			'libraries.sort' => 'Sortér',
-			'libraries.sortBy' => 'Sortér efter',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.sort' => 'Sortér',
+			'libraries.sortBy' => 'Sortér efter',
 			'libraries.filters' => 'Filtre',
 			'libraries.confirmActionMessage' => 'Er du sikker på, at du vil udføre denne handling?',
 			'libraries.showLibrary' => 'Vis bibliotek',

@@ -297,6 +297,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get updates => 'Mises à jour';
 	@override String get updateAvailable => 'Mise à jour disponible';
 	@override String get checkForUpdates => 'Vérifier les mises à jour';
+	@override String get autoCheckUpdatesOnStartup => 'Vérifier automatiquement les mises à jour au démarrage';
+	@override String get autoCheckUpdatesOnStartupDescription => 'Afficher une notification lorsqu\'une nouvelle version est disponible au démarrage';
 	@override String get validationErrorEnterNumber => 'Veuillez saisir un numéro valide';
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'La durée doit être comprise entre ${min} et ${max} ${unit}';
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Raccourci déjà attribué à ${action}';
@@ -1589,6 +1591,8 @@ extension on TranslationsFr {
 			'settings.updates' => 'Mises à jour',
 			'settings.updateAvailable' => 'Mise à jour disponible',
 			'settings.checkForUpdates' => 'Vérifier les mises à jour',
+			'settings.autoCheckUpdatesOnStartup' => 'Vérifier automatiquement les mises à jour au démarrage',
+			'settings.autoCheckUpdatesOnStartupDescription' => 'Afficher une notification lorsqu\'une nouvelle version est disponible au démarrage',
 			'settings.validationErrorEnterNumber' => 'Veuillez saisir un numéro valide',
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'La durée doit être comprise entre ${min} et ${max} ${unit}',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Raccourci déjà attribué à ${action}',
@@ -1932,10 +1936,10 @@ extension on TranslationsFr {
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir actualiser les métadonnées pour "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir vider la corbeille pour "${title}"?',
 			'libraries.manageLibraries' => 'Gérer les bibliothèques',
-			'libraries.sort' => 'Trier',
-			'libraries.sortBy' => 'Trier par',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.sort' => 'Trier',
+			'libraries.sortBy' => 'Trier par',
 			'libraries.filters' => 'Filtres',
 			'libraries.confirmActionMessage' => 'Êtes-vous sûr de vouloir effectuer cette action ?',
 			'libraries.showLibrary' => 'Afficher la bibliothèque',

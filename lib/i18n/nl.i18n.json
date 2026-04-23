@@ -177,6 +177,8 @@
     "updates": "Updates",
     "updateAvailable": "Update beschikbaar",
     "checkForUpdates": "Controleer op updates",
+    "autoCheckUpdatesOnStartup": "Automatisch controleren op updates bij opstarten",
+    "autoCheckUpdatesOnStartupDescription": "Toon een melding wanneer bij het opstarten een nieuwe versie beschikbaar is",
     "validationErrorEnterNumber": "Voer een geldig nummer in",
     "validationErrorDuration": "Duur moet tussen ${min} en ${max} ${unit} zijn",
     "shortcutAlreadyAssigned": "Sneltoets al toegewezen aan ${action}",

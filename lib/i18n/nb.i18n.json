@@ -177,6 +177,8 @@
     "updates": "Oppdateringer",
     "updateAvailable": "Oppdatering tilgjengelig",
     "checkForUpdates": "Se etter oppdateringer",
+    "autoCheckUpdatesOnStartup": "Se automatisk etter oppdateringer ved oppstart",
+    "autoCheckUpdatesOnStartupDescription": "Vis et varsel når en ny versjon er tilgjengelig ved oppstart",
     "validationErrorEnterNumber": "Vennligst skriv inn et gyldig tall",
     "validationErrorDuration": "Varigheten må være mellom ${min} og ${max} ${unit}",
     "shortcutAlreadyAssigned": "Snarvei allerede tilordnet til ${action}",

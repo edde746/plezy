@@ -297,6 +297,8 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get updates => 'Aktualizacje';
 	@override String get updateAvailable => 'Dostępna aktualizacja';
 	@override String get checkForUpdates => 'Sprawdź aktualizacje';
+	@override String get autoCheckUpdatesOnStartup => 'Automatycznie sprawdzaj aktualizacje przy uruchomieniu';
+	@override String get autoCheckUpdatesOnStartupDescription => 'Pokaż powiadomienie, gdy przy uruchomieniu dostępna jest nowa wersja';
 	@override String get validationErrorEnterNumber => 'Wprowadź prawidłową liczbę';
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'Czas musi być między ${min} a ${max} ${unit}';
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Skrót jest już przypisany do ${action}';
@@ -1589,6 +1591,8 @@ extension on TranslationsPl {
 			'settings.updates' => 'Aktualizacje',
 			'settings.updateAvailable' => 'Dostępna aktualizacja',
 			'settings.checkForUpdates' => 'Sprawdź aktualizacje',
+			'settings.autoCheckUpdatesOnStartup' => 'Automatycznie sprawdzaj aktualizacje przy uruchomieniu',
+			'settings.autoCheckUpdatesOnStartupDescription' => 'Pokaż powiadomienie, gdy przy uruchomieniu dostępna jest nowa wersja',
 			'settings.validationErrorEnterNumber' => 'Wprowadź prawidłową liczbę',
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'Czas musi być między ${min} a ${max} ${unit}',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Skrót jest już przypisany do ${action}',
@@ -1932,10 +1936,10 @@ extension on TranslationsPl {
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Czy na pewno chcesz odświeżyć metadane dla "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Czy na pewno chcesz opróżnić kosz dla "${title}"?',
 			'libraries.manageLibraries' => 'Zarządzaj bibliotekami',
-			'libraries.sort' => 'Sortuj',
-			'libraries.sortBy' => 'Sortuj wg',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.sort' => 'Sortuj',
+			'libraries.sortBy' => 'Sortuj wg',
 			'libraries.filters' => 'Filtry',
 			'libraries.confirmActionMessage' => 'Czy na pewno chcesz wykonać tę operację?',
 			'libraries.showLibrary' => 'Pokaż bibliotekę',

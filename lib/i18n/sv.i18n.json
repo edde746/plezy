@@ -177,6 +177,8 @@
     "updates": "Uppdateringar",
     "updateAvailable": "Uppdatering tillgänglig",
     "checkForUpdates": "Kontrollera uppdateringar",
+    "autoCheckUpdatesOnStartup": "Kontrollera uppdateringar automatiskt vid start",
+    "autoCheckUpdatesOnStartupDescription": "Visa en avisering när en ny version är tillgänglig vid start",
     "validationErrorEnterNumber": "Vänligen ange ett giltigt nummer",
     "validationErrorDuration": "Tiden måste vara mellan ${min} och ${max} ${unit}",
     "shortcutAlreadyAssigned": "Genväg redan tilldelad ${action}",

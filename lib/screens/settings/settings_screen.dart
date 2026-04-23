@@ -68,6 +68,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kClearCache = 'clear_cache';
   static const _kResetSettings = 'reset_settings';
   static const _kCheckForUpdates = 'check_for_updates';
+  static const _kAutoCheckUpdatesOnStartup = 'auto_check_updates_on_startup';
   static const _kAbout = 'about';
   static const _kWatchTogetherRelay = 'watch_together_relay';
   static const _kExportSettings = 'export_settings';
@@ -81,6 +82,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   bool _enableDebugLogging = false;
   bool _downloadOnWifiOnly = false;
   bool _autoRemoveWatchedDownloads = false;
+  bool _autoCheckUpdatesOnStartup = true;
   bool _videoPlayerNavigationEnabled = false;
   String? _customRelayUrl;
 
@@ -138,6 +140,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       _enableDebugLogging = _settingsService.getEnableDebugLogging();
       _downloadOnWifiOnly = _settingsService.getDownloadOnWifiOnly();
       _autoRemoveWatchedDownloads = _settingsService.getAutoRemoveWatchedDownloads();
+      _autoCheckUpdatesOnStartup = _settingsService.getAutoCheckUpdatesOnStartup();
       _videoPlayerNavigationEnabled = _settingsService.getVideoPlayerNavigationEnabled();
       _customRelayUrl = _settingsService.getCustomRelayUrl();
       _isLoading = false;
@@ -481,6 +484,20 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     );
   }
 
+  Widget _buildAutoCheckUpdatesOnStartupTile() {
+    return SwitchListTile(
+      focusNode: _focusTracker.get(_kAutoCheckUpdatesOnStartup),
+      secondary: const AppIcon(Symbols.notifications_active_rounded, fill: 1),
+      title: Text(t.settings.autoCheckUpdatesOnStartup),
+      subtitle: Text(t.settings.autoCheckUpdatesOnStartupDescription),
+      value: _autoCheckUpdatesOnStartup,
+      onChanged: (value) async {
+        setState(() => _autoCheckUpdatesOnStartup = value);
+        await _settingsService.setAutoCheckUpdatesOnStartup(value);
+      },
+    );
+  }
+
   Widget _buildUpdateSection() {
     if (UpdateService.useNativeUpdater) {
       return Column(
@@ -494,6 +511,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
             onTap: () => UpdateService.checkForUpdatesNative(inBackground: false),
           ),
+          _buildAutoCheckUpdatesOnStartupTile(),
         ],
       );
     }
@@ -526,6 +544,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                   }
                 },
         ),
+        _buildAutoCheckUpdatesOnStartupTile(),
       ],
     );
   }

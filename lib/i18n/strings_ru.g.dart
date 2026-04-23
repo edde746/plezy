@@ -297,6 +297,8 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get updates => 'Обновления';
 	@override String get updateAvailable => 'Доступно обновление';
 	@override String get checkForUpdates => 'Проверить обновления';
+	@override String get autoCheckUpdatesOnStartup => 'Автоматически проверять обновления при запуске';
+	@override String get autoCheckUpdatesOnStartupDescription => 'Показывать уведомление при запуске, если доступна новая версия';
 	@override String get validationErrorEnterNumber => 'Введите корректное число';
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'Длительность должна быть от ${min} до ${max} ${unit}';
 	@override String shortcutAlreadyAssigned({required Object action}) => 'Клавиша уже назначена для ${action}';
@@ -1589,6 +1591,8 @@ extension on TranslationsRu {
 			'settings.updates' => 'Обновления',
 			'settings.updateAvailable' => 'Доступно обновление',
 			'settings.checkForUpdates' => 'Проверить обновления',
+			'settings.autoCheckUpdatesOnStartup' => 'Автоматически проверять обновления при запуске',
+			'settings.autoCheckUpdatesOnStartupDescription' => 'Показывать уведомление при запуске, если доступна новая версия',
 			'settings.validationErrorEnterNumber' => 'Введите корректное число',
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'Длительность должна быть от ${min} до ${max} ${unit}',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Клавиша уже назначена для ${action}',
@@ -1932,10 +1936,10 @@ extension on TranslationsRu {
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Вы уверены, что хотите обновить метаданные для "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Вы уверены, что хотите очистить корзину для "${title}"?',
 			'libraries.manageLibraries' => 'Управление библиотеками',
-			'libraries.sort' => 'Сортировка',
-			'libraries.sortBy' => 'Сортировать по',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.sort' => 'Сортировка',
+			'libraries.sortBy' => 'Сортировать по',
 			'libraries.filters' => 'Фильтры',
 			'libraries.confirmActionMessage' => 'Вы уверены, что хотите выполнить это действие?',
 			'libraries.showLibrary' => 'Показать библиотеку',

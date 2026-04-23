@@ -211,10 +211,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   }
 
   Future<void> _checkForUpdatesOnStartup() async {
-    // Delay slightly to allow UI to settle
-    await Future.delayed(const Duration(seconds: 3));
-
     if (!mounted) return;
+
+    final settingsService = await SettingsService.getInstance();
+    if (!settingsService.getAutoCheckUpdatesOnStartup()) return;
 
     // Native updater (Sparkle/WinSparkle) handles everything — skip Flutter dialog
     if (UpdateService.useNativeUpdater) {

@@ -177,6 +177,8 @@
     "updates": "업데이트",
     "updateAvailable": "사용 가능한 업데이트 있음",
     "checkForUpdates": "업데이트 확인",
+    "autoCheckUpdatesOnStartup": "시작 시 자동으로 업데이트 확인",
+    "autoCheckUpdatesOnStartupDescription": "시작 시 새 버전이 있으면 알림 표시",
     "validationErrorEnterNumber": "유효한 숫자를 입력하세요",
     "validationErrorDuration": "기간은 ${min}과 ${max} ${unit} 사이여야 합니다",
     "shortcutAlreadyAssigned": "단축키가 이미 ${action}에 할당 되었습니다",

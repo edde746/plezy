@@ -635,6 +635,12 @@ class TranslationsSettingsEn {
 	/// en: 'Check for Updates'
 	String get checkForUpdates => 'Check for Updates';
 
+	/// en: 'Automatically check for updates on startup'
+	String get autoCheckUpdatesOnStartup => 'Automatically check for updates on startup';
+
+	/// en: 'Show a notification when a new version is available at launch'
+	String get autoCheckUpdatesOnStartupDescription => 'Show a notification when a new version is available at launch';
+
 	/// en: 'Please enter a valid number'
 	String get validationErrorEnterNumber => 'Please enter a valid number';
 
@@ -3426,6 +3432,8 @@ extension on Translations {
 			'settings.updates' => 'Updates',
 			'settings.updateAvailable' => 'Update Available',
 			'settings.checkForUpdates' => 'Check for Updates',
+			'settings.autoCheckUpdatesOnStartup' => 'Automatically check for updates on startup',
+			'settings.autoCheckUpdatesOnStartupDescription' => 'Show a notification when a new version is available at launch',
 			'settings.validationErrorEnterNumber' => 'Please enter a valid number',
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'Duration must be between ${min} and ${max} ${unit}',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Shortcut already assigned to ${action}',
@@ -3769,10 +3777,10 @@ extension on Translations {
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Are you sure you want to empty trash for "${title}"?',
 			'libraries.manageLibraries' => 'Manage Libraries',
-			'libraries.sort' => 'Sort',
-			'libraries.sortBy' => 'Sort By',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.sort' => 'Sort',
+			'libraries.sortBy' => 'Sort By',
 			'libraries.filters' => 'Filters',
 			'libraries.confirmActionMessage' => 'Are you sure you want to perform this action?',
 			'libraries.showLibrary' => 'Show library',

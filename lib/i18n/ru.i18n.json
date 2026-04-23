@@ -177,6 +177,8 @@
     "updates": "Обновления",
     "updateAvailable": "Доступно обновление",
     "checkForUpdates": "Проверить обновления",
+    "autoCheckUpdatesOnStartup": "Автоматически проверять обновления при запуске",
+    "autoCheckUpdatesOnStartupDescription": "Показывать уведомление при запуске, если доступна новая версия",
     "validationErrorEnterNumber": "Введите корректное число",
     "validationErrorDuration": "Длительность должна быть от ${min} до ${max} ${unit}",
     "shortcutAlreadyAssigned": "Клавиша уже назначена для ${action}",

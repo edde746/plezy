@@ -297,6 +297,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get updates => 'アップデート';
 	@override String get updateAvailable => 'アップデート利用可能';
 	@override String get checkForUpdates => 'アップデートを確認';
+	@override String get autoCheckUpdatesOnStartup => '起動時にアップデートを自動的に確認';
+	@override String get autoCheckUpdatesOnStartupDescription => '起動時に新しいバージョンが利用可能な場合に通知を表示';
 	@override String get validationErrorEnterNumber => '有効な数値を入力してください';
 	@override String validationErrorDuration({required Object min, required Object max, required Object unit}) => '時間は${min}から${max} ${unit}の間である必要があります';
 	@override String shortcutAlreadyAssigned({required Object action}) => 'ショートカットは既に${action}に割り当てられています';
@@ -1589,6 +1591,8 @@ extension on TranslationsJa {
 			'settings.updates' => 'アップデート',
 			'settings.updateAvailable' => 'アップデート利用可能',
 			'settings.checkForUpdates' => 'アップデートを確認',
+			'settings.autoCheckUpdatesOnStartup' => '起動時にアップデートを自動的に確認',
+			'settings.autoCheckUpdatesOnStartupDescription' => '起動時に新しいバージョンが利用可能な場合に通知を表示',
 			'settings.validationErrorEnterNumber' => '有効な数値を入力してください',
 			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => '時間は${min}から${max} ${unit}の間である必要があります',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'ショートカットは既に${action}に割り当てられています',
@@ -1932,10 +1936,10 @@ extension on TranslationsJa {
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}"のメタデータを更新してもよろしいですか？',
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}"のゴミ箱を空にしてもよろしいですか？',
 			'libraries.manageLibraries' => 'ライブラリを管理',
-			'libraries.sort' => '並べ替え',
-			'libraries.sortBy' => '並べ替え順',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.sort' => '並べ替え',
+			'libraries.sortBy' => '並べ替え順',
 			'libraries.filters' => 'フィルター',
 			'libraries.confirmActionMessage' => 'この操作を実行してもよろしいですか？',
 			'libraries.showLibrary' => 'ライブラリを表示',
