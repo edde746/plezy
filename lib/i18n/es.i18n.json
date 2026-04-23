@@ -986,6 +986,20 @@
     "style": "Estilo",
     "mood": "Estado de ánimo"
   },
+  "matchScreen": {
+    "match": "Emparejar...",
+    "fixMatch": "Corregir coincidencia...",
+    "unmatch": "Desvincular",
+    "unmatchConfirm": "¿Quitar la coincidencia actual de este elemento? Plex lo tratará como sin coincidencia hasta que vuelvas a emparejarlo.",
+    "unmatchSuccess": "Elemento desvinculado",
+    "unmatchFailed": "No se pudo desvincular el elemento",
+    "matchApplied": "Coincidencia aplicada",
+    "matchFailed": "No se pudo aplicar la coincidencia",
+    "titleHint": "Título",
+    "yearHint": "Año",
+    "search": "Buscar",
+    "noMatchesFound": "No se encontraron coincidencias"
+  },
   "serverTasks": {
     "title": "Tareas del servidor",
     "failedToLoad": "Error al cargar tareas",

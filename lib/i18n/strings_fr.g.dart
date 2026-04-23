@@ -74,6 +74,7 @@ class TranslationsFr with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsFr videoSettings = _TranslationsVideoSettingsFr._(_root);
 	@override late final _TranslationsExternalPlayerFr externalPlayer = _TranslationsExternalPlayerFr._(_root);
 	@override late final _TranslationsMetadataEditFr metadataEdit = _TranslationsMetadataEditFr._(_root);
+	@override late final _TranslationsMatchScreenFr matchScreen = _TranslationsMatchScreenFr._(_root);
 	@override late final _TranslationsServerTasksFr serverTasks = _TranslationsServerTasksFr._(_root);
 	@override late final _TranslationsTraktFr trakt = _TranslationsTraktFr._(_root);
 }
@@ -1224,6 +1225,27 @@ class _TranslationsMetadataEditFr implements TranslationsMetadataEditEn {
 	@override String get mood => 'Ambiance';
 }
 
+// Path: matchScreen
+class _TranslationsMatchScreenFr implements TranslationsMatchScreenEn {
+	_TranslationsMatchScreenFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get match => 'Associer...';
+	@override String get fixMatch => 'Corriger l\'association...';
+	@override String get unmatch => 'Dissocier';
+	@override String get unmatchConfirm => 'Effacer l\'association actuelle de cet élément ? Plex le traitera comme non associé jusqu\'à ce que vous l\'associiez de nouveau.';
+	@override String get unmatchSuccess => 'Association supprimée';
+	@override String get unmatchFailed => 'Échec de la dissociation';
+	@override String get matchApplied => 'Association appliquée';
+	@override String get matchFailed => 'Échec de l\'application';
+	@override String get titleHint => 'Titre';
+	@override String get yearHint => 'Année';
+	@override String get search => 'Rechercher';
+	@override String get noMatchesFound => 'Aucune correspondance';
+}
+
 // Path: serverTasks
 class _TranslationsServerTasksFr implements TranslationsServerTasksEn {
 	_TranslationsServerTasksFr._(this._root);
@@ -2325,6 +2347,18 @@ extension on TranslationsFr {
 			'metadataEdit.label' => 'Label',
 			'metadataEdit.style' => 'Style',
 			'metadataEdit.mood' => 'Ambiance',
+			'matchScreen.match' => 'Associer...',
+			'matchScreen.fixMatch' => 'Corriger l\'association...',
+			'matchScreen.unmatch' => 'Dissocier',
+			'matchScreen.unmatchConfirm' => 'Effacer l\'association actuelle de cet élément ? Plex le traitera comme non associé jusqu\'à ce que vous l\'associiez de nouveau.',
+			'matchScreen.unmatchSuccess' => 'Association supprimée',
+			'matchScreen.unmatchFailed' => 'Échec de la dissociation',
+			'matchScreen.matchApplied' => 'Association appliquée',
+			'matchScreen.matchFailed' => 'Échec de l\'application',
+			'matchScreen.titleHint' => 'Titre',
+			'matchScreen.yearHint' => 'Année',
+			'matchScreen.search' => 'Rechercher',
+			'matchScreen.noMatchesFound' => 'Aucune correspondance',
 			'serverTasks.title' => 'Tâches du serveur',
 			'serverTasks.failedToLoad' => 'Échec du chargement des tâches',
 			'serverTasks.noTasks' => 'Aucune tâche en cours',

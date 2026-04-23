@@ -986,6 +986,20 @@
     "style": "Style",
     "mood": "Ambiance"
   },
+  "matchScreen": {
+    "match": "Associer...",
+    "fixMatch": "Corriger l'association...",
+    "unmatch": "Dissocier",
+    "unmatchConfirm": "Effacer l'association actuelle de cet élément ? Plex le traitera comme non associé jusqu'à ce que vous l'associiez de nouveau.",
+    "unmatchSuccess": "Association supprimée",
+    "unmatchFailed": "Échec de la dissociation",
+    "matchApplied": "Association appliquée",
+    "matchFailed": "Échec de l'application",
+    "titleHint": "Titre",
+    "yearHint": "Année",
+    "search": "Rechercher",
+    "noMatchesFound": "Aucune correspondance"
+  },
   "serverTasks": {
     "title": "Tâches du serveur",
     "failedToLoad": "Échec du chargement des tâches",

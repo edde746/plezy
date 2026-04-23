@@ -74,6 +74,7 @@ class TranslationsDa with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsDa videoSettings = _TranslationsVideoSettingsDa._(_root);
 	@override late final _TranslationsExternalPlayerDa externalPlayer = _TranslationsExternalPlayerDa._(_root);
 	@override late final _TranslationsMetadataEditDa metadataEdit = _TranslationsMetadataEditDa._(_root);
+	@override late final _TranslationsMatchScreenDa matchScreen = _TranslationsMatchScreenDa._(_root);
 	@override late final _TranslationsServerTasksDa serverTasks = _TranslationsServerTasksDa._(_root);
 	@override late final _TranslationsTraktDa trakt = _TranslationsTraktDa._(_root);
 }
@@ -1224,6 +1225,27 @@ class _TranslationsMetadataEditDa implements TranslationsMetadataEditEn {
 	@override String get mood => 'Stemning';
 }
 
+// Path: matchScreen
+class _TranslationsMatchScreenDa implements TranslationsMatchScreenEn {
+	_TranslationsMatchScreenDa._(this._root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get match => 'Match...';
+	@override String get fixMatch => 'Ret match...';
+	@override String get unmatch => 'Fjern match';
+	@override String get unmatchConfirm => 'Ryd det aktuelle match for dette element? Plex behandler det som ikke matchet, indtil du matcher det igen.';
+	@override String get unmatchSuccess => 'Match fjernet';
+	@override String get unmatchFailed => 'Kunne ikke fjerne match';
+	@override String get matchApplied => 'Match anvendt';
+	@override String get matchFailed => 'Kunne ikke anvende match';
+	@override String get titleHint => 'Titel';
+	@override String get yearHint => 'År';
+	@override String get search => 'Søg';
+	@override String get noMatchesFound => 'Ingen match fundet';
+}
+
 // Path: serverTasks
 class _TranslationsServerTasksDa implements TranslationsServerTasksEn {
 	_TranslationsServerTasksDa._(this._root);
@@ -2325,6 +2347,18 @@ extension on TranslationsDa {
 			'metadataEdit.label' => 'Etiket',
 			'metadataEdit.style' => 'Stil',
 			'metadataEdit.mood' => 'Stemning',
+			'matchScreen.match' => 'Match...',
+			'matchScreen.fixMatch' => 'Ret match...',
+			'matchScreen.unmatch' => 'Fjern match',
+			'matchScreen.unmatchConfirm' => 'Ryd det aktuelle match for dette element? Plex behandler det som ikke matchet, indtil du matcher det igen.',
+			'matchScreen.unmatchSuccess' => 'Match fjernet',
+			'matchScreen.unmatchFailed' => 'Kunne ikke fjerne match',
+			'matchScreen.matchApplied' => 'Match anvendt',
+			'matchScreen.matchFailed' => 'Kunne ikke anvende match',
+			'matchScreen.titleHint' => 'Titel',
+			'matchScreen.yearHint' => 'År',
+			'matchScreen.search' => 'Søg',
+			'matchScreen.noMatchesFound' => 'Ingen match fundet',
 			'serverTasks.title' => 'Serveropgaver',
 			'serverTasks.failedToLoad' => 'Kunne ikke indlæse opgaver',
 			'serverTasks.noTasks' => 'Ingen opgaver kører',

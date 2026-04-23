@@ -986,6 +986,20 @@
     "style": "风格",
     "mood": "氛围"
   },
+  "matchScreen": {
+    "match": "匹配...",
+    "fixMatch": "修正匹配...",
+    "unmatch": "取消匹配",
+    "unmatchConfirm": "清除此项目的当前匹配吗？在重新匹配之前，Plex 会将其视为未匹配。",
+    "unmatchSuccess": "已取消匹配",
+    "unmatchFailed": "无法取消匹配",
+    "matchApplied": "匹配已应用",
+    "matchFailed": "应用匹配失败",
+    "titleHint": "标题",
+    "yearHint": "年份",
+    "search": "搜索",
+    "noMatchesFound": "未找到匹配项"
+  },
   "serverTasks": {
     "title": "服务器任务",
     "failedToLoad": "加载任务失败",

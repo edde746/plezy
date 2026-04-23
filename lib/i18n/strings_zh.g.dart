@@ -74,6 +74,7 @@ class TranslationsZh with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsZh videoSettings = _TranslationsVideoSettingsZh._(_root);
 	@override late final _TranslationsExternalPlayerZh externalPlayer = _TranslationsExternalPlayerZh._(_root);
 	@override late final _TranslationsMetadataEditZh metadataEdit = _TranslationsMetadataEditZh._(_root);
+	@override late final _TranslationsMatchScreenZh matchScreen = _TranslationsMatchScreenZh._(_root);
 	@override late final _TranslationsServerTasksZh serverTasks = _TranslationsServerTasksZh._(_root);
 	@override late final _TranslationsTraktZh trakt = _TranslationsTraktZh._(_root);
 }
@@ -1224,6 +1225,27 @@ class _TranslationsMetadataEditZh implements TranslationsMetadataEditEn {
 	@override String get mood => '氛围';
 }
 
+// Path: matchScreen
+class _TranslationsMatchScreenZh implements TranslationsMatchScreenEn {
+	_TranslationsMatchScreenZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get match => '匹配...';
+	@override String get fixMatch => '修正匹配...';
+	@override String get unmatch => '取消匹配';
+	@override String get unmatchConfirm => '清除此项目的当前匹配吗？在重新匹配之前，Plex 会将其视为未匹配。';
+	@override String get unmatchSuccess => '已取消匹配';
+	@override String get unmatchFailed => '无法取消匹配';
+	@override String get matchApplied => '匹配已应用';
+	@override String get matchFailed => '应用匹配失败';
+	@override String get titleHint => '标题';
+	@override String get yearHint => '年份';
+	@override String get search => '搜索';
+	@override String get noMatchesFound => '未找到匹配项';
+}
+
 // Path: serverTasks
 class _TranslationsServerTasksZh implements TranslationsServerTasksEn {
 	_TranslationsServerTasksZh._(this._root);
@@ -2325,6 +2347,18 @@ extension on TranslationsZh {
 			'metadataEdit.label' => '标记',
 			'metadataEdit.style' => '风格',
 			'metadataEdit.mood' => '氛围',
+			'matchScreen.match' => '匹配...',
+			'matchScreen.fixMatch' => '修正匹配...',
+			'matchScreen.unmatch' => '取消匹配',
+			'matchScreen.unmatchConfirm' => '清除此项目的当前匹配吗？在重新匹配之前，Plex 会将其视为未匹配。',
+			'matchScreen.unmatchSuccess' => '已取消匹配',
+			'matchScreen.unmatchFailed' => '无法取消匹配',
+			'matchScreen.matchApplied' => '匹配已应用',
+			'matchScreen.matchFailed' => '应用匹配失败',
+			'matchScreen.titleHint' => '标题',
+			'matchScreen.yearHint' => '年份',
+			'matchScreen.search' => '搜索',
+			'matchScreen.noMatchesFound' => '未找到匹配项',
 			'serverTasks.title' => '服务器任务',
 			'serverTasks.failedToLoad' => '加载任务失败',
 			'serverTasks.noTasks' => '没有正在运行的任务',

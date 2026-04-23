@@ -74,6 +74,7 @@ class TranslationsKo with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsKo videoSettings = _TranslationsVideoSettingsKo._(_root);
 	@override late final _TranslationsExternalPlayerKo externalPlayer = _TranslationsExternalPlayerKo._(_root);
 	@override late final _TranslationsMetadataEditKo metadataEdit = _TranslationsMetadataEditKo._(_root);
+	@override late final _TranslationsMatchScreenKo matchScreen = _TranslationsMatchScreenKo._(_root);
 	@override late final _TranslationsServerTasksKo serverTasks = _TranslationsServerTasksKo._(_root);
 	@override late final _TranslationsTraktKo trakt = _TranslationsTraktKo._(_root);
 }
@@ -1224,6 +1225,27 @@ class _TranslationsMetadataEditKo implements TranslationsMetadataEditEn {
 	@override String get mood => '분위기';
 }
 
+// Path: matchScreen
+class _TranslationsMatchScreenKo implements TranslationsMatchScreenEn {
+	_TranslationsMatchScreenKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get match => '일치...';
+	@override String get fixMatch => '일치 수정...';
+	@override String get unmatch => '일치 해제';
+	@override String get unmatchConfirm => '이 항목의 현재 일치를 해제하시겠습니까? 다시 일치시킬 때까지 Plex는 일치되지 않은 것으로 처리합니다.';
+	@override String get unmatchSuccess => '일치 해제됨';
+	@override String get unmatchFailed => '일치 해제에 실패했습니다';
+	@override String get matchApplied => '일치 적용됨';
+	@override String get matchFailed => '일치 적용에 실패했습니다';
+	@override String get titleHint => '제목';
+	@override String get yearHint => '연도';
+	@override String get search => '검색';
+	@override String get noMatchesFound => '일치하는 항목이 없습니다';
+}
+
 // Path: serverTasks
 class _TranslationsServerTasksKo implements TranslationsServerTasksEn {
 	_TranslationsServerTasksKo._(this._root);
@@ -2325,6 +2347,18 @@ extension on TranslationsKo {
 			'metadataEdit.label' => '라벨',
 			'metadataEdit.style' => '스타일',
 			'metadataEdit.mood' => '분위기',
+			'matchScreen.match' => '일치...',
+			'matchScreen.fixMatch' => '일치 수정...',
+			'matchScreen.unmatch' => '일치 해제',
+			'matchScreen.unmatchConfirm' => '이 항목의 현재 일치를 해제하시겠습니까? 다시 일치시킬 때까지 Plex는 일치되지 않은 것으로 처리합니다.',
+			'matchScreen.unmatchSuccess' => '일치 해제됨',
+			'matchScreen.unmatchFailed' => '일치 해제에 실패했습니다',
+			'matchScreen.matchApplied' => '일치 적용됨',
+			'matchScreen.matchFailed' => '일치 적용에 실패했습니다',
+			'matchScreen.titleHint' => '제목',
+			'matchScreen.yearHint' => '연도',
+			'matchScreen.search' => '검색',
+			'matchScreen.noMatchesFound' => '일치하는 항목이 없습니다',
 			'serverTasks.title' => '서버 작업',
 			'serverTasks.failedToLoad' => '작업을 불러올 수 없습니다',
 			'serverTasks.noTasks' => '실행 중인 작업 없음',

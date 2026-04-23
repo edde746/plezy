@@ -74,6 +74,7 @@ class TranslationsIt with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsIt videoSettings = _TranslationsVideoSettingsIt._(_root);
 	@override late final _TranslationsExternalPlayerIt externalPlayer = _TranslationsExternalPlayerIt._(_root);
 	@override late final _TranslationsMetadataEditIt metadataEdit = _TranslationsMetadataEditIt._(_root);
+	@override late final _TranslationsMatchScreenIt matchScreen = _TranslationsMatchScreenIt._(_root);
 	@override late final _TranslationsServerTasksIt serverTasks = _TranslationsServerTasksIt._(_root);
 	@override late final _TranslationsTraktIt trakt = _TranslationsTraktIt._(_root);
 }
@@ -1224,6 +1225,27 @@ class _TranslationsMetadataEditIt implements TranslationsMetadataEditEn {
 	@override String get mood => 'Atmosfera';
 }
 
+// Path: matchScreen
+class _TranslationsMatchScreenIt implements TranslationsMatchScreenEn {
+	_TranslationsMatchScreenIt._(this._root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String get match => 'Abbina...';
+	@override String get fixMatch => 'Correggi abbinamento...';
+	@override String get unmatch => 'Rimuovi abbinamento';
+	@override String get unmatchConfirm => 'Cancellare l\'abbinamento corrente di questo elemento? Plex lo tratterà come non abbinato finché non lo abbinerai di nuovo.';
+	@override String get unmatchSuccess => 'Abbinamento rimosso';
+	@override String get unmatchFailed => 'Rimozione dell\'abbinamento non riuscita';
+	@override String get matchApplied => 'Abbinamento applicato';
+	@override String get matchFailed => 'Applicazione dell\'abbinamento non riuscita';
+	@override String get titleHint => 'Titolo';
+	@override String get yearHint => 'Anno';
+	@override String get search => 'Cerca';
+	@override String get noMatchesFound => 'Nessun risultato';
+}
+
 // Path: serverTasks
 class _TranslationsServerTasksIt implements TranslationsServerTasksEn {
 	_TranslationsServerTasksIt._(this._root);
@@ -2325,6 +2347,18 @@ extension on TranslationsIt {
 			'metadataEdit.label' => 'Etichetta',
 			'metadataEdit.style' => 'Stile',
 			'metadataEdit.mood' => 'Atmosfera',
+			'matchScreen.match' => 'Abbina...',
+			'matchScreen.fixMatch' => 'Correggi abbinamento...',
+			'matchScreen.unmatch' => 'Rimuovi abbinamento',
+			'matchScreen.unmatchConfirm' => 'Cancellare l\'abbinamento corrente di questo elemento? Plex lo tratterà come non abbinato finché non lo abbinerai di nuovo.',
+			'matchScreen.unmatchSuccess' => 'Abbinamento rimosso',
+			'matchScreen.unmatchFailed' => 'Rimozione dell\'abbinamento non riuscita',
+			'matchScreen.matchApplied' => 'Abbinamento applicato',
+			'matchScreen.matchFailed' => 'Applicazione dell\'abbinamento non riuscita',
+			'matchScreen.titleHint' => 'Titolo',
+			'matchScreen.yearHint' => 'Anno',
+			'matchScreen.search' => 'Cerca',
+			'matchScreen.noMatchesFound' => 'Nessun risultato',
 			'serverTasks.title' => 'Attività del server',
 			'serverTasks.failedToLoad' => 'Impossibile caricare le attività',
 			'serverTasks.noTasks' => 'Nessuna attività in corso',

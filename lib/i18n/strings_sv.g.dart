@@ -74,6 +74,7 @@ class TranslationsSv with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsSv videoSettings = _TranslationsVideoSettingsSv._(_root);
 	@override late final _TranslationsExternalPlayerSv externalPlayer = _TranslationsExternalPlayerSv._(_root);
 	@override late final _TranslationsMetadataEditSv metadataEdit = _TranslationsMetadataEditSv._(_root);
+	@override late final _TranslationsMatchScreenSv matchScreen = _TranslationsMatchScreenSv._(_root);
 	@override late final _TranslationsServerTasksSv serverTasks = _TranslationsServerTasksSv._(_root);
 	@override late final _TranslationsTraktSv trakt = _TranslationsTraktSv._(_root);
 }
@@ -1224,6 +1225,27 @@ class _TranslationsMetadataEditSv implements TranslationsMetadataEditEn {
 	@override String get mood => 'Stämning';
 }
 
+// Path: matchScreen
+class _TranslationsMatchScreenSv implements TranslationsMatchScreenEn {
+	_TranslationsMatchScreenSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get match => 'Matcha...';
+	@override String get fixMatch => 'Rätta matchning...';
+	@override String get unmatch => 'Ta bort matchning';
+	@override String get unmatchConfirm => 'Ta bort den aktuella matchningen för det här objektet? Plex behandlar det som omatchat tills du matchar det igen.';
+	@override String get unmatchSuccess => 'Matchning borttagen';
+	@override String get unmatchFailed => 'Det gick inte att ta bort matchningen';
+	@override String get matchApplied => 'Matchning tillämpad';
+	@override String get matchFailed => 'Det gick inte att tillämpa matchningen';
+	@override String get titleHint => 'Titel';
+	@override String get yearHint => 'År';
+	@override String get search => 'Sök';
+	@override String get noMatchesFound => 'Inga matchningar hittades';
+}
+
 // Path: serverTasks
 class _TranslationsServerTasksSv implements TranslationsServerTasksEn {
 	_TranslationsServerTasksSv._(this._root);
@@ -2325,6 +2347,18 @@ extension on TranslationsSv {
 			'metadataEdit.label' => 'Etikett',
 			'metadataEdit.style' => 'Stil',
 			'metadataEdit.mood' => 'Stämning',
+			'matchScreen.match' => 'Matcha...',
+			'matchScreen.fixMatch' => 'Rätta matchning...',
+			'matchScreen.unmatch' => 'Ta bort matchning',
+			'matchScreen.unmatchConfirm' => 'Ta bort den aktuella matchningen för det här objektet? Plex behandlar det som omatchat tills du matchar det igen.',
+			'matchScreen.unmatchSuccess' => 'Matchning borttagen',
+			'matchScreen.unmatchFailed' => 'Det gick inte att ta bort matchningen',
+			'matchScreen.matchApplied' => 'Matchning tillämpad',
+			'matchScreen.matchFailed' => 'Det gick inte att tillämpa matchningen',
+			'matchScreen.titleHint' => 'Titel',
+			'matchScreen.yearHint' => 'År',
+			'matchScreen.search' => 'Sök',
+			'matchScreen.noMatchesFound' => 'Inga matchningar hittades',
 			'serverTasks.title' => 'Serveruppgifter',
 			'serverTasks.failedToLoad' => 'Kunde inte ladda uppgifter',
 			'serverTasks.noTasks' => 'Inga pågående uppgifter',

@@ -77,6 +77,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsVideoSettingsEn videoSettings = TranslationsVideoSettingsEn._(_root);
 	late final TranslationsExternalPlayerEn externalPlayer = TranslationsExternalPlayerEn._(_root);
 	late final TranslationsMetadataEditEn metadataEdit = TranslationsMetadataEditEn._(_root);
+	late final TranslationsMatchScreenEn matchScreen = TranslationsMatchScreenEn._(_root);
 	late final TranslationsServerTasksEn serverTasks = TranslationsServerTasksEn._(_root);
 	late final TranslationsTraktEn trakt = TranslationsTraktEn._(_root);
 }
@@ -2843,6 +2844,51 @@ class TranslationsMetadataEditEn {
 	String get mood => 'Mood';
 }
 
+// Path: matchScreen
+class TranslationsMatchScreenEn {
+	TranslationsMatchScreenEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Match...'
+	String get match => 'Match...';
+
+	/// en: 'Fix Match...'
+	String get fixMatch => 'Fix Match...';
+
+	/// en: 'Unmatch'
+	String get unmatch => 'Unmatch';
+
+	/// en: 'Clear the current match for this item? Plex will treat it as unmatched until you match it again.'
+	String get unmatchConfirm => 'Clear the current match for this item? Plex will treat it as unmatched until you match it again.';
+
+	/// en: 'Item unmatched'
+	String get unmatchSuccess => 'Item unmatched';
+
+	/// en: 'Failed to unmatch item'
+	String get unmatchFailed => 'Failed to unmatch item';
+
+	/// en: 'Match applied'
+	String get matchApplied => 'Match applied';
+
+	/// en: 'Failed to apply match'
+	String get matchFailed => 'Failed to apply match';
+
+	/// en: 'Title'
+	String get titleHint => 'Title';
+
+	/// en: 'Year'
+	String get yearHint => 'Year';
+
+	/// en: 'Search'
+	String get search => 'Search';
+
+	/// en: 'No matches found'
+	String get noMatchesFound => 'No matches found';
+}
+
 // Path: serverTasks
 class TranslationsServerTasksEn {
 	TranslationsServerTasksEn._(this._root);
@@ -4166,6 +4212,18 @@ extension on Translations {
 			'metadataEdit.label' => 'Label',
 			'metadataEdit.style' => 'Style',
 			'metadataEdit.mood' => 'Mood',
+			'matchScreen.match' => 'Match...',
+			'matchScreen.fixMatch' => 'Fix Match...',
+			'matchScreen.unmatch' => 'Unmatch',
+			'matchScreen.unmatchConfirm' => 'Clear the current match for this item? Plex will treat it as unmatched until you match it again.',
+			'matchScreen.unmatchSuccess' => 'Item unmatched',
+			'matchScreen.unmatchFailed' => 'Failed to unmatch item',
+			'matchScreen.matchApplied' => 'Match applied',
+			'matchScreen.matchFailed' => 'Failed to apply match',
+			'matchScreen.titleHint' => 'Title',
+			'matchScreen.yearHint' => 'Year',
+			'matchScreen.search' => 'Search',
+			'matchScreen.noMatchesFound' => 'No matches found',
 			'serverTasks.title' => 'Server Tasks',
 			'serverTasks.failedToLoad' => 'Failed to load tasks',
 			'serverTasks.noTasks' => 'No tasks running',

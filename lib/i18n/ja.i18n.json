@@ -986,6 +986,20 @@
     "style": "スタイル",
     "mood": "ムード"
   },
+  "matchScreen": {
+    "match": "マッチ...",
+    "fixMatch": "マッチを修正...",
+    "unmatch": "マッチ解除",
+    "unmatchConfirm": "このアイテムの現在のマッチを解除しますか？再度マッチするまで、Plex は未マッチとして扱います。",
+    "unmatchSuccess": "マッチを解除しました",
+    "unmatchFailed": "マッチの解除に失敗しました",
+    "matchApplied": "マッチを適用しました",
+    "matchFailed": "マッチの適用に失敗しました",
+    "titleHint": "タイトル",
+    "yearHint": "年",
+    "search": "検索",
+    "noMatchesFound": "一致する項目がありません"
+  },
   "serverTasks": {
     "title": "サーバータスク",
     "failedToLoad": "タスクの読み込みに失敗しました",

@@ -986,6 +986,20 @@
     "style": "Stijl",
     "mood": "Stemming"
   },
+  "matchScreen": {
+    "match": "Koppelen...",
+    "fixMatch": "Koppeling herstellen...",
+    "unmatch": "Ontkoppelen",
+    "unmatchConfirm": "De huidige koppeling voor dit item wissen? Plex behandelt het als ongekoppeld totdat je het opnieuw koppelt.",
+    "unmatchSuccess": "Item ontkoppeld",
+    "unmatchFailed": "Kon item niet ontkoppelen",
+    "matchApplied": "Koppeling toegepast",
+    "matchFailed": "Koppeling kon niet worden toegepast",
+    "titleHint": "Titel",
+    "yearHint": "Jaar",
+    "search": "Zoeken",
+    "noMatchesFound": "Geen overeenkomsten gevonden"
+  },
   "serverTasks": {
     "title": "Servertaken",
     "failedToLoad": "Taken konden niet worden geladen",

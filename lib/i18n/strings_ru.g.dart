@@ -74,6 +74,7 @@ class TranslationsRu with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsRu videoSettings = _TranslationsVideoSettingsRu._(_root);
 	@override late final _TranslationsExternalPlayerRu externalPlayer = _TranslationsExternalPlayerRu._(_root);
 	@override late final _TranslationsMetadataEditRu metadataEdit = _TranslationsMetadataEditRu._(_root);
+	@override late final _TranslationsMatchScreenRu matchScreen = _TranslationsMatchScreenRu._(_root);
 	@override late final _TranslationsServerTasksRu serverTasks = _TranslationsServerTasksRu._(_root);
 	@override late final _TranslationsTraktRu trakt = _TranslationsTraktRu._(_root);
 }
@@ -1224,6 +1225,27 @@ class _TranslationsMetadataEditRu implements TranslationsMetadataEditEn {
 	@override String get mood => 'Настроение';
 }
 
+// Path: matchScreen
+class _TranslationsMatchScreenRu implements TranslationsMatchScreenEn {
+	_TranslationsMatchScreenRu._(this._root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get match => 'Сопоставить...';
+	@override String get fixMatch => 'Исправить сопоставление...';
+	@override String get unmatch => 'Сбросить сопоставление';
+	@override String get unmatchConfirm => 'Сбросить текущее сопоставление этого элемента? Plex будет считать его несопоставленным, пока вы не сопоставите его снова.';
+	@override String get unmatchSuccess => 'Сопоставление сброшено';
+	@override String get unmatchFailed => 'Не удалось сбросить сопоставление';
+	@override String get matchApplied => 'Сопоставление применено';
+	@override String get matchFailed => 'Не удалось применить сопоставление';
+	@override String get titleHint => 'Название';
+	@override String get yearHint => 'Год';
+	@override String get search => 'Поиск';
+	@override String get noMatchesFound => 'Совпадений не найдено';
+}
+
 // Path: serverTasks
 class _TranslationsServerTasksRu implements TranslationsServerTasksEn {
 	_TranslationsServerTasksRu._(this._root);
@@ -2325,6 +2347,18 @@ extension on TranslationsRu {
 			'metadataEdit.label' => 'Метка',
 			'metadataEdit.style' => 'Стиль',
 			'metadataEdit.mood' => 'Настроение',
+			'matchScreen.match' => 'Сопоставить...',
+			'matchScreen.fixMatch' => 'Исправить сопоставление...',
+			'matchScreen.unmatch' => 'Сбросить сопоставление',
+			'matchScreen.unmatchConfirm' => 'Сбросить текущее сопоставление этого элемента? Plex будет считать его несопоставленным, пока вы не сопоставите его снова.',
+			'matchScreen.unmatchSuccess' => 'Сопоставление сброшено',
+			'matchScreen.unmatchFailed' => 'Не удалось сбросить сопоставление',
+			'matchScreen.matchApplied' => 'Сопоставление применено',
+			'matchScreen.matchFailed' => 'Не удалось применить сопоставление',
+			'matchScreen.titleHint' => 'Название',
+			'matchScreen.yearHint' => 'Год',
+			'matchScreen.search' => 'Поиск',
+			'matchScreen.noMatchesFound' => 'Совпадений не найдено',
 			'serverTasks.title' => 'Задачи сервера',
 			'serverTasks.failedToLoad' => 'Не удалось загрузить задачи',
 			'serverTasks.noTasks' => 'Нет выполняемых задач',

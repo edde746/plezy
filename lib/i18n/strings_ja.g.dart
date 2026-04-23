@@ -74,6 +74,7 @@ class TranslationsJa with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsJa videoSettings = _TranslationsVideoSettingsJa._(_root);
 	@override late final _TranslationsExternalPlayerJa externalPlayer = _TranslationsExternalPlayerJa._(_root);
 	@override late final _TranslationsMetadataEditJa metadataEdit = _TranslationsMetadataEditJa._(_root);
+	@override late final _TranslationsMatchScreenJa matchScreen = _TranslationsMatchScreenJa._(_root);
 	@override late final _TranslationsServerTasksJa serverTasks = _TranslationsServerTasksJa._(_root);
 	@override late final _TranslationsTraktJa trakt = _TranslationsTraktJa._(_root);
 }
@@ -1224,6 +1225,27 @@ class _TranslationsMetadataEditJa implements TranslationsMetadataEditEn {
 	@override String get mood => 'ムード';
 }
 
+// Path: matchScreen
+class _TranslationsMatchScreenJa implements TranslationsMatchScreenEn {
+	_TranslationsMatchScreenJa._(this._root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get match => 'マッチ...';
+	@override String get fixMatch => 'マッチを修正...';
+	@override String get unmatch => 'マッチ解除';
+	@override String get unmatchConfirm => 'このアイテムの現在のマッチを解除しますか？再度マッチするまで、Plex は未マッチとして扱います。';
+	@override String get unmatchSuccess => 'マッチを解除しました';
+	@override String get unmatchFailed => 'マッチの解除に失敗しました';
+	@override String get matchApplied => 'マッチを適用しました';
+	@override String get matchFailed => 'マッチの適用に失敗しました';
+	@override String get titleHint => 'タイトル';
+	@override String get yearHint => '年';
+	@override String get search => '検索';
+	@override String get noMatchesFound => '一致する項目がありません';
+}
+
 // Path: serverTasks
 class _TranslationsServerTasksJa implements TranslationsServerTasksEn {
 	_TranslationsServerTasksJa._(this._root);
@@ -2325,6 +2347,18 @@ extension on TranslationsJa {
 			'metadataEdit.label' => 'ラベル',
 			'metadataEdit.style' => 'スタイル',
 			'metadataEdit.mood' => 'ムード',
+			'matchScreen.match' => 'マッチ...',
+			'matchScreen.fixMatch' => 'マッチを修正...',
+			'matchScreen.unmatch' => 'マッチ解除',
+			'matchScreen.unmatchConfirm' => 'このアイテムの現在のマッチを解除しますか？再度マッチするまで、Plex は未マッチとして扱います。',
+			'matchScreen.unmatchSuccess' => 'マッチを解除しました',
+			'matchScreen.unmatchFailed' => 'マッチの解除に失敗しました',
+			'matchScreen.matchApplied' => 'マッチを適用しました',
+			'matchScreen.matchFailed' => 'マッチの適用に失敗しました',
+			'matchScreen.titleHint' => 'タイトル',
+			'matchScreen.yearHint' => '年',
+			'matchScreen.search' => '検索',
+			'matchScreen.noMatchesFound' => '一致する項目がありません',
 			'serverTasks.title' => 'サーバータスク',
 			'serverTasks.failedToLoad' => 'タスクの読み込みに失敗しました',
 			'serverTasks.noTasks' => '実行中のタスクはありません',

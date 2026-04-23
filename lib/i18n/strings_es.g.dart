@@ -74,6 +74,7 @@ class TranslationsEs with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsEs videoSettings = _TranslationsVideoSettingsEs._(_root);
 	@override late final _TranslationsExternalPlayerEs externalPlayer = _TranslationsExternalPlayerEs._(_root);
 	@override late final _TranslationsMetadataEditEs metadataEdit = _TranslationsMetadataEditEs._(_root);
+	@override late final _TranslationsMatchScreenEs matchScreen = _TranslationsMatchScreenEs._(_root);
 	@override late final _TranslationsServerTasksEs serverTasks = _TranslationsServerTasksEs._(_root);
 	@override late final _TranslationsTraktEs trakt = _TranslationsTraktEs._(_root);
 }
@@ -1224,6 +1225,27 @@ class _TranslationsMetadataEditEs implements TranslationsMetadataEditEn {
 	@override String get mood => 'Estado de ánimo';
 }
 
+// Path: matchScreen
+class _TranslationsMatchScreenEs implements TranslationsMatchScreenEn {
+	_TranslationsMatchScreenEs._(this._root);
+
+	final TranslationsEs _root; // ignore: unused_field
+
+	// Translations
+	@override String get match => 'Emparejar...';
+	@override String get fixMatch => 'Corregir coincidencia...';
+	@override String get unmatch => 'Desvincular';
+	@override String get unmatchConfirm => '¿Quitar la coincidencia actual de este elemento? Plex lo tratará como sin coincidencia hasta que vuelvas a emparejarlo.';
+	@override String get unmatchSuccess => 'Elemento desvinculado';
+	@override String get unmatchFailed => 'No se pudo desvincular el elemento';
+	@override String get matchApplied => 'Coincidencia aplicada';
+	@override String get matchFailed => 'No se pudo aplicar la coincidencia';
+	@override String get titleHint => 'Título';
+	@override String get yearHint => 'Año';
+	@override String get search => 'Buscar';
+	@override String get noMatchesFound => 'No se encontraron coincidencias';
+}
+
 // Path: serverTasks
 class _TranslationsServerTasksEs implements TranslationsServerTasksEn {
 	_TranslationsServerTasksEs._(this._root);
@@ -2325,6 +2347,18 @@ extension on TranslationsEs {
 			'metadataEdit.label' => 'Etiqueta',
 			'metadataEdit.style' => 'Estilo',
 			'metadataEdit.mood' => 'Estado de ánimo',
+			'matchScreen.match' => 'Emparejar...',
+			'matchScreen.fixMatch' => 'Corregir coincidencia...',
+			'matchScreen.unmatch' => 'Desvincular',
+			'matchScreen.unmatchConfirm' => '¿Quitar la coincidencia actual de este elemento? Plex lo tratará como sin coincidencia hasta que vuelvas a emparejarlo.',
+			'matchScreen.unmatchSuccess' => 'Elemento desvinculado',
+			'matchScreen.unmatchFailed' => 'No se pudo desvincular el elemento',
+			'matchScreen.matchApplied' => 'Coincidencia aplicada',
+			'matchScreen.matchFailed' => 'No se pudo aplicar la coincidencia',
+			'matchScreen.titleHint' => 'Título',
+			'matchScreen.yearHint' => 'Año',
+			'matchScreen.search' => 'Buscar',
+			'matchScreen.noMatchesFound' => 'No se encontraron coincidencias',
 			'serverTasks.title' => 'Tareas del servidor',
 			'serverTasks.failedToLoad' => 'Error al cargar tareas',
 			'serverTasks.noTasks' => 'No hay tareas en ejecución',

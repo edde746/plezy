@@ -986,6 +986,20 @@
     "style": "Style",
     "mood": "Mood"
   },
+  "matchScreen": {
+    "match": "Match...",
+    "fixMatch": "Fix Match...",
+    "unmatch": "Unmatch",
+    "unmatchConfirm": "Clear the current match for this item? Plex will treat it as unmatched until you match it again.",
+    "unmatchSuccess": "Item unmatched",
+    "unmatchFailed": "Failed to unmatch item",
+    "matchApplied": "Match applied",
+    "matchFailed": "Failed to apply match",
+    "titleHint": "Title",
+    "yearHint": "Year",
+    "search": "Search",
+    "noMatchesFound": "No matches found"
+  },
   "serverTasks": {
     "title": "Server Tasks",
     "failedToLoad": "Failed to load tasks",

@@ -986,6 +986,20 @@
     "style": "Stil",
     "mood": "Stemning"
   },
+  "matchScreen": {
+    "match": "Match...",
+    "fixMatch": "Rett match...",
+    "unmatch": "Fjern match",
+    "unmatchConfirm": "Fjerne gjeldende match for dette elementet? Plex behandler det som umatchet til du matcher det igjen.",
+    "unmatchSuccess": "Match fjernet",
+    "unmatchFailed": "Kunne ikke fjerne match",
+    "matchApplied": "Match anvendt",
+    "matchFailed": "Kunne ikke anvende match",
+    "titleHint": "Tittel",
+    "yearHint": "År",
+    "search": "Søk",
+    "noMatchesFound": "Ingen treff funnet"
+  },
   "serverTasks": {
     "title": "Serveroppgaver",
     "failedToLoad": "Kunne ikke laste oppgaver",

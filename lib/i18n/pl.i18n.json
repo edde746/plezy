@@ -986,6 +986,20 @@
     "style": "Styl",
     "mood": "Nastrój"
   },
+  "matchScreen": {
+    "match": "Dopasuj...",
+    "fixMatch": "Popraw dopasowanie...",
+    "unmatch": "Usuń dopasowanie",
+    "unmatchConfirm": "Usunąć obecne dopasowanie tego elementu? Plex będzie traktował go jako niedopasowany, dopóki nie dopasujesz go ponownie.",
+    "unmatchSuccess": "Dopasowanie usunięte",
+    "unmatchFailed": "Nie udało się usunąć dopasowania",
+    "matchApplied": "Dopasowanie zastosowane",
+    "matchFailed": "Nie udało się zastosować dopasowania",
+    "titleHint": "Tytuł",
+    "yearHint": "Rok",
+    "search": "Szukaj",
+    "noMatchesFound": "Nie znaleziono dopasowań"
+  },
   "serverTasks": {
     "title": "Zadania serwera",
     "failedToLoad": "Nie udało się załadować zadań",

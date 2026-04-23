@@ -986,6 +986,20 @@
     "style": "Estilo",
     "mood": "Humor"
   },
+  "matchScreen": {
+    "match": "Associar...",
+    "fixMatch": "Corrigir correspondência...",
+    "unmatch": "Desassociar",
+    "unmatchConfirm": "Limpar a correspondência atual deste item? O Plex vai tratá-lo como não correspondido até que o associe novamente.",
+    "unmatchSuccess": "Item desassociado",
+    "unmatchFailed": "Falha ao desassociar item",
+    "matchApplied": "Correspondência aplicada",
+    "matchFailed": "Falha ao aplicar correspondência",
+    "titleHint": "Título",
+    "yearHint": "Ano",
+    "search": "Pesquisar",
+    "noMatchesFound": "Nenhuma correspondência encontrada"
+  },
   "serverTasks": {
     "title": "Tarefas do servidor",
     "failedToLoad": "Falha ao carregar tarefas",

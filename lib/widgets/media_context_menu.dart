@@ -27,6 +27,7 @@ import '../utils/focus_utils.dart';
 import '../services/external_player_service.dart';
 import '../focus/focusable_button.dart';
 import '../focus/dpad_navigator.dart';
+import '../screens/match_screen.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/metadata_edit_screen.dart';
 import '../utils/smart_deletion_handler.dart';
@@ -239,6 +240,19 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(
           _MenuAction(value: 'edit_metadata', icon: Symbols.edit_rounded, label: t.metadataEdit.editMetadata),
         );
+      }
+
+      if (isAdmin && (mediaType == PlexMediaType.movie || mediaType == PlexMediaType.show)) {
+        menuActions.add(
+          _MenuAction(
+            value: 'match',
+            icon: Symbols.search_rounded,
+            label: metadata.isUnmatched ? t.matchScreen.match : t.matchScreen.fixMatch,
+          ),
+        );
+        if (!metadata.isUnmatched) {
+          menuActions.add(_MenuAction(value: 'unmatch', icon: Symbols.link_off_rounded, label: t.matchScreen.unmatch));
+        }
       }
 
       // Remove from Collection (only when viewing items within a collection)
@@ -507,6 +521,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           }
           break;
 
+        case 'match':
+          didNavigate = true;
+          if (context.mounted) {
+            await Navigator.push(context, MaterialPageRoute(builder: (context) => MatchScreen(metadata: metadata!)));
+            widget.onRefresh?.call(metadata!.ratingKey);
+          }
+          break;
+
+        case 'unmatch':
+          await _handleUnmatch(context, metadata!);
+          break;
+
         case 'remove_from_collection':
           await _handleRemoveFromCollection(context, metadata!);
           break;
@@ -618,6 +644,33 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (context.mounted) {
         showSuccessSnackBar(context, successMessage);
         widget.onRefresh?.call(widget.item.ratingKey);
+      }
+    } catch (e) {
+      if (context.mounted) {
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      }
+    }
+  }
+
+  Future<void> _handleUnmatch(BuildContext context, PlexMetadata metadata) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: t.matchScreen.unmatch,
+      message: t.matchScreen.unmatchConfirm,
+      confirmText: t.matchScreen.unmatch,
+      isDestructive: true,
+    );
+    if (!confirmed || !context.mounted) return;
+
+    final client = _getClientForItem();
+    try {
+      final success = await client.unmatchItem(metadata.ratingKey);
+      if (!context.mounted) return;
+      if (success) {
+        showSuccessSnackBar(context, t.matchScreen.unmatchSuccess);
+        widget.onRefresh?.call(metadata.ratingKey);
+      } else {
+        showErrorSnackBar(context, t.matchScreen.unmatchFailed);
       }
     } catch (e) {
       if (context.mounted) {

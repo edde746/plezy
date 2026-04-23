@@ -74,6 +74,7 @@ class TranslationsPl with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsPl videoSettings = _TranslationsVideoSettingsPl._(_root);
 	@override late final _TranslationsExternalPlayerPl externalPlayer = _TranslationsExternalPlayerPl._(_root);
 	@override late final _TranslationsMetadataEditPl metadataEdit = _TranslationsMetadataEditPl._(_root);
+	@override late final _TranslationsMatchScreenPl matchScreen = _TranslationsMatchScreenPl._(_root);
 	@override late final _TranslationsServerTasksPl serverTasks = _TranslationsServerTasksPl._(_root);
 	@override late final _TranslationsTraktPl trakt = _TranslationsTraktPl._(_root);
 }
@@ -1224,6 +1225,27 @@ class _TranslationsMetadataEditPl implements TranslationsMetadataEditEn {
 	@override String get mood => 'Nastrój';
 }
 
+// Path: matchScreen
+class _TranslationsMatchScreenPl implements TranslationsMatchScreenEn {
+	_TranslationsMatchScreenPl._(this._root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get match => 'Dopasuj...';
+	@override String get fixMatch => 'Popraw dopasowanie...';
+	@override String get unmatch => 'Usuń dopasowanie';
+	@override String get unmatchConfirm => 'Usunąć obecne dopasowanie tego elementu? Plex będzie traktował go jako niedopasowany, dopóki nie dopasujesz go ponownie.';
+	@override String get unmatchSuccess => 'Dopasowanie usunięte';
+	@override String get unmatchFailed => 'Nie udało się usunąć dopasowania';
+	@override String get matchApplied => 'Dopasowanie zastosowane';
+	@override String get matchFailed => 'Nie udało się zastosować dopasowania';
+	@override String get titleHint => 'Tytuł';
+	@override String get yearHint => 'Rok';
+	@override String get search => 'Szukaj';
+	@override String get noMatchesFound => 'Nie znaleziono dopasowań';
+}
+
 // Path: serverTasks
 class _TranslationsServerTasksPl implements TranslationsServerTasksEn {
 	_TranslationsServerTasksPl._(this._root);
@@ -2325,6 +2347,18 @@ extension on TranslationsPl {
 			'metadataEdit.label' => 'Etykieta',
 			'metadataEdit.style' => 'Styl',
 			'metadataEdit.mood' => 'Nastrój',
+			'matchScreen.match' => 'Dopasuj...',
+			'matchScreen.fixMatch' => 'Popraw dopasowanie...',
+			'matchScreen.unmatch' => 'Usuń dopasowanie',
+			'matchScreen.unmatchConfirm' => 'Usunąć obecne dopasowanie tego elementu? Plex będzie traktował go jako niedopasowany, dopóki nie dopasujesz go ponownie.',
+			'matchScreen.unmatchSuccess' => 'Dopasowanie usunięte',
+			'matchScreen.unmatchFailed' => 'Nie udało się usunąć dopasowania',
+			'matchScreen.matchApplied' => 'Dopasowanie zastosowane',
+			'matchScreen.matchFailed' => 'Nie udało się zastosować dopasowania',
+			'matchScreen.titleHint' => 'Tytuł',
+			'matchScreen.yearHint' => 'Rok',
+			'matchScreen.search' => 'Szukaj',
+			'matchScreen.noMatchesFound' => 'Nie znaleziono dopasowań',
 			'serverTasks.title' => 'Zadania serwera',
 			'serverTasks.failedToLoad' => 'Nie udało się załadować zadań',
 			'serverTasks.noTasks' => 'Brak uruchomionych zadań',

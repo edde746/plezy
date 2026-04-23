@@ -74,6 +74,7 @@ class TranslationsDe with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsDe videoSettings = _TranslationsVideoSettingsDe._(_root);
 	@override late final _TranslationsExternalPlayerDe externalPlayer = _TranslationsExternalPlayerDe._(_root);
 	@override late final _TranslationsMetadataEditDe metadataEdit = _TranslationsMetadataEditDe._(_root);
+	@override late final _TranslationsMatchScreenDe matchScreen = _TranslationsMatchScreenDe._(_root);
 	@override late final _TranslationsServerTasksDe serverTasks = _TranslationsServerTasksDe._(_root);
 	@override late final _TranslationsTraktDe trakt = _TranslationsTraktDe._(_root);
 }
@@ -1224,6 +1225,27 @@ class _TranslationsMetadataEditDe implements TranslationsMetadataEditEn {
 	@override String get mood => 'Stimmung';
 }
 
+// Path: matchScreen
+class _TranslationsMatchScreenDe implements TranslationsMatchScreenEn {
+	_TranslationsMatchScreenDe._(this._root);
+
+	final TranslationsDe _root; // ignore: unused_field
+
+	// Translations
+	@override String get match => 'Zuordnen...';
+	@override String get fixMatch => 'Zuordnung korrigieren...';
+	@override String get unmatch => 'Zuordnung aufheben';
+	@override String get unmatchConfirm => 'Die aktuelle Zuordnung dieses Eintrags entfernen? Plex behandelt ihn als nicht zugeordnet, bis du ihn erneut zuordnest.';
+	@override String get unmatchSuccess => 'Zuordnung aufgehoben';
+	@override String get unmatchFailed => 'Zuordnung konnte nicht aufgehoben werden';
+	@override String get matchApplied => 'Zuordnung angewendet';
+	@override String get matchFailed => 'Zuordnung konnte nicht angewendet werden';
+	@override String get titleHint => 'Titel';
+	@override String get yearHint => 'Jahr';
+	@override String get search => 'Suchen';
+	@override String get noMatchesFound => 'Keine Treffer gefunden';
+}
+
 // Path: serverTasks
 class _TranslationsServerTasksDe implements TranslationsServerTasksEn {
 	_TranslationsServerTasksDe._(this._root);
@@ -2325,6 +2347,18 @@ extension on TranslationsDe {
 			'metadataEdit.label' => 'Label',
 			'metadataEdit.style' => 'Stil',
 			'metadataEdit.mood' => 'Stimmung',
+			'matchScreen.match' => 'Zuordnen...',
+			'matchScreen.fixMatch' => 'Zuordnung korrigieren...',
+			'matchScreen.unmatch' => 'Zuordnung aufheben',
+			'matchScreen.unmatchConfirm' => 'Die aktuelle Zuordnung dieses Eintrags entfernen? Plex behandelt ihn als nicht zugeordnet, bis du ihn erneut zuordnest.',
+			'matchScreen.unmatchSuccess' => 'Zuordnung aufgehoben',
+			'matchScreen.unmatchFailed' => 'Zuordnung konnte nicht aufgehoben werden',
+			'matchScreen.matchApplied' => 'Zuordnung angewendet',
+			'matchScreen.matchFailed' => 'Zuordnung konnte nicht angewendet werden',
+			'matchScreen.titleHint' => 'Titel',
+			'matchScreen.yearHint' => 'Jahr',
+			'matchScreen.search' => 'Suchen',
+			'matchScreen.noMatchesFound' => 'Keine Treffer gefunden',
 			'serverTasks.title' => 'Serveraufgaben',
 			'serverTasks.failedToLoad' => 'Aufgaben konnten nicht geladen werden',
 			'serverTasks.noTasks' => 'Keine laufenden Aufgaben',

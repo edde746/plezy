@@ -74,6 +74,7 @@ class TranslationsPt with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsPt videoSettings = _TranslationsVideoSettingsPt._(_root);
 	@override late final _TranslationsExternalPlayerPt externalPlayer = _TranslationsExternalPlayerPt._(_root);
 	@override late final _TranslationsMetadataEditPt metadataEdit = _TranslationsMetadataEditPt._(_root);
+	@override late final _TranslationsMatchScreenPt matchScreen = _TranslationsMatchScreenPt._(_root);
 	@override late final _TranslationsServerTasksPt serverTasks = _TranslationsServerTasksPt._(_root);
 	@override late final _TranslationsTraktPt trakt = _TranslationsTraktPt._(_root);
 }
@@ -1224,6 +1225,27 @@ class _TranslationsMetadataEditPt implements TranslationsMetadataEditEn {
 	@override String get mood => 'Humor';
 }
 
+// Path: matchScreen
+class _TranslationsMatchScreenPt implements TranslationsMatchScreenEn {
+	_TranslationsMatchScreenPt._(this._root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get match => 'Associar...';
+	@override String get fixMatch => 'Corrigir correspondência...';
+	@override String get unmatch => 'Desassociar';
+	@override String get unmatchConfirm => 'Limpar a correspondência atual deste item? O Plex vai tratá-lo como não correspondido até que o associe novamente.';
+	@override String get unmatchSuccess => 'Item desassociado';
+	@override String get unmatchFailed => 'Falha ao desassociar item';
+	@override String get matchApplied => 'Correspondência aplicada';
+	@override String get matchFailed => 'Falha ao aplicar correspondência';
+	@override String get titleHint => 'Título';
+	@override String get yearHint => 'Ano';
+	@override String get search => 'Pesquisar';
+	@override String get noMatchesFound => 'Nenhuma correspondência encontrada';
+}
+
 // Path: serverTasks
 class _TranslationsServerTasksPt implements TranslationsServerTasksEn {
 	_TranslationsServerTasksPt._(this._root);
@@ -2325,6 +2347,18 @@ extension on TranslationsPt {
 			'metadataEdit.label' => 'Rótulo',
 			'metadataEdit.style' => 'Estilo',
 			'metadataEdit.mood' => 'Humor',
+			'matchScreen.match' => 'Associar...',
+			'matchScreen.fixMatch' => 'Corrigir correspondência...',
+			'matchScreen.unmatch' => 'Desassociar',
+			'matchScreen.unmatchConfirm' => 'Limpar a correspondência atual deste item? O Plex vai tratá-lo como não correspondido até que o associe novamente.',
+			'matchScreen.unmatchSuccess' => 'Item desassociado',
+			'matchScreen.unmatchFailed' => 'Falha ao desassociar item',
+			'matchScreen.matchApplied' => 'Correspondência aplicada',
+			'matchScreen.matchFailed' => 'Falha ao aplicar correspondência',
+			'matchScreen.titleHint' => 'Título',
+			'matchScreen.yearHint' => 'Ano',
+			'matchScreen.search' => 'Pesquisar',
+			'matchScreen.noMatchesFound' => 'Nenhuma correspondência encontrada',
 			'serverTasks.title' => 'Tarefas do servidor',
 			'serverTasks.failedToLoad' => 'Falha ao carregar tarefas',
 			'serverTasks.noTasks' => 'Nenhuma tarefa em execução',

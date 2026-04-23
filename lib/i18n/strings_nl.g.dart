@@ -74,6 +74,7 @@ class TranslationsNl with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsVideoSettingsNl videoSettings = _TranslationsVideoSettingsNl._(_root);
 	@override late final _TranslationsExternalPlayerNl externalPlayer = _TranslationsExternalPlayerNl._(_root);
 	@override late final _TranslationsMetadataEditNl metadataEdit = _TranslationsMetadataEditNl._(_root);
+	@override late final _TranslationsMatchScreenNl matchScreen = _TranslationsMatchScreenNl._(_root);
 	@override late final _TranslationsServerTasksNl serverTasks = _TranslationsServerTasksNl._(_root);
 	@override late final _TranslationsTraktNl trakt = _TranslationsTraktNl._(_root);
 }
@@ -1224,6 +1225,27 @@ class _TranslationsMetadataEditNl implements TranslationsMetadataEditEn {
 	@override String get mood => 'Stemming';
 }
 
+// Path: matchScreen
+class _TranslationsMatchScreenNl implements TranslationsMatchScreenEn {
+	_TranslationsMatchScreenNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get match => 'Koppelen...';
+	@override String get fixMatch => 'Koppeling herstellen...';
+	@override String get unmatch => 'Ontkoppelen';
+	@override String get unmatchConfirm => 'De huidige koppeling voor dit item wissen? Plex behandelt het als ongekoppeld totdat je het opnieuw koppelt.';
+	@override String get unmatchSuccess => 'Item ontkoppeld';
+	@override String get unmatchFailed => 'Kon item niet ontkoppelen';
+	@override String get matchApplied => 'Koppeling toegepast';
+	@override String get matchFailed => 'Koppeling kon niet worden toegepast';
+	@override String get titleHint => 'Titel';
+	@override String get yearHint => 'Jaar';
+	@override String get search => 'Zoeken';
+	@override String get noMatchesFound => 'Geen overeenkomsten gevonden';
+}
+
 // Path: serverTasks
 class _TranslationsServerTasksNl implements TranslationsServerTasksEn {
 	_TranslationsServerTasksNl._(this._root);
@@ -2325,6 +2347,18 @@ extension on TranslationsNl {
 			'metadataEdit.label' => 'Label',
 			'metadataEdit.style' => 'Stijl',
 			'metadataEdit.mood' => 'Stemming',
+			'matchScreen.match' => 'Koppelen...',
+			'matchScreen.fixMatch' => 'Koppeling herstellen...',
+			'matchScreen.unmatch' => 'Ontkoppelen',
+			'matchScreen.unmatchConfirm' => 'De huidige koppeling voor dit item wissen? Plex behandelt het als ongekoppeld totdat je het opnieuw koppelt.',
+			'matchScreen.unmatchSuccess' => 'Item ontkoppeld',
+			'matchScreen.unmatchFailed' => 'Kon item niet ontkoppelen',
+			'matchScreen.matchApplied' => 'Koppeling toegepast',
+			'matchScreen.matchFailed' => 'Koppeling kon niet worden toegepast',
+			'matchScreen.titleHint' => 'Titel',
+			'matchScreen.yearHint' => 'Jaar',
+			'matchScreen.search' => 'Zoeken',
+			'matchScreen.noMatchesFound' => 'Geen overeenkomsten gevonden',
 			'serverTasks.title' => 'Servertaken',
 			'serverTasks.failedToLoad' => 'Taken konden niet worden geladen',
 			'serverTasks.noTasks' => 'Geen actieve taken',

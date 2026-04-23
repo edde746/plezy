@@ -986,6 +986,20 @@
     "style": "Stil",
     "mood": "Stämning"
   },
+  "matchScreen": {
+    "match": "Matcha...",
+    "fixMatch": "Rätta matchning...",
+    "unmatch": "Ta bort matchning",
+    "unmatchConfirm": "Ta bort den aktuella matchningen för det här objektet? Plex behandlar det som omatchat tills du matchar det igen.",
+    "unmatchSuccess": "Matchning borttagen",
+    "unmatchFailed": "Det gick inte att ta bort matchningen",
+    "matchApplied": "Matchning tillämpad",
+    "matchFailed": "Det gick inte att tillämpa matchningen",
+    "titleHint": "Titel",
+    "yearHint": "År",
+    "search": "Sök",
+    "noMatchesFound": "Inga matchningar hittades"
+  },
   "serverTasks": {
     "title": "Serveruppgifter",
     "failedToLoad": "Kunde inte ladda uppgifter",

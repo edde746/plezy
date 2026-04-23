@@ -986,6 +986,20 @@
     "style": "Stil",
     "mood": "Stemning"
   },
+  "matchScreen": {
+    "match": "Match...",
+    "fixMatch": "Ret match...",
+    "unmatch": "Fjern match",
+    "unmatchConfirm": "Ryd det aktuelle match for dette element? Plex behandler det som ikke matchet, indtil du matcher det igen.",
+    "unmatchSuccess": "Match fjernet",
+    "unmatchFailed": "Kunne ikke fjerne match",
+    "matchApplied": "Match anvendt",
+    "matchFailed": "Kunne ikke anvende match",
+    "titleHint": "Titel",
+    "yearHint": "År",
+    "search": "Søg",
+    "noMatchesFound": "Ingen match fundet"
+  },
   "serverTasks": {
     "title": "Serveropgaver",
     "failedToLoad": "Kunne ikke indlæse opgaver",

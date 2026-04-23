@@ -55,6 +55,10 @@ enum PlexMediaType {
   };
 }
 
+/// Shared suffix of both unmatched-agent URL schemes: legacy
+/// `com.plexapp.agents.none://` and new-style `tv.plex.agents.none://`.
+const _unmatchedAgentMarker = 'agents.none://';
+
 @JsonSerializable()
 class PlexMetadata with MultiServerFields {
   @JsonKey(readValue: _readRatingKey)
@@ -159,6 +163,10 @@ class PlexMetadata with MultiServerFields {
   /// Whether this item represents a library section (shared whole-library, not a media item).
   /// These have keys like `/library/sections/5/all` instead of `/library/metadata/12345`.
   bool get isLibrarySection => key != null && key!.startsWith('/library/sections/');
+
+  /// Whether this item has no metadata agent match. Unmatched items get a
+  /// synthetic `*.agents.none://` guid from the server.
+  bool get isUnmatched => guid == null || guid!.isEmpty || guid!.contains(_unmatchedAgentMarker);
 
   /// Extract the library section ID from a library-section item's key.
   /// Returns null if this is not a library section item.

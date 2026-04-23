@@ -986,6 +986,20 @@
     "style": "Stile",
     "mood": "Atmosfera"
   },
+  "matchScreen": {
+    "match": "Abbina...",
+    "fixMatch": "Correggi abbinamento...",
+    "unmatch": "Rimuovi abbinamento",
+    "unmatchConfirm": "Cancellare l'abbinamento corrente di questo elemento? Plex lo tratterà come non abbinato finché non lo abbinerai di nuovo.",
+    "unmatchSuccess": "Abbinamento rimosso",
+    "unmatchFailed": "Rimozione dell'abbinamento non riuscita",
+    "matchApplied": "Abbinamento applicato",
+    "matchFailed": "Applicazione dell'abbinamento non riuscita",
+    "titleHint": "Titolo",
+    "yearHint": "Anno",
+    "search": "Cerca",
+    "noMatchesFound": "Nessun risultato"
+  },
   "serverTasks": {
     "title": "Attività del server",
     "failedToLoad": "Impossibile caricare le attività",

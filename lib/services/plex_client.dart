@@ -22,6 +22,7 @@ import '../models/plex_library.dart';
 import '../models/plex_media_info.dart';
 import '../models/plex_subtitle_search_result.dart';
 import '../models/plex_media_version.dart';
+import '../models/plex_match_result.dart';
 import '../models/plex_metadata.dart';
 import '../utils/content_utils.dart';
 import '../models/plex_playlist.dart';
@@ -1986,6 +1987,60 @@ class PlexClient {
       () => _http.put('/library/sections/$sectionId/all', queryParameters: queryParams),
       'Failed to update metadata',
     );
+  }
+
+  /// Search for match candidates for a media item.
+  Future<List<PlexMatchResult>> findMatches(
+    String ratingKey, {
+    String? title,
+    String? year,
+    String? agent,
+    String? language,
+  }) async {
+    final queryParams = <String, dynamic>{'manual': 1};
+    if (title != null && title.isNotEmpty) queryParams['title'] = title;
+    if (year != null && year.isNotEmpty) queryParams['year'] = year;
+    if (agent != null && agent.isNotEmpty) queryParams['agent'] = agent;
+    if (language != null && language.isNotEmpty) queryParams['language'] = language;
+
+    return _wrapListApiCall<PlexMatchResult>(
+      () => _getWithFailover('/library/metadata/$ratingKey/matches', queryParameters: queryParams),
+      (response) {
+        final container = _getMediaContainer(response);
+        if (container == null || container['SearchResult'] == null) return [];
+        return (container['SearchResult'] as List)
+            .map((json) => PlexMatchResult.fromJson(json as Map<String, dynamic>))
+            .toList();
+      },
+      'Failed to search for matches',
+    );
+  }
+
+  /// Apply a chosen match to a media item.
+  Future<bool> applyMatch(String ratingKey, {required String guid, String? name, String? year}) async {
+    final queryParams = <String, dynamic>{'guid': guid};
+    if (name != null && name.isNotEmpty) queryParams['name'] = name;
+    if (year != null && year.isNotEmpty) queryParams['year'] = year;
+
+    final result = await _wrapBoolApiCall(
+      () => _http.put('/library/metadata/$ratingKey/match', queryParameters: queryParams),
+      'Failed to apply match',
+    );
+    if (result) {
+      await _cache.deleteForItem(serverId, ratingKey);
+    }
+    return result;
+  }
+
+  Future<bool> unmatchItem(String ratingKey) async {
+    final result = await _wrapBoolApiCall(
+      () => _http.put('/library/metadata/$ratingKey/unmatch'),
+      'Failed to unmatch item',
+    );
+    if (result) {
+      await _cache.deleteForItem(serverId, ratingKey);
+    }
+    return result;
   }
 
   /// Get available artwork (posters or backgrounds) for a media item

@@ -986,6 +986,20 @@
     "style": "Stil",
     "mood": "Stimmung"
   },
+  "matchScreen": {
+    "match": "Zuordnen...",
+    "fixMatch": "Zuordnung korrigieren...",
+    "unmatch": "Zuordnung aufheben",
+    "unmatchConfirm": "Die aktuelle Zuordnung dieses Eintrags entfernen? Plex behandelt ihn als nicht zugeordnet, bis du ihn erneut zuordnest.",
+    "unmatchSuccess": "Zuordnung aufgehoben",
+    "unmatchFailed": "Zuordnung konnte nicht aufgehoben werden",
+    "matchApplied": "Zuordnung angewendet",
+    "matchFailed": "Zuordnung konnte nicht angewendet werden",
+    "titleHint": "Titel",
+    "yearHint": "Jahr",
+    "search": "Suchen",
+    "noMatchesFound": "Keine Treffer gefunden"
+  },
   "serverTasks": {
     "title": "Serveraufgaben",
     "failedToLoad": "Aufgaben konnten nicht geladen werden",
