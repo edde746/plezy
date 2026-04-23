@@ -217,7 +217,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             if (disposing || !isInitialized) return@post
             val container = FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)
                 ?: return@post
-            FlutterOverlayHelper.configureFlutterZOrder(contentView, container, zOrderOnTop = false)
+            // Fires on every layout pass via OnGlobalLayoutListener; skip when the
+            // container is already at the front to avoid recursing the view tree
+            // and re-writing compositionOrder each time.
+            if (contentView.getChildAt(contentView.childCount - 1) === container) return@post
+            FlutterOverlayHelper.configureFlutterZOrder(contentView, container, compositionOrder = 2)
         }
     }
 
@@ -230,6 +234,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                     child.setZOrderOnTop(false)
                     child.setZOrderMediaOverlay(true)
                     child.holder.setFormat(PixelFormat.TRANSLUCENT)
+                    FlutterOverlayHelper.applyCompositionOrder(child, 1)
                 } else if (child is TextureView) {
                     child.isOpaque = false
                 }
@@ -302,6 +307,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 holder.addCallback(surfaceCallback)
                 setZOrderOnTop(false)
                 setZOrderMediaOverlay(false)
+                FlutterOverlayHelper.applyCompositionOrder(this, 0)
             }
 
             videoAspectContainer!!.addView(surfaceView)
@@ -325,9 +331,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             contentView.addView(surfaceContainer, 0)
 
             // Find FlutterView and configure z-order
-            // Video SurfaceView is at the bottom, Flutter uses setZOrderMediaOverlay to render above
+            // Stack (top → bottom): Flutter UI (compositionOrder=2) > subtitle overlay
+            // (1) > video (0). On pre-36 this falls back to legacy bucket ordering.
             FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)?.let { container ->
-                FlutterOverlayHelper.configureFlutterZOrder(contentView, container, zOrderOnTop = false)
+                FlutterOverlayHelper.configureFlutterZOrder(contentView, container, compositionOrder = 2)
             }
 
             ensureFlutterOverlayOnTop()
