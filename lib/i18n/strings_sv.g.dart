@@ -153,6 +153,8 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get connectingToServers => 'Ansluter till servrar...';
 	@override String get startingOfflineMode => 'Startar offlineläge...';
 	@override String get loading => 'Laddar...';
+	@override String get fullscreen => 'Helskärm';
+	@override String get exitFullscreen => 'Avsluta helskärm';
 }
 
 // Path: screens
@@ -1470,6 +1472,8 @@ extension on TranslationsSv {
 			'common.connectingToServers' => 'Ansluter till servrar...',
 			'common.startingOfflineMode' => 'Startar offlineläge...',
 			'common.loading' => 'Laddar...',
+			'common.fullscreen' => 'Helskärm',
+			'common.exitFullscreen' => 'Avsluta helskärm',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
@@ -1930,10 +1934,10 @@ extension on TranslationsSv {
 			'libraries.manageLibraries' => 'Hantera bibliotek',
 			'libraries.sort' => 'Sortera',
 			'libraries.sortBy' => 'Sortera efter',
-			'libraries.filters' => 'Filter',
-			'libraries.confirmActionMessage' => 'Är du säker på att du vill utföra denna åtgärd?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filters' => 'Filter',
+			'libraries.confirmActionMessage' => 'Är du säker på att du vill utföra denna åtgärd?',
 			'libraries.showLibrary' => 'Visa bibliotek',
 			'libraries.hideLibrary' => 'Dölj bibliotek',
 			'libraries.libraryOptions' => 'Biblioteksalternativ',

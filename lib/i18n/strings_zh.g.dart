@@ -153,6 +153,8 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get connectingToServers => '正在连接服务器...';
 	@override String get startingOfflineMode => '正在启动离线模式...';
 	@override String get loading => '加载中...';
+	@override String get fullscreen => '全屏';
+	@override String get exitFullscreen => '退出全屏';
 }
 
 // Path: screens
@@ -1470,6 +1472,8 @@ extension on TranslationsZh {
 			'common.connectingToServers' => '正在连接服务器...',
 			'common.startingOfflineMode' => '正在启动离线模式...',
 			'common.loading' => '加载中...',
+			'common.fullscreen' => '全屏',
+			'common.exitFullscreen' => '退出全屏',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
@@ -1930,10 +1934,10 @@ extension on TranslationsZh {
 			'libraries.manageLibraries' => '管理媒体库',
 			'libraries.sort' => '排序',
 			'libraries.sortBy' => '排序依据',
-			'libraries.filters' => '筛选器',
-			'libraries.confirmActionMessage' => '确定要执行此操作吗？',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filters' => '筛选器',
+			'libraries.confirmActionMessage' => '确定要执行此操作吗？',
 			'libraries.showLibrary' => '显示媒体库',
 			'libraries.hideLibrary' => '隐藏媒体库',
 			'libraries.libraryOptions' => '媒体库选项',

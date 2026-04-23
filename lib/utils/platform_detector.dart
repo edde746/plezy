@@ -88,6 +88,13 @@ class PlatformDetector {
     return !isMobile(context);
   }
 
+  /// True on the desktop OS (Windows / macOS / Linux), without needing a
+  /// BuildContext. Use for OS-level capability checks (window state, native
+  /// keyboard, etc.); use [isDesktop] for layout decisions.
+  static bool isDesktopOS() {
+    return Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+  }
+
   /// Detects if the device is likely a tablet based on screen size
   /// Uses diagonal screen size to determine if device is a tablet
   static bool isTablet(BuildContext context) {

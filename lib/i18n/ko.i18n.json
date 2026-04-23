@@ -53,7 +53,9 @@
     "loadingServers": "서버 로딩 중...",
     "connectingToServers": "서버 연결 중...",
     "startingOfflineMode": "오프라인 모드 시작 중...",
-    "loading": "로딩 중..."
+    "loading": "로딩 중...",
+    "fullscreen": "전체화면",
+    "exitFullscreen": "전체화면 종료"
   },
   "screens": {
     "licenses": "라이선스",

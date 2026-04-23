@@ -53,7 +53,9 @@
     "loadingServers": "Laster servere...",
     "connectingToServers": "Kobler til servere...",
     "startingOfflineMode": "Starter frakoblet modus...",
-    "loading": "Laster..."
+    "loading": "Laster...",
+    "fullscreen": "Fullskjerm",
+    "exitFullscreen": "Avslutt fullskjerm"
   },
   "screens": {
     "licenses": "Lisenser",

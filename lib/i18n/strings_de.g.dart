@@ -153,6 +153,8 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get connectingToServers => 'Verbindung zu Servern...';
 	@override String get startingOfflineMode => 'Offlinemodus wird gestartet...';
 	@override String get loading => 'Laden...';
+	@override String get fullscreen => 'Vollbild';
+	@override String get exitFullscreen => 'Vollbild verlassen';
 }
 
 // Path: screens
@@ -1470,6 +1472,8 @@ extension on TranslationsDe {
 			'common.connectingToServers' => 'Verbindung zu Servern...',
 			'common.startingOfflineMode' => 'Offlinemodus wird gestartet...',
 			'common.loading' => 'Laden...',
+			'common.fullscreen' => 'Vollbild',
+			'common.exitFullscreen' => 'Vollbild verlassen',
 			'screens.licenses' => 'Lizenzen',
 			'screens.switchProfile' => 'Profil wechseln',
 			'screens.subtitleStyling' => 'Untertitel-Stil',
@@ -1930,10 +1934,10 @@ extension on TranslationsDe {
 			'libraries.manageLibraries' => 'Mediatheken verwalten',
 			'libraries.sort' => 'Sortieren',
 			'libraries.sortBy' => 'Sortieren nach',
-			'libraries.filters' => 'Filter',
-			'libraries.confirmActionMessage' => 'Aktion wirklich durchführen?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filters' => 'Filter',
+			'libraries.confirmActionMessage' => 'Aktion wirklich durchführen?',
 			'libraries.showLibrary' => 'Mediathek anzeigen',
 			'libraries.hideLibrary' => 'Mediathek ausblenden',
 			'libraries.libraryOptions' => 'Mediatheksoptionen',

@@ -53,7 +53,9 @@
     "loadingServers": "Indlæser servere...",
     "connectingToServers": "Forbinder til servere...",
     "startingOfflineMode": "Starter offlinetilstand...",
-    "loading": "Indlæser..."
+    "loading": "Indlæser...",
+    "fullscreen": "Fuldskærm",
+    "exitFullscreen": "Forlad fuldskærm"
   },
   "screens": {
     "licenses": "Licenser",

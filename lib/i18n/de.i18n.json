@@ -53,7 +53,9 @@
     "loadingServers": "Server werden geladen...",
     "connectingToServers": "Verbindung zu Servern...",
     "startingOfflineMode": "Offlinemodus wird gestartet...",
-    "loading": "Laden..."
+    "loading": "Laden...",
+    "fullscreen": "Vollbild",
+    "exitFullscreen": "Vollbild verlassen"
   },
   "screens": {
     "licenses": "Lizenzen",

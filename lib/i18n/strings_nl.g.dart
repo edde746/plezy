@@ -153,6 +153,8 @@ class _TranslationsCommonNl implements TranslationsCommonEn {
 	@override String get connectingToServers => 'Verbinden met servers...';
 	@override String get startingOfflineMode => 'Offlinemodus starten...';
 	@override String get loading => 'Laden...';
+	@override String get fullscreen => 'Volledig scherm';
+	@override String get exitFullscreen => 'Volledig scherm verlaten';
 }
 
 // Path: screens
@@ -1470,6 +1472,8 @@ extension on TranslationsNl {
 			'common.connectingToServers' => 'Verbinden met servers...',
 			'common.startingOfflineMode' => 'Offlinemodus starten...',
 			'common.loading' => 'Laden...',
+			'common.fullscreen' => 'Volledig scherm',
+			'common.exitFullscreen' => 'Volledig scherm verlaten',
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitel opmaak',
@@ -1930,10 +1934,10 @@ extension on TranslationsNl {
 			'libraries.manageLibraries' => 'Beheer bibliotheken',
 			'libraries.sort' => 'Sorteren',
 			'libraries.sortBy' => 'Sorteer op',
-			'libraries.filters' => 'Filters',
-			'libraries.confirmActionMessage' => 'Weet je zeker dat je deze actie wilt uitvoeren?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filters' => 'Filters',
+			'libraries.confirmActionMessage' => 'Weet je zeker dat je deze actie wilt uitvoeren?',
 			'libraries.showLibrary' => 'Toon bibliotheek',
 			'libraries.hideLibrary' => 'Verberg bibliotheek',
 			'libraries.libraryOptions' => 'Bibliotheek opties',

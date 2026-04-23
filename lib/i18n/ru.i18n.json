@@ -53,7 +53,9 @@
     "loadingServers": "Загрузка серверов...",
     "connectingToServers": "Подключение к серверам...",
     "startingOfflineMode": "Запуск автономного режима...",
-    "loading": "Загрузка..."
+    "loading": "Загрузка...",
+    "fullscreen": "Полноэкранный режим",
+    "exitFullscreen": "Выйти из полноэкранного режима"
   },
   "screens": {
     "licenses": "Лицензии",

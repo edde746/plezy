@@ -153,6 +153,8 @@ class _TranslationsCommonDa implements TranslationsCommonEn {
 	@override String get connectingToServers => 'Forbinder til servere...';
 	@override String get startingOfflineMode => 'Starter offlinetilstand...';
 	@override String get loading => 'Indlæser...';
+	@override String get fullscreen => 'Fuldskærm';
+	@override String get exitFullscreen => 'Forlad fuldskærm';
 }
 
 // Path: screens
@@ -1470,6 +1472,8 @@ extension on TranslationsDa {
 			'common.connectingToServers' => 'Forbinder til servere...',
 			'common.startingOfflineMode' => 'Starter offlinetilstand...',
 			'common.loading' => 'Indlæser...',
+			'common.fullscreen' => 'Fuldskærm',
+			'common.exitFullscreen' => 'Forlad fuldskærm',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Skift profil',
 			'screens.subtitleStyling' => 'Undertekststil',
@@ -1930,10 +1934,10 @@ extension on TranslationsDa {
 			'libraries.manageLibraries' => 'Administrer biblioteker',
 			'libraries.sort' => 'Sortér',
 			'libraries.sortBy' => 'Sortér efter',
-			'libraries.filters' => 'Filtre',
-			'libraries.confirmActionMessage' => 'Er du sikker på, at du vil udføre denne handling?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filters' => 'Filtre',
+			'libraries.confirmActionMessage' => 'Er du sikker på, at du vil udføre denne handling?',
 			'libraries.showLibrary' => 'Vis bibliotek',
 			'libraries.hideLibrary' => 'Skjul bibliotek',
 			'libraries.libraryOptions' => 'Biblioteksindstillinger',

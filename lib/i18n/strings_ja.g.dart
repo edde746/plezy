@@ -153,6 +153,8 @@ class _TranslationsCommonJa implements TranslationsCommonEn {
 	@override String get connectingToServers => 'サーバーに接続中...';
 	@override String get startingOfflineMode => 'オフラインモードを開始中...';
 	@override String get loading => '読み込み中...';
+	@override String get fullscreen => 'フルスクリーン';
+	@override String get exitFullscreen => 'フルスクリーンを終了';
 }
 
 // Path: screens
@@ -1470,6 +1472,8 @@ extension on TranslationsJa {
 			'common.connectingToServers' => 'サーバーに接続中...',
 			'common.startingOfflineMode' => 'オフラインモードを開始中...',
 			'common.loading' => '読み込み中...',
+			'common.fullscreen' => 'フルスクリーン',
+			'common.exitFullscreen' => 'フルスクリーンを終了',
 			'screens.licenses' => 'ライセンス',
 			'screens.switchProfile' => 'プロフィール切替',
 			'screens.subtitleStyling' => '字幕スタイル',
@@ -1930,10 +1934,10 @@ extension on TranslationsJa {
 			'libraries.manageLibraries' => 'ライブラリを管理',
 			'libraries.sort' => '並べ替え',
 			'libraries.sortBy' => '並べ替え順',
-			'libraries.filters' => 'フィルター',
-			'libraries.confirmActionMessage' => 'この操作を実行してもよろしいですか？',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filters' => 'フィルター',
+			'libraries.confirmActionMessage' => 'この操作を実行してもよろしいですか？',
 			'libraries.showLibrary' => 'ライブラリを表示',
 			'libraries.hideLibrary' => 'ライブラリを非表示',
 			'libraries.libraryOptions' => 'ライブラリオプション',

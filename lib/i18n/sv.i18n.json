@@ -53,7 +53,9 @@
     "loadingServers": "Laddar servrar...",
     "connectingToServers": "Ansluter till servrar...",
     "startingOfflineMode": "Startar offlineläge...",
-    "loading": "Laddar..."
+    "loading": "Laddar...",
+    "fullscreen": "Helskärm",
+    "exitFullscreen": "Avsluta helskärm"
   },
   "screens": {
     "licenses": "Licenser",

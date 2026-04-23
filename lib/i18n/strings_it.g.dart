@@ -153,6 +153,8 @@ class _TranslationsCommonIt implements TranslationsCommonEn {
 	@override String get connectingToServers => 'Connessione ai server...';
 	@override String get startingOfflineMode => 'Avvio modalità offline...';
 	@override String get loading => 'Caricamento...';
+	@override String get fullscreen => 'Schermo intero';
+	@override String get exitFullscreen => 'Esci da schermo intero';
 }
 
 // Path: screens
@@ -1470,6 +1472,8 @@ extension on TranslationsIt {
 			'common.connectingToServers' => 'Connessione ai server...',
 			'common.startingOfflineMode' => 'Avvio modalità offline...',
 			'common.loading' => 'Caricamento...',
+			'common.fullscreen' => 'Schermo intero',
+			'common.exitFullscreen' => 'Esci da schermo intero',
 			'screens.licenses' => 'Licenze',
 			'screens.switchProfile' => 'Cambia profilo',
 			'screens.subtitleStyling' => 'Stile sottotitoli',
@@ -1930,10 +1934,10 @@ extension on TranslationsIt {
 			'libraries.manageLibraries' => 'Gestisci librerie',
 			'libraries.sort' => 'Ordina',
 			'libraries.sortBy' => 'Ordina per',
-			'libraries.filters' => 'Filtri',
-			'libraries.confirmActionMessage' => 'Sei sicuro di voler eseguire questa azione?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filters' => 'Filtri',
+			'libraries.confirmActionMessage' => 'Sei sicuro di voler eseguire questa azione?',
 			'libraries.showLibrary' => 'Mostra libreria',
 			'libraries.hideLibrary' => 'Nascondi libreria',
 			'libraries.libraryOptions' => 'Opzioni libreria',

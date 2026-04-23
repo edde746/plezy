@@ -179,12 +179,16 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   static const _kDownloads = 'downloads';
   static const _kSettings = 'settings';
   static const _kReconnect = 'reconnect';
+  static const _kFullscreen = 'fullscreen';
 
   // Unified focus state tracker for all nav items (main + libraries)
   late final FocusMemoryTracker _focusTracker;
 
   /// Whether the sidebar should be expanded (always, hover, or focus)
   bool get _shouldExpand => widget.alwaysExpanded || _isHovered || _isTouchExpanded || widget.isSidebarFocused;
+
+  /// macOS has the system green button; mobile/TV have no OS fullscreen toggle.
+  bool get _showFullscreenToggle => Platform.isWindows || Platform.isLinux;
 
   @override
   void initState() {
@@ -257,6 +261,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       _kDownloads,
       _kSettings,
       _kReconnect,
+      if (_showFullscreenToggle) _kFullscreen,
       'liveTv',
       ...libraries.map((lib) => lib.globalKey),
     };
@@ -275,6 +280,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       ],
       _kDownloads,
       _kSettings,
+      if (_showFullscreenToggle) _kFullscreen,
     ];
   }
 
@@ -498,6 +504,12 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                             ],
                           ),
                         ),
+
+                        if (_showFullscreenToggle)
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                            child: _buildFullscreenItem(isCollapsed: isCollapsed),
+                          ),
                       ],
                     ),
                   ),
@@ -566,6 +578,28 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       // ignore: no-empty-block - no-op tap handler while reconnecting
       onTap: widget.isReconnecting ? () {} : () => widget.onReconnect?.call(),
       focusNode: _focusTracker.get(_kReconnect),
+      onNavigateRight: widget.onNavigateToContent,
+    );
+  }
+
+  Widget _buildFullscreenItem({required bool isCollapsed}) {
+    final t = tokens(context);
+    final isFullscreen = FullscreenStateManager().isFullscreen;
+    final isFocused = _focusTracker.isFocused(_kFullscreen);
+
+    return NavigationRailItem(
+      icon: isFullscreen ? Symbols.fullscreen_exit_rounded : Symbols.fullscreen_rounded,
+      label: Text(
+        isFullscreen ? Translations.of(context).common.exitFullscreen : Translations.of(context).common.fullscreen,
+        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: t.textMuted),
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      ),
+      isSelected: false,
+      isFocused: isFocused,
+      isCollapsed: isCollapsed,
+      onTap: () => unawaited(FullscreenStateManager().toggleFullscreen()),
+      focusNode: _focusTracker.get(_kFullscreen),
       onNavigateRight: widget.onNavigateToContent,
     );
   }

@@ -12,7 +12,6 @@ import 'package:os_media_controls/os_media_controls.dart';
 import 'package:provider/provider.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:window_manager/window_manager.dart';
 
 import '../mpv/mpv.dart';
 import '../mpv/player/platform/player_android.dart';
@@ -2150,19 +2149,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     await FullscreenStateManager().toggleFullscreen();
   }
 
-  /// Exit fullscreen before leaving the player (Windows/Linux only).
-  /// macOS is excluded because we can't distinguish native fullscreen
-  /// from maximized state, so we leave the window state unchanged.
-  Future<void> _exitFullscreenIfNeeded() async {
-    if (Platform.isWindows || Platform.isLinux) {
-      final isFullscreen = await windowManager.isFullScreen();
-      if (isFullscreen) {
-        await FullscreenStateManager().exitFullscreen();
-        await Future.delayed(const Duration(milliseconds: 100));
-      }
-    }
-  }
-
   /// Handle back button press
   /// For non-host participants in Watch Together, shows leave session confirmation
   Future<void> _handleBackButton() async {
@@ -2182,8 +2168,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (confirmed && mounted) {
           await _watchTogetherProvider!.leaveSession();
           if (mounted) {
-            await _exitFullscreenIfNeeded();
-            if (!mounted) return;
             final navigator = Navigator.of(context);
             if (navigator.canPop()) {
               _isExiting.value = true;
@@ -2193,8 +2177,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
         return;
       }
-
-      await _exitFullscreenIfNeeded();
 
       // Default behavior for hosts or non-session users
       if (!mounted) return;

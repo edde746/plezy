@@ -1,6 +1,7 @@
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:window_manager/window_manager.dart';
+import '../utils/platform_detector.dart';
 import 'macos_window_service.dart';
 import 'native_window_service.dart';
 
@@ -96,7 +97,7 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
   }
 
   bool _shouldMonitor() {
-    return Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+    return PlatformDetector.isDesktopOS();
   }
 
   // WindowListener callbacks for Windows/Linux

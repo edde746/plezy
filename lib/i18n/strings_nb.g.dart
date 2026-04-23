@@ -153,6 +153,8 @@ class _TranslationsCommonNb implements TranslationsCommonEn {
 	@override String get connectingToServers => 'Kobler til servere...';
 	@override String get startingOfflineMode => 'Starter frakoblet modus...';
 	@override String get loading => 'Laster...';
+	@override String get fullscreen => 'Fullskjerm';
+	@override String get exitFullscreen => 'Avslutt fullskjerm';
 }
 
 // Path: screens
@@ -1470,6 +1472,8 @@ extension on TranslationsNb {
 			'common.connectingToServers' => 'Kobler til servere...',
 			'common.startingOfflineMode' => 'Starter frakoblet modus...',
 			'common.loading' => 'Laster...',
+			'common.fullscreen' => 'Fullskjerm',
+			'common.exitFullscreen' => 'Avslutt fullskjerm',
 			'screens.licenses' => 'Lisenser',
 			'screens.switchProfile' => 'Bytt profil',
 			'screens.subtitleStyling' => 'Undertekststil',
@@ -1930,10 +1934,10 @@ extension on TranslationsNb {
 			'libraries.manageLibraries' => 'Administrer biblioteker',
 			'libraries.sort' => 'Sorter',
 			'libraries.sortBy' => 'Sorter etter',
-			'libraries.filters' => 'Filtre',
-			'libraries.confirmActionMessage' => 'Er du sikker på at du vil utføre denne handlingen?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filters' => 'Filtre',
+			'libraries.confirmActionMessage' => 'Er du sikker på at du vil utføre denne handlingen?',
 			'libraries.showLibrary' => 'Vis bibliotek',
 			'libraries.hideLibrary' => 'Skjul bibliotek',
 			'libraries.libraryOptions' => 'Bibliotekalternativer',

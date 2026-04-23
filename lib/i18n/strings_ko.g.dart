@@ -153,6 +153,8 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get connectingToServers => '서버 연결 중...';
 	@override String get startingOfflineMode => '오프라인 모드 시작 중...';
 	@override String get loading => '로딩 중...';
+	@override String get fullscreen => '전체화면';
+	@override String get exitFullscreen => '전체화면 종료';
 }
 
 // Path: screens
@@ -1470,6 +1472,8 @@ extension on TranslationsKo {
 			'common.connectingToServers' => '서버 연결 중...',
 			'common.startingOfflineMode' => '오프라인 모드 시작 중...',
 			'common.loading' => '로딩 중...',
+			'common.fullscreen' => '전체화면',
+			'common.exitFullscreen' => '전체화면 종료',
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
@@ -1930,10 +1934,10 @@ extension on TranslationsKo {
 			'libraries.manageLibraries' => '미디어 라이브러리 관리',
 			'libraries.sort' => '정렬',
 			'libraries.sortBy' => '정렬 기준',
-			'libraries.filters' => '필터',
-			'libraries.confirmActionMessage' => '이 작업을 실행 하시겠습니까?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filters' => '필터',
+			'libraries.confirmActionMessage' => '이 작업을 실행 하시겠습니까?',
 			'libraries.showLibrary' => '미디어 라이브러리 표시',
 			'libraries.hideLibrary' => '미디어 라이브러리 숨기기',
 			'libraries.libraryOptions' => '미디어 라이브러리 옵션',

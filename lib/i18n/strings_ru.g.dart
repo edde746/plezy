@@ -153,6 +153,8 @@ class _TranslationsCommonRu implements TranslationsCommonEn {
 	@override String get connectingToServers => 'Подключение к серверам...';
 	@override String get startingOfflineMode => 'Запуск автономного режима...';
 	@override String get loading => 'Загрузка...';
+	@override String get fullscreen => 'Полноэкранный режим';
+	@override String get exitFullscreen => 'Выйти из полноэкранного режима';
 }
 
 // Path: screens
@@ -1470,6 +1472,8 @@ extension on TranslationsRu {
 			'common.connectingToServers' => 'Подключение к серверам...',
 			'common.startingOfflineMode' => 'Запуск автономного режима...',
 			'common.loading' => 'Загрузка...',
+			'common.fullscreen' => 'Полноэкранный режим',
+			'common.exitFullscreen' => 'Выйти из полноэкранного режима',
 			'screens.licenses' => 'Лицензии',
 			'screens.switchProfile' => 'Сменить профиль',
 			'screens.subtitleStyling' => 'Стиль субтитров',
@@ -1930,10 +1934,10 @@ extension on TranslationsRu {
 			'libraries.manageLibraries' => 'Управление библиотеками',
 			'libraries.sort' => 'Сортировка',
 			'libraries.sortBy' => 'Сортировать по',
-			'libraries.filters' => 'Фильтры',
-			'libraries.confirmActionMessage' => 'Вы уверены, что хотите выполнить это действие?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filters' => 'Фильтры',
+			'libraries.confirmActionMessage' => 'Вы уверены, что хотите выполнить это действие?',
 			'libraries.showLibrary' => 'Показать библиотеку',
 			'libraries.hideLibrary' => 'Скрыть библиотеку',
 			'libraries.libraryOptions' => 'Параметры библиотеки',

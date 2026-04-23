@@ -7,6 +7,7 @@ import '../models/hotkey_model.dart';
 import '../i18n/strings.g.dart';
 import '../mpv/mpv.dart';
 import 'settings_service.dart';
+import '../utils/platform_detector.dart';
 import '../utils/player_utils.dart';
 
 class KeyboardShortcutsService {
@@ -30,7 +31,7 @@ class KeyboardShortcutsService {
 
   /// Keyboard shortcut customization is only supported on desktop platforms.
   static bool isPlatformSupported() {
-    return Platform.isWindows || Platform.isLinux || Platform.isMacOS;
+    return PlatformDetector.isDesktopOS();
   }
 
   Future<void> _init() async {

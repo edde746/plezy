@@ -256,6 +256,12 @@ class TranslationsCommonEn {
 
 	/// en: 'Loading...'
 	String get loading => 'Loading...';
+
+	/// en: 'Fullscreen'
+	String get fullscreen => 'Fullscreen';
+
+	/// en: 'Exit fullscreen'
+	String get exitFullscreen => 'Exit fullscreen';
 }
 
 // Path: screens
@@ -3303,6 +3309,8 @@ extension on Translations {
 			'common.connectingToServers' => 'Connecting to servers...',
 			'common.startingOfflineMode' => 'Starting offline mode...',
 			'common.loading' => 'Loading...',
+			'common.fullscreen' => 'Fullscreen',
+			'common.exitFullscreen' => 'Exit fullscreen',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
@@ -3763,10 +3771,10 @@ extension on Translations {
 			'libraries.manageLibraries' => 'Manage Libraries',
 			'libraries.sort' => 'Sort',
 			'libraries.sortBy' => 'Sort By',
-			'libraries.filters' => 'Filters',
-			'libraries.confirmActionMessage' => 'Are you sure you want to perform this action?',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.filters' => 'Filters',
+			'libraries.confirmActionMessage' => 'Are you sure you want to perform this action?',
 			'libraries.showLibrary' => 'Show library',
 			'libraries.hideLibrary' => 'Hide library',
 			'libraries.libraryOptions' => 'Library options',

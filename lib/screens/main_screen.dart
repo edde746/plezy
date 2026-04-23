@@ -35,6 +35,7 @@ import '../providers/offline_mode_provider.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
+import '../services/fullscreen_state_manager.dart';
 import '../providers/companion_remote_provider.dart';
 import '../utils/desktop_window_padding.dart';
 import '../widgets/side_navigation_rail.dart';
@@ -699,6 +700,18 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     });
   }
 
+  /// F11 toggles OS fullscreen from anywhere in the main UI. The in-player
+  /// hotkey (default `f`) only works while the player is mounted; this is
+  /// the escape hatch when fullscreen persists after the player closes.
+  KeyEventResult _handleFullscreenShortcut(KeyEvent event) {
+    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    if (event.logicalKey != LogicalKeyboardKey.f11) return KeyEventResult.ignored;
+    if (!PlatformDetector.isDesktopOS()) return KeyEventResult.ignored;
+
+    unawaited(FullscreenStateManager().toggleFullscreen());
+    return KeyEventResult.handled;
+  }
+
   /// Handle Cmd+F (macOS) / Ctrl+F (Windows/Linux) to navigate to search.
   KeyEventResult _handleSearchShortcut(KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
@@ -940,6 +953,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
               onPopInvokedWithResult: (didPop, result) {},
               child: Focus(
                 onKeyEvent: (node, event) {
+                  final fullscreenResult = _handleFullscreenShortcut(event);
+                  if (fullscreenResult == KeyEventResult.handled) return fullscreenResult;
                   final searchResult = _handleSearchShortcut(event);
                   if (searchResult == KeyEventResult.handled) return searchResult;
                   return _handleBackKey(event);
