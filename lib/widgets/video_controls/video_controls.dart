@@ -283,7 +283,8 @@ class PlexVideoControls extends StatefulWidget {
   State<PlexVideoControls> createState() => _PlexVideoControlsState();
 }
 
-class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListener, WidgetsBindingObserver {
+class _PlexVideoControlsState extends State<PlexVideoControls>
+    with WindowListener, WidgetsBindingObserver, TickerProviderStateMixin {
   bool _showControls = true;
   bool _forceShowControls = false;
   bool _isLoadingExtras = false;
@@ -342,6 +343,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   int _autoSkipDelay = 5;
   Timer? _autoSkipTimer;
   double _autoSkipProgress = 0.0;
+  AnimationController? _autoSkipController;
   // Skip button dismiss state
   bool _skipButtonDismissed = false;
   Timer? _skipButtonDismissTimer;
@@ -577,31 +579,33 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (!shouldAutoSkip || _autoSkipDelay <= 0) return;
 
     _autoSkipProgress = 0.0;
-    const tickDuration = Duration(milliseconds: 200);
-    final totalTicks = (_autoSkipDelay * 1000) / tickDuration.inMilliseconds;
 
-    if (totalTicks <= 0) return;
-
-    _autoSkipTimer = Timer.periodic(tickDuration, (timer) {
-      if (!mounted || _currentMarker != marker) {
-        timer.cancel();
-        return;
-      }
-
-      setState(() {
-        _autoSkipProgress = (timer.tick / totalTicks).clamp(0.0, 1.0);
+    // Smooth progress for the Netflix-style wipe: drive progress every frame.
+    // We still keep marker identity checks so the animation never leaks across markers.
+    _autoSkipController?.dispose();
+    _autoSkipController = AnimationController(duration: Duration(seconds: _autoSkipDelay), vsync: this)
+      ..addListener(() {
+        if (!mounted || _currentMarker != marker) return;
+        setState(() {
+          _autoSkipProgress = _autoSkipController!.value;
+        });
+      })
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          if (!mounted || _currentMarker != marker) return;
+          _performAutoSkip();
+        }
       });
 
-      if (timer.tick >= totalTicks) {
-        timer.cancel();
-        _performAutoSkip();
-      }
-    });
+    _autoSkipController!.forward(from: 0.0);
   }
 
   void _cancelAutoSkipTimer() {
     _autoSkipTimer?.cancel();
     _autoSkipTimer = null;
+    _autoSkipController?.stop();
+    _autoSkipController?.dispose();
+    _autoSkipController = null;
     if (mounted) {
       setState(() {
         _autoSkipProgress = 0.0;
@@ -630,6 +634,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   /// Perform the appropriate skip action based on marker type and next episode availability
   void _performAutoSkip() {
     if (_currentMarker == null) return;
+
+    // Debounce: ignore skip button presses within 200ms of last skip action
+    final now = DateTime.now();
+    if (_lastSkipActionTime != null && now.difference(_lastSkipActionTime!).inMilliseconds < 200) {
+      return;
+    }
+
+    _lastSkipActionTime = now;
     unawaited(_skipMarker());
   }
 
@@ -750,6 +762,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _feedbackTimer?.cancel();
     _lockIconTimer?.cancel();
     _autoSkipTimer?.cancel();
+    _autoSkipController?.dispose();
     _skipButtonDismissTimer?.cancel();
     _singleTapTimer?.cancel();
     _seekThrottle.cancel();
@@ -2231,6 +2244,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                   // Stream-driven VLC-style pill (rate changes, backend-switch notifications)
                   Positioned.fill(
                     child: IgnorePointer(
+                      // Visual-only overlay; must not steal taps from controls/toggle layer below.
+                      ignoring: true,
                       child: ListenableBuilder(
                         listenable: widget.toastController,
                         builder: (context, _) {
@@ -2406,16 +2421,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       baseButtonText = 'Skip Intro';
     }
 
-    final isAutoSkipActive = _autoSkipTimer?.isActive ?? false;
+    final isAutoSkipActive = _autoSkipController?.isAnimating ?? false;
     final shouldShowAutoSkip = _shouldShowAutoSkip();
+    final double autoSkipProgress =
+        (isAutoSkipActive && shouldShowAutoSkip) ? _autoSkipProgress.clamp(0.0, 1.0) : 0.0;
 
-    final int remainingSeconds = isAutoSkipActive && shouldShowAutoSkip
-        ? (_autoSkipDelay - (_autoSkipProgress * _autoSkipDelay)).ceil().clamp(0, _autoSkipDelay)
-        : 0;
-
-    final String buttonText = isAutoSkipActive && shouldShowAutoSkip && remainingSeconds > 0
-        ? '$baseButtonText ($remainingSeconds)'
-        : baseButtonText;
+    final String buttonText = baseButtonText;
     final IconData buttonIcon = showNextEpisode ? Symbols.skip_next_rounded : Symbols.fast_forward_rounded;
 
     return FocusableWrapper(
@@ -2447,54 +2458,84 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             _performAutoSkip();
           },
           borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-          child: Stack(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          // Keep the hitbox to just the chip width.
+          child: IntrinsicWidth(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+              child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                  // Netflix-ish base: grey chip with subtle shadow.
+                  color: Colors.grey.shade700.withValues(alpha: 0.9),
                   boxShadow: [
                     BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
                   ],
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Stack(
                   children: [
-                    Text(
-                      buttonText,
-                      style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
+                    // Auto-skip wipe fill (left -> right), duration is driven by autoSkipDelay via _autoSkipProgress.
+                    if (autoSkipProgress > 0)
+                      Positioned.fill(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: autoSkipProgress,
+                            heightFactor: 1,
+                            alignment: Alignment.centerLeft,
+                            child: const ColoredBox(color: Colors.white),
+                          ),
+                        ),
+                      ),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Stack(
+                        children: [
+                          // Unfilled state visuals (white on grey)
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                buttonText,
+                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(width: 8),
+                              AppIcon(buttonIcon, fill: 1, color: Colors.white, size: 20),
+                            ],
+                          ),
+
+                          // Filled state visuals (black on white), clipped to the wipe region.
+                          // Important: keep this row laid out at full size so the text doesn't shift as the clip grows.
+                          if (autoSkipProgress > 0)
+                            Positioned.fill(
+                              child: ClipRect(
+                                clipper: _ProgressClipper(autoSkipProgress),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        buttonText,
+                                        style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      AppIcon(buttonIcon, fill: 1, color: Colors.black, size: 20),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                    AppIcon(buttonIcon, fill: 1, color: Colors.black, size: 20),
                   ],
                 ),
               ),
-              // Progress indicator overlay
-              if (isAutoSkipActive && shouldShowAutoSkip)
-                Positioned.fill(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: (_autoSkipProgress * 100).round(),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: ((1.0 - _autoSkipProgress) * 100).round(),
-                          child: Container(decoration: const BoxDecoration(color: Colors.transparent)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
+            ),
           ),
         ),
       ),
@@ -2647,6 +2688,20 @@ class _LinuxKeepAlive extends StatefulWidget {
 
   @override
   State<_LinuxKeepAlive> createState() => _LinuxKeepAliveState();
+}
+
+class _ProgressClipper extends CustomClipper<Rect> {
+  final double progress;
+  const _ProgressClipper(this.progress);
+
+  @override
+  Rect getClip(Size size) {
+    final p = progress.clamp(0.0, 1.0);
+    return Rect.fromLTWH(0, 0, size.width * p, size.height);
+  }
+
+  @override
+  bool shouldReclip(covariant _ProgressClipper oldClipper) => oldClipper.progress != progress;
 }
 
 class _LinuxKeepAliveState extends State<_LinuxKeepAlive> {
