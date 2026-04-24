@@ -7,6 +7,60 @@ project 'Runner', {
   'Release' => :release,
 }
 
+# Flutter's tool doesn't generate Podfile logic for tvOS. Hand-wire pods for
+# plugins whose upstream podspecs already declare tvOS — the rest remain
+# compiled from tvos/Runner/Plugins/ via tvos/scripts/wire_plugins.rb.
+require 'json'
+
+tvos_pod_plugins = %w[universal_gamepad os_media_controls]
+
+plugins_deps = File.expand_path('../.flutter-plugins-dependencies', __dir__)
+unless File.exist?(plugins_deps)
+  raise 'Run `flutter pub get` in the project root before `pod install` on tvOS'
+end
+ios_plugins = JSON.parse(File.read(plugins_deps)).dig('plugins', 'ios') || []
+plugin_paths = ios_plugins.each_with_object({}) { |p, h| h[p['name']] = p['path'] }
+
+# Resolve the local tvOS engine root from tvos/Flutter/Generated.xcconfig so
+# pod targets can find Flutter.framework at compile time.
+def tvos_flutter_engine_path
+  xcconfig = File.expand_path('Flutter/Generated.xcconfig', __dir__)
+  raise "tvos/Podfile: missing #{xcconfig}" unless File.exist?(xcconfig)
+  File.foreach(xcconfig) do |line|
+    m = line.match(/^FLUTTER_LOCAL_ENGINE=(.+)/)
+    return m[1].strip if m
+  end
+  raise "tvos/Podfile: FLUTTER_LOCAL_ENGINE missing from Flutter/Generated.xcconfig"
+end
+
 target 'Runner' do
-  # No pods.
+  use_frameworks!
+  pod 'Flutter', :path => 'Flutter'
+  tvos_pod_plugins.each do |name|
+    base = plugin_paths[name] or
+      raise "tvos/Podfile: plugin '#{name}' not in .flutter-plugins-dependencies"
+    pod name, :path => File.join(base, 'ios')
+  end
+end
+
+post_install do |installer|
+  engine = tvos_flutter_engine_path
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      is_debug = config.name.downcase.include?('debug')
+      sim_variant = is_debug ? 'tvos_debug_sim_unopt_arm64' : 'tvos_release'
+      dev_variant = is_debug ? 'tvos_debug_unopt' : 'tvos_release'
+      config.build_settings['FRAMEWORK_SEARCH_PATHS[sdk=appletvsimulator*]'] = [
+        '$(inherited)',
+        File.join(engine, 'out', sim_variant),
+      ]
+      config.build_settings['FRAMEWORK_SEARCH_PATHS[sdk=appletvos*]'] = [
+        '$(inherited)',
+        File.join(engine, 'out', dev_variant),
+      ]
+      # Engine Flutter.framework ships arm64-only for simulator; exclude x86_64
+      # so the link step doesn't look for a slice that doesn't exist.
+      config.build_settings['EXCLUDED_ARCHS[sdk=appletvsimulator*]'] = 'x86_64'
+    end
+  end
 end

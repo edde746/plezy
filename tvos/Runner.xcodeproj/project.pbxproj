@@ -7,32 +7,25 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0D69E2DEA6EA0538722BC7F0 /* ConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20D0E84BD711F2744BA0D136 /* ConnectivityProvider.swift */; };
-		12E72ED3EFA35A8715DE2A52 /* GamepadStreamHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = D82813FF8CCC8320A8C32FC7 /* GamepadStreamHandler.swift */; };
-		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
-		30E568153D56A59EA5EADCBB /* PathProviderPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87984F20624EC6CA45E20790 /* PathProviderPlugin.swift */; };
-		32F0056AF154FC4EA76CBEFC /* GamepadPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD57BBEE1B72584C9C7D44B9 /* GamepadPlugin.swift */; };
+		0A4E3554C5AD1373495F5434 /* messages.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C8E3486BF50440024D81B1E /* messages.g.swift */; };
+		24753D6DD9098E97989137A6 /* PackageInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83C51CAD792E5C69AA4F971A /* PackageInfoPlusPlugin.swift */; };
+		31477C4FBA7BF70CAFCDC566 /* DeviceInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98ED539F08FAE8E8B964C7BE /* DeviceInfoPlusPlugin.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
-		477FB0F520224870902B9FD7 /* messages.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF71CD2416844A1FC485D77 /* messages.g.swift */; };
-		4A6DE7BDEF20A6242A3C6365 /* GCControllerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F2071908D08983E6A6A1C1E /* GCControllerManager.swift */; };
-		5689B077C6EA57D53BBE8D0D /* OsMediaControlsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8663A3A20A0D6F446B6B37 /* OsMediaControlsPlugin.swift */; };
+		4E9365FA67E94D8A289FE862 /* PathMonitorConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA12E2C6063C5799C38CAA95 /* PathMonitorConnectivityProvider.swift */; };
 		5C71F5F7B33075F2B007825B /* MpvPlayerPluginShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73645904F226A24585A092CE /* MpvPlayerPluginShared.swift */; };
-		5CDBEB7E3FE968FC131E964A /* ConnectivityPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C667C1287EFBDF4DF45C5313 /* ConnectivityPlusPlugin.swift */; };
 		691577F0EB3F4EB1A5160280 /* MpvPlayerCoreBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52A3BDA46E79969EA1DF3AC /* MpvPlayerCoreBase.swift */; };
-		6A0510802F9B91CB0090B5FC /* MPVKit in Frameworks */ = {isa = PBXBuildFile; productRef = EA0F4263E7B912702C490108 /* MPVKit */; };
 		6F3C0DD6F2F8DA14E7E2F386 /* MpvPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12B8610AE5D580077264851 /* MpvPlayerCore.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		8E5EED3DDAC9455D4DAA9776 /* MpvPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D7A998830EDC8F77BF521D1 /* MpvPlayerPlugin.swift */; };
+		937279397427A0E8ECC70A3A /* PathProviderPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 217BA48DC884CB7ADD43CF88 /* PathProviderPlugin.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
-		A7ED1D92E7B15D3F7562F93E /* SharedPreferencesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = E09D436FC3E6CD994DC1B488 /* SharedPreferencesPlugin.swift */; };
 		AA34E3E5872B3792D6959EAA /* MpvPipController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2635E12EB9322B151EE5127 /* MpvPipController.swift */; };
-		B494441CBB8FB05D04F55DD9 /* DeviceInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C4BADB53B8D59E031563AA9 /* DeviceInfoPlusPlugin.swift */; };
-		BF599A1C25382688DD7F4505 /* ButtonMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FBF4BBA5D82316059225B32 /* ButtonMapping.swift */; };
-		C1E0D7252DE079EDFA234F90 /* PathMonitorConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4716B74C5238614844BCA224 /* PathMonitorConnectivityProvider.swift */; };
-		C330A1087AA135CCFC0C6203 /* libPods-Runner.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5F435CB4590A55958615A7AD /* libPods-Runner.a */; };
-		F36688C4E8DF44BC6BDD99A5 /* PackageInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 300783F8CE83D2530D2EDD97 /* PackageInfoPlusPlugin.swift */; };
+		AFCEB532D567638EF6707333 /* ConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C9575190150A93F97270FC0 /* ConnectivityProvider.swift */; };
+		C6A15611158B29B0FF43A960 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 824D2C68D1F1206932E118C2 /* Pods_Runner.framework */; };
+		C94CC73C8037BAA385B7ED5C /* SharedPreferencesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35FB5275C65B7F4CC7DD45DF /* SharedPreferencesPlugin.swift */; };
+		F85DEBB1878182EEE1DC542A /* ConnectivityPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 936A41610C7269D52E5E51FF /* ConnectivityPlusPlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -51,24 +44,19 @@
 /* Begin PBXFileReference section */
 		04DD35536DEE7C27FFA53862 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		0C25F4F2367A30B47E945AD6 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
-		0FF71CD2416844A1FC485D77 /* messages.g.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = messages.g.swift; sourceTree = "<group>"; };
-		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
-		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
-		20D0E84BD711F2744BA0D136 /* ConnectivityProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityProvider.swift; sourceTree = "<group>"; };
-		300783F8CE83D2530D2EDD97 /* PackageInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PackageInfoPlusPlugin.swift; sourceTree = "<group>"; };
+		0C8E3486BF50440024D81B1E /* messages.g.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = messages.g.swift; sourceTree = "<group>"; };
+		217BA48DC884CB7ADD43CF88 /* PathProviderPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PathProviderPlugin.swift; sourceTree = "<group>"; };
+		35FB5275C65B7F4CC7DD45DF /* SharedPreferencesPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedPreferencesPlugin.swift; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
+		3C9575190150A93F97270FC0 /* ConnectivityProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityProvider.swift; sourceTree = "<group>"; };
 		420881FB6A648A2AFD39FFF2 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
-		4716B74C5238614844BCA224 /* PathMonitorConnectivityProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PathMonitorConnectivityProvider.swift; sourceTree = "<group>"; };
-		5C4BADB53B8D59E031563AA9 /* DeviceInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeviceInfoPlusPlugin.swift; sourceTree = "<group>"; };
-		5F435CB4590A55958615A7AD /* libPods-Runner.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Runner.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		5FBF4BBA5D82316059225B32 /* ButtonMapping.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ButtonMapping.swift; sourceTree = "<group>"; };
 		73645904F226A24585A092CE /* MpvPlayerPluginShared.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerPluginShared.swift; path = ../shared/apple/MpvPlayer/MpvPlayerPluginShared.swift; sourceTree = "<source_root>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
-		7B8663A3A20A0D6F446B6B37 /* OsMediaControlsPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = OsMediaControlsPlugin.swift; sourceTree = "<group>"; };
-		87984F20624EC6CA45E20790 /* PathProviderPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PathProviderPlugin.swift; sourceTree = "<group>"; };
-		8F2071908D08983E6A6A1C1E /* GCControllerManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GCControllerManager.swift; sourceTree = "<group>"; };
+		824D2C68D1F1206932E118C2 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		83C51CAD792E5C69AA4F971A /* PackageInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PackageInfoPlusPlugin.swift; sourceTree = "<group>"; };
+		936A41610C7269D52E5E51FF /* ConnectivityPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityPlusPlugin.swift; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -76,14 +64,12 @@
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		98ED539F08FAE8E8B964C7BE /* DeviceInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeviceInfoPlusPlugin.swift; sourceTree = "<group>"; };
 		9D7A998830EDC8F77BF521D1 /* MpvPlayerPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerPlugin.swift; path = ../ios/Runner/MpvPlayer/MpvPlayerPlugin.swift; sourceTree = "<source_root>"; };
 		A12B8610AE5D580077264851 /* MpvPlayerCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerCore.swift; path = ../ios/Runner/MpvPlayer/MpvPlayerCore.swift; sourceTree = "<source_root>"; };
 		A2635E12EB9322B151EE5127 /* MpvPipController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPipController.swift; path = ../ios/Runner/MpvPlayer/MpvPipController.swift; sourceTree = "<source_root>"; };
-		C667C1287EFBDF4DF45C5313 /* ConnectivityPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityPlusPlugin.swift; sourceTree = "<group>"; };
+		AA12E2C6063C5799C38CAA95 /* PathMonitorConnectivityProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PathMonitorConnectivityProvider.swift; sourceTree = "<group>"; };
 		D52A3BDA46E79969EA1DF3AC /* MpvPlayerCoreBase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerCoreBase.swift; path = ../shared/apple/MpvPlayer/MpvPlayerCoreBase.swift; sourceTree = "<source_root>"; };
-		D82813FF8CCC8320A8C32FC7 /* GamepadStreamHandler.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GamepadStreamHandler.swift; sourceTree = "<group>"; };
-		DD57BBEE1B72584C9C7D44B9 /* GamepadPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GamepadPlugin.swift; sourceTree = "<group>"; };
-		E09D436FC3E6CD994DC1B488 /* SharedPreferencesPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedPreferencesPlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,36 +77,31 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6A0510802F9B91CB0090B5FC /* MPVKit in Frameworks */,
-				C330A1087AA135CCFC0C6203 /* libPods-Runner.a in Frameworks */,
+				C6A15611158B29B0FF43A960 /* Pods_Runner.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		0524C4A636652321237B0884 /* path_provider */ = {
+		0BB116AB9B63B9251A577795 /* connectivity_plus */ = {
 			isa = PBXGroup;
 			children = (
-				87984F20624EC6CA45E20790 /* PathProviderPlugin.swift */,
+				936A41610C7269D52E5E51FF /* ConnectivityPlusPlugin.swift */,
+				3C9575190150A93F97270FC0 /* ConnectivityProvider.swift */,
+				AA12E2C6063C5799C38CAA95 /* PathMonitorConnectivityProvider.swift */,
 			);
-			path = path_provider;
+			name = connectivity_plus;
+			path = connectivity_plus;
 			sourceTree = "<group>";
 		};
-		08F5845B7875697970629696 /* package_info_plus */ = {
+		5167AAFF7134262A07EBBC7C /* package_info_plus */ = {
 			isa = PBXGroup;
 			children = (
-				300783F8CE83D2530D2EDD97 /* PackageInfoPlusPlugin.swift */,
+				83C51CAD792E5C69AA4F971A /* PackageInfoPlusPlugin.swift */,
 			);
+			name = package_info_plus;
 			path = package_info_plus;
-			sourceTree = "<group>";
-		};
-		19DB3FBCF738894832DA07EF /* device_info_plus */ = {
-			isa = PBXGroup;
-			children = (
-				5C4BADB53B8D59E031563AA9 /* DeviceInfoPlusPlugin.swift */,
-			);
-			path = device_info_plus;
 			sourceTree = "<group>";
 		};
 		53CDD29681161166962B9FA5 /* Pods */ = {
@@ -133,31 +114,34 @@
 			path = Pods;
 			sourceTree = "<group>";
 		};
-		5815557FAD15751414018354 /* shared_preferences_foundation */ = {
-			isa = PBXGroup;
-			children = (
-				E09D436FC3E6CD994DC1B488 /* SharedPreferencesPlugin.swift */,
-				0FF71CD2416844A1FC485D77 /* messages.g.swift */,
-			);
-			path = shared_preferences_foundation;
-			sourceTree = "<group>";
-		};
 		5833EC5B503BBB4E370BA1B7 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				5F435CB4590A55958615A7AD /* libPods-Runner.a */,
+				824D2C68D1F1206932E118C2 /* Pods_Runner.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		737C2C621E266B83D4011221 /* connectivity_plus */ = {
+		6C18DC1E07D29FCDF63F3159 /* Plugins */ = {
 			isa = PBXGroup;
 			children = (
-				C667C1287EFBDF4DF45C5313 /* ConnectivityPlusPlugin.swift */,
-				20D0E84BD711F2744BA0D136 /* ConnectivityProvider.swift */,
-				4716B74C5238614844BCA224 /* PathMonitorConnectivityProvider.swift */,
+				ACB880260B35BB030208DF38 /* shared_preferences_foundation */,
+				5167AAFF7134262A07EBBC7C /* package_info_plus */,
+				9DF350B3C8D3FFF46CF8FEF7 /* path_provider */,
+				7CEBB3A4438717E61CFCBA1E /* device_info_plus */,
+				0BB116AB9B63B9251A577795 /* connectivity_plus */,
 			);
-			path = connectivity_plus;
+			name = Plugins;
+			path = Plugins;
+			sourceTree = "<group>";
+		};
+		7CEBB3A4438717E61CFCBA1E /* device_info_plus */ = {
+			isa = PBXGroup;
+			children = (
+				98ED539F08FAE8E8B964C7BE /* DeviceInfoPlusPlugin.swift */,
+			);
+			name = device_info_plus;
+			path = device_info_plus;
 			sourceTree = "<group>";
 		};
 		9740EEB11CF90186004384FC /* Flutter */ = {
@@ -197,25 +181,31 @@
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
 				97C147021CF9000F007C117D /* Info.plist */,
-				1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */,
-				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				BF0B7DFE378943E9D7865D18 /* MpvPlayer */,
-				E6BAF734A5201F83A1B61DCC /* Plugins */,
+				6C18DC1E07D29FCDF63F3159 /* Plugins */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
 		};
-		AD5C822C9001042A47B99FBD /* universal_gamepad */ = {
+		9DF350B3C8D3FFF46CF8FEF7 /* path_provider */ = {
 			isa = PBXGroup;
 			children = (
-				DD57BBEE1B72584C9C7D44B9 /* GamepadPlugin.swift */,
-				D82813FF8CCC8320A8C32FC7 /* GamepadStreamHandler.swift */,
-				8F2071908D08983E6A6A1C1E /* GCControllerManager.swift */,
-				5FBF4BBA5D82316059225B32 /* ButtonMapping.swift */,
+				217BA48DC884CB7ADD43CF88 /* PathProviderPlugin.swift */,
 			);
-			path = universal_gamepad;
+			name = path_provider;
+			path = path_provider;
+			sourceTree = "<group>";
+		};
+		ACB880260B35BB030208DF38 /* shared_preferences_foundation */ = {
+			isa = PBXGroup;
+			children = (
+				35FB5275C65B7F4CC7DD45DF /* SharedPreferencesPlugin.swift */,
+				0C8E3486BF50440024D81B1E /* messages.g.swift */,
+			);
+			name = shared_preferences_foundation;
+			path = shared_preferences_foundation;
 			sourceTree = "<group>";
 		};
 		BF0B7DFE378943E9D7865D18 /* MpvPlayer */ = {
@@ -229,28 +219,6 @@
 			);
 			name = MpvPlayer;
 			path = Runner/MpvPlayer;
-			sourceTree = "<group>";
-		};
-		C538704E1F003452B22FE0C7 /* os_media_controls */ = {
-			isa = PBXGroup;
-			children = (
-				7B8663A3A20A0D6F446B6B37 /* OsMediaControlsPlugin.swift */,
-			);
-			path = os_media_controls;
-			sourceTree = "<group>";
-		};
-		E6BAF734A5201F83A1B61DCC /* Plugins */ = {
-			isa = PBXGroup;
-			children = (
-				5815557FAD15751414018354 /* shared_preferences_foundation */,
-				08F5845B7875697970629696 /* package_info_plus */,
-				0524C4A636652321237B0884 /* path_provider */,
-				AD5C822C9001042A47B99FBD /* universal_gamepad */,
-				19DB3FBCF738894832DA07EF /* device_info_plus */,
-				737C2C621E266B83D4011221 /* connectivity_plus */,
-				C538704E1F003452B22FE0C7 /* os_media_controls */,
-			);
-			path = Plugins;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -267,6 +235,7 @@
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
+				7C33FC680D67B3859BF9AE6C /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -367,6 +336,23 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
+		7C33FC680D67B3859BF9AE6C /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -389,25 +375,19 @@
 			buildActionMask = 2147483647;
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
-				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 				691577F0EB3F4EB1A5160280 /* MpvPlayerCoreBase.swift in Sources */,
 				5C71F5F7B33075F2B007825B /* MpvPlayerPluginShared.swift in Sources */,
 				6F3C0DD6F2F8DA14E7E2F386 /* MpvPlayerCore.swift in Sources */,
 				8E5EED3DDAC9455D4DAA9776 /* MpvPlayerPlugin.swift in Sources */,
 				AA34E3E5872B3792D6959EAA /* MpvPipController.swift in Sources */,
-				A7ED1D92E7B15D3F7562F93E /* SharedPreferencesPlugin.swift in Sources */,
-				477FB0F520224870902B9FD7 /* messages.g.swift in Sources */,
-				F36688C4E8DF44BC6BDD99A5 /* PackageInfoPlusPlugin.swift in Sources */,
-				30E568153D56A59EA5EADCBB /* PathProviderPlugin.swift in Sources */,
-				32F0056AF154FC4EA76CBEFC /* GamepadPlugin.swift in Sources */,
-				12E72ED3EFA35A8715DE2A52 /* GamepadStreamHandler.swift in Sources */,
-				4A6DE7BDEF20A6242A3C6365 /* GCControllerManager.swift in Sources */,
-				BF599A1C25382688DD7F4505 /* ButtonMapping.swift in Sources */,
-				B494441CBB8FB05D04F55DD9 /* DeviceInfoPlusPlugin.swift in Sources */,
-				5CDBEB7E3FE968FC131E964A /* ConnectivityPlusPlugin.swift in Sources */,
-				0D69E2DEA6EA0538722BC7F0 /* ConnectivityProvider.swift in Sources */,
-				C1E0D7252DE079EDFA234F90 /* PathMonitorConnectivityProvider.swift in Sources */,
-				5689B077C6EA57D53BBE8D0D /* OsMediaControlsPlugin.swift in Sources */,
+				C94CC73C8037BAA385B7ED5C /* SharedPreferencesPlugin.swift in Sources */,
+				0A4E3554C5AD1373495F5434 /* messages.g.swift in Sources */,
+				24753D6DD9098E97989137A6 /* PackageInfoPlusPlugin.swift in Sources */,
+				937279397427A0E8ECC70A3A /* PathProviderPlugin.swift in Sources */,
+				31477C4FBA7BF70CAFCDC566 /* DeviceInfoPlusPlugin.swift in Sources */,
+				F85DEBB1878182EEE1DC542A /* ConnectivityPlusPlugin.swift in Sources */,
+				AFCEB532D567638EF6707333 /* ConnectivityProvider.swift in Sources */,
+				4E9365FA67E94D8A289FE862 /* PathMonitorConnectivityProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

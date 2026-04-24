@@ -16,15 +16,10 @@ PLUGIN_BASENAMES = %w[
   messages.g.swift
   PackageInfoPlusPlugin.swift
   PathProviderPlugin.swift
-  GamepadPlugin.swift
-  GamepadStreamHandler.swift
-  GCControllerManager.swift
-  ButtonMapping.swift
   DeviceInfoPlusPlugin.swift
   ConnectivityPlusPlugin.swift
   ConnectivityProvider.swift
   PathMonitorConnectivityProvider.swift
-  OsMediaControlsPlugin.swift
 ]
 
 # Remove any existing file refs for these basenames from the entire project.
@@ -60,12 +55,6 @@ plugins = {
   'path_provider' => %w[
     PathProviderPlugin.swift
   ],
-  'universal_gamepad' => %w[
-    GamepadPlugin.swift
-    GamepadStreamHandler.swift
-    GCControllerManager.swift
-    ButtonMapping.swift
-  ],
   'device_info_plus' => %w[
     DeviceInfoPlusPlugin.swift
   ],
@@ -74,9 +63,9 @@ plugins = {
     ConnectivityProvider.swift
     PathMonitorConnectivityProvider.swift
   ],
-  'os_media_controls' => %w[
-    OsMediaControlsPlugin.swift
-  ],
+  # universal_gamepad + os_media_controls come from CocoaPods (tvos/Podfile)
+  # — their upstream podspecs declare tvOS support, so no embedded copy
+  # is needed.
 }
 
 sources_phase = runner.source_build_phase

@@ -743,8 +743,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: b4006c601e32a6a1fac9e6f26e6ee9923c7b03c9
-      resolved-ref: b4006c601e32a6a1fac9e6f26e6ee9923c7b03c9
+      ref: edfe336
+      resolved-ref: edfe33636bc82c0649c808117651b5c6844cce80
       url: "https://github.com/edde746/os-media-controls"
     source: git
     version: "0.2.1"
@@ -1287,10 +1287,10 @@ packages:
     dependency: "direct main"
     description:
       name: universal_gamepad
-      sha256: "6177944707639a20dd4f89e7f8d78bf66b40ba03d70a1962754d3bba45e14ccd"
+      sha256: "3ada9b26e3b3471adc414fd50b8a27d2f890301d9d4cfd7a46732988a9f143d0"
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.4"
+    version: "1.5.5"
   url_launcher:
     dependency: "direct main"
     description:

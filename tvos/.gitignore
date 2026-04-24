@@ -31,3 +31,5 @@ Runner/GeneratedPluginRegistrant.*
 !default.mode2v3
 !default.pbxuser
 !default.perspectivev3
+# Flutter tool doesn't generate tvOS Flutter.podspec, so it's hand-maintained.
+!Flutter/Flutter.podspec

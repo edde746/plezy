@@ -1,6 +1,8 @@
 import Flutter
 import UIKit
 import AVFoundation
+import universal_gamepad
+import os_media_controls
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -18,47 +20,28 @@ import AVFoundation
 
     application.beginReceivingRemoteControlEvents()
 
-    NSLog("[tvos] AppDelegate didFinishLaunching — registering plugins")
-
-    if let spRegistrar = self.registrar(forPlugin: "SharedPreferencesPlugin") {
-      NSLog("[tvos] Registering SharedPreferencesPlugin (Swift-direct)")
-      SharedPreferencesPlugin.register(with: spRegistrar)
-    } else {
-      NSLog("[tvos] SharedPreferencesPlugin registrar nil")
+    if let r = self.registrar(forPlugin: "SharedPreferencesPlugin") {
+      SharedPreferencesPlugin.register(with: r)
     }
-
-    if let mpvRegistrar = self.registrar(forPlugin: "MpvPlayerPlugin") {
-      NSLog("[tvos] Registering MpvPlayerPlugin")
-      MpvPlayerPlugin.register(with: mpvRegistrar)
+    if let r = self.registrar(forPlugin: "MpvPlayerPlugin") {
+      MpvPlayerPlugin.register(with: r)
     }
-
     if let r = self.registrar(forPlugin: "PackageInfoPlusPlugin") {
-      NSLog("[tvos] Registering PackageInfoPlusPlugin")
       PackageInfoPlusPlugin.register(with: r)
     }
-
     if let r = self.registrar(forPlugin: "PathProviderPlugin") {
-      NSLog("[tvos] Registering PathProviderPlugin")
       PathProviderPlugin.register(with: r)
     }
-
     if let r = self.registrar(forPlugin: "GamepadPlugin") {
-      NSLog("[tvos] Registering GamepadPlugin")
       GamepadPlugin.register(with: r)
     }
-
     if let r = self.registrar(forPlugin: "DeviceInfoPlusPlugin") {
-      NSLog("[tvos] Registering DeviceInfoPlusPlugin")
       DeviceInfoPlusPlugin.register(with: r)
     }
-
     if let r = self.registrar(forPlugin: "ConnectivityPlusPlugin") {
-      NSLog("[tvos] Registering ConnectivityPlusPlugin")
       ConnectivityPlusPlugin.register(with: r)
     }
-
     if let r = self.registrar(forPlugin: "OsMediaControlsPlugin") {
-      NSLog("[tvos] Registering OsMediaControlsPlugin")
       OsMediaControlsPlugin.register(with: r)
     }
 
