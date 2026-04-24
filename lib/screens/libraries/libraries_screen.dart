@@ -424,22 +424,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   Future<void> _loadLibraryContent(String libraryGlobalKey) async {
-    // Get libraries from provider
     final librariesProvider = context.read<LibrariesProvider>();
     final allLibraries = librariesProvider.libraries;
 
-    // Compute visible libraries based on current provider state
-    final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
-    final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
-    final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
-
-    // Find the library by key
-    final libraryIndex = visibleLibraries.indexWhere((lib) => lib.globalKey == libraryGlobalKey);
-    if (libraryIndex == -1) return; // Library not found or hidden
+    // Resolve from allLibraries — hidden libraries are still navigable from the
+    // sidebar's "Hidden libraries" section.
+    final selectedLibrary = allLibraries.where((lib) => lib.globalKey == libraryGlobalKey).firstOrNull;
+    if (selectedLibrary == null) return;
 
     // Update visible tabs and state in the same synchronous block so no
     // intermediate rebuild can see a mismatched controller/key pair.
-    final selectedLibrary = visibleLibraries[libraryIndex];
     _updateVisibleTabs(_getVisibleTabs(selectedLibrary));
 
     _updateState(() {
@@ -784,9 +778,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   /// Build the app bar title - either dropdown on mobile or simple title on desktop
-  Widget _buildAppBarTitle(List<PlexLibrary> visibleLibraries) {
-    // No libraries or no selection
-    if (visibleLibraries.isEmpty || _selectedLibraryGlobalKey == null) {
+  Widget _buildAppBarTitle(List<PlexLibrary> visibleLibraries, PlexLibrary? selectedLibrary) {
+    // No selection at all, or visible list is empty AND we're not browsing a hidden library
+    if (_selectedLibraryGlobalKey == null || (visibleLibraries.isEmpty && selectedLibrary == null)) {
       return Text(t.libraries.title);
     }
 
@@ -884,7 +878,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           controller: _outerScrollController,
           slivers: [
             DesktopSliverAppBar(
-              title: _buildAppBarTitle(visibleLibraries),
+              title: _buildAppBarTitle(visibleLibraries, selectedLibrary),
               pinned: true,
               backgroundColor: Theme.of(context).scaffoldBackgroundColor,
               surfaceTintColor: Colors.transparent,
@@ -913,7 +907,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             ),
             if (isLoadingLibraries)
               const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-            else if (_errorMessage != null && visibleLibraries.isEmpty)
+            else if (_errorMessage != null && visibleLibraries.isEmpty && selectedLibrary == null)
               SliverFillRemaining(
                 child: ErrorStateWidget(
                   message: _errorMessage!,
@@ -924,9 +918,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                   },
                 ),
               )
-            else if (visibleLibraries.isEmpty)
+            else if (visibleLibraries.isEmpty && selectedLibrary == null)
               SliverFillRemaining(
-                child: EmptyStateWidget(message: t.libraries.noLibrariesFound, icon: Symbols.video_library_rounded),
+                child: allLibraries.isEmpty
+                    ? EmptyStateWidget(message: t.libraries.noLibrariesFound, icon: Symbols.video_library_rounded)
+                    : EmptyStateWidget(
+                        message: t.libraries.allLibrariesHidden,
+                        icon: Symbols.visibility_off_rounded,
+                        onAction: _showLibraryManagementSheet,
+                        actionLabel: t.libraries.manageLibraries,
+                        actionIcon: Symbols.edit_rounded,
+                      ),
               )
             else ...[
               // Tab selector chips (only on mobile - desktop has them in app bar)

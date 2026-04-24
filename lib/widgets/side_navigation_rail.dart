@@ -13,6 +13,7 @@ import '../models/plex_library.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
+import '../providers/settings_provider.dart';
 import '../utils/platform_detector.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/fullscreen_state_manager.dart';
@@ -181,6 +182,11 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   static const _kSettings = 'settings';
   static const _kReconnect = 'reconnect';
   static const _kFullscreen = 'fullscreen';
+  static const _kHiddenLibraries = 'hiddenLibraries';
+  static const _kServerHeaderPrefix = 'serverHeader_';
+
+  bool _hiddenLibrariesExpanded = false;
+  final Set<String> _collapsedServerIds = {};
 
   // Unified focus state tracker for all nav items (main + libraries)
   late final FocusMemoryTracker _focusTracker;
@@ -253,8 +259,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     _focusTracker.restoreFocus(fallbackKey: _kHome);
   }
 
-  /// Build the set of valid focus keys (main nav + current libraries)
-  Set<String> _buildValidFocusKeys(List<PlexLibrary> libraries) {
+  /// Build the set of valid focus keys (main nav + current libraries + server headers)
+  Set<String> _buildValidFocusKeys(List<PlexLibrary> libraries, Set<String> serverIds) {
     return {
       _kHome,
       _kLibraries,
@@ -262,20 +268,56 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       _kDownloads,
       _kSettings,
       _kReconnect,
+      _kHiddenLibraries,
       if (_showFullscreenToggle) _kFullscreen,
       'liveTv',
       ...libraries.map((lib) => lib.globalKey),
+      ...serverIds.map((id) => _kServerHeaderPrefix + id),
     };
   }
 
+  /// Build the visual order of library items inside the libraries body. Must
+  /// mirror what `_buildLibraryGroupedColumn` actually renders so D-pad
+  /// navigation lands on the visually next item.
+  List<String> _buildLibraryBodyOrder(List<PlexLibrary> libs, {required bool showServerHeaders}) {
+    if (!showServerHeaders) {
+      return libs.map((lib) => lib.globalKey).toList();
+    }
+    final grouped = _groupByFirstAppearance(libs);
+    final result = <String>[];
+    for (final serverKey in grouped.serverOrder) {
+      if (serverKey.isNotEmpty) {
+        result.add(_kServerHeaderPrefix + serverKey);
+      }
+      if (serverKey.isEmpty || !_collapsedServerIds.contains(serverKey)) {
+        for (final lib in grouped.byServer[serverKey]!) {
+          result.add(lib.globalKey);
+        }
+      }
+    }
+    return result;
+  }
+
   /// Ordered list of focusable keys matching visual top-to-bottom order.
-  List<String> _buildFocusOrder(List<PlexLibrary> visibleLibraries, {required bool hasLiveTv}) {
+  List<String> _buildFocusOrder(
+    List<PlexLibrary> visibleLibraries,
+    List<PlexLibrary> hiddenLibraries, {
+    required bool hasLiveTv,
+    required bool showServerHeaders,
+  }) {
     return [
       if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
       if (!widget.isOfflineMode) ...[
         _kHome,
         _kLibraries,
-        if (_librariesExpanded) ...visibleLibraries.map((lib) => lib.globalKey),
+        if (_librariesExpanded) ...[
+          ..._buildLibraryBodyOrder(visibleLibraries, showServerHeaders: showServerHeaders),
+          if (hiddenLibraries.isNotEmpty) ...[
+            _kHiddenLibraries,
+            if (_hiddenLibrariesExpanded)
+              ..._buildLibraryBodyOrder(hiddenLibraries, showServerHeaders: showServerHeaders),
+          ],
+        ],
         if (hasLiveTv) 'liveTv',
         _kSearch,
       ],
@@ -369,16 +411,35 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     final hiddenLibrariesProvider = context.watch<HiddenLibrariesProvider>();
     final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
 
-    // Get libraries from provider and filter visible ones
     final allLibraries = librariesProvider.libraries;
-    final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
+    final visibleLibraries = <PlexLibrary>[];
+    final hiddenLibraries = <PlexLibrary>[];
+    final serverIds = <String>{};
+    for (final lib in allLibraries) {
+      if (lib.serverId != null) serverIds.add(lib.serverId!);
+      if (hiddenKeys.contains(lib.globalKey)) {
+        hiddenLibraries.add(lib);
+      } else {
+        visibleLibraries.add(lib);
+      }
+    }
 
-    // Prune stale focus nodes when libraries change
-    _focusTracker.pruneExcept(_buildValidFocusKeys(allLibraries));
+    _focusTracker.pruneExcept(_buildValidFocusKeys(allLibraries, serverIds));
+    _collapsedServerIds.retainAll(serverIds);
 
     final isCollapsed = !_shouldExpand;
     final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
-    final focusOrder = _buildFocusOrder(visibleLibraries, hasLiveTv: hasLiveTv);
+
+    // Server grouping: only when multi-server AND the user-facing toggle is on.
+    final groupByServerSetting = context.select<SettingsProvider, bool>((p) => p.groupLibrariesByServer);
+    final showServerHeaders = serverIds.length > 1 && groupByServerSetting;
+
+    final focusOrder = _buildFocusOrder(
+      visibleLibraries,
+      hiddenLibraries,
+      hasLiveTv: hasLiveTv,
+      showServerHeaders: showServerHeaders,
+    );
 
     // Listen to fullscreen changes for macOS
     return ListenableBuilder(
@@ -442,7 +503,13 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                                 const SizedBox(height: 8),
 
                                 // Libraries section
-                                _buildLibrariesSection(visibleLibraries, t, isCollapsed: isCollapsed),
+                                _buildLibrariesSection(
+                                  visibleLibraries,
+                                  hiddenLibraries,
+                                  t,
+                                  isCollapsed: isCollapsed,
+                                  showServerHeaders: showServerHeaders,
+                                ),
 
                                 const SizedBox(height: 8),
 
@@ -607,11 +674,18 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     );
   }
 
-  Widget _buildLibrariesSection(List<PlexLibrary> visibleLibraries, dynamic t, {bool isCollapsed = false}) {
+  Widget _buildLibrariesSection(
+    List<PlexLibrary> visibleLibraries,
+    List<PlexLibrary> hiddenLibraries,
+    dynamic t, {
+    bool isCollapsed = false,
+    bool showServerHeaders = false,
+  }) {
     final librariesProvider = context.watch<LibrariesProvider>();
     final isLoading = librariesProvider.isLoading;
     final isLibrariesSelected = widget.selectedTab == NavigationTabId.libraries && widget.selectedLibraryKey == null;
     final isLibrariesFocused = _focusTracker.isFocused(_kLibraries);
+    final allEmpty = visibleLibraries.isEmpty && hiddenLibraries.isEmpty;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -735,7 +809,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                       ),
                     ),
                   )
-                else if (visibleLibraries.isEmpty)
+                else if (allEmpty)
                   Padding(
                     padding: const EdgeInsets.all(16),
                     child: Text(
@@ -743,8 +817,15 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                       style: TextStyle(fontSize: 12, color: t.textMuted),
                     ),
                   )
-                else
-                  _buildLibraryItems(visibleLibraries, t),
+                else ...[
+                  if (visibleLibraries.isNotEmpty)
+                    _buildLibraryGroupedColumn(visibleLibraries, t, showServerHeaders: showServerHeaders),
+                  if (hiddenLibraries.isNotEmpty) ...[
+                    _buildHiddenLibrariesHeader(hiddenLibraries.length, t),
+                    if (_hiddenLibrariesExpanded)
+                      _buildLibraryGroupedColumn(hiddenLibraries, t, showServerHeaders: showServerHeaders),
+                  ],
+                ],
               ],
             ),
           ),
@@ -762,16 +843,161 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     return nameCounts.entries.where((e) => e.value > 1).map((e) => e.key).toSet();
   }
 
-  Widget _buildLibraryItems(List<PlexLibrary> visibleLibraries, dynamic t) {
-    // Find which library names are not unique
-    final nonUniqueNames = _getNonUniqueLibraryNames(visibleLibraries);
+  /// First-appearance grouping: walk libraries once, recording each serverId's
+  /// first-seen position and bucketing libraries underneath. Returns the server
+  /// order plus a per-server library list. Libraries without a serverId end up
+  /// in a synthetic '' bucket appearing at their first occurrence.
+  ({List<String> serverOrder, Map<String, List<PlexLibrary>> byServer}) _groupByFirstAppearance(
+    List<PlexLibrary> libs,
+  ) {
+    final order = <String>[];
+    final byServer = <String, List<PlexLibrary>>{};
+    for (final lib in libs) {
+      final key = lib.serverId ?? '';
+      if (!byServer.containsKey(key)) {
+        order.add(key);
+        byServer[key] = [];
+      }
+      byServer[key]!.add(lib);
+    }
+    return (serverOrder: order, byServer: byServer);
+  }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: visibleLibraries.map((library) {
-        final showServerName = nonUniqueNames.contains(library.title) && library.serverName != null;
-        return _buildLibraryItem(library, t, showServerName: showServerName);
-      }).toList(),
+  Widget _buildLibraryGroupedColumn(List<PlexLibrary> libraries, dynamic t, {required bool showServerHeaders}) {
+    if (!showServerHeaders) {
+      final nonUniqueNames = _getNonUniqueLibraryNames(libraries);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: libraries.map((library) {
+          final showServerName = nonUniqueNames.contains(library.title) && library.serverName != null;
+          return _buildLibraryItem(library, t, showServerName: showServerName);
+        }).toList(),
+      );
+    }
+
+    final grouped = _groupByFirstAppearance(libraries);
+    final children = <Widget>[];
+    for (final serverKey in grouped.serverOrder) {
+      final bucket = grouped.byServer[serverKey]!;
+      // serverKey is '' when serverId is null — skip the header in that case.
+      if (serverKey.isNotEmpty) {
+        final serverName = bucket.first.serverName ?? serverKey;
+        children.add(_buildServerHeader(serverKey, serverName, t));
+      }
+      if (serverKey.isEmpty || !_collapsedServerIds.contains(serverKey)) {
+        for (final library in bucket) {
+          children.add(_buildLibraryItem(library, t, showServerName: false));
+        }
+      }
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: children);
+  }
+
+  Widget _buildServerHeader(String serverId, String serverName, dynamic t) {
+    return _buildCollapsibleHeader(
+      focusKey: _kServerHeaderPrefix + serverId,
+      icon: Symbols.dns_rounded,
+      iconSize: 14,
+      label: serverName,
+      labelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.4, color: t.textMuted),
+      verticalPadding: 6,
+      isExpanded: !_collapsedServerIds.contains(serverId),
+      onToggle: () => _toggleServerCollapse(serverId),
+      t: t,
+    );
+  }
+
+  void _toggleServerCollapse(String serverId) {
+    setState(() {
+      if (!_collapsedServerIds.add(serverId)) {
+        _collapsedServerIds.remove(serverId);
+      }
+    });
+  }
+
+  Widget _buildHiddenLibrariesHeader(int count, dynamic t) {
+    return _buildCollapsibleHeader(
+      focusKey: _kHiddenLibraries,
+      icon: Symbols.visibility_off_rounded,
+      iconSize: 16,
+      label: Translations.of(context).libraries.hiddenLibrariesCount(count: count),
+      labelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: t.textMuted),
+      verticalPadding: 8,
+      isExpanded: _hiddenLibrariesExpanded,
+      onToggle: () => setState(() => _hiddenLibrariesExpanded = !_hiddenLibrariesExpanded),
+      t: t,
+    );
+  }
+
+  Widget _buildCollapsibleHeader({
+    required String focusKey,
+    required IconData icon,
+    required double iconSize,
+    required String label,
+    required TextStyle labelStyle,
+    required double verticalPadding,
+    required bool isExpanded,
+    required VoidCallback onToggle,
+    required dynamic t,
+  }) {
+    final isFocused = _focusTracker.isFocused(focusKey);
+    final radius = BorderRadius.circular(tokens(context).radiusSm);
+    // Match library-item indent: outer Padding(left: 12) + inner horizontal 17.
+    return Padding(
+      padding: const EdgeInsets.only(left: 12),
+      child: Focus(
+        focusNode: _focusTracker.get(focusKey),
+        onKeyEvent: (node, event) {
+          if (event is! KeyDownEvent) return KeyEventResult.ignored;
+          if (event.logicalKey.isSelectKey) {
+            onToggle();
+            return KeyEventResult.handled;
+          }
+          if (event.logicalKey == LogicalKeyboardKey.arrowRight && widget.onNavigateToContent != null) {
+            widget.onNavigateToContent!();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            canRequestFocus: false,
+            onTap: onToggle,
+            borderRadius: radius,
+            child: Container(
+              decoration: BoxDecoration(color: isFocused ? t.text.withValues(alpha: 0.08) : null, borderRadius: radius),
+              clipBehavior: Clip.hardEdge,
+              child: UnconstrainedBox(
+                alignment: Alignment.centerLeft,
+                constrainedAxis: Axis.vertical,
+                clipBehavior: Clip.hardEdge,
+                child: SizedBox(
+                  width: expandedWidth - 24,
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 17),
+                    child: Row(
+                      children: [
+                        AppIcon(icon, fill: 1, size: iconSize, color: t.textMuted),
+                        const SizedBox(width: 11),
+                        Expanded(
+                          child: Text(label, style: labelStyle, overflow: TextOverflow.ellipsis),
+                        ),
+                        AppIcon(
+                          isExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
+                          fill: 1,
+                          size: 16,
+                          color: t.textMuted,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 

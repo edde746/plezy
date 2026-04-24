@@ -230,6 +230,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => '显示与官方 Plex 客户端相同的主页推荐。关闭时将显示按媒体库分类的推荐。';
 	@override String get showServerNameOnHubs => '在推荐栏显示服务器名称';
 	@override String get showServerNameOnHubsDescription => '始终在推荐栏标题中显示服务器名称。关闭时仅在推荐栏名称重复时显示。';
+	@override String get groupLibrariesByServer => '按服务器分组媒体库';
+	@override String get groupLibrariesByServerDescription => '当您连接到多个服务器时，在侧边栏中为每个 Plex 服务器显示一个标题。';
 	@override String get alwaysKeepSidebarOpen => '始终保持侧边栏展开';
 	@override String get alwaysKeepSidebarOpenDescription => '侧边栏保持展开状态，内容区域自动调整';
 	@override String get showUnwatchedCount => '显示未观看数量';
@@ -747,6 +749,8 @@ class _TranslationsLibrariesZh implements TranslationsLibrariesEn {
 	@override String analysisStarted({required Object title}) => '已开始分析 “${title}”';
 	@override String failedToAnalyze({required Object error}) => '无法分析媒体库: ${error}';
 	@override String get noLibrariesFound => '未找到媒体库';
+	@override String get allLibrariesHidden => '所有媒体库已隐藏';
+	@override String hiddenLibrariesCount({required Object count}) => '已隐藏的媒体库 (${count})';
 	@override String get thisLibraryIsEmpty => '此媒体库为空';
 	@override String get all => '全部';
 	@override String get clearAll => '全部清除';
@@ -1623,6 +1627,8 @@ extension on TranslationsZh {
 			'settings.useGlobalHubsDescription' => '显示与官方 Plex 客户端相同的主页推荐。关闭时将显示按媒体库分类的推荐。',
 			'settings.showServerNameOnHubs' => '在推荐栏显示服务器名称',
 			'settings.showServerNameOnHubsDescription' => '始终在推荐栏标题中显示服务器名称。关闭时仅在推荐栏名称重复时显示。',
+			'settings.groupLibrariesByServer' => '按服务器分组媒体库',
+			'settings.groupLibrariesByServerDescription' => '当您连接到多个服务器时，在侧边栏中为每个 Plex 服务器显示一个标题。',
 			'settings.alwaysKeepSidebarOpen' => '始终保持侧边栏展开',
 			'settings.alwaysKeepSidebarOpenDescription' => '侧边栏保持展开状态，内容区域自动调整',
 			'settings.showUnwatchedCount' => '显示未观看数量',
@@ -2031,14 +2037,16 @@ extension on TranslationsZh {
 			'libraries.analysisStarted' => ({required Object title}) => '已开始分析 “${title}”',
 			'libraries.failedToAnalyze' => ({required Object error}) => '无法分析媒体库: ${error}',
 			'libraries.noLibrariesFound' => '未找到媒体库',
+			'libraries.allLibrariesHidden' => '所有媒体库已隐藏',
+			'libraries.hiddenLibrariesCount' => ({required Object count}) => '已隐藏的媒体库 (${count})',
 			'libraries.thisLibraryIsEmpty' => '此媒体库为空',
 			'libraries.all' => '全部',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.clearAll' => '全部清除',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '确定要扫描 “${title}” 吗？',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '确定要分析 “${title}” 吗？',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '确定要刷新 “${title}” 的元数据吗？',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '确定要清空 “${title}” 的回收站吗？',
 			'libraries.manageLibraries' => '管理媒体库',
 			'libraries.sort' => '排序',

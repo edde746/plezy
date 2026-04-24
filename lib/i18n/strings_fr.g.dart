@@ -230,6 +230,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Afficher les hubs de la page d\'accueil comme le client Plex officiel. Lorsque cette option est désactivée, affiche à la place les recommandations par bibliothèque.';
 	@override String get showServerNameOnHubs => 'Afficher le nom du serveur sur les hubs';
 	@override String get showServerNameOnHubsDescription => 'Toujours afficher le nom du serveur dans les titres des hubs. Lorsque cette option est désactivée, seuls les noms de hubs en double s\'affichent.';
+	@override String get groupLibrariesByServer => 'Grouper les bibliothèques par serveur';
+	@override String get groupLibrariesByServerDescription => 'Affiche un en-tête pour chaque serveur Plex dans la barre latérale lorsque vous êtes connecté à plusieurs serveurs.';
 	@override String get alwaysKeepSidebarOpen => 'Toujours garder la barre latérale ouverte';
 	@override String get alwaysKeepSidebarOpenDescription => 'La barre latérale reste étendue et la zone de contenu s\'adapte';
 	@override String get showUnwatchedCount => 'Afficher le nombre non visionné';
@@ -747,6 +749,8 @@ class _TranslationsLibrariesFr implements TranslationsLibrariesEn {
 	@override String analysisStarted({required Object title}) => 'L\'analyse a commencé pour "${title}"';
 	@override String failedToAnalyze({required Object error}) => 'Échec de l\'analyse de la bibliothèque: ${error}';
 	@override String get noLibrariesFound => 'Aucune bibliothèque trouvée';
+	@override String get allLibrariesHidden => 'Toutes les bibliothèques sont masquées';
+	@override String hiddenLibrariesCount({required Object count}) => 'Bibliothèques masquées (${count})';
 	@override String get thisLibraryIsEmpty => 'Cette bibliothèque est vide';
 	@override String get all => 'Tout';
 	@override String get clearAll => 'Tout effacer';
@@ -1623,6 +1627,8 @@ extension on TranslationsFr {
 			'settings.useGlobalHubsDescription' => 'Afficher les hubs de la page d\'accueil comme le client Plex officiel. Lorsque cette option est désactivée, affiche à la place les recommandations par bibliothèque.',
 			'settings.showServerNameOnHubs' => 'Afficher le nom du serveur sur les hubs',
 			'settings.showServerNameOnHubsDescription' => 'Toujours afficher le nom du serveur dans les titres des hubs. Lorsque cette option est désactivée, seuls les noms de hubs en double s\'affichent.',
+			'settings.groupLibrariesByServer' => 'Grouper les bibliothèques par serveur',
+			'settings.groupLibrariesByServerDescription' => 'Affiche un en-tête pour chaque serveur Plex dans la barre latérale lorsque vous êtes connecté à plusieurs serveurs.',
 			'settings.alwaysKeepSidebarOpen' => 'Toujours garder la barre latérale ouverte',
 			'settings.alwaysKeepSidebarOpenDescription' => 'La barre latérale reste étendue et la zone de contenu s\'adapte',
 			'settings.showUnwatchedCount' => 'Afficher le nombre non visionné',
@@ -2031,14 +2037,16 @@ extension on TranslationsFr {
 			'libraries.analysisStarted' => ({required Object title}) => 'L\'analyse a commencé pour "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Échec de l\'analyse de la bibliothèque: ${error}',
 			'libraries.noLibrariesFound' => 'Aucune bibliothèque trouvée',
+			'libraries.allLibrariesHidden' => 'Toutes les bibliothèques sont masquées',
+			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Bibliothèques masquées (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Cette bibliothèque est vide',
 			'libraries.all' => 'Tout',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.clearAll' => 'Tout effacer',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir lancer le scan de "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir analyser "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir actualiser les métadonnées pour "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir vider la corbeille pour "${title}"?',
 			'libraries.manageLibraries' => 'Gérer les bibliothèques',
 			'libraries.sort' => 'Trier',

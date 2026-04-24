@@ -10,6 +10,7 @@ class SettingsProvider extends ChangeNotifier {
   bool _showHeroSection = true;
   bool _useGlobalHubs = true;
   bool _showServerNameOnHubs = false;
+  bool _groupLibrariesByServer = true;
   bool _alwaysKeepSidebarOpen = false;
   bool _showUnwatchedCount = true;
   bool _showEpisodeNumberOnCards = true;
@@ -53,6 +54,7 @@ class SettingsProvider extends ChangeNotifier {
     _showHeroSection = s.getShowHeroSection();
     _useGlobalHubs = s.getUseGlobalHubs();
     _showServerNameOnHubs = s.getShowServerNameOnHubs();
+    _groupLibrariesByServer = s.getGroupLibrariesByServer();
     _alwaysKeepSidebarOpen = s.getAlwaysKeepSidebarOpen();
     _showUnwatchedCount = s.getShowUnwatchedCount();
     _showEpisodeNumberOnCards = s.getShowEpisodeNumberOnCards();
@@ -86,6 +88,8 @@ class SettingsProvider extends ChangeNotifier {
   bool get useGlobalHubs => _useGlobalHubs;
 
   bool get showServerNameOnHubs => _showServerNameOnHubs;
+
+  bool get groupLibrariesByServer => _groupLibrariesByServer;
 
   bool get alwaysKeepSidebarOpen => _alwaysKeepSidebarOpen;
 
@@ -158,6 +162,13 @@ class SettingsProvider extends ChangeNotifier {
     value: value,
     setLocal: (v) => _showServerNameOnHubs = v,
     persist: _settingsService!.setShowServerNameOnHubs,
+  );
+
+  Future<void> setGroupLibrariesByServer(bool value) => _updateSetting(
+    current: _groupLibrariesByServer,
+    value: value,
+    setLocal: (v) => _groupLibrariesByServer = v,
+    persist: _settingsService!.setGroupLibrariesByServer,
   );
 
   Future<void> setAlwaysKeepSidebarOpen(bool value) => _updateSetting(

@@ -230,6 +230,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => '公式Plexクライアントのようにホームページのハブを表示。オフにすると、ライブラリごとのおすすめを表示。';
 	@override String get showServerNameOnHubs => 'ハブにサーバー名を表示';
 	@override String get showServerNameOnHubsDescription => 'ハブタイトルに常にサーバー名を表示。オフにすると、重複名のみ表示。';
+	@override String get groupLibrariesByServer => 'サーバーごとにライブラリをグループ化';
+	@override String get groupLibrariesByServerDescription => '複数のサーバーに接続しているとき、サイドバーに各 Plex サーバーのヘッダーを表示します。';
 	@override String get alwaysKeepSidebarOpen => 'サイドバーを常に開いておく';
 	@override String get alwaysKeepSidebarOpenDescription => 'サイドバーを展開したまま、コンテンツ領域が調整される';
 	@override String get showUnwatchedCount => '未視聴数を表示';
@@ -747,6 +749,8 @@ class _TranslationsLibrariesJa implements TranslationsLibrariesEn {
 	@override String analysisStarted({required Object title}) => '"${title}"の解析を開始しました';
 	@override String failedToAnalyze({required Object error}) => 'ライブラリの解析に失敗しました: ${error}';
 	@override String get noLibrariesFound => 'ライブラリが見つかりません';
+	@override String get allLibrariesHidden => 'すべてのライブラリが非表示です';
+	@override String hiddenLibrariesCount({required Object count}) => '非表示のライブラリ (${count})';
 	@override String get thisLibraryIsEmpty => 'このライブラリは空です';
 	@override String get all => 'すべて';
 	@override String get clearAll => 'すべてクリア';
@@ -1623,6 +1627,8 @@ extension on TranslationsJa {
 			'settings.useGlobalHubsDescription' => '公式Plexクライアントのようにホームページのハブを表示。オフにすると、ライブラリごとのおすすめを表示。',
 			'settings.showServerNameOnHubs' => 'ハブにサーバー名を表示',
 			'settings.showServerNameOnHubsDescription' => 'ハブタイトルに常にサーバー名を表示。オフにすると、重複名のみ表示。',
+			'settings.groupLibrariesByServer' => 'サーバーごとにライブラリをグループ化',
+			'settings.groupLibrariesByServerDescription' => '複数のサーバーに接続しているとき、サイドバーに各 Plex サーバーのヘッダーを表示します。',
 			'settings.alwaysKeepSidebarOpen' => 'サイドバーを常に開いておく',
 			'settings.alwaysKeepSidebarOpenDescription' => 'サイドバーを展開したまま、コンテンツ領域が調整される',
 			'settings.showUnwatchedCount' => '未視聴数を表示',
@@ -2031,14 +2037,16 @@ extension on TranslationsJa {
 			'libraries.analysisStarted' => ({required Object title}) => '"${title}"の解析を開始しました',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'ライブラリの解析に失敗しました: ${error}',
 			'libraries.noLibrariesFound' => 'ライブラリが見つかりません',
+			'libraries.allLibrariesHidden' => 'すべてのライブラリが非表示です',
+			'libraries.hiddenLibrariesCount' => ({required Object count}) => '非表示のライブラリ (${count})',
 			'libraries.thisLibraryIsEmpty' => 'このライブラリは空です',
 			'libraries.all' => 'すべて',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.clearAll' => 'すべてクリア',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '"${title}"をスキャンしてもよろしいですか？',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}"を解析してもよろしいですか？',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '"${title}"のメタデータを更新してもよろしいですか？',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '"${title}"のゴミ箱を空にしてもよろしいですか？',
 			'libraries.manageLibraries' => 'ライブラリを管理',
 			'libraries.sort' => '並べ替え',

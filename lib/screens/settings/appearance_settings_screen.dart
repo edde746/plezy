@@ -80,6 +80,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
             SettingsSectionHeader(t.settings.navigation),
             if (Platform.isAndroid) _buildForceTvMode(),
             if (PlatformDetector.shouldUseSideNavigation(context)) _buildAlwaysKeepSidebarOpen(),
+            if (PlatformDetector.shouldUseSideNavigation(context)) _buildGroupLibrariesByServer(),
             if (!PlatformDetector.shouldUseSideNavigation(context)) _buildShowNavBarLabels(),
             _buildShowUnwatchedCount(),
 
@@ -276,6 +277,14 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
     subtitle: t.settings.alwaysKeepSidebarOpenDescription,
     getter: (p) => p.alwaysKeepSidebarOpen,
     setter: (p, v) => p.setAlwaysKeepSidebarOpen(v),
+  );
+
+  Widget _buildGroupLibrariesByServer() => _buildBoolToggle(
+    icon: Symbols.dns_rounded,
+    title: t.settings.groupLibrariesByServer,
+    subtitle: t.settings.groupLibrariesByServerDescription,
+    getter: (p) => p.groupLibrariesByServer,
+    setter: (p, v) => p.setGroupLibrariesByServer(v),
   );
 
   Widget _buildShowNavBarLabels() => _buildBoolToggle(

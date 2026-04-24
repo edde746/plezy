@@ -230,6 +230,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.';
 	@override String get showServerNameOnHubs => 'Servername bei Hubs anzeigen';
 	@override String get showServerNameOnHubsDescription => 'Zeigt immer den Servernamen in Hub-Titeln an. Wenn deaktiviert, nur bei doppelten Hub-Namen.';
+	@override String get groupLibrariesByServer => 'Mediatheken nach Server gruppieren';
+	@override String get groupLibrariesByServerDescription => 'Zeigt eine Überschrift für jeden Plex-Server in der Seitenleiste an, wenn du mit mehreren Servern verbunden bist.';
 	@override String get alwaysKeepSidebarOpen => 'Seitenleiste immer geöffnet halten';
 	@override String get alwaysKeepSidebarOpenDescription => 'Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an';
 	@override String get showUnwatchedCount => 'Anzahl nicht gesehener Folgen anzeigen';
@@ -747,6 +749,8 @@ class _TranslationsLibrariesDe implements TranslationsLibrariesEn {
 	@override String analysisStarted({required Object title}) => 'Analyse gestartet für „${title}“';
 	@override String failedToAnalyze({required Object error}) => 'Analyse der Mediathek fehlgeschlagen: ${error}';
 	@override String get noLibrariesFound => 'Keine Mediatheken gefunden';
+	@override String get allLibrariesHidden => 'Alle Mediatheken sind ausgeblendet';
+	@override String hiddenLibrariesCount({required Object count}) => 'Ausgeblendete Mediatheken (${count})';
 	@override String get thisLibraryIsEmpty => 'Diese Mediathek ist leer';
 	@override String get all => 'Alle';
 	@override String get clearAll => 'Alle löschen';
@@ -1623,6 +1627,8 @@ extension on TranslationsDe {
 			'settings.useGlobalHubsDescription' => 'Zeigt Startseiten-Hubs wie der offizielle Plex-Client. Wenn deaktiviert, werden stattdessen Empfehlungen pro Bibliothek angezeigt.',
 			'settings.showServerNameOnHubs' => 'Servername bei Hubs anzeigen',
 			'settings.showServerNameOnHubsDescription' => 'Zeigt immer den Servernamen in Hub-Titeln an. Wenn deaktiviert, nur bei doppelten Hub-Namen.',
+			'settings.groupLibrariesByServer' => 'Mediatheken nach Server gruppieren',
+			'settings.groupLibrariesByServerDescription' => 'Zeigt eine Überschrift für jeden Plex-Server in der Seitenleiste an, wenn du mit mehreren Servern verbunden bist.',
 			'settings.alwaysKeepSidebarOpen' => 'Seitenleiste immer geöffnet halten',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an',
 			'settings.showUnwatchedCount' => 'Anzahl nicht gesehener Folgen anzeigen',
@@ -2031,14 +2037,16 @@ extension on TranslationsDe {
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse gestartet für „${title}“',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Analyse der Mediathek fehlgeschlagen: ${error}',
 			'libraries.noLibrariesFound' => 'Keine Mediatheken gefunden',
+			'libraries.allLibrariesHidden' => 'Alle Mediatheken sind ausgeblendet',
+			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Ausgeblendete Mediatheken (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Diese Mediathek ist leer',
 			'libraries.all' => 'Alle',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.clearAll' => 'Alle löschen',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '„${title}“ wirklich scannen?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '„${title}“ wirklich analysieren?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Metadaten für „${title}“ wirklich aktualisieren?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Papierkorb für „${title}“ wirklich leeren?',
 			'libraries.manageLibraries' => 'Mediatheken verwalten',
 			'libraries.sort' => 'Sortieren',

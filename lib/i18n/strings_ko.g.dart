@@ -230,6 +230,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.';
 	@override String get showServerNameOnHubs => '허브에 서버 이름 표시';
 	@override String get showServerNameOnHubsDescription => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.';
+	@override String get groupLibrariesByServer => '서버별로 라이브러리 그룹화';
+	@override String get groupLibrariesByServerDescription => '여러 서버에 연결되어 있을 때 사이드바에 각 Plex 서버의 헤더를 표시합니다.';
 	@override String get alwaysKeepSidebarOpen => '사이드바 항상 열어두기';
 	@override String get alwaysKeepSidebarOpenDescription => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다';
 	@override String get showUnwatchedCount => '미시청 수 표시';
@@ -747,6 +749,8 @@ class _TranslationsLibrariesKo implements TranslationsLibrariesEn {
 	@override String analysisStarted({required Object title}) => '"${title}" 분석 시작됨';
 	@override String failedToAnalyze({required Object error}) => '미디어 라이브러리 분석 실패: ${error}';
 	@override String get noLibrariesFound => '미디어 라이브러리 없음';
+	@override String get allLibrariesHidden => '모든 라이브러리가 숨겨졌습니다';
+	@override String hiddenLibrariesCount({required Object count}) => '숨겨진 라이브러리 (${count})';
 	@override String get thisLibraryIsEmpty => '이 미디어 라이브러리는 비어 있습니다';
 	@override String get all => '전체';
 	@override String get clearAll => '모두 삭제';
@@ -1623,6 +1627,8 @@ extension on TranslationsKo {
 			'settings.useGlobalHubsDescription' => '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.',
 			'settings.showServerNameOnHubs' => '허브에 서버 이름 표시',
 			'settings.showServerNameOnHubsDescription' => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.',
+			'settings.groupLibrariesByServer' => '서버별로 라이브러리 그룹화',
+			'settings.groupLibrariesByServerDescription' => '여러 서버에 연결되어 있을 때 사이드바에 각 Plex 서버의 헤더를 표시합니다.',
 			'settings.alwaysKeepSidebarOpen' => '사이드바 항상 열어두기',
 			'settings.alwaysKeepSidebarOpenDescription' => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다',
 			'settings.showUnwatchedCount' => '미시청 수 표시',
@@ -2031,14 +2037,16 @@ extension on TranslationsKo {
 			'libraries.analysisStarted' => ({required Object title}) => '"${title}" 분석 시작됨',
 			'libraries.failedToAnalyze' => ({required Object error}) => '미디어 라이브러리 분석 실패: ${error}',
 			'libraries.noLibrariesFound' => '미디어 라이브러리 없음',
+			'libraries.allLibrariesHidden' => '모든 라이브러리가 숨겨졌습니다',
+			'libraries.hiddenLibrariesCount' => ({required Object count}) => '숨겨진 라이브러리 (${count})',
 			'libraries.thisLibraryIsEmpty' => '이 미디어 라이브러리는 비어 있습니다',
 			'libraries.all' => '전체',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.clearAll' => '모두 삭제',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '「${title}」를 스캔 하시겠습니까?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '「${title}」를 분석 하시겠습니까?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '「${title}」의 메타데이터를 새로고침 하시겠습니까?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '${title}의 휴지통을 비우시겠습니까?',
 			'libraries.manageLibraries' => '미디어 라이브러리 관리',
 			'libraries.sort' => '정렬',

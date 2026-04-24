@@ -230,6 +230,8 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Vis hjemmeside-huber som den offisielle Plex-klienten. Når av, vises per-bibliotek-anbefalinger i stedet.';
 	@override String get showServerNameOnHubs => 'Vis servernavn på huber';
 	@override String get showServerNameOnHubsDescription => 'Vis alltid servernavnet i hubtitler. Når av, vises kun for dupliserte hubnavn.';
+	@override String get groupLibrariesByServer => 'Grupper biblioteker etter server';
+	@override String get groupLibrariesByServerDescription => 'Vis en overskrift for hver Plex-server i sidefeltet når du er koblet til flere servere.';
 	@override String get alwaysKeepSidebarOpen => 'Hold sidefeltet alltid åpent';
 	@override String get alwaysKeepSidebarOpenDescription => 'Sidefeltet forblir utvidet og innholdsområdet tilpasser seg';
 	@override String get showUnwatchedCount => 'Vis antall usette';
@@ -747,6 +749,8 @@ class _TranslationsLibrariesNb implements TranslationsLibrariesEn {
 	@override String analysisStarted({required Object title}) => 'Analyse startet for "${title}"';
 	@override String failedToAnalyze({required Object error}) => 'Kunne ikke analysere bibliotek: ${error}';
 	@override String get noLibrariesFound => 'Ingen biblioteker funnet';
+	@override String get allLibrariesHidden => 'Alle biblioteker er skjult';
+	@override String hiddenLibrariesCount({required Object count}) => 'Skjulte biblioteker (${count})';
 	@override String get thisLibraryIsEmpty => 'Dette biblioteket er tomt';
 	@override String get all => 'Alle';
 	@override String get clearAll => 'Tøm alle';
@@ -1623,6 +1627,8 @@ extension on TranslationsNb {
 			'settings.useGlobalHubsDescription' => 'Vis hjemmeside-huber som den offisielle Plex-klienten. Når av, vises per-bibliotek-anbefalinger i stedet.',
 			'settings.showServerNameOnHubs' => 'Vis servernavn på huber',
 			'settings.showServerNameOnHubsDescription' => 'Vis alltid servernavnet i hubtitler. Når av, vises kun for dupliserte hubnavn.',
+			'settings.groupLibrariesByServer' => 'Grupper biblioteker etter server',
+			'settings.groupLibrariesByServerDescription' => 'Vis en overskrift for hver Plex-server i sidefeltet når du er koblet til flere servere.',
 			'settings.alwaysKeepSidebarOpen' => 'Hold sidefeltet alltid åpent',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidefeltet forblir utvidet og innholdsområdet tilpasser seg',
 			'settings.showUnwatchedCount' => 'Vis antall usette',
@@ -2031,14 +2037,16 @@ extension on TranslationsNb {
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse startet for "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kunne ikke analysere bibliotek: ${error}',
 			'libraries.noLibrariesFound' => 'Ingen biblioteker funnet',
+			'libraries.allLibrariesHidden' => 'Alle biblioteker er skjult',
+			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Skjulte biblioteker (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Dette biblioteket er tomt',
 			'libraries.all' => 'Alle',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.clearAll' => 'Tøm alle',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Er du sikker på at du vil skanne "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Er du sikker på at du vil analysere "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Er du sikker på at du vil oppdatere metadata for "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Er du sikker på at du vil tømme papirkurven for "${title}"?',
 			'libraries.manageLibraries' => 'Administrer biblioteker',
 			'libraries.sort' => 'Sorter',

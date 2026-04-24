@@ -230,6 +230,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.';
 	@override String get showServerNameOnHubs => 'Visa servernamn på hubbar';
 	@override String get showServerNameOnHubsDescription => 'Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.';
+	@override String get groupLibrariesByServer => 'Gruppera bibliotek efter server';
+	@override String get groupLibrariesByServerDescription => 'Visa en rubrik för varje Plex-server i sidofältet när du är ansluten till flera servrar.';
 	@override String get alwaysKeepSidebarOpen => 'Håll sidofältet alltid öppet';
 	@override String get alwaysKeepSidebarOpenDescription => 'Sidofältet förblir expanderat och innehållsytan anpassas';
 	@override String get showUnwatchedCount => 'Visa antal osedda';
@@ -747,6 +749,8 @@ class _TranslationsLibrariesSv implements TranslationsLibrariesEn {
 	@override String analysisStarted({required Object title}) => 'Analys startad för "${title}"';
 	@override String failedToAnalyze({required Object error}) => 'Misslyckades att analysera bibliotek: ${error}';
 	@override String get noLibrariesFound => 'Inga bibliotek hittades';
+	@override String get allLibrariesHidden => 'Alla bibliotek är dolda';
+	@override String hiddenLibrariesCount({required Object count}) => 'Dolda bibliotek (${count})';
 	@override String get thisLibraryIsEmpty => 'Detta bibliotek är tomt';
 	@override String get all => 'Alla';
 	@override String get clearAll => 'Rensa alla';
@@ -1623,6 +1627,8 @@ extension on TranslationsSv {
 			'settings.useGlobalHubsDescription' => 'Visar startsidans hubbar som den officiella Plex-klienten. När av visas rekommendationer per bibliotek istället.',
 			'settings.showServerNameOnHubs' => 'Visa servernamn på hubbar',
 			'settings.showServerNameOnHubsDescription' => 'Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.',
+			'settings.groupLibrariesByServer' => 'Gruppera bibliotek efter server',
+			'settings.groupLibrariesByServerDescription' => 'Visa en rubrik för varje Plex-server i sidofältet när du är ansluten till flera servrar.',
 			'settings.alwaysKeepSidebarOpen' => 'Håll sidofältet alltid öppet',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidofältet förblir expanderat och innehållsytan anpassas',
 			'settings.showUnwatchedCount' => 'Visa antal osedda',
@@ -2031,14 +2037,16 @@ extension on TranslationsSv {
 			'libraries.analysisStarted' => ({required Object title}) => 'Analys startad för "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Misslyckades att analysera bibliotek: ${error}',
 			'libraries.noLibrariesFound' => 'Inga bibliotek hittades',
+			'libraries.allLibrariesHidden' => 'Alla bibliotek är dolda',
+			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Dolda bibliotek (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Detta bibliotek är tomt',
 			'libraries.all' => 'Alla',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.clearAll' => 'Rensa alla',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Är du säker på att du vill skanna "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Är du säker på att du vill analysera "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Är du säker på att du vill uppdatera metadata för "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Är du säker på att du vill tömma papperskorgen för "${title}"?',
 			'libraries.manageLibraries' => 'Hantera bibliotek',
 			'libraries.sort' => 'Sortera',

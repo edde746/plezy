@@ -230,6 +230,8 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Pokaż huby strony głównej jak w oficjalnym kliencie Plex. Gdy wyłączone, pokazuje rekomendacje per biblioteka.';
 	@override String get showServerNameOnHubs => 'Pokaż nazwę serwera w hubach';
 	@override String get showServerNameOnHubsDescription => 'Zawsze wyświetlaj nazwę serwera w tytułach hubów. Gdy wyłączone, pokazuje tylko dla zduplikowanych nazw.';
+	@override String get groupLibrariesByServer => 'Grupuj biblioteki według serwera';
+	@override String get groupLibrariesByServerDescription => 'Pokazuj nagłówek dla każdego serwera Plex na pasku bocznym, gdy jesteś połączony z wieloma serwerami.';
 	@override String get alwaysKeepSidebarOpen => 'Zawsze utrzymuj panel boczny otwarty';
 	@override String get alwaysKeepSidebarOpenDescription => 'Panel boczny jest rozwinięty, a obszar treści dostosowuje się';
 	@override String get showUnwatchedCount => 'Pokaż liczbę nieobejrzanych';
@@ -747,6 +749,8 @@ class _TranslationsLibrariesPl implements TranslationsLibrariesEn {
 	@override String analysisStarted({required Object title}) => 'Analiza rozpoczęta dla "${title}"';
 	@override String failedToAnalyze({required Object error}) => 'Nie udało się przeanalizować biblioteki: ${error}';
 	@override String get noLibrariesFound => 'Nie znaleziono bibliotek';
+	@override String get allLibrariesHidden => 'Wszystkie biblioteki są ukryte';
+	@override String hiddenLibrariesCount({required Object count}) => 'Ukryte biblioteki (${count})';
 	@override String get thisLibraryIsEmpty => 'Ta biblioteka jest pusta';
 	@override String get all => 'Wszystkie';
 	@override String get clearAll => 'Wyczyść wszystko';
@@ -1623,6 +1627,8 @@ extension on TranslationsPl {
 			'settings.useGlobalHubsDescription' => 'Pokaż huby strony głównej jak w oficjalnym kliencie Plex. Gdy wyłączone, pokazuje rekomendacje per biblioteka.',
 			'settings.showServerNameOnHubs' => 'Pokaż nazwę serwera w hubach',
 			'settings.showServerNameOnHubsDescription' => 'Zawsze wyświetlaj nazwę serwera w tytułach hubów. Gdy wyłączone, pokazuje tylko dla zduplikowanych nazw.',
+			'settings.groupLibrariesByServer' => 'Grupuj biblioteki według serwera',
+			'settings.groupLibrariesByServerDescription' => 'Pokazuj nagłówek dla każdego serwera Plex na pasku bocznym, gdy jesteś połączony z wieloma serwerami.',
 			'settings.alwaysKeepSidebarOpen' => 'Zawsze utrzymuj panel boczny otwarty',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Panel boczny jest rozwinięty, a obszar treści dostosowuje się',
 			'settings.showUnwatchedCount' => 'Pokaż liczbę nieobejrzanych',
@@ -2031,14 +2037,16 @@ extension on TranslationsPl {
 			'libraries.analysisStarted' => ({required Object title}) => 'Analiza rozpoczęta dla "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Nie udało się przeanalizować biblioteki: ${error}',
 			'libraries.noLibrariesFound' => 'Nie znaleziono bibliotek',
+			'libraries.allLibrariesHidden' => 'Wszystkie biblioteki są ukryte',
+			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Ukryte biblioteki (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Ta biblioteka jest pusta',
 			'libraries.all' => 'Wszystkie',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.clearAll' => 'Wyczyść wszystko',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Czy na pewno chcesz zeskanować "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Czy na pewno chcesz przeanalizować "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Czy na pewno chcesz odświeżyć metadane dla "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Czy na pewno chcesz opróżnić kosz dla "${title}"?',
 			'libraries.manageLibraries' => 'Zarządzaj bibliotekami',
 			'libraries.sort' => 'Sortuj',

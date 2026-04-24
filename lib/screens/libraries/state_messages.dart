@@ -117,6 +117,9 @@ class EmptyStateWidget extends StatelessWidget {
   /// Optional label for the action button
   final String? actionLabel;
 
+  /// Optional icon for the action button (defaults to a generic add icon)
+  final IconData? actionIcon;
+
   const EmptyStateWidget({
     super.key,
     required this.message,
@@ -125,6 +128,7 @@ class EmptyStateWidget extends StatelessWidget {
     this.iconSize = 64,
     this.onAction,
     this.actionLabel,
+    this.actionIcon,
   });
 
   @override
@@ -136,7 +140,7 @@ class EmptyStateWidget extends StatelessWidget {
       iconSize: iconSize,
       onAction: onAction,
       actionLabel: actionLabel,
-      actionIcon: Symbols.add_rounded,
+      actionIcon: actionIcon ?? Symbols.add_rounded,
     );
   }
 }

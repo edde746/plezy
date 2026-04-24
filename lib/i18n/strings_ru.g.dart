@@ -230,6 +230,8 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Показывать хабы главной страницы как в официальном клиенте Plex. При выключении показывает рекомендации по библиотекам.';
 	@override String get showServerNameOnHubs => 'Показывать имя сервера в хабах';
 	@override String get showServerNameOnHubsDescription => 'Всегда показывать имя сервера в заголовках хабов. При выключении показывает только для дублирующихся имён.';
+	@override String get groupLibrariesByServer => 'Группировать библиотеки по серверам';
+	@override String get groupLibrariesByServerDescription => 'Показывать заголовок для каждого сервера Plex на боковой панели при подключении к нескольким серверам.';
 	@override String get alwaysKeepSidebarOpen => 'Всегда держать боковую панель открытой';
 	@override String get alwaysKeepSidebarOpenDescription => 'Боковая панель остаётся развёрнутой, область контента подстраивается';
 	@override String get showUnwatchedCount => 'Показывать количество непросмотренных';
@@ -747,6 +749,8 @@ class _TranslationsLibrariesRu implements TranslationsLibrariesEn {
 	@override String analysisStarted({required Object title}) => 'Анализ начат для "${title}"';
 	@override String failedToAnalyze({required Object error}) => 'Не удалось проанализировать библиотеку: ${error}';
 	@override String get noLibrariesFound => 'Библиотеки не найдены';
+	@override String get allLibrariesHidden => 'Все библиотеки скрыты';
+	@override String hiddenLibrariesCount({required Object count}) => 'Скрытые библиотеки (${count})';
 	@override String get thisLibraryIsEmpty => 'Эта библиотека пуста';
 	@override String get all => 'Все';
 	@override String get clearAll => 'Очистить все';
@@ -1623,6 +1627,8 @@ extension on TranslationsRu {
 			'settings.useGlobalHubsDescription' => 'Показывать хабы главной страницы как в официальном клиенте Plex. При выключении показывает рекомендации по библиотекам.',
 			'settings.showServerNameOnHubs' => 'Показывать имя сервера в хабах',
 			'settings.showServerNameOnHubsDescription' => 'Всегда показывать имя сервера в заголовках хабов. При выключении показывает только для дублирующихся имён.',
+			'settings.groupLibrariesByServer' => 'Группировать библиотеки по серверам',
+			'settings.groupLibrariesByServerDescription' => 'Показывать заголовок для каждого сервера Plex на боковой панели при подключении к нескольким серверам.',
 			'settings.alwaysKeepSidebarOpen' => 'Всегда держать боковую панель открытой',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Боковая панель остаётся развёрнутой, область контента подстраивается',
 			'settings.showUnwatchedCount' => 'Показывать количество непросмотренных',
@@ -2031,14 +2037,16 @@ extension on TranslationsRu {
 			'libraries.analysisStarted' => ({required Object title}) => 'Анализ начат для "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Не удалось проанализировать библиотеку: ${error}',
 			'libraries.noLibrariesFound' => 'Библиотеки не найдены',
+			'libraries.allLibrariesHidden' => 'Все библиотеки скрыты',
+			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Скрытые библиотеки (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Эта библиотека пуста',
 			'libraries.all' => 'Все',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.clearAll' => 'Очистить все',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Вы уверены, что хотите сканировать "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Вы уверены, что хотите проанализировать "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Вы уверены, что хотите обновить метаданные для "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Вы уверены, что хотите очистить корзину для "${title}"?',
 			'libraries.manageLibraries' => 'Управление библиотеками',
 			'libraries.sort' => 'Сортировка',

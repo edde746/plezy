@@ -230,6 +230,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.';
 	@override String get showServerNameOnHubs => 'Servernaam tonen bij hubs';
 	@override String get showServerNameOnHubsDescription => 'Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.';
+	@override String get groupLibrariesByServer => 'Bibliotheken groeperen per server';
+	@override String get groupLibrariesByServerDescription => 'Toont een kop voor elke Plex-server in de zijbalk wanneer je met meerdere servers verbonden bent.';
 	@override String get alwaysKeepSidebarOpen => 'Zijbalk altijd open houden';
 	@override String get alwaysKeepSidebarOpenDescription => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan';
 	@override String get showUnwatchedCount => 'Aantal ongekeken tonen';
@@ -747,6 +749,8 @@ class _TranslationsLibrariesNl implements TranslationsLibrariesEn {
 	@override String analysisStarted({required Object title}) => 'Analyse gestart voor "${title}"';
 	@override String failedToAnalyze({required Object error}) => 'Kon bibliotheek niet analyseren: ${error}';
 	@override String get noLibrariesFound => 'Geen bibliotheken gevonden';
+	@override String get allLibrariesHidden => 'Alle bibliotheken zijn verborgen';
+	@override String hiddenLibrariesCount({required Object count}) => 'Verborgen bibliotheken (${count})';
 	@override String get thisLibraryIsEmpty => 'Deze bibliotheek is leeg';
 	@override String get all => 'Alles';
 	@override String get clearAll => 'Alles wissen';
@@ -1623,6 +1627,8 @@ extension on TranslationsNl {
 			'settings.useGlobalHubsDescription' => 'Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.',
 			'settings.showServerNameOnHubs' => 'Servernaam tonen bij hubs',
 			'settings.showServerNameOnHubsDescription' => 'Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.',
+			'settings.groupLibrariesByServer' => 'Bibliotheken groeperen per server',
+			'settings.groupLibrariesByServerDescription' => 'Toont een kop voor elke Plex-server in de zijbalk wanneer je met meerdere servers verbonden bent.',
 			'settings.alwaysKeepSidebarOpen' => 'Zijbalk altijd open houden',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan',
 			'settings.showUnwatchedCount' => 'Aantal ongekeken tonen',
@@ -2031,14 +2037,16 @@ extension on TranslationsNl {
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse gestart voor "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kon bibliotheek niet analyseren: ${error}',
 			'libraries.noLibrariesFound' => 'Geen bibliotheken gevonden',
+			'libraries.allLibrariesHidden' => 'Alle bibliotheken zijn verborgen',
+			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Verborgen bibliotheken (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Deze bibliotheek is leeg',
 			'libraries.all' => 'Alles',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.clearAll' => 'Alles wissen',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt scannen?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt analyseren?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Weet je zeker dat je metadata wilt vernieuwen voor "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Weet je zeker dat je de prullenbak wilt legen voor "${title}"?',
 			'libraries.manageLibraries' => 'Beheer bibliotheken',
 			'libraries.sort' => 'Sorteren',

@@ -230,6 +230,8 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get useGlobalHubsDescription => 'Mostrar los hubs de la página de inicio como el cliente oficial de Plex. Cuando está desactivado, muestra recomendaciones por biblioteca en su lugar.';
 	@override String get showServerNameOnHubs => 'Mostrar Nombre del Servidor en los Hubs';
 	@override String get showServerNameOnHubsDescription => 'Mostrar siempre el nombre del servidor en los títulos de los hubs. Cuando está desactivado, solo se muestra para nombres de hubs duplicados.';
+	@override String get groupLibrariesByServer => 'Agrupar bibliotecas por servidor';
+	@override String get groupLibrariesByServerDescription => 'Muestra un encabezado para cada servidor Plex en la barra lateral cuando estás conectado a varios servidores.';
 	@override String get alwaysKeepSidebarOpen => 'Mantener siempre la barra lateral abierta';
 	@override String get alwaysKeepSidebarOpenDescription => 'La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse';
 	@override String get showUnwatchedCount => 'Mostrar conteo de no vistos';
@@ -747,6 +749,8 @@ class _TranslationsLibrariesEs implements TranslationsLibrariesEn {
 	@override String analysisStarted({required Object title}) => 'Análisis iniciado para "${title}"';
 	@override String failedToAnalyze({required Object error}) => 'Error al analizar la biblioteca: ${error}';
 	@override String get noLibrariesFound => 'No se encontraron bibliotecas';
+	@override String get allLibrariesHidden => 'Todas las bibliotecas están ocultas';
+	@override String hiddenLibrariesCount({required Object count}) => 'Bibliotecas ocultas (${count})';
 	@override String get thisLibraryIsEmpty => 'Esta biblioteca está vacía';
 	@override String get all => 'Todos';
 	@override String get clearAll => 'Borrar Todo';
@@ -1623,6 +1627,8 @@ extension on TranslationsEs {
 			'settings.useGlobalHubsDescription' => 'Mostrar los hubs de la página de inicio como el cliente oficial de Plex. Cuando está desactivado, muestra recomendaciones por biblioteca en su lugar.',
 			'settings.showServerNameOnHubs' => 'Mostrar Nombre del Servidor en los Hubs',
 			'settings.showServerNameOnHubsDescription' => 'Mostrar siempre el nombre del servidor en los títulos de los hubs. Cuando está desactivado, solo se muestra para nombres de hubs duplicados.',
+			'settings.groupLibrariesByServer' => 'Agrupar bibliotecas por servidor',
+			'settings.groupLibrariesByServerDescription' => 'Muestra un encabezado para cada servidor Plex en la barra lateral cuando estás conectado a varios servidores.',
 			'settings.alwaysKeepSidebarOpen' => 'Mantener siempre la barra lateral abierta',
 			'settings.alwaysKeepSidebarOpenDescription' => 'La barra lateral permanece expandida y el área de contenido se ajusta para adaptarse',
 			'settings.showUnwatchedCount' => 'Mostrar conteo de no vistos',
@@ -2031,14 +2037,16 @@ extension on TranslationsEs {
 			'libraries.analysisStarted' => ({required Object title}) => 'Análisis iniciado para "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Error al analizar la biblioteca: ${error}',
 			'libraries.noLibrariesFound' => 'No se encontraron bibliotecas',
+			'libraries.allLibrariesHidden' => 'Todas las bibliotecas están ocultas',
+			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Bibliotecas ocultas (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Esta biblioteca está vacía',
 			'libraries.all' => 'Todos',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.clearAll' => 'Borrar Todo',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '¿Estás seguro de que quieres escanear "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '¿Estás seguro de que quieres analizar "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '¿Estás seguro de que quieres actualizar los metadatos de "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.emptyTrashConfirm' => ({required Object title}) => '¿Estás seguro de que quieres vaciar la papelera de "${title}"?',
 			'libraries.manageLibraries' => 'Gestionar Bibliotecas',
 			'libraries.sort' => 'Ordenar',

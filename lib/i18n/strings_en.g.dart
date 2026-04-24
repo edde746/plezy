@@ -430,6 +430,12 @@ class TranslationsSettingsEn {
 	/// en: 'Always display the server name in hub titles. When off, only shows for duplicate hub names.'
 	String get showServerNameOnHubsDescription => 'Always display the server name in hub titles. When off, only shows for duplicate hub names.';
 
+	/// en: 'Group Libraries by Server'
+	String get groupLibrariesByServer => 'Group Libraries by Server';
+
+	/// en: 'Show a header for each Plex server in the sidebar when you're connected to multiple servers.'
+	String get groupLibrariesByServerDescription => 'Show a header for each Plex server in the sidebar when you\'re connected to multiple servers.';
+
 	/// en: 'Always Keep Sidebar Open'
 	String get alwaysKeepSidebarOpen => 'Always Keep Sidebar Open';
 
@@ -1708,6 +1714,12 @@ class TranslationsLibrariesEn {
 
 	/// en: 'No libraries found'
 	String get noLibrariesFound => 'No libraries found';
+
+	/// en: 'All libraries are hidden'
+	String get allLibrariesHidden => 'All libraries are hidden';
+
+	/// en: 'Hidden libraries (${count})'
+	String hiddenLibrariesCount({required Object count}) => 'Hidden libraries (${count})';
 
 	/// en: 'This library is empty'
 	String get thisLibraryIsEmpty => 'This library is empty';
@@ -3547,6 +3559,8 @@ extension on Translations {
 			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official Plex client. When off, shows per-library recommendations instead.',
 			'settings.showServerNameOnHubs' => 'Show Server Name on Hubs',
 			'settings.showServerNameOnHubsDescription' => 'Always display the server name in hub titles. When off, only shows for duplicate hub names.',
+			'settings.groupLibrariesByServer' => 'Group Libraries by Server',
+			'settings.groupLibrariesByServerDescription' => 'Show a header for each Plex server in the sidebar when you\'re connected to multiple servers.',
 			'settings.alwaysKeepSidebarOpen' => 'Always Keep Sidebar Open',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidebar stays expanded and content area adjusts to fit',
 			'settings.showUnwatchedCount' => 'Show Unwatched Count',
@@ -3955,14 +3969,16 @@ extension on Translations {
 			'libraries.analysisStarted' => ({required Object title}) => 'Analysis started for "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Failed to analyze library: ${error}',
 			'libraries.noLibrariesFound' => 'No libraries found',
+			'libraries.allLibrariesHidden' => 'All libraries are hidden',
+			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Hidden libraries (${count})',
 			'libraries.thisLibraryIsEmpty' => 'This library is empty',
 			'libraries.all' => 'All',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.clearAll' => 'Clear All',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Are you sure you want to scan "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Are you sure you want to refresh metadata for "${title}"?',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Are you sure you want to empty trash for "${title}"?',
 			'libraries.manageLibraries' => 'Manage Libraries',
 			'libraries.sort' => 'Sort',

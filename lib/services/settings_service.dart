@@ -54,6 +54,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyShowHeroSection = 'show_hero_section';
   static const String _keyUseGlobalHubs = 'use_global_hubs';
   static const String _keyShowServerNameOnHubs = 'show_server_name_on_hubs';
+  static const String _keyGroupLibrariesByServer = 'group_libraries_by_server';
   static const String _keySleepTimerDuration = 'sleep_timer_duration';
   static const String _keyAudioSyncOffset = 'audio_sync_offset';
   static const String _keySubtitleSyncOffset = 'subtitle_sync_offset';
@@ -329,6 +330,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   bool getShowServerNameOnHubs() {
     return prefs.getBool(_keyShowServerNameOnHubs) ?? false; // Default: false (only show on duplicates)
+  }
+
+  // Group Libraries by Server in the side rail
+  Future<void> setGroupLibrariesByServer(bool enabled) async {
+    await prefs.setBool(_keyGroupLibrariesByServer, enabled);
+  }
+
+  bool getGroupLibrariesByServer() {
+    return prefs.getBool(_keyGroupLibrariesByServer) ?? true;
   }
 
   // Seek Time Small (in seconds)
