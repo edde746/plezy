@@ -14,13 +14,18 @@ Stream<DevicePollEvent> pollDeviceCode(
   DeviceCode code, {
   required Future<DevicePollEvent> Function() probe,
   bool Function()? shouldCancel,
+  Future<void>? onCancel,
 }) async* {
   var interval = Duration(seconds: code.interval);
   final deadline = DateTime.now().add(Duration(seconds: code.expiresIn));
 
   while (DateTime.now().isBefore(deadline)) {
     if (shouldCancel != null && shouldCancel()) return;
-    await Future<void>.delayed(interval);
+    if (onCancel != null) {
+      await Future.any<void>([Future<void>.delayed(interval), onCancel]);
+    } else {
+      await Future<void>.delayed(interval);
+    }
     if (shouldCancel != null && shouldCancel()) return;
 
     final event = await probe();

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/trackers/device_code.dart';
@@ -37,7 +39,7 @@ class TrackersProvider extends ChangeNotifier {
 
   String _activeUserUuid = '';
   TrackerService? _connecting;
-  bool _cancelRequested = false;
+  Completer<void>? _cancelCompleter;
 
   MalSession? get mal => _mal;
   AnilistSession? get anilist => _anilist;
@@ -53,11 +55,11 @@ class TrackersProvider extends ChangeNotifier {
 
   bool isConnecting(TrackerService service) => _connecting == service;
 
-  /// Cancel an in-flight connect. Supported for all three services — Simkl's
-  /// device-code poll and MAL/AniList's OAuth-proxy long-poll both honor the
-  /// flag on their next tick.
+  /// Cancel an in-flight connect. Completing the completer both wakes the
+  /// blocking `Future.any` race and flips `isCompleted` for the next sync check.
   void cancelConnect() {
-    _cancelRequested = true;
+    final c = _cancelCompleter;
+    if (c != null && !c.isCompleted) c.complete();
   }
 
   Future<void> onActiveProfileChanged(String? newUserUuid) async {
@@ -83,7 +85,11 @@ class TrackersProvider extends ChangeNotifier {
   Future<bool> connectMal({required void Function(OAuthProxyStart) onCodeReady}) => _runConnect<MalSession>(
     service: TrackerService.mal,
     alreadyConnected: isMalConnected,
-    authorize: () => _malAuth.authorize(onCodeReady: onCodeReady, shouldCancel: () => _cancelRequested),
+    authorize: () => _malAuth.authorize(
+      onCodeReady: onCodeReady,
+      shouldCancel: () => _cancelCompleter?.isCompleted ?? false,
+      onCancel: _cancelCompleter!.future,
+    ),
     enrich: _enrichMal,
     store: malAccountStore,
     assign: (s) {
@@ -100,7 +106,11 @@ class TrackersProvider extends ChangeNotifier {
   Future<bool> connectAnilist({required void Function(OAuthProxyStart) onCodeReady}) => _runConnect<AnilistSession>(
     service: TrackerService.anilist,
     alreadyConnected: isAnilistConnected,
-    authorize: () => _anilistAuth.authorize(onCodeReady: onCodeReady, shouldCancel: () => _cancelRequested),
+    authorize: () => _anilistAuth.authorize(
+      onCodeReady: onCodeReady,
+      shouldCancel: () => _cancelCompleter?.isCompleted ?? false,
+      onCancel: _cancelCompleter!.future,
+    ),
     enrich: _enrichAnilist,
     store: anilistAccountStore,
     assign: (s) {
@@ -117,7 +127,11 @@ class TrackersProvider extends ChangeNotifier {
   Future<bool> connectSimkl({required void Function(DeviceCode code) onCodeReady}) => _runConnect<SimklSession>(
     service: TrackerService.simkl,
     alreadyConnected: isSimklConnected,
-    authorize: () => _simklAuth.authorize(onCodeReady: onCodeReady, shouldCancel: () => _cancelRequested),
+    authorize: () => _simklAuth.authorize(
+      onCodeReady: onCodeReady,
+      shouldCancel: () => _cancelCompleter?.isCompleted ?? false,
+      onCancel: _cancelCompleter!.future,
+    ),
     enrich: _enrichSimkl,
     store: simklAccountStore,
     assign: (s) {
@@ -144,7 +158,7 @@ class TrackersProvider extends ChangeNotifier {
   }) async {
     if (_connecting != null || alreadyConnected) return false;
     _connecting = service;
-    _cancelRequested = false;
+    _cancelCompleter = Completer<void>();
     notifyListeners();
     try {
       return await runConnectPipeline<T>(
@@ -155,6 +169,9 @@ class TrackersProvider extends ChangeNotifier {
         assign: assign,
       );
     } finally {
+      final c = _cancelCompleter;
+      if (c != null && !c.isCompleted) c.complete();
+      _cancelCompleter = null;
       _connecting = null;
       notifyListeners();
     }

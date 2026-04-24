@@ -34,10 +34,11 @@ class MalAuthService {
   Future<MalSession?> authorize({
     required void Function(OAuthProxyStart) onCodeReady,
     bool Function()? shouldCancel,
+    Future<void>? onCancel,
   }) async {
     final start = await _proxy.start('mal');
     onCodeReady(start);
-    final result = await _proxy.poll(start.session, shouldCancel: shouldCancel);
+    final result = await _proxy.poll(start.session, shouldCancel: shouldCancel, onCancel: onCancel);
     if (result == null) return null;
     return MalSession.fromProxyResult(result);
   }

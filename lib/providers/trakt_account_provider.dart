@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../models/trackers/device_code.dart';
@@ -21,7 +23,7 @@ class TraktAccountProvider extends ChangeNotifier {
   TraktSession? _session;
   String _activeUserUuid = '';
   bool _isConnecting = false;
-  bool _cancelRequested = false;
+  Completer<void>? _cancelCompleter;
 
   TraktSession? get session => _session;
   bool get isConnected => _session != null;
@@ -29,9 +31,11 @@ class TraktAccountProvider extends ChangeNotifier {
   bool get isConnecting => _isConnecting;
 
   /// Cancel an in-flight `connect()` (e.g. user dismissed the device-code
-  /// dialog). The poll loop checks this flag between iterations.
+  /// dialog). Completing the completer both wakes the blocking `Future.any`
+  /// race and flips `isCompleted` for the next sync check.
   void cancelConnect() {
-    _cancelRequested = true;
+    final c = _cancelCompleter;
+    if (c != null && !c.isCompleted) c.complete();
   }
 
   /// Called whenever the active Plex profile changes (or on initial load).
@@ -48,17 +52,24 @@ class TraktAccountProvider extends ChangeNotifier {
   Future<bool> connect({required void Function(DeviceCode code) onCodeReady}) async {
     if (_isConnecting || isConnected) return false;
     _isConnecting = true;
-    _cancelRequested = false;
+    _cancelCompleter = Completer<void>();
     notifyListeners();
     try {
       return await runConnectPipeline<TraktSession>(
         logLabel: 'Trakt',
-        authorize: () => _auth.authorize(onCodeReady: onCodeReady, shouldCancel: () => _cancelRequested),
+        authorize: () => _auth.authorize(
+          onCodeReady: onCodeReady,
+          shouldCancel: () => _cancelCompleter?.isCompleted ?? false,
+          onCancel: _cancelCompleter!.future,
+        ),
         enrich: _enrichUsername,
         save: (s) => _store.save(_activeUserUuid, s),
         assign: _setSessionAndRebind,
       );
     } finally {
+      final c = _cancelCompleter;
+      if (c != null && !c.isCompleted) c.complete();
+      _cancelCompleter = null;
       _isConnecting = false;
       notifyListeners();
     }

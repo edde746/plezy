@@ -48,18 +48,22 @@ class OAuthProxyClient {
 
   /// Long-poll /auth/result?session=X until a completion event arrives.
   ///
-  /// Returns null if [shouldCancel] flips true before a result arrives. Throws
-  /// [OAuthProxyException] on unrecoverable errors (session gone, upstream
-  /// failure). The server holds each request for up to 50 s; 204 responses are
-  /// retried transparently.
-  Future<OAuthProxyResult?> poll(String session, {bool Function()? shouldCancel}) async {
+  /// Returns null if [shouldCancel] flips true between iterations or [onCancel]
+  /// completes mid-request. Throws [OAuthProxyException] on unrecoverable errors
+  /// (session gone, upstream failure). The server holds each request for up to
+  /// 50 s; 204 responses are retried transparently.
+  Future<OAuthProxyResult?> poll(String session, {bool Function()? shouldCancel, Future<void>? onCancel}) async {
     final uri = Uri.parse('$baseUrl/auth/result').replace(queryParameters: {'session': session});
+    final cancelSentinel = Object();
+    // Subscribe to onCancel once; reusing this derived future avoids
+    // accumulating a fresh listener per loop iteration.
+    final cancelFuture = onCancel?.then((_) => cancelSentinel);
     while (true) {
       if (shouldCancel?.call() ?? false) return null;
 
-      final http.Response res;
+      final Object? raced;
       try {
-        res = await _http.get(uri).timeout(const Duration(seconds: 65));
+        raced = await Future.any<Object?>([_http.get(uri).timeout(const Duration(seconds: 65)), ?cancelFuture]);
       } on TimeoutException {
         continue;
       } catch (e) {
@@ -67,6 +71,9 @@ class OAuthProxyClient {
         await Future<void>.delayed(const Duration(seconds: 2));
         continue;
       }
+
+      if (identical(raced, cancelSentinel)) return null;
+      final res = raced as http.Response;
 
       if (res.statusCode == 204) continue; // server-side timeout, retry
       if (res.statusCode == 410) {
