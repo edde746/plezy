@@ -36,7 +36,12 @@ Future<void> launchTrackerConnect<T>(
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => buildDialog(payload, onCancel),
+      builder: (_) => buildDialog(payload, () {
+        // Flip synchronously so the post-await guard below is a no-op —
+        // `whenComplete` fires a microtask later and loses the race otherwise.
+        dialogOpen = false;
+        onCancel();
+      }),
     ).whenComplete(() => dialogOpen = false);
     if (autoLaunchBrowser) {
       unawaited(
