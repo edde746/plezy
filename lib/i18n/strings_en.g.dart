@@ -2990,6 +2990,7 @@ class TranslationsTrackersEn {
 
 	late final TranslationsTrackersServicesEn services = TranslationsTrackersServicesEn._(_root);
 	late final TranslationsTrackersDeviceCodeEn deviceCode = TranslationsTrackersDeviceCodeEn._(_root);
+	late final TranslationsTrackersOauthProxyEn oauthProxy = TranslationsTrackersOauthProxyEn._(_root);
 }
 
 // Path: hotkeys.actions
@@ -3374,6 +3375,27 @@ class TranslationsTrackersDeviceCodeEn {
 
 	/// en: 'Code copied'
 	String get codeCopied => 'Code copied';
+}
+
+// Path: trackers.oauthProxy
+class TranslationsTrackersOauthProxyEn {
+	TranslationsTrackersOauthProxyEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Sign in to ${service}'
+	String title({required Object service}) => 'Sign in to ${service}';
+
+	/// en: 'Scan this QR code with your phone, or open the URL below on any device with a browser.'
+	String get body => 'Scan this QR code with your phone, or open the URL below on any device with a browser.';
+
+	/// en: 'Open ${service} to sign in'
+	String openToSignIn({required Object service}) => 'Open ${service} to sign in';
+
+	/// en: 'URL copied'
+	String get urlCopied => 'URL copied';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -4329,6 +4351,10 @@ extension on Translations {
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} to activate',
 			'trackers.deviceCode.waitingForAuthorization' => 'Waiting for authorization…',
 			'trackers.deviceCode.codeCopied' => 'Code copied',
+			'trackers.oauthProxy.title' => ({required Object service}) => 'Sign in to ${service}',
+			'trackers.oauthProxy.body' => 'Scan this QR code with your phone, or open the URL below on any device with a browser.',
+			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Open ${service} to sign in',
+			'trackers.oauthProxy.urlCopied' => 'URL copied',
 			_ => null,
 		};
 	}

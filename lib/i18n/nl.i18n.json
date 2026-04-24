@@ -1040,6 +1040,12 @@
       "openToActivate": "Open ${service} om te activeren",
       "waitingForAuthorization": "Wachten op autorisatie…",
       "codeCopied": "Code gekopieerd"
+    },
+    "oauthProxy": {
+      "title": "Aanmelden bij ${service}",
+      "body": "Scan deze QR-code met je telefoon, of open onderstaande URL op een apparaat met browser.",
+      "openToSignIn": "${service} openen om aan te melden",
+      "urlCopied": "URL gekopieerd"
     }
   }
 }

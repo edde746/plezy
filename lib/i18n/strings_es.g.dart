@@ -1298,6 +1298,7 @@ class _TranslationsTrackersEs implements TranslationsTrackersEn {
 	@override String connectFailed({required Object service}) => 'No se pudo conectar a ${service}. Inténtalo de nuevo.';
 	@override late final _TranslationsTrackersServicesEs services = _TranslationsTrackersServicesEs._(_root);
 	@override late final _TranslationsTrackersDeviceCodeEs deviceCode = _TranslationsTrackersDeviceCodeEs._(_root);
+	@override late final _TranslationsTrackersOauthProxyEs oauthProxy = _TranslationsTrackersOauthProxyEs._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1480,6 +1481,19 @@ class _TranslationsTrackersDeviceCodeEs implements TranslationsTrackersDeviceCod
 	@override String openToActivate({required Object service}) => 'Abrir ${service} para activar';
 	@override String get waitingForAuthorization => 'Esperando autorización…';
 	@override String get codeCopied => 'Código copiado';
+}
+
+// Path: trackers.oauthProxy
+class _TranslationsTrackersOauthProxyEs implements TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyEs._(this._root);
+
+	final TranslationsEs _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => 'Inicia sesión en ${service}';
+	@override String get body => 'Escanea este código QR con tu teléfono, o abre la URL de abajo en cualquier dispositivo con navegador.';
+	@override String openToSignIn({required Object service}) => 'Abrir ${service} para iniciar sesión';
+	@override String get urlCopied => 'URL copiada';
 }
 
 /// The flat map containing all translations for locale <es>.
@@ -2435,6 +2449,10 @@ extension on TranslationsEs {
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Abrir ${service} para activar',
 			'trackers.deviceCode.waitingForAuthorization' => 'Esperando autorización…',
 			'trackers.deviceCode.codeCopied' => 'Código copiado',
+			'trackers.oauthProxy.title' => ({required Object service}) => 'Inicia sesión en ${service}',
+			'trackers.oauthProxy.body' => 'Escanea este código QR con tu teléfono, o abre la URL de abajo en cualquier dispositivo con navegador.',
+			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Abrir ${service} para iniciar sesión',
+			'trackers.oauthProxy.urlCopied' => 'URL copiada',
 			_ => null,
 		};
 	}

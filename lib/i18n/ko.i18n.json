@@ -1040,6 +1040,12 @@
       "openToActivate": "활성화하려면 ${service} 열기",
       "waitingForAuthorization": "인증을 기다리는 중…",
       "codeCopied": "코드가 복사되었습니다"
+    },
+    "oauthProxy": {
+      "title": "${service}에 로그인",
+      "body": "휴대전화로 이 QR 코드를 스캔하거나 아래 URL을 브라우저가 있는 기기에서 여세요.",
+      "openToSignIn": "로그인하려면 ${service} 열기",
+      "urlCopied": "URL이 복사되었습니다"
     }
   }
 }

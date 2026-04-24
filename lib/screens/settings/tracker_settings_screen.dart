@@ -7,9 +7,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
+import '../../models/trackers/device_code.dart';
 import '../../providers/trackers_provider.dart';
 import '../../services/trackers/anilist/anilist_tracker.dart';
 import '../../services/trackers/mal/mal_tracker.dart';
+import '../../services/trackers/oauth_proxy_client.dart';
 import '../../services/trackers/simkl/simkl_tracker.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
@@ -18,71 +20,95 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/device_code_dialog.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/oauth_proxy_dialog.dart';
 import '../../widgets/settings_section.dart';
 
-/// Start MAL's loopback-OAuth flow from anywhere. The user's browser opens to
-/// complete the flow; no in-app dialog is needed. Shows a snackbar on failure.
-Future<void> startMalConnection(BuildContext context) async {
+/// Shared dialog-driven connect flow used by all three trackers. Handles the
+/// guard, auto-launch-on-pointer, dialog lifecycle, and failure snackbar —
+/// service-specific pieces are delegated via [connect], [buildDialog], and
+/// [urlFor].
+Future<void> _startConnectionWithDialog<T>(
+  BuildContext context, {
+  required TrackerService service,
+  required bool alreadyConnected,
+  required String serviceName,
+  required Future<bool> Function(void Function(T)) connect,
+  required Widget Function(T payload, VoidCallback onCancel) buildDialog,
+  required String Function(T payload) urlFor,
+}) async {
   final account = context.read<TrackersProvider>();
-  if (account.isConnecting(TrackerService.mal) || account.isMalConnected) return;
-  final ok = await account.connectMal();
-  if (!context.mounted) return;
-  if (!ok && !account.isMalConnected) {
-    showAppSnackBar(context, t.trackers.connectFailed(service: t.trackers.services.mal));
-  }
-}
-
-/// Start AniList's loopback-OAuth flow from anywhere.
-Future<void> startAnilistConnection(BuildContext context) async {
-  final account = context.read<TrackersProvider>();
-  if (account.isConnecting(TrackerService.anilist) || account.isAnilistConnected) return;
-  final ok = await account.connectAnilist();
-  if (!context.mounted) return;
-  if (!ok && !account.isAnilistConnected) {
-    showAppSnackBar(context, t.trackers.connectFailed(service: t.trackers.services.anilist));
-  }
-}
-
-/// Start Simkl's device-code flow. Mirrors `startTraktConnection` — shows the
-/// PIN dialog, polls, auto-launches the browser on pointer-driven platforms.
-Future<void> startSimklConnection(BuildContext context) async {
-  final account = context.read<TrackersProvider>();
-  if (account.isConnecting(TrackerService.simkl) || account.isSimklConnected) return;
+  if (account.isConnecting(service) || alreadyConnected) return;
 
   final autoLaunchBrowser = !InputModeTracker.isKeyboardMode(context);
   var dialogOpen = false;
 
-  final ok = await account.connectSimkl(
-    onCodeReady: (code) {
-      if (!context.mounted) return;
-      dialogOpen = true;
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => DeviceCodeDialog(
-          code: code,
-          serviceName: t.trackers.services.simkl,
-          onCancel: account.cancelConnect,
-        ),
-      ).whenComplete(() => dialogOpen = false);
-      if (autoLaunchBrowser) {
-        unawaited(
-          launchUrl(Uri.parse(code.verificationUrl), mode: LaunchMode.externalApplication).catchError((Object e) {
-            appLogger.d('Simkl: failed to auto-launch browser', error: e);
-            return false;
-          }),
-        );
-      }
-    },
-  );
+  final ok = await connect((payload) {
+    if (!context.mounted) return;
+    dialogOpen = true;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => buildDialog(payload, account.cancelConnect),
+    ).whenComplete(() => dialogOpen = false);
+    if (autoLaunchBrowser) {
+      unawaited(
+        launchUrl(Uri.parse(urlFor(payload)), mode: LaunchMode.externalApplication).catchError((Object e) {
+          appLogger.d('${service.name}: failed to auto-launch browser', error: e);
+          return false;
+        }),
+      );
+    }
+  });
 
   if (!context.mounted) return;
   if (dialogOpen) {
     Navigator.of(context, rootNavigator: true).pop();
   }
-  if (!ok && !account.isSimklConnected) {
-    showAppSnackBar(context, t.trackers.connectFailed(service: t.trackers.services.simkl));
+  if (!ok) {
+    showAppSnackBar(context, t.trackers.connectFailed(service: serviceName));
   }
+}
+
+Future<void> startMalConnection(BuildContext context) {
+  final account = context.read<TrackersProvider>();
+  final name = t.trackers.services.mal;
+  return _startConnectionWithDialog<OAuthProxyStart>(
+    context,
+    service: TrackerService.mal,
+    alreadyConnected: account.isMalConnected,
+    serviceName: name,
+    connect: (cb) => account.connectMal(onCodeReady: cb),
+    buildDialog: (p, cancel) => OAuthProxyDialog(start: p, serviceName: name, onCancel: cancel),
+    urlFor: (p) => p.url,
+  );
+}
+
+Future<void> startAnilistConnection(BuildContext context) {
+  final account = context.read<TrackersProvider>();
+  final name = t.trackers.services.anilist;
+  return _startConnectionWithDialog<OAuthProxyStart>(
+    context,
+    service: TrackerService.anilist,
+    alreadyConnected: account.isAnilistConnected,
+    serviceName: name,
+    connect: (cb) => account.connectAnilist(onCodeReady: cb),
+    buildDialog: (p, cancel) => OAuthProxyDialog(start: p, serviceName: name, onCancel: cancel),
+    urlFor: (p) => p.url,
+  );
+}
+
+Future<void> startSimklConnection(BuildContext context) {
+  final account = context.read<TrackersProvider>();
+  final name = t.trackers.services.simkl;
+  return _startConnectionWithDialog<DeviceCode>(
+    context,
+    service: TrackerService.simkl,
+    alreadyConnected: account.isSimklConnected,
+    serviceName: name,
+    connect: (cb) => account.connectSimkl(onCodeReady: cb),
+    buildDialog: (p, cancel) => DeviceCodeDialog(code: p, serviceName: name, onCancel: cancel),
+    urlFor: (p) => p.verificationUrlComplete ?? p.verificationUrl,
+  );
 }
 
 /// Per-service wiring for [TrackerSettingsScreen]. Keeps tracker-specific

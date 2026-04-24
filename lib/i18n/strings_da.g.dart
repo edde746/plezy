@@ -1298,6 +1298,7 @@ class _TranslationsTrackersDa implements TranslationsTrackersEn {
 	@override String connectFailed({required Object service}) => 'Kunne ikke forbinde til ${service}. Prøv igen.';
 	@override late final _TranslationsTrackersServicesDa services = _TranslationsTrackersServicesDa._(_root);
 	@override late final _TranslationsTrackersDeviceCodeDa deviceCode = _TranslationsTrackersDeviceCodeDa._(_root);
+	@override late final _TranslationsTrackersOauthProxyDa oauthProxy = _TranslationsTrackersOauthProxyDa._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1480,6 +1481,19 @@ class _TranslationsTrackersDeviceCodeDa implements TranslationsTrackersDeviceCod
 	@override String openToActivate({required Object service}) => 'Åbn ${service} for at aktivere';
 	@override String get waitingForAuthorization => 'Venter på godkendelse…';
 	@override String get codeCopied => 'Kode kopieret';
+}
+
+// Path: trackers.oauthProxy
+class _TranslationsTrackersOauthProxyDa implements TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyDa._(this._root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => 'Log ind på ${service}';
+	@override String get body => 'Scan denne QR-kode med din telefon, eller åbn URL\'en nedenfor på en enhed med browser.';
+	@override String openToSignIn({required Object service}) => 'Åbn ${service} for at logge ind';
+	@override String get urlCopied => 'URL kopieret';
 }
 
 /// The flat map containing all translations for locale <da>.
@@ -2435,6 +2449,10 @@ extension on TranslationsDa {
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Åbn ${service} for at aktivere',
 			'trackers.deviceCode.waitingForAuthorization' => 'Venter på godkendelse…',
 			'trackers.deviceCode.codeCopied' => 'Kode kopieret',
+			'trackers.oauthProxy.title' => ({required Object service}) => 'Log ind på ${service}',
+			'trackers.oauthProxy.body' => 'Scan denne QR-kode med din telefon, eller åbn URL\'en nedenfor på en enhed med browser.',
+			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Åbn ${service} for at logge ind',
+			'trackers.oauthProxy.urlCopied' => 'URL kopieret',
 			_ => null,
 		};
 	}

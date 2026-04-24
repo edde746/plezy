@@ -1298,6 +1298,7 @@ class _TranslationsTrackersKo implements TranslationsTrackersEn {
 	@override String connectFailed({required Object service}) => '${service}에 연결할 수 없습니다. 다시 시도하세요.';
 	@override late final _TranslationsTrackersServicesKo services = _TranslationsTrackersServicesKo._(_root);
 	@override late final _TranslationsTrackersDeviceCodeKo deviceCode = _TranslationsTrackersDeviceCodeKo._(_root);
+	@override late final _TranslationsTrackersOauthProxyKo oauthProxy = _TranslationsTrackersOauthProxyKo._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1480,6 +1481,19 @@ class _TranslationsTrackersDeviceCodeKo implements TranslationsTrackersDeviceCod
 	@override String openToActivate({required Object service}) => '활성화하려면 ${service} 열기';
 	@override String get waitingForAuthorization => '인증을 기다리는 중…';
 	@override String get codeCopied => '코드가 복사되었습니다';
+}
+
+// Path: trackers.oauthProxy
+class _TranslationsTrackersOauthProxyKo implements TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => '${service}에 로그인';
+	@override String get body => '휴대전화로 이 QR 코드를 스캔하거나 아래 URL을 브라우저가 있는 기기에서 여세요.';
+	@override String openToSignIn({required Object service}) => '로그인하려면 ${service} 열기';
+	@override String get urlCopied => 'URL이 복사되었습니다';
 }
 
 /// The flat map containing all translations for locale <ko>.
@@ -2435,6 +2449,10 @@ extension on TranslationsKo {
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => '활성화하려면 ${service} 열기',
 			'trackers.deviceCode.waitingForAuthorization' => '인증을 기다리는 중…',
 			'trackers.deviceCode.codeCopied' => '코드가 복사되었습니다',
+			'trackers.oauthProxy.title' => ({required Object service}) => '${service}에 로그인',
+			'trackers.oauthProxy.body' => '휴대전화로 이 QR 코드를 스캔하거나 아래 URL을 브라우저가 있는 기기에서 여세요.',
+			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => '로그인하려면 ${service} 열기',
+			'trackers.oauthProxy.urlCopied' => 'URL이 복사되었습니다',
 			_ => null,
 		};
 	}

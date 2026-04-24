@@ -1040,6 +1040,12 @@
       "openToActivate": "Open ${service} to activate",
       "waitingForAuthorization": "Waiting for authorization…",
       "codeCopied": "Code copied"
+    },
+    "oauthProxy": {
+      "title": "Sign in to ${service}",
+      "body": "Scan this QR code with your phone, or open the URL below on any device with a browser.",
+      "openToSignIn": "Open ${service} to sign in",
+      "urlCopied": "URL copied"
     }
   }
 }

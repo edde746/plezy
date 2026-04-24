@@ -1298,6 +1298,7 @@ class _TranslationsTrackersPl implements TranslationsTrackersEn {
 	@override String connectFailed({required Object service}) => 'Nie udało się połączyć z ${service}. Spróbuj ponownie.';
 	@override late final _TranslationsTrackersServicesPl services = _TranslationsTrackersServicesPl._(_root);
 	@override late final _TranslationsTrackersDeviceCodePl deviceCode = _TranslationsTrackersDeviceCodePl._(_root);
+	@override late final _TranslationsTrackersOauthProxyPl oauthProxy = _TranslationsTrackersOauthProxyPl._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1480,6 +1481,19 @@ class _TranslationsTrackersDeviceCodePl implements TranslationsTrackersDeviceCod
 	@override String openToActivate({required Object service}) => 'Otwórz ${service}, aby aktywować';
 	@override String get waitingForAuthorization => 'Oczekiwanie na autoryzację…';
 	@override String get codeCopied => 'Kod skopiowany';
+}
+
+// Path: trackers.oauthProxy
+class _TranslationsTrackersOauthProxyPl implements TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyPl._(this._root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => 'Zaloguj się do ${service}';
+	@override String get body => 'Zeskanuj ten kod QR telefonem lub otwórz poniższy adres URL na dowolnym urządzeniu z przeglądarką.';
+	@override String openToSignIn({required Object service}) => 'Otwórz ${service}, aby się zalogować';
+	@override String get urlCopied => 'URL skopiowany';
 }
 
 /// The flat map containing all translations for locale <pl>.
@@ -2435,6 +2449,10 @@ extension on TranslationsPl {
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Otwórz ${service}, aby aktywować',
 			'trackers.deviceCode.waitingForAuthorization' => 'Oczekiwanie na autoryzację…',
 			'trackers.deviceCode.codeCopied' => 'Kod skopiowany',
+			'trackers.oauthProxy.title' => ({required Object service}) => 'Zaloguj się do ${service}',
+			'trackers.oauthProxy.body' => 'Zeskanuj ten kod QR telefonem lub otwórz poniższy adres URL na dowolnym urządzeniu z przeglądarką.',
+			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Otwórz ${service}, aby się zalogować',
+			'trackers.oauthProxy.urlCopied' => 'URL skopiowany',
 			_ => null,
 		};
 	}

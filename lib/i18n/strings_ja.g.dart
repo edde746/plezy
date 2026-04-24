@@ -1298,6 +1298,7 @@ class _TranslationsTrackersJa implements TranslationsTrackersEn {
 	@override String connectFailed({required Object service}) => '${service} に接続できませんでした。もう一度お試しください。';
 	@override late final _TranslationsTrackersServicesJa services = _TranslationsTrackersServicesJa._(_root);
 	@override late final _TranslationsTrackersDeviceCodeJa deviceCode = _TranslationsTrackersDeviceCodeJa._(_root);
+	@override late final _TranslationsTrackersOauthProxyJa oauthProxy = _TranslationsTrackersOauthProxyJa._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1480,6 +1481,19 @@ class _TranslationsTrackersDeviceCodeJa implements TranslationsTrackersDeviceCod
 	@override String openToActivate({required Object service}) => '${service} を開いて有効化';
 	@override String get waitingForAuthorization => '認証を待っています…';
 	@override String get codeCopied => 'コードをコピーしました';
+}
+
+// Path: trackers.oauthProxy
+class _TranslationsTrackersOauthProxyJa implements TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyJa._(this._root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => '${service} にサインイン';
+	@override String get body => 'このQRコードをスマートフォンで読み取るか、下のURLをブラウザで開いてください。';
+	@override String openToSignIn({required Object service}) => '${service} を開いてサインイン';
+	@override String get urlCopied => 'URLをコピーしました';
 }
 
 /// The flat map containing all translations for locale <ja>.
@@ -2435,6 +2449,10 @@ extension on TranslationsJa {
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => '${service} を開いて有効化',
 			'trackers.deviceCode.waitingForAuthorization' => '認証を待っています…',
 			'trackers.deviceCode.codeCopied' => 'コードをコピーしました',
+			'trackers.oauthProxy.title' => ({required Object service}) => '${service} にサインイン',
+			'trackers.oauthProxy.body' => 'このQRコードをスマートフォンで読み取るか、下のURLをブラウザで開いてください。',
+			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => '${service} を開いてサインイン',
+			'trackers.oauthProxy.urlCopied' => 'URLをコピーしました',
 			_ => null,
 		};
 	}

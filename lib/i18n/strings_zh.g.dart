@@ -1298,6 +1298,7 @@ class _TranslationsTrackersZh implements TranslationsTrackersEn {
 	@override String connectFailed({required Object service}) => '无法连接到 ${service}。请重试。';
 	@override late final _TranslationsTrackersServicesZh services = _TranslationsTrackersServicesZh._(_root);
 	@override late final _TranslationsTrackersDeviceCodeZh deviceCode = _TranslationsTrackersDeviceCodeZh._(_root);
+	@override late final _TranslationsTrackersOauthProxyZh oauthProxy = _TranslationsTrackersOauthProxyZh._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1480,6 +1481,19 @@ class _TranslationsTrackersDeviceCodeZh implements TranslationsTrackersDeviceCod
 	@override String openToActivate({required Object service}) => '打开 ${service} 以激活';
 	@override String get waitingForAuthorization => '等待授权…';
 	@override String get codeCopied => '代码已复制';
+}
+
+// Path: trackers.oauthProxy
+class _TranslationsTrackersOauthProxyZh implements TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => '登录 ${service}';
+	@override String get body => '用手机扫描此二维码，或在任何带浏览器的设备上打开下方 URL。';
+	@override String openToSignIn({required Object service}) => '打开 ${service} 以登录';
+	@override String get urlCopied => 'URL 已复制';
 }
 
 /// The flat map containing all translations for locale <zh>.
@@ -2435,6 +2449,10 @@ extension on TranslationsZh {
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => '打开 ${service} 以激活',
 			'trackers.deviceCode.waitingForAuthorization' => '等待授权…',
 			'trackers.deviceCode.codeCopied' => '代码已复制',
+			'trackers.oauthProxy.title' => ({required Object service}) => '登录 ${service}',
+			'trackers.oauthProxy.body' => '用手机扫描此二维码，或在任何带浏览器的设备上打开下方 URL。',
+			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => '打开 ${service} 以登录',
+			'trackers.oauthProxy.urlCopied' => 'URL 已复制',
 			_ => null,
 		};
 	}

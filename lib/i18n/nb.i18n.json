@@ -1040,6 +1040,12 @@
       "openToActivate": "Åpne ${service} for å aktivere",
       "waitingForAuthorization": "Venter på godkjenning…",
       "codeCopied": "Kode kopiert"
+    },
+    "oauthProxy": {
+      "title": "Logg inn på ${service}",
+      "body": "Skann denne QR-koden med telefonen din, eller åpne URL-en under på en enhet med nettleser.",
+      "openToSignIn": "Åpne ${service} for å logge inn",
+      "urlCopied": "URL kopiert"
     }
   }
 }

@@ -1298,6 +1298,7 @@ class _TranslationsTrackersNb implements TranslationsTrackersEn {
 	@override String connectFailed({required Object service}) => 'Kunne ikke koble til ${service}. Prøv igjen.';
 	@override late final _TranslationsTrackersServicesNb services = _TranslationsTrackersServicesNb._(_root);
 	@override late final _TranslationsTrackersDeviceCodeNb deviceCode = _TranslationsTrackersDeviceCodeNb._(_root);
+	@override late final _TranslationsTrackersOauthProxyNb oauthProxy = _TranslationsTrackersOauthProxyNb._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1480,6 +1481,19 @@ class _TranslationsTrackersDeviceCodeNb implements TranslationsTrackersDeviceCod
 	@override String openToActivate({required Object service}) => 'Åpne ${service} for å aktivere';
 	@override String get waitingForAuthorization => 'Venter på godkjenning…';
 	@override String get codeCopied => 'Kode kopiert';
+}
+
+// Path: trackers.oauthProxy
+class _TranslationsTrackersOauthProxyNb implements TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyNb._(this._root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => 'Logg inn på ${service}';
+	@override String get body => 'Skann denne QR-koden med telefonen din, eller åpne URL-en under på en enhet med nettleser.';
+	@override String openToSignIn({required Object service}) => 'Åpne ${service} for å logge inn';
+	@override String get urlCopied => 'URL kopiert';
 }
 
 /// The flat map containing all translations for locale <nb>.
@@ -2435,6 +2449,10 @@ extension on TranslationsNb {
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Åpne ${service} for å aktivere',
 			'trackers.deviceCode.waitingForAuthorization' => 'Venter på godkjenning…',
 			'trackers.deviceCode.codeCopied' => 'Kode kopiert',
+			'trackers.oauthProxy.title' => ({required Object service}) => 'Logg inn på ${service}',
+			'trackers.oauthProxy.body' => 'Skann denne QR-koden med telefonen din, eller åpne URL-en under på en enhet med nettleser.',
+			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Åpne ${service} for å logge inn',
+			'trackers.oauthProxy.urlCopied' => 'URL kopiert',
 			_ => null,
 		};
 	}

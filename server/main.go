@@ -97,6 +97,14 @@ func (rl *rateLimiter) allow() bool {
 	return true
 }
 
+// stale reports whether a limiter hasn't been touched in over 10 minutes —
+// safe to GC from a per-IP map.
+func (rl *rateLimiter) stale(now time.Time) bool {
+	rl.mu.Lock()
+	defer rl.mu.Unlock()
+	return now.Sub(rl.lastTime) > 10*time.Minute
+}
+
 // --- Connection tracker (per-IP limits) ---
 
 type connTracker struct {
@@ -547,11 +555,16 @@ type Server struct {
 	logs  *logStore
 	conns *connTracker
 	snap  *snapshotter
+	oauth *oauthProxy // nil when OAUTH_BASE_URL is unset
 	mu    sync.RWMutex
 }
 
 func newServer(logDir, stateFile string) *Server {
 	s := &Server{rooms: make(map[string]*Room), logs: newLogStore(logDir), conns: newConnTracker()}
+	if p, ok := oauthConfigFromEnv(); ok {
+		s.oauth = p
+		log.Printf("oauth: proxy enabled (base=%s, services=%d)", p.baseURL, len(p.services))
+	}
 	s.snap = newSnapshotter(stateFile, s.buildSnapshot)
 	if err := s.loadSnapshot(stateFile); err != nil {
 		log.Printf("snapshot: load error: %v", err)
@@ -669,6 +682,9 @@ func (s *Server) runCleanupStep(now time.Time) {
 	}
 	s.logs.cleanup()
 	s.conns.cleanup()
+	if s.oauth != nil {
+		s.oauth.cleanup()
+	}
 
 	s.conns.mu.Lock()
 	log.Printf("stats: conns=%d ips=%d rooms=%d",
@@ -996,6 +1012,7 @@ func main() {
 	})
 	mux.HandleFunc("/logs", srv.handlePostLogs)
 	mux.HandleFunc("/logs/", srv.handleGetLogs)
+	registerOAuthRoutes(mux, srv.oauth)
 
 	httpSrv := &http.Server{Addr: *addr, Handler: mux}
 

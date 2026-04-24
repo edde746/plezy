@@ -1298,6 +1298,7 @@ class _TranslationsTrackersRu implements TranslationsTrackersEn {
 	@override String connectFailed({required Object service}) => 'Не удалось подключиться к ${service}. Попробуйте ещё раз.';
 	@override late final _TranslationsTrackersServicesRu services = _TranslationsTrackersServicesRu._(_root);
 	@override late final _TranslationsTrackersDeviceCodeRu deviceCode = _TranslationsTrackersDeviceCodeRu._(_root);
+	@override late final _TranslationsTrackersOauthProxyRu oauthProxy = _TranslationsTrackersOauthProxyRu._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1480,6 +1481,19 @@ class _TranslationsTrackersDeviceCodeRu implements TranslationsTrackersDeviceCod
 	@override String openToActivate({required Object service}) => 'Открыть ${service} для активации';
 	@override String get waitingForAuthorization => 'Ожидание авторизации…';
 	@override String get codeCopied => 'Код скопирован';
+}
+
+// Path: trackers.oauthProxy
+class _TranslationsTrackersOauthProxyRu implements TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyRu._(this._root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => 'Войти в ${service}';
+	@override String get body => 'Отсканируйте этот QR-код телефоном или откройте ссылку ниже на любом устройстве с браузером.';
+	@override String openToSignIn({required Object service}) => 'Открыть ${service} для входа';
+	@override String get urlCopied => 'URL скопирован';
 }
 
 /// The flat map containing all translations for locale <ru>.
@@ -2435,6 +2449,10 @@ extension on TranslationsRu {
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Открыть ${service} для активации',
 			'trackers.deviceCode.waitingForAuthorization' => 'Ожидание авторизации…',
 			'trackers.deviceCode.codeCopied' => 'Код скопирован',
+			'trackers.oauthProxy.title' => ({required Object service}) => 'Войти в ${service}',
+			'trackers.oauthProxy.body' => 'Отсканируйте этот QR-код телефоном или откройте ссылку ниже на любом устройстве с браузером.',
+			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Открыть ${service} для входа',
+			'trackers.oauthProxy.urlCopied' => 'URL скопирован',
 			_ => null,
 		};
 	}

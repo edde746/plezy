@@ -1298,6 +1298,7 @@ class _TranslationsTrackersNl implements TranslationsTrackersEn {
 	@override String connectFailed({required Object service}) => 'Kan niet verbinden met ${service}. Probeer opnieuw.';
 	@override late final _TranslationsTrackersServicesNl services = _TranslationsTrackersServicesNl._(_root);
 	@override late final _TranslationsTrackersDeviceCodeNl deviceCode = _TranslationsTrackersDeviceCodeNl._(_root);
+	@override late final _TranslationsTrackersOauthProxyNl oauthProxy = _TranslationsTrackersOauthProxyNl._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1480,6 +1481,19 @@ class _TranslationsTrackersDeviceCodeNl implements TranslationsTrackersDeviceCod
 	@override String openToActivate({required Object service}) => 'Open ${service} om te activeren';
 	@override String get waitingForAuthorization => 'Wachten op autorisatie…';
 	@override String get codeCopied => 'Code gekopieerd';
+}
+
+// Path: trackers.oauthProxy
+class _TranslationsTrackersOauthProxyNl implements TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => 'Aanmelden bij ${service}';
+	@override String get body => 'Scan deze QR-code met je telefoon, of open onderstaande URL op een apparaat met browser.';
+	@override String openToSignIn({required Object service}) => '${service} openen om aan te melden';
+	@override String get urlCopied => 'URL gekopieerd';
 }
 
 /// The flat map containing all translations for locale <nl>.
@@ -2435,6 +2449,10 @@ extension on TranslationsNl {
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} om te activeren',
 			'trackers.deviceCode.waitingForAuthorization' => 'Wachten op autorisatie…',
 			'trackers.deviceCode.codeCopied' => 'Code gekopieerd',
+			'trackers.oauthProxy.title' => ({required Object service}) => 'Aanmelden bij ${service}',
+			'trackers.oauthProxy.body' => 'Scan deze QR-code met je telefoon, of open onderstaande URL op een apparaat met browser.',
+			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => '${service} openen om aan te melden',
+			'trackers.oauthProxy.urlCopied' => 'URL gekopieerd',
 			_ => null,
 		};
 	}

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../oauth_proxy_client.dart';
+
 /// Immutable MyAnimeList OAuth session.
 ///
 /// Access tokens expire in ~31 days. Refresh token rotates with each refresh
@@ -55,6 +57,19 @@ class MalSession {
     return MalSession(
       accessToken: json['access_token'] as String,
       refreshToken: json['refresh_token'] as String,
+      expiresAt: createdAt + expiresIn,
+      createdAt: createdAt,
+    );
+  }
+
+  /// Build a session from an OAuth-proxy result. MAL's refresh_token is
+  /// required for the 31-day refresh loop.
+  factory MalSession.fromProxyResult(OAuthProxyResult r) {
+    final createdAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final expiresIn = r.expiresIn ?? 31 * 24 * 60 * 60;
+    return MalSession(
+      accessToken: r.accessToken,
+      refreshToken: r.refreshToken ?? '',
       expiresAt: createdAt + expiresIn,
       createdAt: createdAt,
     );

@@ -1040,6 +1040,12 @@
       "openToActivate": "${service} を開いて有効化",
       "waitingForAuthorization": "認証を待っています…",
       "codeCopied": "コードをコピーしました"
+    },
+    "oauthProxy": {
+      "title": "${service} にサインイン",
+      "body": "このQRコードをスマートフォンで読み取るか、下のURLをブラウザで開いてください。",
+      "openToSignIn": "${service} を開いてサインイン",
+      "urlCopied": "URLをコピーしました"
     }
   }
 }

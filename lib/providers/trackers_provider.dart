@@ -13,6 +13,7 @@ import '../services/trackers/mal/mal_auth_service.dart';
 import '../services/trackers/mal/mal_client.dart';
 import '../services/trackers/mal/mal_session.dart';
 import '../services/trackers/mal/mal_tracker.dart';
+import '../services/trackers/oauth_proxy_client.dart';
 import '../services/trackers/simkl/simkl_account_store.dart';
 import '../services/trackers/simkl/simkl_auth_service.dart';
 import '../services/trackers/simkl/simkl_client.dart';
@@ -31,6 +32,7 @@ enum TrackerService { mal, anilist, simkl }
 /// sessions from their stores and pushes them to their trackers.
 class TrackersProvider extends ChangeNotifier {
   final MalAuthService _malAuth = MalAuthService();
+  final AnilistAuthService _anilistAuth = AnilistAuthService();
   final SimklAuthService _simklAuth = SimklAuthService();
 
   MalSession? _mal;
@@ -55,9 +57,9 @@ class TrackersProvider extends ChangeNotifier {
 
   bool isConnecting(TrackerService service) => _connecting == service;
 
-  /// Cancel an in-flight device-code poll. Currently only Simkl is
-  /// cancellable — MAL/AniList are OS-browser driven, the user dismisses the
-  /// browser to abort.
+  /// Cancel an in-flight connect. Supported for all three services — Simkl's
+  /// device-code poll and MAL/AniList's OAuth-proxy long-poll both honor the
+  /// flag on their next tick.
   void cancelConnect() {
     _cancelRequested = true;
   }
@@ -82,10 +84,13 @@ class TrackersProvider extends ChangeNotifier {
 
   // ───── Connect / disconnect ─────
 
-  Future<bool> connectMal() => _runConnect<MalSession>(
+  Future<bool> connectMal({required void Function(OAuthProxyStart) onCodeReady}) => _runConnect<MalSession>(
     service: TrackerService.mal,
     alreadyConnected: isMalConnected,
-    authorize: _malAuth.authorize,
+    authorize: () => _malAuth.authorize(
+      onCodeReady: onCodeReady,
+      shouldCancel: () => _cancelRequested,
+    ),
     enrich: _enrichMal,
     store: malAccountStore,
     assign: (s) {
@@ -99,10 +104,13 @@ class TrackersProvider extends ChangeNotifier {
     _rebindMal();
   });
 
-  Future<bool> connectAnilist() => _runConnect<AnilistSession>(
+  Future<bool> connectAnilist({required void Function(OAuthProxyStart) onCodeReady}) => _runConnect<AnilistSession>(
     service: TrackerService.anilist,
     alreadyConnected: isAnilistConnected,
-    authorize: AnilistAuthService().authorize,
+    authorize: () => _anilistAuth.authorize(
+      onCodeReady: onCodeReady,
+      shouldCancel: () => _cancelRequested,
+    ),
     enrich: _enrichAnilist,
     store: anilistAccountStore,
     assign: (s) {
@@ -271,6 +279,7 @@ class TrackersProvider extends ChangeNotifier {
   @override
   void dispose() {
     _malAuth.dispose();
+    _anilistAuth.dispose();
     _simklAuth.dispose();
     super.dispose();
   }

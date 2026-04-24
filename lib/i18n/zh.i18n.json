@@ -1040,6 +1040,12 @@
       "openToActivate": "打开 ${service} 以激活",
       "waitingForAuthorization": "等待授权…",
       "codeCopied": "代码已复制"
+    },
+    "oauthProxy": {
+      "title": "登录 ${service}",
+      "body": "用手机扫描此二维码，或在任何带浏览器的设备上打开下方 URL。",
+      "openToSignIn": "打开 ${service} 以登录",
+      "urlCopied": "URL 已复制"
     }
   }
 }

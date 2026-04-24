@@ -8,6 +8,11 @@ services:
       - logs:/data
     expose:
       - "8080"
+    environment:
+      OAUTH_BASE_URL: https://ice.plezy.app
+      MAL_CLIENT_ID: ${MAL_CLIENT_ID:-}
+      ANILIST_CLIENT_ID: ${ANILIST_CLIENT_ID:-}
+      ANILIST_CLIENT_SECRET: ${ANILIST_CLIENT_SECRET:-}
     logging:
       driver: "json-file"
       options:

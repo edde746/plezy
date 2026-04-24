@@ -1298,6 +1298,7 @@ class _TranslationsTrackersIt implements TranslationsTrackersEn {
 	@override String connectFailed({required Object service}) => 'Impossibile connettersi a ${service}. Riprova.';
 	@override late final _TranslationsTrackersServicesIt services = _TranslationsTrackersServicesIt._(_root);
 	@override late final _TranslationsTrackersDeviceCodeIt deviceCode = _TranslationsTrackersDeviceCodeIt._(_root);
+	@override late final _TranslationsTrackersOauthProxyIt oauthProxy = _TranslationsTrackersOauthProxyIt._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1480,6 +1481,19 @@ class _TranslationsTrackersDeviceCodeIt implements TranslationsTrackersDeviceCod
 	@override String openToActivate({required Object service}) => 'Apri ${service} per attivare';
 	@override String get waitingForAuthorization => 'In attesa di autorizzazione…';
 	@override String get codeCopied => 'Codice copiato';
+}
+
+// Path: trackers.oauthProxy
+class _TranslationsTrackersOauthProxyIt implements TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyIt._(this._root);
+
+	final TranslationsIt _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => 'Accedi a ${service}';
+	@override String get body => 'Scansiona questo codice QR con il telefono oppure apri l\'URL sottostante su un dispositivo con browser.';
+	@override String openToSignIn({required Object service}) => 'Apri ${service} per accedere';
+	@override String get urlCopied => 'URL copiato';
 }
 
 /// The flat map containing all translations for locale <it>.
@@ -2435,6 +2449,10 @@ extension on TranslationsIt {
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Apri ${service} per attivare',
 			'trackers.deviceCode.waitingForAuthorization' => 'In attesa di autorizzazione…',
 			'trackers.deviceCode.codeCopied' => 'Codice copiato',
+			'trackers.oauthProxy.title' => ({required Object service}) => 'Accedi a ${service}',
+			'trackers.oauthProxy.body' => 'Scansiona questo codice QR con il telefono oppure apri l\'URL sottostante su un dispositivo con browser.',
+			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Apri ${service} per accedere',
+			'trackers.oauthProxy.urlCopied' => 'URL copiato',
 			_ => null,
 		};
 	}

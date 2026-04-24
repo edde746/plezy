@@ -1298,6 +1298,7 @@ class _TranslationsTrackersSv implements TranslationsTrackersEn {
 	@override String connectFailed({required Object service}) => 'Kunde inte ansluta till ${service}. Försök igen.';
 	@override late final _TranslationsTrackersServicesSv services = _TranslationsTrackersServicesSv._(_root);
 	@override late final _TranslationsTrackersDeviceCodeSv deviceCode = _TranslationsTrackersDeviceCodeSv._(_root);
+	@override late final _TranslationsTrackersOauthProxySv oauthProxy = _TranslationsTrackersOauthProxySv._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1480,6 +1481,19 @@ class _TranslationsTrackersDeviceCodeSv implements TranslationsTrackersDeviceCod
 	@override String openToActivate({required Object service}) => 'Öppna ${service} för att aktivera';
 	@override String get waitingForAuthorization => 'Väntar på auktorisering…';
 	@override String get codeCopied => 'Kod kopierad';
+}
+
+// Path: trackers.oauthProxy
+class _TranslationsTrackersOauthProxySv implements TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxySv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => 'Logga in på ${service}';
+	@override String get body => 'Skanna den här QR-koden med din telefon, eller öppna URL:en nedan på en enhet med webbläsare.';
+	@override String openToSignIn({required Object service}) => 'Öppna ${service} för att logga in';
+	@override String get urlCopied => 'URL kopierad';
 }
 
 /// The flat map containing all translations for locale <sv>.
@@ -2435,6 +2449,10 @@ extension on TranslationsSv {
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Öppna ${service} för att aktivera',
 			'trackers.deviceCode.waitingForAuthorization' => 'Väntar på auktorisering…',
 			'trackers.deviceCode.codeCopied' => 'Kod kopierad',
+			'trackers.oauthProxy.title' => ({required Object service}) => 'Logga in på ${service}',
+			'trackers.oauthProxy.body' => 'Skanna den här QR-koden med din telefon, eller öppna URL:en nedan på en enhet med webbläsare.',
+			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Öppna ${service} för att logga in',
+			'trackers.oauthProxy.urlCopied' => 'URL kopierad',
 			_ => null,
 		};
 	}

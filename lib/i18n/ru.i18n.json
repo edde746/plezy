@@ -1040,6 +1040,12 @@
       "openToActivate": "Открыть ${service} для активации",
       "waitingForAuthorization": "Ожидание авторизации…",
       "codeCopied": "Код скопирован"
+    },
+    "oauthProxy": {
+      "title": "Войти в ${service}",
+      "body": "Отсканируйте этот QR-код телефоном или откройте ссылку ниже на любом устройстве с браузером.",
+      "openToSignIn": "Открыть ${service} для входа",
+      "urlCopied": "URL скопирован"
     }
   }
 }

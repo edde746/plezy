@@ -1298,6 +1298,7 @@ class _TranslationsTrackersFr implements TranslationsTrackersEn {
 	@override String connectFailed({required Object service}) => 'Échec de la connexion à ${service}. Réessayez.';
 	@override late final _TranslationsTrackersServicesFr services = _TranslationsTrackersServicesFr._(_root);
 	@override late final _TranslationsTrackersDeviceCodeFr deviceCode = _TranslationsTrackersDeviceCodeFr._(_root);
+	@override late final _TranslationsTrackersOauthProxyFr oauthProxy = _TranslationsTrackersOauthProxyFr._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1480,6 +1481,19 @@ class _TranslationsTrackersDeviceCodeFr implements TranslationsTrackersDeviceCod
 	@override String openToActivate({required Object service}) => 'Ouvrir ${service} pour activer';
 	@override String get waitingForAuthorization => 'En attente d\'autorisation…';
 	@override String get codeCopied => 'Code copié';
+}
+
+// Path: trackers.oauthProxy
+class _TranslationsTrackersOauthProxyFr implements TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => 'Se connecter à ${service}';
+	@override String get body => 'Scannez ce code QR avec votre téléphone, ou ouvrez l\'URL ci-dessous sur un appareil équipé d\'un navigateur.';
+	@override String openToSignIn({required Object service}) => 'Ouvrir ${service} pour se connecter';
+	@override String get urlCopied => 'URL copiée';
 }
 
 /// The flat map containing all translations for locale <fr>.
@@ -2435,6 +2449,10 @@ extension on TranslationsFr {
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Ouvrir ${service} pour activer',
 			'trackers.deviceCode.waitingForAuthorization' => 'En attente d\'autorisation…',
 			'trackers.deviceCode.codeCopied' => 'Code copié',
+			'trackers.oauthProxy.title' => ({required Object service}) => 'Se connecter à ${service}',
+			'trackers.oauthProxy.body' => 'Scannez ce code QR avec votre téléphone, ou ouvrez l\'URL ci-dessous sur un appareil équipé d\'un navigateur.',
+			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Ouvrir ${service} pour se connecter',
+			'trackers.oauthProxy.urlCopied' => 'URL copiée',
 			_ => null,
 		};
 	}
