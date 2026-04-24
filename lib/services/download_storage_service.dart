@@ -462,6 +462,19 @@ class DownloadStorageService {
     return ['TV Shows', showFolder, 'Season $seasonNum'];
   }
 
+  /// Get SAF path components for a show directory: ['TV Shows', {showFolder}]
+  List<String> getShowSafPathComponents(PlexMetadata metadata, {int? showYear}) {
+    return ['TV Shows', _getShowFolderName(metadata, showYear: showYear)];
+  }
+
+  /// Get SAF path components for a season directory when called with season metadata:
+  /// ['TV Shows', {showFolder}, 'Season XX']. Uses season.index for the season number.
+  List<String> getSeasonSafPathComponents(PlexMetadata season, {int? showYear}) {
+    final showFolder = _getShowFolderName(season, showYear: showYear);
+    final seasonNum = padNumber(season.index ?? 0, 2);
+    return ['TV Shows', showFolder, 'Season $seasonNum'];
+  }
+
   /// Get SAF file name for a movie
   String getMovieSafFileName(PlexMetadata movie, String extension) {
     return '${_getMovieFolderName(movie)}.$extension';
@@ -472,6 +485,9 @@ class DownloadStorageService {
     final fileName = _formatEpisodeFileName(episode);
     return '$fileName.$extension';
   }
+
+  /// Get the extension-less episode filename used for SAF lookups.
+  String getEpisodeSafBaseName(PlexMetadata episode) => _formatEpisodeFileName(episode);
 
   /// Check if a path is a SAF content URI
   bool isSafUri(String storedPath) {
