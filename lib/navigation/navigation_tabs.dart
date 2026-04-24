@@ -3,6 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../i18n/strings.g.dart';
+import '../utils/platform_detector.dart';
 
 /// Navigation tab identifiers
 enum NavigationTabId { discover, libraries, liveTv, search, downloads, settings }
@@ -31,6 +32,7 @@ class NavigationTab {
     return allNavigationTabs.where((tab) {
       if (isOffline && tab.onlineOnly) return false;
       if (tab.id == NavigationTabId.liveTv && !hasLiveTv) return false;
+      if (tab.id == NavigationTabId.downloads && PlatformDetector.isAppleTV()) return false;
       return true;
     }).toList();
   }

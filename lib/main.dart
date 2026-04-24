@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:ui' show AppExitResponse;
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences_foundation/shared_preferences_foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
 import 'dart:io' show Platform, ProcessInfo;
@@ -86,9 +88,25 @@ void _absorbZeroOffsetPointerEvent(PointerEvent event) {
   }
 }
 
+/// Register platform plugin stores manually for tvOS. Flutter's tool
+/// doesn't support tvOS so it never generates a plugin registrant for it.
+/// Each plugin whose iOS Swift implementation is tvOS-compatible must be
+/// wired here; the Swift side (GeneratedPluginRegistrant.m / AppDelegate)
+/// also needs to call the plugin's Swift register(with:) to attach its
+/// message channels.
+void _registerTvosPlatformPlugins() {
+  if (!Platform.isIOS) return; // tvOS reports as iOS via dart:io.
+  SharedPreferencesFoundation.registerWith();
+}
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   _installZeroOffsetPointerGuard(); // Workaround for iPadOS 26.1+ modal dismissal bug
+
+  // On tvOS, Flutter's generated plugin registrant doesn't run (no tvOS
+  // target in Flutter's tool), so register platform stores manually for
+  // the plugins we use.
+  _registerTvosPlatformPlugins();
 
   if (_enableSentry) {
     final packageInfo = await PackageInfo.fromPlatform();
@@ -143,10 +161,12 @@ Future<void> _bootstrapApp() async {
     futures.add(windowManager.ensureInitialized());
   }
 
-  // Initialize TV detection and PiP service for Android
-  if (Platform.isAndroid) {
+  // Initialize TV detection (Android leanback or Apple TV) and PiP on Android.
+  if (Platform.isAndroid || Platform.isIOS) {
     futures.add(TvDetectionService.getInstance(forceTv: settings.getForceTvMode()));
-    // Initialize PiP service to listen for PiP state changes
+  }
+  if (Platform.isAndroid) {
+    // Initialize PiP service to listen for PiP state changes (Android only).
     PipService();
   }
 
@@ -702,9 +722,23 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                         navigatorKey: rootNavigatorKey,
                         navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
                         home: const OrientationAwareSetup(),
+                        // Siri Remote select + gamepad A report as
+                        // LogicalKeyboardKey.{select,gameButtonA} which aren't
+                        // in Flutter's default shortcut set — Material-level
+                        // widgets (PopupMenuItem, showModalBottomSheet actions)
+                        // ignore them. Map both to ActivateIntent so tapping
+                        // select on tvOS activates the focused widget.
+                        shortcuts: <ShortcutActivator, Intent>{
+                          ...WidgetsApp.defaultShortcuts,
+                          const SingleActivator(LogicalKeyboardKey.select): const ActivateIntent(),
+                          const SingleActivator(LogicalKeyboardKey.gameButtonA): const ActivateIntent(),
+                        },
                         builder: (context, child) => ScaffoldMessenger(
                           key: rootScaffoldMessengerKey,
-                          child: Scaffold(backgroundColor: Colors.transparent, body: child),
+                          child: Scaffold(
+                            backgroundColor: Colors.transparent,
+                            body: _AppleTvScale(child: child),
+                          ),
                         ),
                       ),
                     ),
@@ -715,6 +749,55 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           );
         },
       ),
+    );
+  }
+}
+
+/// On Apple TV the system hands Flutter a 1920×1080 surface at
+/// devicePixelRatio 1.0, the same logical pixel count as a phablet. That's
+/// too dense for a 10ft viewing distance, so everything ends up tiny. We
+/// shrink the effective logical size to half and scale the rendered output
+/// back up so fonts, icons, and paddings end up visually ~2× larger — roughly
+/// matching the UI feel of Android TV (which renders at lower logical DPI).
+class _AppleTvScale extends StatelessWidget {
+  final Widget? child;
+  const _AppleTvScale({required this.child});
+
+  static const double _scale = 2.0;
+
+  @override
+  Widget build(BuildContext context) {
+    if (child == null || !PlatformDetector.isAppleTV()) {
+      return child ?? const SizedBox.shrink();
+    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final logicalSize = Size(constraints.maxWidth / _scale, constraints.maxHeight / _scale);
+        final outerQ = MediaQuery.of(context);
+        // tvOS reports conservative overscan insets (~60pt top/bottom,
+        // ~90pt left/right). Modern TVs don't overscan, so treat them as
+        // dead margin and zero them out — the UI can use the full surface.
+        return Transform.scale(
+          scale: _scale,
+          alignment: Alignment.topLeft,
+          transformHitTests: true,
+          child: SizedBox(
+            width: logicalSize.width,
+            height: logicalSize.height,
+            child: MediaQuery(
+              data: outerQ.copyWith(
+                size: logicalSize,
+                devicePixelRatio: outerQ.devicePixelRatio * _scale,
+                padding: EdgeInsets.zero,
+                viewPadding: EdgeInsets.zero,
+                viewInsets: EdgeInsets.zero,
+                systemGestureInsets: EdgeInsets.zero,
+              ),
+              child: child!,
+            ),
+          ),
+        );
+      },
     );
   }
 }

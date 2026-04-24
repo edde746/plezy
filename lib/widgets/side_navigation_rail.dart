@@ -13,6 +13,7 @@ import '../models/plex_library.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
+import '../utils/platform_detector.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../theme/mono_tokens.dart';
@@ -476,19 +477,21 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                                 const SizedBox(height: 8),
                               ],
 
-                              // Downloads
-                              _buildNavItem(
-                                icon: Symbols.download_rounded,
-                                selectedIcon: Symbols.download_rounded,
-                                label: Translations.of(context).navigation.downloads,
-                                isSelected: widget.selectedTab == NavigationTabId.downloads,
-                                isFocused: _focusTracker.isFocused(_kDownloads),
-                                onTap: () => widget.onDestinationSelected(NavigationTabId.downloads),
-                                focusNode: _focusTracker.get(_kDownloads),
-                                isCollapsed: isCollapsed,
-                              ),
-
-                              const SizedBox(height: 8),
+                              // Downloads (hidden on Apple TV — no user
+                              // file storage)
+                              if (!PlatformDetector.isAppleTV()) ...[
+                                _buildNavItem(
+                                  icon: Symbols.download_rounded,
+                                  selectedIcon: Symbols.download_rounded,
+                                  label: Translations.of(context).navigation.downloads,
+                                  isSelected: widget.selectedTab == NavigationTabId.downloads,
+                                  isFocused: _focusTracker.isFocused(_kDownloads),
+                                  onTap: () => widget.onDestinationSelected(NavigationTabId.downloads),
+                                  focusNode: _focusTracker.get(_kDownloads),
+                                  isCollapsed: isCollapsed,
+                                ),
+                                const SizedBox(height: 8),
+                              ],
 
                               // Settings
                               _buildNavItem(

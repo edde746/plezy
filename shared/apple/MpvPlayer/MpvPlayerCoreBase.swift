@@ -2,7 +2,7 @@ import Foundation
 import Libmpv
 import QuartzCore
 
-#if os(iOS)
+#if os(iOS) || os(tvOS)
 import UIKit
 #elseif os(macOS)
 import Cocoa
@@ -26,6 +26,8 @@ class MpvMetalLayer: CAMetalLayer {
     }
 
     #if os(iOS)
+    // wantsExtendedDynamicRangeContent is unavailable on tvOS as of SDK 26.4,
+    // so this override only applies to iOS / macOS.
     @available(iOS 16.0, *)
     override var wantsExtendedDynamicRangeContent: Bool {
         get { super.wantsExtendedDynamicRangeContent }

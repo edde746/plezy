@@ -3,6 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../models/plex_home_user.dart';
+import '../../services/image_cache_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../i18n/strings.g.dart';
 import '../../widgets/plex_optimized_image.dart' show blurArtwork;
@@ -143,6 +144,7 @@ class UserAvatarWidget extends StatelessWidget {
             child: blurArtwork(
               CachedNetworkImage(
                 imageUrl: user.thumb,
+                cacheManager: PlexImageCacheManager.instance,
                 width: size,
                 height: size,
                 fit: BoxFit.cover,

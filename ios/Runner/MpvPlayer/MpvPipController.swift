@@ -1,6 +1,47 @@
 import AVKit
 import UIKit
 
+#if os(tvOS)
+// tvOS stub: AVPictureInPictureController has different constraints on tvOS
+// and is not supported by the Plezy flow. Provide a no-op shell so callers
+// in MpvPlayerPlugin compile unchanged; isSupported reports false so PiP is
+// never attempted at runtime.
+protocol MpvPipDelegate: AnyObject {
+    func pipWillStart()
+    func pipDidStart()
+    func pipDidStop(restored: Bool)
+    func pipDidFailToStart(error: Error?)
+    func pipSetPlaying(_ playing: Bool)
+    func pipSkip(byInterval seconds: Double)
+    var isPipPlaying: Bool { get }
+    var pipDuration: Double { get }
+}
+
+class MpvPipController: NSObject {
+    static var isSupported: Bool { false }
+    weak var delegate: MpvPipDelegate?
+    var isPipActive: Bool { false }
+    var autoStartEnabled: Bool { false }
+    var layerPointer: UnsafeMutableRawPointer {
+        // Return a dummy non-null pointer — layerPointer is handed to mpv for
+        // rendering into PiP, which never activates on tvOS.
+        UnsafeMutableRawPointer(bitPattern: 0x1)!
+    }
+    func setup(with layer: CALayer, containerView: UIView) {}
+    func setAutoStart(_ enabled: Bool) {}
+    func warmLayer(currentTime: Double, isPlaying: Bool) {}
+    func pushBlankFrame(width: Int32 = 1920, height: Int32 = 1080) {}
+    func startPip(waitForFrame: Bool = true, completion: @escaping (Bool) -> Void) {
+        completion(false)
+    }
+    func stopPip() {}
+    func invalidatePlaybackState() {}
+    func flushLayer() {}
+    func syncTimebase(currentTime: Double, isPlaying: Bool) {}
+    func teardown() {}
+}
+#else
+
 /// Delegate to notify the plugin of PiP lifecycle events
 protocol MpvPipDelegate: AnyObject {
     /// Called when PiP is about to start (system or app-initiated)
@@ -367,3 +408,5 @@ private class PipDelegateHelper: NSObject, AVPictureInPictureControllerDelegate,
         completionHandler()
     }
 }
+
+#endif  // !os(tvOS)

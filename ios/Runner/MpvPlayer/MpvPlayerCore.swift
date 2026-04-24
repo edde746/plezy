@@ -127,11 +127,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         guard let metalLayer else { return }
 
         var edrHeadroom: CGFloat = 1.0
+        #if os(iOS)
         if #available(iOS 16.0, *) {
             edrHeadroom = containerView?.window?.screen.potentialEDRHeadroom ?? 1.0
             metalLayer.wantsExtendedDynamicRangeContent =
                 hdrEnabled && sigPeak > 1.0 && edrHeadroom > 1.0
         }
+        #endif
 
         let shouldEnableEDR = hdrEnabled && sigPeak > 1.0 && edrHeadroom > 1.0
         print(

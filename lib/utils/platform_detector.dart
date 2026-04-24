@@ -4,12 +4,13 @@ import 'dart:math';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 
-/// Service for detecting if the app is running on Android TV
+/// Service for detecting if the app is running on Android TV or Apple TV.
 class TvDetectionService {
   static TvDetectionService? _instance;
   bool _detected = false;
   bool _forceTv = false;
   bool _isTV = false;
+  bool _isAppleTV = false;
   bool _initialized = false;
 
   TvDetectionService._();
@@ -24,19 +25,38 @@ class TvDetectionService {
     return _instance!;
   }
 
+  static const bool _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
+
   Future<void> _detect(bool forceTv) async {
     if (_initialized) return;
 
+    final deviceInfo = DeviceInfoPlugin();
     if (Platform.isAndroid) {
-      final deviceInfo = DeviceInfoPlugin();
       final androidInfo = await deviceInfo.androidInfo;
-      // Check for android.software.leanback feature (standard Android TV detection)
       _detected = androidInfo.systemFeatures.contains('android.software.leanback');
+    } else if (Platform.isIOS) {
+      if (_tvosBuild) {
+        _isAppleTV = true;
+        _detected = true;
+      } else {
+        final iosInfo = await deviceInfo.iosInfo;
+        final sysName = iosInfo.systemName.toLowerCase();
+        _isAppleTV =
+            sysName == 'tvos' ||
+            sysName.contains('appletv') ||
+            iosInfo.model.toLowerCase().contains('appletv') ||
+            iosInfo.utsname.machine.toLowerCase().contains('appletv');
+        _detected = _isAppleTV;
+      }
     }
     _forceTv = forceTv;
     _isTV = _detected || _forceTv;
     _initialized = true;
   }
+
+  /// True when running on Apple TV (tvOS). False for all other platforms
+  /// including force-TV on non-tvOS devices.
+  bool get isAppleTV => _isAppleTV;
 
   bool get isTV => _isTV;
 
@@ -49,15 +69,25 @@ class TvDetectionService {
   /// Synchronous access after initialization (returns false if not initialized)
   static bool isTVSync() => _instance?._isTV ?? false;
 
+  /// Synchronous Apple TV check (returns false if not initialized or not tvOS).
+  static bool isAppleTVSync() => _instance?._isAppleTV ?? false;
+
   /// Convenience setter that forwards to the singleton if available.
   static void setForceTVSync(bool value) => _instance?.setForceTv(value);
 }
 
 /// Utility class for platform detection
 class PlatformDetector {
-  /// Detects if running on Android TV (requires TvDetectionService to be initialized)
+  /// Detects if running on a TV platform (Android TV or Apple TV).
+  /// Requires TvDetectionService to be initialized.
   static bool isTV() {
     return TvDetectionService.isTVSync();
+  }
+
+  /// Detects if running specifically on Apple TV (tvOS).
+  /// Requires TvDetectionService to be initialized.
+  static bool isAppleTV() {
+    return TvDetectionService.isAppleTVSync();
   }
 
   /// Detects if the app should use side navigation (Desktop or TV)
@@ -71,9 +101,12 @@ class PlatformDetector {
     return isDesktop(context) || isTV();
   }
 
-  /// Detects if running on a mobile platform (iOS or Android)
-  /// Uses Theme for consistent platform detection across the app
+  /// Detects if running on a mobile platform (iOS or Android).
+  /// Excludes TV platforms (Android TV / Apple TV) even though the underlying
+  /// OS is iOS or Android.
+  /// Uses Theme for consistent platform detection across the app.
   static bool isMobile(BuildContext context) {
+    if (isTV()) return false;
     final platform = Theme.of(context).platform;
     return platform == TargetPlatform.iOS || platform == TargetPlatform.android;
   }

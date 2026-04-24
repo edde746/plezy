@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:http/http.dart' as http;
 
+import '../utils/platform_detector.dart';
 import '../utils/plex_http_client.dart';
 
 /// Custom cache manager for Plex image transcoding with HTTP/2 multiplexing.
@@ -16,15 +17,23 @@ class PlexImageCacheManager extends CacheManager with ImageCacheManager {
 
   static final PlexImageCacheManager instance = PlexImageCacheManager._();
 
-  PlexImageCacheManager._()
-    : super(
-        Config(
-          _key,
-          stalePeriod: const Duration(days: 14),
-          maxNrOfCacheObjects: 3000,
-          fileService: _HttpFileService(httpClient.inner),
-        ),
+  PlexImageCacheManager._() : super(_buildConfig());
+
+  static Config _buildConfig() {
+    final fileService = _HttpFileService(httpClient.inner);
+    // tvOS has no sqflite plugin, so force the JSON cache-info repo there.
+    // On other platforms we let flutter_cache_manager pick its default repo.
+    if (PlatformDetector.isAppleTV()) {
+      return Config(
+        _key,
+        stalePeriod: const Duration(days: 14),
+        maxNrOfCacheObjects: 3000,
+        fileService: fileService,
+        repo: JsonCacheInfoRepository(databaseName: _key),
       );
+    }
+    return Config(_key, stalePeriod: const Duration(days: 14), maxNrOfCacheObjects: 3000, fileService: fileService);
+  }
 }
 
 class _HttpFileService extends FileService {

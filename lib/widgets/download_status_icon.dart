@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../models/download_models.dart';
+import '../utils/platform_detector.dart';
 import '../widgets/app_icon.dart';
 
 /// Visual weight preset.
@@ -53,6 +54,7 @@ class DownloadStatusIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (PlatformDetector.isAppleTV()) return const SizedBox.shrink();
     final s = status;
     if (s == null) return const SizedBox.shrink();
 

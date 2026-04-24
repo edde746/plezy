@@ -18,6 +18,7 @@ import 'playlist_item_card.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/download_provider.dart';
 import '../../utils/content_utils.dart';
+import '../../utils/platform_detector.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/download_utils.dart';
 import '../../utils/global_key_utils.dart';
@@ -69,14 +70,14 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
         FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
       ],
-      if (isVideoPlaylist && (items.isNotEmpty || hasRule))
+      if (!PlatformDetector.isAppleTV() && isVideoPlaylist && (items.isNotEmpty || hasRule))
         FocusableAction(
           icon: hasRule ? Symbols.sync_rounded : Symbols.download_rounded,
           tooltip: hasRule ? t.downloads.manageSyncRule : t.downloads.downloadNow,
           onPressed: hasRule ? _managePlaylistSyncRule : _downloadPlaylist,
           iconColor: hasRule ? Colors.teal : null,
         ),
-      if (hasRule)
+      if (!PlatformDetector.isAppleTV() && hasRule)
         FocusableAction(
           icon: Symbols.sync_disabled_rounded,
           tooltip: t.downloads.removeSyncRule,

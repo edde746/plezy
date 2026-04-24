@@ -21,6 +21,7 @@ import '../providers/user_profile_provider.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
+import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/dialogs.dart';
 import '../utils/focus_utils.dart';
@@ -160,7 +161,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // Download + sync-rule management. Video playlists and any collection
       // qualify — collections can contain movies, episodes, and shows.
       final isVideoPlaylist = isPlaylist && (widget.item as PlexPlaylist).playlistType == 'video';
-      if (isVideoPlaylist || isCollection) {
+      if ((isVideoPlaylist || isCollection) && !PlatformDetector.isAppleTV()) {
         final hasRule = Provider.of<DownloadProvider>(context, listen: false).hasSyncRule(_itemGlobalKey());
         if (hasRule) {
           menuActions.add(
@@ -324,11 +325,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Download options (for episodes, movies, shows, and seasons)
-      if (mediaType == PlexMediaType.episode ||
-          mediaType == PlexMediaType.movie ||
-          mediaType == PlexMediaType.show ||
-          mediaType == PlexMediaType.season) {
+      // Download options (for episodes, movies, shows, and seasons).
+      // Apple TV has no user-accessible file storage — skip entirely.
+      if (!PlatformDetector.isAppleTV() &&
+          (mediaType == PlexMediaType.episode ||
+              mediaType == PlexMediaType.movie ||
+              mediaType == PlexMediaType.show ||
+              mediaType == PlexMediaType.season)) {
         final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
         final globalKey = metadata.globalKey;
         final isDownloaded = downloadProvider.isDownloaded(globalKey);

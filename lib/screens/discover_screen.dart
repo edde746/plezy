@@ -11,6 +11,8 @@ import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import '../utils/global_key_utils.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+
+import '../services/image_cache_service.dart';
 import '../../services/plex_client.dart';
 import '../utils/plex_image_helper.dart';
 import '../widgets/plex_optimized_image.dart' show blurArtwork;
@@ -1383,6 +1385,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         return blurArtwork(
                           CachedNetworkImage(
                             imageUrl: imageUrl,
+                            cacheManager: PlexImageCacheManager.instance,
                             fit: BoxFit.cover,
                             placeholder: (context, url) =>
                                 Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
@@ -1455,6 +1458,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             return blurArtwork(
                               CachedNetworkImage(
                                 imageUrl: logoUrl,
+                                cacheManager: PlexImageCacheManager.instance,
                                 filterQuality: FilterQuality.medium,
                                 fit: BoxFit.contain,
                                 memCacheWidth: (400 * dpr).clamp(200, 800).round(),

@@ -1,10 +1,10 @@
-#if os(iOS)
+#if os(iOS) || os(tvOS)
 import Flutter
 #elseif os(macOS)
 import FlutterMacOS
 #endif
 
-/// Protocol for shared MpvPlayerPlugin method handlers across iOS and macOS.
+/// Protocol for shared MpvPlayerPlugin method handlers across iOS, tvOS, and macOS.
 /// Platform-specific methods (PiP, initialization, window finding) remain
 /// in the per-platform MpvPlayerPlugin files.
 protocol MpvPluginShared: AnyObject, MpvPlayerDelegate {

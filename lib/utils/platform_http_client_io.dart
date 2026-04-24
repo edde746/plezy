@@ -31,8 +31,17 @@ http.Client createPlatformClient() {
     return CronetClient.fromCronetEngine(_sharedEngine!);
   }
   if (Platform.isIOS || Platform.isMacOS) {
-    _logPlatformClient(Platform.isIOS ? 'ios' : 'macos', 'CupertinoClient');
-    return CupertinoClient.defaultSessionConfiguration();
+    // cupertino_http relies on the objective_c FFI dylib, which isn't
+    // available on tvOS. Fall back to IOClient if the init fails.
+    try {
+      final client = CupertinoClient.defaultSessionConfiguration();
+      _logPlatformClient(Platform.isIOS ? 'ios' : 'macos', 'CupertinoClient');
+      return client;
+    } catch (e, st) {
+      appLogger.w('CupertinoClient init failed, falling back to IOClient', error: e, stackTrace: st);
+      _logPlatformClient(Platform.isIOS ? 'ios' : 'macos', 'IOClient (fallback)');
+      return IOClient();
+    }
   }
   if (Platform.isWindows) {
     try {

@@ -1,0 +1,6 @@
+{
+  "images" : [
+    { "filename" : "top-shelf.png", "idiom" : "tv" }
+  ],
+  "info" : { "author" : "xcode", "version" : 1 }
+}

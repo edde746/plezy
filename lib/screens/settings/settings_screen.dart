@@ -175,7 +175,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 _buildTrackersTile(),
 
                 // --- Downloads (inline) ---
-                _buildDownloadsSection(),
+                if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
 
                 // --- Keyboard Shortcuts (inline, conditional) ---
                 if (_keyboardShortcutsSupported) ...[_buildKeyboardShortcutsSection()],
@@ -186,8 +186,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 // --- Updates (conditional) ---
                 if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection()],
 
-                // --- Backup ---
-                _buildBackupSection(),
+                // --- Backup (hidden on Apple TV — no file picker / storage) ---
+                if (!PlatformDetector.isAppleTV()) _buildBackupSection(),
 
                 // --- About ---
                 ListTile(

@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+
+import '../services/image_cache_service.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -576,8 +578,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             ),
             const SizedBox(width: 12),
           ],
-          // Download button (hide in offline mode - already downloaded)
-          if (!widget.isOffline)
+          // Download button (hide in offline mode - already downloaded,
+          // and on Apple TV where there's no user file storage).
+          if (!widget.isOffline && !PlatformDetector.isAppleTV())
             Consumer<DownloadProvider>(
               builder: (context, downloadProvider, _) {
                 final globalKey = metadata.globalKey;
@@ -2486,6 +2489,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                     return blurArtwork(
                                       CachedNetworkImage(
                                         imageUrl: imageUrl,
+                                        cacheManager: PlexImageCacheManager.instance,
                                         fit: BoxFit.cover,
                                         placeholder: (context, url) => const PlaceholderContainer(),
                                         errorWidget: (context, url, error) => const PlaceholderContainer(),
@@ -2575,6 +2579,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                           return blurArtwork(
                                             CachedNetworkImage(
                                               imageUrl: logoUrl,
+                                              cacheManager: PlexImageCacheManager.instance,
                                               filterQuality: FilterQuality.medium,
                                               fit: BoxFit.contain,
                                               alignment: Alignment.centerLeft,

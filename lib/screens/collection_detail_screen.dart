@@ -9,6 +9,7 @@ import '../services/plex_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/download_utils.dart';
+import '../utils/platform_detector.dart';
 import '../utils/plex_http_client.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
@@ -111,13 +112,14 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
         FocusableAction(icon: Symbols.play_arrow_rounded, tooltip: t.common.play, onPressed: playItems),
         FocusableAction(icon: Symbols.shuffle_rounded, tooltip: t.common.shuffle, onPressed: shufflePlayItems),
       ],
-      FocusableAction(
-        icon: hasRule ? Symbols.sync_rounded : Symbols.download_rounded,
-        tooltip: hasRule ? t.downloads.manageSyncRule : t.downloads.downloadNow,
-        onPressed: hasRule ? _manageCollectionSyncRule : _downloadCollection,
-        iconColor: hasRule ? Colors.teal : null,
-      ),
-      if (hasRule)
+      if (!PlatformDetector.isAppleTV())
+        FocusableAction(
+          icon: hasRule ? Symbols.sync_rounded : Symbols.download_rounded,
+          tooltip: hasRule ? t.downloads.manageSyncRule : t.downloads.downloadNow,
+          onPressed: hasRule ? _manageCollectionSyncRule : _downloadCollection,
+          iconColor: hasRule ? Colors.teal : null,
+        ),
+      if (!PlatformDetector.isAppleTV() && hasRule)
         FocusableAction(
           icon: Symbols.sync_disabled_rounded,
           tooltip: t.downloads.removeSyncRule,
