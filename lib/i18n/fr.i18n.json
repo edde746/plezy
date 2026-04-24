@@ -218,6 +218,8 @@
     "discordRichPresenceDescription": "Montrez ce que vous regardez sur Discord",
     "trakt": "Trakt",
     "traktDescription": "Synchroniser l'historique de visionnage avec Trakt",
+    "trackers": "Trackers",
+    "trackersDescription": "Synchroniser la progression avec Trakt, MyAnimeList, AniList et Simkl",
     "companionRemoteServer": "Serveur de télécommande",
     "companionRemoteServerDescription": "Autoriser les appareils mobiles de votre réseau à contrôler cette application",
     "autoPip": "Image dans l'image automatique",
@@ -1015,11 +1017,29 @@
     "scrobbleDescription": "Envoyer les événements de lecture, pause et arrêt à Trakt pendant la lecture.",
     "watchedSync": "Synchroniser le statut « vu »",
     "watchedSyncDescription": "Lorsque vous marquez un élément comme vu dans Plezy, il l'est aussi sur Trakt.",
-    "deviceCodeTitle": "Activer Plezy sur Trakt",
-    "deviceCodeBody": "Rendez-vous sur ${url} et entrez ce code :",
-    "openTraktActivate": "Ouvrir Trakt pour activer",
-    "waitingForAuthorization": "En attente d'autorisation…",
-    "codeCopied": "Code copié",
     "connectFailed": "Échec de la connexion à Trakt. Réessayez."
+  },
+  "trackers": {
+    "title": "Trackers",
+    "hubSubtitle": "Gardez votre progression synchronisée avec Trakt et d'autres services.",
+    "notConnected": "Non connecté",
+    "connectedAs": "Connecté en tant que @${username}",
+    "scrobble": "Suivre la progression automatiquement",
+    "scrobbleDescription": "Mettre à jour votre liste lorsque vous terminez un épisode ou un film.",
+    "disconnectConfirm": "Déconnecter ${service} ?",
+    "disconnectConfirmBody": "Plezy ne mettra plus à jour votre liste ${service}. Vous pouvez vous reconnecter à tout moment.",
+    "connectFailed": "Échec de la connexion à ${service}. Réessayez.",
+    "services": {
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "simkl": "Simkl"
+    },
+    "deviceCode": {
+      "title": "Activer Plezy sur ${service}",
+      "body": "Rendez-vous sur ${url} et entrez ce code :",
+      "openToActivate": "Ouvrir ${service} pour activer",
+      "waitingForAuthorization": "En attente d'autorisation…",
+      "codeCopied": "Code copié"
+    }
   }
 }

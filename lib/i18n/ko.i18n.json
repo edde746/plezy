@@ -218,6 +218,8 @@
     "discordRichPresenceDescription": "Discord에서 시청 중인 콘텐츠 표시",
     "trakt": "Trakt",
     "traktDescription": "Trakt와 시청 기록 동기화",
+    "trackers": "트래커",
+    "trackersDescription": "Trakt, MyAnimeList, AniList 및 Simkl에 진행률 동기화",
     "companionRemoteServer": "컴패니언 리모트 서버",
     "companionRemoteServerDescription": "네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용",
     "autoPip": "자동 PIP 모드",
@@ -1015,11 +1017,29 @@
     "scrobbleDescription": "재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.",
     "watchedSync": "시청 상태 동기화",
     "watchedSyncDescription": "Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.",
-    "deviceCodeTitle": "Trakt에서 Plezy 활성화",
-    "deviceCodeBody": "${url}을(를) 방문하여 이 코드를 입력하세요:",
-    "openTraktActivate": "활성화하려면 Trakt 열기",
-    "waitingForAuthorization": "인증 대기 중…",
-    "codeCopied": "코드가 복사됨",
     "connectFailed": "Trakt에 연결할 수 없습니다. 다시 시도하세요."
+  },
+  "trackers": {
+    "title": "트래커",
+    "hubSubtitle": "시청 진행률을 Trakt 및 기타 서비스와 동기화하세요.",
+    "notConnected": "연결되지 않음",
+    "connectedAs": "@${username} 로 연결됨",
+    "scrobble": "진행률 자동 추적",
+    "scrobbleDescription": "에피소드나 영화를 시청하면 목록을 업데이트합니다.",
+    "disconnectConfirm": "${service} 연결을 해제하시겠습니까?",
+    "disconnectConfirmBody": "Plezy가 ${service} 목록 업데이트를 중지합니다. 언제든지 다시 연결할 수 있습니다.",
+    "connectFailed": "${service}에 연결할 수 없습니다. 다시 시도하세요.",
+    "services": {
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "simkl": "Simkl"
+    },
+    "deviceCode": {
+      "title": "${service}에서 Plezy 활성화",
+      "body": "${url}을 방문하여 이 코드를 입력하세요:",
+      "openToActivate": "활성화하려면 ${service} 열기",
+      "waitingForAuthorization": "인증을 기다리는 중…",
+      "codeCopied": "코드가 복사되었습니다"
+    }
   }
 }

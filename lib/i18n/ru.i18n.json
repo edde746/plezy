@@ -218,6 +218,8 @@
     "discordRichPresenceDescription": "Показывать, что вы смотрите, в Discord",
     "trakt": "Trakt",
     "traktDescription": "Синхронизировать историю просмотров с Trakt",
+    "trackers": "Трекеры",
+    "trackersDescription": "Синхронизировать прогресс с Trakt, MyAnimeList, AniList и Simkl",
     "companionRemoteServer": "Сервер удалённого управления",
     "companionRemoteServerDescription": "Разрешить мобильным устройствам в сети управлять этим приложением",
     "autoPip": "Автоматический «картинка в картинке»",
@@ -1015,11 +1017,29 @@
     "scrobbleDescription": "Отправлять события воспроизведения, паузы и остановки в Trakt во время просмотра.",
     "watchedSync": "Синхронизация статуса просмотра",
     "watchedSyncDescription": "Когда вы отмечаете элементы как просмотренные в Plezy, они отмечаются и в Trakt.",
-    "deviceCodeTitle": "Активация Plezy в Trakt",
-    "deviceCodeBody": "Откройте ${url} и введите этот код:",
-    "openTraktActivate": "Открыть Trakt для активации",
-    "waitingForAuthorization": "Ожидание авторизации…",
-    "codeCopied": "Код скопирован",
     "connectFailed": "Не удалось подключиться к Trakt. Попробуйте ещё раз."
+  },
+  "trackers": {
+    "title": "Трекеры",
+    "hubSubtitle": "Синхронизируйте прогресс просмотра с Trakt и другими сервисами.",
+    "notConnected": "Не подключено",
+    "connectedAs": "Подключено как @${username}",
+    "scrobble": "Автоматически отслеживать прогресс",
+    "scrobbleDescription": "Обновляет список, когда вы заканчиваете эпизод или фильм.",
+    "disconnectConfirm": "Отключить ${service}?",
+    "disconnectConfirmBody": "Plezy перестанет обновлять ваш список ${service}. Вы можете подключиться снова в любое время.",
+    "connectFailed": "Не удалось подключиться к ${service}. Попробуйте ещё раз.",
+    "services": {
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "simkl": "Simkl"
+    },
+    "deviceCode": {
+      "title": "Активируйте Plezy в ${service}",
+      "body": "Перейдите на ${url} и введите этот код:",
+      "openToActivate": "Открыть ${service} для активации",
+      "waitingForAuthorization": "Ожидание авторизации…",
+      "codeCopied": "Код скопирован"
+    }
   }
 }

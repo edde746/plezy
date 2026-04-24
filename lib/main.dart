@@ -21,7 +21,9 @@ import 'services/discord_rpc_service.dart';
 import 'services/gamepad_service.dart';
 import 'services/trakt/trakt_scrobble_service.dart';
 import 'services/trakt/trakt_sync_service.dart';
+import 'services/trackers/tracker_coordinator.dart';
 import 'providers/trakt_account_provider.dart';
+import 'providers/trackers_provider.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
@@ -661,9 +663,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // Existing providers
         ChangeNotifierProvider(create: (context) => UserProfileProvider()),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        // Trakt account — depends on UserProfileProvider for per-profile token scoping.
-        // Hydrated and rebound in `_TraktBootstrap` below.
+        // Tracker accounts — depend on UserProfileProvider for per-profile
+        // session scoping. Hydrated and rebound by `_TrackerProfileBootstrap`.
         ChangeNotifierProvider(create: (context) => TraktAccountProvider()),
+        ChangeNotifierProvider(create: (context) => TrackersProvider()),
         ChangeNotifierProvider(create: (context) => SettingsProvider(), lazy: true),
         ChangeNotifierProvider(create: (context) => HiddenLibrariesProvider(), lazy: true),
         ChangeNotifierProvider(create: (context) => LibrariesProvider()),
@@ -675,31 +678,39 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, child) {
           return TranslationProvider(
-            child: _TraktProfileBootstrap(
-              child: Listener(
-                onPointerDown: (event) {
-                  if ((event.buttons & kBackMouseButton) != 0) {
-                    rootNavigatorKey.currentState?.maybePop();
-                  }
-                },
-                behavior: HitTestBehavior.translucent,
-                child: InputModeTracker(
-                  child: MaterialApp(
-                    title: t.app.title,
-                    debugShowCheckedModeBanner: false,
-                    theme: themeProvider.lightTheme,
-                    darkTheme: themeProvider.darkTheme,
-                    themeMode: themeProvider.materialThemeMode,
-                    navigatorKey: rootNavigatorKey,
-                    navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
-                    home: const OrientationAwareSetup(),
-                    builder: (context, child) => ScaffoldMessenger(
-                      key: rootScaffoldMessengerKey,
-                      child: Scaffold(backgroundColor: Colors.transparent, body: child),
+            child: Builder(
+              builder: (context) {
+                final trakt = context.read<TraktAccountProvider>();
+                final trackers = context.read<TrackersProvider>();
+                return _TrackerProfileBootstrap(
+                  onProfileChanged: [trakt.onActiveProfileChanged, trackers.onActiveProfileChanged],
+                  onFirstMount: TrackerCoordinator.instance.initialize,
+                  child: Listener(
+                    onPointerDown: (event) {
+                      if ((event.buttons & kBackMouseButton) != 0) {
+                        rootNavigatorKey.currentState?.maybePop();
+                      }
+                    },
+                    behavior: HitTestBehavior.translucent,
+                    child: InputModeTracker(
+                      child: MaterialApp(
+                        title: t.app.title,
+                        debugShowCheckedModeBanner: false,
+                        theme: themeProvider.lightTheme,
+                        darkTheme: themeProvider.darkTheme,
+                        themeMode: themeProvider.materialThemeMode,
+                        navigatorKey: rootNavigatorKey,
+                        navigatorObservers: [routeObserver, BackKeySuppressorObserver()],
+                        home: const OrientationAwareSetup(),
+                        builder: (context, child) => ScaffoldMessenger(
+                          key: rootScaffoldMessengerKey,
+                          child: Scaffold(backgroundColor: Colors.transparent, body: child),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           );
         },
@@ -708,40 +719,46 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   }
 }
 
-/// Hydrates the [TraktAccountProvider] with the active Plex profile's session
-/// and rebinds the scrobble + sync services whenever the user switches.
+/// Hydrates Trakt and MAL/AniList/Simkl providers with the active Plex
+/// profile's sessions and rebinds their services whenever the user switches.
 ///
 /// Lives high in the widget tree (above MaterialApp) so the listener survives
-/// route changes.
-class _TraktProfileBootstrap extends StatefulWidget {
+/// route changes. [onFirstMount] runs exactly once after the first
+/// `didChangeDependencies`.
+class _TrackerProfileBootstrap extends StatefulWidget {
   final Widget child;
-  const _TraktProfileBootstrap({required this.child});
+  final List<Future<void> Function(String? uuid)> onProfileChanged;
+  final VoidCallback? onFirstMount;
+
+  const _TrackerProfileBootstrap({
+    required this.child,
+    required this.onProfileChanged,
+    this.onFirstMount,
+  });
 
   @override
-  State<_TraktProfileBootstrap> createState() => _TraktProfileBootstrapState();
+  State<_TrackerProfileBootstrap> createState() => _TrackerProfileBootstrapState();
 }
 
-class _TraktProfileBootstrapState extends State<_TraktProfileBootstrap> {
+class _TrackerProfileBootstrapState extends State<_TrackerProfileBootstrap> {
   UserProfileProvider? _profile;
-  TraktAccountProvider? _trakt;
   String? _lastUuid;
-  bool _hydrated = false;
+  bool _initialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final profile = context.read<UserProfileProvider>();
-    final trakt = context.read<TraktAccountProvider>();
 
     if (!identical(_profile, profile)) {
       _profile?.removeListener(_onProfileChanged);
       _profile = profile;
       _profile!.addListener(_onProfileChanged);
     }
-    _trakt = trakt;
 
-    if (!_hydrated) {
-      _hydrated = true;
+    if (!_initialized) {
+      _initialized = true;
+      widget.onFirstMount?.call();
       _onProfileChanged();
     }
   }
@@ -750,7 +767,11 @@ class _TraktProfileBootstrapState extends State<_TraktProfileBootstrap> {
     final uuid = _profile?.currentUser?.uuid;
     if (uuid == _lastUuid) return;
     _lastUuid = uuid;
-    _trakt?.onActiveProfileChanged(uuid);
+    for (final fn in widget.onProfileChanged) {
+      unawaited(fn(uuid).catchError((Object e, StackTrace s) {
+        appLogger.w('Tracker profile bootstrap failed', error: e, stackTrace: s);
+      }));
+    }
   }
 
   @override

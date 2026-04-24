@@ -218,6 +218,8 @@
     "discordRichPresenceDescription": "Pokaż, co oglądasz na Discordzie",
     "trakt": "Trakt",
     "traktDescription": "Synchronizuj historię oglądania z Trakt",
+    "trackers": "Trackery",
+    "trackersDescription": "Synchronizuj postęp z Trakt, MyAnimeList, AniList i Simkl",
     "companionRemoteServer": "Serwer zdalnego sterowania",
     "companionRemoteServerDescription": "Pozwól urządzeniom mobilnym w sieci sterować tą aplikacją",
     "autoPip": "Automatyczny obraz w obrazie",
@@ -1015,11 +1017,29 @@
     "scrobbleDescription": "Wysyłaj zdarzenia odtwarzania, pauzy i zatrzymania do Trakt podczas odtwarzania.",
     "watchedSync": "Synchronizuj status obejrzane",
     "watchedSyncDescription": "Gdy oznaczysz pozycje jako obejrzane w Plezy, zostaną też oznaczone w Trakt.",
-    "deviceCodeTitle": "Aktywuj Plezy w Trakt",
-    "deviceCodeBody": "Otwórz ${url} i wpisz ten kod:",
-    "openTraktActivate": "Otwórz Trakt, aby aktywować",
-    "waitingForAuthorization": "Czekanie na autoryzację…",
-    "codeCopied": "Kod skopiowany",
     "connectFailed": "Nie udało się połączyć z Trakt. Spróbuj ponownie."
+  },
+  "trackers": {
+    "title": "Trackery",
+    "hubSubtitle": "Synchronizuj postęp oglądania z Trakt i innymi usługami.",
+    "notConnected": "Nie połączono",
+    "connectedAs": "Połączono jako @${username}",
+    "scrobble": "Automatycznie śledź postęp",
+    "scrobbleDescription": "Aktualizuj swoją listę po ukończeniu odcinka lub filmu.",
+    "disconnectConfirm": "Odłączyć ${service}?",
+    "disconnectConfirmBody": "Plezy przestanie aktualizować Twoją listę ${service}. Możesz połączyć się ponownie w dowolnej chwili.",
+    "connectFailed": "Nie udało się połączyć z ${service}. Spróbuj ponownie.",
+    "services": {
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "simkl": "Simkl"
+    },
+    "deviceCode": {
+      "title": "Aktywuj Plezy w ${service}",
+      "body": "Odwiedź ${url} i wpisz ten kod:",
+      "openToActivate": "Otwórz ${service}, aby aktywować",
+      "waitingForAuthorization": "Oczekiwanie na autoryzację…",
+      "codeCopied": "Kod skopiowany"
+    }
   }
 }

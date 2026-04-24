@@ -36,6 +36,7 @@ import '../providers/companion_remote_provider.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../services/discord_rpc_service.dart';
+import '../services/trackers/tracker_coordinator.dart';
 import '../services/trakt/trakt_scrobble_service.dart';
 import '../services/episode_navigation_service.dart';
 import '../services/media_controls_manager.dart';
@@ -1150,9 +1151,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       );
       DiscordRPCService.instance.updatePosition(position);
       TraktScrobbleService.instance.updatePosition(position);
+      TrackerCoordinator.instance.updatePosition(position);
       // Keep Trakt's known duration current — mpv only emits on the duration
       // stream once per load, but this is cheap and avoids an extra listener.
       TraktScrobbleService.instance.updateDuration(player!.state.duration);
+      TrackerCoordinator.instance.updateDuration(player!.state.duration);
     });
 
     // Listen to playback rate changes for Discord Rich Presence
@@ -1168,6 +1171,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (client != null) {
       DiscordRPCService.instance.startPlayback(_currentMetadata, client);
       TraktScrobbleService.instance.startPlayback(_currentMetadata, client, isLive: widget.isLive);
+      TrackerCoordinator.instance.startPlayback(_currentMetadata, client, isLive: widget.isLive);
     }
   }
 
@@ -2285,6 +2289,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Clear Discord Rich Presence + send Trakt stop scrobble
     DiscordRPCService.instance.stopPlayback();
     TraktScrobbleService.instance.stopPlayback();
+    TrackerCoordinator.instance.stopPlayback();
 
     // Clean up Windows display mode service
     if (Platform.isWindows && _displayModeService != null) {
@@ -3061,6 +3066,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     // Clear Discord Rich Presence + Trakt scrobble before switching episodes
     DiscordRPCService.instance.stopPlayback();
     TraktScrobbleService.instance.stopPlayback();
+    TrackerCoordinator.instance.stopPlayback();
 
     // If player isn't available, navigate without preserving settings
     if (player == null) {
@@ -3141,6 +3147,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _progressTracker = null;
     DiscordRPCService.instance.stopPlayback();
     TraktScrobbleService.instance.stopPlayback();
+    TrackerCoordinator.instance.stopPlayback();
 
     _currentMetadata = episodeMetadata;
     _activeRatingKey = episodeMetadata.ratingKey;
@@ -3254,6 +3261,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (client != null) {
         DiscordRPCService.instance.startPlayback(episodeMetadata, client);
         TraktScrobbleService.instance.startPlayback(episodeMetadata, client, isLive: widget.isLive);
+        TrackerCoordinator.instance.startPlayback(episodeMetadata, client, isLive: widget.isLive);
       }
 
       try {

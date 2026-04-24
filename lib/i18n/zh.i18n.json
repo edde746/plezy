@@ -218,6 +218,8 @@
     "discordRichPresenceDescription": "在 Discord 上显示您正在观看的内容",
     "trakt": "Trakt",
     "traktDescription": "将观看历史与 Trakt 同步",
+    "trackers": "追踪器",
+    "trackersDescription": "将进度同步到 Trakt、MyAnimeList、AniList 和 Simkl",
     "companionRemoteServer": "配套遥控服务器",
     "companionRemoteServerDescription": "允许网络上的移动设备控制此应用",
     "autoPip": "自动画中画",
@@ -1015,11 +1017,29 @@
     "scrobbleDescription": "在播放时向 Trakt 发送播放、暂停和停止事件。",
     "watchedSync": "同步已观看状态",
     "watchedSyncDescription": "在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。",
-    "deviceCodeTitle": "在 Trakt 上激活 Plezy",
-    "deviceCodeBody": "请访问 ${url} 并输入此代码：",
-    "openTraktActivate": "打开 Trakt 进行激活",
-    "waitingForAuthorization": "等待授权…",
-    "codeCopied": "代码已复制",
     "connectFailed": "无法连接到 Trakt。请重试。"
+  },
+  "trackers": {
+    "title": "追踪器",
+    "hubSubtitle": "让你的观看进度与 Trakt 及其他服务保持同步。",
+    "notConnected": "未连接",
+    "connectedAs": "已以 @${username} 身份连接",
+    "scrobble": "自动记录进度",
+    "scrobbleDescription": "观看完一集或一部电影后更新你的列表。",
+    "disconnectConfirm": "断开 ${service} 连接？",
+    "disconnectConfirmBody": "Plezy 将停止更新你的 ${service} 列表。你可以随时重新连接。",
+    "connectFailed": "无法连接到 ${service}。请重试。",
+    "services": {
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "simkl": "Simkl"
+    },
+    "deviceCode": {
+      "title": "在 ${service} 上激活 Plezy",
+      "body": "访问 ${url} 并输入此代码：",
+      "openToActivate": "打开 ${service} 以激活",
+      "waitingForAuthorization": "等待授权…",
+      "codeCopied": "代码已复制"
+    }
   }
 }

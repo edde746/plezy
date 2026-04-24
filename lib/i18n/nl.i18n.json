@@ -218,6 +218,8 @@
     "discordRichPresenceDescription": "Toon op Discord wat je aan het kijken bent",
     "trakt": "Trakt",
     "traktDescription": "Kijkgeschiedenis synchroniseren met Trakt",
+    "trackers": "Trackers",
+    "trackersDescription": "Voortgang synchroniseren met Trakt, MyAnimeList, AniList en Simkl",
     "companionRemoteServer": "Companion Remote-server",
     "companionRemoteServerDescription": "Sta mobiele apparaten op je netwerk toe om deze app te bedienen",
     "autoPip": "Automatische beeld-in-beeld",
@@ -1015,11 +1017,29 @@
     "scrobbleDescription": "Verstuur play-, pauze- en stopgebeurtenissen tijdens afspelen naar Trakt.",
     "watchedSync": "Bekeken-status synchroniseren",
     "watchedSyncDescription": "Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd.",
-    "deviceCodeTitle": "Activeer Plezy op Trakt",
-    "deviceCodeBody": "Ga naar ${url} en voer deze code in:",
-    "openTraktActivate": "Open Trakt om te activeren",
-    "waitingForAuthorization": "Wacht op autorisatie…",
-    "codeCopied": "Code gekopieerd",
     "connectFailed": "Kan niet verbinden met Trakt. Probeer opnieuw."
+  },
+  "trackers": {
+    "title": "Trackers",
+    "hubSubtitle": "Houd je kijkvoortgang gesynchroniseerd met Trakt en andere diensten.",
+    "notConnected": "Niet verbonden",
+    "connectedAs": "Verbonden als @${username}",
+    "scrobble": "Voortgang automatisch volgen",
+    "scrobbleDescription": "Werk je lijst bij wanneer je een aflevering of film afrondt.",
+    "disconnectConfirm": "${service} loskoppelen?",
+    "disconnectConfirmBody": "Plezy werkt je ${service}-lijst niet meer bij. Je kunt op elk moment opnieuw verbinden.",
+    "connectFailed": "Kan niet verbinden met ${service}. Probeer opnieuw.",
+    "services": {
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "simkl": "Simkl"
+    },
+    "deviceCode": {
+      "title": "Plezy activeren op ${service}",
+      "body": "Ga naar ${url} en voer deze code in:",
+      "openToActivate": "Open ${service} om te activeren",
+      "waitingForAuthorization": "Wachten op autorisatie…",
+      "codeCopied": "Code gekopieerd"
+    }
   }
 }

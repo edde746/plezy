@@ -1,14 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
-import '../../models/trakt/trakt_device_code.dart';
 import '../../providers/trakt_account_provider.dart';
 import '../../services/settings_service.dart';
 import '../../services/trakt/trakt_scrobble_service.dart';
@@ -16,8 +14,8 @@ import '../../services/trakt/trakt_sync_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
-import '../../widgets/dialog_action_button.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/device_code_dialog.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
 
@@ -42,7 +40,11 @@ Future<void> startTraktConnection(BuildContext context) async {
       showDialog<void>(
         context: context,
         barrierDismissible: false,
-        builder: (_) => _DeviceCodeDialog(code: code, account: account),
+        builder: (_) => DeviceCodeDialog(
+          code: code,
+          serviceName: t.trakt.title,
+          onCancel: account.cancelConnect,
+        ),
       ).whenComplete(() => dialogOpen = false);
       if (autoLaunchBrowser) {
         final url = code.verificationUrlComplete ?? code.verificationUrl;
@@ -188,83 +190,3 @@ class _TraktSettingsScreenState extends State<TraktSettingsScreen> {
   }
 }
 
-class _DeviceCodeDialog extends StatefulWidget {
-  final TraktDeviceCode code;
-  final TraktAccountProvider account;
-  const _DeviceCodeDialog({required this.code, required this.account});
-
-  @override
-  State<_DeviceCodeDialog> createState() => _DeviceCodeDialogState();
-}
-
-class _DeviceCodeDialogState extends State<_DeviceCodeDialog> {
-  Future<void> _open() async {
-    final url = widget.code.verificationUrlComplete ?? widget.code.verificationUrl;
-    await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-  }
-
-  Future<void> _copy() async {
-    await Clipboard.setData(ClipboardData(text: widget.code.userCode));
-    if (!mounted) return;
-    showAppSnackBar(context, t.trakt.codeCopied);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return AlertDialog(
-      title: Text(t.trakt.deviceCodeTitle),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(t.trakt.deviceCodeBody(url: widget.code.verificationUrl), style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 16),
-          Center(
-            child: InkWell(
-              onTap: _copy,
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                child: Text(
-                  widget.code.userCode,
-                  style: theme.textTheme.displaySmall?.copyWith(
-                    fontFeatures: const [FontFeature.tabularFigures()],
-                    letterSpacing: 4,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton.icon(
-              icon: const Icon(Icons.open_in_new),
-              label: Text(t.trakt.openTraktActivate),
-              onPressed: _open,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
-              const SizedBox(width: 12),
-              Expanded(child: Text(t.trakt.waitingForAuthorization, style: theme.textTheme.bodySmall)),
-            ],
-          ),
-        ],
-      ),
-      actions: [
-        DialogActionButton(
-          onPressed: () {
-            widget.account.cancelConnect();
-            Navigator.of(context, rootNavigator: true).pop();
-          },
-          label: t.common.cancel,
-        ),
-      ],
-    );
-  }
-}

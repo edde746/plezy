@@ -218,6 +218,8 @@
     "discordRichPresenceDescription": "Show what you're watching on Discord",
     "trakt": "Trakt",
     "traktDescription": "Sync watch history with Trakt",
+    "trackers": "Trackers",
+    "trackersDescription": "Sync progress to Trakt, MyAnimeList, AniList, and Simkl",
     "companionRemoteServer": "Companion Remote Server",
     "companionRemoteServerDescription": "Allow mobile devices on your network to control this app",
     "autoPip": "Auto Picture-in-Picture",
@@ -1015,11 +1017,29 @@
     "scrobbleDescription": "Send play, pause, and stop events to Trakt during playback.",
     "watchedSync": "Sync watched status",
     "watchedSyncDescription": "When you mark items watched in Plezy, mark them on Trakt.",
-    "deviceCodeTitle": "Activate Plezy on Trakt",
-    "deviceCodeBody": "Visit ${url} and enter this code:",
-    "openTraktActivate": "Open Trakt to activate",
-    "waitingForAuthorization": "Waiting for authorization…",
-    "codeCopied": "Code copied",
     "connectFailed": "Couldn't connect to Trakt. Try again."
+  },
+  "trackers": {
+    "title": "Trackers",
+    "hubSubtitle": "Keep your watch progress in sync with Trakt and other services.",
+    "notConnected": "Not connected",
+    "connectedAs": "Connected as @${username}",
+    "scrobble": "Track progress automatically",
+    "scrobbleDescription": "Update your list when you finish an episode or movie.",
+    "disconnectConfirm": "Disconnect ${service}?",
+    "disconnectConfirmBody": "Plezy will stop updating your ${service} list. You can reconnect at any time.",
+    "connectFailed": "Couldn't connect to ${service}. Try again.",
+    "services": {
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "simkl": "Simkl"
+    },
+    "deviceCode": {
+      "title": "Activate Plezy on ${service}",
+      "body": "Visit ${url} and enter this code:",
+      "openToActivate": "Open ${service} to activate",
+      "waitingForAuthorization": "Waiting for authorization…",
+      "codeCopied": "Code copied"
+    }
   }
 }

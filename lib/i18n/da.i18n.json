@@ -218,6 +218,8 @@
     "discordRichPresenceDescription": "Vis hvad du ser på Discord",
     "trakt": "Trakt",
     "traktDescription": "Synkroniser visningshistorik med Trakt",
+    "trackers": "Trackere",
+    "trackersDescription": "Synkroniser fremgang til Trakt, MyAnimeList, AniList og Simkl",
     "companionRemoteServer": "Companion Remote Server",
     "companionRemoteServerDescription": "Tillad mobilenheder på dit netværk at styre denne app",
     "autoPip": "Auto billede-i-billede",
@@ -1015,11 +1017,29 @@
     "scrobbleDescription": "Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.",
     "watchedSync": "Synkroniser sét-status",
     "watchedSyncDescription": "Når du markerer ting som sét i Plezy, markeres de også på Trakt.",
-    "deviceCodeTitle": "Aktivér Plezy på Trakt",
-    "deviceCodeBody": "Besøg ${url} og indtast denne kode:",
-    "openTraktActivate": "Åbn Trakt for at aktivere",
-    "waitingForAuthorization": "Venter på godkendelse…",
-    "codeCopied": "Kode kopieret",
     "connectFailed": "Kunne ikke forbinde til Trakt. Prøv igen."
+  },
+  "trackers": {
+    "title": "Trackere",
+    "hubSubtitle": "Hold din visningsfremgang synkroniseret med Trakt og andre tjenester.",
+    "notConnected": "Ikke forbundet",
+    "connectedAs": "Forbundet som @${username}",
+    "scrobble": "Registrer fremgang automatisk",
+    "scrobbleDescription": "Opdater din liste når du er færdig med et afsnit eller en film.",
+    "disconnectConfirm": "Afbryd ${service}?",
+    "disconnectConfirmBody": "Plezy stopper med at opdatere din ${service}-liste. Du kan forbinde igen når som helst.",
+    "connectFailed": "Kunne ikke forbinde til ${service}. Prøv igen.",
+    "services": {
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "simkl": "Simkl"
+    },
+    "deviceCode": {
+      "title": "Aktiver Plezy på ${service}",
+      "body": "Besøg ${url} og indtast denne kode:",
+      "openToActivate": "Åbn ${service} for at aktivere",
+      "waitingForAuthorization": "Venter på godkendelse…",
+      "codeCopied": "Kode kopieret"
+    }
   }
 }

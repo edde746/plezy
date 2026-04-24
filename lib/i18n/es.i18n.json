@@ -218,6 +218,8 @@
     "discordRichPresenceDescription": "Mostrar lo que estás viendo en Discord",
     "trakt": "Trakt",
     "traktDescription": "Sincronizar historial de visualización con Trakt",
+    "trackers": "Rastreadores",
+    "trackersDescription": "Sincronizar progreso con Trakt, MyAnimeList, AniList y Simkl",
     "companionRemoteServer": "Servidor de control remoto",
     "companionRemoteServerDescription": "Permitir que dispositivos móviles en tu red controlen esta aplicación",
     "autoPip": "Imagen en imagen automática",
@@ -1015,11 +1017,29 @@
     "scrobbleDescription": "Enviar eventos de reproducción, pausa y parada a Trakt durante la reproducción.",
     "watchedSync": "Sincronizar estado de visto",
     "watchedSyncDescription": "Cuando marques elementos como vistos en Plezy, también se marcarán en Trakt.",
-    "deviceCodeTitle": "Activa Plezy en Trakt",
-    "deviceCodeBody": "Visita ${url} e introduce este código:",
-    "openTraktActivate": "Abrir Trakt para activar",
-    "waitingForAuthorization": "Esperando autorización…",
-    "codeCopied": "Código copiado",
     "connectFailed": "No se pudo conectar a Trakt. Inténtalo de nuevo."
+  },
+  "trackers": {
+    "title": "Rastreadores",
+    "hubSubtitle": "Mantén sincronizado tu progreso con Trakt y otros servicios.",
+    "notConnected": "No conectado",
+    "connectedAs": "Conectado como @${username}",
+    "scrobble": "Registrar progreso automáticamente",
+    "scrobbleDescription": "Actualiza tu lista cuando termines un episodio o película.",
+    "disconnectConfirm": "¿Desconectar ${service}?",
+    "disconnectConfirmBody": "Plezy dejará de actualizar tu lista de ${service}. Puedes reconectarte en cualquier momento.",
+    "connectFailed": "No se pudo conectar a ${service}. Inténtalo de nuevo.",
+    "services": {
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "simkl": "Simkl"
+    },
+    "deviceCode": {
+      "title": "Activar Plezy en ${service}",
+      "body": "Visita ${url} e introduce este código:",
+      "openToActivate": "Abrir ${service} para activar",
+      "waitingForAuthorization": "Esperando autorización…",
+      "codeCopied": "Código copiado"
+    }
   }
 }

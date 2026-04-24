@@ -77,6 +77,7 @@ class TranslationsKo with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsMatchScreenKo matchScreen = _TranslationsMatchScreenKo._(_root);
 	@override late final _TranslationsServerTasksKo serverTasks = _TranslationsServerTasksKo._(_root);
 	@override late final _TranslationsTraktKo trakt = _TranslationsTraktKo._(_root);
+	@override late final _TranslationsTrackersKo trackers = _TranslationsTrackersKo._(_root);
 }
 
 // Path: app
@@ -339,6 +340,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Discord에서 시청 중인 콘텐츠 표시';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => 'Trakt와 시청 기록 동기화';
+	@override String get trackers => '트래커';
+	@override String get trackersDescription => 'Trakt, MyAnimeList, AniList 및 Simkl에 진행률 동기화';
 	@override String get companionRemoteServer => '컴패니언 리모트 서버';
 	@override String get companionRemoteServerDescription => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용';
 	@override String get autoPip => '자동 PIP 모드';
@@ -1274,12 +1277,27 @@ class _TranslationsTraktKo implements TranslationsTraktEn {
 	@override String get scrobbleDescription => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.';
 	@override String get watchedSync => '시청 상태 동기화';
 	@override String get watchedSyncDescription => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.';
-	@override String get deviceCodeTitle => 'Trakt에서 Plezy 활성화';
-	@override String deviceCodeBody({required Object url}) => '${url}을(를) 방문하여 이 코드를 입력하세요:';
-	@override String get openTraktActivate => '활성화하려면 Trakt 열기';
-	@override String get waitingForAuthorization => '인증 대기 중…';
-	@override String get codeCopied => '코드가 복사됨';
 	@override String get connectFailed => 'Trakt에 연결할 수 없습니다. 다시 시도하세요.';
+}
+
+// Path: trackers
+class _TranslationsTrackersKo implements TranslationsTrackersEn {
+	_TranslationsTrackersKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '트래커';
+	@override String get hubSubtitle => '시청 진행률을 Trakt 및 기타 서비스와 동기화하세요.';
+	@override String get notConnected => '연결되지 않음';
+	@override String connectedAs({required Object username}) => '@${username} 로 연결됨';
+	@override String get scrobble => '진행률 자동 추적';
+	@override String get scrobbleDescription => '에피소드나 영화를 시청하면 목록을 업데이트합니다.';
+	@override String disconnectConfirm({required Object service}) => '${service} 연결을 해제하시겠습니까?';
+	@override String disconnectConfirmBody({required Object service}) => 'Plezy가 ${service} 목록 업데이트를 중지합니다. 언제든지 다시 연결할 수 있습니다.';
+	@override String connectFailed({required Object service}) => '${service}에 연결할 수 없습니다. 다시 시도하세요.';
+	@override late final _TranslationsTrackersServicesKo services = _TranslationsTrackersServicesKo._(_root);
+	@override late final _TranslationsTrackersDeviceCodeKo deviceCode = _TranslationsTrackersDeviceCodeKo._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1436,6 +1454,32 @@ class _TranslationsCompanionRemoteRemoteKo implements TranslationsCompanionRemot
 	@override String get subtitles => '자막';
 	@override String get audio => '오디오';
 	@override String get searchHint => '데스크톱에서 검색...';
+}
+
+// Path: trackers.services
+class _TranslationsTrackersServicesKo implements TranslationsTrackersServicesEn {
+	_TranslationsTrackersServicesKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get mal => 'MyAnimeList';
+	@override String get anilist => 'AniList';
+	@override String get simkl => 'Simkl';
+}
+
+// Path: trackers.deviceCode
+class _TranslationsTrackersDeviceCodeKo implements TranslationsTrackersDeviceCodeEn {
+	_TranslationsTrackersDeviceCodeKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => '${service}에서 Plezy 활성화';
+	@override String body({required Object url}) => '${url}을 방문하여 이 코드를 입력하세요:';
+	@override String openToActivate({required Object service}) => '활성화하려면 ${service} 열기';
+	@override String get waitingForAuthorization => '인증을 기다리는 중…';
+	@override String get codeCopied => '코드가 복사되었습니다';
 }
 
 /// The flat map containing all translations for locale <ko>.
@@ -1654,6 +1698,8 @@ extension on TranslationsKo {
 			'settings.discordRichPresenceDescription' => 'Discord에서 시청 중인 콘텐츠 표시',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => 'Trakt와 시청 기록 동기화',
+			'settings.trackers' => '트래커',
+			'settings.trackersDescription' => 'Trakt, MyAnimeList, AniList 및 Simkl에 진행률 동기화',
 			'settings.companionRemoteServer' => '컴패니언 리모트 서버',
 			'settings.companionRemoteServerDescription' => '네트워크의 모바일 기기가 이 앱을 제어할 수 있도록 허용',
 			'settings.autoPip' => '자동 PIP 모드',
@@ -1956,10 +2002,10 @@ extension on TranslationsKo {
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '「${title}」를 스캔 하시겠습니까?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '「${title}」를 분석 하시겠습니까?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '「${title}」의 메타데이터를 새로고침 하시겠습니까?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => '${title}의 휴지통을 비우시겠습니까?',
-			'libraries.manageLibraries' => '미디어 라이브러리 관리',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrashConfirm' => ({required Object title}) => '${title}의 휴지통을 비우시겠습니까?',
+			'libraries.manageLibraries' => '미디어 라이브러리 관리',
 			'libraries.sort' => '정렬',
 			'libraries.sortBy' => '정렬 기준',
 			'libraries.filters' => '필터',
@@ -2371,12 +2417,24 @@ extension on TranslationsKo {
 			'trakt.scrobbleDescription' => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.',
 			'trakt.watchedSync' => '시청 상태 동기화',
 			'trakt.watchedSyncDescription' => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.',
-			'trakt.deviceCodeTitle' => 'Trakt에서 Plezy 활성화',
-			'trakt.deviceCodeBody' => ({required Object url}) => '${url}을(를) 방문하여 이 코드를 입력하세요:',
-			'trakt.openTraktActivate' => '활성화하려면 Trakt 열기',
-			'trakt.waitingForAuthorization' => '인증 대기 중…',
-			'trakt.codeCopied' => '코드가 복사됨',
 			'trakt.connectFailed' => 'Trakt에 연결할 수 없습니다. 다시 시도하세요.',
+			'trackers.title' => '트래커',
+			'trackers.hubSubtitle' => '시청 진행률을 Trakt 및 기타 서비스와 동기화하세요.',
+			'trackers.notConnected' => '연결되지 않음',
+			'trackers.connectedAs' => ({required Object username}) => '@${username} 로 연결됨',
+			'trackers.scrobble' => '진행률 자동 추적',
+			'trackers.scrobbleDescription' => '에피소드나 영화를 시청하면 목록을 업데이트합니다.',
+			'trackers.disconnectConfirm' => ({required Object service}) => '${service} 연결을 해제하시겠습니까?',
+			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy가 ${service} 목록 업데이트를 중지합니다. 언제든지 다시 연결할 수 있습니다.',
+			'trackers.connectFailed' => ({required Object service}) => '${service}에 연결할 수 없습니다. 다시 시도하세요.',
+			'trackers.services.mal' => 'MyAnimeList',
+			'trackers.services.anilist' => 'AniList',
+			'trackers.services.simkl' => 'Simkl',
+			'trackers.deviceCode.title' => ({required Object service}) => '${service}에서 Plezy 활성화',
+			'trackers.deviceCode.body' => ({required Object url}) => '${url}을 방문하여 이 코드를 입력하세요:',
+			'trackers.deviceCode.openToActivate' => ({required Object service}) => '활성화하려면 ${service} 열기',
+			'trackers.deviceCode.waitingForAuthorization' => '인증을 기다리는 중…',
+			'trackers.deviceCode.codeCopied' => '코드가 복사되었습니다',
 			_ => null,
 		};
 	}

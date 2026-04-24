@@ -95,6 +95,9 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyEnableDiscordRPC = 'enable_discord_rpc';
   static const String _keyEnableTraktScrobble = 'enable_trakt_scrobble';
   static const String _keyEnableTraktWatchedSync = 'enable_trakt_watched_sync';
+  static const String _keyEnableMalScrobble = 'enable_mal_scrobble';
+  static const String _keyEnableAnilistScrobble = 'enable_anilist_scrobble';
+  static const String _keyEnableSimklScrobble = 'enable_simkl_scrobble';
   static const String _keyEnableCompanionRemoteServer = 'enable_companion_remote_server';
   static const String _keyAutoPip = 'auto_pip';
   static const String _keyMatchContentFrameRate = 'match_content_frame_rate';
@@ -1166,6 +1169,31 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyEnableTraktWatchedSync) ?? true; // Default enabled when account is linked
   }
 
+  // Tracker scrobbling (threshold-based, fires at 80% progress)
+  Future<void> setEnableMalScrobble(bool enabled) async {
+    await prefs.setBool(_keyEnableMalScrobble, enabled);
+  }
+
+  bool getEnableMalScrobble() {
+    return prefs.getBool(_keyEnableMalScrobble) ?? true;
+  }
+
+  Future<void> setEnableAnilistScrobble(bool enabled) async {
+    await prefs.setBool(_keyEnableAnilistScrobble, enabled);
+  }
+
+  bool getEnableAnilistScrobble() {
+    return prefs.getBool(_keyEnableAnilistScrobble) ?? true;
+  }
+
+  Future<void> setEnableSimklScrobble(bool enabled) async {
+    await prefs.setBool(_keyEnableSimklScrobble, enabled);
+  }
+
+  bool getEnableSimklScrobble() {
+    return prefs.getBool(_keyEnableSimklScrobble) ?? true;
+  }
+
   // Companion Remote Server
   Future<void> setEnableCompanionRemoteServer(bool enabled) async {
     await prefs.setBool(_keyEnableCompanionRemoteServer, enabled);
@@ -1505,6 +1533,9 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyEnableDiscordRPC),
       prefs.remove(_keyEnableTraktScrobble),
       prefs.remove(_keyEnableTraktWatchedSync),
+      prefs.remove(_keyEnableMalScrobble),
+      prefs.remove(_keyEnableAnilistScrobble),
+      prefs.remove(_keyEnableSimklScrobble),
       prefs.remove(_keyAutoPip),
       prefs.remove(_keyMatchContentFrameRate),
       prefs.remove(_keyTunneledPlayback),

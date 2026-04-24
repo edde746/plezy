@@ -218,6 +218,8 @@
     "discordRichPresenceDescription": "Vis hva du ser på Discord",
     "trakt": "Trakt",
     "traktDescription": "Synkroniser visningshistorikk med Trakt",
+    "trackers": "Trackere",
+    "trackersDescription": "Synkroniser fremdrift til Trakt, MyAnimeList, AniList og Simkl",
     "companionRemoteServer": "Companion Remote-server",
     "companionRemoteServerDescription": "Tillat mobilenheter på nettverket ditt å styre denne appen",
     "autoPip": "Auto bilde-i-bilde",
@@ -1015,11 +1017,29 @@
     "scrobbleDescription": "Send avspillings-, pause- og stopphendelser til Trakt under avspilling.",
     "watchedSync": "Synkroniser sett-status",
     "watchedSyncDescription": "Når du markerer noe som sett i Plezy, markeres det også på Trakt.",
-    "deviceCodeTitle": "Aktiver Plezy på Trakt",
-    "deviceCodeBody": "Besøk ${url} og skriv inn denne koden:",
-    "openTraktActivate": "Åpne Trakt for å aktivere",
-    "waitingForAuthorization": "Venter på autorisering…",
-    "codeCopied": "Kode kopiert",
     "connectFailed": "Kunne ikke koble til Trakt. Prøv igjen."
+  },
+  "trackers": {
+    "title": "Trackere",
+    "hubSubtitle": "Hold visningsfremdriften synkronisert med Trakt og andre tjenester.",
+    "notConnected": "Ikke tilkoblet",
+    "connectedAs": "Tilkoblet som @${username}",
+    "scrobble": "Registrer fremdrift automatisk",
+    "scrobbleDescription": "Oppdater listen din når du er ferdig med en episode eller film.",
+    "disconnectConfirm": "Koble fra ${service}?",
+    "disconnectConfirmBody": "Plezy slutter å oppdatere ${service}-listen din. Du kan koble til igjen når som helst.",
+    "connectFailed": "Kunne ikke koble til ${service}. Prøv igjen.",
+    "services": {
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "simkl": "Simkl"
+    },
+    "deviceCode": {
+      "title": "Aktiver Plezy på ${service}",
+      "body": "Besøk ${url} og skriv inn denne koden:",
+      "openToActivate": "Åpne ${service} for å aktivere",
+      "waitingForAuthorization": "Venter på godkjenning…",
+      "codeCopied": "Kode kopiert"
+    }
   }
 }

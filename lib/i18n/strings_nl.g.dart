@@ -77,6 +77,7 @@ class TranslationsNl with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsMatchScreenNl matchScreen = _TranslationsMatchScreenNl._(_root);
 	@override late final _TranslationsServerTasksNl serverTasks = _TranslationsServerTasksNl._(_root);
 	@override late final _TranslationsTraktNl trakt = _TranslationsTraktNl._(_root);
+	@override late final _TranslationsTrackersNl trackers = _TranslationsTrackersNl._(_root);
 }
 
 // Path: app
@@ -339,6 +340,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Toon op Discord wat je aan het kijken bent';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => 'Kijkgeschiedenis synchroniseren met Trakt';
+	@override String get trackers => 'Trackers';
+	@override String get trackersDescription => 'Voortgang synchroniseren met Trakt, MyAnimeList, AniList en Simkl';
 	@override String get companionRemoteServer => 'Companion Remote-server';
 	@override String get companionRemoteServerDescription => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen';
 	@override String get autoPip => 'Automatische beeld-in-beeld';
@@ -1274,12 +1277,27 @@ class _TranslationsTraktNl implements TranslationsTraktEn {
 	@override String get scrobbleDescription => 'Verstuur play-, pauze- en stopgebeurtenissen tijdens afspelen naar Trakt.';
 	@override String get watchedSync => 'Bekeken-status synchroniseren';
 	@override String get watchedSyncDescription => 'Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd.';
-	@override String get deviceCodeTitle => 'Activeer Plezy op Trakt';
-	@override String deviceCodeBody({required Object url}) => 'Ga naar ${url} en voer deze code in:';
-	@override String get openTraktActivate => 'Open Trakt om te activeren';
-	@override String get waitingForAuthorization => 'Wacht op autorisatie…';
-	@override String get codeCopied => 'Code gekopieerd';
 	@override String get connectFailed => 'Kan niet verbinden met Trakt. Probeer opnieuw.';
+}
+
+// Path: trackers
+class _TranslationsTrackersNl implements TranslationsTrackersEn {
+	_TranslationsTrackersNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Trackers';
+	@override String get hubSubtitle => 'Houd je kijkvoortgang gesynchroniseerd met Trakt en andere diensten.';
+	@override String get notConnected => 'Niet verbonden';
+	@override String connectedAs({required Object username}) => 'Verbonden als @${username}';
+	@override String get scrobble => 'Voortgang automatisch volgen';
+	@override String get scrobbleDescription => 'Werk je lijst bij wanneer je een aflevering of film afrondt.';
+	@override String disconnectConfirm({required Object service}) => '${service} loskoppelen?';
+	@override String disconnectConfirmBody({required Object service}) => 'Plezy werkt je ${service}-lijst niet meer bij. Je kunt op elk moment opnieuw verbinden.';
+	@override String connectFailed({required Object service}) => 'Kan niet verbinden met ${service}. Probeer opnieuw.';
+	@override late final _TranslationsTrackersServicesNl services = _TranslationsTrackersServicesNl._(_root);
+	@override late final _TranslationsTrackersDeviceCodeNl deviceCode = _TranslationsTrackersDeviceCodeNl._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1436,6 +1454,32 @@ class _TranslationsCompanionRemoteRemoteNl implements TranslationsCompanionRemot
 	@override String get subtitles => 'Ondertitels';
 	@override String get audio => 'Audio';
 	@override String get searchHint => 'Zoeken op desktop...';
+}
+
+// Path: trackers.services
+class _TranslationsTrackersServicesNl implements TranslationsTrackersServicesEn {
+	_TranslationsTrackersServicesNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get mal => 'MyAnimeList';
+	@override String get anilist => 'AniList';
+	@override String get simkl => 'Simkl';
+}
+
+// Path: trackers.deviceCode
+class _TranslationsTrackersDeviceCodeNl implements TranslationsTrackersDeviceCodeEn {
+	_TranslationsTrackersDeviceCodeNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => 'Plezy activeren op ${service}';
+	@override String body({required Object url}) => 'Ga naar ${url} en voer deze code in:';
+	@override String openToActivate({required Object service}) => 'Open ${service} om te activeren';
+	@override String get waitingForAuthorization => 'Wachten op autorisatie…';
+	@override String get codeCopied => 'Code gekopieerd';
 }
 
 /// The flat map containing all translations for locale <nl>.
@@ -1654,6 +1698,8 @@ extension on TranslationsNl {
 			'settings.discordRichPresenceDescription' => 'Toon op Discord wat je aan het kijken bent',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => 'Kijkgeschiedenis synchroniseren met Trakt',
+			'settings.trackers' => 'Trackers',
+			'settings.trackersDescription' => 'Voortgang synchroniseren met Trakt, MyAnimeList, AniList en Simkl',
 			'settings.companionRemoteServer' => 'Companion Remote-server',
 			'settings.companionRemoteServerDescription' => 'Sta mobiele apparaten op je netwerk toe om deze app te bedienen',
 			'settings.autoPip' => 'Automatische beeld-in-beeld',
@@ -1956,10 +2002,10 @@ extension on TranslationsNl {
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt scannen?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt analyseren?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Weet je zeker dat je metadata wilt vernieuwen voor "${title}"?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Weet je zeker dat je de prullenbak wilt legen voor "${title}"?',
-			'libraries.manageLibraries' => 'Beheer bibliotheken',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Weet je zeker dat je de prullenbak wilt legen voor "${title}"?',
+			'libraries.manageLibraries' => 'Beheer bibliotheken',
 			'libraries.sort' => 'Sorteren',
 			'libraries.sortBy' => 'Sorteer op',
 			'libraries.filters' => 'Filters',
@@ -2371,12 +2417,24 @@ extension on TranslationsNl {
 			'trakt.scrobbleDescription' => 'Verstuur play-, pauze- en stopgebeurtenissen tijdens afspelen naar Trakt.',
 			'trakt.watchedSync' => 'Bekeken-status synchroniseren',
 			'trakt.watchedSyncDescription' => 'Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd.',
-			'trakt.deviceCodeTitle' => 'Activeer Plezy op Trakt',
-			'trakt.deviceCodeBody' => ({required Object url}) => 'Ga naar ${url} en voer deze code in:',
-			'trakt.openTraktActivate' => 'Open Trakt om te activeren',
-			'trakt.waitingForAuthorization' => 'Wacht op autorisatie…',
-			'trakt.codeCopied' => 'Code gekopieerd',
 			'trakt.connectFailed' => 'Kan niet verbinden met Trakt. Probeer opnieuw.',
+			'trackers.title' => 'Trackers',
+			'trackers.hubSubtitle' => 'Houd je kijkvoortgang gesynchroniseerd met Trakt en andere diensten.',
+			'trackers.notConnected' => 'Niet verbonden',
+			'trackers.connectedAs' => ({required Object username}) => 'Verbonden als @${username}',
+			'trackers.scrobble' => 'Voortgang automatisch volgen',
+			'trackers.scrobbleDescription' => 'Werk je lijst bij wanneer je een aflevering of film afrondt.',
+			'trackers.disconnectConfirm' => ({required Object service}) => '${service} loskoppelen?',
+			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy werkt je ${service}-lijst niet meer bij. Je kunt op elk moment opnieuw verbinden.',
+			'trackers.connectFailed' => ({required Object service}) => 'Kan niet verbinden met ${service}. Probeer opnieuw.',
+			'trackers.services.mal' => 'MyAnimeList',
+			'trackers.services.anilist' => 'AniList',
+			'trackers.services.simkl' => 'Simkl',
+			'trackers.deviceCode.title' => ({required Object service}) => 'Plezy activeren op ${service}',
+			'trackers.deviceCode.body' => ({required Object url}) => 'Ga naar ${url} en voer deze code in:',
+			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Open ${service} om te activeren',
+			'trackers.deviceCode.waitingForAuthorization' => 'Wachten op autorisatie…',
+			'trackers.deviceCode.codeCopied' => 'Code gekopieerd',
 			_ => null,
 		};
 	}

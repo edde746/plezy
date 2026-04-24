@@ -77,6 +77,7 @@ class TranslationsFr with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsMatchScreenFr matchScreen = _TranslationsMatchScreenFr._(_root);
 	@override late final _TranslationsServerTasksFr serverTasks = _TranslationsServerTasksFr._(_root);
 	@override late final _TranslationsTraktFr trakt = _TranslationsTraktFr._(_root);
+	@override late final _TranslationsTrackersFr trackers = _TranslationsTrackersFr._(_root);
 }
 
 // Path: app
@@ -339,6 +340,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Montrez ce que vous regardez sur Discord';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => 'Synchroniser l\'historique de visionnage avec Trakt';
+	@override String get trackers => 'Trackers';
+	@override String get trackersDescription => 'Synchroniser la progression avec Trakt, MyAnimeList, AniList et Simkl';
 	@override String get companionRemoteServer => 'Serveur de télécommande';
 	@override String get companionRemoteServerDescription => 'Autoriser les appareils mobiles de votre réseau à contrôler cette application';
 	@override String get autoPip => 'Image dans l\'image automatique';
@@ -1274,12 +1277,27 @@ class _TranslationsTraktFr implements TranslationsTraktEn {
 	@override String get scrobbleDescription => 'Envoyer les événements de lecture, pause et arrêt à Trakt pendant la lecture.';
 	@override String get watchedSync => 'Synchroniser le statut « vu »';
 	@override String get watchedSyncDescription => 'Lorsque vous marquez un élément comme vu dans Plezy, il l\'est aussi sur Trakt.';
-	@override String get deviceCodeTitle => 'Activer Plezy sur Trakt';
-	@override String deviceCodeBody({required Object url}) => 'Rendez-vous sur ${url} et entrez ce code :';
-	@override String get openTraktActivate => 'Ouvrir Trakt pour activer';
-	@override String get waitingForAuthorization => 'En attente d\'autorisation…';
-	@override String get codeCopied => 'Code copié';
 	@override String get connectFailed => 'Échec de la connexion à Trakt. Réessayez.';
+}
+
+// Path: trackers
+class _TranslationsTrackersFr implements TranslationsTrackersEn {
+	_TranslationsTrackersFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Trackers';
+	@override String get hubSubtitle => 'Gardez votre progression synchronisée avec Trakt et d\'autres services.';
+	@override String get notConnected => 'Non connecté';
+	@override String connectedAs({required Object username}) => 'Connecté en tant que @${username}';
+	@override String get scrobble => 'Suivre la progression automatiquement';
+	@override String get scrobbleDescription => 'Mettre à jour votre liste lorsque vous terminez un épisode ou un film.';
+	@override String disconnectConfirm({required Object service}) => 'Déconnecter ${service} ?';
+	@override String disconnectConfirmBody({required Object service}) => 'Plezy ne mettra plus à jour votre liste ${service}. Vous pouvez vous reconnecter à tout moment.';
+	@override String connectFailed({required Object service}) => 'Échec de la connexion à ${service}. Réessayez.';
+	@override late final _TranslationsTrackersServicesFr services = _TranslationsTrackersServicesFr._(_root);
+	@override late final _TranslationsTrackersDeviceCodeFr deviceCode = _TranslationsTrackersDeviceCodeFr._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1436,6 +1454,32 @@ class _TranslationsCompanionRemoteRemoteFr implements TranslationsCompanionRemot
 	@override String get subtitles => 'Sous-titres';
 	@override String get audio => 'Audio';
 	@override String get searchHint => 'Rechercher sur le bureau...';
+}
+
+// Path: trackers.services
+class _TranslationsTrackersServicesFr implements TranslationsTrackersServicesEn {
+	_TranslationsTrackersServicesFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get mal => 'MyAnimeList';
+	@override String get anilist => 'AniList';
+	@override String get simkl => 'Simkl';
+}
+
+// Path: trackers.deviceCode
+class _TranslationsTrackersDeviceCodeFr implements TranslationsTrackersDeviceCodeEn {
+	_TranslationsTrackersDeviceCodeFr._(this._root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => 'Activer Plezy sur ${service}';
+	@override String body({required Object url}) => 'Rendez-vous sur ${url} et entrez ce code :';
+	@override String openToActivate({required Object service}) => 'Ouvrir ${service} pour activer';
+	@override String get waitingForAuthorization => 'En attente d\'autorisation…';
+	@override String get codeCopied => 'Code copié';
 }
 
 /// The flat map containing all translations for locale <fr>.
@@ -1654,6 +1698,8 @@ extension on TranslationsFr {
 			'settings.discordRichPresenceDescription' => 'Montrez ce que vous regardez sur Discord',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => 'Synchroniser l\'historique de visionnage avec Trakt',
+			'settings.trackers' => 'Trackers',
+			'settings.trackersDescription' => 'Synchroniser la progression avec Trakt, MyAnimeList, AniList et Simkl',
 			'settings.companionRemoteServer' => 'Serveur de télécommande',
 			'settings.companionRemoteServerDescription' => 'Autoriser les appareils mobiles de votre réseau à contrôler cette application',
 			'settings.autoPip' => 'Image dans l\'image automatique',
@@ -1956,10 +2002,10 @@ extension on TranslationsFr {
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir lancer le scan de "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir analyser "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir actualiser les métadonnées pour "${title}"?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir vider la corbeille pour "${title}"?',
-			'libraries.manageLibraries' => 'Gérer les bibliothèques',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir vider la corbeille pour "${title}"?',
+			'libraries.manageLibraries' => 'Gérer les bibliothèques',
 			'libraries.sort' => 'Trier',
 			'libraries.sortBy' => 'Trier par',
 			'libraries.filters' => 'Filtres',
@@ -2371,12 +2417,24 @@ extension on TranslationsFr {
 			'trakt.scrobbleDescription' => 'Envoyer les événements de lecture, pause et arrêt à Trakt pendant la lecture.',
 			'trakt.watchedSync' => 'Synchroniser le statut « vu »',
 			'trakt.watchedSyncDescription' => 'Lorsque vous marquez un élément comme vu dans Plezy, il l\'est aussi sur Trakt.',
-			'trakt.deviceCodeTitle' => 'Activer Plezy sur Trakt',
-			'trakt.deviceCodeBody' => ({required Object url}) => 'Rendez-vous sur ${url} et entrez ce code :',
-			'trakt.openTraktActivate' => 'Ouvrir Trakt pour activer',
-			'trakt.waitingForAuthorization' => 'En attente d\'autorisation…',
-			'trakt.codeCopied' => 'Code copié',
 			'trakt.connectFailed' => 'Échec de la connexion à Trakt. Réessayez.',
+			'trackers.title' => 'Trackers',
+			'trackers.hubSubtitle' => 'Gardez votre progression synchronisée avec Trakt et d\'autres services.',
+			'trackers.notConnected' => 'Non connecté',
+			'trackers.connectedAs' => ({required Object username}) => 'Connecté en tant que @${username}',
+			'trackers.scrobble' => 'Suivre la progression automatiquement',
+			'trackers.scrobbleDescription' => 'Mettre à jour votre liste lorsque vous terminez un épisode ou un film.',
+			'trackers.disconnectConfirm' => ({required Object service}) => 'Déconnecter ${service} ?',
+			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy ne mettra plus à jour votre liste ${service}. Vous pouvez vous reconnecter à tout moment.',
+			'trackers.connectFailed' => ({required Object service}) => 'Échec de la connexion à ${service}. Réessayez.',
+			'trackers.services.mal' => 'MyAnimeList',
+			'trackers.services.anilist' => 'AniList',
+			'trackers.services.simkl' => 'Simkl',
+			'trackers.deviceCode.title' => ({required Object service}) => 'Activer Plezy sur ${service}',
+			'trackers.deviceCode.body' => ({required Object url}) => 'Rendez-vous sur ${url} et entrez ce code :',
+			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Ouvrir ${service} pour activer',
+			'trackers.deviceCode.waitingForAuthorization' => 'En attente d\'autorisation…',
+			'trackers.deviceCode.codeCopied' => 'Code copié',
 			_ => null,
 		};
 	}

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
-import '../models/trakt/trakt_device_code.dart';
+import '../models/trackers/device_code.dart';
 import '../services/trakt/trakt_account_store.dart';
 import '../services/trakt/trakt_auth_service.dart';
 import '../services/trakt/trakt_client.dart';
@@ -14,11 +14,10 @@ import '../utils/app_logger.dart';
 /// Owns the active Trakt session for the currently-selected Plex profile.
 ///
 /// Single rebind seam: `onActiveProfileChanged` loads the new profile's
-/// session from `TraktAccountStore` and pushes it to both
-/// `TraktScrobbleService` and `TraktSyncService`.
+/// session and pushes it to both `TraktScrobbleService` and `TraktSyncService`.
 class TraktAccountProvider extends ChangeNotifier {
   final TraktAuthService _auth = TraktAuthService();
-  final TraktAccountStore _store = TraktAccountStore.instance;
+  final _store = traktAccountStore;
 
   TraktSession? _session;
   String _activeUserUuid = '';
@@ -47,7 +46,7 @@ class TraktAccountProvider extends ChangeNotifier {
   ///
   /// [onCodeReady] is invoked once with the user code + verification URL so
   /// the UI can render the dialog.
-  Future<bool> connect({required void Function(TraktDeviceCode code) onCodeReady}) async {
+  Future<bool> connect({required void Function(DeviceCode code) onCodeReady}) async {
     if (_isConnecting) return false;
     _isConnecting = true;
     _cancelRequested = false;
@@ -58,11 +57,11 @@ class TraktAccountProvider extends ChangeNotifier {
       onCodeReady(code);
 
       await for (final event in _auth.pollDeviceCode(code, shouldCancel: () => _cancelRequested)) {
-        if (event is TraktDevicePollSuccess) {
+        if (event is DevicePollSuccess) {
           await _completeConnect(event.tokenResponse);
           return true;
         }
-        if (event is TraktDevicePollDenied || event is TraktDevicePollExpired) {
+        if (event is DevicePollDenied || event is DevicePollExpired) {
           return false;
         }
       }

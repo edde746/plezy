@@ -77,6 +77,7 @@ class TranslationsZh with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsMatchScreenZh matchScreen = _TranslationsMatchScreenZh._(_root);
 	@override late final _TranslationsServerTasksZh serverTasks = _TranslationsServerTasksZh._(_root);
 	@override late final _TranslationsTraktZh trakt = _TranslationsTraktZh._(_root);
+	@override late final _TranslationsTrackersZh trackers = _TranslationsTrackersZh._(_root);
 }
 
 // Path: app
@@ -339,6 +340,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => '在 Discord 上显示您正在观看的内容';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => '将观看历史与 Trakt 同步';
+	@override String get trackers => '追踪器';
+	@override String get trackersDescription => '将进度同步到 Trakt、MyAnimeList、AniList 和 Simkl';
 	@override String get companionRemoteServer => '配套遥控服务器';
 	@override String get companionRemoteServerDescription => '允许网络上的移动设备控制此应用';
 	@override String get autoPip => '自动画中画';
@@ -1274,12 +1277,27 @@ class _TranslationsTraktZh implements TranslationsTraktEn {
 	@override String get scrobbleDescription => '在播放时向 Trakt 发送播放、暂停和停止事件。';
 	@override String get watchedSync => '同步已观看状态';
 	@override String get watchedSyncDescription => '在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。';
-	@override String get deviceCodeTitle => '在 Trakt 上激活 Plezy';
-	@override String deviceCodeBody({required Object url}) => '请访问 ${url} 并输入此代码：';
-	@override String get openTraktActivate => '打开 Trakt 进行激活';
-	@override String get waitingForAuthorization => '等待授权…';
-	@override String get codeCopied => '代码已复制';
 	@override String get connectFailed => '无法连接到 Trakt。请重试。';
+}
+
+// Path: trackers
+class _TranslationsTrackersZh implements TranslationsTrackersEn {
+	_TranslationsTrackersZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '追踪器';
+	@override String get hubSubtitle => '让你的观看进度与 Trakt 及其他服务保持同步。';
+	@override String get notConnected => '未连接';
+	@override String connectedAs({required Object username}) => '已以 @${username} 身份连接';
+	@override String get scrobble => '自动记录进度';
+	@override String get scrobbleDescription => '观看完一集或一部电影后更新你的列表。';
+	@override String disconnectConfirm({required Object service}) => '断开 ${service} 连接？';
+	@override String disconnectConfirmBody({required Object service}) => 'Plezy 将停止更新你的 ${service} 列表。你可以随时重新连接。';
+	@override String connectFailed({required Object service}) => '无法连接到 ${service}。请重试。';
+	@override late final _TranslationsTrackersServicesZh services = _TranslationsTrackersServicesZh._(_root);
+	@override late final _TranslationsTrackersDeviceCodeZh deviceCode = _TranslationsTrackersDeviceCodeZh._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1436,6 +1454,32 @@ class _TranslationsCompanionRemoteRemoteZh implements TranslationsCompanionRemot
 	@override String get subtitles => '字幕';
 	@override String get audio => '音频';
 	@override String get searchHint => '在桌面上搜索...';
+}
+
+// Path: trackers.services
+class _TranslationsTrackersServicesZh implements TranslationsTrackersServicesEn {
+	_TranslationsTrackersServicesZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get mal => 'MyAnimeList';
+	@override String get anilist => 'AniList';
+	@override String get simkl => 'Simkl';
+}
+
+// Path: trackers.deviceCode
+class _TranslationsTrackersDeviceCodeZh implements TranslationsTrackersDeviceCodeEn {
+	_TranslationsTrackersDeviceCodeZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => '在 ${service} 上激活 Plezy';
+	@override String body({required Object url}) => '访问 ${url} 并输入此代码：';
+	@override String openToActivate({required Object service}) => '打开 ${service} 以激活';
+	@override String get waitingForAuthorization => '等待授权…';
+	@override String get codeCopied => '代码已复制';
 }
 
 /// The flat map containing all translations for locale <zh>.
@@ -1654,6 +1698,8 @@ extension on TranslationsZh {
 			'settings.discordRichPresenceDescription' => '在 Discord 上显示您正在观看的内容',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => '将观看历史与 Trakt 同步',
+			'settings.trackers' => '追踪器',
+			'settings.trackersDescription' => '将进度同步到 Trakt、MyAnimeList、AniList 和 Simkl',
 			'settings.companionRemoteServer' => '配套遥控服务器',
 			'settings.companionRemoteServerDescription' => '允许网络上的移动设备控制此应用',
 			'settings.autoPip' => '自动画中画',
@@ -1956,10 +2002,10 @@ extension on TranslationsZh {
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '确定要扫描 “${title}” 吗？',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '确定要分析 “${title}” 吗？',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => '确定要刷新 “${title}” 的元数据吗？',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => '确定要清空 “${title}” 的回收站吗？',
-			'libraries.manageLibraries' => '管理媒体库',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrashConfirm' => ({required Object title}) => '确定要清空 “${title}” 的回收站吗？',
+			'libraries.manageLibraries' => '管理媒体库',
 			'libraries.sort' => '排序',
 			'libraries.sortBy' => '排序依据',
 			'libraries.filters' => '筛选器',
@@ -2371,12 +2417,24 @@ extension on TranslationsZh {
 			'trakt.scrobbleDescription' => '在播放时向 Trakt 发送播放、暂停和停止事件。',
 			'trakt.watchedSync' => '同步已观看状态',
 			'trakt.watchedSyncDescription' => '在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。',
-			'trakt.deviceCodeTitle' => '在 Trakt 上激活 Plezy',
-			'trakt.deviceCodeBody' => ({required Object url}) => '请访问 ${url} 并输入此代码：',
-			'trakt.openTraktActivate' => '打开 Trakt 进行激活',
-			'trakt.waitingForAuthorization' => '等待授权…',
-			'trakt.codeCopied' => '代码已复制',
 			'trakt.connectFailed' => '无法连接到 Trakt。请重试。',
+			'trackers.title' => '追踪器',
+			'trackers.hubSubtitle' => '让你的观看进度与 Trakt 及其他服务保持同步。',
+			'trackers.notConnected' => '未连接',
+			'trackers.connectedAs' => ({required Object username}) => '已以 @${username} 身份连接',
+			'trackers.scrobble' => '自动记录进度',
+			'trackers.scrobbleDescription' => '观看完一集或一部电影后更新你的列表。',
+			'trackers.disconnectConfirm' => ({required Object service}) => '断开 ${service} 连接？',
+			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy 将停止更新你的 ${service} 列表。你可以随时重新连接。',
+			'trackers.connectFailed' => ({required Object service}) => '无法连接到 ${service}。请重试。',
+			'trackers.services.mal' => 'MyAnimeList',
+			'trackers.services.anilist' => 'AniList',
+			'trackers.services.simkl' => 'Simkl',
+			'trackers.deviceCode.title' => ({required Object service}) => '在 ${service} 上激活 Plezy',
+			'trackers.deviceCode.body' => ({required Object url}) => '访问 ${url} 并输入此代码：',
+			'trackers.deviceCode.openToActivate' => ({required Object service}) => '打开 ${service} 以激活',
+			'trackers.deviceCode.waitingForAuthorization' => '等待授权…',
+			'trackers.deviceCode.codeCopied' => '代码已复制',
 			_ => null,
 		};
 	}

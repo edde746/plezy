@@ -77,6 +77,7 @@ class TranslationsDa with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsMatchScreenDa matchScreen = _TranslationsMatchScreenDa._(_root);
 	@override late final _TranslationsServerTasksDa serverTasks = _TranslationsServerTasksDa._(_root);
 	@override late final _TranslationsTraktDa trakt = _TranslationsTraktDa._(_root);
+	@override late final _TranslationsTrackersDa trackers = _TranslationsTrackersDa._(_root);
 }
 
 // Path: app
@@ -339,6 +340,8 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String get discordRichPresenceDescription => 'Vis hvad du ser på Discord';
 	@override String get trakt => 'Trakt';
 	@override String get traktDescription => 'Synkroniser visningshistorik med Trakt';
+	@override String get trackers => 'Trackere';
+	@override String get trackersDescription => 'Synkroniser fremgang til Trakt, MyAnimeList, AniList og Simkl';
 	@override String get companionRemoteServer => 'Companion Remote Server';
 	@override String get companionRemoteServerDescription => 'Tillad mobilenheder på dit netværk at styre denne app';
 	@override String get autoPip => 'Auto billede-i-billede';
@@ -1274,12 +1277,27 @@ class _TranslationsTraktDa implements TranslationsTraktEn {
 	@override String get scrobbleDescription => 'Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.';
 	@override String get watchedSync => 'Synkroniser sét-status';
 	@override String get watchedSyncDescription => 'Når du markerer ting som sét i Plezy, markeres de også på Trakt.';
-	@override String get deviceCodeTitle => 'Aktivér Plezy på Trakt';
-	@override String deviceCodeBody({required Object url}) => 'Besøg ${url} og indtast denne kode:';
-	@override String get openTraktActivate => 'Åbn Trakt for at aktivere';
-	@override String get waitingForAuthorization => 'Venter på godkendelse…';
-	@override String get codeCopied => 'Kode kopieret';
 	@override String get connectFailed => 'Kunne ikke forbinde til Trakt. Prøv igen.';
+}
+
+// Path: trackers
+class _TranslationsTrackersDa implements TranslationsTrackersEn {
+	_TranslationsTrackersDa._(this._root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Trackere';
+	@override String get hubSubtitle => 'Hold din visningsfremgang synkroniseret med Trakt og andre tjenester.';
+	@override String get notConnected => 'Ikke forbundet';
+	@override String connectedAs({required Object username}) => 'Forbundet som @${username}';
+	@override String get scrobble => 'Registrer fremgang automatisk';
+	@override String get scrobbleDescription => 'Opdater din liste når du er færdig med et afsnit eller en film.';
+	@override String disconnectConfirm({required Object service}) => 'Afbryd ${service}?';
+	@override String disconnectConfirmBody({required Object service}) => 'Plezy stopper med at opdatere din ${service}-liste. Du kan forbinde igen når som helst.';
+	@override String connectFailed({required Object service}) => 'Kunne ikke forbinde til ${service}. Prøv igen.';
+	@override late final _TranslationsTrackersServicesDa services = _TranslationsTrackersServicesDa._(_root);
+	@override late final _TranslationsTrackersDeviceCodeDa deviceCode = _TranslationsTrackersDeviceCodeDa._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1436,6 +1454,32 @@ class _TranslationsCompanionRemoteRemoteDa implements TranslationsCompanionRemot
 	@override String get subtitles => 'Undertekster';
 	@override String get audio => 'Lyd';
 	@override String get searchHint => 'Søg på desktop...';
+}
+
+// Path: trackers.services
+class _TranslationsTrackersServicesDa implements TranslationsTrackersServicesEn {
+	_TranslationsTrackersServicesDa._(this._root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get mal => 'MyAnimeList';
+	@override String get anilist => 'AniList';
+	@override String get simkl => 'Simkl';
+}
+
+// Path: trackers.deviceCode
+class _TranslationsTrackersDeviceCodeDa implements TranslationsTrackersDeviceCodeEn {
+	_TranslationsTrackersDeviceCodeDa._(this._root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String title({required Object service}) => 'Aktiver Plezy på ${service}';
+	@override String body({required Object url}) => 'Besøg ${url} og indtast denne kode:';
+	@override String openToActivate({required Object service}) => 'Åbn ${service} for at aktivere';
+	@override String get waitingForAuthorization => 'Venter på godkendelse…';
+	@override String get codeCopied => 'Kode kopieret';
 }
 
 /// The flat map containing all translations for locale <da>.
@@ -1654,6 +1698,8 @@ extension on TranslationsDa {
 			'settings.discordRichPresenceDescription' => 'Vis hvad du ser på Discord',
 			'settings.trakt' => 'Trakt',
 			'settings.traktDescription' => 'Synkroniser visningshistorik med Trakt',
+			'settings.trackers' => 'Trackere',
+			'settings.trackersDescription' => 'Synkroniser fremgang til Trakt, MyAnimeList, AniList og Simkl',
 			'settings.companionRemoteServer' => 'Companion Remote Server',
 			'settings.companionRemoteServerDescription' => 'Tillad mobilenheder på dit netværk at styre denne app',
 			'settings.autoPip' => 'Auto billede-i-billede',
@@ -1956,10 +2002,10 @@ extension on TranslationsDa {
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Er du sikker på, at du vil scanne "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Er du sikker på, at du vil analysere "${title}"?',
 			'libraries.refreshMetadataConfirm' => ({required Object title}) => 'Er du sikker på, at du vil opdatere metadata for "${title}"?',
-			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Er du sikker på, at du vil tømme papirkurven for "${title}"?',
-			'libraries.manageLibraries' => 'Administrer biblioteker',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.emptyTrashConfirm' => ({required Object title}) => 'Er du sikker på, at du vil tømme papirkurven for "${title}"?',
+			'libraries.manageLibraries' => 'Administrer biblioteker',
 			'libraries.sort' => 'Sortér',
 			'libraries.sortBy' => 'Sortér efter',
 			'libraries.filters' => 'Filtre',
@@ -2371,12 +2417,24 @@ extension on TranslationsDa {
 			'trakt.scrobbleDescription' => 'Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.',
 			'trakt.watchedSync' => 'Synkroniser sét-status',
 			'trakt.watchedSyncDescription' => 'Når du markerer ting som sét i Plezy, markeres de også på Trakt.',
-			'trakt.deviceCodeTitle' => 'Aktivér Plezy på Trakt',
-			'trakt.deviceCodeBody' => ({required Object url}) => 'Besøg ${url} og indtast denne kode:',
-			'trakt.openTraktActivate' => 'Åbn Trakt for at aktivere',
-			'trakt.waitingForAuthorization' => 'Venter på godkendelse…',
-			'trakt.codeCopied' => 'Kode kopieret',
 			'trakt.connectFailed' => 'Kunne ikke forbinde til Trakt. Prøv igen.',
+			'trackers.title' => 'Trackere',
+			'trackers.hubSubtitle' => 'Hold din visningsfremgang synkroniseret med Trakt og andre tjenester.',
+			'trackers.notConnected' => 'Ikke forbundet',
+			'trackers.connectedAs' => ({required Object username}) => 'Forbundet som @${username}',
+			'trackers.scrobble' => 'Registrer fremgang automatisk',
+			'trackers.scrobbleDescription' => 'Opdater din liste når du er færdig med et afsnit eller en film.',
+			'trackers.disconnectConfirm' => ({required Object service}) => 'Afbryd ${service}?',
+			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy stopper med at opdatere din ${service}-liste. Du kan forbinde igen når som helst.',
+			'trackers.connectFailed' => ({required Object service}) => 'Kunne ikke forbinde til ${service}. Prøv igen.',
+			'trackers.services.mal' => 'MyAnimeList',
+			'trackers.services.anilist' => 'AniList',
+			'trackers.services.simkl' => 'Simkl',
+			'trackers.deviceCode.title' => ({required Object service}) => 'Aktiver Plezy på ${service}',
+			'trackers.deviceCode.body' => ({required Object url}) => 'Besøg ${url} og indtast denne kode:',
+			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Åbn ${service} for at aktivere',
+			'trackers.deviceCode.waitingForAuthorization' => 'Venter på godkendelse…',
+			'trackers.deviceCode.codeCopied' => 'Kode kopieret',
 			_ => null,
 		};
 	}

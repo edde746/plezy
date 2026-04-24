@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -24,6 +23,7 @@ import '../../services/saf_storage_service.dart';
 import '../../services/settings_export_service.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/trackers_provider.dart';
 import '../../providers/trakt_account_provider.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/settings_service.dart' as settings;
@@ -39,7 +39,7 @@ import 'appearance_settings_screen.dart';
 import 'keyboard_shortcuts_screen.dart';
 import 'logs_screen.dart';
 import 'playback_settings_screen.dart';
-import 'trakt_settings_screen.dart';
+import 'trackers_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -56,7 +56,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   static const _kDonate = 'donate';
   static const _kAppearance = 'appearance';
   static const _kPlayback = 'playback';
-  static const _kTrakt = 'trakt';
+  static const _kTrackers = 'trackers';
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
@@ -171,8 +171,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 // --- Playback (navigation tile) ---
                 _buildPlaybackTile(),
 
-                // --- Trakt.tv (navigation tile) ---
-                _buildTraktTile(),
+                // --- Trackers (unified hub: Trakt + MAL + AniList + Simkl) ---
+                _buildTrackersTile(),
 
                 // --- Downloads (inline) ---
                 _buildDownloadsSection(),
@@ -257,31 +257,24 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     );
   }
 
-  Widget _buildTraktTile() {
-    return Consumer<TraktAccountProvider>(
-      builder: (context, account, _) {
-        final connected = account.isConnected;
-        final username = account.username;
-        final iconColor = IconTheme.of(context).color ?? Theme.of(context).colorScheme.onSurface;
+  Widget _buildTrackersTile() {
+    return Consumer2<TraktAccountProvider, TrackersProvider>(
+      builder: (context, trakt, trackers, _) {
+        final connectedNames = <String>[
+          if (trakt.isConnected) t.trakt.title,
+          if (trackers.isMalConnected) t.trackers.services.mal,
+          if (trackers.isAnilistConnected) t.trackers.services.anilist,
+          if (trackers.isSimklConnected) t.trackers.services.simkl,
+        ];
+        final subtitle = connectedNames.isEmpty ? t.settings.trackersDescription : connectedNames.join(' · ');
         return ListTile(
-          focusNode: _focusTracker.get(_kTrakt),
-          leading: SvgPicture.asset(
-            'assets/trakt_circlemark.svg',
-            width: 24,
-            height: 24,
-            colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
-          ),
-          title: Text(t.settings.trakt),
-          subtitle: Text(
-            connected && username != null ? t.trakt.connectedAs(username: username) : t.settings.traktDescription,
-          ),
+          focusNode: _focusTracker.get(_kTrackers),
+          leading: const AppIcon(Symbols.sync_rounded, fill: 1),
+          title: Text(t.settings.trackers),
+          subtitle: Text(subtitle),
           trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
           onTap: () {
-            if (account.isConnected) {
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const TraktSettingsScreen()));
-            } else {
-              startTraktConnection(context);
-            }
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackersSettingsScreen()));
           },
         );
       },

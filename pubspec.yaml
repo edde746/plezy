@@ -117,6 +117,9 @@ flutter:
     - assets/plezy.png
     - assets/plezy_adaptive_foreground.svg
     - assets/trakt_circlemark.svg
+    - assets/mal_mark.svg
+    - assets/anilist_mark.svg
+    - assets/simkl_mark.svg
     - assets/go-noto-current-regular.ttf
     - assets/shaders/nvscaler/
     - assets/shaders/anime4k/

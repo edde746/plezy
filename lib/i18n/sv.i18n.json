@@ -218,6 +218,8 @@
     "discordRichPresenceDescription": "Visa vad du tittar på i Discord",
     "trakt": "Trakt",
     "traktDescription": "Synkronisera visningshistorik med Trakt",
+    "trackers": "Spårare",
+    "trackersDescription": "Synkronisera framsteg till Trakt, MyAnimeList, AniList och Simkl",
     "companionRemoteServer": "Companion Remote-server",
     "companionRemoteServerDescription": "Tillåt mobila enheter i ditt nätverk att styra denna app",
     "autoPip": "Automatisk bild-i-bild",
@@ -1015,11 +1017,29 @@
     "scrobbleDescription": "Skicka uppspelnings-, paus- och stopphändelser till Trakt under uppspelning.",
     "watchedSync": "Synkronisera tittad-status",
     "watchedSyncDescription": "När du markerar något som tittat i Plezy markeras det också på Trakt.",
-    "deviceCodeTitle": "Aktivera Plezy på Trakt",
-    "deviceCodeBody": "Besök ${url} och ange den här koden:",
-    "openTraktActivate": "Öppna Trakt för att aktivera",
-    "waitingForAuthorization": "Väntar på auktorisering…",
-    "codeCopied": "Kod kopierad",
     "connectFailed": "Kunde inte ansluta till Trakt. Försök igen."
+  },
+  "trackers": {
+    "title": "Spårare",
+    "hubSubtitle": "Håll ditt tittarprogress synkroniserat med Trakt och andra tjänster.",
+    "notConnected": "Ej ansluten",
+    "connectedAs": "Ansluten som @${username}",
+    "scrobble": "Spåra framsteg automatiskt",
+    "scrobbleDescription": "Uppdaterar din lista när du är klar med ett avsnitt eller en film.",
+    "disconnectConfirm": "Koppla från ${service}?",
+    "disconnectConfirmBody": "Plezy slutar uppdatera din ${service}-lista. Du kan ansluta igen när som helst.",
+    "connectFailed": "Kunde inte ansluta till ${service}. Försök igen.",
+    "services": {
+      "mal": "MyAnimeList",
+      "anilist": "AniList",
+      "simkl": "Simkl"
+    },
+    "deviceCode": {
+      "title": "Aktivera Plezy på ${service}",
+      "body": "Besök ${url} och ange den här koden:",
+      "openToActivate": "Öppna ${service} för att aktivera",
+      "waitingForAuthorization": "Väntar på auktorisering…",
+      "codeCopied": "Kod kopierad"
+    }
   }
 }

@@ -7,9 +7,9 @@ import '../../utils/app_logger.dart';
 import '../../utils/watch_state_notifier.dart';
 import '../multi_server_manager.dart';
 import '../settings_service.dart';
+import '../trackers/tracker_id_resolver.dart';
 import 'trakt_client.dart';
 import 'trakt_constants.dart';
-import 'trakt_guid_resolver.dart';
 import 'trakt_session.dart';
 import 'trakt_sync_queue.dart';
 
@@ -39,7 +39,7 @@ class TraktSyncService {
 
   /// One resolver per Plex server, kept alive across events so the per-rating-
   /// key GUID cache survives a binge-watch session.
-  final Map<String, TraktGuidResolver> _resolvers = {};
+  final Map<String, TrackerIdResolver> _resolvers = {};
 
   /// Fallback buffer for items that failed to persist to the on-disk queue
   /// (e.g. SharedPreferences write threw). Retried on next `flushQueue`.
@@ -90,14 +90,14 @@ class TraktSyncService {
 
   bool get _canPush => _isEnabled && _client != null;
 
-  TraktGuidResolver? _resolverFor(String serverId) {
+  TrackerIdResolver? _resolverFor(String serverId) {
     final cached = _resolvers[serverId];
     if (cached != null) return cached;
 
     final plexClient = _serverManager?.getClient(serverId);
     if (plexClient == null) return null;
 
-    final resolver = TraktGuidResolver(plexClient);
+    final resolver = TrackerIdResolver(plexClient, needsFribb: () => false);
     _resolvers[serverId] = resolver;
     return resolver;
   }
@@ -132,12 +132,12 @@ class TraktSyncService {
       return;
     }
 
-    TraktIds? ids;
+    TrackerIds? resolved;
     int? season;
     int? number;
 
     if (kind == TraktMediaKind.movie) {
-      ids = await resolver.resolveForMovie(ratingKey);
+      resolved = await resolver.resolveForMovie(ratingKey);
     } else {
       // Episode — need show IDs + season/episode index. The WatchStateEvent
       // doesn't carry the index, so fetch episode metadata.
@@ -148,14 +148,15 @@ class TraktSyncService {
       season = episodeMeta.parentIndex;
       number = episodeMeta.index;
       if (season == null || number == null) return;
-      ids = await resolver.resolveShowForEpisode(episodeMeta);
+      resolved = await resolver.resolveShowForEpisode(episodeMeta);
     }
 
-    if (ids == null || !ids.hasAny) {
+    if (resolved == null) {
       appLogger.d('Trakt sync: no IDs for ${kind.name} $ratingKey, dropping');
       return;
     }
 
+    final ids = TraktIds.fromExternal(resolved.external);
     final body = kind == TraktMediaKind.movie
         ? TraktScrobbleRequest.movie(ids: ids)
         : TraktScrobbleRequest.episode(showIds: ids, season: season!, number: number!);
