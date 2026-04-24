@@ -16,8 +16,7 @@ import 'device_code_poller.dart' as poller;
 abstract class DeviceCodeAuthServiceBase<T> {
   final http.Client httpClient;
 
-  DeviceCodeAuthServiceBase({http.Client? httpClient})
-    : httpClient = httpClient ?? platform.createPlatformClient();
+  DeviceCodeAuthServiceBase({http.Client? httpClient}) : httpClient = httpClient ?? platform.createPlatformClient();
 
   void dispose() => httpClient.close();
 
@@ -33,17 +32,10 @@ abstract class DeviceCodeAuthServiceBase<T> {
   /// Drive the full flow. Invokes [onCodeReady] once with the code so the UI
   /// can render the dialog, then polls until the user authorizes, denies, or
   /// the code expires. Returns null on denied/expired/cancel.
-  Future<T?> authorize({
-    required void Function(DeviceCode code) onCodeReady,
-    bool Function()? shouldCancel,
-  }) async {
+  Future<T?> authorize({required void Function(DeviceCode code) onCodeReady, bool Function()? shouldCancel}) async {
     final code = await createDeviceCode();
     onCodeReady(code);
-    await for (final event in poller.pollDeviceCode(
-      code,
-      shouldCancel: shouldCancel,
-      probe: () => probe(code),
-    )) {
+    await for (final event in poller.pollDeviceCode(code, shouldCancel: shouldCancel, probe: () => probe(code))) {
       if (event is DevicePollSuccess) return buildSession(event.tokenResponse);
       if (event is DevicePollDenied || event is DevicePollExpired) return null;
     }

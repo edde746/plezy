@@ -12,12 +12,7 @@ class AnilistSession {
   final String? username;
   final int createdAt;
 
-  const AnilistSession({
-    required this.accessToken,
-    required this.expiresAt,
-    required this.createdAt,
-    this.username,
-  });
+  const AnilistSession({required this.accessToken, required this.expiresAt, required this.createdAt, this.username});
 
   bool get isExpired => DateTime.now().millisecondsSinceEpoch ~/ 1000 >= expiresAt;
 
@@ -50,11 +45,7 @@ class AnilistSession {
   factory AnilistSession.fromProxyResult(OAuthProxyResult r) {
     final createdAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     final expiresIn = r.expiresIn ?? 365 * 24 * 60 * 60;
-    return AnilistSession(
-      accessToken: r.accessToken,
-      expiresAt: createdAt + expiresIn,
-      createdAt: createdAt,
-    );
+    return AnilistSession(accessToken: r.accessToken, expiresAt: createdAt + expiresIn, createdAt: createdAt);
   }
 
   String encode() => json.encode(toJson());

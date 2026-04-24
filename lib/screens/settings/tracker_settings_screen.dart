@@ -198,9 +198,7 @@ class _TrackerSettingsScreenState extends State<TrackerSettingsScreen> {
                 ListTile(
                   leading: const AppIcon(Symbols.account_circle_rounded, fill: 1),
                   title: Text(
-                    username != null
-                        ? t.trackers.connectedAs(username: username)
-                        : widget.config.displayName,
+                    username != null ? t.trackers.connectedAs(username: username) : widget.config.displayName,
                   ),
                 ),
                 SettingsSectionHeader(t.settings.behavior),
@@ -231,10 +229,7 @@ class _TrackerSettingsScreenState extends State<TrackerSettingsScreen> {
                 const Divider(height: 32),
                 ListTile(
                   leading: AppIcon(Symbols.link_off_rounded, fill: 1, color: Theme.of(context).colorScheme.error),
-                  title: Text(
-                    t.common.disconnect,
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  ),
+                  title: Text(t.common.disconnect, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                   onTap: () => _disconnect(account),
                 ),
                 const SizedBox(height: 24),

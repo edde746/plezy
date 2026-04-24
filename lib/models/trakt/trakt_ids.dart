@@ -32,9 +32,5 @@ class TraktIds {
     tvdb: (json['tvdb'] as num?)?.toInt(),
   );
 
-  factory TraktIds.fromExternal(PlexExternalIds ids) => TraktIds(
-    imdb: ids.imdb,
-    tmdb: ids.tmdb,
-    tvdb: ids.tvdb,
-  );
+  factory TraktIds.fromExternal(PlexExternalIds ids) => TraktIds(imdb: ids.imdb, tmdb: ids.tmdb, tvdb: ids.tvdb);
 }

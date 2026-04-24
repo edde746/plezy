@@ -83,10 +83,7 @@ class TrackersProvider extends ChangeNotifier {
   Future<bool> connectMal({required void Function(OAuthProxyStart) onCodeReady}) => _runConnect<MalSession>(
     service: TrackerService.mal,
     alreadyConnected: isMalConnected,
-    authorize: () => _malAuth.authorize(
-      onCodeReady: onCodeReady,
-      shouldCancel: () => _cancelRequested,
-    ),
+    authorize: () => _malAuth.authorize(onCodeReady: onCodeReady, shouldCancel: () => _cancelRequested),
     enrich: _enrichMal,
     store: malAccountStore,
     assign: (s) {
@@ -103,10 +100,7 @@ class TrackersProvider extends ChangeNotifier {
   Future<bool> connectAnilist({required void Function(OAuthProxyStart) onCodeReady}) => _runConnect<AnilistSession>(
     service: TrackerService.anilist,
     alreadyConnected: isAnilistConnected,
-    authorize: () => _anilistAuth.authorize(
-      onCodeReady: onCodeReady,
-      shouldCancel: () => _cancelRequested,
-    ),
+    authorize: () => _anilistAuth.authorize(onCodeReady: onCodeReady, shouldCancel: () => _cancelRequested),
     enrich: _enrichAnilist,
     store: anilistAccountStore,
     assign: (s) {
@@ -123,10 +117,7 @@ class TrackersProvider extends ChangeNotifier {
   Future<bool> connectSimkl({required void Function(DeviceCode code) onCodeReady}) => _runConnect<SimklSession>(
     service: TrackerService.simkl,
     alreadyConnected: isSimklConnected,
-    authorize: () => _simklAuth.authorize(
-      onCodeReady: onCodeReady,
-      shouldCancel: () => _cancelRequested,
-    ),
+    authorize: () => _simklAuth.authorize(onCodeReady: onCodeReady, shouldCancel: () => _cancelRequested),
     enrich: _enrichSimkl,
     store: simklAccountStore,
     assign: (s) {

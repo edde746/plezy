@@ -21,10 +21,7 @@ class SimklAuthService extends DeviceCodeAuthServiceBase<SimklSession> {
   @override
   Future<DeviceCode> createDeviceCode() async {
     final uri = Uri.parse(SimklConstants.pinUrl).replace(
-      queryParameters: {
-        'client_id': SimklConstants.clientId,
-        'redirect': '${OAuthProxyClient.baseUrl}/auth/done',
-      },
+      queryParameters: {'client_id': SimklConstants.clientId, 'redirect': '${OAuthProxyClient.baseUrl}/auth/done'},
     );
     final res = await httpClient.get(uri, headers: SimklConstants.headers()).timeout(const Duration(seconds: 15));
     if (res.statusCode != 200) {

@@ -53,10 +53,7 @@ class TraktAccountProvider extends ChangeNotifier {
     try {
       return await runConnectPipeline<TraktSession>(
         logLabel: 'Trakt',
-        authorize: () => _auth.authorize(
-          onCodeReady: onCodeReady,
-          shouldCancel: () => _cancelRequested,
-        ),
+        authorize: () => _auth.authorize(onCodeReady: onCodeReady, shouldCancel: () => _cancelRequested),
         enrich: _enrichUsername,
         save: (s) => _store.save(_activeUserUuid, s),
         assign: _setSessionAndRebind,

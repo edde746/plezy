@@ -111,8 +111,7 @@ class TraktSyncService {
     if (kind == null) return;
 
     final settings = SettingsService.instanceOrNull;
-    if (settings != null &&
-        !settings.isLibraryAllowedForTracker(TrackerService.trakt, event.librarySectionGlobalKey)) {
+    if (settings != null && !settings.isLibraryAllowedForTracker(TrackerService.trakt, event.librarySectionGlobalKey)) {
       appLogger.d('Trakt sync: library filtered out for ${event.ratingKey}');
       return;
     }

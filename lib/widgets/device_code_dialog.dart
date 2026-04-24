@@ -18,12 +18,7 @@ class DeviceCodeDialog extends StatelessWidget {
   final String serviceName;
   final VoidCallback onCancel;
 
-  const DeviceCodeDialog({
-    super.key,
-    required this.code,
-    required this.serviceName,
-    required this.onCancel,
-  });
+  const DeviceCodeDialog({super.key, required this.code, required this.serviceName, required this.onCancel});
 
   Future<void> _open() async {
     final url = code.verificationUrlComplete ?? code.verificationUrl;
@@ -78,9 +73,7 @@ class DeviceCodeDialog extends StatelessWidget {
             children: [
               const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
               const SizedBox(width: 12),
-              Expanded(
-                child: Text(t.trackers.deviceCode.waitingForAuthorization, style: theme.textTheme.bodySmall),
-              ),
+              Expanded(child: Text(t.trackers.deviceCode.waitingForAuthorization, style: theme.textTheme.bodySmall)),
             ],
           ),
         ],

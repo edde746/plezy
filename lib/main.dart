@@ -813,11 +813,7 @@ class _TrackerProfileBootstrap extends StatefulWidget {
   final List<Future<void> Function(String? uuid)> onProfileChanged;
   final VoidCallback? onFirstMount;
 
-  const _TrackerProfileBootstrap({
-    required this.child,
-    required this.onProfileChanged,
-    this.onFirstMount,
-  });
+  const _TrackerProfileBootstrap({required this.child, required this.onProfileChanged, this.onFirstMount});
 
   @override
   State<_TrackerProfileBootstrap> createState() => _TrackerProfileBootstrapState();
@@ -851,9 +847,11 @@ class _TrackerProfileBootstrapState extends State<_TrackerProfileBootstrap> {
     if (uuid == _lastUuid) return;
     _lastUuid = uuid;
     for (final fn in widget.onProfileChanged) {
-      unawaited(fn(uuid).catchError((Object e, StackTrace s) {
-        appLogger.w('Tracker profile bootstrap failed', error: e, stackTrace: s);
-      }));
+      unawaited(
+        fn(uuid).catchError((Object e, StackTrace s) {
+          appLogger.w('Tracker profile bootstrap failed', error: e, stackTrace: s);
+        }),
+      );
     }
   }
 

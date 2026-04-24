@@ -34,12 +34,9 @@ class TrackerIdResolver {
   /// un-matched item doesn't re-hit Plex every position update.
   final Map<String, TrackerIds?> _cache = {};
 
-  TrackerIdResolver(
-    this._client, {
-    bool Function()? needsFribb,
-    FribbMappingStore? store,
-  })  : _needsFribb = needsFribb ?? _returnTrue,
-        _store = store ?? FribbMappingStore.instance;
+  TrackerIdResolver(this._client, {bool Function()? needsFribb, FribbMappingStore? store})
+    : _needsFribb = needsFribb ?? _returnTrue,
+      _store = store ?? FribbMappingStore.instance;
 
   static bool _returnTrue() => true;
 

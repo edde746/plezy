@@ -17,11 +17,7 @@ class SimklSession {
     createdAt: createdAt ?? this.createdAt,
   );
 
-  Map<String, dynamic> toJson() => {
-    'access_token': accessToken,
-    'username': username,
-    'created_at': createdAt,
-  };
+  Map<String, dynamic> toJson() => {'access_token': accessToken, 'username': username, 'created_at': createdAt};
 
   factory SimklSession.fromJson(Map<String, dynamic> json) => SimklSession(
     accessToken: json['access_token'] as String,

@@ -156,10 +156,7 @@ class FribbMappingStore {
       final client = platform.createPlatformClient();
       try {
         final res = await client
-            .get(
-              Uri.parse(_sourceUrl),
-              headers: {'If-None-Match': ?etag, 'Accept': 'application/json'},
-            )
+            .get(Uri.parse(_sourceUrl), headers: {'If-None-Match': ?etag, 'Accept': 'application/json'})
             .timeout(_requestTimeout);
         await prefs.setInt(_prefsLastCheckKey, now);
 

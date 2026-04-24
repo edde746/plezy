@@ -18,12 +18,7 @@ class OAuthProxyDialog extends StatelessWidget {
   final String serviceName;
   final VoidCallback onCancel;
 
-  const OAuthProxyDialog({
-    super.key,
-    required this.start,
-    required this.serviceName,
-    required this.onCancel,
-  });
+  const OAuthProxyDialog({super.key, required this.start, required this.serviceName, required this.onCancel});
 
   Future<void> _open() async {
     await launchUrl(Uri.parse(start.url), mode: LaunchMode.externalApplication);
@@ -53,12 +48,7 @@ class OAuthProxyDialog extends StatelessWidget {
               dimension: 220,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: QrImageView(
-                  data: start.url,
-                  size: 220,
-                  version: QrVersions.auto,
-                  backgroundColor: Colors.white,
-                ),
+                child: QrImageView(data: start.url, size: 220, version: QrVersions.auto, backgroundColor: Colors.white),
               ),
             ),
           ),
@@ -92,9 +82,7 @@ class OAuthProxyDialog extends StatelessWidget {
             children: [
               const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
               const SizedBox(width: 12),
-              Expanded(
-                child: Text(t.trackers.deviceCode.waitingForAuthorization, style: theme.textTheme.bodySmall),
-              ),
+              Expanded(child: Text(t.trackers.deviceCode.waitingForAuthorization, style: theme.textTheme.bodySmall)),
             ],
           ),
         ],

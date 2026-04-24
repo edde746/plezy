@@ -1567,10 +1567,12 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyEnableMalScrobble),
       prefs.remove(_keyEnableAnilistScrobble),
       prefs.remove(_keyEnableSimklScrobble),
-      ...TrackerService.values.expand((s) => [
-        prefs.remove('$_prefixTrackerLibraryFilterMode${s.name}'),
-        prefs.remove('$_prefixTrackerLibraryFilterIds${s.name}'),
-      ]),
+      ...TrackerService.values.expand(
+        (s) => [
+          prefs.remove('$_prefixTrackerLibraryFilterMode${s.name}'),
+          prefs.remove('$_prefixTrackerLibraryFilterIds${s.name}'),
+        ],
+      ),
       prefs.remove(_keyAutoPip),
       prefs.remove(_keyMatchContentFrameRate),
       prefs.remove(_keyTunneledPlayback),

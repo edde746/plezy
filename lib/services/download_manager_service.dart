@@ -402,11 +402,13 @@ class DownloadManagerService {
     final saf = SafStorageService.instance;
     final children = await saf.list(dirUri);
     if (children != null && children.isNotEmpty) {
-      await Future.wait(children.map((child) {
-        return child.isDir
-            ? _deleteSafDirRecursive(child.uri, description: description)
-            : saf.delete(child.uri, isDir: false);
-      }));
+      await Future.wait(
+        children.map((child) {
+          return child.isDir
+              ? _deleteSafDirRecursive(child.uri, description: description)
+              : saf.delete(child.uri, isDir: false);
+        }),
+      );
     }
     await _tryDeleteSaf(dirUri, isDir: true, description: description);
   }
@@ -1491,24 +1493,16 @@ class DownloadManagerService {
       final isSaf = _storageService.isUsingSaf;
       switch (metadata.mediaType) {
         case PlexMediaType.episode:
-          isSaf
-              ? await _deleteEpisodeFilesSaf(metadata, serverId)
-              : await _deleteEpisodeFiles(metadata, serverId);
+          isSaf ? await _deleteEpisodeFilesSaf(metadata, serverId) : await _deleteEpisodeFiles(metadata, serverId);
           break;
         case PlexMediaType.season:
-          isSaf
-              ? await _deleteSeasonFilesSaf(metadata, serverId)
-              : await _deleteSeasonFiles(metadata, serverId);
+          isSaf ? await _deleteSeasonFilesSaf(metadata, serverId) : await _deleteSeasonFiles(metadata, serverId);
           break;
         case PlexMediaType.show:
-          isSaf
-              ? await _deleteShowFilesSaf(metadata, serverId)
-              : await _deleteShowFiles(metadata, serverId);
+          isSaf ? await _deleteShowFilesSaf(metadata, serverId) : await _deleteShowFiles(metadata, serverId);
           break;
         case PlexMediaType.movie:
-          isSaf
-              ? await _deleteMovieFilesSaf(metadata, serverId)
-              : await _deleteMovieFiles(metadata, serverId);
+          isSaf ? await _deleteMovieFilesSaf(metadata, serverId) : await _deleteMovieFiles(metadata, serverId);
           break;
         default:
           appLogger.w('Unknown type for deletion: ${metadata.type}');

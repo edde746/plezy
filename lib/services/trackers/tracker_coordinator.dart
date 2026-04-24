@@ -21,11 +21,7 @@ class TrackerCoordinator {
 
   TrackerCoordinator._();
 
-  late final List<Tracker> _trackers = [
-    MalTracker.instance,
-    AnilistTracker.instance,
-    SimklTracker.instance,
-  ];
+  late final List<Tracker> _trackers = [MalTracker.instance, AnilistTracker.instance, SimklTracker.instance];
 
   /// Resolver persists across episode swaps so back-to-back episodes of the
   /// same show reuse the cached IDs. Cleared only on profile switch.
@@ -113,16 +109,16 @@ class TrackerCoordinator {
   }
 
   Future<void> _dispatchMarkWatched(TrackerContext ctx) async {
-    final active = _trackers.where(
-      (t) => t.canScrobble && t.shouldScrobbleForLibrary(ctx.libraryGlobalKey),
+    final active = _trackers.where((t) => t.canScrobble && t.shouldScrobbleForLibrary(ctx.libraryGlobalKey));
+    await Future.wait(
+      active.map((t) async {
+        try {
+          await t.markWatched(ctx);
+        } catch (e) {
+          appLogger.d('${t.name}: markWatched failed', error: e);
+        }
+      }),
     );
-    await Future.wait(active.map((t) async {
-      try {
-        await t.markWatched(ctx);
-      } catch (e) {
-        appLogger.d('${t.name}: markWatched failed', error: e);
-      }
-    }));
   }
 
   Future<TrackerContext?> _buildContext(PlexMetadata metadata) async {

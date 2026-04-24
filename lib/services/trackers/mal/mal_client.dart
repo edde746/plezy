@@ -127,7 +127,9 @@ class MalClient {
     String? encoded;
     if (formBody != null) {
       headers['Content-Type'] = 'application/x-www-form-urlencoded';
-      encoded = formBody.entries.map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}').join('&');
+      encoded = formBody.entries
+          .map((e) => '${Uri.encodeQueryComponent(e.key)}=${Uri.encodeQueryComponent(e.value)}')
+          .join('&');
     } else if (body != null) {
       headers['Content-Type'] = 'application/json';
       encoded = json.encode(body);

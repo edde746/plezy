@@ -27,9 +27,9 @@ class TrackersSettingsScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Text(
                 t.trackers.hubSubtitle,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ),
             _trakt(),

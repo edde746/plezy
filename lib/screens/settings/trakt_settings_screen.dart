@@ -162,4 +162,3 @@ class _TraktSettingsScreenState extends State<TraktSettingsScreen> {
     );
   }
 }
-

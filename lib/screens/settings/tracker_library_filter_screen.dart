@@ -154,9 +154,7 @@ class _TrackerLibraryFilterScreenState extends State<TrackerLibraryFilterScreen>
 
         return FocusedScrollScaffold(
           title: title,
-          slivers: [
-            SliverList(delegate: SliverChildListDelegate(children)),
-          ],
+          slivers: [SliverList(delegate: SliverChildListDelegate(children))],
         );
       },
     );

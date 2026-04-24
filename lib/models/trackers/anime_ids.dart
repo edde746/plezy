@@ -12,9 +12,6 @@ class AnimeIds {
 
   const AnimeIds({this.mal, this.anilist, this.simkl});
 
-  factory AnimeIds.fromFribb(FribbMappingRow row) => AnimeIds(
-    mal: row.malId,
-    anilist: row.anilistId,
-    simkl: row.simklId,
-  );
+  factory AnimeIds.fromFribb(FribbMappingRow row) =>
+      AnimeIds(mal: row.malId, anilist: row.anilistId, simkl: row.simklId);
 }
