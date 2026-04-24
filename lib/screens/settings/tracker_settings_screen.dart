@@ -13,6 +13,7 @@ import '../../services/trackers/anilist/anilist_tracker.dart';
 import '../../services/trackers/mal/mal_tracker.dart';
 import '../../services/trackers/oauth_proxy_client.dart';
 import '../../services/trackers/simkl/simkl_tracker.dart';
+import '../../services/trackers/tracker_constants.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
@@ -22,6 +23,7 @@ import '../../widgets/device_code_dialog.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/oauth_proxy_dialog.dart';
 import '../../widgets/settings_section.dart';
+import 'tracker_library_filter_screen.dart';
 
 /// Shared dialog-driven connect flow used by all three trackers. Handles the
 /// guard, auto-launch-on-pointer, dialog lifecycle, and failure snackbar —
@@ -114,6 +116,7 @@ Future<void> startSimklConnection(BuildContext context) {
 /// Per-service wiring for [TrackerSettingsScreen]. Keeps tracker-specific
 /// method names out of the shared screen body.
 class TrackerConfig {
+  final TrackerService service;
   final String displayName;
   final bool Function(TrackersProvider) isConnected;
   final String? Function(TrackersProvider) username;
@@ -122,6 +125,7 @@ class TrackerConfig {
   final Future<void> Function(TrackersProvider) disconnect;
 
   const TrackerConfig({
+    required this.service,
     required this.displayName,
     required this.isConnected,
     required this.username,
@@ -131,6 +135,7 @@ class TrackerConfig {
   });
 
   static TrackerConfig mal() => TrackerConfig(
+    service: TrackerService.mal,
     displayName: t.trackers.services.mal,
     isConnected: (a) => a.isMalConnected,
     username: (a) => a.malUsername,
@@ -143,6 +148,7 @@ class TrackerConfig {
   );
 
   static TrackerConfig anilist() => TrackerConfig(
+    service: TrackerService.anilist,
     displayName: t.trackers.services.anilist,
     isConnected: (a) => a.isAnilistConnected,
     username: (a) => a.anilistUsername,
@@ -155,6 +161,7 @@ class TrackerConfig {
   );
 
   static TrackerConfig simkl() => TrackerConfig(
+    service: TrackerService.simkl,
     displayName: t.trackers.services.simkl,
     isConnected: (a) => a.isSimklConnected,
     username: (a) => a.simklUsername,
@@ -256,6 +263,20 @@ class _TrackerSettingsScreenState extends State<TrackerSettingsScreen> {
                   onChanged: (value) async {
                     setState(() => _scrobbleEnabled = value);
                     await widget.config.setScrobbleEnabled(_settings!, value);
+                  },
+                ),
+                ListTile(
+                  leading: const AppIcon(Symbols.filter_list_rounded, fill: 1),
+                  title: Text(t.trackers.libraryFilter.title),
+                  subtitle: Text(TrackerLibraryFilterScreen.subtitleFor(_settings!, widget.config.service)),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => TrackerLibraryFilterScreen(service: widget.config.service),
+                      ),
+                    );
+                    if (mounted) setState(() {});
                   },
                 ),
                 const Divider(height: 32),

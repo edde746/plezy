@@ -20,11 +20,16 @@ class TrackerContext {
   /// sent to any tracker.
   final String ratingKey;
 
+  /// Library globalKey the item belongs to, or null when the metadata didn't
+  /// carry library info.
+  final String? libraryGlobalKey;
+
   const TrackerContext._({
     required this.external,
     required this.anime,
     required this.isMovie,
     required this.ratingKey,
+    required this.libraryGlobalKey,
     this.season,
     this.episodeNumber,
   });
@@ -33,14 +38,22 @@ class TrackerContext {
     required PlexExternalIds external,
     required AnimeIds? anime,
     required String ratingKey,
+    required String? libraryGlobalKey,
   }) {
-    return TrackerContext._(external: external, anime: anime, isMovie: true, ratingKey: ratingKey);
+    return TrackerContext._(
+      external: external,
+      anime: anime,
+      isMovie: true,
+      ratingKey: ratingKey,
+      libraryGlobalKey: libraryGlobalKey,
+    );
   }
 
   factory TrackerContext.episode({
     required PlexExternalIds external,
     required AnimeIds? anime,
     required String ratingKey,
+    required String? libraryGlobalKey,
     required int season,
     required int episodeNumber,
   }) {
@@ -49,6 +62,7 @@ class TrackerContext {
       anime: anime,
       isMovie: false,
       ratingKey: ratingKey,
+      libraryGlobalKey: libraryGlobalKey,
       season: season,
       episodeNumber: episodeNumber,
     );

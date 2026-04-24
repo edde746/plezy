@@ -1299,6 +1299,7 @@ class _TranslationsTrackersDa implements TranslationsTrackersEn {
 	@override late final _TranslationsTrackersServicesDa services = _TranslationsTrackersServicesDa._(_root);
 	@override late final _TranslationsTrackersDeviceCodeDa deviceCode = _TranslationsTrackersDeviceCodeDa._(_root);
 	@override late final _TranslationsTrackersOauthProxyDa oauthProxy = _TranslationsTrackersOauthProxyDa._(_root);
+	@override late final _TranslationsTrackersLibraryFilterDa libraryFilter = _TranslationsTrackersLibraryFilterDa._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1494,6 +1495,27 @@ class _TranslationsTrackersOauthProxyDa implements TranslationsTrackersOauthProx
 	@override String get body => 'Scan denne QR-kode med din telefon, eller åbn URL\'en nedenfor på en enhed med browser.';
 	@override String openToSignIn({required Object service}) => 'Åbn ${service} for at logge ind';
 	@override String get urlCopied => 'URL kopieret';
+}
+
+// Path: trackers.libraryFilter
+class _TranslationsTrackersLibraryFilterDa implements TranslationsTrackersLibraryFilterEn {
+	_TranslationsTrackersLibraryFilterDa._(this._root);
+
+	final TranslationsDa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Bibliotekfilter';
+	@override String get subtitleAllSyncing => 'Synkroniserer alle biblioteker';
+	@override String get subtitleNoneSyncing => 'Intet synkroniseres';
+	@override String subtitleBlocked({required Object count}) => '${count} blokeret';
+	@override String subtitleAllowed({required Object count}) => '${count} tilladt';
+	@override String get mode => 'Filtertilstand';
+	@override String get modeBlacklist => 'Sortliste';
+	@override String get modeWhitelist => 'Hvidliste';
+	@override String get modeHintBlacklist => 'Synkroniser alle biblioteker undtagen dem du markerer nedenfor.';
+	@override String get modeHintWhitelist => 'Synkroniser kun de biblioteker du markerer nedenfor.';
+	@override String get libraries => 'Biblioteker';
+	@override String get noLibraries => 'Ingen biblioteker tilgængelige';
 }
 
 /// The flat map containing all translations for locale <da>.
@@ -2453,6 +2475,18 @@ extension on TranslationsDa {
 			'trackers.oauthProxy.body' => 'Scan denne QR-kode med din telefon, eller åbn URL\'en nedenfor på en enhed med browser.',
 			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Åbn ${service} for at logge ind',
 			'trackers.oauthProxy.urlCopied' => 'URL kopieret',
+			'trackers.libraryFilter.title' => 'Bibliotekfilter',
+			'trackers.libraryFilter.subtitleAllSyncing' => 'Synkroniserer alle biblioteker',
+			'trackers.libraryFilter.subtitleNoneSyncing' => 'Intet synkroniseres',
+			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} blokeret',
+			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} tilladt',
+			'trackers.libraryFilter.mode' => 'Filtertilstand',
+			'trackers.libraryFilter.modeBlacklist' => 'Sortliste',
+			'trackers.libraryFilter.modeWhitelist' => 'Hvidliste',
+			'trackers.libraryFilter.modeHintBlacklist' => 'Synkroniser alle biblioteker undtagen dem du markerer nedenfor.',
+			'trackers.libraryFilter.modeHintWhitelist' => 'Synkroniser kun de biblioteker du markerer nedenfor.',
+			'trackers.libraryFilter.libraries' => 'Biblioteker',
+			'trackers.libraryFilter.noLibraries' => 'Ingen biblioteker tilgængelige',
 			_ => null,
 		};
 	}

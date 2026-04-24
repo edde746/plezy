@@ -1046,6 +1046,20 @@
       "body": "Scan this QR code with your phone, or open the URL below on any device with a browser.",
       "openToSignIn": "Open ${service} to sign in",
       "urlCopied": "URL copied"
+    },
+    "libraryFilter": {
+      "title": "Library filter",
+      "subtitleAllSyncing": "Syncing all libraries",
+      "subtitleNoneSyncing": "Nothing syncing",
+      "subtitleBlocked": "${count} blocked",
+      "subtitleAllowed": "${count} allowed",
+      "mode": "Filter mode",
+      "modeBlacklist": "Blacklist",
+      "modeWhitelist": "Whitelist",
+      "modeHintBlacklist": "Sync every library except the ones checked below.",
+      "modeHintWhitelist": "Sync only the libraries checked below.",
+      "libraries": "Libraries",
+      "noLibraries": "No libraries available"
     }
   }
 }

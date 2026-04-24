@@ -1046,6 +1046,20 @@
       "body": "Escaneie este código QR com o celular, ou abra o URL abaixo em qualquer dispositivo com navegador.",
       "openToSignIn": "Abrir ${service} para entrar",
       "urlCopied": "URL copiado"
+    },
+    "libraryFilter": {
+      "title": "Filtro de bibliotecas",
+      "subtitleAllSyncing": "Sincronizando todas as bibliotecas",
+      "subtitleNoneSyncing": "Nada a sincronizar",
+      "subtitleBlocked": "${count} bloqueadas",
+      "subtitleAllowed": "${count} permitidas",
+      "mode": "Modo de filtro",
+      "modeBlacklist": "Lista negra",
+      "modeWhitelist": "Lista branca",
+      "modeHintBlacklist": "Sincronizar todas as bibliotecas exceto as marcadas abaixo.",
+      "modeHintWhitelist": "Sincronizar apenas as bibliotecas marcadas abaixo.",
+      "libraries": "Bibliotecas",
+      "noLibraries": "Nenhuma biblioteca disponível"
     }
   }
 }

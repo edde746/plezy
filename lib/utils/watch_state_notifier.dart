@@ -40,6 +40,10 @@ class WatchStateEvent with HierarchicalEventMixin {
   /// Whether item is now considered watched (>90% progress or marked)
   final bool? isNowWatched;
 
+  /// Library section this item belongs to — used for per-tracker library
+  /// filtering. Null when emitted without full metadata.
+  final int? librarySectionID;
+
   WatchStateEvent({
     required this.ratingKey,
     required this.serverId,
@@ -48,7 +52,13 @@ class WatchStateEvent with HierarchicalEventMixin {
     required this.mediaType,
     this.viewOffset,
     this.isNowWatched,
+    this.librarySectionID,
   }) : globalKey = buildGlobalKey(serverId, ratingKey);
+
+  /// `serverId:librarySectionID`, matching [PlexLibrary.globalKey]. Null when
+  /// the library section is unknown.
+  String? get librarySectionGlobalKey =>
+      librarySectionID != null ? buildGlobalKey(serverId, librarySectionID!.toString()) : null;
 
   @override
   String toString() => 'WatchStateEvent($changeType, $globalKey, parents: $parentChain)';
@@ -88,6 +98,7 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
         parentChain: metadata.parentChain,
         mediaType: metadata.type ?? '',
         isNowWatched: isNowWatched,
+        librarySectionID: metadata.librarySectionID,
       ),
     );
   }
@@ -112,6 +123,7 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
         mediaType: metadata.type ?? '',
         viewOffset: viewOffset,
         isNowWatched: isNowWatched,
+        librarySectionID: metadata.librarySectionID,
       ),
     );
   }

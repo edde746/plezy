@@ -1299,6 +1299,7 @@ class _TranslationsTrackersKo implements TranslationsTrackersEn {
 	@override late final _TranslationsTrackersServicesKo services = _TranslationsTrackersServicesKo._(_root);
 	@override late final _TranslationsTrackersDeviceCodeKo deviceCode = _TranslationsTrackersDeviceCodeKo._(_root);
 	@override late final _TranslationsTrackersOauthProxyKo oauthProxy = _TranslationsTrackersOauthProxyKo._(_root);
+	@override late final _TranslationsTrackersLibraryFilterKo libraryFilter = _TranslationsTrackersLibraryFilterKo._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1494,6 +1495,27 @@ class _TranslationsTrackersOauthProxyKo implements TranslationsTrackersOauthProx
 	@override String get body => '휴대전화로 이 QR 코드를 스캔하거나 아래 URL을 브라우저가 있는 기기에서 여세요.';
 	@override String openToSignIn({required Object service}) => '로그인하려면 ${service} 열기';
 	@override String get urlCopied => 'URL이 복사되었습니다';
+}
+
+// Path: trackers.libraryFilter
+class _TranslationsTrackersLibraryFilterKo implements TranslationsTrackersLibraryFilterEn {
+	_TranslationsTrackersLibraryFilterKo._(this._root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '라이브러리 필터';
+	@override String get subtitleAllSyncing => '모든 라이브러리 동기화 중';
+	@override String get subtitleNoneSyncing => '동기화 안 함';
+	@override String subtitleBlocked({required Object count}) => '${count}개 차단됨';
+	@override String subtitleAllowed({required Object count}) => '${count}개 허용됨';
+	@override String get mode => '필터 모드';
+	@override String get modeBlacklist => '차단 목록';
+	@override String get modeWhitelist => '허용 목록';
+	@override String get modeHintBlacklist => '아래에 선택한 라이브러리를 제외한 모든 라이브러리를 동기화합니다.';
+	@override String get modeHintWhitelist => '아래에 선택한 라이브러리만 동기화합니다.';
+	@override String get libraries => '라이브러리';
+	@override String get noLibraries => '사용 가능한 라이브러리가 없습니다';
 }
 
 /// The flat map containing all translations for locale <ko>.
@@ -2453,6 +2475,18 @@ extension on TranslationsKo {
 			'trackers.oauthProxy.body' => '휴대전화로 이 QR 코드를 스캔하거나 아래 URL을 브라우저가 있는 기기에서 여세요.',
 			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => '로그인하려면 ${service} 열기',
 			'trackers.oauthProxy.urlCopied' => 'URL이 복사되었습니다',
+			'trackers.libraryFilter.title' => '라이브러리 필터',
+			'trackers.libraryFilter.subtitleAllSyncing' => '모든 라이브러리 동기화 중',
+			'trackers.libraryFilter.subtitleNoneSyncing' => '동기화 안 함',
+			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count}개 차단됨',
+			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count}개 허용됨',
+			'trackers.libraryFilter.mode' => '필터 모드',
+			'trackers.libraryFilter.modeBlacklist' => '차단 목록',
+			'trackers.libraryFilter.modeWhitelist' => '허용 목록',
+			'trackers.libraryFilter.modeHintBlacklist' => '아래에 선택한 라이브러리를 제외한 모든 라이브러리를 동기화합니다.',
+			'trackers.libraryFilter.modeHintWhitelist' => '아래에 선택한 라이브러리만 동기화합니다.',
+			'trackers.libraryFilter.libraries' => '라이브러리',
+			'trackers.libraryFilter.noLibraries' => '사용 가능한 라이브러리가 없습니다',
 			_ => null,
 		};
 	}

@@ -9,6 +9,7 @@ import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/trakt_account_provider.dart';
 import '../../services/settings_service.dart';
+import '../../services/trackers/tracker_constants.dart';
 import '../../services/trakt/trakt_scrobble_service.dart';
 import '../../services/trakt/trakt_sync_service.dart';
 import '../../utils/app_logger.dart';
@@ -18,6 +19,7 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/device_code_dialog.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
+import 'tracker_library_filter_screen.dart';
 
 /// Start the Trakt device-code OAuth flow from anywhere in the app.
 ///
@@ -172,6 +174,20 @@ class _TraktSettingsScreenState extends State<TraktSettingsScreen> {
                     setState(() => _watchedSyncEnabled = value);
                     await _settings!.setEnableTraktWatchedSync(value);
                     await TraktSyncService.instance.setEnabled(value);
+                  },
+                ),
+                ListTile(
+                  leading: const AppIcon(Symbols.filter_list_rounded, fill: 1),
+                  title: Text(t.trackers.libraryFilter.title),
+                  subtitle: Text(TrackerLibraryFilterScreen.subtitleFor(_settings!, TrackerService.trakt)),
+                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const TrackerLibraryFilterScreen(service: TrackerService.trakt),
+                      ),
+                    );
+                    if (mounted) setState(() {});
                   },
                 ),
                 const Divider(height: 32),

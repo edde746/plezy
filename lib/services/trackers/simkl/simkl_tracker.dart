@@ -2,6 +2,7 @@ import '../../../models/trackers/tracker_context.dart';
 import '../../../utils/app_logger.dart';
 import '../../settings_service.dart';
 import '../tracker.dart';
+import '../tracker_constants.dart';
 import 'simkl_client.dart';
 import 'simkl_session.dart';
 
@@ -19,6 +20,9 @@ class SimklTracker extends TrackerBase {
 
   @override
   String get name => 'simkl';
+
+  @override
+  TrackerService get service => TrackerService.simkl;
 
   @override
   bool get needsFribb => false;

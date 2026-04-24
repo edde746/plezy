@@ -1299,6 +1299,7 @@ class _TranslationsTrackersRu implements TranslationsTrackersEn {
 	@override late final _TranslationsTrackersServicesRu services = _TranslationsTrackersServicesRu._(_root);
 	@override late final _TranslationsTrackersDeviceCodeRu deviceCode = _TranslationsTrackersDeviceCodeRu._(_root);
 	@override late final _TranslationsTrackersOauthProxyRu oauthProxy = _TranslationsTrackersOauthProxyRu._(_root);
+	@override late final _TranslationsTrackersLibraryFilterRu libraryFilter = _TranslationsTrackersLibraryFilterRu._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1494,6 +1495,27 @@ class _TranslationsTrackersOauthProxyRu implements TranslationsTrackersOauthProx
 	@override String get body => 'Отсканируйте этот QR-код телефоном или откройте ссылку ниже на любом устройстве с браузером.';
 	@override String openToSignIn({required Object service}) => 'Открыть ${service} для входа';
 	@override String get urlCopied => 'URL скопирован';
+}
+
+// Path: trackers.libraryFilter
+class _TranslationsTrackersLibraryFilterRu implements TranslationsTrackersLibraryFilterEn {
+	_TranslationsTrackersLibraryFilterRu._(this._root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Фильтр библиотек';
+	@override String get subtitleAllSyncing => 'Синхронизация всех библиотек';
+	@override String get subtitleNoneSyncing => 'Ничего не синхронизируется';
+	@override String subtitleBlocked({required Object count}) => '${count} заблокировано';
+	@override String subtitleAllowed({required Object count}) => '${count} разрешено';
+	@override String get mode => 'Режим фильтра';
+	@override String get modeBlacklist => 'Чёрный список';
+	@override String get modeWhitelist => 'Белый список';
+	@override String get modeHintBlacklist => 'Синхронизировать все библиотеки, кроме отмеченных ниже.';
+	@override String get modeHintWhitelist => 'Синхронизировать только библиотеки, отмеченные ниже.';
+	@override String get libraries => 'Библиотеки';
+	@override String get noLibraries => 'Библиотеки недоступны';
 }
 
 /// The flat map containing all translations for locale <ru>.
@@ -2453,6 +2475,18 @@ extension on TranslationsRu {
 			'trackers.oauthProxy.body' => 'Отсканируйте этот QR-код телефоном или откройте ссылку ниже на любом устройстве с браузером.',
 			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Открыть ${service} для входа',
 			'trackers.oauthProxy.urlCopied' => 'URL скопирован',
+			'trackers.libraryFilter.title' => 'Фильтр библиотек',
+			'trackers.libraryFilter.subtitleAllSyncing' => 'Синхронизация всех библиотек',
+			'trackers.libraryFilter.subtitleNoneSyncing' => 'Ничего не синхронизируется',
+			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} заблокировано',
+			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} разрешено',
+			'trackers.libraryFilter.mode' => 'Режим фильтра',
+			'trackers.libraryFilter.modeBlacklist' => 'Чёрный список',
+			'trackers.libraryFilter.modeWhitelist' => 'Белый список',
+			'trackers.libraryFilter.modeHintBlacklist' => 'Синхронизировать все библиотеки, кроме отмеченных ниже.',
+			'trackers.libraryFilter.modeHintWhitelist' => 'Синхронизировать только библиотеки, отмеченные ниже.',
+			'trackers.libraryFilter.libraries' => 'Библиотеки',
+			'trackers.libraryFilter.noLibraries' => 'Библиотеки недоступны',
 			_ => null,
 		};
 	}

@@ -20,12 +20,9 @@ import '../services/trackers/simkl/simkl_client.dart';
 import '../services/trackers/simkl/simkl_session.dart';
 import '../services/trackers/simkl/simkl_tracker.dart';
 import '../services/trackers/tracker_account_store.dart';
+import '../services/trackers/tracker_constants.dart';
 import '../services/trackers/tracker_coordinator.dart';
 import '../utils/app_logger.dart';
-
-/// Identifier used in the settings UI to disambiguate disconnect/connect
-/// actions without importing the per-service session classes into widgets.
-enum TrackerService { mal, anilist, simkl }
 
 /// Owns the active MAL / AniList / Simkl sessions for the currently-selected
 /// Plex profile. Single rebind seam: [onActiveProfileChanged] loads all three

@@ -1046,6 +1046,20 @@
       "body": "Skanna den här QR-koden med din telefon, eller öppna URL:en nedan på en enhet med webbläsare.",
       "openToSignIn": "Öppna ${service} för att logga in",
       "urlCopied": "URL kopierad"
+    },
+    "libraryFilter": {
+      "title": "Biblioteksfilter",
+      "subtitleAllSyncing": "Synkroniserar alla bibliotek",
+      "subtitleNoneSyncing": "Ingenting synkroniseras",
+      "subtitleBlocked": "${count} blockerade",
+      "subtitleAllowed": "${count} tillåtna",
+      "mode": "Filterläge",
+      "modeBlacklist": "Svartlista",
+      "modeWhitelist": "Vitlista",
+      "modeHintBlacklist": "Synkronisera alla bibliotek utom de som markerats nedan.",
+      "modeHintWhitelist": "Synkronisera endast de bibliotek som markerats nedan.",
+      "libraries": "Bibliotek",
+      "noLibraries": "Inga bibliotek tillgängliga"
     }
   }
 }

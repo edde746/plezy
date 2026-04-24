@@ -1046,6 +1046,20 @@
       "body": "Scan denne QR-kode med din telefon, eller åbn URL'en nedenfor på en enhed med browser.",
       "openToSignIn": "Åbn ${service} for at logge ind",
       "urlCopied": "URL kopieret"
+    },
+    "libraryFilter": {
+      "title": "Bibliotekfilter",
+      "subtitleAllSyncing": "Synkroniserer alle biblioteker",
+      "subtitleNoneSyncing": "Intet synkroniseres",
+      "subtitleBlocked": "${count} blokeret",
+      "subtitleAllowed": "${count} tilladt",
+      "mode": "Filtertilstand",
+      "modeBlacklist": "Sortliste",
+      "modeWhitelist": "Hvidliste",
+      "modeHintBlacklist": "Synkroniser alle biblioteker undtagen dem du markerer nedenfor.",
+      "modeHintWhitelist": "Synkroniser kun de biblioteker du markerer nedenfor.",
+      "libraries": "Biblioteker",
+      "noLibraries": "Ingen biblioteker tilgængelige"
     }
   }
 }

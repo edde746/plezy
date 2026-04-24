@@ -1046,6 +1046,20 @@
       "body": "Scan deze QR-code met je telefoon, of open onderstaande URL op een apparaat met browser.",
       "openToSignIn": "${service} openen om aan te melden",
       "urlCopied": "URL gekopieerd"
+    },
+    "libraryFilter": {
+      "title": "Bibliotheekfilter",
+      "subtitleAllSyncing": "Alle bibliotheken synchroniseren",
+      "subtitleNoneSyncing": "Niets wordt gesynchroniseerd",
+      "subtitleBlocked": "${count} geblokkeerd",
+      "subtitleAllowed": "${count} toegestaan",
+      "mode": "Filtermodus",
+      "modeBlacklist": "Zwarte lijst",
+      "modeWhitelist": "Witte lijst",
+      "modeHintBlacklist": "Synchroniseer alle bibliotheken behalve die hieronder aangevinkt zijn.",
+      "modeHintWhitelist": "Synchroniseer alleen de hieronder aangevinkte bibliotheken.",
+      "libraries": "Bibliotheken",
+      "noLibraries": "Geen bibliotheken beschikbaar"
     }
   }
 }

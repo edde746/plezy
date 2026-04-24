@@ -2991,6 +2991,7 @@ class TranslationsTrackersEn {
 	late final TranslationsTrackersServicesEn services = TranslationsTrackersServicesEn._(_root);
 	late final TranslationsTrackersDeviceCodeEn deviceCode = TranslationsTrackersDeviceCodeEn._(_root);
 	late final TranslationsTrackersOauthProxyEn oauthProxy = TranslationsTrackersOauthProxyEn._(_root);
+	late final TranslationsTrackersLibraryFilterEn libraryFilter = TranslationsTrackersLibraryFilterEn._(_root);
 }
 
 // Path: hotkeys.actions
@@ -3396,6 +3397,51 @@ class TranslationsTrackersOauthProxyEn {
 
 	/// en: 'URL copied'
 	String get urlCopied => 'URL copied';
+}
+
+// Path: trackers.libraryFilter
+class TranslationsTrackersLibraryFilterEn {
+	TranslationsTrackersLibraryFilterEn._(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Library filter'
+	String get title => 'Library filter';
+
+	/// en: 'Syncing all libraries'
+	String get subtitleAllSyncing => 'Syncing all libraries';
+
+	/// en: 'Nothing syncing'
+	String get subtitleNoneSyncing => 'Nothing syncing';
+
+	/// en: '${count} blocked'
+	String subtitleBlocked({required Object count}) => '${count} blocked';
+
+	/// en: '${count} allowed'
+	String subtitleAllowed({required Object count}) => '${count} allowed';
+
+	/// en: 'Filter mode'
+	String get mode => 'Filter mode';
+
+	/// en: 'Blacklist'
+	String get modeBlacklist => 'Blacklist';
+
+	/// en: 'Whitelist'
+	String get modeWhitelist => 'Whitelist';
+
+	/// en: 'Sync every library except the ones checked below.'
+	String get modeHintBlacklist => 'Sync every library except the ones checked below.';
+
+	/// en: 'Sync only the libraries checked below.'
+	String get modeHintWhitelist => 'Sync only the libraries checked below.';
+
+	/// en: 'Libraries'
+	String get libraries => 'Libraries';
+
+	/// en: 'No libraries available'
+	String get noLibraries => 'No libraries available';
 }
 
 /// The flat map containing all translations for locale <en>.
@@ -4355,6 +4401,18 @@ extension on Translations {
 			'trackers.oauthProxy.body' => 'Scan this QR code with your phone, or open the URL below on any device with a browser.',
 			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Open ${service} to sign in',
 			'trackers.oauthProxy.urlCopied' => 'URL copied',
+			'trackers.libraryFilter.title' => 'Library filter',
+			'trackers.libraryFilter.subtitleAllSyncing' => 'Syncing all libraries',
+			'trackers.libraryFilter.subtitleNoneSyncing' => 'Nothing syncing',
+			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} blocked',
+			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} allowed',
+			'trackers.libraryFilter.mode' => 'Filter mode',
+			'trackers.libraryFilter.modeBlacklist' => 'Blacklist',
+			'trackers.libraryFilter.modeWhitelist' => 'Whitelist',
+			'trackers.libraryFilter.modeHintBlacklist' => 'Sync every library except the ones checked below.',
+			'trackers.libraryFilter.modeHintWhitelist' => 'Sync only the libraries checked below.',
+			'trackers.libraryFilter.libraries' => 'Libraries',
+			'trackers.libraryFilter.noLibraries' => 'No libraries available',
 			_ => null,
 		};
 	}

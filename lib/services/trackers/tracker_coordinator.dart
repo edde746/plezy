@@ -113,7 +113,9 @@ class TrackerCoordinator {
   }
 
   Future<void> _dispatchMarkWatched(TrackerContext ctx) async {
-    final active = _trackers.where((t) => t.canScrobble);
+    final active = _trackers.where(
+      (t) => t.canScrobble && t.shouldScrobbleForLibrary(ctx.libraryGlobalKey),
+    );
     await Future.wait(active.map((t) async {
       try {
         await t.markWatched(ctx);
@@ -127,6 +129,8 @@ class TrackerCoordinator {
     final resolver = _resolver;
     if (resolver == null) return null;
 
+    final libraryKey = metadata.librarySectionGlobalKey;
+
     if (metadata.mediaType == PlexMediaType.movie) {
       final ids = await resolver.resolveForMovie(metadata.ratingKey);
       if (ids == null) return null;
@@ -134,6 +138,7 @@ class TrackerCoordinator {
         external: ids.external,
         anime: ids.anime,
         ratingKey: metadata.ratingKey,
+        libraryGlobalKey: libraryKey,
       );
     }
 
@@ -147,6 +152,7 @@ class TrackerCoordinator {
       external: ids.external,
       anime: ids.anime,
       ratingKey: metadata.ratingKey,
+      libraryGlobalKey: libraryKey,
       season: season,
       episodeNumber: number,
     );

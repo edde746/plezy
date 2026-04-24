@@ -1046,6 +1046,20 @@
       "body": "휴대전화로 이 QR 코드를 스캔하거나 아래 URL을 브라우저가 있는 기기에서 여세요.",
       "openToSignIn": "로그인하려면 ${service} 열기",
       "urlCopied": "URL이 복사되었습니다"
+    },
+    "libraryFilter": {
+      "title": "라이브러리 필터",
+      "subtitleAllSyncing": "모든 라이브러리 동기화 중",
+      "subtitleNoneSyncing": "동기화 안 함",
+      "subtitleBlocked": "${count}개 차단됨",
+      "subtitleAllowed": "${count}개 허용됨",
+      "mode": "필터 모드",
+      "modeBlacklist": "차단 목록",
+      "modeWhitelist": "허용 목록",
+      "modeHintBlacklist": "아래에 선택한 라이브러리를 제외한 모든 라이브러리를 동기화합니다.",
+      "modeHintWhitelist": "아래에 선택한 라이브러리만 동기화합니다.",
+      "libraries": "라이브러리",
+      "noLibraries": "사용 가능한 라이브러리가 없습니다"
     }
   }
 }

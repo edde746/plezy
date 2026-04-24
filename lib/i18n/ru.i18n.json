@@ -1046,6 +1046,20 @@
       "body": "Отсканируйте этот QR-код телефоном или откройте ссылку ниже на любом устройстве с браузером.",
       "openToSignIn": "Открыть ${service} для входа",
       "urlCopied": "URL скопирован"
+    },
+    "libraryFilter": {
+      "title": "Фильтр библиотек",
+      "subtitleAllSyncing": "Синхронизация всех библиотек",
+      "subtitleNoneSyncing": "Ничего не синхронизируется",
+      "subtitleBlocked": "${count} заблокировано",
+      "subtitleAllowed": "${count} разрешено",
+      "mode": "Режим фильтра",
+      "modeBlacklist": "Чёрный список",
+      "modeWhitelist": "Белый список",
+      "modeHintBlacklist": "Синхронизировать все библиотеки, кроме отмеченных ниже.",
+      "modeHintWhitelist": "Синхронизировать только библиотеки, отмеченные ниже.",
+      "libraries": "Библиотеки",
+      "noLibraries": "Библиотеки недоступны"
     }
   }
 }

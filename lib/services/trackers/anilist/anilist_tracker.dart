@@ -2,6 +2,7 @@ import '../../../models/trackers/tracker_context.dart';
 import '../../../utils/app_logger.dart';
 import '../../settings_service.dart';
 import '../tracker.dart';
+import '../tracker_constants.dart';
 import 'anilist_client.dart';
 import 'anilist_session.dart';
 
@@ -16,6 +17,9 @@ class AnilistTracker extends TrackerBase {
 
   @override
   String get name => 'anilist';
+
+  @override
+  TrackerService get service => TrackerService.anilist;
 
   @override
   bool get needsFribb => true;

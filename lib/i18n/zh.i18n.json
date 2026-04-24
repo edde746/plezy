@@ -1046,6 +1046,20 @@
       "body": "用手机扫描此二维码，或在任何带浏览器的设备上打开下方 URL。",
       "openToSignIn": "打开 ${service} 以登录",
       "urlCopied": "URL 已复制"
+    },
+    "libraryFilter": {
+      "title": "媒体库筛选",
+      "subtitleAllSyncing": "同步所有媒体库",
+      "subtitleNoneSyncing": "不同步任何内容",
+      "subtitleBlocked": "已屏蔽 ${count} 个",
+      "subtitleAllowed": "已允许 ${count} 个",
+      "mode": "筛选模式",
+      "modeBlacklist": "黑名单",
+      "modeWhitelist": "白名单",
+      "modeHintBlacklist": "同步下方未勾选的所有媒体库。",
+      "modeHintWhitelist": "仅同步下方勾选的媒体库。",
+      "libraries": "媒体库",
+      "noLibraries": "没有可用的媒体库"
     }
   }
 }

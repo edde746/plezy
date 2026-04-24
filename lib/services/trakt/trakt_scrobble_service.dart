@@ -6,6 +6,7 @@ import '../../models/trakt/trakt_scrobble_request.dart';
 import '../../utils/app_logger.dart';
 import '../plex_client.dart';
 import '../settings_service.dart';
+import '../trackers/tracker_constants.dart';
 import '../trackers/tracker_id_resolver.dart';
 import 'trakt_client.dart';
 import 'trakt_constants.dart';
@@ -90,6 +91,13 @@ class TraktScrobbleService {
 
     final type = metadata.mediaType;
     if (type != PlexMediaType.movie && type != PlexMediaType.episode) return;
+
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null &&
+        !settings.isLibraryAllowedForTracker(TrackerService.trakt, metadata.librarySectionGlobalKey)) {
+      appLogger.d('Trakt: library filtered out for ${metadata.ratingKey}');
+      return;
+    }
 
     // Seed with the resume offset so the first real position update doesn't
     // look like a seek when resuming mid-item.

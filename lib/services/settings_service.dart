@@ -10,6 +10,7 @@ import '../models/mpv_config_models.dart';
 import '../models/external_player_models.dart';
 import 'base_shared_preferences_service.dart';
 import '../utils/platform_detector.dart';
+import 'trackers/tracker_constants.dart';
 
 enum ThemeMode { system, light, dark, oled }
 
@@ -98,6 +99,8 @@ class SettingsService extends BaseSharedPreferencesService {
   static const String _keyEnableMalScrobble = 'enable_mal_scrobble';
   static const String _keyEnableAnilistScrobble = 'enable_anilist_scrobble';
   static const String _keyEnableSimklScrobble = 'enable_simkl_scrobble';
+  static const String _prefixTrackerLibraryFilterMode = 'tracker_library_filter_mode_';
+  static const String _prefixTrackerLibraryFilterIds = 'tracker_library_filter_ids_';
   static const String _keyEnableCompanionRemoteServer = 'enable_companion_remote_server';
   static const String _keyAutoPip = 'auto_pip';
   static const String _keyMatchContentFrameRate = 'match_content_frame_rate';
@@ -1194,6 +1197,34 @@ class SettingsService extends BaseSharedPreferencesService {
     return prefs.getBool(_keyEnableSimklScrobble) ?? true;
   }
 
+  // Per-tracker library filter. Default blacklist+empty = sync every library.
+  TrackerLibraryFilterMode getTrackerLibraryFilterMode(TrackerService service) => _getEnumValue(
+    '$_prefixTrackerLibraryFilterMode${service.name}',
+    TrackerLibraryFilterMode.values,
+    TrackerLibraryFilterMode.blacklist,
+  );
+
+  Future<void> setTrackerLibraryFilterMode(TrackerService service, TrackerLibraryFilterMode mode) async {
+    await prefs.setString('$_prefixTrackerLibraryFilterMode${service.name}', mode.name);
+  }
+
+  Set<String> getTrackerLibraryFilterIds(TrackerService service) {
+    final ids = prefs.getStringList('$_prefixTrackerLibraryFilterIds${service.name}');
+    return ids?.toSet() ?? <String>{};
+  }
+
+  Future<void> setTrackerLibraryFilterIds(TrackerService service, Set<String> ids) async {
+    await prefs.setStringList('$_prefixTrackerLibraryFilterIds${service.name}', ids.toList());
+  }
+
+  /// Whether a scrobble/sync for [libraryGlobalKey] should be sent to [service].
+  /// Null keys bypass the filter so we err on the side of syncing.
+  bool isLibraryAllowedForTracker(TrackerService service, String? libraryGlobalKey) {
+    if (libraryGlobalKey == null) return true;
+    final inList = getTrackerLibraryFilterIds(service).contains(libraryGlobalKey);
+    return getTrackerLibraryFilterMode(service) == TrackerLibraryFilterMode.blacklist ? !inList : inList;
+  }
+
   // Companion Remote Server
   Future<void> setEnableCompanionRemoteServer(bool enabled) async {
     await prefs.setBool(_keyEnableCompanionRemoteServer, enabled);
@@ -1536,6 +1567,10 @@ class SettingsService extends BaseSharedPreferencesService {
       prefs.remove(_keyEnableMalScrobble),
       prefs.remove(_keyEnableAnilistScrobble),
       prefs.remove(_keyEnableSimklScrobble),
+      ...TrackerService.values.expand((s) => [
+        prefs.remove('$_prefixTrackerLibraryFilterMode${s.name}'),
+        prefs.remove('$_prefixTrackerLibraryFilterIds${s.name}'),
+      ]),
       prefs.remove(_keyAutoPip),
       prefs.remove(_keyMatchContentFrameRate),
       prefs.remove(_keyTunneledPlayback),

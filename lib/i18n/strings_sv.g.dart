@@ -1299,6 +1299,7 @@ class _TranslationsTrackersSv implements TranslationsTrackersEn {
 	@override late final _TranslationsTrackersServicesSv services = _TranslationsTrackersServicesSv._(_root);
 	@override late final _TranslationsTrackersDeviceCodeSv deviceCode = _TranslationsTrackersDeviceCodeSv._(_root);
 	@override late final _TranslationsTrackersOauthProxySv oauthProxy = _TranslationsTrackersOauthProxySv._(_root);
+	@override late final _TranslationsTrackersLibraryFilterSv libraryFilter = _TranslationsTrackersLibraryFilterSv._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1494,6 +1495,27 @@ class _TranslationsTrackersOauthProxySv implements TranslationsTrackersOauthProx
 	@override String get body => 'Skanna den här QR-koden med din telefon, eller öppna URL:en nedan på en enhet med webbläsare.';
 	@override String openToSignIn({required Object service}) => 'Öppna ${service} för att logga in';
 	@override String get urlCopied => 'URL kopierad';
+}
+
+// Path: trackers.libraryFilter
+class _TranslationsTrackersLibraryFilterSv implements TranslationsTrackersLibraryFilterEn {
+	_TranslationsTrackersLibraryFilterSv._(this._root);
+
+	final TranslationsSv _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Biblioteksfilter';
+	@override String get subtitleAllSyncing => 'Synkroniserar alla bibliotek';
+	@override String get subtitleNoneSyncing => 'Ingenting synkroniseras';
+	@override String subtitleBlocked({required Object count}) => '${count} blockerade';
+	@override String subtitleAllowed({required Object count}) => '${count} tillåtna';
+	@override String get mode => 'Filterläge';
+	@override String get modeBlacklist => 'Svartlista';
+	@override String get modeWhitelist => 'Vitlista';
+	@override String get modeHintBlacklist => 'Synkronisera alla bibliotek utom de som markerats nedan.';
+	@override String get modeHintWhitelist => 'Synkronisera endast de bibliotek som markerats nedan.';
+	@override String get libraries => 'Bibliotek';
+	@override String get noLibraries => 'Inga bibliotek tillgängliga';
 }
 
 /// The flat map containing all translations for locale <sv>.
@@ -2453,6 +2475,18 @@ extension on TranslationsSv {
 			'trackers.oauthProxy.body' => 'Skanna den här QR-koden med din telefon, eller öppna URL:en nedan på en enhet med webbläsare.',
 			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Öppna ${service} för att logga in',
 			'trackers.oauthProxy.urlCopied' => 'URL kopierad',
+			'trackers.libraryFilter.title' => 'Biblioteksfilter',
+			'trackers.libraryFilter.subtitleAllSyncing' => 'Synkroniserar alla bibliotek',
+			'trackers.libraryFilter.subtitleNoneSyncing' => 'Ingenting synkroniseras',
+			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} blockerade',
+			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} tillåtna',
+			'trackers.libraryFilter.mode' => 'Filterläge',
+			'trackers.libraryFilter.modeBlacklist' => 'Svartlista',
+			'trackers.libraryFilter.modeWhitelist' => 'Vitlista',
+			'trackers.libraryFilter.modeHintBlacklist' => 'Synkronisera alla bibliotek utom de som markerats nedan.',
+			'trackers.libraryFilter.modeHintWhitelist' => 'Synkronisera endast de bibliotek som markerats nedan.',
+			'trackers.libraryFilter.libraries' => 'Bibliotek',
+			'trackers.libraryFilter.noLibraries' => 'Inga bibliotek tillgängliga',
 			_ => null,
 		};
 	}

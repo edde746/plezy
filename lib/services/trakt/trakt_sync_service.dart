@@ -7,6 +7,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/watch_state_notifier.dart';
 import '../multi_server_manager.dart';
 import '../settings_service.dart';
+import '../trackers/tracker_constants.dart';
 import '../trackers/tracker_id_resolver.dart';
 import 'trakt_client.dart';
 import 'trakt_constants.dart';
@@ -108,6 +109,13 @@ class TraktSyncService {
 
     final kind = TraktMediaKind.tryFromPlexType(event.mediaType);
     if (kind == null) return;
+
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null &&
+        !settings.isLibraryAllowedForTracker(TrackerService.trakt, event.librarySectionGlobalKey)) {
+      appLogger.d('Trakt sync: library filtered out for ${event.ratingKey}');
+      return;
+    }
 
     final op = event.changeType == WatchStateChangeType.watched ? TraktSyncOp.add : TraktSyncOp.remove;
     await _push(

@@ -1046,6 +1046,20 @@
       "body": "このQRコードをスマートフォンで読み取るか、下のURLをブラウザで開いてください。",
       "openToSignIn": "${service} を開いてサインイン",
       "urlCopied": "URLをコピーしました"
+    },
+    "libraryFilter": {
+      "title": "ライブラリフィルター",
+      "subtitleAllSyncing": "すべてのライブラリを同期中",
+      "subtitleNoneSyncing": "同期なし",
+      "subtitleBlocked": "${count} 件をブロック",
+      "subtitleAllowed": "${count} 件を許可",
+      "mode": "フィルターモード",
+      "modeBlacklist": "ブロックリスト",
+      "modeWhitelist": "許可リスト",
+      "modeHintBlacklist": "下でチェックしたライブラリ以外をすべて同期します。",
+      "modeHintWhitelist": "下でチェックしたライブラリのみ同期します。",
+      "libraries": "ライブラリ",
+      "noLibraries": "利用できるライブラリがありません"
     }
   }
 }

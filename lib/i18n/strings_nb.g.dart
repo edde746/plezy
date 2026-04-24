@@ -1299,6 +1299,7 @@ class _TranslationsTrackersNb implements TranslationsTrackersEn {
 	@override late final _TranslationsTrackersServicesNb services = _TranslationsTrackersServicesNb._(_root);
 	@override late final _TranslationsTrackersDeviceCodeNb deviceCode = _TranslationsTrackersDeviceCodeNb._(_root);
 	@override late final _TranslationsTrackersOauthProxyNb oauthProxy = _TranslationsTrackersOauthProxyNb._(_root);
+	@override late final _TranslationsTrackersLibraryFilterNb libraryFilter = _TranslationsTrackersLibraryFilterNb._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1494,6 +1495,27 @@ class _TranslationsTrackersOauthProxyNb implements TranslationsTrackersOauthProx
 	@override String get body => 'Skann denne QR-koden med telefonen din, eller åpne URL-en under på en enhet med nettleser.';
 	@override String openToSignIn({required Object service}) => 'Åpne ${service} for å logge inn';
 	@override String get urlCopied => 'URL kopiert';
+}
+
+// Path: trackers.libraryFilter
+class _TranslationsTrackersLibraryFilterNb implements TranslationsTrackersLibraryFilterEn {
+	_TranslationsTrackersLibraryFilterNb._(this._root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Biblioteksfilter';
+	@override String get subtitleAllSyncing => 'Synkroniserer alle biblioteker';
+	@override String get subtitleNoneSyncing => 'Ingenting synkroniseres';
+	@override String subtitleBlocked({required Object count}) => '${count} blokkert';
+	@override String subtitleAllowed({required Object count}) => '${count} tillatt';
+	@override String get mode => 'Filtermodus';
+	@override String get modeBlacklist => 'Svarteliste';
+	@override String get modeWhitelist => 'Hviteliste';
+	@override String get modeHintBlacklist => 'Synkroniser alle biblioteker bortsett fra dem du markerer nedenfor.';
+	@override String get modeHintWhitelist => 'Synkroniser kun bibliotekene du markerer nedenfor.';
+	@override String get libraries => 'Biblioteker';
+	@override String get noLibraries => 'Ingen biblioteker tilgjengelige';
 }
 
 /// The flat map containing all translations for locale <nb>.
@@ -2453,6 +2475,18 @@ extension on TranslationsNb {
 			'trackers.oauthProxy.body' => 'Skann denne QR-koden med telefonen din, eller åpne URL-en under på en enhet med nettleser.',
 			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Åpne ${service} for å logge inn',
 			'trackers.oauthProxy.urlCopied' => 'URL kopiert',
+			'trackers.libraryFilter.title' => 'Biblioteksfilter',
+			'trackers.libraryFilter.subtitleAllSyncing' => 'Synkroniserer alle biblioteker',
+			'trackers.libraryFilter.subtitleNoneSyncing' => 'Ingenting synkroniseres',
+			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} blokkert',
+			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} tillatt',
+			'trackers.libraryFilter.mode' => 'Filtermodus',
+			'trackers.libraryFilter.modeBlacklist' => 'Svarteliste',
+			'trackers.libraryFilter.modeWhitelist' => 'Hviteliste',
+			'trackers.libraryFilter.modeHintBlacklist' => 'Synkroniser alle biblioteker bortsett fra dem du markerer nedenfor.',
+			'trackers.libraryFilter.modeHintWhitelist' => 'Synkroniser kun bibliotekene du markerer nedenfor.',
+			'trackers.libraryFilter.libraries' => 'Biblioteker',
+			'trackers.libraryFilter.noLibraries' => 'Ingen biblioteker tilgjengelige',
 			_ => null,
 		};
 	}

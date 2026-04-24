@@ -1299,6 +1299,7 @@ class _TranslationsTrackersPl implements TranslationsTrackersEn {
 	@override late final _TranslationsTrackersServicesPl services = _TranslationsTrackersServicesPl._(_root);
 	@override late final _TranslationsTrackersDeviceCodePl deviceCode = _TranslationsTrackersDeviceCodePl._(_root);
 	@override late final _TranslationsTrackersOauthProxyPl oauthProxy = _TranslationsTrackersOauthProxyPl._(_root);
+	@override late final _TranslationsTrackersLibraryFilterPl libraryFilter = _TranslationsTrackersLibraryFilterPl._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1494,6 +1495,27 @@ class _TranslationsTrackersOauthProxyPl implements TranslationsTrackersOauthProx
 	@override String get body => 'Zeskanuj ten kod QR telefonem lub otwórz poniższy adres URL na dowolnym urządzeniu z przeglądarką.';
 	@override String openToSignIn({required Object service}) => 'Otwórz ${service}, aby się zalogować';
 	@override String get urlCopied => 'URL skopiowany';
+}
+
+// Path: trackers.libraryFilter
+class _TranslationsTrackersLibraryFilterPl implements TranslationsTrackersLibraryFilterEn {
+	_TranslationsTrackersLibraryFilterPl._(this._root);
+
+	final TranslationsPl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Filtr bibliotek';
+	@override String get subtitleAllSyncing => 'Synchronizowanie wszystkich bibliotek';
+	@override String get subtitleNoneSyncing => 'Nic nie synchronizuje';
+	@override String subtitleBlocked({required Object count}) => '${count} zablokowanych';
+	@override String subtitleAllowed({required Object count}) => '${count} dozwolonych';
+	@override String get mode => 'Tryb filtra';
+	@override String get modeBlacklist => 'Czarna lista';
+	@override String get modeWhitelist => 'Biała lista';
+	@override String get modeHintBlacklist => 'Synchronizuj wszystkie biblioteki oprócz zaznaczonych poniżej.';
+	@override String get modeHintWhitelist => 'Synchronizuj tylko biblioteki zaznaczone poniżej.';
+	@override String get libraries => 'Biblioteki';
+	@override String get noLibraries => 'Brak dostępnych bibliotek';
 }
 
 /// The flat map containing all translations for locale <pl>.
@@ -2453,6 +2475,18 @@ extension on TranslationsPl {
 			'trackers.oauthProxy.body' => 'Zeskanuj ten kod QR telefonem lub otwórz poniższy adres URL na dowolnym urządzeniu z przeglądarką.',
 			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => 'Otwórz ${service}, aby się zalogować',
 			'trackers.oauthProxy.urlCopied' => 'URL skopiowany',
+			'trackers.libraryFilter.title' => 'Filtr bibliotek',
+			'trackers.libraryFilter.subtitleAllSyncing' => 'Synchronizowanie wszystkich bibliotek',
+			'trackers.libraryFilter.subtitleNoneSyncing' => 'Nic nie synchronizuje',
+			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} zablokowanych',
+			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} dozwolonych',
+			'trackers.libraryFilter.mode' => 'Tryb filtra',
+			'trackers.libraryFilter.modeBlacklist' => 'Czarna lista',
+			'trackers.libraryFilter.modeWhitelist' => 'Biała lista',
+			'trackers.libraryFilter.modeHintBlacklist' => 'Synchronizuj wszystkie biblioteki oprócz zaznaczonych poniżej.',
+			'trackers.libraryFilter.modeHintWhitelist' => 'Synchronizuj tylko biblioteki zaznaczone poniżej.',
+			'trackers.libraryFilter.libraries' => 'Biblioteki',
+			'trackers.libraryFilter.noLibraries' => 'Brak dostępnych bibliotek',
 			_ => null,
 		};
 	}

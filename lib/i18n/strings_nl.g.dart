@@ -1299,6 +1299,7 @@ class _TranslationsTrackersNl implements TranslationsTrackersEn {
 	@override late final _TranslationsTrackersServicesNl services = _TranslationsTrackersServicesNl._(_root);
 	@override late final _TranslationsTrackersDeviceCodeNl deviceCode = _TranslationsTrackersDeviceCodeNl._(_root);
 	@override late final _TranslationsTrackersOauthProxyNl oauthProxy = _TranslationsTrackersOauthProxyNl._(_root);
+	@override late final _TranslationsTrackersLibraryFilterNl libraryFilter = _TranslationsTrackersLibraryFilterNl._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1494,6 +1495,27 @@ class _TranslationsTrackersOauthProxyNl implements TranslationsTrackersOauthProx
 	@override String get body => 'Scan deze QR-code met je telefoon, of open onderstaande URL op een apparaat met browser.';
 	@override String openToSignIn({required Object service}) => '${service} openen om aan te melden';
 	@override String get urlCopied => 'URL gekopieerd';
+}
+
+// Path: trackers.libraryFilter
+class _TranslationsTrackersLibraryFilterNl implements TranslationsTrackersLibraryFilterEn {
+	_TranslationsTrackersLibraryFilterNl._(this._root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Bibliotheekfilter';
+	@override String get subtitleAllSyncing => 'Alle bibliotheken synchroniseren';
+	@override String get subtitleNoneSyncing => 'Niets wordt gesynchroniseerd';
+	@override String subtitleBlocked({required Object count}) => '${count} geblokkeerd';
+	@override String subtitleAllowed({required Object count}) => '${count} toegestaan';
+	@override String get mode => 'Filtermodus';
+	@override String get modeBlacklist => 'Zwarte lijst';
+	@override String get modeWhitelist => 'Witte lijst';
+	@override String get modeHintBlacklist => 'Synchroniseer alle bibliotheken behalve die hieronder aangevinkt zijn.';
+	@override String get modeHintWhitelist => 'Synchroniseer alleen de hieronder aangevinkte bibliotheken.';
+	@override String get libraries => 'Bibliotheken';
+	@override String get noLibraries => 'Geen bibliotheken beschikbaar';
 }
 
 /// The flat map containing all translations for locale <nl>.
@@ -2453,6 +2475,18 @@ extension on TranslationsNl {
 			'trackers.oauthProxy.body' => 'Scan deze QR-code met je telefoon, of open onderstaande URL op een apparaat met browser.',
 			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => '${service} openen om aan te melden',
 			'trackers.oauthProxy.urlCopied' => 'URL gekopieerd',
+			'trackers.libraryFilter.title' => 'Bibliotheekfilter',
+			'trackers.libraryFilter.subtitleAllSyncing' => 'Alle bibliotheken synchroniseren',
+			'trackers.libraryFilter.subtitleNoneSyncing' => 'Niets wordt gesynchroniseerd',
+			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} geblokkeerd',
+			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} toegestaan',
+			'trackers.libraryFilter.mode' => 'Filtermodus',
+			'trackers.libraryFilter.modeBlacklist' => 'Zwarte lijst',
+			'trackers.libraryFilter.modeWhitelist' => 'Witte lijst',
+			'trackers.libraryFilter.modeHintBlacklist' => 'Synchroniseer alle bibliotheken behalve die hieronder aangevinkt zijn.',
+			'trackers.libraryFilter.modeHintWhitelist' => 'Synchroniseer alleen de hieronder aangevinkte bibliotheken.',
+			'trackers.libraryFilter.libraries' => 'Bibliotheken',
+			'trackers.libraryFilter.noLibraries' => 'Geen bibliotheken beschikbaar',
 			_ => null,
 		};
 	}

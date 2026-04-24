@@ -1299,6 +1299,7 @@ class _TranslationsTrackersJa implements TranslationsTrackersEn {
 	@override late final _TranslationsTrackersServicesJa services = _TranslationsTrackersServicesJa._(_root);
 	@override late final _TranslationsTrackersDeviceCodeJa deviceCode = _TranslationsTrackersDeviceCodeJa._(_root);
 	@override late final _TranslationsTrackersOauthProxyJa oauthProxy = _TranslationsTrackersOauthProxyJa._(_root);
+	@override late final _TranslationsTrackersLibraryFilterJa libraryFilter = _TranslationsTrackersLibraryFilterJa._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1494,6 +1495,27 @@ class _TranslationsTrackersOauthProxyJa implements TranslationsTrackersOauthProx
 	@override String get body => 'このQRコードをスマートフォンで読み取るか、下のURLをブラウザで開いてください。';
 	@override String openToSignIn({required Object service}) => '${service} を開いてサインイン';
 	@override String get urlCopied => 'URLをコピーしました';
+}
+
+// Path: trackers.libraryFilter
+class _TranslationsTrackersLibraryFilterJa implements TranslationsTrackersLibraryFilterEn {
+	_TranslationsTrackersLibraryFilterJa._(this._root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'ライブラリフィルター';
+	@override String get subtitleAllSyncing => 'すべてのライブラリを同期中';
+	@override String get subtitleNoneSyncing => '同期なし';
+	@override String subtitleBlocked({required Object count}) => '${count} 件をブロック';
+	@override String subtitleAllowed({required Object count}) => '${count} 件を許可';
+	@override String get mode => 'フィルターモード';
+	@override String get modeBlacklist => 'ブロックリスト';
+	@override String get modeWhitelist => '許可リスト';
+	@override String get modeHintBlacklist => '下でチェックしたライブラリ以外をすべて同期します。';
+	@override String get modeHintWhitelist => '下でチェックしたライブラリのみ同期します。';
+	@override String get libraries => 'ライブラリ';
+	@override String get noLibraries => '利用できるライブラリがありません';
 }
 
 /// The flat map containing all translations for locale <ja>.
@@ -2453,6 +2475,18 @@ extension on TranslationsJa {
 			'trackers.oauthProxy.body' => 'このQRコードをスマートフォンで読み取るか、下のURLをブラウザで開いてください。',
 			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => '${service} を開いてサインイン',
 			'trackers.oauthProxy.urlCopied' => 'URLをコピーしました',
+			'trackers.libraryFilter.title' => 'ライブラリフィルター',
+			'trackers.libraryFilter.subtitleAllSyncing' => 'すべてのライブラリを同期中',
+			'trackers.libraryFilter.subtitleNoneSyncing' => '同期なし',
+			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '${count} 件をブロック',
+			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '${count} 件を許可',
+			'trackers.libraryFilter.mode' => 'フィルターモード',
+			'trackers.libraryFilter.modeBlacklist' => 'ブロックリスト',
+			'trackers.libraryFilter.modeWhitelist' => '許可リスト',
+			'trackers.libraryFilter.modeHintBlacklist' => '下でチェックしたライブラリ以外をすべて同期します。',
+			'trackers.libraryFilter.modeHintWhitelist' => '下でチェックしたライブラリのみ同期します。',
+			'trackers.libraryFilter.libraries' => 'ライブラリ',
+			'trackers.libraryFilter.noLibraries' => '利用できるライブラリがありません',
 			_ => null,
 		};
 	}

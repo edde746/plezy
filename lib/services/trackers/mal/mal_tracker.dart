@@ -2,6 +2,7 @@ import '../../../models/trackers/tracker_context.dart';
 import '../../../utils/app_logger.dart';
 import '../../settings_service.dart';
 import '../tracker.dart';
+import '../tracker_constants.dart';
 import 'mal_client.dart';
 import 'mal_session.dart';
 
@@ -21,6 +22,9 @@ class MalTracker extends TrackerBase {
 
   @override
   String get name => 'mal';
+
+  @override
+  TrackerService get service => TrackerService.mal;
 
   @override
   bool get needsFribb => true;

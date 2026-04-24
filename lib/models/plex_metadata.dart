@@ -154,6 +154,12 @@ class PlexMetadata with MultiServerFields {
   /// Global unique identifier across all servers (serverId:ratingKey)
   String get globalKey => serverId != null ? buildGlobalKey(serverId!, ratingKey) : ratingKey;
 
+  /// Global unique identifier of this item's library section, matching
+  /// [PlexLibrary.globalKey]. Null when either [serverId] or [librarySectionID]
+  /// is missing.
+  String? get librarySectionGlobalKey =>
+      serverId != null && librarySectionID != null ? buildGlobalKey(serverId!, librarySectionID!.toString()) : null;
+
   /// Parent rating keys for hierarchical invalidation.
   /// For an episode: [seasonRatingKey, showRatingKey]
   /// For a season: [showRatingKey]

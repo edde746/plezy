@@ -1299,6 +1299,7 @@ class _TranslationsTrackersZh implements TranslationsTrackersEn {
 	@override late final _TranslationsTrackersServicesZh services = _TranslationsTrackersServicesZh._(_root);
 	@override late final _TranslationsTrackersDeviceCodeZh deviceCode = _TranslationsTrackersDeviceCodeZh._(_root);
 	@override late final _TranslationsTrackersOauthProxyZh oauthProxy = _TranslationsTrackersOauthProxyZh._(_root);
+	@override late final _TranslationsTrackersLibraryFilterZh libraryFilter = _TranslationsTrackersLibraryFilterZh._(_root);
 }
 
 // Path: hotkeys.actions
@@ -1494,6 +1495,27 @@ class _TranslationsTrackersOauthProxyZh implements TranslationsTrackersOauthProx
 	@override String get body => '用手机扫描此二维码，或在任何带浏览器的设备上打开下方 URL。';
 	@override String openToSignIn({required Object service}) => '打开 ${service} 以登录';
 	@override String get urlCopied => 'URL 已复制';
+}
+
+// Path: trackers.libraryFilter
+class _TranslationsTrackersLibraryFilterZh implements TranslationsTrackersLibraryFilterEn {
+	_TranslationsTrackersLibraryFilterZh._(this._root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '媒体库筛选';
+	@override String get subtitleAllSyncing => '同步所有媒体库';
+	@override String get subtitleNoneSyncing => '不同步任何内容';
+	@override String subtitleBlocked({required Object count}) => '已屏蔽 ${count} 个';
+	@override String subtitleAllowed({required Object count}) => '已允许 ${count} 个';
+	@override String get mode => '筛选模式';
+	@override String get modeBlacklist => '黑名单';
+	@override String get modeWhitelist => '白名单';
+	@override String get modeHintBlacklist => '同步下方未勾选的所有媒体库。';
+	@override String get modeHintWhitelist => '仅同步下方勾选的媒体库。';
+	@override String get libraries => '媒体库';
+	@override String get noLibraries => '没有可用的媒体库';
 }
 
 /// The flat map containing all translations for locale <zh>.
@@ -2453,6 +2475,18 @@ extension on TranslationsZh {
 			'trackers.oauthProxy.body' => '用手机扫描此二维码，或在任何带浏览器的设备上打开下方 URL。',
 			'trackers.oauthProxy.openToSignIn' => ({required Object service}) => '打开 ${service} 以登录',
 			'trackers.oauthProxy.urlCopied' => 'URL 已复制',
+			'trackers.libraryFilter.title' => '媒体库筛选',
+			'trackers.libraryFilter.subtitleAllSyncing' => '同步所有媒体库',
+			'trackers.libraryFilter.subtitleNoneSyncing' => '不同步任何内容',
+			'trackers.libraryFilter.subtitleBlocked' => ({required Object count}) => '已屏蔽 ${count} 个',
+			'trackers.libraryFilter.subtitleAllowed' => ({required Object count}) => '已允许 ${count} 个',
+			'trackers.libraryFilter.mode' => '筛选模式',
+			'trackers.libraryFilter.modeBlacklist' => '黑名单',
+			'trackers.libraryFilter.modeWhitelist' => '白名单',
+			'trackers.libraryFilter.modeHintBlacklist' => '同步下方未勾选的所有媒体库。',
+			'trackers.libraryFilter.modeHintWhitelist' => '仅同步下方勾选的媒体库。',
+			'trackers.libraryFilter.libraries' => '媒体库',
+			'trackers.libraryFilter.noLibraries' => '没有可用的媒体库',
 			_ => null,
 		};
 	}
