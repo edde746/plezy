@@ -1174,6 +1174,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             firstFrameRendered = true
             cancelDecoderHangCheck()
             emitLog("debug", "decoder-hang", "First frame rendered — decoder OK")
+            // STATE_READY fires when the player has enough buffered to start, but
+            // the first frame may not be on screen yet (decoder init + keyframe
+            // decode). The MPV-parity `playback-restart` event consumers (Dart
+            // first-frame detection, frame-rate matching) want the moment the
+            // pixel actually hits the screen, which is here.
+            delegate?.onEvent("playback-restart", null)
         }
     }
 

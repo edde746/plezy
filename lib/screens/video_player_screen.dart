@@ -183,6 +183,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   int? _selectedAudioStreamId;
   bool _isTranscoding = false;
   bool _serverSupportsTranscoding = false;
+  // Kicked off early in `_initializePlayer` for online non-live playback so
+  // the metadata fetch (and transcode-decision HTTP, if non-original preset)
+  // overlaps with MPV property configuration. Awaited inside `_startPlayback`
+  // immediately before `player.open()` needs the video URL.
+  Future<PlaybackInitializationResult>? _playbackDataFuture;
+  Map<String, String>? _plexHeaders;
+  // Fired in parallel with MPV setup so the OS audio-focus negotiation
+  // (~90ms on Android) doesn't sit on the critical path. Awaited before
+  // `player.open()` so the semantics are unchanged — we just eat the cost
+  // during otherwise-idle setup time.
+  Future<void>? _audioFocusFuture;
   late final String _playbackSessionIdentifier;
   late final String _playbackTranscodeSessionId;
   StreamSubscription<PlayerError>? _errorSubscription;
@@ -609,6 +620,50 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       player = Player(useExoPlayer: useExoPlayer);
       _playerBackendLabel = player!.playerType;
 
+      // Kick off audio-focus negotiation in parallel with MPV config + prefetch.
+      // On Android this is a round-trip to AudioManager (~90ms cold).
+      if (Platform.isAndroid && !widget.isLive) {
+        _audioFocusFuture = player!.requestAudioFocus();
+        _audioFocusFuture!.ignore();
+      }
+
+      // Kick off getPlaybackData() in parallel with the rest of MPV setup.
+      // The network/DB work has no dependency on the player — it just needs
+      // the context (providers), which is still safe to touch here because
+      // no async gaps invalidate it before the calls below read it.
+      // Skipped for live TV (has its own tune path) and offline (its own
+      // branch in _startPlayback).
+      if (!widget.isLive && !widget.isOffline && mounted) {
+        final client = _getClientForMetadata(context);
+        _plexHeaders = client.config.headers;
+        if (widget.selectedQualityPreset == null) {
+          try {
+            final settingsProvider = context.read<SettingsProvider>();
+            _selectedQualityPreset = settingsProvider.defaultQualityPreset;
+          } catch (_) {
+            _selectedQualityPreset = TranscodeQualityPreset.original;
+          }
+        } else {
+          _selectedQualityPreset = widget.selectedQualityPreset!;
+        }
+        _serverSupportsTranscoding = client.serverSupportsVideoTranscodingCached;
+        final playbackService = PlaybackInitializationService(client: client, database: PlexApiCache.instance.database);
+        _playbackDataFuture = playbackService.getPlaybackData(
+          metadata: _currentMetadata,
+          selectedMediaIndex: widget.selectedMediaIndex,
+          preferOffline: _selectedQualityPreset.isOriginal,
+          playbackData: widget.playbackData,
+          qualityPreset: _selectedQualityPreset,
+          selectedAudioStreamId: _selectedAudioStreamId,
+          sessionIdentifier: _playbackSessionIdentifier,
+          transcodeSessionId: _playbackTranscodeSessionId,
+        );
+        // If MPV setup below throws before `_startPlayback` awaits this,
+        // tell Dart we've "handled" the future so it's not reported as an
+        // unhandled async error. The later `await` still receives the error.
+        _playbackDataFuture!.ignore();
+      }
+
       await player!.configureSubtitleFonts();
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
       if (Platform.isAndroid && useExoPlayer) {
@@ -864,17 +919,25 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       });
 
       // Listen to position for completion detection (fallback for unreliable MPV events)
+      int? lastObservedPositionMs;
       _positionSubscription = player!.streams.position.listen((position) {
-        // Fallback for cases where playbackRestart doesn't fire (observed on some
-        // offline Android playback flows). Prevents a permanent loading spinner.
-        if (!_hasFirstFrame.value && position.inMilliseconds > 0) {
-          _hasFirstFrame.value = true;
+        // Fallback for cases where playbackRestart doesn't fire (observed on
+        // some offline Android playback flows). Prevents a permanent loading
+        // spinner. Checking `position > 0` was broken for resume playback —
+        // the native layer sets position to the resume offset before the first
+        // frame renders, so the fallback tripped immediately. Requiring a
+        // position *change* ensures we only fire when playback is advancing.
+        if (!_hasFirstFrame.value) {
+          if (lastObservedPositionMs != null && position.inMilliseconds != lastObservedPositionMs) {
+            _hasFirstFrame.value = true;
 
-          // Apply frame rate matching here too, since this fallback may fire
-          // before playbackRestart (race condition with resume positions > 0)
-          if (Platform.isAndroid && settingsService.getMatchContentFrameRate()) {
-            _applyFrameRateMatching();
+            // Apply frame rate matching here too, since this fallback may fire
+            // before playbackRestart (race condition with resume positions > 0)
+            if (Platform.isAndroid && settingsService.getMatchContentFrameRate()) {
+              _applyFrameRateMatching();
+            }
           }
+          lastObservedPositionMs = position.inMilliseconds;
         }
 
         final duration = player!.state.duration;
@@ -886,13 +949,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       });
 
-      // Initialize services
+      // Services init must finish before `_loadAdjacentEpisodes` so Discord /
+      // Trakt / Tracker start-playback calls have fired before first-frame.
+      // Play queue is only consumed by next/previous navigation buttons which
+      // the user can't hit until after first frame; fire-and-forget removes
+      // its HTTP latency from the critical path.
+      unawaited(_ensurePlayQueue());
       await _initializeServices();
 
-      // Ensure play queue exists for sequential playback
-      await _ensurePlayQueue();
-
-      // Load next/previous episodes
+      // Load next/previous episodes (fire-and-forget)
       _loadAdjacentEpisodes();
     } catch (e) {
       appLogger.e('Failed to initialize player', error: e);
@@ -1126,11 +1191,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     });
 
-    // Update media metadata (client can be null in offline mode - artwork won't be shown)
-    await _mediaControlsManager!.updateMetadata(
-      metadata: _currentMetadata,
-      client: client,
-      duration: _currentMetadata.duration != null ? Duration(milliseconds: _currentMetadata.duration!) : null,
+    // Update media metadata (client can be null in offline mode - artwork won't
+    // be shown). Fire-and-forget: the OS media-controls plugin downloads the
+    // poster synchronously inside `setMetadata` (~270ms). The controls populate
+    // a beat after first frame which is fine; it's not visible during loading.
+    unawaited(
+      _mediaControlsManager!.updateMetadata(
+        metadata: _currentMetadata,
+        client: client,
+        duration: _currentMetadata.duration != null ? Duration(milliseconds: _currentMetadata.duration!) : null,
+      ),
     );
 
     if (!mounted) return;
@@ -1427,44 +1497,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // Offline mode: get video path from downloads without requiring server
         result = await _startOfflinePlayback();
       } else {
-        // Online mode: use server-specific client
-        final client = _getClientForMetadata(context);
-        plexHeaders = client.config.headers;
-
-        // Resolve quality preset from widget → SettingsProvider default.
-        if (widget.selectedQualityPreset == null && mounted) {
-          try {
-            final settingsProvider = context.read<SettingsProvider>();
-            _selectedQualityPreset = settingsProvider.defaultQualityPreset;
-          } catch (_) {
-            _selectedQualityPreset = TranscodeQualityPreset.original;
-          }
-        } else {
-          _selectedQualityPreset = widget.selectedQualityPreset ?? TranscodeQualityPreset.original;
-        }
-
-        // Capability flag comes from the warm cache populated at connection
-        // time. If the warm-up hasn't landed yet (rare — playback within a
-        // few seconds of connect), the sync getter returns `true` and the
-        // transcode decision's own fallback handles a "not actually supported"
-        // server without blocking the hot path.
-        _serverSupportsTranscoding = client.serverSupportsVideoTranscodingCached;
-
-        final playbackService = PlaybackInitializationService(client: client, database: PlexApiCache.instance.database);
-        // Only prefer a downloaded local file when the user wants Original
-        // quality. Any non-Original preset implies an explicit request to
-        // transcode, which can only be satisfied by hitting the server — the
-        // local file is always source quality.
-        result = await playbackService.getPlaybackData(
-          metadata: _currentMetadata,
-          selectedMediaIndex: widget.selectedMediaIndex,
-          preferOffline: _selectedQualityPreset.isOriginal,
-          playbackData: widget.playbackData,
-          qualityPreset: _selectedQualityPreset,
-          selectedAudioStreamId: _selectedAudioStreamId,
-          sessionIdentifier: _playbackSessionIdentifier,
-          transcodeSessionId: _playbackTranscodeSessionId,
-        );
+        // Online path: `_playbackDataFuture` was kicked off in `_initializePlayer`
+        // in parallel with MPV setup. Quality preset + server capabilities +
+        // headers were resolved there too. Just await the result.
+        plexHeaders = _plexHeaders;
+        result = await _playbackDataFuture!;
 
         _isTranscoding = result.isTranscoding;
         if (result.activeAudioStreamId != null) {
@@ -1496,8 +1533,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _frameRateMatchingApplied = false;
 
         // Request audio focus before starting playback (Android)
-        // This causes other media apps (Spotify, podcasts, etc.) to pause
-        await player!.requestAudioFocus();
+        // This causes other media apps (Spotify, podcasts, etc.) to pause.
+        // Fired in parallel with MPV setup in `_initializePlayer`; we await
+        // the in-flight future here (usually already resolved).
+        if (_audioFocusFuture != null) {
+          await _audioFocusFuture;
+          _audioFocusFuture = null;
+        } else {
+          await player!.requestAudioFocus();
+        }
 
         // Pass resume position if available.
         // In offline mode, prefer locally tracked progress over the cached server value
@@ -1515,7 +1559,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             ? Duration(milliseconds: _currentMetadata.viewOffset!)
             : null;
 
-        // Enable FFmpeg auto-reconnect for VOD streams (covers network drops up to 10 min)
+        // Enable FFmpeg auto-reconnect for VOD streams (covers network drops
+        // up to 10 min). Forwarded to the Kotlin layer on Android so MPV
+        // inherits it on the ExoPlayer→MPV fallback path (see
+        // _onBackendSwitched), so keep it unconditional.
         if (!widget.isOffline && !widget.isLive) {
           await player!.setProperty(
             'stream-lavf-o',

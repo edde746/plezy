@@ -6,12 +6,12 @@ import '../models/download_models.dart';
 import '../models/transcode_quality_preset.dart';
 import '../mpv/mpv.dart';
 import '../utils/app_logger.dart';
+import '../utils/global_key_utils.dart';
 import '../utils/plex_url_helper.dart';
 import '../i18n/strings.g.dart';
 import '../database/app_database.dart';
 import 'download_storage_service.dart';
 import 'dart:io';
-import 'package:drift/drift.dart';
 
 /// Service responsible for fetching video playback data from the Plex server
 class PlaybackInitializationService {
@@ -35,9 +35,11 @@ class PlaybackInitializationService {
     }
 
     try {
-      // Query database for downloaded media with matching serverId and ratingKey
+      // Query by globalKey — the column is UNIQUE so SQLite's auto-index on it
+      // makes this an O(log n) lookup. Filtering by (serverId, ratingKey)
+      // would only use the serverId index and then linear-scan matching rows.
       final query = database!.select(database!.downloadedMedia)
-        ..where((tbl) => tbl.serverId.equals(serverId) & tbl.ratingKey.equals(ratingKey));
+        ..where((tbl) => tbl.globalKey.equals(buildGlobalKey(serverId, ratingKey)));
 
       final downloadedItem = await query.getSingleOrNull();
 

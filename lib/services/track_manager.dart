@@ -77,27 +77,32 @@ class TrackManager {
     _lastExternalSubtitles = externalSubtitles;
   }
 
-  /// Add external subtitle tracks to the player one by one.
+  /// Add external subtitle tracks to the player in parallel.
+  ///
+  /// Each sub-add does its own HTTP fetch of the sidecar file, so sequential
+  /// adds dominate startup (~170ms × N). Firing them in parallel lets
+  /// libavformat's network IO overlap and stops Dart → method channel → native
+  /// round-trips from stacking.
   Future<void> addExternalSubtitles(List<SubtitleTrack> externalSubtitles) async {
     if (externalSubtitles.isEmpty) return;
 
     appLogger.d('Adding ${externalSubtitles.length} external subtitle(s) to player');
 
-    for (final subtitleTrack in externalSubtitles) {
-      if (subtitleTrack.uri == null) continue;
-
-      try {
-        await player.addSubtitleTrack(
-          uri: subtitleTrack.uri!,
-          title: subtitleTrack.title,
-          language: subtitleTrack.language,
-          select: false,
-        );
-        appLogger.d('Added external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}');
-      } catch (e) {
-        appLogger.w('Failed to add external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}', error: e);
-      }
-    }
+    await Future.wait(
+      externalSubtitles.where((s) => s.uri != null).map((subtitleTrack) async {
+        try {
+          await player.addSubtitleTrack(
+            uri: subtitleTrack.uri!,
+            title: subtitleTrack.title,
+            language: subtitleTrack.language,
+            select: false,
+          );
+          appLogger.d('Added external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}');
+        } catch (e) {
+          appLogger.w('Failed to add external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}', error: e);
+        }
+      }),
+    );
   }
 
   /// Resume playback after external subtitles have been loaded (or failed).
