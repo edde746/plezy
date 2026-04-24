@@ -1016,8 +1016,7 @@
     "scrobble": "Real-time scrobbling",
     "scrobbleDescription": "Send play, pause, and stop events to Trakt during playback.",
     "watchedSync": "Sync watched status",
-    "watchedSyncDescription": "When you mark items watched in Plezy, mark them on Trakt.",
-    "connectFailed": "Couldn't connect to Trakt. Try again."
+    "watchedSyncDescription": "When you mark items watched in Plezy, mark them on Trakt."
   },
   "trackers": {
     "title": "Trackers",

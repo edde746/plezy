@@ -1277,7 +1277,6 @@ class _TranslationsTraktNl implements TranslationsTraktEn {
 	@override String get scrobbleDescription => 'Verstuur play-, pauze- en stopgebeurtenissen tijdens afspelen naar Trakt.';
 	@override String get watchedSync => 'Bekeken-status synchroniseren';
 	@override String get watchedSyncDescription => 'Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd.';
-	@override String get connectFailed => 'Kan niet verbinden met Trakt. Probeer opnieuw.';
 }
 
 // Path: trackers
@@ -2453,7 +2452,6 @@ extension on TranslationsNl {
 			'trakt.scrobbleDescription' => 'Verstuur play-, pauze- en stopgebeurtenissen tijdens afspelen naar Trakt.',
 			'trakt.watchedSync' => 'Bekeken-status synchroniseren',
 			'trakt.watchedSyncDescription' => 'Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd.',
-			'trakt.connectFailed' => 'Kan niet verbinden met Trakt. Probeer opnieuw.',
 			'trackers.title' => 'Trackers',
 			'trackers.hubSubtitle' => 'Houd je kijkvoortgang gesynchroniseerd met Trakt en andere diensten.',
 			'trackers.notConnected' => 'Niet verbonden',

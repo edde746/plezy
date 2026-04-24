@@ -1277,7 +1277,6 @@ class _TranslationsTraktJa implements TranslationsTraktEn {
 	@override String get scrobbleDescription => '再生中に再生・一時停止・停止イベントを Trakt に送信します。';
 	@override String get watchedSync => '視聴済みステータスを同期';
 	@override String get watchedSyncDescription => 'Plezy で項目を視聴済みにすると、Trakt でも視聴済みになります。';
-	@override String get connectFailed => 'Trakt に接続できませんでした。もう一度お試しください。';
 }
 
 // Path: trackers
@@ -2453,7 +2452,6 @@ extension on TranslationsJa {
 			'trakt.scrobbleDescription' => '再生中に再生・一時停止・停止イベントを Trakt に送信します。',
 			'trakt.watchedSync' => '視聴済みステータスを同期',
 			'trakt.watchedSyncDescription' => 'Plezy で項目を視聴済みにすると、Trakt でも視聴済みになります。',
-			'trakt.connectFailed' => 'Trakt に接続できませんでした。もう一度お試しください。',
 			'trackers.title' => 'トラッカー',
 			'trackers.hubSubtitle' => '視聴進捗を Trakt や他のサービスで同期します。',
 			'trackers.notConnected' => '未接続',

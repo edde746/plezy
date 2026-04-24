@@ -1277,7 +1277,6 @@ class _TranslationsTraktKo implements TranslationsTraktEn {
 	@override String get scrobbleDescription => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.';
 	@override String get watchedSync => '시청 상태 동기화';
 	@override String get watchedSyncDescription => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.';
-	@override String get connectFailed => 'Trakt에 연결할 수 없습니다. 다시 시도하세요.';
 }
 
 // Path: trackers
@@ -2453,7 +2452,6 @@ extension on TranslationsKo {
 			'trakt.scrobbleDescription' => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.',
 			'trakt.watchedSync' => '시청 상태 동기화',
 			'trakt.watchedSyncDescription' => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.',
-			'trakt.connectFailed' => 'Trakt에 연결할 수 없습니다. 다시 시도하세요.',
 			'trackers.title' => '트래커',
 			'trackers.hubSubtitle' => '시청 진행률을 Trakt 및 기타 서비스와 동기화하세요.',
 			'trackers.notConnected' => '연결되지 않음',

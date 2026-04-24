@@ -1016,8 +1016,7 @@
     "scrobble": "Realtids-scrobbling",
     "scrobbleDescription": "Skicka uppspelnings-, paus- och stopphändelser till Trakt under uppspelning.",
     "watchedSync": "Synkronisera tittad-status",
-    "watchedSyncDescription": "När du markerar något som tittat i Plezy markeras det också på Trakt.",
-    "connectFailed": "Kunde inte ansluta till Trakt. Försök igen."
+    "watchedSyncDescription": "När du markerar något som tittat i Plezy markeras det också på Trakt."
   },
   "trackers": {
     "title": "Spårare",

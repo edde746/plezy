@@ -1016,8 +1016,7 @@
     "scrobble": "Sanntids-scrobbling",
     "scrobbleDescription": "Send avspillings-, pause- og stopphendelser til Trakt under avspilling.",
     "watchedSync": "Synkroniser sett-status",
-    "watchedSyncDescription": "Når du markerer noe som sett i Plezy, markeres det også på Trakt.",
-    "connectFailed": "Kunne ikke koble til Trakt. Prøv igjen."
+    "watchedSyncDescription": "Når du markerer noe som sett i Plezy, markeres det også på Trakt."
   },
   "trackers": {
     "title": "Trackere",

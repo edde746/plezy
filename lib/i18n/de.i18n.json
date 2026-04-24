@@ -1016,8 +1016,7 @@
     "scrobble": "Echtzeit-Scrobbling",
     "scrobbleDescription": "Sende Play-, Pause- und Stopp-Ereignisse während der Wiedergabe an Trakt.",
     "watchedSync": "Gesehen-Status synchronisieren",
-    "watchedSyncDescription": "Wenn du Inhalte in Plezy als gesehen markierst, werden sie auch auf Trakt markiert.",
-    "connectFailed": "Verbindung zu Trakt fehlgeschlagen. Versuche es erneut."
+    "watchedSyncDescription": "Wenn du Inhalte in Plezy als gesehen markierst, werden sie auch auf Trakt markiert."
   },
   "trackers": {
     "title": "Tracker",

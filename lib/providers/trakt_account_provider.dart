@@ -1,8 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 
 import '../models/trackers/device_code.dart';
+import '../services/trackers/tracker_connect_runner.dart';
 import '../services/trakt/trakt_account_store.dart';
 import '../services/trakt/trakt_auth_service.dart';
 import '../services/trakt/trakt_client.dart';
@@ -47,49 +46,37 @@ class TraktAccountProvider extends ChangeNotifier {
   /// [onCodeReady] is invoked once with the user code + verification URL so
   /// the UI can render the dialog.
   Future<bool> connect({required void Function(DeviceCode code) onCodeReady}) async {
-    if (_isConnecting) return false;
+    if (_isConnecting || isConnected) return false;
     _isConnecting = true;
     _cancelRequested = false;
     notifyListeners();
-
     try {
-      final code = await _auth.createDeviceCode();
-      onCodeReady(code);
-
-      await for (final event in _auth.pollDeviceCode(code, shouldCancel: () => _cancelRequested)) {
-        if (event is DevicePollSuccess) {
-          await _completeConnect(event.tokenResponse);
-          return true;
-        }
-        if (event is DevicePollDenied || event is DevicePollExpired) {
-          return false;
-        }
-      }
-      return false;
-    } catch (e) {
-      appLogger.w('Trakt connect failed', error: e);
-      return false;
+      return await runConnectPipeline<TraktSession>(
+        logLabel: 'Trakt',
+        authorize: () => _auth.authorize(
+          onCodeReady: onCodeReady,
+          shouldCancel: () => _cancelRequested,
+        ),
+        enrich: _enrichUsername,
+        save: (s) => _store.save(_activeUserUuid, s),
+        assign: _setSessionAndRebind,
+      );
     } finally {
       _isConnecting = false;
       notifyListeners();
     }
   }
 
-  Future<void> _completeConnect(Map<String, dynamic> tokenResponse) async {
-    final raw = TraktSession.fromTokenResponse(tokenResponse);
-    // Best-effort fetch of the username for display.
-    TraktSession enriched = raw;
+  Future<TraktSession> _enrichUsername(TraktSession raw) async {
     try {
-      final tmpClient = TraktClient(raw, onSessionInvalidated: () {});
-      final user = await tmpClient.getUserSettings();
-      enriched = raw.copyWith(username: user.username);
-      tmpClient.dispose();
+      final tmp = TraktClient(raw, onSessionInvalidated: () {});
+      final user = await tmp.getUserSettings();
+      tmp.dispose();
+      return raw.copyWith(username: user.username);
     } catch (e) {
       appLogger.d('Trakt: getUserSettings failed (non-fatal)', error: e);
+      return raw;
     }
-
-    await _store.save(_activeUserUuid, enriched);
-    _setSessionAndRebind(enriched);
   }
 
   /// Revoke the access token and clear local state.

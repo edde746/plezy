@@ -1016,8 +1016,7 @@
     "scrobble": "Scrobbling em tempo real",
     "scrobbleDescription": "Envia eventos de reprodução, pausa e parada ao Trakt durante a exibição.",
     "watchedSync": "Sincronizar status de assistido",
-    "watchedSyncDescription": "Ao marcar itens como assistidos no Plezy, eles também serão marcados no Trakt.",
-    "connectFailed": "Não foi possível conectar ao Trakt. Tente novamente."
+    "watchedSyncDescription": "Ao marcar itens como assistidos no Plezy, eles também serão marcados no Trakt."
   },
   "trackers": {
     "title": "Rastreadores",

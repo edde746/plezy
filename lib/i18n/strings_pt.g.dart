@@ -1277,7 +1277,6 @@ class _TranslationsTraktPt implements TranslationsTraktEn {
 	@override String get scrobbleDescription => 'Envia eventos de reprodução, pausa e parada ao Trakt durante a exibição.';
 	@override String get watchedSync => 'Sincronizar status de assistido';
 	@override String get watchedSyncDescription => 'Ao marcar itens como assistidos no Plezy, eles também serão marcados no Trakt.';
-	@override String get connectFailed => 'Não foi possível conectar ao Trakt. Tente novamente.';
 }
 
 // Path: trackers
@@ -2453,7 +2452,6 @@ extension on TranslationsPt {
 			'trakt.scrobbleDescription' => 'Envia eventos de reprodução, pausa e parada ao Trakt durante a exibição.',
 			'trakt.watchedSync' => 'Sincronizar status de assistido',
 			'trakt.watchedSyncDescription' => 'Ao marcar itens como assistidos no Plezy, eles também serão marcados no Trakt.',
-			'trakt.connectFailed' => 'Não foi possível conectar ao Trakt. Tente novamente.',
 			'trackers.title' => 'Rastreadores',
 			'trackers.hubSubtitle' => 'Mantenha seu progresso sincronizado com Trakt e outros serviços.',
 			'trackers.notConnected' => 'Não conectado',

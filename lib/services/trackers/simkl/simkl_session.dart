@@ -29,6 +29,13 @@ class SimklSession {
     createdAt: (json['created_at'] as num).toInt(),
   );
 
+  /// Build a session from Simkl's device-code `/oauth/pin/<code>` response.
+  /// Simkl doesn't expose a creation timestamp so we stamp "now".
+  factory SimklSession.fromTokenResponse(Map<String, dynamic> json) => SimklSession(
+    accessToken: json['access_token'] as String,
+    createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+  );
+
   String encode() => json.encode(toJson());
   static SimklSession decode(String raw) => SimklSession.fromJson(json.decode(raw) as Map<String, dynamic>);
 }

@@ -1016,8 +1016,7 @@
     "scrobble": "Scrobbling en temps réel",
     "scrobbleDescription": "Envoyer les événements de lecture, pause et arrêt à Trakt pendant la lecture.",
     "watchedSync": "Synchroniser le statut « vu »",
-    "watchedSyncDescription": "Lorsque vous marquez un élément comme vu dans Plezy, il l'est aussi sur Trakt.",
-    "connectFailed": "Échec de la connexion à Trakt. Réessayez."
+    "watchedSyncDescription": "Lorsque vous marquez un élément comme vu dans Plezy, il l'est aussi sur Trakt."
   },
   "trackers": {
     "title": "Trackers",

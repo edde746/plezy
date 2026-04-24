@@ -1277,7 +1277,6 @@ class _TranslationsTraktDe implements TranslationsTraktEn {
 	@override String get scrobbleDescription => 'Sende Play-, Pause- und Stopp-Ereignisse während der Wiedergabe an Trakt.';
 	@override String get watchedSync => 'Gesehen-Status synchronisieren';
 	@override String get watchedSyncDescription => 'Wenn du Inhalte in Plezy als gesehen markierst, werden sie auch auf Trakt markiert.';
-	@override String get connectFailed => 'Verbindung zu Trakt fehlgeschlagen. Versuche es erneut.';
 }
 
 // Path: trackers
@@ -2453,7 +2452,6 @@ extension on TranslationsDe {
 			'trakt.scrobbleDescription' => 'Sende Play-, Pause- und Stopp-Ereignisse während der Wiedergabe an Trakt.',
 			'trakt.watchedSync' => 'Gesehen-Status synchronisieren',
 			'trakt.watchedSyncDescription' => 'Wenn du Inhalte in Plezy als gesehen markierst, werden sie auch auf Trakt markiert.',
-			'trakt.connectFailed' => 'Verbindung zu Trakt fehlgeschlagen. Versuche es erneut.',
 			'trackers.title' => 'Tracker',
 			'trackers.hubSubtitle' => 'Halte deinen Wiedergabefortschritt mit Trakt und anderen Diensten synchron.',
 			'trackers.notConnected' => 'Nicht verbunden',

@@ -1,11 +1,7 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/trackers/device_code.dart';
 import '../../providers/trackers_provider.dart';
@@ -15,71 +11,24 @@ import '../../services/trackers/oauth_proxy_client.dart';
 import '../../services/trackers/simkl/simkl_tracker.dart';
 import '../../services/trackers/tracker_constants.dart';
 import '../../services/settings_service.dart';
-import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
-import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/device_code_dialog.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/oauth_proxy_dialog.dart';
 import '../../widgets/settings_section.dart';
+import 'tracker_connect_launcher.dart';
 import 'tracker_library_filter_screen.dart';
-
-/// Shared dialog-driven connect flow used by all three trackers. Handles the
-/// guard, auto-launch-on-pointer, dialog lifecycle, and failure snackbar —
-/// service-specific pieces are delegated via [connect], [buildDialog], and
-/// [urlFor].
-Future<void> _startConnectionWithDialog<T>(
-  BuildContext context, {
-  required TrackerService service,
-  required bool alreadyConnected,
-  required String serviceName,
-  required Future<bool> Function(void Function(T)) connect,
-  required Widget Function(T payload, VoidCallback onCancel) buildDialog,
-  required String Function(T payload) urlFor,
-}) async {
-  final account = context.read<TrackersProvider>();
-  if (account.isConnecting(service) || alreadyConnected) return;
-
-  final autoLaunchBrowser = !InputModeTracker.isKeyboardMode(context);
-  var dialogOpen = false;
-
-  final ok = await connect((payload) {
-    if (!context.mounted) return;
-    dialogOpen = true;
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => buildDialog(payload, account.cancelConnect),
-    ).whenComplete(() => dialogOpen = false);
-    if (autoLaunchBrowser) {
-      unawaited(
-        launchUrl(Uri.parse(urlFor(payload)), mode: LaunchMode.externalApplication).catchError((Object e) {
-          appLogger.d('${service.name}: failed to auto-launch browser', error: e);
-          return false;
-        }),
-      );
-    }
-  });
-
-  if (!context.mounted) return;
-  if (dialogOpen) {
-    Navigator.of(context, rootNavigator: true).pop();
-  }
-  if (!ok) {
-    showAppSnackBar(context, t.trackers.connectFailed(service: serviceName));
-  }
-}
 
 Future<void> startMalConnection(BuildContext context) {
   final account = context.read<TrackersProvider>();
   final name = t.trackers.services.mal;
-  return _startConnectionWithDialog<OAuthProxyStart>(
+  return launchTrackerConnect<OAuthProxyStart>(
     context,
-    service: TrackerService.mal,
-    alreadyConnected: account.isMalConnected,
+    isBusyOrConnected: account.isConnecting(TrackerService.mal) || account.isMalConnected,
     serviceName: name,
     connect: (cb) => account.connectMal(onCodeReady: cb),
+    onCancel: account.cancelConnect,
     buildDialog: (p, cancel) => OAuthProxyDialog(start: p, serviceName: name, onCancel: cancel),
     urlFor: (p) => p.url,
   );
@@ -88,12 +37,12 @@ Future<void> startMalConnection(BuildContext context) {
 Future<void> startAnilistConnection(BuildContext context) {
   final account = context.read<TrackersProvider>();
   final name = t.trackers.services.anilist;
-  return _startConnectionWithDialog<OAuthProxyStart>(
+  return launchTrackerConnect<OAuthProxyStart>(
     context,
-    service: TrackerService.anilist,
-    alreadyConnected: account.isAnilistConnected,
+    isBusyOrConnected: account.isConnecting(TrackerService.anilist) || account.isAnilistConnected,
     serviceName: name,
     connect: (cb) => account.connectAnilist(onCodeReady: cb),
+    onCancel: account.cancelConnect,
     buildDialog: (p, cancel) => OAuthProxyDialog(start: p, serviceName: name, onCancel: cancel),
     urlFor: (p) => p.url,
   );
@@ -102,12 +51,12 @@ Future<void> startAnilistConnection(BuildContext context) {
 Future<void> startSimklConnection(BuildContext context) {
   final account = context.read<TrackersProvider>();
   final name = t.trackers.services.simkl;
-  return _startConnectionWithDialog<DeviceCode>(
+  return launchTrackerConnect<DeviceCode>(
     context,
-    service: TrackerService.simkl,
-    alreadyConnected: account.isSimklConnected,
+    isBusyOrConnected: account.isConnecting(TrackerService.simkl) || account.isSimklConnected,
     serviceName: name,
     connect: (cb) => account.connectSimkl(onCodeReady: cb),
+    onCancel: account.cancelConnect,
     buildDialog: (p, cancel) => DeviceCodeDialog(code: p, serviceName: name, onCancel: cancel),
     urlFor: (p) => p.verificationUrlComplete ?? p.verificationUrl,
   );

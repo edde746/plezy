@@ -1277,7 +1277,6 @@ class _TranslationsTraktSv implements TranslationsTraktEn {
 	@override String get scrobbleDescription => 'Skicka uppspelnings-, paus- och stopphändelser till Trakt under uppspelning.';
 	@override String get watchedSync => 'Synkronisera tittad-status';
 	@override String get watchedSyncDescription => 'När du markerar något som tittat i Plezy markeras det också på Trakt.';
-	@override String get connectFailed => 'Kunde inte ansluta till Trakt. Försök igen.';
 }
 
 // Path: trackers
@@ -2453,7 +2452,6 @@ extension on TranslationsSv {
 			'trakt.scrobbleDescription' => 'Skicka uppspelnings-, paus- och stopphändelser till Trakt under uppspelning.',
 			'trakt.watchedSync' => 'Synkronisera tittad-status',
 			'trakt.watchedSyncDescription' => 'När du markerar något som tittat i Plezy markeras det också på Trakt.',
-			'trakt.connectFailed' => 'Kunde inte ansluta till Trakt. Försök igen.',
 			'trackers.title' => 'Spårare',
 			'trackers.hubSubtitle' => 'Håll ditt tittarprogress synkroniserat med Trakt och andra tjänster.',
 			'trackers.notConnected' => 'Ej ansluten',

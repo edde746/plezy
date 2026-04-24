@@ -1,77 +1,34 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
+import '../../models/trackers/device_code.dart';
 import '../../providers/trakt_account_provider.dart';
 import '../../services/settings_service.dart';
 import '../../services/trackers/tracker_constants.dart';
 import '../../services/trakt/trakt_scrobble_service.dart';
 import '../../services/trakt/trakt_sync_service.dart';
-import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
-import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/device_code_dialog.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
+import 'tracker_connect_launcher.dart';
 import 'tracker_library_filter_screen.dart';
 
-/// Start the Trakt device-code OAuth flow from anywhere in the app.
-///
-/// Shows the code dialog + polls until the user completes authorization.
-/// On pointer-driven platforms (desktop + mobile when dpad/keyboard mode
-/// isn't active) this additionally auto-launches the browser at
-/// `trakt.tv/activate` with the code prefilled — the dialog still shows
-/// as a fallback/progress indicator.
-Future<void> startTraktConnection(BuildContext context) async {
+Future<void> startTraktConnection(BuildContext context) {
   final account = context.read<TraktAccountProvider>();
-  if (account.isConnecting || account.isConnected) return;
-
-  final autoLaunchBrowser = !InputModeTracker.isKeyboardMode(context);
-  var dialogOpen = false;
-
-  final ok = await account.connect(
-    onCodeReady: (code) {
-      if (!context.mounted) return;
-      dialogOpen = true;
-      showDialog<void>(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => DeviceCodeDialog(
-          code: code,
-          serviceName: t.trakt.title,
-          onCancel: account.cancelConnect,
-        ),
-      ).whenComplete(() => dialogOpen = false);
-      if (autoLaunchBrowser) {
-        final url = code.verificationUrlComplete ?? code.verificationUrl;
-        unawaited(
-          launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication).catchError((Object e) {
-            appLogger.d('Trakt: failed to auto-launch browser', error: e);
-            return false;
-          }),
-        );
-      }
-    },
+  final name = t.trakt.title;
+  return launchTrackerConnect<DeviceCode>(
+    context,
+    isBusyOrConnected: account.isConnecting || account.isConnected,
+    serviceName: name,
+    connect: (cb) => account.connect(onCodeReady: cb),
+    onCancel: account.cancelConnect,
+    buildDialog: (code, cancel) => DeviceCodeDialog(code: code, serviceName: name, onCancel: cancel),
+    urlFor: (code) => code.verificationUrlComplete ?? code.verificationUrl,
   );
-
-  if (!context.mounted) return;
-
-  // Close the dialog iff we showed one and it's still up (not already closed by
-  // the Cancel button). This is the ONLY site that dismisses the dialog —
-  // popping here and having the dialog self-pop would pop the screen behind.
-  if (dialogOpen) {
-    Navigator.of(context, rootNavigator: true).pop();
-  }
-
-  if (!ok && account.session == null) {
-    showAppSnackBar(context, t.trakt.connectFailed);
-  }
 }
 
 class TraktSettingsScreen extends StatefulWidget {

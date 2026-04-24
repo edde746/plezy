@@ -1016,8 +1016,7 @@
     "scrobble": "실시간 스크로블",
     "scrobbleDescription": "재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.",
     "watchedSync": "시청 상태 동기화",
-    "watchedSyncDescription": "Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.",
-    "connectFailed": "Trakt에 연결할 수 없습니다. 다시 시도하세요."
+    "watchedSyncDescription": "Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다."
   },
   "trackers": {
     "title": "트래커",

@@ -1277,7 +1277,6 @@ class _TranslationsTraktDa implements TranslationsTraktEn {
 	@override String get scrobbleDescription => 'Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.';
 	@override String get watchedSync => 'Synkroniser sét-status';
 	@override String get watchedSyncDescription => 'Når du markerer ting som sét i Plezy, markeres de også på Trakt.';
-	@override String get connectFailed => 'Kunne ikke forbinde til Trakt. Prøv igen.';
 }
 
 // Path: trackers
@@ -2453,7 +2452,6 @@ extension on TranslationsDa {
 			'trakt.scrobbleDescription' => 'Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.',
 			'trakt.watchedSync' => 'Synkroniser sét-status',
 			'trakt.watchedSyncDescription' => 'Når du markerer ting som sét i Plezy, markeres de også på Trakt.',
-			'trakt.connectFailed' => 'Kunne ikke forbinde til Trakt. Prøv igen.',
 			'trackers.title' => 'Trackere',
 			'trackers.hubSubtitle' => 'Hold din visningsfremgang synkroniseret med Trakt og andre tjenester.',
 			'trackers.notConnected' => 'Ikke forbundet',

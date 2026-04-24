@@ -2948,9 +2948,6 @@ class TranslationsTraktEn {
 
 	/// en: 'When you mark items watched in Plezy, mark them on Trakt.'
 	String get watchedSyncDescription => 'When you mark items watched in Plezy, mark them on Trakt.';
-
-	/// en: 'Couldn't connect to Trakt. Try again.'
-	String get connectFailed => 'Couldn\'t connect to Trakt. Try again.';
 }
 
 // Path: trackers
@@ -4379,7 +4376,6 @@ extension on Translations {
 			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
 			'trakt.watchedSync' => 'Sync watched status',
 			'trakt.watchedSyncDescription' => 'When you mark items watched in Plezy, mark them on Trakt.',
-			'trakt.connectFailed' => 'Couldn\'t connect to Trakt. Try again.',
 			'trackers.title' => 'Trackers',
 			'trackers.hubSubtitle' => 'Keep your watch progress in sync with Trakt and other services.',
 			'trackers.notConnected' => 'Not connected',

@@ -1277,7 +1277,6 @@ class _TranslationsTraktRu implements TranslationsTraktEn {
 	@override String get scrobbleDescription => 'Отправлять события воспроизведения, паузы и остановки в Trakt во время просмотра.';
 	@override String get watchedSync => 'Синхронизация статуса просмотра';
 	@override String get watchedSyncDescription => 'Когда вы отмечаете элементы как просмотренные в Plezy, они отмечаются и в Trakt.';
-	@override String get connectFailed => 'Не удалось подключиться к Trakt. Попробуйте ещё раз.';
 }
 
 // Path: trackers
@@ -2453,7 +2452,6 @@ extension on TranslationsRu {
 			'trakt.scrobbleDescription' => 'Отправлять события воспроизведения, паузы и остановки в Trakt во время просмотра.',
 			'trakt.watchedSync' => 'Синхронизация статуса просмотра',
 			'trakt.watchedSyncDescription' => 'Когда вы отмечаете элементы как просмотренные в Plezy, они отмечаются и в Trakt.',
-			'trakt.connectFailed' => 'Не удалось подключиться к Trakt. Попробуйте ещё раз.',
 			'trackers.title' => 'Трекеры',
 			'trackers.hubSubtitle' => 'Синхронизируйте прогресс просмотра с Trakt и другими сервисами.',
 			'trackers.notConnected' => 'Не подключено',

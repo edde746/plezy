@@ -1016,8 +1016,7 @@
     "scrobble": "Scrobbling w czasie rzeczywistym",
     "scrobbleDescription": "Wysyłaj zdarzenia odtwarzania, pauzy i zatrzymania do Trakt podczas odtwarzania.",
     "watchedSync": "Synchronizuj status obejrzane",
-    "watchedSyncDescription": "Gdy oznaczysz pozycje jako obejrzane w Plezy, zostaną też oznaczone w Trakt.",
-    "connectFailed": "Nie udało się połączyć z Trakt. Spróbuj ponownie."
+    "watchedSyncDescription": "Gdy oznaczysz pozycje jako obejrzane w Plezy, zostaną też oznaczone w Trakt."
   },
   "trackers": {
     "title": "Trackery",

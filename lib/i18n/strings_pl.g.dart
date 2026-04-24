@@ -1277,7 +1277,6 @@ class _TranslationsTraktPl implements TranslationsTraktEn {
 	@override String get scrobbleDescription => 'Wysyłaj zdarzenia odtwarzania, pauzy i zatrzymania do Trakt podczas odtwarzania.';
 	@override String get watchedSync => 'Synchronizuj status obejrzane';
 	@override String get watchedSyncDescription => 'Gdy oznaczysz pozycje jako obejrzane w Plezy, zostaną też oznaczone w Trakt.';
-	@override String get connectFailed => 'Nie udało się połączyć z Trakt. Spróbuj ponownie.';
 }
 
 // Path: trackers
@@ -2453,7 +2452,6 @@ extension on TranslationsPl {
 			'trakt.scrobbleDescription' => 'Wysyłaj zdarzenia odtwarzania, pauzy i zatrzymania do Trakt podczas odtwarzania.',
 			'trakt.watchedSync' => 'Synchronizuj status obejrzane',
 			'trakt.watchedSyncDescription' => 'Gdy oznaczysz pozycje jako obejrzane w Plezy, zostaną też oznaczone w Trakt.',
-			'trakt.connectFailed' => 'Nie udało się połączyć z Trakt. Spróbuj ponownie.',
 			'trackers.title' => 'Trackery',
 			'trackers.hubSubtitle' => 'Synchronizuj postęp oglądania z Trakt i innymi usługami.',
 			'trackers.notConnected' => 'Nie połączono',

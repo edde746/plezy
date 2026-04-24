@@ -1277,7 +1277,6 @@ class _TranslationsTraktZh implements TranslationsTraktEn {
 	@override String get scrobbleDescription => '在播放时向 Trakt 发送播放、暂停和停止事件。';
 	@override String get watchedSync => '同步已观看状态';
 	@override String get watchedSyncDescription => '在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。';
-	@override String get connectFailed => '无法连接到 Trakt。请重试。';
 }
 
 // Path: trackers
@@ -2453,7 +2452,6 @@ extension on TranslationsZh {
 			'trakt.scrobbleDescription' => '在播放时向 Trakt 发送播放、暂停和停止事件。',
 			'trakt.watchedSync' => '同步已观看状态',
 			'trakt.watchedSyncDescription' => '在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。',
-			'trakt.connectFailed' => '无法连接到 Trakt。请重试。',
 			'trackers.title' => '追踪器',
 			'trackers.hubSubtitle' => '让你的观看进度与 Trakt 及其他服务保持同步。',
 			'trackers.notConnected' => '未连接',

@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 
 import '../models/trackers/device_code.dart';
@@ -20,6 +18,7 @@ import '../services/trackers/simkl/simkl_client.dart';
 import '../services/trackers/simkl/simkl_session.dart';
 import '../services/trackers/simkl/simkl_tracker.dart';
 import '../services/trackers/tracker_account_store.dart';
+import '../services/trackers/tracker_connect_runner.dart';
 import '../services/trackers/tracker_constants.dart';
 import '../services/trackers/tracker_coordinator.dart';
 import '../utils/app_logger.dart';
@@ -124,7 +123,10 @@ class TrackersProvider extends ChangeNotifier {
   Future<bool> connectSimkl({required void Function(DeviceCode code) onCodeReady}) => _runConnect<SimklSession>(
     service: TrackerService.simkl,
     alreadyConnected: isSimklConnected,
-    authorize: () => _simklAuthorize(onCodeReady),
+    authorize: () => _simklAuth.authorize(
+      onCodeReady: onCodeReady,
+      shouldCancel: () => _cancelRequested,
+    ),
     enrich: _enrichSimkl,
     store: simklAccountStore,
     assign: (s) {
@@ -140,9 +142,7 @@ class TrackersProvider extends ChangeNotifier {
 
   // ───── Connect machinery ─────
 
-  /// Shared connect shell: guard-if-busy, set in-flight flag, authorize,
-  /// enrich, save, assign, clear flag. Errors are logged and surface as
-  /// `false` so the UI can show a snack.
+  /// Guard-if-busy, set in-flight flag, run the shared pipeline, clear flag.
   Future<bool> _runConnect<T>({
     required TrackerService service,
     required bool alreadyConnected,
@@ -156,15 +156,13 @@ class TrackersProvider extends ChangeNotifier {
     _cancelRequested = false;
     notifyListeners();
     try {
-      final raw = await authorize();
-      if (raw == null) return false;
-      final enriched = await enrich(raw);
-      await store.save(_activeUserUuid, enriched);
-      assign(enriched);
-      return true;
-    } catch (e) {
-      appLogger.w('${service.name} connect failed', error: e);
-      return false;
+      return await runConnectPipeline<T>(
+        logLabel: service.name,
+        authorize: authorize,
+        enrich: enrich,
+        save: (s) => store.save(_activeUserUuid, s),
+        assign: assign,
+      );
     } finally {
       _connecting = null;
       notifyListeners();
@@ -175,19 +173,6 @@ class TrackersProvider extends ChangeNotifier {
     await store.clear(_activeUserUuid);
     clearAndRebind();
     notifyListeners();
-  }
-
-  Future<SimklSession?> _simklAuthorize(void Function(DeviceCode) onCodeReady) async {
-    final code = await _simklAuth.createDeviceCode();
-    onCodeReady(code);
-    await for (final event in _simklAuth.pollDeviceCode(code, shouldCancel: () => _cancelRequested)) {
-      if (event is DevicePollSuccess) {
-        final token = event.tokenResponse['access_token'] as String;
-        return SimklSession(accessToken: token, createdAt: DateTime.now().millisecondsSinceEpoch ~/ 1000);
-      }
-      if (event is DevicePollDenied || event is DevicePollExpired) return null;
-    }
-    return null;
   }
 
   Future<MalSession> _enrichMal(MalSession raw) async {

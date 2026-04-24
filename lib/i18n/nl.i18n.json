@@ -1016,8 +1016,7 @@
     "scrobble": "Realtime scrobbling",
     "scrobbleDescription": "Verstuur play-, pauze- en stopgebeurtenissen tijdens afspelen naar Trakt.",
     "watchedSync": "Bekeken-status synchroniseren",
-    "watchedSyncDescription": "Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd.",
-    "connectFailed": "Kan niet verbinden met Trakt. Probeer opnieuw."
+    "watchedSyncDescription": "Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd."
   },
   "trackers": {
     "title": "Trackers",
