@@ -69,3 +69,5 @@ duplication-report/
 **/fastlane/**/
 **/fastlane/report.xml
 maestro/**/*.png
+
+server/deploy.sh

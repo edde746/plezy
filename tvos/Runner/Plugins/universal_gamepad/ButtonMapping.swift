@@ -87,9 +87,11 @@ enum ButtonMapping {
             return (15, gamepad.dpad.right)
         }
 
-        // Guide / Home button
-        if let buttonHome = gamepad.buttonHome, element == buttonHome {
-            return (16, buttonHome)
+        // Guide / Home button (added in tvOS/iOS 14).
+        if #available(iOS 14.0, tvOS 14.0, macOS 11.0, *) {
+            if let buttonHome = gamepad.buttonHome, element == buttonHome {
+                return (16, buttonHome)
+            }
         }
 
         return nil

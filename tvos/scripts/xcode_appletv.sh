@@ -42,6 +42,10 @@ BuildAppDebug() {
   echo " └─Copying Flutter.framework"
   rm -rf "$OUTDIR/Flutter.framework"
   cp -R "$DEVICE_TOOLS/Flutter.framework" "$OUTDIR"
+  # The engine tarball's Flutter.framework/Info.plist declares MinimumOSVersion
+  # 13.0 but the binary is linked with minos=14.0. Apple's validator compares
+  # both against the host app — align the plist to 14.0 so the upload passes.
+  plutil -replace MinimumOSVersion -string "$TVOS_DEPLOYMENT_TARGET" "$OUTDIR/Flutter.framework/Info.plist"
 
 
   tvos_deployment_target="$TVOS_DEPLOYMENT_TARGET"
@@ -136,30 +140,30 @@ BuildAppDebug() {
   echo " └─copy frameworks"
   cp "$PROJECT_DIR/scripts/Info.plist" "$OUTDIR/App.framework/Info.plist"
 
-  # For Archive builds BUILT_PRODUCTS_DIR differs from TARGET_BUILD_DIR:
-  # Swift compile looks up frameworks under BUILT_PRODUCTS_DIR, but the
-  # embedded copy needs to end up inside TARGET_BUILD_DIR/Runner.app.
-  cp -R "${OUTDIR}/"{App.framework,Flutter.framework} "$TARGET_BUILD_DIR"
-  if [ -n "${BUILT_PRODUCTS_DIR:-}" ] && [ "$BUILT_PRODUCTS_DIR" != "$TARGET_BUILD_DIR" ]; then
-    rm -rf "$BUILT_PRODUCTS_DIR/App.framework" "$BUILT_PRODUCTS_DIR/Flutter.framework"
-    cp -R "${OUTDIR}/"{App.framework,Flutter.framework} "$BUILT_PRODUCTS_DIR"
-  fi
+  # Two destinations:
+  # 1. BUILT_PRODUCTS_DIR — Swift/linker search path. For plain builds this
+  #    equals TARGET_BUILD_DIR; for Archive it differs.
+  # 2. $TARGET_BUILD_DIR/$WRAPPER_NAME/Frameworks — embedded into Runner.app
+  #    so @rpath resolves at runtime.
+  #
+  # DO NOT drop frameworks flat into TARGET_BUILD_DIR. During archive that's
+  # Products/Applications/ — sibling to Runner.app — and extra framework
+  # bundles there make Organizer classify the archive as "Other Items".
+  mkdir -p "$BUILT_PRODUCTS_DIR"
+  rm -rf "$BUILT_PRODUCTS_DIR/App.framework" "$BUILT_PRODUCTS_DIR/Flutter.framework"
+  cp -R "${OUTDIR}/"{App.framework,Flutter.framework} "$BUILT_PRODUCTS_DIR"
 
-  # Also embed into Runner.app/Frameworks so the dylib @rpath resolves at launch.
   APP_FRAMEWORKS_DIR="$TARGET_BUILD_DIR/$WRAPPER_NAME/Frameworks"
   mkdir -p "$APP_FRAMEWORKS_DIR"
   rm -rf "$APP_FRAMEWORKS_DIR/App.framework" "$APP_FRAMEWORKS_DIR/Flutter.framework"
   cp -R "${OUTDIR}/"{App.framework,Flutter.framework} "$APP_FRAMEWORKS_DIR"
 
-  # Sign the binaries we moved. Both the flat copy (used by linker/embedder)
-  # and the embedded copy inside Runner.app/Frameworks need signatures.
-  # Skip when signing is disabled (CODE_SIGNING_ALLOWED=NO, unit-test builds,
-  # or sim builds where Xcode doesn't sign frameworks). Xcode's own CodeSign
-  # phase will sign the final app + frameworks in proper archive builds.
+  # Sign the embedded frameworks. Skip when signing is disabled. Xcode's
+  # later CodeSign phase re-signs the full app anyway.
   echo " └─Sign"
   if [[ "$debug_sim" != "true" && -n "${EXPANDED_CODE_SIGN_IDENTITY:-}" && "${CODE_SIGNING_ALLOWED:-YES}" != "NO" ]]; then
-    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${TARGET_BUILD_DIR}/App.framework/App"
-    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${TARGET_BUILD_DIR}/Flutter.framework/Flutter"
+    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${BUILT_PRODUCTS_DIR}/App.framework/App"
+    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${BUILT_PRODUCTS_DIR}/Flutter.framework/Flutter"
     codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${APP_FRAMEWORKS_DIR}/App.framework/App"
     codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${APP_FRAMEWORKS_DIR}/Flutter.framework/Flutter"
   else
@@ -205,6 +209,10 @@ BuildAppRelease() {
   echo " └─Copying Flutter.framework"
   rm -rf "$OUTDIR/Flutter.framework"
   cp -R "$DEVICE_TOOLS/Flutter.framework" "$OUTDIR"
+  # The engine tarball's Flutter.framework/Info.plist declares MinimumOSVersion
+  # 13.0 but the binary is linked with minos=14.0. Apple's validator compares
+  # both against the host app — align the plist to 14.0 so the upload passes.
+  plutil -replace MinimumOSVersion -string "$TVOS_DEPLOYMENT_TARGET" "$OUTDIR/Flutter.framework/Info.plist"
 
   tvos_deployment_target="$TVOS_DEPLOYMENT_TARGET"
 
@@ -288,14 +296,12 @@ BuildAppRelease() {
   cp "$PROJECT_DIR/scripts/Info.plist" "$OUTDIR/App.framework/Info.plist"
 
   echo " └─copy frameworks"
-  # Archive builds point BUILT_PRODUCTS_DIR at a separate products path that
-  # Swift compile scans for frameworks — copy there too so downstream
-  # compilation in the same target can resolve Flutter.h.
-  cp -R "${OUTDIR}/"{App.framework,Flutter.framework} "$TARGET_BUILD_DIR"
-  if [ -n "${BUILT_PRODUCTS_DIR:-}" ] && [ "$BUILT_PRODUCTS_DIR" != "$TARGET_BUILD_DIR" ]; then
-    rm -rf "$BUILT_PRODUCTS_DIR/App.framework" "$BUILT_PRODUCTS_DIR/Flutter.framework"
-    cp -R "${OUTDIR}/"{App.framework,Flutter.framework} "$BUILT_PRODUCTS_DIR"
-  fi
+  # BUILT_PRODUCTS_DIR = linker search path. DO NOT use TARGET_BUILD_DIR
+  # flat — during archive that's Products/Applications/ and loose framework
+  # bundles next to Runner.app make Xcode classify the archive as "Other".
+  mkdir -p "$BUILT_PRODUCTS_DIR"
+  rm -rf "$BUILT_PRODUCTS_DIR/App.framework" "$BUILT_PRODUCTS_DIR/Flutter.framework"
+  cp -R "${OUTDIR}/"{App.framework,Flutter.framework} "$BUILT_PRODUCTS_DIR"
 
   APP_FRAMEWORKS_DIR="$TARGET_BUILD_DIR/$WRAPPER_NAME/Frameworks"
   mkdir -p "$APP_FRAMEWORKS_DIR"
@@ -304,8 +310,8 @@ BuildAppRelease() {
 
   echo " └─Sign"
   if [[ -n "${EXPANDED_CODE_SIGN_IDENTITY:-}" && "${CODE_SIGNING_ALLOWED:-YES}" != "NO" ]]; then
-    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${TARGET_BUILD_DIR}/App.framework/App"
-    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${TARGET_BUILD_DIR}/Flutter.framework/Flutter"
+    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${BUILT_PRODUCTS_DIR}/App.framework/App"
+    codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${BUILT_PRODUCTS_DIR}/Flutter.framework/Flutter"
     codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${APP_FRAMEWORKS_DIR}/App.framework/App"
     codesign --force --verbose --sign "${EXPANDED_CODE_SIGN_IDENTITY}" -- "${APP_FRAMEWORKS_DIR}/Flutter.framework/Flutter"
   else
