@@ -1248,7 +1248,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   static const double _gridTopPaddingPhone = _chipsBarHeight;
 
   /// Width of the alpha jump bar widget
-  static const double _alphaJumpBarWidth = 28.0;
+  static const double _alphaJumpBarWidth = 20.0;
 
   /// Builds either a sliver list or sliver grid based on the view mode
   Widget _buildItemsSliver(BuildContext context, SettingsProvider settingsProvider) {
@@ -1277,12 +1277,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       // Use 16:9 aspect ratio when browsing episodes with episode thumbnail mode
       final useWideRatio =
           _selectedGrouping == 'episodes' && settingsProvider.episodePosterMode == EpisodePosterMode.episodeThumbnail;
-      final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
+      final baseMaxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
+      final effectiveMaxExtent = useWideRatio ? baseMaxExtent * 1.8 : baseMaxExtent;
+      final hasAlphaBarReservation = rightPadding > 8.0;
       return SliverPadding(
         padding: EdgeInsets.fromLTRB(8, topPadding, rightPadding, 8),
         sliver: SliverLayoutBuilder(
           builder: (context, constraints) {
-            final columnCount = GridSizeCalculator.getColumnCount(constraints.crossAxisExtent, maxExtent);
+            // Compute column count from the width the grid would have without the alpha
+            // bar's reservation, so toggling the bar doesn't repack the grid into one
+            // fewer column and blow up poster size.
+            final baselineWidth = constraints.crossAxisExtent + (rightPadding - 8.0);
+            final columnCount = GridSizeCalculator.getColumnCount(baselineWidth, effectiveMaxExtent);
             // Cache grid metrics for alpha jump bar scroll calculations
             _lastCrossAxisExtent = constraints.crossAxisExtent;
             _currentColumnCount = columnCount;
@@ -1291,6 +1297,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
                 context: context,
                 density: settingsProvider.libraryDensity,
                 useWideAspectRatio: useWideRatio,
+                maxCrossAxisExtentOverride: hasAlphaBarReservation ? constraints.crossAxisExtent / columnCount : null,
               ),
               itemCount: itemCount,
               itemBuilder: (context, index) => _buildMediaCardItem(

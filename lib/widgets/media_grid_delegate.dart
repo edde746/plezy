@@ -10,25 +10,33 @@ class MediaGridDelegate {
   /// Uses [GridSizeCalculator.getMaxCrossAxisExtent] by default.
   /// Set [usePaddingAware] to true to use [GridSizeCalculator.getMaxCrossAxisExtentWithPadding] instead.
   /// Set [useWideAspectRatio] to true to use 16:9 aspect ratio for episode thumbnails.
+  /// Pass [maxCrossAxisExtentOverride] to bypass the calculator and the wide-aspect multiplier —
+  /// the caller is then responsible for providing a fully-resolved per-cell width.
   static SliverGridDelegateWithMaxCrossAxisExtent createDelegate({
     required BuildContext context,
     required int density,
     bool usePaddingAware = false,
     double horizontalPadding = 16,
     bool useWideAspectRatio = false,
+    double? maxCrossAxisExtentOverride,
   }) {
-    var maxCrossAxisExtent = usePaddingAware
-        ? GridSizeCalculator.getMaxCrossAxisExtentWithPadding(context, density, horizontalPadding)
-        : GridSizeCalculator.getMaxCrossAxisExtent(context, density);
-
     final aspectRatio = useWideAspectRatio
         ? GridLayoutConstants.episodeGridCellAspectRatio
         : GridLayoutConstants.posterAspectRatio;
 
-    // For wide aspect ratio (16:9), increase max extent so items are larger
-    // and there are fewer per row (roughly 1.8x wider to maintain similar visual area)
-    if (useWideAspectRatio) {
-      maxCrossAxisExtent *= 1.8;
+    double maxCrossAxisExtent;
+    if (maxCrossAxisExtentOverride != null) {
+      maxCrossAxisExtent = maxCrossAxisExtentOverride;
+    } else {
+      maxCrossAxisExtent = usePaddingAware
+          ? GridSizeCalculator.getMaxCrossAxisExtentWithPadding(context, density, horizontalPadding)
+          : GridSizeCalculator.getMaxCrossAxisExtent(context, density);
+
+      // For wide aspect ratio (16:9), increase max extent so items are larger
+      // and there are fewer per row (roughly 1.8x wider to maintain similar visual area)
+      if (useWideAspectRatio) {
+        maxCrossAxisExtent *= 1.8;
+      }
     }
 
     return SliverGridDelegateWithMaxCrossAxisExtent(
