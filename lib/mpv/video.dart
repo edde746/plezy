@@ -102,7 +102,7 @@ class _VideoState extends State<Video> {
 
     final position = renderBox.localToGlobal(Offset.zero);
     final size = renderBox.size;
-    final dpr = MediaQuery.of(context).devicePixelRatio;
+    final dpr = MediaQuery.devicePixelRatioOf(context);
 
     final newRect = Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
 

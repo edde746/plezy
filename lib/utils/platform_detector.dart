@@ -131,10 +131,9 @@ class PlatformDetector {
   /// Detects if the device is likely a tablet based on screen size
   /// Uses diagonal screen size to determine if device is a tablet
   static bool isTablet(BuildContext context) {
-    final data = MediaQuery.of(context);
-    final size = data.size;
+    final size = MediaQuery.sizeOf(context);
     final diagonal = sqrt(size.width * size.width + size.height * size.height);
-    final devicePixelRatio = data.devicePixelRatio;
+    final devicePixelRatio = MediaQuery.devicePixelRatioOf(context);
 
     // Convert diagonal from logical pixels to inches (assuming 160 DPI as baseline)
     final diagonalInches = diagonal / (devicePixelRatio * 160 / 2.54);

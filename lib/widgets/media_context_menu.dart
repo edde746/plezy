@@ -1702,7 +1702,7 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
 
   @override
   Widget build(BuildContext context) {
-    final screenSize = MediaQuery.of(context).size;
+    final screenSize = MediaQuery.sizeOf(context);
     const menuWidth = 220.0;
 
     // Clamp menu position to stay within screen bounds

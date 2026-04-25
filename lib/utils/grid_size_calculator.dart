@@ -10,7 +10,7 @@ class GridSizeCalculator {
   /// Calculates the maximum cross-axis extent for grid items based on screen size and density.
   /// [density] is an int 1–5 (1 = most compact, 5 = most comfortable).
   static double getMaxCrossAxisExtent(BuildContext context, int density) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.sizeOf(context).width;
     final f = LibraryDensity.factor(density);
 
     if (PlatformDetector.isTV()) return _lerp(120, 220, f);
@@ -22,7 +22,7 @@ class GridSizeCalculator {
   /// Calculates the max cross-axis extent accounting for outer padding.
   /// [density] is an int 1–5.
   static double getMaxCrossAxisExtentWithPadding(BuildContext context, int density, double horizontalPadding) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.sizeOf(context).width;
     final availableWidth = screenWidth - horizontalPadding;
     final f = LibraryDensity.factor(density);
 

@@ -126,7 +126,7 @@ class OverlaySheetController {
     final effectiveConstraints =
         constraints ??
         () {
-          final size = MediaQuery.of(context).size;
+          final size = MediaQuery.sizeOf(context);
           final isDesktop = size.width > 600;
           return BoxConstraints(
             maxWidth: isDesktop ? 700 : double.infinity,
@@ -496,7 +496,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
   }
 
   Widget _buildSheet(BuildContext context) {
-    final size = MediaQuery.of(context).size;
+    final size = MediaQuery.sizeOf(context);
     final isDesktop = size.width > 600;
     final isTop = _alignment.y < 0;
     final isTV = PlatformDetector.isTV();

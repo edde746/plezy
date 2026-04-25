@@ -2471,13 +2471,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
                                     // Online - use network image
                                     final client = _getClientForMetadata(context);
-                                    final mediaQuery = MediaQuery.of(context);
+                                    final mqSize = MediaQuery.sizeOf(context);
                                     final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
                                     final imageUrl = PlexImageHelper.getOptimizedImageUrl(
                                       client: client,
                                       thumbPath: heroArtPath,
-                                      maxWidth: mediaQuery.size.width,
-                                      maxHeight: mediaQuery.size.height * 0.6,
+                                      maxWidth: mqSize.width,
+                                      maxHeight: mqSize.height * 0.6,
                                       devicePixelRatio: dpr,
                                       imageType: ImageType.art,
                                     );
@@ -2829,7 +2829,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       ),
                     ),
                   ),
-                  SliverPadding(padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom)),
+                  SliverPadding(padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom)),
                 ],
               ),
               // Sticky top bar with fading background
@@ -2848,7 +2848,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     ),
                   ),
                   child: Container(
-                    height: MediaQuery.of(context).padding.top + 58,
+                    height: MediaQuery.paddingOf(context).top + 58,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,

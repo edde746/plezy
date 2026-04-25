@@ -870,7 +870,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Widget _buildOverlaidAppBar() {
-    final statusBarHeight = MediaQuery.of(context).padding.top;
+    final statusBarHeight = MediaQuery.paddingOf(context).top;
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -1059,7 +1059,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final showServerNameOnHubs = context.watch<SettingsProvider>().showServerNameOnHubs;
     final duplicateHubTitles = _getDuplicateHubTitles();
 
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final bottomPadding = MediaQuery.paddingOf(context).bottom;
     return Material(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Stack(
@@ -1075,7 +1075,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   }
                   // Add top padding when hero is not shown
                   return SliverToBoxAdapter(
-                    child: SizedBox(height: kToolbarHeight + MediaQuery.of(context).padding.top + 16),
+                    child: SizedBox(height: kToolbarHeight + MediaQuery.paddingOf(context).top + 16),
                   );
                 },
               ),
@@ -1201,7 +1201,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Widget _buildHeroSection() {
-    final statusBarHeight = MediaQuery.of(context).padding.top;
+    final statusBarHeight = MediaQuery.paddingOf(context).top;
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
     final heroHeight = useSideNav ? MediaQuery.sizeOf(context).height * 0.75 : 500 + statusBarHeight;
     return SliverToBoxAdapter(
@@ -1373,14 +1373,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         if (heroClient == null) {
                           return ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest);
                         }
-                        final mediaQuery = MediaQuery.of(context);
+                        final size = MediaQuery.sizeOf(context);
                         final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
                         final containerAspect = screenWidth / heroHeight;
                         final imageUrl = PlexImageHelper.getOptimizedImageUrl(
                           client: heroClient,
                           thumbPath: heroItem.heroArt(containerAspectRatio: containerAspect) ?? heroItem.grandparentArt,
-                          maxWidth: mediaQuery.size.width,
-                          maxHeight: mediaQuery.size.height * 0.7,
+                          maxWidth: size.width,
+                          maxHeight: size.height * 0.7,
                           devicePixelRatio: dpr,
                           imageType: ImageType.art,
                         );

@@ -1100,13 +1100,13 @@ class _SetupScreenState extends State<SetupScreen> {
           Positioned(
             left: 0,
             right: 0,
-            bottom: MediaQuery.of(context).size.height * 0.5 - 170,
+            bottom: MediaQuery.sizeOf(context).height * 0.5 - 170,
             child: _buildStatusText(context),
           ),
           Positioned(
             left: 0,
             right: 0,
-            top: MediaQuery.of(context).size.height * 0.5 + 180,
+            top: MediaQuery.sizeOf(context).height * 0.5 + 180,
             child: Center(
               child: _serverStatus.isEmpty
                   ? const SizedBox(

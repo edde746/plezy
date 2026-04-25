@@ -440,7 +440,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
     bool top = true,
     bool bottom = true,
   }) {
-    final orientation = MediaQuery.of(context).orientation;
+    final orientation = MediaQuery.orientationOf(context);
     final isPortrait = orientation == Orientation.portrait;
 
     // Only apply SafeArea in portrait mode
