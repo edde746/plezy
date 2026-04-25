@@ -2327,13 +2327,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final playbackState = context.read<PlaybackStateProvider>();
 
     try {
-      // Show loading indicator
       if (context.mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => const Center(child: CircularProgressIndicator()),
-        );
+        showLoadingDialog(context);
       }
 
       // Determine the rating key for the play queue

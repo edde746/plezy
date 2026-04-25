@@ -12,6 +12,7 @@ import '../../focus/focusable_action_bar.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
+import '../../utils/dialogs.dart';
 import '../../main.dart' show gitCommit;
 import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
@@ -125,11 +126,7 @@ class _LogsScreenState extends State<LogsScreen> {
   Future<void> _uploadLogs() async {
     final logText = _formatAllLogs();
 
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
+    showLoadingDialog(context);
 
     try {
       final response = await httpClient.post(

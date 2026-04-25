@@ -1,16 +1,30 @@
+import 'package:json_annotation/json_annotation.dart';
+
+part 'plex_home_user.g.dart';
+
+@JsonSerializable()
 class PlexHomeUser {
+  @JsonKey(defaultValue: 0)
   final int id;
+  @JsonKey(defaultValue: '')
   final String uuid;
+  @JsonKey(defaultValue: 'Unknown')
   final String title;
   final String? username;
   final String? email;
   final String? friendlyName;
+  @JsonKey(defaultValue: '')
   final String thumb;
+  @JsonKey(defaultValue: false)
   final bool hasPassword;
+  @JsonKey(defaultValue: false)
   final bool restricted;
   final int? updatedAt;
+  @JsonKey(defaultValue: false)
   final bool admin;
+  @JsonKey(defaultValue: false)
   final bool guest;
+  @JsonKey(defaultValue: false)
   final bool protected;
 
   PlexHomeUser({
@@ -29,41 +43,9 @@ class PlexHomeUser {
     required this.protected,
   });
 
-  factory PlexHomeUser.fromJson(Map<String, dynamic> json) {
-    return PlexHomeUser(
-      id: (json['id'] as num?)?.toInt() ?? 0,
-      uuid: json['uuid'] as String? ?? '',
-      title: json['title'] as String? ?? 'Unknown',
-      username: json['username'] as String?,
-      email: json['email'] as String?,
-      friendlyName: json['friendlyName'] as String?,
-      thumb: json['thumb'] as String? ?? '',
-      hasPassword: json['hasPassword'] as bool? ?? false,
-      restricted: json['restricted'] as bool? ?? false,
-      updatedAt: (json['updatedAt'] as num?)?.toInt(),
-      admin: json['admin'] as bool? ?? false,
-      guest: json['guest'] as bool? ?? false,
-      protected: json['protected'] as bool? ?? false,
-    );
-  }
+  factory PlexHomeUser.fromJson(Map<String, dynamic> json) => _$PlexHomeUserFromJson(json);
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'uuid': uuid,
-      'title': title,
-      'username': username,
-      'email': email,
-      'friendlyName': friendlyName,
-      'thumb': thumb,
-      'hasPassword': hasPassword,
-      'restricted': restricted,
-      'updatedAt': updatedAt,
-      'admin': admin,
-      'guest': guest,
-      'protected': protected,
-    };
-  }
+  Map<String, dynamic> toJson() => _$PlexHomeUserToJson(this);
 
   String get displayName => friendlyName ?? title;
 

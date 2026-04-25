@@ -6,7 +6,6 @@ import '../../focus/dpad_navigator.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/mpv_config_models.dart';
-import '../../focus/focusable_button.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../services/settings_service.dart';
@@ -61,49 +60,15 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
   Future<void> _showSavePresetDialog() async {
     if (_textController.text.trim().isEmpty) return;
 
-    final nameController = TextEditingController();
-    final saveFocusNode = FocusNode();
-
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.mpvConfig.saveAsPreset),
-        content: TextField(
-          controller: nameController,
-          decoration: InputDecoration(labelText: t.mpvConfig.presetName, hintText: t.mpvConfig.presetNameHint),
-          autofocus: true,
-          textInputAction: TextInputAction.done,
-          onSubmitted: (_) => saveFocusNode.requestFocus(),
-        ),
-        actions: [
-          FocusableButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          ),
-          FocusableButton(
-            focusNode: saveFocusNode,
-            onPressed: () {
-              if (nameController.text.isNotEmpty) {
-                Navigator.pop(context, true);
-              }
-            },
-            child: FilledButton(
-              onPressed: () {
-                if (nameController.text.isNotEmpty) {
-                  Navigator.pop(context, true);
-                }
-              },
-              child: Text(t.common.save),
-            ),
-          ),
-        ],
-      ),
+    final name = await showTextInputDialog(
+      context,
+      title: t.mpvConfig.saveAsPreset,
+      labelText: t.mpvConfig.presetName,
+      hintText: t.mpvConfig.presetNameHint,
     );
 
-    saveFocusNode.dispose();
-
-    if (result == true) {
-      await _settingsService.saveMpvPreset(nameController.text.trim(), _textController.text);
+    if (name != null && name.trim().isNotEmpty) {
+      await _settingsService.saveMpvPreset(name.trim(), _textController.text);
       if (!mounted) return;
       setState(() {
         _presets = _settingsService.getMpvPresets();
@@ -113,8 +78,6 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
         showSuccessSnackBar(context, t.mpvConfig.presetSaved);
       }
     }
-
-    nameController.dispose();
   }
 
   Future<void> _loadPreset(MpvPreset preset) async {

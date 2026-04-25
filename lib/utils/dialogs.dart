@@ -58,6 +58,16 @@ Future<bool> showConfirmDialog(
   return confirmed ?? false;
 }
 
+/// Shows a non-dismissible loading-spinner dialog. Caller is responsible for
+/// closing it via `Navigator.pop(context)` when the work completes.
+void showLoadingDialog(BuildContext context) {
+  showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (_) => const Center(child: CircularProgressIndicator()),
+  );
+}
+
 /// Shows the server-side 500 modal (bandwidth/transcoding limit rejection).
 Future<void> showServerLimitDialog(BuildContext context) async {
   await showDialog<void>(
