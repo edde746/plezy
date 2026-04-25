@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
@@ -26,6 +27,13 @@ class DownloadStorageService {
   static DownloadStorageService? _instance;
   static DownloadStorageService get instance => _instance ??= DownloadStorageService._();
   DownloadStorageService._();
+
+  /// Drop the cached singleton so the next [instance] call returns a fresh
+  /// service. Test-only.
+  @visibleForTesting
+  static void resetForTesting() {
+    _instance = null;
+  }
 
   Directory? _baseDownloadsDir;
   String? _artworkDirectoryPath;

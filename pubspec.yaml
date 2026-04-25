@@ -80,6 +80,8 @@ dev_dependencies:
   dart_code_linter: ^3.2.1
   drift_dev: ^2.28.3
   shared_preferences_platform_interface: ^2.4.0
+  path_provider_platform_interface: ^2.1.0
+  plugin_platform_interface: ^2.1.0
 
 dependency_overrides:
   auto_updater_platform_interface:

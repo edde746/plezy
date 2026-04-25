@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
 import '../models/hotkey_model.dart';
@@ -424,6 +425,14 @@ class SettingsService extends BaseSharedPreferencesService {
 
   /// Synchronous access to the singleton, or null if not yet initialized.
   static SettingsService? get instanceOrNull => _cachedInstance;
+
+  /// Drop the cached singleton so the next [getInstance] call rebuilds against
+  /// the current SharedPreferences state. Test-only — pair with
+  /// [BaseSharedPreferencesService.resetForTesting].
+  @visibleForTesting
+  static void resetForTesting() {
+    _cachedInstance = null;
+  }
 
   static Map<String, String> defaultKeyboardShortcuts() => _defaultKeyboardShortcuts();
   static Map<String, HotKey> defaultKeyboardHotkeys() => _defaultKeyboardHotkeys();
