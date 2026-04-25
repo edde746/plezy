@@ -463,14 +463,16 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
           widget.child,
           // Barrier + sheet only when open
           if (_isOpen) ...[
-            AnimatedBuilder(
-              animation: _barrierAnimation,
-              builder: (context, child) {
-                return GestureDetector(
-                  onTap: _barrierDismissible ? () => _close() : null,
-                  child: ColoredBox(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
-                );
-              },
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: _barrierAnimation,
+                builder: (context, child) {
+                  return GestureDetector(
+                    onTap: _barrierDismissible ? () => _close() : null,
+                    child: ColoredBox(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
+                  );
+                },
+              ),
             ),
             _buildSheet(context),
           ],
