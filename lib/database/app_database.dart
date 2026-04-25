@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
@@ -18,6 +19,11 @@ enum OfflineActionType { progress, watched, unwatched }
 @DriftDatabase(tables: [DownloadedMedia, DownloadQueue, ApiCache, OfflineWatchProgress, SyncRules])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
+
+  /// Test-only constructor — inject an in-memory [QueryExecutor]
+  /// (e.g. `NativeDatabase.memory()`) so tests don't touch real disk.
+  @visibleForTesting
+  AppDatabase.forTesting(super.e);
 
   @override
   int get schemaVersion => 13;
