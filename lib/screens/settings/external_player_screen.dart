@@ -37,9 +37,9 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
 
     if (!mounted) return;
     setState(() {
-      _useExternalPlayer = _settingsService.getUseExternalPlayer();
-      _selectedPlayer = _settingsService.getSelectedExternalPlayer();
-      _customPlayers = _settingsService.getCustomExternalPlayers();
+      _useExternalPlayer = _settingsService.read(SettingsService.useExternalPlayer);
+      _selectedPlayer = _settingsService.read(SettingsService.selectedExternalPlayer);
+      _customPlayers = _settingsService.read(SettingsService.customExternalPlayers);
       _isLoading = false;
     });
   }
@@ -67,7 +67,7 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
               value: _useExternalPlayer,
               onChanged: (value) async {
                 setState(() => _useExternalPlayer = value);
-                await _settingsService.setUseExternalPlayer(value);
+                await _settingsService.write(SettingsService.useExternalPlayer, value);
               },
             ),
             if (_useExternalPlayer) ...[
@@ -132,7 +132,7 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
       ),
       onTap: () async {
         setState(() => _selectedPlayer = player);
-        await _settingsService.setSelectedExternalPlayer(player);
+        await _settingsService.write(SettingsService.selectedExternalPlayer, player);
       },
     );
   }
@@ -142,7 +142,7 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
     if (!mounted) return;
     setState(() {
       _customPlayers.removeWhere((p) => p.id == player.id);
-      _selectedPlayer = _settingsService.getSelectedExternalPlayer();
+      _selectedPlayer = _settingsService.read(SettingsService.selectedExternalPlayer);
     });
   }
 
@@ -255,7 +255,10 @@ class _ExternalPlayerScreenState extends State<ExternalPlayerScreen> {
       type: selectedType,
     );
 
-    await _settingsService.addCustomExternalPlayer(newPlayer);
+    await _settingsService.write(SettingsService.customExternalPlayers, [
+      ..._settingsService.read(SettingsService.customExternalPlayers),
+      newPlayer,
+    ]);
     if (!mounted) return;
     setState(() {
       _customPlayers.add(newPlayer);

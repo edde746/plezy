@@ -44,7 +44,7 @@ class ExternalPlayerService {
       }
 
       final settings = await SettingsService.getInstance();
-      final player = settings.getSelectedExternalPlayer();
+      final player = settings.read(SettingsService.selectedExternalPlayer);
 
       // On Android, always use native intent to avoid url_launcher opening in browser
       if (Platform.isAndroid && context.mounted) {

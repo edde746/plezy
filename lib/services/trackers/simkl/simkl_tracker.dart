@@ -33,7 +33,7 @@ class SimklTracker extends TrackerBase {
   bool get hasActiveClient => _client != null;
 
   @override
-  bool readEnabledSetting(SettingsService settings) => settings.getEnableSimklScrobble();
+  bool readEnabledSetting(SettingsService settings) => settings.read(SettingsService.enableSimklScrobble);
 
   void rebindSession(SimklSession? session, {required void Function() onSessionInvalidated}) {
     _client?.dispose();

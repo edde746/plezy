@@ -33,7 +33,7 @@ class ThemeProvider extends ChangeNotifier {
 
   Future<void> _initializeSettings() async {
     _settingsService = await settings.SettingsService.getInstance();
-    _themeMode = _settingsService.getThemeMode();
+    _themeMode = _settingsService.read(settings.SettingsService.themeMode);
     _updateSplashTheme(_themeMode);
     notifyListeners();
   }
@@ -79,7 +79,7 @@ class ThemeProvider extends ChangeNotifier {
   Future<void> setThemeMode(settings.ThemeMode mode) async {
     if (_themeMode != mode) {
       _themeMode = mode;
-      await _settingsService.setThemeMode(mode);
+      await _settingsService.write(settings.SettingsService.themeMode, mode);
       _updateSplashTheme(mode);
       notifyListeners();
     }
@@ -89,7 +89,7 @@ class ThemeProvider extends ChangeNotifier {
   /// resets that change persisted settings outside this provider.
   Future<void> reload() async {
     _settingsService = await settings.SettingsService.getInstance();
-    final mode = _settingsService.getThemeMode();
+    final mode = _settingsService.read(settings.SettingsService.themeMode);
     _themeMode = mode;
     _updateSplashTheme(mode);
     notifyListeners();

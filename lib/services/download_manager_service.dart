@@ -125,7 +125,7 @@ class DownloadManagerService {
   /// pay for a second platform round-trip.
   static Future<bool> shouldBlockDownloadOnCellularWith(List<ConnectivityResult> connectivity) async {
     final settings = await SettingsService.getInstance();
-    if (!settings.getDownloadOnWifiOnly()) return false;
+    if (!settings.read(SettingsService.downloadOnWifiOnly)) return false;
     if (connectivity.isEmpty) return false;
     return connectivity.contains(ConnectivityResult.mobile) &&
         !connectivity.contains(ConnectivityResult.wifi) &&
@@ -610,7 +610,7 @@ class DownloadManagerService {
 
       // Get WiFi-only setting for native enforcement
       final settings = await SettingsService.getInstance();
-      final requiresWiFi = settings.getDownloadOnWifiOnly();
+      final requiresWiFi = settings.read(SettingsService.downloadOnWifiOnly);
 
       if (_storageService.isUsingSaf) {
         // SAF mode: use UriDownloadTask (writes directly to content:// URI, no pause/resume)

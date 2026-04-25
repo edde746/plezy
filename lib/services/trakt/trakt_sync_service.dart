@@ -56,7 +56,7 @@ class TraktSyncService {
     _serverManager = serverManager;
 
     final settings = await SettingsService.getInstance();
-    _isEnabled = settings.getEnableTraktWatchedSync();
+    _isEnabled = settings.read(SettingsService.enableTraktWatchedSync);
 
     _subscription = WatchStateNotifier().stream.listen(
       _onWatchStateEvent,

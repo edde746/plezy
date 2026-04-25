@@ -34,7 +34,7 @@ class DisplayModeService {
     bool anyChange = false;
 
     // Refresh rate matching.
-    if (_settings.getMatchRefreshRate() && fps != null && fps > 0) {
+    if (_settings.read(SettingsService.matchRefreshRate) && fps != null && fps > 0) {
       try {
         final success = await _matchRefreshRate(fps);
         anyChange |= success;
@@ -44,7 +44,7 @@ class DisplayModeService {
     }
 
     // Dynamic range matching.
-    if (_settings.getMatchDynamicRange() && sigPeak != null && sigPeak > 1.0) {
+    if (_settings.read(SettingsService.matchDynamicRange) && sigPeak != null && sigPeak > 1.0) {
       try {
         final success = await _enableSystemHDR();
         anyChange |= success;
@@ -54,7 +54,7 @@ class DisplayModeService {
     }
 
     if (anyChange) {
-      final delaySec = _settings.getDisplaySwitchDelay();
+      final delaySec = _settings.read(SettingsService.displaySwitchDelay);
       return Duration(seconds: delaySec);
     }
 

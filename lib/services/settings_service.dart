@@ -9,6 +9,8 @@ import '../i18n/strings.g.dart';
 import '../models/mpv_config_models.dart';
 import '../models/external_player_models.dart';
 import 'base_shared_preferences_service.dart';
+export 'base_shared_preferences_service.dart'
+    show Pref, BoolPref, IntPref, DoublePref, StringPref, NullableStringPref, StringListPref, EnumPref, JsonPref;
 import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
 
@@ -31,108 +33,385 @@ enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
 
 enum SubAssOverride { no, yes, scale, force, strip }
 
-class SettingsService extends BaseSharedPreferencesService {
-  static const String _keyThemeMode = 'theme_mode';
-  static const String _keyEnableDebugLogging = 'enable_debug_logging';
-  static const String _keyCrashReporting = 'crash_reporting';
-  static const String _keyBufferSize = 'buffer_size';
-  static const String _keyBufferSizeMigratedToAuto = 'buffer_size_migrated_to_auto';
-  static const String _keyKeyboardShortcuts = 'keyboard_shortcuts';
-  static const String _keyKeyboardHotkeys = 'keyboard_hotkeys';
-  static const String _keyEnableHardwareDecoding = 'enable_hardware_decoding';
-  static const String _keyEnableHDR = 'enable_hdr';
-  static const String _keyPreferredVideoCodec = 'preferred_video_codec';
-  static const String _keyPreferredAudioCodec = 'preferred_audio_codec';
-  static const String _keyLibraryDensity = 'library_density';
-  static const String _keyViewMode = 'view_mode';
-  static const String _keyUseSeasonPoster = 'use_season_poster'; // Legacy key for migration
-  static const String _keyEpisodePosterMode = 'episode_poster_mode';
-  static const String _keySeekTimeSmall = 'seek_time_small';
-  static const String _keySeekTimeLarge = 'seek_time_large';
-  static const String _keyRewindOnResume = 'rewind_on_resume';
-  static const String _keyMediaVersionPreferences = 'media_version_preferences';
-  static const String _keyShowHeroSection = 'show_hero_section';
-  static const String _keyUseGlobalHubs = 'use_global_hubs';
-  static const String _keyShowServerNameOnHubs = 'show_server_name_on_hubs';
-  static const String _keyGroupLibrariesByServer = 'group_libraries_by_server';
-  static const String _keySleepTimerDuration = 'sleep_timer_duration';
-  static const String _keyAudioSyncOffset = 'audio_sync_offset';
-  static const String _keySubtitleSyncOffset = 'subtitle_sync_offset';
-  static const String _keyVolume = 'volume';
-  static const String _keyRotationLocked = 'rotation_locked';
-  static const String _keySubtitleFontSize = 'subtitle_font_size';
-  static const String _keySubtitleTextColor = 'subtitle_text_color';
-  static const String _keySubtitleBorderSize = 'subtitle_border_size';
-  static const String _keySubtitleBorderColor = 'subtitle_border_color';
-  static const String _keySubtitleBackgroundColor = 'subtitle_background_color';
-  static const String _keySubtitleBackgroundOpacity = 'subtitle_background_opacity';
-  static const String _keySubtitlePosition = 'subtitle_position';
-  static const String _keySubAssOverride = 'sub_ass_override';
-  static const String _keySubtitleBold = 'subtitle_bold';
-  static const String _keySubtitleItalic = 'subtitle_italic';
-  static const String _keyAppLocale = 'app_locale';
-  static const String _keyRememberTrackSelections = 'remember_track_selections';
-  static const String _keyClickVideoTogglesPlayback = 'click_video_toggles_playback';
-  static const String _keyAutoSkipIntro = 'auto_skip_intro';
-  static const String _keyAutoSkipCredits = 'auto_skip_credits';
-  static const String _keyAutoSkipDelay = 'auto_skip_delay';
-  static const String _keyIntroPattern = 'intro_pattern';
-  static const String _keyCreditsPattern = 'credits_pattern';
+const String _bufferSizeMigratedKey = 'buffer_size_migrated_to_auto';
+const String _legacyUseSeasonPosterKey = 'use_season_poster';
+const String _legacyMpvConfigEntriesKey = 'mpv_config_entries';
 
+/// One-time auto-reset migration for buffer size.
+class _BufferSizePref extends IntPref {
+  const _BufferSizePref() : super('buffer_size');
+
+  @override
+  int readFrom(BaseSharedPreferencesService svc) {
+    // SharedPreferences updates in-memory cache synchronously, so the
+    // unawaited disk-flush futures are safe here (idempotent if re-run).
+    if (svc.prefs.getBool(_bufferSizeMigratedKey) != true) {
+      svc.prefs.remove(key);
+      svc.prefs.setBool(_bufferSizeMigratedKey, true);
+    }
+    return super.readFrom(svc);
+  }
+}
+
+/// Migrates from the legacy enum-string format and clamps to 1..5.
+class _LibraryDensityPref extends Pref<int> {
+  const _LibraryDensityPref() : super('library_density');
+
+  @override
+  int readFrom(BaseSharedPreferencesService svc) {
+    try {
+      final intVal = svc.prefs.getInt(key);
+      if (intVal != null) return intVal.clamp(LibraryDensity.min, LibraryDensity.max);
+    } on TypeError {
+      // Stored value is a String from old enum format — fall through to migration.
+    }
+    String? strVal;
+    try {
+      strVal = svc.prefs.getString(key);
+    } on TypeError {
+      // Value exists but isn't a String either.
+    }
+    final result = switch (strVal) {
+      'compact' => 2,
+      'comfortable' => 4,
+      _ => LibraryDensity.defaultValue,
+    };
+    svc.prefs.setInt(key, result);
+    return result;
+  }
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, int value) =>
+      svc.writeInt(key, value.clamp(LibraryDensity.min, LibraryDensity.max));
+}
+
+/// Migrates from the legacy `use_season_poster` boolean key.
+class _EpisodePosterModePref extends EnumPref<EpisodePosterMode> {
+  const _EpisodePosterModePref()
+    : super('episode_poster_mode', values: EpisodePosterMode.values, defaultValue: EpisodePosterMode.episodeThumbnail);
+
+  @override
+  EpisodePosterMode readFrom(BaseSharedPreferencesService svc) {
+    final legacyValue = svc.prefs.getBool(_legacyUseSeasonPosterKey);
+    if (legacyValue != null) {
+      final migrated = legacyValue ? EpisodePosterMode.seasonPoster : EpisodePosterMode.seriesPoster;
+      svc.prefs.remove(_legacyUseSeasonPosterKey);
+      svc.prefs.setString(key, migrated.name);
+      return migrated;
+    }
+    return super.readFrom(svc);
+  }
+}
+
+/// Stored as the language code; null/empty falls back to the device locale.
+class _AppLocalePref extends Pref<AppLocale> {
+  const _AppLocalePref() : super('app_locale');
+
+  @override
+  AppLocale readFrom(BaseSharedPreferencesService svc) {
+    final code = svc.prefs.getString(key);
+    if (code == null || code.isEmpty) return AppLocaleUtils.findDeviceLocale();
+    return AppLocale.values.asNameMap()[code] ?? AppLocale.en;
+  }
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, AppLocale value) => svc.writeString(key, value.languageCode);
+}
+
+/// Mobile-only with a macOS-disabled-by-default rule; forced off on TV and non-mobile platforms.
+class _AutoPipPref extends Pref<bool> {
+  const _AutoPipPref() : super('auto_pip');
+
+  @override
+  bool readFrom(BaseSharedPreferencesService svc) {
+    if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) return false;
+    if (PlatformDetector.isTV()) return false;
+    return svc.prefs.getBool(key) ?? !Platform.isMacOS;
+  }
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
+}
+
+String? _trimEmptyAsNull(String? v) {
+  final t = v?.trim();
+  return (t == null || t.isEmpty) ? null : t;
+}
+
+String _legacyMpvEntriesToText(List<dynamic> entries) {
+  final lines = <String>[];
+  for (final item in entries) {
+    if (item is Map<String, dynamic>) {
+      final k = item['key'] as String? ?? '';
+      final v = item['value'] as String? ?? '';
+      final enabled = item['isEnabled'] as bool? ?? true;
+      if (k.isNotEmpty) {
+        lines.add(enabled ? '$k=$v' : '#$k=$v');
+      }
+    }
+  }
+  return lines.join('\n');
+}
+
+class _MpvConfigTextPref extends StringPref {
+  const _MpvConfigTextPref() : super('mpv_config_text');
+
+  @override
+  String readFrom(BaseSharedPreferencesService svc) {
+    final text = svc.prefs.getString(key);
+    if (text != null) return text;
+
+    final legacyJson = svc.prefs.getString(_legacyMpvConfigEntriesKey);
+    if (legacyJson == null) return '';
+
+    try {
+      final migrated = _legacyMpvEntriesToText(json.decode(legacyJson) as List<dynamic>);
+      svc.prefs.setString(key, migrated);
+      return migrated;
+    } catch (e, st) {
+      appLogger.w('SettingsService: failed to migrate mpv config', error: e, stackTrace: st);
+      return '';
+    }
+  }
+}
+
+List<MpvPreset> _decodeMpvPresets(dynamic raw) {
+  return (raw as List).map((e) {
+    final map = e as Map<String, dynamic>;
+    if (map.containsKey('entries') && !map.containsKey('text')) {
+      map['text'] = _legacyMpvEntriesToText(map['entries'] as List);
+    }
+    return MpvPreset.fromJson(map);
+  }).toList();
+}
+
+Map<String, String> _defaultKeyboardShortcuts() => {
+  'play_pause': 'Space',
+  'volume_up': 'Arrow Up',
+  'volume_down': 'Arrow Down',
+  'seek_forward': 'Arrow Right',
+  'seek_backward': 'Arrow Left',
+  'seek_forward_large': 'Shift+Arrow Right',
+  'seek_backward_large': 'Shift+Arrow Left',
+  'fullscreen_toggle': 'F',
+  'mute_toggle': 'M',
+  'subtitle_toggle': 'S',
+  'audio_track_next': 'A',
+  'subtitle_track_next': 'Shift+S',
+  'chapter_next': 'N',
+  'chapter_previous': 'P',
+  'speed_increase': 'Plus',
+  'speed_decrease': 'Minus',
+  'speed_reset': 'R',
+  'sub_seek_next': 'Ctrl+Right',
+  'sub_seek_prev': 'Ctrl+Left',
+};
+
+Map<String, HotKey> _defaultKeyboardHotkeys() => {
+  'play_pause': const HotKey(key: PhysicalKeyboardKey.space),
+  'volume_up': const HotKey(key: PhysicalKeyboardKey.arrowUp),
+  'volume_down': const HotKey(key: PhysicalKeyboardKey.arrowDown),
+  'seek_forward': const HotKey(key: PhysicalKeyboardKey.arrowRight),
+  'seek_backward': const HotKey(key: PhysicalKeyboardKey.arrowLeft),
+  'seek_forward_large': const HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.shift]),
+  'seek_backward_large': const HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.shift]),
+  'fullscreen_toggle': const HotKey(key: PhysicalKeyboardKey.keyF),
+  'mute_toggle': const HotKey(key: PhysicalKeyboardKey.keyM),
+  'subtitle_toggle': const HotKey(key: PhysicalKeyboardKey.keyS),
+  'audio_track_next': const HotKey(key: PhysicalKeyboardKey.keyA),
+  'subtitle_track_next': const HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.shift]),
+  'chapter_next': const HotKey(key: PhysicalKeyboardKey.keyN),
+  'chapter_previous': const HotKey(key: PhysicalKeyboardKey.keyP),
+  'episode_next': const HotKey(key: PhysicalKeyboardKey.keyN, modifiers: [HotKeyModifier.shift]),
+  'episode_previous': const HotKey(key: PhysicalKeyboardKey.keyP, modifiers: [HotKeyModifier.shift]),
+  'speed_increase': const HotKey(key: PhysicalKeyboardKey.equal),
+  'speed_decrease': const HotKey(key: PhysicalKeyboardKey.minus),
+  'speed_reset': const HotKey(key: PhysicalKeyboardKey.keyR),
+  'sub_seek_next': const HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.control]),
+  'sub_seek_prev': const HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
+  'shader_toggle': const HotKey(key: PhysicalKeyboardKey.keyG),
+  'skip_marker': const HotKey(key: PhysicalKeyboardKey.enter),
+};
+
+Map<String, String> _decodeKeyboardShortcuts(dynamic raw) {
+  final stored = (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, v.toString()));
+  // Merge with defaults so newly-added defaults appear without resetting customizations.
+  return {..._defaultKeyboardShortcuts(), ...stored};
+}
+
+Map<String, HotKey> _decodeKeyboardHotkeys(dynamic raw) {
+  final result = <String, HotKey>{};
+  for (final entry in (raw as Map<String, dynamic>).entries) {
+    final hk = SettingsService.deserializeHotKey(entry.value as Map<String, dynamic>);
+    if (hk != null) result[entry.key] = hk;
+  }
+  return {..._defaultKeyboardHotkeys(), ...result};
+}
+
+class SettingsService extends BaseSharedPreferencesService {
   static const String defaultIntroPattern = r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$';
   static const String defaultCreditsPattern = r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
-  static const String _keyCustomDownloadPath = 'custom_download_path';
-  static const String _keyCustomDownloadPathType = 'custom_download_path_type';
-  static const String _keyDownloadOnWifiOnly = 'download_on_wifi_only';
-  static const String _keyAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
-  static const String _keyAutoCheckUpdatesOnStartup = 'auto_check_updates_on_startup';
-  static const String _prefixWatchedThreshold = 'watched_threshold_';
-  static const String _keyVideoPlayerNavigationEnabled = 'video_player_navigation_enabled';
-  static const String _keyShowPerformanceOverlay = 'show_performance_overlay';
-  static const String _keyAutoHidePerformanceOverlay = 'auto_hide_performance_overlay';
-  static const String _keyMpvConfigEntries = 'mpv_config_entries'; // Legacy
-  static const String _keyMpvConfigText = 'mpv_config_text';
-  static const String _keyMpvConfigPresets = 'mpv_config_presets';
-  static const String _keyMaxVolume = 'max_volume';
-  static const String _keyEnableDiscordRPC = 'enable_discord_rpc';
-  static const String _keyEnableTraktScrobble = 'enable_trakt_scrobble';
-  static const String _keyEnableTraktWatchedSync = 'enable_trakt_watched_sync';
-  static const String _keyEnableMalScrobble = 'enable_mal_scrobble';
-  static const String _keyEnableAnilistScrobble = 'enable_anilist_scrobble';
-  static const String _keyEnableSimklScrobble = 'enable_simkl_scrobble';
-  static const String _prefixTrackerLibraryFilterMode = 'tracker_library_filter_mode_';
-  static const String _prefixTrackerLibraryFilterIds = 'tracker_library_filter_ids_';
-  static const String _keyEnableCompanionRemoteServer = 'enable_companion_remote_server';
-  static const String _keyAutoPip = 'auto_pip';
-  static const String _keyMatchContentFrameRate = 'match_content_frame_rate';
-  static const String _keyTunneledPlayback = 'tunneled_playback';
-  static const String _keyDefaultPlaybackSpeed = 'default_playback_speed';
-  static const String _keyDefaultBoxFitMode = 'default_box_fit_mode';
-  static const String _keyDefaultQualityPreset = 'default_quality_preset';
-  static const String _keyAutoPlayNextEpisode = 'auto_play_next_episode';
-  static const String _keyUseExoPlayer = 'use_exoplayer';
-  static const String _keyAlwaysKeepSidebarOpen = 'always_keep_sidebar_open';
-  static const String _keyShowUnwatchedCount = 'show_unwatched_count';
-  static const String _keyShowEpisodeNumberOnCards = 'show_episode_number_on_cards';
-  static const String _keyHideSpoilers = 'hide_spoilers';
-  static const String _keyShowNavBarLabels = 'show_nav_bar_labels';
-  static const String _keyGlobalShaderPreset = 'global_shader_preset';
-  static const String _keyRequireProfileSelectionOnOpen = 'require_profile_selection_on_open';
-  static const String _keyUseExternalPlayer = 'use_external_player';
-  static const String _keySelectedExternalPlayer = 'selected_external_player';
-  static const String _keyCustomExternalPlayers = 'custom_external_players';
-  static const String _keyConfirmExitOnBack = 'confirm_exit_on_back';
-  static const String _keyForceTvMode = 'force_tv_mode';
-  static const String _keyAmbientLighting = 'ambient_lighting';
-  static const String _keyAudioPassthrough = 'audio_passthrough';
-  static const String _keyAudioNormalization = 'audio_normalization';
-  static const String _keyCustomShaderPresets = 'custom_shader_presets';
-  static const String _keyLiveTvDefaultFavorites = 'live_tv_default_favorites';
-  static const String _keyCustomRelayUrl = 'custom_relay_url';
-  static const String _keyRecentRooms = 'watch_together_recent_rooms';
-  static const String _keyMatchRefreshRate = 'match_refresh_rate';
-  static const String _keyMatchDynamicRange = 'match_dynamic_range';
-  static const String _keyDisplaySwitchDelay = 'display_switch_delay';
+
+  static const enableDebugLogging = BoolPref('enable_debug_logging', onWrite: setLoggerLevel);
+  static const crashReporting = BoolPref('crash_reporting', defaultValue: true);
+  static const enableHardwareDecoding = BoolPref('enable_hardware_decoding', defaultValue: true);
+  static const enableHDR = BoolPref('enable_hdr', defaultValue: true);
+  static const preferredVideoCodec = StringPref('preferred_video_codec', defaultValue: 'auto');
+  static const preferredAudioCodec = StringPref('preferred_audio_codec', defaultValue: 'auto');
+  static const viewMode = EnumPref<ViewMode>('view_mode', values: ViewMode.values, defaultValue: ViewMode.grid);
+  static const seekTimeSmall = IntPref('seek_time_small', defaultValue: 10);
+  static const seekTimeLarge = IntPref('seek_time_large', defaultValue: 30);
+  static const rewindOnResume = IntPref('rewind_on_resume');
+  static const showHeroSection = BoolPref('show_hero_section', defaultValue: true);
+  static const useGlobalHubs = BoolPref('use_global_hubs', defaultValue: true);
+  static const showServerNameOnHubs = BoolPref('show_server_name_on_hubs');
+  static const groupLibrariesByServer = BoolPref('group_libraries_by_server', defaultValue: true);
+  static const sleepTimerDuration = IntPref('sleep_timer_duration', defaultValue: 30);
+  static const audioSyncOffset = IntPref('audio_sync_offset');
+  static const subtitleSyncOffset = IntPref('subtitle_sync_offset');
+  static const volume = DoublePref('volume', defaultValue: 100.0);
+  static const rotationLocked = BoolPref('rotation_locked', defaultValue: true);
+  static const subtitleFontSize = IntPref('subtitle_font_size', defaultValue: 38);
+  static const subtitleTextColor = StringPref('subtitle_text_color', defaultValue: '#FFFFFF');
+  static const subtitleBorderSize = IntPref('subtitle_border_size', defaultValue: 3);
+  static const subtitleBorderColor = StringPref('subtitle_border_color', defaultValue: '#000000');
+  static const subtitleBackgroundColor = StringPref('subtitle_background_color', defaultValue: '#000000');
+  static const subtitleBackgroundOpacity = IntPref('subtitle_background_opacity');
+  static const subAssOverride = EnumPref<SubAssOverride>(
+    'sub_ass_override',
+    values: SubAssOverride.values,
+    defaultValue: SubAssOverride.no,
+  );
+  static const subtitleBold = BoolPref('subtitle_bold');
+  static const subtitleItalic = BoolPref('subtitle_italic');
+  static const rememberTrackSelections = BoolPref('remember_track_selections', defaultValue: true);
+  static const clickVideoTogglesPlayback = BoolPref('click_video_toggles_playback');
+  static const autoSkipIntro = BoolPref('auto_skip_intro');
+  static const autoSkipCredits = BoolPref('auto_skip_credits');
+  static const autoSkipDelay = IntPref('auto_skip_delay', defaultValue: 5);
+  static const introPattern = StringPref('intro_pattern', defaultValue: defaultIntroPattern);
+  static const creditsPattern = StringPref('credits_pattern', defaultValue: defaultCreditsPattern);
+  static const customDownloadPathType = NullableStringPref('custom_download_path_type');
+  static const downloadOnWifiOnly = BoolPref('download_on_wifi_only');
+  static const autoRemoveWatchedDownloads = BoolPref('auto_remove_watched_downloads');
+  static const autoCheckUpdatesOnStartup = BoolPref('auto_check_updates_on_startup', defaultValue: true);
+  static const showPerformanceOverlay = BoolPref('show_performance_overlay');
+  static const autoHidePerformanceOverlay = BoolPref('auto_hide_performance_overlay', defaultValue: true);
+  static const enableDiscordRPC = BoolPref('enable_discord_rpc');
+  static const enableTraktScrobble = BoolPref('enable_trakt_scrobble', defaultValue: true);
+  static const enableTraktWatchedSync = BoolPref('enable_trakt_watched_sync', defaultValue: true);
+  static const enableMalScrobble = BoolPref('enable_mal_scrobble', defaultValue: true);
+  static const enableAnilistScrobble = BoolPref('enable_anilist_scrobble', defaultValue: true);
+  static const enableSimklScrobble = BoolPref('enable_simkl_scrobble', defaultValue: true);
+  static const matchContentFrameRate = BoolPref('match_content_frame_rate');
+  static const tunneledPlayback = BoolPref('tunneled_playback', defaultValue: true);
+  static const defaultQualityPreset = StringPref('default_quality_preset', defaultValue: 'original');
+  static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
+  static const useExoPlayer = BoolPref('use_exoplayer', defaultValue: true);
+  static const alwaysKeepSidebarOpen = BoolPref('always_keep_sidebar_open');
+  static const showUnwatchedCount = BoolPref('show_unwatched_count', defaultValue: true);
+  static const showEpisodeNumberOnCards = BoolPref('show_episode_number_on_cards', defaultValue: true);
+  static const hideSpoilers = BoolPref('hide_spoilers');
+  static const showNavBarLabels = BoolPref('show_nav_bar_labels', defaultValue: true);
+  static const globalShaderPreset = StringPref('global_shader_preset', defaultValue: 'none');
+  static const requireProfileSelectionOnOpen = BoolPref('require_profile_selection_on_open');
+  static const useExternalPlayer = BoolPref('use_external_player');
+  static const confirmExitOnBack = BoolPref('confirm_exit_on_back', defaultValue: true);
+  static const forceTvMode = BoolPref('force_tv_mode');
+  static const ambientLighting = BoolPref('ambient_lighting');
+  static const audioPassthrough = BoolPref('audio_passthrough');
+  static const audioNormalization = BoolPref('audio_normalization');
+  static const liveTvDefaultFavorites = BoolPref('live_tv_default_favorites');
+  static const matchRefreshRate = BoolPref('match_refresh_rate');
+  static const matchDynamicRange = BoolPref('match_dynamic_range');
+  static const appLocale = _AppLocalePref();
+  static const autoPip = _AutoPipPref();
+  static const customDownloadPath = NullableStringPref('custom_download_path');
+  static final customRelayUrl = NullableStringPref('custom_relay_url', transform: _trimEmptyAsNull);
+  static const recentRooms = NullableStringPref('watch_together_recent_rooms');
+
+  static final maxVolume = IntPref('max_volume', defaultValue: 100, transform: (v) => v.clamp(100, 300));
+  static final subtitlePosition = IntPref('subtitle_position', defaultValue: 100, transform: (v) => v.clamp(0, 100));
+  static final defaultPlaybackSpeed = DoublePref(
+    'default_playback_speed',
+    defaultValue: 1.0,
+    transform: (v) => v.clamp(0.5, 3.0),
+  );
+  static final defaultBoxFitMode = IntPref('default_box_fit_mode', transform: (v) => v.clamp(0, 2));
+  static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
+
+  static final themeMode = EnumPref<ThemeMode>(
+    'theme_mode',
+    values: ThemeMode.values,
+    defaultValue: TvDetectionService.isTVSync() ? ThemeMode.oled : ThemeMode.system,
+  );
+  static final videoPlayerNavigationEnabled = BoolPref(
+    'video_player_navigation_enabled',
+    defaultValue: TvDetectionService.isTVSync(),
+  );
+  static final enableCompanionRemoteServer = BoolPref(
+    'enable_companion_remote_server',
+    defaultValue: PlatformDetector.isDesktopOS(),
+  );
+
+  static const bufferSize = _BufferSizePref();
+  static const libraryDensity = _LibraryDensityPref();
+  static const episodePosterMode = _EpisodePosterModePref();
+  static const mpvConfigText = _MpvConfigTextPref();
+
+  static final keyboardShortcuts = JsonPref<Map<String, String>>(
+    'keyboard_shortcuts',
+    defaultValue: _defaultKeyboardShortcuts(),
+    encode: json.encode,
+    decode: _decodeKeyboardShortcuts,
+  );
+  static final keyboardHotkeys = JsonPref<Map<String, HotKey>>(
+    'keyboard_hotkeys',
+    defaultValue: _defaultKeyboardHotkeys(),
+    encode: (v) => json.encode(v.map((k, hk) => MapEntry(k, SettingsService.serializeHotKey(hk)))),
+    decode: _decodeKeyboardHotkeys,
+  );
+  static final mediaVersionPreferences = JsonPref<Map<String, int>>(
+    'media_version_preferences',
+    defaultValue: const {},
+    encode: json.encode,
+    decode: (raw) => (raw as Map<String, dynamic>).map((k, v) => MapEntry(k, v as int)),
+  );
+  static final customShaderPresets = JsonPref<List<Map<String, dynamic>>>(
+    'custom_shader_presets',
+    defaultValue: const [],
+    encode: json.encode,
+    decode: (raw) => (raw as List).cast<Map<String, dynamic>>(),
+  );
+  static final selectedExternalPlayer = JsonPref<ExternalPlayer>(
+    'selected_external_player',
+    defaultValue: KnownPlayers.systemDefault,
+    encode: (p) => json.encode(p.toJson()),
+    decode: (raw) => ExternalPlayer.fromJson(raw as Map<String, dynamic>),
+  );
+  static final customExternalPlayers = JsonPref<List<ExternalPlayer>>(
+    'custom_external_players',
+    defaultValue: const [],
+    encode: (v) => json.encode(v.map((p) => p.toJson()).toList()),
+    decode: (raw) => (raw as List).map((e) => ExternalPlayer.fromJson(e as Map<String, dynamic>)).toList(),
+  );
+  static final mpvPresets = JsonPref<List<MpvPreset>>(
+    'mpv_config_presets',
+    defaultValue: const [],
+    encode: (v) => json.encode(v.map((p) => p.toJson()).toList()),
+    decode: _decodeMpvPresets,
+  );
+
+  static IntPref watchedThresholdPref(String serverId) => IntPref('watched_threshold_$serverId', defaultValue: 90);
+
+  static EnumPref<TrackerLibraryFilterMode> trackerFilterModePref(TrackerService s) => EnumPref(
+    'tracker_library_filter_mode_${s.name}',
+    values: TrackerLibraryFilterMode.values,
+    defaultValue: TrackerLibraryFilterMode.blacklist,
+  );
+
+  static StringListPref trackerFilterIdsPref(TrackerService s) =>
+      StringListPref('tracker_library_filter_ids_${s.name}');
 
   SettingsService._();
 
@@ -146,550 +425,59 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Synchronous access to the singleton, or null if not yet initialized.
   static SettingsService? get instanceOrNull => _cachedInstance;
 
-  /// Generic helper to get an enum value from preferences
-  T _getEnumValue<T extends Enum>(String key, List<T> values, T defaultValue) {
-    final stored = prefs.getString(key);
-    if (stored == null) return defaultValue;
-    return values.firstWhere((v) => v.name == stored, orElse: () => defaultValue);
+  static Map<String, String> defaultKeyboardShortcuts() => _defaultKeyboardShortcuts();
+  static Map<String, HotKey> defaultKeyboardHotkeys() => _defaultKeyboardHotkeys();
+
+  /// Null keys bypass the filter so we err on the side of syncing.
+  bool isLibraryAllowedForTracker(TrackerService service, String? libraryGlobalKey) {
+    if (libraryGlobalKey == null) return true;
+    final inList = read(trackerFilterIdsPref(service)).contains(libraryGlobalKey);
+    final mode = read(trackerFilterModePref(service));
+    return mode == TrackerLibraryFilterMode.blacklist ? !inList : inList;
   }
 
-  // Theme Mode
-  Future<void> setThemeMode(ThemeMode mode) async {
-    await prefs.setString(_keyThemeMode, mode.name);
-  }
-
-  ThemeMode getThemeMode() {
-    final stored = prefs.getString(_keyThemeMode);
-    if (stored == null) {
-      // Default to OLED on Android TV, system elsewhere
-      return TvDetectionService.isTVSync() ? ThemeMode.oled : ThemeMode.system;
+  Future<void> removeCustomExternalPlayer(String id) async {
+    final players = read(customExternalPlayers).where((p) => p.id != id).toList();
+    await write(customExternalPlayers, players);
+    if (read(selectedExternalPlayer).id == id) {
+      await write(selectedExternalPlayer, KnownPlayers.systemDefault);
     }
-    return _getEnumValue(_keyThemeMode, ThemeMode.values, ThemeMode.system);
   }
 
-  // Debug Logging
-  Future<void> setEnableDebugLogging(bool enabled) async {
-    await prefs.setBool(_keyEnableDebugLogging, enabled);
-    // Update logger level immediately when setting changes
-    setLoggerLevel(enabled);
-  }
-
-  bool getEnableDebugLogging() {
-    return prefs.getBool(_keyEnableDebugLogging) ?? false;
-  }
-
-  // Crash Reporting
-  Future<void> setCrashReporting(bool enabled) async {
-    await prefs.setBool(_keyCrashReporting, enabled);
-  }
-
-  bool getCrashReporting() {
-    return prefs.getBool(_keyCrashReporting) ?? true; // Default enabled
-  }
-
-  // Default video quality preset (persisted as enum name)
-  Future<void> setDefaultQualityPreset(String presetName) async {
-    await prefs.setString(_keyDefaultQualityPreset, presetName);
-  }
-
-  String getDefaultQualityPreset() {
-    return prefs.getString(_keyDefaultQualityPreset) ?? 'original';
-  }
-
-  // Buffer Size (in MB)
-  Future<void> setBufferSize(int sizeInMB) async {
-    await prefs.setInt(_keyBufferSize, sizeInMB);
-  }
-
-  int getBufferSize() {
-    // One-time migration: reset existing users to Auto.
-    // SharedPreferences updates in-memory cache synchronously, so the
-    // unawaited disk-flush futures are safe here (idempotent if re-run).
-    if (prefs.getBool(_keyBufferSizeMigratedToAuto) != true) {
-      prefs.remove(_keyBufferSize);
-      prefs.setBool(_keyBufferSizeMigratedToAuto, true);
+  /// Parse raw config text into a `Map<String, String>` (skip blanks and # comments).
+  static Map<String, String> parseMpvConfigText(String text) {
+    final result = <String, String>{};
+    for (final line in text.split('\n')) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
+      final eqIndex = trimmed.indexOf('=');
+      if (eqIndex <= 0) continue;
+      final k = trimmed.substring(0, eqIndex).trim();
+      final v = trimmed.substring(eqIndex + 1).trim();
+      if (k.isNotEmpty) result[k] = v;
     }
-    return prefs.getInt(_keyBufferSize) ?? 0; // 0 = Auto
-  }
-
-  // Hardware Decoding
-  Future<void> setEnableHardwareDecoding(bool enabled) async {
-    await prefs.setBool(_keyEnableHardwareDecoding, enabled);
-  }
-
-  bool getEnableHardwareDecoding() {
-    return prefs.getBool(_keyEnableHardwareDecoding) ?? true; // Default enabled
-  }
-
-  // HDR (High Dynamic Range)
-  Future<void> setEnableHDR(bool enabled) async {
-    await prefs.setBool(_keyEnableHDR, enabled);
-  }
-
-  bool getEnableHDR() {
-    return prefs.getBool(_keyEnableHDR) ?? true; // Default enabled
-  }
-
-  // Preferred Video Codec
-  Future<void> setPreferredVideoCodec(String codec) async {
-    await prefs.setString(_keyPreferredVideoCodec, codec);
-  }
-
-  String getPreferredVideoCodec() {
-    return prefs.getString(_keyPreferredVideoCodec) ?? 'auto';
-  }
-
-  // Preferred Audio Codec
-  Future<void> setPreferredAudioCodec(String codec) async {
-    await prefs.setString(_keyPreferredAudioCodec, codec);
-  }
-
-  String getPreferredAudioCodec() {
-    return prefs.getString(_keyPreferredAudioCodec) ?? 'auto';
-  }
-
-  // Library Density (int 1–5)
-  Future<void> setLibraryDensity(int density) async {
-    await prefs.setInt(_keyLibraryDensity, density.clamp(LibraryDensity.min, LibraryDensity.max));
-  }
-
-  int getLibraryDensity() {
-    // New int format — getInt throws if the stored value is a different type
-    try {
-      final intVal = prefs.getInt(_keyLibraryDensity);
-      if (intVal != null) return intVal.clamp(LibraryDensity.min, LibraryDensity.max);
-    } on TypeError {
-      // Stored value is a String from old enum format — fall through to migration
-    }
-    // Migrate from old enum string format
-    String? strVal;
-    try {
-      strVal = prefs.getString(_keyLibraryDensity);
-    } on TypeError {
-      // Value exists but isn't a String either
-    }
-    final result = switch (strVal) {
-      'compact' => 2,
-      'comfortable' => 4,
-      _ => LibraryDensity.defaultValue,
-    };
-    prefs.setInt(_keyLibraryDensity, result);
     return result;
   }
 
-  // View Mode
-  Future<void> setViewMode(ViewMode mode) async {
-    await prefs.setString(_keyViewMode, mode.name);
+  /// Save a new preset (overwrites existing with same name).
+  Future<void> saveMpvPreset(String name, String text) async {
+    final presets = read(mpvPresets).where((p) => p.name != name).toList();
+    presets.add(MpvPreset(name: name, text: text, createdAt: DateTime.now()));
+    await write(mpvPresets, presets);
   }
 
-  ViewMode getViewMode() {
-    return _getEnumValue(_keyViewMode, ViewMode.values, ViewMode.grid);
+  Future<void> deleteMpvPreset(String name) async {
+    final presets = read(mpvPresets).where((p) => p.name != name).toList();
+    await write(mpvPresets, presets);
   }
 
-  // Episode Poster Mode
-  Future<void> setEpisodePosterMode(EpisodePosterMode mode) async {
-    await prefs.setString(_keyEpisodePosterMode, mode.name);
+  /// Load a preset (replaces current config text).
+  Future<void> loadMpvPreset(String name) async {
+    final presets = read(mpvPresets);
+    final preset = presets.firstWhere((p) => p.name == name, orElse: () => throw Exception('Preset not found: $name'));
+    await write(mpvConfigText, preset.text);
   }
 
-  EpisodePosterMode getEpisodePosterMode() {
-    // Migration: check old boolean key first
-    final legacyValue = prefs.getBool(_keyUseSeasonPoster);
-    if (legacyValue != null) {
-      // Migrate old setting: true = seasonPoster, false = seriesPoster
-      final migratedMode = legacyValue ? EpisodePosterMode.seasonPoster : EpisodePosterMode.seriesPoster;
-      // Clear old key and save new format (fire and forget)
-      prefs.remove(_keyUseSeasonPoster);
-      prefs.setString(_keyEpisodePosterMode, migratedMode.name);
-      return migratedMode;
-    }
-    return _getEnumValue(_keyEpisodePosterMode, EpisodePosterMode.values, EpisodePosterMode.episodeThumbnail);
-  }
-
-  // Show Hero Section
-  Future<void> setShowHeroSection(bool enabled) async {
-    await prefs.setBool(_keyShowHeroSection, enabled);
-  }
-
-  bool getShowHeroSection() {
-    return prefs.getBool(_keyShowHeroSection) ?? true; // Default: true (show hero section)
-  }
-
-  // Use Global Hubs (true = global /hubs endpoint, false = per-library hubs)
-  Future<void> setUseGlobalHubs(bool enabled) async {
-    await prefs.setBool(_keyUseGlobalHubs, enabled);
-  }
-
-  bool getUseGlobalHubs() {
-    return prefs.getBool(_keyUseGlobalHubs) ?? true; // Default: true (use global hubs like official Plex)
-  }
-
-  // Show Server Name on Hubs (false = only on duplicates, true = always)
-  Future<void> setShowServerNameOnHubs(bool enabled) async {
-    await prefs.setBool(_keyShowServerNameOnHubs, enabled);
-  }
-
-  bool getShowServerNameOnHubs() {
-    return prefs.getBool(_keyShowServerNameOnHubs) ?? false; // Default: false (only show on duplicates)
-  }
-
-  // Group Libraries by Server in the side rail
-  Future<void> setGroupLibrariesByServer(bool enabled) async {
-    await prefs.setBool(_keyGroupLibrariesByServer, enabled);
-  }
-
-  bool getGroupLibrariesByServer() {
-    return prefs.getBool(_keyGroupLibrariesByServer) ?? true;
-  }
-
-  // Seek Time Small (in seconds)
-  Future<void> setSeekTimeSmall(int seconds) async {
-    await prefs.setInt(_keySeekTimeSmall, seconds);
-  }
-
-  int getSeekTimeSmall() {
-    return prefs.getInt(_keySeekTimeSmall) ?? 10; // Default: 10 seconds
-  }
-
-  // Seek Time Large (in seconds)
-  Future<void> setSeekTimeLarge(int seconds) async {
-    await prefs.setInt(_keySeekTimeLarge, seconds);
-  }
-
-  int getSeekTimeLarge() {
-    return prefs.getInt(_keySeekTimeLarge) ?? 30; // Default: 30 seconds
-  }
-
-  // Rewind on Resume (in seconds, 0 = disabled)
-  Future<void> setRewindOnResume(int seconds) async {
-    await prefs.setInt(_keyRewindOnResume, seconds);
-  }
-
-  int getRewindOnResume() {
-    return prefs.getInt(_keyRewindOnResume) ?? 0; // Default: 0 (disabled)
-  }
-
-  // Sleep Timer Duration (in minutes)
-  Future<void> setSleepTimerDuration(int minutes) async {
-    await prefs.setInt(_keySleepTimerDuration, minutes);
-  }
-
-  int getSleepTimerDuration() {
-    return prefs.getInt(_keySleepTimerDuration) ?? 30; // Default: 30 minutes
-  }
-
-  // Audio Sync Offset (in milliseconds)
-  Future<void> setAudioSyncOffset(int milliseconds) async {
-    await prefs.setInt(_keyAudioSyncOffset, milliseconds);
-  }
-
-  int getAudioSyncOffset() {
-    return prefs.getInt(_keyAudioSyncOffset) ?? 0; // Default: 0ms (no offset)
-  }
-
-  // Subtitle Sync Offset (in milliseconds)
-  Future<void> setSubtitleSyncOffset(int milliseconds) async {
-    await prefs.setInt(_keySubtitleSyncOffset, milliseconds);
-  }
-
-  int getSubtitleSyncOffset() {
-    return prefs.getInt(_keySubtitleSyncOffset) ?? 0; // Default: 0ms (no offset)
-  }
-
-  // Volume (0.0 to 100.0)
-  Future<void> setVolume(double volume) async {
-    await prefs.setDouble(_keyVolume, volume);
-  }
-
-  double getVolume() {
-    return prefs.getDouble(_keyVolume) ?? 100.0; // Default: full volume
-  }
-
-  // Max Volume (100-300%, for volume boost)
-  Future<void> setMaxVolume(int percent) async {
-    await prefs.setInt(_keyMaxVolume, percent.clamp(100, 300));
-  }
-
-  int getMaxVolume() {
-    return prefs.getInt(_keyMaxVolume) ?? 100; // Default: 100% (no boost)
-  }
-
-  // Rotation Lock (mobile only)
-  Future<void> setRotationLocked(bool locked) async {
-    await prefs.setBool(_keyRotationLocked, locked);
-  }
-
-  bool getRotationLocked() {
-    return prefs.getBool(_keyRotationLocked) ?? true; // Default: locked (landscape only)
-  }
-
-  // Subtitle Styling Settings
-
-  // Font Size (30-80, default 55)
-  Future<void> setSubtitleFontSize(int size) async {
-    await prefs.setInt(_keySubtitleFontSize, size);
-  }
-
-  int getSubtitleFontSize() {
-    return prefs.getInt(_keySubtitleFontSize) ?? 38;
-  }
-
-  // Text Color (hex format #RRGGBB, default white)
-  Future<void> setSubtitleTextColor(String color) async {
-    await prefs.setString(_keySubtitleTextColor, color);
-  }
-
-  String getSubtitleTextColor() {
-    return prefs.getString(_keySubtitleTextColor) ?? '#FFFFFF';
-  }
-
-  // Border Size (0-5, default 3)
-  Future<void> setSubtitleBorderSize(int size) async {
-    await prefs.setInt(_keySubtitleBorderSize, size);
-  }
-
-  int getSubtitleBorderSize() {
-    return prefs.getInt(_keySubtitleBorderSize) ?? 3;
-  }
-
-  // Border Color (hex format #RRGGBB, default black)
-  Future<void> setSubtitleBorderColor(String color) async {
-    await prefs.setString(_keySubtitleBorderColor, color);
-  }
-
-  String getSubtitleBorderColor() {
-    return prefs.getString(_keySubtitleBorderColor) ?? '#000000';
-  }
-
-  // Background Color (hex format #RRGGBB, default black)
-  Future<void> setSubtitleBackgroundColor(String color) async {
-    await prefs.setString(_keySubtitleBackgroundColor, color);
-  }
-
-  String getSubtitleBackgroundColor() {
-    return prefs.getString(_keySubtitleBackgroundColor) ?? '#000000';
-  }
-
-  // Background Opacity (0-100, default 0 for transparent)
-  Future<void> setSubtitleBackgroundOpacity(int opacity) async {
-    await prefs.setInt(_keySubtitleBackgroundOpacity, opacity);
-  }
-
-  int getSubtitleBackgroundOpacity() {
-    return prefs.getInt(_keySubtitleBackgroundOpacity) ?? 0;
-  }
-
-  // Subtitle Position (0 = top, 100 = bottom, default 100)
-  Future<void> setSubtitlePosition(int position) async {
-    await prefs.setInt(_keySubtitlePosition, position.clamp(0, 100));
-  }
-
-  int getSubtitlePosition() {
-    return prefs.getInt(_keySubtitlePosition) ?? 100; // Default: bottom
-  }
-
-  // Sub ASS Override
-  Future<void> setSubAssOverride(SubAssOverride mode) async {
-    await prefs.setString(_keySubAssOverride, mode.name);
-  }
-
-  SubAssOverride getSubAssOverride() {
-    return _getEnumValue(_keySubAssOverride, SubAssOverride.values, SubAssOverride.no);
-  }
-
-  // Bold subtitles
-  Future<void> setSubtitleBold(bool bold) async {
-    await prefs.setBool(_keySubtitleBold, bold);
-  }
-
-  bool getSubtitleBold() {
-    return prefs.getBool(_keySubtitleBold) ?? false;
-  }
-
-  // Italic subtitles
-  Future<void> setSubtitleItalic(bool italic) async {
-    await prefs.setBool(_keySubtitleItalic, italic);
-  }
-
-  bool getSubtitleItalic() {
-    return prefs.getBool(_keySubtitleItalic) ?? false;
-  }
-
-  // Keyboard Shortcuts (Legacy String-based)
-  Map<String, String> getDefaultKeyboardShortcuts() {
-    return {
-      'play_pause': 'Space',
-      'volume_up': 'Arrow Up',
-      'volume_down': 'Arrow Down',
-      'seek_forward': 'Arrow Right',
-      'seek_backward': 'Arrow Left',
-      'seek_forward_large': 'Shift+Arrow Right',
-      'seek_backward_large': 'Shift+Arrow Left',
-      'fullscreen_toggle': 'F',
-      'mute_toggle': 'M',
-      'subtitle_toggle': 'S',
-      'audio_track_next': 'A',
-      'subtitle_track_next': 'Shift+S',
-      'chapter_next': 'N',
-      'chapter_previous': 'P',
-      'speed_increase': 'Plus',
-      'speed_decrease': 'Minus',
-      'speed_reset': 'R',
-      'sub_seek_next': 'Ctrl+Right',
-      'sub_seek_prev': 'Ctrl+Left',
-    };
-  }
-
-  // HotKey Objects (New implementation)
-  Map<String, HotKey> getDefaultKeyboardHotkeys() {
-    return {
-      'play_pause': const HotKey(key: PhysicalKeyboardKey.space),
-      'volume_up': const HotKey(key: PhysicalKeyboardKey.arrowUp),
-      'volume_down': const HotKey(key: PhysicalKeyboardKey.arrowDown),
-      'seek_forward': const HotKey(key: PhysicalKeyboardKey.arrowRight),
-      'seek_backward': const HotKey(key: PhysicalKeyboardKey.arrowLeft),
-      'seek_forward_large': const HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.shift]),
-      'seek_backward_large': const HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.shift]),
-      'fullscreen_toggle': const HotKey(key: PhysicalKeyboardKey.keyF),
-      'mute_toggle': const HotKey(key: PhysicalKeyboardKey.keyM),
-      'subtitle_toggle': const HotKey(key: PhysicalKeyboardKey.keyS),
-      'audio_track_next': const HotKey(key: PhysicalKeyboardKey.keyA),
-      'subtitle_track_next': const HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.shift]),
-      'chapter_next': const HotKey(key: PhysicalKeyboardKey.keyN),
-      'chapter_previous': const HotKey(key: PhysicalKeyboardKey.keyP),
-      'episode_next': const HotKey(key: PhysicalKeyboardKey.keyN, modifiers: [HotKeyModifier.shift]),
-      'episode_previous': const HotKey(key: PhysicalKeyboardKey.keyP, modifiers: [HotKeyModifier.shift]),
-      'speed_increase': const HotKey(key: PhysicalKeyboardKey.equal),
-      'speed_decrease': const HotKey(key: PhysicalKeyboardKey.minus),
-      'speed_reset': const HotKey(key: PhysicalKeyboardKey.keyR),
-      'sub_seek_next': const HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.control]),
-      'sub_seek_prev': const HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
-      'shader_toggle': const HotKey(key: PhysicalKeyboardKey.keyG),
-      'skip_marker': const HotKey(key: PhysicalKeyboardKey.enter),
-    };
-  }
-
-  Future<void> setKeyboardShortcuts(Map<String, String> shortcuts) async {
-    final jsonString = json.encode(shortcuts);
-    await prefs.setString(_keyKeyboardShortcuts, jsonString);
-  }
-
-  Map<String, String> getKeyboardShortcuts() {
-    final jsonString = prefs.getString(_keyKeyboardShortcuts);
-    if (jsonString == null) return getDefaultKeyboardShortcuts();
-
-    final decoded = decodeJsonStringToMap(jsonString);
-    if (decoded.isEmpty) return getDefaultKeyboardShortcuts();
-
-    final shortcuts = decoded.map((key, value) => MapEntry(key, value.toString()));
-
-    // Merge with defaults to ensure all keys exist
-    final defaults = getDefaultKeyboardShortcuts();
-    defaults.addAll(shortcuts);
-    return defaults;
-  }
-
-  Future<void> setKeyboardShortcut(String action, String key) async {
-    final shortcuts = getKeyboardShortcuts();
-    shortcuts[action] = key;
-    await setKeyboardShortcuts(shortcuts);
-  }
-
-  String getKeyboardShortcut(String action) {
-    final shortcuts = getKeyboardShortcuts();
-    return shortcuts[action] ?? '';
-  }
-
-  Future<void> resetKeyboardShortcuts() async {
-    await setKeyboardShortcuts(getDefaultKeyboardShortcuts());
-  }
-
-  // HotKey Objects Methods
-  Future<void> setKeyboardHotkeys(Map<String, HotKey> hotkeys) async {
-    final Map<String, Map<String, dynamic>> serializedHotkeys = {};
-    for (final entry in hotkeys.entries) {
-      serializedHotkeys[entry.key] = _serializeHotKey(entry.value);
-    }
-    final jsonString = json.encode(serializedHotkeys);
-    await prefs.setString(_keyKeyboardHotkeys, jsonString);
-  }
-
-  Future<Map<String, HotKey>> getKeyboardHotkeys() async {
-    final jsonString = prefs.getString(_keyKeyboardHotkeys);
-    if (jsonString == null) {
-      return getDefaultKeyboardHotkeys();
-    }
-
-    try {
-      final decoded = json.decode(jsonString) as Map<String, dynamic>;
-      final Map<String, HotKey> hotkeys = {};
-
-      for (final entry in decoded.entries) {
-        final hotKey = _deserializeHotKey(entry.value as Map<String, dynamic>);
-        if (hotKey != null) {
-          hotkeys[entry.key] = hotKey;
-        }
-      }
-
-      // Merge with defaults to ensure all keys exist, but keep saved hotkeys priority
-      final defaults = getDefaultKeyboardHotkeys();
-      final result = <String, HotKey>{};
-
-      // Start with defaults
-      result.addAll(defaults);
-      // Override with saved hotkeys (this preserves user customizations)
-      result.addAll(hotkeys);
-
-      return result;
-    } catch (e) {
-      appLogger.d('Failed to parse keyboard hotkeys', error: e);
-      return getDefaultKeyboardHotkeys();
-    }
-  }
-
-  Future<void> setKeyboardHotkey(String action, HotKey hotKey) async {
-    final hotkeys = await getKeyboardHotkeys();
-    hotkeys[action] = hotKey;
-    await setKeyboardHotkeys(hotkeys);
-  }
-
-  Future<HotKey?> getKeyboardHotkey(String action) async {
-    final hotkeys = await getKeyboardHotkeys();
-    return hotkeys[action];
-  }
-
-  Future<void> resetKeyboardHotkeys() async {
-    await setKeyboardHotkeys(getDefaultKeyboardHotkeys());
-  }
-
-  // Video Player Navigation (use arrow keys to navigate video player controls)
-  Future<void> setVideoPlayerNavigationEnabled(bool enabled) async {
-    await prefs.setBool(_keyVideoPlayerNavigationEnabled, enabled);
-  }
-
-  bool getVideoPlayerNavigationEnabled() {
-    // Default: enabled on Android TV, disabled elsewhere
-    return prefs.getBool(_keyVideoPlayerNavigationEnabled) ?? TvDetectionService.isTVSync();
-  }
-
-  // Performance Overlay (show debug stats on video player)
-  Future<void> setShowPerformanceOverlay(bool enabled) async {
-    await prefs.setBool(_keyShowPerformanceOverlay, enabled);
-  }
-
-  bool getShowPerformanceOverlay() {
-    return prefs.getBool(_keyShowPerformanceOverlay) ?? false; // Default: disabled
-  }
-
-  // Auto-hide performance overlay (fade with playback controls)
-  Future<void> setAutoHidePerformanceOverlay(bool enabled) async {
-    await prefs.setBool(_keyAutoHidePerformanceOverlay, enabled);
-  }
-
-  bool getAutoHidePerformanceOverlay() {
-    return prefs.getBool(_keyAutoHidePerformanceOverlay) ?? true; // Default: enabled
-  }
-
-  // Helper methods for HotKey serialization
   static const _modifierMap = <String, HotKeyModifier>{
     'alt': HotKeyModifier.alt,
     'control': HotKeyModifier.control,
@@ -699,36 +487,34 @@ class SettingsService extends BaseSharedPreferencesService {
     'fn': HotKeyModifier.fn,
   };
 
-  Map<String, dynamic> _serializeHotKey(HotKey hotKey) {
-    // Use USB HID code for reliable serialization across debug/release modes
+  static Map<String, dynamic> serializeHotKey(HotKey hotKey) {
+    // Use USB HID code for reliable serialization across debug/release modes.
     final usbHidCode = hotKey.key.usbHidUsage.toRadixString(16).padLeft(8, '0');
     return {'key': usbHidCode, 'modifiers': hotKey.modifiers?.map((m) => m.name).toList() ?? []};
   }
 
-  HotKey? _deserializeHotKey(Map<String, dynamic> data) {
+  static HotKey? deserializeHotKey(Map<String, dynamic> data) {
     try {
       final keyString = data['key'] as String;
       final modifierNames = (data['modifiers'] as List<dynamic>).cast<String>();
-
       final modifiers = modifierNames
           .map((name) => _modifierMap[name])
           .where((m) => m != null)
           .cast<HotKeyModifier>()
           .toList();
-
-      // Try parsing as USB HID code first (new format), fall back to string parsing (backwards compat)
+      // Try parsing as USB HID code first (new format), fall back to string parsing.
       final usbHidCode = int.tryParse(keyString, radix: 16);
       final key = usbHidCode != null ? PhysicalKeyboardKey(usbHidCode) : _findKeyByString(keyString);
       if (key != null) {
         return HotKey(key: key, modifiers: modifiers.isNotEmpty ? modifiers : null);
       }
-    } catch (e) {
-      // Ignore deserialization errors
+    } catch (_) {
+      // Ignore deserialization errors.
     }
     return null;
   }
 
-  // Map for pattern-based key name matching (lowercase keys for case-insensitive matching)
+  // Pattern-based key name matching (lowercase keys for case-insensitive matching).
   static const _keyNameMap = <String, PhysicalKeyboardKey>{
     'space': PhysicalKeyboardKey.space,
     'backspace': PhysicalKeyboardKey.backspace,
@@ -749,7 +535,6 @@ class SettingsService extends BaseSharedPreferencesService {
     'minus': PhysicalKeyboardKey.minus,
   };
 
-  // Function keys map
   static const _functionKeyMap = <String, PhysicalKeyboardKey>{
     'f1': PhysicalKeyboardKey.f1,
     'f2': PhysicalKeyboardKey.f2,
@@ -765,7 +550,6 @@ class SettingsService extends BaseSharedPreferencesService {
     'f12': PhysicalKeyboardKey.f12,
   };
 
-  // Digit keys map
   static const _digitKeyMap = <String, PhysicalKeyboardKey>{
     'digit0': PhysicalKeyboardKey.digit0,
     'digit1': PhysicalKeyboardKey.digit1,
@@ -779,7 +563,6 @@ class SettingsService extends BaseSharedPreferencesService {
     'digit9': PhysicalKeyboardKey.digit9,
   };
 
-  // Letter keys map
   static const _letterKeyMap = <String, PhysicalKeyboardKey>{
     'keya': PhysicalKeyboardKey.keyA,
     'keyb': PhysicalKeyboardKey.keyB,
@@ -809,840 +592,125 @@ class SettingsService extends BaseSharedPreferencesService {
     'keyz': PhysicalKeyboardKey.keyZ,
   };
 
-  // Helper method to find PhysicalKeyboardKey by string representation
-  PhysicalKeyboardKey? _findKeyByString(String keyString) {
+  static PhysicalKeyboardKey? _findKeyByString(String keyString) {
     final normalized = keyString.toLowerCase();
 
-    // Try extracting USB HID code from toString() output
-    // Format: PhysicalKeyboardKey#ec9ed(usbHidUsage: "0x0007002c", debugName: "Space")
+    // Try extracting USB HID code from toString() output:
+    // PhysicalKeyboardKey#ec9ed(usbHidUsage: "0x0007002c", debugName: "Space")
     final usbHidMatch = RegExp(r'usbhidusage: "0x([0-9a-f]+)"').firstMatch(normalized);
     if (usbHidMatch != null) {
       final code = int.tryParse(usbHidMatch.group(1)!, radix: 16);
       if (code != null) return PhysicalKeyboardKey(code);
     }
 
-    // Try direct name matches
     for (final entry in _keyNameMap.entries) {
-      if (normalized.contains(entry.key)) {
-        return entry.value;
-      }
+      if (normalized.contains(entry.key)) return entry.value;
     }
-
-    // Try function keys (check longer patterns first to avoid f1 matching f10)
+    // Function keys before digits to avoid f1 matching f10.
     for (final entry in _functionKeyMap.entries) {
-      if (normalized.contains(entry.key)) {
-        return entry.value;
-      }
+      if (normalized.contains(entry.key)) return entry.value;
     }
-
-    // Try digit keys
     for (final entry in _digitKeyMap.entries) {
-      if (normalized.contains(entry.key)) {
-        return entry.value;
-      }
+      if (normalized.contains(entry.key)) return entry.value;
     }
-
-    // Try letter keys
     for (final entry in _letterKeyMap.entries) {
-      if (normalized.contains(entry.key)) {
-        return entry.value;
-      }
+      if (normalized.contains(entry.key)) return entry.value;
     }
 
     return null;
   }
 
-  // Media Version Preferences
-  /// Save media version preference for a series
-  /// [seriesRatingKey] is the grandparentRatingKey for TV series, or ratingKey for movies
-  /// [mediaIndex] is the index of the selected media version
-  Future<void> setMediaVersionPreference(String seriesRatingKey, int mediaIndex) async {
-    final preferences = _getMediaVersionPreferences();
-    preferences[seriesRatingKey] = mediaIndex;
+  /// Settings that "Reset All Settings" actually resets. Mirrors the original
+  /// reset surface — notably excludes user-customized data (intro/credits regex
+  /// patterns) and opt-in toggles prior versions didn't reset, so behavior
+  /// stays identical for users.
+  static List<String> _resettableKeys() => [
+    enableDebugLogging.key,
+    bufferSize.key,
+    enableHardwareDecoding.key,
+    enableHDR.key,
+    preferredVideoCodec.key,
+    preferredAudioCodec.key,
+    viewMode.key,
+    showHeroSection.key,
+    seekTimeSmall.key,
+    seekTimeLarge.key,
+    sleepTimerDuration.key,
+    audioSyncOffset.key,
+    subtitleSyncOffset.key,
+    volume.key,
+    maxVolume.key,
+    subtitleFontSize.key,
+    subtitleTextColor.key,
+    subtitleBorderSize.key,
+    subtitleBorderColor.key,
+    subtitleBackgroundColor.key,
+    subtitleBackgroundOpacity.key,
+    subtitlePosition.key,
+    rememberTrackSelections.key,
+    customDownloadPathType.key,
+    downloadOnWifiOnly.key,
+    autoCheckUpdatesOnStartup.key,
+    showPerformanceOverlay.key,
+    autoHidePerformanceOverlay.key,
+    enableDiscordRPC.key,
+    enableTraktScrobble.key,
+    enableTraktWatchedSync.key,
+    enableMalScrobble.key,
+    enableAnilistScrobble.key,
+    enableSimklScrobble.key,
+    matchContentFrameRate.key,
+    tunneledPlayback.key,
+    defaultPlaybackSpeed.key,
+    defaultBoxFitMode.key,
+    autoPlayNextEpisode.key,
+    useExoPlayer.key,
+    alwaysKeepSidebarOpen.key,
+    showUnwatchedCount.key,
+    showEpisodeNumberOnCards.key,
+    hideSpoilers.key,
+    showNavBarLabels.key,
+    globalShaderPreset.key,
+    requireProfileSelectionOnOpen.key,
+    useExternalPlayer.key,
+    confirmExitOnBack.key,
+    forceTvMode.key,
+    ambientLighting.key,
+    audioPassthrough.key,
+    audioNormalization.key,
+    themeMode.key,
+    keyboardShortcuts.key,
+    keyboardHotkeys.key,
+    libraryDensity.key,
+    _legacyUseSeasonPosterKey,
+    episodePosterMode.key,
+    mediaVersionPreferences.key,
+    appLocale.key,
+    customDownloadPath.key,
+    videoPlayerNavigationEnabled.key,
+    _legacyMpvConfigEntriesKey,
+    mpvConfigText.key,
+    mpvPresets.key,
+    autoPip.key,
+    customShaderPresets.key,
+    selectedExternalPlayer.key,
+    customExternalPlayers.key,
+    _bufferSizeMigratedKey,
+    customRelayUrl.key,
+  ];
 
-    final jsonString = json.encode(preferences);
-    await prefs.setString(_keyMediaVersionPreferences, jsonString);
-  }
-
-  /// Get saved media version preference for a series
-  /// Returns null if no preference is saved
-  int? getMediaVersionPreference(String seriesRatingKey) {
-    final preferences = _getMediaVersionPreferences();
-    return preferences[seriesRatingKey];
-  }
-
-  /// Get all media version preferences
-  Map<String, int> _getMediaVersionPreferences() {
-    final jsonString = prefs.getString(_keyMediaVersionPreferences);
-    if (jsonString == null) return {};
-
-    final decoded = decodeJsonStringToMap(jsonString);
-    return decoded.map((key, value) => MapEntry(key, value as int));
-  }
-
-  // App Locale
-  Future<void> setAppLocale(AppLocale locale) async {
-    await prefs.setString(_keyAppLocale, locale.languageCode);
-  }
-
-  AppLocale getAppLocale() {
-    final localeString = prefs.getString(_keyAppLocale);
-    if (localeString == null) return AppLocaleUtils.findDeviceLocale();
-
-    return AppLocale.values.asNameMap()[localeString] ?? AppLocale.en;
-  }
-
-  // Track Selection Settings
-
-  /// Remember Track Selections - Save per-media audio/subtitle language preferences
-  Future<void> setRememberTrackSelections(bool value) async {
-    await prefs.setBool(_keyRememberTrackSelections, value);
-  }
-
-  bool getRememberTrackSelections() {
-    return prefs.getBool(_keyRememberTrackSelections) ?? true;
-  }
-
-  // Click on Video Player Settings
-  Future<void> setClickVideoTogglesPlayback(bool value) async {
-    await prefs.setBool(_keyClickVideoTogglesPlayback, value);
-  }
-
-  bool getClickVideoTogglesPlayback() {
-    return prefs.getBool(_keyClickVideoTogglesPlayback) ?? false;
-  }
-
-  // Auto Skip Intro
-  Future<void> setAutoSkipIntro(bool value) async {
-    await prefs.setBool(_keyAutoSkipIntro, value);
-  }
-
-  bool getAutoSkipIntro() {
-    return prefs.getBool(_keyAutoSkipIntro) ?? false; // Default: disabled
-  }
-
-  // Auto Skip Credits
-  Future<void> setAutoSkipCredits(bool value) async {
-    await prefs.setBool(_keyAutoSkipCredits, value);
-  }
-
-  bool getAutoSkipCredits() {
-    return prefs.getBool(_keyAutoSkipCredits) ?? false; // Default: disabled
-  }
-
-  // Auto Skip Delay (in seconds)
-  Future<void> setAutoSkipDelay(int seconds) async {
-    await prefs.setInt(_keyAutoSkipDelay, seconds);
-  }
-
-  int getAutoSkipDelay() {
-    return prefs.getInt(_keyAutoSkipDelay) ?? 5; // Default: 5 seconds
-  }
-
-  // Intro Pattern
-  Future<void> setIntroPattern(String value) async {
-    await prefs.setString(_keyIntroPattern, value);
-  }
-
-  String getIntroPattern() {
-    return prefs.getString(_keyIntroPattern) ?? defaultIntroPattern;
-  }
-
-  // Credits Pattern
-  Future<void> setCreditsPattern(String value) async {
-    await prefs.setString(_keyCreditsPattern, value);
-  }
-
-  String getCreditsPattern() {
-    return prefs.getString(_keyCreditsPattern) ?? defaultCreditsPattern;
-  }
-
-  // Custom Download Path
-  Future<void> setCustomDownloadPath(String? path, {String type = 'file'}) async {
-    if (path == null) {
-      await prefs.remove(_keyCustomDownloadPath);
-      await prefs.remove(_keyCustomDownloadPathType);
-    } else {
-      await prefs.setString(_keyCustomDownloadPath, path);
-      await prefs.setString(_keyCustomDownloadPathType, type);
-    }
-  }
-
-  String? getCustomDownloadPath() {
-    return prefs.getString(_keyCustomDownloadPath);
-  }
-
-  String getCustomDownloadPathType() {
-    return prefs.getString(_keyCustomDownloadPathType) ?? 'file';
-  }
-
-  bool hasCustomDownloadPath() {
-    return prefs.containsKey(_keyCustomDownloadPath);
-  }
-
-  // Custom Relay URL
-  Future<void> setCustomRelayUrl(String? url) async {
-    if (url == null || url.trim().isEmpty) {
-      await prefs.remove(_keyCustomRelayUrl);
-    } else {
-      await prefs.setString(_keyCustomRelayUrl, url.trim());
-    }
-  }
-
-  String? getCustomRelayUrl() {
-    return prefs.getString(_keyCustomRelayUrl);
-  }
-
-  // Recent Watch Together rooms
-  Future<void> setRecentRooms(String json) async {
-    await prefs.setString(_keyRecentRooms, json);
-  }
-
-  String? getRecentRooms() {
-    return prefs.getString(_keyRecentRooms);
-  }
-
-  // Download on WiFi Only
-  Future<void> setDownloadOnWifiOnly(bool value) async {
-    await prefs.setBool(_keyDownloadOnWifiOnly, value);
-  }
-
-  bool getDownloadOnWifiOnly() {
-    return prefs.getBool(_keyDownloadOnWifiOnly) ?? false;
-  }
-
-  Future<void> setAutoCheckUpdatesOnStartup(bool value) async {
-    await prefs.setBool(_keyAutoCheckUpdatesOnStartup, value);
-  }
-
-  bool getAutoCheckUpdatesOnStartup() {
-    return prefs.getBool(_keyAutoCheckUpdatesOnStartup) ?? true;
-  }
-
-  // Auto-remove watched downloads
-  Future<void> setAutoRemoveWatchedDownloads(bool value) async {
-    await prefs.setBool(_keyAutoRemoveWatchedDownloads, value);
-  }
-
-  bool getAutoRemoveWatchedDownloads() {
-    return prefs.getBool(_keyAutoRemoveWatchedDownloads) ?? false;
-  }
-
-  // Per-server watched threshold (cached from server prefs)
-  Future<void> setWatchedThreshold(String serverId, int percent) async {
-    await prefs.setInt('$_prefixWatchedThreshold$serverId', percent);
-  }
-
-  int getWatchedThreshold(String serverId) {
-    return prefs.getInt('$_prefixWatchedThreshold$serverId') ?? 90;
-  }
-
-  // MPV Config (raw text)
-
-  /// Get the raw MPV config text. Migrates from legacy JSON entries on first read.
-  String getMpvConfigText() {
-    final text = prefs.getString(_keyMpvConfigText);
-    if (text != null) return text;
-
-    // Migrate from legacy JSON entries
-    final legacyJson = prefs.getString(_keyMpvConfigEntries);
-    if (legacyJson != null) {
-      try {
-        final List<dynamic> decoded = json.decode(legacyJson);
-        final lines = <String>[];
-        for (final item in decoded) {
-          if (item is Map<String, dynamic>) {
-            final key = item['key'] as String? ?? '';
-            final value = item['value'] as String? ?? '';
-            final enabled = item['isEnabled'] as bool? ?? true;
-            if (key.isNotEmpty) {
-              lines.add(enabled ? '$key=$value' : '#$key=$value');
-            }
-          }
-        }
-        final migrated = lines.join('\n');
-        prefs.setString(_keyMpvConfigText, migrated);
-        return migrated;
-      } catch (e, st) {
-        appLogger.w('SettingsService: failed to migrate mpv config', error: e, stackTrace: st);
-      }
-    }
-
-    return '';
-  }
-
-  /// Save the raw MPV config text
-  Future<void> setMpvConfigText(String text) async {
-    await prefs.setString(_keyMpvConfigText, text);
-  }
-
-  /// Parse raw config text into a `Map<String, String>` (skip blanks and # comments)
-  static Map<String, String> parseMpvConfigText(String text) {
-    final result = <String, String>{};
-    for (final line in text.split('\n')) {
-      final trimmed = line.trim();
-      if (trimmed.isEmpty || trimmed.startsWith('#')) continue;
-      final eqIndex = trimmed.indexOf('=');
-      if (eqIndex <= 0) continue;
-      final key = trimmed.substring(0, eqIndex).trim();
-      final value = trimmed.substring(eqIndex + 1).trim();
-      if (key.isNotEmpty) result[key] = value;
-    }
-    return result;
-  }
-
-  /// Get enabled MPV config entries (for player initialization)
-  Map<String, String> getEnabledMpvConfigEntries() {
-    return parseMpvConfigText(getMpvConfigText());
-  }
-
-  // MPV Presets
-
-  /// Get all saved presets
-  List<MpvPreset> getMpvPresets() {
-    final jsonString = prefs.getString(_keyMpvConfigPresets);
-    if (jsonString == null) return [];
-
-    try {
-      final List<dynamic> decoded = json.decode(jsonString);
-      return decoded.map((e) {
-        final map = e as Map<String, dynamic>;
-        // Migrate legacy presets with entries list to text
-        if (map.containsKey('entries') && !map.containsKey('text')) {
-          final entries = map['entries'] as List;
-          final lines = <String>[];
-          for (final item in entries) {
-            if (item is Map<String, dynamic>) {
-              final key = item['key'] as String? ?? '';
-              final value = item['value'] as String? ?? '';
-              final enabled = item['isEnabled'] as bool? ?? true;
-              if (key.isNotEmpty) {
-                lines.add(enabled ? '$key=$value' : '#$key=$value');
-              }
-            }
-          }
-          map['text'] = lines.join('\n');
-        }
-        return MpvPreset.fromJson(map);
-      }).toList();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  /// Save a new preset (overwrites existing with same name)
-  Future<void> saveMpvPreset(String name, String text) async {
-    final presets = getMpvPresets();
-    presets.removeWhere((p) => p.name == name);
-    presets.add(MpvPreset(name: name, text: text, createdAt: DateTime.now()));
-
-    final jsonString = json.encode(presets.map((p) => p.toJson()).toList());
-    await prefs.setString(_keyMpvConfigPresets, jsonString);
-  }
-
-  /// Delete a preset by name
-  Future<void> deleteMpvPreset(String name) async {
-    final presets = getMpvPresets();
-    presets.removeWhere((p) => p.name == name);
-
-    final jsonString = json.encode(presets.map((p) => p.toJson()).toList());
-    await prefs.setString(_keyMpvConfigPresets, jsonString);
-  }
-
-  /// Load a preset (replaces current config text)
-  Future<void> loadMpvPreset(String name) async {
-    final presets = getMpvPresets();
-    final preset = presets.firstWhere((p) => p.name == name, orElse: () => throw Exception('Preset not found: $name'));
-
-    await setMpvConfigText(preset.text);
-  }
-
-  // Discord Rich Presence
-  Future<void> setEnableDiscordRPC(bool enabled) async {
-    await prefs.setBool(_keyEnableDiscordRPC, enabled);
-  }
-
-  bool getEnableDiscordRPC() {
-    return prefs.getBool(_keyEnableDiscordRPC) ?? false; // Default disabled
-  }
-
-  // Trakt Scrobbling (sends play/pause/stop during playback to Trakt)
-  Future<void> setEnableTraktScrobble(bool enabled) async {
-    await prefs.setBool(_keyEnableTraktScrobble, enabled);
-  }
-
-  bool getEnableTraktScrobble() {
-    return prefs.getBool(_keyEnableTraktScrobble) ?? true; // Default enabled when account is linked
-  }
-
-  // Trakt Watched-Status Sync (Plezy → Trakt only)
-  Future<void> setEnableTraktWatchedSync(bool enabled) async {
-    await prefs.setBool(_keyEnableTraktWatchedSync, enabled);
-  }
-
-  bool getEnableTraktWatchedSync() {
-    return prefs.getBool(_keyEnableTraktWatchedSync) ?? true; // Default enabled when account is linked
-  }
-
-  // Tracker scrobbling (threshold-based, fires at 80% progress)
-  Future<void> setEnableMalScrobble(bool enabled) async {
-    await prefs.setBool(_keyEnableMalScrobble, enabled);
-  }
-
-  bool getEnableMalScrobble() {
-    return prefs.getBool(_keyEnableMalScrobble) ?? true;
-  }
-
-  Future<void> setEnableAnilistScrobble(bool enabled) async {
-    await prefs.setBool(_keyEnableAnilistScrobble, enabled);
-  }
-
-  bool getEnableAnilistScrobble() {
-    return prefs.getBool(_keyEnableAnilistScrobble) ?? true;
-  }
-
-  Future<void> setEnableSimklScrobble(bool enabled) async {
-    await prefs.setBool(_keyEnableSimklScrobble, enabled);
-  }
-
-  bool getEnableSimklScrobble() {
-    return prefs.getBool(_keyEnableSimklScrobble) ?? true;
-  }
-
-  // Per-tracker library filter. Default blacklist+empty = sync every library.
-  TrackerLibraryFilterMode getTrackerLibraryFilterMode(TrackerService service) => _getEnumValue(
-    '$_prefixTrackerLibraryFilterMode${service.name}',
-    TrackerLibraryFilterMode.values,
-    TrackerLibraryFilterMode.blacklist,
-  );
-
-  Future<void> setTrackerLibraryFilterMode(TrackerService service, TrackerLibraryFilterMode mode) async {
-    await prefs.setString('$_prefixTrackerLibraryFilterMode${service.name}', mode.name);
-  }
-
-  Set<String> getTrackerLibraryFilterIds(TrackerService service) {
-    final ids = prefs.getStringList('$_prefixTrackerLibraryFilterIds${service.name}');
-    return ids?.toSet() ?? <String>{};
-  }
-
-  Future<void> setTrackerLibraryFilterIds(TrackerService service, Set<String> ids) async {
-    await prefs.setStringList('$_prefixTrackerLibraryFilterIds${service.name}', ids.toList());
-  }
-
-  /// Whether a scrobble/sync for [libraryGlobalKey] should be sent to [service].
-  /// Null keys bypass the filter so we err on the side of syncing.
-  bool isLibraryAllowedForTracker(TrackerService service, String? libraryGlobalKey) {
-    if (libraryGlobalKey == null) return true;
-    final inList = getTrackerLibraryFilterIds(service).contains(libraryGlobalKey);
-    return getTrackerLibraryFilterMode(service) == TrackerLibraryFilterMode.blacklist ? !inList : inList;
-  }
-
-  // Companion Remote Server
-  Future<void> setEnableCompanionRemoteServer(bool enabled) async {
-    await prefs.setBool(_keyEnableCompanionRemoteServer, enabled);
-  }
-
-  bool getEnableCompanionRemoteServer() {
-    // Default enabled on desktop/TV, disabled on mobile
-    return prefs.getBool(_keyEnableCompanionRemoteServer) ?? (PlatformDetector.isDesktopOS());
-  }
-
-  // Auto Picture-in-Picture (Android & iOS)
-  Future<void> setAutoPip(bool enabled) async {
-    await prefs.setBool(_keyAutoPip, enabled);
-  }
-
-  bool getAutoPip() {
-    if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) return false;
-    if (PlatformDetector.isTV()) return false;
-    // Default enabled on mobile, disabled on macOS
-    return prefs.getBool(_keyAutoPip) ?? !Platform.isMacOS;
-  }
-
-  // Match Content Frame Rate (Android only)
-  Future<void> setMatchContentFrameRate(bool enabled) async {
-    await prefs.setBool(_keyMatchContentFrameRate, enabled);
-  }
-
-  bool getMatchContentFrameRate() {
-    return prefs.getBool(_keyMatchContentFrameRate) ?? false; // Default disabled
-  }
-
-  // Match Refresh Rate (Windows)
-  Future<void> setMatchRefreshRate(bool enabled) async {
-    await prefs.setBool(_keyMatchRefreshRate, enabled);
-  }
-
-  bool getMatchRefreshRate() {
-    return prefs.getBool(_keyMatchRefreshRate) ?? false;
-  }
-
-  // Match Dynamic Range (Windows)
-  Future<void> setMatchDynamicRange(bool enabled) async {
-    await prefs.setBool(_keyMatchDynamicRange, enabled);
-  }
-
-  bool getMatchDynamicRange() {
-    return prefs.getBool(_keyMatchDynamicRange) ?? false;
-  }
-
-  // Display Switch Delay (Windows, seconds)
-  Future<void> setDisplaySwitchDelay(int seconds) async {
-    await prefs.setInt(_keyDisplaySwitchDelay, seconds.clamp(0, 10));
-  }
-
-  int getDisplaySwitchDelay() {
-    return prefs.getInt(_keyDisplaySwitchDelay) ?? 0;
-  }
-
-  // Tunneled Playback (Android ExoPlayer only)
-  Future<void> setTunneledPlayback(bool enabled) async {
-    await prefs.setBool(_keyTunneledPlayback, enabled);
-  }
-
-  bool getTunneledPlayback() {
-    return prefs.getBool(_keyTunneledPlayback) ?? true; // Default: enabled
-  }
-
-  // Default Playback Speed (0.5 to 3.0)
-  Future<void> setDefaultPlaybackSpeed(double speed) async {
-    await prefs.setDouble(_keyDefaultPlaybackSpeed, speed.clamp(0.5, 3.0));
-  }
-
-  double getDefaultPlaybackSpeed() {
-    return prefs.getDouble(_keyDefaultPlaybackSpeed) ?? 1.0; // Default: normal speed
-  }
-
-  // Default BoxFit Mode (0=contain, 1=cover, 2=fill)
-  Future<void> setDefaultBoxFitMode(int mode) async {
-    await prefs.setInt(_keyDefaultBoxFitMode, mode.clamp(0, 2));
-  }
-
-  int getDefaultBoxFitMode() {
-    return prefs.getInt(_keyDefaultBoxFitMode) ?? 0; // Default: contain
-  }
-
-  // Auto-Play Next Episode
-  Future<void> setAutoPlayNextEpisode(bool enabled) async {
-    await prefs.setBool(_keyAutoPlayNextEpisode, enabled);
-  }
-
-  bool getAutoPlayNextEpisode() {
-    return prefs.getBool(_keyAutoPlayNextEpisode) ?? true; // Default enabled
-  }
-
-  // Use ExoPlayer on Android (default: true)
-  // When false, uses MPV as the player backend
-  Future<void> setUseExoPlayer(bool enabled) async {
-    await prefs.setBool(_keyUseExoPlayer, enabled);
-  }
-
-  bool getUseExoPlayer() {
-    return prefs.getBool(_keyUseExoPlayer) ?? true; // Default: ExoPlayer
-  }
-
-  // Always Keep Sidebar Open (Desktop/TV only)
-  Future<void> setAlwaysKeepSidebarOpen(bool enabled) async {
-    await prefs.setBool(_keyAlwaysKeepSidebarOpen, enabled);
-  }
-
-  bool getAlwaysKeepSidebarOpen() {
-    return prefs.getBool(_keyAlwaysKeepSidebarOpen) ?? false; // Default: collapsed
-  }
-
-  // Show Unwatched Count (show unwatched episode count on shows/seasons)
-  Future<void> setShowUnwatchedCount(bool enabled) async {
-    await prefs.setBool(_keyShowUnwatchedCount, enabled);
-  }
-
-  bool getShowUnwatchedCount() {
-    return prefs.getBool(_keyShowUnwatchedCount) ?? true; // Default: enabled (show counts)
-  }
-
-  // Show Episode Number on Cards (append E# alongside S# on episode cards)
-  Future<void> setShowEpisodeNumberOnCards(bool enabled) async {
-    await prefs.setBool(_keyShowEpisodeNumberOnCards, enabled);
-  }
-
-  bool getShowEpisodeNumberOnCards() {
-    return prefs.getBool(_keyShowEpisodeNumberOnCards) ?? true; // Default: enabled
-  }
-
-  // Hide Spoilers (blur thumbnails and hide descriptions for unwatched episodes)
-  Future<void> setHideSpoilers(bool enabled) async {
-    await prefs.setBool(_keyHideSpoilers, enabled);
-  }
-
-  bool getHideSpoilers() {
-    return prefs.getBool(_keyHideSpoilers) ?? false; // Default: disabled
-  }
-
-  // Show Navigation Bar Labels (mobile bottom nav)
-  Future<void> setShowNavBarLabels(bool enabled) async {
-    await prefs.setBool(_keyShowNavBarLabels, enabled);
-  }
-
-  bool getShowNavBarLabels() {
-    return prefs.getBool(_keyShowNavBarLabels) ?? true; // Default: show labels
-  }
-
-  Future<void> setLiveTvDefaultFavorites(bool enabled) async {
-    await prefs.setBool(_keyLiveTvDefaultFavorites, enabled);
-  }
-
-  bool getLiveTvDefaultFavorites() {
-    return prefs.getBool(_keyLiveTvDefaultFavorites) ?? false;
-  }
-
-  // Global Shader Preset (for MPV video enhancement)
-  Future<void> setGlobalShaderPreset(String presetId) async {
-    await prefs.setString(_keyGlobalShaderPreset, presetId);
-  }
-
-  String getGlobalShaderPreset() {
-    return prefs.getString(_keyGlobalShaderPreset) ?? 'none'; // Default: no shader
-  }
-
-  // Custom Shader Presets
-  List<Map<String, dynamic>> getCustomShaderPresets() {
-    final jsonString = prefs.getString(_keyCustomShaderPresets);
-    if (jsonString == null) return [];
-    try {
-      final List<dynamic> decoded = json.decode(jsonString);
-      return decoded.cast<Map<String, dynamic>>();
-    } catch (_) {
-      return [];
-    }
-  }
-
-  Future<void> setCustomShaderPresets(List<Map<String, dynamic>> presets) async {
-    await prefs.setString(_keyCustomShaderPresets, json.encode(presets));
-  }
-
-  // Require Profile Selection on App Open
-  Future<void> setRequireProfileSelectionOnOpen(bool enabled) async {
-    await prefs.setBool(_keyRequireProfileSelectionOnOpen, enabled);
-  }
-
-  bool getRequireProfileSelectionOnOpen() {
-    return prefs.getBool(_keyRequireProfileSelectionOnOpen) ?? false;
-  }
-
-  // External Player
-  Future<void> setUseExternalPlayer(bool enabled) async {
-    await prefs.setBool(_keyUseExternalPlayer, enabled);
-  }
-
-  bool getUseExternalPlayer() {
-    return prefs.getBool(_keyUseExternalPlayer) ?? false;
-  }
-
-  Future<void> setSelectedExternalPlayer(ExternalPlayer player) async {
-    await prefs.setString(_keySelectedExternalPlayer, player.toJsonString());
-  }
-
-  ExternalPlayer getSelectedExternalPlayer() {
-    final jsonString = prefs.getString(_keySelectedExternalPlayer);
-    if (jsonString == null) return KnownPlayers.systemDefault;
-    try {
-      return ExternalPlayer.fromJsonString(jsonString);
-    } catch (e) {
-      appLogger.d('Failed to parse external player', error: e);
-      return KnownPlayers.systemDefault;
-    }
-  }
-
-  Future<void> setCustomExternalPlayers(List<ExternalPlayer> players) async {
-    final jsonString = json.encode(players.map((p) => p.toJson()).toList());
-    await prefs.setString(_keyCustomExternalPlayers, jsonString);
-  }
-
-  List<ExternalPlayer> getCustomExternalPlayers() {
-    final jsonString = prefs.getString(_keyCustomExternalPlayers);
-    if (jsonString == null) return [];
-    try {
-      final List<dynamic> decoded = json.decode(jsonString);
-      return decoded.map((e) => ExternalPlayer.fromJson(e as Map<String, dynamic>)).toList();
-    } catch (e) {
-      appLogger.d('Failed to parse custom external players', error: e);
-      return [];
-    }
-  }
-
-  Future<void> addCustomExternalPlayer(ExternalPlayer player) async {
-    final players = getCustomExternalPlayers();
-    players.add(player);
-    await setCustomExternalPlayers(players);
-  }
-
-  Future<void> removeCustomExternalPlayer(String id) async {
-    final players = getCustomExternalPlayers();
-    players.removeWhere((p) => p.id == id);
-    await setCustomExternalPlayers(players);
-    // If the removed player was selected, reset to system default
-    if (getSelectedExternalPlayer().id == id) {
-      await setSelectedExternalPlayer(KnownPlayers.systemDefault);
-    }
-  }
-
-  // Confirm Exit on Back (Android TV)
-  Future<void> setConfirmExitOnBack(bool value) async {
-    await prefs.setBool(_keyConfirmExitOnBack, value);
-  }
-
-  bool getConfirmExitOnBack() {
-    return prefs.getBool(_keyConfirmExitOnBack) ?? true; // Default: enabled
-  }
-
-  // Force TV Mode (Android)
-  Future<void> setForceTvMode(bool value) async {
-    await prefs.setBool(_keyForceTvMode, value);
-  }
-
-  bool getForceTvMode() => prefs.getBool(_keyForceTvMode) ?? false;
-
-  // Ambient Lighting
-  Future<void> setAmbientLighting(bool enabled) async {
-    await prefs.setBool(_keyAmbientLighting, enabled);
-  }
-
-  bool getAmbientLighting() {
-    return prefs.getBool(_keyAmbientLighting) ?? false;
-  }
-
-  // Audio Passthrough
-  Future<void> setAudioPassthrough(bool enabled) async {
-    await prefs.setBool(_keyAudioPassthrough, enabled);
-  }
-
-  bool getAudioPassthrough() {
-    return prefs.getBool(_keyAudioPassthrough) ?? false;
-  }
-
-  // Audio Normalization
-  Future<void> setAudioNormalization(bool enabled) async {
-    await prefs.setBool(_keyAudioNormalization, enabled);
-  }
-
-  bool getAudioNormalization() {
-    return prefs.getBool(_keyAudioNormalization) ?? false;
-  }
-
-  // Reset all settings to defaults
   Future<void> resetAllSettings() async {
     await Future.wait([
-      prefs.remove(_keyThemeMode),
-      prefs.remove(_keyEnableDebugLogging),
-      prefs.remove(_keyBufferSize),
-      prefs.remove(_keyKeyboardShortcuts),
-      prefs.remove(_keyKeyboardHotkeys),
-      prefs.remove(_keyEnableHardwareDecoding),
-      prefs.remove(_keyEnableHDR),
-      prefs.remove(_keyPreferredVideoCodec),
-      prefs.remove(_keyPreferredAudioCodec),
-      prefs.remove(_keyLibraryDensity),
-      prefs.remove(_keyViewMode),
-      prefs.remove(_keyUseSeasonPoster), // Legacy key
-      prefs.remove(_keyEpisodePosterMode),
-      prefs.remove(_keyShowHeroSection),
-      prefs.remove(_keySeekTimeSmall),
-      prefs.remove(_keySeekTimeLarge),
-      prefs.remove(_keyMediaVersionPreferences),
-      prefs.remove(_keySleepTimerDuration),
-      prefs.remove(_keyAudioSyncOffset),
-      prefs.remove(_keySubtitleSyncOffset),
-      prefs.remove(_keyVolume),
-      prefs.remove(_keyMaxVolume),
-      prefs.remove(_keySubtitleFontSize),
-      prefs.remove(_keySubtitleTextColor),
-      prefs.remove(_keySubtitleBorderSize),
-      prefs.remove(_keySubtitleBorderColor),
-      prefs.remove(_keySubtitleBackgroundColor),
-      prefs.remove(_keySubtitleBackgroundOpacity),
-      prefs.remove(_keySubtitlePosition),
-      prefs.remove(_keyAppLocale),
-      prefs.remove(_keyRememberTrackSelections),
-      prefs.remove(_keyCustomDownloadPath),
-      prefs.remove(_keyCustomDownloadPathType),
-      prefs.remove(_keyDownloadOnWifiOnly),
-      prefs.remove(_keyAutoCheckUpdatesOnStartup),
-      prefs.remove(_keyVideoPlayerNavigationEnabled),
-      prefs.remove(_keyShowPerformanceOverlay),
-      prefs.remove(_keyAutoHidePerformanceOverlay),
-      prefs.remove(_keyMpvConfigEntries),
-      prefs.remove(_keyMpvConfigText),
-      prefs.remove(_keyMpvConfigPresets),
-      prefs.remove(_keyEnableDiscordRPC),
-      prefs.remove(_keyEnableTraktScrobble),
-      prefs.remove(_keyEnableTraktWatchedSync),
-      prefs.remove(_keyEnableMalScrobble),
-      prefs.remove(_keyEnableAnilistScrobble),
-      prefs.remove(_keyEnableSimklScrobble),
+      ..._resettableKeys().map((k) => prefs.remove(k)),
       ...TrackerService.values.expand(
-        (s) => [
-          prefs.remove('$_prefixTrackerLibraryFilterMode${s.name}'),
-          prefs.remove('$_prefixTrackerLibraryFilterIds${s.name}'),
-        ],
+        (s) => [prefs.remove(trackerFilterModePref(s).key), prefs.remove(trackerFilterIdsPref(s).key)],
       ),
-      prefs.remove(_keyAutoPip),
-      prefs.remove(_keyMatchContentFrameRate),
-      prefs.remove(_keyTunneledPlayback),
-      prefs.remove(_keyDefaultPlaybackSpeed),
-      prefs.remove(_keyDefaultBoxFitMode),
-      prefs.remove(_keyAutoPlayNextEpisode),
-      prefs.remove(_keyUseExoPlayer),
-      prefs.remove(_keyAlwaysKeepSidebarOpen),
-      prefs.remove(_keyShowUnwatchedCount),
-      prefs.remove(_keyShowEpisodeNumberOnCards),
-      prefs.remove(_keyHideSpoilers),
-      prefs.remove(_keyShowNavBarLabels),
-      prefs.remove(_keyGlobalShaderPreset),
-      prefs.remove(_keyCustomShaderPresets),
-      prefs.remove(_keyRequireProfileSelectionOnOpen),
-      prefs.remove(_keyUseExternalPlayer),
-      prefs.remove(_keySelectedExternalPlayer),
-      prefs.remove(_keyCustomExternalPlayers),
-      prefs.remove(_keyConfirmExitOnBack),
-      prefs.remove(_keyForceTvMode),
-      prefs.remove(_keyAmbientLighting),
-      prefs.remove(_keyAudioPassthrough),
-      prefs.remove(_keyAudioNormalization),
-      prefs.remove(_keyBufferSizeMigratedToAuto),
-      prefs.remove(_keyCustomRelayUrl),
     ]);
   }
 
-  // Clear cache (for storage cleanup)
   Future<void> clearCache() async {
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
     await PlexImageCacheManager.instance.emptyCache();
-  }
-
-  // Get all settings as a map for debugging/export
-  Future<Map<String, dynamic>> getAllSettings() async {
-    final hotkeys = await getKeyboardHotkeys();
-    return {
-      'themeMode': getThemeMode().name,
-      'enableDebugLogging': getEnableDebugLogging(),
-      'bufferSize': getBufferSize(),
-      'enableHardwareDecoding': getEnableHardwareDecoding(),
-      'preferredVideoCodec': getPreferredVideoCodec(),
-      'preferredAudioCodec': getPreferredAudioCodec(),
-      'libraryDensity': getLibraryDensity(),
-      'viewMode': getViewMode().name,
-      'episodePosterMode': getEpisodePosterMode().name,
-      'seekTimeSmall': getSeekTimeSmall(),
-      'seekTimeLarge': getSeekTimeLarge(),
-      'keyboardShortcuts': getKeyboardShortcuts(),
-      'keyboardHotkeys': hotkeys.map((key, value) => MapEntry(key, _serializeHotKey(value))),
-      'rememberTrackSelections': getRememberTrackSelections(),
-      'clickVideoTogglesPlayback': getClickVideoTogglesPlayback(),
-      'autoSkipIntro': getAutoSkipIntro(),
-      'autoSkipCredits': getAutoSkipCredits(),
-      'autoSkipDelay': getAutoSkipDelay(),
-      'introPattern': getIntroPattern(),
-      'creditsPattern': getCreditsPattern(),
-    };
   }
 }

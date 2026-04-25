@@ -46,7 +46,7 @@ class RecentRoomsService {
   static const int _maxRooms = 20;
 
   static List<RecentRoom> getRecentRooms() {
-    final json = SettingsService.instanceOrNull?.getRecentRooms();
+    final json = SettingsService.instanceOrNull?.read(SettingsService.recentRooms);
     if (json == null) return [];
     try {
       final list = jsonDecode(json) as List<dynamic>;
@@ -61,7 +61,10 @@ class RecentRoomsService {
   static Future<void> _save(List<RecentRoom> rooms) async {
     rooms.sort((a, b) => b.lastUsed.compareTo(a.lastUsed));
     if (rooms.length > _maxRooms) rooms.removeRange(_maxRooms, rooms.length);
-    await SettingsService.instanceOrNull?.setRecentRooms(jsonEncode(rooms.map((r) => r.toJson()).toList()));
+    await SettingsService.instanceOrNull?.write(
+      SettingsService.recentRooms,
+      jsonEncode(rooms.map((r) => r.toJson()).toList()),
+    );
   }
 
   static Future<void> addOrUpdateRoom(String code, {String? name, ControlMode? controlMode}) async {

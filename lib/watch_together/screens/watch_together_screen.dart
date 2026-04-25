@@ -91,7 +91,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
   @override
   void initState() {
     super.initState();
-    _customRelayUrl = SettingsService.instanceOrNull?.getCustomRelayUrl();
+    _customRelayUrl = SettingsService.instanceOrNull?.read(SettingsService.customRelayUrl);
     _recentRooms = RecentRoomsService.getRecentRooms();
     _checkHealth();
   }

@@ -602,13 +602,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     try {
       // Load buffer size from settings
       final settingsService = await SettingsService.getInstance();
-      _videoPlayerNavigationEnabled = settingsService.getVideoPlayerNavigationEnabled();
-      _autoPipEnabled = settingsService.getAutoPip();
-      _rewindOnResume = settingsService.getRewindOnResume();
-      final bufferSizeMB = settingsService.getBufferSize();
-      final enableHardwareDecoding = settingsService.getEnableHardwareDecoding();
-      final debugLoggingEnabled = settingsService.getEnableDebugLogging();
-      final useExoPlayer = settingsService.getUseExoPlayer();
+      _videoPlayerNavigationEnabled = settingsService.read(SettingsService.videoPlayerNavigationEnabled);
+      _autoPipEnabled = settingsService.read(SettingsService.autoPip);
+      _rewindOnResume = settingsService.read(SettingsService.rewindOnResume);
+      final bufferSizeMB = settingsService.read(SettingsService.bufferSize);
+      final enableHardwareDecoding = settingsService.read(SettingsService.enableHardwareDecoding);
+      final debugLoggingEnabled = settingsService.read(SettingsService.enableDebugLogging);
+      final useExoPlayer = settingsService.read(SettingsService.useExoPlayer);
 
       // Initialize Windows display mode service.
       if (Platform.isWindows) {
@@ -667,7 +667,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await player!.configureSubtitleFonts();
       await player!.setProperty('sub-ass', 'yes'); // Enable libass
       if (Platform.isAndroid && useExoPlayer) {
-        final tunneledPlayback = settingsService.getTunneledPlayback();
+        final tunneledPlayback = settingsService.read(SettingsService.tunneledPlayback);
         await player!.setProperty('tunneled-playback', tunneledPlayback ? 'yes' : 'no');
       }
       if (bufferSizeMB > 0) {
@@ -716,24 +716,24 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await player!.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));
 
       // Subtitle styling
-      await player!.setProperty('sub-font-size', settingsService.getSubtitleFontSize().toString());
-      await player!.setProperty('sub-color', settingsService.getSubtitleTextColor());
-      await player!.setProperty('sub-border-size', settingsService.getSubtitleBorderSize().toString());
-      await player!.setProperty('sub-border-color', settingsService.getSubtitleBorderColor());
-      await player!.setProperty('sub-bold', settingsService.getSubtitleBold() ? 'yes' : 'no');
-      await player!.setProperty('sub-italic', settingsService.getSubtitleItalic() ? 'yes' : 'no');
-      final bgOpacity = (settingsService.getSubtitleBackgroundOpacity() * 255 / 100).toInt();
-      final bgColor = settingsService.getSubtitleBackgroundColor().replaceFirst('#', '');
+      await player!.setProperty('sub-font-size', settingsService.read(SettingsService.subtitleFontSize).toString());
+      await player!.setProperty('sub-color', settingsService.read(SettingsService.subtitleTextColor));
+      await player!.setProperty('sub-border-size', settingsService.read(SettingsService.subtitleBorderSize).toString());
+      await player!.setProperty('sub-border-color', settingsService.read(SettingsService.subtitleBorderColor));
+      await player!.setProperty('sub-bold', settingsService.read(SettingsService.subtitleBold) ? 'yes' : 'no');
+      await player!.setProperty('sub-italic', settingsService.read(SettingsService.subtitleItalic) ? 'yes' : 'no');
+      final bgOpacity = (settingsService.read(SettingsService.subtitleBackgroundOpacity) * 255 / 100).toInt();
+      final bgColor = settingsService.read(SettingsService.subtitleBackgroundColor).replaceFirst('#', '');
       await player!.setProperty(
         'sub-back-color',
         '#${bgOpacity.toRadixString(16).padLeft(2, '0').toUpperCase()}$bgColor',
       );
-      if (settingsService.getSubtitleBackgroundOpacity() > 0) {
+      if (settingsService.read(SettingsService.subtitleBackgroundOpacity) > 0) {
         await player!.setProperty('sub-border-style', 'background-box');
       }
-      await player!.setProperty('sub-ass-override', settingsService.getSubAssOverride().name);
+      await player!.setProperty('sub-ass-override', settingsService.read(SettingsService.subAssOverride).name);
       await player!.setProperty('sub-ass-video-aspect-override', '1');
-      await player!.setProperty('sub-pos', settingsService.getSubtitlePosition().toString());
+      await player!.setProperty('sub-pos', settingsService.read(SettingsService.subtitlePosition).toString());
 
       // Platform-specific settings
       if (Platform.isIOS) {
@@ -742,38 +742,38 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Audio passthrough (desktop only - sends bitstream to receiver)
       if (PlatformDetector.isDesktopOS()) {
-        if (settingsService.getAudioPassthrough()) {
+        if (settingsService.read(SettingsService.audioPassthrough)) {
           await player!.setAudioPassthrough(true);
         }
       }
 
       // HDR is controlled via custom hdr-enabled property on iOS/macOS/Windows
       if (Platform.isIOS || Platform.isMacOS || Platform.isWindows) {
-        final enableHDR = settingsService.getEnableHDR();
+        final enableHDR = settingsService.read(SettingsService.enableHDR);
         await player!.setProperty('hdr-enabled', enableHDR ? 'yes' : 'no');
       }
 
       // Apply audio sync offset
-      final audioSyncOffset = settingsService.getAudioSyncOffset();
+      final audioSyncOffset = settingsService.read(SettingsService.audioSyncOffset);
       if (audioSyncOffset != 0) {
         final offsetSeconds = audioSyncOffset / 1000.0;
         await player!.setProperty('audio-delay', offsetSeconds.toString());
       }
 
       // Apply subtitle sync offset
-      final subtitleSyncOffset = settingsService.getSubtitleSyncOffset();
+      final subtitleSyncOffset = settingsService.read(SettingsService.subtitleSyncOffset);
       if (subtitleSyncOffset != 0) {
         final offsetSeconds = subtitleSyncOffset / 1000.0;
         await player!.setProperty('sub-delay', offsetSeconds.toString());
       }
 
       // Apply audio normalization (loudnorm filter)
-      if (settingsService.getAudioNormalization()) {
+      if (settingsService.read(SettingsService.audioNormalization)) {
         await player!.setProperty('af', 'loudnorm=I=-14:TP=-3:LRA=4');
       }
 
       // Apply custom MPV config entries
-      final customMpvConfig = settingsService.getEnabledMpvConfigEntries();
+      final customMpvConfig = SettingsService.parseMpvConfigText(settingsService.read(SettingsService.mpvConfigText));
       for (final entry in customMpvConfig.entries) {
         try {
           await player!.setProperty(entry.key, entry.value);
@@ -784,11 +784,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
 
       // Set max volume limit for volume boost
-      final maxVolume = settingsService.getMaxVolume();
+      final maxVolume = settingsService.read(SettingsService.maxVolume);
       await player!.setProperty('volume-max', maxVolume.toString());
 
       // Apply saved volume (clamped to max volume)
-      final savedVolume = settingsService.getVolume().clamp(0.0, maxVolume.toDouble());
+      final savedVolume = settingsService.read(SettingsService.volume).clamp(0.0, maxVolume.toDouble());
       player!.setVolume(savedVolume);
 
       // Notify that player is ready
@@ -815,7 +815,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (mounted) {
         try {
           // Check rotation lock setting before applying orientation
-          final isRotationLocked = settingsService.getRotationLocked();
+          final isRotationLocked = settingsService.read(SettingsService.rotationLocked);
 
           if (isRotationLocked) {
             // Locked: Apply landscape orientation only
@@ -906,7 +906,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player'));
 
           // Apply frame rate matching on Android if enabled
-          if (Platform.isAndroid && settingsService.getMatchContentFrameRate()) {
+          if (Platform.isAndroid && settingsService.read(SettingsService.matchContentFrameRate)) {
             await _applyFrameRateMatching();
           }
 
@@ -933,7 +933,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
             // Apply frame rate matching here too, since this fallback may fire
             // before playbackRestart (race condition with resume positions > 0)
-            if (Platform.isAndroid && settingsService.getMatchContentFrameRate()) {
+            if (Platform.isAndroid && settingsService.read(SettingsService.matchContentFrameRate)) {
               _applyFrameRateMatching();
             }
           }
@@ -1005,7 +1005,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _frameRateMatchingApplied = true;
       final durationMs = player!.state.duration.inMilliseconds;
       final settingsService = await SettingsService.getInstance();
-      final delaySec = settingsService.getDisplaySwitchDelay();
+      final delaySec = settingsService.read(SettingsService.displaySwitchDelay);
 
       // Suppress spurious PauseEvent from MediaSession during HDMI renegotiation.
       // Fire Stick (and similar Android TV devices) send onPause() through the
@@ -1525,7 +1525,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final settingsService = await SettingsService.getInstance();
       final preKnownFps = result.mediaInfo?.frameRate;
       final willAutoSwitch =
-          Platform.isAndroid && settingsService.getMatchContentFrameRate() && preKnownFps != null && preKnownFps > 0;
+          Platform.isAndroid &&
+          settingsService.read(SettingsService.matchContentFrameRate) &&
+          preKnownFps != null &&
+          preKnownFps > 0;
 
       // Open video through Player
       if (result.videoUrl != null) {
@@ -1588,15 +1591,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // Must be called after open() since that's when ExoPlayer initializes
         if (player is PlayerAndroid) {
           await (player as PlayerAndroid).setSubtitleStyle(
-            fontSize: settingsService.getSubtitleFontSize().toDouble(),
-            textColor: settingsService.getSubtitleTextColor(),
-            borderSize: settingsService.getSubtitleBorderSize().toDouble(),
-            borderColor: settingsService.getSubtitleBorderColor(),
-            bgColor: settingsService.getSubtitleBackgroundColor(),
-            bgOpacity: settingsService.getSubtitleBackgroundOpacity(),
-            subtitlePosition: settingsService.getSubtitlePosition(),
-            bold: settingsService.getSubtitleBold(),
-            italic: settingsService.getSubtitleItalic(),
+            fontSize: settingsService.read(SettingsService.subtitleFontSize).toDouble(),
+            textColor: settingsService.read(SettingsService.subtitleTextColor),
+            borderSize: settingsService.read(SettingsService.subtitleBorderSize).toDouble(),
+            borderColor: settingsService.read(SettingsService.subtitleBorderColor),
+            bgColor: settingsService.read(SettingsService.subtitleBackgroundColor),
+            bgOpacity: settingsService.read(SettingsService.subtitleBackgroundOpacity),
+            subtitlePosition: settingsService.read(SettingsService.subtitlePosition),
+            bold: settingsService.read(SettingsService.subtitleBold),
+            italic: settingsService.read(SettingsService.subtitleItalic),
           );
         }
 
@@ -1714,7 +1717,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // the switch has settled.
         if (willAutoSwitch && mounted && player != null) {
           _frameRateMatchingApplied = true;
-          final delaySec = settingsService.getDisplaySwitchDelay();
+          final delaySec = settingsService.read(SettingsService.displaySwitchDelay);
           final durationMs = _currentMetadata.duration ?? player!.state.duration.inMilliseconds;
           _suppressMediaPauseDuringFrameRateSwitch = true;
           Future.delayed(Duration(seconds: 2 + delaySec + 1), () {
@@ -1854,8 +1857,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       player: player!,
       availableVersions: _availableVersions,
       selectedMediaIndex: widget.selectedMediaIndex,
-      initialBoxFitMode: settings.getDefaultBoxFitMode(),
-      onBoxFitModeChanged: (mode) => settings.setDefaultBoxFitMode(mode),
+      initialBoxFitMode: settings.read(SettingsService.defaultBoxFitMode),
+      onBoxFitModeChanged: (mode) => settings.write(SettingsService.defaultBoxFitMode, mode),
     );
     _videoFilterManager!.updateVideoFilter();
 
@@ -1902,7 +1905,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     try {
       final shaderProvider = context.read<ShaderProvider>();
       final settings = await SettingsService.getInstance();
-      final presetId = settings.getGlobalShaderPreset();
+      final presetId = settings.read(SettingsService.globalShaderPreset);
       final preset =
           (shaderProvider.initialized ? shaderProvider.findPresetById(presetId) : ShaderPreset.fromId(presetId)) ??
           ShaderPreset.none;
@@ -1918,7 +1921,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _restoreAmbientLighting() async {
     final shaderProvider = context.read<ShaderProvider>();
     final settings = await SettingsService.getInstance();
-    if (!settings.getAmbientLighting()) return;
+    if (!settings.read(SettingsService.ambientLighting)) return;
 
     final ambientLighting = _ambientLightingService;
     if (ambientLighting == null || !ambientLighting.isSupported) return;
@@ -2005,7 +2008,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Persist ambient lighting state
     final settings = await SettingsService.getInstance();
-    settings.setAmbientLighting(ambientLighting.isEnabled);
+    settings.write(SettingsService.ambientLighting, ambientLighting.isEnabled);
 
     if (mounted) setState(() {});
   }
@@ -2123,7 +2126,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     receiver.onSeekForward = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
-      final seekSeconds = settings.getSeekTimeSmall();
+      final seekSeconds = settings.read(SettingsService.seekTimeSmall);
       if (widget.isLive && _captureBuffer != null) {
         await _seekLivePosition(_currentPositionEpoch + seekSeconds);
         return;
@@ -2134,7 +2137,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     receiver.onSeekBackward = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
-      final seekSeconds = settings.getSeekTimeSmall();
+      final seekSeconds = settings.read(SettingsService.seekTimeSmall);
       if (widget.isLive && _captureBuffer != null) {
         await _seekLivePosition(_currentPositionEpoch - seekSeconds);
         return;
@@ -2145,25 +2148,25 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     receiver.onVolumeUp = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
-      final maxVol = settings.getMaxVolume().toDouble();
+      final maxVol = settings.read(SettingsService.maxVolume).toDouble();
       final newVolume = (player!.state.volume + 10).clamp(0.0, maxVol);
       player!.setVolume(newVolume);
-      settings.setVolume(newVolume);
+      settings.write(SettingsService.volume, newVolume);
     };
     receiver.onVolumeDown = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
-      final maxVol = settings.getMaxVolume().toDouble();
+      final maxVol = settings.read(SettingsService.maxVolume).toDouble();
       final newVolume = (player!.state.volume - 10).clamp(0.0, maxVol);
       player!.setVolume(newVolume);
-      settings.setVolume(newVolume);
+      settings.write(SettingsService.volume, newVolume);
     };
     receiver.onVolumeMute = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
       final newVolume = player!.state.volume > 0 ? 0.0 : 100.0;
       player!.setVolume(newVolume);
-      settings.setVolume(newVolume);
+      settings.write(SettingsService.volume, newVolume);
     };
     receiver.onSubtitles = _cycleSubtitleTrack;
     receiver.onAudioTracks = _cycleAudioTrack;
@@ -2489,7 +2492,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final isKeyboardMode = PlatformDetector.isTV() && InputModeTracker.isKeyboardMode(context);
 
       final settings = await SettingsService.getInstance();
-      final autoPlayEnabled = settings.getAutoPlayNextEpisode();
+      final autoPlayEnabled = settings.read(SettingsService.autoPlayNextEpisode);
 
       if (!mounted) return;
       setState(() {

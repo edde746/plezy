@@ -136,13 +136,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
 
     if (!mounted) return;
     setState(() {
-      _crashReporting = _settingsService.getCrashReporting();
-      _enableDebugLogging = _settingsService.getEnableDebugLogging();
-      _downloadOnWifiOnly = _settingsService.getDownloadOnWifiOnly();
-      _autoRemoveWatchedDownloads = _settingsService.getAutoRemoveWatchedDownloads();
-      _autoCheckUpdatesOnStartup = _settingsService.getAutoCheckUpdatesOnStartup();
-      _videoPlayerNavigationEnabled = _settingsService.getVideoPlayerNavigationEnabled();
-      _customRelayUrl = _settingsService.getCustomRelayUrl();
+      _crashReporting = _settingsService.read(settings.SettingsService.crashReporting);
+      _enableDebugLogging = _settingsService.read(settings.SettingsService.enableDebugLogging);
+      _downloadOnWifiOnly = _settingsService.read(settings.SettingsService.downloadOnWifiOnly);
+      _autoRemoveWatchedDownloads = _settingsService.read(settings.SettingsService.autoRemoveWatchedDownloads);
+      _autoCheckUpdatesOnStartup = _settingsService.read(settings.SettingsService.autoCheckUpdatesOnStartup);
+      _videoPlayerNavigationEnabled = _settingsService.read(settings.SettingsService.videoPlayerNavigationEnabled);
+      _customRelayUrl = _settingsService.read(settings.SettingsService.customRelayUrl);
       _isLoading = false;
     });
   }
@@ -312,7 +312,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           value: _downloadOnWifiOnly,
           onChanged: (value) async {
             setState(() => _downloadOnWifiOnly = value);
-            await _settingsService.setDownloadOnWifiOnly(value);
+            await _settingsService.write(settings.SettingsService.downloadOnWifiOnly, value);
           },
         ),
         SwitchListTile(
@@ -323,7 +323,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           value: _autoRemoveWatchedDownloads,
           onChanged: (value) async {
             setState(() => _autoRemoveWatchedDownloads = value);
-            await _settingsService.setAutoRemoveWatchedDownloads(value);
+            await _settingsService.write(settings.SettingsService.autoRemoveWatchedDownloads, value);
           },
         ),
       ],
@@ -358,7 +358,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           value: _videoPlayerNavigationEnabled,
           onChanged: (value) async {
             setState(() => _videoPlayerNavigationEnabled = value);
-            await _settingsService.setVideoPlayerNavigationEnabled(value);
+            await _settingsService.write(settings.SettingsService.videoPlayerNavigationEnabled, value);
           },
         ),
       ],
@@ -386,7 +386,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           value: _crashReporting,
           onChanged: (value) async {
             setState(() => _crashReporting = value);
-            await _settingsService.setCrashReporting(value);
+            await _settingsService.write(settings.SettingsService.crashReporting, value);
           },
         ),
         SwitchListTile(
@@ -397,7 +397,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           value: _enableDebugLogging,
           onChanged: (value) async {
             setState(() => _enableDebugLogging = value);
-            await _settingsService.setEnableDebugLogging(value);
+            await _settingsService.write(settings.SettingsService.enableDebugLogging, value);
           },
         ),
         ListTile(
@@ -486,7 +486,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       value: _autoCheckUpdatesOnStartup,
       onChanged: (value) async {
         setState(() => _autoCheckUpdatesOnStartup = value);
-        await _settingsService.setAutoCheckUpdatesOnStartup(value);
+        await _settingsService.write(settings.SettingsService.autoCheckUpdatesOnStartup, value);
       },
     );
   }
@@ -625,7 +625,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           }
         }
 
-        await _settingsService.setCustomDownloadPath(selectedPath, type: pathType);
+        await _settingsService.write(settings.SettingsService.customDownloadPath, selectedPath);
+        await _settingsService.write(settings.SettingsService.customDownloadPathType, pathType);
         await DownloadStorageService.instance.refreshCustomPath();
 
         if (mounted) {
@@ -642,7 +643,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   }
 
   Future<void> _resetDownloadLocation() async {
-    await _settingsService.setCustomDownloadPath(null);
+    await _settingsService.write(settings.SettingsService.customDownloadPath, null);
+    await _settingsService.write(settings.SettingsService.customDownloadPathType, null);
     await DownloadStorageService.instance.refreshCustomPath();
 
     if (mounted) {
@@ -672,7 +674,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             DialogActionButton(
               onPressed: () async {
                 controller.clear();
-                await _settingsService.setCustomRelayUrl(null);
+                await _settingsService.write(settings.SettingsService.customRelayUrl, null);
                 if (mounted) setState(() => _customRelayUrl = null);
                 if (dialogContext.mounted) Navigator.pop(dialogContext);
               },
@@ -683,7 +685,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               focusNode: saveFocusNode,
               onPressed: () async {
                 final url = controller.text.trim().isEmpty ? null : controller.text.trim();
-                await _settingsService.setCustomRelayUrl(url);
+                await _settingsService.write(settings.SettingsService.customRelayUrl, url);
                 if (mounted) setState(() => _customRelayUrl = url);
                 if (dialogContext.mounted) Navigator.pop(dialogContext);
               },
@@ -764,7 +766,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       if (!mounted) return;
       if (result == null) return; // user cancelled file picker
 
-      LocaleSettings.setLocale(_settingsService.getAppLocale());
+      LocaleSettings.setLocale(_settingsService.read(settings.SettingsService.appLocale));
       await Future.wait([
         themeProvider.reload(),
         settingsProvider.reload(),

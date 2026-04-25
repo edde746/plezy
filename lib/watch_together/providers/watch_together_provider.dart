@@ -210,7 +210,7 @@ class WatchTogetherProvider with ChangeNotifier {
 
     appLogger.d('WatchTogether: Creating session with control mode: $controlMode');
 
-    final customRelayUrl = SettingsService.instanceOrNull?.getCustomRelayUrl();
+    final customRelayUrl = SettingsService.instanceOrNull?.read(SettingsService.customRelayUrl);
     _peerService = WatchTogetherPeerService(customBaseUrl: customRelayUrl);
     _setupPeerServiceListeners();
 
@@ -258,7 +258,7 @@ class WatchTogetherProvider with ChangeNotifier {
 
     appLogger.d('WatchTogether: Joining session: $sessionId');
 
-    final customRelayUrl = SettingsService.instanceOrNull?.getCustomRelayUrl();
+    final customRelayUrl = SettingsService.instanceOrNull?.read(SettingsService.customRelayUrl);
     _peerService = WatchTogetherPeerService(customBaseUrl: customRelayUrl);
     _setupPeerServiceListeners();
 
@@ -312,7 +312,7 @@ class WatchTogetherProvider with ChangeNotifier {
     // Probe the relay with a lightweight peer service to check room occupancy,
     // then do a single createSession or joinSession. This avoids the crash-prone
     // join→teardown→create cycle on the provider.
-    final customRelayUrl = SettingsService.instanceOrNull?.getCustomRelayUrl();
+    final customRelayUrl = SettingsService.instanceOrNull?.read(SettingsService.customRelayUrl);
     final probe = WatchTogetherPeerService(customBaseUrl: customRelayUrl);
     bool shouldBeHost;
     try {

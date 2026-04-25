@@ -47,14 +47,14 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
 
     if (!mounted) return;
     setState(() {
-      _textController.text = _settingsService.getMpvConfigText();
-      _presets = _settingsService.getMpvPresets();
+      _textController.text = _settingsService.read(SettingsService.mpvConfigText);
+      _presets = _settingsService.read(SettingsService.mpvPresets);
       _isLoading = false;
     });
   }
 
   Future<void> _saveText() async {
-    await _settingsService.setMpvConfigText(_textController.text);
+    await _settingsService.write(SettingsService.mpvConfigText, _textController.text);
   }
 
   Future<void> _showSavePresetDialog() async {
@@ -71,7 +71,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
       await _settingsService.saveMpvPreset(name.trim(), _textController.text);
       if (!mounted) return;
       setState(() {
-        _presets = _settingsService.getMpvPresets();
+        _presets = _settingsService.read(SettingsService.mpvPresets);
       });
 
       if (mounted) {
@@ -84,7 +84,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
     await _settingsService.loadMpvPreset(preset.name);
     if (!mounted) return;
     setState(() {
-      _textController.text = _settingsService.getMpvConfigText();
+      _textController.text = _settingsService.read(SettingsService.mpvConfigText);
     });
 
     if (mounted) {
@@ -103,7 +103,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> {
       await _settingsService.deleteMpvPreset(preset.name);
       if (!mounted) return;
       setState(() {
-        _presets = _settingsService.getMpvPresets();
+        _presets = _settingsService.read(SettingsService.mpvPresets);
       });
 
       if (mounted) {

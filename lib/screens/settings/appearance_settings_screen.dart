@@ -26,9 +26,6 @@ class AppearanceSettingsScreen extends StatefulWidget {
 class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
   late settings.SettingsService _settingsService;
   bool _isLoading = true;
-  bool _requireProfileSelectionOnOpen = false;
-  bool _confirmExitOnBack = true;
-  bool _forceTvMode = false;
 
   @override
   void initState() {
@@ -39,12 +36,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
   Future<void> _loadSettings() async {
     _settingsService = await settings.SettingsService.getInstance();
     if (!mounted) return;
-    setState(() {
-      _requireProfileSelectionOnOpen = _settingsService.getRequireProfileSelectionOnOpen();
-      _confirmExitOnBack = _settingsService.getConfirmExitOnBack();
-      _forceTvMode = _settingsService.getForceTvMode();
-      _isLoading = false;
-    });
+    setState(() => _isLoading = false);
   }
 
   @override
@@ -135,7 +127,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
           currentValue: LocaleSettings.currentLocale,
         );
         if (value != null) {
-          await _settingsService.setAppLocale(value);
+          await _settingsService.write(settings.SettingsService.appLocale, value);
           LocaleSettings.setLocale(value);
           _restartApp();
         }
@@ -333,45 +325,55 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
     return Consumer<UserProfileProvider>(
       builder: (context, userProfileProvider, child) {
         if (!userProfileProvider.hasMultipleUsers) return const SizedBox.shrink();
-        return SwitchListTile(
-          secondary: const AppIcon(Symbols.person_rounded, fill: 1),
-          title: Text(t.settings.requireProfileSelectionOnOpen),
-          subtitle: Text(t.settings.requireProfileSelectionOnOpenDescription),
-          value: _requireProfileSelectionOnOpen,
-          onChanged: (value) async {
-            setState(() => _requireProfileSelectionOnOpen = value);
-            await _settingsService.setRequireProfileSelectionOnOpen(value);
-          },
+        return _buildListenableSwitch(
+          icon: Symbols.person_rounded,
+          title: t.settings.requireProfileSelectionOnOpen,
+          subtitle: t.settings.requireProfileSelectionOnOpenDescription,
+          pref: settings.SettingsService.requireProfileSelectionOnOpen,
         );
       },
     );
   }
 
-  Widget _buildConfirmExitOnBack() {
-    return SwitchListTile(
-      secondary: const AppIcon(Symbols.exit_to_app_rounded, fill: 1),
-      title: Text(t.settings.confirmExitOnBack),
-      subtitle: Text(t.settings.confirmExitOnBackDescription),
-      value: _confirmExitOnBack,
-      onChanged: (value) async {
-        setState(() => _confirmExitOnBack = value);
-        await _settingsService.setConfirmExitOnBack(value);
-      },
-    );
-  }
+  Widget _buildConfirmExitOnBack() => _buildListenableSwitch(
+    icon: Symbols.exit_to_app_rounded,
+    title: t.settings.confirmExitOnBack,
+    subtitle: t.settings.confirmExitOnBackDescription,
+    pref: settings.SettingsService.confirmExitOnBack,
+  );
 
-  Widget _buildForceTvMode() {
-    return SwitchListTile(
-      secondary: const AppIcon(Symbols.tv_rounded, fill: 1),
-      title: Text(t.settings.forceTvMode),
-      subtitle: Text(t.settings.forceTvModeDescription),
-      value: _forceTvMode,
-      onChanged: (value) async {
-        setState(() => _forceTvMode = value);
-        await _settingsService.setForceTvMode(value);
-        TvDetectionService.setForceTVSync(value);
-        if (mounted) _restartApp();
-      },
+  Widget _buildForceTvMode() => _buildListenableSwitch(
+    icon: Symbols.tv_rounded,
+    title: t.settings.forceTvMode,
+    subtitle: t.settings.forceTvModeDescription,
+    pref: settings.SettingsService.forceTvMode,
+    onAfterWrite: (value) {
+      TvDetectionService.setForceTVSync(value);
+      if (mounted) _restartApp();
+    },
+  );
+
+  /// Generic bool toggle that listens to a [Pref] directly via [ValueNotifier].
+  /// No local state; rebuilds across the app stay consistent.
+  Widget _buildListenableSwitch({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required settings.Pref<bool> pref,
+    void Function(bool)? onAfterWrite,
+  }) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: _settingsService.listenable(pref),
+      builder: (_, value, _) => SwitchListTile(
+        secondary: AppIcon(icon, fill: 1),
+        title: Text(title),
+        subtitle: Text(subtitle),
+        value: value,
+        onChanged: (v) async {
+          await _settingsService.write(pref, v);
+          onAfterWrite?.call(v);
+        },
+      ),
     );
   }
 

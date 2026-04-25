@@ -35,7 +35,7 @@ class MalTracker extends TrackerBase {
   bool get hasActiveClient => _client != null;
 
   @override
-  bool readEnabledSetting(SettingsService settings) => settings.getEnableMalScrobble();
+  bool readEnabledSetting(SettingsService settings) => settings.read(SettingsService.enableMalScrobble);
 
   void rebindSession(
     MalSession? session, {

@@ -44,16 +44,16 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
 
     if (!mounted) return;
     setState(() {
-      _fontSize = _settingsService.getSubtitleFontSize();
-      _textColor = _settingsService.getSubtitleTextColor();
-      _borderSize = _settingsService.getSubtitleBorderSize();
-      _borderColor = _settingsService.getSubtitleBorderColor();
-      _backgroundColor = _settingsService.getSubtitleBackgroundColor();
-      _backgroundOpacity = _settingsService.getSubtitleBackgroundOpacity();
-      _subtitlePosition = _settingsService.getSubtitlePosition();
-      _assOverride = _settingsService.getSubAssOverride();
-      _bold = _settingsService.getSubtitleBold();
-      _italic = _settingsService.getSubtitleItalic();
+      _fontSize = _settingsService.read(SettingsService.subtitleFontSize);
+      _textColor = _settingsService.read(SettingsService.subtitleTextColor);
+      _borderSize = _settingsService.read(SettingsService.subtitleBorderSize);
+      _borderColor = _settingsService.read(SettingsService.subtitleBorderColor);
+      _backgroundColor = _settingsService.read(SettingsService.subtitleBackgroundColor);
+      _backgroundOpacity = _settingsService.read(SettingsService.subtitleBackgroundOpacity);
+      _subtitlePosition = _settingsService.read(SettingsService.subtitlePosition);
+      _assOverride = _settingsService.read(SettingsService.subAssOverride);
+      _bold = _settingsService.read(SettingsService.subtitleBold);
+      _italic = _settingsService.read(SettingsService.subtitleItalic);
       _isLoading = false;
     });
   }
@@ -200,7 +200,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 );
                 if (value != null) {
                   setState(() => _assOverride = value);
-                  await _settingsService.setSubAssOverride(value);
+                  await _settingsService.write(SettingsService.subAssOverride, value);
                 }
               },
             ),
@@ -219,7 +219,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 currentValue: _fontSize,
                 onSave: (value) async {
                   setState(() => _fontSize = value);
-                  await _settingsService.setSubtitleFontSize(value);
+                  await _settingsService.write(SettingsService.subtitleFontSize, value);
                 },
               ),
             ),
@@ -238,7 +238,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
               onTap: () => _openColorPicker(t.subtitlingStyling.textColor, _textColor, (color) {
                 setState(() => _textColor = color);
-                _settingsService.setSubtitleTextColor(color);
+                _settingsService.write(SettingsService.subtitleTextColor, color);
               }),
             ),
             ListTile(
@@ -256,7 +256,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 currentValue: _subtitlePosition,
                 onSave: (value) async {
                   setState(() => _subtitlePosition = value);
-                  await _settingsService.setSubtitlePosition(value);
+                  await _settingsService.write(SettingsService.subtitlePosition, value);
                 },
               ),
             ),
@@ -266,7 +266,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               value: _bold,
               onChanged: (value) async {
                 setState(() => _bold = value);
-                await _settingsService.setSubtitleBold(value);
+                await _settingsService.write(SettingsService.subtitleBold, value);
               },
             ),
             SwitchListTile(
@@ -275,7 +275,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               value: _italic,
               onChanged: (value) async {
                 setState(() => _italic = value);
-                await _settingsService.setSubtitleItalic(value);
+                await _settingsService.write(SettingsService.subtitleItalic, value);
               },
             ),
 
@@ -296,7 +296,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 currentValue: _borderSize,
                 onSave: (value) async {
                   setState(() => _borderSize = value);
-                  await _settingsService.setSubtitleBorderSize(value);
+                  await _settingsService.write(SettingsService.subtitleBorderSize, value);
                 },
               ),
             ),
@@ -315,7 +315,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
               onTap: () => _openColorPicker(t.subtitlingStyling.borderColor, _borderColor, (color) {
                 setState(() => _borderColor = color);
-                _settingsService.setSubtitleBorderColor(color);
+                _settingsService.write(SettingsService.subtitleBorderColor, color);
               }),
             ),
 
@@ -336,7 +336,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
                 currentValue: _backgroundOpacity,
                 onSave: (value) async {
                   setState(() => _backgroundOpacity = value);
-                  await _settingsService.setSubtitleBackgroundOpacity(value);
+                  await _settingsService.write(SettingsService.subtitleBackgroundOpacity, value);
                 },
               ),
             ),
@@ -355,7 +355,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
               onTap: () => _openColorPicker(t.subtitlingStyling.backgroundColor, _backgroundColor, (color) {
                 setState(() => _backgroundColor = color);
-                _settingsService.setSubtitleBackgroundColor(color);
+                _settingsService.write(SettingsService.subtitleBackgroundColor, color);
               }),
             ),
             const SizedBox(height: 24),

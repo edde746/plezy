@@ -55,7 +55,7 @@ class TraktScrobbleService {
     if (_isInitialized) return;
     _isInitialized = true;
     final settings = await SettingsService.getInstance();
-    _isEnabled = settings.getEnableTraktScrobble();
+    _isEnabled = settings.read(SettingsService.enableTraktScrobble);
   }
 
   Future<void> setEnabled(bool enabled) async {

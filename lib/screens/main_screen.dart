@@ -199,7 +199,8 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     final needsInitial = userProfileProvider.needsInitialProfileSelection;
     final settingsService = await SettingsService.getInstance();
     if (!mounted) return;
-    final requireOnOpen = settingsService.getRequireProfileSelectionOnOpen() && userProfileProvider.hasMultipleUsers;
+    final requireOnOpen =
+        settingsService.read(SettingsService.requireProfileSelectionOnOpen) && userProfileProvider.hasMultipleUsers;
 
     if (!needsInitial && !requireOnOpen) return;
 
@@ -214,7 +215,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     if (!mounted) return;
 
     final settingsService = await SettingsService.getInstance();
-    if (!settingsService.getAutoCheckUpdatesOnStartup()) return;
+    if (!settingsService.read(SettingsService.autoCheckUpdatesOnStartup)) return;
 
     // Native updater (Sparkle/WinSparkle) handles everything — skip Flutter dialog
     if (UpdateService.useNativeUpdater) {
@@ -449,7 +450,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   Future<void> _autoStartCompanionRemoteServer(CompanionRemoteProvider companionRemote) async {
     try {
       final settings = await SettingsService.getInstance();
-      if (!settings.getEnableCompanionRemoteServer()) return;
+      if (!settings.read(SettingsService.enableCompanionRemoteServer)) return;
       if (!mounted) return;
 
       final home = context.read<UserProfileProvider>().home;
@@ -510,7 +511,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
   Future<void> _showProfileSelectionOnResume() async {
     final settingsService = await SettingsService.getInstance();
-    if (!settingsService.getRequireProfileSelectionOnOpen()) return;
+    if (!settingsService.read(SettingsService.requireProfileSelectionOnOpen)) return;
     if (!mounted) return;
 
     final userProfileProvider = context.read<UserProfileProvider>();
@@ -682,7 +683,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     return handleBackKeyAction(event, () async {
       if (PlatformDetector.isTV()) {
         final settings = await SettingsService.getInstance();
-        if (settings.getConfirmExitOnBack() && mounted) {
+        if (settings.read(SettingsService.confirmExitOnBack) && mounted) {
           final result = await showConfirmDialogWithCheckbox(
             context,
             title: t.common.exitConfirmTitle,
@@ -691,7 +692,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
             checkboxLabel: t.common.dontAskAgain,
           );
           if (result.checked) {
-            await settings.setConfirmExitOnBack(false);
+            await settings.write(SettingsService.confirmExitOnBack, false);
           }
           if (!result.confirmed) return;
         }

@@ -185,7 +185,7 @@ class OfflineWatchProvider extends ChangeNotifier {
   /// Auto-delete a download if the auto-remove setting is enabled.
   void _autoDeleteIfWatched(String serverId, String ratingKey) {
     final settings = SettingsService.instanceOrNull;
-    if (settings == null || !settings.getAutoRemoveWatchedDownloads()) return;
+    if (settings == null || !settings.read(SettingsService.autoRemoveWatchedDownloads)) return;
 
     final globalKey = buildGlobalKey(serverId, ratingKey);
     final meta = _downloadProvider.getMetadata(globalKey);

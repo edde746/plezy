@@ -47,8 +47,8 @@ class DownloadStorageService {
   /// Initialize with settings service (call during app startup)
   Future<void> initialize(SettingsService settingsService) async {
     _settingsService = settingsService;
-    _customDownloadPath = settingsService.getCustomDownloadPath();
-    _customPathType = settingsService.getCustomDownloadPathType();
+    _customDownloadPath = settingsService.read(SettingsService.customDownloadPath);
+    _customPathType = settingsService.read(SettingsService.customDownloadPathType) ?? 'file';
     // Reset cached directories to force recalculation
     _baseDownloadsDir = null;
     _artworkDirectoryPath = null;
@@ -60,8 +60,8 @@ class DownloadStorageService {
   /// Refresh custom path from settings (call when settings change)
   Future<void> refreshCustomPath() async {
     if (_settingsService != null) {
-      _customDownloadPath = _settingsService!.getCustomDownloadPath();
-      _customPathType = _settingsService!.getCustomDownloadPathType();
+      _customDownloadPath = _settingsService!.read(SettingsService.customDownloadPath);
+      _customPathType = _settingsService!.read(SettingsService.customDownloadPathType) ?? 'file';
       _baseDownloadsDir = null;
       _artworkDirectoryPath = null;
       await getArtworkDirectory();

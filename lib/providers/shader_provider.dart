@@ -23,10 +23,10 @@ class ShaderProvider extends ChangeNotifier {
     _settingsService = await SettingsService.getInstance();
 
     // Load custom presets from storage
-    final customData = _settingsService.getCustomShaderPresets();
+    final customData = _settingsService.read(SettingsService.customShaderPresets);
     _customPresets = customData.map((json) => ShaderPreset.fromJson(json)).toList();
 
-    final presetId = _settingsService.getGlobalShaderPreset();
+    final presetId = _settingsService.read(SettingsService.globalShaderPreset);
     _savedPreset = findPresetById(presetId) ?? ShaderPreset.none;
     _currentPreset = _savedPreset;
 
@@ -62,7 +62,7 @@ class ShaderProvider extends ChangeNotifier {
   Future<void> setPreset(ShaderPreset preset) async {
     _savedPreset = preset;
     _currentPreset = preset;
-    await _settingsService.setGlobalShaderPreset(preset.id);
+    await _settingsService.write(SettingsService.globalShaderPreset, preset.id);
     notifyListeners();
   }
 
@@ -100,7 +100,7 @@ class ShaderProvider extends ChangeNotifier {
     if (_currentPreset.id == preset.id || _savedPreset.id == preset.id) {
       _savedPreset = ShaderPreset.none;
       _currentPreset = ShaderPreset.none;
-      await _settingsService.setGlobalShaderPreset(ShaderPreset.none.id);
+      await _settingsService.write(SettingsService.globalShaderPreset, ShaderPreset.none.id);
     }
 
     notifyListeners();
@@ -108,7 +108,7 @@ class ShaderProvider extends ChangeNotifier {
 
   Future<void> _saveCustomPresets() async {
     final data = _customPresets.map((p) => p.toJson()).toList();
-    await _settingsService.setCustomShaderPresets(data);
+    await _settingsService.write(SettingsService.customShaderPresets, data);
   }
 
   /// Reset to default (no shaders)

@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import 'file_picker_service.dart';
+import 'settings_service.dart';
 import 'storage_service.dart';
 
 class ImportResult {
@@ -101,7 +102,7 @@ class SettingsExportService {
   /// prefix stripped so they can be re-scoped on import. Keys belonging to any
   /// OTHER user are skipped (we only export the active user's prefs).
   static Map<String, dynamic> buildExportMap(
-    SharedPreferences prefs, {
+    SharedPreferencesWithCache prefs, {
     String? currentUserUuid,
     String appVersion = '',
   }) {
@@ -110,7 +111,7 @@ class SettingsExportService {
         ? '$_userPrefixRoot${currentUserUuid}_'
         : null;
 
-    for (final fullKey in prefs.getKeys()) {
+    for (final fullKey in prefs.keys) {
       String baseKey;
       if (currentUserPrefix != null && fullKey.startsWith(currentUserPrefix)) {
         baseKey = fullKey.substring(currentUserPrefix.length);
@@ -159,7 +160,7 @@ class SettingsExportService {
   /// Throws [SettingsExportException] for structural problems.
   static Future<ImportResult> applyImportMap(
     Map<String, dynamic> data,
-    SharedPreferences prefs, {
+    SharedPreferencesWithCache prefs, {
     required String currentUserUuid,
   }) async {
     final version = data['formatVersion'];
@@ -222,7 +223,7 @@ class SettingsExportService {
     return prefixes.any(baseKey.startsWith);
   }
 
-  static Future<bool> _writeTyped(SharedPreferences prefs, String key, String type, Object? value) async {
+  static Future<bool> _writeTyped(SharedPreferencesWithCache prefs, String key, String type, Object? value) async {
     try {
       switch (type) {
         case _typeBool:
@@ -270,7 +271,7 @@ class SettingsExportService {
   ///
   /// Throws [SettingsExportException] on failure.
   static Future<String?> exportToFile() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = (await SettingsService.getInstance()).prefs;
     final storage = await StorageService.getInstance();
     String appVersion = '';
     try {
@@ -359,7 +360,7 @@ class SettingsExportService {
       throw const InvalidExportFileException('Invalid export file');
     }
 
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = (await SettingsService.getInstance()).prefs;
     return applyImportMap(data, prefs, currentUserUuid: uuid);
   }
 }

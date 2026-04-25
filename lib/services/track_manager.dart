@@ -180,7 +180,7 @@ class TrackManager {
         preferredAudioTrack: preferredAudioTrack,
         preferredSubtitleTrack: preferredSubtitleTrack,
         preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
-        defaultPlaybackSpeed: settingsService.getDefaultPlaybackSpeed(),
+        defaultPlaybackSpeed: settingsService.read(SettingsService.defaultPlaybackSpeed),
         onAudioTrackChanged: onAudioTrackChanged,
         onSubtitleTrackChanged: onSubtitleTrackChanged,
       );
@@ -354,7 +354,7 @@ class TrackManager {
   /// Common guard checks for track change handlers.
   Future<int?> _guardTrackChange(PlexMediaInfo? info) async {
     final settings = await SettingsService.getInstance();
-    if (!settings.getRememberTrackSelections()) return null;
+    if (!settings.read(SettingsService.rememberTrackSelections)) return null;
 
     if (info == null) {
       appLogger.w('No media info available, cannot save stream selection');

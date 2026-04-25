@@ -368,7 +368,7 @@ class StorageService extends BaseSharedPreferencesService {
   /// Load all persisted episode counts
   Map<String, int> loadAllEpisodeCounts() {
     final counts = <String, int>{};
-    final keys = prefs.getKeys().where((k) => k.startsWith(_prefixEpisodeCount));
+    final keys = prefs.keys.where((k) => k.startsWith(_prefixEpisodeCount));
 
     for (final key in keys) {
       final globalKey = key.replaceFirst(_prefixEpisodeCount, '');
@@ -415,7 +415,7 @@ class StorageService extends BaseSharedPreferencesService {
 
   /// Remove all keys matching a prefix
   Future<void> _clearKeysWithPrefix(String prefix) async {
-    final keys = prefs.getKeys().where((k) => k.startsWith(prefix));
+    final keys = prefs.keys.where((k) => k.startsWith(prefix));
     await Future.wait(keys.map((k) => prefs.remove(k)));
   }
 

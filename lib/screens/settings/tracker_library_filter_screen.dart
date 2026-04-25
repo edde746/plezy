@@ -23,8 +23,8 @@ class TrackerLibraryFilterScreen extends StatefulWidget {
   /// Human-readable summary of the current filter state for [service], used as
   /// the subtitle on the parent settings screen's "Library filter" tile.
   static String subtitleFor(SettingsService settings, TrackerService service) {
-    final mode = settings.getTrackerLibraryFilterMode(service);
-    final ids = settings.getTrackerLibraryFilterIds(service);
+    final mode = settings.read(SettingsService.trackerFilterModePref(service));
+    final ids = settings.read(SettingsService.trackerFilterIdsPref(service)).toSet();
     if (ids.isEmpty) {
       return mode == TrackerLibraryFilterMode.blacklist
           ? t.trackers.libraryFilter.subtitleAllSyncing
@@ -57,10 +57,10 @@ class _TrackerLibraryFilterScreenState extends State<TrackerLibraryFilterScreen>
     if (!mounted) return;
     setState(() {
       _settings = s;
-      _mode = s.getTrackerLibraryFilterMode(widget.service);
+      _mode = s.read(SettingsService.trackerFilterModePref(widget.service));
       _selectedIds
         ..clear()
-        ..addAll(s.getTrackerLibraryFilterIds(widget.service));
+        ..addAll(s.read(SettingsService.trackerFilterIdsPref(widget.service)).toSet());
       _loaded = true;
     });
   }
@@ -68,7 +68,7 @@ class _TrackerLibraryFilterScreenState extends State<TrackerLibraryFilterScreen>
   Future<void> _setMode(TrackerLibraryFilterMode mode) async {
     if (mode == _mode) return;
     setState(() => _mode = mode);
-    await _settings.setTrackerLibraryFilterMode(widget.service, mode);
+    await _settings.write(SettingsService.trackerFilterModePref(widget.service), mode);
   }
 
   Future<void> _toggleLibrary(String globalKey, bool value) async {
@@ -79,7 +79,7 @@ class _TrackerLibraryFilterScreenState extends State<TrackerLibraryFilterScreen>
         _selectedIds.remove(globalKey);
       }
     });
-    await _settings.setTrackerLibraryFilterIds(widget.service, _selectedIds);
+    await _settings.write(SettingsService.trackerFilterIdsPref(widget.service), _selectedIds.toList());
   }
 
   @override

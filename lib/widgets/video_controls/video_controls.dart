@@ -647,18 +647,18 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     final settingsService = await SettingsService.getInstance();
     if (mounted) {
       setState(() {
-        _seekTimeSmall = settingsService.getSeekTimeSmall();
-        _rewindOnResume = settingsService.getRewindOnResume();
-        _audioSyncOffset = settingsService.getAudioSyncOffset();
-        _subtitleSyncOffset = settingsService.getSubtitleSyncOffset();
-        _isRotationLocked = settingsService.getRotationLocked();
-        _autoSkipIntro = settingsService.getAutoSkipIntro();
-        _autoSkipCredits = settingsService.getAutoSkipCredits();
-        _autoSkipDelay = settingsService.getAutoSkipDelay();
-        _videoPlayerNavigationEnabled = settingsService.getVideoPlayerNavigationEnabled();
-        _showPerformanceOverlay = settingsService.getShowPerformanceOverlay();
-        _autoHidePerformanceOverlay = settingsService.getAutoHidePerformanceOverlay();
-        _clickVideoTogglesPlayback = settingsService.getClickVideoTogglesPlayback();
+        _seekTimeSmall = settingsService.read(SettingsService.seekTimeSmall);
+        _rewindOnResume = settingsService.read(SettingsService.rewindOnResume);
+        _audioSyncOffset = settingsService.read(SettingsService.audioSyncOffset);
+        _subtitleSyncOffset = settingsService.read(SettingsService.subtitleSyncOffset);
+        _isRotationLocked = settingsService.read(SettingsService.rotationLocked);
+        _autoSkipIntro = settingsService.read(SettingsService.autoSkipIntro);
+        _autoSkipCredits = settingsService.read(SettingsService.autoSkipCredits);
+        _autoSkipDelay = settingsService.read(SettingsService.autoSkipDelay);
+        _videoPlayerNavigationEnabled = settingsService.read(SettingsService.videoPlayerNavigationEnabled);
+        _showPerformanceOverlay = settingsService.read(SettingsService.showPerformanceOverlay);
+        _autoHidePerformanceOverlay = settingsService.read(SettingsService.autoHidePerformanceOverlay);
+        _clickVideoTogglesPlayback = settingsService.read(SettingsService.clickVideoTogglesPlayback);
       });
 
       // Focus play/pause if navigation is now enabled and controls are visible
@@ -940,7 +940,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       final maxVol = _keyboardService!.maxVolume.toDouble();
       final newVolume = (volume - delta / 20).clamp(0.0, maxVol);
       widget.player.setVolume(newVolume);
-      unawaited(SettingsService.getInstance().then((s) => s.setVolume(newVolume)));
+      unawaited(SettingsService.getInstance().then((s) => s.write(SettingsService.volume, newVolume)));
       _showControlsFromPointerActivity();
     }
   }
@@ -990,7 +990,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
     // Save to settings
     final settingsService = await SettingsService.getInstance();
-    await settingsService.setRotationLocked(_isRotationLocked);
+    await settingsService.write(SettingsService.rotationLocked, _isRotationLocked);
 
     if (_isRotationLocked) {
       // Locked: Allow landscape orientations only
@@ -1085,8 +1085,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       appLogger.d('_loadPlaybackExtras: got client with serverId=${client.serverId}');
 
       final settings = await SettingsService.getInstance();
-      final introPattern = settings.getIntroPattern();
-      final creditsPattern = settings.getCreditsPattern();
+      final introPattern = settings.read(SettingsService.introPattern);
+      final creditsPattern = settings.read(SettingsService.creditsPattern);
       final extras = await client.getPlaybackExtras(
         widget.metadata.ratingKey,
         introPattern: introPattern,
@@ -1172,8 +1172,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     return PlaybackExtras.withChapterFallback(
       chapters: chapters,
       markers: markers,
-      introPatternStr: settings.getIntroPattern(),
-      creditsPatternStr: settings.getCreditsPattern(),
+      introPatternStr: settings.read(SettingsService.introPattern),
+      creditsPatternStr: settings.read(SettingsService.creditsPattern),
     );
   }
 
@@ -2592,7 +2592,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       if (isVersionChange) {
         final settingsService = await SettingsService.getInstance();
         final seriesKey = widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey;
-        await settingsService.setMediaVersionPreference(seriesKey, effectiveMediaIndex);
+        await settingsService.write(SettingsService.mediaVersionPreferences, {
+          ...settingsService.read(SettingsService.mediaVersionPreferences),
+          seriesKey: effectiveMediaIndex,
+        });
       }
 
       // Preserve session identifiers across the reload so Plex reuses the

@@ -30,7 +30,7 @@ class AnilistTracker extends TrackerBase {
   bool get hasActiveClient => _client != null;
 
   @override
-  bool readEnabledSetting(SettingsService settings) => settings.getEnableAnilistScrobble();
+  bool readEnabledSetting(SettingsService settings) => settings.read(SettingsService.enableAnilistScrobble);
 
   void rebindSession(AnilistSession? session, {required void Function() onSessionInvalidated}) {
     _client?.dispose();

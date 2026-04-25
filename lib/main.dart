@@ -135,7 +135,7 @@ Future<void> main() async {
 Future<void> _bootstrapApp() async {
   // Initialize settings first to get saved locale
   final settings = await SettingsService.getInstance();
-  final savedLocale = settings.getAppLocale();
+  final savedLocale = settings.read(SettingsService.appLocale);
 
   // Initialize localization with saved locale
   LocaleSettings.setLocale(savedLocale);
@@ -162,7 +162,7 @@ Future<void> _bootstrapApp() async {
 
   // Initialize TV detection (Android leanback or Apple TV) and PiP on Android.
   if (Platform.isAndroid || Platform.isIOS) {
-    futures.add(TvDetectionService.getInstance(forceTv: settings.getForceTvMode()));
+    futures.add(TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode)));
   }
   if (Platform.isAndroid) {
     // Initialize PiP service to listen for PiP state changes (Android only).
@@ -188,7 +188,7 @@ Future<void> _bootstrapApp() async {
   }
 
   // Initialize logger level based on debug setting
-  final debugEnabled = settings.getEnableDebugLogging();
+  final debugEnabled = settings.read(SettingsService.enableDebugLogging);
   setLoggerLevel(debugEnabled);
 
   // Log app version and git commit at startup
@@ -248,7 +248,7 @@ Breadcrumb? _beforeBreadcrumb(Breadcrumb? breadcrumb, Hint _) {
 FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
   // Drop event if user opted out of crash reporting
   final instance = SettingsService.instanceOrNull;
-  if (instance != null && !instance.getCrashReporting()) return null;
+  if (instance != null && !instance.read(SettingsService.crashReporting)) return null;
 
   // Drop unactionable errors
   var exceptions = event.exceptions;
@@ -530,7 +530,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       await downloadProvider.refreshMetadataFromCache();
       final activeKey = VideoPlayerScreenState.activeRatingKey;
       final settings = SettingsService.instanceOrNull;
-      if (settings != null && settings.getAutoRemoveWatchedDownloads()) {
+      if (settings != null && settings.read(SettingsService.autoRemoveWatchedDownloads)) {
         final deleted = await downloadProvider.autoDeleteWatchedDownloads(activeRatingKey: activeKey);
         if (deleted.isNotEmpty) {
           final msg = deleted.length == 1

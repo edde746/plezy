@@ -76,7 +76,7 @@ class DiscordRPCService {
     _isInitialized = true;
 
     final settings = await SettingsService.getInstance();
-    _isEnabled = settings.getEnableDiscordRPC();
+    _isEnabled = settings.read(SettingsService.enableDiscordRPC);
 
     if (_isEnabled) {
       await _connect();

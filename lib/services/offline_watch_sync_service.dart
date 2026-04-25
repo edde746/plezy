@@ -44,7 +44,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
     if (client != null && client.serverPrefs.isNotEmpty) {
       return client.watchedThresholdPercent / 100.0;
     }
-    final cached = SettingsService.instanceOrNull?.getWatchedThreshold(serverId) ?? 90;
+    final cached = SettingsService.instanceOrNull?.read(SettingsService.watchedThresholdPref(serverId)) ?? 90;
     return cached / 100.0;
   }
 

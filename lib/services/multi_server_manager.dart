@@ -242,7 +242,7 @@ class MultiServerManager {
               .fetchServerPrefs()
               .then((_) {
                 final threshold = client.watchedThresholdPercent;
-                SettingsService.instanceOrNull?.setWatchedThreshold(serverId, threshold);
+                SettingsService.instanceOrNull?.write(SettingsService.watchedThresholdPref(serverId), threshold);
               })
               .catchError((Object e, StackTrace st) {
                 appLogger.w('fetchServerPrefs failed for ${server.name}', error: e, stackTrace: st);

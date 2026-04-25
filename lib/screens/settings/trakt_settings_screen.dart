@@ -55,8 +55,8 @@ class _TraktSettingsScreenState extends State<TraktSettingsScreen> {
     if (!mounted) return;
     setState(() {
       _settings = s;
-      _scrobbleEnabled = s.getEnableTraktScrobble();
-      _watchedSyncEnabled = s.getEnableTraktWatchedSync();
+      _scrobbleEnabled = s.read(SettingsService.enableTraktScrobble);
+      _watchedSyncEnabled = s.read(SettingsService.enableTraktWatchedSync);
       _loaded = true;
     });
   }
@@ -118,7 +118,7 @@ class _TraktSettingsScreenState extends State<TraktSettingsScreen> {
                   value: _scrobbleEnabled,
                   onChanged: (value) async {
                     setState(() => _scrobbleEnabled = value);
-                    await _settings!.setEnableTraktScrobble(value);
+                    await _settings!.write(SettingsService.enableTraktScrobble, value);
                     await TraktScrobbleService.instance.setEnabled(value);
                   },
                 ),
@@ -129,7 +129,7 @@ class _TraktSettingsScreenState extends State<TraktSettingsScreen> {
                   value: _watchedSyncEnabled,
                   onChanged: (value) async {
                     setState(() => _watchedSyncEnabled = value);
-                    await _settings!.setEnableTraktWatchedSync(value);
+                    await _settings!.write(SettingsService.enableTraktWatchedSync, value);
                     await TraktSyncService.instance.setEnabled(value);
                   },
                 ),

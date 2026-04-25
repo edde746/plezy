@@ -88,9 +88,9 @@ class TrackerConfig {
     displayName: t.trackers.services.mal,
     isConnected: (a) => a.isMalConnected,
     username: (a) => a.malUsername,
-    readScrobbleEnabled: (s) => s.getEnableMalScrobble(),
+    readScrobbleEnabled: (s) => s.read(SettingsService.enableMalScrobble),
     setScrobbleEnabled: (s, v) async {
-      await s.setEnableMalScrobble(v);
+      await s.write(SettingsService.enableMalScrobble, v);
       await MalTracker.instance.setEnabled(v);
     },
     disconnect: (a) => a.disconnectMal(),
@@ -101,9 +101,9 @@ class TrackerConfig {
     displayName: t.trackers.services.anilist,
     isConnected: (a) => a.isAnilistConnected,
     username: (a) => a.anilistUsername,
-    readScrobbleEnabled: (s) => s.getEnableAnilistScrobble(),
+    readScrobbleEnabled: (s) => s.read(SettingsService.enableAnilistScrobble),
     setScrobbleEnabled: (s, v) async {
-      await s.setEnableAnilistScrobble(v);
+      await s.write(SettingsService.enableAnilistScrobble, v);
       await AnilistTracker.instance.setEnabled(v);
     },
     disconnect: (a) => a.disconnectAnilist(),
@@ -114,9 +114,9 @@ class TrackerConfig {
     displayName: t.trackers.services.simkl,
     isConnected: (a) => a.isSimklConnected,
     username: (a) => a.simklUsername,
-    readScrobbleEnabled: (s) => s.getEnableSimklScrobble(),
+    readScrobbleEnabled: (s) => s.read(SettingsService.enableSimklScrobble),
     setScrobbleEnabled: (s, v) async {
-      await s.setEnableSimklScrobble(v);
+      await s.write(SettingsService.enableSimklScrobble, v);
       await SimklTracker.instance.setEnabled(v);
     },
     disconnect: (a) => a.disconnectSimkl(),
