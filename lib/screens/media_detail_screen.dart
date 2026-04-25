@@ -413,6 +413,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Build radial progress indicator for download button
   /// If progressPercent is null or 0, shows indeterminate spinner
   Widget _buildRadialProgress(double? progressPercent) {
+    final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: 20,
       height: 20,
@@ -424,13 +425,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             CircularProgressIndicator(
               value: 1.0,
               strokeWidth: 2.0,
-              valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)),
+              valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary.withValues(alpha: 0.2)),
             ),
           // Progress circle (indeterminate if no progress, determinate otherwise)
           CircularProgressIndicator(
             value: (progressPercent != null && progressPercent > 0) ? progressPercent : null, // null = indeterminate
             strokeWidth: 2.0,
-            valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary),
+            valueColor: AlwaysStoppedAnimation<Color>(colorScheme.primary),
           ),
         ],
       ),
@@ -931,13 +932,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Build a metadata chip with optional leading icon or widget
   Widget _buildMetadataChip(String text, {IconData? icon, Widget? leading}) {
+    final colorScheme = Theme.of(context).colorScheme;
     final textWidget = Text(
       text,
-      style: TextStyle(
-        color: Theme.of(context).colorScheme.onSecondaryContainer,
-        fontSize: 13,
-        fontWeight: FontWeight.w500,
-      ),
+      style: TextStyle(color: colorScheme.onSecondaryContainer, fontSize: 13, fontWeight: FontWeight.w500),
     );
 
     final hasLeading = leading != null || icon != null;
@@ -945,7 +943,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.8),
+        color: colorScheme.secondaryContainer.withValues(alpha: 0.8),
         borderRadius: const BorderRadius.all(Radius.circular(100)),
       ),
       child: hasLeading
@@ -955,7 +953,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 if (leading != null)
                   leading
                 else
-                  AppIcon(icon!, fill: 1, color: Theme.of(context).colorScheme.onSecondaryContainer, size: 16),
+                  AppIcon(icon!, fill: 1, color: colorScheme.onSecondaryContainer, size: 16),
                 const SizedBox(width: 4),
                 textWidget,
               ],
@@ -1095,16 +1093,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Build a combined RT chip showing critic + audience side by side.
   Widget _buildCombinedRtChip(RatingInfo critic, RatingInfo audience) {
-    final textStyle = TextStyle(
-      color: Theme.of(context).colorScheme.onSecondaryContainer,
-      fontSize: 13,
-      fontWeight: FontWeight.w500,
-    );
+    final colorScheme = Theme.of(context).colorScheme;
+    final textStyle = TextStyle(color: colorScheme.onSecondaryContainer, fontSize: 13, fontWeight: FontWeight.w500);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer.withValues(alpha: 0.8),
+        color: colorScheme.secondaryContainer.withValues(alpha: 0.8),
         borderRadius: const BorderRadius.all(Radius.circular(100)),
       ),
       child: Row(
@@ -2397,6 +2392,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final isShow = metadata.isShow;
     final isMobile = PlatformDetector.isMobile(context);
     final isTv = PlatformDetector.isTV();
+    final theme = Theme.of(context);
 
     KeyEventResult handleBack(FocusNode _, KeyEvent event) =>
         handleBackKeyNavigation(context, event, result: _watchStateChanged);
@@ -2614,7 +2610,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                   else
                                     Text(
                                       metadata.displayTitle,
-                                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                                      style: theme.textTheme.displaySmall?.copyWith(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold,
                                         shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
@@ -2662,7 +2658,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             Text(
                               key: _overviewSectionKey,
                               t.discover.overview,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 12),
                             Focus(
@@ -2671,6 +2667,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                               onFocusChange: (_) => setState(() {}),
                               child: Builder(
                                 builder: (context) {
+                                  final innerTheme = Theme.of(context);
                                   final showFocus =
                                       _overviewFocusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
                                   return AnimatedContainer(
@@ -2680,13 +2677,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                       borderRadius: const BorderRadius.all(Radius.circular(8)),
                                       border: Border.all(
                                         color: showFocus
-                                            ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.5)
+                                            ? innerTheme.colorScheme.primary.withValues(alpha: 0.5)
                                             : Colors.transparent,
                                         width: 2,
                                       ),
                                     ),
                                     child: () {
-                                      final summaryStyle = Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.6);
+                                      final summaryStyle = innerTheme.textTheme.bodyLarge?.copyWith(height: 1.6);
                                       if (isTv) {
                                         return Text(metadata.summary!, style: summaryStyle);
                                       }
@@ -2716,7 +2713,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                 child: Center(
                                   child: Text(
                                     t.messages.noSeasonsFound,
-                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                                    style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey),
                                   ),
                                 ),
                               )
@@ -2724,7 +2721,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                               Text(
                                 key: _seasonsSectionKey,
                                 t.libraries.groupings.episodes,
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                               ),
                               const SizedBox(height: 12),
                               _buildSeasonTabs(),
@@ -2741,7 +2738,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                   child: Center(
                                     child: Text(
                                       t.messages.noEpisodesFoundGeneral,
-                                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                                      style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey),
                                     ),
                                   ),
                                 ),
@@ -2752,7 +2749,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             Text(
                               key: _seasonsSectionKey,
                               t.libraries.groupings.episodes,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 12),
                             if (_isLoadingSeasons || _isLoadingEpisodes)
@@ -2767,7 +2764,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                 child: Center(
                                   child: Text(
                                     t.messages.noEpisodesFoundGeneral,
-                                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                                    style: theme.textTheme.bodyLarge?.copyWith(color: Colors.grey),
                                   ),
                                 ),
                               ),
@@ -2779,7 +2776,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             Text(
                               key: _castSectionKey,
                               t.discover.cast,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 12),
                             _buildCastSection(metadata),
@@ -2791,7 +2788,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             Text(
                               key: _extrasSectionKey,
                               t.discover.extras,
-                              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 12),
                             _buildExtrasSection(),
@@ -2860,9 +2857,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.8),
-                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0.5),
-                          Theme.of(context).scaffoldBackgroundColor.withValues(alpha: 0),
+                          theme.scaffoldBackgroundColor.withValues(alpha: 0.8),
+                          theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
+                          theme.scaffoldBackgroundColor.withValues(alpha: 0),
                         ],
                         stops: const [0.0, 0.3, 1.0],
                       ),
@@ -2936,6 +2933,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final containerHeight = imageSize + innerPadding * 2 + 66 + 16;
 
     final hasFocus = _castFocusNode.hasFocus;
+    final theme = Theme.of(context);
+    final actorNameStyle = theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600);
+    final actorRoleStyle = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
 
     return Focus(
       focusNode: _castFocusNode,
@@ -2986,19 +2986,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  actor.tag,
-                                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                                Text(actor.tag, style: actorNameStyle, maxLines: 2, overflow: TextOverflow.ellipsis),
                                 if (actor.role != null) ...[
                                   const SizedBox(height: 2),
                                   Text(
                                     actor.role!,
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                    ),
+                                    style: actorRoleStyle,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -3068,6 +3061,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Widget _buildInfoRow(String label, String value) {
+    final theme = Theme.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -3075,10 +3069,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           width: 120,
           child: Text(
             label,
-            style: TextStyle(fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurfaceVariant),
           ),
         ),
-        Expanded(child: Text(value, style: Theme.of(context).textTheme.bodyLarge)),
+        Expanded(child: Text(value, style: theme.textTheme.bodyLarge)),
       ],
     );
   }

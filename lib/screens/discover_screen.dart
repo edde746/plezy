@@ -871,7 +871,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   Widget _buildOverlaidAppBar() {
     final statusBarHeight = MediaQuery.paddingOf(context).top;
-    return Container(
+    return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
@@ -902,6 +902,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 builder: (context, watchTogether, companionRemote, _) {
                   final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
                   final userProvider = context.watch<UserProfileProvider>();
+                  final colorScheme = Theme.of(context).colorScheme;
 
                   return FocusableActionBar(
                     key: _actionBarKey,
@@ -919,7 +920,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               icon: AppIcon(
                                 Symbols.group_rounded,
                                 fill: watchTogether.isInSession ? 1 : 0,
-                                color: watchTogether.isInSession ? Theme.of(context).colorScheme.primary : Colors.white,
+                                color: watchTogether.isInSession ? colorScheme.primary : Colors.white,
                               ),
                               onPressed: () => Navigator.push(
                                 context,
@@ -934,13 +935,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
                                   decoration: BoxDecoration(
-                                    color: Theme.of(context).colorScheme.primary,
+                                    color: colorScheme.primary,
                                     borderRadius: const BorderRadius.all(Radius.circular(8)),
                                   ),
                                   child: Text(
                                     '${watchTogether.participantCount}',
                                     style: TextStyle(
-                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      color: colorScheme.onPrimary,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -968,9 +969,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               icon: AppIcon(
                                 Symbols.phone_android_rounded,
                                 fill: companionRemote.isConnected ? 1 : 0,
-                                color: companionRemote.isConnected
-                                    ? Theme.of(context).colorScheme.primary
-                                    : Colors.white,
+                                color: companionRemote.isConnected ? colorScheme.primary : Colors.white,
                               ),
                               onPressed: () {
                                 if (isDesktop) {
@@ -1060,8 +1059,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final duplicateHubTitles = _getDuplicateHubTitles();
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
+    final theme = Theme.of(context);
     return Material(
-      color: Theme.of(context).scaffoldBackgroundColor,
+      color: theme.scaffoldBackgroundColor,
       child: Stack(
         children: [
           CustomScrollView(
@@ -1143,7 +1143,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               width: 200,
                               height: 24,
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                color: theme.colorScheme.surfaceContainerHighest,
                                 borderRadius: const BorderRadius.all(Radius.circular(4)),
                               ),
                             ),
@@ -1325,6 +1325,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final showName = heroItem.grandparentTitle ?? heroItem.displayTitle;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final isLargeScreen = ScreenBreakpoints.isWideTabletOrLarger(screenWidth);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     // Determine content type label for chip
     final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
@@ -1409,7 +1411,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 ),
               )
             else
-              ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+              ColoredBox(color: colorScheme.surfaceContainerHighest),
 
             // Gradient Overlay - blends into scaffold background
             Positioned(
@@ -1473,39 +1475,39 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 fit: BoxFit.contain,
                                 memCacheWidth: (400 * dpr).clamp(200, 800).round(),
                                 alignment: isLargeScreen ? Alignment.bottomLeft : Alignment.bottomCenter,
-                                placeholder: (context, url) => Align(
-                                  alignment: isLargeScreen ? Alignment.centerLeft : Alignment.center,
-                                  child: Text(
-                                    showName,
-                                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
-                                      fontWeight: FontWeight.bold,
-                                      shadows: [
-                                        Shadow(
-                                          color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
-                                          blurRadius: 8,
-                                        ),
-                                      ],
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                    textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
-                                  ),
-                                ),
-                                errorWidget: (context, url, error) {
-                                  // Fallback to text if logo fails to load
+                                placeholder: (context, url) {
+                                  final theme = Theme.of(context);
+                                  final colorScheme = theme.colorScheme;
                                   return Align(
                                     alignment: isLargeScreen ? Alignment.centerLeft : Alignment.center,
                                     child: Text(
                                       showName,
-                                      style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                        color: Theme.of(context).colorScheme.onSurface,
+                                      style: theme.textTheme.displaySmall?.copyWith(
+                                        color: colorScheme.onSurface.withValues(alpha: 0.3),
                                         fontWeight: FontWeight.bold,
                                         shadows: [
-                                          Shadow(
-                                            color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8),
-                                            blurRadius: 8,
-                                          ),
+                                          Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8),
+                                        ],
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
+                                    ),
+                                  );
+                                },
+                                errorWidget: (context, url, error) {
+                                  // Fallback to text if logo fails to load
+                                  final theme = Theme.of(context);
+                                  final colorScheme = theme.colorScheme;
+                                  return Align(
+                                    alignment: isLargeScreen ? Alignment.centerLeft : Alignment.center,
+                                    child: Text(
+                                      showName,
+                                      style: theme.textTheme.displaySmall?.copyWith(
+                                        color: colorScheme.onSurface,
+                                        fontWeight: FontWeight.bold,
+                                        shadows: [
+                                          Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8),
                                         ],
                                       ),
                                       maxLines: 2,
@@ -1524,12 +1526,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     else
                       Text(
                         showName,
-                        style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
+                        style: theme.textTheme.displaySmall?.copyWith(
+                          color: colorScheme.onSurface,
                           fontWeight: FontWeight.bold,
-                          shadows: [
-                            Shadow(color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8),
-                          ],
+                          shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -1565,7 +1565,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           style: TextStyle(
                             color: isLargeScreen
                                 ? Colors.white.withValues(alpha: 0.7)
-                                : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                : colorScheme.onSurface.withValues(alpha: 0.7),
                             fontSize: 14,
                             height: 1.4,
                           ),
@@ -1575,7 +1575,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: isLargeScreen ? Colors.white : Theme.of(context).colorScheme.onSurface,
+                                  color: isLargeScreen ? Colors.white : colorScheme.onSurface,
                                 ),
                               ),
                             TextSpan(
@@ -1599,7 +1599,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         style: TextStyle(
                           color: isLargeScreen
                               ? Colors.white.withValues(alpha: 0.7)
-                              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                              : colorScheme.onSurface.withValues(alpha: 0.7),
                           fontSize: 14,
                           height: 1.4,
                         ),
