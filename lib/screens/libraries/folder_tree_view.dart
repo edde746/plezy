@@ -165,48 +165,23 @@ class _FolderTreeViewState extends State<FolderTreeView> {
         item.mediaType == PlexMediaType.unknown;
   }
 
-  List<Widget> _buildTreeItems(List<PlexMetadata> items, int depth, [String parentPath = '']) {
-    final List<Widget> widgets = [];
-
+  /// Flatten the visible tree into a list of (item, depth, path) tuples so
+  /// `ListView.builder` can lazy-build only the rows currently on screen.
+  void _flattenTreeItems(
+    List<PlexMetadata> items,
+    int depth,
+    String parentPath,
+    List<({PlexMetadata item, int depth, String path})> out,
+  ) {
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
-      final isFolder = _isFolder(item);
-      final isExpanded = _expandedFolders.contains(item.key);
-      final isLoading = _loadingFolders.contains(item.key);
-
-      // Create a unique key path that includes parent hierarchy and index
       final itemPath = parentPath.isEmpty ? '$i' : '$parentPath-$i';
+      out.add((item: item, depth: depth, path: itemPath));
 
-      // First root item gets the external focus node and navigate-up callback
-      final isFirstRootItem = depth == 0 && i == 0;
-
-      // Add the item itself
-      widgets.add(
-        FolderTreeItem(
-          key: ValueKey(itemPath),
-          item: item,
-          depth: depth,
-          isFolder: isFolder,
-          isExpanded: isExpanded,
-          isLoading: isLoading,
-          serverId: widget.serverId,
-          onExpand: isFolder ? () => _toggleFolder(item) : null,
-          onTap: !isFolder ? () => _handleItemTap(item) : null,
-          onPlayAll: isFolder ? () => _handleFolderPlay(item) : null,
-          onShuffle: isFolder ? () => _handleFolderShuffle(item) : null,
-          focusNode: isFirstRootItem ? widget.firstItemFocusNode : null,
-          onNavigateUp: isFirstRootItem ? widget.onNavigateUp : null,
-        ),
-      );
-
-      // Add children if folder is expanded
-      if (isFolder && isExpanded && _childrenCache.containsKey(item.key)) {
-        final children = _childrenCache[item.key]!;
-        widgets.addAll(_buildTreeItems(children, depth + 1, itemPath));
+      if (_isFolder(item) && _expandedFolders.contains(item.key) && _childrenCache.containsKey(item.key)) {
+        _flattenTreeItems(_childrenCache[item.key]!, depth + 1, itemPath, out);
       }
     }
-
-    return widgets;
   }
 
   @override
@@ -228,9 +203,39 @@ class _FolderTreeViewState extends State<FolderTreeView> {
       return EmptyStateWidget(message: t.libraries.noFoldersFound, icon: Symbols.folder_open_rounded);
     }
 
+    final flattened = <({PlexMetadata item, int depth, String path})>[];
+    _flattenTreeItems(_rootFolders, 0, '', flattened);
+
     return RefreshIndicator(
       onRefresh: _loadRootFolders,
-      child: ListView(padding: const EdgeInsets.symmetric(horizontal: 8), children: _buildTreeItems(_rootFolders, 0)),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        itemCount: flattened.length,
+        itemBuilder: (context, index) {
+          final entry = flattened[index];
+          final item = entry.item;
+          final isFolder = _isFolder(item);
+          final isExpanded = _expandedFolders.contains(item.key);
+          final isLoading = _loadingFolders.contains(item.key);
+          final isFirstRootItem = index == 0;
+
+          return FolderTreeItem(
+            key: ValueKey(entry.path),
+            item: item,
+            depth: entry.depth,
+            isFolder: isFolder,
+            isExpanded: isExpanded,
+            isLoading: isLoading,
+            serverId: widget.serverId,
+            onExpand: isFolder ? () => _toggleFolder(item) : null,
+            onTap: !isFolder ? () => _handleItemTap(item) : null,
+            onPlayAll: isFolder ? () => _handleFolderPlay(item) : null,
+            onShuffle: isFolder ? () => _handleFolderShuffle(item) : null,
+            focusNode: isFirstRootItem ? widget.firstItemFocusNode : null,
+            onNavigateUp: isFirstRootItem ? widget.onNavigateUp : null,
+          );
+        },
+      ),
     );
   }
 }
