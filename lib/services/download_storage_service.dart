@@ -413,10 +413,12 @@ class DownloadStorageService {
       // Recover from doubled app base path corruption:
       // /data/.../app_flutter/data/.../app_flutter/downloads/...
       final firstBaseIndex = storedPath.indexOf(baseDir.path);
-      final secondBaseIndex = storedPath.indexOf(baseDir.path, firstBaseIndex + baseDir.path.length);
-      if (firstBaseIndex != -1 && secondBaseIndex != -1) {
-        final tail = trimLeadingSeparators(storedPath.substring(secondBaseIndex + baseDir.path.length));
-        addCandidate(path.join(baseDir.path, tail));
+      if (firstBaseIndex != -1) {
+        final secondBaseIndex = storedPath.indexOf(baseDir.path, firstBaseIndex + baseDir.path.length);
+        if (secondBaseIndex != -1) {
+          final tail = trimLeadingSeparators(storedPath.substring(secondBaseIndex + baseDir.path.length));
+          addCandidate(path.join(baseDir.path, tail));
+        }
       }
 
       // Recover from paths that contain downloads/ but wrong prefix.

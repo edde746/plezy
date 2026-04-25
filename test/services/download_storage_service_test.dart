@@ -401,6 +401,21 @@ void main() {
       final expected = p.join(tmpRoot.path, 'support', stored);
       expect(resolved, expected);
     });
+
+    test('absolute path shorter than the base dir does not throw RangeError', () async {
+      final settings = await SettingsService.getInstance();
+      final dss = DownloadStorageService.instance;
+      await dss.initialize(settings);
+
+      // Stored absolute path is 9 chars; base dir is much longer. Previously,
+      // the doubled-base-prefix recovery passed `firstBaseIndex + baseDir.path.length`
+      // (negative + len > storedPath.length) to a second `indexOf`, throwing.
+      const stored = '/nope.mkv';
+      final resolved = await dss.ensureAbsolutePath(stored);
+      // Falls back to the original absolute path (it doesn't exist on disk,
+      // and no other candidate could be derived from it).
+      expect(resolved, stored);
+    });
   });
 
   group('getReadablePath', () {
