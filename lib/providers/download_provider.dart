@@ -86,6 +86,21 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _initFuture = _loadPersistedDownloads();
   }
 
+  /// Test-only constructor that skips the heavy initial load (artwork dir,
+  /// pinned-metadata bulk fetch, episode counts). Only sync rules are loaded
+  /// from the database. Use this in tests that exercise the provider's public
+  /// database-backed API without mocking [PlexApiCache], [DownloadStorageService],
+  /// or path_provider.
+  @visibleForTesting
+  DownloadProvider.forTesting({required DownloadManagerService downloadManager, required AppDatabase database})
+    : _downloadManager = downloadManager,
+      _database = database,
+      _syncRuleExecutor = SyncRuleExecutor(database: database) {
+    _progressSubscription = _downloadManager.progressStream.listen(_onProgressUpdate);
+    _deletionProgressSubscription = _downloadManager.deletionProgressStream.listen(_onDeletionProgressUpdate);
+    _initFuture = _loadSyncRules();
+  }
+
   /// Inject the offline-mode source so queueing paths can short-circuit when
   /// the device has no Plex connectivity. Propagates to the download manager
   /// and the sync-rule executor so background paths see the same flag.
