@@ -35,13 +35,16 @@ abstract class BaseSharedPreferencesService {
     if (_instances[T] == null) {
       final instance = constructor();
       _instances[T] = instance;
-      instance._cache = await _ensureCache();
+      instance._cache = await sharedCache();
       await instance.onInit();
     }
     return _instances[T] as T;
   }
 
-  static Future<SharedPreferencesWithCache> _ensureCache() {
+  /// Shared preferences cache used app-wide. Runs the legacy → async
+  /// migration on first call; subsequent calls return the same future.
+  /// Use this from services that don't extend [BaseSharedPreferencesService].
+  static Future<SharedPreferencesWithCache> sharedCache() {
     return _cacheFuture ??= () async {
       final legacy = await SharedPreferences.getInstance();
       await migrateLegacySharedPreferencesToSharedPreferencesAsyncIfNecessary(

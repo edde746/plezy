@@ -5,9 +5,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../models/trackers/fribb_mapping_row.dart';
+import '../base_shared_preferences_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../utils/platform_http_client_io.dart'
@@ -109,7 +108,7 @@ class FribbMappingStore {
       }
       await _writeDiskCopy(res.body, etag: res.headers['etag']);
       // Seed the weekly throttle so a same-week relaunch skips the refresh.
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await BaseSharedPreferencesService.sharedCache();
       await prefs.setInt(_prefsLastCheckKey, DateTime.now().millisecondsSinceEpoch);
       return res.body;
     } catch (e) {
@@ -147,7 +146,7 @@ class FribbMappingStore {
     if (_index == null) return;
     _refreshRunning = true;
     try {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await BaseSharedPreferencesService.sharedCache();
       final lastCheck = prefs.getInt(_prefsLastCheckKey) ?? 0;
       final now = DateTime.now().millisecondsSinceEpoch;
       if (now - lastCheck < _refreshInterval.inMilliseconds) return;
@@ -186,7 +185,7 @@ class FribbMappingStore {
   Future<void> _writeDiskCopy(String body, {String? etag}) async {
     await File(await _diskPath()).writeAsString(body, flush: true);
     if (etag != null) {
-      final prefs = await SharedPreferences.getInstance();
+      final prefs = await BaseSharedPreferencesService.sharedCache();
       await prefs.setString(_prefsEtagKey, etag);
     }
   }

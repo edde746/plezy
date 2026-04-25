@@ -4,7 +4,7 @@ import 'package:auto_updater/auto_updater.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:logger/logger.dart';
 import 'package:plezy/utils/plex_http_client.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'base_shared_preferences_service.dart';
 
 /// Service to check for new versions on GitHub
 /// Only enabled when ENABLE_UPDATE_CHECK build flag is set
@@ -102,25 +102,25 @@ class UpdateService {
 
   /// Skip a specific version
   static Future<void> skipVersion(String version) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await BaseSharedPreferencesService.sharedCache();
     await prefs.setString(_keySkippedVersion, version);
   }
 
   /// Get the skipped version
   static Future<String?> getSkippedVersion() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await BaseSharedPreferencesService.sharedCache();
     return prefs.getString(_keySkippedVersion);
   }
 
   /// Clear skipped version
   static Future<void> clearSkippedVersion() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await BaseSharedPreferencesService.sharedCache();
     await prefs.remove(_keySkippedVersion);
   }
 
   /// Check if cooldown period has passed since last check
   static Future<bool> shouldCheckForUpdates() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await BaseSharedPreferencesService.sharedCache();
     final lastCheckString = prefs.getString(_keyLastCheckTime);
 
     if (lastCheckString == null) return true;
@@ -134,7 +134,7 @@ class UpdateService {
 
   /// Update the last check timestamp
   static Future<void> _updateLastCheckTime() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await BaseSharedPreferencesService.sharedCache();
     await prefs.setString(_keyLastCheckTime, DateTime.now().toIso8601String());
   }
 

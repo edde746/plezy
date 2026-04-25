@@ -1,4 +1,4 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import '../base_shared_preferences_service.dart';
 
 /// Per-Plex-profile session persistence for any tracker service.
 ///
@@ -24,7 +24,7 @@ class TrackerAccountStore<T> {
   String _scopedKey(String userUuid) => userUuid.isEmpty ? _baseKey : 'user_${userUuid}_$_baseKey';
 
   Future<T?> load(String userUuid) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await BaseSharedPreferencesService.sharedCache();
     final raw = prefs.getString(_scopedKey(userUuid));
     if (raw == null) return null;
     try {
@@ -35,12 +35,12 @@ class TrackerAccountStore<T> {
   }
 
   Future<void> save(String userUuid, T session) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await BaseSharedPreferencesService.sharedCache();
     await prefs.setString(_scopedKey(userUuid), _encode(session));
   }
 
   Future<void> clear(String userUuid) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await BaseSharedPreferencesService.sharedCache();
     await prefs.remove(_scopedKey(userUuid));
   }
 }

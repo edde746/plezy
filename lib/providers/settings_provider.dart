@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../models/transcode_quality_preset.dart';
-import '../services/base_shared_preferences_service.dart';
 import '../services/settings_service.dart';
 
 class SettingsProvider extends ChangeNotifier {

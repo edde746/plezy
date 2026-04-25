@@ -1,9 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../models/trakt/trakt_ids.dart';
+import '../base_shared_preferences_service.dart';
 import '../../utils/app_logger.dart';
 import 'trakt_constants.dart';
 
@@ -92,7 +91,7 @@ class TraktSyncQueue {
   }
 
   Future<List<TraktSyncQueueItem>> load(String userUuid) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await BaseSharedPreferencesService.sharedCache();
     final key = traktUserKey(userUuid, _baseKey);
     final raw = prefs.getString(key);
     if (raw == null) return [];
@@ -112,7 +111,7 @@ class TraktSyncQueue {
   }
 
   Future<void> _saveRaw(String userUuid, List<TraktSyncQueueItem> items) async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs = await BaseSharedPreferencesService.sharedCache();
     final key = traktUserKey(userUuid, _baseKey);
     if (items.isEmpty) {
       await prefs.remove(key);

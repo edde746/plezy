@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:in_app_review/in_app_review.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/app_logger.dart';
+import 'base_shared_preferences_service.dart';
 
 /// Service to manage in-app review prompts
 /// Only enabled when ENABLE_IN_APP_REVIEW build flag is set
@@ -14,12 +15,7 @@ class InAppReviewService {
 
   final InAppReview _inAppReview = InAppReview.instance;
 
-  // Cached SharedPreferences instance (lazy-initialized)
-  SharedPreferences? _prefs;
-
-  Future<SharedPreferences> _getPrefs() async {
-    return _prefs ??= await SharedPreferences.getInstance();
-  }
+  Future<SharedPreferencesWithCache> _getPrefs() => BaseSharedPreferencesService.sharedCache();
 
   // SharedPreferences keys
   static const String _keyQualifyingSessionsCount = 'review_qualifying_sessions_count';
