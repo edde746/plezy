@@ -79,6 +79,7 @@ dev_dependencies:
   slang_build_runner: ^4.14.0
   dart_code_linter: ^3.2.1
   drift_dev: ^2.28.3
+  shared_preferences_platform_interface: ^2.4.0
 
 dependency_overrides:
   auto_updater_platform_interface:

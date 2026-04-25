@@ -56,6 +56,15 @@ abstract class BaseSharedPreferencesService {
     }();
   }
 
+  /// Drop all cached singleton instances and the shared cache future so the
+  /// next `getInstance()` call rebuilds against the current
+  /// `SharedPreferences.setMockInitialValues(...)`. Test-only.
+  @visibleForTesting
+  static void resetForTesting() {
+    _instances.clear();
+    _cacheFuture = null;
+  }
+
   /// Typed read helpers — return the stored value or [defaultValue] when missing.
   bool readBool(String key, {bool defaultValue = false}) => _cache.getBool(key) ?? defaultValue;
   int readInt(String key, {int defaultValue = 0}) => _cache.getInt(key) ?? defaultValue;
