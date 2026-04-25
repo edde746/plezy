@@ -2482,11 +2482,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                       imageType: ImageType.art,
                                     );
 
+                                    final (_, memHeight) = PlexImageHelper.getMemCacheDimensions(
+                                      displayWidth: (mqSize.width * dpr).round(),
+                                      displayHeight: (mqSize.height * 0.6 * dpr).round(),
+                                      imageType: ImageType.art,
+                                    );
                                     return blurArtwork(
                                       CachedNetworkImage(
                                         imageUrl: imageUrl,
                                         cacheManager: PlexImageCacheManager.instance,
                                         fit: BoxFit.cover,
+                                        memCacheHeight: memHeight,
                                         placeholder: (context, url) => const PlaceholderContainer(),
                                         errorWidget: (context, url, error) => const PlaceholderContainer(),
                                       ),

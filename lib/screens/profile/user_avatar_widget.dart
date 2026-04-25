@@ -148,6 +148,7 @@ class UserAvatarWidget extends StatelessWidget {
                 width: size,
                 height: size,
                 fit: BoxFit.cover,
+                memCacheHeight: (size * MediaQuery.devicePixelRatioOf(context)).round(),
                 placeholder: (ctx, url) => _buildPlaceholderAvatar(theme),
                 errorWidget: (ctx, url, error) => _buildPlaceholderAvatar(theme),
               ),

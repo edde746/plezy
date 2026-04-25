@@ -167,6 +167,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
                       width: 80,
                       height: 120,
                       fit: BoxFit.cover,
+                      memCacheHeight: (120 * MediaQuery.devicePixelRatioOf(context)).round(),
                       errorWidget: (_, _, _) => const SizedBox.shrink(),
                     ),
                   ),
