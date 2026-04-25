@@ -417,8 +417,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     if (PlatformDetector.isDesktopOS()) {
       _memoryCheckTimer = Timer.periodic(const Duration(seconds: 30), (_) {
         final rss = ProcessInfo.currentRss;
-        if (rss > 1536 * 1024 * 1024) {
-          // 1.5GB
+        if (rss > 1024 * 1024 * 1024) {
+          // 1GB
           appLogger.w('RSS high ($rss bytes), evicting image caches');
           _evictImageCaches();
         }
@@ -592,10 +592,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // SQLite WAL mode handles process death; desktop uses onExitRequested.
         InAppReviewService.instance.endSession();
         if (PlatformDetector.isDesktopOS()) {
-          if (ProcessInfo.currentRss > 1024 * 1024 * 1024) {
-            // 1GB
-            _evictImageCaches();
-          }
+          _evictImageCaches();
         }
       case AppLifecycleState.inactive:
       case AppLifecycleState.hidden:

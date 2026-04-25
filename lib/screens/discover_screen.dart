@@ -1382,11 +1382,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           imageType: ImageType.art,
                         );
 
+                        final (_, memHeight) = PlexImageHelper.getMemCacheDimensions(
+                          displayWidth: (screenWidth * dpr).round(),
+                          displayHeight: (heroHeight * dpr).round(),
+                          imageType: ImageType.art,
+                        );
+
                         return blurArtwork(
                           CachedNetworkImage(
                             imageUrl: imageUrl,
                             cacheManager: PlexImageCacheManager.instance,
                             fit: BoxFit.cover,
+                            memCacheHeight: memHeight,
                             placeholder: (context, url) =>
                                 ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
                             errorWidget: (context, url, error) =>
