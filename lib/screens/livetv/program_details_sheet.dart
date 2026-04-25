@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -5,6 +6,7 @@ import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/livetv_channel.dart';
 import '../../models/livetv_program.dart';
+import '../../services/image_cache_service.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/overlay_sheet.dart';
@@ -159,12 +161,13 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
                 ClipRRect(
                   borderRadius: const BorderRadius.all(Radius.circular(6)),
                   child: blurArtwork(
-                    Image.network(
-                      widget.posterUrl!,
+                    CachedNetworkImage(
+                      imageUrl: widget.posterUrl!,
+                      cacheManager: PlexImageCacheManager.instance,
                       width: 80,
                       height: 120,
                       fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                      errorWidget: (_, _, _) => const SizedBox.shrink(),
                     ),
                   ),
                 ),

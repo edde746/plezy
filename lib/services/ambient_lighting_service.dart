@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 
 import '../mpv/player/player.dart';
+import '../utils/app_logger.dart';
 
 /// Generates and manages an ambient lighting GLSL shader that fills letterbox/pillarbox
 /// bars with a blurred, dimmed version of the video edges.
@@ -40,9 +40,7 @@ class AmbientLightingService {
       // Write static shader (only needs to happen once)
       _shaderPath ??= await _writeShaderToTemp(_generateShader());
 
-      if (kDebugMode) {
-        debugPrint('AmbientLightingService: Shader path: $_shaderPath');
-      }
+      appLogger.d('AmbientLightingService: Shader path: $_shaderPath');
 
       // Set video-aspect-override to fill the entire output area
       await _player.setProperty('video-aspect-override', outputAspect.toString());
@@ -52,13 +50,9 @@ class AmbientLightingService {
 
       _enabled = true;
 
-      if (kDebugMode) {
-        debugPrint('AmbientLightingService: Enabled (video=$videoAspect, output=$outputAspect)');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('AmbientLightingService: Failed to enable: $e');
-      }
+      appLogger.d('AmbientLightingService: Enabled (video=$videoAspect, output=$outputAspect)');
+    } catch (e, st) {
+      appLogger.w('AmbientLightingService: Failed to enable', error: e, stackTrace: st);
     }
   }
 
@@ -75,13 +69,9 @@ class AmbientLightingService {
 
       _enabled = false;
 
-      if (kDebugMode) {
-        debugPrint('AmbientLightingService: Disabled');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('AmbientLightingService: Failed to disable: $e');
-      }
+      appLogger.d('AmbientLightingService: Disabled');
+    } catch (e, st) {
+      appLogger.w('AmbientLightingService: Failed to disable', error: e, stackTrace: st);
     }
   }
 

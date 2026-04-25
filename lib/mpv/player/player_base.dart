@@ -220,8 +220,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           try {
             final parsed = jsonDecode(value);
             if (parsed is List) trackList = parsed;
-          } catch (_) {
-            // Ignore parse errors
+          } catch (e) {
+            appLogger.d('Player: track-list parse failed', error: e);
           }
         }
         if (trackList != null) {
@@ -260,7 +260,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           try {
             final parsed = jsonDecode(value);
             if (parsed is List) deviceList = parsed;
-          } catch (_) {}
+          } catch (e) {
+            appLogger.d('Player: device-list parse failed', error: e);
+          }
         }
         if (deviceList != null) {
           final devices = deviceList

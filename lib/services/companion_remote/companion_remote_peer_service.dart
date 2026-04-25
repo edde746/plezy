@@ -546,7 +546,9 @@ class CompanionRemotePeerService with KeepaliveMixin {
         if (_channel != null) {
           try {
             await _channel!.sink.close();
-          } catch (_) {}
+          } catch (e) {
+            appLogger.d('CompanionRemote: channel close on timeout failed', error: e);
+          }
           _channel = null;
         }
         throw const RemotePeerError(type: RemotePeerErrorType.timeout, message: 'Timed out joining session');
@@ -591,7 +593,9 @@ class CompanionRemotePeerService with KeepaliveMixin {
       for (final ch in channels) {
         try {
           ch.sink.close();
-        } catch (_) {}
+        } catch (e) {
+          appLogger.d('CompanionRemote: race-loser close ignored', error: e);
+        }
       }
     }
 
@@ -610,7 +614,9 @@ class CompanionRemotePeerService with KeepaliveMixin {
                 appLogger.d('CompanionRemote: Race winner: $address');
                 completer.complete(address);
               }
-            } catch (_) {}
+            } catch (e) {
+              appLogger.d('CompanionRemote: race message parse skipped', error: e);
+            }
           },
           onError: (_) {},
           onDone: () {},
@@ -762,14 +768,18 @@ class CompanionRemotePeerService with KeepaliveMixin {
     if (_clientSocket != null) {
       try {
         await _clientSocket!.close();
-      } catch (_) {}
+      } catch (e) {
+        appLogger.d('CompanionRemote: client socket close ignored', error: e);
+      }
       _clientSocket = null;
     }
 
     if (_channel != null) {
       try {
         await _channel!.sink.close();
-      } catch (_) {}
+      } catch (e) {
+        appLogger.d('CompanionRemote: channel close ignored', error: e);
+      }
       _channel = null;
     }
 

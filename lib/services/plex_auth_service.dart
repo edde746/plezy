@@ -80,7 +80,11 @@ class PlexAuthService {
   }
 
   Future<PlexResponse> _getUser(String authToken) {
-    return _http.get('$_plexApiBase/user', headers: _getCommonHeaders(authToken: authToken));
+    return _http.get(
+      '$_plexApiBase/user',
+      headers: _getCommonHeaders(authToken: authToken),
+      timeout: ConnectionTimeouts.plexTvReceive,
+    );
   }
 
   void _checkStatus(PlexResponse response) => throwIfHttpError(response);
@@ -97,7 +101,11 @@ class PlexAuthService {
 
   /// Create a PIN for authentication
   Future<Map<String, dynamic>> createPin() async {
-    final response = await _http.post('$_plexApiBase/pins?strong=true', headers: _getCommonHeaders());
+    final response = await _http.post(
+      '$_plexApiBase/pins?strong=true',
+      headers: _getCommonHeaders(),
+      timeout: ConnectionTimeouts.plexTvReceive,
+    );
     _checkStatus(response);
     return response.data as Map<String, dynamic>;
   }
@@ -116,7 +124,11 @@ class PlexAuthService {
   /// Poll the PIN to check if it has been claimed
   Future<String?> checkPin(int pinId) async {
     try {
-      final response = await _http.get('$_plexApiBase/pins/$pinId', headers: _getCommonHeaders());
+      final response = await _http.get(
+        '$_plexApiBase/pins/$pinId',
+        headers: _getCommonHeaders(),
+        timeout: ConnectionTimeouts.plexTvReceive,
+      );
 
       final data = response.data as Map<String, dynamic>;
       return data['authToken'] as String?;
@@ -125,16 +137,20 @@ class PlexAuthService {
     }
   }
 
-  /// Poll the PIN until it's claimed or timeout
+  /// Poll the PIN until it's claimed or timeout.
+  ///
+  /// Uses an exponential backoff (1s → 2s → 4s, capped at 5s) so a stalled
+  /// claim doesn't hammer plex.tv every second for two minutes.
   Future<String?> pollPinUntilClaimed(
     int pinId, {
     Duration timeout = const Duration(minutes: 2),
     bool Function()? shouldCancel,
   }) async {
     final endTime = DateTime.now().add(timeout);
+    var backoff = const Duration(seconds: 1);
+    const maxBackoff = Duration(seconds: 5);
 
     while (DateTime.now().isBefore(endTime)) {
-      // Check if polling should be cancelled
       if (shouldCancel != null && shouldCancel()) {
         return null;
       }
@@ -144,8 +160,9 @@ class PlexAuthService {
         return token;
       }
 
-      // Wait 1 second before polling again
-      await Future.delayed(const Duration(seconds: 1));
+      await Future.delayed(backoff);
+      final next = backoff * 2;
+      backoff = next > maxBackoff ? maxBackoff : next;
     }
 
     return null; // Timeout

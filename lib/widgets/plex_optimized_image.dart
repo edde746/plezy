@@ -346,46 +346,26 @@ class PlexOptimizedImage extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder(BuildContext context) {
+  Widget _surfacePlaceholder(BuildContext context, {IconData? icon, Color? iconColor, bool fillParent = false}) {
+    final theme = Theme.of(context).colorScheme;
     return Container(
-      width: width,
-      height: height,
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: fallbackIcon != null
-          ? Center(child: AppIcon(fallbackIcon!, fill: 1, size: 40, color: Colors.white54))
-          : null,
+      width: fillParent ? null : width,
+      height: fillParent ? null : height,
+      color: theme.surfaceContainerHighest,
+      child: icon == null
+          ? null
+          : Center(child: AppIcon(icon, fill: 1, size: 40, color: iconColor ?? theme.onSurfaceVariant)),
     );
   }
 
-  Widget _buildErrorWidget(BuildContext context, dynamic _) {
-    return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: AppIcon(
-          fallbackIcon ?? Symbols.broken_image_rounded,
-          fill: 1,
-          size: 40,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
+  Widget _buildPlaceholder(BuildContext context) =>
+      _surfacePlaceholder(context, icon: fallbackIcon, iconColor: Colors.white54);
 
-  Widget _buildFallback(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Center(
-        child: AppIcon(
-          fallbackIcon ?? Symbols.image_not_supported_rounded,
-          fill: 1,
-          size: 40,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
-  }
+  Widget _buildErrorWidget(BuildContext context, dynamic _) =>
+      _surfacePlaceholder(context, icon: fallbackIcon ?? Symbols.broken_image_rounded, fillParent: true);
+
+  Widget _buildFallback(BuildContext context) =>
+      _surfacePlaceholder(context, icon: fallbackIcon ?? Symbols.image_not_supported_rounded);
 
   String _generateCacheKey(String imageUrl) {
     // URL already encodes bucketed transcode dimensions via roundDimensions,

@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:saf_util/saf_util.dart';
+import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import 'package:saf_util/saf_util_platform_interface.dart';
 
@@ -27,7 +27,7 @@ class SafStorageService {
       final doc = await _safUtil.pickDirectory(writePermission: true, persistablePermission: true);
       return doc?.uri;
     } catch (e) {
-      debugPrint('SAF pickDirectory error: $e');
+      appLogger.w('SAF pickDirectory error', error: e);
       return null;
     }
   }
@@ -40,7 +40,7 @@ class SafStorageService {
       final result = await _safUtil.mkdirp(parentUri, [name]);
       return result.uri;
     } catch (e) {
-      debugPrint('SAF createDirectory error: $e');
+      appLogger.w('SAF createDirectory error', error: e);
       return null;
     }
   }
@@ -53,7 +53,7 @@ class SafStorageService {
     try {
       return await _safUtil.child(parentUri, names);
     } catch (e) {
-      debugPrint('SAF getChild error: $e');
+      appLogger.w('SAF getChild error', error: e);
       return null;
     }
   }
@@ -66,7 +66,7 @@ class SafStorageService {
       final result = await _safUtil.mkdirp(parentUri, pathComponents);
       return result.uri;
     } catch (e) {
-      debugPrint('SAF createNestedDirectories error: $e');
+      appLogger.w('SAF createNestedDirectories error', error: e);
       return null;
     }
   }
@@ -78,7 +78,7 @@ class SafStorageService {
       await _safUtil.delete(uri, isDir);
       return true;
     } catch (e) {
-      debugPrint('SAF delete error: $e');
+      appLogger.w('SAF delete error', error: e);
       return false;
     }
   }
@@ -89,7 +89,7 @@ class SafStorageService {
     try {
       return await _safUtil.exists(uri, isDir);
     } catch (e) {
-      debugPrint('SAF exists error: $e');
+      appLogger.w('SAF exists error', error: e);
       return false;
     }
   }
@@ -101,7 +101,7 @@ class SafStorageService {
     try {
       return await _safUtil.list(uri);
     } catch (e) {
-      debugPrint('SAF list error: $e');
+      appLogger.w('SAF list error', error: e);
       return null;
     }
   }

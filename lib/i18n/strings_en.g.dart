@@ -2384,8 +2384,23 @@ class TranslationsDownloadsEn {
 	/// en: 'Are you sure you want to delete "${title}"? This will remove the downloaded file from your device.'
 	String deleteConfirm({required Object title}) => 'Are you sure you want to delete "${title}"? This will remove the downloaded file from your device.';
 
+	/// en: 'Deleting...'
+	String get deleting => 'Deleting...';
+
 	/// en: 'Deleting ${title}... (${current} of ${total})'
 	String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})';
+
+	/// en: 'Queued'
+	String get queuedTooltip => 'Queued';
+
+	/// en: 'Queued ${files}'
+	String queuedFilesTooltip({required Object files}) => 'Queued ${files}';
+
+	/// en: 'Downloading...'
+	String get downloadingTooltip => 'Downloading...';
+
+	/// en: 'Downloading ${files}'
+	String downloadingFilesTooltip({required Object files}) => 'Downloading ${files}';
 
 	/// en: 'No downloads'
 	String get noDownloadsTree => 'No downloads';
@@ -4171,7 +4186,12 @@ extension on Translations {
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodes queued for download',
 			'downloads.downloadDeleted' => 'Download deleted',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Are you sure you want to delete "${title}"? This will remove the downloaded file from your device.',
+			'downloads.deleting' => 'Deleting...',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})',
+			'downloads.queuedTooltip' => 'Queued',
+			'downloads.queuedFilesTooltip' => ({required Object files}) => 'Queued ${files}',
+			'downloads.downloadingTooltip' => 'Downloading...',
+			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloading ${files}',
 			'downloads.noDownloadsTree' => 'No downloads',
 			'downloads.pauseAll' => 'Pause all',
 			'downloads.resumeAll' => 'Resume all',

@@ -249,4 +249,40 @@ class PlexImageHelper {
 
     return true;
   }
+
+  /// Optimized URL for hero/background art ([ImageType.art]).
+  static String heroArtUrl({
+    required PlexClient? client,
+    required String? thumbPath,
+    required BuildContext context,
+    required double containerWidth,
+    required double containerHeight,
+  }) => _typedUrl(client, thumbPath, context, containerWidth, containerHeight, ImageType.art);
+
+  /// Optimized URL for clear-logo overlays ([ImageType.logo]).
+  static String logoUrl({
+    required PlexClient? client,
+    required String? thumbPath,
+    required BuildContext context,
+    required double containerWidth,
+    required double containerHeight,
+  }) => _typedUrl(client, thumbPath, context, containerWidth, containerHeight, ImageType.logo);
+
+  static String _typedUrl(
+    PlexClient? client,
+    String? thumbPath,
+    BuildContext context,
+    double containerWidth,
+    double containerHeight,
+    ImageType type,
+  ) {
+    return getOptimizedImageUrl(
+      client: client,
+      thumbPath: thumbPath,
+      maxWidth: containerWidth,
+      maxHeight: containerHeight,
+      devicePixelRatio: effectiveDevicePixelRatio(context),
+      imageType: type,
+    );
+  }
 }

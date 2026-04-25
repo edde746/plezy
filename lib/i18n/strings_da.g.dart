@@ -1040,6 +1040,11 @@ class _TranslationsDownloadsDa implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => 'Download slettet';
 	@override String deleteConfirm({required Object title}) => 'Er du sikker på, at du vil slette "${title}"? Den downloadede fil fjernes fra din enhed.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Sletter ${title}... (${current} af ${total})';
+	@override String get deleting => 'Sletter...';
+	@override String get queuedTooltip => 'I kø';
+	@override String queuedFilesTooltip({required Object files}) => 'I kø: ${files}';
+	@override String get downloadingTooltip => 'Downloader...';
+	@override String downloadingFilesTooltip({required Object files}) => 'Downloader ${files}';
 	@override String get noDownloadsTree => 'Ingen downloads';
 	@override String get pauseAll => 'Pause alle';
 	@override String get resumeAll => 'Genoptag alle';
@@ -2240,6 +2245,11 @@ extension on TranslationsDa {
 			'downloads.downloadDeleted' => 'Download slettet',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Er du sikker på, at du vil slette "${title}"? Den downloadede fil fjernes fra din enhed.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Sletter ${title}... (${current} af ${total})',
+			'downloads.deleting' => 'Sletter...',
+			'downloads.queuedTooltip' => 'I kø',
+			'downloads.queuedFilesTooltip' => ({required Object files}) => 'I kø: ${files}',
+			'downloads.downloadingTooltip' => 'Downloader...',
+			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloader ${files}',
 			'downloads.noDownloadsTree' => 'Ingen downloads',
 			'downloads.pauseAll' => 'Pause alle',
 			'downloads.resumeAll' => 'Genoptag alle',

@@ -42,6 +42,7 @@ class LanDiscoveryService {
 
   // Listener state (client)
   RawDatagramSocket? _listenSocket;
+  StreamSubscription<RawSocketEvent>? _listenSubscription;
   Timer? _staleCleanupTimer;
   final Map<String, DiscoveredHost> _discoveredHosts = {};
   final _hostsController = StreamController<List<DiscoveredHost>>.broadcast();
@@ -175,7 +176,7 @@ class LanDiscoveryService {
 
       appLogger.d('LanDiscovery: Listening on port $discoveryPort');
 
-      _listenSocket!.listen((RawSocketEvent event) {
+      _listenSubscription = _listenSocket!.listen((RawSocketEvent event) {
         if (event == RawSocketEvent.read) {
           final datagram = _listenSocket?.receive();
           if (datagram != null) {
@@ -269,6 +270,8 @@ class LanDiscoveryService {
   void _stopListeningInternal() {
     _staleCleanupTimer?.cancel();
     _staleCleanupTimer = null;
+    _listenSubscription?.cancel();
+    _listenSubscription = null;
     _listenSocket?.close();
     _listenSocket = null;
     appLogger.d('LanDiscovery: Listening stopped');

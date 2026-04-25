@@ -1040,6 +1040,11 @@ class _TranslationsDownloadsPt implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => 'Download excluído';
 	@override String deleteConfirm({required Object title}) => 'Tem certeza que deseja excluir "${title}"? Isso removerá o arquivo baixado do seu dispositivo.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Excluindo ${title}... (${current} de ${total})';
+	@override String get deleting => 'Excluindo...';
+	@override String get queuedTooltip => 'Na fila';
+	@override String queuedFilesTooltip({required Object files}) => 'Na fila: ${files}';
+	@override String get downloadingTooltip => 'Baixando...';
+	@override String downloadingFilesTooltip({required Object files}) => 'Baixando ${files}';
 	@override String get noDownloadsTree => 'Nenhum download';
 	@override String get pauseAll => 'Pausar todos';
 	@override String get resumeAll => 'Retomar todos';
@@ -2240,6 +2245,11 @@ extension on TranslationsPt {
 			'downloads.downloadDeleted' => 'Download excluído',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Tem certeza que deseja excluir "${title}"? Isso removerá o arquivo baixado do seu dispositivo.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Excluindo ${title}... (${current} de ${total})',
+			'downloads.deleting' => 'Excluindo...',
+			'downloads.queuedTooltip' => 'Na fila',
+			'downloads.queuedFilesTooltip' => ({required Object files}) => 'Na fila: ${files}',
+			'downloads.downloadingTooltip' => 'Baixando...',
+			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Baixando ${files}',
 			'downloads.noDownloadsTree' => 'Nenhum download',
 			'downloads.pauseAll' => 'Pausar todos',
 			'downloads.resumeAll' => 'Retomar todos',

@@ -18,86 +18,71 @@ extension ProviderExtensions on BuildContext {
   // Direct profile settings access (nullable)
   PlexUserProfile? get profileSettings => userProfile.profileSettings;
 
-  /// Get PlexClient for a specific server ID
-  /// Throws an exception if no client is available for the given serverId
-  PlexClient getClientForServer(String serverId) {
-    final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
+  /// Internal: resolve a [PlexClient] from a serverId or fall back to the
+  /// first online server. Returns null if neither yields a client.
+  PlexClient? _resolveClient(String? serverId) {
+    final provider = Provider.of<MultiServerProvider>(this, listen: false);
+    if (serverId != null) {
+      final client = provider.getClientForServer(serverId);
+      if (client != null) return client;
+    }
+    final fallbackId = provider.onlineServerIds.firstOrNull;
+    if (fallbackId == null) return null;
+    return provider.getClientForServer(fallbackId);
+  }
 
-    final serverClient = multiServerProvider.getClientForServer(serverId);
-
-    if (serverClient == null) {
-      appLogger.e('No client found for server $serverId');
+  /// Internal: like [_resolveClient] but throws a localized exception when
+  /// no client is available. The thrown message is the canonical
+  /// `t.errors.noClientAvailable` so callers can surface it directly.
+  PlexClient _requireClient(String? serverId, {bool fallback = true}) {
+    final provider = Provider.of<MultiServerProvider>(this, listen: false);
+    if (serverId != null) {
+      final client = provider.getClientForServer(serverId);
+      if (client != null) return client;
+      if (!fallback) {
+        appLogger.e('No client found for server $serverId');
+        throw Exception(t.errors.noClientAvailable);
+      }
+    }
+    final fallbackId = provider.onlineServerIds.firstOrNull;
+    final client = fallbackId == null ? null : provider.getClientForServer(fallbackId);
+    if (client == null) {
       throw Exception(t.errors.noClientAvailable);
     }
-
-    return serverClient;
+    return client;
   }
+
+  /// Get PlexClient for a specific server ID. Throws if unavailable.
+  PlexClient getClientForServer(String serverId) => _requireClient(serverId, fallback: false);
 
   /// Get PlexClient for a specific server ID, or null if unavailable.
   PlexClient? tryGetClientForServer(String? serverId) {
     if (serverId == null) return null;
-    final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
-    return multiServerProvider.getClientForServer(serverId);
+    final provider = Provider.of<MultiServerProvider>(this, listen: false);
+    return provider.getClientForServer(serverId);
   }
 
-  /// Get PlexClient for a library
-  /// Throws an exception if no client is available
-  PlexClient getClientForLibrary(PlexLibrary library) {
-    // If library doesn't have a serverId, fall back to first available server
-    if (library.serverId == null) {
-      final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
-      final serverId = multiServerProvider.onlineServerIds.firstOrNull;
-      if (serverId == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
-      return getClientForServer(serverId);
-    }
-    return getClientForServer(library.serverId!);
-  }
+  /// Get PlexClient for a library, falling back to the first online server
+  /// when the library has no serverId. Throws if no client is available.
+  PlexClient getClientForLibrary(PlexLibrary library) => _requireClient(library.serverId);
 
-  /// Get PlexClient for metadata, with fallback to first available server
-  /// Throws an exception if no servers are available
-  PlexClient getClientForMetadata(PlexMetadata metadata) {
-    if (metadata.serverId != null) {
-      return getClientForServer(metadata.serverId!);
-    }
-    return getFirstAvailableClient();
-  }
+  /// Get PlexClient for metadata, falling back to the first online server.
+  /// Throws if no client is available.
+  PlexClient getClientForMetadata(PlexMetadata metadata) => _requireClient(metadata.serverId);
 
-  /// Get PlexClient for metadata, or null if offline mode or no serverId
-  /// Use this for screens that support offline mode
+  /// Get PlexClient for metadata, or null in offline mode / when no serverId.
   PlexClient? getClientForMetadataOrNull(PlexMetadata metadata, {bool isOffline = false}) {
-    if (isOffline || metadata.serverId == null) {
-      return null;
-    }
+    if (isOffline) return null;
     return tryGetClientForServer(metadata.serverId);
   }
 
-  /// Get the first available client from connected servers
-  /// Throws an exception if no servers are available
-  PlexClient getFirstAvailableClient() {
-    final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
-    final serverId = multiServerProvider.onlineServerIds.firstOrNull;
-    if (serverId == null) {
-      throw Exception(t.errors.noClientAvailable);
-    }
-    return getClientForServer(serverId);
-  }
+  /// Get the first online server's client. Throws if none available.
+  PlexClient getFirstAvailableClient() => _requireClient(null);
 
-  /// Get the first available client, or null if no servers are connected
-  PlexClient? tryGetFirstAvailableClient() {
-    final multiServerProvider = Provider.of<MultiServerProvider>(this, listen: false);
-    final serverId = multiServerProvider.onlineServerIds.firstOrNull;
-    if (serverId == null) return null;
-    return multiServerProvider.getClientForServer(serverId);
-  }
+  /// Get the first online server's client, or null.
+  PlexClient? tryGetFirstAvailableClient() => _resolveClient(null);
 
-  /// Get client for a serverId with fallback to first available server
-  /// Useful for items that might not have a serverId
-  PlexClient getClientWithFallback(String? serverId) {
-    if (serverId != null) {
-      return getClientForServer(serverId);
-    }
-    return getFirstAvailableClient();
-  }
+  /// Get client for a serverId, falling back to the first online server.
+  /// Throws if no client is available.
+  PlexClient getClientWithFallback(String? serverId) => _requireClient(serverId);
 }

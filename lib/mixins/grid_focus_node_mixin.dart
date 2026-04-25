@@ -19,6 +19,12 @@ mixin GridFocusNodeMixin<T extends StatefulWidget> on State<T> {
     return gridItemFocusNodes.putIfAbsent(index, () => FocusNode(debugLabel: '${prefix}_$index'));
   }
 
+  /// Get the focus node for [index], routing index 0 through [firstNode] when
+  /// the grid pins a dedicated node for the first item (e.g. `firstItemFocusNode`).
+  FocusNode focusNodeForIndex(int index, FocusNode firstNode, {required String prefix}) {
+    return index == 0 ? firstNode : getGridItemFocusNode(index, prefix: prefix);
+  }
+
   /// Record that the item at [index] received focus.
   void trackGridItemFocus(int index, bool hasFocus) {
     if (hasFocus) {

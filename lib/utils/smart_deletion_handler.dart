@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../i18n/strings.g.dart';
 import '../providers/download_provider.dart';
 import '../widgets/deletion_progress_dialog.dart';
 
@@ -45,10 +46,10 @@ class SmartDeletionHandler {
 
           // If no progress, show simple fallback
           if (progress == null) {
-            return const AlertDialog(
+            return AlertDialog(
               content: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: [CircularProgressIndicator(), SizedBox(width: 20), Text('Deleting...')],
+                children: [const CircularProgressIndicator(), const SizedBox(width: 20), Text(t.downloads.deleting)],
               ),
             );
           }

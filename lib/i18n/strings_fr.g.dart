@@ -1040,6 +1040,11 @@ class _TranslationsDownloadsFr implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => 'Télécharger supprimé';
 	@override String deleteConfirm({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cela supprimera le fichier téléchargé de votre appareil.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Suppression de ${title}... (${current} sur ${total})';
+	@override String get deleting => 'Suppression...';
+	@override String get queuedTooltip => 'En attente';
+	@override String queuedFilesTooltip({required Object files}) => 'En attente : ${files}';
+	@override String get downloadingTooltip => 'Téléchargement...';
+	@override String downloadingFilesTooltip({required Object files}) => 'Téléchargement de ${files}';
 	@override String get noDownloadsTree => 'Aucun téléchargement';
 	@override String get pauseAll => 'Tout mettre en pause';
 	@override String get resumeAll => 'Tout reprendre';
@@ -2240,6 +2245,11 @@ extension on TranslationsFr {
 			'downloads.downloadDeleted' => 'Télécharger supprimé',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir supprimer "${title}" ? Cela supprimera le fichier téléchargé de votre appareil.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Suppression de ${title}... (${current} sur ${total})',
+			'downloads.deleting' => 'Suppression...',
+			'downloads.queuedTooltip' => 'En attente',
+			'downloads.queuedFilesTooltip' => ({required Object files}) => 'En attente : ${files}',
+			'downloads.downloadingTooltip' => 'Téléchargement...',
+			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Téléchargement de ${files}',
 			'downloads.noDownloadsTree' => 'Aucun téléchargement',
 			'downloads.pauseAll' => 'Tout mettre en pause',
 			'downloads.resumeAll' => 'Tout reprendre',

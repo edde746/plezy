@@ -11,6 +11,9 @@ import '../utils/global_key_utils.dart';
 
 part 'app_database.g.dart';
 
+/// String values stored in [OfflineWatchProgress.actionType] (use `.name`).
+enum OfflineActionType { progress, watched, unwatched }
+
 // Simplified database with API cache for offline support
 @DriftDatabase(tables: [DownloadedMedia, DownloadQueue, ApiCache, OfflineWatchProgress, SyncRules])
 class AppDatabase extends _$AppDatabase {
@@ -150,7 +153,7 @@ class AppDatabase extends _$AppDatabase {
     // Check for existing progress entry
     final existing =
         await (select(offlineWatchProgress)
-              ..where((t) => t.globalKey.equals(globalKey) & t.actionType.equals('progress'))
+              ..where((t) => t.globalKey.equals(globalKey) & t.actionType.equals(OfflineActionType.progress.name))
               ..limit(1))
             .getSingleOrNull();
 
@@ -171,7 +174,7 @@ class AppDatabase extends _$AppDatabase {
           serverId: serverId,
           ratingKey: ratingKey,
           globalKey: globalKey,
-          actionType: 'progress',
+          actionType: OfflineActionType.progress.name,
           viewOffset: Value(viewOffset),
           duration: Value(duration),
           shouldMarkWatched: Value(shouldMarkWatched),

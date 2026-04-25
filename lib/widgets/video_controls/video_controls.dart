@@ -391,7 +391,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // Add lifecycle observer to reload settings when app resumes
     WidgetsBinding.instance.addObserver(this);
     // Add window listener for tracking fullscreen state (for button icon)
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    if (PlatformDetector.isDesktopOS()) {
       windowManager.addListener(this);
       _initAlwaysOnTopState();
     }
@@ -705,11 +705,18 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
     if (shaderService.currentPreset.isEnabled) {
       // Currently active - disable temporarily
-      shaderService.applyPreset(ShaderPreset.none).then((_) {
-        // ignore: no-empty-block - setState triggers rebuild to reflect disabled shader
-        if (mounted) setState(() {});
-        widget.onShaderChanged?.call();
-      });
+      unawaited(
+        shaderService
+            .applyPreset(ShaderPreset.none)
+            .then((_) {
+              // ignore: no-empty-block - setState triggers rebuild to reflect disabled shader
+              if (mounted) setState(() {});
+              widget.onShaderChanged?.call();
+            })
+            .catchError((Object e, StackTrace st) {
+              appLogger.w('Failed to disable shader', error: e, stackTrace: st);
+            }),
+      );
     } else {
       // Currently off - restore saved preset
       final shaderProvider = context.read<ShaderProvider>();
@@ -718,12 +725,19 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       final targetPreset = saved.isEnabled
           ? saved
           : allPresets.firstWhere((p) => p.isEnabled, orElse: () => allPresets[1]);
-      shaderService.applyPreset(targetPreset).then((_) {
-        shaderProvider.setCurrentPreset(targetPreset);
-        // ignore: no-empty-block - setState triggers rebuild to reflect restored shader
-        if (mounted) setState(() {});
-        widget.onShaderChanged?.call();
-      });
+      unawaited(
+        shaderService
+            .applyPreset(targetPreset)
+            .then((_) {
+              shaderProvider.setCurrentPreset(targetPreset);
+              // ignore: no-empty-block - setState triggers rebuild to reflect restored shader
+              if (mounted) setState(() {});
+              widget.onShaderChanged?.call();
+            })
+            .catchError((Object e, StackTrace st) {
+              appLogger.w('Failed to apply shader preset', error: e, stackTrace: st);
+            }),
+      );
     }
   }
 
@@ -766,7 +780,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     // Remove lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
     // Remove window listener and reset always-on-top if it was enabled
-    if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+    if (PlatformDetector.isDesktopOS()) {
       windowManager.removeListener(this);
       if (_isAlwaysOnTop) {
         windowManager.setAlwaysOnTop(false);
@@ -926,7 +940,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       final maxVol = _keyboardService!.maxVolume.toDouble();
       final newVolume = (volume - delta / 20).clamp(0.0, maxVol);
       widget.player.setVolume(newVolume);
-      SettingsService.getInstance().then((s) => s.setVolume(newVolume));
+      unawaited(SettingsService.getInstance().then((s) => s.setVolume(newVolume)));
       _showControlsFromPointerActivity();
     }
   }
@@ -2033,7 +2047,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                       onLongPressEnd: (_) => _handleLongPressEnd(),
                       onLongPressCancel: _handleLongPressCancel,
                       behavior: HitTestBehavior.opaque,
-                      child: Container(color: Colors.transparent),
+                      child: const ColoredBox(color: Colors.transparent),
                     ),
                   ),
                   // Mobile double-tap zones for skip forward/backward
@@ -2061,7 +2075,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                   onLongPressEnd: (_) => _handleLongPressEnd(),
                                   onLongPressCancel: _handleLongPressCancel,
                                   behavior: HitTestBehavior.opaque,
-                                  child: Container(color: Colors.transparent),
+                                  child: const ColoredBox(color: Colors.transparent),
                                 ),
                               ),
                               // Right zone - skip forward (custom double-tap detection)
@@ -2076,7 +2090,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                                   onLongPressEnd: (_) => _handleLongPressEnd(),
                                   onLongPressCancel: _handleLongPressCancel,
                                   behavior: HitTestBehavior.opaque,
-                                  child: Container(color: Colors.transparent),
+                                  child: const ColoredBox(color: Colors.transparent),
                                 ),
                               ),
                             ],

@@ -1040,6 +1040,11 @@ class _TranslationsDownloadsRu implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => 'Загрузка удалена';
 	@override String deleteConfirm({required Object title}) => 'Вы уверены, что хотите удалить "${title}"? Загруженный файл будет удалён с устройства.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Удаление ${title}... (${current} из ${total})';
+	@override String get deleting => 'Удаление...';
+	@override String get queuedTooltip => 'В очереди';
+	@override String queuedFilesTooltip({required Object files}) => 'В очереди: ${files}';
+	@override String get downloadingTooltip => 'Загрузка...';
+	@override String downloadingFilesTooltip({required Object files}) => 'Загрузка ${files}';
 	@override String get noDownloadsTree => 'Нет загрузок';
 	@override String get pauseAll => 'Приостановить все';
 	@override String get resumeAll => 'Возобновить все';
@@ -2240,6 +2245,11 @@ extension on TranslationsRu {
 			'downloads.downloadDeleted' => 'Загрузка удалена',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Вы уверены, что хотите удалить "${title}"? Загруженный файл будет удалён с устройства.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Удаление ${title}... (${current} из ${total})',
+			'downloads.deleting' => 'Удаление...',
+			'downloads.queuedTooltip' => 'В очереди',
+			'downloads.queuedFilesTooltip' => ({required Object files}) => 'В очереди: ${files}',
+			'downloads.downloadingTooltip' => 'Загрузка...',
+			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Загрузка ${files}',
 			'downloads.noDownloadsTree' => 'Нет загрузок',
 			'downloads.pauseAll' => 'Приостановить все',
 			'downloads.resumeAll' => 'Возобновить все',

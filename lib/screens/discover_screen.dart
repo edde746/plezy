@@ -1368,7 +1368,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     child: Builder(
                       builder: (context) {
                         if (heroClient == null) {
-                          return Container(color: Theme.of(context).colorScheme.surfaceContainerHighest);
+                          return ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest);
                         }
                         final mediaQuery = MediaQuery.of(context);
                         final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
@@ -1388,9 +1388,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             cacheManager: PlexImageCacheManager.instance,
                             fit: BoxFit.cover,
                             placeholder: (context, url) =>
-                                Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                                ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
                             errorWidget: (context, url, error) =>
-                                Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                                ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
                           ),
                         );
                       },
@@ -1399,7 +1399,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 ),
               )
             else
-              Container(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+              ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
 
             // Gradient Overlay - blends into scaffold background
             Positioned(

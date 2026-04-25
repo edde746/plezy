@@ -18,6 +18,7 @@ import '../services/sync_rule_executor.dart';
 import '../utils/app_logger.dart';
 import '../utils/episode_collection.dart';
 import '../utils/global_key_utils.dart';
+import '../mixins/disposable_change_notifier_mixin.dart';
 
 /// Filter mode for batch downloads (shows/seasons).
 /// Use [all] to download everything, or [unwatched] with an optional maxCount.
@@ -39,7 +40,7 @@ class DownloadedArtwork {
 }
 
 /// Provider for managing download state and operations.
-class DownloadProvider extends ChangeNotifier {
+class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   final DownloadManagerService _downloadManager;
   final AppDatabase _database;
   final SyncRuleExecutor _syncRuleExecutor;
@@ -158,7 +159,7 @@ class DownloadProvider extends ChangeNotifier {
         'Loaded ${_downloads.length} downloads, ${_metadata.length} metadata entries, '
         '${_totalEpisodeCounts.length} episode counts, and ${_syncRules.length} sync rules',
       );
-      notifyListeners();
+      safeNotifyListeners();
     } catch (e) {
       appLogger.e('Failed to load persisted downloads', error: e);
     }
@@ -236,7 +237,7 @@ class DownloadProvider extends ChangeNotifier {
     }
 
     appLogger.d('Notifying listeners for ${progress.globalKey}');
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   @override
@@ -606,7 +607,7 @@ class DownloadProvider extends ChangeNotifier {
     try {
       // Mark as queueing to show loading state in UI
       _queueing.add(globalKey);
-      notifyListeners();
+      safeNotifyListeners();
 
       final mt = metadata.mediaType;
 
@@ -624,7 +625,7 @@ class DownloadProvider extends ChangeNotifier {
       }
     } finally {
       _queueing.remove(globalKey);
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -752,7 +753,7 @@ class DownloadProvider extends ChangeNotifier {
 
     // Update local state immediately for UI feedback
     _downloads[globalKey] = DownloadProgress(globalKey: globalKey, status: DownloadStatus.queued);
-    notifyListeners();
+    safeNotifyListeners();
 
     // Actually trigger download via DownloadManagerService
     await _downloadManager.queueDownload(metadata: metadataToStore, client: client, mediaIndex: resolvedIndex);
@@ -945,7 +946,7 @@ class DownloadProvider extends ChangeNotifier {
       await _downloadManager.cancelDownload(globalKey);
       _downloads.remove(globalKey);
       _metadata.remove(globalKey);
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -975,11 +976,11 @@ class DownloadProvider extends ChangeNotifier {
       _metadata.remove(globalKey);
       _artworkPaths.remove(globalKey);
 
-      notifyListeners();
+      safeNotifyListeners();
     } catch (e) {
       // Remove from deletion tracking on error
       _deletionProgress.remove(globalKey);
-      notifyListeners();
+      safeNotifyListeners();
       rethrow;
     }
   }
@@ -993,7 +994,7 @@ class DownloadProvider extends ChangeNotifier {
       // Update progress
       _deletionProgress[progress.globalKey] = progress;
     }
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   /// Get deletion progress for an item
@@ -1038,7 +1039,7 @@ class DownloadProvider extends ChangeNotifier {
 
     if (updatedCount > 0) {
       appLogger.i('Refreshed metadata from cache for $updatedCount items');
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -1123,7 +1124,7 @@ class DownloadProvider extends ChangeNotifier {
     final rule = await _database.getSyncRule(globalKey);
     if (rule != null) {
       _syncRules[globalKey] = rule;
-      notifyListeners();
+      safeNotifyListeners();
     }
     appLogger.i('Created sync rule: $globalKey ($targetType, filter=$downloadFilter, keep $episodeCount)');
   }
@@ -1134,7 +1135,7 @@ class DownloadProvider extends ChangeNotifier {
     final existing = _syncRules[globalKey];
     if (existing != null) {
       _syncRules[globalKey] = existing.copyWith(episodeCount: episodeCount);
-      notifyListeners();
+      safeNotifyListeners();
     }
     appLogger.i('Updated sync rule $globalKey: keep $episodeCount');
   }
@@ -1145,7 +1146,7 @@ class DownloadProvider extends ChangeNotifier {
     final existing = _syncRules[globalKey];
     if (existing != null) {
       _syncRules[globalKey] = existing.copyWith(downloadFilter: downloadFilter);
-      notifyListeners();
+      safeNotifyListeners();
     }
     appLogger.i('Updated sync rule $globalKey: filter=$downloadFilter');
   }
@@ -1156,7 +1157,7 @@ class DownloadProvider extends ChangeNotifier {
     final existing = _syncRules[globalKey];
     if (existing != null) {
       _syncRules[globalKey] = existing.copyWith(enabled: enabled);
-      notifyListeners();
+      safeNotifyListeners();
     }
     appLogger.i('${enabled ? 'Enabled' : 'Disabled'} sync rule: $globalKey');
   }
@@ -1165,7 +1166,7 @@ class DownloadProvider extends ChangeNotifier {
   Future<void> deleteSyncRule(String globalKey) async {
     await _database.deleteSyncRule(globalKey);
     _syncRules.remove(globalKey);
-    notifyListeners();
+    safeNotifyListeners();
     appLogger.i('Deleted sync rule: $globalKey');
   }
 

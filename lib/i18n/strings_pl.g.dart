@@ -1040,6 +1040,11 @@ class _TranslationsDownloadsPl implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => 'Pobranie usunięte';
 	@override String deleteConfirm({required Object title}) => 'Czy na pewno chcesz usunąć "${title}"? Spowoduje to usunięcie pobranego pliku z urządzenia.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Usuwanie ${title}... (${current} z ${total})';
+	@override String get deleting => 'Usuwanie...';
+	@override String get queuedTooltip => 'W kolejce';
+	@override String queuedFilesTooltip({required Object files}) => 'W kolejce: ${files}';
+	@override String get downloadingTooltip => 'Pobieranie...';
+	@override String downloadingFilesTooltip({required Object files}) => 'Pobieranie ${files}';
 	@override String get noDownloadsTree => 'Brak pobrań';
 	@override String get pauseAll => 'Wstrzymaj wszystko';
 	@override String get resumeAll => 'Wznów wszystko';
@@ -2240,6 +2245,11 @@ extension on TranslationsPl {
 			'downloads.downloadDeleted' => 'Pobranie usunięte',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Czy na pewno chcesz usunąć "${title}"? Spowoduje to usunięcie pobranego pliku z urządzenia.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Usuwanie ${title}... (${current} z ${total})',
+			'downloads.deleting' => 'Usuwanie...',
+			'downloads.queuedTooltip' => 'W kolejce',
+			'downloads.queuedFilesTooltip' => ({required Object files}) => 'W kolejce: ${files}',
+			'downloads.downloadingTooltip' => 'Pobieranie...',
+			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Pobieranie ${files}',
 			'downloads.noDownloadsTree' => 'Brak pobrań',
 			'downloads.pauseAll' => 'Wstrzymaj wszystko',
 			'downloads.resumeAll' => 'Wznów wszystko',

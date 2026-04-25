@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../mpv/mpv.dart';
 import '../services/pip_service.dart';
+import '../utils/app_logger.dart';
 
 /// Manages video Picture-in-Picture mode
 class VideoPIPManager {
@@ -36,7 +37,9 @@ class VideoPIPManager {
         width = int.tryParse(dwidth);
         height = int.tryParse(dheight);
       }
-    } catch (_) {}
+    } catch (e) {
+      appLogger.d('VideoPipManager: dwidth/dheight unavailable', error: e);
+    }
 
     if (width == null || height == null) {
       try {
@@ -46,7 +49,9 @@ class VideoPIPManager {
           width = int.tryParse(videoWidth);
           height = int.tryParse(videoHeight);
         }
-      } catch (_) {}
+      } catch (e) {
+        appLogger.d('VideoPipManager: width/height unavailable', error: e);
+      }
     }
 
     width ??= _playerSize?.width.toInt();

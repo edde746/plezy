@@ -305,12 +305,19 @@ class DownloadManagerService {
     // Attempt deferred supplementary downloads for recovered items
     _processPendingSupplementaryDownloads(client);
 
-    _database.getNextQueueItem().then((item) {
-      if (item != null) {
-        appLogger.i('Resuming queued downloads after app restart');
-        _processQueue(client);
-      }
-    });
+    unawaited(
+      _database
+          .getNextQueueItem()
+          .then((item) {
+            if (item != null) {
+              appLogger.i('Resuming queued downloads after app restart');
+              _processQueue(client);
+            }
+          })
+          .catchError((e, st) {
+            appLogger.e('Failed to resume queued downloads', error: e, stackTrace: st);
+          }),
+    );
   }
 
   /// Attempt supplementary downloads (artwork, subtitles) for items that were

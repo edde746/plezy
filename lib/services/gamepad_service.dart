@@ -9,6 +9,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../utils/app_logger.dart';
 import '../utils/key_event_simulator.dart' as key_sim;
+import '../utils/platform_detector.dart';
 
 /// Service that bridges gamepad input to Flutter's focus navigation system.
 ///
@@ -62,7 +63,7 @@ class GamepadService with WindowListener {
 
   /// Start listening to gamepad events.
   /// Only active on desktop platforms (macOS, Windows, Linux).
-  static bool get _isDesktop => Platform.isMacOS || Platform.isWindows || Platform.isLinux;
+  static bool get _isDesktop => PlatformDetector.isDesktopOS();
 
   void start() async {
     appLogger.i('GamepadService: Starting on ${Platform.operatingSystem}');

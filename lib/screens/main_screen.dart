@@ -139,7 +139,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
     WidgetsBinding.instance.addObserver(this);
 
-    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+    if (PlatformDetector.isDesktopOS()) {
       windowManager.addListener(this);
       windowManager.setPreventClose(true);
     }
@@ -465,7 +465,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     routeObserver.unsubscribe(this);
-    if (Platform.isLinux || Platform.isWindows || Platform.isMacOS) {
+    if (PlatformDetector.isDesktopOS()) {
       windowManager.removeListener(this);
       windowManager.setPreventClose(false);
     }

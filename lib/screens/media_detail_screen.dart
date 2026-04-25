@@ -348,8 +348,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           }
         });
       }
-    } catch (_) {
-      // Silently fail
+    } catch (e) {
+      appLogger.d('Episode cache sync skipped', error: e);
     }
   }
 
@@ -608,8 +608,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 if (progress?.status == DownloadStatus.queued) {
                   final currentFile = progress?.currentFile;
                   final tooltip = currentFile != null && currentFile.contains('episodes')
-                      ? 'Queued $currentFile'
-                      : 'Queued';
+                      ? t.downloads.queuedFilesTooltip(files: currentFile)
+                      : t.downloads.queuedTooltip;
 
                   return IconButton.filledTonal(
                     onPressed: null,
@@ -625,8 +625,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   // Show episode count in tooltip for shows/seasons
                   final currentFile = progress?.currentFile;
                   final tooltip = currentFile != null && currentFile.contains('episodes')
-                      ? 'Downloading $currentFile'
-                      : 'Downloading...';
+                      ? t.downloads.downloadingFilesTooltip(files: currentFile)
+                      : t.downloads.downloadingTooltip;
 
                   return IconButton.filledTonal(
                     onPressed: null,
@@ -2182,7 +2182,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         _episodes = episodeLists.expand((e) => e).toList();
         _isLoadingEpisodes = false;
       });
-    } catch (_) {
+    } catch (e, st) {
+      appLogger.w('Failed to load episodes for all seasons', error: e, stackTrace: st);
       setStateIfMounted(() => _isLoadingEpisodes = false);
     }
   }

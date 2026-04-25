@@ -1,11 +1,11 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
 
 import '../models/shader_preset.dart';
+import '../utils/app_logger.dart';
 
 /// Utility class for loading GLSL shader assets for MPV video enhancement.
 ///
@@ -70,10 +70,8 @@ class ShaderAssetLoader {
       }
 
       return targetFile.path;
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Failed to extract shader $assetPath: $e');
-      }
+    } catch (e, st) {
+      appLogger.w('Failed to extract shader $assetPath', error: e, stackTrace: st);
       return null;
     }
   }
@@ -245,10 +243,8 @@ class ShaderAssetLoader {
       for (final shaderPath in _anime4kShaders.values) {
         await _extractShader(shaderPath);
       }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('Failed to preload shaders: $e');
-      }
+    } catch (e, st) {
+      appLogger.w('Failed to preload shaders', error: e, stackTrace: st);
     }
   }
 

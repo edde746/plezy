@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'layout_constants.dart';
+
 /// Global key for the root ScaffoldMessenger, allowing snackbars to survive navigation.
 final rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
 
@@ -31,9 +33,9 @@ void showSnackBar(BuildContext context, String message, {SnackBarType type = Sna
   if (!context.mounted) return;
 
   final (backgroundColor, defaultDuration) = switch (type) {
-    SnackBarType.info => (null, const Duration(seconds: 3)),
-    SnackBarType.success => (Colors.green, const Duration(seconds: 3)),
-    SnackBarType.error => (Colors.red, const Duration(seconds: 4)),
+    SnackBarType.info => (null, AppDurations.snackBarDefault),
+    SnackBarType.success => (Colors.green, AppDurations.snackBarDefault),
+    SnackBarType.error => (Colors.red, AppDurations.snackBarLong),
   };
 
   ScaffoldMessenger.of(context).showSnackBar(
@@ -61,14 +63,14 @@ void showErrorSnackBar(BuildContext context, String message) {
 /// Shows an error snackbar using the root ScaffoldMessenger (survives navigation).
 void showGlobalErrorSnackBar(String message) {
   rootScaffoldMessengerKey.currentState?.showSnackBar(
-    SnackBar(content: Text(message), backgroundColor: Colors.red, duration: const Duration(seconds: 4)),
+    SnackBar(content: Text(message), backgroundColor: Colors.red, duration: AppDurations.snackBarLong),
   );
 }
 
 /// Shows an info snackbar through the main-screen messenger when available
 /// (so it floats above the mobile NavigationBar), falling back to the root
 /// messenger when the main screen is not mounted.
-void showMainSnackBar(String message, {Duration duration = const Duration(seconds: 3)}) {
+void showMainSnackBar(String message, {Duration duration = AppDurations.snackBarDefault}) {
   final messenger = mainScaffoldMessengerKey.currentState ?? rootScaffoldMessengerKey.currentState;
   messenger
     ?..removeCurrentSnackBar()

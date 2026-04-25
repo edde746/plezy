@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../mixins/context_menu_tap_mixin.dart';
 import '../../services/plex_client.dart';
 import '../../models/plex_metadata.dart';
 import '../../utils/formatters.dart';
@@ -42,18 +43,7 @@ class PlaylistItemCard extends StatefulWidget {
   State<PlaylistItemCard> createState() => _PlaylistItemCardState();
 }
 
-class _PlaylistItemCardState extends State<PlaylistItemCard> {
-  final _contextMenuKey = GlobalKey<MediaContextMenuState>();
-  Offset? _tapPosition;
-
-  void _storeTapPosition(TapDownDetails details) {
-    _tapPosition = details.globalPosition;
-  }
-
-  void _showContextMenu() {
-    _contextMenuKey.currentState?.showContextMenu(context, position: _tapPosition);
-  }
-
+class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTapMixin<PlaylistItemCard> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -80,7 +70,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
     }
 
     return MediaContextMenu(
-      key: _contextMenuKey,
+      key: contextMenuKey,
       item: widget.item,
       onRefresh: widget.onRefresh,
       onTap: widget.onTap,
@@ -90,10 +80,10 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> {
         shape: cardShape,
         child: InkWell(
           onTap: widget.onTap,
-          onTapDown: _storeTapPosition,
-          onLongPress: _showContextMenu,
-          onSecondaryTapDown: _storeTapPosition,
-          onSecondaryTap: _showContextMenu,
+          onTapDown: storeTapPosition,
+          onLongPress: showContextMenuFromTap,
+          onSecondaryTapDown: storeTapPosition,
+          onSecondaryTap: showContextMenuFromTap,
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(

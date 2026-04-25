@@ -98,25 +98,7 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       margin: EdgeInsets.zero,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
     ),
-    inputDecorationTheme: InputDecorationTheme(
-      filled: true,
-      fillColor: c.text.withValues(alpha: 0.08),
-      isDense: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      border: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide.none,
-      ),
-      enabledBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: const OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-        borderSide: BorderSide.none,
-      ),
-      hintStyle: TextStyle(color: c.textMuted),
-    ),
+    inputDecorationTheme: _inputDecorationTheme(c.text, c.textMuted),
     elevatedButtonTheme: ElevatedButtonThemeData(style: buttonStyle),
     filledButtonTheme: FilledButtonThemeData(style: buttonStyle),
     sliderTheme: SliderThemeData(
@@ -177,5 +159,24 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
         splashFactory: NoSplash.splashFactory,
       ),
     ],
+  );
+}
+
+/// Brighter fill on focus so input focus is visible inside TV overscan.
+InputDecorationTheme _inputDecorationTheme(Color text, Color textMuted) {
+  final unfocusedFill = text.withValues(alpha: 0.08);
+  final focusedFill = text.withValues(alpha: 0.18);
+  const border = OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(12)), borderSide: BorderSide.none);
+  return InputDecorationTheme(
+    filled: true,
+    fillColor: WidgetStateColor.resolveWith(
+      (states) => states.contains(WidgetState.focused) ? focusedFill : unfocusedFill,
+    ),
+    isDense: true,
+    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+    border: border,
+    enabledBorder: border,
+    focusedBorder: border,
+    hintStyle: TextStyle(color: textMuted),
   );
 }

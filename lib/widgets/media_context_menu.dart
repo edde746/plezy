@@ -1756,7 +1756,7 @@ class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
               child: GestureDetector(
                 onTap: () => Navigator.pop(context),
                 behavior: HitTestBehavior.opaque,
-                child: Container(color: Colors.transparent),
+                child: const ColoredBox(color: Colors.transparent),
               ),
             ),
             // Menu

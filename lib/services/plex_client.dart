@@ -2541,7 +2541,9 @@ class PlexClient {
         } else {
           programs.add(LiveTvProgram.fromJson(map));
         }
-      } catch (_) {}
+      } catch (e, st) {
+        appLogger.w('LiveTvProgram parse failed', error: e, stackTrace: st);
+      }
     }
     return programs;
   }

@@ -1040,6 +1040,11 @@ class _TranslationsDownloadsIt implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => 'Download eliminato';
 	@override String deleteConfirm({required Object title}) => 'Sei sicuro di voler eliminare "${title}"? Il file scaricato verrà rimosso dal tuo dispositivo.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Eliminazione di ${title}... (${current} di ${total})';
+	@override String get deleting => 'Eliminazione...';
+	@override String get queuedTooltip => 'In coda';
+	@override String queuedFilesTooltip({required Object files}) => 'In coda: ${files}';
+	@override String get downloadingTooltip => 'Download in corso...';
+	@override String downloadingFilesTooltip({required Object files}) => 'Download di ${files}';
 	@override String get noDownloadsTree => 'Nessun download';
 	@override String get pauseAll => 'Metti tutto in pausa';
 	@override String get resumeAll => 'Riprendi tutto';
@@ -2240,6 +2245,11 @@ extension on TranslationsIt {
 			'downloads.downloadDeleted' => 'Download eliminato',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Sei sicuro di voler eliminare "${title}"? Il file scaricato verrà rimosso dal tuo dispositivo.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Eliminazione di ${title}... (${current} di ${total})',
+			'downloads.deleting' => 'Eliminazione...',
+			'downloads.queuedTooltip' => 'In coda',
+			'downloads.queuedFilesTooltip' => ({required Object files}) => 'In coda: ${files}',
+			'downloads.downloadingTooltip' => 'Download in corso...',
+			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Download di ${files}',
 			'downloads.noDownloadsTree' => 'Nessun download',
 			'downloads.pauseAll' => 'Metti tutto in pausa',
 			'downloads.resumeAll' => 'Riprendi tutto',

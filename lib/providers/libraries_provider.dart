@@ -18,6 +18,10 @@ class LibrariesProvider extends ChangeNotifier {
   LibrariesLoadState _loadState = LibrariesLoadState.initial;
   String? _errorMessage;
 
+  /// Coalesces concurrent `loadLibraries()` calls so two simultaneous callers
+  /// see the same in-flight result instead of racing two separate fetches.
+  Future<void>? _inFlightLoad;
+
   /// Unmodifiable list of all libraries (filtered for supported types, ordered)
   List<PlexLibrary> get libraries => List.unmodifiable(_libraries);
 
@@ -44,7 +48,11 @@ class LibrariesProvider extends ChangeNotifier {
 
   /// Load libraries from all connected servers.
   /// Filters out music libraries and applies saved ordering.
-  Future<void> loadLibraries() async {
+  Future<void> loadLibraries() {
+    return _inFlightLoad ??= _loadLibrariesInternal().whenComplete(() => _inFlightLoad = null);
+  }
+
+  Future<void> _loadLibrariesInternal() async {
     if (_aggregationService == null) {
       appLogger.w('LibrariesProvider: Cannot load libraries - not initialized');
       return;

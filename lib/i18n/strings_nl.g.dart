@@ -1040,6 +1040,11 @@ class _TranslationsDownloadsNl implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => 'Download verwijderd';
 	@override String deleteConfirm({required Object title}) => 'Weet je zeker dat je "${title}" wilt verwijderen? Het gedownloade bestand wordt van je apparaat verwijderd.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Verwijderen van ${title}... (${current} van ${total})';
+	@override String get deleting => 'Verwijderen...';
+	@override String get queuedTooltip => 'In wachtrij';
+	@override String queuedFilesTooltip({required Object files}) => 'In wachtrij: ${files}';
+	@override String get downloadingTooltip => 'Downloaden...';
+	@override String downloadingFilesTooltip({required Object files}) => 'Downloaden ${files}';
 	@override String get noDownloadsTree => 'Geen downloads';
 	@override String get pauseAll => 'Alles pauzeren';
 	@override String get resumeAll => 'Alles hervatten';
@@ -2240,6 +2245,11 @@ extension on TranslationsNl {
 			'downloads.downloadDeleted' => 'Download verwijderd',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt verwijderen? Het gedownloade bestand wordt van je apparaat verwijderd.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Verwijderen van ${title}... (${current} van ${total})',
+			'downloads.deleting' => 'Verwijderen...',
+			'downloads.queuedTooltip' => 'In wachtrij',
+			'downloads.queuedFilesTooltip' => ({required Object files}) => 'In wachtrij: ${files}',
+			'downloads.downloadingTooltip' => 'Downloaden...',
+			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Downloaden ${files}',
 			'downloads.noDownloadsTree' => 'Geen downloads',
 			'downloads.pauseAll' => 'Alles pauzeren',
 			'downloads.resumeAll' => 'Alles hervatten',

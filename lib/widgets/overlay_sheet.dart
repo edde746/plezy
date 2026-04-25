@@ -468,7 +468,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
               builder: (context, child) {
                 return GestureDetector(
                   onTap: _barrierDismissible ? () => _close() : null,
-                  child: Container(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
+                  child: ColoredBox(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
                 );
               },
             ),

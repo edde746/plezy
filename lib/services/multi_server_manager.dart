@@ -237,10 +237,17 @@ class MultiServerManager {
         appLogger.i('Successfully connected to ${server.name}');
 
         // Fire-and-forget: fetch server prefs and cache watched threshold
-        client.fetchServerPrefs().then((_) {
-          final threshold = client.watchedThresholdPercent;
-          SettingsService.instanceOrNull?.setWatchedThreshold(serverId, threshold);
-        });
+        unawaited(
+          client
+              .fetchServerPrefs()
+              .then((_) {
+                final threshold = client.watchedThresholdPercent;
+                SettingsService.instanceOrNull?.setWatchedThreshold(serverId, threshold);
+              })
+              .catchError((Object e, StackTrace st) {
+                appLogger.w('fetchServerPrefs failed for ${server.name}', error: e, stackTrace: st);
+              }),
+        );
 
         return serverId;
       } on TimeoutException {

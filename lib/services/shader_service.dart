@@ -1,7 +1,6 @@
-import 'package:flutter/foundation.dart';
-
 import '../models/shader_preset.dart';
 import '../mpv/player/player.dart';
+import '../utils/app_logger.dart';
 import 'ambient_lighting_service.dart';
 import 'shader_asset_loader.dart';
 
@@ -31,9 +30,7 @@ class ShaderService {
   /// and skip shader application for HDR content.
   Future<void> applyPreset(ShaderPreset preset) async {
     if (!isSupported) {
-      if (kDebugMode) {
-        debugPrint('ShaderService: Shaders not supported on ${_player.playerType}');
-      }
+      appLogger.d('ShaderService: Shaders not supported on ${_player.playerType}');
       return;
     }
 
@@ -42,9 +39,7 @@ class ShaderService {
       if (preset.type == ShaderPresetType.nvscaler && preset.nvscalerConfig?.autoHdrSkip == true) {
         final isHdr = await _isHdrContent();
         if (isHdr) {
-          if (kDebugMode) {
-            debugPrint('ShaderService: Skipping NVScaler on HDR content');
-          }
+          appLogger.d('ShaderService: Skipping NVScaler on HDR content');
           await _clearShaders();
           _currentPreset = ShaderPreset.none;
           await _reappendAmbientLighting();
@@ -76,13 +71,9 @@ class ShaderService {
       // Re-append ambient lighting shader at end of chain
       await _reappendAmbientLighting();
 
-      if (kDebugMode) {
-        debugPrint('ShaderService: Applied ${preset.name} with ${shaderPaths.length} shaders');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('ShaderService: Failed to apply preset: $e');
-      }
+      appLogger.d('ShaderService: Applied ${preset.name} with ${shaderPaths.length} shaders');
+    } catch (e, st) {
+      appLogger.w('ShaderService: Failed to apply preset', error: e, stackTrace: st);
       // Don't rethrow - shader failure shouldn't stop playback
     }
   }
@@ -91,10 +82,8 @@ class ShaderService {
   Future<void> _clearShaders() async {
     try {
       await _player.command(['change-list', 'glsl-shaders', 'clr', '']);
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('ShaderService: Failed to clear shaders: $e');
-      }
+    } catch (e, st) {
+      appLogger.w('ShaderService: Failed to clear shaders', error: e, stackTrace: st);
     }
   }
 
@@ -106,10 +95,8 @@ class ShaderService {
 
     try {
       await service.reappendShader();
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('ShaderService: Failed to re-append ambient lighting: $e');
-      }
+    } catch (e, st) {
+      appLogger.w('ShaderService: Failed to re-append ambient lighting', error: e, stackTrace: st);
     }
   }
 
@@ -136,9 +123,7 @@ class ShaderService {
 
       return false;
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('ShaderService: HDR detection failed: $e');
-      }
+      appLogger.d('ShaderService: HDR detection failed', error: e);
       return false;
     }
   }

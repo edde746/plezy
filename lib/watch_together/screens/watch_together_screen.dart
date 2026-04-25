@@ -232,7 +232,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
     } catch (e) {
       appLogger.e('Failed to create session', error: e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${t.watchTogether.failedToCreate}: $e')));
+        showErrorSnackBar(context, '${t.watchTogether.failedToCreate}: $e');
       }
     } finally {
       if (mounted) {
@@ -276,7 +276,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
     } catch (e) {
       appLogger.e('Failed to join session', error: e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${t.watchTogether.failedToJoin}: $e')));
+        showErrorSnackBar(context, '${t.watchTogether.failedToJoin}: $e');
       }
     } finally {
       if (mounted) {
@@ -299,7 +299,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
     } catch (e) {
       appLogger.e('Failed to enter room', error: e);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${t.watchTogether.failedToJoin}: $e')));
+        showErrorSnackBar(context, '${t.watchTogether.failedToJoin}: $e');
       }
     } finally {
       if (mounted) {
@@ -729,6 +729,6 @@ class _SessionCodeRow extends StatelessWidget {
 
   void _copySessionCode(BuildContext context) {
     Clipboard.setData(ClipboardData(text: sessionId));
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.watchTogether.sessionCodeCopied)));
+    showSnackBar(context, t.watchTogether.sessionCodeCopied);
   }
 }

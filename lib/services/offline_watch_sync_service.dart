@@ -191,13 +191,13 @@ class OfflineWatchSyncService extends ChangeNotifier {
   ///
   /// Removes any conflicting actions for the same item.
   Future<void> queueMarkWatched({required String serverId, required String ratingKey}) =>
-      _queueWatchStatusAction(serverId: serverId, ratingKey: ratingKey, actionType: 'watched');
+      _queueWatchStatusAction(serverId: serverId, ratingKey: ratingKey, actionType: OfflineActionType.watched.name);
 
   /// Queue a manual "mark as unwatched" action.
   ///
   /// Removes any conflicting actions for the same item.
   Future<void> queueMarkUnwatched({required String serverId, required String ratingKey}) =>
-      _queueWatchStatusAction(serverId: serverId, ratingKey: ratingKey, actionType: 'unwatched');
+      _queueWatchStatusAction(serverId: serverId, ratingKey: ratingKey, actionType: OfflineActionType.unwatched.name);
 
   /// Internal helper to queue watch/unwatch actions.
   Future<void> _queueWatchStatusAction({
@@ -281,7 +281,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
     if (action == null) return null;
 
     // Only return offset for progress actions
-    if (action.actionType == 'progress') {
+    if (action.actionType == OfflineActionType.progress.name) {
       return action.viewOffset;
     }
 
@@ -402,9 +402,9 @@ class OfflineWatchSyncService extends ChangeNotifier {
     // listeners (UI invalidation, Trakt sync). Best-effort: a missed metadata
     // fetch only suppresses the event, not the Plex API call.
     final emitsEvent =
-        action.actionType == 'watched' ||
-        action.actionType == 'unwatched' ||
-        (action.actionType == 'progress' && action.shouldMarkWatched);
+        action.actionType == OfflineActionType.watched.name ||
+        action.actionType == OfflineActionType.unwatched.name ||
+        (action.actionType == OfflineActionType.progress.name && action.shouldMarkWatched);
     PlexMetadata? metadata;
     if (emitsEvent) {
       try {
@@ -488,7 +488,9 @@ class OfflineWatchSyncService extends ChangeNotifier {
           if (existingMeta['Media'] == null) {
             try {
               await client.getMetadataWithImages(episode.ratingKey);
-            } catch (_) {}
+            } catch (e) {
+              appLogger.d('Cache repair fetch skipped for ${episode.ratingKey}', error: e);
+            }
           }
         } else {
           // No existing entry — write what we have

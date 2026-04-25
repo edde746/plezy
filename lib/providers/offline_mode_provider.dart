@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_mode_source.dart';
 
 /// Tracks offline mode status based on network connectivity and server reachability.
-class OfflineModeProvider extends ChangeNotifier implements OfflineModeSource {
+class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMixin implements OfflineModeSource {
   final MultiServerManager _serverManager;
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
@@ -61,7 +62,7 @@ class OfflineModeProvider extends ChangeNotifier implements OfflineModeSource {
             _hasNetworkConnection = !results.contains(ConnectivityResult.none);
 
             if (wasOffline != isOffline) {
-              notifyListeners();
+              safeNotifyListeners();
             }
           },
           onError: (e) {
@@ -81,17 +82,17 @@ class OfflineModeProvider extends ChangeNotifier implements OfflineModeSource {
       _hasServerConnection = statusMap.values.any((isOnline) => isOnline);
 
       if (wasOffline != isOffline) {
-        notifyListeners();
+        safeNotifyListeners();
       }
     });
 
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   /// Force a refresh of connectivity status
   Future<void> refresh() async {
     await _updateConnectionFlags();
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   @override

@@ -1040,6 +1040,11 @@ class _TranslationsDownloadsJa implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => 'ダウンロードを削除しました';
 	@override String deleteConfirm({required Object title}) => '"${title}"を削除してもよろしいですか？ダウンロードしたファイルがデバイスから削除されます。';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => '${title}を削除中... (${current}/${total})';
+	@override String get deleting => '削除中...';
+	@override String get queuedTooltip => 'キュー';
+	@override String queuedFilesTooltip({required Object files}) => 'キュー: ${files}';
+	@override String get downloadingTooltip => 'ダウンロード中...';
+	@override String downloadingFilesTooltip({required Object files}) => '${files} をダウンロード中';
 	@override String get noDownloadsTree => 'ダウンロードなし';
 	@override String get pauseAll => 'すべて一時停止';
 	@override String get resumeAll => 'すべて再開';
@@ -2240,6 +2245,11 @@ extension on TranslationsJa {
 			'downloads.downloadDeleted' => 'ダウンロードを削除しました',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}"を削除してもよろしいですか？ダウンロードしたファイルがデバイスから削除されます。',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => '${title}を削除中... (${current}/${total})',
+			'downloads.deleting' => '削除中...',
+			'downloads.queuedTooltip' => 'キュー',
+			'downloads.queuedFilesTooltip' => ({required Object files}) => 'キュー: ${files}',
+			'downloads.downloadingTooltip' => 'ダウンロード中...',
+			'downloads.downloadingFilesTooltip' => ({required Object files}) => '${files} をダウンロード中',
 			'downloads.noDownloadsTree' => 'ダウンロードなし',
 			'downloads.pauseAll' => 'すべて一時停止',
 			'downloads.resumeAll' => 'すべて再開',

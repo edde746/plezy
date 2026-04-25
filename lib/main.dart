@@ -1,11 +1,10 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, ProcessInfo;
 import 'dart:ui' show AppExitResponse;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import 'dart:io' show Platform, ProcessInfo;
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
@@ -145,7 +144,7 @@ Future<void> _bootstrapApp() async {
   await initializeDateFormatting(savedLocale.languageCode, null);
 
   // Configure image cache — keep budget modest to leave headroom for Skia decode buffers
-  if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+  if (PlatformDetector.isDesktopOS()) {
     PaintingBinding.instance.imageCache.maximumSize = 1000;
     PaintingBinding.instance.imageCache.maximumSizeBytes = 150 << 20; // 150MB
   } else {
@@ -157,7 +156,7 @@ Future<void> _bootstrapApp() async {
   final futures = <Future<void>>[];
 
   // Initialize window_manager for desktop platforms
-  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+  if (PlatformDetector.isDesktopOS()) {
     futures.add(windowManager.ensureInitialized());
   }
 
@@ -212,7 +211,7 @@ Future<void> _bootstrapApp() async {
   GamepadService.instance.start();
 
   // Desktop-only services
-  if (Platform.isMacOS || Platform.isWindows || Platform.isLinux) {
+  if (PlatformDetector.isDesktopOS()) {
     DiscordRPCService.instance.initialize();
   }
 
@@ -415,7 +414,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
 
     // On desktop, periodically check RSS and evict image cache if too high
-    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+    if (PlatformDetector.isDesktopOS()) {
       _memoryCheckTimer = Timer.periodic(const Duration(seconds: 30), (_) {
         final rss = ProcessInfo.currentRss;
         if (rss > 1536 * 1024 * 1024) {
@@ -592,7 +591,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // (sync, downloads, cache) still hold references to the executor.
         // SQLite WAL mode handles process death; desktop uses onExitRequested.
         InAppReviewService.instance.endSession();
-        if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+        if (PlatformDetector.isDesktopOS()) {
           if (ProcessInfo.currentRss > 1024 * 1024 * 1024) {
             // 1GB
             _evictImageCaches();

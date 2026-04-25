@@ -1040,6 +1040,11 @@ class _TranslationsDownloadsSv implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => 'Nedladdning borttagen';
 	@override String deleteConfirm({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Den nedladdade filen kommer att tas bort från din enhet.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Tar bort ${title}... (${current} av ${total})';
+	@override String get deleting => 'Tar bort...';
+	@override String get queuedTooltip => 'I kö';
+	@override String queuedFilesTooltip({required Object files}) => 'I kö: ${files}';
+	@override String get downloadingTooltip => 'Laddar ned...';
+	@override String downloadingFilesTooltip({required Object files}) => 'Laddar ned ${files}';
 	@override String get noDownloadsTree => 'Inga nedladdningar';
 	@override String get pauseAll => 'Pausa alla';
 	@override String get resumeAll => 'Återuppta alla';
@@ -2240,6 +2245,11 @@ extension on TranslationsSv {
 			'downloads.downloadDeleted' => 'Nedladdning borttagen',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Är du säker på att du vill ta bort "${title}"? Den nedladdade filen kommer att tas bort från din enhet.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Tar bort ${title}... (${current} av ${total})',
+			'downloads.deleting' => 'Tar bort...',
+			'downloads.queuedTooltip' => 'I kö',
+			'downloads.queuedFilesTooltip' => ({required Object files}) => 'I kö: ${files}',
+			'downloads.downloadingTooltip' => 'Laddar ned...',
+			'downloads.downloadingFilesTooltip' => ({required Object files}) => 'Laddar ned ${files}',
 			'downloads.noDownloadsTree' => 'Inga nedladdningar',
 			'downloads.pauseAll' => 'Pausa alla',
 			'downloads.resumeAll' => 'Återuppta alla',

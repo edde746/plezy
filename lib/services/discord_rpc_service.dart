@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:dart_discord_presence/dart_discord_presence.dart';
 import 'package:http/http.dart' as http;
@@ -7,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
 import '../utils/future_extensions.dart';
+import '../utils/platform_detector.dart';
 import '../utils/plex_http_client.dart';
 import 'plex_client.dart';
 import 'settings_service.dart';
@@ -59,7 +59,7 @@ class DiscordRPCService {
 
   /// Check if Discord RPC is available on this platform
   static bool get isAvailable {
-    if (!Platform.isMacOS && !Platform.isWindows && !Platform.isLinux) {
+    if (!PlatformDetector.isDesktopOS()) {
       return false;
     }
     return DiscordRPC.isAvailable;
@@ -238,7 +238,9 @@ class DiscordRPCService {
       _errorSubscription = null;
       try {
         _rpc?.dispose();
-      } catch (_) {}
+      } catch (e) {
+        appLogger.d('DiscordRPC: dispose ignored', error: e);
+      }
       _rpc = null;
       _scheduleReconnect();
     }

@@ -1,8 +1,9 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as path;
 import 'package:path_provider/path_provider.dart';
+
+import '../utils/app_logger.dart';
 
 /// Utility class for loading font assets for libass subtitle rendering.
 ///
@@ -44,11 +45,9 @@ class SubtitleFontLoader {
       }
 
       return fontDir.path;
-    } catch (e) {
+    } catch (e, st) {
       // Return null if font loading fails - libass will fall back gracefully
-      if (kDebugMode) {
-        debugPrint('Failed to load subtitle font: $e');
-      }
+      appLogger.w('Failed to load subtitle font', error: e, stackTrace: st);
       return null;
     }
   }

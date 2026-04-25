@@ -71,12 +71,10 @@ class _HubDetailScreenState extends State<HubDetailScreen>
       isAppBarFocused = false;
     });
 
-    if (targetIndex == 0) {
-      firstItemFocusNode.requestFocus();
-    } else {
-      getGridItemFocusNode(targetIndex, prefix: 'hub_detail_item').requestFocus();
-    }
+    _focusNodeForIndex(targetIndex).requestFocus();
   }
+
+  FocusNode _focusNodeForIndex(int index) => focusNodeForIndex(index, firstItemFocusNode, prefix: 'hub_detail_item');
 
   /// Get the correct PlexClient for this hub's server
   PlexClient _getClientForHub() {
@@ -342,9 +340,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                           itemCount: _filteredItems.length,
                           itemBuilder: (context, index) {
                             final item = _filteredItems[index];
-                            final focusNode = index == 0
-                                ? firstItemFocusNode
-                                : getGridItemFocusNode(index, prefix: 'hub_detail_item');
+                            final focusNode = _focusNodeForIndex(index);
 
                             return FocusableMediaCard(
                               focusNode: focusNode,
@@ -385,9 +381,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                             ),
                             delegate: SliverChildBuilderDelegate((context, index) {
                               final item = _filteredItems[index];
-                              final focusNode = index == 0
-                                  ? firstItemFocusNode
-                                  : getGridItemFocusNode(index, prefix: 'hub_detail_item');
+                              final focusNode = _focusNodeForIndex(index);
                               final isFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
                               final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
 

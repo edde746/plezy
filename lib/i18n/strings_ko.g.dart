@@ -1040,6 +1040,11 @@ class _TranslationsDownloadsKo implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => '다운로드 삭제됨';
 	@override String deleteConfirm({required Object title}) => '"${title}"를 삭제 하시겠습니까? 다운로드한 파일이 기기에서 삭제됩니다.';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => '${title} 삭제 중... (${current}/${total})';
+	@override String get deleting => '삭제 중...';
+	@override String get queuedTooltip => '대기 중';
+	@override String queuedFilesTooltip({required Object files}) => '대기 중: ${files}';
+	@override String get downloadingTooltip => '다운로드 중...';
+	@override String downloadingFilesTooltip({required Object files}) => '${files} 다운로드 중';
 	@override String get noDownloadsTree => '다운로드 없음';
 	@override String get pauseAll => '모두 일시정지';
 	@override String get resumeAll => '모두 재개';
@@ -2240,6 +2245,11 @@ extension on TranslationsKo {
 			'downloads.downloadDeleted' => '다운로드 삭제됨',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}"를 삭제 하시겠습니까? 다운로드한 파일이 기기에서 삭제됩니다.',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => '${title} 삭제 중... (${current}/${total})',
+			'downloads.deleting' => '삭제 중...',
+			'downloads.queuedTooltip' => '대기 중',
+			'downloads.queuedFilesTooltip' => ({required Object files}) => '대기 중: ${files}',
+			'downloads.downloadingTooltip' => '다운로드 중...',
+			'downloads.downloadingFilesTooltip' => ({required Object files}) => '${files} 다운로드 중',
 			'downloads.noDownloadsTree' => '다운로드 없음',
 			'downloads.pauseAll' => '모두 일시정지',
 			'downloads.resumeAll' => '모두 재개',

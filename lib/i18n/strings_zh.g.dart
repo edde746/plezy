@@ -1040,6 +1040,11 @@ class _TranslationsDownloadsZh implements TranslationsDownloadsEn {
 	@override String get downloadDeleted => '下载已删除';
 	@override String deleteConfirm({required Object title}) => '确定要删除 "${title}" 吗？下载的文件将从您的设备中删除。';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => '正在删除 ${title}... (${current}/${total})';
+	@override String get deleting => '正在删除...';
+	@override String get queuedTooltip => '已排队';
+	@override String queuedFilesTooltip({required Object files}) => '已排队：${files}';
+	@override String get downloadingTooltip => '正在下载...';
+	@override String downloadingFilesTooltip({required Object files}) => '正在下载 ${files}';
 	@override String get noDownloadsTree => '暂无下载';
 	@override String get pauseAll => '全部暂停';
 	@override String get resumeAll => '全部继续';
@@ -2240,6 +2245,11 @@ extension on TranslationsZh {
 			'downloads.downloadDeleted' => '下载已删除',
 			'downloads.deleteConfirm' => ({required Object title}) => '确定要删除 "${title}" 吗？下载的文件将从您的设备中删除。',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => '正在删除 ${title}... (${current}/${total})',
+			'downloads.deleting' => '正在删除...',
+			'downloads.queuedTooltip' => '已排队',
+			'downloads.queuedFilesTooltip' => ({required Object files}) => '已排队：${files}',
+			'downloads.downloadingTooltip' => '正在下载...',
+			'downloads.downloadingFilesTooltip' => ({required Object files}) => '正在下载 ${files}',
 			'downloads.noDownloadsTree' => '暂无下载',
 			'downloads.pauseAll' => '全部暂停',
 			'downloads.resumeAll' => '全部继续',

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../models/livetv_dvr.dart';
+import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/plex_client.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/multi_server_manager.dart';
@@ -23,7 +24,7 @@ class LiveTvServerInfo {
 
 /// Provider for multi-server Plex connections
 /// Manages multiple PlexClient instances and provides data aggregation
-class MultiServerProvider extends ChangeNotifier {
+class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   final MultiServerManager _serverManager;
   final DataAggregationService _aggregationService;
   StreamSubscription? _statusSubscription;
@@ -46,7 +47,7 @@ class MultiServerProvider extends ChangeNotifier {
       final hasNewServer = currentOnline.any((id) => !_previousOnlineServerIds.contains(id));
       _previousOnlineServerIds = currentOnline;
 
-      notifyListeners();
+      safeNotifyListeners();
 
       // Only re-check live TV when a new server came online
       if (hasNewServer) {
@@ -90,7 +91,7 @@ class MultiServerProvider extends ChangeNotifier {
   void clearAllConnections() {
     _serverManager.disconnectAll();
     appLogger.d('MultiServerProvider: All connections cleared');
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   /// Reconnect all servers after a profile switch
@@ -104,7 +105,7 @@ class MultiServerProvider extends ChangeNotifier {
     final connectedCount = await _serverManager.connectToAllServers(servers, clientIdentifier: clientIdentifier);
 
     appLogger.i('MultiServerProvider: Reconnected to $connectedCount/${servers.length} servers after profile switch');
-    notifyListeners();
+    safeNotifyListeners();
     return connectedCount;
   }
 
@@ -142,7 +143,7 @@ class MultiServerProvider extends ChangeNotifier {
 
     // Notify when availability changes OR when the server set changes
     if (hadLiveTv != _hasLiveTv || !oldServerIds.containsAll(newServerIds) || !newServerIds.containsAll(oldServerIds)) {
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 

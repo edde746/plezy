@@ -1063,7 +1063,9 @@ class SettingsService extends BaseSharedPreferencesService {
         final migrated = lines.join('\n');
         prefs.setString(_keyMpvConfigText, migrated);
         return migrated;
-      } catch (_) {}
+      } catch (e, st) {
+        appLogger.w('SettingsService: failed to migrate mpv config', error: e, stackTrace: st);
+      }
     }
 
     return '';
@@ -1242,8 +1244,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
   bool getEnableCompanionRemoteServer() {
     // Default enabled on desktop/TV, disabled on mobile
-    return prefs.getBool(_keyEnableCompanionRemoteServer) ??
-        (Platform.isMacOS || Platform.isWindows || Platform.isLinux);
+    return prefs.getBool(_keyEnableCompanionRemoteServer) ?? (PlatformDetector.isDesktopOS());
   }
 
   // Auto Picture-in-Picture (Android & iOS)

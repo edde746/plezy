@@ -75,12 +75,10 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
       isAppBarFocused = false;
     });
 
-    if (targetIndex == 0) {
-      firstItemFocusNode.requestFocus();
-    } else {
-      getGridItemFocusNode(targetIndex, prefix: 'detail_grid_item').requestFocus();
-    }
+    _focusNodeForIndex(targetIndex).requestFocus();
   }
+
+  FocusNode _focusNodeForIndex(int index) => focusNodeForIndex(index, firstItemFocusNode, prefix: 'detail_grid_item');
 
   /// Wrap [slivers] in the standard detail-screen scaffold — PopScope that
   /// defers to [handleBackNavigation], plus a Scaffold with a CustomScrollView
@@ -167,9 +165,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
               itemCount: items.length,
               itemBuilder: (context, index) {
                 final item = items[index];
-                final focusNode = index == 0
-                    ? firstItemFocusNode
-                    : getGridItemFocusNode(index, prefix: 'detail_grid_item');
+                final focusNode = _focusNodeForIndex(index);
 
                 return FocusableMediaCard(
                   key: Key(item.ratingKey),
@@ -203,9 +199,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
                 itemBuilder: (context, index) {
                   final item = items[index];
                   final inFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
-                  final focusNode = index == 0
-                      ? firstItemFocusNode
-                      : getGridItemFocusNode(index, prefix: 'detail_grid_item');
+                  final focusNode = _focusNodeForIndex(index);
 
                   return FocusableMediaCard(
                     key: Key(item.ratingKey),

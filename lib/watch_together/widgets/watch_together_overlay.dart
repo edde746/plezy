@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
@@ -301,7 +302,9 @@ class _ParticipantNotificationOverlayState extends State<ParticipantNotification
     try {
       final provider = context.read<WatchTogetherProvider>();
       _subscription = provider.participantEvents.listen(_onEvent);
-    } catch (_) {}
+    } catch (e) {
+      appLogger.d('WatchTogetherOverlay: provider unavailable', error: e);
+    }
   }
 
   void _onEvent(ParticipantEvent event) {

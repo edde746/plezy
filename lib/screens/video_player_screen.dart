@@ -741,7 +741,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
 
       // Audio passthrough (desktop only - sends bitstream to receiver)
-      if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+      if (PlatformDetector.isDesktopOS()) {
         if (settingsService.getAudioPassthrough()) {
           await player!.setAudioPassthrough(true);
         }
@@ -1030,7 +1030,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Set MPV video-sync mode for smoother playback when display is synced
       try {
         await player!.setProperty('video-sync', 'display-tempo');
-      } catch (_) {}
+      } catch (e) {
+        appLogger.d('video-sync property unsupported', error: e);
+      }
 
       if (mounted && player != null) {
         await player!.play();
@@ -1619,14 +1621,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           final partId = _currentMediaInfo!.partId!;
           final client = _getClientForMetadata(context);
           final service = BifThumbnailService();
-          service.load(client, partId).then((_) {
-            // Guard against media having changed while the download was in flight
-            if (mounted && _currentMediaInfo?.partId == partId) {
-              setState(() => _bifService = service);
-            } else {
-              service.dispose();
-            }
-          });
+          unawaited(
+            service
+                .load(client, partId)
+                .then((_) {
+                  // Guard against media having changed while the download was in flight
+                  if (mounted && _currentMediaInfo?.partId == partId) {
+                    setState(() => _bifService = service);
+                  } else {
+                    service.dispose();
+                  }
+                })
+                .catchError((e, st) {
+                  appLogger.w('BIF thumbnail load failed for part $partId', error: e, stackTrace: st);
+                  service.dispose();
+                }),
+          );
         }
 
         await _initVideoFilterAndPip();
@@ -1716,7 +1726,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             // MPV video-sync tuning (no-op on ExoPlayer).
             try {
               await player!.setProperty('video-sync', 'display-tempo');
-            } catch (_) {}
+            } catch (e) {
+              appLogger.d('video-sync property unsupported on this player', error: e);
+            }
           } catch (e) {
             appLogger.w('Failed to apply pre-playback frame rate matching', error: e);
           }
@@ -2167,7 +2179,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     try {
       _companionRemoteProvider = context.read<CompanionRemoteProvider>();
       _companionRemoteProvider!.sendCommand(RemoteCommandType.syncState, data: {'playerActive': true});
-    } catch (_) {}
+    } catch (e) {
+      appLogger.d('CompanionRemote provider unavailable', error: e);
+    }
   }
 
   void _cleanupCompanionRemoteCallbacks() {
@@ -3313,7 +3327,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       try {
         playbackState.setCurrentItem(episodeMetadata);
-      } catch (_) {}
+      } catch (e) {
+        appLogger.d('playbackState.setCurrentItem failed', error: e);
+      }
 
       await _loadAdjacentEpisodes();
 
@@ -3931,7 +3947,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                 valueListenable: _isExiting,
                 builder: (context, isExiting, child) {
                   if (!isExiting) return const SizedBox.shrink();
-                  return Positioned.fill(child: Container(color: Colors.black));
+                  return const Positioned.fill(child: ColoredBox(color: Colors.black));
                 },
               ),
             ],

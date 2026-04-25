@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focus_theme.dart';
 import '../focus/focusable_wrapper.dart';
+import '../mixins/context_menu_tap_mixin.dart';
 import '../models/download_models.dart';
 import '../providers/download_provider.dart';
 import '../providers/settings_provider.dart';
@@ -52,18 +53,7 @@ class EpisodeCard extends StatefulWidget {
   State<EpisodeCard> createState() => _EpisodeCardState();
 }
 
-class _EpisodeCardState extends State<EpisodeCard> {
-  final _contextMenuKey = GlobalKey<MediaContextMenuState>();
-  Offset? _tapPosition;
-
-  void _storeTapPosition(TapDownDetails details) {
-    _tapPosition = details.globalPosition;
-  }
-
-  void _showContextMenu() {
-    _contextMenuKey.currentState?.showContextMenu(context, position: _tapPosition);
-  }
-
+class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<EpisodeCard> {
   Widget _buildEpisodeMetaRow(BuildContext context) {
     final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12);
     final dot = Padding(
@@ -119,10 +109,10 @@ class _EpisodeCardState extends State<EpisodeCard> {
         enableLongPress: true,
         onNavigateUp: widget.onNavigateUp,
         onSelect: widget.onTap,
-        onLongPress: _showContextMenu,
+        onLongPress: showContextMenuFromTap,
         disableScale: true,
         child: MediaContextMenu(
-          key: _contextMenuKey,
+          key: contextMenuKey,
           item: widget.episode,
           onRefresh: widget.onRefresh,
           onListRefresh: widget.onListRefresh,
@@ -131,10 +121,10 @@ class _EpisodeCardState extends State<EpisodeCard> {
             key: Key(widget.episode.ratingKey),
             borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
             onTap: widget.onTap,
-            onTapDown: _storeTapPosition,
-            onLongPress: _showContextMenu,
-            onSecondaryTapDown: _storeTapPosition,
-            onSecondaryTap: _showContextMenu,
+            onTapDown: storeTapPosition,
+            onLongPress: showContextMenuFromTap,
+            onSecondaryTapDown: storeTapPosition,
+            onSecondaryTap: showContextMenuFromTap,
             hoverColor: Theme.of(context).colorScheme.surface.withValues(alpha: 0.05),
             child: Container(
               decoration: BoxDecoration(
