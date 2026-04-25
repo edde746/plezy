@@ -188,7 +188,7 @@ class CompanionRemoteProvider with ChangeNotifier {
   /// Stop the host server and LAN broadcasting.
   Future<void> stopHostServer() async {
     _intentionalDisconnect = true;
-    _discoveryService?.stopBroadcasting();
+    await _discoveryService?.stopBroadcasting();
 
     if (_peerService != null) {
       await _peerService!.disconnect();

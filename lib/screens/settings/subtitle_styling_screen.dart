@@ -71,7 +71,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
   }
 
   Future<void> _showColorPicker(String title, String currentColor, Function(String) onColorSelected) async {
-    Color initialColor = _hexToColor(currentColor);
+    final Color initialColor = _hexToColor(currentColor);
 
     final Color selectedColor = await showColorPickerDialog(
       context,

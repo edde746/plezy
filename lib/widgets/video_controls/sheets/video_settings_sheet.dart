@@ -559,7 +559,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               title: Text(label, style: TextStyle(color: isSelected ? primary : null)),
               trailing: isSelected ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
               onTap: () async {
-                widget.player.setRate(speed);
+                await widget.player.setRate(speed);
                 // Save as default playback speed
                 final settings = await SettingsService.getInstance();
                 await settings.write(SettingsService.defaultPlaybackSpeed, speed);

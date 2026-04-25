@@ -153,7 +153,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
           }
         } else {
           request.response.statusCode = HttpStatus.notFound;
-          request.response.close();
+          unawaited(request.response.close());
         }
       });
 
@@ -229,7 +229,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
                   deviceName == null ||
                   platform == null) {
                 socket.add(jsonEncode({'type': 'authFailed'}));
-                socket.close(4003, 'Authentication failed');
+                unawaited(socket.close(4003, 'Authentication failed'));
                 return;
               }
 
@@ -240,7 +240,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
                 _recordFailedAuth(sourceIp);
                 appLogger.w('CompanionRemote: Auth failed — unknown user');
                 socket.add(jsonEncode({'type': 'authFailed'}));
-                socket.close(4003, 'Authentication failed');
+                unawaited(socket.close(4003, 'Authentication failed'));
                 return;
               }
 
@@ -261,7 +261,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
                 _recordFailedAuth(sourceIp);
                 appLogger.w('CompanionRemote: Auth failed — invalid auth tag');
                 socket.add(jsonEncode({'type': 'authFailed'}));
-                socket.close(4003, 'Authentication failed');
+                unawaited(socket.close(4003, 'Authentication failed'));
                 return;
               }
 
@@ -275,7 +275,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
               // Close existing client if present
               if (_clientSocket != null) {
                 appLogger.d('CompanionRemote: Replacing existing client connection');
-                _clientSocket!.close(4004, 'Replaced by new connection');
+                unawaited(_clientSocket!.close(4004, 'Replaced by new connection'));
               }
 
               _clientSocket = socket;
@@ -298,7 +298,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
               sendDeviceInfo(hostDeviceName, hostPlatform);
             } else {
               appLogger.w('CompanionRemote: Expected auth, got ${json['type']}');
-              socket.close(4002, 'Authentication required');
+              unawaited(socket.close(4002, 'Authentication required'));
             }
           } else {
             // Encrypted command — data is binary

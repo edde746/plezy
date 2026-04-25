@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/livetv_channel.dart';
@@ -43,5 +45,5 @@ Future<void> navigateToLiveTv(
     reverseTransitionDuration: Duration.zero,
   );
 
-  navigator.push<bool>(route);
+  unawaited(navigator.push<bool>(route));
 }

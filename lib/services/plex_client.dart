@@ -922,7 +922,7 @@ class PlexClient {
 
     if (streams == null) return (audio: audioTracks, subtitles: subtitleTracks, frameRate: frameRate);
 
-    for (var stream in streams) {
+    for (final stream in streams) {
       final streamType = stream['streamType'] as int?;
 
       if (streamType == PlexStreamType.video) {
@@ -1382,7 +1382,7 @@ class PlexClient {
         Map<String, dynamic>? videoStream;
         Map<String, dynamic>? audioStream;
 
-        for (var stream in streams) {
+        for (final stream in streams) {
           final streamType = stream['streamType'] as int?;
           if (streamType == PlexStreamType.video && videoStream == null) {
             videoStream = stream;
@@ -2801,13 +2801,13 @@ class PlexClient {
             : (timeline is Map ? timeline : null);
 
         if (op is Map) {
-          if (op['Metadata'] case [Map firstMetadata, ...]) {
-            if (firstMetadata['Media'] case [Map firstMedia, ...]) {
+          if (op['Metadata'] case [final Map firstMetadata, ...]) {
+            if (firstMetadata['Media'] case [final Map firstMedia, ...]) {
               final rawBeginsAt = firstMedia['beginsAt'];
 
               beginsAt = switch (rawBeginsAt) {
-                num n => n.toInt(),
-                String s => int.tryParse(s),
+                final num n => n.toInt(),
+                final String s => int.tryParse(s),
                 _ => null,
               };
 
@@ -2878,8 +2878,8 @@ class PlexClient {
           if (firstMedia is Map<String, dynamic>) {
             final rawBeginsAt = firstMedia['beginsAt'];
             beginsAt = switch (rawBeginsAt) {
-              num n => n.toInt(),
-              String s => int.tryParse(s),
+              final num n => n.toInt(),
+              final String s => int.tryParse(s),
               _ => null,
             };
           }

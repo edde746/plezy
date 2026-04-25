@@ -413,7 +413,7 @@ class PlexMetadata with MultiServerFields {
     final images = json['Image'] as List?;
     if (images == null) return null;
 
-    for (var image in images) {
+    for (final image in images) {
       if (image is Map && image['type'] == imageType) {
         return image['url'] as String?;
       }

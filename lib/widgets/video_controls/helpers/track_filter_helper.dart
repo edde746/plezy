@@ -26,8 +26,8 @@ class TrackFilterHelper {
 
   static bool _isAllowedTrack<T>(T track) {
     final id = switch (track) {
-      AudioTrack t => t.id,
-      SubtitleTrack t => t.id,
+      final AudioTrack t => t.id,
+      final SubtitleTrack t => t.id,
       _ => '',
     };
 

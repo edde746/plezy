@@ -418,21 +418,21 @@ class TrackSelectionService {
     final preferredLanguage = getLanguage(preferred);
 
     // Try to match: id, title, and language
-    for (var track in validTracks) {
+    for (final track in validTracks) {
       if (getId(track) == preferredId && getTitle(track) == preferredTitle && getLanguage(track) == preferredLanguage) {
         return track;
       }
     }
 
     // Try to match: title and language
-    for (var track in validTracks) {
+    for (final track in validTracks) {
       if (getTitle(track) == preferredTitle && getLanguage(track) == preferredLanguage) {
         return track;
       }
     }
 
     // Try to match: language only
-    for (var track in validTracks) {
+    for (final track in validTracks) {
       if (getLanguage(track) == preferredLanguage) {
         return track;
       }
@@ -490,7 +490,7 @@ class TrackSelectionService {
     String Function(T) _,
     String _,
   ) {
-    for (var track in tracks) {
+    for (final track in tracks) {
       final trackLang = getLanguage(track)?.toLowerCase();
       if (trackLang != null && languageVariations.any((lang) => trackLang.startsWith(lang))) {
         return track;
@@ -682,7 +682,7 @@ class TrackSelectionService {
       appLogger.d(
         'Audio: ${selectedAudioTrack.title ?? selectedAudioTrack.language ?? "Track ${selectedAudioTrack.id}"} [${audioResult.priority.name}]',
       );
-      player.selectAudioTrack(selectedAudioTrack);
+      unawaited(player.selectAudioTrack(selectedAudioTrack));
 
       // Save to Plex if this was user's navigation preference (Priority 1)
       if (audioResult.priority == TrackSelectionPriority.navigation && onAudioTrackChanged != null) {
@@ -697,7 +697,7 @@ class TrackSelectionService {
         ? 'OFF'
         : (selectedSubtitleTrack.title ?? selectedSubtitleTrack.language ?? 'Track ${selectedSubtitleTrack.id}');
     appLogger.d('Subtitle: $subtitleName [${subtitleResult.priority.name}]');
-    player.selectSubtitleTrack(selectedSubtitleTrack);
+    unawaited(player.selectSubtitleTrack(selectedSubtitleTrack));
 
     // Save to Plex if this was user's navigation preference (Priority 1)
     if (subtitleResult.priority == TrackSelectionPriority.navigation && onSubtitleTrackChanged != null) {
@@ -714,13 +714,13 @@ class TrackSelectionService {
         appLogger.d(
           'Secondary subtitle: ${secondaryMatch.title ?? secondaryMatch.language ?? "Track ${secondaryMatch.id}"}',
         );
-        player.selectSecondarySubtitleTrack(secondaryMatch);
+        unawaited(player.selectSecondarySubtitleTrack(secondaryMatch));
       }
     }
 
     // Apply default playback speed from settings
     if (defaultPlaybackSpeed != null && defaultPlaybackSpeed != 1.0) {
-      player.setRate(defaultPlaybackSpeed);
+      unawaited(player.setRate(defaultPlaybackSpeed));
     }
   }
 }

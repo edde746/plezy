@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -188,7 +190,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       });
 
       // Load favorites from the first available server (favorites are cloud-synced)
-      _loadFavorites(multiServer);
+      unawaited(_loadFavorites(multiServer));
 
       if (allChannels.isNotEmpty && PlatformDetector.shouldUseSideNavigation(context)) {
         WidgetsBinding.instance.addPostFrameCallback((_) {

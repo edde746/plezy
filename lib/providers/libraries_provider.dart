@@ -126,7 +126,7 @@ class LibrariesProvider extends ChangeNotifier {
     }
 
     // Create a map for quick lookup
-    final libraryMap = {for (var lib in libraries) lib.globalKey: lib};
+    final libraryMap = {for (final lib in libraries) lib.globalKey: lib};
 
     // Build ordered list based on saved order
     final orderedLibraries = <PlexLibrary>[];

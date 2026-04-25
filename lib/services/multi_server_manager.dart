@@ -206,7 +206,9 @@ class MultiServerManager {
     }
 
     appLogger.i('Connecting to ${servers.length} servers...');
-    Sentry.addBreadcrumb(Breadcrumb(message: 'Connecting to ${servers.length} server(s)', category: 'servers'));
+    unawaited(
+      Sentry.addBreadcrumb(Breadcrumb(message: 'Connecting to ${servers.length} server(s)', category: 'servers')),
+    );
 
     // Re-use the persisted client ID so Plex doesn't see a "new device" on
     // every reconnect.
@@ -531,7 +533,11 @@ class MultiServerManager {
     if (offline.isEmpty) return;
 
     appLogger.d('Attempting reconnection for ${offline.length} offline servers');
-    Sentry.addBreadcrumb(Breadcrumb(message: 'Reconnecting ${offline.length} offline server(s)', category: 'servers'));
+    unawaited(
+      Sentry.addBreadcrumb(
+        Breadcrumb(message: 'Reconnecting ${offline.length} offline server(s)', category: 'servers'),
+      ),
+    );
 
     if (forceRediscovery) {
       final storage = await StorageService.getInstance();

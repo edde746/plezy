@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform, ProcessInfo;
 import 'dart:ui' show AppExitResponse;
 import 'package:flutter/foundation.dart';
+// ignore: depend_on_referenced_packages
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
@@ -138,7 +139,7 @@ Future<void> _bootstrapApp() async {
   final savedLocale = settings.read(SettingsService.appLocale);
 
   // Initialize localization with saved locale
-  LocaleSettings.setLocale(savedLocale);
+  unawaited(LocaleSettings.setLocale(savedLocale));
 
   // Needed for formatting dates in different locales
   await initializeDateFormatting(savedLocale.languageCode, null);
@@ -212,7 +213,7 @@ Future<void> _bootstrapApp() async {
 
   // Desktop-only services
   if (PlatformDetector.isDesktopOS()) {
-    DiscordRPCService.instance.initialize();
+    unawaited(DiscordRPCService.instance.initialize());
   }
 
   // Trakt scrobble service (all platforms)
@@ -251,7 +252,7 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
   if (instance != null && !instance.read(SettingsService.crashReporting)) return null;
 
   // Drop unactionable errors
-  var exceptions = event.exceptions;
+  final exceptions = event.exceptions;
   if (exceptions != null) {
     bool shouldDrop(SentryException e) {
       final v = e.value;
@@ -917,7 +918,7 @@ class _SetupScreenState extends State<SetupScreen> {
     // Check network connectivity early to fast-path airplane mode.
     // Timeout guards against connectivity_plus hanging on some Android TV devices after force-close.
     bool hasNetwork;
-    Sentry.addBreadcrumb(Breadcrumb(message: 'Checking network connectivity', category: 'setup'));
+    unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Checking network connectivity', category: 'setup')));
     try {
       final connectivityResult = await Connectivity().checkConnectivity().timeout(
         const Duration(seconds: 3),
@@ -929,7 +930,9 @@ class _SetupScreenState extends State<SetupScreen> {
       hasNetwork = true;
     }
 
-    Sentry.addBreadcrumb(Breadcrumb(message: 'Network check done: hasNetwork=$hasNetwork', category: 'setup'));
+    unawaited(
+      Sentry.addBreadcrumb(Breadcrumb(message: 'Network check done: hasNetwork=$hasNetwork', category: 'setup')),
+    );
 
     if (hasNetwork) {
       _setStatus(t.common.refreshingServers);
@@ -941,7 +944,7 @@ class _SetupScreenState extends State<SetupScreen> {
       if (refreshResult == ServerRefreshResult.authError) {
         await storage.clearCredentials();
         if (mounted) {
-          Navigator.pushReplacement(context, fadeRoute(const AuthScreen()));
+          unawaited(Navigator.pushReplacement(context, fadeRoute(const AuthScreen())));
         }
         return;
       }
@@ -954,7 +957,7 @@ class _SetupScreenState extends State<SetupScreen> {
 
     if (servers.isEmpty) {
       if (mounted) {
-        Navigator.pushReplacement(context, fadeRoute(const AuthScreen()));
+        unawaited(Navigator.pushReplacement(context, fadeRoute(const AuthScreen())));
       }
       return;
     }
@@ -966,11 +969,13 @@ class _SetupScreenState extends State<SetupScreen> {
       _setStatus(t.common.startingOfflineMode);
       await context.read<DownloadProvider>().ensureInitialized();
       if (!mounted) return;
-      Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true)));
+      unawaited(Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true))));
       return;
     }
 
-    Sentry.addBreadcrumb(Breadcrumb(message: 'Connecting to ${servers.length} server(s)', category: 'setup'));
+    unawaited(
+      Sentry.addBreadcrumb(Breadcrumb(message: 'Connecting to ${servers.length} server(s)', category: 'setup')),
+    );
     _setStatus(t.common.connectingToServers);
 
     // Populate per-server status for splash display
@@ -1006,16 +1011,18 @@ class _SetupScreenState extends State<SetupScreen> {
       if (result.hasConnections && result.firstClient != null) {
         // Resume any downloads that were interrupted by app kill
         final downloadProvider = context.read<DownloadProvider>();
-        downloadProvider.ensureInitialized().then((_) {
-          downloadProvider.resumeQueuedDownloads(result.firstClient!);
-        });
+        unawaited(
+          downloadProvider.ensureInitialized().then((_) {
+            downloadProvider.resumeQueuedDownloads(result.firstClient!);
+          }),
+        );
 
-        Navigator.pushReplacement(context, fadeRoute(MainScreen(client: result.firstClient!)));
+        unawaited(Navigator.pushReplacement(context, fadeRoute(MainScreen(client: result.firstClient!))));
       } else {
         _setStatus(t.common.startingOfflineMode);
         await context.read<DownloadProvider>().ensureInitialized();
         if (!mounted) return;
-        Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true)));
+        unawaited(Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true))));
       }
     } catch (e, stackTrace) {
       appLogger.e('Error during multi-server connection', error: e, stackTrace: stackTrace);
@@ -1024,7 +1031,7 @@ class _SetupScreenState extends State<SetupScreen> {
         _setStatus(t.common.startingOfflineMode);
         await context.read<DownloadProvider>().ensureInitialized();
         if (!mounted) return;
-        Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true)));
+        unawaited(Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true))));
       }
     }
   }

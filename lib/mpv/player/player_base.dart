@@ -351,7 +351,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
           3 => 'quit',
           4 => 'error',
           5 => 'redirect',
-          String s => s,
+          final String s => s,
           _ => null,
         };
         if (reason == 'eof') {

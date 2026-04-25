@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -253,13 +255,15 @@ class PlayQueueLauncher {
     // Show loading indicator
     if (showLoading && context.mounted) {
       loadingVisible = true;
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) {
-          loadingDialogContext = dialogContext;
-          return const Center(child: CircularProgressIndicator());
-        },
+      unawaited(
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) {
+            loadingDialogContext = dialogContext;
+            return const Center(child: CircularProgressIndicator());
+          },
+        ),
       );
     }
 

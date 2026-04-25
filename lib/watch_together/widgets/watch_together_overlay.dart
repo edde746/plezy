@@ -276,7 +276,7 @@ class _SessionMenuSheet extends StatelessWidget {
     );
 
     if (confirmed) {
-      provider.leaveSession();
+      unawaited(provider.leaveSession());
       onLeaveSession?.call();
     }
   }

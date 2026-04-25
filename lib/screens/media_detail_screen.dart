@@ -323,7 +323,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         });
         // Re-fetch episodes for the currently selected season
         if (!_showEpisodesDirectly && _seasons.isNotEmpty) {
-          _fetchSeasonEpisodes(_selectedSeasonIndex);
+          unawaited(_fetchSeasonEpisodes(_selectedSeasonIndex));
         }
       } else if (widget.metadata.isSeason) {
         await _fetchAllEpisodes();
@@ -872,8 +872,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       context,
                       isWatched ? t.messages.markedAsUnwatchedOffline : t.messages.markedAsWatchedOffline,
                     );
-                    _updateWatchStateOffline();
-                    _loadOfflineOnDeckEpisode();
+                    unawaited(_updateWatchStateOffline());
+                    unawaited(_loadOfflineOnDeckEpisode());
                   }
                 } else {
                   // Online mode: send to server
@@ -1237,7 +1237,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (widget.metadata.isShow) {
         _loadSeasonsFromDownloads();
         // Get offline OnDeck episode
-        _loadOfflineOnDeckEpisode();
+        unawaited(_loadOfflineOnDeckEpisode());
       } else if (widget.metadata.isSeason) {
         _seasons = [widget.metadata];
         _showEpisodesDirectly = true;
@@ -1286,16 +1286,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
         // Load seasons if it's a show
         if (metadata.isShow) {
-          _loadSeasons();
+          unawaited(_loadSeasons());
         } else if (metadata.isSeason) {
           _seasons = [widget.metadata];
           _showEpisodesDirectly = true;
-          _fetchAllEpisodes();
+          unawaited(_fetchAllEpisodes());
         }
 
         // Load extras (trailers, behind-the-scenes, etc.)
-        _loadExtras();
-        _loadRelatedHubs();
+        unawaited(_loadExtras());
+        unawaited(_loadRelatedHubs());
 
         return;
       }
@@ -1307,11 +1307,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       });
 
       if (widget.metadata.isShow) {
-        _loadSeasons();
+        unawaited(_loadSeasons());
       } else if (widget.metadata.isSeason) {
         _seasons = [widget.metadata];
         _showEpisodesDirectly = true;
-        _fetchAllEpisodes();
+        unawaited(_fetchAllEpisodes());
       }
     } catch (e) {
       // Fallback to passed metadata on error
@@ -1322,11 +1322,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       });
 
       if (widget.metadata.isShow) {
-        _loadSeasons();
+        unawaited(_loadSeasons());
       } else if (widget.metadata.isSeason) {
         _seasons = [widget.metadata];
         _showEpisodesDirectly = true;
-        _fetchAllEpisodes();
+        unawaited(_fetchAllEpisodes());
       }
     }
   }
@@ -1383,7 +1383,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         await _fetchAllEpisodes();
       } else if (seasonsWithServerId.isNotEmpty) {
         // Fetch episodes for the auto-selected season
-        _fetchSeasonEpisodes(onDeckSeasonIndex);
+        unawaited(_fetchSeasonEpisodes(onDeckSeasonIndex));
       }
     } catch (e) {
       setStateIfMounted(() {
@@ -2376,7 +2376,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (context.mounted) {
         await navigateToVideoPlayer(context, metadata: firstEpisode);
         // Refresh metadata when returning from video player
-        _loadFullMetadata();
+        unawaited(_loadFullMetadata());
       }
     } catch (e) {
       // Close loading indicator if it's still open

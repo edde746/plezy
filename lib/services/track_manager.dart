@@ -122,7 +122,7 @@ class TrackManager {
       // play() failed — clear the flag immediately since playbackRestart won't fire
       appLogger.w('Resume after subtitle load failed, applying track selection directly', error: e);
       waitingForExternalSubsTrackSelection = false;
-      applyTrackSelection();
+      unawaited(applyTrackSelection());
       return;
     }
 

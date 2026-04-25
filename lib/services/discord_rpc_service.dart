@@ -112,7 +112,7 @@ class DiscordRPCService {
 
     if (_isEnabled && _isConnected) {
       // Upload thumbnail in background, don't block playback
-      _uploadThumbnailAndUpdatePresence();
+      unawaited(_uploadThumbnailAndUpdatePresence());
     }
   }
 
@@ -183,7 +183,7 @@ class DiscordRPCService {
   /// Clear the presence
   Future<void> clearPresence() async {
     try {
-      _rpc?.clearPresence();
+      unawaited(_rpc?.clearPresence());
     } catch (e) {
       appLogger.d('Failed to clear Discord presence', error: e);
     }
@@ -237,7 +237,7 @@ class DiscordRPCService {
       _disconnectedSubscription = null;
       _errorSubscription = null;
       try {
-        _rpc?.dispose();
+        unawaited(_rpc?.dispose());
       } catch (e) {
         appLogger.d('DiscordRPC: dispose ignored', error: e);
       }
@@ -258,7 +258,7 @@ class DiscordRPCService {
     _errorSubscription = null;
 
     try {
-      _rpc?.dispose();
+      unawaited(_rpc?.dispose());
     } catch (e) {
       appLogger.d('Error disposing Discord RPC', error: e);
     }

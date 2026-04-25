@@ -548,46 +548,48 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     final storageService = DownloadStorageService.instance;
     final isCustom = storageService.isUsingCustomPath();
 
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(t.settings.downloads),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(t.settings.downloadLocationDescription),
-            const SizedBox(height: 16),
-            FutureBuilder<String>(
-              future: storageService.getCurrentDownloadPathDisplay(),
-              builder: (context, snapshot) {
-                return Text(
-                  t.settings.currentPath(path: snapshot.data ?? '...'),
-                  style: Theme.of(context).textTheme.bodySmall,
-                );
-              },
-            ),
-          ],
-        ),
-        actions: [
-          if (isCustom)
+    unawaited(
+      showDialog(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(t.settings.downloads),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.settings.downloadLocationDescription),
+              const SizedBox(height: 16),
+              FutureBuilder<String>(
+                future: storageService.getCurrentDownloadPathDisplay(),
+                builder: (context, snapshot) {
+                  return Text(
+                    t.settings.currentPath(path: snapshot.data ?? '...'),
+                    style: Theme.of(context).textTheme.bodySmall,
+                  );
+                },
+              ),
+            ],
+          ),
+          actions: [
+            if (isCustom)
+              DialogActionButton(
+                onPressed: () async {
+                  Navigator.pop(dialogContext);
+                  await _resetDownloadLocation();
+                },
+                label: t.settings.resetToDefault,
+              ),
+            DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
             DialogActionButton(
               onPressed: () async {
                 Navigator.pop(dialogContext);
-                await _resetDownloadLocation();
+                await _selectDownloadLocation();
               },
-              label: t.settings.resetToDefault,
+              label: t.settings.selectFolder,
+              isPrimary: true,
             ),
-          DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
-          DialogActionButton(
-            onPressed: () async {
-              Navigator.pop(dialogContext);
-              await _selectDownloadLocation();
-            },
-            label: t.settings.selectFolder,
-            isPrimary: true,
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -725,7 +727,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     await _keyboardService?.resetToDefaults();
     if (mounted) {
       showSuccessSnackBar(context, t.settings.resetSettingsSuccess);
-      _loadSettings();
+      unawaited(_loadSettings());
     }
   }
 
@@ -766,7 +768,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       if (!mounted) return;
       if (result == null) return; // user cancelled file picker
 
-      LocaleSettings.setLocale(_settingsService.read(settings.SettingsService.appLocale));
+      unawaited(LocaleSettings.setLocale(_settingsService.read(settings.SettingsService.appLocale)));
       await Future.wait([
         themeProvider.reload(),
         settingsProvider.reload(),
@@ -776,7 +778,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       unawaited(librariesProvider.refresh());
 
       if (!mounted) return;
-      _loadSettings();
+      unawaited(_loadSettings());
       showSuccessSnackBar(context, t.settings.importSettingsSuccess);
     } on NoUserSignedInException {
       if (mounted) showErrorSnackBar(context, t.settings.importSettingsNoUser);

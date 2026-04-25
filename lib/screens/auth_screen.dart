@@ -51,7 +51,7 @@ class _AuthScreenState extends State<AuthScreen> {
       setState(() {
         _useQrFlow = true;
       });
-      _startAuthentication();
+      unawaited(_startAuthentication());
     }
   }
 
@@ -115,7 +115,7 @@ class _AuthScreenState extends State<AuthScreen> {
       await profileFuture;
 
       if (!mounted) return;
-      Navigator.pushReplacement(context, fadeRoute(MainScreen(client: result.firstClient!)));
+      unawaited(Navigator.pushReplacement(context, fadeRoute(MainScreen(client: result.firstClient!))));
     } catch (e) {
       appLogger.e('Failed to connect to servers', error: e);
       if (!mounted) return;

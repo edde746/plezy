@@ -669,9 +669,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
       // Apply rotation lock setting
       if (_isRotationLocked) {
-        SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+        unawaited(
+          SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]),
+        );
       } else {
-        SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+        unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
       }
     }
   }
@@ -994,10 +996,10 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
     if (_isRotationLocked) {
       // Locked: Allow landscape orientations only
-      SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+      await SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
     } else {
       // Unlocked: Allow all orientations including portrait
-      SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+      await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     }
   }
 
@@ -1139,7 +1141,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (metadataJson != null) {
       // Parse chapters
       if (metadataJson['Chapter'] != null) {
-        for (var chapter in metadataJson['Chapter'] as List) {
+        for (final chapter in metadataJson['Chapter'] as List) {
           chapters.add(
             PlexChapter(
               id: chapter['id'] as int,
@@ -1155,7 +1157,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
       // Parse markers
       if (metadataJson['Marker'] != null) {
-        for (var marker in metadataJson['Marker'] as List) {
+        for (final marker in metadataJson['Marker'] as List) {
           markers.add(
             PlexMarker(
               id: marker['id'] as int,
@@ -2611,19 +2613,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       // Navigate to new player screen with the updated selection
       // Use PageRouteBuilder with zero-duration transitions to prevent orientation reset
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder<bool>(
-            pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
-              metadata: widget.metadata.copyWith(viewOffset: currentPosition.inMilliseconds),
-              selectedMediaIndex: effectiveMediaIndex,
-              selectedQualityPreset: effectivePreset,
-              selectedAudioStreamId: effectiveAudioStreamId,
-              reusedSessionIdentifier: sessionId,
-              reusedTranscodeSessionId: transcodeSessionId,
+        unawaited(
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder<bool>(
+              pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
+                metadata: widget.metadata.copyWith(viewOffset: currentPosition.inMilliseconds),
+                selectedMediaIndex: effectiveMediaIndex,
+                selectedQualityPreset: effectivePreset,
+                selectedAudioStreamId: effectiveAudioStreamId,
+                reusedSessionIdentifier: sessionId,
+                reusedTranscodeSessionId: transcodeSessionId,
+              ),
+              transitionDuration: Duration.zero,
+              reverseTransitionDuration: Duration.zero,
             ),
-            transitionDuration: Duration.zero,
-            reverseTransitionDuration: Duration.zero,
           ),
         );
       }

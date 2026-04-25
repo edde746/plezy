@@ -87,7 +87,7 @@ class _VolumeControlState extends State<VolumeControl> {
   Future<void> _adjustVolume(double delta) async {
     final currentVolume = widget.player.state.volume;
     final newVolume = (currentVolume + delta).clamp(0.0, _maxVolume.toDouble());
-    widget.player.setVolume(newVolume);
+    await widget.player.setVolume(newVolume);
     final settings = await SettingsService.getInstance();
     await settings.write(SettingsService.volume, newVolume);
   }
@@ -168,7 +168,7 @@ class _VolumeControlState extends State<VolumeControl> {
             ),
             onPressed: () async {
               final newVolume = isMuted ? 100.0 : 0.0;
-              widget.player.setVolume(newVolume);
+              await widget.player.setVolume(newVolume);
               final settings = await SettingsService.getInstance();
               await settings.write(SettingsService.volume, newVolume);
             },

@@ -462,36 +462,38 @@ class PlexServer {
       appLogger.d('Running connection race to find first working endpoint', error: {'candidateCount': totalCandidates});
 
       for (final candidate in candidates) {
-        PlexClient.testConnectionWithLatency(
-          candidate.url,
-          accessToken,
-          timeout: raceTimeout,
-          clientIdentifier: clientIdentifier,
-        ).then((result) {
-          completedTests++;
+        unawaited(
+          PlexClient.testConnectionWithLatency(
+            candidate.url,
+            accessToken,
+            timeout: raceTimeout,
+            clientIdentifier: clientIdentifier,
+          ).then((result) {
+            completedTests++;
 
-          if (!result.success) {
-            appLogger.w(
-              'Connection candidate failed',
-              error: {
-                'url': candidate.url,
-                'type': candidate.connection.displayType,
-                'https': candidate.isHttps,
-                'error': result.error,
-                'latencyMs': result.latencyMs,
-              },
-            );
-          }
+            if (!result.success) {
+              appLogger.w(
+                'Connection candidate failed',
+                error: {
+                  'url': candidate.url,
+                  'type': candidate.connection.displayType,
+                  'https': candidate.isHttps,
+                  'error': result.error,
+                  'latencyMs': result.latencyMs,
+                },
+              );
+            }
 
-          if (result.success && !completer.isCompleted) {
-            if (result.transcoderVideo != null) onTranscoderCapability?.call(result.transcoderVideo!);
-            completer.complete(candidate);
-          }
+            if (result.success && !completer.isCompleted) {
+              if (result.transcoderVideo != null) onTranscoderCapability?.call(result.transcoderVideo!);
+              completer.complete(candidate);
+            }
 
-          if (completedTests == candidates.length && !completer.isCompleted) {
-            completer.complete(null);
-          }
-        });
+            if (completedTests == candidates.length && !completer.isCompleted) {
+              completer.complete(null);
+            }
+          }),
+        );
       }
 
       firstCandidate = await completer.future;

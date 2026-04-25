@@ -67,7 +67,7 @@ class VideoControlsHeader extends StatelessWidget {
     final seriesName = metadata.grandparentTitle ?? metadata.title!;
     final hasEpisodeInfo = metadata.parentIndex != null && metadata.index != null;
 
-    List<String> parts = [seriesName];
+    final List<String> parts = [seriesName];
 
     if (hasEpisodeInfo) {
       parts.add('S${metadata.parentIndex}E${metadata.index}');
@@ -83,7 +83,7 @@ class VideoControlsHeader extends StatelessWidget {
   }
 
   Widget _buildMultiLineTitle() {
-    List<String> secondLineParts = [];
+    final List<String> secondLineParts = [];
 
     if (metadata.parentIndex != null && metadata.index != null) {
       secondLineParts.add('S${metadata.parentIndex}');

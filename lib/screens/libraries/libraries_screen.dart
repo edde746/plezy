@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -174,7 +176,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
 
     if (libraryGlobalKeyToLoad != null && mounted) {
-      _loadLibraryContent(libraryGlobalKeyToLoad);
+      unawaited(_loadLibraryContent(libraryGlobalKeyToLoad));
     }
   }
 
@@ -536,7 +538,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
             .toList();
 
         if (visibleLibraries.isNotEmpty) {
-          _loadLibraryContent(visibleLibraries.first.globalKey);
+          unawaited(_loadLibraryContent(visibleLibraries.first.globalKey));
         }
       }
     }
@@ -600,16 +602,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     switch (action) {
       case 'scan':
-        _scanLibrary(library);
+        unawaited(_scanLibrary(library));
         break;
       case 'analyze':
-        _analyzeLibrary(library);
+        unawaited(_analyzeLibrary(library));
         break;
       case 'refresh':
-        _refreshLibraryMetadata(library);
+        unawaited(_refreshLibraryMetadata(library));
         break;
       case 'empty_trash':
-        _emptyLibraryTrash(library);
+        unawaited(_emptyLibraryTrash(library));
         break;
     }
   }

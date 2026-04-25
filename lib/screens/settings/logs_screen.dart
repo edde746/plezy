@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -141,34 +142,36 @@ class _LogsScreenState extends State<LogsScreen> {
       final data = response.data is String ? jsonDecode(response.data) : response.data;
       final id = (data as Map<String, dynamic>)['id'] as String;
 
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(t.messages.logsUploaded),
-          content: Row(
-            children: [
-              Text('${t.messages.logId}: '),
-              SelectableText(
-                id,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 18),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.copy, size: 20),
-                onPressed: () {
-                  Clipboard.setData(ClipboardData(text: id));
-                  showSuccessSnackBar(context, t.messages.logsCopied);
-                },
+      unawaited(
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(t.messages.logsUploaded),
+            content: Row(
+              children: [
+                Text('${t.messages.logId}: '),
+                SelectableText(
+                  id,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 18),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.copy, size: 20),
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: id));
+                    showSuccessSnackBar(context, t.messages.logsCopied);
+                  },
+                ),
+              ],
+            ),
+            actions: [
+              FocusableButton(
+                autofocus: true,
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(t.common.close)),
               ),
             ],
           ),
-          actions: [
-            FocusableButton(
-              autofocus: true,
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(t.common.close)),
-            ),
-          ],
         ),
       );
     } catch (_) {

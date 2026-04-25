@@ -108,6 +108,7 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       thumbShape: const HandleThumbShape(),
       trackShape: const GappedTrackShape(),
       tickMarkShape: const RoundSliderTickMarkShape(tickMarkRadius: 2),
+      // ignore: deprecated_member_use — opting into the 2024 slider appearance until the default flips
       year2023: false,
     ),
     dividerTheme: DividerThemeData(space: 0, thickness: 1, color: c.outline),

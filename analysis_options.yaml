@@ -7,6 +7,16 @@ analyzer:
   plugins:
     - dart_code_linter
 
+linter:
+  rules:
+    unawaited_futures: true
+    cancel_subscriptions: true
+    close_sinks: true
+    use_super_parameters: true
+    prefer_final_locals: true
+    prefer_final_in_for_each: true
+    avoid_print: true
+
 dart_code_linter:
   extends:
     - package:dart_code_linter/presets/recommended.yaml

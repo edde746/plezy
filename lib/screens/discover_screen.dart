@@ -416,8 +416,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
     // Center the active dot when possible
     final center = _currentHeroIndex;
-    int start = (center - 2).clamp(0, totalDots - 5);
-    int end = start + 4; // 5 dots total (0-4 inclusive)
+    final int start = (center - 2).clamp(0, totalDots - 5);
+    final int end = start + 4; // 5 dots total (0-4 inclusive)
 
     return (start: start, end: end);
   }
@@ -461,6 +461,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // Get hidden libraries for filtering
       final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
       await hiddenLibrariesProvider.ensureInitialized();
+      if (!mounted) return;
       _lastSeenHiddenKeys = Set.of(hiddenLibrariesProvider.hiddenLibraryKeys);
 
       // Get settings for hub mode preference (ensure initialized before accessing)
@@ -509,7 +510,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
       // Sync to Android TV Watch Next row
       if (Platform.isAndroid) {
-        _syncWatchNext(onDeck);
+        unawaited(_syncWatchNext(onDeck));
       }
 
       // Sync PageController to first page after OnDeck loads
@@ -622,7 +623,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
         // Sync to Android TV Watch Next row
         if (Platform.isAndroid) {
-          _syncWatchNext(onDeck);
+          unawaited(_syncWatchNext(onDeck));
         }
 
         appLogger.d('Continue Watching refreshed successfully');
@@ -806,9 +807,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       playbackStateProvider.clearShuffle();
 
       if (mounted) {
-        Navigator.of(
-          context,
-        ).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const AuthScreen()), (route) => false);
+        unawaited(
+          Navigator.of(
+            context,
+          ).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const AuthScreen()), (route) => false),
+        );
       }
     }
   }

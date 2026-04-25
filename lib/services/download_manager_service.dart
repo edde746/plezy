@@ -201,11 +201,11 @@ class DownloadManagerService {
   /// then scans drift for orphaned items.
   Future<void> recoverInterruptedDownloads() async {
     try {
-      Sentry.addBreadcrumb(Breadcrumb(message: 'Initializing FileDownloader', category: 'downloads'));
+      unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Initializing FileDownloader', category: 'downloads')));
       await _initializeFileDownloader();
 
       // Let background_downloader re-enqueue tasks killed by the OS
-      Sentry.addBreadcrumb(Breadcrumb(message: 'Rescheduling killed tasks', category: 'downloads'));
+      unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Rescheduling killed tasks', category: 'downloads')));
       final (rescheduled, _) = await FileDownloader().rescheduleKilledTasks();
       if (rescheduled.isNotEmpty) {
         appLogger.i('Rescheduled ${rescheduled.length} killed download task(s)');
@@ -251,7 +251,7 @@ class DownloadManagerService {
       }
 
       // Scan drift for orphaned items stuck in 'downloading'
-      Sentry.addBreadcrumb(Breadcrumb(message: 'Scanning for orphaned downloads', category: 'downloads'));
+      unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Scanning for orphaned downloads', category: 'downloads')));
       final allDownloads = await _database.select(_database.downloadedMedia).get();
       for (final item in allDownloads) {
         if (item.status == DownloadStatus.downloading.index) {
@@ -496,7 +496,7 @@ class DownloadManagerService {
     _emitProgress(globalKey, DownloadStatus.queued, 0);
 
     // Start processing if not already
-    _processQueue(client);
+    unawaited(_processQueue(client));
   }
 
   /// Process the download queue — prepares and enqueues items with background_downloader.
@@ -812,7 +812,7 @@ class DownloadManagerService {
     await _transitionStatus(globalKey, DownloadStatus.queued);
     await _database.addToQueue(mediaGlobalKey: globalKey);
     final client = _getClient(parseGlobalKey(globalKey)?.serverId);
-    if (client != null) _processQueue(client);
+    if (client != null) unawaited(_processQueue(client));
   }
 
   /// Handle a failed download — auto-retry if retries remain, otherwise permanently fail.
@@ -860,7 +860,7 @@ class DownloadManagerService {
 
       // Only advance the queue if the download actually started transferring.
       // Instant failures (DNS, connection) would just cause the next item to fail too.
-      if (hadProgress) _processQueue(client);
+      if (hadProgress) unawaited(_processQueue(client));
     } else {
       if (isNetworkError) {
         appLogger.w('Network error for $globalKey, failing permanently (no auto-retry): $errorMessage');
@@ -891,7 +891,7 @@ class DownloadManagerService {
 
     // Try to enqueue more items from the queue
     final client = _getClient(parseGlobalKey(globalKey)?.serverId);
-    if (client != null) _processQueue(client);
+    if (client != null) unawaited(_processQueue(client));
   }
 
   /// Execute an app-level auto-retry: transition back to queued and re-enqueue.
@@ -913,7 +913,7 @@ class DownloadManagerService {
     await _database.updateBgTaskId(globalKey, null);
     await _transitionStatus(globalKey, DownloadStatus.queued);
     await _database.addToQueue(mediaGlobalKey: globalKey);
-    _processQueue(client);
+    unawaited(_processQueue(client));
   }
 
   /// Handle a completed video download — store path, download supplementary content, mark done.
@@ -1034,7 +1034,7 @@ class DownloadManagerService {
       _completingKeys.remove(globalKey);
       // Always advance the queue, even after errors
       final nextClient = _getClient(parseGlobalKey(globalKey)?.serverId);
-      if (nextClient != null) _processQueue(nextClient);
+      if (nextClient != null) unawaited(_processQueue(nextClient));
     }
   }
 
@@ -1372,7 +1372,7 @@ class DownloadManagerService {
     await _transitionStatus(globalKey, DownloadStatus.queued);
     await _database.addToQueue(mediaGlobalKey: globalKey);
     final resolvedClient = _getClient(parseGlobalKey(globalKey)?.serverId) ?? client;
-    _processQueue(resolvedClient);
+    unawaited(_processQueue(resolvedClient));
   }
 
   /// Retry a failed download
@@ -1384,7 +1384,7 @@ class DownloadManagerService {
     await _transitionStatus(globalKey, DownloadStatus.queued);
     await _database.addToQueue(mediaGlobalKey: globalKey);
     final resolvedClient = _getClient(parseGlobalKey(globalKey)?.serverId) ?? client;
-    _processQueue(resolvedClient);
+    unawaited(_processQueue(resolvedClient));
   }
 
   /// Cancel a download

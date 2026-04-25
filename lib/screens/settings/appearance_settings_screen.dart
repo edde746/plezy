@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -128,7 +129,7 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
         );
         if (value != null) {
           await _settingsService.write(settings.SettingsService.appLocale, value);
-          LocaleSettings.setLocale(value);
+          unawaited(LocaleSettings.setLocale(value));
           _restartApp();
         }
       },

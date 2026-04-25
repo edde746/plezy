@@ -432,7 +432,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
     _reconnectTimer = null;
     stopKeepalive();
 
-    _channelSubscription?.cancel();
+    unawaited(_channelSubscription?.cancel());
     _channelSubscription = null;
 
     try {

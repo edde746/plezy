@@ -37,7 +37,7 @@ class _HotKeyRecorderState extends State<HotKeyRecorder> {
     final PhysicalKeyboardKey key = keyEvent.physicalKey;
 
     // Detect which modifiers are currently held down, excluding the primary key
-    List<HotKeyModifier> modifiers = HotKeyModifier.values
+    final List<HotKeyModifier> modifiers = HotKeyModifier.values
         .where((m) => m.physicalKeys.any(physicalKeysPressed.contains))
         .where((m) => !m.physicalKeys.contains(key))
         .toList();

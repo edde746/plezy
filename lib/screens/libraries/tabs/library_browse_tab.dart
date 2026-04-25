@@ -611,8 +611,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
           final storage = await StorageService.getInstance();
           await storage.saveLibraryFilters(filters, sectionId: widget.library.globalKey);
 
-          _loadItems();
-          _loadFirstCharacters();
+          unawaited(_loadItems());
+          unawaited(_loadFirstCharacters());
         },
       ),
     );

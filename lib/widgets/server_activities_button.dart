@@ -143,7 +143,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
     _pollTimer?.cancel();
     _pollTimer = null;
     _panelNotifier.value = _PanelData.loading;
-    _fetchActivities();
+    unawaited(_fetchActivities());
   }
 
   Widget _buildOverlay(BuildContext overlayContext, {required double right, required double top}) {

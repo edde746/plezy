@@ -116,7 +116,7 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
     final textColor = needsContrastSwap ? Theme.of(context).colorScheme.onError : widget.textColor;
     final iconColor = needsContrastSwap ? Theme.of(context).colorScheme.onError : widget.iconColor;
 
-    Widget tile = MouseRegion(
+    final Widget tile = MouseRegion(
       onEnter: widget.hoverColor != null ? (_) => setState(() => _isHoveredOrFocused = true) : null,
       onExit: widget.hoverColor != null ? (_) => setState(() => _isHoveredOrFocused = false) : null,
       child: ListTile(

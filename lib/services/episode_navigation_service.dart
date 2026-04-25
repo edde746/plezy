@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -89,13 +91,15 @@ class EpisodeNavigationService {
 
     // Navigate to the new episode
     if (context.mounted) {
-      navigateToVideoPlayer(
-        context,
-        metadata: episode,
-        preferredAudioTrack: currentAudioTrack,
-        preferredSubtitleTrack: currentSubtitleTrack,
-        preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
-        usePushReplacement: usePushReplacement,
+      unawaited(
+        navigateToVideoPlayer(
+          context,
+          metadata: episode,
+          preferredAudioTrack: currentAudioTrack,
+          preferredSubtitleTrack: currentSubtitleTrack,
+          preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
+          usePushReplacement: usePushReplacement,
+        ),
       );
     }
   }

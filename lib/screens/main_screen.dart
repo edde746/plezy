@@ -175,7 +175,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
         // Auto-start companion remote server now that home data is available
         if (_companionRemoteSetup && mounted) {
-          _autoStartCompanionRemoteServer(context.read<CompanionRemoteProvider>());
+          unawaited(_autoStartCompanionRemoteServer(context.read<CompanionRemoteProvider>()));
         }
 
         // Ensure first login (or any unset profile state) requires explicit selection.
@@ -189,7 +189,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       }
 
       // Check for updates on startup
-      _checkForUpdatesOnStartup();
+      unawaited(_checkForUpdatesOnStartup());
     });
   }
 
@@ -327,7 +327,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       final contentId = await watchNext.getInitialDeepLink();
       if (contentId != null && mounted) {
         appLogger.d('Watch Next initial deep link: $contentId');
-        _handleWatchNextContentId(contentId);
+        unawaited(_handleWatchNextContentId(contentId));
       }
     });
   }
@@ -357,7 +357,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
       if (metadata == null || !mounted) return;
 
-      navigateToVideoPlayer(context, metadata: metadata);
+      unawaited(navigateToVideoPlayer(context, metadata: metadata));
     } catch (e) {
       appLogger.e('Watch Next: failed to navigate to media', error: e);
     }
@@ -697,7 +697,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
           if (!result.confirmed) return;
         }
       }
-      SystemNavigator.pop();
+      unawaited(SystemNavigator.pop());
     });
   }
 
@@ -823,7 +823,7 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     }
 
     // Reset other provider states
-    hiddenLibrariesProvider.refresh();
+    unawaited(hiddenLibrariesProvider.refresh());
     playbackStateProvider.clearShuffle();
 
     appLogger.d('Cleared all provider states for profile switch');

@@ -348,10 +348,10 @@ class WatchTogetherProvider with ChangeNotifier {
     _syncManager?.announceLeave();
 
     // Clean up subscriptions
-    _peerConnectedSubscription?.cancel();
-    _peerDisconnectedSubscription?.cancel();
-    _messageSubscription?.cancel();
-    _errorSubscription?.cancel();
+    unawaited(_peerConnectedSubscription?.cancel());
+    unawaited(_peerDisconnectedSubscription?.cancel());
+    unawaited(_messageSubscription?.cancel());
+    unawaited(_errorSubscription?.cancel());
 
     _peerConnectedSubscription = null;
     _peerDisconnectedSubscription = null;

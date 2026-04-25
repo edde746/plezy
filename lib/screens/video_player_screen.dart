@@ -789,7 +789,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // Apply saved volume (clamped to max volume)
       final savedVolume = settingsService.read(SettingsService.volume).clamp(0.0, maxVolume.toDouble());
-      player!.setVolume(savedVolume);
+      unawaited(player!.setVolume(savedVolume));
 
       // Notify that player is ready
       if (mounted) {
@@ -804,7 +804,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
 
         // Enable wakelock to prevent screen from turning off during playback
-        _setWakelock(true);
+        unawaited(_setWakelock(true));
         appLogger.d('Wakelock enabled for video playback');
       }
 
@@ -822,8 +822,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             OrientationHelper.setLandscapeOrientation();
           } else {
             // Unlocked: Allow all orientations immediately
-            SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-            SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+            unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
+            unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky));
           }
         } catch (e) {
           appLogger.w('Failed to set orientation', error: e);
@@ -903,7 +903,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _liveStreamFallbackLevel = 0;
         if (!_hasFirstFrame.value) {
           _hasFirstFrame.value = true;
-          Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player'));
+          unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player')));
 
           // Apply frame rate matching on Android if enabled
           if (Platform.isAndroid && settingsService.read(SettingsService.matchContentFrameRate)) {
@@ -958,7 +958,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await _initializeServices();
 
       // Load next/previous episodes (fire-and-forget)
-      _loadAdjacentEpisodes();
+      unawaited(_loadAdjacentEpisodes());
     } catch (e) {
       appLogger.e('Failed to initialize player', error: e);
       if (mounted) {
@@ -1038,10 +1038,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await player!.play();
       }
 
-      Sentry.addBreadcrumb(
-        Breadcrumb(
-          message: 'Frame rate matching: ${fps}fps, switched=$didSwitch, delay=${delaySec}s',
-          category: 'player',
+      unawaited(
+        Sentry.addBreadcrumb(
+          Breadcrumb(
+            message: 'Frame rate matching: ${fps}fps, switched=$didSwitch, delay=${delaySec}s',
+            category: 'player',
+          ),
         ),
       );
       appLogger.d('Frame rate matching: Set display to ${fps}fps (duration: ${durationMs}ms, switched=$didSwitch)');
@@ -1057,7 +1059,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     try {
       await player!.clearVideoFrameRate();
       await player!.setProperty('video-sync', 'audio');
-      Sentry.addBreadcrumb(Breadcrumb(message: 'Frame rate matching cleared', category: 'player'));
+      unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Frame rate matching cleared', category: 'player')));
       appLogger.d('Frame rate matching: Cleared, restored default display mode');
     } catch (e) {
       appLogger.d('Failed to clear frame rate matching', error: e);
@@ -1241,9 +1243,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Start Discord Rich Presence for current media
     if (client != null) {
-      DiscordRPCService.instance.startPlayback(_currentMetadata, client);
-      TraktScrobbleService.instance.startPlayback(_currentMetadata, client, isLive: widget.isLive);
-      TrackerCoordinator.instance.startPlayback(_currentMetadata, client, isLive: widget.isLive);
+      unawaited(DiscordRPCService.instance.startPlayback(_currentMetadata, client));
+      unawaited(TraktScrobbleService.instance.startPlayback(_currentMetadata, client, isLive: widget.isLive));
+      unawaited(TrackerCoordinator.instance.startPlayback(_currentMetadata, client, isLive: widget.isLive));
     }
   }
 
@@ -1479,10 +1481,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       } catch (e) {
         appLogger.e('Failed to start live TV playback', error: e);
-        _sendLiveTimeline('stopped');
+        unawaited(_sendLiveTimeline('stopped'));
         if (mounted) {
           showErrorSnackBar(context, e.toString());
-          _handleBackButton();
+          unawaited(_handleBackButton());
         }
       }
       return;
@@ -1652,7 +1654,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
               _videoFilterManager?.enterPipMode();
             };
             if (player!.state.playing) {
-              _videoPIPManager!.updateAutoPipState(isPlaying: true);
+              unawaited(_videoPIPManager!.updateAutoPipState(isPlaying: true));
             }
           }
 
@@ -1747,10 +1749,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             }
           }
 
-          Sentry.addBreadcrumb(
-            Breadcrumb(
-              message: 'Pre-playback frame rate: ${preKnownFps}fps, switched=$didSwitch, delay=${delaySec}s',
-              category: 'player',
+          unawaited(
+            Sentry.addBreadcrumb(
+              Breadcrumb(
+                message: 'Pre-playback frame rate: ${preKnownFps}fps, switched=$didSwitch, delay=${delaySec}s',
+                category: 'player',
+              ),
             ),
           );
         }
@@ -2008,7 +2012,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Persist ambient lighting state
     final settings = await SettingsService.getInstance();
-    settings.write(SettingsService.ambientLighting, ambientLighting.isEnabled);
+    unawaited(settings.write(SettingsService.ambientLighting, ambientLighting.isEnabled));
 
     if (mounted) setState(() {});
   }
@@ -2109,7 +2113,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Use same navigation as local episode change (pushReplacement from player context)
     _isReplacingWithVideo = true;
-    navigateToVideoPlayer(context, metadata: metadata, usePushReplacement: true);
+    unawaited(navigateToVideoPlayer(context, metadata: metadata, usePushReplacement: true));
   }
 
   void _setupCompanionRemoteCallbacks() {
@@ -2150,23 +2154,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final settings = await SettingsService.getInstance();
       final maxVol = settings.read(SettingsService.maxVolume).toDouble();
       final newVolume = (player!.state.volume + 10).clamp(0.0, maxVol);
-      player!.setVolume(newVolume);
-      settings.write(SettingsService.volume, newVolume);
+      unawaited(player!.setVolume(newVolume));
+      unawaited(settings.write(SettingsService.volume, newVolume));
     };
     receiver.onVolumeDown = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
       final maxVol = settings.read(SettingsService.maxVolume).toDouble();
       final newVolume = (player!.state.volume - 10).clamp(0.0, maxVol);
-      player!.setVolume(newVolume);
-      settings.write(SettingsService.volume, newVolume);
+      unawaited(player!.setVolume(newVolume));
+      unawaited(settings.write(SettingsService.volume, newVolume));
     };
     receiver.onVolumeMute = () async {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
       final newVolume = player!.state.volume > 0 ? 0.0 : 100.0;
-      player!.setVolume(newVolume);
-      settings.write(SettingsService.volume, newVolume);
+      unawaited(player!.setVolume(newVolume));
+      unawaited(settings.write(SettingsService.volume, newVolume));
     };
     receiver.onSubtitles = _cycleSubtitleTrack;
     receiver.onAudioTracks = _cycleAudioTrack;
@@ -2470,13 +2474,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged
     // never fires false.  Normalize all playback-dependent state.
-    _setWakelock(false);
-    _progressTracker?.sendProgress('paused');
+    unawaited(_setWakelock(false));
+    unawaited(_progressTracker?.sendProgress('paused'));
     _updateMediaControlsPlaybackState();
-    DiscordRPCService.instance.pausePlayback();
-    TraktScrobbleService.instance.pausePlayback();
+    unawaited(DiscordRPCService.instance.pausePlayback());
+    unawaited(TraktScrobbleService.instance.pausePlayback());
     if (_autoPipEnabled) {
-      _videoPIPManager?.updateAutoPipState(isPlaying: false);
+      unawaited(_videoPIPManager?.updateAutoPipState(isPlaying: false));
     }
 
     if (_nextEpisode != null && !_showPlayNextDialog && !_showStillWatchingPrompt && !_completionTriggered) {
@@ -2484,7 +2488,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       // PiP: skip dialog (user can't interact), auto-play immediately
       if (PipService().isPipActive.value) {
-        _playNext();
+        unawaited(_playNext());
         return;
       }
 
@@ -2514,7 +2518,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
     } else if (_nextEpisode == null && !_completionTriggered) {
       _completionTriggered = true;
-      _handleBackButton();
+      unawaited(_handleBackButton());
     }
   }
 
@@ -2560,7 +2564,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _showServerLimitDialog() async {
     if (!mounted) return;
     await showServerLimitDialog(context);
-    if (mounted) _handleBackButton();
+    if (mounted) unawaited(_handleBackButton());
   }
 
   /// Handle notification when native player switched from ExoPlayer to MPV
@@ -2606,7 +2610,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Future<void> _restoreMediaControlsAfterResume() async {
     if (!_isPlayerInitialized || !mounted) return;
 
-    _setWakelock(player?.state.isActive ?? false);
+    unawaited(_setWakelock(player?.state.isActive ?? false));
 
     final manager = _mediaControlsManager;
     final currentPlayer = player;
@@ -2770,7 +2774,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         widget.liveDvrKey == null) {
       appLogger.w('Cannot retry live stream — missing session info');
       showGlobalErrorSnackBar(_lastLogError ?? 'Live stream failed');
-      _handleBackButton();
+      unawaited(_handleBackButton());
       return;
     }
 
@@ -2783,7 +2787,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final tuneResult = await client.tuneChannel(widget.liveDvrKey!, channel.key);
     if (tuneResult == null || !mounted) {
       showGlobalErrorSnackBar(_lastLogError ?? 'Live stream failed');
-      _handleBackButton();
+      unawaited(_handleBackButton());
       return;
     }
 
@@ -2800,7 +2804,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     );
     if (streamPath == null || !mounted) {
       showGlobalErrorSnackBar(_lastLogError ?? 'Live stream failed');
-      _handleBackButton();
+      unawaited(_handleBackButton());
       return;
     }
 
@@ -3128,18 +3132,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _isReplacingWithVideo = true;
 
     // Clear Discord Rich Presence + Trakt scrobble before switching episodes
-    DiscordRPCService.instance.stopPlayback();
-    TraktScrobbleService.instance.stopPlayback();
-    TrackerCoordinator.instance.stopPlayback();
+    unawaited(DiscordRPCService.instance.stopPlayback());
+    unawaited(TraktScrobbleService.instance.stopPlayback());
+    unawaited(TrackerCoordinator.instance.stopPlayback());
 
     // If player isn't available, navigate without preserving settings
     if (player == null) {
       if (mounted) {
-        navigateToVideoPlayer(
-          context,
-          metadata: episodeMetadata,
-          usePushReplacement: true,
-          isOffline: widget.isOffline,
+        unawaited(
+          navigateToVideoPlayer(
+            context,
+            metadata: episodeMetadata,
+            usePushReplacement: true,
+            isOffline: widget.isOffline,
+          ),
         );
       }
       return;
@@ -3150,11 +3156,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (currentPlayer == null) {
       // Player already disposed, navigate without preserving settings
       if (mounted) {
-        navigateToVideoPlayer(
-          context,
-          metadata: episodeMetadata,
-          usePushReplacement: true,
-          isOffline: widget.isOffline,
+        unawaited(
+          navigateToVideoPlayer(
+            context,
+            metadata: episodeMetadata,
+            usePushReplacement: true,
+            isOffline: widget.isOffline,
+          ),
         );
       }
       return;
@@ -3165,7 +3173,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     final currentSecondarySubtitleTrack = currentPlayer.state.track.secondarySubtitle;
 
     // Pause and stop current playback
-    currentPlayer.pause();
+    unawaited(currentPlayer.pause());
     await _progressTracker?.sendProgress('stopped');
     _progressTracker?.stopTracking();
 
@@ -3174,14 +3182,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Navigate to the episode using pushReplacement to destroy current player
     if (mounted) {
-      navigateToVideoPlayer(
-        context,
-        metadata: episodeMetadata,
-        preferredAudioTrack: currentAudioTrack,
-        preferredSubtitleTrack: currentSubtitleTrack,
-        preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
-        usePushReplacement: true,
-        isOffline: widget.isOffline,
+      unawaited(
+        navigateToVideoPlayer(
+          context,
+          metadata: episodeMetadata,
+          preferredAudioTrack: currentAudioTrack,
+          preferredSubtitleTrack: currentSubtitleTrack,
+          preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
+          usePushReplacement: true,
+          isOffline: widget.isOffline,
+        ),
       );
     }
   }
@@ -3209,9 +3219,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _progressTracker?.stopTracking();
     _progressTracker?.dispose();
     _progressTracker = null;
-    DiscordRPCService.instance.stopPlayback();
-    TraktScrobbleService.instance.stopPlayback();
-    TrackerCoordinator.instance.stopPlayback();
+    unawaited(DiscordRPCService.instance.stopPlayback());
+    unawaited(TraktScrobbleService.instance.stopPlayback());
+    unawaited(TrackerCoordinator.instance.stopPlayback());
 
     _currentMetadata = episodeMetadata;
     _activeRatingKey = episodeMetadata.ratingKey;
@@ -3323,9 +3333,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
 
       if (client != null) {
-        DiscordRPCService.instance.startPlayback(episodeMetadata, client);
-        TraktScrobbleService.instance.startPlayback(episodeMetadata, client, isLive: widget.isLive);
-        TrackerCoordinator.instance.startPlayback(episodeMetadata, client, isLive: widget.isLive);
+        unawaited(DiscordRPCService.instance.startPlayback(episodeMetadata, client));
+        unawaited(TraktScrobbleService.instance.startPlayback(episodeMetadata, client, isLive: widget.isLive));
+        unawaited(TrackerCoordinator.instance.startPlayback(episodeMetadata, client, isLive: widget.isLive));
       }
 
       try {
@@ -3337,7 +3347,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await _loadAdjacentEpisodes();
 
       if (_autoPipEnabled) {
-        _videoPIPManager?.updateAutoPipState(isPlaying: currentPlayer.state.playing);
+        unawaited(_videoPIPManager?.updateAutoPipState(isPlaying: currentPlayer.state.playing));
       }
     } catch (e) {
       _isSwappingEpisode = false;

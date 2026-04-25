@@ -86,7 +86,7 @@ class GamepadService with WindowListener {
       _windowFocused = await windowManager.isFocused();
     }
 
-    _subscription?.cancel();
+    unawaited(_subscription?.cancel());
     _subscription = Gamepad.instance.events.listen(
       _handleGamepadEvent,
       onError: (e) => appLogger.e('GamepadService: Stream error', error: e),
@@ -138,11 +138,11 @@ class GamepadService with WindowListener {
 
   void _handleGamepadEvent(GamepadEvent event) {
     switch (event) {
-      case GamepadConnectionEvent e:
+      case final GamepadConnectionEvent e:
         appLogger.i('GamepadService: Gamepad ${e.connected ? "connected" : "disconnected"}: ${e.info.name}');
-      case GamepadButtonEvent e:
+      case final GamepadButtonEvent e:
         _handleButton(e);
-      case GamepadAxisEvent e:
+      case final GamepadAxisEvent e:
         _handleAxis(e);
     }
   }
