@@ -1,8 +1,27 @@
+import 'package:json_annotation/json_annotation.dart';
+
 import '../utils/json_utils.dart';
 
+part 'livetv_dvr.g.dart';
+
+List<ChannelMapping> _parseChannelMappings(Object? raw) {
+  final result = <ChannelMapping>[];
+  if (raw is List) {
+    for (final item in raw) {
+      try {
+        result.add(ChannelMapping.fromJson(item as Map<String, dynamic>));
+      } catch (_) {}
+    }
+  }
+  return result;
+}
+
 /// Represents a Plex Live TV DVR device (e.g., HDHomeRun tuner, IPTV provider)
+@JsonSerializable(createToJson: false)
 class LiveTvDvr {
+  @JsonKey(defaultValue: '')
   final String key;
+  @JsonKey(defaultValue: '')
   final String uuid;
   final String? make;
   final String? model;
@@ -15,6 +34,7 @@ class LiveTvDvr {
   final String? country;
   final String? language;
   final String? status;
+  @JsonKey(name: 'ChannelMapping', fromJson: _parseChannelMappings)
   final List<ChannelMapping> channelMappings;
 
   LiveTvDvr({
@@ -34,50 +54,19 @@ class LiveTvDvr {
     this.channelMappings = const [],
   });
 
-  factory LiveTvDvr.fromJson(Map<String, dynamic> json) {
-    final mappings = <ChannelMapping>[];
-    if (json['ChannelMapping'] != null) {
-      for (final item in json['ChannelMapping'] as List) {
-        try {
-          mappings.add(ChannelMapping.fromJson(item as Map<String, dynamic>));
-        } catch (_) {}
-      }
-    }
-
-    return LiveTvDvr(
-      key: json['key'] as String? ?? '',
-      uuid: json['uuid'] as String? ?? '',
-      make: json['make'] as String?,
-      model: json['model'] as String?,
-      modelNumber: json['modelNumber'] as String?,
-      firmware: json['firmware'] as String?,
-      tuners: (json['tuners'] as num?)?.toInt(),
-      lineup: json['lineup'] as String?,
-      lineupTitle: json['lineupTitle'] as String?,
-      lineupURL: json['lineupURL'] as String?,
-      country: json['country'] as String?,
-      language: json['language'] as String?,
-      status: json['status'] as String?,
-      channelMappings: mappings,
-    );
-  }
+  factory LiveTvDvr.fromJson(Map<String, dynamic> json) => _$LiveTvDvrFromJson(json);
 }
 
 /// Represents a channel mapping within a DVR device
+@JsonSerializable(createToJson: false)
 class ChannelMapping {
   final String? channelKey;
   final String? deviceIdentifier;
+  @JsonKey(fromJson: flexibleBool)
   final bool? enabled;
   final String? lineupIdentifier;
 
   ChannelMapping({this.channelKey, this.deviceIdentifier, this.enabled, this.lineupIdentifier});
 
-  factory ChannelMapping.fromJson(Map<String, dynamic> json) {
-    return ChannelMapping(
-      channelKey: json['channelKey'] as String?,
-      deviceIdentifier: json['deviceIdentifier'] as String?,
-      enabled: flexibleBool(json['enabled']),
-      lineupIdentifier: json['lineupIdentifier'] as String?,
-    );
-  }
+  factory ChannelMapping.fromJson(Map<String, dynamic> json) => _$ChannelMappingFromJson(json);
 }

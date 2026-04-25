@@ -1,15 +1,35 @@
+import 'package:json_annotation/json_annotation.dart';
+
 import '../utils/formatters.dart';
 import '../utils/codec_utils.dart';
 import '../utils/json_utils.dart';
 
+part 'plex_media_version.g.dart';
+
+int _flexibleIntOrZero(Object? v) => flexibleInt(v) ?? 0;
+
+Object? _readPartKey(Map json, String key) {
+  final parts = flexibleList(json['Part']);
+  return parts != null && parts.isNotEmpty ? parts.first['key']?.toString() ?? '' : '';
+}
+
+@JsonSerializable(createToJson: false)
 class PlexMediaVersion {
+  @JsonKey(fromJson: _flexibleIntOrZero)
   final int id;
+  @JsonKey(readValue: readStringField)
   final String? videoResolution;
+  @JsonKey(readValue: readStringField)
   final String? videoCodec;
+  @JsonKey(fromJson: flexibleInt)
   final int? bitrate;
+  @JsonKey(fromJson: flexibleInt)
   final int? width;
+  @JsonKey(fromJson: flexibleInt)
   final int? height;
+  @JsonKey(readValue: readStringField)
   final String? container;
+  @JsonKey(readValue: _readPartKey)
   final String partKey;
 
   PlexMediaVersion({
@@ -25,22 +45,7 @@ class PlexMediaVersion {
 
   /// Creates a PlexMediaVersion from Plex API Media object.
   /// Values may be String or int depending on the response format (XML vs JSON).
-  factory PlexMediaVersion.fromJson(Map<String, dynamic> json) {
-    // Get the first Part key for playback
-    final parts = flexibleList(json['Part']);
-    final partKey = parts != null && parts.isNotEmpty ? parts.first['key']?.toString() ?? '' : '';
-
-    return PlexMediaVersion(
-      id: flexibleInt(json['id']) ?? 0,
-      videoResolution: json['videoResolution']?.toString(),
-      videoCodec: json['videoCodec']?.toString(),
-      bitrate: flexibleInt(json['bitrate']),
-      width: flexibleInt(json['width']),
-      height: flexibleInt(json['height']),
-      container: json['container']?.toString(),
-      partKey: partKey,
-    );
-  }
+  factory PlexMediaVersion.fromJson(Map<String, dynamic> json) => _$PlexMediaVersionFromJson(json);
 
   /// Display label with detailed information: "1080p H.264 MKV (8.5 Mbps)"
   String get displayLabel {

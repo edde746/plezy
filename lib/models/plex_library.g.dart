@@ -19,15 +19,16 @@ PlexLibrary _$PlexLibraryFromJson(Map<String, dynamic> json) => PlexLibrary(
   hidden: (json['hidden'] as num?)?.toInt(),
 );
 
-Map<String, dynamic> _$PlexLibraryToJson(PlexLibrary instance) => <String, dynamic>{
-  'key': instance.key,
-  'title': instance.title,
-  'type': instance.type,
-  'agent': instance.agent,
-  'scanner': instance.scanner,
-  'language': instance.language,
-  'uuid': instance.uuid,
-  'updatedAt': instance.updatedAt,
-  'createdAt': instance.createdAt,
-  'hidden': instance.hidden,
-};
+Map<String, dynamic> _$PlexLibraryToJson(PlexLibrary instance) =>
+    <String, dynamic>{
+      'key': instance.key,
+      'title': instance.title,
+      'type': instance.type,
+      'agent': instance.agent,
+      'scanner': instance.scanner,
+      'language': instance.language,
+      'uuid': instance.uuid,
+      'updatedAt': instance.updatedAt,
+      'createdAt': instance.createdAt,
+      'hidden': instance.hidden,
+    };

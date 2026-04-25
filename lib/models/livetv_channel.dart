@@ -1,23 +1,57 @@
+import 'package:json_annotation/json_annotation.dart';
+
 import '../utils/json_utils.dart';
 import 'mixins/multi_server_fields.dart';
 
+part 'livetv_channel.g.dart';
+
+Object? _readChannelKey(Map json, String _) =>
+    json['key'] as String? ??
+    json['ratingKey'] as String? ??
+    json['identifier'] as String? ??
+    json['id'] as String? ??
+    json['channelIdentifier'] as String? ??
+    '';
+
+Object? _readChannelIdentifier(Map json, String _) =>
+    json['identifier'] as String? ?? json['id'] as String? ?? json['channelIdentifier'] as String?;
+
+Object? _readChannelTitle(Map json, String _) => json['title'] as String? ?? json['callSign'] as String?;
+
+Object? _readChannelNumber(Map json, String _) =>
+    json['number'] as String? ??
+    json['channelNumber'] as String? ??
+    json['channelVcn']?.toString() ??
+    json['vcn']?.toString();
+
+Object? _readFavoriteChannelId(Map json, String _) => json['id'] as String? ?? json['key'] as String? ?? '';
+
 /// Represents a Live TV channel from the EPG
+@JsonSerializable(createToJson: false)
 class LiveTvChannel with MultiServerFields {
+  @JsonKey(readValue: _readChannelKey)
   final String key;
+  @JsonKey(readValue: _readChannelIdentifier)
   final String? identifier;
   final String? callSign;
+  @JsonKey(readValue: _readChannelTitle)
   final String? title;
   final String? thumb;
   final String? art;
+  @JsonKey(readValue: _readChannelNumber)
   final String? number;
+  @JsonKey(fromJson: flexibleBool)
   final bool hd;
   final String? lineup;
   final String? slug;
+  @JsonKey(fromJson: flexibleBool)
   final bool? drm;
 
   @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
   final String? serverId;
   @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
   final String? serverName;
 
   LiveTvChannel({
@@ -36,31 +70,7 @@ class LiveTvChannel with MultiServerFields {
     this.serverName,
   });
 
-  factory LiveTvChannel.fromJson(Map<String, dynamic> json) {
-    return LiveTvChannel(
-      key:
-          json['key'] as String? ??
-          json['ratingKey'] as String? ??
-          json['identifier'] as String? ??
-          json['id'] as String? ??
-          json['channelIdentifier'] as String? ??
-          '',
-      identifier: json['identifier'] as String? ?? json['id'] as String? ?? json['channelIdentifier'] as String?,
-      callSign: json['callSign'] as String?,
-      title: json['title'] as String? ?? json['callSign'] as String?,
-      thumb: json['thumb'] as String?,
-      art: json['art'] as String?,
-      number:
-          json['number'] as String? ??
-          json['channelNumber'] as String? ??
-          json['channelVcn']?.toString() ??
-          json['vcn']?.toString(),
-      hd: flexibleBool(json['hd']),
-      lineup: json['lineup'] as String?,
-      slug: json['slug'] as String?,
-      drm: flexibleBool(json['drm']),
-    );
-  }
+  factory LiveTvChannel.fromJson(Map<String, dynamic> json) => _$LiveTvChannelFromJson(json);
 
   LiveTvChannel copyWith({String? serverId, String? serverName}) {
     return LiveTvChannel(
@@ -86,8 +96,11 @@ class LiveTvChannel with MultiServerFields {
 
 /// A channel entry in the Plex cloud favorites list.
 /// Stored at `https://epg.provider.plex.tv/settings/favoriteChannels`.
+@JsonSerializable(createToJson: false)
 class FavoriteChannel {
+  @JsonKey(defaultValue: '')
   final String source;
+  @JsonKey(readValue: _readFavoriteChannelId)
   final String id;
   final String? title;
   final String? thumb;
@@ -95,15 +108,7 @@ class FavoriteChannel {
 
   FavoriteChannel({required this.source, required this.id, this.title, this.thumb, this.vcn});
 
-  factory FavoriteChannel.fromJson(Map<String, dynamic> json) {
-    return FavoriteChannel(
-      source: json['source'] as String? ?? '',
-      id: json['id'] as String? ?? json['key'] as String? ?? '',
-      title: json['title'] as String?,
-      thumb: json['thumb'] as String?,
-      vcn: json['vcn'] as String?,
-    );
-  }
+  factory FavoriteChannel.fromJson(Map<String, dynamic> json) => _$FavoriteChannelFromJson(json);
 
   Map<String, dynamic> toJson() => {
     'source': source,
