@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/transcode_quality_preset.dart';
 import '../services/settings_service.dart';
 
-class SettingsProvider extends ChangeNotifier {
+class SettingsProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   SettingsService? _settingsService;
   bool _isInitialized = false;
   Future<void>? _initFuture;
@@ -21,7 +22,7 @@ class SettingsProvider extends ChangeNotifier {
     if (_isInitialized) return;
     _settingsService = await SettingsService.getInstance();
     _isInitialized = true;
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   /// Re-read settings after an external mutation (import, reset). The provider
@@ -30,7 +31,7 @@ class SettingsProvider extends ChangeNotifier {
   Future<void> reload() async {
     _settingsService = await SettingsService.getInstance();
     _isInitialized = true;
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   T _read<T>(Pref<T> pref, T fallback) => _isInitialized ? _settingsService!.read(pref) : fallback;
@@ -39,7 +40,7 @@ class SettingsProvider extends ChangeNotifier {
     if (!_isInitialized) await _initializeSettings();
     if (_settingsService!.read(pref) == value) return;
     await _settingsService!.write(pref, value);
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   int get libraryDensity => _read(SettingsService.libraryDensity, LibraryDensity.defaultValue);

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/trackers/device_code.dart';
 import '../services/trackers/tracker_connect_runner.dart';
 import '../services/trakt/trakt_account_store.dart';
@@ -16,7 +17,7 @@ import '../utils/app_logger.dart';
 ///
 /// Single rebind seam: `onActiveProfileChanged` loads the new profile's
 /// session and pushes it to both `TraktScrobbleService` and `TraktSyncService`.
-class TraktAccountProvider extends ChangeNotifier {
+class TraktAccountProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   final TraktAuthService _auth = TraktAuthService();
   final _store = traktAccountStore;
 
@@ -71,7 +72,7 @@ class TraktAccountProvider extends ChangeNotifier {
       if (c != null && !c.isCompleted) c.complete();
       _cancelCompleter = null;
       _isConnecting = false;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -107,7 +108,7 @@ class TraktAccountProvider extends ChangeNotifier {
       session,
       onSessionInvalidated: _handleSessionInvalidated,
     );
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   /// Called by [TraktClient] when refresh fails permanently. Clears local state

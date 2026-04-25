@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
+import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/storage_service.dart';
 
 /// Provider for managing hidden library state across the app.
 /// This ensures that when a library is hidden/unhidden in one screen,
 /// all other screens are automatically updated.
-class HiddenLibrariesProvider extends ChangeNotifier {
+class HiddenLibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   late StorageService _storageService;
   Set<String> _hiddenLibraryKeys = {};
   bool _isInitialized = false;
@@ -31,7 +32,7 @@ class HiddenLibrariesProvider extends ChangeNotifier {
     _storageService = await StorageService.getInstance();
     _hiddenLibraryKeys = _storageService.getHiddenLibraries();
     _isInitialized = true;
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   /// Hide a library by its key
@@ -41,7 +42,7 @@ class HiddenLibrariesProvider extends ChangeNotifier {
     if (!_hiddenLibraryKeys.contains(libraryKey)) {
       _hiddenLibraryKeys = Set.from(_hiddenLibraryKeys)..add(libraryKey);
       await _storageService.saveHiddenLibraries(_hiddenLibraryKeys);
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -52,7 +53,7 @@ class HiddenLibrariesProvider extends ChangeNotifier {
     if (_hiddenLibraryKeys.contains(libraryKey)) {
       _hiddenLibraryKeys = Set.from(_hiddenLibraryKeys)..remove(libraryKey);
       await _storageService.saveHiddenLibraries(_hiddenLibraryKeys);
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -63,6 +64,6 @@ class HiddenLibrariesProvider extends ChangeNotifier {
   /// Useful if storage was modified outside the provider
   Future<void> refresh() async {
     _hiddenLibraryKeys = _storageService.getHiddenLibraries();
-    notifyListeners();
+    safeNotifyListeners();
   }
 }

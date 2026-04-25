@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/shader_preset.dart';
 import '../services/settings_service.dart';
 import '../services/shader_asset_loader.dart';
@@ -7,7 +8,7 @@ import '../services/shader_asset_loader.dart';
 /// Provider for managing shader preset state.
 ///
 /// Persists the selected shader preset so it is restored across sessions.
-class ShaderProvider extends ChangeNotifier {
+class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   late SettingsService _settingsService;
 
   ShaderPreset _savedPreset = ShaderPreset.none;
@@ -31,7 +32,7 @@ class ShaderProvider extends ChangeNotifier {
     _currentPreset = _savedPreset;
 
     _initialized = true;
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   /// Whether the provider has finished initializing
@@ -63,7 +64,7 @@ class ShaderProvider extends ChangeNotifier {
     _savedPreset = preset;
     _currentPreset = preset;
     await _settingsService.write(SettingsService.globalShaderPreset, preset.id);
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   /// Update the current preset without persisting (e.g. toggling off temporarily)
@@ -84,7 +85,7 @@ class ShaderProvider extends ChangeNotifier {
 
     _customPresets.add(preset);
     await _saveCustomPresets();
-    notifyListeners();
+    safeNotifyListeners();
     return preset;
   }
 
@@ -103,7 +104,7 @@ class ShaderProvider extends ChangeNotifier {
       await _settingsService.write(SettingsService.globalShaderPreset, ShaderPreset.none.id);
     }
 
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   Future<void> _saveCustomPresets() async {

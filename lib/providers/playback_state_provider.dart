@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import '../models/plex_metadata.dart';
 import '../models/play_queue_response.dart';
 import '../services/plex_client.dart';
+import '../mixins/disposable_change_notifier_mixin.dart';
 
 /// Result of trying to locate the current queue index.
 class _IndexLookupResult {
@@ -14,7 +15,7 @@ class _IndexLookupResult {
 
 /// Manages playback state using Plex's play queue API.
 /// This provider is session-only and does not persist across app restarts.
-class PlaybackStateProvider with ChangeNotifier {
+class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   // Play queue state
   int? _playQueueId;
   int _playQueueTotalCount = 0;
@@ -61,7 +62,7 @@ class PlaybackStateProvider with ChangeNotifier {
   void setCurrentItem(PlexMetadata metadata) {
     if (_isQueueMode && metadata.playQueueItemID != null) {
       _currentPlayQueueItemID = metadata.playQueueItemID;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -79,7 +80,7 @@ class PlaybackStateProvider with ChangeNotifier {
 
     _contextKey = contextKey;
     _isQueueMode = true;
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   /// Load more items from the play queue if needed
@@ -106,7 +107,7 @@ class PlaybackStateProvider with ChangeNotifier {
         // Use size or items length as fallback if totalCount is null
         _playQueueTotalCount = response.playQueueTotalCount ?? response.size ?? response.items!.length;
         _playQueueShuffled = response.playQueueShuffled;
-        notifyListeners();
+        safeNotifyListeners();
         return true;
       }
     } catch (e) {
@@ -249,6 +250,6 @@ class PlaybackStateProvider with ChangeNotifier {
     _loadedItems = [];
     _contextKey = null;
     _isQueueMode = false;
-    notifyListeners();
+    safeNotifyListeners();
   }
 }

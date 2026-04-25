@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../i18n/strings.g.dart';
+import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/download_models.dart';
 import '../models/plex_metadata.dart';
 import '../services/offline_watch_sync_service.dart';
@@ -18,7 +19,7 @@ import '../utils/global_key_utils.dart';
 /// - Effective watch status (local changes + cached server data)
 /// - Offline "OnDeck" calculation for shows
 /// - Manual mark watched/unwatched while offline
-class OfflineWatchProvider extends ChangeNotifier {
+class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   final OfflineWatchSyncService _syncService;
   final DownloadProvider _downloadProvider;
 
@@ -30,7 +31,7 @@ class OfflineWatchProvider extends ChangeNotifier {
   }
 
   void _onSyncServiceChanged() {
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   /// Whether a sync is in progress
@@ -178,7 +179,7 @@ class OfflineWatchProvider extends ChangeNotifier {
       isNowWatched: true,
       changeType: WatchStateChangeType.watched,
     );
-    notifyListeners();
+    safeNotifyListeners();
     _autoDeleteIfWatched(serverId, ratingKey);
   }
 
@@ -219,7 +220,7 @@ class OfflineWatchProvider extends ChangeNotifier {
       isNowWatched: false,
       changeType: WatchStateChangeType.unwatched,
     );
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   /// Get downloaded episodes for a show with their watch status.

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../mixins/disposable_change_notifier_mixin.dart';
 import '../utils/plex_http_exception.dart';
 import '../models/plex_home.dart';
 import '../models/plex_home_user.dart';
@@ -8,7 +9,7 @@ import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
 import '../screens/profile/pin_entry_dialog.dart';
 
-class UserProfileProvider extends ChangeNotifier {
+class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   PlexHome? _home;
   PlexHomeUser? _currentUser;
   PlexUserProfile? _profileSettings;
@@ -117,7 +118,7 @@ class UserProfileProvider extends ChangeNotifier {
     // Profile settings are NOT cached - they will be fetched fresh from API
     // in refreshProfileSettings()
 
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   /// Fetch the user's profile settings from the API
@@ -140,7 +141,7 @@ class UserProfileProvider extends ChangeNotifier {
 
       appLogger.i('Successfully fetched user profile settings from API');
 
-      notifyListeners();
+      safeNotifyListeners();
     } catch (e) {
       appLogger.w('Failed to fetch user profile settings from API', error: e);
       // Don't set error state, profile will remain null or keep existing value
@@ -210,7 +211,7 @@ class UserProfileProvider extends ChangeNotifier {
         }
       }
 
-      notifyListeners();
+      safeNotifyListeners();
     } catch (e) {
       _setError('Failed to load home users: $e');
       appLogger.e('Failed to load home users', error: e);
@@ -286,7 +287,7 @@ class UserProfileProvider extends ChangeNotifier {
         },
       );
 
-      notifyListeners();
+      safeNotifyListeners();
 
       // Invalidate all cached data and reconnect to all servers with new tokens
       // The callback will handle server reconnection using the servers list
@@ -337,7 +338,7 @@ class UserProfileProvider extends ChangeNotifier {
       // Update current user from refreshed data
       if (_home != null) {
         _currentUser = _home!.getUserByUUID(_currentUser!.uuid);
-        notifyListeners();
+        safeNotifyListeners();
       }
     }
   }
@@ -361,7 +362,7 @@ class UserProfileProvider extends ChangeNotifier {
       _isInitialized = false;
 
       _clearError();
-      notifyListeners();
+      safeNotifyListeners();
 
       appLogger.i('User logged out successfully');
     } catch (e) {
@@ -373,12 +374,12 @@ class UserProfileProvider extends ChangeNotifier {
 
   void _setLoading(bool loading) {
     _isLoading = loading;
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   void _setError(String error) {
     _error = error;
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   void _clearError() {

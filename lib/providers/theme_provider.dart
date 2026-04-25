@@ -2,10 +2,11 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../mixins/disposable_change_notifier_mixin.dart';
 import '../services/settings_service.dart' as settings;
 import '../theme/mono_theme.dart';
 
-class ThemeProvider extends ChangeNotifier {
+class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   late settings.SettingsService _settingsService;
   settings.ThemeMode _themeMode = settings.ThemeMode.system;
   late Brightness _systemBrightness;
@@ -19,7 +20,7 @@ class ThemeProvider extends ChangeNotifier {
   void _onBrightnessChanged() {
     _systemBrightness = WidgetsBinding.instance.platformDispatcher.platformBrightness;
     if (_themeMode == settings.ThemeMode.system) {
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -35,7 +36,7 @@ class ThemeProvider extends ChangeNotifier {
     _settingsService = await settings.SettingsService.getInstance();
     _themeMode = _settingsService.read(settings.SettingsService.themeMode);
     _updateSplashTheme(_themeMode);
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   settings.ThemeMode get themeMode => _themeMode;
@@ -81,7 +82,7 @@ class ThemeProvider extends ChangeNotifier {
       _themeMode = mode;
       await _settingsService.write(settings.SettingsService.themeMode, mode);
       _updateSplashTheme(mode);
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -92,7 +93,7 @@ class ThemeProvider extends ChangeNotifier {
     final mode = _settingsService.read(settings.SettingsService.themeMode);
     _themeMode = mode;
     _updateSplashTheme(mode);
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   void _updateSplashTheme(settings.ThemeMode mode) {

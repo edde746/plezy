@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/plex_library.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/storage_service.dart';
@@ -12,7 +13,7 @@ enum LibrariesLoadState { initial, loading, loaded, error }
 /// Provider that serves as the single source of truth for library data.
 /// Both SideNavigationRail and LibrariesScreen consume this provider
 /// instead of independently fetching library data.
-class LibrariesProvider extends ChangeNotifier {
+class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   DataAggregationService? _aggregationService;
   List<PlexLibrary> _libraries = [];
   LibrariesLoadState _loadState = LibrariesLoadState.initial;
@@ -60,7 +61,7 @@ class LibrariesProvider extends ChangeNotifier {
 
     _loadState = LibrariesLoadState.loading;
     _errorMessage = null;
-    notifyListeners();
+    safeNotifyListeners();
 
     try {
       // Fetch libraries from all servers
@@ -79,12 +80,12 @@ class LibrariesProvider extends ChangeNotifier {
       _errorMessage = null;
 
       appLogger.i('LibrariesProvider: Loaded ${_libraries.length} libraries');
-      notifyListeners();
+      safeNotifyListeners();
     } catch (e, stackTrace) {
       appLogger.e('LibrariesProvider: Failed to load libraries', error: e, stackTrace: stackTrace);
       _loadState = LibrariesLoadState.error;
       _errorMessage = e.toString();
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -100,7 +101,7 @@ class LibrariesProvider extends ChangeNotifier {
   /// Update the library order and persist it.
   Future<void> updateLibraryOrder(List<PlexLibrary> orderedLibraries) async {
     _libraries = List.from(orderedLibraries);
-    notifyListeners();
+    safeNotifyListeners();
 
     // Save the new order
     final storage = await StorageService.getInstance();
@@ -115,7 +116,7 @@ class LibrariesProvider extends ChangeNotifier {
     _libraries = [];
     _loadState = LibrariesLoadState.initial;
     _errorMessage = null;
-    notifyListeners();
+    safeNotifyListeners();
     appLogger.d('LibrariesProvider: Cleared library data');
   }
 

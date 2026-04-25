@@ -12,12 +12,13 @@ import '../services/companion_remote/lan_discovery_service.dart';
 import '../services/companion_remote/remote_auth_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
+import '../mixins/disposable_change_notifier_mixin.dart';
 
 export '../services/companion_remote/lan_discovery_service.dart' show DiscoveredHost;
 
 typedef CommandReceivedCallback = void Function(RemoteCommand command);
 
-class CompanionRemoteProvider with ChangeNotifier {
+class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   RemoteSession? _session;
   CompanionRemotePeerService? _peerService;
   LanDiscoveryService? _discoveryService;
@@ -97,7 +98,7 @@ class CompanionRemoteProvider with ChangeNotifier {
       _platform = Platform.operatingSystem;
     }
 
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   /// Initialize crypto context from Plex home data.
@@ -159,7 +160,7 @@ class CompanionRemoteProvider with ChangeNotifier {
       );
 
       _session = RemoteSession(role: RemoteSessionRole.host, status: RemoteSessionStatus.connected);
-      notifyListeners();
+      safeNotifyListeners();
 
       // Start LAN discovery broadcasting
       _discoveryService ??= LanDiscoveryService();
@@ -181,7 +182,7 @@ class CompanionRemoteProvider with ChangeNotifier {
         status: RemoteSessionStatus.error,
         errorMessage: e.toString(),
       );
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -199,7 +200,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     _session = null;
     _isPlayerActive = false;
     _intentionalDisconnect = false;
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   // ── Client: Discovery ──
@@ -237,7 +238,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     _setupPeerServiceListeners();
 
     _session = RemoteSession(role: RemoteSessionRole.remote, status: RemoteSessionStatus.connecting);
-    notifyListeners();
+    safeNotifyListeners();
 
     try {
       final winner = await _peerService!.joinSessionRacing(
@@ -252,12 +253,12 @@ class CompanionRemoteProvider with ChangeNotifier {
       _lastHostAddresses = [winner];
 
       _session = _session?.copyWith(status: RemoteSessionStatus.connected);
-      notifyListeners();
+      safeNotifyListeners();
       appLogger.d('CompanionRemote: Connected to ${host.name} via $winner');
     } catch (e) {
       appLogger.e('CompanionRemote: Failed to connect to host', error: e);
       _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: e.toString());
-      notifyListeners();
+      safeNotifyListeners();
       rethrow;
     }
   }
@@ -279,7 +280,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     _setupPeerServiceListeners();
 
     _session = RemoteSession(role: RemoteSessionRole.remote, status: RemoteSessionStatus.connecting);
-    notifyListeners();
+    safeNotifyListeners();
 
     try {
       await _peerService!.joinSession(
@@ -293,11 +294,11 @@ class CompanionRemoteProvider with ChangeNotifier {
       );
 
       _session = _session?.copyWith(status: RemoteSessionStatus.connected);
-      notifyListeners();
+      safeNotifyListeners();
     } catch (e) {
       appLogger.e('CompanionRemote: Failed to connect to manual host', error: e);
       _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: e.toString());
-      notifyListeners();
+      safeNotifyListeners();
       rethrow;
     }
   }
@@ -327,25 +328,25 @@ class CompanionRemoteProvider with ChangeNotifier {
     _deviceConnectedSubscription = _peerService!.onDeviceConnected.listen((device) {
       appLogger.d('CompanionRemote: Device connected: ${device.name}');
       _session = _session?.copyWith(status: RemoteSessionStatus.connected, connectedDevice: device);
-      notifyListeners();
+      safeNotifyListeners();
     });
 
     _deviceDisconnectedSubscription = _peerService!.onDeviceDisconnected.listen((_) {
       appLogger.d('CompanionRemote: Device disconnected (intentional: $_intentionalDisconnect)');
       if (_intentionalDisconnect) {
         _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, clearConnectedDevice: true);
-        notifyListeners();
+        safeNotifyListeners();
       } else if (isHost) {
         _session = _session?.copyWith(
           status: RemoteSessionStatus.reconnecting,
           clearConnectedDevice: true,
           clearErrorMessage: true,
         );
-        notifyListeners();
+        safeNotifyListeners();
         appLogger.d('CompanionRemote: Host waiting for client to reconnect');
       } else {
         _session = _session?.copyWith(status: RemoteSessionStatus.reconnecting);
-        notifyListeners();
+        safeNotifyListeners();
         _scheduleReconnect();
       }
     });
@@ -353,13 +354,13 @@ class CompanionRemoteProvider with ChangeNotifier {
     _errorSubscription = _peerService!.onError.listen((error) {
       appLogger.e('CompanionRemote: Error: ${error.message}');
       _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: error.message);
-      notifyListeners();
+      safeNotifyListeners();
     });
 
     _statusSubscription = _peerService!.onConnectionStateChanged.listen((status) {
       appLogger.d('CompanionRemote: Status changed: $status');
       _session = _session?.copyWith(status: status);
-      notifyListeners();
+      safeNotifyListeners();
     });
   }
 
@@ -375,7 +376,7 @@ class CompanionRemoteProvider with ChangeNotifier {
       final device = RemoteDevice(id: id, name: name, platform: platform);
 
       _session = _session?.copyWith(connectedDevice: device);
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -383,7 +384,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     final playerActive = command.data?['playerActive'] as bool? ?? false;
     if (_isPlayerActive != playerActive) {
       _isPlayerActive = playerActive;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
@@ -422,7 +423,7 @@ class CompanionRemoteProvider with ChangeNotifier {
         errorMessage: 'Connection lost after $_maxReconnectAttempts attempts',
       );
       _reconnectAttempts = 0;
-      notifyListeners();
+      safeNotifyListeners();
       return;
     }
 
@@ -438,7 +439,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     if (_lastHostAddresses == null || !isCryptoReady) {
       appLogger.w('CompanionRemote: No stored context for reconnect');
       _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: 'Connection lost');
-      notifyListeners();
+      safeNotifyListeners();
       return;
     }
 
@@ -464,7 +465,7 @@ class CompanionRemoteProvider with ChangeNotifier {
 
       _session = _session?.copyWith(status: RemoteSessionStatus.connected, clearErrorMessage: true);
       _reconnectAttempts = 0;
-      notifyListeners();
+      safeNotifyListeners();
       appLogger.d('CompanionRemote: Reconnected successfully');
     } catch (e) {
       appLogger.e('CompanionRemote: Reconnect failed', error: e);
@@ -484,7 +485,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     _reconnectTimer?.cancel();
     _reconnectAttempts = 0;
     _session = _session?.copyWith(status: RemoteSessionStatus.disconnected, clearConnectedDevice: true);
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   Future<void> leaveSession() async {
@@ -506,7 +507,7 @@ class CompanionRemoteProvider with ChangeNotifier {
     }
     _isPlayerActive = false;
     _intentionalDisconnect = false;
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   @override

@@ -24,11 +24,12 @@ import '../services/trackers/tracker_connect_runner.dart';
 import '../services/trackers/tracker_constants.dart';
 import '../services/trackers/tracker_coordinator.dart';
 import '../utils/app_logger.dart';
+import '../mixins/disposable_change_notifier_mixin.dart';
 
 /// Owns the active MAL / AniList / Simkl sessions for the currently-selected
 /// Plex profile. Single rebind seam: [onActiveProfileChanged] loads all three
 /// sessions from their stores and pushes them to their trackers.
-class TrackersProvider extends ChangeNotifier {
+class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   final MalAuthService _malAuth = MalAuthService();
   final AnilistAuthService _anilistAuth = AnilistAuthService();
   final SimklAuthService _simklAuth = SimklAuthService();
@@ -77,7 +78,7 @@ class TrackersProvider extends ChangeNotifier {
     _anilist = results[1] as AnilistSession?;
     _simkl = results[2] as SimklSession?;
     _rebindAll();
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   // ───── Connect / disconnect ─────
@@ -159,7 +160,7 @@ class TrackersProvider extends ChangeNotifier {
     if (_connecting != null || alreadyConnected) return false;
     _connecting = service;
     _cancelCompleter = Completer<void>();
-    notifyListeners();
+    safeNotifyListeners();
     try {
       return await runConnectPipeline<T>(
         logLabel: service.name,
@@ -173,14 +174,14 @@ class TrackersProvider extends ChangeNotifier {
       if (c != null && !c.isCompleted) c.complete();
       _cancelCompleter = null;
       _connecting = null;
-      notifyListeners();
+      safeNotifyListeners();
     }
   }
 
   Future<void> _clearAndRebind<T>(TrackerAccountStore<T> store, void Function() clearAndRebind) async {
     await store.clear(_activeUserUuid);
     clearAndRebind();
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   Future<MalSession> _enrichMal(MalSession raw) async {
@@ -240,7 +241,7 @@ class TrackersProvider extends ChangeNotifier {
       onSessionUpdated: (next) {
         _mal = next;
         malAccountStore.save(_activeUserUuid, next);
-        notifyListeners();
+        safeNotifyListeners();
       },
     );
   }
@@ -263,7 +264,7 @@ class TrackersProvider extends ChangeNotifier {
     store.clear(_activeUserUuid);
     clearSession();
     rebind();
-    notifyListeners();
+    safeNotifyListeners();
   }
 
   @override
