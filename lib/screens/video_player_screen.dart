@@ -950,16 +950,19 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       });
 
-      // Services init must finish before `_loadAdjacentEpisodes` so Discord /
-      // Trakt / Tracker start-playback calls have fired before first-frame.
-      // Play queue is only consumed by next/previous navigation buttons which
-      // the user can't hit until after first frame; fire-and-forget removes
-      // its HTTP latency from the critical path.
-      unawaited(_ensurePlayQueue());
+      // Services init must finish before first frame so Discord / Trakt /
+      // Tracker start-playback calls are dispatched pre-first-frame.
+      // `_loadAdjacentEpisodes` depends on the play queue being in state
+      // (EpisodeNavigationService bails when !isQueueActive), so chain it
+      // after `_ensurePlayQueue`. Both stay fire-and-forget so HTTP latency
+      // is off the critical path; the user can't hit next/previous buttons
+      // until after first frame anyway.
+      unawaited(
+        _ensurePlayQueue().whenComplete(() {
+          if (mounted) _loadAdjacentEpisodes();
+        }),
+      );
       await _initializeServices();
-
-      // Load next/previous episodes (fire-and-forget)
-      unawaited(_loadAdjacentEpisodes());
     } catch (e) {
       appLogger.e('Failed to initialize player', error: e);
       if (mounted) {
