@@ -36,6 +36,10 @@ class FocusableTabChip extends StatefulWidget {
   /// Called when SELECT key is held (D-pad long press).
   final VoidCallback? onLongPress;
 
+  /// Optional image to show above the label (e.g. a poster).
+  /// When provided, the chip lays out vertically with image on top, label below.
+  final Widget? topImage;
+
   const FocusableTabChip({
     super.key,
     required this.label,
@@ -47,6 +51,7 @@ class FocusableTabChip extends StatefulWidget {
     this.onNavigateDown,
     this.onBack,
     this.onLongPress,
+    this.topImage,
   });
 
   @override
@@ -123,20 +128,38 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
 
     final isHighlighted = showFocus || widget.isSelected;
 
+    final label = Text(
+      widget.label,
+      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+        color: foregroundColor,
+        fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.normal,
+      ),
+    );
+
+    final hasImage = widget.topImage != null;
     return FocusBuilders.buildFocusableChip(
       context: context,
       focusNode: focusNode,
       onKeyEvent: _handleKeyEvent,
       onTap: widget.onSelect,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: hasImage
+          ? const EdgeInsets.all(8)
+          : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       backgroundColor: backgroundColor,
-      child: Text(
-        widget.label,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: foregroundColor,
-          fontWeight: isHighlighted ? FontWeight.w600 : FontWeight.normal,
-        ),
-      ),
+      borderRadius: hasImage ? 12 : 20,
+      child: hasImage
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(6),
+                  child: widget.topImage!,
+                ),
+                const SizedBox(height: 6),
+                label,
+              ],
+            )
+          : label,
     );
   }
 }

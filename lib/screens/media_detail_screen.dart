@@ -1796,6 +1796,39 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             final season = _seasons[index];
             final contextMenuKey = _seasonContextMenuKeys.putIfAbsent(index, () => GlobalKey<MediaContextMenuState>());
             Offset? tapPosition;
+            final posterPath = season.thumb;
+            Widget? topImage;
+            if (posterPath != null && posterPath.isNotEmpty) {
+              const posterWidth = 72.0;
+              const posterHeight = 108.0;
+              final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
+              final client = _getClientForMetadata(context);
+              final imageUrl = PlexImageHelper.getOptimizedImageUrl(
+                client: client,
+                thumbPath: posterPath,
+                maxWidth: posterWidth,
+                maxHeight: posterHeight,
+                devicePixelRatio: dpr,
+                imageType: ImageType.poster,
+              );
+              final (memWidth, _) = PlexImageHelper.getMemCacheDimensions(
+                displayWidth: (posterWidth * dpr).round(),
+                displayHeight: (posterHeight * dpr).round(),
+                imageType: ImageType.poster,
+              );
+              topImage = SizedBox(
+                width: posterWidth,
+                height: posterHeight,
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
+                  cacheManager: PlexImageCacheManager.instance,
+                  fit: BoxFit.cover,
+                  memCacheWidth: memWidth,
+                  placeholder: (context, url) => const PlaceholderContainer(),
+                  errorWidget: (context, url, error) => const PlaceholderContainer(),
+                ),
+              );
+            }
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: MediaContextMenu(
@@ -1819,6 +1852,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   child: FocusableTabChip(
                     label: season.title!,
                     isSelected: index == _selectedSeasonIndex,
+                    topImage: topImage,
                     focusNode: _seasonTabFocusNodes.length > index ? _seasonTabFocusNodes[index] : null,
                     onSelect: () {
                       if (index == _selectedSeasonIndex) return;
