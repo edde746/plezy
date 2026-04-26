@@ -1089,6 +1089,9 @@ class _TranslationsShadersEs implements TranslationsShadersEn {
 	@override String get title => 'Shaders';
 	@override String get noShaderDescription => 'Sin mejora de video';
 	@override String get nvscalerDescription => 'Escalado de imagen NVIDIA para un video más nítido';
+	@override String get artcnnVariantNeutral => 'Neutral';
+	@override String get artcnnVariantDenoise => 'Reducción de ruido';
+	@override String get artcnnVariantDenoiseSharpen => 'Reducción de ruido + enfoque';
 	@override String get qualityFast => 'Rápido';
 	@override String get qualityHQ => 'Alta Calidad';
 	@override String get mode => 'Modo';
@@ -2288,6 +2291,9 @@ extension on TranslationsEs {
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Sin mejora de video',
 			'shaders.nvscalerDescription' => 'Escalado de imagen NVIDIA para un video más nítido',
+			'shaders.artcnnVariantNeutral' => 'Neutral',
+			'shaders.artcnnVariantDenoise' => 'Reducción de ruido',
+			'shaders.artcnnVariantDenoiseSharpen' => 'Reducción de ruido + enfoque',
 			'shaders.qualityFast' => 'Rápido',
 			'shaders.qualityHQ' => 'Alta Calidad',
 			'shaders.mode' => 'Modo',

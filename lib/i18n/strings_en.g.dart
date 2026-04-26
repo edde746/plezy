@@ -2516,6 +2516,15 @@ class TranslationsShadersEn {
 	/// en: 'NVIDIA image scaling for sharper video'
 	String get nvscalerDescription => 'NVIDIA image scaling for sharper video';
 
+	/// en: 'Neutral'
+	String get artcnnVariantNeutral => 'Neutral';
+
+	/// en: 'Denoise'
+	String get artcnnVariantDenoise => 'Denoise';
+
+	/// en: 'Denoise + Sharpen'
+	String get artcnnVariantDenoiseSharpen => 'Denoise + Sharpen';
+
 	/// en: 'Fast'
 	String get qualityFast => 'Fast';
 
@@ -4236,6 +4245,9 @@ extension on Translations {
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',
+			'shaders.artcnnVariantNeutral' => 'Neutral',
+			'shaders.artcnnVariantDenoise' => 'Denoise',
+			'shaders.artcnnVariantDenoiseSharpen' => 'Denoise + Sharpen',
 			'shaders.qualityFast' => 'Fast',
 			'shaders.qualityHQ' => 'High Quality',
 			'shaders.mode' => 'Mode',

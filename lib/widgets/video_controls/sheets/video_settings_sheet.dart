@@ -798,6 +798,16 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return t.shaders.noShaderDescription;
       case ShaderPresetType.nvscaler:
         return t.shaders.nvscalerDescription;
+      case ShaderPresetType.artcnn:
+        if (preset.artcnnConfig != null) {
+          final variant = switch (preset.artcnnConfig!.variant) {
+            ArtCNNVariant.neutral => t.shaders.artcnnVariantNeutral,
+            ArtCNNVariant.denoise => t.shaders.artcnnVariantDenoise,
+            ArtCNNVariant.denoiseSharpen => t.shaders.artcnnVariantDenoiseSharpen,
+          };
+          return '${preset.artcnnModelDisplayName} - $variant';
+        }
+        return null;
       case ShaderPresetType.anime4k:
         if (preset.anime4kConfig != null) {
           final quality = preset.anime4kConfig!.quality == Anime4KQuality.fast

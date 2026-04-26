@@ -1089,6 +1089,9 @@ class _TranslationsShadersKo implements TranslationsShadersEn {
 	@override String get title => '셰이더';
 	@override String get noShaderDescription => '비디오 향상 없음';
 	@override String get nvscalerDescription => '더 선명한 비디오를 위한 NVIDIA 이미지 스케일링';
+	@override String get artcnnVariantNeutral => '중립';
+	@override String get artcnnVariantDenoise => '노이즈 제거';
+	@override String get artcnnVariantDenoiseSharpen => '노이즈 제거 + 선명화';
 	@override String get qualityFast => '빠름';
 	@override String get qualityHQ => '고품질';
 	@override String get mode => '모드';
@@ -2288,6 +2291,9 @@ extension on TranslationsKo {
 			'shaders.title' => '셰이더',
 			'shaders.noShaderDescription' => '비디오 향상 없음',
 			'shaders.nvscalerDescription' => '더 선명한 비디오를 위한 NVIDIA 이미지 스케일링',
+			'shaders.artcnnVariantNeutral' => '중립',
+			'shaders.artcnnVariantDenoise' => '노이즈 제거',
+			'shaders.artcnnVariantDenoiseSharpen' => '노이즈 제거 + 선명화',
 			'shaders.qualityFast' => '빠름',
 			'shaders.qualityHQ' => '고품질',
 			'shaders.mode' => '모드',

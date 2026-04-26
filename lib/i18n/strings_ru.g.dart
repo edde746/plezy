@@ -1089,6 +1089,9 @@ class _TranslationsShadersRu implements TranslationsShadersEn {
 	@override String get title => 'Шейдеры';
 	@override String get noShaderDescription => 'Без улучшения видео';
 	@override String get nvscalerDescription => 'Масштабирование NVIDIA для более чёткого видео';
+	@override String get artcnnVariantNeutral => 'Нейтральный';
+	@override String get artcnnVariantDenoise => 'Шумоподавление';
+	@override String get artcnnVariantDenoiseSharpen => 'Шумоподавление + резкость';
 	@override String get qualityFast => 'Быстрый';
 	@override String get qualityHQ => 'Высокое качество';
 	@override String get mode => 'Режим';
@@ -2288,6 +2291,9 @@ extension on TranslationsRu {
 			'shaders.title' => 'Шейдеры',
 			'shaders.noShaderDescription' => 'Без улучшения видео',
 			'shaders.nvscalerDescription' => 'Масштабирование NVIDIA для более чёткого видео',
+			'shaders.artcnnVariantNeutral' => 'Нейтральный',
+			'shaders.artcnnVariantDenoise' => 'Шумоподавление',
+			'shaders.artcnnVariantDenoiseSharpen' => 'Шумоподавление + резкость',
 			'shaders.qualityFast' => 'Быстрый',
 			'shaders.qualityHQ' => 'Высокое качество',
 			'shaders.mode' => 'Режим',

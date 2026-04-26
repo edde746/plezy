@@ -1089,6 +1089,9 @@ class _TranslationsShadersPl implements TranslationsShadersEn {
 	@override String get title => 'Shadery';
 	@override String get noShaderDescription => 'Bez ulepszenia wideo';
 	@override String get nvscalerDescription => 'Skalowanie obrazu NVIDIA dla ostrzejszego wideo';
+	@override String get artcnnVariantNeutral => 'Neutralny';
+	@override String get artcnnVariantDenoise => 'Odszumianie';
+	@override String get artcnnVariantDenoiseSharpen => 'Odszumianie + wyostrzanie';
 	@override String get qualityFast => 'Szybki';
 	@override String get qualityHQ => 'Wysoka jakość';
 	@override String get mode => 'Tryb';
@@ -2288,6 +2291,9 @@ extension on TranslationsPl {
 			'shaders.title' => 'Shadery',
 			'shaders.noShaderDescription' => 'Bez ulepszenia wideo',
 			'shaders.nvscalerDescription' => 'Skalowanie obrazu NVIDIA dla ostrzejszego wideo',
+			'shaders.artcnnVariantNeutral' => 'Neutralny',
+			'shaders.artcnnVariantDenoise' => 'Odszumianie',
+			'shaders.artcnnVariantDenoiseSharpen' => 'Odszumianie + wyostrzanie',
 			'shaders.qualityFast' => 'Szybki',
 			'shaders.qualityHQ' => 'Wysoka jakość',
 			'shaders.mode' => 'Tryb',

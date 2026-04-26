@@ -1089,6 +1089,9 @@ class _TranslationsShadersDa implements TranslationsShadersEn {
 	@override String get title => 'Shadere';
 	@override String get noShaderDescription => 'Ingen videoforbedring';
 	@override String get nvscalerDescription => 'NVIDIA-billedskalering for skarpere video';
+	@override String get artcnnVariantNeutral => 'Neutral';
+	@override String get artcnnVariantDenoise => 'Støjreduktion';
+	@override String get artcnnVariantDenoiseSharpen => 'Støjreduktion + skarphed';
 	@override String get qualityFast => 'Hurtig';
 	@override String get qualityHQ => 'Høj kvalitet';
 	@override String get mode => 'Tilstand';
@@ -2288,6 +2291,9 @@ extension on TranslationsDa {
 			'shaders.title' => 'Shadere',
 			'shaders.noShaderDescription' => 'Ingen videoforbedring',
 			'shaders.nvscalerDescription' => 'NVIDIA-billedskalering for skarpere video',
+			'shaders.artcnnVariantNeutral' => 'Neutral',
+			'shaders.artcnnVariantDenoise' => 'Støjreduktion',
+			'shaders.artcnnVariantDenoiseSharpen' => 'Støjreduktion + skarphed',
 			'shaders.qualityFast' => 'Hurtig',
 			'shaders.qualityHQ' => 'Høj kvalitet',
 			'shaders.mode' => 'Tilstand',

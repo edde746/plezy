@@ -1089,6 +1089,9 @@ class _TranslationsShadersZh implements TranslationsShadersEn {
 	@override String get title => '着色器';
 	@override String get noShaderDescription => '无视频增强';
 	@override String get nvscalerDescription => 'NVIDIA 图像缩放，使视频更清晰';
+	@override String get artcnnVariantNeutral => '中性';
+	@override String get artcnnVariantDenoise => '降噪';
+	@override String get artcnnVariantDenoiseSharpen => '降噪 + 锐化';
 	@override String get qualityFast => '快速';
 	@override String get qualityHQ => '高质量';
 	@override String get mode => '模式';
@@ -2288,6 +2291,9 @@ extension on TranslationsZh {
 			'shaders.title' => '着色器',
 			'shaders.noShaderDescription' => '无视频增强',
 			'shaders.nvscalerDescription' => 'NVIDIA 图像缩放，使视频更清晰',
+			'shaders.artcnnVariantNeutral' => '中性',
+			'shaders.artcnnVariantDenoise' => '降噪',
+			'shaders.artcnnVariantDenoiseSharpen' => '降噪 + 锐化',
 			'shaders.qualityFast' => '快速',
 			'shaders.qualityHQ' => '高质量',
 			'shaders.mode' => '模式',

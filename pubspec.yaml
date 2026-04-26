@@ -125,6 +125,7 @@ flutter:
     - assets/simkl_mark.svg
     - assets/go-noto-current-regular.ttf
     - assets/shaders/nvscaler/
+    - assets/shaders/artcnn/
     - assets/shaders/anime4k/
     - assets/player_icons/
     - assets/rating_icons/

@@ -1089,6 +1089,9 @@ class _TranslationsShadersNb implements TranslationsShadersEn {
 	@override String get title => 'Shadere';
 	@override String get noShaderDescription => 'Ingen videoforbedring';
 	@override String get nvscalerDescription => 'NVIDIA bildeskalering for skarpere video';
+	@override String get artcnnVariantNeutral => 'Nøytral';
+	@override String get artcnnVariantDenoise => 'Støyreduksjon';
+	@override String get artcnnVariantDenoiseSharpen => 'Støyreduksjon + skarphet';
 	@override String get qualityFast => 'Rask';
 	@override String get qualityHQ => 'Høy kvalitet';
 	@override String get mode => 'Modus';
@@ -2288,6 +2291,9 @@ extension on TranslationsNb {
 			'shaders.title' => 'Shadere',
 			'shaders.noShaderDescription' => 'Ingen videoforbedring',
 			'shaders.nvscalerDescription' => 'NVIDIA bildeskalering for skarpere video',
+			'shaders.artcnnVariantNeutral' => 'Nøytral',
+			'shaders.artcnnVariantDenoise' => 'Støyreduksjon',
+			'shaders.artcnnVariantDenoiseSharpen' => 'Støyreduksjon + skarphet',
 			'shaders.qualityFast' => 'Rask',
 			'shaders.qualityHQ' => 'Høy kvalitet',
 			'shaders.mode' => 'Modus',

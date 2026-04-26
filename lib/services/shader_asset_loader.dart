@@ -18,6 +18,16 @@ class ShaderAssetLoader {
   /// NVScaler shader file
   static const String _nvscalerShader = 'nvscaler/NVScaler.glsl';
 
+  /// ArtCNN shader files organized by preset model and variant.
+  static const Map<String, String> _artcnnShaders = {
+    'c4f16_neutral': 'artcnn/ArtCNN_C4F16.glsl',
+    'c4f16_dn': 'artcnn/ArtCNN_C4F16_DN.glsl',
+    'c4f16_ds': 'artcnn/ArtCNN_C4F16_DS.glsl',
+    'c4f32_neutral': 'artcnn/ArtCNN_C4F32.glsl',
+    'c4f32_dn': 'artcnn/ArtCNN_C4F32_DN.glsl',
+    'c4f32_ds': 'artcnn/ArtCNN_C4F32_DS.glsl',
+  };
+
   /// Anime4K shader files organized by function
   static const Map<String, String> _anime4kShaders = {
     'clamp': 'anime4k/Anime4K_Clamp_Highlights.glsl',
@@ -80,6 +90,19 @@ class ShaderAssetLoader {
   /// Returns a list containing the single NVScaler shader path.
   static Future<List<String>> getNVScalerShaders() async {
     final shaderPath = await _extractShader(_nvscalerShader);
+    if (shaderPath == null) return [];
+    return [shaderPath];
+  }
+
+  /// Get the shader file path for an ArtCNN preset.
+  /// Returns a list containing exactly one ArtCNN shader path.
+  static Future<List<String>> getArtCNNShaders(ArtCNNConfig config) async {
+    final variantId = switch (config.variant) {
+      ArtCNNVariant.neutral => 'neutral',
+      ArtCNNVariant.denoise => 'dn',
+      ArtCNNVariant.denoiseSharpen => 'ds',
+    };
+    final shaderPath = await _extractShader(_artcnnShaders['${config.model.name}_$variantId']!);
     if (shaderPath == null) return [];
     return [shaderPath];
   }
@@ -221,6 +244,9 @@ class ShaderAssetLoader {
         return [];
       case ShaderPresetType.nvscaler:
         return getNVScalerShaders();
+      case ShaderPresetType.artcnn:
+        if (preset.artcnnConfig == null) return [];
+        return getArtCNNShaders(preset.artcnnConfig!);
       case ShaderPresetType.anime4k:
         if (preset.anime4kConfig == null) return [];
         return getAnime4KShaders(preset.anime4kConfig!);
@@ -238,6 +264,11 @@ class ShaderAssetLoader {
     try {
       // Extract NVScaler
       await _extractShader(_nvscalerShader);
+
+      // Extract all ArtCNN shaders
+      for (final shaderPath in _artcnnShaders.values) {
+        await _extractShader(shaderPath);
+      }
 
       // Extract all Anime4K shaders
       for (final shaderPath in _anime4kShaders.values) {

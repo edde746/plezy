@@ -33,6 +33,12 @@ void main() {
       final ids = p.allPresets.map((preset) => preset.id).toList();
       expect(ids, contains(ShaderPreset.none.id));
       expect(ids, contains(ShaderPreset.nvscalerDefault.id));
+      expect(ids, contains('artcnn_c4f16_neutral'));
+      expect(ids, contains('artcnn_c4f16_dn'));
+      expect(ids, contains('artcnn_c4f16_ds'));
+      expect(ids, contains('artcnn_c4f32_neutral'));
+      expect(ids, contains('artcnn_c4f32_dn'));
+      expect(ids, contains('artcnn_c4f32_ds'));
       expect(p.allPresets.length, ShaderPreset.allPresets.length);
 
       p.dispose();

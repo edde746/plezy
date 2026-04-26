@@ -1089,6 +1089,9 @@ class _TranslationsShadersJa implements TranslationsShadersEn {
 	@override String get title => 'シェーダー';
 	@override String get noShaderDescription => '映像補正なし';
 	@override String get nvscalerDescription => 'よりシャープな映像のためのNVIDIA画像スケーリング';
+	@override String get artcnnVariantNeutral => 'ニュートラル';
+	@override String get artcnnVariantDenoise => 'ノイズ除去';
+	@override String get artcnnVariantDenoiseSharpen => 'ノイズ除去 + シャープ';
 	@override String get qualityFast => '高速';
 	@override String get qualityHQ => '高品質';
 	@override String get mode => 'モード';
@@ -2288,6 +2291,9 @@ extension on TranslationsJa {
 			'shaders.title' => 'シェーダー',
 			'shaders.noShaderDescription' => '映像補正なし',
 			'shaders.nvscalerDescription' => 'よりシャープな映像のためのNVIDIA画像スケーリング',
+			'shaders.artcnnVariantNeutral' => 'ニュートラル',
+			'shaders.artcnnVariantDenoise' => 'ノイズ除去',
+			'shaders.artcnnVariantDenoiseSharpen' => 'ノイズ除去 + シャープ',
 			'shaders.qualityFast' => '高速',
 			'shaders.qualityHQ' => '高品質',
 			'shaders.mode' => 'モード',

@@ -1,5 +1,26 @@
 /// Shader preset types available in the app
-enum ShaderPresetType { none, nvscaler, anime4k, custom }
+enum ShaderPresetType { none, nvscaler, artcnn, anime4k, custom }
+
+/// ArtCNN real-time model sizes.
+enum ArtCNNModel {
+  /// Lightweight real-time model
+  c4f16,
+
+  /// Higher-quality real-time model
+  c4f32,
+}
+
+/// ArtCNN luma doubler variants.
+enum ArtCNNVariant {
+  /// Neutral luma doubler
+  neutral,
+
+  /// Denoise and soften
+  denoise,
+
+  /// Denoise and sharpen
+  denoiseSharpen,
+}
 
 /// Quality tiers for Anime4K presets
 enum Anime4KQuality {
@@ -57,6 +78,32 @@ class Anime4KConfig {
   }
 }
 
+/// Configuration for ArtCNN preset
+class ArtCNNConfig {
+  final ArtCNNModel model;
+  final ArtCNNVariant variant;
+
+  const ArtCNNConfig({required this.model, required this.variant});
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is ArtCNNConfig && other.model == model && other.variant == variant;
+  }
+
+  @override
+  int get hashCode => model.hashCode ^ variant.hashCode;
+
+  Map<String, dynamic> toJson() => {'model': model.name, 'variant': variant.name};
+
+  factory ArtCNNConfig.fromJson(Map<String, dynamic> json) {
+    return ArtCNNConfig(
+      model: ArtCNNModel.values.asNameMap()[json['model']] ?? ArtCNNModel.c4f16,
+      variant: ArtCNNVariant.values.asNameMap()[json['variant']] ?? ArtCNNVariant.neutral,
+    );
+  }
+}
+
 /// Configuration for NVScaler preset
 class NVScalerConfig {
   /// Whether to automatically skip NVScaler on HDR content
@@ -85,6 +132,7 @@ class ShaderPreset {
   final String id;
   final String name;
   final ShaderPresetType type;
+  final ArtCNNConfig? artcnnConfig;
   final Anime4KConfig? anime4kConfig;
   final NVScalerConfig? nvscalerConfig;
 
@@ -95,6 +143,7 @@ class ShaderPreset {
     required this.id,
     required this.name,
     required this.type,
+    this.artcnnConfig,
     this.anime4kConfig,
     this.nvscalerConfig,
     this.fileName,
@@ -110,6 +159,20 @@ class ShaderPreset {
     type: ShaderPresetType.nvscaler,
     nvscalerConfig: NVScalerConfig(),
   );
+
+  /// Create an ArtCNN preset with the specified model and variant
+  static ShaderPreset artcnnPreset(ArtCNNModel model, ArtCNNVariant variant) {
+    final modelName = _getArtCNNModelName(model);
+    final variantName = _getArtCNNVariantName(variant);
+    final variantId = _getArtCNNVariantId(variant);
+
+    return ShaderPreset(
+      id: 'artcnn_${model.name}_$variantId',
+      name: variant == ArtCNNVariant.neutral ? 'ArtCNN $modelName' : 'ArtCNN $modelName $variantName',
+      type: ShaderPresetType.artcnn,
+      artcnnConfig: ArtCNNConfig(model: model, variant: variant),
+    );
+  }
 
   /// Create an Anime4K preset with the specified quality and mode
   static ShaderPreset anime4kPreset(Anime4KQuality quality, Anime4KMode mode) {
@@ -141,10 +204,49 @@ class ShaderPreset {
     }
   }
 
+  static String _getArtCNNModelName(ArtCNNModel model) {
+    switch (model) {
+      case ArtCNNModel.c4f16:
+        return 'C4F16';
+      case ArtCNNModel.c4f32:
+        return 'C4F32';
+    }
+  }
+
+  static String _getArtCNNVariantName(ArtCNNVariant variant) {
+    switch (variant) {
+      case ArtCNNVariant.neutral:
+        return 'Neutral';
+      case ArtCNNVariant.denoise:
+        return 'Denoise';
+      case ArtCNNVariant.denoiseSharpen:
+        return 'Denoise + Sharpen';
+    }
+  }
+
+  static String _getArtCNNVariantId(ArtCNNVariant variant) {
+    switch (variant) {
+      case ArtCNNVariant.neutral:
+        return 'neutral';
+      case ArtCNNVariant.denoise:
+        return 'dn';
+      case ArtCNNVariant.denoiseSharpen:
+        return 'ds';
+    }
+  }
+
   /// Get display name for the mode
   String get modeDisplayName {
     if (anime4kConfig != null) {
       return _getModeName(anime4kConfig!.mode);
+    }
+    return '';
+  }
+
+  /// Get display name for the ArtCNN model
+  String get artcnnModelDisplayName {
+    if (artcnnConfig != null) {
+      return _getArtCNNModelName(artcnnConfig!.model);
     }
     return '';
   }
@@ -154,6 +256,13 @@ class ShaderPreset {
     return [
       none,
       nvscalerDefault,
+      // ArtCNN presets
+      artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.neutral),
+      artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.denoise),
+      artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.denoiseSharpen),
+      artcnnPreset(ArtCNNModel.c4f32, ArtCNNVariant.neutral),
+      artcnnPreset(ArtCNNModel.c4f32, ArtCNNVariant.denoise),
+      artcnnPreset(ArtCNNModel.c4f32, ArtCNNVariant.denoiseSharpen),
       // Anime4K Fast presets
       anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeA),
       anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeB),
@@ -195,6 +304,7 @@ class ShaderPreset {
     'id': id,
     'name': name,
     'type': type.name,
+    if (artcnnConfig != null) 'artcnnConfig': artcnnConfig!.toJson(),
     if (anime4kConfig != null) 'anime4kConfig': anime4kConfig!.toJson(),
     if (nvscalerConfig != null) 'nvscalerConfig': nvscalerConfig!.toJson(),
     if (fileName != null) 'fileName': fileName,
@@ -213,6 +323,7 @@ class ShaderPreset {
       id: id ?? 'custom',
       name: json['name'] as String? ?? 'Custom',
       type: ShaderPresetType.values.asNameMap()[json['type']] ?? ShaderPresetType.none,
+      artcnnConfig: json['artcnnConfig'] != null ? ArtCNNConfig.fromJson(json['artcnnConfig']) : null,
       anime4kConfig: json['anime4kConfig'] != null ? Anime4KConfig.fromJson(json['anime4kConfig']) : null,
       nvscalerConfig: json['nvscalerConfig'] != null ? NVScalerConfig.fromJson(json['nvscalerConfig']) : null,
       fileName: json['fileName'] as String?,
