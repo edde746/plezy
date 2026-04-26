@@ -172,4 +172,16 @@ class DisplayModeService {
 
     return bestRate;
   }
+
+  Future<void> syncWithNative() async {
+    if (!Platform.isWindows) return;
+    try {
+      final modeChanged = await _channel.invokeMethod<bool>('isModeChanged');
+      _displayModeChanged = modeChanged ?? false;
+      final hdrChanged = await _channel.invokeMethod<bool>('isHDRChanged');
+      _hdrStateChanged = hdrChanged ?? false;
+    } catch (e) {
+      appLogger.w('Failed syncing native state', error: e);
+    }
+  }
 }
