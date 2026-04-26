@@ -438,6 +438,10 @@ void MpvPlayerPlugin::HandleMethodCall(
     HWND hwnd = GetWindow();
     bool success = display_mode_manager_.RestoreOriginalHDRState(hwnd);
     result->Success(flutter::EncodableValue(success));
+  } else if (method == "isModeChanged") {
+    result->Success(flutter::EncodableValue(display_mode_manager_.IsModeChanged()));
+  } else if (method == "isHDRChanged") {
+    result->Success(flutter::EncodableValue(display_mode_manager_.IsHDRChanged()));
   } else {
     result->NotImplemented();
   }

@@ -613,6 +613,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Initialize Windows display mode service.
       if (Platform.isWindows) {
         _displayModeService = DisplayModeService(settingsService, FullscreenStateManager());
+        await _displayModeService!.syncWithNative();
         FullscreenStateManager().addListener(_onFullscreenChanged);
       }
 
@@ -2108,11 +2109,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
 
     // Detach and dispose current player before switching to avoid sync calls on a disposed instance
+    _isReplacingWithVideo = true;
     await disposePlayerForNavigation();
     if (!mounted) return;
 
     // Use same navigation as local episode change (pushReplacement from player context)
-    _isReplacingWithVideo = true;
     unawaited(navigateToVideoPlayer(context, metadata: metadata, usePushReplacement: true));
   }
 
@@ -2363,7 +2364,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (Platform.isWindows && _displayModeService != null) {
       FullscreenStateManager().removeListener(_onFullscreenChanged);
     }
-    if (Platform.isWindows && _displayModeService != null && _displayModeService!.anyChangeApplied) {
+    if (!_isReplacingWithVideo && Platform.isWindows && _displayModeService != null && _displayModeService!.anyChangeApplied) {
       if (_displayModeService!.hdrStateChanged && player != null) {
         player!.setProperty('target-colorspace-hint', 'no');
       }
@@ -3371,7 +3372,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Clear frame rate matching before disposing (Android only)
       await _clearFrameRateMatching();
       // Restore Windows display mode before disposing
-      await _restoreWindowsDisplayMode();
+      if (!_isReplacingWithVideo) {
+        await _restoreWindowsDisplayMode();
+      }
       await player?.dispose();
     } catch (e) {
       appLogger.d('Error disposing player before navigation', error: e);
