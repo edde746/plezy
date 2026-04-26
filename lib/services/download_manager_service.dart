@@ -444,6 +444,38 @@ class DownloadManagerService {
     return null;
   }
 
+  /// Delete the canonical target file and any pre-existing numbered duplicates
+  /// in [safDirUri] before re-enqueueing a SAF download. SAF DocumentsProviders
+  /// auto-number on createDocument when a name conflict exists, which would
+  /// otherwise produce "name (1).ext" / "name.ext (1)" corrupt duplicates on
+  /// every app-level retry.
+  Future<void> _cleanupSafTargetFile(String safDirUri, String safFileName) async {
+    final children = await SafStorageService.instance.list(safDirUri);
+    if (children == null) return;
+
+    // Match BOTH numbering schemes a DocumentsProvider may use:
+    //   "S02E11 - The Hunt (1).mkv"  - inserted before extension (most providers)
+    //   "S02E11 - The Hunt.mkv (1)"  - appended after full name (Downloads tree)
+    final base = path.basenameWithoutExtension(safFileName);
+    final ext = path.extension(safFileName);
+    final dup = RegExp(
+      '^${RegExp.escape(base)} \\(\\d+\\)${RegExp.escape(ext)}\$|'
+      '^${RegExp.escape(safFileName)} \\(\\d+\\)\$',
+    );
+
+    await Future.wait([
+      for (final child in children)
+        if (!child.isDir && (child.name == safFileName || dup.hasMatch(child.name)))
+          _tryDeleteSaf(
+            child.uri,
+            isDir: false,
+            description: child.name == safFileName
+                ? 'stale SAF video before re-download'
+                : 'stale SAF numbered duplicate',
+          ),
+    ]);
+  }
+
   /// Queue a download for a media item
   Future<void> queueDownload({
     required PlexMetadata metadata,
@@ -632,6 +664,8 @@ class DownloadManagerService {
           pathComponents,
         );
         if (safDirUri == null) throw Exception('Failed to create SAF directory');
+
+        await _cleanupSafTargetFile(safDirUri, safFileName);
 
         final task = UriDownloadTask(
           url: playbackData.videoUrl!,
