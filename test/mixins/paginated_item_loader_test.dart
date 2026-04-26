@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/library_query.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/mixins/paginated_item_loader.dart';
-import 'package:plezy/models/plex_metadata.dart';
-import 'package:plezy/services/plex_client.dart';
-import 'package:plezy/utils/plex_http_client.dart';
-import 'package:plezy/utils/plex_http_exception.dart';
+import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plezy/exceptions/media_server_exceptions.dart';
 
 /// Test probe wired with a controllable `fetchPage` so individual tests can
 /// stage successes, failures, and slow responses.
@@ -15,10 +17,10 @@ class _PaginatedProbe extends StatefulWidget {
 
   /// Returns a future for the requested `(start, size)` slice. Tests stage
   /// futures via this fetcher to control timing and error paths.
-  final Future<LibraryContentResult> Function(int start, int size, AbortController? abort) fetcher;
+  final Future<LibraryPage<MediaItem>> Function(int start, int size, AbortController? abort) fetcher;
 
   final void Function(_PaginatedProbeState)? onState;
-  final void Function(int start, List<PlexMetadata> items)? onPageLoadedHook;
+  final void Function(int start, List<MediaItem> items)? onPageLoadedHook;
 
   @override
   State<_PaginatedProbe> createState() => _PaginatedProbeState();
@@ -29,14 +31,14 @@ class _PaginatedProbeState extends State<_PaginatedProbe> with PaginatedItemLoad
   final List<({int start, int size})> fetchArgs = [];
 
   @override
-  Future<LibraryContentResult> fetchPage(int start, int size, AbortController? abort) {
+  Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) {
     fetchCalls++;
     fetchArgs.add((start: start, size: size));
     return widget.fetcher(start, size, abort);
   }
 
   @override
-  void onPageLoaded(int start, List<PlexMetadata> items) {
+  void onPageLoaded(int start, List<MediaItem> items) {
     widget.onPageLoadedHook?.call(start, items);
   }
 
@@ -56,10 +58,14 @@ class _PaginatedProbeState extends State<_PaginatedProbe> with PaginatedItemLoad
   Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-PlexMetadata _meta(int i) => PlexMetadata(ratingKey: 'k$i', title: 't$i');
+MediaItem _meta(int i) => MediaItem(id: 'k$i', backend: MediaBackend.plex, kind: MediaKind.movie, title: 't$i');
 
-LibraryContentResult _result({required int start, required int size, required int totalSize}) {
-  return LibraryContentResult(items: List<PlexMetadata>.generate(size, (i) => _meta(start + i)), totalSize: totalSize);
+LibraryPage<MediaItem> _result({required int start, required int size, required int totalSize}) {
+  return LibraryPage<MediaItem>(
+    items: List<MediaItem>.generate(size, (i) => _meta(start + i)),
+    totalCount: totalSize,
+    offset: start,
+  );
 }
 
 void main() {
@@ -80,9 +86,9 @@ void main() {
       expect(state.fetchArgs.first, (start: 0, size: 10));
       expect(state.totalSize, 42);
       expect(state.loadedItems.length, 10);
-      expect(state.loadedItems[0]?.ratingKey, 'k0');
-      expect(state.loadedItems[9]?.ratingKey, 'k9');
-      expect(result.totalSize, 42);
+      expect(state.loadedItems[0]?.id, 'k0');
+      expect(state.loadedItems[9]?.id, 'k9');
+      expect(result.totalCount, 42);
     });
 
     testWidgets('onPageLoaded fires after a successful initial page', (tester) async {
@@ -108,7 +114,7 @@ void main() {
         _PaginatedProbe(
           onState: (s) => state = s,
           // Empty list mirrors the "library has no items" wire response.
-          fetcher: (start, size, abort) async => const LibraryContentResult(items: [], totalSize: 0),
+          fetcher: (start, size, abort) async => const LibraryPage<MediaItem>(items: [], totalCount: 0),
         ),
       );
 
@@ -194,7 +200,7 @@ void main() {
             rangeAttempt++;
             if (rangeAttempt == 1) {
               // First range fetch fails — triggers retry path.
-              throw PlexHttpException(type: PlexHttpErrorType.connectionError, message: 'boom');
+              throw MediaServerHttpException(type: MediaServerHttpErrorType.connectionError, message: 'boom');
             }
             // Retry fetch succeeds.
             return _result(start: start, size: size, totalSize: 400);
@@ -221,7 +227,7 @@ void main() {
       expect(rangeAttempt, greaterThanOrEqualTo(2)); // failed + retry
     });
 
-    testWidgets('cancelled fetch (PlexHttpErrorType.cancelled) does not schedule a retry', (tester) async {
+    testWidgets('cancelled fetch (MediaServerHttpErrorType.cancelled) does not schedule a retry', (tester) async {
       late _PaginatedProbeState state;
       var sawCancellation = false;
 
@@ -233,7 +239,7 @@ void main() {
               return _result(start: 0, size: size, totalSize: 400);
             }
             sawCancellation = true;
-            throw PlexHttpException(type: PlexHttpErrorType.cancelled, message: 'aborted');
+            throw MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'aborted');
           },
         ),
       );
@@ -258,7 +264,7 @@ void main() {
 
     testWidgets('dispose during in-flight load is a no-op (no setState on unmounted)', (tester) async {
       late _PaginatedProbeState state;
-      final completer = Completer<LibraryContentResult>();
+      final completer = Completer<LibraryPage<MediaItem>>();
 
       await tester.pumpWidget(
         _PaginatedProbe(onState: (s) => state = s, fetcher: (start, size, abort) => completer.future),
@@ -286,13 +292,13 @@ void main() {
 
     testWidgets('disposePagination clears state and aborts in-flight fetches', (tester) async {
       late _PaginatedProbeState state;
-      final futures = <Completer<LibraryContentResult>>[];
+      final futures = <Completer<LibraryPage<MediaItem>>>[];
 
       await tester.pumpWidget(
         _PaginatedProbe(
           onState: (s) => state = s,
           fetcher: (start, size, abort) {
-            final c = Completer<LibraryContentResult>();
+            final c = Completer<LibraryPage<MediaItem>>();
             futures.add(c);
             return c.future;
           },
@@ -335,10 +341,10 @@ void main() {
 
       expect(state.totalSize, 4);
       expect(state.loadedItems.length, 4);
-      expect(state.loadedItems[0]?.ratingKey, 'k0');
-      expect(state.loadedItems[1]?.ratingKey, 'k1');
-      expect(state.loadedItems[2]?.ratingKey, 'k3'); // shifted from index 3
-      expect(state.loadedItems[3]?.ratingKey, 'k4'); // shifted from index 4
+      expect(state.loadedItems[0]?.id, 'k0');
+      expect(state.loadedItems[1]?.id, 'k1');
+      expect(state.loadedItems[2]?.id, 'k3'); // shifted from index 3
+      expect(state.loadedItems[3]?.id, 'k4'); // shifted from index 4
       expect(state.loadedItems.containsKey(4), isFalse);
     });
 
@@ -422,7 +428,7 @@ void main() {
 
     testWidgets('clearPendingRanges allows another fetch attempt without dedupe', (tester) async {
       late _PaginatedProbeState state;
-      final completers = <Completer<LibraryContentResult>>[];
+      final completers = <Completer<LibraryPage<MediaItem>>>[];
 
       await tester.pumpWidget(
         _PaginatedProbe(
@@ -432,7 +438,7 @@ void main() {
             if (start == 0 && completers.isEmpty) {
               return Future.value(_result(start: 0, size: size, totalSize: 400));
             }
-            final c = Completer<LibraryContentResult>();
+            final c = Completer<LibraryPage<MediaItem>>();
             completers.add(c);
             return c.future;
           },
@@ -492,14 +498,14 @@ void main() {
 
     testWidgets('a stale in-flight fetch from before resetPaginationState is dropped', (tester) async {
       late _PaginatedProbeState state;
-      Completer<LibraryContentResult>? staleFetch;
+      Completer<LibraryPage<MediaItem>>? staleFetch;
 
       await tester.pumpWidget(
         _PaginatedProbe(
           onState: (s) => state = s,
           fetcher: (start, size, abort) {
             if (staleFetch == null) {
-              staleFetch = Completer<LibraryContentResult>();
+              staleFetch = Completer<LibraryPage<MediaItem>>();
               return staleFetch!.future;
             }
             return Future.value(_result(start: start, size: size, totalSize: 99));

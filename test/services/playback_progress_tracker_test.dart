@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
-import 'package:plezy/models/plex_metadata.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
@@ -37,11 +42,40 @@ import '../test_helpers/prefs.dart';
 /// Fake Player whose state is mutable from the test.
 class _FakePlayer implements Player {
   PlayerState _state;
-  _FakePlayer({Duration position = Duration.zero, Duration duration = Duration.zero, bool playing = true})
-    : _state = PlayerState(playing: playing, duration: duration, position: position);
+  final PlayerStreams _streams = const PlayerStreams(
+    playing: Stream<bool>.empty(),
+    completed: Stream<bool>.empty(),
+    buffering: Stream<bool>.empty(),
+    position: Stream<Duration>.empty(),
+    duration: Stream<Duration>.empty(),
+    seekable: Stream<bool>.empty(),
+    buffer: Stream<Duration>.empty(),
+    volume: Stream<double>.empty(),
+    rate: Stream<double>.empty(),
+    tracks: Stream<Tracks>.empty(),
+    track: Stream<TrackSelection>.empty(),
+    log: Stream<PlayerLog>.empty(),
+    error: Stream<PlayerError>.empty(),
+    audioDevice: Stream<AudioDevice>.empty(),
+    audioDevices: Stream<List<AudioDevice>>.empty(),
+    bufferRanges: Stream<List<BufferRange>>.empty(),
+    playbackRestart: Stream<void>.empty(),
+    backendSwitched: Stream<void>.empty(),
+  );
+
+  _FakePlayer({
+    Duration position = Duration.zero,
+    Duration duration = Duration.zero,
+    bool playing = true,
+    Tracks tracks = const Tracks(),
+    TrackSelection track = const TrackSelection(),
+  }) : _state = PlayerState(playing: playing, duration: duration, position: position, tracks: tracks, track: track);
 
   @override
   PlayerState get state => _state;
+
+  @override
+  PlayerStreams get streams => _streams;
 
   set position(Duration value) {
     _state = _state.copyWith(position: value);
@@ -77,13 +111,21 @@ class _FakePlexClient implements PlexClient {
   @override
   int get watchedThresholdPercent => thresholdPercent;
 
+  @override
+  double get watchedThreshold => thresholdPercent / 100.0;
+
   /// (ratingKey, time, state, duration) tuples for every updateProgress call.
   final List<({String ratingKey, int time, String state, int? duration})> updateProgressCalls = [];
 
-  /// Rating keys passed to markAsWatched.
+  /// Rating keys passed to markWatched.
   final List<String> markWatchedCalls = [];
 
-  /// If non-null, [updateProgress] / [markAsWatched] throw this on the next call.
+  /// PlaySessionIds forwarded through the reportPlayback* methods.
+  final List<String?> playbackSessionIds = [];
+
+  final List<({String? mediaSourceId, int? audioStreamIndex, int? subtitleStreamIndex})> playbackStreamSelections = [];
+
+  /// If non-null, the next reportPlayback*/markWatched call throws this.
   Object? throwOnNextCall;
 
   @override
@@ -96,18 +138,88 @@ class _FakePlexClient implements PlexClient {
     updateProgressCalls.add((ratingKey: ratingKey, time: time, state: state, duration: duration));
   }
 
+  // The interface report* methods delegate to updateProgress so existing
+  // assertions on `updateProgressCalls` keep working.
   @override
-  Future<void> markAsWatched(String ratingKey, {PlexMetadata? metadata}) async {
+  Future<void> reportPlaybackStarted({
+    required String itemId,
+    required Duration position,
+    Duration? duration,
+    String? playSessionId,
+    String? playMethod,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) {
+    playbackSessionIds.add(playSessionId);
+    playbackStreamSelections.add((
+      mediaSourceId: mediaSourceId,
+      audioStreamIndex: audioStreamIndex,
+      subtitleStreamIndex: subtitleStreamIndex,
+    ));
+    return updateProgress(itemId, time: position.inMilliseconds, state: 'playing', duration: duration?.inMilliseconds);
+  }
+
+  @override
+  Future<void> reportPlaybackProgress({
+    required String itemId,
+    required Duration position,
+    required Duration duration,
+    bool isPaused = false,
+    String? playSessionId,
+    String? playMethod,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) {
+    playbackSessionIds.add(playSessionId);
+    playbackStreamSelections.add((
+      mediaSourceId: mediaSourceId,
+      audioStreamIndex: audioStreamIndex,
+      subtitleStreamIndex: subtitleStreamIndex,
+    ));
+    return updateProgress(
+      itemId,
+      time: position.inMilliseconds,
+      state: isPaused ? 'paused' : 'playing',
+      duration: duration.inMilliseconds,
+    );
+  }
+
+  @override
+  Future<void> reportPlaybackStopped({
+    required String itemId,
+    required Duration position,
+    Duration? duration,
+    String? playSessionId,
+    String? mediaSourceId,
+  }) {
+    playbackSessionIds.add(playSessionId);
+    playbackStreamSelections.add((mediaSourceId: mediaSourceId, audioStreamIndex: null, subtitleStreamIndex: null));
+    return updateProgress(itemId, time: position.inMilliseconds, state: 'stopped', duration: duration?.inMilliseconds);
+  }
+
+  @override
+  Future<void> markWatched(MediaItem item) async {
+    if (throwOnNextCall != null) {
+      final err = throwOnNextCall!;
+      throwOnNextCall = null;
+      throw err;
+    }
+    markWatchedCalls.add(item.id);
+    WatchStateNotifier().notifyWatched(item: item, isNowWatched: true);
+  }
+
+  @override
+  Future<void> markAsWatched(String ratingKey, {MediaItem? item}) async {
     if (throwOnNextCall != null) {
       final err = throwOnNextCall!;
       throwOnNextCall = null;
       throw err;
     }
     markWatchedCalls.add(ratingKey);
-    // Production fires a WatchStateNotifier event from markAsWatched. Mirror
-    // that so tests can observe it through the singleton.
-    if (metadata != null) {
-      WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: true);
+    if (item != null) {
+      WatchStateNotifier().notifyWatched(item: item, isNowWatched: true);
     }
   }
 
@@ -115,8 +227,41 @@ class _FakePlexClient implements PlexClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-PlexMetadata _meta({String ratingKey = '42', String? serverId = 'srv', String? type = 'movie'}) =>
-    PlexMetadata(ratingKey: ratingKey, type: type, title: 'Test Item', serverId: serverId);
+class _DelayedStartClient extends _FakePlexClient {
+  final Completer<void> startCompleter = Completer<void>();
+
+  @override
+  Future<void> reportPlaybackStarted({
+    required String itemId,
+    required Duration position,
+    Duration? duration,
+    String? playSessionId,
+    String? playMethod,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) async {
+    await startCompleter.future;
+    await super.reportPlaybackStarted(
+      itemId: itemId,
+      position: position,
+      duration: duration,
+      playSessionId: playSessionId,
+      playMethod: playMethod,
+      mediaSourceId: mediaSourceId,
+      audioStreamIndex: audioStreamIndex,
+      subtitleStreamIndex: subtitleStreamIndex,
+    );
+  }
+}
+
+MediaItem _meta({String ratingKey = '42', String? serverId = 'srv', String? type = 'movie'}) => MediaItem(
+  id: ratingKey,
+  backend: MediaBackend.plex,
+  kind: MediaKind.fromString(type),
+  title: 'Test Item',
+  serverId: serverId,
+);
 
 void main() {
   setUp(resetSharedPreferencesForTest);
@@ -210,6 +355,204 @@ void main() {
       expect(client.updateProgressCalls, hasLength(1));
       expect(client.updateProgressCalls.single.state, 'playing');
     });
+
+    test('forwards PlaySessionId to started, progress, and stopped reports', () async {
+      final client = _FakePlexClient();
+      final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+        playSessionId: 'play-session-1',
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      await tracker.sendProgress('stopped');
+
+      expect(client.updateProgressCalls.map((call) => call.state), ['playing', 'playing', 'stopped']);
+      expect(client.playbackSessionIds, ['play-session-1', 'play-session-1', 'play-session-1']);
+    });
+
+    test('coalesces concurrent start reports while the first start is in flight', () async {
+      final client = _DelayedStartClient();
+      final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(client: client, metadata: _meta(), player: player, isOffline: false);
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      expect(client.updateProgressCalls, isEmpty);
+
+      client.startCompleter.complete();
+      await Future<void>.delayed(Duration.zero);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(client.updateProgressCalls.map((call) => call.state), ['playing']);
+    });
+
+    test('orders stopped after an in-flight start report', () async {
+      final client = _DelayedStartClient();
+      final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(client: client, metadata: _meta(), player: player, isOffline: false);
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+
+      final stopFuture = tracker.sendProgress('stopped');
+      await Future<void>.delayed(Duration.zero);
+      expect(client.updateProgressCalls, isEmpty);
+
+      client.startCompleter.complete();
+      await stopFuture;
+
+      expect(client.updateProgressCalls.map((call) => call.state), ['playing', 'stopped']);
+    });
+
+    test('does not send queued progress after terminal stopped state', () async {
+      final client = _DelayedStartClient();
+      final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(client: client, metadata: _meta(), player: player, isOffline: false);
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+
+      final stopFuture = tracker.sendProgress('stopped');
+      client.startCompleter.complete();
+      await stopFuture;
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(client.updateProgressCalls.map((call) => call.state), ['playing', 'stopped']);
+    });
+
+    test('coalesces concurrent stopped reports into one terminal stop', () async {
+      final client = _FakePlexClient();
+      final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(client: client, metadata: _meta(), player: player, isOffline: false);
+      addTearDown(tracker.dispose);
+
+      final events = <WatchStateEvent>[];
+      final sub = WatchStateNotifier().forItem('42').listen(events.add);
+      addTearDown(sub.cancel);
+
+      await Future.wait([tracker.sendProgress('stopped'), tracker.sendProgress('stopped')]);
+      await Future<void>.delayed(Duration.zero);
+
+      expect(client.updateProgressCalls.map((call) => call.state), ['stopped']);
+      expect(events.where((e) => e.changeType == WatchStateChangeType.progressUpdate), hasLength(1));
+    });
+
+    test('allows a later stopped report to retry after final stop fails', () async {
+      final client = _FakePlexClient()..throwOnNextCall = Exception('network blip');
+      final player = _FakePlayer(position: const Duration(seconds: 5), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(client: client, metadata: _meta(), player: player, isOffline: false);
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped');
+      expect(client.updateProgressCalls, isEmpty);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      expect(client.updateProgressCalls, isEmpty);
+
+      await tracker.sendProgress('stopped');
+      expect(client.updateProgressCalls.map((call) => call.state), ['stopped']);
+    });
+
+    test('maps current player tracks to server stream indexes for progress reports', () async {
+      final client = _FakePlexClient();
+      const selectedAudio = AudioTrack(id: 'audio_1', language: 'jpn');
+      const subtitlesOff = SubtitleTrack(id: 'no');
+      final player = _FakePlayer(
+        position: const Duration(seconds: 5),
+        duration: const Duration(seconds: 100),
+        tracks: const Tracks(
+          audio: [
+            AudioTrack(id: 'audio_0', language: 'eng'),
+            selectedAudio,
+          ],
+          subtitle: [SubtitleTrack(id: 'text_0', language: 'eng')],
+        ),
+        track: const TrackSelection(audio: selectedAudio, subtitle: subtitlesOff),
+      );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: '',
+        audioTracks: [
+          MediaAudioTrack(id: 1, languageCode: 'eng', selected: false),
+          MediaAudioTrack(id: 2, languageCode: 'jpn', selected: true),
+        ],
+        subtitleTracks: [MediaSubtitleTrack(id: 3, languageCode: 'eng', selected: false, forced: false)],
+        chapters: const [],
+        mediaSourceId: 'source-1',
+      );
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+        mediaInfo: mediaInfo,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+
+      final progressSelection = client.playbackStreamSelections[1];
+      expect(progressSelection.mediaSourceId, 'source-1');
+      expect(progressSelection.audioStreamIndex, 2);
+      expect(progressSelection.subtitleStreamIndex, -1);
+    });
+
+    test('stopped reports only resolve media source and do not include selected streams', () async {
+      final client = _FakePlexClient();
+      const selectedAudio = AudioTrack(id: 'audio_1', language: 'jpn');
+      final player = _FakePlayer(
+        position: const Duration(seconds: 5),
+        duration: const Duration(seconds: 100),
+        tracks: const Tracks(
+          audio: [selectedAudio],
+          subtitle: [SubtitleTrack(id: 'text_0', language: 'eng')],
+        ),
+        track: const TrackSelection(
+          audio: selectedAudio,
+          subtitle: SubtitleTrack(id: 'text_0', language: 'eng'),
+        ),
+      );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: '',
+        audioTracks: [MediaAudioTrack(id: 2, languageCode: 'jpn', selected: true)],
+        subtitleTracks: [MediaSubtitleTrack(id: 3, languageCode: 'eng', selected: true, forced: false)],
+        chapters: const [],
+        mediaSourceId: 'source-1',
+      );
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+        mediaInfo: mediaInfo,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped');
+
+      expect(client.playbackStreamSelections, hasLength(1));
+      expect(client.playbackStreamSelections.single.mediaSourceId, 'source-1');
+      expect(client.playbackStreamSelections.single.audioStreamIndex, isNull);
+      expect(client.playbackStreamSelections.single.subtitleStreamIndex, isNull);
+    });
   });
 
   // ============================================================
@@ -301,11 +644,13 @@ void main() {
       );
       addTearDown(tracker2.dispose);
 
-      await tracker2.sendProgress('stopped');
+      await tracker2.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
       expect(precise.markWatchedAttempts, 1);
 
       // Retry — markAsWatched now succeeds.
-      await tracker2.sendProgress('stopped');
+      await tracker2.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
       expect(precise.markWatchedAttempts, 2);
       expect(precise.markWatchedSuccesses, 1);
     });
@@ -509,13 +854,16 @@ void main() {
 }
 
 /// A more precise fake than [_FakePlexClient]: lets the test independently
-/// fail markAsWatched without touching updateProgress.
+/// fail the scrobble (markWatched) without touching the progress signals.
 class _ScrobblePreciseClient implements PlexClient {
   _ScrobblePreciseClient({this.thresholdPercent = 90, this.failScrobbleFirstTime = false});
 
   final int thresholdPercent;
   @override
   int get watchedThresholdPercent => thresholdPercent;
+
+  @override
+  double get watchedThreshold => thresholdPercent / 100.0;
 
   bool failScrobbleFirstTime;
   int markWatchedAttempts = 0;
@@ -525,7 +873,51 @@ class _ScrobblePreciseClient implements PlexClient {
   Future<void> updateProgress(String ratingKey, {required int time, required String state, int? duration}) async {}
 
   @override
-  Future<void> markAsWatched(String ratingKey, {PlexMetadata? metadata}) async {
+  Future<void> reportPlaybackStarted({
+    required String itemId,
+    required Duration position,
+    Duration? duration,
+    String? playSessionId,
+    String? playMethod,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) async {}
+
+  @override
+  Future<void> reportPlaybackProgress({
+    required String itemId,
+    required Duration position,
+    required Duration duration,
+    bool isPaused = false,
+    String? playSessionId,
+    String? playMethod,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) async {}
+
+  @override
+  Future<void> reportPlaybackStopped({
+    required String itemId,
+    required Duration position,
+    Duration? duration,
+    String? playSessionId,
+    String? mediaSourceId,
+  }) async {}
+
+  @override
+  Future<void> markWatched(MediaItem item) async {
+    markWatchedAttempts++;
+    if (failScrobbleFirstTime) {
+      failScrobbleFirstTime = false;
+      throw StateError('simulated scrobble failure');
+    }
+    markWatchedSuccesses++;
+  }
+
+  @override
+  Future<void> markAsWatched(String ratingKey, {MediaItem? item}) async {
     markWatchedAttempts++;
     if (failScrobbleFirstTime) {
       failScrobbleFirstTime = false;

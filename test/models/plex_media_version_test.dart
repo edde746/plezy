@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/plex_media_version.dart';
+import 'package:plezy/media/media_part.dart';
+import 'package:plezy/media/media_version.dart';
+import 'package:plezy/services/plex_mappers.dart';
 
 Map<String, dynamic> _media({
   int id = 1,
@@ -20,11 +22,11 @@ Map<String, dynamic> _media({
 }
 
 void main() {
-  group('PlexMediaVersion accessibility parsing', () {
+  group('Plex media version accessibility parsing', () {
     test('accessible/exists are null when Plex did not include them', () {
-      final v = PlexMediaVersion.fromJson(_media());
-      expect(v.accessible, isNull);
-      expect(v.exists, isNull);
+      final v = PlexMappers.mediaVersionFromJson(_media());
+      expect(v.parts.single.accessible, isNull);
+      expect(v.parts.single.exists, isNull);
       expect(
         v.isPlayable,
         isTrue,
@@ -33,38 +35,41 @@ void main() {
     });
 
     test('parses int 0/1 from Plex JSON output', () {
-      final notExists = PlexMediaVersion.fromJson(_media(partExtras: {'exists': 0, 'accessible': 1}));
-      expect(notExists.exists, isFalse);
-      expect(notExists.accessible, isTrue);
+      final notExists = PlexMappers.mediaVersionFromJson(_media(partExtras: {'exists': 0, 'accessible': 1}));
+      expect(notExists.parts.single.exists, isFalse);
+      expect(notExists.parts.single.accessible, isTrue);
       expect(notExists.isPlayable, isFalse);
 
-      final notAccessible = PlexMediaVersion.fromJson(_media(partExtras: {'exists': 1, 'accessible': 0}));
-      expect(notAccessible.exists, isTrue);
-      expect(notAccessible.accessible, isFalse);
+      final notAccessible = PlexMappers.mediaVersionFromJson(_media(partExtras: {'exists': 1, 'accessible': 0}));
+      expect(notAccessible.parts.single.exists, isTrue);
+      expect(notAccessible.parts.single.accessible, isFalse);
       expect(notAccessible.isPlayable, isFalse);
 
-      final ok = PlexMediaVersion.fromJson(_media(partExtras: {'exists': 1, 'accessible': 1}));
+      final ok = PlexMappers.mediaVersionFromJson(_media(partExtras: {'exists': 1, 'accessible': 1}));
       expect(ok.isPlayable, isTrue);
     });
 
     test('parses native bool', () {
-      final v = PlexMediaVersion.fromJson(_media(partExtras: {'exists': false, 'accessible': true}));
-      expect(v.exists, isFalse);
-      expect(v.accessible, isTrue);
+      final v = PlexMappers.mediaVersionFromJson(_media(partExtras: {'exists': false, 'accessible': true}));
+      expect(v.parts.single.exists, isFalse);
+      expect(v.parts.single.accessible, isTrue);
       expect(v.isPlayable, isFalse);
     });
 
     test('parses string "0"/"1" forms (XML-to-JSON conversion)', () {
-      final v = PlexMediaVersion.fromJson(_media(partExtras: {'exists': '0', 'accessible': '1'}));
-      expect(v.exists, isFalse);
-      expect(v.accessible, isTrue);
+      final v = PlexMappers.mediaVersionFromJson(_media(partExtras: {'exists': '0', 'accessible': '1'}));
+      expect(v.parts.single.exists, isFalse);
+      expect(v.parts.single.accessible, isTrue);
     });
 
     test('isPlayable truth table mirrors Plex web semantics', () {
       // Mirrors plex-web.js:28926: !1 !== e.exists && !1 !== e.accessible
       // Anything but explicit `false` for both fields → playable.
       bool playable({bool? acc, bool? ex}) {
-        return PlexMediaVersion(id: 1, partKey: '/k', accessible: acc, exists: ex).isPlayable;
+        return MediaVersion(
+          id: '1',
+          parts: [MediaPart(id: '1', streamPath: '/k', accessible: acc, exists: ex)],
+        ).isPlayable;
       }
 
       expect(playable(acc: null, ex: null), isTrue);
@@ -87,16 +92,16 @@ void main() {
         'container': 'mkv',
         'Part': {'id': 101, 'key': '/library/parts/1/file.mkv', 'exists': 0},
       };
-      final v = PlexMediaVersion.fromJson(json);
-      expect(v.exists, isFalse);
+      final v = PlexMappers.mediaVersionFromJson(json);
+      expect(v.parts.single.exists, isFalse);
       expect(v.isPlayable, isFalse);
     });
 
     test('missing Part array leaves accessibility fields null', () {
       final json = {'id': 1, 'videoResolution': '1080', 'videoCodec': 'h264', 'container': 'mkv'};
-      final v = PlexMediaVersion.fromJson(json);
-      expect(v.accessible, isNull);
-      expect(v.exists, isNull);
+      final v = PlexMappers.mediaVersionFromJson(json);
+      expect(v.parts.single.accessible, isNull);
+      expect(v.parts.single.exists, isNull);
       expect(v.isPlayable, isTrue);
     });
   });

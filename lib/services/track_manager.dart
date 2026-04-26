@@ -2,16 +2,28 @@ import 'dart:async';
 
 import '../mpv/mpv.dart';
 
-import '../models/plex_media_info.dart';
-import '../models/plex_metadata.dart';
-import '../services/plex_client.dart';
+import '../media/media_item.dart';
+import '../media/media_item_types.dart';
+import '../media/media_server_user_profile.dart';
+import '../media/media_source_info.dart';
 import '../services/settings_service.dart';
 import '../services/track_selection_service.dart';
-import '../models/plex_user_profile.dart';
 import '../utils/app_logger.dart';
-import '../utils/content_utils.dart';
 import '../utils/language_codes.dart';
 import '../utils/track_label_builder.dart';
+
+/// Persists a track choice through Plex's immediate preference endpoints.
+/// Backends that persist through another path (Jellyfin uses playback progress
+/// stream indexes) or lack server-side track preferences leave this null.
+/// [trackType] is `'audio'` or `'subtitle'`.
+typedef TrackPreferencePersister =
+    Future<void> Function({
+      required String id,
+      required int partId,
+      required String trackType,
+      String? languageCode,
+      int? streamID,
+    });
 
 /// Manages track (audio + subtitle) lifecycle: external subtitle loading,
 /// automatic track selection, server preference sync, and cycling.
@@ -25,11 +37,13 @@ class TrackManager {
   /// Returns false once the owning widget is unmounted or disposed.
   final bool Function() isActive;
 
-  /// Resolves the Plex API client for the current server.
-  final PlexClient Function() getClient;
+  /// Optional hook for persisting a track choice to Plex immediately. `null`
+  /// for backends with a different persistence path (Jellyfin) or no
+  /// server-side track preferences.
+  final TrackPreferencePersister? persistTrackPreference;
 
   /// Resolves the user's profile settings (may be null during loading).
-  final PlexUserProfile? Function() getProfileSettings;
+  final MediaServerUserProfile? Function() getProfileSettings;
 
   /// Waits until profile settings are available (offline path).
   final Future<void> Function() waitForProfileSettings;
@@ -39,8 +53,8 @@ class TrackManager {
 
   // ── Mutable configuration (updated on episode navigation) ──────────
 
-  PlexMetadata metadata;
-  PlexMediaInfo? mediaInfo;
+  MediaItem metadata;
+  MediaSourceInfo? mediaInfo;
   AudioTrack? preferredAudioTrack;
   SubtitleTrack? preferredSubtitleTrack;
   SubtitleTrack? preferredSecondarySubtitleTrack;
@@ -59,7 +73,7 @@ class TrackManager {
   TrackManager({
     required this.player,
     required this.isActive,
-    required this.getClient,
+    this.persistTrackPreference,
     required this.getProfileSettings,
     required this.waitForProfileSettings,
     required this.metadata,
@@ -346,15 +360,17 @@ class TrackManager {
 
   // ── Private helpers ────────────────────────────────────────────────
 
-  /// Rating key used for series/movie level language preferences.
-  String get _preferenceRatingKey {
-    return metadata.isEpisode ? (metadata.grandparentRatingKey ?? metadata.ratingKey) : metadata.ratingKey;
+  /// Series/movie-level identifier used for language preferences.
+  String get _preferenceId {
+    return metadata.isEpisode ? (metadata.grandparentId ?? metadata.id) : metadata.id;
   }
 
   /// Common guard checks for track change handlers.
-  Future<int?> _guardTrackChange(PlexMediaInfo? info) async {
+  Future<int?> _guardTrackChange(MediaSourceInfo? info) async {
     final settings = await SettingsService.getInstance();
     if (!settings.read(SettingsService.rememberTrackSelections)) return null;
+
+    if (persistTrackPreference == null) return null;
 
     if (info == null) {
       appLogger.w('No media info available, cannot save stream selection');
@@ -377,27 +393,17 @@ class TrackManager {
   }) async {
     try {
       if (!isActive()) return;
-      final client = getClient();
-      final ratingKey = _preferenceRatingKey;
-
-      final futures = <Future>[];
-
-      if (languageCode != null && (trackType == 'subtitle' || languageCode.isNotEmpty)) {
-        futures.add(
-          trackType == 'audio'
-              ? client.setMetadataPreferences(ratingKey, audioLanguage: languageCode)
-              : client.setMetadataPreferences(ratingKey, subtitleLanguage: languageCode),
-        );
+      final persist = persistTrackPreference;
+      if (persist == null) {
+        return;
       }
-      if (streamID != null) {
-        futures.add(
-          trackType == 'audio'
-              ? client.selectStreams(partId, audioStreamID: streamID, allParts: true)
-              : client.selectStreams(partId, subtitleStreamID: streamID, allParts: true),
-        );
-      }
-
-      await Future.wait(futures);
+      await persist(
+        id: _preferenceId,
+        partId: partId,
+        trackType: trackType,
+        languageCode: languageCode,
+        streamID: streamID,
+      );
       appLogger.d('Successfully saved $trackType preferences (language + stream)');
     } catch (e) {
       appLogger.e('Failed to save $trackType preferences', error: e);
@@ -414,7 +420,7 @@ class TrackManager {
     required String? Function(T) getTitle,
     required int Function(T) getId,
   }) {
-    final normalizedLang = _iso6391ToPlex6392(mpvLanguage);
+    final normalizedLang = _iso6391To6392(mpvLanguage);
 
     for (final plexTrack in plexTracks) {
       final matchLang = getLanguageCode(plexTrack) == normalizedLang;
@@ -429,8 +435,9 @@ class TrackManager {
     return null;
   }
 
-  /// Convert ISO 639-1 code (e.g. "fr") to Plex's 639-2 code (e.g. "fre").
-  static String? _iso6391ToPlex6392(String? code) {
+  /// Convert ISO 639-1 code (e.g. "fr") to ISO 639-2/B (e.g. "fre"). Plex
+  /// streams use the 3-letter form.
+  static String? _iso6391To6392(String? code) {
     if (code == null || code.isEmpty) return null;
     final lang = code.split('-').first.toLowerCase();
 

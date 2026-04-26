@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
+# Git sets GIT_DIR (and friends) for hook invocations. Inside `flutter pub
+# run`, that leaks into Flutter's own SDK-version probe (`git describe` from
+# Flutter's checkout) and makes Flutter misreport its version as
+# `1.35.1-0.0.pre-1`, which then fails dependency resolution. Strip those
+# vars so the script behaves the same when invoked from a hook as it does
+# from a plain shell.
+unset GIT_DIR GIT_INDEX_FILE GIT_WORK_TREE GIT_PREFIX
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$ROOT"
@@ -74,7 +82,7 @@ if ! have_dart_code_linter; then
   skip "dart_code_linter unresolved — run 'flutter pub get'"
 else
   out="$(mktemp)"
-  dart run dart_code_linter:metrics check-unused-code lib >"$out" 2>&1 || true
+  flutter pub run dart_code_linter:metrics check-unused-code lib >"$out" 2>&1 || true
   if grep -qi "no unused code found" "$out"; then
     ok "none"
   else
@@ -91,7 +99,7 @@ if ! have_dart_code_linter; then
   skip "dart_code_linter unresolved — run 'flutter pub get'"
 else
   out="$(mktemp)"
-  dart run dart_code_linter:metrics check-unused-files lib >"$out" 2>&1 || true
+  flutter pub run dart_code_linter:metrics check-unused-files lib >"$out" 2>&1 || true
   if grep -qi "no unused files found" "$out"; then
     ok "none"
   else

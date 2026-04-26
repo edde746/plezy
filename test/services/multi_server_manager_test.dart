@@ -1,7 +1,36 @@
+import 'dart:async';
+
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:plezy/connection/connection.dart';
+import 'package:plezy/database/app_database.dart';
+import 'package:plezy/models/plex/plex_config.dart';
+import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/plex_auth_service.dart';
+import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 
 import '../test_helpers/prefs.dart';
+
+JellyfinConnection _jellyfinConnection(String userId) => JellyfinConnection(
+  id: 'jf-machine/$userId',
+  baseUrl: 'https://jf.example.com',
+  serverName: 'Shared JF',
+  serverMachineId: 'jf-machine',
+  userId: userId,
+  userName: userId,
+  accessToken: 'token-$userId',
+  deviceId: 'device',
+  createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+);
+
+JellyfinClient _jellyfinClient(String userId) => JellyfinClient.forTesting(
+  connection: _jellyfinConnection(userId),
+  httpClient: MockClient((_) async => http.Response('{}', 200)),
+);
 
 // NOTE on coverage scope:
 // [MultiServerManager.addServer] / `connectToAllServers` / `_createClientForServer`
@@ -40,26 +69,26 @@ void main() {
       expect(m.serverIds, isEmpty);
       expect(m.onlineServerIds, isEmpty);
       expect(m.offlineServerIds, isEmpty);
-      expect(m.servers, isEmpty);
+      expect(m.plexServers, isEmpty);
       expect(m.onlineClients, isEmpty);
     });
 
-    test('getClient/getServer return null for unknown ids', () {
+    test('getClient/getPlexServer return null for unknown ids', () {
       final m = MultiServerManager();
       addTearDown(m.dispose);
 
       expect(m.getClient('nope'), isNull);
-      expect(m.getServer('nope'), isNull);
+      expect(m.getPlexServer('nope'), isNull);
       expect(m.isServerOnline('nope'), isFalse);
     });
 
-    test('servers map is unmodifiable', () {
+    test('plexServers map is unmodifiable', () {
       final m = MultiServerManager();
       addTearDown(m.dispose);
 
       // Map.unmodifiable rejects every mutating operation — clear() is the
       // simplest no-arg one to exercise the wrapper.
-      expect(() => m.servers.clear(), throwsUnsupportedError);
+      expect(() => m.plexServers.clear(), throwsUnsupportedError);
     });
   });
 
@@ -122,6 +151,176 @@ void main() {
     });
   });
 
+  group('refreshTokensForProfile', () {
+    test('successful in-place Plex token refresh clears auth-error state', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      addTearDown(db.close);
+
+      final m = MultiServerManager();
+      addTearDown(m.dispose);
+
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: 'https://plex.example',
+          token: 'old-token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: '1.0.0',
+        ),
+        serverId: 'server-1',
+        serverName: 'Plex',
+        httpClient: MockClient((_) async => http.Response('{}', 200)),
+      );
+      m.debugRegisterClientForTesting(client, online: true);
+      m.debugMarkAuthErrorForTesting('server-1');
+
+      final bound = await m.refreshTokensForProfile(
+        PlexAccountConnection(
+          id: 'account-1',
+          accountToken: 'account-token',
+          clientIdentifier: 'client-id',
+          accountLabel: 'Account',
+          servers: [
+            PlexServer(
+              name: 'Plex',
+              clientIdentifier: 'server-1',
+              accessToken: 'new-token',
+              connections: const [],
+              owned: true,
+            ),
+          ],
+          createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+        ),
+      );
+
+      expect(bound, {'server-1'});
+      expect(m.authErrorServerIds, isNot(contains('server-1')));
+      expect(client.config.token, 'new-token');
+    });
+  });
+
+  group('Jellyfin connection updates', () {
+    test('persists refreshed admin status discovered during health checks', () async {
+      final persisted = <JellyfinConnection>[];
+      final persistStarted = Completer<void>();
+      final allowPersist = Completer<void>();
+      final client = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-a'),
+        httpClient: MockClient((request) async {
+          expect(request.url.path, '/Users/Me');
+          return http.Response(
+            '{"Policy":{"IsAdministrator":true}}',
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.close);
+      final m = MultiServerManager()
+        ..onJellyfinConnectionUpdated = (connection) async {
+          persistStarted.complete();
+          await allowPersist.future;
+          persisted.add(connection);
+        };
+      addTearDown(m.dispose);
+      m.debugRegisterJellyfinClientForTesting(client);
+
+      final healthFuture = m.checkServerHealth();
+      await persistStarted.future;
+      expect(persisted, isEmpty);
+      allowPersist.complete();
+      await healthFuture;
+
+      expect(persisted, hasLength(1));
+      expect(persisted.single.isAdministrator, isTrue);
+    });
+
+    test('health remains online when persisting refreshed admin status fails', () async {
+      final client = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-a'),
+        httpClient: MockClient(
+          (_) async =>
+              http.Response('{"Policy":{"IsAdministrator":true}}', 200, headers: {'content-type': 'application/json'}),
+        ),
+      );
+      addTearDown(client.close);
+      final m = MultiServerManager()
+        ..onJellyfinConnectionUpdated = (_) async {
+          throw Exception('disk full');
+        };
+      addTearDown(m.dispose);
+      m.debugRegisterJellyfinClientForTesting(client);
+
+      await m.checkServerHealth();
+
+      expect(m.isServerOnline('jf-machine'), isTrue);
+      expect(m.isOwnerOrAdmin('jf-machine'), isTrue);
+    });
+
+    test('ignores stale admin-status persistence from a replaced Jellyfin client', () async {
+      final persisted = <JellyfinConnection>[];
+      final requestStarted = Completer<void>();
+      final allowResponse = Completer<void>();
+      final oldClient = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-a'),
+        httpClient: MockClient((_) async {
+          requestStarted.complete();
+          await allowResponse.future;
+          return http.Response(
+            '{"Policy":{"IsAdministrator":true}}',
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      final newClient = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-a').copyWith(accessToken: 'new-token'),
+        httpClient: MockClient((_) async => http.Response('{}', 200)),
+      );
+      addTearDown(oldClient.close);
+      final m = MultiServerManager()..onJellyfinConnectionUpdated = persisted.add;
+      addTearDown(m.dispose);
+
+      m.debugRegisterJellyfinClientForTesting(oldClient);
+      final healthFuture = m.checkServerHealth();
+      await requestStarted.future;
+      m.debugRegisterJellyfinClientForTesting(newClient);
+      allowResponse.complete();
+      await healthFuture;
+
+      expect(persisted, isEmpty);
+      expect(m.getJellyfinClientByCompoundId('jf-machine/user-a'), same(newClient));
+    });
+
+    test('ignores stale health status when active Jellyfin user changes mid-check', () async {
+      final requestStarted = Completer<void>();
+      final allowResponse = Completer<void>();
+      final userA = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-a'),
+        httpClient: MockClient((_) async {
+          requestStarted.complete();
+          await allowResponse.future;
+          return http.Response('', 403);
+        }),
+      );
+      final userB = _jellyfinClient('user-b');
+      final m = MultiServerManager();
+      addTearDown(m.dispose);
+
+      m.debugRegisterJellyfinClientForTesting(userA);
+      final healthFuture = m.checkServerHealth();
+      await requestStarted.future;
+      m.debugRegisterJellyfinClientForTesting(userB, online: true);
+      allowResponse.complete();
+      await healthFuture;
+
+      expect(m.getClient('jf-machine'), same(userB));
+      expect(m.isServerOnline('jf-machine'), isTrue);
+      expect(m.authErrorServerIds, isNot(contains('jf-machine')));
+    });
+  });
+
   // ============================================================
   // removeServer
   // ============================================================
@@ -162,6 +361,23 @@ void main() {
       expect(emitted, hasLength(1));
       expect(emitted.first, isEmpty);
     });
+
+    test('removing a Jellyfin machine clears every scoped user client', () {
+      final m = MultiServerManager();
+      addTearDown(m.dispose);
+
+      m.debugRegisterJellyfinClientForTesting(_jellyfinClient('user-a'));
+      m.debugRegisterJellyfinClientForTesting(_jellyfinClient('user-b'));
+
+      expect(m.getJellyfinClientByCompoundId('jf-machine/user-a'), isNotNull);
+      expect(m.getJellyfinClientByCompoundId('jf-machine/user-b'), isNotNull);
+
+      m.removeServer('jf-machine');
+
+      expect(m.getClient('jf-machine'), isNull);
+      expect(m.getJellyfinClientByCompoundId('jf-machine/user-a'), isNull);
+      expect(m.getJellyfinClientByCompoundId('jf-machine/user-b'), isNull);
+    });
   });
 
   // ============================================================
@@ -187,6 +403,20 @@ void main() {
       expect(m.onlineServerIds, isEmpty);
       expect(m.offlineServerIds, isEmpty);
       expect(emitted.last, isEmpty);
+    });
+
+    test('clears inactive Jellyfin scoped clients', () {
+      final m = MultiServerManager();
+      addTearDown(m.dispose);
+
+      m.debugRegisterJellyfinClientForTesting(_jellyfinClient('user-a'));
+      m.debugRegisterJellyfinClientForTesting(_jellyfinClient('user-b'));
+
+      m.disconnectAll();
+
+      expect(m.getClient('jf-machine'), isNull);
+      expect(m.getJellyfinClientByCompoundId('jf-machine/user-a'), isNull);
+      expect(m.getJellyfinClientByCompoundId('jf-machine/user-b'), isNull);
     });
   });
 

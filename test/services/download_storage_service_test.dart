@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-import 'package:plezy/models/plex_metadata.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -579,21 +581,34 @@ void main() {
 }
 
 // ============================================================
-// PlexMetadata fixtures (only the fields the SUT actually reads)
+// MediaItem fixtures (only the fields the SUT actually reads)
 // ============================================================
 
-PlexMetadata _movie({required String title, int? year}) {
-  return PlexMetadata(ratingKey: 'm-${title.hashCode}', type: 'movie', title: title, year: year);
+MediaItem _movie({required String title, int? year}) {
+  return MediaItem(
+    id: 'm-${title.hashCode}',
+    backend: MediaBackend.plex,
+    kind: MediaKind.movie,
+    title: title,
+    year: year,
+  );
 }
 
-PlexMetadata _show({required String title, int? year}) {
-  return PlexMetadata(ratingKey: 's-${title.hashCode}', type: 'show', title: title, year: year);
+MediaItem _show({required String title, int? year}) {
+  return MediaItem(
+    id: 's-${title.hashCode}',
+    backend: MediaBackend.plex,
+    kind: MediaKind.show,
+    title: title,
+    year: year,
+  );
 }
 
-PlexMetadata _season({required String showTitle, int? showYear, required int seasonNumber}) {
-  return PlexMetadata(
-    ratingKey: 'season-$showTitle-$seasonNumber',
-    type: 'season',
+MediaItem _season({required String showTitle, int? showYear, required int seasonNumber}) {
+  return MediaItem(
+    id: 'season-$showTitle-$seasonNumber',
+    backend: MediaBackend.plex,
+    kind: MediaKind.season,
     title: 'Season $seasonNumber',
     grandparentTitle: showTitle,
     year: showYear,
@@ -601,16 +616,17 @@ PlexMetadata _season({required String showTitle, int? showYear, required int sea
   );
 }
 
-PlexMetadata _episode({
+MediaItem _episode({
   required String showTitle,
   int? showYear,
   required int seasonNumber,
   required int episodeNumber,
   required String episodeTitle,
 }) {
-  return PlexMetadata(
-    ratingKey: 'ep-$showTitle-$seasonNumber-$episodeNumber',
-    type: 'episode',
+  return MediaItem(
+    id: 'ep-$showTitle-$seasonNumber-$episodeNumber',
+    backend: MediaBackend.plex,
+    kind: MediaKind.episode,
     title: episodeTitle,
     grandparentTitle: showTitle,
     year: showYear,

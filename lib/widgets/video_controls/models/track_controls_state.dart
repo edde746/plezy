@@ -1,20 +1,20 @@
 import 'package:flutter/material.dart';
 
-import '../../../models/plex_media_info.dart';
-import '../../../models/plex_media_version.dart';
-import '../../../models/plex_metadata.dart';
+import '../../../media/media_item.dart';
+import '../../../media/media_version.dart';
+import '../../../media/media_source_info.dart';
 import '../../../models/transcode_quality_preset.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/shader_service.dart';
 
 /// Immutable configuration for track/chapter control widgets.
 class TrackControlsState {
-  final List<PlexMediaVersion> availableVersions;
+  final List<MediaVersion> availableVersions;
   final int selectedMediaIndex;
   final TranscodeQualityPreset selectedQualityPreset;
   final bool serverSupportsTranscoding;
   final bool isTranscoding;
-  final List<PlexAudioTrack> sourceAudioTracks;
+  final List<MediaAudioTrack> sourceAudioTracks;
   final int? selectedAudioStreamId;
 
   /// Total media duration in milliseconds. Used by the version/quality sheet
@@ -52,10 +52,16 @@ class TrackControlsState {
   final bool isLive;
   final bool subtitlesVisible;
   final bool showQueueButton;
-  final Function(PlexMetadata)? onQueueItemSelected;
+  final Function(MediaItem)? onQueueItemSelected;
   final String ratingKey;
   final String? mediaTitle;
   final Future<void> Function()? onSubtitleDownloaded;
+
+  /// Whether OpenSubtitles search is reachable for this server. The Plex
+  /// server proxies the OpenSubtitles plugin; Jellyfin doesn't expose an
+  /// equivalent. The track sheet hides the "Search subtitles" tile when
+  /// this is false.
+  final bool subtitleSearchSupported;
 
   const TrackControlsState({
     this.availableVersions = const [],
@@ -102,5 +108,6 @@ class TrackControlsState {
     this.ratingKey = '',
     this.mediaTitle,
     this.onSubtitleDownloaded,
+    this.subtitleSearchSupported = true,
   });
 }

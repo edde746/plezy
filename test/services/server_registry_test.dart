@@ -61,7 +61,7 @@ void main() {
     registry = ServerRegistry(storage);
   }
 
-  group('getServers', () {
+  group('getServers (legacy migration read)', () {
     test('returns empty list when no servers JSON is set', () async {
       await bootstrap();
       expect(await registry.getServers(), isEmpty);
@@ -69,177 +69,30 @@ void main() {
 
     test('returns empty list for empty-string JSON', () async {
       await bootstrap();
-      await storage.saveServersListJson('');
+      await storage.prefs.setString('servers_list', '');
       expect(await registry.getServers(), isEmpty);
     });
 
     test('returns empty list when stored JSON is malformed', () async {
       await bootstrap();
-      await storage.saveServersListJson('not-valid-json');
+      await storage.prefs.setString('servers_list', 'not-valid-json');
       // Corrupt JSON is logged and treated as no servers, NOT thrown.
       expect(await registry.getServers(), isEmpty);
     });
 
-    test('parses a list of servers from saved JSON', () async {
+    test('parses a list of servers from raw JSON written under the legacy key', () async {
       await bootstrap();
       final s1 = _server(clientIdentifier: 'a');
       final s2 = _server(clientIdentifier: 'b', name: 'Other');
-      await registry.saveServers([s1, s2]);
+      await storage.prefs.setString('servers_list', jsonEncode([s1.toJson(), s2.toJson()]));
 
       final loaded = await registry.getServers();
       expect(loaded.map((s) => s.clientIdentifier).toList(), ['a', 'b']);
       expect(loaded.first.name, 'Home Server');
       expect(loaded.last.name, 'Other');
     });
-  });
 
-  group('saveServers', () {
-    test('overwrites stored JSON with the latest list', () async {
-      await bootstrap();
-      await registry.saveServers([_server(clientIdentifier: 'a')]);
-      await registry.saveServers([_server(clientIdentifier: 'b'), _server(clientIdentifier: 'c', name: 'Cee')]);
-
-      final loaded = await registry.getServers();
-      expect(loaded.map((s) => s.clientIdentifier).toList(), ['b', 'c']);
-    });
-
-    test('saving empty list yields empty getServers', () async {
-      await bootstrap();
-      await registry.saveServers([_server(clientIdentifier: 'a')]);
-      await registry.saveServers([]);
-      expect(await registry.getServers(), isEmpty);
-    });
-
-    test('persists JSON in a shape parseable by PlexServer.fromJson', () async {
-      await bootstrap();
-      final s = _server(clientIdentifier: 'srv-z', name: 'Zee');
-      await registry.saveServers([s]);
-
-      final raw = storage.getServersListJson();
-      expect(raw, isNotNull);
-      final decoded = jsonDecode(raw!) as List<dynamic>;
-      expect(decoded, hasLength(1));
-
-      final parsed = PlexServer.fromJson(decoded.first as Map<String, dynamic>);
-      expect(parsed.clientIdentifier, 'srv-z');
-      expect(parsed.name, 'Zee');
-    });
-  });
-
-  group('getServer', () {
-    test('returns matching server', () async {
-      await bootstrap();
-      await registry.saveServers([_server(clientIdentifier: 'a'), _server(clientIdentifier: 'b', name: 'Bee')]);
-      final found = await registry.getServer('b');
-      expect(found, isNotNull);
-      expect(found!.name, 'Bee');
-    });
-
-    test('returns null when id is unknown', () async {
-      await bootstrap();
-      await registry.saveServers([_server(clientIdentifier: 'a')]);
-      expect(await registry.getServer('missing'), isNull);
-    });
-
-    test('returns null when no servers are stored', () async {
-      await bootstrap();
-      expect(await registry.getServer('anything'), isNull);
-    });
-  });
-
-  group('upsertServer', () {
-    test('adds a new server when id is not present', () async {
-      await bootstrap();
-      await registry.upsertServer(_server(clientIdentifier: 'a'));
-      final servers = await registry.getServers();
-      expect(servers, hasLength(1));
-      expect(servers.first.clientIdentifier, 'a');
-    });
-
-    test('updates an existing server in place (preserves order)', () async {
-      await bootstrap();
-      await registry.saveServers([
-        _server(clientIdentifier: 'a', name: 'Original A'),
-        _server(clientIdentifier: 'b', name: 'Bee'),
-        _server(clientIdentifier: 'c', name: 'Cee'),
-      ]);
-
-      await registry.upsertServer(_server(clientIdentifier: 'b', name: 'Updated B'));
-
-      final servers = await registry.getServers();
-      expect(servers.map((s) => s.clientIdentifier).toList(), ['a', 'b', 'c']);
-      expect(servers[1].name, 'Updated B');
-      expect(servers[0].name, 'Original A');
-    });
-
-    test('appends new servers in insertion order', () async {
-      await bootstrap();
-      await registry.upsertServer(_server(clientIdentifier: 'a'));
-      await registry.upsertServer(_server(clientIdentifier: 'b'));
-      await registry.upsertServer(_server(clientIdentifier: 'c'));
-
-      final servers = await registry.getServers();
-      expect(servers.map((s) => s.clientIdentifier).toList(), ['a', 'b', 'c']);
-    });
-  });
-
-  group('removeServer', () {
-    test('removes only the matching server', () async {
-      await bootstrap();
-      await registry.saveServers([
-        _server(clientIdentifier: 'a'),
-        _server(clientIdentifier: 'b'),
-        _server(clientIdentifier: 'c'),
-      ]);
-      await registry.removeServer('b');
-      final servers = await registry.getServers();
-      expect(servers.map((s) => s.clientIdentifier).toList(), ['a', 'c']);
-    });
-
-    test('removing an unknown id is a no-op', () async {
-      await bootstrap();
-      await registry.saveServers([_server(clientIdentifier: 'a')]);
-      await registry.removeServer('missing');
-      final servers = await registry.getServers();
-      expect(servers.map((s) => s.clientIdentifier).toList(), ['a']);
-    });
-
-    test('removing on empty list is a no-op', () async {
-      await bootstrap();
-      await registry.removeServer('a');
-      expect(await registry.getServers(), isEmpty);
-    });
-  });
-
-  group('clearAllServers', () {
-    test('clears the underlying servers list JSON', () async {
-      await bootstrap();
-      await registry.saveServers([_server(clientIdentifier: 'a'), _server(clientIdentifier: 'b')]);
-
-      await registry.clearAllServers();
-
-      expect(await registry.getServers(), isEmpty);
-      expect(storage.getServersListJson(), isNull);
-    });
-  });
-
-  group('refreshServersFromApi', () {
-    test('returns noToken when no Plex token is stored', () async {
-      await bootstrap();
-      final result = await registry.refreshServersFromApi();
-      expect(result, ServerRefreshResult.noToken);
-    });
-
-    test('returns noToken for empty Plex token', () async {
-      await bootstrap();
-      await storage.savePlexToken('');
-      final result = await registry.refreshServersFromApi();
-      expect(result, ServerRefreshResult.noToken);
-    });
-  });
-
-  group('Round-trip via raw storage', () {
-    test('saveServers preserves all PlexServer fields after re-read', () async {
+    test('preserves all PlexServer fields after re-read from raw JSON', () async {
       await bootstrap();
       final original = _server(
         clientIdentifier: 'rt',
@@ -255,7 +108,7 @@ void main() {
         ],
       );
 
-      await registry.saveServers([original]);
+      await storage.prefs.setString('servers_list', jsonEncode([original.toJson()]));
       final loaded = (await registry.getServers()).single;
 
       expect(loaded.name, original.name);

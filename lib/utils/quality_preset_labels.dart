@@ -29,26 +29,44 @@ String _formatBitrate(int kbps) {
 
 /// File-size hint for a quality row, e.g. `3.6 GB (45%)`. Transcode presets
 /// append the ratio vs. source so the user can compare at a glance; Original
-/// returns just the raw source size. Returns `null` when inputs are missing.
+/// returns the raw source size. Prefers [sourceSizeBytes] when known (the
+/// actual file size, matches what File Info shows) and falls back to
+/// `bitrate × duration` when only bitrate is available. Returns `null`
+/// when inputs are missing.
 String? qualityPresetSizeEstimate({
   required TranscodeQualityPreset preset,
   required int? sourceBitrateKbps,
   required int? sourceDurationMs,
+  int? sourceSizeBytes,
 }) {
-  if (sourceDurationMs == null || sourceDurationMs <= 0) return null;
-
   if (preset.isOriginal) {
+    if (sourceSizeBytes != null && sourceSizeBytes > 0) {
+      return ByteFormatter.formatBytes(sourceSizeBytes);
+    }
+    if (sourceDurationMs == null || sourceDurationMs <= 0) return null;
     if (sourceBitrateKbps == null || sourceBitrateKbps <= 0) return null;
     return ByteFormatter.formatBytes(sourceBitrateKbps * sourceDurationMs ~/ 8);
   }
 
+  if (sourceDurationMs == null || sourceDurationMs <= 0) return null;
   final videoKbps = preset.videoBitrateKbps;
   if (videoKbps == null) return null;
   final totalKbps = videoKbps + _audioBitrateEstimateKbps;
-  final size = ByteFormatter.formatBytes(totalKbps * sourceDurationMs ~/ 8);
+  final estimatedBytes = totalKbps * sourceDurationMs ~/ 8;
+  final size = ByteFormatter.formatBytes(estimatedBytes);
 
-  if (sourceBitrateKbps != null && sourceBitrateKbps > 0) {
-    final pct = (totalKbps * 100 / sourceBitrateKbps).round();
+  // Percentage compares estimated transcode size to the same source figure
+  // the "Original" row displays — the real file size when known, otherwise
+  // the bitrate × duration estimate. Mixing the two bases (real file size
+  // vs. bitrate-based estimate) was causing visible mismatches.
+  int? sourceBytes;
+  if (sourceSizeBytes != null && sourceSizeBytes > 0) {
+    sourceBytes = sourceSizeBytes;
+  } else if (sourceBitrateKbps != null && sourceBitrateKbps > 0) {
+    sourceBytes = sourceBitrateKbps * sourceDurationMs ~/ 8;
+  }
+  if (sourceBytes != null && sourceBytes > 0) {
+    final pct = (estimatedBytes * 100 / sourceBytes).round();
     return '$size ($pct%)';
   }
   return size;
@@ -61,6 +79,7 @@ Future<TranscodeQualityPreset?> showQualityPickerDialog(
   String? title,
   int? sourceBitrateKbps,
   int? sourceDurationMs,
+  int? sourceSizeBytes,
 }) {
   String labelFor(TranscodeQualityPreset p) {
     final base = qualityPresetLabel(p);
@@ -68,6 +87,7 @@ Future<TranscodeQualityPreset?> showQualityPickerDialog(
       preset: p,
       sourceBitrateKbps: sourceBitrateKbps,
       sourceDurationMs: sourceDurationMs,
+      sourceSizeBytes: sourceSizeBytes,
     );
     return size == null ? base : toBulletedString([base, size]);
   }

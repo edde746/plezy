@@ -1,3 +1,8 @@
 input_directory: lib/i18n
 input_file_pattern: .i18n.json
 output_directory: lib/i18n
+# Fall back to base (en) for any key missing in a non-base locale.
+# Without this, every locale would need every key declared up-front and
+# the generator would emit `class is missing implementations for…`
+# errors when a new English string lands.
+fallback_strategy: base_locale

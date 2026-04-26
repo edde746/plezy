@@ -1,11 +1,10 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
-import '../../../models/plex_media_info.dart';
+import '../../../media/media_source_info.dart';
 import '../../../mpv/models.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../focus/input_mode_tracker.dart';
+import '../../../services/scrub_preview_source.dart';
 import '../../../utils/formatters.dart';
 import '../painters/buffer_range_painter.dart';
 
@@ -17,7 +16,7 @@ class TimelineSlider extends StatefulWidget {
   final Duration position;
   final Duration duration;
   final List<BufferRange> bufferRanges;
-  final List<PlexChapter> chapters;
+  final List<MediaChapter> chapters;
   final bool chaptersLoaded;
   final ValueChanged<Duration> onSeek;
   final ValueChanged<Duration> onSeekEnd;
@@ -34,8 +33,10 @@ class TimelineSlider extends StatefulWidget {
   /// Whether the slider is enabled for interaction.
   final bool enabled;
 
-  /// Optional callback that returns thumbnail image bytes for a given timestamp.
-  final Uint8List? Function(Duration time)? thumbnailDataBuilder;
+  /// Optional callback that returns a scrub-preview frame for a given timestamp.
+  /// Plex returns [BytesScrubFrame] (BIF JPEG bytes); Jellyfin returns
+  /// [SheetScrubFrame] (sprite-sheet URL + crop). The tooltip renders both.
+  final ScrubFrame? Function(Duration time)? thumbnailDataBuilder;
 
   /// When true, show the preview thumbnail at the current playback position.
   /// Intended for sustained dpad/keyboard seeking where the decoder cannot
@@ -72,14 +73,13 @@ class _TimelineSliderState extends State<TimelineSlider> {
   static const _sliderPadding = 0.0;
 
   static const _thumbWidth = 160.0;
-  static const _thumbHeight = 90.0;
 
   Widget _buildTooltip(double sliderWidth, double pixelX, Duration time) {
-    final thumbnailData = widget.thumbnailDataBuilder?.call(time);
-    final hasThumbnail = thumbnailData != null;
+    final frame = widget.thumbnailDataBuilder?.call(time);
+    final hasThumbnail = frame != null;
 
     final tooltipWidth = hasThumbnail ? _thumbWidth : 64.0;
-    final tooltipHeight = hasThumbnail ? _thumbHeight : 26.0;
+    final tooltipHeight = hasThumbnail ? _thumbWidth / frame.aspectRatio : 26.0;
     final tooltipTop = -(tooltipHeight + 2.0);
 
     // Center tooltip on cursor, clamped so it stays within the slider bounds
@@ -108,8 +108,8 @@ class _TimelineSliderState extends State<TimelineSlider> {
       child: IgnorePointer(
         child: hasThumbnail
             ? Container(
-                width: _thumbWidth,
-                height: _thumbHeight,
+                width: tooltipWidth,
+                height: tooltipHeight,
                 decoration: BoxDecoration(
                   color: Colors.black,
                   borderRadius: const BorderRadius.all(Radius.circular(6)),
@@ -119,12 +119,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    Image.memory(
-                      thumbnailData,
-                      fit: BoxFit.cover,
-                      gaplessPlayback: true,
-                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                    ),
+                    _ScrubFrameView(frame: frame),
                     Positioned(bottom: 4, left: 0, right: 0, child: Center(child: timeLabel)),
                   ],
                 ),
@@ -253,5 +248,54 @@ class _TimelineSliderState extends State<TimelineSlider> {
         );
       },
     );
+  }
+}
+
+class _ScrubFrameView extends StatelessWidget {
+  final ScrubFrame frame;
+  const _ScrubFrameView({required this.frame});
+
+  @override
+  Widget build(BuildContext context) {
+    final f = frame;
+    switch (f) {
+      case BytesScrubFrame():
+        return Image.memory(
+          f.bytes,
+          fit: BoxFit.cover,
+          gaplessPlayback: true,
+          errorBuilder: (_, _, _) => const SizedBox.shrink(),
+        );
+      case SheetScrubFrame():
+        // The parent tooltip box matches the source tile aspect (see
+        // `tooltipHeight = tooltipWidth / frame.aspectRatio` above), so each
+        // source tile maps 1:1 to the box without distortion or cropping.
+        return LayoutBuilder(
+          builder: (context, constraints) {
+            final tileW = constraints.maxWidth;
+            final tileH = constraints.maxHeight;
+            final sheetW = tileW * f.sheetColumns;
+            final sheetH = tileH * f.sheetRows;
+            return ClipRect(
+              child: OverflowBox(
+                maxWidth: sheetW,
+                maxHeight: sheetH,
+                alignment: Alignment.topLeft,
+                child: Transform.translate(
+                  offset: Offset(-f.tileColumn * tileW, -f.tileRow * tileH),
+                  child: Image(
+                    image: f.sheet,
+                    width: sheetW,
+                    height: sheetH,
+                    fit: BoxFit.fill,
+                    gaplessPlayback: true,
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+    }
   }
 }

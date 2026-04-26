@@ -81,7 +81,9 @@ void main() {
       await prefs.setString('plex_token', 'abc');
       await prefs.setString('client_identifier', 'xyz');
       await prefs.setString('current_user_uuid', 'user-1');
+      await prefs.setString('active_app_profile_id', 'profile-1');
       await prefs.setString('user_profile', '{}');
+      await prefs.setString('credential_vault_key_v1', 'base64-key');
       // Plus a good-faith key that should stay.
       await prefs.setBool('keep_me', true);
 
@@ -91,16 +93,20 @@ void main() {
       expect(p, isNot(contains('plex_token')));
       expect(p, isNot(contains('client_identifier')));
       expect(p, isNot(contains('current_user_uuid')));
+      expect(p, isNot(contains('active_app_profile_id')));
       expect(p, isNot(contains('user_profile')));
+      expect(p, isNot(contains('credential_vault_key_v1')));
       expect(p, contains('keep_me'));
     });
 
-    test('drops prefix-deny keys (server_endpoint_, episode_count_, watched_threshold_, trakt_)', () async {
+    test('drops prefix-deny keys', () async {
       final prefs = await BaseSharedPreferencesService.sharedCache();
       await prefs.setString('server_endpoint_srv1', 'http://x');
       await prefs.setInt('episode_count_show42', 24);
       await prefs.setInt('watched_threshold_srv1', 95);
       await prefs.setString('trakt_access_token', 'secret');
+      await prefs.setString('plex_home_users_conn-1', '[{"title":"Kid"}]');
+      await prefs.setInt('profile_last_used_profile-1', 123);
       // The trakt feature flag uses a different prefix and SHOULD survive.
       await prefs.setBool('enable_trakt_scrobble', true);
 
@@ -111,6 +117,8 @@ void main() {
       expect(p, isNot(contains('episode_count_show42')));
       expect(p, isNot(contains('watched_threshold_srv1')));
       expect(p, isNot(contains('trakt_access_token')));
+      expect(p, isNot(contains('plex_home_users_conn-1')));
+      expect(p, isNot(contains('profile_last_used_profile-1')));
       expect(p, contains('enable_trakt_scrobble'));
     });
 
@@ -366,7 +374,11 @@ void main() {
           'formatVersion': SettingsExportService.formatVersion,
           'prefs': {
             'plex_token': {'type': 'string', 'value': 'malicious'},
+            'credential_vault_key_v1': {'type': 'string', 'value': 'attacker-key'},
+            'active_app_profile_id': {'type': 'string', 'value': 'stale-profile'},
             'server_endpoint_srv': {'type': 'string', 'value': 'http://attacker.test'},
+            'plex_home_users_conn': {'type': 'string', 'value': '[]'},
+            'profile_last_used_stale': {'type': 'int', 'value': 1},
             'good_key': {'type': 'bool', 'value': true},
           },
         },
@@ -375,9 +387,13 @@ void main() {
       );
 
       expect(result.keysImported, 1);
-      expect(result.keysSkipped, 2);
+      expect(result.keysSkipped, 6);
       expect(prefs.getString('plex_token'), isNull);
+      expect(prefs.getString('credential_vault_key_v1'), isNull);
+      expect(prefs.getString('active_app_profile_id'), isNull);
       expect(prefs.getString('server_endpoint_srv'), isNull);
+      expect(prefs.getString('plex_home_users_conn'), isNull);
+      expect(prefs.getInt('profile_last_used_stale'), isNull);
       expect(prefs.getBool('good_key'), isTrue);
     });
   });

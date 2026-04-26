@@ -1,9 +1,10 @@
 import 'dart:async';
 
-import '../../models/plex_metadata.dart';
+import '../../media/media_item.dart';
+import '../../media/media_kind.dart';
+import '../../media/media_server_client.dart';
 import '../../models/trackers/tracker_context.dart';
 import '../../utils/app_logger.dart';
-import '../plex_client.dart';
 import 'anilist/anilist_tracker.dart';
 import 'mal/mal_tracker.dart';
 import 'simkl/simkl_tracker.dart';
@@ -36,16 +37,16 @@ class TrackerCoordinator {
     await Future.wait(_trackers.map((t) => t.initialize()));
   }
 
-  Future<void> startPlayback(PlexMetadata metadata, PlexClient plexClient, {bool isLive = false}) async {
+  Future<void> startPlayback(MediaItem metadata, MediaServerClient client, {bool isLive = false}) async {
     if (isLive) return;
-    final mediaType = metadata.mediaType;
-    if (mediaType != PlexMediaType.movie && mediaType != PlexMediaType.episode) return;
+    final mediaType = metadata.kind;
+    if (mediaType != MediaKind.movie && mediaType != MediaKind.episode) return;
     if (!_trackers.any((t) => t.canScrobble)) return;
 
-    _resolver ??= TrackerIdResolver(plexClient, needsFribb: _anyTrackerNeedsFribb);
+    _resolver ??= TrackerIdResolver(client, needsFribb: _anyTrackerNeedsFribb);
     final ctx = await _buildContext(metadata);
     if (ctx == null) {
-      appLogger.d('Trackers: no external IDs for ${metadata.ratingKey}');
+      appLogger.d('Trackers: no external IDs for ${metadata.id}');
       _reset();
       return;
     }
@@ -121,19 +122,19 @@ class TrackerCoordinator {
     );
   }
 
-  Future<TrackerContext?> _buildContext(PlexMetadata metadata) async {
+  Future<TrackerContext?> _buildContext(MediaItem metadata) async {
     final resolver = _resolver;
     if (resolver == null) return null;
 
-    final libraryKey = metadata.librarySectionGlobalKey;
+    final libraryKey = metadata.libraryGlobalKey;
 
-    if (metadata.mediaType == PlexMediaType.movie) {
-      final ids = await resolver.resolveForMovie(metadata.ratingKey);
+    if (metadata.kind == MediaKind.movie) {
+      final ids = await resolver.resolveForMovie(metadata.id);
       if (ids == null) return null;
       return TrackerContext.movie(
         external: ids.external,
         anime: ids.anime,
-        ratingKey: metadata.ratingKey,
+        ratingKey: metadata.id,
         libraryGlobalKey: libraryKey,
       );
     }
@@ -147,7 +148,7 @@ class TrackerCoordinator {
     return TrackerContext.episode(
       external: ids.external,
       anime: ids.anime,
-      ratingKey: metadata.ratingKey,
+      ratingKey: metadata.id,
       libraryGlobalKey: libraryKey,
       season: season,
       episodeNumber: number,

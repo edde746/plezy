@@ -2,12 +2,84 @@ import 'package:drift/drift.dart';
 
 import 'app_database.dart';
 import '../models/download_models.dart';
+import '../profiles/profile.dart';
 
 /// Extension methods on AppDatabase for download operations
 extension DownloadDatabaseOperations on AppDatabase {
-  /// Insert a new download into the database
+  Future<void> addDownloadOwner({required String profileId, required String globalKey}) async {
+    if (profileId.isEmpty) return;
+    await into(downloadOwners).insert(
+      DownloadOwnersCompanion.insert(
+        profileId: profileId,
+        globalKey: globalKey,
+        createdAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+      mode: InsertMode.insertOrIgnore,
+    );
+  }
+
+  Future<void> removeDownloadOwner({required String profileId, required String globalKey}) async {
+    await (delete(downloadOwners)..where((t) => t.profileId.equals(profileId) & t.globalKey.equals(globalKey))).go();
+  }
+
+  Future<void> removeDownloadOwnersForProfile(String profileId) async {
+    if (profileId.isEmpty) return;
+    await (delete(downloadOwners)..where((t) => t.profileId.equals(profileId))).go();
+  }
+
+  Future<Set<String>> getDownloadOwnerKeysForProfile(String profileId) async {
+    if (profileId.isEmpty) return const {};
+    final rows = await (select(downloadOwners)..where((t) => t.profileId.equals(profileId))).get();
+    return rows.map((row) => row.globalKey).toSet();
+  }
+
+  Future<int> getDownloadOwnerCount(String globalKey) async {
+    return (await _validDownloadOwnerRows(globalKey)).length;
+  }
+
+  Future<bool> hasDownloadOwner(String globalKey, {String? excludingProfileId}) async {
+    final rows = await _validDownloadOwnerRows(globalKey, excludingProfileId: excludingProfileId);
+    return rows.isNotEmpty;
+  }
+
+  Future<List<DownloadOwnerItem>> _validDownloadOwnerRows(String globalKey, {String? excludingProfileId}) async {
+    final rows = await (select(downloadOwners)..where((t) => t.globalKey.equals(globalKey))).get();
+    if (rows.isEmpty) return const [];
+    final candidates = rows
+        .where((row) => excludingProfileId == null || excludingProfileId.isEmpty || row.profileId != excludingProfileId)
+        .toList(growable: false);
+    if (candidates.isEmpty) return const [];
+
+    final localProfileRows = await select(profiles).get();
+    final localProfileIds = localProfileRows.map((row) => row.id).toSet();
+    final connectionRows = await select(connections).get();
+    final connectionIds = connectionRows.map((row) => row.id).toSet();
+    return candidates
+        .where((row) {
+          if (localProfileIds.contains(row.profileId)) return true;
+          final plexHome = parsePlexHomeProfileId(row.profileId);
+          if (plexHome != null) return connectionIds.contains(plexHome.accountConnectionId);
+          return localProfileIds.isEmpty;
+        })
+        .toList(growable: false);
+  }
+
+  /// Claim pre-v17 shared download rows for [profileId]. Rows that already
+  /// have any owner are left untouched so later profiles do not inherit them.
+  Future<void> adoptLegacyDownloadsForProfile(String profileId) async {
+    if (profileId.isEmpty) return;
+    final rows = await select(downloadedMedia).get();
+    for (final row in rows) {
+      if (await getDownloadOwnerCount(row.globalKey) == 0) {
+        await addDownloadOwner(profileId: profileId, globalKey: row.globalKey);
+      }
+    }
+  }
+
+  /// Insert a new download into the database.
   Future<void> insertDownload({
     required String serverId,
+    String? clientScopeId,
     required String ratingKey,
     required String globalKey,
     required String type,
@@ -19,6 +91,7 @@ extension DownloadDatabaseOperations on AppDatabase {
     await into(downloadedMedia).insert(
       DownloadedMediaCompanion.insert(
         serverId: serverId,
+        clientScopeId: Value(clientScopeId),
         ratingKey: ratingKey,
         globalKey: globalKey,
         type: type,
@@ -135,23 +208,64 @@ extension DownloadDatabaseOperations on AppDatabase {
 
   /// Delete a download
   Future<void> deleteDownload(String globalKey) async {
+    await (delete(downloadOwners)..where((t) => t.globalKey.equals(globalKey))).go();
     await (delete(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).go();
     await (delete(downloadQueue)..where((t) => t.mediaGlobalKey.equals(globalKey))).go();
   }
 
   /// Get all downloaded episodes for a season
-  Future<List<DownloadedMediaItem>> getEpisodesBySeason(String seasonKey) {
-    return (select(downloadedMedia)..where((t) => t.parentRatingKey.equals(seasonKey))).get();
+  Future<List<DownloadedMediaItem>> getEpisodesBySeason(
+    String seasonKey, {
+    String? serverId,
+    String? clientScopeId,
+    bool filterClientScope = false,
+  }) {
+    return (select(downloadedMedia)..where(
+          (t) =>
+              t.parentRatingKey.equals(seasonKey) &
+              _optionalServerPredicate(t.serverId, serverId) &
+              _optionalClientScopePredicate(t.clientScopeId, clientScopeId, filterClientScope: filterClientScope),
+        ))
+        .get();
   }
 
   /// Get all downloaded episodes for a show
-  Future<List<DownloadedMediaItem>> getEpisodesByShow(String showKey) {
-    return (select(downloadedMedia)..where((t) => t.grandparentRatingKey.equals(showKey))).get();
+  Future<List<DownloadedMediaItem>> getEpisodesByShow(
+    String showKey, {
+    String? serverId,
+    String? clientScopeId,
+    bool filterClientScope = false,
+  }) {
+    return (select(downloadedMedia)..where(
+          (t) =>
+              t.grandparentRatingKey.equals(showKey) &
+              _optionalServerPredicate(t.serverId, serverId) &
+              _optionalClientScopePredicate(t.clientScopeId, clientScopeId, filterClientScope: filterClientScope),
+        ))
+        .get();
   }
 
   /// Get all downloaded items for a specific server
   Future<List<DownloadedMediaItem>> getDownloadsByServerId(String serverId) {
     return (select(downloadedMedia)..where((t) => t.serverId.equals(serverId))).get();
+  }
+
+  Expression<bool> _optionalServerPredicate(GeneratedColumn<String> column, String? serverId) {
+    return serverId == null ? const Constant(true) : column.equals(serverId);
+  }
+
+  Expression<bool> _optionalClientScopePredicate(
+    GeneratedColumn<String> column,
+    String? clientScopeId, {
+    required bool filterClientScope,
+  }) {
+    if (!filterClientScope && (clientScopeId == null || clientScopeId.isEmpty)) {
+      return const Constant(true);
+    }
+    if (clientScopeId == null || clientScopeId.isEmpty) {
+      return column.isNull() | column.equals('');
+    }
+    return column.equals(clientScopeId);
   }
 
   /// Update the background_downloader task ID for a download

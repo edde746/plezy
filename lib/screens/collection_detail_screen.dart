@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
+import '../media/library_query.dart';
+import '../media/media_item.dart';
 import '../mixins/paginated_item_loader.dart';
-import '../models/plex_metadata.dart';
 import '../providers/download_provider.dart';
-import '../services/plex_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/download_utils.dart';
 import '../utils/platform_detector.dart';
-import '../utils/plex_http_client.dart';
+import '../utils/media_server_http_client.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../i18n/strings.g.dart';
@@ -20,7 +20,7 @@ import '../mixins/grid_focus_node_mixin.dart';
 
 /// Screen to display the contents of a collection
 class CollectionDetailScreen extends StatefulWidget {
-  final PlexMetadata collection;
+  final MediaItem collection;
 
   const CollectionDetailScreen({super.key, required this.collection});
 
@@ -36,7 +36,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   static const int _pageSize = 200;
 
   @override
-  PlexMetadata get mediaItem => widget.collection;
+  MediaItem get mediaItem => widget.collection;
 
   @override
   String get title => widget.collection.title!;
@@ -55,17 +55,18 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   }
 
   @override
-  Future<LibraryContentResult> fetchPage(int start, int size, AbortController? abort) =>
-      client.getCollectionItems(widget.collection.ratingKey, start: start, size: size, abort: abort);
+  Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) {
+    return mediaClient.fetchCollectionPage(widget.collection.id, start: start, size: size, abort: abort);
+  }
 
   @override
-  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
+  void updateItemInLists(String itemId, MediaItem updatedItem) {
     // Search [loadedItems] (not the flat [items] snapshot, which only has
     // the first page) so refreshing an item at a scrolled-in position updates
     // the grid in place.
     for (final entry in loadedItems.entries) {
-      if (entry.value.ratingKey == ratingKey) {
-        loadedItems[entry.key] = updatedMetadata;
+      if (entry.value.id == itemId) {
+        loadedItems[entry.key] = updatedItem;
         return;
       }
     }
@@ -103,9 +104,10 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   @override
   List<FocusableAction> getAppBarActions() {
+    final ruleKey = _collectionSyncRuleKey();
     // Select the specific bool we care about so unrelated DownloadProvider
     // ticks (e.g. active download progress) don't rebuild the app bar.
-    final hasRule = context.select<DownloadProvider, bool>((p) => p.hasSyncRule(widget.collection.globalKey));
+    final hasRule = context.select<DownloadProvider, bool>((p) => p.hasSyncRule(ruleKey));
 
     return [
       if (hasItems) ...[
@@ -142,13 +144,16 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
     final downloadProvider = context.read<DownloadProvider>();
     try {
-      final allItems = await client.fetchAllCollectionItems(widget.collection.ratingKey);
+      // [fetchChildren] is the neutral equivalent of the Plex-only
+      // `fetchAllCollectionItemsAsMediaItems` — both backends return the
+      // collection's full contents.
+      final allItems = await mediaClient.fetchChildren(widget.collection.id);
       if (!mounted) return;
       final result = await showCollectionDownloadOptionsAndQueue(
         context,
         collectionMetadata: widget.collection,
         items: allItems,
-        client: client,
+        client: mediaClient,
         downloadProvider: downloadProvider,
       );
       if (result == null || !mounted) return;
@@ -161,32 +166,22 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     }
   }
 
-  Future<void> _manageCollectionSyncRule() => manageSyncRule(
-    context,
-    downloadProvider: context.read<DownloadProvider>(),
-    globalKey: widget.collection.globalKey,
-  );
+  Future<void> _manageCollectionSyncRule() =>
+      manageSyncRule(context, downloadProvider: context.read<DownloadProvider>(), globalKey: _collectionSyncRuleKey());
 
   Future<void> _removeCollectionSyncRule() => removeSyncRuleAndSnack(
     context,
     downloadProvider: context.read<DownloadProvider>(),
-    globalKey: widget.collection.globalKey,
+    globalKey: _collectionSyncRuleKey(),
     displayTitle: widget.collection.displayTitle,
   );
 
+  String _collectionSyncRuleKey() {
+    final serverId = widget.collection.serverId ?? mediaClient.serverId;
+    return context.read<DownloadProvider>().syncRuleKeyForClient(mediaClient, widget.collection.id, serverId: serverId);
+  }
+
   Future<void> _deleteCollection() async {
-    int? sectionId = widget.collection.librarySectionID;
-    if (sectionId == null && loadedItems.isNotEmpty) {
-      sectionId = loadedItems.values.first.librarySectionID;
-    }
-
-    if (sectionId == null) {
-      if (mounted) {
-        showErrorSnackBar(context, t.collections.unknownLibrarySection);
-      }
-      return;
-    }
-
     final confirmed = await showDeleteConfirmation(
       context,
       title: t.collections.deleteCollection,
@@ -197,7 +192,9 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     if (!mounted) return;
 
     try {
-      final success = await client.deleteCollection(sectionId.toString(), widget.collection.ratingKey);
+      // Backend-neutral [deleteCollection] reads `libraryId` from the
+      // [MediaItem] for Plex's section-id; Jellyfin ignores it.
+      final success = await mediaClient.deleteCollection(widget.collection);
 
       if (!mounted) return;
 
@@ -227,7 +224,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
             itemAt: (index) => loadedItems[index],
             onRefresh: updateItem,
             onSkeletonVisible: (index) => ensureIndexLoaded(index, pageSize: _pageSize),
-            collectionId: widget.collection.ratingKey,
+            collectionId: widget.collection.id,
             onListRefresh: loadItems,
           ),
       ],

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../focus/focusable_action_bar.dart';
 import '../../i18n/strings.g.dart';
+import '../../media/live_tv_support.dart';
 import '../../models/livetv_channel.dart';
 import '../../models/livetv_dvr.dart';
 import '../../mixins/refreshable.dart';
@@ -47,19 +48,39 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
   // Favorites
   bool _showFavoritesOnly = false;
-  Set<String> _favoriteChannelIds = {};
+  Set<String> _favoriteKeys = {};
   List<FavoriteChannel> _favoriteChannels = [];
 
-  /// Source URI per server, built from machineIdentifier + EPG provider identifier.
-  final Map<String, String> _favoriteSourceByServer = {};
+  /// Source URI per Live TV server/DVR, built from machineIdentifier + EPG provider identifier.
+  final Map<String, String> _favoriteSourceByLiveServer = {};
+  final Map<String, String> _favoriteSourceByChannel = {};
+  final Map<String, String> _favoriteStoreByLiveServer = {};
+  final Map<String, String> _favoriteStoreByChannel = {};
+  final Map<String, String> _favoriteStoreBySource = {};
+  final Map<String, FavoriteChannelPersistenceMode> _favoriteModeByStore = {};
 
   List<LiveTvChannel> get _filteredChannels {
-    if (!_showFavoritesOnly || _favoriteChannelIds.isEmpty) return _channels;
-    final channelMap = {for (final c in _channels) c.key: c};
+    if (!_showFavoritesOnly) return _channels;
+    if (_favoriteKeys.isEmpty) return const [];
+    final channelMap = {for (final c in _channels) _favoriteKeyForChannel(c): c};
     return [
       for (final fav in _favoriteChannels)
-        if (channelMap.containsKey(fav.id)) channelMap[fav.id]!,
+        if (channelMap.containsKey(fav.stableKey)) channelMap[fav.stableKey]!,
     ];
+  }
+
+  String _liveServerScopeKey(LiveTvServerInfo serverInfo) => '${serverInfo.serverId}\u0000${serverInfo.dvrKey}';
+
+  String _sourceForChannel(LiveTvChannel channel) {
+    return channel.favoriteSource ?? _favoriteSourceByChannel[liveTvChannelScopeKey(channel)] ?? '';
+  }
+
+  String _favoriteKeyForChannel(LiveTvChannel channel) => favoriteChannelKey(_sourceForChannel(channel), channel.key);
+
+  bool _isFavoriteChannel(LiveTvChannel channel) => _favoriteKeys.contains(_favoriteKeyForChannel(channel));
+
+  void _refreshFavoriteKeys() {
+    _favoriteKeys = _favoriteChannels.map((f) => f.stableKey).toSet();
   }
 
   @override
@@ -114,6 +135,11 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     return hasMappings ? enabledKeys : null;
   }
 
+  Set<String>? _extractEnabledChannelKeysForServerInfo(LiveTvServerInfo serverInfo) {
+    final matching = serverInfo.dvrs.where((dvr) => dvr.key == serverInfo.dvrKey).toList();
+    return _extractEnabledChannelKeys(matching.isNotEmpty ? matching : serverInfo.dvrs);
+  }
+
   Future<void> _loadChannels() async {
     if (!mounted) return;
     setState(() {
@@ -135,38 +161,60 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
       final allChannels = <LiveTvChannel>[];
       final seenChannels = <String>{};
+      _favoriteSourceByLiveServer.clear();
+      _favoriteSourceByChannel.clear();
+      _favoriteStoreByLiveServer.clear();
+      _favoriteStoreByChannel.clear();
+      _favoriteStoreBySource.clear();
+      _favoriteModeByStore.clear();
 
       appLogger.d(
         'Live TV DVRs: ${liveTvServers.map((s) => '${s.serverId}/${s.dvrKey} lineup=${s.lineup}').join(', ')}',
       );
 
-      // Build a set of enabled channel keys per server from cached DVR data
-      final enabledKeysByServer = <String, Set<String>>{};
-      final processedServers = <String>{};
+      // Build a set of enabled channel keys per Live TV DVR from cached DVR data.
+      final enabledKeysByLiveServer = <String, Set<String>>{};
       for (final serverInfo in liveTvServers) {
-        if (!processedServers.add(serverInfo.serverId)) continue;
-        final enabledKeys = _extractEnabledChannelKeys(serverInfo.dvrs);
+        final enabledKeys = _extractEnabledChannelKeysForServerInfo(serverInfo);
         if (enabledKeys != null) {
-          enabledKeysByServer[serverInfo.serverId] = enabledKeys;
+          enabledKeysByLiveServer[_liveServerScopeKey(serverInfo)] = enabledKeys;
         }
       }
 
       for (final serverInfo in liveTvServers) {
         try {
-          final client = multiServer.getClientForServer(serverInfo.serverId);
-          if (client == null) continue;
+          final genericClient = multiServer.getClientForServer(serverInfo.serverId);
+          if (genericClient == null) continue;
 
-          final channels = await client.getEpgChannels(lineup: serverInfo.lineup);
-          final enabledKeys = enabledKeysByServer[serverInfo.serverId];
+          final liveTv = genericClient.liveTv;
+          final source = await liveTv.buildFavoriteChannelSource(lineup: serverInfo.lineup);
+          final storeKey = liveTv.favoriteStoreKey;
+          final liveServerKey = _liveServerScopeKey(serverInfo);
+          _favoriteSourceByLiveServer[liveServerKey] = source;
+          _favoriteStoreByLiveServer[liveServerKey] = storeKey;
+          _favoriteStoreBySource[source] = storeKey;
+          _favoriteModeByStore[storeKey] = liveTv.favoritePersistenceMode;
+
+          final channels = await genericClient.liveTv.fetchChannels(lineup: serverInfo.lineup);
+          // Plex's DVR exposes a separate enabled-channel mapping; Jellyfin
+          // already filters to subscribed channels server-side.
+          final enabledKeys = enabledKeysByLiveServer[liveServerKey];
           appLogger.d(
-            'Channels from DVR ${serverInfo.dvrKey}: ${channels.length} channels (${enabledKeys?.length ?? 'all'} enabled)',
+            'Channels from ${serverInfo.dvrKey}: ${channels.length} channels (${enabledKeys?.length ?? 'all'} enabled)',
           );
           for (final channel in channels) {
-            // Skip disabled channels if DVR has mapping data
             if (enabledKeys != null && !enabledKeys.contains(channel.key)) continue;
-            final dedupKey = '${serverInfo.serverId}:${channel.key}';
+            final scopedChannel = channel.copyWith(
+              liveDvrKey: serverInfo.dvrKey,
+              favoriteSource: source,
+              favoriteStoreKey: storeKey,
+            );
+            final dedupKey = liveTvChannelScopeKey(scopedChannel);
             if (seenChannels.add(dedupKey)) {
-              allChannels.add(channel);
+              final scopeKey = liveTvChannelScopeKey(scopedChannel);
+              _favoriteSourceByChannel[scopeKey] = source;
+              _favoriteStoreByChannel[scopeKey] = storeKey;
+              allChannels.add(scopedChannel);
             }
           }
         } catch (e) {
@@ -189,7 +237,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         _isLoading = false;
       });
 
-      // Load favorites from the first available server (favorites are cloud-synced)
+      // Load favorites by backend store: Plex is cloud/account-scoped, Jellyfin per server.
       unawaited(_loadFavorites(multiServer));
 
       if (allChannels.isNotEmpty && PlatformDetector.shouldUseSideNavigation(context)) {
@@ -210,25 +258,37 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
   Future<void> _loadFavorites(MultiServerProvider multiServer) async {
     try {
-      // Use the first available server's client to fetch favorites
+      _favoriteSourceByLiveServer.clear();
+      _favoriteStoreBySource.clear();
+      _favoriteModeByStore.clear();
+      final merged = <FavoriteChannel>[];
+      final fetchedStores = <String>{};
+      final seenFavorites = <String>{};
       for (final serverInfo in multiServer.liveTvServers) {
         final client = multiServer.getClientForServer(serverInfo.serverId);
         if (client == null) continue;
-
-        // Build and cache the source URI for this server
-        final source = await client.buildFavoriteChannelSource();
-        _favoriteSourceByServer[serverInfo.serverId] = source;
-
-        final favorites = await client.getFavoriteChannels();
-        if (!mounted) return;
-
-        setState(() {
-          _favoriteChannels = favorites;
-          _favoriteChannelIds = favorites.map((f) => f.id).toSet();
-        });
-        appLogger.d('Live TV: loaded ${favorites.length} favorite channels');
-        break; // Favorites are cloud-synced, only need to fetch once
+        final liveTv = client.liveTv;
+        final source = await liveTv.buildFavoriteChannelSource(lineup: serverInfo.lineup);
+        final storeKey = liveTv.favoriteStoreKey;
+        final liveServerKey = _liveServerScopeKey(serverInfo);
+        _favoriteSourceByLiveServer[liveServerKey] = source;
+        _favoriteStoreByLiveServer[liveServerKey] = storeKey;
+        _favoriteStoreBySource[source] = storeKey;
+        _favoriteModeByStore[storeKey] = liveTv.favoritePersistenceMode;
+        if (!fetchedStores.add(storeKey)) continue;
+        final serverFavorites = await liveTv.fetchFavoriteChannels();
+        for (final favorite in serverFavorites) {
+          _favoriteStoreBySource[favorite.source] = storeKey;
+          if (seenFavorites.add(favorite.stableKey)) merged.add(favorite);
+        }
       }
+
+      if (!mounted) return;
+      setState(() {
+        _favoriteChannels = merged;
+        _refreshFavoriteKeys();
+      });
+      appLogger.d('Live TV: loaded ${merged.length} favorite channels');
     } catch (e) {
       appLogger.e('Failed to load favorite channels', error: e);
     }
@@ -241,23 +301,26 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   }
 
   void _toggleFavorite(LiveTvChannel channel) {
-    final source = _favoriteSourceByServer[channel.serverId] ?? '';
+    final source = _sourceForChannel(channel);
+    final favoriteKey = favoriteChannelKey(source, channel.key);
+    final scopeKey = liveTvChannelScopeKey(channel);
+    final storeKey = channel.favoriteStoreKey ?? _favoriteStoreByChannel[scopeKey];
+    if (storeKey != null) _favoriteStoreBySource[source] = storeKey;
 
     setState(() {
-      if (_favoriteChannelIds.contains(channel.key)) {
-        _favoriteChannelIds = Set.from(_favoriteChannelIds)..remove(channel.key);
-        _favoriteChannels = _favoriteChannels.where((f) => f.id != channel.key).toList();
+      if (_favoriteKeys.contains(favoriteKey)) {
+        _favoriteChannels = _favoriteChannels.where((f) => f.id != channel.key || f.source != source).toList();
       } else {
-        _favoriteChannelIds = Set.from(_favoriteChannelIds)..add(channel.key);
         _favoriteChannels = [..._favoriteChannels, FavoriteChannel.fromLiveTvChannel(channel, source)];
       }
+      _refreshFavoriteKeys();
     });
 
     _persistFavorites();
   }
 
   void _showReorderFavorites() {
-    final channelMap = {for (final c in _channels) c.key: c};
+    final channelMap = {for (final c in _channels) _favoriteKeyForChannel(c): c};
 
     OverlaySheetController.showAdaptive(
       context,
@@ -267,14 +330,14 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         onReorder: (reordered) {
           setState(() {
             _favoriteChannels = reordered;
-            _favoriteChannelIds = reordered.map((f) => f.id).toSet();
+            _refreshFavoriteKeys();
           });
           _persistFavorites();
         },
         onRemove: (removed) {
           setState(() {
-            _favoriteChannels = _favoriteChannels.where((f) => f.id != removed.id).toList();
-            _favoriteChannelIds = Set.from(_favoriteChannelIds)..remove(removed.id);
+            _favoriteChannels = _favoriteChannels.where((f) => f.stableKey != removed.stableKey).toList();
+            _refreshFavoriteKeys();
           });
           _persistFavorites();
         },
@@ -284,12 +347,28 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
   void _persistFavorites() {
     final multiServer = context.read<MultiServerProvider>();
+    final byStore = <String, List<FavoriteChannel>>{};
+    for (final f in _favoriteChannels) {
+      final storeKey = _favoriteStoreBySource[f.source];
+      if (storeKey == null) continue;
+      byStore.putIfAbsent(storeKey, () => []).add(f);
+    }
+    final writtenStores = <String>{};
     for (final serverInfo in multiServer.liveTvServers) {
       final client = multiServer.getClientForServer(serverInfo.serverId);
-      if (client != null) {
-        client.setFavoriteChannels(_favoriteChannels);
-        break;
-      }
+      if (client == null) continue;
+      final liveServerKey = _liveServerScopeKey(serverInfo);
+      final storeKey = _favoriteStoreByLiveServer[liveServerKey];
+      if (storeKey == null || !writtenStores.add(storeKey)) continue;
+      final mode = _favoriteModeByStore[storeKey] ?? client.liveTv.favoritePersistenceMode;
+      final source = _favoriteSourceByLiveServer[liveServerKey];
+      if (source == null) continue; // not yet resolved — skip; next toggle will catch up
+      final channels = switch (mode) {
+        FavoriteChannelPersistenceMode.sharedFullList => byStore[storeKey] ?? const <FavoriteChannel>[],
+        FavoriteChannelPersistenceMode.serverSlice =>
+          (byStore[storeKey] ?? const <FavoriteChannel>[]).where((f) => f.source == source).toList(),
+      };
+      unawaited(client.liveTv.setFavoriteChannels(channels));
     }
   }
 
@@ -419,7 +498,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
               GuideTab(
                 key: _guideTabKey,
                 channels: guideChannels,
-                favoriteChannelIds: _favoriteChannelIds,
+                isFavoriteChannel: _isFavoriteChannel,
                 onToggleFavorite: _toggleFavorite,
                 onNavigateUp: focusTabBar,
                 onBack: onTabBarBack,

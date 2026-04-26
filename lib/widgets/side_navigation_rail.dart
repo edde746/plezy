@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../focus/focus_memory_tracker.dart';
-import '../models/plex_library.dart';
+import '../media/media_library.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
@@ -18,6 +18,7 @@ import '../utils/platform_detector.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../theme/mono_tokens.dart';
+import '../widgets/backend_badge.dart';
 import '../i18n/strings.g.dart';
 
 /// Reusable navigation rail item widget that handles focus, selection, and interaction
@@ -260,7 +261,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   }
 
   /// Build the set of valid focus keys (main nav + current libraries + server headers)
-  Set<String> _buildValidFocusKeys(List<PlexLibrary> libraries, Set<String> serverIds) {
+  Set<String> _buildValidFocusKeys(List<MediaLibrary> libraries, Set<String> serverIds) {
     return {
       _kHome,
       _kLibraries,
@@ -279,7 +280,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   /// Build the visual order of library items inside the libraries body. Must
   /// mirror what `_buildLibraryGroupedColumn` actually renders so D-pad
   /// navigation lands on the visually next item.
-  List<String> _buildLibraryBodyOrder(List<PlexLibrary> libs, {required bool showServerHeaders}) {
+  List<String> _buildLibraryBodyOrder(List<MediaLibrary> libs, {required bool showServerHeaders}) {
     if (!showServerHeaders) {
       return libs.map((lib) => lib.globalKey).toList();
     }
@@ -300,8 +301,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
   /// Ordered list of focusable keys matching visual top-to-bottom order.
   List<String> _buildFocusOrder(
-    List<PlexLibrary> visibleLibraries,
-    List<PlexLibrary> hiddenLibraries, {
+    List<MediaLibrary> visibleLibraries,
+    List<MediaLibrary> hiddenLibraries, {
     required bool hasLiveTv,
     required bool showServerHeaders,
   }) {
@@ -412,8 +413,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
 
     final allLibraries = librariesProvider.libraries;
-    final visibleLibraries = <PlexLibrary>[];
-    final hiddenLibraries = <PlexLibrary>[];
+    final visibleLibraries = <MediaLibrary>[];
+    final hiddenLibraries = <MediaLibrary>[];
     final serverIds = <String>{};
     for (final lib in allLibraries) {
       if (lib.serverId != null) serverIds.add(lib.serverId!);
@@ -675,8 +676,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   }
 
   Widget _buildLibrariesSection(
-    List<PlexLibrary> visibleLibraries,
-    List<PlexLibrary> hiddenLibraries,
+    List<MediaLibrary> visibleLibraries,
+    List<MediaLibrary> hiddenLibraries,
     dynamic t, {
     bool isCollapsed = false,
     bool showServerHeaders = false,
@@ -835,7 +836,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   }
 
   /// Get set of library names that appear more than once (not globally unique)
-  Set<String> _getNonUniqueLibraryNames(List<PlexLibrary> libraries) {
+  Set<String> _getNonUniqueLibraryNames(List<MediaLibrary> libraries) {
     final nameCounts = <String, int>{};
     for (final lib in libraries) {
       nameCounts[lib.title] = (nameCounts[lib.title] ?? 0) + 1;
@@ -847,11 +848,11 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   /// first-seen position and bucketing libraries underneath. Returns the server
   /// order plus a per-server library list. Libraries without a serverId end up
   /// in a synthetic '' bucket appearing at their first occurrence.
-  ({List<String> serverOrder, Map<String, List<PlexLibrary>> byServer}) _groupByFirstAppearance(
-    List<PlexLibrary> libs,
+  ({List<String> serverOrder, Map<String, List<MediaLibrary>> byServer}) _groupByFirstAppearance(
+    List<MediaLibrary> libs,
   ) {
     final order = <String>[];
-    final byServer = <String, List<PlexLibrary>>{};
+    final byServer = <String, List<MediaLibrary>>{};
     for (final lib in libs) {
       final key = lib.serverId ?? '';
       if (!byServer.containsKey(key)) {
@@ -863,7 +864,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     return (serverOrder: order, byServer: byServer);
   }
 
-  Widget _buildLibraryGroupedColumn(List<PlexLibrary> libraries, dynamic t, {required bool showServerHeaders}) {
+  Widget _buildLibraryGroupedColumn(List<MediaLibrary> libraries, dynamic t, {required bool showServerHeaders}) {
     if (!showServerHeaders) {
       final nonUniqueNames = _getNonUniqueLibraryNames(libraries);
       return Column(
@@ -894,10 +895,15 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   }
 
   Widget _buildServerHeader(String serverId, String serverName, dynamic t) {
+    // Resolve backend per server so the badge matches the brand. Falls back
+    // to the generic `dns` icon if the client isn't registered yet (rare —
+    // can happen during a profile switch before the manager rehydrates).
+    final backend = context.read<MultiServerProvider>().serverManager.getClient(serverId)?.backend;
     return _buildCollapsibleHeader(
       focusKey: _kServerHeaderPrefix + serverId,
       icon: Symbols.dns_rounded,
       iconSize: 14,
+      leading: backend == null ? null : BackendBadge(backend: backend, size: 14, color: t.textMuted),
       label: serverName,
       labelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.4, color: t.textMuted),
       verticalPadding: 6,
@@ -933,6 +939,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     required String focusKey,
     required IconData icon,
     required double iconSize,
+    Widget? leading,
     required String label,
     required TextStyle labelStyle,
     required double verticalPadding,
@@ -978,7 +985,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                     padding: EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 17),
                     child: Row(
                       children: [
-                        AppIcon(icon, fill: 1, size: iconSize, color: t.textMuted),
+                        leading ?? AppIcon(icon, fill: 1, size: iconSize, color: t.textMuted),
                         const SizedBox(width: 11),
                         Expanded(
                           child: Text(label, style: labelStyle, overflow: TextOverflow.ellipsis),
@@ -1001,7 +1008,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     );
   }
 
-  Widget _buildLibraryItem(PlexLibrary library, dynamic t, {bool showServerName = false}) {
+  Widget _buildLibraryItem(MediaLibrary library, dynamic t, {bool showServerName = false}) {
     final isSelected =
         widget.selectedTab == NavigationTabId.libraries && widget.selectedLibraryKey == library.globalKey;
     final isFocused = _focusTracker.isFocused(library.globalKey);
@@ -1010,8 +1017,8 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     return Padding(
       padding: const EdgeInsets.only(left: 12),
       child: NavigationRailItem(
-        icon: _getLibraryIcon(library.type),
-        selectedIcon: _getLibraryIcon(library.type),
+        icon: _getLibraryIcon(library.kind.id),
+        selectedIcon: _getLibraryIcon(library.kind.id),
         label: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,

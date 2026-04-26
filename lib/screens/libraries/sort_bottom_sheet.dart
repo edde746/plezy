@@ -3,7 +3,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/input_mode_tracker.dart';
-import '../../models/plex_sort.dart';
+import '../../media/media_sort.dart';
 import '../../utils/scroll_utils.dart';
 import '../../widgets/bottom_sheet_header.dart';
 import '../../widgets/focusable_list_tile.dart';
@@ -11,10 +11,10 @@ import '../../widgets/overlay_sheet.dart';
 import '../../i18n/strings.g.dart';
 
 class SortBottomSheet extends StatefulWidget {
-  final List<PlexSort> sortOptions;
-  final PlexSort? selectedSort;
+  final List<MediaSort> sortOptions;
+  final MediaSort? selectedSort;
   final bool isSortDescending;
-  final Function(PlexSort, bool) onSortChanged;
+  final Function(MediaSort, bool) onSortChanged;
   final VoidCallback? onClear;
 
   const SortBottomSheet({
@@ -31,7 +31,7 @@ class SortBottomSheet extends StatefulWidget {
 }
 
 class _SortBottomSheetState extends State<SortBottomSheet> {
-  late PlexSort? _currentSort;
+  late MediaSort? _currentSort;
   late bool _currentDescending;
   late final FocusNode _initialFocusNode;
   final _firstItemKey = GlobalKey();
@@ -74,7 +74,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
     super.dispose();
   }
 
-  void _handleSortSelect(PlexSort sort) {
+  void _handleSortSelect(MediaSort sort) {
     final descending = (_currentSort?.key == sort.key) ? _currentDescending : sort.isDefaultDescending;
     setState(() {
       _currentSort = sort;
@@ -83,7 +83,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
     widget.onSortChanged(sort, descending);
   }
 
-  void _handleDirectionChange(PlexSort sort, bool descending) {
+  void _handleDirectionChange(MediaSort sort, bool descending) {
     setState(() {
       _currentDescending = descending;
     });
@@ -109,7 +109,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
           action: widget.onClear != null ? TextButton(onPressed: _handleClear, child: Text(t.common.clear)) : null,
         ),
         Expanded(
-          child: RadioGroup<PlexSort>(
+          child: RadioGroup<MediaSort>(
             groupValue: _currentSort,
             onChanged: (value) {
               if (value != null) _handleSortSelect(value);
@@ -139,7 +139,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                     }
                     return KeyEventResult.ignored;
                   },
-                  child: FocusableRadioListTile<PlexSort>(
+                  child: FocusableRadioListTile<MediaSort>(
                     focusNode: (widget.selectedSort?.key == sort.key || (widget.selectedSort == null && index == 0))
                         ? _initialFocusNode
                         : null,

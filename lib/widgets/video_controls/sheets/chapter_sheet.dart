@@ -5,10 +5,10 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../i18n/strings.g.dart';
+import '../../../media/media_server_client.dart';
 import '../../../mpv/mpv.dart';
-import '../../../services/plex_client.dart';
 import '../../../services/download_storage_service.dart';
-import '../../../models/plex_media_info.dart';
+import '../../../media/media_source_info.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/player_utils.dart';
@@ -17,12 +17,12 @@ import '../../../utils/scroll_utils.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
-import '../../plex_optimized_image.dart';
+import '../../optimized_media_image.dart';
 
 /// Bottom sheet for selecting chapters
 class ChapterSheet extends StatefulWidget {
   final Player player;
-  final List<PlexChapter> chapters;
+  final List<MediaChapter> chapters;
   final bool chaptersLoaded;
   final String? serverId; // Server ID for the metadata these chapters belong to
   final Function(Duration position)? onSeekCompleted;
@@ -60,9 +60,9 @@ class _ChapterSheetState extends State<ChapterSheet> {
     }
   }
 
-  /// Get the PlexClient for chapters, or null if unavailable (offline mode)
-  PlexClient? _tryGetClientForChapters(BuildContext context) {
-    return context.tryGetClientForServer(widget.serverId);
+  /// Get the media client for chapters, or null if unavailable (offline mode).
+  MediaServerClient? _tryGetClientForChapters(BuildContext context) {
+    return context.tryGetMediaClientForServer(widget.serverId);
   }
 
   @override
@@ -72,7 +72,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
       initialData: widget.player.state.position,
       builder: (context, positionSnapshot) {
         final currentPosition = positionSnapshot.data ?? Duration.zero;
-        final currentChapterIndex = PlexChapter.indexAtPosition(currentPosition, widget.chapters);
+        final currentChapterIndex = MediaChapter.indexAtPosition(currentPosition, widget.chapters);
 
         Widget content;
         if (!widget.chaptersLoaded) {
@@ -109,7 +109,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
                           children: [
                             ClipRRect(
                               borderRadius: const BorderRadius.all(Radius.circular(4)),
-                              child: PlexOptimizedImage.thumb(
+                              child: OptimizedMediaImage.thumb(
                                 client: _tryGetClientForChapters(context),
                                 imagePath: chapter.thumb,
                                 localFilePath: localThumbPath,

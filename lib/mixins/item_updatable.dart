@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../services/plex_client.dart';
-import '../models/plex_metadata.dart';
+import '../media/media_item.dart';
+import '../utils/provider_extensions.dart';
 
 /// Mixin for screens that need to update individual items after watch state changes
 ///
@@ -8,9 +8,10 @@ import '../models/plex_metadata.dart';
 /// and replacing items in lists, while allowing each screen to customize
 /// which lists should be updated.
 mixin ItemUpdatable<T extends StatefulWidget> on State<T> {
-  /// The Plex client to use for fetching updated metadata
-  /// Each screen must provide access to their client
-  PlexClient get client;
+  /// Override to enable backend-aware item refresh. [updateItem] resolves
+  /// the right [MediaServerClient] for the item's server. When null,
+  /// [updateItem] is a no-op.
+  String? get itemServerId => null;
 
   /// Updates a single item in the screen's list(s) after watch state changes
   ///
@@ -19,12 +20,14 @@ mixin ItemUpdatable<T extends StatefulWidget> on State<T> {
   ///
   /// If the fetch fails, the error is silently caught and the item will
   /// be updated on the next full refresh.
-  Future<void> updateItem(String ratingKey) async {
+  Future<void> updateItem(String itemId) async {
     try {
-      final updatedMetadata = await client.getMetadataWithImages(ratingKey);
-      if (updatedMetadata != null) {
+      final serverId = itemServerId;
+      if (serverId == null) return;
+      final updatedItem = await context.tryGetMediaClientForServer(serverId)?.fetchItem(itemId);
+      if (updatedItem != null) {
         setState(() {
-          updateItemInLists(ratingKey, updatedMetadata);
+          updateItemInLists(itemId, updatedItem);
         });
       }
     } catch (e) {
@@ -40,12 +43,12 @@ mixin ItemUpdatable<T extends StatefulWidget> on State<T> {
   /// Example:
   /// ```dart
   /// @override
-  /// void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
-  ///   final index = _items.indexWhere((item) => item.ratingKey == ratingKey);
+  /// void updateItemInLists(String itemId, MediaItem updatedItem) {
+  ///   final index = _items.indexWhere((item) => item.id == itemId);
   ///   if (index != -1) {
-  ///     _items[index] = updatedMetadata;
+  ///     _items[index] = updatedItem;
   ///   }
   /// }
   /// ```
-  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata);
+  void updateItemInLists(String itemId, MediaItem updatedItem);
 }

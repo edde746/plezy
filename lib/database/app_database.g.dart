@@ -3,7 +3,8 @@
 part of 'app_database.dart';
 
 // ignore_for_file: type=lint
-class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMediaTable, DownloadedMediaItem> {
+class $DownloadedMediaTable extends DownloadedMedia
+    with TableInfo<$DownloadedMediaTable, DownloadedMediaItem> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -17,9 +18,13 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
   );
-  static const VerificationMeta _serverIdMeta = const VerificationMeta('serverId');
+  static const VerificationMeta _serverIdMeta = const VerificationMeta(
+    'serverId',
+  );
   @override
   late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
     'server_id',
@@ -28,7 +33,20 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _ratingKeyMeta = const VerificationMeta('ratingKey');
+  static const VerificationMeta _clientScopeIdMeta = const VerificationMeta(
+    'clientScopeId',
+  );
+  @override
+  late final GeneratedColumn<String> clientScopeId = GeneratedColumn<String>(
+    'client_scope_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ratingKeyMeta = const VerificationMeta(
+    'ratingKey',
+  );
   @override
   late final GeneratedColumn<String> ratingKey = GeneratedColumn<String>(
     'rating_key',
@@ -37,7 +55,9 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _globalKeyMeta = const VerificationMeta('globalKey');
+  static const VerificationMeta _globalKeyMeta = const VerificationMeta(
+    'globalKey',
+  );
   @override
   late final GeneratedColumn<String> globalKey = GeneratedColumn<String>(
     'global_key',
@@ -56,7 +76,9 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _parentRatingKeyMeta = const VerificationMeta('parentRatingKey');
+  static const VerificationMeta _parentRatingKeyMeta = const VerificationMeta(
+    'parentRatingKey',
+  );
   @override
   late final GeneratedColumn<String> parentRatingKey = GeneratedColumn<String>(
     'parent_rating_key',
@@ -65,15 +87,17 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _grandparentRatingKeyMeta = const VerificationMeta('grandparentRatingKey');
+  static const VerificationMeta _grandparentRatingKeyMeta =
+      const VerificationMeta('grandparentRatingKey');
   @override
-  late final GeneratedColumn<String> grandparentRatingKey = GeneratedColumn<String>(
-    'grandparent_rating_key',
-    aliasedName,
-    true,
-    type: DriftSqlType.string,
-    requiredDuringInsert: false,
-  );
+  late final GeneratedColumn<String> grandparentRatingKey =
+      GeneratedColumn<String>(
+        'grandparent_rating_key',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _statusMeta = const VerificationMeta('status');
   @override
   late final GeneratedColumn<int> status = GeneratedColumn<int>(
@@ -83,7 +107,9 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _progressMeta = const VerificationMeta('progress');
+  static const VerificationMeta _progressMeta = const VerificationMeta(
+    'progress',
+  );
   @override
   late final GeneratedColumn<int> progress = GeneratedColumn<int>(
     'progress',
@@ -93,7 +119,9 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
-  static const VerificationMeta _totalBytesMeta = const VerificationMeta('totalBytes');
+  static const VerificationMeta _totalBytesMeta = const VerificationMeta(
+    'totalBytes',
+  );
   @override
   late final GeneratedColumn<int> totalBytes = GeneratedColumn<int>(
     'total_bytes',
@@ -102,7 +130,9 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _downloadedBytesMeta = const VerificationMeta('downloadedBytes');
+  static const VerificationMeta _downloadedBytesMeta = const VerificationMeta(
+    'downloadedBytes',
+  );
   @override
   late final GeneratedColumn<int> downloadedBytes = GeneratedColumn<int>(
     'downloaded_bytes',
@@ -112,7 +142,9 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
-  static const VerificationMeta _videoFilePathMeta = const VerificationMeta('videoFilePath');
+  static const VerificationMeta _videoFilePathMeta = const VerificationMeta(
+    'videoFilePath',
+  );
   @override
   late final GeneratedColumn<String> videoFilePath = GeneratedColumn<String>(
     'video_file_path',
@@ -121,7 +153,9 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _thumbPathMeta = const VerificationMeta('thumbPath');
+  static const VerificationMeta _thumbPathMeta = const VerificationMeta(
+    'thumbPath',
+  );
   @override
   late final GeneratedColumn<String> thumbPath = GeneratedColumn<String>(
     'thumb_path',
@@ -130,7 +164,9 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _downloadedAtMeta = const VerificationMeta('downloadedAt');
+  static const VerificationMeta _downloadedAtMeta = const VerificationMeta(
+    'downloadedAt',
+  );
   @override
   late final GeneratedColumn<int> downloadedAt = GeneratedColumn<int>(
     'downloaded_at',
@@ -139,7 +175,9 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _errorMessageMeta = const VerificationMeta('errorMessage');
+  static const VerificationMeta _errorMessageMeta = const VerificationMeta(
+    'errorMessage',
+  );
   @override
   late final GeneratedColumn<String> errorMessage = GeneratedColumn<String>(
     'error_message',
@@ -148,7 +186,9 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _retryCountMeta = const VerificationMeta('retryCount');
+  static const VerificationMeta _retryCountMeta = const VerificationMeta(
+    'retryCount',
+  );
   @override
   late final GeneratedColumn<int> retryCount = GeneratedColumn<int>(
     'retry_count',
@@ -158,7 +198,9 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
-  static const VerificationMeta _bgTaskIdMeta = const VerificationMeta('bgTaskId');
+  static const VerificationMeta _bgTaskIdMeta = const VerificationMeta(
+    'bgTaskId',
+  );
   @override
   late final GeneratedColumn<String> bgTaskId = GeneratedColumn<String>(
     'bg_task_id',
@@ -167,7 +209,9 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _mediaIndexMeta = const VerificationMeta('mediaIndex');
+  static const VerificationMeta _mediaIndexMeta = const VerificationMeta(
+    'mediaIndex',
+  );
   @override
   late final GeneratedColumn<int> mediaIndex = GeneratedColumn<int>(
     'media_index',
@@ -181,6 +225,7 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
   List<GeneratedColumn> get $columns => [
     id,
     serverId,
+    clientScopeId,
     ratingKey,
     globalKey,
     type,
@@ -204,84 +249,153 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
   String get actualTableName => $name;
   static const String $name = 'downloaded_media';
   @override
-  VerificationContext validateIntegrity(Insertable<DownloadedMediaItem> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<DownloadedMediaItem> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
     if (data.containsKey('server_id')) {
-      context.handle(_serverIdMeta, serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta));
+      context.handle(
+        _serverIdMeta,
+        serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_serverIdMeta);
     }
+    if (data.containsKey('client_scope_id')) {
+      context.handle(
+        _clientScopeIdMeta,
+        clientScopeId.isAcceptableOrUnknown(
+          data['client_scope_id']!,
+          _clientScopeIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('rating_key')) {
-      context.handle(_ratingKeyMeta, ratingKey.isAcceptableOrUnknown(data['rating_key']!, _ratingKeyMeta));
+      context.handle(
+        _ratingKeyMeta,
+        ratingKey.isAcceptableOrUnknown(data['rating_key']!, _ratingKeyMeta),
+      );
     } else if (isInserting) {
       context.missing(_ratingKeyMeta);
     }
     if (data.containsKey('global_key')) {
-      context.handle(_globalKeyMeta, globalKey.isAcceptableOrUnknown(data['global_key']!, _globalKeyMeta));
+      context.handle(
+        _globalKeyMeta,
+        globalKey.isAcceptableOrUnknown(data['global_key']!, _globalKeyMeta),
+      );
     } else if (isInserting) {
       context.missing(_globalKeyMeta);
     }
     if (data.containsKey('type')) {
-      context.handle(_typeMeta, type.isAcceptableOrUnknown(data['type']!, _typeMeta));
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
     } else if (isInserting) {
       context.missing(_typeMeta);
     }
     if (data.containsKey('parent_rating_key')) {
       context.handle(
         _parentRatingKeyMeta,
-        parentRatingKey.isAcceptableOrUnknown(data['parent_rating_key']!, _parentRatingKeyMeta),
+        parentRatingKey.isAcceptableOrUnknown(
+          data['parent_rating_key']!,
+          _parentRatingKeyMeta,
+        ),
       );
     }
     if (data.containsKey('grandparent_rating_key')) {
       context.handle(
         _grandparentRatingKeyMeta,
-        grandparentRatingKey.isAcceptableOrUnknown(data['grandparent_rating_key']!, _grandparentRatingKeyMeta),
+        grandparentRatingKey.isAcceptableOrUnknown(
+          data['grandparent_rating_key']!,
+          _grandparentRatingKeyMeta,
+        ),
       );
     }
     if (data.containsKey('status')) {
-      context.handle(_statusMeta, status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
     } else if (isInserting) {
       context.missing(_statusMeta);
     }
     if (data.containsKey('progress')) {
-      context.handle(_progressMeta, progress.isAcceptableOrUnknown(data['progress']!, _progressMeta));
+      context.handle(
+        _progressMeta,
+        progress.isAcceptableOrUnknown(data['progress']!, _progressMeta),
+      );
     }
     if (data.containsKey('total_bytes')) {
-      context.handle(_totalBytesMeta, totalBytes.isAcceptableOrUnknown(data['total_bytes']!, _totalBytesMeta));
+      context.handle(
+        _totalBytesMeta,
+        totalBytes.isAcceptableOrUnknown(data['total_bytes']!, _totalBytesMeta),
+      );
     }
     if (data.containsKey('downloaded_bytes')) {
       context.handle(
         _downloadedBytesMeta,
-        downloadedBytes.isAcceptableOrUnknown(data['downloaded_bytes']!, _downloadedBytesMeta),
+        downloadedBytes.isAcceptableOrUnknown(
+          data['downloaded_bytes']!,
+          _downloadedBytesMeta,
+        ),
       );
     }
     if (data.containsKey('video_file_path')) {
       context.handle(
         _videoFilePathMeta,
-        videoFilePath.isAcceptableOrUnknown(data['video_file_path']!, _videoFilePathMeta),
+        videoFilePath.isAcceptableOrUnknown(
+          data['video_file_path']!,
+          _videoFilePathMeta,
+        ),
       );
     }
     if (data.containsKey('thumb_path')) {
-      context.handle(_thumbPathMeta, thumbPath.isAcceptableOrUnknown(data['thumb_path']!, _thumbPathMeta));
+      context.handle(
+        _thumbPathMeta,
+        thumbPath.isAcceptableOrUnknown(data['thumb_path']!, _thumbPathMeta),
+      );
     }
     if (data.containsKey('downloaded_at')) {
-      context.handle(_downloadedAtMeta, downloadedAt.isAcceptableOrUnknown(data['downloaded_at']!, _downloadedAtMeta));
+      context.handle(
+        _downloadedAtMeta,
+        downloadedAt.isAcceptableOrUnknown(
+          data['downloaded_at']!,
+          _downloadedAtMeta,
+        ),
+      );
     }
     if (data.containsKey('error_message')) {
-      context.handle(_errorMessageMeta, errorMessage.isAcceptableOrUnknown(data['error_message']!, _errorMessageMeta));
+      context.handle(
+        _errorMessageMeta,
+        errorMessage.isAcceptableOrUnknown(
+          data['error_message']!,
+          _errorMessageMeta,
+        ),
+      );
     }
     if (data.containsKey('retry_count')) {
-      context.handle(_retryCountMeta, retryCount.isAcceptableOrUnknown(data['retry_count']!, _retryCountMeta));
+      context.handle(
+        _retryCountMeta,
+        retryCount.isAcceptableOrUnknown(data['retry_count']!, _retryCountMeta),
+      );
     }
     if (data.containsKey('bg_task_id')) {
-      context.handle(_bgTaskIdMeta, bgTaskId.isAcceptableOrUnknown(data['bg_task_id']!, _bgTaskIdMeta));
+      context.handle(
+        _bgTaskIdMeta,
+        bgTaskId.isAcceptableOrUnknown(data['bg_task_id']!, _bgTaskIdMeta),
+      );
     }
     if (data.containsKey('media_index')) {
-      context.handle(_mediaIndexMeta, mediaIndex.isAcceptableOrUnknown(data['media_index']!, _mediaIndexMeta));
+      context.handle(
+        _mediaIndexMeta,
+        mediaIndex.isAcceptableOrUnknown(data['media_index']!, _mediaIndexMeta),
+      );
     }
     return context;
   }
@@ -292,11 +406,30 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
   DownloadedMediaItem map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return DownloadedMediaItem(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      serverId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}server_id'])!,
-      ratingKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}rating_key'])!,
-      globalKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}global_key'])!,
-      type: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}type'])!,
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      serverId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}server_id'],
+      )!,
+      clientScopeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_scope_id'],
+      ),
+      ratingKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rating_key'],
+      )!,
+      globalKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_key'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
       parentRatingKey: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}parent_rating_key'],
@@ -305,17 +438,50 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
         DriftSqlType.string,
         data['${effectivePrefix}grandparent_rating_key'],
       ),
-      status: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}status'])!,
-      progress: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}progress'])!,
-      totalBytes: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}total_bytes']),
-      downloadedBytes: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}downloaded_bytes'])!,
-      videoFilePath: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}video_file_path']),
-      thumbPath: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}thumb_path']),
-      downloadedAt: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}downloaded_at']),
-      errorMessage: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}error_message']),
-      retryCount: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}retry_count'])!,
-      bgTaskId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}bg_task_id']),
-      mediaIndex: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}media_index'])!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}status'],
+      )!,
+      progress: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}progress'],
+      )!,
+      totalBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_bytes'],
+      ),
+      downloadedBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}downloaded_bytes'],
+      )!,
+      videoFilePath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}video_file_path'],
+      ),
+      thumbPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}thumb_path'],
+      ),
+      downloadedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}downloaded_at'],
+      ),
+      errorMessage: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error_message'],
+      ),
+      retryCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}retry_count'],
+      )!,
+      bgTaskId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bg_task_id'],
+      ),
+      mediaIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}media_index'],
+      )!,
     );
   }
 
@@ -325,9 +491,11 @@ class $DownloadedMediaTable extends DownloadedMedia with TableInfo<$DownloadedMe
   }
 }
 
-class DownloadedMediaItem extends DataClass implements Insertable<DownloadedMediaItem> {
+class DownloadedMediaItem extends DataClass
+    implements Insertable<DownloadedMediaItem> {
   final int id;
   final String serverId;
+  final String? clientScopeId;
   final String ratingKey;
   final String globalKey;
   final String type;
@@ -347,6 +515,7 @@ class DownloadedMediaItem extends DataClass implements Insertable<DownloadedMedi
   const DownloadedMediaItem({
     required this.id,
     required this.serverId,
+    this.clientScopeId,
     required this.ratingKey,
     required this.globalKey,
     required this.type,
@@ -369,6 +538,9 @@ class DownloadedMediaItem extends DataClass implements Insertable<DownloadedMedi
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['server_id'] = Variable<String>(serverId);
+    if (!nullToAbsent || clientScopeId != null) {
+      map['client_scope_id'] = Variable<String>(clientScopeId);
+    }
     map['rating_key'] = Variable<String>(ratingKey);
     map['global_key'] = Variable<String>(globalKey);
     map['type'] = Variable<String>(type);
@@ -408,37 +580,60 @@ class DownloadedMediaItem extends DataClass implements Insertable<DownloadedMedi
     return DownloadedMediaCompanion(
       id: Value(id),
       serverId: Value(serverId),
+      clientScopeId: clientScopeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientScopeId),
       ratingKey: Value(ratingKey),
       globalKey: Value(globalKey),
       type: Value(type),
-      parentRatingKey: parentRatingKey == null && nullToAbsent ? const Value.absent() : Value(parentRatingKey),
+      parentRatingKey: parentRatingKey == null && nullToAbsent
+          ? const Value.absent()
+          : Value(parentRatingKey),
       grandparentRatingKey: grandparentRatingKey == null && nullToAbsent
           ? const Value.absent()
           : Value(grandparentRatingKey),
       status: Value(status),
       progress: Value(progress),
-      totalBytes: totalBytes == null && nullToAbsent ? const Value.absent() : Value(totalBytes),
+      totalBytes: totalBytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalBytes),
       downloadedBytes: Value(downloadedBytes),
-      videoFilePath: videoFilePath == null && nullToAbsent ? const Value.absent() : Value(videoFilePath),
-      thumbPath: thumbPath == null && nullToAbsent ? const Value.absent() : Value(thumbPath),
-      downloadedAt: downloadedAt == null && nullToAbsent ? const Value.absent() : Value(downloadedAt),
-      errorMessage: errorMessage == null && nullToAbsent ? const Value.absent() : Value(errorMessage),
+      videoFilePath: videoFilePath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(videoFilePath),
+      thumbPath: thumbPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(thumbPath),
+      downloadedAt: downloadedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(downloadedAt),
+      errorMessage: errorMessage == null && nullToAbsent
+          ? const Value.absent()
+          : Value(errorMessage),
       retryCount: Value(retryCount),
-      bgTaskId: bgTaskId == null && nullToAbsent ? const Value.absent() : Value(bgTaskId),
+      bgTaskId: bgTaskId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(bgTaskId),
       mediaIndex: Value(mediaIndex),
     );
   }
 
-  factory DownloadedMediaItem.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory DownloadedMediaItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return DownloadedMediaItem(
       id: serializer.fromJson<int>(json['id']),
       serverId: serializer.fromJson<String>(json['serverId']),
+      clientScopeId: serializer.fromJson<String?>(json['clientScopeId']),
       ratingKey: serializer.fromJson<String>(json['ratingKey']),
       globalKey: serializer.fromJson<String>(json['globalKey']),
       type: serializer.fromJson<String>(json['type']),
       parentRatingKey: serializer.fromJson<String?>(json['parentRatingKey']),
-      grandparentRatingKey: serializer.fromJson<String?>(json['grandparentRatingKey']),
+      grandparentRatingKey: serializer.fromJson<String?>(
+        json['grandparentRatingKey'],
+      ),
       status: serializer.fromJson<int>(json['status']),
       progress: serializer.fromJson<int>(json['progress']),
       totalBytes: serializer.fromJson<int?>(json['totalBytes']),
@@ -458,6 +653,7 @@ class DownloadedMediaItem extends DataClass implements Insertable<DownloadedMedi
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'serverId': serializer.toJson<String>(serverId),
+      'clientScopeId': serializer.toJson<String?>(clientScopeId),
       'ratingKey': serializer.toJson<String>(ratingKey),
       'globalKey': serializer.toJson<String>(globalKey),
       'type': serializer.toJson<String>(type),
@@ -480,6 +676,7 @@ class DownloadedMediaItem extends DataClass implements Insertable<DownloadedMedi
   DownloadedMediaItem copyWith({
     int? id,
     String? serverId,
+    Value<String?> clientScopeId = const Value.absent(),
     String? ratingKey,
     String? globalKey,
     String? type,
@@ -499,16 +696,25 @@ class DownloadedMediaItem extends DataClass implements Insertable<DownloadedMedi
   }) => DownloadedMediaItem(
     id: id ?? this.id,
     serverId: serverId ?? this.serverId,
+    clientScopeId: clientScopeId.present
+        ? clientScopeId.value
+        : this.clientScopeId,
     ratingKey: ratingKey ?? this.ratingKey,
     globalKey: globalKey ?? this.globalKey,
     type: type ?? this.type,
-    parentRatingKey: parentRatingKey.present ? parentRatingKey.value : this.parentRatingKey,
-    grandparentRatingKey: grandparentRatingKey.present ? grandparentRatingKey.value : this.grandparentRatingKey,
+    parentRatingKey: parentRatingKey.present
+        ? parentRatingKey.value
+        : this.parentRatingKey,
+    grandparentRatingKey: grandparentRatingKey.present
+        ? grandparentRatingKey.value
+        : this.grandparentRatingKey,
     status: status ?? this.status,
     progress: progress ?? this.progress,
     totalBytes: totalBytes.present ? totalBytes.value : this.totalBytes,
     downloadedBytes: downloadedBytes ?? this.downloadedBytes,
-    videoFilePath: videoFilePath.present ? videoFilePath.value : this.videoFilePath,
+    videoFilePath: videoFilePath.present
+        ? videoFilePath.value
+        : this.videoFilePath,
     thumbPath: thumbPath.present ? thumbPath.value : this.thumbPath,
     downloadedAt: downloadedAt.present ? downloadedAt.value : this.downloadedAt,
     errorMessage: errorMessage.present ? errorMessage.value : this.errorMessage,
@@ -520,24 +726,43 @@ class DownloadedMediaItem extends DataClass implements Insertable<DownloadedMedi
     return DownloadedMediaItem(
       id: data.id.present ? data.id.value : this.id,
       serverId: data.serverId.present ? data.serverId.value : this.serverId,
+      clientScopeId: data.clientScopeId.present
+          ? data.clientScopeId.value
+          : this.clientScopeId,
       ratingKey: data.ratingKey.present ? data.ratingKey.value : this.ratingKey,
       globalKey: data.globalKey.present ? data.globalKey.value : this.globalKey,
       type: data.type.present ? data.type.value : this.type,
-      parentRatingKey: data.parentRatingKey.present ? data.parentRatingKey.value : this.parentRatingKey,
+      parentRatingKey: data.parentRatingKey.present
+          ? data.parentRatingKey.value
+          : this.parentRatingKey,
       grandparentRatingKey: data.grandparentRatingKey.present
           ? data.grandparentRatingKey.value
           : this.grandparentRatingKey,
       status: data.status.present ? data.status.value : this.status,
       progress: data.progress.present ? data.progress.value : this.progress,
-      totalBytes: data.totalBytes.present ? data.totalBytes.value : this.totalBytes,
-      downloadedBytes: data.downloadedBytes.present ? data.downloadedBytes.value : this.downloadedBytes,
-      videoFilePath: data.videoFilePath.present ? data.videoFilePath.value : this.videoFilePath,
+      totalBytes: data.totalBytes.present
+          ? data.totalBytes.value
+          : this.totalBytes,
+      downloadedBytes: data.downloadedBytes.present
+          ? data.downloadedBytes.value
+          : this.downloadedBytes,
+      videoFilePath: data.videoFilePath.present
+          ? data.videoFilePath.value
+          : this.videoFilePath,
       thumbPath: data.thumbPath.present ? data.thumbPath.value : this.thumbPath,
-      downloadedAt: data.downloadedAt.present ? data.downloadedAt.value : this.downloadedAt,
-      errorMessage: data.errorMessage.present ? data.errorMessage.value : this.errorMessage,
-      retryCount: data.retryCount.present ? data.retryCount.value : this.retryCount,
+      downloadedAt: data.downloadedAt.present
+          ? data.downloadedAt.value
+          : this.downloadedAt,
+      errorMessage: data.errorMessage.present
+          ? data.errorMessage.value
+          : this.errorMessage,
+      retryCount: data.retryCount.present
+          ? data.retryCount.value
+          : this.retryCount,
       bgTaskId: data.bgTaskId.present ? data.bgTaskId.value : this.bgTaskId,
-      mediaIndex: data.mediaIndex.present ? data.mediaIndex.value : this.mediaIndex,
+      mediaIndex: data.mediaIndex.present
+          ? data.mediaIndex.value
+          : this.mediaIndex,
     );
   }
 
@@ -546,6 +771,7 @@ class DownloadedMediaItem extends DataClass implements Insertable<DownloadedMedi
     return (StringBuffer('DownloadedMediaItem(')
           ..write('id: $id, ')
           ..write('serverId: $serverId, ')
+          ..write('clientScopeId: $clientScopeId, ')
           ..write('ratingKey: $ratingKey, ')
           ..write('globalKey: $globalKey, ')
           ..write('type: $type, ')
@@ -570,6 +796,7 @@ class DownloadedMediaItem extends DataClass implements Insertable<DownloadedMedi
   int get hashCode => Object.hash(
     id,
     serverId,
+    clientScopeId,
     ratingKey,
     globalKey,
     type,
@@ -593,6 +820,7 @@ class DownloadedMediaItem extends DataClass implements Insertable<DownloadedMedi
       (other is DownloadedMediaItem &&
           other.id == this.id &&
           other.serverId == this.serverId &&
+          other.clientScopeId == this.clientScopeId &&
           other.ratingKey == this.ratingKey &&
           other.globalKey == this.globalKey &&
           other.type == this.type &&
@@ -614,6 +842,7 @@ class DownloadedMediaItem extends DataClass implements Insertable<DownloadedMedi
 class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   final Value<int> id;
   final Value<String> serverId;
+  final Value<String?> clientScopeId;
   final Value<String> ratingKey;
   final Value<String> globalKey;
   final Value<String> type;
@@ -633,6 +862,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   const DownloadedMediaCompanion({
     this.id = const Value.absent(),
     this.serverId = const Value.absent(),
+    this.clientScopeId = const Value.absent(),
     this.ratingKey = const Value.absent(),
     this.globalKey = const Value.absent(),
     this.type = const Value.absent(),
@@ -653,6 +883,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   DownloadedMediaCompanion.insert({
     this.id = const Value.absent(),
     required String serverId,
+    this.clientScopeId = const Value.absent(),
     required String ratingKey,
     required String globalKey,
     required String type,
@@ -677,6 +908,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   static Insertable<DownloadedMediaItem> custom({
     Expression<int>? id,
     Expression<String>? serverId,
+    Expression<String>? clientScopeId,
     Expression<String>? ratingKey,
     Expression<String>? globalKey,
     Expression<String>? type,
@@ -697,11 +929,13 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (serverId != null) 'server_id': serverId,
+      if (clientScopeId != null) 'client_scope_id': clientScopeId,
       if (ratingKey != null) 'rating_key': ratingKey,
       if (globalKey != null) 'global_key': globalKey,
       if (type != null) 'type': type,
       if (parentRatingKey != null) 'parent_rating_key': parentRatingKey,
-      if (grandparentRatingKey != null) 'grandparent_rating_key': grandparentRatingKey,
+      if (grandparentRatingKey != null)
+        'grandparent_rating_key': grandparentRatingKey,
       if (status != null) 'status': status,
       if (progress != null) 'progress': progress,
       if (totalBytes != null) 'total_bytes': totalBytes,
@@ -719,6 +953,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   DownloadedMediaCompanion copyWith({
     Value<int>? id,
     Value<String>? serverId,
+    Value<String?>? clientScopeId,
     Value<String>? ratingKey,
     Value<String>? globalKey,
     Value<String>? type,
@@ -739,6 +974,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     return DownloadedMediaCompanion(
       id: id ?? this.id,
       serverId: serverId ?? this.serverId,
+      clientScopeId: clientScopeId ?? this.clientScopeId,
       ratingKey: ratingKey ?? this.ratingKey,
       globalKey: globalKey ?? this.globalKey,
       type: type ?? this.type,
@@ -767,6 +1003,9 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     if (serverId.present) {
       map['server_id'] = Variable<String>(serverId.value);
     }
+    if (clientScopeId.present) {
+      map['client_scope_id'] = Variable<String>(clientScopeId.value);
+    }
     if (ratingKey.present) {
       map['rating_key'] = Variable<String>(ratingKey.value);
     }
@@ -780,7 +1019,9 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       map['parent_rating_key'] = Variable<String>(parentRatingKey.value);
     }
     if (grandparentRatingKey.present) {
-      map['grandparent_rating_key'] = Variable<String>(grandparentRatingKey.value);
+      map['grandparent_rating_key'] = Variable<String>(
+        grandparentRatingKey.value,
+      );
     }
     if (status.present) {
       map['status'] = Variable<int>(status.value);
@@ -823,6 +1064,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     return (StringBuffer('DownloadedMediaCompanion(')
           ..write('id: $id, ')
           ..write('serverId: $serverId, ')
+          ..write('clientScopeId: $clientScopeId, ')
           ..write('ratingKey: $ratingKey, ')
           ..write('globalKey: $globalKey, ')
           ..write('type: $type, ')
@@ -844,7 +1086,278 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   }
 }
 
-class $DownloadQueueTable extends DownloadQueue with TableInfo<$DownloadQueueTable, DownloadQueueItem> {
+class $DownloadOwnersTable extends DownloadOwners
+    with TableInfo<$DownloadOwnersTable, DownloadOwnerItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DownloadOwnersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _globalKeyMeta = const VerificationMeta(
+    'globalKey',
+  );
+  @override
+  late final GeneratedColumn<String> globalKey = GeneratedColumn<String>(
+    'global_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [profileId, globalKey, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'download_owners';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DownloadOwnerItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('global_key')) {
+      context.handle(
+        _globalKeyMeta,
+        globalKey.isAcceptableOrUnknown(data['global_key']!, _globalKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_globalKeyMeta);
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {profileId, globalKey};
+  @override
+  DownloadOwnerItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DownloadOwnerItem(
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      globalKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_key'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $DownloadOwnersTable createAlias(String alias) {
+    return $DownloadOwnersTable(attachedDatabase, alias);
+  }
+}
+
+class DownloadOwnerItem extends DataClass
+    implements Insertable<DownloadOwnerItem> {
+  final String profileId;
+  final String globalKey;
+  final int createdAt;
+  const DownloadOwnerItem({
+    required this.profileId,
+    required this.globalKey,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['profile_id'] = Variable<String>(profileId);
+    map['global_key'] = Variable<String>(globalKey);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  DownloadOwnersCompanion toCompanion(bool nullToAbsent) {
+    return DownloadOwnersCompanion(
+      profileId: Value(profileId),
+      globalKey: Value(globalKey),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory DownloadOwnerItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DownloadOwnerItem(
+      profileId: serializer.fromJson<String>(json['profileId']),
+      globalKey: serializer.fromJson<String>(json['globalKey']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'profileId': serializer.toJson<String>(profileId),
+      'globalKey': serializer.toJson<String>(globalKey),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  DownloadOwnerItem copyWith({
+    String? profileId,
+    String? globalKey,
+    int? createdAt,
+  }) => DownloadOwnerItem(
+    profileId: profileId ?? this.profileId,
+    globalKey: globalKey ?? this.globalKey,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  DownloadOwnerItem copyWithCompanion(DownloadOwnersCompanion data) {
+    return DownloadOwnerItem(
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      globalKey: data.globalKey.present ? data.globalKey.value : this.globalKey,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DownloadOwnerItem(')
+          ..write('profileId: $profileId, ')
+          ..write('globalKey: $globalKey, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(profileId, globalKey, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DownloadOwnerItem &&
+          other.profileId == this.profileId &&
+          other.globalKey == this.globalKey &&
+          other.createdAt == this.createdAt);
+}
+
+class DownloadOwnersCompanion extends UpdateCompanion<DownloadOwnerItem> {
+  final Value<String> profileId;
+  final Value<String> globalKey;
+  final Value<int> createdAt;
+  final Value<int> rowid;
+  const DownloadOwnersCompanion({
+    this.profileId = const Value.absent(),
+    this.globalKey = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DownloadOwnersCompanion.insert({
+    required String profileId,
+    required String globalKey,
+    required int createdAt,
+    this.rowid = const Value.absent(),
+  }) : profileId = Value(profileId),
+       globalKey = Value(globalKey),
+       createdAt = Value(createdAt);
+  static Insertable<DownloadOwnerItem> custom({
+    Expression<String>? profileId,
+    Expression<String>? globalKey,
+    Expression<int>? createdAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (profileId != null) 'profile_id': profileId,
+      if (globalKey != null) 'global_key': globalKey,
+      if (createdAt != null) 'created_at': createdAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DownloadOwnersCompanion copyWith({
+    Value<String>? profileId,
+    Value<String>? globalKey,
+    Value<int>? createdAt,
+    Value<int>? rowid,
+  }) {
+    return DownloadOwnersCompanion(
+      profileId: profileId ?? this.profileId,
+      globalKey: globalKey ?? this.globalKey,
+      createdAt: createdAt ?? this.createdAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (globalKey.present) {
+      map['global_key'] = Variable<String>(globalKey.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DownloadOwnersCompanion(')
+          ..write('profileId: $profileId, ')
+          ..write('globalKey: $globalKey, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DownloadQueueTable extends DownloadQueue
+    with TableInfo<$DownloadQueueTable, DownloadQueueItem> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -858,9 +1371,13 @@ class $DownloadQueueTable extends DownloadQueue with TableInfo<$DownloadQueueTab
     hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
   );
-  static const VerificationMeta _mediaGlobalKeyMeta = const VerificationMeta('mediaGlobalKey');
+  static const VerificationMeta _mediaGlobalKeyMeta = const VerificationMeta(
+    'mediaGlobalKey',
+  );
   @override
   late final GeneratedColumn<String> mediaGlobalKey = GeneratedColumn<String>(
     'media_global_key',
@@ -870,7 +1387,9 @@ class $DownloadQueueTable extends DownloadQueue with TableInfo<$DownloadQueueTab
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
-  static const VerificationMeta _priorityMeta = const VerificationMeta('priority');
+  static const VerificationMeta _priorityMeta = const VerificationMeta(
+    'priority',
+  );
   @override
   late final GeneratedColumn<int> priority = GeneratedColumn<int>(
     'priority',
@@ -880,7 +1399,9 @@ class $DownloadQueueTable extends DownloadQueue with TableInfo<$DownloadQueueTab
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
-  static const VerificationMeta _addedAtMeta = const VerificationMeta('addedAt');
+  static const VerificationMeta _addedAtMeta = const VerificationMeta(
+    'addedAt',
+  );
   @override
   late final GeneratedColumn<int> addedAt = GeneratedColumn<int>(
     'added_at',
@@ -889,7 +1410,9 @@ class $DownloadQueueTable extends DownloadQueue with TableInfo<$DownloadQueueTab
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _downloadSubtitlesMeta = const VerificationMeta('downloadSubtitles');
+  static const VerificationMeta _downloadSubtitlesMeta = const VerificationMeta(
+    'downloadSubtitles',
+  );
   @override
   late final GeneratedColumn<bool> downloadSubtitles = GeneratedColumn<bool>(
     'download_subtitles',
@@ -897,10 +1420,14 @@ class $DownloadQueueTable extends DownloadQueue with TableInfo<$DownloadQueueTab
     false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("download_subtitles" IN (0, 1))'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("download_subtitles" IN (0, 1))',
+    ),
     defaultValue: const Constant(true),
   );
-  static const VerificationMeta _downloadArtworkMeta = const VerificationMeta('downloadArtwork');
+  static const VerificationMeta _downloadArtworkMeta = const VerificationMeta(
+    'downloadArtwork',
+  );
   @override
   late final GeneratedColumn<bool> downloadArtwork = GeneratedColumn<bool>(
     'download_artwork',
@@ -908,18 +1435,30 @@ class $DownloadQueueTable extends DownloadQueue with TableInfo<$DownloadQueueTab
     false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("download_artwork" IN (0, 1))'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("download_artwork" IN (0, 1))',
+    ),
     defaultValue: const Constant(true),
   );
   @override
-  List<GeneratedColumn> get $columns => [id, mediaGlobalKey, priority, addedAt, downloadSubtitles, downloadArtwork];
+  List<GeneratedColumn> get $columns => [
+    id,
+    mediaGlobalKey,
+    priority,
+    addedAt,
+    downloadSubtitles,
+    downloadArtwork,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
   String get actualTableName => $name;
   static const String $name = 'download_queue';
   @override
-  VerificationContext validateIntegrity(Insertable<DownloadQueueItem> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<DownloadQueueItem> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
@@ -928,29 +1467,44 @@ class $DownloadQueueTable extends DownloadQueue with TableInfo<$DownloadQueueTab
     if (data.containsKey('media_global_key')) {
       context.handle(
         _mediaGlobalKeyMeta,
-        mediaGlobalKey.isAcceptableOrUnknown(data['media_global_key']!, _mediaGlobalKeyMeta),
+        mediaGlobalKey.isAcceptableOrUnknown(
+          data['media_global_key']!,
+          _mediaGlobalKeyMeta,
+        ),
       );
     } else if (isInserting) {
       context.missing(_mediaGlobalKeyMeta);
     }
     if (data.containsKey('priority')) {
-      context.handle(_priorityMeta, priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta));
+      context.handle(
+        _priorityMeta,
+        priority.isAcceptableOrUnknown(data['priority']!, _priorityMeta),
+      );
     }
     if (data.containsKey('added_at')) {
-      context.handle(_addedAtMeta, addedAt.isAcceptableOrUnknown(data['added_at']!, _addedAtMeta));
+      context.handle(
+        _addedAtMeta,
+        addedAt.isAcceptableOrUnknown(data['added_at']!, _addedAtMeta),
+      );
     } else if (isInserting) {
       context.missing(_addedAtMeta);
     }
     if (data.containsKey('download_subtitles')) {
       context.handle(
         _downloadSubtitlesMeta,
-        downloadSubtitles.isAcceptableOrUnknown(data['download_subtitles']!, _downloadSubtitlesMeta),
+        downloadSubtitles.isAcceptableOrUnknown(
+          data['download_subtitles']!,
+          _downloadSubtitlesMeta,
+        ),
       );
     }
     if (data.containsKey('download_artwork')) {
       context.handle(
         _downloadArtworkMeta,
-        downloadArtwork.isAcceptableOrUnknown(data['download_artwork']!, _downloadArtworkMeta),
+        downloadArtwork.isAcceptableOrUnknown(
+          data['download_artwork']!,
+          _downloadArtworkMeta,
+        ),
       );
     }
     return context;
@@ -962,13 +1516,22 @@ class $DownloadQueueTable extends DownloadQueue with TableInfo<$DownloadQueueTab
   DownloadQueueItem map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return DownloadQueueItem(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
       mediaGlobalKey: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}media_global_key'],
       )!,
-      priority: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}priority'])!,
-      addedAt: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}added_at'])!,
+      priority: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}priority'],
+      )!,
+      addedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}added_at'],
+      )!,
       downloadSubtitles: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}download_subtitles'],
@@ -986,7 +1549,8 @@ class $DownloadQueueTable extends DownloadQueue with TableInfo<$DownloadQueueTab
   }
 }
 
-class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueItem> {
+class DownloadQueueItem extends DataClass
+    implements Insertable<DownloadQueueItem> {
   final int id;
   final String mediaGlobalKey;
   final int priority;
@@ -1024,7 +1588,10 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
     );
   }
 
-  factory DownloadQueueItem.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory DownloadQueueItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return DownloadQueueItem(
       id: serializer.fromJson<int>(json['id']),
@@ -1066,11 +1633,17 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
   DownloadQueueItem copyWithCompanion(DownloadQueueCompanion data) {
     return DownloadQueueItem(
       id: data.id.present ? data.id.value : this.id,
-      mediaGlobalKey: data.mediaGlobalKey.present ? data.mediaGlobalKey.value : this.mediaGlobalKey,
+      mediaGlobalKey: data.mediaGlobalKey.present
+          ? data.mediaGlobalKey.value
+          : this.mediaGlobalKey,
       priority: data.priority.present ? data.priority.value : this.priority,
       addedAt: data.addedAt.present ? data.addedAt.value : this.addedAt,
-      downloadSubtitles: data.downloadSubtitles.present ? data.downloadSubtitles.value : this.downloadSubtitles,
-      downloadArtwork: data.downloadArtwork.present ? data.downloadArtwork.value : this.downloadArtwork,
+      downloadSubtitles: data.downloadSubtitles.present
+          ? data.downloadSubtitles.value
+          : this.downloadSubtitles,
+      downloadArtwork: data.downloadArtwork.present
+          ? data.downloadArtwork.value
+          : this.downloadArtwork,
     );
   }
 
@@ -1088,7 +1661,14 @@ class DownloadQueueItem extends DataClass implements Insertable<DownloadQueueIte
   }
 
   @override
-  int get hashCode => Object.hash(id, mediaGlobalKey, priority, addedAt, downloadSubtitles, downloadArtwork);
+  int get hashCode => Object.hash(
+    id,
+    mediaGlobalKey,
+    priority,
+    addedAt,
+    downloadSubtitles,
+    downloadArtwork,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1199,12 +1779,15 @@ class DownloadQueueCompanion extends UpdateCompanion<DownloadQueueItem> {
   }
 }
 
-class $ApiCacheTable extends ApiCache with TableInfo<$ApiCacheTable, ApiCacheData> {
+class $ApiCacheTable extends ApiCache
+    with TableInfo<$ApiCacheTable, ApiCacheData> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
   $ApiCacheTable(this.attachedDatabase, [this._alias]);
-  static const VerificationMeta _cacheKeyMeta = const VerificationMeta('cacheKey');
+  static const VerificationMeta _cacheKeyMeta = const VerificationMeta(
+    'cacheKey',
+  );
   @override
   late final GeneratedColumn<String> cacheKey = GeneratedColumn<String>(
     'cache_key',
@@ -1230,10 +1813,14 @@ class $ApiCacheTable extends ApiCache with TableInfo<$ApiCacheTable, ApiCacheDat
     false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("pinned" IN (0, 1))'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("pinned" IN (0, 1))',
+    ),
     defaultValue: const Constant(false),
   );
-  static const VerificationMeta _cachedAtMeta = const VerificationMeta('cachedAt');
+  static const VerificationMeta _cachedAtMeta = const VerificationMeta(
+    'cachedAt',
+  );
   @override
   late final GeneratedColumn<DateTime> cachedAt = GeneratedColumn<DateTime>(
     'cached_at',
@@ -1251,24 +1838,39 @@ class $ApiCacheTable extends ApiCache with TableInfo<$ApiCacheTable, ApiCacheDat
   String get actualTableName => $name;
   static const String $name = 'api_cache';
   @override
-  VerificationContext validateIntegrity(Insertable<ApiCacheData> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<ApiCacheData> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('cache_key')) {
-      context.handle(_cacheKeyMeta, cacheKey.isAcceptableOrUnknown(data['cache_key']!, _cacheKeyMeta));
+      context.handle(
+        _cacheKeyMeta,
+        cacheKey.isAcceptableOrUnknown(data['cache_key']!, _cacheKeyMeta),
+      );
     } else if (isInserting) {
       context.missing(_cacheKeyMeta);
     }
     if (data.containsKey('data')) {
-      context.handle(_dataMeta, this.data.isAcceptableOrUnknown(data['data']!, _dataMeta));
+      context.handle(
+        _dataMeta,
+        this.data.isAcceptableOrUnknown(data['data']!, _dataMeta),
+      );
     } else if (isInserting) {
       context.missing(_dataMeta);
     }
     if (data.containsKey('pinned')) {
-      context.handle(_pinnedMeta, pinned.isAcceptableOrUnknown(data['pinned']!, _pinnedMeta));
+      context.handle(
+        _pinnedMeta,
+        pinned.isAcceptableOrUnknown(data['pinned']!, _pinnedMeta),
+      );
     }
     if (data.containsKey('cached_at')) {
-      context.handle(_cachedAtMeta, cachedAt.isAcceptableOrUnknown(data['cached_at']!, _cachedAtMeta));
+      context.handle(
+        _cachedAtMeta,
+        cachedAt.isAcceptableOrUnknown(data['cached_at']!, _cachedAtMeta),
+      );
     }
     return context;
   }
@@ -1279,10 +1881,22 @@ class $ApiCacheTable extends ApiCache with TableInfo<$ApiCacheTable, ApiCacheDat
   ApiCacheData map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return ApiCacheData(
-      cacheKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}cache_key'])!,
-      data: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}data'])!,
-      pinned: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}pinned'])!,
-      cachedAt: attachedDatabase.typeMapping.read(DriftSqlType.dateTime, data['${effectivePrefix}cached_at'])!,
+      cacheKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cache_key'],
+      )!,
+      data: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}data'],
+      )!,
+      pinned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}pinned'],
+      )!,
+      cachedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}cached_at'],
+      )!,
     );
   }
 
@@ -1293,7 +1907,8 @@ class $ApiCacheTable extends ApiCache with TableInfo<$ApiCacheTable, ApiCacheDat
 }
 
 class ApiCacheData extends DataClass implements Insertable<ApiCacheData> {
-  /// Composite key: serverId:endpoint (e.g., "abc123:/library/metadata/12345")
+  /// Composite key: serverId:endpoint (e.g., "abc123:/library/metadata/12345"
+  /// for Plex, "abc123:/Users/.../Items/..." for Jellyfin)
   final String cacheKey;
 
   /// JSON response data
@@ -1304,7 +1919,12 @@ class ApiCacheData extends DataClass implements Insertable<ApiCacheData> {
 
   /// Timestamp for cache invalidation (optional future use)
   final DateTime cachedAt;
-  const ApiCacheData({required this.cacheKey, required this.data, required this.pinned, required this.cachedAt});
+  const ApiCacheData({
+    required this.cacheKey,
+    required this.data,
+    required this.pinned,
+    required this.cachedAt,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -1324,7 +1944,10 @@ class ApiCacheData extends DataClass implements Insertable<ApiCacheData> {
     );
   }
 
-  factory ApiCacheData.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory ApiCacheData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return ApiCacheData(
       cacheKey: serializer.fromJson<String>(json['cacheKey']),
@@ -1344,7 +1967,12 @@ class ApiCacheData extends DataClass implements Insertable<ApiCacheData> {
     };
   }
 
-  ApiCacheData copyWith({String? cacheKey, String? data, bool? pinned, DateTime? cachedAt}) => ApiCacheData(
+  ApiCacheData copyWith({
+    String? cacheKey,
+    String? data,
+    bool? pinned,
+    DateTime? cachedAt,
+  }) => ApiCacheData(
     cacheKey: cacheKey ?? this.cacheKey,
     data: data ?? this.data,
     pinned: pinned ?? this.pinned,
@@ -1484,9 +2112,24 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
     hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
   );
-  static const VerificationMeta _serverIdMeta = const VerificationMeta('serverId');
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _serverIdMeta = const VerificationMeta(
+    'serverId',
+  );
   @override
   late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
     'server_id',
@@ -1495,7 +2138,20 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _ratingKeyMeta = const VerificationMeta('ratingKey');
+  static const VerificationMeta _clientScopeIdMeta = const VerificationMeta(
+    'clientScopeId',
+  );
+  @override
+  late final GeneratedColumn<String> clientScopeId = GeneratedColumn<String>(
+    'client_scope_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _ratingKeyMeta = const VerificationMeta(
+    'ratingKey',
+  );
   @override
   late final GeneratedColumn<String> ratingKey = GeneratedColumn<String>(
     'rating_key',
@@ -1504,7 +2160,9 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _globalKeyMeta = const VerificationMeta('globalKey');
+  static const VerificationMeta _globalKeyMeta = const VerificationMeta(
+    'globalKey',
+  );
   @override
   late final GeneratedColumn<String> globalKey = GeneratedColumn<String>(
     'global_key',
@@ -1513,7 +2171,9 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _actionTypeMeta = const VerificationMeta('actionType');
+  static const VerificationMeta _actionTypeMeta = const VerificationMeta(
+    'actionType',
+  );
   @override
   late final GeneratedColumn<String> actionType = GeneratedColumn<String>(
     'action_type',
@@ -1522,7 +2182,9 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _viewOffsetMeta = const VerificationMeta('viewOffset');
+  static const VerificationMeta _viewOffsetMeta = const VerificationMeta(
+    'viewOffset',
+  );
   @override
   late final GeneratedColumn<int> viewOffset = GeneratedColumn<int>(
     'view_offset',
@@ -1531,7 +2193,9 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _durationMeta = const VerificationMeta('duration');
+  static const VerificationMeta _durationMeta = const VerificationMeta(
+    'duration',
+  );
   @override
   late final GeneratedColumn<int> duration = GeneratedColumn<int>(
     'duration',
@@ -1540,7 +2204,9 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _shouldMarkWatchedMeta = const VerificationMeta('shouldMarkWatched');
+  static const VerificationMeta _shouldMarkWatchedMeta = const VerificationMeta(
+    'shouldMarkWatched',
+  );
   @override
   late final GeneratedColumn<bool> shouldMarkWatched = GeneratedColumn<bool>(
     'should_mark_watched',
@@ -1548,10 +2214,14 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
     false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("should_mark_watched" IN (0, 1))'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("should_mark_watched" IN (0, 1))',
+    ),
     defaultValue: const Constant(false),
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
   @override
   late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
     'created_at',
@@ -1560,7 +2230,9 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _updatedAtMeta = const VerificationMeta('updatedAt');
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
   @override
   late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
     'updated_at',
@@ -1569,7 +2241,9 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _syncAttemptsMeta = const VerificationMeta('syncAttempts');
+  static const VerificationMeta _syncAttemptsMeta = const VerificationMeta(
+    'syncAttempts',
+  );
   @override
   late final GeneratedColumn<int> syncAttempts = GeneratedColumn<int>(
     'sync_attempts',
@@ -1579,7 +2253,9 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
-  static const VerificationMeta _lastErrorMeta = const VerificationMeta('lastError');
+  static const VerificationMeta _lastErrorMeta = const VerificationMeta(
+    'lastError',
+  );
   @override
   late final GeneratedColumn<String> lastError = GeneratedColumn<String>(
     'last_error',
@@ -1591,7 +2267,9 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    profileId,
     serverId,
+    clientScopeId,
     ratingKey,
     globalKey,
     actionType,
@@ -1609,59 +2287,113 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
   String get actualTableName => $name;
   static const String $name = 'offline_watch_progress';
   @override
-  VerificationContext validateIntegrity(Insertable<OfflineWatchProgressItem> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<OfflineWatchProgressItem> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    }
     if (data.containsKey('server_id')) {
-      context.handle(_serverIdMeta, serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta));
+      context.handle(
+        _serverIdMeta,
+        serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_serverIdMeta);
     }
+    if (data.containsKey('client_scope_id')) {
+      context.handle(
+        _clientScopeIdMeta,
+        clientScopeId.isAcceptableOrUnknown(
+          data['client_scope_id']!,
+          _clientScopeIdMeta,
+        ),
+      );
+    }
     if (data.containsKey('rating_key')) {
-      context.handle(_ratingKeyMeta, ratingKey.isAcceptableOrUnknown(data['rating_key']!, _ratingKeyMeta));
+      context.handle(
+        _ratingKeyMeta,
+        ratingKey.isAcceptableOrUnknown(data['rating_key']!, _ratingKeyMeta),
+      );
     } else if (isInserting) {
       context.missing(_ratingKeyMeta);
     }
     if (data.containsKey('global_key')) {
-      context.handle(_globalKeyMeta, globalKey.isAcceptableOrUnknown(data['global_key']!, _globalKeyMeta));
+      context.handle(
+        _globalKeyMeta,
+        globalKey.isAcceptableOrUnknown(data['global_key']!, _globalKeyMeta),
+      );
     } else if (isInserting) {
       context.missing(_globalKeyMeta);
     }
     if (data.containsKey('action_type')) {
-      context.handle(_actionTypeMeta, actionType.isAcceptableOrUnknown(data['action_type']!, _actionTypeMeta));
+      context.handle(
+        _actionTypeMeta,
+        actionType.isAcceptableOrUnknown(data['action_type']!, _actionTypeMeta),
+      );
     } else if (isInserting) {
       context.missing(_actionTypeMeta);
     }
     if (data.containsKey('view_offset')) {
-      context.handle(_viewOffsetMeta, viewOffset.isAcceptableOrUnknown(data['view_offset']!, _viewOffsetMeta));
+      context.handle(
+        _viewOffsetMeta,
+        viewOffset.isAcceptableOrUnknown(data['view_offset']!, _viewOffsetMeta),
+      );
     }
     if (data.containsKey('duration')) {
-      context.handle(_durationMeta, duration.isAcceptableOrUnknown(data['duration']!, _durationMeta));
+      context.handle(
+        _durationMeta,
+        duration.isAcceptableOrUnknown(data['duration']!, _durationMeta),
+      );
     }
     if (data.containsKey('should_mark_watched')) {
       context.handle(
         _shouldMarkWatchedMeta,
-        shouldMarkWatched.isAcceptableOrUnknown(data['should_mark_watched']!, _shouldMarkWatchedMeta),
+        shouldMarkWatched.isAcceptableOrUnknown(
+          data['should_mark_watched']!,
+          _shouldMarkWatchedMeta,
+        ),
       );
     }
     if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta, createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
     if (data.containsKey('updated_at')) {
-      context.handle(_updatedAtMeta, updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
     if (data.containsKey('sync_attempts')) {
-      context.handle(_syncAttemptsMeta, syncAttempts.isAcceptableOrUnknown(data['sync_attempts']!, _syncAttemptsMeta));
+      context.handle(
+        _syncAttemptsMeta,
+        syncAttempts.isAcceptableOrUnknown(
+          data['sync_attempts']!,
+          _syncAttemptsMeta,
+        ),
+      );
     }
     if (data.containsKey('last_error')) {
-      context.handle(_lastErrorMeta, lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta));
+      context.handle(
+        _lastErrorMeta,
+        lastError.isAcceptableOrUnknown(data['last_error']!, _lastErrorMeta),
+      );
     }
     return context;
   }
@@ -1669,24 +2401,68 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  OfflineWatchProgressItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+  OfflineWatchProgressItem map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return OfflineWatchProgressItem(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      serverId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}server_id'])!,
-      ratingKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}rating_key'])!,
-      globalKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}global_key'])!,
-      actionType: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}action_type'])!,
-      viewOffset: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}view_offset']),
-      duration: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}duration']),
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      ),
+      serverId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}server_id'],
+      )!,
+      clientScopeId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}client_scope_id'],
+      ),
+      ratingKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rating_key'],
+      )!,
+      globalKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_key'],
+      )!,
+      actionType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}action_type'],
+      )!,
+      viewOffset: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}view_offset'],
+      ),
+      duration: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration'],
+      ),
       shouldMarkWatched: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}should_mark_watched'],
       )!,
-      createdAt: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}created_at'])!,
-      updatedAt: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}updated_at'])!,
-      syncAttempts: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}sync_attempts'])!,
-      lastError: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}last_error']),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      syncAttempts: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sync_attempts'],
+      )!,
+      lastError: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}last_error'],
+      ),
     );
   }
 
@@ -1696,12 +2472,20 @@ class $OfflineWatchProgressTable extends OfflineWatchProgress
   }
 }
 
-class OfflineWatchProgressItem extends DataClass implements Insertable<OfflineWatchProgressItem> {
+class OfflineWatchProgressItem extends DataClass
+    implements Insertable<OfflineWatchProgressItem> {
   /// Auto-incrementing primary key
   final int id;
 
+  /// Active Plezy profile that owns this queued action.
+  final String? profileId;
+
   /// Server ID this media belongs to
   final String serverId;
+
+  /// Optional user-scoped client/cache id for backends where [serverId] is
+  /// shared by multiple users on the same server.
+  final String? clientScopeId;
 
   /// Rating key of the media item
   final String ratingKey;
@@ -1735,7 +2519,9 @@ class OfflineWatchProgressItem extends DataClass implements Insertable<OfflineWa
   final String? lastError;
   const OfflineWatchProgressItem({
     required this.id,
+    this.profileId,
     required this.serverId,
+    this.clientScopeId,
     required this.ratingKey,
     required this.globalKey,
     required this.actionType,
@@ -1751,7 +2537,13 @@ class OfflineWatchProgressItem extends DataClass implements Insertable<OfflineWa
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    if (!nullToAbsent || profileId != null) {
+      map['profile_id'] = Variable<String>(profileId);
+    }
     map['server_id'] = Variable<String>(serverId);
+    if (!nullToAbsent || clientScopeId != null) {
+      map['client_scope_id'] = Variable<String>(clientScopeId);
+    }
     map['rating_key'] = Variable<String>(ratingKey);
     map['global_key'] = Variable<String>(globalKey);
     map['action_type'] = Variable<String>(actionType);
@@ -1774,25 +2566,42 @@ class OfflineWatchProgressItem extends DataClass implements Insertable<OfflineWa
   OfflineWatchProgressCompanion toCompanion(bool nullToAbsent) {
     return OfflineWatchProgressCompanion(
       id: Value(id),
+      profileId: profileId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(profileId),
       serverId: Value(serverId),
+      clientScopeId: clientScopeId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(clientScopeId),
       ratingKey: Value(ratingKey),
       globalKey: Value(globalKey),
       actionType: Value(actionType),
-      viewOffset: viewOffset == null && nullToAbsent ? const Value.absent() : Value(viewOffset),
-      duration: duration == null && nullToAbsent ? const Value.absent() : Value(duration),
+      viewOffset: viewOffset == null && nullToAbsent
+          ? const Value.absent()
+          : Value(viewOffset),
+      duration: duration == null && nullToAbsent
+          ? const Value.absent()
+          : Value(duration),
       shouldMarkWatched: Value(shouldMarkWatched),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
       syncAttempts: Value(syncAttempts),
-      lastError: lastError == null && nullToAbsent ? const Value.absent() : Value(lastError),
+      lastError: lastError == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastError),
     );
   }
 
-  factory OfflineWatchProgressItem.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory OfflineWatchProgressItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return OfflineWatchProgressItem(
       id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<String?>(json['profileId']),
       serverId: serializer.fromJson<String>(json['serverId']),
+      clientScopeId: serializer.fromJson<String?>(json['clientScopeId']),
       ratingKey: serializer.fromJson<String>(json['ratingKey']),
       globalKey: serializer.fromJson<String>(json['globalKey']),
       actionType: serializer.fromJson<String>(json['actionType']),
@@ -1810,7 +2619,9 @@ class OfflineWatchProgressItem extends DataClass implements Insertable<OfflineWa
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<String?>(profileId),
       'serverId': serializer.toJson<String>(serverId),
+      'clientScopeId': serializer.toJson<String?>(clientScopeId),
       'ratingKey': serializer.toJson<String>(ratingKey),
       'globalKey': serializer.toJson<String>(globalKey),
       'actionType': serializer.toJson<String>(actionType),
@@ -1826,7 +2637,9 @@ class OfflineWatchProgressItem extends DataClass implements Insertable<OfflineWa
 
   OfflineWatchProgressItem copyWith({
     int? id,
+    Value<String?> profileId = const Value.absent(),
     String? serverId,
+    Value<String?> clientScopeId = const Value.absent(),
     String? ratingKey,
     String? globalKey,
     String? actionType,
@@ -1839,7 +2652,11 @@ class OfflineWatchProgressItem extends DataClass implements Insertable<OfflineWa
     Value<String?> lastError = const Value.absent(),
   }) => OfflineWatchProgressItem(
     id: id ?? this.id,
+    profileId: profileId.present ? profileId.value : this.profileId,
     serverId: serverId ?? this.serverId,
+    clientScopeId: clientScopeId.present
+        ? clientScopeId.value
+        : this.clientScopeId,
     ratingKey: ratingKey ?? this.ratingKey,
     globalKey: globalKey ?? this.globalKey,
     actionType: actionType ?? this.actionType,
@@ -1851,19 +2668,33 @@ class OfflineWatchProgressItem extends DataClass implements Insertable<OfflineWa
     syncAttempts: syncAttempts ?? this.syncAttempts,
     lastError: lastError.present ? lastError.value : this.lastError,
   );
-  OfflineWatchProgressItem copyWithCompanion(OfflineWatchProgressCompanion data) {
+  OfflineWatchProgressItem copyWithCompanion(
+    OfflineWatchProgressCompanion data,
+  ) {
     return OfflineWatchProgressItem(
       id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
       serverId: data.serverId.present ? data.serverId.value : this.serverId,
+      clientScopeId: data.clientScopeId.present
+          ? data.clientScopeId.value
+          : this.clientScopeId,
       ratingKey: data.ratingKey.present ? data.ratingKey.value : this.ratingKey,
       globalKey: data.globalKey.present ? data.globalKey.value : this.globalKey,
-      actionType: data.actionType.present ? data.actionType.value : this.actionType,
-      viewOffset: data.viewOffset.present ? data.viewOffset.value : this.viewOffset,
+      actionType: data.actionType.present
+          ? data.actionType.value
+          : this.actionType,
+      viewOffset: data.viewOffset.present
+          ? data.viewOffset.value
+          : this.viewOffset,
       duration: data.duration.present ? data.duration.value : this.duration,
-      shouldMarkWatched: data.shouldMarkWatched.present ? data.shouldMarkWatched.value : this.shouldMarkWatched,
+      shouldMarkWatched: data.shouldMarkWatched.present
+          ? data.shouldMarkWatched.value
+          : this.shouldMarkWatched,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
-      syncAttempts: data.syncAttempts.present ? data.syncAttempts.value : this.syncAttempts,
+      syncAttempts: data.syncAttempts.present
+          ? data.syncAttempts.value
+          : this.syncAttempts,
       lastError: data.lastError.present ? data.lastError.value : this.lastError,
     );
   }
@@ -1872,7 +2703,9 @@ class OfflineWatchProgressItem extends DataClass implements Insertable<OfflineWa
   String toString() {
     return (StringBuffer('OfflineWatchProgressItem(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('serverId: $serverId, ')
+          ..write('clientScopeId: $clientScopeId, ')
           ..write('ratingKey: $ratingKey, ')
           ..write('globalKey: $globalKey, ')
           ..write('actionType: $actionType, ')
@@ -1890,7 +2723,9 @@ class OfflineWatchProgressItem extends DataClass implements Insertable<OfflineWa
   @override
   int get hashCode => Object.hash(
     id,
+    profileId,
     serverId,
+    clientScopeId,
     ratingKey,
     globalKey,
     actionType,
@@ -1907,7 +2742,9 @@ class OfflineWatchProgressItem extends DataClass implements Insertable<OfflineWa
       identical(this, other) ||
       (other is OfflineWatchProgressItem &&
           other.id == this.id &&
+          other.profileId == this.profileId &&
           other.serverId == this.serverId &&
+          other.clientScopeId == this.clientScopeId &&
           other.ratingKey == this.ratingKey &&
           other.globalKey == this.globalKey &&
           other.actionType == this.actionType &&
@@ -1920,9 +2757,12 @@ class OfflineWatchProgressItem extends DataClass implements Insertable<OfflineWa
           other.lastError == this.lastError);
 }
 
-class OfflineWatchProgressCompanion extends UpdateCompanion<OfflineWatchProgressItem> {
+class OfflineWatchProgressCompanion
+    extends UpdateCompanion<OfflineWatchProgressItem> {
   final Value<int> id;
+  final Value<String?> profileId;
   final Value<String> serverId;
+  final Value<String?> clientScopeId;
   final Value<String> ratingKey;
   final Value<String> globalKey;
   final Value<String> actionType;
@@ -1935,7 +2775,9 @@ class OfflineWatchProgressCompanion extends UpdateCompanion<OfflineWatchProgress
   final Value<String?> lastError;
   const OfflineWatchProgressCompanion({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.serverId = const Value.absent(),
+    this.clientScopeId = const Value.absent(),
     this.ratingKey = const Value.absent(),
     this.globalKey = const Value.absent(),
     this.actionType = const Value.absent(),
@@ -1949,7 +2791,9 @@ class OfflineWatchProgressCompanion extends UpdateCompanion<OfflineWatchProgress
   });
   OfflineWatchProgressCompanion.insert({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     required String serverId,
+    this.clientScopeId = const Value.absent(),
     required String ratingKey,
     required String globalKey,
     required String actionType,
@@ -1968,7 +2812,9 @@ class OfflineWatchProgressCompanion extends UpdateCompanion<OfflineWatchProgress
        updatedAt = Value(updatedAt);
   static Insertable<OfflineWatchProgressItem> custom({
     Expression<int>? id,
+    Expression<String>? profileId,
     Expression<String>? serverId,
+    Expression<String>? clientScopeId,
     Expression<String>? ratingKey,
     Expression<String>? globalKey,
     Expression<String>? actionType,
@@ -1982,7 +2828,9 @@ class OfflineWatchProgressCompanion extends UpdateCompanion<OfflineWatchProgress
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
       if (serverId != null) 'server_id': serverId,
+      if (clientScopeId != null) 'client_scope_id': clientScopeId,
       if (ratingKey != null) 'rating_key': ratingKey,
       if (globalKey != null) 'global_key': globalKey,
       if (actionType != null) 'action_type': actionType,
@@ -1998,7 +2846,9 @@ class OfflineWatchProgressCompanion extends UpdateCompanion<OfflineWatchProgress
 
   OfflineWatchProgressCompanion copyWith({
     Value<int>? id,
+    Value<String?>? profileId,
     Value<String>? serverId,
+    Value<String?>? clientScopeId,
     Value<String>? ratingKey,
     Value<String>? globalKey,
     Value<String>? actionType,
@@ -2012,7 +2862,9 @@ class OfflineWatchProgressCompanion extends UpdateCompanion<OfflineWatchProgress
   }) {
     return OfflineWatchProgressCompanion(
       id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
       serverId: serverId ?? this.serverId,
+      clientScopeId: clientScopeId ?? this.clientScopeId,
       ratingKey: ratingKey ?? this.ratingKey,
       globalKey: globalKey ?? this.globalKey,
       actionType: actionType ?? this.actionType,
@@ -2032,8 +2884,14 @@ class OfflineWatchProgressCompanion extends UpdateCompanion<OfflineWatchProgress
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
     if (serverId.present) {
       map['server_id'] = Variable<String>(serverId.value);
+    }
+    if (clientScopeId.present) {
+      map['client_scope_id'] = Variable<String>(clientScopeId.value);
     }
     if (ratingKey.present) {
       map['rating_key'] = Variable<String>(ratingKey.value);
@@ -2072,7 +2930,9 @@ class OfflineWatchProgressCompanion extends UpdateCompanion<OfflineWatchProgress
   String toString() {
     return (StringBuffer('OfflineWatchProgressCompanion(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('serverId: $serverId, ')
+          ..write('clientScopeId: $clientScopeId, ')
           ..write('ratingKey: $ratingKey, ')
           ..write('globalKey: $globalKey, ')
           ..write('actionType: $actionType, ')
@@ -2088,7 +2948,8 @@ class OfflineWatchProgressCompanion extends UpdateCompanion<OfflineWatchProgress
   }
 }
 
-class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRuleItem> {
+class $SyncRulesTable extends SyncRules
+    with TableInfo<$SyncRulesTable, SyncRuleItem> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -2102,9 +2963,25 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
     hasAutoIncrement: true,
     type: DriftSqlType.int,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
   );
-  static const VerificationMeta _serverIdMeta = const VerificationMeta('serverId');
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _serverIdMeta = const VerificationMeta(
+    'serverId',
+  );
   @override
   late final GeneratedColumn<String> serverId = GeneratedColumn<String>(
     'server_id',
@@ -2113,7 +2990,9 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _ratingKeyMeta = const VerificationMeta('ratingKey');
+  static const VerificationMeta _ratingKeyMeta = const VerificationMeta(
+    'ratingKey',
+  );
   @override
   late final GeneratedColumn<String> ratingKey = GeneratedColumn<String>(
     'rating_key',
@@ -2122,7 +3001,9 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _globalKeyMeta = const VerificationMeta('globalKey');
+  static const VerificationMeta _globalKeyMeta = const VerificationMeta(
+    'globalKey',
+  );
   @override
   late final GeneratedColumn<String> globalKey = GeneratedColumn<String>(
     'global_key',
@@ -2132,7 +3013,9 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
     requiredDuringInsert: true,
     defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'),
   );
-  static const VerificationMeta _targetTypeMeta = const VerificationMeta('targetType');
+  static const VerificationMeta _targetTypeMeta = const VerificationMeta(
+    'targetType',
+  );
   @override
   late final GeneratedColumn<String> targetType = GeneratedColumn<String>(
     'target_type',
@@ -2141,7 +3024,9 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _episodeCountMeta = const VerificationMeta('episodeCount');
+  static const VerificationMeta _episodeCountMeta = const VerificationMeta(
+    'episodeCount',
+  );
   @override
   late final GeneratedColumn<int> episodeCount = GeneratedColumn<int>(
     'episode_count',
@@ -2150,7 +3035,9 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _enabledMeta = const VerificationMeta('enabled');
+  static const VerificationMeta _enabledMeta = const VerificationMeta(
+    'enabled',
+  );
   @override
   late final GeneratedColumn<bool> enabled = GeneratedColumn<bool>(
     'enabled',
@@ -2158,10 +3045,14 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
     false,
     type: DriftSqlType.bool,
     requiredDuringInsert: false,
-    defaultConstraints: GeneratedColumn.constraintIsAlways('CHECK ("enabled" IN (0, 1))'),
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("enabled" IN (0, 1))',
+    ),
     defaultValue: const Constant(true),
   );
-  static const VerificationMeta _createdAtMeta = const VerificationMeta('createdAt');
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
   @override
   late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
     'created_at',
@@ -2170,7 +3061,9 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _lastExecutedAtMeta = const VerificationMeta('lastExecutedAt');
+  static const VerificationMeta _lastExecutedAtMeta = const VerificationMeta(
+    'lastExecutedAt',
+  );
   @override
   late final GeneratedColumn<int> lastExecutedAt = GeneratedColumn<int>(
     'last_executed_at',
@@ -2179,7 +3072,9 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
-  static const VerificationMeta _mediaIndexMeta = const VerificationMeta('mediaIndex');
+  static const VerificationMeta _mediaIndexMeta = const VerificationMeta(
+    'mediaIndex',
+  );
   @override
   late final GeneratedColumn<int> mediaIndex = GeneratedColumn<int>(
     'media_index',
@@ -2189,7 +3084,9 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
-  static const VerificationMeta _downloadFilterMeta = const VerificationMeta('downloadFilter');
+  static const VerificationMeta _downloadFilterMeta = const VerificationMeta(
+    'downloadFilter',
+  );
   @override
   late final GeneratedColumn<String> downloadFilter = GeneratedColumn<String>(
     'download_filter',
@@ -2202,6 +3099,7 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    profileId,
     serverId,
     ratingKey,
     globalKey,
@@ -2219,58 +3117,100 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
   String get actualTableName => $name;
   static const String $name = 'sync_rules';
   @override
-  VerificationContext validateIntegrity(Insertable<SyncRuleItem> instance, {bool isInserting = false}) {
+  VerificationContext validateIntegrity(
+    Insertable<SyncRuleItem> instance, {
+    bool isInserting = false,
+  }) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    }
     if (data.containsKey('server_id')) {
-      context.handle(_serverIdMeta, serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta));
+      context.handle(
+        _serverIdMeta,
+        serverId.isAcceptableOrUnknown(data['server_id']!, _serverIdMeta),
+      );
     } else if (isInserting) {
       context.missing(_serverIdMeta);
     }
     if (data.containsKey('rating_key')) {
-      context.handle(_ratingKeyMeta, ratingKey.isAcceptableOrUnknown(data['rating_key']!, _ratingKeyMeta));
+      context.handle(
+        _ratingKeyMeta,
+        ratingKey.isAcceptableOrUnknown(data['rating_key']!, _ratingKeyMeta),
+      );
     } else if (isInserting) {
       context.missing(_ratingKeyMeta);
     }
     if (data.containsKey('global_key')) {
-      context.handle(_globalKeyMeta, globalKey.isAcceptableOrUnknown(data['global_key']!, _globalKeyMeta));
+      context.handle(
+        _globalKeyMeta,
+        globalKey.isAcceptableOrUnknown(data['global_key']!, _globalKeyMeta),
+      );
     } else if (isInserting) {
       context.missing(_globalKeyMeta);
     }
     if (data.containsKey('target_type')) {
-      context.handle(_targetTypeMeta, targetType.isAcceptableOrUnknown(data['target_type']!, _targetTypeMeta));
+      context.handle(
+        _targetTypeMeta,
+        targetType.isAcceptableOrUnknown(data['target_type']!, _targetTypeMeta),
+      );
     } else if (isInserting) {
       context.missing(_targetTypeMeta);
     }
     if (data.containsKey('episode_count')) {
-      context.handle(_episodeCountMeta, episodeCount.isAcceptableOrUnknown(data['episode_count']!, _episodeCountMeta));
+      context.handle(
+        _episodeCountMeta,
+        episodeCount.isAcceptableOrUnknown(
+          data['episode_count']!,
+          _episodeCountMeta,
+        ),
+      );
     } else if (isInserting) {
       context.missing(_episodeCountMeta);
     }
     if (data.containsKey('enabled')) {
-      context.handle(_enabledMeta, enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta));
+      context.handle(
+        _enabledMeta,
+        enabled.isAcceptableOrUnknown(data['enabled']!, _enabledMeta),
+      );
     }
     if (data.containsKey('created_at')) {
-      context.handle(_createdAtMeta, createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
     if (data.containsKey('last_executed_at')) {
       context.handle(
         _lastExecutedAtMeta,
-        lastExecutedAt.isAcceptableOrUnknown(data['last_executed_at']!, _lastExecutedAtMeta),
+        lastExecutedAt.isAcceptableOrUnknown(
+          data['last_executed_at']!,
+          _lastExecutedAtMeta,
+        ),
       );
     }
     if (data.containsKey('media_index')) {
-      context.handle(_mediaIndexMeta, mediaIndex.isAcceptableOrUnknown(data['media_index']!, _mediaIndexMeta));
+      context.handle(
+        _mediaIndexMeta,
+        mediaIndex.isAcceptableOrUnknown(data['media_index']!, _mediaIndexMeta),
+      );
     }
     if (data.containsKey('download_filter')) {
       context.handle(
         _downloadFilterMeta,
-        downloadFilter.isAcceptableOrUnknown(data['download_filter']!, _downloadFilterMeta),
+        downloadFilter.isAcceptableOrUnknown(
+          data['download_filter']!,
+          _downloadFilterMeta,
+        ),
       );
     }
     return context;
@@ -2282,16 +3222,50 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
   SyncRuleItem map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return SyncRuleItem(
-      id: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      serverId: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}server_id'])!,
-      ratingKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}rating_key'])!,
-      globalKey: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}global_key'])!,
-      targetType: attachedDatabase.typeMapping.read(DriftSqlType.string, data['${effectivePrefix}target_type'])!,
-      episodeCount: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}episode_count'])!,
-      enabled: attachedDatabase.typeMapping.read(DriftSqlType.bool, data['${effectivePrefix}enabled'])!,
-      createdAt: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}created_at'])!,
-      lastExecutedAt: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}last_executed_at']),
-      mediaIndex: attachedDatabase.typeMapping.read(DriftSqlType.int, data['${effectivePrefix}media_index'])!,
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      serverId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}server_id'],
+      )!,
+      ratingKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}rating_key'],
+      )!,
+      globalKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}global_key'],
+      )!,
+      targetType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_type'],
+      )!,
+      episodeCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}episode_count'],
+      )!,
+      enabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}enabled'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      lastExecutedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_executed_at'],
+      ),
+      mediaIndex: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}media_index'],
+      )!,
       downloadFilter: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}download_filter'],
@@ -2307,6 +3281,7 @@ class $SyncRulesTable extends SyncRules with TableInfo<$SyncRulesTable, SyncRule
 
 class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   final int id;
+  final String profileId;
   final String serverId;
   final String ratingKey;
   final String globalKey;
@@ -2319,6 +3294,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   final String downloadFilter;
   const SyncRuleItem({
     required this.id,
+    required this.profileId,
     required this.serverId,
     required this.ratingKey,
     required this.globalKey,
@@ -2334,6 +3310,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
+    map['profile_id'] = Variable<String>(profileId);
     map['server_id'] = Variable<String>(serverId);
     map['rating_key'] = Variable<String>(ratingKey);
     map['global_key'] = Variable<String>(globalKey);
@@ -2352,6 +3329,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   SyncRulesCompanion toCompanion(bool nullToAbsent) {
     return SyncRulesCompanion(
       id: Value(id),
+      profileId: Value(profileId),
       serverId: Value(serverId),
       ratingKey: Value(ratingKey),
       globalKey: Value(globalKey),
@@ -2359,16 +3337,22 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       episodeCount: Value(episodeCount),
       enabled: Value(enabled),
       createdAt: Value(createdAt),
-      lastExecutedAt: lastExecutedAt == null && nullToAbsent ? const Value.absent() : Value(lastExecutedAt),
+      lastExecutedAt: lastExecutedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastExecutedAt),
       mediaIndex: Value(mediaIndex),
       downloadFilter: Value(downloadFilter),
     );
   }
 
-  factory SyncRuleItem.fromJson(Map<String, dynamic> json, {ValueSerializer? serializer}) {
+  factory SyncRuleItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return SyncRuleItem(
       id: serializer.fromJson<int>(json['id']),
+      profileId: serializer.fromJson<String>(json['profileId']),
       serverId: serializer.fromJson<String>(json['serverId']),
       ratingKey: serializer.fromJson<String>(json['ratingKey']),
       globalKey: serializer.fromJson<String>(json['globalKey']),
@@ -2386,6 +3370,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
+      'profileId': serializer.toJson<String>(profileId),
       'serverId': serializer.toJson<String>(serverId),
       'ratingKey': serializer.toJson<String>(ratingKey),
       'globalKey': serializer.toJson<String>(globalKey),
@@ -2401,6 +3386,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
 
   SyncRuleItem copyWith({
     int? id,
+    String? profileId,
     String? serverId,
     String? ratingKey,
     String? globalKey,
@@ -2413,6 +3399,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     String? downloadFilter,
   }) => SyncRuleItem(
     id: id ?? this.id,
+    profileId: profileId ?? this.profileId,
     serverId: serverId ?? this.serverId,
     ratingKey: ratingKey ?? this.ratingKey,
     globalKey: globalKey ?? this.globalKey,
@@ -2420,23 +3407,36 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     episodeCount: episodeCount ?? this.episodeCount,
     enabled: enabled ?? this.enabled,
     createdAt: createdAt ?? this.createdAt,
-    lastExecutedAt: lastExecutedAt.present ? lastExecutedAt.value : this.lastExecutedAt,
+    lastExecutedAt: lastExecutedAt.present
+        ? lastExecutedAt.value
+        : this.lastExecutedAt,
     mediaIndex: mediaIndex ?? this.mediaIndex,
     downloadFilter: downloadFilter ?? this.downloadFilter,
   );
   SyncRuleItem copyWithCompanion(SyncRulesCompanion data) {
     return SyncRuleItem(
       id: data.id.present ? data.id.value : this.id,
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
       serverId: data.serverId.present ? data.serverId.value : this.serverId,
       ratingKey: data.ratingKey.present ? data.ratingKey.value : this.ratingKey,
       globalKey: data.globalKey.present ? data.globalKey.value : this.globalKey,
-      targetType: data.targetType.present ? data.targetType.value : this.targetType,
-      episodeCount: data.episodeCount.present ? data.episodeCount.value : this.episodeCount,
+      targetType: data.targetType.present
+          ? data.targetType.value
+          : this.targetType,
+      episodeCount: data.episodeCount.present
+          ? data.episodeCount.value
+          : this.episodeCount,
       enabled: data.enabled.present ? data.enabled.value : this.enabled,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      lastExecutedAt: data.lastExecutedAt.present ? data.lastExecutedAt.value : this.lastExecutedAt,
-      mediaIndex: data.mediaIndex.present ? data.mediaIndex.value : this.mediaIndex,
-      downloadFilter: data.downloadFilter.present ? data.downloadFilter.value : this.downloadFilter,
+      lastExecutedAt: data.lastExecutedAt.present
+          ? data.lastExecutedAt.value
+          : this.lastExecutedAt,
+      mediaIndex: data.mediaIndex.present
+          ? data.mediaIndex.value
+          : this.mediaIndex,
+      downloadFilter: data.downloadFilter.present
+          ? data.downloadFilter.value
+          : this.downloadFilter,
     );
   }
 
@@ -2444,6 +3444,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   String toString() {
     return (StringBuffer('SyncRuleItem(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('serverId: $serverId, ')
           ..write('ratingKey: $ratingKey, ')
           ..write('globalKey: $globalKey, ')
@@ -2461,6 +3462,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   @override
   int get hashCode => Object.hash(
     id,
+    profileId,
     serverId,
     ratingKey,
     globalKey,
@@ -2477,6 +3479,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       identical(this, other) ||
       (other is SyncRuleItem &&
           other.id == this.id &&
+          other.profileId == this.profileId &&
           other.serverId == this.serverId &&
           other.ratingKey == this.ratingKey &&
           other.globalKey == this.globalKey &&
@@ -2491,6 +3494,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
 
 class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   final Value<int> id;
+  final Value<String> profileId;
   final Value<String> serverId;
   final Value<String> ratingKey;
   final Value<String> globalKey;
@@ -2503,6 +3507,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   final Value<String> downloadFilter;
   const SyncRulesCompanion({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     this.serverId = const Value.absent(),
     this.ratingKey = const Value.absent(),
     this.globalKey = const Value.absent(),
@@ -2516,6 +3521,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   });
   SyncRulesCompanion.insert({
     this.id = const Value.absent(),
+    this.profileId = const Value.absent(),
     required String serverId,
     required String ratingKey,
     required String globalKey,
@@ -2534,6 +3540,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
        createdAt = Value(createdAt);
   static Insertable<SyncRuleItem> custom({
     Expression<int>? id,
+    Expression<String>? profileId,
     Expression<String>? serverId,
     Expression<String>? ratingKey,
     Expression<String>? globalKey,
@@ -2547,6 +3554,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (profileId != null) 'profile_id': profileId,
       if (serverId != null) 'server_id': serverId,
       if (ratingKey != null) 'rating_key': ratingKey,
       if (globalKey != null) 'global_key': globalKey,
@@ -2562,6 +3570,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
 
   SyncRulesCompanion copyWith({
     Value<int>? id,
+    Value<String>? profileId,
     Value<String>? serverId,
     Value<String>? ratingKey,
     Value<String>? globalKey,
@@ -2575,6 +3584,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   }) {
     return SyncRulesCompanion(
       id: id ?? this.id,
+      profileId: profileId ?? this.profileId,
       serverId: serverId ?? this.serverId,
       ratingKey: ratingKey ?? this.ratingKey,
       globalKey: globalKey ?? this.globalKey,
@@ -2593,6 +3603,9 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<int>(id.value);
+    }
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
     }
     if (serverId.present) {
       map['server_id'] = Variable<String>(serverId.value);
@@ -2631,6 +3644,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   String toString() {
     return (StringBuffer('SyncRulesCompanion(')
           ..write('id: $id, ')
+          ..write('profileId: $profileId, ')
           ..write('serverId: $serverId, ')
           ..write('ratingKey: $ratingKey, ')
           ..write('globalKey: $globalKey, ')
@@ -2646,14 +3660,1554 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   }
 }
 
+class $ConnectionsTable extends Connections
+    with TableInfo<$ConnectionsTable, ConnectionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ConnectionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _configJsonMeta = const VerificationMeta(
+    'configJson',
+  );
+  @override
+  late final GeneratedColumn<String> configJson = GeneratedColumn<String>(
+    'config_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDefaultMeta = const VerificationMeta(
+    'isDefault',
+  );
+  @override
+  late final GeneratedColumn<bool> isDefault = GeneratedColumn<bool>(
+    'is_default',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_default" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastAuthenticatedAtMeta =
+      const VerificationMeta('lastAuthenticatedAt');
+  @override
+  late final GeneratedColumn<int> lastAuthenticatedAt = GeneratedColumn<int>(
+    'last_authenticated_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kind,
+    displayName,
+    configJson,
+    isDefault,
+    createdAt,
+    lastAuthenticatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'connections';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ConnectionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_displayNameMeta);
+    }
+    if (data.containsKey('config_json')) {
+      context.handle(
+        _configJsonMeta,
+        configJson.isAcceptableOrUnknown(data['config_json']!, _configJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_configJsonMeta);
+    }
+    if (data.containsKey('is_default')) {
+      context.handle(
+        _isDefaultMeta,
+        isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('last_authenticated_at')) {
+      context.handle(
+        _lastAuthenticatedAtMeta,
+        lastAuthenticatedAt.isAcceptableOrUnknown(
+          data['last_authenticated_at']!,
+          _lastAuthenticatedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ConnectionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ConnectionRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      )!,
+      configJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}config_json'],
+      )!,
+      isDefault: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_default'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      lastAuthenticatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_authenticated_at'],
+      ),
+    );
+  }
+
+  @override
+  $ConnectionsTable createAlias(String alias) {
+    return $ConnectionsTable(attachedDatabase, alias);
+  }
+}
+
+class ConnectionRow extends DataClass implements Insertable<ConnectionRow> {
+  /// Stable identifier for the connection. For Plex it's a generated UUID
+  /// (one per account); for Jellyfin it's the server's machineId.
+  final String id;
+
+  /// Backend kind: `'plex'` or `'jellyfin'`.
+  final String kind;
+
+  /// User-visible label (account email, server name).
+  final String displayName;
+
+  /// Backend-specific config payload (token, baseUrl, profile id, …).
+  final String configJson;
+
+  /// Whether this is the default connection used at app launch when only
+  /// one connection is present.
+  final bool isDefault;
+
+  /// Timestamp this connection was added (milliseconds since epoch).
+  final int createdAt;
+
+  /// Timestamp of the most-recent successful auth refresh (milliseconds
+  /// since epoch). Null until the first successful auth.
+  final int? lastAuthenticatedAt;
+  const ConnectionRow({
+    required this.id,
+    required this.kind,
+    required this.displayName,
+    required this.configJson,
+    required this.isDefault,
+    required this.createdAt,
+    this.lastAuthenticatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['kind'] = Variable<String>(kind);
+    map['display_name'] = Variable<String>(displayName);
+    map['config_json'] = Variable<String>(configJson);
+    map['is_default'] = Variable<bool>(isDefault);
+    map['created_at'] = Variable<int>(createdAt);
+    if (!nullToAbsent || lastAuthenticatedAt != null) {
+      map['last_authenticated_at'] = Variable<int>(lastAuthenticatedAt);
+    }
+    return map;
+  }
+
+  ConnectionsCompanion toCompanion(bool nullToAbsent) {
+    return ConnectionsCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      displayName: Value(displayName),
+      configJson: Value(configJson),
+      isDefault: Value(isDefault),
+      createdAt: Value(createdAt),
+      lastAuthenticatedAt: lastAuthenticatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAuthenticatedAt),
+    );
+  }
+
+  factory ConnectionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ConnectionRow(
+      id: serializer.fromJson<String>(json['id']),
+      kind: serializer.fromJson<String>(json['kind']),
+      displayName: serializer.fromJson<String>(json['displayName']),
+      configJson: serializer.fromJson<String>(json['configJson']),
+      isDefault: serializer.fromJson<bool>(json['isDefault']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      lastAuthenticatedAt: serializer.fromJson<int?>(
+        json['lastAuthenticatedAt'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'kind': serializer.toJson<String>(kind),
+      'displayName': serializer.toJson<String>(displayName),
+      'configJson': serializer.toJson<String>(configJson),
+      'isDefault': serializer.toJson<bool>(isDefault),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'lastAuthenticatedAt': serializer.toJson<int?>(lastAuthenticatedAt),
+    };
+  }
+
+  ConnectionRow copyWith({
+    String? id,
+    String? kind,
+    String? displayName,
+    String? configJson,
+    bool? isDefault,
+    int? createdAt,
+    Value<int?> lastAuthenticatedAt = const Value.absent(),
+  }) => ConnectionRow(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    displayName: displayName ?? this.displayName,
+    configJson: configJson ?? this.configJson,
+    isDefault: isDefault ?? this.isDefault,
+    createdAt: createdAt ?? this.createdAt,
+    lastAuthenticatedAt: lastAuthenticatedAt.present
+        ? lastAuthenticatedAt.value
+        : this.lastAuthenticatedAt,
+  );
+  ConnectionRow copyWithCompanion(ConnectionsCompanion data) {
+    return ConnectionRow(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      configJson: data.configJson.present
+          ? data.configJson.value
+          : this.configJson,
+      isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      lastAuthenticatedAt: data.lastAuthenticatedAt.present
+          ? data.lastAuthenticatedAt.value
+          : this.lastAuthenticatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConnectionRow(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('displayName: $displayName, ')
+          ..write('configJson: $configJson, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastAuthenticatedAt: $lastAuthenticatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    kind,
+    displayName,
+    configJson,
+    isDefault,
+    createdAt,
+    lastAuthenticatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ConnectionRow &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.displayName == this.displayName &&
+          other.configJson == this.configJson &&
+          other.isDefault == this.isDefault &&
+          other.createdAt == this.createdAt &&
+          other.lastAuthenticatedAt == this.lastAuthenticatedAt);
+}
+
+class ConnectionsCompanion extends UpdateCompanion<ConnectionRow> {
+  final Value<String> id;
+  final Value<String> kind;
+  final Value<String> displayName;
+  final Value<String> configJson;
+  final Value<bool> isDefault;
+  final Value<int> createdAt;
+  final Value<int?> lastAuthenticatedAt;
+  final Value<int> rowid;
+  const ConnectionsCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.configJson = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.lastAuthenticatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ConnectionsCompanion.insert({
+    required String id,
+    required String kind,
+    required String displayName,
+    required String configJson,
+    this.isDefault = const Value.absent(),
+    required int createdAt,
+    this.lastAuthenticatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       kind = Value(kind),
+       displayName = Value(displayName),
+       configJson = Value(configJson),
+       createdAt = Value(createdAt);
+  static Insertable<ConnectionRow> custom({
+    Expression<String>? id,
+    Expression<String>? kind,
+    Expression<String>? displayName,
+    Expression<String>? configJson,
+    Expression<bool>? isDefault,
+    Expression<int>? createdAt,
+    Expression<int>? lastAuthenticatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (displayName != null) 'display_name': displayName,
+      if (configJson != null) 'config_json': configJson,
+      if (isDefault != null) 'is_default': isDefault,
+      if (createdAt != null) 'created_at': createdAt,
+      if (lastAuthenticatedAt != null)
+        'last_authenticated_at': lastAuthenticatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ConnectionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? kind,
+    Value<String>? displayName,
+    Value<String>? configJson,
+    Value<bool>? isDefault,
+    Value<int>? createdAt,
+    Value<int?>? lastAuthenticatedAt,
+    Value<int>? rowid,
+  }) {
+    return ConnectionsCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      displayName: displayName ?? this.displayName,
+      configJson: configJson ?? this.configJson,
+      isDefault: isDefault ?? this.isDefault,
+      createdAt: createdAt ?? this.createdAt,
+      lastAuthenticatedAt: lastAuthenticatedAt ?? this.lastAuthenticatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (configJson.present) {
+      map['config_json'] = Variable<String>(configJson.value);
+    }
+    if (isDefault.present) {
+      map['is_default'] = Variable<bool>(isDefault.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (lastAuthenticatedAt.present) {
+      map['last_authenticated_at'] = Variable<int>(lastAuthenticatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ConnectionsCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('displayName: $displayName, ')
+          ..write('configJson: $configJson, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastAuthenticatedAt: $lastAuthenticatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProfilesTable extends Profiles
+    with TableInfo<$ProfilesTable, ProfileRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProfilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _avatarThumbUrlMeta = const VerificationMeta(
+    'avatarThumbUrl',
+  );
+  @override
+  late final GeneratedColumn<String> avatarThumbUrl = GeneratedColumn<String>(
+    'avatar_thumb_url',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _configJsonMeta = const VerificationMeta(
+    'configJson',
+  );
+  @override
+  late final GeneratedColumn<String> configJson = GeneratedColumn<String>(
+    'config_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _lastUsedAtMeta = const VerificationMeta(
+    'lastUsedAt',
+  );
+  @override
+  late final GeneratedColumn<int> lastUsedAt = GeneratedColumn<int>(
+    'last_used_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    kind,
+    displayName,
+    avatarThumbUrl,
+    configJson,
+    sortOrder,
+    createdAt,
+    lastUsedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'profiles';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProfileRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_displayNameMeta);
+    }
+    if (data.containsKey('avatar_thumb_url')) {
+      context.handle(
+        _avatarThumbUrlMeta,
+        avatarThumbUrl.isAcceptableOrUnknown(
+          data['avatar_thumb_url']!,
+          _avatarThumbUrlMeta,
+        ),
+      );
+    }
+    if (data.containsKey('config_json')) {
+      context.handle(
+        _configJsonMeta,
+        configJson.isAcceptableOrUnknown(data['config_json']!, _configJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_configJsonMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('last_used_at')) {
+      context.handle(
+        _lastUsedAtMeta,
+        lastUsedAt.isAcceptableOrUnknown(
+          data['last_used_at']!,
+          _lastUsedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ProfileRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProfileRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
+      )!,
+      avatarThumbUrl: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}avatar_thumb_url'],
+      ),
+      configJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}config_json'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      lastUsedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_used_at'],
+      ),
+    );
+  }
+
+  @override
+  $ProfilesTable createAlias(String alias) {
+    return $ProfilesTable(attachedDatabase, alias);
+  }
+}
+
+class ProfileRow extends DataClass implements Insertable<ProfileRow> {
+  /// Stable identifier. For Plex Home profiles: `plex-home-{accountId}-{homeUserUuid}`
+  /// (deterministic so re-discovery is idempotent). For locals: `local-{uuid}`.
+  final String id;
+
+  /// `'local'` | `'plex_home'`.
+  final String kind;
+  final String displayName;
+
+  /// Plex Home users have a thumb URL; locals fall back to initials/colour.
+  final String? avatarThumbUrl;
+
+  /// Per-kind config:
+  /// - `local`: `{ "pinHash": "..." }`
+  /// - `plex_home`: `{ "restricted": bool, "admin": bool, "hasPassword": bool, "parentConnectionId": "..." }`
+  final String configJson;
+  final int sortOrder;
+  final int createdAt;
+  final int? lastUsedAt;
+  const ProfileRow({
+    required this.id,
+    required this.kind,
+    required this.displayName,
+    this.avatarThumbUrl,
+    required this.configJson,
+    required this.sortOrder,
+    required this.createdAt,
+    this.lastUsedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['kind'] = Variable<String>(kind);
+    map['display_name'] = Variable<String>(displayName);
+    if (!nullToAbsent || avatarThumbUrl != null) {
+      map['avatar_thumb_url'] = Variable<String>(avatarThumbUrl);
+    }
+    map['config_json'] = Variable<String>(configJson);
+    map['sort_order'] = Variable<int>(sortOrder);
+    map['created_at'] = Variable<int>(createdAt);
+    if (!nullToAbsent || lastUsedAt != null) {
+      map['last_used_at'] = Variable<int>(lastUsedAt);
+    }
+    return map;
+  }
+
+  ProfilesCompanion toCompanion(bool nullToAbsent) {
+    return ProfilesCompanion(
+      id: Value(id),
+      kind: Value(kind),
+      displayName: Value(displayName),
+      avatarThumbUrl: avatarThumbUrl == null && nullToAbsent
+          ? const Value.absent()
+          : Value(avatarThumbUrl),
+      configJson: Value(configJson),
+      sortOrder: Value(sortOrder),
+      createdAt: Value(createdAt),
+      lastUsedAt: lastUsedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastUsedAt),
+    );
+  }
+
+  factory ProfileRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProfileRow(
+      id: serializer.fromJson<String>(json['id']),
+      kind: serializer.fromJson<String>(json['kind']),
+      displayName: serializer.fromJson<String>(json['displayName']),
+      avatarThumbUrl: serializer.fromJson<String?>(json['avatarThumbUrl']),
+      configJson: serializer.fromJson<String>(json['configJson']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      lastUsedAt: serializer.fromJson<int?>(json['lastUsedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'kind': serializer.toJson<String>(kind),
+      'displayName': serializer.toJson<String>(displayName),
+      'avatarThumbUrl': serializer.toJson<String?>(avatarThumbUrl),
+      'configJson': serializer.toJson<String>(configJson),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'lastUsedAt': serializer.toJson<int?>(lastUsedAt),
+    };
+  }
+
+  ProfileRow copyWith({
+    String? id,
+    String? kind,
+    String? displayName,
+    Value<String?> avatarThumbUrl = const Value.absent(),
+    String? configJson,
+    int? sortOrder,
+    int? createdAt,
+    Value<int?> lastUsedAt = const Value.absent(),
+  }) => ProfileRow(
+    id: id ?? this.id,
+    kind: kind ?? this.kind,
+    displayName: displayName ?? this.displayName,
+    avatarThumbUrl: avatarThumbUrl.present
+        ? avatarThumbUrl.value
+        : this.avatarThumbUrl,
+    configJson: configJson ?? this.configJson,
+    sortOrder: sortOrder ?? this.sortOrder,
+    createdAt: createdAt ?? this.createdAt,
+    lastUsedAt: lastUsedAt.present ? lastUsedAt.value : this.lastUsedAt,
+  );
+  ProfileRow copyWithCompanion(ProfilesCompanion data) {
+    return ProfileRow(
+      id: data.id.present ? data.id.value : this.id,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      avatarThumbUrl: data.avatarThumbUrl.present
+          ? data.avatarThumbUrl.value
+          : this.avatarThumbUrl,
+      configJson: data.configJson.present
+          ? data.configJson.value
+          : this.configJson,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      lastUsedAt: data.lastUsedAt.present
+          ? data.lastUsedAt.value
+          : this.lastUsedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfileRow(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('displayName: $displayName, ')
+          ..write('avatarThumbUrl: $avatarThumbUrl, ')
+          ..write('configJson: $configJson, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastUsedAt: $lastUsedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    kind,
+    displayName,
+    avatarThumbUrl,
+    configJson,
+    sortOrder,
+    createdAt,
+    lastUsedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProfileRow &&
+          other.id == this.id &&
+          other.kind == this.kind &&
+          other.displayName == this.displayName &&
+          other.avatarThumbUrl == this.avatarThumbUrl &&
+          other.configJson == this.configJson &&
+          other.sortOrder == this.sortOrder &&
+          other.createdAt == this.createdAt &&
+          other.lastUsedAt == this.lastUsedAt);
+}
+
+class ProfilesCompanion extends UpdateCompanion<ProfileRow> {
+  final Value<String> id;
+  final Value<String> kind;
+  final Value<String> displayName;
+  final Value<String?> avatarThumbUrl;
+  final Value<String> configJson;
+  final Value<int> sortOrder;
+  final Value<int> createdAt;
+  final Value<int?> lastUsedAt;
+  final Value<int> rowid;
+  const ProfilesCompanion({
+    this.id = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.avatarThumbUrl = const Value.absent(),
+    this.configJson = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.lastUsedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProfilesCompanion.insert({
+    required String id,
+    required String kind,
+    required String displayName,
+    this.avatarThumbUrl = const Value.absent(),
+    required String configJson,
+    this.sortOrder = const Value.absent(),
+    required int createdAt,
+    this.lastUsedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       kind = Value(kind),
+       displayName = Value(displayName),
+       configJson = Value(configJson),
+       createdAt = Value(createdAt);
+  static Insertable<ProfileRow> custom({
+    Expression<String>? id,
+    Expression<String>? kind,
+    Expression<String>? displayName,
+    Expression<String>? avatarThumbUrl,
+    Expression<String>? configJson,
+    Expression<int>? sortOrder,
+    Expression<int>? createdAt,
+    Expression<int>? lastUsedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (kind != null) 'kind': kind,
+      if (displayName != null) 'display_name': displayName,
+      if (avatarThumbUrl != null) 'avatar_thumb_url': avatarThumbUrl,
+      if (configJson != null) 'config_json': configJson,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (createdAt != null) 'created_at': createdAt,
+      if (lastUsedAt != null) 'last_used_at': lastUsedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProfilesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? kind,
+    Value<String>? displayName,
+    Value<String?>? avatarThumbUrl,
+    Value<String>? configJson,
+    Value<int>? sortOrder,
+    Value<int>? createdAt,
+    Value<int?>? lastUsedAt,
+    Value<int>? rowid,
+  }) {
+    return ProfilesCompanion(
+      id: id ?? this.id,
+      kind: kind ?? this.kind,
+      displayName: displayName ?? this.displayName,
+      avatarThumbUrl: avatarThumbUrl ?? this.avatarThumbUrl,
+      configJson: configJson ?? this.configJson,
+      sortOrder: sortOrder ?? this.sortOrder,
+      createdAt: createdAt ?? this.createdAt,
+      lastUsedAt: lastUsedAt ?? this.lastUsedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (avatarThumbUrl.present) {
+      map['avatar_thumb_url'] = Variable<String>(avatarThumbUrl.value);
+    }
+    if (configJson.present) {
+      map['config_json'] = Variable<String>(configJson.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (lastUsedAt.present) {
+      map['last_used_at'] = Variable<int>(lastUsedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfilesCompanion(')
+          ..write('id: $id, ')
+          ..write('kind: $kind, ')
+          ..write('displayName: $displayName, ')
+          ..write('avatarThumbUrl: $avatarThumbUrl, ')
+          ..write('configJson: $configJson, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('lastUsedAt: $lastUsedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ProfileConnectionsTable extends ProfileConnections
+    with TableInfo<$ProfileConnectionsTable, ProfileConnectionRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProfileConnectionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _profileIdMeta = const VerificationMeta(
+    'profileId',
+  );
+  @override
+  late final GeneratedColumn<String> profileId = GeneratedColumn<String>(
+    'profile_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _connectionIdMeta = const VerificationMeta(
+    'connectionId',
+  );
+  @override
+  late final GeneratedColumn<String> connectionId = GeneratedColumn<String>(
+    'connection_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES connections (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _userTokenMeta = const VerificationMeta(
+    'userToken',
+  );
+  @override
+  late final GeneratedColumn<String> userToken = GeneratedColumn<String>(
+    'user_token',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _userIdentifierMeta = const VerificationMeta(
+    'userIdentifier',
+  );
+  @override
+  late final GeneratedColumn<String> userIdentifier = GeneratedColumn<String>(
+    'user_identifier',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _isDefaultMeta = const VerificationMeta(
+    'isDefault',
+  );
+  @override
+  late final GeneratedColumn<bool> isDefault = GeneratedColumn<bool>(
+    'is_default',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_default" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _tokenAcquiredAtMeta = const VerificationMeta(
+    'tokenAcquiredAt',
+  );
+  @override
+  late final GeneratedColumn<int> tokenAcquiredAt = GeneratedColumn<int>(
+    'token_acquired_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastUsedAtMeta = const VerificationMeta(
+    'lastUsedAt',
+  );
+  @override
+  late final GeneratedColumn<int> lastUsedAt = GeneratedColumn<int>(
+    'last_used_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    profileId,
+    connectionId,
+    userToken,
+    userIdentifier,
+    isDefault,
+    tokenAcquiredAt,
+    lastUsedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'profile_connections';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ProfileConnectionRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('profile_id')) {
+      context.handle(
+        _profileIdMeta,
+        profileId.isAcceptableOrUnknown(data['profile_id']!, _profileIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_profileIdMeta);
+    }
+    if (data.containsKey('connection_id')) {
+      context.handle(
+        _connectionIdMeta,
+        connectionId.isAcceptableOrUnknown(
+          data['connection_id']!,
+          _connectionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_connectionIdMeta);
+    }
+    if (data.containsKey('user_token')) {
+      context.handle(
+        _userTokenMeta,
+        userToken.isAcceptableOrUnknown(data['user_token']!, _userTokenMeta),
+      );
+    }
+    if (data.containsKey('user_identifier')) {
+      context.handle(
+        _userIdentifierMeta,
+        userIdentifier.isAcceptableOrUnknown(
+          data['user_identifier']!,
+          _userIdentifierMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_userIdentifierMeta);
+    }
+    if (data.containsKey('is_default')) {
+      context.handle(
+        _isDefaultMeta,
+        isDefault.isAcceptableOrUnknown(data['is_default']!, _isDefaultMeta),
+      );
+    }
+    if (data.containsKey('token_acquired_at')) {
+      context.handle(
+        _tokenAcquiredAtMeta,
+        tokenAcquiredAt.isAcceptableOrUnknown(
+          data['token_acquired_at']!,
+          _tokenAcquiredAtMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_used_at')) {
+      context.handle(
+        _lastUsedAtMeta,
+        lastUsedAt.isAcceptableOrUnknown(
+          data['last_used_at']!,
+          _lastUsedAtMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {profileId, connectionId};
+  @override
+  ProfileConnectionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ProfileConnectionRow(
+      profileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}profile_id'],
+      )!,
+      connectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}connection_id'],
+      )!,
+      userToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_token'],
+      )!,
+      userIdentifier: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_identifier'],
+      )!,
+      isDefault: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_default'],
+      )!,
+      tokenAcquiredAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}token_acquired_at'],
+      ),
+      lastUsedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_used_at'],
+      ),
+    );
+  }
+
+  @override
+  $ProfileConnectionsTable createAlias(String alias) {
+    return $ProfileConnectionsTable(attachedDatabase, alias);
+  }
+}
+
+class ProfileConnectionRow extends DataClass
+    implements Insertable<ProfileConnectionRow> {
+  final String profileId;
+  final String connectionId;
+  final String userToken;
+  final String userIdentifier;
+  final bool isDefault;
+  final int? tokenAcquiredAt;
+  final int? lastUsedAt;
+  const ProfileConnectionRow({
+    required this.profileId,
+    required this.connectionId,
+    required this.userToken,
+    required this.userIdentifier,
+    required this.isDefault,
+    this.tokenAcquiredAt,
+    this.lastUsedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['profile_id'] = Variable<String>(profileId);
+    map['connection_id'] = Variable<String>(connectionId);
+    map['user_token'] = Variable<String>(userToken);
+    map['user_identifier'] = Variable<String>(userIdentifier);
+    map['is_default'] = Variable<bool>(isDefault);
+    if (!nullToAbsent || tokenAcquiredAt != null) {
+      map['token_acquired_at'] = Variable<int>(tokenAcquiredAt);
+    }
+    if (!nullToAbsent || lastUsedAt != null) {
+      map['last_used_at'] = Variable<int>(lastUsedAt);
+    }
+    return map;
+  }
+
+  ProfileConnectionsCompanion toCompanion(bool nullToAbsent) {
+    return ProfileConnectionsCompanion(
+      profileId: Value(profileId),
+      connectionId: Value(connectionId),
+      userToken: Value(userToken),
+      userIdentifier: Value(userIdentifier),
+      isDefault: Value(isDefault),
+      tokenAcquiredAt: tokenAcquiredAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tokenAcquiredAt),
+      lastUsedAt: lastUsedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastUsedAt),
+    );
+  }
+
+  factory ProfileConnectionRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ProfileConnectionRow(
+      profileId: serializer.fromJson<String>(json['profileId']),
+      connectionId: serializer.fromJson<String>(json['connectionId']),
+      userToken: serializer.fromJson<String>(json['userToken']),
+      userIdentifier: serializer.fromJson<String>(json['userIdentifier']),
+      isDefault: serializer.fromJson<bool>(json['isDefault']),
+      tokenAcquiredAt: serializer.fromJson<int?>(json['tokenAcquiredAt']),
+      lastUsedAt: serializer.fromJson<int?>(json['lastUsedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'profileId': serializer.toJson<String>(profileId),
+      'connectionId': serializer.toJson<String>(connectionId),
+      'userToken': serializer.toJson<String>(userToken),
+      'userIdentifier': serializer.toJson<String>(userIdentifier),
+      'isDefault': serializer.toJson<bool>(isDefault),
+      'tokenAcquiredAt': serializer.toJson<int?>(tokenAcquiredAt),
+      'lastUsedAt': serializer.toJson<int?>(lastUsedAt),
+    };
+  }
+
+  ProfileConnectionRow copyWith({
+    String? profileId,
+    String? connectionId,
+    String? userToken,
+    String? userIdentifier,
+    bool? isDefault,
+    Value<int?> tokenAcquiredAt = const Value.absent(),
+    Value<int?> lastUsedAt = const Value.absent(),
+  }) => ProfileConnectionRow(
+    profileId: profileId ?? this.profileId,
+    connectionId: connectionId ?? this.connectionId,
+    userToken: userToken ?? this.userToken,
+    userIdentifier: userIdentifier ?? this.userIdentifier,
+    isDefault: isDefault ?? this.isDefault,
+    tokenAcquiredAt: tokenAcquiredAt.present
+        ? tokenAcquiredAt.value
+        : this.tokenAcquiredAt,
+    lastUsedAt: lastUsedAt.present ? lastUsedAt.value : this.lastUsedAt,
+  );
+  ProfileConnectionRow copyWithCompanion(ProfileConnectionsCompanion data) {
+    return ProfileConnectionRow(
+      profileId: data.profileId.present ? data.profileId.value : this.profileId,
+      connectionId: data.connectionId.present
+          ? data.connectionId.value
+          : this.connectionId,
+      userToken: data.userToken.present ? data.userToken.value : this.userToken,
+      userIdentifier: data.userIdentifier.present
+          ? data.userIdentifier.value
+          : this.userIdentifier,
+      isDefault: data.isDefault.present ? data.isDefault.value : this.isDefault,
+      tokenAcquiredAt: data.tokenAcquiredAt.present
+          ? data.tokenAcquiredAt.value
+          : this.tokenAcquiredAt,
+      lastUsedAt: data.lastUsedAt.present
+          ? data.lastUsedAt.value
+          : this.lastUsedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfileConnectionRow(')
+          ..write('profileId: $profileId, ')
+          ..write('connectionId: $connectionId, ')
+          ..write('userToken: $userToken, ')
+          ..write('userIdentifier: $userIdentifier, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('tokenAcquiredAt: $tokenAcquiredAt, ')
+          ..write('lastUsedAt: $lastUsedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    profileId,
+    connectionId,
+    userToken,
+    userIdentifier,
+    isDefault,
+    tokenAcquiredAt,
+    lastUsedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ProfileConnectionRow &&
+          other.profileId == this.profileId &&
+          other.connectionId == this.connectionId &&
+          other.userToken == this.userToken &&
+          other.userIdentifier == this.userIdentifier &&
+          other.isDefault == this.isDefault &&
+          other.tokenAcquiredAt == this.tokenAcquiredAt &&
+          other.lastUsedAt == this.lastUsedAt);
+}
+
+class ProfileConnectionsCompanion
+    extends UpdateCompanion<ProfileConnectionRow> {
+  final Value<String> profileId;
+  final Value<String> connectionId;
+  final Value<String> userToken;
+  final Value<String> userIdentifier;
+  final Value<bool> isDefault;
+  final Value<int?> tokenAcquiredAt;
+  final Value<int?> lastUsedAt;
+  final Value<int> rowid;
+  const ProfileConnectionsCompanion({
+    this.profileId = const Value.absent(),
+    this.connectionId = const Value.absent(),
+    this.userToken = const Value.absent(),
+    this.userIdentifier = const Value.absent(),
+    this.isDefault = const Value.absent(),
+    this.tokenAcquiredAt = const Value.absent(),
+    this.lastUsedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProfileConnectionsCompanion.insert({
+    required String profileId,
+    required String connectionId,
+    this.userToken = const Value.absent(),
+    required String userIdentifier,
+    this.isDefault = const Value.absent(),
+    this.tokenAcquiredAt = const Value.absent(),
+    this.lastUsedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : profileId = Value(profileId),
+       connectionId = Value(connectionId),
+       userIdentifier = Value(userIdentifier);
+  static Insertable<ProfileConnectionRow> custom({
+    Expression<String>? profileId,
+    Expression<String>? connectionId,
+    Expression<String>? userToken,
+    Expression<String>? userIdentifier,
+    Expression<bool>? isDefault,
+    Expression<int>? tokenAcquiredAt,
+    Expression<int>? lastUsedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (profileId != null) 'profile_id': profileId,
+      if (connectionId != null) 'connection_id': connectionId,
+      if (userToken != null) 'user_token': userToken,
+      if (userIdentifier != null) 'user_identifier': userIdentifier,
+      if (isDefault != null) 'is_default': isDefault,
+      if (tokenAcquiredAt != null) 'token_acquired_at': tokenAcquiredAt,
+      if (lastUsedAt != null) 'last_used_at': lastUsedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProfileConnectionsCompanion copyWith({
+    Value<String>? profileId,
+    Value<String>? connectionId,
+    Value<String>? userToken,
+    Value<String>? userIdentifier,
+    Value<bool>? isDefault,
+    Value<int?>? tokenAcquiredAt,
+    Value<int?>? lastUsedAt,
+    Value<int>? rowid,
+  }) {
+    return ProfileConnectionsCompanion(
+      profileId: profileId ?? this.profileId,
+      connectionId: connectionId ?? this.connectionId,
+      userToken: userToken ?? this.userToken,
+      userIdentifier: userIdentifier ?? this.userIdentifier,
+      isDefault: isDefault ?? this.isDefault,
+      tokenAcquiredAt: tokenAcquiredAt ?? this.tokenAcquiredAt,
+      lastUsedAt: lastUsedAt ?? this.lastUsedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (profileId.present) {
+      map['profile_id'] = Variable<String>(profileId.value);
+    }
+    if (connectionId.present) {
+      map['connection_id'] = Variable<String>(connectionId.value);
+    }
+    if (userToken.present) {
+      map['user_token'] = Variable<String>(userToken.value);
+    }
+    if (userIdentifier.present) {
+      map['user_identifier'] = Variable<String>(userIdentifier.value);
+    }
+    if (isDefault.present) {
+      map['is_default'] = Variable<bool>(isDefault.value);
+    }
+    if (tokenAcquiredAt.present) {
+      map['token_acquired_at'] = Variable<int>(tokenAcquiredAt.value);
+    }
+    if (lastUsedAt.present) {
+      map['last_used_at'] = Variable<int>(lastUsedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfileConnectionsCompanion(')
+          ..write('profileId: $profileId, ')
+          ..write('connectionId: $connectionId, ')
+          ..write('userToken: $userToken, ')
+          ..write('userIdentifier: $userIdentifier, ')
+          ..write('isDefault: $isDefault, ')
+          ..write('tokenAcquiredAt: $tokenAcquiredAt, ')
+          ..write('lastUsedAt: $lastUsedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
-  late final $DownloadedMediaTable downloadedMedia = $DownloadedMediaTable(this);
+  late final $DownloadedMediaTable downloadedMedia = $DownloadedMediaTable(
+    this,
+  );
+  late final $DownloadOwnersTable downloadOwners = $DownloadOwnersTable(this);
   late final $DownloadQueueTable downloadQueue = $DownloadQueueTable(this);
   late final $ApiCacheTable apiCache = $ApiCacheTable(this);
-  late final $OfflineWatchProgressTable offlineWatchProgress = $OfflineWatchProgressTable(this);
+  late final $OfflineWatchProgressTable offlineWatchProgress =
+      $OfflineWatchProgressTable(this);
   late final $SyncRulesTable syncRules = $SyncRulesTable(this);
+  late final $ConnectionsTable connections = $ConnectionsTable(this);
+  late final $ProfilesTable profiles = $ProfilesTable(this);
+  late final $ProfileConnectionsTable profileConnections =
+      $ProfileConnectionsTable(this);
   late final Index idxDownloadedMediaStatus = Index(
     'idx_downloaded_media_status',
     'CREATE INDEX idx_downloaded_media_status ON downloaded_media (status)',
@@ -2670,26 +5224,87 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     'idx_downloaded_media_grandparent',
     'CREATE INDEX idx_downloaded_media_grandparent ON downloaded_media (grandparent_rating_key)',
   );
+  late final Index idxDownloadOwnersProfile = Index(
+    'idx_download_owners_profile',
+    'CREATE INDEX idx_download_owners_profile ON download_owners (profile_id)',
+  );
+  late final Index idxDownloadOwnersGlobalKey = Index(
+    'idx_download_owners_global_key',
+    'CREATE INDEX idx_download_owners_global_key ON download_owners (global_key)',
+  );
+  late final Index idxOfflineWatchProgressServer = Index(
+    'idx_offline_watch_progress_server',
+    'CREATE INDEX idx_offline_watch_progress_server ON offline_watch_progress (server_id)',
+  );
+  late final Index idxOfflineWatchProgressProfile = Index(
+    'idx_offline_watch_progress_profile',
+    'CREATE INDEX idx_offline_watch_progress_profile ON offline_watch_progress (profile_id)',
+  );
+  late final Index idxSyncRulesProfile = Index(
+    'idx_sync_rules_profile',
+    'CREATE INDEX idx_sync_rules_profile ON sync_rules (profile_id)',
+  );
+  late final Index idxConnectionsKind = Index(
+    'idx_connections_kind',
+    'CREATE INDEX idx_connections_kind ON connections (kind)',
+  );
+  late final Index idxProfilesKind = Index(
+    'idx_profiles_kind',
+    'CREATE INDEX idx_profiles_kind ON profiles (kind)',
+  );
+  late final Index idxProfileConnectionsConnectionId = Index(
+    'idx_profile_connections_connection_id',
+    'CREATE INDEX idx_profile_connections_connection_id ON profile_connections (connection_id)',
+  );
+  late final Index idxProfileConnectionsProfileId = Index(
+    'idx_profile_connections_profile_id',
+    'CREATE INDEX idx_profile_connections_profile_id ON profile_connections (profile_id)',
+  );
   @override
-  Iterable<TableInfo<Table, Object?>> get allTables => allSchemaEntities.whereType<TableInfo<Table, Object?>>();
+  Iterable<TableInfo<Table, Object?>> get allTables =>
+      allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     downloadedMedia,
+    downloadOwners,
     downloadQueue,
     apiCache,
     offlineWatchProgress,
     syncRules,
+    connections,
+    profiles,
+    profileConnections,
     idxDownloadedMediaStatus,
     idxDownloadedMediaServer,
     idxDownloadedMediaParent,
     idxDownloadedMediaGrandparent,
+    idxDownloadOwnersProfile,
+    idxDownloadOwnersGlobalKey,
+    idxOfflineWatchProgressServer,
+    idxOfflineWatchProgressProfile,
+    idxSyncRulesProfile,
+    idxConnectionsKind,
+    idxProfilesKind,
+    idxProfileConnectionsConnectionId,
+    idxProfileConnectionsProfileId,
   ];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'connections',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('profile_connections', kind: UpdateKind.delete)],
+    ),
+  ]);
 }
 
 typedef $$DownloadedMediaTableCreateCompanionBuilder =
     DownloadedMediaCompanion Function({
       Value<int> id,
       required String serverId,
+      Value<String?> clientScopeId,
       required String ratingKey,
       required String globalKey,
       required String type,
@@ -2711,6 +5326,7 @@ typedef $$DownloadedMediaTableUpdateCompanionBuilder =
     DownloadedMediaCompanion Function({
       Value<int> id,
       Value<String> serverId,
+      Value<String?> clientScopeId,
       Value<String> ratingKey,
       Value<String> globalKey,
       Value<String> type,
@@ -2729,7 +5345,8 @@ typedef $$DownloadedMediaTableUpdateCompanionBuilder =
       Value<int> mediaIndex,
     });
 
-class $$DownloadedMediaTableFilterComposer extends Composer<_$AppDatabase, $DownloadedMediaTable> {
+class $$DownloadedMediaTableFilterComposer
+    extends Composer<_$AppDatabase, $DownloadedMediaTable> {
   $$DownloadedMediaTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -2737,60 +5354,104 @@ class $$DownloadedMediaTableFilterComposer extends Composer<_$AppDatabase, $Down
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get serverId =>
-      $composableBuilder(column: $table.serverId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get ratingKey =>
-      $composableBuilder(column: $table.ratingKey, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get clientScopeId => $composableBuilder(
+    column: $table.clientScopeId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get globalKey =>
-      $composableBuilder(column: $table.globalKey, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get ratingKey => $composableBuilder(
+    column: $table.ratingKey,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get type => $composableBuilder(column: $table.type, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get globalKey => $composableBuilder(
+    column: $table.globalKey,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get parentRatingKey =>
-      $composableBuilder(column: $table.parentRatingKey, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get grandparentRatingKey =>
-      $composableBuilder(column: $table.grandparentRatingKey, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get parentRatingKey => $composableBuilder(
+    column: $table.parentRatingKey,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get status =>
-      $composableBuilder(column: $table.status, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get grandparentRatingKey => $composableBuilder(
+    column: $table.grandparentRatingKey,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get progress =>
-      $composableBuilder(column: $table.progress, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get totalBytes =>
-      $composableBuilder(column: $table.totalBytes, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get progress => $composableBuilder(
+    column: $table.progress,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get downloadedBytes =>
-      $composableBuilder(column: $table.downloadedBytes, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get totalBytes => $composableBuilder(
+    column: $table.totalBytes,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get videoFilePath =>
-      $composableBuilder(column: $table.videoFilePath, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get downloadedBytes => $composableBuilder(
+    column: $table.downloadedBytes,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get thumbPath =>
-      $composableBuilder(column: $table.thumbPath, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get videoFilePath => $composableBuilder(
+    column: $table.videoFilePath,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get downloadedAt =>
-      $composableBuilder(column: $table.downloadedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get thumbPath => $composableBuilder(
+    column: $table.thumbPath,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get errorMessage =>
-      $composableBuilder(column: $table.errorMessage, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get downloadedAt => $composableBuilder(
+    column: $table.downloadedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get retryCount =>
-      $composableBuilder(column: $table.retryCount, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get errorMessage => $composableBuilder(
+    column: $table.errorMessage,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get bgTaskId =>
-      $composableBuilder(column: $table.bgTaskId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get retryCount => $composableBuilder(
+    column: $table.retryCount,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get mediaIndex =>
-      $composableBuilder(column: $table.mediaIndex, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get bgTaskId => $composableBuilder(
+    column: $table.bgTaskId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get mediaIndex => $composableBuilder(
+    column: $table.mediaIndex,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$DownloadedMediaTableOrderingComposer extends Composer<_$AppDatabase, $DownloadedMediaTable> {
+class $$DownloadedMediaTableOrderingComposer
+    extends Composer<_$AppDatabase, $DownloadedMediaTable> {
   $$DownloadedMediaTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -2798,61 +5459,104 @@ class $$DownloadedMediaTableOrderingComposer extends Composer<_$AppDatabase, $Do
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get serverId =>
-      $composableBuilder(column: $table.serverId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get ratingKey =>
-      $composableBuilder(column: $table.ratingKey, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get clientScopeId => $composableBuilder(
+    column: $table.clientScopeId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get globalKey =>
-      $composableBuilder(column: $table.globalKey, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get ratingKey => $composableBuilder(
+    column: $table.ratingKey,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get type =>
-      $composableBuilder(column: $table.type, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get globalKey => $composableBuilder(
+    column: $table.globalKey,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get parentRatingKey =>
-      $composableBuilder(column: $table.parentRatingKey, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get grandparentRatingKey =>
-      $composableBuilder(column: $table.grandparentRatingKey, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get parentRatingKey => $composableBuilder(
+    column: $table.parentRatingKey,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get status =>
-      $composableBuilder(column: $table.status, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get grandparentRatingKey => $composableBuilder(
+    column: $table.grandparentRatingKey,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get progress =>
-      $composableBuilder(column: $table.progress, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get totalBytes =>
-      $composableBuilder(column: $table.totalBytes, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get progress => $composableBuilder(
+    column: $table.progress,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get downloadedBytes =>
-      $composableBuilder(column: $table.downloadedBytes, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get totalBytes => $composableBuilder(
+    column: $table.totalBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get videoFilePath =>
-      $composableBuilder(column: $table.videoFilePath, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get downloadedBytes => $composableBuilder(
+    column: $table.downloadedBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get thumbPath =>
-      $composableBuilder(column: $table.thumbPath, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get videoFilePath => $composableBuilder(
+    column: $table.videoFilePath,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get downloadedAt =>
-      $composableBuilder(column: $table.downloadedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get thumbPath => $composableBuilder(
+    column: $table.thumbPath,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get errorMessage =>
-      $composableBuilder(column: $table.errorMessage, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get downloadedAt => $composableBuilder(
+    column: $table.downloadedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get retryCount =>
-      $composableBuilder(column: $table.retryCount, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get errorMessage => $composableBuilder(
+    column: $table.errorMessage,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get bgTaskId =>
-      $composableBuilder(column: $table.bgTaskId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get retryCount => $composableBuilder(
+    column: $table.retryCount,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get mediaIndex =>
-      $composableBuilder(column: $table.mediaIndex, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get bgTaskId => $composableBuilder(
+    column: $table.bgTaskId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get mediaIndex => $composableBuilder(
+    column: $table.mediaIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$DownloadedMediaTableAnnotationComposer extends Composer<_$AppDatabase, $DownloadedMediaTable> {
+class $$DownloadedMediaTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DownloadedMediaTable> {
   $$DownloadedMediaTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -2860,46 +5564,82 @@ class $$DownloadedMediaTableAnnotationComposer extends Composer<_$AppDatabase, $
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get serverId => $composableBuilder(column: $table.serverId, builder: (column) => column);
+  GeneratedColumn<String> get serverId =>
+      $composableBuilder(column: $table.serverId, builder: (column) => column);
 
-  GeneratedColumn<String> get ratingKey => $composableBuilder(column: $table.ratingKey, builder: (column) => column);
+  GeneratedColumn<String> get clientScopeId => $composableBuilder(
+    column: $table.clientScopeId,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get globalKey => $composableBuilder(column: $table.globalKey, builder: (column) => column);
+  GeneratedColumn<String> get ratingKey =>
+      $composableBuilder(column: $table.ratingKey, builder: (column) => column);
 
-  GeneratedColumn<String> get type => $composableBuilder(column: $table.type, builder: (column) => column);
+  GeneratedColumn<String> get globalKey =>
+      $composableBuilder(column: $table.globalKey, builder: (column) => column);
 
-  GeneratedColumn<String> get parentRatingKey =>
-      $composableBuilder(column: $table.parentRatingKey, builder: (column) => column);
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
 
-  GeneratedColumn<String> get grandparentRatingKey =>
-      $composableBuilder(column: $table.grandparentRatingKey, builder: (column) => column);
+  GeneratedColumn<String> get parentRatingKey => $composableBuilder(
+    column: $table.parentRatingKey,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get status => $composableBuilder(column: $table.status, builder: (column) => column);
+  GeneratedColumn<String> get grandparentRatingKey => $composableBuilder(
+    column: $table.grandparentRatingKey,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get progress => $composableBuilder(column: $table.progress, builder: (column) => column);
+  GeneratedColumn<int> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 
-  GeneratedColumn<int> get totalBytes => $composableBuilder(column: $table.totalBytes, builder: (column) => column);
+  GeneratedColumn<int> get progress =>
+      $composableBuilder(column: $table.progress, builder: (column) => column);
 
-  GeneratedColumn<int> get downloadedBytes =>
-      $composableBuilder(column: $table.downloadedBytes, builder: (column) => column);
+  GeneratedColumn<int> get totalBytes => $composableBuilder(
+    column: $table.totalBytes,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get videoFilePath =>
-      $composableBuilder(column: $table.videoFilePath, builder: (column) => column);
+  GeneratedColumn<int> get downloadedBytes => $composableBuilder(
+    column: $table.downloadedBytes,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get thumbPath => $composableBuilder(column: $table.thumbPath, builder: (column) => column);
+  GeneratedColumn<String> get videoFilePath => $composableBuilder(
+    column: $table.videoFilePath,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get downloadedAt => $composableBuilder(column: $table.downloadedAt, builder: (column) => column);
+  GeneratedColumn<String> get thumbPath =>
+      $composableBuilder(column: $table.thumbPath, builder: (column) => column);
 
-  GeneratedColumn<String> get errorMessage =>
-      $composableBuilder(column: $table.errorMessage, builder: (column) => column);
+  GeneratedColumn<int> get downloadedAt => $composableBuilder(
+    column: $table.downloadedAt,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get retryCount => $composableBuilder(column: $table.retryCount, builder: (column) => column);
+  GeneratedColumn<String> get errorMessage => $composableBuilder(
+    column: $table.errorMessage,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get bgTaskId => $composableBuilder(column: $table.bgTaskId, builder: (column) => column);
+  GeneratedColumn<int> get retryCount => $composableBuilder(
+    column: $table.retryCount,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get mediaIndex => $composableBuilder(column: $table.mediaIndex, builder: (column) => column);
+  GeneratedColumn<String> get bgTaskId =>
+      $composableBuilder(column: $table.bgTaskId, builder: (column) => column);
+
+  GeneratedColumn<int> get mediaIndex => $composableBuilder(
+    column: $table.mediaIndex,
+    builder: (column) => column,
+  );
 }
 
 class $$DownloadedMediaTableTableManager
@@ -2913,22 +5653,35 @@ class $$DownloadedMediaTableTableManager
           $$DownloadedMediaTableAnnotationComposer,
           $$DownloadedMediaTableCreateCompanionBuilder,
           $$DownloadedMediaTableUpdateCompanionBuilder,
-          (DownloadedMediaItem, BaseReferences<_$AppDatabase, $DownloadedMediaTable, DownloadedMediaItem>),
+          (
+            DownloadedMediaItem,
+            BaseReferences<
+              _$AppDatabase,
+              $DownloadedMediaTable,
+              DownloadedMediaItem
+            >,
+          ),
           DownloadedMediaItem,
           PrefetchHooks Function()
         > {
-  $$DownloadedMediaTableTableManager(_$AppDatabase db, $DownloadedMediaTable table)
-    : super(
+  $$DownloadedMediaTableTableManager(
+    _$AppDatabase db,
+    $DownloadedMediaTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$DownloadedMediaTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$DownloadedMediaTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$DownloadedMediaTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$DownloadedMediaTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DownloadedMediaTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DownloadedMediaTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
                 Value<String> serverId = const Value.absent(),
+                Value<String?> clientScopeId = const Value.absent(),
                 Value<String> ratingKey = const Value.absent(),
                 Value<String> globalKey = const Value.absent(),
                 Value<String> type = const Value.absent(),
@@ -2948,6 +5701,7 @@ class $$DownloadedMediaTableTableManager
               }) => DownloadedMediaCompanion(
                 id: id,
                 serverId: serverId,
+                clientScopeId: clientScopeId,
                 ratingKey: ratingKey,
                 globalKey: globalKey,
                 type: type,
@@ -2969,6 +5723,7 @@ class $$DownloadedMediaTableTableManager
               ({
                 Value<int> id = const Value.absent(),
                 required String serverId,
+                Value<String?> clientScopeId = const Value.absent(),
                 required String ratingKey,
                 required String globalKey,
                 required String type,
@@ -2988,6 +5743,7 @@ class $$DownloadedMediaTableTableManager
               }) => DownloadedMediaCompanion.insert(
                 id: id,
                 serverId: serverId,
+                clientScopeId: clientScopeId,
                 ratingKey: ratingKey,
                 globalKey: globalKey,
                 type: type,
@@ -3005,7 +5761,9 @@ class $$DownloadedMediaTableTableManager
                 bgTaskId: bgTaskId,
                 mediaIndex: mediaIndex,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -3021,8 +5779,183 @@ typedef $$DownloadedMediaTableProcessedTableManager =
       $$DownloadedMediaTableAnnotationComposer,
       $$DownloadedMediaTableCreateCompanionBuilder,
       $$DownloadedMediaTableUpdateCompanionBuilder,
-      (DownloadedMediaItem, BaseReferences<_$AppDatabase, $DownloadedMediaTable, DownloadedMediaItem>),
+      (
+        DownloadedMediaItem,
+        BaseReferences<
+          _$AppDatabase,
+          $DownloadedMediaTable,
+          DownloadedMediaItem
+        >,
+      ),
       DownloadedMediaItem,
+      PrefetchHooks Function()
+    >;
+typedef $$DownloadOwnersTableCreateCompanionBuilder =
+    DownloadOwnersCompanion Function({
+      required String profileId,
+      required String globalKey,
+      required int createdAt,
+      Value<int> rowid,
+    });
+typedef $$DownloadOwnersTableUpdateCompanionBuilder =
+    DownloadOwnersCompanion Function({
+      Value<String> profileId,
+      Value<String> globalKey,
+      Value<int> createdAt,
+      Value<int> rowid,
+    });
+
+class $$DownloadOwnersTableFilterComposer
+    extends Composer<_$AppDatabase, $DownloadOwnersTable> {
+  $$DownloadOwnersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get globalKey => $composableBuilder(
+    column: $table.globalKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DownloadOwnersTableOrderingComposer
+    extends Composer<_$AppDatabase, $DownloadOwnersTable> {
+  $$DownloadOwnersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get globalKey => $composableBuilder(
+    column: $table.globalKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DownloadOwnersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DownloadOwnersTable> {
+  $$DownloadOwnersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
+
+  GeneratedColumn<String> get globalKey =>
+      $composableBuilder(column: $table.globalKey, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$DownloadOwnersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $DownloadOwnersTable,
+          DownloadOwnerItem,
+          $$DownloadOwnersTableFilterComposer,
+          $$DownloadOwnersTableOrderingComposer,
+          $$DownloadOwnersTableAnnotationComposer,
+          $$DownloadOwnersTableCreateCompanionBuilder,
+          $$DownloadOwnersTableUpdateCompanionBuilder,
+          (
+            DownloadOwnerItem,
+            BaseReferences<
+              _$AppDatabase,
+              $DownloadOwnersTable,
+              DownloadOwnerItem
+            >,
+          ),
+          DownloadOwnerItem,
+          PrefetchHooks Function()
+        > {
+  $$DownloadOwnersTableTableManager(
+    _$AppDatabase db,
+    $DownloadOwnersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DownloadOwnersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DownloadOwnersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DownloadOwnersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> profileId = const Value.absent(),
+                Value<String> globalKey = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DownloadOwnersCompanion(
+                profileId: profileId,
+                globalKey: globalKey,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String profileId,
+                required String globalKey,
+                required int createdAt,
+                Value<int> rowid = const Value.absent(),
+              }) => DownloadOwnersCompanion.insert(
+                profileId: profileId,
+                globalKey: globalKey,
+                createdAt: createdAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DownloadOwnersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $DownloadOwnersTable,
+      DownloadOwnerItem,
+      $$DownloadOwnersTableFilterComposer,
+      $$DownloadOwnersTableOrderingComposer,
+      $$DownloadOwnersTableAnnotationComposer,
+      $$DownloadOwnersTableCreateCompanionBuilder,
+      $$DownloadOwnersTableUpdateCompanionBuilder,
+      (
+        DownloadOwnerItem,
+        BaseReferences<_$AppDatabase, $DownloadOwnersTable, DownloadOwnerItem>,
+      ),
+      DownloadOwnerItem,
       PrefetchHooks Function()
     >;
 typedef $$DownloadQueueTableCreateCompanionBuilder =
@@ -3044,7 +5977,8 @@ typedef $$DownloadQueueTableUpdateCompanionBuilder =
       Value<bool> downloadArtwork,
     });
 
-class $$DownloadQueueTableFilterComposer extends Composer<_$AppDatabase, $DownloadQueueTable> {
+class $$DownloadQueueTableFilterComposer
+    extends Composer<_$AppDatabase, $DownloadQueueTable> {
   $$DownloadQueueTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -3052,25 +5986,39 @@ class $$DownloadQueueTableFilterComposer extends Composer<_$AppDatabase, $Downlo
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get mediaGlobalKey =>
-      $composableBuilder(column: $table.mediaGlobalKey, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get mediaGlobalKey => $composableBuilder(
+    column: $table.mediaGlobalKey,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get priority =>
-      $composableBuilder(column: $table.priority, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get addedAt =>
-      $composableBuilder(column: $table.addedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get addedAt => $composableBuilder(
+    column: $table.addedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<bool> get downloadSubtitles =>
-      $composableBuilder(column: $table.downloadSubtitles, builder: (column) => ColumnFilters(column));
+  ColumnFilters<bool> get downloadSubtitles => $composableBuilder(
+    column: $table.downloadSubtitles,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<bool> get downloadArtwork =>
-      $composableBuilder(column: $table.downloadArtwork, builder: (column) => ColumnFilters(column));
+  ColumnFilters<bool> get downloadArtwork => $composableBuilder(
+    column: $table.downloadArtwork,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$DownloadQueueTableOrderingComposer extends Composer<_$AppDatabase, $DownloadQueueTable> {
+class $$DownloadQueueTableOrderingComposer
+    extends Composer<_$AppDatabase, $DownloadQueueTable> {
   $$DownloadQueueTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -3078,25 +6026,39 @@ class $$DownloadQueueTableOrderingComposer extends Composer<_$AppDatabase, $Down
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get mediaGlobalKey =>
-      $composableBuilder(column: $table.mediaGlobalKey, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get mediaGlobalKey => $composableBuilder(
+    column: $table.mediaGlobalKey,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get priority =>
-      $composableBuilder(column: $table.priority, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get addedAt =>
-      $composableBuilder(column: $table.addedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get addedAt => $composableBuilder(
+    column: $table.addedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<bool> get downloadSubtitles =>
-      $composableBuilder(column: $table.downloadSubtitles, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<bool> get downloadSubtitles => $composableBuilder(
+    column: $table.downloadSubtitles,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<bool> get downloadArtwork =>
-      $composableBuilder(column: $table.downloadArtwork, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<bool> get downloadArtwork => $composableBuilder(
+    column: $table.downloadArtwork,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$DownloadQueueTableAnnotationComposer extends Composer<_$AppDatabase, $DownloadQueueTable> {
+class $$DownloadQueueTableAnnotationComposer
+    extends Composer<_$AppDatabase, $DownloadQueueTable> {
   $$DownloadQueueTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -3104,20 +6066,29 @@ class $$DownloadQueueTableAnnotationComposer extends Composer<_$AppDatabase, $Do
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get mediaGlobalKey =>
-      $composableBuilder(column: $table.mediaGlobalKey, builder: (column) => column);
+  GeneratedColumn<String> get mediaGlobalKey => $composableBuilder(
+    column: $table.mediaGlobalKey,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get priority => $composableBuilder(column: $table.priority, builder: (column) => column);
+  GeneratedColumn<int> get priority =>
+      $composableBuilder(column: $table.priority, builder: (column) => column);
 
-  GeneratedColumn<int> get addedAt => $composableBuilder(column: $table.addedAt, builder: (column) => column);
+  GeneratedColumn<int> get addedAt =>
+      $composableBuilder(column: $table.addedAt, builder: (column) => column);
 
-  GeneratedColumn<bool> get downloadSubtitles =>
-      $composableBuilder(column: $table.downloadSubtitles, builder: (column) => column);
+  GeneratedColumn<bool> get downloadSubtitles => $composableBuilder(
+    column: $table.downloadSubtitles,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<bool> get downloadArtwork =>
-      $composableBuilder(column: $table.downloadArtwork, builder: (column) => column);
+  GeneratedColumn<bool> get downloadArtwork => $composableBuilder(
+    column: $table.downloadArtwork,
+    builder: (column) => column,
+  );
 }
 
 class $$DownloadQueueTableTableManager
@@ -3131,7 +6102,14 @@ class $$DownloadQueueTableTableManager
           $$DownloadQueueTableAnnotationComposer,
           $$DownloadQueueTableCreateCompanionBuilder,
           $$DownloadQueueTableUpdateCompanionBuilder,
-          (DownloadQueueItem, BaseReferences<_$AppDatabase, $DownloadQueueTable, DownloadQueueItem>),
+          (
+            DownloadQueueItem,
+            BaseReferences<
+              _$AppDatabase,
+              $DownloadQueueTable,
+              DownloadQueueItem
+            >,
+          ),
           DownloadQueueItem,
           PrefetchHooks Function()
         > {
@@ -3140,9 +6118,12 @@ class $$DownloadQueueTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$DownloadQueueTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$DownloadQueueTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$DownloadQueueTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$DownloadQueueTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DownloadQueueTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DownloadQueueTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
@@ -3175,7 +6156,9 @@ class $$DownloadQueueTableTableManager
                 downloadSubtitles: downloadSubtitles,
                 downloadArtwork: downloadArtwork,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -3191,7 +6174,10 @@ typedef $$DownloadQueueTableProcessedTableManager =
       $$DownloadQueueTableAnnotationComposer,
       $$DownloadQueueTableCreateCompanionBuilder,
       $$DownloadQueueTableUpdateCompanionBuilder,
-      (DownloadQueueItem, BaseReferences<_$AppDatabase, $DownloadQueueTable, DownloadQueueItem>),
+      (
+        DownloadQueueItem,
+        BaseReferences<_$AppDatabase, $DownloadQueueTable, DownloadQueueItem>,
+      ),
       DownloadQueueItem,
       PrefetchHooks Function()
     >;
@@ -3212,7 +6198,8 @@ typedef $$ApiCacheTableUpdateCompanionBuilder =
       Value<int> rowid,
     });
 
-class $$ApiCacheTableFilterComposer extends Composer<_$AppDatabase, $ApiCacheTable> {
+class $$ApiCacheTableFilterComposer
+    extends Composer<_$AppDatabase, $ApiCacheTable> {
   $$ApiCacheTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -3220,19 +6207,29 @@ class $$ApiCacheTableFilterComposer extends Composer<_$AppDatabase, $ApiCacheTab
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<String> get cacheKey =>
-      $composableBuilder(column: $table.cacheKey, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get cacheKey => $composableBuilder(
+    column: $table.cacheKey,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get data => $composableBuilder(column: $table.data, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<bool> get pinned =>
-      $composableBuilder(column: $table.pinned, builder: (column) => ColumnFilters(column));
+  ColumnFilters<bool> get pinned => $composableBuilder(
+    column: $table.pinned,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<DateTime> get cachedAt =>
-      $composableBuilder(column: $table.cachedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<DateTime> get cachedAt => $composableBuilder(
+    column: $table.cachedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$ApiCacheTableOrderingComposer extends Composer<_$AppDatabase, $ApiCacheTable> {
+class $$ApiCacheTableOrderingComposer
+    extends Composer<_$AppDatabase, $ApiCacheTable> {
   $$ApiCacheTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -3240,20 +6237,29 @@ class $$ApiCacheTableOrderingComposer extends Composer<_$AppDatabase, $ApiCacheT
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<String> get cacheKey =>
-      $composableBuilder(column: $table.cacheKey, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get cacheKey => $composableBuilder(
+    column: $table.cacheKey,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get data =>
-      $composableBuilder(column: $table.data, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get data => $composableBuilder(
+    column: $table.data,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<bool> get pinned =>
-      $composableBuilder(column: $table.pinned, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<bool> get pinned => $composableBuilder(
+    column: $table.pinned,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<DateTime> get cachedAt =>
-      $composableBuilder(column: $table.cachedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<DateTime> get cachedAt => $composableBuilder(
+    column: $table.cachedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$ApiCacheTableAnnotationComposer extends Composer<_$AppDatabase, $ApiCacheTable> {
+class $$ApiCacheTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ApiCacheTable> {
   $$ApiCacheTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -3261,13 +6267,17 @@ class $$ApiCacheTableAnnotationComposer extends Composer<_$AppDatabase, $ApiCach
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<String> get cacheKey => $composableBuilder(column: $table.cacheKey, builder: (column) => column);
+  GeneratedColumn<String> get cacheKey =>
+      $composableBuilder(column: $table.cacheKey, builder: (column) => column);
 
-  GeneratedColumn<String> get data => $composableBuilder(column: $table.data, builder: (column) => column);
+  GeneratedColumn<String> get data =>
+      $composableBuilder(column: $table.data, builder: (column) => column);
 
-  GeneratedColumn<bool> get pinned => $composableBuilder(column: $table.pinned, builder: (column) => column);
+  GeneratedColumn<bool> get pinned =>
+      $composableBuilder(column: $table.pinned, builder: (column) => column);
 
-  GeneratedColumn<DateTime> get cachedAt => $composableBuilder(column: $table.cachedAt, builder: (column) => column);
+  GeneratedColumn<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => column);
 }
 
 class $$ApiCacheTableTableManager
@@ -3281,7 +6291,10 @@ class $$ApiCacheTableTableManager
           $$ApiCacheTableAnnotationComposer,
           $$ApiCacheTableCreateCompanionBuilder,
           $$ApiCacheTableUpdateCompanionBuilder,
-          (ApiCacheData, BaseReferences<_$AppDatabase, $ApiCacheTable, ApiCacheData>),
+          (
+            ApiCacheData,
+            BaseReferences<_$AppDatabase, $ApiCacheTable, ApiCacheData>,
+          ),
           ApiCacheData,
           PrefetchHooks Function()
         > {
@@ -3290,9 +6303,12 @@ class $$ApiCacheTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$ApiCacheTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$ApiCacheTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$ApiCacheTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$ApiCacheTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ApiCacheTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ApiCacheTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<String> cacheKey = const Value.absent(),
@@ -3300,7 +6316,13 @@ class $$ApiCacheTableTableManager
                 Value<bool> pinned = const Value.absent(),
                 Value<DateTime> cachedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
-              }) => ApiCacheCompanion(cacheKey: cacheKey, data: data, pinned: pinned, cachedAt: cachedAt, rowid: rowid),
+              }) => ApiCacheCompanion(
+                cacheKey: cacheKey,
+                data: data,
+                pinned: pinned,
+                cachedAt: cachedAt,
+                rowid: rowid,
+              ),
           createCompanionCallback:
               ({
                 required String cacheKey,
@@ -3315,7 +6337,9 @@ class $$ApiCacheTableTableManager
                 cachedAt: cachedAt,
                 rowid: rowid,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -3331,14 +6355,19 @@ typedef $$ApiCacheTableProcessedTableManager =
       $$ApiCacheTableAnnotationComposer,
       $$ApiCacheTableCreateCompanionBuilder,
       $$ApiCacheTableUpdateCompanionBuilder,
-      (ApiCacheData, BaseReferences<_$AppDatabase, $ApiCacheTable, ApiCacheData>),
+      (
+        ApiCacheData,
+        BaseReferences<_$AppDatabase, $ApiCacheTable, ApiCacheData>,
+      ),
       ApiCacheData,
       PrefetchHooks Function()
     >;
 typedef $$OfflineWatchProgressTableCreateCompanionBuilder =
     OfflineWatchProgressCompanion Function({
       Value<int> id,
+      Value<String?> profileId,
       required String serverId,
+      Value<String?> clientScopeId,
       required String ratingKey,
       required String globalKey,
       required String actionType,
@@ -3353,7 +6382,9 @@ typedef $$OfflineWatchProgressTableCreateCompanionBuilder =
 typedef $$OfflineWatchProgressTableUpdateCompanionBuilder =
     OfflineWatchProgressCompanion Function({
       Value<int> id,
+      Value<String?> profileId,
       Value<String> serverId,
+      Value<String?> clientScopeId,
       Value<String> ratingKey,
       Value<String> globalKey,
       Value<String> actionType,
@@ -3366,7 +6397,8 @@ typedef $$OfflineWatchProgressTableUpdateCompanionBuilder =
       Value<String?> lastError,
     });
 
-class $$OfflineWatchProgressTableFilterComposer extends Composer<_$AppDatabase, $OfflineWatchProgressTable> {
+class $$OfflineWatchProgressTableFilterComposer
+    extends Composer<_$AppDatabase, $OfflineWatchProgressTable> {
   $$OfflineWatchProgressTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -3374,43 +6406,79 @@ class $$OfflineWatchProgressTableFilterComposer extends Composer<_$AppDatabase, 
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get serverId =>
-      $composableBuilder(column: $table.serverId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get ratingKey =>
-      $composableBuilder(column: $table.ratingKey, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get globalKey =>
-      $composableBuilder(column: $table.globalKey, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get clientScopeId => $composableBuilder(
+    column: $table.clientScopeId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get actionType =>
-      $composableBuilder(column: $table.actionType, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get ratingKey => $composableBuilder(
+    column: $table.ratingKey,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get viewOffset =>
-      $composableBuilder(column: $table.viewOffset, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get globalKey => $composableBuilder(
+    column: $table.globalKey,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get duration =>
-      $composableBuilder(column: $table.duration, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get actionType => $composableBuilder(
+    column: $table.actionType,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<bool> get shouldMarkWatched =>
-      $composableBuilder(column: $table.shouldMarkWatched, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get viewOffset => $composableBuilder(
+    column: $table.viewOffset,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get duration => $composableBuilder(
+    column: $table.duration,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<bool> get shouldMarkWatched => $composableBuilder(
+    column: $table.shouldMarkWatched,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get syncAttempts =>
-      $composableBuilder(column: $table.syncAttempts, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get lastError =>
-      $composableBuilder(column: $table.lastError, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get syncAttempts => $composableBuilder(
+    column: $table.syncAttempts,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$OfflineWatchProgressTableOrderingComposer extends Composer<_$AppDatabase, $OfflineWatchProgressTable> {
+class $$OfflineWatchProgressTableOrderingComposer
+    extends Composer<_$AppDatabase, $OfflineWatchProgressTable> {
   $$OfflineWatchProgressTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -3418,43 +6486,79 @@ class $$OfflineWatchProgressTableOrderingComposer extends Composer<_$AppDatabase
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get serverId =>
-      $composableBuilder(column: $table.serverId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get ratingKey =>
-      $composableBuilder(column: $table.ratingKey, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get globalKey =>
-      $composableBuilder(column: $table.globalKey, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get clientScopeId => $composableBuilder(
+    column: $table.clientScopeId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get actionType =>
-      $composableBuilder(column: $table.actionType, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get ratingKey => $composableBuilder(
+    column: $table.ratingKey,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get viewOffset =>
-      $composableBuilder(column: $table.viewOffset, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get globalKey => $composableBuilder(
+    column: $table.globalKey,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get duration =>
-      $composableBuilder(column: $table.duration, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get actionType => $composableBuilder(
+    column: $table.actionType,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<bool> get shouldMarkWatched =>
-      $composableBuilder(column: $table.shouldMarkWatched, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get viewOffset => $composableBuilder(
+    column: $table.viewOffset,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get duration => $composableBuilder(
+    column: $table.duration,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get updatedAt =>
-      $composableBuilder(column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<bool> get shouldMarkWatched => $composableBuilder(
+    column: $table.shouldMarkWatched,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get syncAttempts =>
-      $composableBuilder(column: $table.syncAttempts, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get lastError =>
-      $composableBuilder(column: $table.lastError, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get syncAttempts => $composableBuilder(
+    column: $table.syncAttempts,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lastError => $composableBuilder(
+    column: $table.lastError,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$OfflineWatchProgressTableAnnotationComposer extends Composer<_$AppDatabase, $OfflineWatchProgressTable> {
+class $$OfflineWatchProgressTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OfflineWatchProgressTable> {
   $$OfflineWatchProgressTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -3462,30 +6566,57 @@ class $$OfflineWatchProgressTableAnnotationComposer extends Composer<_$AppDataba
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get serverId => $composableBuilder(column: $table.serverId, builder: (column) => column);
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
 
-  GeneratedColumn<String> get ratingKey => $composableBuilder(column: $table.ratingKey, builder: (column) => column);
+  GeneratedColumn<String> get serverId =>
+      $composableBuilder(column: $table.serverId, builder: (column) => column);
 
-  GeneratedColumn<String> get globalKey => $composableBuilder(column: $table.globalKey, builder: (column) => column);
+  GeneratedColumn<String> get clientScopeId => $composableBuilder(
+    column: $table.clientScopeId,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get actionType => $composableBuilder(column: $table.actionType, builder: (column) => column);
+  GeneratedColumn<String> get ratingKey =>
+      $composableBuilder(column: $table.ratingKey, builder: (column) => column);
 
-  GeneratedColumn<int> get viewOffset => $composableBuilder(column: $table.viewOffset, builder: (column) => column);
+  GeneratedColumn<String> get globalKey =>
+      $composableBuilder(column: $table.globalKey, builder: (column) => column);
 
-  GeneratedColumn<int> get duration => $composableBuilder(column: $table.duration, builder: (column) => column);
+  GeneratedColumn<String> get actionType => $composableBuilder(
+    column: $table.actionType,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<bool> get shouldMarkWatched =>
-      $composableBuilder(column: $table.shouldMarkWatched, builder: (column) => column);
+  GeneratedColumn<int> get viewOffset => $composableBuilder(
+    column: $table.viewOffset,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get createdAt => $composableBuilder(column: $table.createdAt, builder: (column) => column);
+  GeneratedColumn<int> get duration =>
+      $composableBuilder(column: $table.duration, builder: (column) => column);
 
-  GeneratedColumn<int> get updatedAt => $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+  GeneratedColumn<bool> get shouldMarkWatched => $composableBuilder(
+    column: $table.shouldMarkWatched,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get syncAttempts => $composableBuilder(column: $table.syncAttempts, builder: (column) => column);
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
-  GeneratedColumn<String> get lastError => $composableBuilder(column: $table.lastError, builder: (column) => column);
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<int> get syncAttempts => $composableBuilder(
+    column: $table.syncAttempts,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get lastError =>
+      $composableBuilder(column: $table.lastError, builder: (column) => column);
 }
 
 class $$OfflineWatchProgressTableTableManager
@@ -3501,23 +6632,40 @@ class $$OfflineWatchProgressTableTableManager
           $$OfflineWatchProgressTableUpdateCompanionBuilder,
           (
             OfflineWatchProgressItem,
-            BaseReferences<_$AppDatabase, $OfflineWatchProgressTable, OfflineWatchProgressItem>,
+            BaseReferences<
+              _$AppDatabase,
+              $OfflineWatchProgressTable,
+              OfflineWatchProgressItem
+            >,
           ),
           OfflineWatchProgressItem,
           PrefetchHooks Function()
         > {
-  $$OfflineWatchProgressTableTableManager(_$AppDatabase db, $OfflineWatchProgressTable table)
-    : super(
+  $$OfflineWatchProgressTableTableManager(
+    _$AppDatabase db,
+    $OfflineWatchProgressTable table,
+  ) : super(
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$OfflineWatchProgressTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$OfflineWatchProgressTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$OfflineWatchProgressTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$OfflineWatchProgressTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OfflineWatchProgressTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$OfflineWatchProgressTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String?> profileId = const Value.absent(),
                 Value<String> serverId = const Value.absent(),
+                Value<String?> clientScopeId = const Value.absent(),
                 Value<String> ratingKey = const Value.absent(),
                 Value<String> globalKey = const Value.absent(),
                 Value<String> actionType = const Value.absent(),
@@ -3530,7 +6678,9 @@ class $$OfflineWatchProgressTableTableManager
                 Value<String?> lastError = const Value.absent(),
               }) => OfflineWatchProgressCompanion(
                 id: id,
+                profileId: profileId,
                 serverId: serverId,
+                clientScopeId: clientScopeId,
                 ratingKey: ratingKey,
                 globalKey: globalKey,
                 actionType: actionType,
@@ -3545,7 +6695,9 @@ class $$OfflineWatchProgressTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String?> profileId = const Value.absent(),
                 required String serverId,
+                Value<String?> clientScopeId = const Value.absent(),
                 required String ratingKey,
                 required String globalKey,
                 required String actionType,
@@ -3558,7 +6710,9 @@ class $$OfflineWatchProgressTableTableManager
                 Value<String?> lastError = const Value.absent(),
               }) => OfflineWatchProgressCompanion.insert(
                 id: id,
+                profileId: profileId,
                 serverId: serverId,
+                clientScopeId: clientScopeId,
                 ratingKey: ratingKey,
                 globalKey: globalKey,
                 actionType: actionType,
@@ -3570,7 +6724,9 @@ class $$OfflineWatchProgressTableTableManager
                 syncAttempts: syncAttempts,
                 lastError: lastError,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -3586,13 +6742,21 @@ typedef $$OfflineWatchProgressTableProcessedTableManager =
       $$OfflineWatchProgressTableAnnotationComposer,
       $$OfflineWatchProgressTableCreateCompanionBuilder,
       $$OfflineWatchProgressTableUpdateCompanionBuilder,
-      (OfflineWatchProgressItem, BaseReferences<_$AppDatabase, $OfflineWatchProgressTable, OfflineWatchProgressItem>),
+      (
+        OfflineWatchProgressItem,
+        BaseReferences<
+          _$AppDatabase,
+          $OfflineWatchProgressTable,
+          OfflineWatchProgressItem
+        >,
+      ),
       OfflineWatchProgressItem,
       PrefetchHooks Function()
     >;
 typedef $$SyncRulesTableCreateCompanionBuilder =
     SyncRulesCompanion Function({
       Value<int> id,
+      Value<String> profileId,
       required String serverId,
       required String ratingKey,
       required String globalKey,
@@ -3607,6 +6771,7 @@ typedef $$SyncRulesTableCreateCompanionBuilder =
 typedef $$SyncRulesTableUpdateCompanionBuilder =
     SyncRulesCompanion Function({
       Value<int> id,
+      Value<String> profileId,
       Value<String> serverId,
       Value<String> ratingKey,
       Value<String> globalKey,
@@ -3619,7 +6784,8 @@ typedef $$SyncRulesTableUpdateCompanionBuilder =
       Value<String> downloadFilter,
     });
 
-class $$SyncRulesTableFilterComposer extends Composer<_$AppDatabase, $SyncRulesTable> {
+class $$SyncRulesTableFilterComposer
+    extends Composer<_$AppDatabase, $SyncRulesTable> {
   $$SyncRulesTableFilterComposer({
     required super.$db,
     required super.$table,
@@ -3627,40 +6793,69 @@ class $$SyncRulesTableFilterComposer extends Composer<_$AppDatabase, $SyncRulesT
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnFilters<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get serverId =>
-      $composableBuilder(column: $table.serverId, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get ratingKey =>
-      $composableBuilder(column: $table.ratingKey, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get globalKey =>
-      $composableBuilder(column: $table.globalKey, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get ratingKey => $composableBuilder(
+    column: $table.ratingKey,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get targetType =>
-      $composableBuilder(column: $table.targetType, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get globalKey => $composableBuilder(
+    column: $table.globalKey,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get episodeCount =>
-      $composableBuilder(column: $table.episodeCount, builder: (column) => ColumnFilters(column));
+  ColumnFilters<String> get targetType => $composableBuilder(
+    column: $table.targetType,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<bool> get enabled =>
-      $composableBuilder(column: $table.enabled, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get episodeCount => $composableBuilder(
+    column: $table.episodeCount,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get lastExecutedAt =>
-      $composableBuilder(column: $table.lastExecutedAt, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<int> get mediaIndex =>
-      $composableBuilder(column: $table.mediaIndex, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get lastExecutedAt => $composableBuilder(
+    column: $table.lastExecutedAt,
+    builder: (column) => ColumnFilters(column),
+  );
 
-  ColumnFilters<String> get downloadFilter =>
-      $composableBuilder(column: $table.downloadFilter, builder: (column) => ColumnFilters(column));
+  ColumnFilters<int> get mediaIndex => $composableBuilder(
+    column: $table.mediaIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get downloadFilter => $composableBuilder(
+    column: $table.downloadFilter,
+    builder: (column) => ColumnFilters(column),
+  );
 }
 
-class $$SyncRulesTableOrderingComposer extends Composer<_$AppDatabase, $SyncRulesTable> {
+class $$SyncRulesTableOrderingComposer
+    extends Composer<_$AppDatabase, $SyncRulesTable> {
   $$SyncRulesTableOrderingComposer({
     required super.$db,
     required super.$table,
@@ -3668,40 +6863,69 @@ class $$SyncRulesTableOrderingComposer extends Composer<_$AppDatabase, $SyncRule
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  ColumnOrderings<int> get id => $composableBuilder(column: $table.id, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get serverId =>
-      $composableBuilder(column: $table.serverId, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get ratingKey =>
-      $composableBuilder(column: $table.ratingKey, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get serverId => $composableBuilder(
+    column: $table.serverId,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get globalKey =>
-      $composableBuilder(column: $table.globalKey, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get ratingKey => $composableBuilder(
+    column: $table.ratingKey,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get targetType =>
-      $composableBuilder(column: $table.targetType, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get globalKey => $composableBuilder(
+    column: $table.globalKey,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get episodeCount =>
-      $composableBuilder(column: $table.episodeCount, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<String> get targetType => $composableBuilder(
+    column: $table.targetType,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<bool> get enabled =>
-      $composableBuilder(column: $table.enabled, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get episodeCount => $composableBuilder(
+    column: $table.episodeCount,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get createdAt =>
-      $composableBuilder(column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<bool> get enabled => $composableBuilder(
+    column: $table.enabled,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get lastExecutedAt =>
-      $composableBuilder(column: $table.lastExecutedAt, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<int> get mediaIndex =>
-      $composableBuilder(column: $table.mediaIndex, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get lastExecutedAt => $composableBuilder(
+    column: $table.lastExecutedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 
-  ColumnOrderings<String> get downloadFilter =>
-      $composableBuilder(column: $table.downloadFilter, builder: (column) => ColumnOrderings(column));
+  ColumnOrderings<int> get mediaIndex => $composableBuilder(
+    column: $table.mediaIndex,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get downloadFilter => $composableBuilder(
+    column: $table.downloadFilter,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
-class $$SyncRulesTableAnnotationComposer extends Composer<_$AppDatabase, $SyncRulesTable> {
+class $$SyncRulesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SyncRulesTable> {
   $$SyncRulesTableAnnotationComposer({
     required super.$db,
     required super.$table,
@@ -3709,29 +6933,51 @@ class $$SyncRulesTableAnnotationComposer extends Composer<_$AppDatabase, $SyncRu
     super.$addJoinBuilderToRootComposer,
     super.$removeJoinBuilderFromRootComposer,
   });
-  GeneratedColumn<int> get id => $composableBuilder(column: $table.id, builder: (column) => column);
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<String> get serverId => $composableBuilder(column: $table.serverId, builder: (column) => column);
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
 
-  GeneratedColumn<String> get ratingKey => $composableBuilder(column: $table.ratingKey, builder: (column) => column);
+  GeneratedColumn<String> get serverId =>
+      $composableBuilder(column: $table.serverId, builder: (column) => column);
 
-  GeneratedColumn<String> get globalKey => $composableBuilder(column: $table.globalKey, builder: (column) => column);
+  GeneratedColumn<String> get ratingKey =>
+      $composableBuilder(column: $table.ratingKey, builder: (column) => column);
 
-  GeneratedColumn<String> get targetType => $composableBuilder(column: $table.targetType, builder: (column) => column);
+  GeneratedColumn<String> get globalKey =>
+      $composableBuilder(column: $table.globalKey, builder: (column) => column);
 
-  GeneratedColumn<int> get episodeCount => $composableBuilder(column: $table.episodeCount, builder: (column) => column);
+  GeneratedColumn<String> get targetType => $composableBuilder(
+    column: $table.targetType,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<bool> get enabled => $composableBuilder(column: $table.enabled, builder: (column) => column);
+  GeneratedColumn<int> get episodeCount => $composableBuilder(
+    column: $table.episodeCount,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<int> get createdAt => $composableBuilder(column: $table.createdAt, builder: (column) => column);
+  GeneratedColumn<bool> get enabled =>
+      $composableBuilder(column: $table.enabled, builder: (column) => column);
 
-  GeneratedColumn<int> get lastExecutedAt =>
-      $composableBuilder(column: $table.lastExecutedAt, builder: (column) => column);
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
-  GeneratedColumn<int> get mediaIndex => $composableBuilder(column: $table.mediaIndex, builder: (column) => column);
+  GeneratedColumn<int> get lastExecutedAt => $composableBuilder(
+    column: $table.lastExecutedAt,
+    builder: (column) => column,
+  );
 
-  GeneratedColumn<String> get downloadFilter =>
-      $composableBuilder(column: $table.downloadFilter, builder: (column) => column);
+  GeneratedColumn<int> get mediaIndex => $composableBuilder(
+    column: $table.mediaIndex,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get downloadFilter => $composableBuilder(
+    column: $table.downloadFilter,
+    builder: (column) => column,
+  );
 }
 
 class $$SyncRulesTableTableManager
@@ -3745,7 +6991,10 @@ class $$SyncRulesTableTableManager
           $$SyncRulesTableAnnotationComposer,
           $$SyncRulesTableCreateCompanionBuilder,
           $$SyncRulesTableUpdateCompanionBuilder,
-          (SyncRuleItem, BaseReferences<_$AppDatabase, $SyncRulesTable, SyncRuleItem>),
+          (
+            SyncRuleItem,
+            BaseReferences<_$AppDatabase, $SyncRulesTable, SyncRuleItem>,
+          ),
           SyncRuleItem,
           PrefetchHooks Function()
         > {
@@ -3754,12 +7003,16 @@ class $$SyncRulesTableTableManager
         TableManagerState(
           db: db,
           table: table,
-          createFilteringComposer: () => $$SyncRulesTableFilterComposer($db: db, $table: table),
-          createOrderingComposer: () => $$SyncRulesTableOrderingComposer($db: db, $table: table),
-          createComputedFieldComposer: () => $$SyncRulesTableAnnotationComposer($db: db, $table: table),
+          createFilteringComposer: () =>
+              $$SyncRulesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SyncRulesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SyncRulesTableAnnotationComposer($db: db, $table: table),
           updateCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String> profileId = const Value.absent(),
                 Value<String> serverId = const Value.absent(),
                 Value<String> ratingKey = const Value.absent(),
                 Value<String> globalKey = const Value.absent(),
@@ -3772,6 +7025,7 @@ class $$SyncRulesTableTableManager
                 Value<String> downloadFilter = const Value.absent(),
               }) => SyncRulesCompanion(
                 id: id,
+                profileId: profileId,
                 serverId: serverId,
                 ratingKey: ratingKey,
                 globalKey: globalKey,
@@ -3786,6 +7040,7 @@ class $$SyncRulesTableTableManager
           createCompanionCallback:
               ({
                 Value<int> id = const Value.absent(),
+                Value<String> profileId = const Value.absent(),
                 required String serverId,
                 required String ratingKey,
                 required String globalKey,
@@ -3798,6 +7053,7 @@ class $$SyncRulesTableTableManager
                 Value<String> downloadFilter = const Value.absent(),
               }) => SyncRulesCompanion.insert(
                 id: id,
+                profileId: profileId,
                 serverId: serverId,
                 ratingKey: ratingKey,
                 globalKey: globalKey,
@@ -3809,7 +7065,9 @@ class $$SyncRulesTableTableManager
                 mediaIndex: mediaIndex,
                 downloadFilter: downloadFilter,
               ),
-          withReferenceMapper: (p0) => p0.map((e) => (e.readTable(table), BaseReferences(db, table, e))).toList(),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
           prefetchHooksCallback: null,
         ),
       );
@@ -3825,9 +7083,1015 @@ typedef $$SyncRulesTableProcessedTableManager =
       $$SyncRulesTableAnnotationComposer,
       $$SyncRulesTableCreateCompanionBuilder,
       $$SyncRulesTableUpdateCompanionBuilder,
-      (SyncRuleItem, BaseReferences<_$AppDatabase, $SyncRulesTable, SyncRuleItem>),
+      (
+        SyncRuleItem,
+        BaseReferences<_$AppDatabase, $SyncRulesTable, SyncRuleItem>,
+      ),
       SyncRuleItem,
       PrefetchHooks Function()
+    >;
+typedef $$ConnectionsTableCreateCompanionBuilder =
+    ConnectionsCompanion Function({
+      required String id,
+      required String kind,
+      required String displayName,
+      required String configJson,
+      Value<bool> isDefault,
+      required int createdAt,
+      Value<int?> lastAuthenticatedAt,
+      Value<int> rowid,
+    });
+typedef $$ConnectionsTableUpdateCompanionBuilder =
+    ConnectionsCompanion Function({
+      Value<String> id,
+      Value<String> kind,
+      Value<String> displayName,
+      Value<String> configJson,
+      Value<bool> isDefault,
+      Value<int> createdAt,
+      Value<int?> lastAuthenticatedAt,
+      Value<int> rowid,
+    });
+
+final class $$ConnectionsTableReferences
+    extends BaseReferences<_$AppDatabase, $ConnectionsTable, ConnectionRow> {
+  $$ConnectionsTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<
+    $ProfileConnectionsTable,
+    List<ProfileConnectionRow>
+  >
+  _profileConnectionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.profileConnections,
+        aliasName: $_aliasNameGenerator(
+          db.connections.id,
+          db.profileConnections.connectionId,
+        ),
+      );
+
+  $$ProfileConnectionsTableProcessedTableManager get profileConnectionsRefs {
+    final manager = $$ProfileConnectionsTableTableManager(
+      $_db,
+      $_db.profileConnections,
+    ).filter((f) => f.connectionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _profileConnectionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ConnectionsTableFilterComposer
+    extends Composer<_$AppDatabase, $ConnectionsTable> {
+  $$ConnectionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get configJson => $composableBuilder(
+    column: $table.configJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastAuthenticatedAt => $composableBuilder(
+    column: $table.lastAuthenticatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> profileConnectionsRefs(
+    Expression<bool> Function($$ProfileConnectionsTableFilterComposer f) f,
+  ) {
+    final $$ProfileConnectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.profileConnections,
+      getReferencedColumn: (t) => t.connectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ProfileConnectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.profileConnections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$ConnectionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ConnectionsTable> {
+  $$ConnectionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get configJson => $composableBuilder(
+    column: $table.configJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastAuthenticatedAt => $composableBuilder(
+    column: $table.lastAuthenticatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ConnectionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ConnectionsTable> {
+  $$ConnectionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get configJson => $composableBuilder(
+    column: $table.configJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDefault =>
+      $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get lastAuthenticatedAt => $composableBuilder(
+    column: $table.lastAuthenticatedAt,
+    builder: (column) => column,
+  );
+
+  Expression<T> profileConnectionsRefs<T extends Object>(
+    Expression<T> Function($$ProfileConnectionsTableAnnotationComposer a) f,
+  ) {
+    final $$ProfileConnectionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.profileConnections,
+          getReferencedColumn: (t) => t.connectionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ProfileConnectionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.profileConnections,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ConnectionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ConnectionsTable,
+          ConnectionRow,
+          $$ConnectionsTableFilterComposer,
+          $$ConnectionsTableOrderingComposer,
+          $$ConnectionsTableAnnotationComposer,
+          $$ConnectionsTableCreateCompanionBuilder,
+          $$ConnectionsTableUpdateCompanionBuilder,
+          (ConnectionRow, $$ConnectionsTableReferences),
+          ConnectionRow,
+          PrefetchHooks Function({bool profileConnectionsRefs})
+        > {
+  $$ConnectionsTableTableManager(_$AppDatabase db, $ConnectionsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ConnectionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ConnectionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ConnectionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> displayName = const Value.absent(),
+                Value<String> configJson = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int?> lastAuthenticatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ConnectionsCompanion(
+                id: id,
+                kind: kind,
+                displayName: displayName,
+                configJson: configJson,
+                isDefault: isDefault,
+                createdAt: createdAt,
+                lastAuthenticatedAt: lastAuthenticatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String kind,
+                required String displayName,
+                required String configJson,
+                Value<bool> isDefault = const Value.absent(),
+                required int createdAt,
+                Value<int?> lastAuthenticatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ConnectionsCompanion.insert(
+                id: id,
+                kind: kind,
+                displayName: displayName,
+                configJson: configJson,
+                isDefault: isDefault,
+                createdAt: createdAt,
+                lastAuthenticatedAt: lastAuthenticatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ConnectionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({profileConnectionsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (profileConnectionsRefs) db.profileConnections,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (profileConnectionsRefs)
+                    await $_getPrefetchedData<
+                      ConnectionRow,
+                      $ConnectionsTable,
+                      ProfileConnectionRow
+                    >(
+                      currentTable: table,
+                      referencedTable: $$ConnectionsTableReferences
+                          ._profileConnectionsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$ConnectionsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).profileConnectionsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.connectionId == item.id,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ConnectionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ConnectionsTable,
+      ConnectionRow,
+      $$ConnectionsTableFilterComposer,
+      $$ConnectionsTableOrderingComposer,
+      $$ConnectionsTableAnnotationComposer,
+      $$ConnectionsTableCreateCompanionBuilder,
+      $$ConnectionsTableUpdateCompanionBuilder,
+      (ConnectionRow, $$ConnectionsTableReferences),
+      ConnectionRow,
+      PrefetchHooks Function({bool profileConnectionsRefs})
+    >;
+typedef $$ProfilesTableCreateCompanionBuilder =
+    ProfilesCompanion Function({
+      required String id,
+      required String kind,
+      required String displayName,
+      Value<String?> avatarThumbUrl,
+      required String configJson,
+      Value<int> sortOrder,
+      required int createdAt,
+      Value<int?> lastUsedAt,
+      Value<int> rowid,
+    });
+typedef $$ProfilesTableUpdateCompanionBuilder =
+    ProfilesCompanion Function({
+      Value<String> id,
+      Value<String> kind,
+      Value<String> displayName,
+      Value<String?> avatarThumbUrl,
+      Value<String> configJson,
+      Value<int> sortOrder,
+      Value<int> createdAt,
+      Value<int?> lastUsedAt,
+      Value<int> rowid,
+    });
+
+class $$ProfilesTableFilterComposer
+    extends Composer<_$AppDatabase, $ProfilesTable> {
+  $$ProfilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get avatarThumbUrl => $composableBuilder(
+    column: $table.avatarThumbUrl,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get configJson => $composableBuilder(
+    column: $table.configJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastUsedAt => $composableBuilder(
+    column: $table.lastUsedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ProfilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProfilesTable> {
+  $$ProfilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get avatarThumbUrl => $composableBuilder(
+    column: $table.avatarThumbUrl,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get configJson => $composableBuilder(
+    column: $table.configJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastUsedAt => $composableBuilder(
+    column: $table.lastUsedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ProfilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProfilesTable> {
+  $$ProfilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get avatarThumbUrl => $composableBuilder(
+    column: $table.avatarThumbUrl,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get configJson => $composableBuilder(
+    column: $table.configJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get lastUsedAt => $composableBuilder(
+    column: $table.lastUsedAt,
+    builder: (column) => column,
+  );
+}
+
+class $$ProfilesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProfilesTable,
+          ProfileRow,
+          $$ProfilesTableFilterComposer,
+          $$ProfilesTableOrderingComposer,
+          $$ProfilesTableAnnotationComposer,
+          $$ProfilesTableCreateCompanionBuilder,
+          $$ProfilesTableUpdateCompanionBuilder,
+          (
+            ProfileRow,
+            BaseReferences<_$AppDatabase, $ProfilesTable, ProfileRow>,
+          ),
+          ProfileRow,
+          PrefetchHooks Function()
+        > {
+  $$ProfilesTableTableManager(_$AppDatabase db, $ProfilesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProfilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProfilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProfilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> displayName = const Value.absent(),
+                Value<String?> avatarThumbUrl = const Value.absent(),
+                Value<String> configJson = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int?> lastUsedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProfilesCompanion(
+                id: id,
+                kind: kind,
+                displayName: displayName,
+                avatarThumbUrl: avatarThumbUrl,
+                configJson: configJson,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                lastUsedAt: lastUsedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String kind,
+                required String displayName,
+                Value<String?> avatarThumbUrl = const Value.absent(),
+                required String configJson,
+                Value<int> sortOrder = const Value.absent(),
+                required int createdAt,
+                Value<int?> lastUsedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProfilesCompanion.insert(
+                id: id,
+                kind: kind,
+                displayName: displayName,
+                avatarThumbUrl: avatarThumbUrl,
+                configJson: configJson,
+                sortOrder: sortOrder,
+                createdAt: createdAt,
+                lastUsedAt: lastUsedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ProfilesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProfilesTable,
+      ProfileRow,
+      $$ProfilesTableFilterComposer,
+      $$ProfilesTableOrderingComposer,
+      $$ProfilesTableAnnotationComposer,
+      $$ProfilesTableCreateCompanionBuilder,
+      $$ProfilesTableUpdateCompanionBuilder,
+      (ProfileRow, BaseReferences<_$AppDatabase, $ProfilesTable, ProfileRow>),
+      ProfileRow,
+      PrefetchHooks Function()
+    >;
+typedef $$ProfileConnectionsTableCreateCompanionBuilder =
+    ProfileConnectionsCompanion Function({
+      required String profileId,
+      required String connectionId,
+      Value<String> userToken,
+      required String userIdentifier,
+      Value<bool> isDefault,
+      Value<int?> tokenAcquiredAt,
+      Value<int?> lastUsedAt,
+      Value<int> rowid,
+    });
+typedef $$ProfileConnectionsTableUpdateCompanionBuilder =
+    ProfileConnectionsCompanion Function({
+      Value<String> profileId,
+      Value<String> connectionId,
+      Value<String> userToken,
+      Value<String> userIdentifier,
+      Value<bool> isDefault,
+      Value<int?> tokenAcquiredAt,
+      Value<int?> lastUsedAt,
+      Value<int> rowid,
+    });
+
+final class $$ProfileConnectionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ProfileConnectionsTable,
+          ProfileConnectionRow
+        > {
+  $$ProfileConnectionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ConnectionsTable _connectionIdTable(_$AppDatabase db) =>
+      db.connections.createAlias(
+        $_aliasNameGenerator(
+          db.profileConnections.connectionId,
+          db.connections.id,
+        ),
+      );
+
+  $$ConnectionsTableProcessedTableManager get connectionId {
+    final $_column = $_itemColumn<String>('connection_id')!;
+
+    final manager = $$ConnectionsTableTableManager(
+      $_db,
+      $_db.connections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_connectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ProfileConnectionsTableFilterComposer
+    extends Composer<_$AppDatabase, $ProfileConnectionsTable> {
+  $$ProfileConnectionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userToken => $composableBuilder(
+    column: $table.userToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userIdentifier => $composableBuilder(
+    column: $table.userIdentifier,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get tokenAcquiredAt => $composableBuilder(
+    column: $table.tokenAcquiredAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastUsedAt => $composableBuilder(
+    column: $table.lastUsedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ConnectionsTableFilterComposer get connectionId {
+    final $$ConnectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.connectionId,
+      referencedTable: $db.connections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConnectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.connections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProfileConnectionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProfileConnectionsTable> {
+  $$ProfileConnectionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get profileId => $composableBuilder(
+    column: $table.profileId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userToken => $composableBuilder(
+    column: $table.userToken,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userIdentifier => $composableBuilder(
+    column: $table.userIdentifier,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDefault => $composableBuilder(
+    column: $table.isDefault,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get tokenAcquiredAt => $composableBuilder(
+    column: $table.tokenAcquiredAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastUsedAt => $composableBuilder(
+    column: $table.lastUsedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ConnectionsTableOrderingComposer get connectionId {
+    final $$ConnectionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.connectionId,
+      referencedTable: $db.connections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConnectionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.connections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProfileConnectionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProfileConnectionsTable> {
+  $$ProfileConnectionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get profileId =>
+      $composableBuilder(column: $table.profileId, builder: (column) => column);
+
+  GeneratedColumn<String> get userToken =>
+      $composableBuilder(column: $table.userToken, builder: (column) => column);
+
+  GeneratedColumn<String> get userIdentifier => $composableBuilder(
+    column: $table.userIdentifier,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDefault =>
+      $composableBuilder(column: $table.isDefault, builder: (column) => column);
+
+  GeneratedColumn<int> get tokenAcquiredAt => $composableBuilder(
+    column: $table.tokenAcquiredAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastUsedAt => $composableBuilder(
+    column: $table.lastUsedAt,
+    builder: (column) => column,
+  );
+
+  $$ConnectionsTableAnnotationComposer get connectionId {
+    final $$ConnectionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.connectionId,
+      referencedTable: $db.connections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ConnectionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.connections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ProfileConnectionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ProfileConnectionsTable,
+          ProfileConnectionRow,
+          $$ProfileConnectionsTableFilterComposer,
+          $$ProfileConnectionsTableOrderingComposer,
+          $$ProfileConnectionsTableAnnotationComposer,
+          $$ProfileConnectionsTableCreateCompanionBuilder,
+          $$ProfileConnectionsTableUpdateCompanionBuilder,
+          (ProfileConnectionRow, $$ProfileConnectionsTableReferences),
+          ProfileConnectionRow,
+          PrefetchHooks Function({bool connectionId})
+        > {
+  $$ProfileConnectionsTableTableManager(
+    _$AppDatabase db,
+    $ProfileConnectionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProfileConnectionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProfileConnectionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProfileConnectionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> profileId = const Value.absent(),
+                Value<String> connectionId = const Value.absent(),
+                Value<String> userToken = const Value.absent(),
+                Value<String> userIdentifier = const Value.absent(),
+                Value<bool> isDefault = const Value.absent(),
+                Value<int?> tokenAcquiredAt = const Value.absent(),
+                Value<int?> lastUsedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProfileConnectionsCompanion(
+                profileId: profileId,
+                connectionId: connectionId,
+                userToken: userToken,
+                userIdentifier: userIdentifier,
+                isDefault: isDefault,
+                tokenAcquiredAt: tokenAcquiredAt,
+                lastUsedAt: lastUsedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String profileId,
+                required String connectionId,
+                Value<String> userToken = const Value.absent(),
+                required String userIdentifier,
+                Value<bool> isDefault = const Value.absent(),
+                Value<int?> tokenAcquiredAt = const Value.absent(),
+                Value<int?> lastUsedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ProfileConnectionsCompanion.insert(
+                profileId: profileId,
+                connectionId: connectionId,
+                userToken: userToken,
+                userIdentifier: userIdentifier,
+                isDefault: isDefault,
+                tokenAcquiredAt: tokenAcquiredAt,
+                lastUsedAt: lastUsedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ProfileConnectionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({connectionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (connectionId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.connectionId,
+                                referencedTable:
+                                    $$ProfileConnectionsTableReferences
+                                        ._connectionIdTable(db),
+                                referencedColumn:
+                                    $$ProfileConnectionsTableReferences
+                                        ._connectionIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ProfileConnectionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ProfileConnectionsTable,
+      ProfileConnectionRow,
+      $$ProfileConnectionsTableFilterComposer,
+      $$ProfileConnectionsTableOrderingComposer,
+      $$ProfileConnectionsTableAnnotationComposer,
+      $$ProfileConnectionsTableCreateCompanionBuilder,
+      $$ProfileConnectionsTableUpdateCompanionBuilder,
+      (ProfileConnectionRow, $$ProfileConnectionsTableReferences),
+      ProfileConnectionRow,
+      PrefetchHooks Function({bool connectionId})
     >;
 
 class $AppDatabaseManager {
@@ -3835,9 +8099,20 @@ class $AppDatabaseManager {
   $AppDatabaseManager(this._db);
   $$DownloadedMediaTableTableManager get downloadedMedia =>
       $$DownloadedMediaTableTableManager(_db, _db.downloadedMedia);
-  $$DownloadQueueTableTableManager get downloadQueue => $$DownloadQueueTableTableManager(_db, _db.downloadQueue);
-  $$ApiCacheTableTableManager get apiCache => $$ApiCacheTableTableManager(_db, _db.apiCache);
+  $$DownloadOwnersTableTableManager get downloadOwners =>
+      $$DownloadOwnersTableTableManager(_db, _db.downloadOwners);
+  $$DownloadQueueTableTableManager get downloadQueue =>
+      $$DownloadQueueTableTableManager(_db, _db.downloadQueue);
+  $$ApiCacheTableTableManager get apiCache =>
+      $$ApiCacheTableTableManager(_db, _db.apiCache);
   $$OfflineWatchProgressTableTableManager get offlineWatchProgress =>
       $$OfflineWatchProgressTableTableManager(_db, _db.offlineWatchProgress);
-  $$SyncRulesTableTableManager get syncRules => $$SyncRulesTableTableManager(_db, _db.syncRules);
+  $$SyncRulesTableTableManager get syncRules =>
+      $$SyncRulesTableTableManager(_db, _db.syncRules);
+  $$ConnectionsTableTableManager get connections =>
+      $$ConnectionsTableTableManager(_db, _db.connections);
+  $$ProfilesTableTableManager get profiles =>
+      $$ProfilesTableTableManager(_db, _db.profiles);
+  $$ProfileConnectionsTableTableManager get profileConnections =>
+      $$ProfileConnectionsTableTableManager(_db, _db.profileConnections);
 }

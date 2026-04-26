@@ -26,6 +26,11 @@ Object? _readChannelNumber(Map json, String _) =>
 
 Object? _readFavoriteChannelId(Map json, String _) => json['id'] as String? ?? json['key'] as String? ?? '';
 
+String favoriteChannelKey(String source, String id) => '$source\u0000$id';
+
+String liveTvChannelScopeKey(LiveTvChannel channel) =>
+    '${channel.serverId ?? ''}\u0000${channel.liveDvrKey ?? ''}\u0000${channel.key}';
+
 /// Represents a Live TV channel from the EPG
 @JsonSerializable(createToJson: false)
 class LiveTvChannel with MultiServerFields {
@@ -53,6 +58,12 @@ class LiveTvChannel with MultiServerFields {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   final String? serverName;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? liveDvrKey;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? favoriteSource;
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  final String? favoriteStoreKey;
 
   LiveTvChannel({
     required this.key,
@@ -68,11 +79,20 @@ class LiveTvChannel with MultiServerFields {
     this.drm,
     this.serverId,
     this.serverName,
+    this.liveDvrKey,
+    this.favoriteSource,
+    this.favoriteStoreKey,
   });
 
   factory LiveTvChannel.fromJson(Map<String, dynamic> json) => _$LiveTvChannelFromJson(json);
 
-  LiveTvChannel copyWith({String? serverId, String? serverName}) {
+  LiveTvChannel copyWith({
+    String? serverId,
+    String? serverName,
+    String? liveDvrKey,
+    String? favoriteSource,
+    String? favoriteStoreKey,
+  }) {
     return LiveTvChannel(
       key: key,
       identifier: identifier,
@@ -87,6 +107,9 @@ class LiveTvChannel with MultiServerFields {
       drm: drm,
       serverId: serverId ?? this.serverId,
       serverName: serverName ?? this.serverName,
+      liveDvrKey: liveDvrKey ?? this.liveDvrKey,
+      favoriteSource: favoriteSource ?? this.favoriteSource,
+      favoriteStoreKey: favoriteStoreKey ?? this.favoriteStoreKey,
     );
   }
 
@@ -109,6 +132,8 @@ class FavoriteChannel {
   FavoriteChannel({required this.source, required this.id, this.title, this.thumb, this.vcn});
 
   factory FavoriteChannel.fromJson(Map<String, dynamic> json) => _$FavoriteChannelFromJson(json);
+
+  String get stableKey => favoriteChannelKey(source, id);
 
   Map<String, dynamic> toJson() => {
     'source': source,

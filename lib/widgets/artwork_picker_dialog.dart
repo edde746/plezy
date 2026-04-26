@@ -6,10 +6,12 @@ import '../focus/focusable_wrapper.dart';
 import '../i18n/strings.g.dart';
 import '../services/file_picker_service.dart';
 import '../services/plex_client.dart';
+import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/snackbar_helper.dart';
 import '../widgets/app_icon.dart';
-import '../widgets/plex_optimized_image.dart';
+import '../widgets/optimized_media_image.dart';
+import 'loading_indicator_box.dart';
 
 class ArtworkPickerDialog extends StatefulWidget {
   final PlexClient client;
@@ -59,10 +61,7 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
     // silently ignore the selection despite returning 200.
     final url = artwork['ratingKey'] as String? ?? artwork['key'] as String?;
     if (url == null || _isApplying) return;
-
-    setState(() => _isApplying = true);
-    final success = await widget.client.setArtworkFromUrl(widget.ratingKey, widget.element, url);
-    _handleArtworkUpdate(success);
+    await _runArtworkUpdate(() => widget.client.setArtworkFromUrl(widget.ratingKey, widget.element, url));
   }
 
   Future<void> _addFromUrl() async {
@@ -74,10 +73,7 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
     );
 
     if (url == null || url.isEmpty || !mounted) return;
-
-    setState(() => _isApplying = true);
-    final success = await widget.client.setArtworkFromUrl(widget.ratingKey, widget.element, url);
-    _handleArtworkUpdate(success);
+    await _runArtworkUpdate(() => widget.client.setArtworkFromUrl(widget.ratingKey, widget.element, url));
   }
 
   Future<void> _uploadFile() async {
@@ -87,13 +83,22 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
 
     final bytes = result.files.first.bytes;
     if (bytes == null) return;
-
-    setState(() => _isApplying = true);
-    final success = await widget.client.uploadArtwork(widget.ratingKey, widget.element, bytes);
-    _handleArtworkUpdate(success);
+    await _runArtworkUpdate(() => widget.client.uploadArtwork(widget.ratingKey, widget.element, bytes));
   }
 
-  void _handleArtworkUpdate(bool success) {
+  /// Runs an artwork update API call with shared loading-state and
+  /// error-handling. The underlying client throws on HTTP errors (see
+  /// [PlexClient] `_wrapBoolApiCall`), so we must catch here or `_isApplying`
+  /// gets stuck `true` and the user sees an infinite spinner.
+  Future<void> _runArtworkUpdate(Future<bool> Function() action) async {
+    if (_isApplying) return;
+    setState(() => _isApplying = true);
+    bool success = false;
+    try {
+      success = await action();
+    } catch (e, st) {
+      appLogger.e('Artwork update failed', error: e, stackTrace: st);
+    }
     if (!mounted) return;
     setState(() => _isApplying = false);
     if (success) {
@@ -114,11 +119,7 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
         child: _isLoading ? const Center(child: CircularProgressIndicator()) : _buildArtworkContent(),
       ),
       actions: [
-        if (_isApplying)
-          const Padding(
-            padding: EdgeInsets.all(8),
-            child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2)),
-          ),
+        if (_isApplying) const Padding(padding: EdgeInsets.all(8), child: LoadingIndicatorBox(size: 24)),
         FocusableButton(
           onPressed: _addFromUrl,
           child: TextButton.icon(
@@ -182,7 +183,7 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
                   ),
                   child: ClipRRect(
                     borderRadius: const BorderRadius.all(Radius.circular(8)),
-                    child: PlexOptimizedImage(client: widget.client, imagePath: thumbUrl, fit: BoxFit.contain),
+                    child: OptimizedMediaImage(client: widget.client, imagePath: thumbUrl, fit: BoxFit.contain),
                   ),
                 ),
                 if (isSelected)

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../focus/focusable_action_bar.dart';
-import '../../models/plex_metadata.dart';
+import '../../media/media_item.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../providers/settings_provider.dart';
@@ -193,7 +193,11 @@ class DownloadsScreenState extends State<DownloadsScreen> with TickerProviderSta
                     children: [
                       Consumer2<DownloadProvider, MultiServerProvider>(
                         builder: (context, downloadProvider, serverProvider, _) {
-                          // Helper to get client from globalKey (serverId:ratingKey)
+                          // Resolve the owning server's client from a download's
+                          // globalKey (`serverId:ratingKey`). Backend-neutral —
+                          // Jellyfin downloads also surface here, so the
+                          // resume/retry buttons need a [MediaServerClient]
+                          // (not a [PlexClient]) for both code paths.
                           getClient(String globalKey) {
                             final serverId = parseGlobalKey(globalKey)?.serverId ?? globalKey;
                             return serverProvider.serverManager.getClient(serverId);
@@ -290,7 +294,7 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
   Widget build(BuildContext context) {
     return Consumer2<DownloadProvider, SettingsProvider>(
       builder: (context, downloadProvider, settingsProvider, _) {
-        final List<PlexMetadata> items = widget.type == DownloadType.tvShows
+        final List<MediaItem> items = widget.type == DownloadType.tvShows
             ? downloadProvider.downloadedShows
             : downloadProvider.downloadedMovies;
 

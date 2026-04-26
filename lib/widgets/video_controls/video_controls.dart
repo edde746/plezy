@@ -1,6 +1,5 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:io' show Platform;
-import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart' show PointerSignalEvent, PointerScrollEvent;
 import 'package:flutter/material.dart';
@@ -27,20 +26,23 @@ import '../overlay_sheet.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/focusable_wrapper.dart';
 
+import '../../database/app_database.dart';
+import '../../media/media_backend.dart';
+import '../../media/media_item.dart';
 import '../../models/livetv_capture_buffer.dart';
-import '../../services/plex_client.dart';
-import '../../services/plex_api_cache.dart';
-import '../../models/plex_media_info.dart';
+import '../../providers/multi_server_provider.dart';
+import '../../media/media_source_info.dart';
 import '../../models/transcode_quality_preset.dart';
-import '../../models/plex_media_version.dart';
-import '../../models/plex_metadata.dart';
+import '../../media/media_version.dart';
 import '../../screens/video_player_screen.dart';
 import '../../focus/key_event_utils.dart';
 import '../../services/keyboard_shortcuts_service.dart';
+import '../../services/cached_playback_metadata_service.dart';
+import '../../services/scrub_preview_source.dart';
 import '../../services/settings_service.dart';
 import '../../utils/formatters.dart';
+import '../../utils/global_key_utils.dart';
 import '../../utils/platform_detector.dart';
-import '../../utils/plex_cache_parser.dart';
 import '../../utils/player_utils.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/provider_extensions.dart';
@@ -65,15 +67,16 @@ import '../../services/shader_service.dart';
 /// Custom video controls builder for Plex with chapter, audio, and subtitle support
 Widget plexVideoControlsBuilder(
   Player player,
-  PlexMetadata metadata, {
+  MediaItem metadata, {
   VoidCallback? onNext,
   VoidCallback? onPrevious,
-  List<PlexMediaVersion>? availableVersions,
+  List<MediaVersion>? availableVersions,
   int? selectedMediaIndex,
   TranscodeQualityPreset selectedQualityPreset = TranscodeQualityPreset.original,
   bool serverSupportsTranscoding = false,
   bool isTranscoding = false,
-  List<PlexAudioTrack> sourceAudioTracks = const [],
+  bool isOfflinePlayback = false,
+  List<MediaAudioTrack> sourceAudioTracks = const [],
   int? selectedAudioStreamId,
   VoidCallback? onTogglePIPMode,
   int boxFitMode = 0,
@@ -92,7 +95,7 @@ Widget plexVideoControlsBuilder(
   ValueNotifier<bool>? controlsVisible,
   ShaderService? shaderService,
   VoidCallback? onShaderChanged,
-  Uint8List? Function(Duration time)? thumbnailDataBuilder,
+  ScrubFrame? Function(Duration time)? thumbnailDataBuilder,
   bool isLive = false,
   String? liveChannelName,
   CaptureBuffer? captureBuffer,
@@ -116,6 +119,7 @@ Widget plexVideoControlsBuilder(
     selectedQualityPreset: selectedQualityPreset,
     serverSupportsTranscoding: serverSupportsTranscoding,
     isTranscoding: isTranscoding,
+    isOfflinePlayback: isOfflinePlayback,
     sourceAudioTracks: sourceAudioTracks,
     selectedAudioStreamId: selectedAudioStreamId,
     boxFitMode: boxFitMode,
@@ -149,17 +153,55 @@ Widget plexVideoControlsBuilder(
   );
 }
 
+@visibleForTesting
+({
+  List<MediaVersion> availableVersions,
+  bool serverSupportsTranscoding,
+  bool isTranscoding,
+  List<MediaAudioTrack> sourceAudioTracks,
+  int? selectedAudioStreamId,
+  bool canSwitch,
+})
+effectiveVersionQualityControls({
+  required bool isOfflinePlayback,
+  required List<MediaVersion> availableVersions,
+  required bool serverSupportsTranscoding,
+  required bool isTranscoding,
+  required List<MediaAudioTrack> sourceAudioTracks,
+  required int? selectedAudioStreamId,
+}) {
+  if (isOfflinePlayback) {
+    return (
+      availableVersions: const <MediaVersion>[],
+      serverSupportsTranscoding: false,
+      isTranscoding: false,
+      sourceAudioTracks: const <MediaAudioTrack>[],
+      selectedAudioStreamId: null,
+      canSwitch: false,
+    );
+  }
+  return (
+    availableVersions: availableVersions,
+    serverSupportsTranscoding: serverSupportsTranscoding,
+    isTranscoding: isTranscoding,
+    sourceAudioTracks: sourceAudioTracks,
+    selectedAudioStreamId: selectedAudioStreamId,
+    canSwitch: true,
+  );
+}
+
 class PlexVideoControls extends StatefulWidget {
   final Player player;
-  final PlexMetadata metadata;
+  final MediaItem metadata;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
-  final List<PlexMediaVersion> availableVersions;
+  final List<MediaVersion> availableVersions;
   final int selectedMediaIndex;
   final TranscodeQualityPreset selectedQualityPreset;
   final bool serverSupportsTranscoding;
   final bool isTranscoding;
-  final List<PlexAudioTrack> sourceAudioTracks;
+  final bool isOfflinePlayback;
+  final List<MediaAudioTrack> sourceAudioTracks;
   final int? selectedAudioStreamId;
   final int boxFitMode;
   final VoidCallback? onTogglePIPMode;
@@ -200,7 +242,7 @@ class PlexVideoControls extends StatefulWidget {
   final VoidCallback? onShaderChanged;
 
   /// Optional callback that returns thumbnail image bytes for a given timestamp.
-  final Uint8List? Function(Duration time)? thumbnailDataBuilder;
+  final ScrubFrame? Function(Duration time)? thumbnailDataBuilder;
 
   /// Whether this is a live TV stream (disables seek, progress, etc.)
   final bool isLive;
@@ -247,6 +289,7 @@ class PlexVideoControls extends StatefulWidget {
     this.selectedQualityPreset = TranscodeQualityPreset.original,
     this.serverSupportsTranscoding = false,
     this.isTranscoding = false,
+    this.isOfflinePlayback = false,
     this.sourceAudioTracks = const [],
     this.selectedAudioStreamId,
     this.boxFitMode = 0,
@@ -287,7 +330,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   bool _showControls = true;
   bool _forceShowControls = false;
   bool _isLoadingExtras = false;
-  List<PlexChapter> _chapters = [];
+  List<MediaChapter> _chapters = [];
   bool _chaptersLoaded = false;
   Timer? _hideTimer;
   bool _isFullscreen = false;
@@ -308,11 +351,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   // GlobalKey to access DesktopVideoControls state for focus management
   final GlobalKey<DesktopVideoControlsState> _desktopControlsKey = GlobalKey<DesktopVideoControlsState>();
 
-  /// Get the correct PlexClient for this metadata's server
-  PlexClient _getClientForMetadata() {
-    return context.getClientForServer(widget.metadata.serverId!);
-  }
-
   // Double-tap feedback state
   bool _showDoubleTapFeedback = false;
   double _doubleTapFeedbackOpacity = 0.0;
@@ -327,8 +365,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   // Seek throttle
   late final Throttle _seekThrottle;
   // Current marker state
-  PlexMarker? _currentMarker;
-  List<PlexMarker> _markers = [];
+  MediaMarker? _currentMarker;
+  List<MediaMarker> _markers = [];
   bool _markersLoaded = false;
   // Playback state subscription for auto-hide timer
   StreamSubscription<bool>? _playingSubscription;
@@ -469,7 +507,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         return;
       }
 
-      PlexMarker? foundMarker;
+      MediaMarker? foundMarker;
       for (final marker in _markers) {
         if (marker.containsPosition(position)) {
           foundMarker = marker;
@@ -484,7 +522,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   /// Updates the current marker and manages auto-skip/focus behavior.
-  void _updateCurrentMarker(PlexMarker? foundMarker) {
+  void _updateCurrentMarker(MediaMarker? foundMarker) {
     setState(() {
       _currentMarker = foundMarker;
       _skipButtonDismissed = false;
@@ -569,7 +607,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _cancelSkipButtonDismissTimer();
   }
 
-  void _startAutoSkipTimer(PlexMarker marker) {
+  void _startAutoSkipTimer(MediaMarker marker) {
     _cancelAutoSkipTimer();
 
     final shouldAutoSkip = (marker.isCredits && _autoSkipCredits) || (!marker.isCredits && _autoSkipIntro);
@@ -634,7 +672,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   /// Check if auto-skip should be active for the current marker
-  bool _shouldAutoSkipForMarker(PlexMarker marker) {
+  bool _shouldAutoSkipForMarker(MediaMarker marker) {
     return (marker.isCredits && _autoSkipCredits) || (!marker.isCredits && _autoSkipIntro);
   }
 
@@ -1081,50 +1119,51 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (_isLoadingExtras) return;
     _isLoadingExtras = true;
 
-    try {
-      appLogger.d('_loadPlaybackExtras: starting for ${widget.metadata.ratingKey} (forceRefresh=$forceRefresh)');
-      final client = _getClientForMetadata();
-      appLogger.d('_loadPlaybackExtras: got client with serverId=${client.serverId}');
+    final serverId = widget.metadata.serverId;
+    // Read providers before any await — `context` after an async gap is
+    // a lint trigger and can crash if the widget unmounts mid-load.
+    final client = serverId != null ? context.tryGetMediaClientForServer(serverId) : null;
+    final database = context.read<AppDatabase>();
+    if (client == null) {
+      await _loadPlaybackExtrasFromCacheOnly(cacheServerId: await _resolveCacheServerId(database));
+      _isLoadingExtras = false;
+      return;
+    }
 
+    try {
+      appLogger.d('_loadPlaybackExtras: starting for ${widget.metadata.id} (forceRefresh=$forceRefresh)');
       final settings = await SettingsService.getInstance();
       final introPattern = settings.read(SettingsService.introPattern);
       final creditsPattern = settings.read(SettingsService.creditsPattern);
-      final extras = await client.getPlaybackExtras(
-        widget.metadata.ratingKey,
+      // Backend-aware: Plex hits /library/metadata?includeChapters=1; Jellyfin
+      // pulls Chapters from /Users/{userId}/Items/{id}.
+      final extras = await client.fetchPlaybackExtras(
+        widget.metadata.id,
         introPattern: introPattern,
         creditsPattern: creditsPattern,
         forceRefresh: forceRefresh,
       );
       appLogger.d('_loadPlaybackExtras: got ${extras.chapters.length} chapters');
 
-      if (mounted) {
-        setState(() {
-          _chapters = extras.chapters;
-          _markers = extras.markers;
-          _chaptersLoaded = true;
-          _markersLoaded = true;
-        });
-      }
+      _applyPlaybackExtras(extras);
     } catch (e, stack) {
-      // Fallback: try to load from cache directly (for offline playback)
-      appLogger.d('_loadPlaybackExtras: client unavailable, trying cache fallback');
-      final serverId = widget.metadata.serverId;
-      if (serverId != null) {
-        final cacheKey = '/library/metadata/${widget.metadata.ratingKey}';
-        final cached = await PlexApiCache.instance.get(serverId, cacheKey);
-        if (cached != null) {
-          final extras = await _parsePlaybackExtrasFromCache(cached);
+      // Fallback: serve extras from the per-backend cache (for offline
+      // playback after the network call threw).
+      appLogger.d('_loadPlaybackExtras: network path failed, trying cache fallback');
+      try {
+        final settings = await SettingsService.getInstance();
+        final extras = await client.fetchPlaybackExtrasFromCacheOnly(
+          widget.metadata.id,
+          introPattern: settings.read(SettingsService.introPattern),
+          creditsPattern: settings.read(SettingsService.creditsPattern),
+        );
+        if (extras != null) {
           appLogger.d('_loadPlaybackExtras: loaded ${extras.chapters.length} chapters from cache');
-          if (mounted) {
-            setState(() {
-              _chapters = extras.chapters;
-              _markers = extras.markers;
-              _chaptersLoaded = true;
-              _markersLoaded = true;
-            });
-          }
+          _applyPlaybackExtras(extras);
           return;
         }
+      } catch (cacheError) {
+        appLogger.d('_loadPlaybackExtras: cache fallback failed', error: cacheError);
       }
       appLogger.e('_loadPlaybackExtras failed', error: e, stackTrace: stack);
     } finally {
@@ -1132,66 +1171,70 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
   }
 
-  /// Parse PlaybackExtras from cached API response (for offline playback)
-  Future<PlaybackExtras> _parsePlaybackExtrasFromCache(Map<String, dynamic> cached) async {
-    final chapters = <PlexChapter>[];
-    final markers = <PlexMarker>[];
-
-    final metadataJson = PlexCacheParser.extractFirstMetadata(cached);
-    if (metadataJson != null) {
-      // Parse chapters
-      if (metadataJson['Chapter'] != null) {
-        for (final chapter in metadataJson['Chapter'] as List) {
-          chapters.add(
-            PlexChapter(
-              id: chapter['id'] as int,
-              index: chapter['index'] as int?,
-              startTimeOffset: chapter['startTimeOffset'] as int?,
-              endTimeOffset: chapter['endTimeOffset'] as int?,
-              title: chapter['tag'] as String?,
-              thumb: chapter['thumb'] as String?,
-            ),
-          );
-        }
-      }
-
-      // Parse markers
-      if (metadataJson['Marker'] != null) {
-        for (final marker in metadataJson['Marker'] as List) {
-          markers.add(
-            PlexMarker(
-              id: marker['id'] as int,
-              type: marker['type'] as String,
-              startTimeOffset: marker['startTimeOffset'] as int,
-              endTimeOffset: marker['endTimeOffset'] as int,
-            ),
-          );
-        }
-      }
+  Future<void> _loadPlaybackExtrasFromCacheOnly({required String? cacheServerId}) async {
+    if (cacheServerId == null) {
+      appLogger.w('_loadPlaybackExtras: no client or cache scope for server ${widget.metadata.serverId}');
+      return;
     }
+    try {
+      final settings = await SettingsService.getInstance();
+      final extras = await CachedPlaybackMetadataService.fetchPlaybackExtras(
+        backend: widget.metadata.backend,
+        cacheServerId: cacheServerId,
+        itemId: widget.metadata.id,
+        introPattern: settings.read(SettingsService.introPattern),
+        creditsPattern: settings.read(SettingsService.creditsPattern),
+      );
+      if (extras != null) _applyPlaybackExtras(extras);
+    } catch (e) {
+      appLogger.d('_loadPlaybackExtras: cache-only path failed', error: e);
+    }
+  }
 
-    final settings = await SettingsService.getInstance();
-    return PlaybackExtras.withChapterFallback(
-      chapters: chapters,
-      markers: markers,
-      introPatternStr: settings.read(SettingsService.introPattern),
-      creditsPatternStr: settings.read(SettingsService.creditsPattern),
-    );
+  Future<String?> _resolveCacheServerId(AppDatabase database) async {
+    final serverId = widget.metadata.serverId;
+    if (serverId == null) return null;
+    try {
+      final row = await (database.select(
+        database.downloadedMedia,
+      )..where((tbl) => tbl.globalKey.equals(buildGlobalKey(serverId, widget.metadata.id)))).getSingleOrNull();
+      return row?.clientScopeId ?? serverId;
+    } catch (_) {
+      return serverId;
+    }
+  }
+
+  void _applyPlaybackExtras(PlaybackExtras extras) {
+    if (!mounted) return;
+    setState(() {
+      _chapters = extras.chapters;
+      _markers = extras.markers;
+      _chaptersLoaded = true;
+      _markersLoaded = true;
+    });
   }
 
   TrackControlsState _buildTrackControlsState({
     required PlaybackStateProvider playbackState,
     required VoidCallback? onToggleAlwaysOnTop,
   }) {
-    return TrackControlsState(
+    final versionQuality = effectiveVersionQualityControls(
+      isOfflinePlayback: widget.isOfflinePlayback,
       availableVersions: widget.availableVersions,
-      selectedMediaIndex: widget.selectedMediaIndex,
-      selectedQualityPreset: widget.selectedQualityPreset,
       serverSupportsTranscoding: widget.serverSupportsTranscoding,
       isTranscoding: widget.isTranscoding,
       sourceAudioTracks: widget.sourceAudioTracks,
       selectedAudioStreamId: widget.selectedAudioStreamId,
-      sourceDurationMs: widget.metadata.duration,
+    );
+    return TrackControlsState(
+      availableVersions: versionQuality.availableVersions,
+      selectedMediaIndex: widget.selectedMediaIndex,
+      selectedQualityPreset: widget.selectedQualityPreset,
+      serverSupportsTranscoding: versionQuality.serverSupportsTranscoding,
+      isTranscoding: versionQuality.isTranscoding,
+      sourceAudioTracks: versionQuality.sourceAudioTracks,
+      selectedAudioStreamId: versionQuality.selectedAudioStreamId,
+      sourceDurationMs: widget.metadata.durationMs,
       boxFitMode: widget.boxFitMode,
       audioSyncOffset: _audioSyncOffset,
       subtitleSyncOffset: _subtitleSyncOffset,
@@ -1205,9 +1248,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       onToggleScreenLock: _toggleScreenLock,
       onToggleFullscreen: _toggleFullscreen,
       onToggleAlwaysOnTop: onToggleAlwaysOnTop,
-      onSwitchVersion: (i) => _switchVersionAndQuality(newMediaIndex: i),
-      onSwitchQualityPreset: (p) => _switchVersionAndQuality(newPreset: p),
-      onSwitchAudioStreamId: (id) => _switchVersionAndQuality(newAudioStreamId: id),
+      onSwitchVersion: versionQuality.canSwitch ? (i) => _switchVersionAndQuality(newMediaIndex: i) : null,
+      onSwitchQualityPreset: versionQuality.canSwitch ? (p) => _switchVersionAndQuality(newPreset: p) : null,
+      onSwitchAudioStreamId: versionQuality.canSwitch ? (id) => _switchVersionAndQuality(newAudioStreamId: id) : null,
       onAudioTrackChanged: widget.onAudioTrackChanged,
       onSubtitleTrackChanged: _onSubtitleTrackChanged,
       onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
@@ -1237,10 +1280,30 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       subtitlesVisible: _subtitlesVisible,
       showQueueButton: playbackState.isQueueActive,
       onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
-      ratingKey: widget.metadata.ratingKey,
+      ratingKey: widget.metadata.id,
       mediaTitle: widget.metadata.title,
       onSubtitleDownloaded: _onSubtitleDownloaded,
+      // Plex proxies OpenSubtitles via its server-side plugin; Jellyfin
+      // doesn't expose an equivalent so the Search Subtitles tile is hidden
+      // for Jellyfin items. The check uses the registered client type for
+      // this metadata's serverId.
+      subtitleSearchSupported: _isPlexBackedMetadata(),
     );
+  }
+
+  /// True when the active server supports external subtitle search (Plex
+  /// today). Requires a server id because the download callback needs the
+  /// Plex client/token for that server.
+  bool _isPlexBackedMetadata() {
+    try {
+      final serverId = widget.metadata.serverId;
+      if (serverId == null) return false;
+      final manager = context.read<MultiServerProvider>().serverManager;
+      final c = manager.getClient(serverId);
+      return c?.capabilities.externalSubtitleSearch ?? false;
+    } catch (_) {
+      return false;
+    }
   }
 
   Widget _buildTrackChapterControlsWidget({bool hideChaptersAndQueue = false}) {
@@ -2496,7 +2559,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   /// Switch to a different media version
-  void _onQueueItemSelected(PlexMetadata item) {
+  void _onQueueItemSelected(MediaItem item) {
     final videoPlayerState = context.findAncestorStateOfType<VideoPlayerScreenState>();
     videoPlayerState?.navigateToQueueItem(item);
   }
@@ -2504,8 +2567,16 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   Future<void> _onSubtitleDownloaded() async {
     if (!mounted) return;
 
+    // Plex-only: the OpenSubtitles polling flow uses [getVideoPlaybackData]
+    // and the Plex token. Jellyfin has no analogue and the entry point
+    // (`subtitleSearchSupported`) is already gated on backend, but guard
+    // here too in case a future caller wires the same handler elsewhere.
+    if (widget.metadata.backend != MediaBackend.plex) return;
+    final serverId = widget.metadata.serverId;
+    if (serverId == null) return;
+
     try {
-      final client = _getClientForMetadata();
+      final client = context.getPlexClientForServer(serverId);
       final token = client.config.token;
       if (token == null) return;
 
@@ -2516,23 +2587,23 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       final existingUris = widget.player.state.tracks.subtitle.where((t) => t.uri != null).map((t) => t.uri!).toSet();
 
       final deadline = DateTime.now().add(const Duration(seconds: 15));
-      PlexSubtitleTrack? newTrack;
+      MediaSubtitleTrack? newTrack;
       String? newUrl;
-      PlexMediaInfo? latestInfo;
+      MediaSourceInfo? latestInfo;
 
       while (mounted && DateTime.now().isBefore(deadline)) {
         await Future.delayed(const Duration(seconds: 2));
         if (!mounted) return;
 
         try {
-          final data = await client.getVideoPlaybackData(widget.metadata.ratingKey);
+          final data = await client.getVideoPlaybackData(widget.metadata.id);
           if (!mounted) return;
           if (data.mediaInfo == null) continue;
           latestInfo = data.mediaInfo;
 
           for (final plexTrack in data.mediaInfo!.subtitleTracks) {
             if (!plexTrack.isExternal) continue;
-            final url = plexTrack.getSubtitleUrl(client.config.baseUrl, token);
+            final url = client.buildExternalSubtitleUrl(plexTrack);
             if (url == null) continue;
             if (existingUris.any((uri) => uri.contains(plexTrack.key!))) continue;
 
@@ -2593,7 +2664,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
       if (isVersionChange) {
         final settingsService = await SettingsService.getInstance();
-        final seriesKey = widget.metadata.grandparentRatingKey ?? widget.metadata.ratingKey;
+        final seriesKey = widget.metadata.grandparentId ?? widget.metadata.id;
         await settingsService.write(SettingsService.mediaVersionPreferences, {
           ...settingsService.read(SettingsService.mediaVersionPreferences),
           seriesKey: effectiveMediaIndex,
@@ -2618,7 +2689,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
             context,
             PageRouteBuilder<bool>(
               pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
-                metadata: widget.metadata.copyWith(viewOffset: currentPosition.inMilliseconds),
+                metadata: widget.metadata.copyWith(viewOffsetMs: currentPosition.inMilliseconds),
                 selectedMediaIndex: effectiveMediaIndex,
                 selectedQualityPreset: effectivePreset,
                 selectedAudioStreamId: effectiveAudioStreamId,

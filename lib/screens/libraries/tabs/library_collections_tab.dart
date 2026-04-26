@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import '../../../models/plex_metadata.dart';
+import '../../../media/media_item.dart';
 import '../../../utils/library_refresh_notifier.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../i18n/strings.g.dart';
@@ -10,7 +10,7 @@ import 'library_grid_tab_state.dart';
 
 /// Collections tab for library screen
 /// Shows collections for the current library
-class LibraryCollectionsTab extends BaseLibraryTab<PlexMetadata> {
+class LibraryCollectionsTab extends BaseLibraryTab<MediaItem> {
   const LibraryCollectionsTab({
     super.key,
     required super.library,
@@ -26,7 +26,7 @@ class LibraryCollectionsTab extends BaseLibraryTab<PlexMetadata> {
   State<LibraryCollectionsTab> createState() => _LibraryCollectionsTabState();
 }
 
-class _LibraryCollectionsTabState extends LibraryGridTabState<PlexMetadata, LibraryCollectionsTab> {
+class _LibraryCollectionsTabState extends LibraryGridTabState<MediaItem, LibraryCollectionsTab> {
   @override
   String get focusNodeDebugLabel => 'collections_first_item';
 
@@ -43,18 +43,15 @@ class _LibraryCollectionsTabState extends LibraryGridTabState<PlexMetadata, Libr
   Stream<void>? getRefreshStream() => LibraryRefreshNotifier().collectionsStream;
 
   @override
-  Future<List<PlexMetadata>> loadData() async {
-    // Use server-specific client for this library
-    final client = getClientForLibrary();
-
-    // Collections are automatically tagged with server info by PlexClient
-    return await client.getLibraryCollections(widget.library.key);
+  Future<List<MediaItem>> loadData() async {
+    final client = getMediaClientForLibrary();
+    return client.fetchCollections(widget.library.id);
   }
 
   @override
-  Widget buildGridItem(BuildContext context, PlexMetadata item, int index, [GridItemContext? gridContext]) {
+  Widget buildGridItem(BuildContext context, MediaItem item, int index, [GridItemContext? gridContext]) {
     return FocusableMediaCard(
-      key: Key(item.ratingKey),
+      key: Key(item.id),
       item: item,
       focusNode: index == 0 ? firstItemFocusNode : null,
       disableScale: gridContext?.isListMode ?? false,

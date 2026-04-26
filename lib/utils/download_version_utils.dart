@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import '../models/plex_media_version.dart';
-import '../models/plex_metadata.dart';
-import '../services/plex_client.dart';
+import '../media/media_item.dart';
+import '../media/media_kind.dart';
+import '../media/media_server_client.dart';
+import '../media/media_version.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../i18n/strings.g.dart';
@@ -11,7 +12,7 @@ import '../i18n/strings.g.dart';
 class DownloadVersionConfig {
   final int mediaIndex;
   final Set<String> acceptedSignatures;
-  final Future<int?> Function(PlexMetadata episode, List<PlexMediaVersion> versions)? onVersionMismatch;
+  final Future<int?> Function(MediaItem episode, List<MediaVersion> versions)? onVersionMismatch;
 
   DownloadVersionConfig({this.mediaIndex = 0, Set<String>? acceptedSignatures, this.onVersionMismatch})
     : acceptedSignatures = acceptedSignatures ?? {};
@@ -20,7 +21,7 @@ class DownloadVersionConfig {
   factory DownloadVersionConfig.fromSignature(
     String signature, {
     int mediaIndex = 0,
-    Future<int?> Function(PlexMetadata, List<PlexMediaVersion>)? onVersionMismatch,
+    Future<int?> Function(MediaItem, List<MediaVersion>)? onVersionMismatch,
   }) {
     return DownloadVersionConfig(
       mediaIndex: mediaIndex,
@@ -34,13 +35,13 @@ class DownloadVersionConfig {
 /// Returns null if the user cancels, or a config with the selection.
 Future<DownloadVersionConfig?> resolveDownloadVersion(
   BuildContext context,
-  PlexMetadata metadata,
-  PlexClient client, {
-  List<PlexMediaVersion>? fallbackVersions,
+  MediaItem metadata,
+  MediaServerClient client, {
+  List<MediaVersion>? fallbackVersions,
 }) async {
-  final mediaType = metadata.mediaType;
+  final kind = metadata.kind;
 
-  if (mediaType == PlexMediaType.movie || mediaType == PlexMediaType.episode) {
+  if (kind == MediaKind.movie || kind == MediaKind.episode) {
     final versions = metadata.mediaVersions ?? fallbackVersions;
     if (versions != null && versions.length > 1) {
       final selectedIndex = await showVersionPickerDialog(context, versions, t.downloads.selectVersion);
@@ -50,7 +51,7 @@ Future<DownloadVersionConfig?> resolveDownloadVersion(
     return DownloadVersionConfig();
   }
 
-  if (mediaType == PlexMediaType.show || mediaType == PlexMediaType.season) {
+  if (kind == MediaKind.show || kind == MediaKind.season) {
     final versions = await fetchRepresentativeVersions(client, metadata);
     if (versions != null && versions.length > 1) {
       if (!context.mounted) return null;
@@ -77,7 +78,7 @@ Future<DownloadVersionConfig?> resolveDownloadVersion(
 
 /// Show a dialog for selecting a media version.
 /// Returns the selected index, or null if cancelled.
-Future<int?> showVersionPickerDialog(BuildContext context, List<PlexMediaVersion> versions, String title) {
+Future<int?> showVersionPickerDialog(BuildContext context, List<MediaVersion> versions, String title) {
   return showOptionPickerDialog<int>(
     context,
     title: title,
@@ -89,31 +90,30 @@ Future<int?> showVersionPickerDialog(BuildContext context, List<PlexMediaVersion
 }
 
 /// Fetch media versions from a representative episode (first episode of first season).
-Future<List<PlexMediaVersion>?> fetchRepresentativeVersions(PlexClient client, PlexMetadata metadata) async {
+Future<List<MediaVersion>?> fetchRepresentativeVersions(MediaServerClient client, MediaItem metadata) async {
   try {
     String? episodeRatingKey;
 
-    if (metadata.mediaType == PlexMediaType.season) {
-      final episodes = await client.getChildren(metadata.ratingKey);
-      final firstEpisode = episodes.cast<PlexMetadata?>().firstWhere((e) => e?.type == 'episode', orElse: () => null);
-      episodeRatingKey = firstEpisode?.ratingKey;
-    } else if (metadata.mediaType == PlexMediaType.show) {
-      final seasons = await client.getChildren(metadata.ratingKey);
+    if (metadata.kind == MediaKind.season) {
+      final episodes = await client.fetchChildren(metadata.id);
+      final firstEpisode = episodes.where((e) => e.kind == MediaKind.episode).firstOrNull;
+      episodeRatingKey = firstEpisode?.id;
+    } else if (metadata.kind == MediaKind.show) {
+      final seasons = await client.fetchChildren(metadata.id);
       // Skip Season 0 (Specials) as it may have different encoding
-      final firstSeason = seasons.cast<PlexMetadata?>().firstWhere(
-        (s) => s?.type == 'season' && (s?.index ?? 0) > 0,
-        orElse: () => seasons.cast<PlexMetadata?>().firstWhere((s) => s?.type == 'season', orElse: () => null),
-      );
+      final firstSeason =
+          seasons.where((s) => s.kind == MediaKind.season && (s.index ?? 0) > 0).firstOrNull ??
+          seasons.where((s) => s.kind == MediaKind.season).firstOrNull;
       if (firstSeason != null) {
-        final episodes = await client.getChildren(firstSeason.ratingKey);
-        final firstEpisode = episodes.cast<PlexMetadata?>().firstWhere((e) => e?.type == 'episode', orElse: () => null);
-        episodeRatingKey = firstEpisode?.ratingKey;
+        final episodes = await client.fetchChildren(firstSeason.id);
+        final firstEpisode = episodes.where((e) => e.kind == MediaKind.episode).firstOrNull;
+        episodeRatingKey = firstEpisode?.id;
       }
     }
 
     if (episodeRatingKey == null) return null;
 
-    final fullMetadata = await client.getMetadataWithImages(episodeRatingKey);
+    final fullMetadata = await client.fetchItem(episodeRatingKey);
     return fullMetadata?.mediaVersions;
   } catch (e) {
     appLogger.w('Failed to fetch representative versions', error: e);

@@ -13,11 +13,12 @@ import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../../services/plex_client.dart';
-import '../../models/plex_library.dart';
-import '../../models/plex_metadata.dart';
+import '../../media/media_backend.dart';
+import '../../media/media_item.dart';
+import '../../media/media_library.dart';
+import '../../media/media_server_client.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/libraries_provider.dart';
-import '../../providers/multi_server_provider.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
@@ -38,7 +39,7 @@ import 'tabs/library_playlists_tab.dart';
 
 enum LibraryTabType { recommended, browse, collections, playlists }
 
-List<LibraryTabType> _getVisibleTabs(PlexLibrary library) {
+List<LibraryTabType> _getVisibleTabs(MediaLibrary library) {
   if (library.isShared) return [LibraryTabType.browse, LibraryTabType.playlists];
   return LibraryTabType.values;
 }
@@ -82,16 +83,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         ItemUpdatable,
         TickerProviderStateMixin,
         TabNavigationMixin {
-  @override
-  PlexClient get client {
-    final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-    final serverId = multiServerProvider.onlineServerIds.firstOrNull;
-    if (serverId == null) {
-      throw Exception(t.errors.noClientAvailable);
-    }
-    return context.getClientForServer(serverId);
-  }
-
   // GlobalKeys for tabs to enable refresh
   final _recommendedTabKey = GlobalKey();
   final _browseTabKey = GlobalKey();
@@ -368,7 +359,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   Widget _buildTabContent(
     LibraryTabType type, {
-    required PlexLibrary library,
+    required MediaLibrary library,
     required bool isActive,
     required int tabIndex,
   }) {
@@ -409,7 +400,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   /// Check if libraries come from multiple servers
-  bool _hasMultipleServers(List<PlexLibrary> libraries) {
+  bool _hasMultipleServers(List<MediaLibrary> libraries) {
     final uniqueServerIds = libraries.where((lib) => lib.serverId != null).map((lib) => lib.serverId).toSet();
     return uniqueServerIds.length > 1;
   }
@@ -479,7 +470,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   @override
-  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
+  void updateItemInLists(String itemId, MediaItem updatedItem) {
     // Delegate to the active tab — parent doesn't maintain its own item list
   }
 
@@ -515,7 +506,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     _initializeWithLibraries();
   }
 
-  Future<void> _toggleLibraryVisibility(PlexLibrary library) async {
+  Future<void> _toggleLibraryVisibility(MediaLibrary library) async {
     if (!mounted) return;
     final librariesProvider = context.read<LibrariesProvider>();
     final hiddenLibrariesProvider = Provider.of<HiddenLibrariesProvider>(context, listen: false);
@@ -544,7 +535,24 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
   }
 
-  List<ContextMenuItem> _getLibraryMenuItems(PlexLibrary library) {
+  List<ContextMenuItem> _getLibraryMenuItems(MediaLibrary library) {
+    // Refresh metadata is the only admin action both backends support — Plex
+    // hits `/library/sections/{id}/refresh?force=1`, Jellyfin posts to
+    // `/Items/{id}/Refresh` (the library view is itself an item).
+    final refresh = ContextMenuItem(
+      value: 'refresh',
+      icon: Symbols.sync_rounded,
+      label: t.libraries.refreshMetadata,
+      requiresConfirmation: true,
+      confirmationTitle: t.libraries.refreshMetadata,
+      confirmationMessage: t.libraries.refreshMetadataConfirm(title: library.title),
+      isDestructive: true,
+    );
+    // Scan / analyze / empty trash hit Plex-only endpoints. Gating them keeps
+    // [getPlexClientForLibrary] from falling back through `_resolveClient` to
+    // the first online Plex server and firing the action against the wrong
+    // backend.
+    if (library.backend != MediaBackend.plex) return [refresh];
     return [
       ContextMenuItem(
         value: 'scan',
@@ -562,15 +570,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         confirmationTitle: t.libraries.analyzeLibrary,
         confirmationMessage: t.libraries.analyzeLibraryConfirm(title: library.title),
       ),
-      ContextMenuItem(
-        value: 'refresh',
-        icon: Symbols.sync_rounded,
-        label: t.libraries.refreshMetadata,
-        requiresConfirmation: true,
-        confirmationTitle: t.libraries.refreshMetadata,
-        confirmationMessage: t.libraries.refreshMetadataConfirm(title: library.title),
-        isDestructive: true,
-      ),
+      refresh,
       ContextMenuItem(
         value: 'empty_trash',
         icon: Symbols.delete_outline_rounded,
@@ -583,7 +583,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     ];
   }
 
-  Future<void> _handleLibraryMenuAction(String action, PlexLibrary library) async {
+  Future<void> _handleLibraryMenuAction(String action, MediaLibrary library) async {
     // Find the menu item for confirmation details
     final menuItems = _getLibraryMenuItems(library);
     final item = menuItems.where((i) => i.value == action).firstOrNull;
@@ -655,14 +655,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   Future<void> _performLibraryAction({
-    required PlexLibrary library,
+    required MediaLibrary library,
     required Future<void> Function(PlexClient client) action,
     required String progressMessage,
     required String successMessage,
     required String Function(Object error) failureMessage,
   }) async {
     try {
-      final client = context.getClientForLibrary(library);
+      final client = context.getPlexClientForLibrary(library);
 
       if (mounted) {
         showAppSnackBar(context, progressMessage, duration: const Duration(seconds: 2));
@@ -681,40 +681,71 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
   }
 
-  Future<void> _scanLibrary(PlexLibrary library) {
+  /// Backend-neutral counterpart to [_performLibraryAction] for ops that exist
+  /// on the [MediaServerClient] interface (currently just refresh metadata).
+  /// Resolves the client through `getMediaClientForLibrary` so a Jellyfin
+  /// library is routed to its own server, not a fallback Plex one.
+  Future<void> _performMediaLibraryAction({
+    required MediaLibrary library,
+    required Future<void> Function(MediaServerClient client) action,
+    required String progressMessage,
+    required String successMessage,
+    required String Function(Object error) failureMessage,
+  }) async {
+    try {
+      final client = context.getMediaClientForLibrary(library);
+
+      if (mounted) {
+        showAppSnackBar(context, progressMessage, duration: const Duration(seconds: 2));
+      }
+
+      await action(client);
+
+      if (mounted) {
+        showSuccessSnackBar(context, successMessage);
+      }
+    } catch (e) {
+      appLogger.e('Library action failed', error: e);
+      if (mounted) {
+        showErrorSnackBar(context, failureMessage(e));
+      }
+    }
+  }
+
+  Future<void> _scanLibrary(MediaLibrary library) {
     return _performLibraryAction(
       library: library,
-      action: (client) => client.scanLibrary(library.key),
+      action: (client) => client.scanLibrary(library.id),
       progressMessage: t.messages.libraryScanning(title: library.title),
       successMessage: t.messages.libraryScanStarted(title: library.title),
       failureMessage: (error) => t.messages.libraryScanFailed(error: error.toString()),
     );
   }
 
-  Future<void> _refreshLibraryMetadata(PlexLibrary library) {
-    return _performLibraryAction(
+  Future<void> _refreshLibraryMetadata(MediaLibrary library) {
+    return _performMediaLibraryAction(
       library: library,
-      action: (client) => client.refreshLibraryMetadata(library.key),
+      action: (client) => client.refreshLibraryMetadata(library.id),
       progressMessage: t.messages.metadataRefreshing(title: library.title),
       successMessage: t.messages.metadataRefreshStarted(title: library.title),
       failureMessage: (error) => t.messages.metadataRefreshFailed(error: error.toString()),
     );
   }
 
-  Future<void> _emptyLibraryTrash(PlexLibrary library) {
+  Future<void> _emptyLibraryTrash(MediaLibrary library) {
     return _performLibraryAction(
       library: library,
-      action: (client) => client.emptyLibraryTrash(library.key),
+      action: (client) => client.emptyLibraryTrash(library.id),
       progressMessage: t.libraries.emptyingTrash(title: library.title),
       successMessage: t.libraries.trashEmptied(title: library.title),
       failureMessage: (error) => t.libraries.failedToEmptyTrash(error: error),
     );
   }
 
-  Future<void> _analyzeLibrary(PlexLibrary library) {
+  Future<void> _analyzeLibrary(MediaLibrary library) {
     return _performLibraryAction(
       library: library,
-      action: (client) => client.analyzeLibrary(library.key),
+      action: (client) => client.analyzeLibrary(library.id),
       progressMessage: t.libraries.analyzing(title: library.title),
       successMessage: t.libraries.analysisStarted(title: library.title),
       failureMessage: (error) => t.libraries.failedToAnalyze(error: error),
@@ -722,7 +753,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   /// Get set of library names that appear more than once (not globally unique)
-  Set<String> _getNonUniqueLibraryNames(List<PlexLibrary> libraries) {
+  Set<String> _getNonUniqueLibraryNames(List<MediaLibrary> libraries) {
     final nameCounts = <String, int>{};
     for (final lib in libraries) {
       nameCounts[lib.title] = (nameCounts[lib.title] ?? 0) + 1;
@@ -731,7 +762,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   /// Build dropdown menu items with server subtitle for non-unique names
-  List<PopupMenuEntry<String>> _buildGroupedLibraryMenuItems(List<PlexLibrary> visibleLibraries) {
+  List<PopupMenuEntry<String>> _buildGroupedLibraryMenuItems(List<MediaLibrary> visibleLibraries) {
     // Find which library names are not unique
     final nonUniqueNames = _getNonUniqueLibraryNames(visibleLibraries);
 
@@ -744,7 +775,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         child: Row(
           children: [
             AppIcon(
-              ContentTypeHelper.getLibraryIcon(library.type),
+              ContentTypeHelper.getLibraryIcon(library.kind.id),
               fill: 1,
               size: 20,
               color: isSelected ? Theme.of(context).colorScheme.primary : null,
@@ -780,7 +811,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   /// Build the app bar title - either dropdown on mobile or simple title on desktop
-  Widget _buildAppBarTitle(List<PlexLibrary> visibleLibraries, PlexLibrary? selectedLibrary) {
+  Widget _buildAppBarTitle(List<MediaLibrary> visibleLibraries, MediaLibrary? selectedLibrary) {
     // No selection at all, or visible list is empty AND we're not browsing a hidden library
     if (_selectedLibraryGlobalKey == null || (visibleLibraries.isEmpty && selectedLibrary == null)) {
       return Text(t.libraries.title);
@@ -809,7 +840,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     return _buildLibraryDropdownTitle(visibleLibraries);
   }
 
-  Widget _buildLibraryDropdownTitle(List<PlexLibrary> visibleLibraries) {
+  Widget _buildLibraryDropdownTitle(List<MediaLibrary> visibleLibraries) {
     final selectedLibrary =
         visibleLibraries.where((lib) => lib.globalKey == _selectedLibraryGlobalKey).firstOrNull ??
         visibleLibraries.firstOrNull;
@@ -828,7 +859,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AppIcon(ContentTypeHelper.getLibraryIcon(selectedLibrary.type), fill: 1, size: 20),
+            AppIcon(ContentTypeHelper.getLibraryIcon(selectedLibrary.kind.id), fill: 1, size: 20),
             const SizedBox(width: 8),
             if (_hasMultipleServers(visibleLibraries) && selectedLibrary.serverName != null)
               Column(
@@ -994,12 +1025,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
 class _LibraryManagementSheet extends StatefulWidget {
   final bool isDialog;
-  final List<PlexLibrary> allLibraries;
+  final List<MediaLibrary> allLibraries;
   final Set<String> hiddenLibraryKeys;
-  final Function(List<PlexLibrary>) onReorder;
-  final Function(PlexLibrary) onToggleVisibility;
-  final List<ContextMenuItem> Function(PlexLibrary) getLibraryMenuItems;
-  final void Function(String action, PlexLibrary library) onLibraryMenuAction;
+  final Function(List<MediaLibrary>) onReorder;
+  final Function(MediaLibrary) onToggleVisibility;
+  final List<ContextMenuItem> Function(MediaLibrary) getLibraryMenuItems;
+  final void Function(String action, MediaLibrary library) onLibraryMenuAction;
 
   const _LibraryManagementSheet({
     this.isDialog = false,
@@ -1016,14 +1047,14 @@ class _LibraryManagementSheet extends StatefulWidget {
 }
 
 class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
-  late List<PlexLibrary> _tempLibraries;
+  late List<MediaLibrary> _tempLibraries;
 
   // Keyboard navigation state
   int _focusedIndex = 0;
   int _focusedColumn = 0; // 0 = row, 1 = visibility button, 2 = options button
   int? _movingIndex; // Non-null when in move mode
   int? _originalIndex; // Original position before move (for cancel)
-  List<PlexLibrary>? _originalOrder; // Original order before move (for cancel)
+  List<MediaLibrary>? _originalOrder; // Original order before move (for cancel)
   final FocusNode _listFocusNode = FocusNode();
   final ScrollController _dialogScrollController = ScrollController();
   bool _backKeyDownSeen = false;
@@ -1204,7 +1235,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     widget.onReorder(_tempLibraries);
   }
 
-  void _showLibraryMenuBottomSheet(BuildContext outerContext, PlexLibrary library) {
+  void _showLibraryMenuBottomSheet(BuildContext outerContext, MediaLibrary library) {
     final menuItems = widget.getLibraryMenuItems(library);
     OverlaySheetController.pushAdaptive<String>(
       outerContext,
@@ -1391,7 +1422,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
 
   /// Build a single library tile
   Widget _buildLibraryTile(
-    PlexLibrary library,
+    MediaLibrary library,
     int index,
     Set<String> hiddenLibraryKeys, {
     bool showServerName = false,
@@ -1433,7 +1464,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                 ),
               ),
               const SizedBox(width: 8),
-              AppIcon(ContentTypeHelper.getLibraryIcon(library.type), fill: 1),
+              AppIcon(ContentTypeHelper.getLibraryIcon(library.kind.id), fill: 1),
             ],
           ),
           title: Text(library.title),

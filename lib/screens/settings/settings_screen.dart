@@ -34,12 +34,18 @@ import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/settings_section.dart';
+import '../../profiles/active_profile_provider.dart';
+import '../../profiles/profile.dart';
+import '../../profiles/profile_registry.dart';
 import 'about_screen.dart';
+import 'add_connection_screen.dart';
 import 'appearance_settings_screen.dart';
 import 'keyboard_shortcuts_screen.dart';
 import 'logs_screen.dart';
 import 'playback_settings_screen.dart';
+import '../profile/profile_switch_screen.dart';
 import 'trackers_settings_screen.dart';
+import '../../widgets/loading_indicator_box.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -174,6 +180,12 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 // --- Trackers (unified hub: Trakt + MAL + AniList + Simkl) ---
                 _buildTrackersTile(),
 
+                // --- Connections (Jellyfin servers) ---
+                _buildConnectionsSection(),
+
+                // --- Profiles (kids mode / multi-user) ---
+                _buildProfilesSection(),
+
                 // --- Downloads (inline) ---
                 if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
 
@@ -275,6 +287,67 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
           onTap: () {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackersSettingsScreen()));
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildConnectionsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SettingsSectionHeader(t.connections.sectionTitle),
+        // Connections are managed per-profile (via the Profiles section
+        // and each profile's detail screen). The shortcut here just opens
+        // the picker scoped to the active profile so users can add a Plex
+        // account, Jellyfin server, or borrow from another profile.
+        ListTile(
+          leading: const AppIcon(Symbols.add_link_rounded, fill: 1),
+          title: Text(t.connections.addConnection),
+          subtitle: Builder(
+            builder: (context) {
+              // Select only the active profile slice — `context.watch`
+              // would rebuild on every provider notification.
+              final active = context.select<ActiveProfileProvider, Profile?>((p) => p.active);
+              return Text(
+                active == null
+                    ? t.connections.addConnectionSubtitleNoProfile
+                    : t.connections.addConnectionSubtitleScoped(displayName: active.displayName),
+              );
+            },
+          ),
+          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          onTap: () {
+            final active = context.read<ActiveProfileProvider>().active;
+            Navigator.push(context, MaterialPageRoute(builder: (_) => AddConnectionScreen(targetProfile: active)));
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProfilesSection() {
+    return StreamBuilder<List<Profile>>(
+      stream: context.read<ProfileRegistry>().watchProfiles(),
+      builder: (context, snapshot) {
+        final count = snapshot.data?.length ?? 0;
+        // `context.select` so this StreamBuilder doesn't rebuild on every
+        // ActiveProfileProvider notification — only when the active
+        // profile's display name actually changes.
+        final activeName = context.select<ActiveProfileProvider, String?>((p) => p.active?.displayName);
+        final subtitle = count <= 1
+            ? t.profiles.summarySingle
+            : (activeName != null
+                  ? t.profiles.summaryMultipleWithActive(count: count, activeName: activeName)
+                  : t.profiles.summaryMultiple(count: count));
+        return ListTile(
+          leading: const AppIcon(Symbols.group_rounded, fill: 1),
+          title: Text(t.profiles.sectionTitle),
+          subtitle: Text(subtitle),
+          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          onTap: () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileSwitchScreen()));
           },
         );
       },
@@ -525,7 +598,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           title: Text(hasUpdate ? t.settings.updateAvailable : t.settings.checkForUpdates),
           subtitle: hasUpdate ? Text(t.update.versionAvailable(version: _updateInfo!['latestVersion'])) : null,
           trailing: _isCheckingForUpdate
-              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const LoadingIndicatorBox(size: 24)
               : const AppIcon(Symbols.chevron_right_rounded, fill: 1),
           onTap: _isCheckingForUpdate
               ? null
@@ -548,48 +621,49 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     final storageService = DownloadStorageService.instance;
     final isCustom = storageService.isUsingCustomPath();
 
-    unawaited(
-      showDialog(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title: Text(t.settings.downloads),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(t.settings.downloadLocationDescription),
-              const SizedBox(height: 16),
-              FutureBuilder<String>(
-                future: storageService.getCurrentDownloadPathDisplay(),
-                builder: (context, snapshot) {
-                  return Text(
-                    t.settings.currentPath(path: snapshot.data ?? '...'),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  );
-                },
-              ),
-            ],
-          ),
-          actions: [
-            if (isCustom)
-              DialogActionButton(
-                onPressed: () async {
-                  Navigator.pop(dialogContext);
-                  await _resetDownloadLocation();
-                },
-                label: t.settings.resetToDefault,
-              ),
-            DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
-            DialogActionButton(
-              onPressed: () async {
-                Navigator.pop(dialogContext);
-                await _selectDownloadLocation();
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(t.settings.downloads),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.settings.downloadLocationDescription),
+            const SizedBox(height: 16),
+            FutureBuilder<String>(
+              future: storageService.getCurrentDownloadPathDisplay(),
+              builder: (context, snapshot) {
+                return Text(
+                  t.settings.currentPath(path: snapshot.data ?? '...'),
+                  style: Theme.of(context).textTheme.bodySmall,
+                );
               },
-              label: t.settings.selectFolder,
-              isPrimary: true,
             ),
           ],
         ),
+        actions: [
+          if (isCustom)
+            DialogActionButton(
+              onPressed: () async {
+                // Run the async work first, then pop — popping first leaves
+                // setState inside _resetDownloadLocation racing against the
+                // already-dismissed dialog (and any re-opened instance).
+                await _resetDownloadLocation();
+                if (dialogContext.mounted) Navigator.pop(dialogContext);
+              },
+              label: t.settings.resetToDefault,
+            ),
+          DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+          DialogActionButton(
+            onPressed: () async {
+              await _selectDownloadLocation();
+              if (dialogContext.mounted) Navigator.pop(dialogContext);
+            },
+            label: t.settings.selectFolder,
+            isPrimary: true,
+          ),
+        ],
       ),
     );
   }
@@ -656,50 +730,53 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     }
   }
 
-  void _showRelayUrlDialog() {
+  Future<void> _showRelayUrlDialog() async {
     final controller = TextEditingController(text: _customRelayUrl ?? '');
     final saveFocusNode = FocusNode();
-
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(t.settings.watchTogetherRelay),
-          content: TextField(
-            controller: controller,
-            decoration: InputDecoration(labelText: 'URL', hintText: t.settings.watchTogetherRelayHint),
-            autofocus: true,
-            textInputAction: TextInputAction.done,
-            onEditingComplete: () => saveFocusNode.requestFocus(),
-          ),
-          actions: [
-            DialogActionButton(
-              onPressed: () async {
-                controller.clear();
-                await _settingsService.write(settings.SettingsService.customRelayUrl, null);
-                if (mounted) setState(() => _customRelayUrl = null);
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
-              },
-              label: t.settings.resetToDefault,
+    // try/finally guarantees disposal on every dismissal path (button,
+    // back, tap-outside) without depending on `.then` chaining.
+    try {
+      await showDialog<void>(
+        context: context,
+        builder: (BuildContext dialogContext) {
+          return AlertDialog(
+            title: Text(t.settings.watchTogetherRelay),
+            content: TextField(
+              controller: controller,
+              decoration: InputDecoration(labelText: 'URL', hintText: t.settings.watchTogetherRelayHint),
+              autofocus: true,
+              textInputAction: TextInputAction.done,
+              onEditingComplete: () => saveFocusNode.requestFocus(),
             ),
-            DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
-            DialogActionButton(
-              focusNode: saveFocusNode,
-              onPressed: () async {
-                final url = controller.text.trim().isEmpty ? null : controller.text.trim();
-                await _settingsService.write(settings.SettingsService.customRelayUrl, url);
-                if (mounted) setState(() => _customRelayUrl = url);
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
-              },
-              label: t.common.save,
-            ),
-          ],
-        );
-      },
-    ).then((_) {
+            actions: [
+              DialogActionButton(
+                onPressed: () async {
+                  controller.clear();
+                  await _settingsService.write(settings.SettingsService.customRelayUrl, null);
+                  if (mounted) setState(() => _customRelayUrl = null);
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                },
+                label: t.settings.resetToDefault,
+              ),
+              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+              DialogActionButton(
+                focusNode: saveFocusNode,
+                onPressed: () async {
+                  final url = controller.text.trim().isEmpty ? null : controller.text.trim();
+                  await _settingsService.write(settings.SettingsService.customRelayUrl, url);
+                  if (mounted) setState(() => _customRelayUrl = url);
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                },
+                label: t.common.save,
+              ),
+            ],
+          );
+        },
+      );
+    } finally {
       controller.dispose();
       saveFocusNode.dispose();
-    });
+    }
   }
 
   Future<void> _showClearCacheDialog() async {

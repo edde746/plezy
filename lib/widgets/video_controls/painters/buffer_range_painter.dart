@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../models/plex_media_info.dart';
+import '../../../media/media_source_info.dart';
 import '../../../mpv/models.dart';
 
 /// Custom painter that draws a segmented background track (split at chapter
@@ -7,7 +7,7 @@ import '../../../mpv/models.dart';
 class BufferRangePainter extends CustomPainter {
   final List<BufferRange> ranges;
   final Duration duration;
-  final List<PlexChapter> chapters;
+  final List<MediaChapter> chapters;
 
   BufferRangePainter({required this.ranges, required this.duration, this.chapters = const []});
 

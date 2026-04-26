@@ -163,6 +163,32 @@ void main() {
       expect(state.tabController.index, 0);
     });
 
+    testWidgets('dispose + re-init reseats the TabController without LateInitializationError', (tester) async {
+      // Regression: libraries_screen calls disposeTabNavigation() then
+      // initTabNavigation() inside _updateVisibleTabs whenever the visible
+      // tab set changes (e.g. switching between a Plex library with 4 tabs
+      // and a Jellyfin library with 1). A `late final` on `tabController`
+      // would throw LateInitializationError on the second init; the mixin
+      // must allow re-initialization for the lifetime of the State.
+      late _ProbeState state;
+      await tester.pumpWidget(_Probe(tabCount: 3, onState: (s) => state = s));
+      final original = state.tabController;
+
+      state.disposeTabNavigation();
+      // After dispose+init the controller field must point at a fresh
+      // instance so the listener and gamepad bindings reattach cleanly.
+      state.initTabNavigation();
+
+      expect(identical(state.tabController, original), isFalse);
+      expect(state.tabController.length, 3);
+      expect(state.tabController.index, 0);
+
+      // The original is disposed; touching it would throw — but the
+      // mixin's references all point at the new instance now.
+      expect(GamepadService.onL1Pressed, isNotNull);
+      expect(GamepadService.onR1Pressed, isNotNull);
+    });
+
     testWidgets('onTabChanged fires when tabController.index changes', (tester) async {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(tabCount: 3, onState: (s) => state = s));

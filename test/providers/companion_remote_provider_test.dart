@@ -1,10 +1,28 @@
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/connection/connection.dart';
+import 'package:plezy/connection/connection_registry.dart';
+import 'package:plezy/database/app_database.dart';
+import 'package:plezy/models/plex/plex_home.dart';
+import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/models/companion_remote/remote_command.dart';
 import 'package:plezy/models/companion_remote/remote_session.dart';
+import 'package:plezy/profiles/active_profile_provider.dart';
+import 'package:plezy/profiles/plex_home_service.dart';
+import 'package:plezy/profiles/profile.dart';
+import 'package:plezy/profiles/profile_connection.dart';
+import 'package:plezy/profiles/profile_connection_registry.dart';
+import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
+import 'package:plezy/services/companion_remote/remote_auth_service.dart';
+import 'package:plezy/services/storage_service.dart';
+
+import '../test_helpers/prefs.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(resetSharedPreferencesForTest);
 
   group('CompanionRemoteProvider — initial state', () {
     test('starts with no session and no connected device', () {
@@ -123,4 +141,364 @@ void main() {
       p.dispose();
     });
   });
+
+  group('CompanionRemoteProvider — crypto identity', () {
+    test('Jellyfin remote secret is stable across tokens for the same server user', () async {
+      final auth = RemoteAuthService.instance;
+      auth.clearCache();
+
+      final tokenA = await auth.deriveJellyfinSecret(serverMachineId: 'machine-a', userId: 'user-a');
+      final tokenAAgain = await auth.deriveJellyfinSecret(serverMachineId: 'machine-a', userId: 'user-a');
+      final tokenB = await auth.deriveJellyfinSecret(serverMachineId: 'machine-a', userId: 'user-a');
+      final otherUser = await auth.deriveJellyfinSecret(serverMachineId: 'machine-a', userId: 'user-b');
+
+      expect(tokenAAgain, tokenA);
+      expect(tokenB, tokenA);
+      expect(otherUser, isNot(tokenA));
+    });
+
+    test('ensureCryptoReady rebuilds when the active profile/account changes', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final connections = ConnectionRegistry(db);
+      final profileConnections = ProfileConnectionRegistry(db);
+      final profiles = ProfileRegistry(db);
+      final storage = await StorageService.getInstance();
+      final plexHome = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: (_) async => const [],
+      );
+      final active = ActiveProfileProvider(
+        registry: profiles,
+        plexHome: plexHome,
+        connections: connections,
+        storage: storage,
+      );
+      addTearDown(() async {
+        await active.resetForTesting();
+        active.dispose();
+        await plexHome.dispose();
+        await db.close();
+      });
+
+      final accountA = _plexAccount('plex-a', 'client-a');
+      final accountB = _plexAccount('plex-b', 'client-b');
+      final profileA = _localProfile('profile-a');
+      final profileB = _localProfile('profile-b');
+      await connections.upsert(accountB);
+      await profiles.upsert(profileB);
+      await profileConnections.upsert(
+        ProfileConnection(profileId: profileB.id, connectionId: accountB.id, userIdentifier: 'admin-b'),
+        makeDefault: true,
+      );
+      await storage.setActiveProfileId(profileB.id);
+      await active.initialize();
+
+      final provider = CompanionRemoteProvider();
+      addTearDown(provider.dispose);
+      await provider.initializeCrypto(home: _home('admin-a'), account: accountA, activeProfile: profileA);
+      expect(provider.debugCryptoConnectionId, accountA.id);
+      expect(provider.debugCryptoProfileId, profileA.id);
+
+      final ok = await provider.ensureCryptoReady(
+        _home('admin-b'),
+        connections: connections,
+        activeProfile: active,
+        profileConnections: profileConnections,
+        account: accountB,
+      );
+
+      expect(ok, isTrue);
+      expect(provider.debugCryptoConnectionId, accountB.id);
+      expect(provider.debugCryptoProfileId, profileB.id);
+    });
+
+    test('ensureCryptoReady uses the active local profile Plex row', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final connections = ConnectionRegistry(db);
+      final profileConnections = ProfileConnectionRegistry(db);
+      final profiles = ProfileRegistry(db);
+      final storage = await StorageService.getInstance();
+      final plexHome = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: (_) async => const [],
+      );
+      final active = ActiveProfileProvider(
+        registry: profiles,
+        plexHome: plexHome,
+        connections: connections,
+        storage: storage,
+      );
+      addTearDown(() async {
+        await active.resetForTesting();
+        active.dispose();
+        await plexHome.dispose();
+        await db.close();
+      });
+
+      final accountA = _plexAccount('plex-a', 'client-a');
+      final accountB = _plexAccount('plex-b', 'client-b');
+      final profile = _localProfile('profile-local');
+      await connections.upsert(accountA);
+      await connections.upsert(accountB);
+      await profiles.upsert(profile);
+      await profileConnections.upsert(
+        ProfileConnection(profileId: profile.id, connectionId: accountB.id, userIdentifier: 'child-b', isDefault: true),
+        makeDefault: true,
+      );
+      await storage.setActiveProfileId(profile.id);
+      await active.initialize();
+
+      final provider = CompanionRemoteProvider();
+      addTearDown(provider.dispose);
+      final ok = await provider.ensureCryptoReady(
+        _homeWithUsers('admin-b', ['child-b']),
+        connections: connections,
+        activeProfile: active,
+        profileConnections: profileConnections,
+      );
+
+      expect(ok, isTrue);
+      expect(provider.debugCryptoConnectionId, accountB.id);
+      expect(provider.debugCryptoProfileId, profile.id);
+      expect(provider.debugCryptoUserUuid, 'child-b');
+    });
+
+    test('ensureCryptoReady uses the active local profile Jellyfin row', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final connections = ConnectionRegistry(db);
+      final profileConnections = ProfileConnectionRegistry(db);
+      final profiles = ProfileRegistry(db);
+      final storage = await StorageService.getInstance();
+      final plexHome = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: (_) async => const [],
+      );
+      final active = ActiveProfileProvider(
+        registry: profiles,
+        plexHome: plexHome,
+        connections: connections,
+        storage: storage,
+      );
+      addTearDown(() async {
+        await active.resetForTesting();
+        active.dispose();
+        await plexHome.dispose();
+        await db.close();
+      });
+
+      final jellyfin = _jellyfinConnection('jf-a');
+      final profile = _localProfile('profile-jf');
+      await connections.upsert(jellyfin);
+      await profiles.upsert(profile);
+      await profileConnections.upsert(
+        ProfileConnection(profileId: profile.id, connectionId: jellyfin.id, userIdentifier: jellyfin.userId),
+        makeDefault: true,
+      );
+      await storage.setActiveProfileId(profile.id);
+      await active.initialize();
+
+      final provider = CompanionRemoteProvider();
+      addTearDown(provider.dispose);
+      final ok = await provider.ensureCryptoReady(
+        null,
+        connections: connections,
+        activeProfile: active,
+        profileConnections: profileConnections,
+      );
+
+      expect(ok, isTrue);
+      expect(provider.debugCryptoConnectionId, jellyfin.id);
+      expect(provider.debugCryptoProfileId, profile.id);
+      expect(provider.debugCryptoUserUuid, jellyfin.userId);
+    });
+
+    test('ensureCryptoReady includes every active local profile remote identity', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final connections = ConnectionRegistry(db);
+      final profileConnections = ProfileConnectionRegistry(db);
+      final profiles = ProfileRegistry(db);
+      final storage = await StorageService.getInstance();
+      final plexHome = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: (_) async => const [],
+      );
+      final active = ActiveProfileProvider(
+        registry: profiles,
+        plexHome: plexHome,
+        connections: connections,
+        storage: storage,
+      );
+      addTearDown(() async {
+        await active.resetForTesting();
+        active.dispose();
+        await plexHome.dispose();
+        await db.close();
+      });
+
+      final account = _plexAccount('plex-a', 'client-a');
+      final jellyfin = _jellyfinConnection('jf-a');
+      final profile = _localProfile('profile-mixed');
+      final home = _homeWithUsers('admin-a', ['child-a']);
+      await connections.upsert(account);
+      await connections.upsert(jellyfin);
+      await profiles.upsert(profile);
+      await profileConnections.upsert(
+        ProfileConnection(profileId: profile.id, connectionId: jellyfin.id, userIdentifier: jellyfin.userId),
+        makeDefault: true,
+      );
+      await profileConnections.upsert(
+        ProfileConnection(profileId: profile.id, connectionId: account.id, userIdentifier: 'child-a'),
+      );
+      await storage.setActiveProfileId(profile.id);
+      await active.initialize();
+
+      final provider = CompanionRemoteProvider();
+      addTearDown(provider.dispose);
+      final ok = await provider.ensureCryptoReady(
+        home,
+        connections: connections,
+        activeProfile: active,
+        profileConnections: profileConnections,
+        plexHomeForConnection: (_) async => home,
+      );
+
+      expect(ok, isTrue);
+      expect(provider.debugCryptoConnectionId, jellyfin.id);
+      expect(provider.debugCryptoConnectionIds, [jellyfin.id, account.id]);
+    });
+
+    test('ensureCryptoReady does not fall back to an account without an active profile', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      final connections = ConnectionRegistry(db);
+      final profileConnections = ProfileConnectionRegistry(db);
+      final profiles = ProfileRegistry(db);
+      final storage = await StorageService.getInstance();
+      final plexHome = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: (_) async => const [],
+      );
+      final active = ActiveProfileProvider(
+        registry: profiles,
+        plexHome: plexHome,
+        connections: connections,
+        storage: storage,
+      );
+      addTearDown(() async {
+        await active.resetForTesting();
+        active.dispose();
+        await plexHome.dispose();
+        await db.close();
+      });
+
+      await connections.upsert(_plexAccount('plex-a', 'client-a'));
+      await profiles.upsert(_localProfile('profile-a'));
+      await active.initialize();
+
+      final provider = CompanionRemoteProvider();
+      addTearDown(provider.dispose);
+      final ok = await provider.ensureCryptoReady(
+        _home('admin-a'),
+        connections: connections,
+        activeProfile: active,
+        profileConnections: profileConnections,
+      );
+
+      expect(ok, isFalse);
+      expect(provider.isCryptoReady, isFalse);
+    });
+
+    test('resetForLogout clears crypto context', () async {
+      final provider = CompanionRemoteProvider();
+      addTearDown(provider.dispose);
+      await provider.initializeCrypto(
+        home: _home('admin-a'),
+        account: _plexAccount('plex-a', 'client-a'),
+        activeProfile: _localProfile('profile-a'),
+      );
+      expect(provider.isCryptoReady, isTrue);
+
+      await provider.resetForLogout();
+
+      expect(provider.isCryptoReady, isFalse);
+      expect(provider.debugCryptoConnectionId, isNull);
+      expect(provider.debugCryptoProfileId, isNull);
+    });
+  });
+}
+
+PlexAccountConnection _plexAccount(String id, String clientIdentifier) {
+  return PlexAccountConnection(
+    id: id,
+    accountToken: 'token-$id',
+    clientIdentifier: clientIdentifier,
+    accountLabel: id,
+    createdAt: DateTime(2026, 1, 1),
+  );
+}
+
+JellyfinConnection _jellyfinConnection(String id) {
+  return JellyfinConnection(
+    id: id,
+    baseUrl: 'https://jellyfin.example.test',
+    serverName: 'Jellyfin',
+    serverMachineId: 'machine-$id',
+    userId: 'user-$id',
+    userName: 'User $id',
+    accessToken: 'token-$id',
+    deviceId: 'device-$id',
+    createdAt: DateTime(2026, 1, 1),
+  );
+}
+
+Profile _localProfile(String id) {
+  return Profile(id: id, kind: ProfileKind.local, displayName: id, createdAt: DateTime(2026, 1, 1));
+}
+
+PlexHome _home(String adminUuid) {
+  return PlexHome(
+    id: 1,
+    name: 'Home',
+    guestUserID: null,
+    guestUserUUID: '',
+    guestEnabled: false,
+    subscription: false,
+    users: [_homeUser(adminUuid, admin: true)],
+  );
+}
+
+PlexHome _homeWithUsers(String adminUuid, List<String> userUuids) {
+  return PlexHome(
+    id: 1,
+    name: 'Home',
+    guestUserID: null,
+    guestUserUUID: '',
+    guestEnabled: false,
+    subscription: false,
+    users: [_homeUser(adminUuid, admin: true), for (final uuid in userUuids) _homeUser(uuid, admin: false)],
+  );
+}
+
+PlexHomeUser _homeUser(String uuid, {required bool admin}) {
+  return PlexHomeUser(
+    id: admin ? 1 : 2,
+    uuid: uuid,
+    title: uuid,
+    thumb: '',
+    hasPassword: false,
+    restricted: false,
+    updatedAt: null,
+    admin: admin,
+    guest: false,
+    protected: false,
+  );
 }

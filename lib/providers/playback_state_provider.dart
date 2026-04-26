@@ -1,8 +1,15 @@
 import 'package:flutter/foundation.dart';
-import '../models/plex_metadata.dart';
-import '../models/play_queue_response.dart';
-import '../services/plex_client.dart';
+import '../media/media_item.dart';
+import '../media/play_queue.dart';
+import '../models/plex/play_queue_response.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
+
+/// Fetches a window of items from a server-side play queue. Provider calls
+/// this when the currently loaded window doesn't contain the next item it
+/// needs to surface. Wired to a backend that maintains queues server-side
+/// (Plex's `/playQueues`); left null for client-side queues (Jellyfin's
+/// [LocalPlayQueue]) where the full list is already resident.
+typedef PlayQueueWindowFetcher = Future<PlayQueueResponse?> Function(int playQueueId, {String? center, int window});
 
 /// Result of trying to locate the current queue index.
 class _IndexLookupResult {
@@ -23,14 +30,33 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   int? _currentPlayQueueItemID;
 
   // Windowed items (loaded around current position)
-  List<PlexMetadata> _loadedItems = [];
+  List<MediaItem> _loadedItems = [];
   final int _windowSize = 50; // Number of items to keep in memory
+
+  /// Synthetic per-item queue IDs for client-side queues (Jellyfin, etc.).
+  /// Parallel to [_loadedItems] — `_syntheticIds[i]` is the queue ID for
+  /// `_loadedItems[i]`. Empty when the queue is server-side (Plex), where
+  /// the real id lives on [PlexMediaItem.playQueueItemId].
+  List<int> _syntheticIds = const [];
 
   String? _contextKey; // The show/season/playlist ratingKey for this session
   bool _isQueueMode = false;
 
   // Client reference for loading more items
-  PlexClient? _client;
+  PlayQueueWindowFetcher? _windowFetcher;
+
+  /// Returns the queue id for [item] within the current queue. For Plex
+  /// items this is the server's `playQueueItemID`; for client-side queues
+  /// (Jellyfin) it's a synthetic index assigned in [setPlaybackFromLocalQueue].
+  /// Returns null when [item] isn't in the current loaded window.
+  int? playQueueItemIdFor(MediaItem item) {
+    if (item is PlexMediaItem && item.playQueueItemId != null) {
+      return item.playQueueItemId;
+    }
+    final idx = _loadedItems.indexOf(item);
+    if (idx < 0 || idx >= _syntheticIds.length) return null;
+    return _syntheticIds[idx];
+  }
 
   /// Whether shuffle mode is currently active
   bool get isShuffleActive => _playQueueShuffled;
@@ -48,20 +74,22 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   int? get playQueueId => _playQueueId;
 
   /// The currently loaded queue items (windowed subset of full queue)
-  List<PlexMetadata> get loadedItems => List.unmodifiable(_loadedItems);
+  List<MediaItem> get loadedItems => List.unmodifiable(_loadedItems);
 
   /// The current play queue item ID
   int? get currentPlayQueueItemID => _currentPlayQueueItemID;
 
   /// Set the client reference for loading more items
-  void setClient(PlexClient client) {
-    _client = client;
+  void setPlayQueueWindowFetcher(PlayQueueWindowFetcher? fetcher) {
+    _windowFetcher = fetcher;
   }
 
   /// Update the current play queue item when playing a new item
-  void setCurrentItem(PlexMetadata metadata) {
-    if (_isQueueMode && metadata.playQueueItemID != null) {
-      _currentPlayQueueItemID = metadata.playQueueItemID;
+  void setCurrentItem(MediaItem metadata) {
+    if (!_isQueueMode) return;
+    final id = playQueueItemIdFor(metadata);
+    if (id != null) {
+      _currentPlayQueueItemID = id;
       safeNotifyListeners();
     }
   }
@@ -75,34 +103,62 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     _playQueueShuffled = playQueue.playQueueShuffled;
     _currentPlayQueueItemID = playQueue.playQueueSelectedItemID;
 
-    // Items are already tagged with server info by PlexClient
+    // Items arrive pre-tagged with server info by the producing mapper.
     _loadedItems = playQueue.items ?? [];
+    // Plex items carry their own playQueueItemId — no synthetic IDs needed.
+    _syntheticIds = const [];
 
     _contextKey = contextKey;
     _isQueueMode = true;
     safeNotifyListeners();
   }
 
+  /// Initialize playback from a [LocalPlayQueue] (Jellyfin / any backend
+  /// without a server-side queue). Synthetic per-item queue IDs are
+  /// recorded in [_syntheticIds] (parallel to [_loadedItems]) so the
+  /// existing Plex-shaped UI — Queue sheet, content strip, current item
+  /// highlight — keeps working without a parallel rendering path. Items
+  /// themselves are stored unmutated.
+  ///
+  /// `playQueueId` is set to a sentinel so [isQueueActive] returns true.
+  /// Window-extension paths (`_ensureItemsLoaded`, `getNextEpisode`) consult
+  /// `_windowFetcher`, which stays null for client-side queues — JF callers
+  /// resolve adjacent items through [EpisodeNavigationService] instead.
+  void setPlaybackFromLocalQueue(LocalPlayQueue queue, {String? contextKey}) {
+    _playQueueId = -1; // sentinel for "client-side queue"
+    _playQueueTotalCount = queue.items.length;
+    _playQueueShuffled = queue.shuffled;
+    _loadedItems = List.of(queue.items);
+    _syntheticIds = [for (var i = 0; i < queue.items.length; i++) i];
+    _currentPlayQueueItemID = queue.currentIndex;
+    _contextKey = contextKey;
+    _isQueueMode = true;
+    _windowFetcher = null; // disable server-side window extension
+    safeNotifyListeners();
+  }
+
   /// Load more items from the play queue if needed
   /// Returns true if more items were loaded
   Future<bool> _ensureItemsLoaded(int targetPlayQueueItemID) async {
-    if (_client == null || _playQueueId == null) return false;
+    if (_windowFetcher == null || _playQueueId == null) return false;
 
-    // Check if the target item is already loaded
-    final hasItem = _loadedItems.any((item) => item.playQueueItemID == targetPlayQueueItemID);
+    // Plex queues only — items are PlexMediaItem with a real playQueueItemId.
+    final hasItem = _loadedItems.whereType<PlexMediaItem>().any(
+      (item) => item.playQueueItemId == targetPlayQueueItemID,
+    );
 
     if (hasItem) return true;
 
     // Load a window around the target item
     try {
-      final response = await _client!.getPlayQueue(
+      final response = await _windowFetcher!(
         _playQueueId!,
         center: targetPlayQueueItemID.toString(),
         window: _windowSize,
       );
 
       if (response != null && response.items != null) {
-        // Items are already tagged with server info by PlexClient
+        // Items arrive pre-tagged with server info by the producing mapper.
         _loadedItems = response.items!;
         // Use size or items length as fallback if totalCount is null
         _playQueueTotalCount = response.playQueueTotalCount ?? response.size ?? response.items!.length;
@@ -123,13 +179,13 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
       return const _IndexLookupResult();
     }
 
-    var currentIndex = _loadedItems.indexWhere((item) => item.playQueueItemID == _currentPlayQueueItemID);
+    var currentIndex = _findLoadedIndex(_currentPlayQueueItemID!);
 
     if (currentIndex != -1) {
       return _IndexLookupResult(index: currentIndex);
     }
 
-    if (!loadIfMissing || _client == null || _playQueueId == null) {
+    if (!loadIfMissing || _windowFetcher == null || _playQueueId == null) {
       return const _IndexLookupResult();
     }
 
@@ -138,7 +194,7 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
       return const _IndexLookupResult(attemptedLoad: true, loadFailed: true);
     }
 
-    currentIndex = _loadedItems.indexWhere((item) => item.playQueueItemID == _currentPlayQueueItemID);
+    currentIndex = _findLoadedIndex(_currentPlayQueueItemID!);
 
     if (currentIndex == -1) {
       return const _IndexLookupResult(attemptedLoad: true, loadFailed: true);
@@ -147,10 +203,26 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     return _IndexLookupResult(index: currentIndex, attemptedLoad: true);
   }
 
+  /// Returns the index of the item with [playQueueItemId] in [_loadedItems],
+  /// or -1 if absent. Bridges Plex (real id on [PlexMediaItem]) and
+  /// client-side (synthetic id in [_syntheticIds]) queues.
+  int _findLoadedIndex(int playQueueItemId) {
+    for (var i = 0; i < _loadedItems.length; i++) {
+      final item = _loadedItems[i];
+      if (item is PlexMediaItem && item.playQueueItemId == playQueueItemId) {
+        return i;
+      }
+      if (i < _syntheticIds.length && _syntheticIds[i] == playQueueItemId) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
   /// Gets the next item in the playback queue.
   /// Returns null if queue is exhausted or current item is not in queue.
   /// [loopQueue] - If true, restart from beginning when queue is exhausted
-  Future<PlexMetadata?> getNextEpisode(String currentItemKey, {bool loopQueue = false}) async {
+  Future<MediaItem?> getNextEpisode(String currentItemKey, {bool loopQueue = false}) async {
     if (!_isQueueMode) {
       // For sequential mode, let the video player handle next episode
       return null;
@@ -175,10 +247,10 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     if (currentIndex + 1 >= _playQueueTotalCount) {
       if (loopQueue && _playQueueTotalCount > 0) {
         // Loop back to beginning - load first item
-        if (_client != null && _playQueueId != null) {
-          final response = await _client!.getPlayQueue(_playQueueId!);
+        if (_windowFetcher != null && _playQueueId != null) {
+          final response = await _windowFetcher!(_playQueueId!);
           if (response != null && response.items != null && response.items!.isNotEmpty) {
-            // Items are already tagged with server info by PlexClient
+            // Items arrive pre-tagged with server info by the producing mapper.
             _loadedItems = response.items!;
             // Don't update _currentPlayQueueItemID here - let setCurrentItem do it when playback starts
             return _loadedItems.first;
@@ -190,9 +262,11 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     }
 
     // Need to load next window
-    if (_client != null && _playQueueId != null && _loadedItems.isNotEmpty) {
-      // Load next window centered on the item after current
-      final nextItemID = _loadedItems.last.playQueueItemID;
+    if (_windowFetcher != null && _playQueueId != null && _loadedItems.isNotEmpty) {
+      // Load next window centered on the item after current. Plex-only path
+      // — _windowFetcher != null implies queue items are PlexMediaItem.
+      final last = _loadedItems.last;
+      final nextItemID = last is PlexMediaItem ? last.playQueueItemId : null;
       if (nextItemID != null) {
         final loaded = await _ensureItemsLoaded(nextItemID + 1);
         if (loaded) {
@@ -207,7 +281,7 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
 
   /// Gets the previous item in the playback queue.
   /// Returns null if at the beginning of the queue or current item is not in queue.
-  Future<PlexMetadata?> getPreviousEpisode(String currentItemKey) async {
+  Future<MediaItem?> getPreviousEpisode(String currentItemKey) async {
     if (!_isQueueMode) {
       // For sequential mode, let the video player handle previous episode
       return null;
@@ -228,8 +302,10 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     }
 
     // Need to load previous window
-    if (_client != null && _playQueueId != null && _loadedItems.isNotEmpty) {
-      final prevItemID = _loadedItems.first.playQueueItemID;
+    if (_windowFetcher != null && _playQueueId != null && _loadedItems.isNotEmpty) {
+      // Plex-only path — _windowFetcher != null implies items are PlexMediaItem.
+      final first = _loadedItems.first;
+      final prevItemID = first is PlexMediaItem ? first.playQueueItemId : null;
       if (prevItemID != null && prevItemID > 0) {
         final loaded = await _ensureItemsLoaded(prevItemID - 1);
         if (loaded) {
@@ -248,6 +324,7 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     _playQueueShuffled = false;
     _currentPlayQueueItemID = null;
     _loadedItems = [];
+    _syntheticIds = const [];
     _contextKey = null;
     _isQueueMode = false;
     safeNotifyListeners();

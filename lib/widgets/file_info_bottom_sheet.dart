@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import '../models/plex_file_info.dart';
+import '../media/media_file_info.dart';
 import '../i18n/strings.g.dart';
 import '../utils/scroll_utils.dart';
 import 'bottom_sheet_header.dart';
 
 class FileInfoBottomSheet extends StatefulWidget {
-  final PlexFileInfo fileInfo;
+  final MediaFileInfo fileInfo;
   final String title;
 
   const FileInfoBottomSheet({super.key, required this.fileInfo, required this.title});
@@ -32,6 +32,8 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final info = widget.fileInfo;
+    final hasAdvanced = info.optimizedForStreaming != null || info.has64bitOffsets != null;
     return Column(
       children: [
         // Header
@@ -50,69 +52,63 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
               // Video Section
               _buildSectionHeader(t.fileInfo.video),
               const SizedBox(height: 8),
-              _buildInfoRow(t.fileInfo.codec, widget.fileInfo.videoCodec ?? t.common.unknown),
-              _buildInfoRow(t.fileInfo.resolution, widget.fileInfo.resolutionFormatted),
-              if (widget.fileInfo.videoBitrate != null)
-                _buildInfoRow(t.fileInfo.bitrate, widget.fileInfo.videoBitrateFormatted),
-              _buildInfoRow(t.fileInfo.frameRate, widget.fileInfo.frameRateFormatted),
-              _buildInfoRow(t.fileInfo.aspectRatio, widget.fileInfo.aspectRatioFormatted),
-              if (widget.fileInfo.videoProfile != null)
-                _buildInfoRow(t.fileInfo.profile, widget.fileInfo.videoProfile!),
-              if (widget.fileInfo.bitDepth != null)
-                _buildInfoRow(t.fileInfo.bitDepth, '${widget.fileInfo.bitDepth} bit'),
-              if (widget.fileInfo.colorSpace != null) _buildInfoRow(t.fileInfo.colorSpace, widget.fileInfo.colorSpace!),
-              if (widget.fileInfo.colorRange != null) _buildInfoRow(t.fileInfo.colorRange, widget.fileInfo.colorRange!),
-              if (widget.fileInfo.colorPrimaries != null)
-                _buildInfoRow(t.fileInfo.colorPrimaries, widget.fileInfo.colorPrimaries!),
-              if (widget.fileInfo.chromaSubsampling != null)
-                _buildInfoRow(t.fileInfo.chromaSubsampling, widget.fileInfo.chromaSubsampling!),
+              if (info.videoCodec != null) _buildInfoRow(t.fileInfo.codec, info.videoCodec!),
+              if (info.resolutionFormatted != null) _buildInfoRow(t.fileInfo.resolution, info.resolutionFormatted!),
+              if (info.videoBitrateFormatted != null) _buildInfoRow(t.fileInfo.bitrate, info.videoBitrateFormatted!),
+              if (info.frameRateFormatted != null) _buildInfoRow(t.fileInfo.frameRate, info.frameRateFormatted!),
+              if (info.aspectRatioFormatted != null) _buildInfoRow(t.fileInfo.aspectRatio, info.aspectRatioFormatted!),
+              if (info.videoProfile != null) _buildInfoRow(t.fileInfo.profile, info.videoProfile!),
+              if (info.bitDepth != null) _buildInfoRow(t.fileInfo.bitDepth, '${info.bitDepth} bit'),
+              if (info.colorSpace != null) _buildInfoRow(t.fileInfo.colorSpace, info.colorSpace!),
+              if (info.colorRange != null) _buildInfoRow(t.fileInfo.colorRange, info.colorRange!),
+              if (info.colorPrimaries != null) _buildInfoRow(t.fileInfo.colorPrimaries, info.colorPrimaries!),
+              if (info.chromaSubsampling != null) _buildInfoRow(t.fileInfo.chromaSubsampling, info.chromaSubsampling!),
               const SizedBox(height: 20),
 
               // Audio Section
               _buildSectionHeader(t.fileInfo.audio),
               const SizedBox(height: 8),
-              if (widget.fileInfo.audioTracks.isNotEmpty)
-                for (int i = 0; i < widget.fileInfo.audioTracks.length; i++)
-                  _buildInfoRow('${i + 1}', widget.fileInfo.audioTracks[i].label),
-              if (widget.fileInfo.audioTracks.isEmpty) ...[
-                _buildInfoRow(t.fileInfo.codec, widget.fileInfo.audioCodec ?? t.common.unknown),
-                _buildInfoRow(t.fileInfo.channels, widget.fileInfo.audioChannelsFormatted),
-                if (widget.fileInfo.audioProfile != null)
-                  _buildInfoRow(t.fileInfo.profile, widget.fileInfo.audioProfile!),
+              if (info.audioTracks.isNotEmpty)
+                for (int i = 0; i < info.audioTracks.length; i++) _buildInfoRow('${i + 1}', info.audioTracks[i].label),
+              if (info.audioTracks.isEmpty) ...[
+                if (info.audioCodec != null) _buildInfoRow(t.fileInfo.codec, info.audioCodec!),
+                if (info.audioChannelsFormatted != null)
+                  _buildInfoRow(t.fileInfo.channels, info.audioChannelsFormatted!),
+                if (info.audioProfile != null) _buildInfoRow(t.fileInfo.profile, info.audioProfile!),
               ],
               const SizedBox(height: 20),
 
               // Subtitles Section
-              if (widget.fileInfo.subtitleTracks.isNotEmpty) ...[
+              if (info.subtitleTracks.isNotEmpty) ...[
                 _buildSectionHeader(t.fileInfo.subtitles),
                 const SizedBox(height: 8),
-                for (int i = 0; i < widget.fileInfo.subtitleTracks.length; i++)
-                  _buildInfoRow('${i + 1}', widget.fileInfo.subtitleTracks[i].label),
+                for (int i = 0; i < info.subtitleTracks.length; i++)
+                  _buildInfoRow('${i + 1}', info.subtitleTracks[i].label),
                 const SizedBox(height: 20),
               ],
 
               // File Section
               _buildSectionHeader(t.fileInfo.file),
               const SizedBox(height: 8),
-              if (widget.fileInfo.filePath != null)
-                _buildInfoRow(t.fileInfo.path, widget.fileInfo.filePath!, isMonospace: true),
-              _buildInfoRow(t.fileInfo.size, widget.fileInfo.fileSizeFormatted),
-              _buildInfoRow(t.fileInfo.container, widget.fileInfo.container ?? t.common.unknown),
-              _buildInfoRow(t.fileInfo.duration, widget.fileInfo.durationFormatted),
-              _buildInfoRow(t.fileInfo.overallBitrate, widget.fileInfo.bitrateFormatted),
-              const SizedBox(height: 20),
+              if (info.filePath != null) _buildInfoRow(t.fileInfo.path, info.filePath!, isMonospace: true),
+              if (info.fileSizeFormatted != null) _buildInfoRow(t.fileInfo.size, info.fileSizeFormatted!),
+              if (info.container != null) _buildInfoRow(t.fileInfo.container, info.container!),
+              if (info.durationFormatted != null) _buildInfoRow(t.fileInfo.duration, info.durationFormatted!),
+              if (info.bitrateFormatted != null) _buildInfoRow(t.fileInfo.overallBitrate, info.bitrateFormatted!),
+              if (hasAdvanced) ...[
+                const SizedBox(height: 20),
 
-              // Advanced Section
-              _buildSectionHeader(t.fileInfo.advanced),
-              const SizedBox(height: 8),
-              _buildInfoRow(
-                t.fileInfo.optimizedForStreaming,
-                widget.fileInfo.optimizedForStreaming == true ? t.common.yes : t.common.no,
-              ),
-              _buildInfoRow(
-                t.fileInfo.has64bitOffsets,
-                widget.fileInfo.has64bitOffsets == true ? t.common.yes : t.common.no,
-              ),
+                // Advanced Section
+                _buildSectionHeader(t.fileInfo.advanced),
+                const SizedBox(height: 8),
+                if (info.optimizedForStreaming != null)
+                  _buildInfoRow(
+                    t.fileInfo.optimizedForStreaming,
+                    info.optimizedForStreaming! ? t.common.yes : t.common.no,
+                  ),
+                if (info.has64bitOffsets != null)
+                  _buildInfoRow(t.fileInfo.has64bitOffsets, info.has64bitOffsets! ? t.common.yes : t.common.no),
+              ],
             ],
           ),
         ),

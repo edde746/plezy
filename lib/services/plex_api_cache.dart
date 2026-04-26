@@ -1,16 +1,23 @@
 import 'dart:convert';
-import '../utils/isolate_helper.dart';
 
 import 'package:drift/drift.dart';
 
 import '../database/app_database.dart';
-import '../models/plex_metadata.dart';
-import '../utils/plex_cache_parser.dart';
+import '../media/media_backend.dart';
+import '../media/media_item.dart';
 import '../utils/global_key_utils.dart';
+import '../utils/isolate_helper.dart';
+import '../utils/plex_cache_parser.dart';
+import 'api_cache.dart';
+import 'plex_mappers.dart';
 
-/// Key-value cache for Plex API responses using Drift/SQLite.
-/// Stores raw JSON responses keyed by serverId:endpoint format.
-class PlexApiCache {
+/// Plex-shape helpers on top of the shared [ApiCache] substrate.
+///
+/// The generic CRUD (`get`/`put`/`pin`/...) lives on [ApiCache]. This class
+/// adds operations that bake in Plex's `/library/metadata/{ratingKey}`
+/// endpoint shape and parse cached JSON into [MediaItem] via
+/// [PlexMappers.mediaItemFromCacheJson].
+class PlexApiCache extends ApiCache {
   static PlexApiCache? _instance;
   static PlexApiCache get instance {
     if (_instance == null) {
@@ -19,153 +26,129 @@ class PlexApiCache {
     return _instance!;
   }
 
-  final AppDatabase _db;
+  PlexApiCache._(super.db);
 
-  PlexApiCache._(this._db);
-
-  /// Initialize the singleton with an AppDatabase instance
+  /// Initialize the singleton with an [AppDatabase] instance. Also registers
+  /// this instance with the [ApiCache] backend dispatch so callers using
+  /// `ApiCache.forBackend(MediaBackend.plex)` resolve here.
   static void initialize(AppDatabase db) {
     _instance = PlexApiCache._(db);
+    ApiCache.registerInstance(MediaBackend.plex, _instance!);
   }
 
-  /// Get the database instance (for services that need direct database access)
-  AppDatabase get database => _db;
-
-  /// Build cache key from serverId and endpoint
-  String _buildKey(String serverId, String endpoint) {
-    return '$serverId:$endpoint';
-  }
-
-  /// Get cached response for an endpoint
-  Future<Map<String, dynamic>?> get(String serverId, String endpoint) async {
-    final key = _buildKey(serverId, endpoint);
-    final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
-
-    if (result != null) {
-      return await tryIsolateRun(() => jsonDecode(result.data) as Map<String, dynamic>);
-    }
-    return null;
-  }
-
-  /// Cache a response for an endpoint
-  Future<void> put(String serverId, String endpoint, Map<String, dynamic> data) async {
-    final key = _buildKey(serverId, endpoint);
-    final encoded = await tryIsolateRun(() => jsonEncode(data));
-    await _db
-        .into(_db.apiCache)
-        .insertOnConflictUpdate(
-          ApiCacheCompanion(cacheKey: Value(key), data: Value(encoded), cachedAt: Value(DateTime.now())),
-        );
-  }
-
-  /// Delete all cached data for a server
-  Future<void> deleteForServer(String serverId) async {
-    await (_db.delete(_db.apiCache)..where((t) => t.cacheKey.like('$serverId:%'))).go();
-  }
-
-  /// Delete cached data for a specific item (when removing a download)
+  /// Delete cached data for a specific item (when removing a download).
+  @override
   Future<void> deleteForItem(String serverId, String ratingKey) async {
-    // Delete the metadata endpoint
-    final metadataKey = _buildKey(serverId, '/library/metadata/$ratingKey');
-    final childrenKey = _buildKey(serverId, '/library/metadata/$ratingKey/children');
+    final metadataKey = '$serverId:/library/metadata/$ratingKey';
+    final childrenKey = '$serverId:/library/metadata/$ratingKey/children';
 
-    await (_db.delete(
-      _db.apiCache,
+    await (database.delete(
+      database.apiCache,
     )..where((t) => t.cacheKey.equals(metadataKey) | t.cacheKey.equals(childrenKey))).go();
   }
 
-  /// Mark an item as pinned for offline access
+  /// Mark an item as pinned for offline access.
+  @override
   Future<void> pinForOffline(String serverId, String ratingKey) async {
-    final metadataKey = _buildKey(serverId, '/library/metadata/$ratingKey');
-    await (_db.update(
-      _db.apiCache,
-    )..where((t) => t.cacheKey.equals(metadataKey))).write(const ApiCacheCompanion(pinned: Value(true)));
+    return pin(serverId, '/library/metadata/$ratingKey');
   }
 
-  /// Unpin an item
+  /// Unpin an item.
   Future<void> unpinForOffline(String serverId, String ratingKey) async {
-    final metadataKey = _buildKey(serverId, '/library/metadata/$ratingKey');
-    await (_db.update(
-      _db.apiCache,
-    )..where((t) => t.cacheKey.equals(metadataKey))).write(const ApiCacheCompanion(pinned: Value(false)));
+    return unpin(serverId, '/library/metadata/$ratingKey');
   }
 
-  /// Check if an item is pinned for offline
-  Future<bool> isPinned(String serverId, String ratingKey) async {
-    final metadataKey = _buildKey(serverId, '/library/metadata/$ratingKey');
-    final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(metadataKey))).getSingleOrNull();
-    return result?.pinned ?? false;
-  }
-
-  /// Get all pinned rating keys for a server
-  Future<Set<String>> getPinnedKeys(String serverId) async {
-    final results = await (_db.select(
-      _db.apiCache,
-    )..where((t) => t.cacheKey.like('$serverId:%') & t.pinned.equals(true))).get();
-
-    final keys = <String>{};
-    for (final row in results) {
-      // Extract ratingKey from cache key like "serverId:/library/metadata/12345"
-      // Rating keys can be alphanumeric, not just numeric
-      final match = RegExp(r'/library/metadata/([^/]+)$').firstMatch(row.cacheKey);
-      if (match != null) {
-        keys.add(match.group(1)!);
-      }
-    }
-    return keys;
-  }
-
-  /// Fetch and parse a [PlexMetadata] item from cache.
+  /// Whether the metadata for [ratingKey] is pinned for offline.
   ///
-  /// Returns `null` when the endpoint is not cached or contains no metadata.
-  Future<PlexMetadata?> getMetadata(String serverId, String ratingKey) async {
+  /// Named `isPinnedRatingKey` to avoid colliding with the inherited
+  /// [ApiCache.isPinned]'s identical Dart signature.
+  Future<bool> isPinnedRatingKey(String serverId, String ratingKey) {
+    return isPinned(serverId, '/library/metadata/$ratingKey');
+  }
+
+  // Rating keys can be alphanumeric, not just numeric.
+  static final RegExp _metadataKeyPattern = RegExp(r'/library/metadata/([^/]+)$');
+
+  /// Get all pinned rating keys for a server.
+  Future<Set<String>> getPinnedKeys(String serverId) => extractPinnedIds(serverId, _metadataKeyPattern);
+
+  /// Fetch and parse a [MediaItem] from cache.
+  ///
+  /// The on-disk format is the raw Plex `/library/metadata/{id}` JSON shape;
+  /// [PlexMappers.mediaItemFromCacheJson] converts it to the neutral
+  /// [MediaItem] at the boundary. Returns `null` when the endpoint is not
+  /// cached or contains no metadata.
+  @override
+  Future<MediaItem?> getMetadata(String serverId, String ratingKey) async {
     final cached = await get(serverId, '/library/metadata/$ratingKey');
     final json = PlexCacheParser.extractFirstMetadata(cached);
     if (json == null) return null;
-    return PlexMetadata.fromJsonWithImages(json).copyWith(serverId: serverId);
+    return PlexMappers.mediaItemFromCacheJson(json, serverId: serverId);
   }
 
-  /// Load all pinned metadata in a single query.
+  /// Persist a watched/unwatched flip into the cached metadata JSON. Mirrors
+  /// what the server would return after the flip so a later cache reload
+  /// (e.g. on app restart) reflects the current watched state without a
+  /// network roundtrip.
   ///
-  /// Returns a map keyed by `serverId:ratingKey` for O(1) lookups.
-  /// Used by DownloadProvider to batch-load metadata on startup instead of
-  /// issuing per-item DB queries.
-  Future<Map<String, PlexMetadata>> getAllPinnedMetadata() async {
-    final rows = await (_db.select(_db.apiCache)..where((t) => t.pinned.equals(true))).get();
-
-    // Extract (cacheKey, data) pairs and parse serverId/ratingKey on main thread (cheap string ops),
-    // then send raw JSON strings to isolate for the expensive decode+parse.
-    final entries = <(String serverId, String ratingKey, String data)>[];
-    for (final row in rows) {
-      final colonIdx = row.cacheKey.indexOf(':');
-      if (colonIdx < 0) continue;
-      final serverId = row.cacheKey.substring(0, colonIdx);
-      final match = RegExp(r'/library/metadata/([^/]+)$').firstMatch(row.cacheKey);
-      if (match == null) continue;
-      entries.add((serverId, match.group(1)!, row.data));
+  /// When [viewOffsetMs] / [lastViewedAt] / [viewedLeafCount] are supplied,
+  /// they overwrite the snapshot values mirrored from a fresher server
+  /// response (e.g. the offline-watch-sync episode-list refresh). They take
+  /// precedence over the defaults the watched flip would otherwise apply —
+  /// callers passing them have a more accurate read of server state.
+  @override
+  Future<void> applyWatchState({
+    required String serverId,
+    required String itemId,
+    required bool isWatched,
+    int? viewOffsetMs,
+    int? lastViewedAt,
+    int? viewedLeafCount,
+  }) async {
+    final endpoint = '/library/metadata/$itemId';
+    final cached = await get(serverId, endpoint);
+    final json = PlexCacheParser.extractFirstMetadata(cached);
+    if (cached == null || json == null) return;
+    if (isWatched) {
+      final current = (json['viewCount'] as num?)?.toInt() ?? 0;
+      json['viewCount'] = current < 1 ? 1 : current;
+      json['viewOffset'] = viewOffsetMs ?? 0;
+      json['lastViewedAt'] = lastViewedAt ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    } else {
+      json['viewCount'] = 0;
+      json['viewOffset'] = viewOffsetMs ?? 0;
+      if (lastViewedAt != null) json['lastViewedAt'] = lastViewedAt;
     }
+    if (viewedLeafCount != null) json['viewedLeafCount'] = viewedLeafCount;
+    await put(serverId, endpoint, cached);
+  }
 
+  /// Load all pinned Plex metadata in a single query.
+  ///
+  /// Returns a map keyed by `buildGlobalKey(serverId, ratingKey)` for O(1)
+  /// lookups. Used by DownloadProvider to batch-load metadata on startup
+  /// instead of issuing per-item DB queries.
+  @override
+  Future<Map<String, MediaItem>> getAllPinnedMetadata() async {
+    final entries = await listPinnedRowsByPattern(_metadataKeyPattern);
     if (entries.isEmpty) return {};
 
     return await tryIsolateRun(() {
-      final result = <String, PlexMetadata>{};
-      for (final (serverId, ratingKey, rawData) in entries) {
+      final result = <String, MediaItem>{};
+      for (final entry in entries) {
         try {
-          final data = jsonDecode(rawData) as Map<String, dynamic>;
+          final data = jsonDecode(entry.data) as Map<String, dynamic>;
           final json = PlexCacheParser.extractFirstMetadata(data);
           if (json == null) continue;
-          final metadata = PlexMetadata.fromJsonWithImages(json).copyWith(serverId: serverId);
-          result[buildGlobalKey(serverId, ratingKey)] = metadata;
+          result[buildGlobalKey(entry.serverId, entry.id)] = PlexMappers.mediaItemFromCacheJson(
+            json,
+            serverId: entry.serverId,
+          );
         } catch (_) {
           // Skip malformed entries
         }
       }
       return result;
     });
-  }
-
-  /// Clear all cached data (useful for debugging/testing)
-  Future<void> clearAll() async {
-    await _db.delete(_db.apiCache).go();
   }
 }

@@ -2,24 +2,25 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import '../connection/connection.dart';
+import '../connection/connection_registry.dart';
+import '../profiles/active_profile_provider.dart';
+import '../profiles/plex_home_service.dart';
+import '../profiles/profile.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
-import '../services/server_registry.dart';
-import '../services/server_connection_orchestrator.dart';
-import '../providers/multi_server_provider.dart';
-import '../providers/libraries_provider.dart';
 import '../providers/user_profile_provider.dart';
-import '../services/offline_watch_sync_service.dart';
 import '../i18n/strings.g.dart';
-import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../focus/focusable_button.dart';
+import '../media/media_backend.dart';
 import '../utils/navigation_transitions.dart';
+import '../widgets/backend_badge.dart';
 import '../widgets/dialog_action_button.dart';
+import 'auth/plex_pin_auth_flow.dart';
 import 'main_screen.dart';
+import 'settings/add_jellyfin_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -31,31 +32,56 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   bool _isAuthenticating = false;
   String? _errorMessage;
-  late PlexAuthService _authService;
-  bool _shouldCancelPolling = false;
-  bool _useQrFlow = false; // whether current auth attempt is QR based
-  String? _qrAuthUrl; // auth URL rendered as QR
+  // Reuse a one-shot service for the debug-token verify path; the Plex
+  // PIN/QR flow inside [PlexPinAuthFlow] owns its own service instance.
+  PlexAuthService? _verifyOnlyService;
 
   @override
   void initState() {
     super.initState();
-    _initializeAuthService();
+    unawaited(_initVerifyService());
   }
 
-  Future<void> _initializeAuthService() async {
-    _authService = await PlexAuthService.create();
-
-    // On Android TV, auto-start QR code flow
-    if (PlatformDetector.isTV()) {
-      if (!mounted) return;
-      setState(() {
-        _useQrFlow = true;
-      });
-      unawaited(_startAuthentication());
+  Future<void> _initVerifyService() async {
+    final svc = await PlexAuthService.create();
+    if (!mounted) {
+      svc.dispose();
+      return;
     }
+    setState(() => _verifyOnlyService = svc);
   }
 
-  /// Connect to all available servers and navigate to main screen
+  @override
+  void dispose() {
+    _verifyOnlyService?.dispose();
+    super.dispose();
+  }
+
+  /// Auto-select the active profile after sign-in *only* when there's a
+  /// single Plex Home user — there's no choice for the user to make. With
+  /// multiple Home users (the "real" Home case) we leave the active id
+  /// unset so [MainScreen] forces the picker before the binder runs,
+  /// avoiding a surprise PIN prompt on whichever user we'd otherwise
+  /// pre-select.
+  Future<void> _selectInitialProfile(
+    PlexHomeService plexHome,
+    ActiveProfileProvider activeProfiles,
+    PlexAccountConnection accountConn,
+  ) async {
+    await activeProfiles.initialize();
+    final profile = initialPlexHomeProfileFromCache(plexHome, accountConn);
+    if (profile == null) {
+      await activeProfiles.clearActiveProfile();
+      return;
+    }
+    await activeProfiles.activate(profile);
+  }
+
+  /// Persist the new Plex account into the connection pipeline and
+  /// navigate to the main screen. The [ActiveProfileBinder] (mounted by
+  /// [MainScreen]) takes over from there: it picks up the active profile
+  /// id we set below and connects servers via
+  /// [MultiServerManager.refreshTokensForProfile].
   Future<void> _connectToAllServersAndNavigate(String plexToken) async {
     if (!mounted) return;
 
@@ -64,13 +90,17 @@ class _AuthScreenState extends State<AuthScreen> {
       _errorMessage = null;
     });
 
+    final connectionRegistry = context.read<ConnectionRegistry>();
+    final plexHome = context.read<PlexHomeService>();
+    final svc = await PlexAuthService.create();
+
     try {
-      // Fetch user info and servers for this user
-      final userInfo = await _authService.getUserInfo(plexToken);
+      final userInfo = await svc.getUserInfo(plexToken);
       final username = userInfo['username'] as String? ?? '';
       final email = userInfo['email'] as String? ?? '';
+      final accountUuid = (userInfo['uuid'] as String?)?.trim() ?? '';
 
-      final servers = await _authService.fetchServers(plexToken);
+      final servers = await svc.fetchServers(plexToken);
       final storage = await StorageService.getInstance();
 
       if (servers.isEmpty) {
@@ -83,39 +113,31 @@ class _AuthScreenState extends State<AuthScreen> {
         return;
       }
 
-      // Save all servers to registry (all servers are considered enabled)
-      final registry = ServerRegistry(storage);
-      await registry.saveServers(servers);
-
-      if (!mounted) return;
-
-      // Start profile initialization in parallel with server connection.
-      // The home users API (clients.plex.tv) is independent of server connections.
-      final profileFuture = context.read<UserProfileProvider>().initialize();
-
-      final result = await ServerConnectionOrchestrator.connectAndInitialize(
+      final clientId = await storage.getOrCreateClientIdentifier();
+      final accountConnection = PlexAccountConnection(
+        // Key the row by the plex.tv account UUID so signing into a second
+        // Plex account on the same device produces a distinct row. The
+        // clientIdentifier is per-device and would collide. Falls back to
+        // clientId only if plex.tv didn't return a uuid (rare).
+        id: 'plex.${accountUuid.isNotEmpty ? accountUuid : clientId}',
+        accountToken: plexToken,
+        clientIdentifier: clientId,
+        accountLabel: username.isNotEmpty ? username : (email.isNotEmpty ? email : 'Plex'),
         servers: servers,
-        multiServerProvider: context.read<MultiServerProvider>(),
-        librariesProvider: context.read<LibrariesProvider>(),
-        syncService: context.read<OfflineWatchSyncService>(),
-        clientIdentifier: _authService.clientIdentifier,
+        createdAt: DateTime.now(),
+        lastAuthenticatedAt: DateTime.now(),
       );
-
-      if (!result.hasConnections || result.firstClient == null) {
-        if (!mounted) return;
-        setState(() {
-          _isAuthenticating = false;
-          _errorMessage = t.serverSelection.allServerConnectionsFailed;
-        });
-        return;
-      }
-
-      // Wait for profile init to finish before navigating so MainScreen
-      // has home user data available immediately.
-      await profileFuture;
+      await connectionRegistry.upsert(accountConnection);
+      await plexHome.refresh(accountConnection);
+      if (!mounted) return;
+      await _selectInitialProfile(plexHome, context.read<ActiveProfileProvider>(), accountConnection);
 
       if (!mounted) return;
-      unawaited(Navigator.pushReplacement(context, fadeRoute(MainScreen(client: result.firstClient!))));
+
+      await context.read<UserProfileProvider>().initialize();
+
+      if (!mounted) return;
+      unawaited(Navigator.pushReplacement(context, fadeRoute(const MainScreen())));
     } catch (e) {
       appLogger.e('Failed to connect to servers', error: e);
       if (!mounted) return;
@@ -123,111 +145,9 @@ class _AuthScreenState extends State<AuthScreen> {
         _isAuthenticating = false;
         _errorMessage = t.serverSelection.failedToLoadServers(error: e);
       });
+    } finally {
+      svc.dispose();
     }
-  }
-
-  Future<void> _startAuthentication() async {
-    setState(() {
-      _isAuthenticating = true;
-      _errorMessage = null;
-      _shouldCancelPolling = false;
-      // preserve _useQrFlow as chosen prior to calling
-      if (!_useQrFlow) {
-        _qrAuthUrl = null; // ensure stale QR cleared for browser flow
-      }
-    });
-
-    try {
-      // Create a PIN
-      final pinData = await _authService.createPin();
-      final pinId = pinData['id'] as int;
-      final pinCode = pinData['code'] as String;
-
-      // Construct auth URL
-      final authUrl = _authService.getAuthUrl(pinCode);
-
-      if (!mounted) return;
-      if (_useQrFlow) {
-        // Display QR instead of launching browser
-        setState(() {
-          _qrAuthUrl = authUrl;
-        });
-      } else {
-        // Open browser (in-app for mobile, external for desktop)
-        final uri = Uri.parse(authUrl);
-        if (await canLaunchUrl(uri)) {
-          // On TV, use inAppWebView (simpler WebView) instead of Chrome Custom Tabs
-          final mode = PlatformDetector.isTV() ? LaunchMode.inAppWebView : LaunchMode.inAppBrowserView;
-          try {
-            await launchUrl(uri, mode: mode);
-          } catch (_) {
-            // Chrome Custom Tabs may not be available (e.g. no Chrome installed).
-            // Fall back to opening in the default external browser.
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          }
-        } else {
-          throw Exception(t.errors.couldNotLaunchUrl);
-        }
-      }
-
-      // Poll for authentication with cancellation support
-      final token = await _authService.pollPinUntilClaimed(pinId, shouldCancel: () => _shouldCancelPolling);
-
-      // If polling was cancelled, don't show error
-      if (_shouldCancelPolling) {
-        return;
-      }
-
-      if (!mounted) return;
-      if (token == null) {
-        setState(() {
-          _isAuthenticating = false;
-          _errorMessage = t.auth.authenticationTimeout;
-        });
-        return;
-      }
-
-      // Auto-close the in-app browser on mobile (no-op on desktop)
-      if (!_useQrFlow) {
-        try {
-          await closeInAppWebView();
-        } catch (e) {
-          // Ignore errors - browser might already be closed or on desktop
-        }
-      }
-
-      // Store the token
-      final storage = await StorageService.getInstance();
-      await storage.savePlexToken(token);
-
-      // Clear QR URL after successful auth
-      if (!mounted) return;
-      setState(() {
-        _qrAuthUrl = null;
-        _useQrFlow = false;
-      });
-
-      // Connect to all servers and navigate to main screen
-      if (mounted) {
-        await _connectToAllServersAndNavigate(token);
-      }
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isAuthenticating = false;
-        _errorMessage = t.errors.authenticationFailed(error: e);
-      });
-    }
-  }
-
-  void _retryAuthentication() {
-    setState(() {
-      _shouldCancelPolling = true;
-      _isAuthenticating = false;
-      _qrAuthUrl = null;
-    });
-    // Start new authentication after a brief delay to ensure cleanup
-    Future.delayed(const Duration(milliseconds: 100), _startAuthentication);
   }
 
   void _handleDebugTap() {
@@ -235,78 +155,20 @@ class _AuthScreenState extends State<AuthScreen> {
     _showDebugTokenDialog();
   }
 
-  void _showDebugTokenDialog() {
-    final tokenController = TextEditingController();
-    String? errorMessage;
+  Future<void> _connectToJellyfin() async {
+    final added = await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AddJellyfinScreen()));
+    if (!mounted || added != true) return;
+    // The connection persisted and the manager registered the client; move
+    // straight to the main screen. [MainScreen] reads the active client
+    // from the server provider, so no client argument is needed here.
+    unawaited(Navigator.pushReplacement(context, fadeRoute(const MainScreen())));
+  }
 
+  void _showDebugTokenDialog() {
     showDialog<void>(
       context: context,
       builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Debug: Enter Plex Token'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextFormField(
-                    controller: tokenController,
-                    decoration: InputDecoration(
-                      labelText: 'Plex Auth Token',
-                      hintText: 'Enter your Plex.tv token',
-                      errorText: errorMessage,
-                      border: const OutlineInputBorder(),
-                    ),
-                    obscureText: true,
-                    maxLines: 1,
-                  ),
-                ],
-              ),
-              actions: [
-                DialogActionButton(onPressed: () => Navigator.of(context).pop(), label: t.common.cancel),
-                DialogActionButton(
-                  onPressed: () async {
-                    final token = tokenController.text.trim();
-                    if (token.isEmpty) {
-                      setDialogState(() {
-                        errorMessage = t.errors.pleaseEnterToken;
-                      });
-                      return;
-                    }
-
-                    final navigator = Navigator.of(context);
-
-                    try {
-                      final isValid = await _authService.verifyToken(token);
-                      if (!isValid) {
-                        setDialogState(() {
-                          errorMessage = t.errors.invalidToken;
-                        });
-                        return;
-                      }
-
-                      // Store the token
-                      final storage = await StorageService.getInstance();
-                      await storage.savePlexToken(token);
-
-                      // Close dialog and connect to all servers
-                      if (mounted) {
-                        navigator.pop();
-                        await _connectToAllServersAndNavigate(token);
-                      }
-                    } catch (e) {
-                      setDialogState(() {
-                        errorMessage = t.errors.failedToVerifyToken(error: e);
-                      });
-                    }
-                  },
-                  label: t.auth.authenticate,
-                  isPrimary: true,
-                ),
-              ],
-            );
-          },
-        );
+        return _DebugTokenDialog(verifyService: _verifyOnlyService, onTokenAccepted: _connectToAllServersAndNavigate);
       },
     );
   }
@@ -325,7 +187,6 @@ class _AuthScreenState extends State<AuthScreen> {
               ? Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // First column - Logo and title (always visible)
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -342,22 +203,13 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                     ),
                     const SizedBox(width: 48),
-                    // Second column - All authentication content
                     Expanded(
                       child: Center(
                         child: SingleChildScrollView(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              if (_isAuthenticating) ...[
-                                if (_useQrFlow && _qrAuthUrl != null)
-                                  _buildQrAuthWidget(qrSize: 300)
-                                else
-                                  _buildBrowserAuthWidget(),
-                              ] else
-                                _buildInitialButtons(),
-                            ],
+                            children: [_buildAuthBody()],
                           ),
                         ),
                       ),
@@ -377,13 +229,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 48),
-                      if (_isAuthenticating) ...[
-                        if (_useQrFlow && _qrAuthUrl != null)
-                          _buildQrAuthWidget(qrSize: 200)
-                        else
-                          _buildBrowserAuthWidget(),
-                      ] else
-                        _buildInitialButtons(),
+                      _buildAuthBody(),
                     ],
                   ),
                 ),
@@ -392,62 +238,100 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-  /// Builds the initial authentication buttons (before auth starts)
-  Widget _buildInitialButtons() {
+  Widget _buildAuthBody() {
+    if (_isAuthenticating) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Center(child: CircularProgressIndicator()),
+          const SizedBox(height: 16),
+          Text(
+            t.auth.waitingForAuth,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.grey),
+          ),
+        ],
+      );
+    }
+    return PlexPinAuthFlow(
+      onTokenReceived: _connectToAllServersAndNavigate,
+      initialButtonsBuilder: _buildInitialButtons,
+    );
+  }
+
+  Widget _buildInitialButtons(BuildContext context, VoidCallback startBrowser, VoidCallback startQr, bool busy) {
     final isTV = PlatformDetector.isTV();
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         if (isTV) ...[
-          // On TV: QR is primary, browser is secondary
           FocusableButton(
             autofocus: true,
-            onPressed: () {
-              setState(() {
-                _useQrFlow = true;
-              });
-              _startAuthentication();
-            },
+            onPressed: busy ? null : startQr,
             child: ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _useQrFlow = true;
-                });
-                _startAuthentication();
-              },
+              onPressed: busy ? null : startQr,
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
               child: Text(t.auth.showQRCode),
             ),
           ),
           const SizedBox(height: 12),
           FocusableButton(
-            onPressed: _startAuthentication,
+            onPressed: busy ? null : startBrowser,
             child: OutlinedButton(
-              onPressed: _startAuthentication,
+              onPressed: busy ? null : startBrowser,
               style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
               child: Text(t.auth.useBrowser),
             ),
           ),
         ] else ...[
-          // On other platforms: Browser is primary, QR is secondary
-          ElevatedButton(
-            onPressed: _startAuthentication,
+          ElevatedButton.icon(
+            onPressed: busy ? null : startBrowser,
             style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-            child: Text(t.auth.signInWithPlex),
+            icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
+            label: Text(t.auth.signInWithPlex),
           ),
           const SizedBox(height: 12),
           OutlinedButton(
-            onPressed: () {
-              setState(() {
-                _useQrFlow = true;
-              });
-              _startAuthentication();
-            },
+            onPressed: busy ? null : startQr,
             style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
             child: Text(t.auth.showQRCode),
           ),
         ],
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Text(
+                t.auth.or,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+              ),
+            ),
+            Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
+          ],
+        ),
+        const SizedBox(height: 12),
+        if (isTV)
+          FocusableButton(
+            onPressed: _connectToJellyfin,
+            child: OutlinedButton.icon(
+              onPressed: _connectToJellyfin,
+              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+              icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 18),
+              label: Text(t.auth.connectToJellyfin),
+            ),
+          )
+        else
+          OutlinedButton.icon(
+            onPressed: _connectToJellyfin,
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 18),
+            label: Text(t.auth.connectToJellyfin),
+          ),
         if (kDebugMode) ...[
           const SizedBox(height: 12),
           OutlinedButton(
@@ -470,99 +354,101 @@ class _AuthScreenState extends State<AuthScreen> {
       ],
     );
   }
+}
 
-  Widget _buildRetryButton() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const SizedBox(height: 24),
-        OutlinedButton(
-          onPressed: _retryAuthentication,
-          style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
-          child: Text(t.common.retry),
-        ),
-      ],
-    );
+@visibleForTesting
+Profile? initialPlexHomeProfileFromCache(PlexHomeService plexHome, PlexAccountConnection accountConn) {
+  final users = plexHome.current[accountConn.id];
+  if (users == null || users.length != 1) return null;
+  return Profile.virtualPlexHome(connectionId: accountConn.id, homeUser: users.single);
+}
+
+/// Stateful so the [TextEditingController] is disposed when the dialog
+/// closes — the previous inline `showDialog` builder created the
+/// controller in a closure and leaked it on every dismissal.
+class _DebugTokenDialog extends StatefulWidget {
+  final PlexAuthService? verifyService;
+  final Future<void> Function(String token) onTokenAccepted;
+
+  const _DebugTokenDialog({required this.verifyService, required this.onTokenAccepted});
+
+  @override
+  State<_DebugTokenDialog> createState() => _DebugTokenDialogState();
+}
+
+class _DebugTokenDialogState extends State<_DebugTokenDialog> {
+  final TextEditingController _tokenController = TextEditingController();
+  String? _errorMessage;
+  bool _busy = false;
+
+  @override
+  void dispose() {
+    _tokenController.dispose();
+    super.dispose();
   }
 
-  /// Builds the QR code authentication widget
-  Widget _buildQrAuthWidget({required double qrSize}) {
-    final isTV = PlatformDetector.isTV();
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          t.auth.scanQRToSignIn,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.grey),
-        ),
-        const SizedBox(height: 24),
-        Center(
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(tokens(context).radiusMd),
-            child: QrImageView(
-              data: _qrAuthUrl!,
-              size: qrSize,
-              version: QrVersions.auto,
-              backgroundColor: Colors.white,
+  Future<void> _submit() async {
+    final token = _tokenController.text.trim();
+    if (token.isEmpty) {
+      setState(() => _errorMessage = t.errors.pleaseEnterToken);
+      return;
+    }
+    final svc = widget.verifyService;
+    if (svc == null) {
+      setState(() => _errorMessage = 'Auth service not ready');
+      return;
+    }
+    final navigator = Navigator.of(context);
+    setState(() {
+      _errorMessage = null;
+      _busy = true;
+    });
+    try {
+      final isValid = await svc.verifyToken(token);
+      if (!mounted) return;
+      if (!isValid) {
+        setState(() {
+          _errorMessage = t.errors.invalidToken;
+          _busy = false;
+        });
+        return;
+      }
+      navigator.pop();
+      await widget.onTokenAccepted(token);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = t.errors.failedToVerifyToken(error: e);
+        _busy = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Debug: Enter Plex Token'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextFormField(
+            controller: _tokenController,
+            decoration: InputDecoration(
+              labelText: 'Plex Auth Token',
+              hintText: 'Enter your Plex.tv token',
+              errorText: _errorMessage,
+              border: const OutlineInputBorder(),
             ),
+            obscureText: true,
+            maxLines: 1,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _busy ? null : _submit(),
           ),
-        ),
-        // On TV, show retry and browser buttons in a row
-        if (isTV) ...[
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              FocusableButton(
-                autofocus: true,
-                onPressed: _retryAuthentication,
-                child: OutlinedButton(
-                  onPressed: _retryAuthentication,
-                  style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
-                  child: Text(t.common.retry),
-                ),
-              ),
-              const SizedBox(width: 16),
-              FocusableButton(
-                onPressed: () {
-                  setState(() {
-                    _useQrFlow = false;
-                  });
-                  _startAuthentication();
-                },
-                child: OutlinedButton(
-                  onPressed: () {
-                    setState(() {
-                      _useQrFlow = false;
-                    });
-                    _startAuthentication();
-                  },
-                  style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
-                  child: Text(t.auth.useBrowser),
-                ),
-              ),
-            ],
-          ),
-        ] else
-          _buildRetryButton(),
-      ],
-    );
-  }
-
-  /// Builds the browser authentication waiting widget
-  Widget _buildBrowserAuthWidget() {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const Center(child: CircularProgressIndicator()),
-        const SizedBox(height: 16),
-        Text(
-          t.auth.waitingForAuth,
-          textAlign: TextAlign.center,
-          style: const TextStyle(color: Colors.grey),
-        ),
-        _buildRetryButton(),
+        ],
+      ),
+      actions: [
+        DialogActionButton(onPressed: _busy ? () {} : () => Navigator.of(context).pop(), label: t.common.cancel),
+        DialogActionButton(onPressed: _busy ? () {} : _submit, label: t.auth.authenticate, isPrimary: true),
       ],
     );
   }

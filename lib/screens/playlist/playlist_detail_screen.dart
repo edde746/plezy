@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_action_bar.dart';
-import '../../services/plex_client.dart';
-import '../../services/play_queue_launcher.dart';
-import '../../models/plex_playlist.dart';
-import '../../models/plex_metadata.dart';
+import '../../media/media_item.dart';
+import '../../media/media_kind.dart';
+import '../../media/media_playlist.dart';
+import '../../services/media_list_playback_launcher.dart';
+import '../../services/playlist_items_loader.dart';
 import '../../utils/app_logger.dart';
-import '../../utils/provider_extensions.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../focus/dpad_navigator.dart';
@@ -17,11 +17,9 @@ import 'package:provider/provider.dart';
 import 'playlist_item_card.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/download_provider.dart';
-import '../../utils/content_utils.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/download_utils.dart';
-import '../../utils/global_key_utils.dart';
 import '../../utils/snackbar_helper.dart';
 import '../base_media_list_detail_screen.dart';
 import '../focusable_detail_screen_mixin.dart';
@@ -29,7 +27,7 @@ import '../../mixins/grid_focus_node_mixin.dart';
 
 /// Screen to display the contents of a playlist
 class PlaylistDetailScreen extends StatefulWidget {
-  final PlexPlaylist playlist;
+  final MediaPlaylist playlist;
 
   const PlaylistDetailScreen({super.key, required this.playlist});
 
@@ -43,7 +41,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         GridFocusNodeMixin<PlaylistDetailScreen>,
         FocusableDetailScreenMixin<PlaylistDetailScreen> {
   @override
-  dynamic get mediaItem => widget.playlist;
+  Object get mediaItem => widget.playlist;
 
   @override
   String get title => widget.playlist.title;
@@ -57,13 +55,18 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   @override
   bool get hasItems => items.isNotEmpty;
 
+  /// True when the playlist can't be reordered or have items removed.
+  /// Currently only Plex smart playlists (server-side rule-based; managed via
+  /// filter rules, not direct edits). Jellyfin has no equivalent concept.
+  bool get _isReadOnly => widget.playlist.smart;
+
   @override
   List<FocusableAction> getAppBarActions() {
     final isVideoPlaylist = widget.playlist.playlistType == 'video';
-    final globalKey = _playlistGlobalKey();
+    final ruleKey = _playlistSyncRuleKey();
     // Select the specific bool we care about so unrelated DownloadProvider
     // ticks (e.g. active download progress) don't rebuild the app bar.
-    final hasRule = isVideoPlaylist && context.select<DownloadProvider, bool>((p) => p.hasSyncRule(globalKey));
+    final hasRule = isVideoPlaylist && context.select<DownloadProvider, bool>((p) => p.hasSyncRule(ruleKey));
 
     return [
       if (items.isNotEmpty) ...[
@@ -83,6 +86,10 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           tooltip: t.downloads.removeSyncRule,
           onPressed: _removePlaylistSyncRule,
         ),
+      // Delete works on both backends now (Jellyfin uses /Items/{id} DELETE,
+      // wrapped in the neutral [MediaServerClient.deletePlaylist]). Smart
+      // playlists are still skipped — they're a Plex concept and are
+      // managed server-side via filter rules, not via DELETE.
       if (!widget.playlist.smart)
         FocusableAction(
           icon: Symbols.delete_rounded,
@@ -93,24 +100,30 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     ];
   }
 
-  PlexMetadata _playlistAsMetadata() => PlexMetadata(
-    ratingKey: widget.playlist.ratingKey,
-    type: ContentTypes.playlist,
+  /// Synthesise a [MediaItem] view of the current playlist for the
+  /// download_utils helpers.
+  MediaItem _playlistAsMetadata() => MediaItem(
+    id: widget.playlist.id,
+    backend: widget.playlist.backend,
+    kind: MediaKind.playlist,
     title: widget.playlist.title,
-    thumb: widget.playlist.thumb,
-    serverId: widget.playlist.serverId ?? client.serverId,
+    thumbPath: widget.playlist.thumbPath,
+    serverId: widget.playlist.serverId ?? mediaClient.serverId,
     serverName: widget.playlist.serverName,
   );
 
-  String _playlistGlobalKey() => buildGlobalKey(widget.playlist.serverId ?? client.serverId, widget.playlist.ratingKey);
+  String _playlistSyncRuleKey() {
+    final serverId = widget.playlist.serverId ?? mediaClient.serverId;
+    return context.read<DownloadProvider>().syncRuleKeyForClient(mediaClient, widget.playlist.id, serverId: serverId);
+  }
 
   Future<void> _managePlaylistSyncRule() =>
-      manageSyncRule(context, downloadProvider: context.read<DownloadProvider>(), globalKey: _playlistGlobalKey());
+      manageSyncRule(context, downloadProvider: context.read<DownloadProvider>(), globalKey: _playlistSyncRuleKey());
 
   Future<void> _removePlaylistSyncRule() => removeSyncRuleAndSnack(
     context,
     downloadProvider: context.read<DownloadProvider>(),
-    globalKey: _playlistGlobalKey(),
+    globalKey: _playlistSyncRuleKey(),
     displayTitle: widget.playlist.title,
   );
 
@@ -124,7 +137,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   // Move mode state
   int? _movingIndex;
   int? _originalIndex;
-  List<PlexMetadata>? _originalOrder;
+  List<MediaItem>? _originalOrder;
 
   // Estimated item height for scroll-into-view (card + vertical margins)
   static const double _estimatedItemHeight = 114.0;
@@ -137,8 +150,8 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   }
 
   @override
-  Future<List<PlexMetadata>> fetchItems() async {
-    return await client.fetchAllPlaylistItems(widget.playlist.ratingKey);
+  Future<List<MediaItem>> fetchItems() async {
+    return fetchAllPlaylistItems(mediaClient, widget.playlist.id);
   }
 
   @override
@@ -155,7 +168,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
             _focusedIndex = 0;
             _focusedColumn = 0;
           });
-          if (widget.playlist.smart) {
+          if (_isReadOnly) {
             firstItemFocusNode.requestFocus();
           } else {
             _listFocusNode.requestFocus();
@@ -175,7 +188,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   void navigateToGrid() {
     if (!hasItems) return;
 
-    if (widget.playlist.smart) {
+    if (_isReadOnly) {
       super.navigateToGrid();
     } else {
       setState(() {
@@ -183,11 +196,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       });
       _listFocusNode.requestFocus();
     }
-  }
-
-  /// Get the correct PlexClient for this playlist's server
-  PlexClient _getClientForPlaylist() {
-    return context.getClientForServer(widget.playlist.serverId!);
   }
 
   Future<void> _downloadPlaylist() async {
@@ -198,7 +206,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         context,
         playlistMetadata: _playlistAsMetadata(),
         items: items,
-        client: client,
+        client: mediaClient,
         downloadProvider: downloadProvider,
       );
       if (result == null || !mounted) return;
@@ -222,31 +230,30 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       message: t.playlists.deleteMessage(name: widget.playlist.title),
     );
 
-    if (confirmed && mounted) {
-      final success = await client.deletePlaylist(widget.playlist.ratingKey);
+    if (!confirmed || !mounted) return;
 
-      if (mounted) {
-        if (success) {
-          showSuccessSnackBar(context, t.playlists.deleted);
-          Navigator.pop(context); // Return to playlists screen
-        } else {
-          showErrorSnackBar(context, t.playlists.errorDeleting);
-        }
-      }
+    bool success = false;
+    try {
+      success = await mediaClient.deletePlaylist(widget.playlist);
+    } catch (e) {
+      appLogger.e('Failed to delete playlist', error: e);
+    }
+
+    if (!mounted) return;
+    if (success) {
+      showSuccessSnackBar(context, t.playlists.deleted);
+      Navigator.pop(context); // Return to playlists screen
+    } else {
+      showErrorSnackBar(context, t.playlists.errorDeleting);
     }
   }
 
-  /// Get the afterPlaylistItemId for reordering at the given index.
-  /// Returns null if validation fails, showing an error if [showError] is true.
-  int? _getAfterPlaylistItemId(int newIndex, {bool showError = true}) {
-    if (newIndex == 0) return 0;
-    final afterItem = items[newIndex - 1];
-    if (afterItem.playlistItemID == null) {
-      appLogger.e('Cannot reorder: after item missing playlistItemID');
-      if (showError && mounted) showErrorSnackBar(context, t.playlists.errorReordering);
-      return null;
-    }
-    return afterItem.playlistItemID!;
+  /// The item that should sit immediately before the moved item at [newIndex],
+  /// or null when moving to position 0. Pushes per-backend id-extraction down
+  /// into the client implementations.
+  MediaItem? _afterItemForIndex(int newIndex) {
+    if (newIndex == 0) return null;
+    return items[newIndex - 1];
   }
 
   Future<void> _onReorder(int oldIndex, int newIndex) async {
@@ -260,20 +267,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
     final movedItem = items[oldIndex];
 
-    // Check if item has playlistItemID (required for reordering)
-    if (movedItem.playlistItemID == null) {
-      appLogger.e('Cannot reorder: item missing playlistItemID');
-      if (mounted) {
-        showErrorSnackBar(context, t.playlists.errorReordering);
-      }
-      return;
-    }
-
-    // Determine the "after" item ID
-    final afterPlaylistItemId = _getAfterPlaylistItemId(newIndex);
-    if (afterPlaylistItemId == null) return;
-
-    appLogger.d('Reordering item from $oldIndex to $newIndex (after ID: $afterPlaylistItemId)');
+    appLogger.d('Reordering item from $oldIndex to $newIndex');
 
     // Optimistically update UI
     setState(() {
@@ -281,12 +275,17 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       items.insert(newIndex, item);
     });
 
-    // Call API to persist the change
-    final success = await client.movePlaylistItem(
-      playlistId: widget.playlist.ratingKey,
-      playlistItemId: movedItem.playlistItemID!,
-      afterPlaylistItemId: afterPlaylistItemId,
-    );
+    bool success = false;
+    try {
+      success = await mediaClient.movePlaylistItem(
+        playlistId: widget.playlist.id,
+        item: movedItem,
+        newIndex: newIndex,
+        afterItem: _afterItemForIndex(newIndex),
+      );
+    } catch (e) {
+      appLogger.e('Failed to reorder playlist item', error: e);
+    }
 
     if (!success) {
       // Revert on failure
@@ -305,37 +304,21 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   /// Persist a move that was already done in the UI (during move mode).
   /// The item is already at newIndex in the items list.
   Future<void> _persistMoveToServer(int originalIndex, int newIndex) async {
-    // Item is already at newIndex in the list
     final movedItem = items[newIndex];
 
-    // Check if item has playlistItemID (required for reordering)
-    if (movedItem.playlistItemID == null) {
-      appLogger.e('Cannot persist move: item missing playlistItemID');
-      if (mounted) {
-        showErrorSnackBar(context, t.playlists.errorReordering);
-        _revertMove(newIndex, originalIndex);
-      }
-      return;
+    appLogger.d('Persisting move from $originalIndex to $newIndex');
+
+    bool success = false;
+    try {
+      success = await mediaClient.movePlaylistItem(
+        playlistId: widget.playlist.id,
+        item: movedItem,
+        newIndex: newIndex,
+        afterItem: _afterItemForIndex(newIndex),
+      );
+    } catch (e) {
+      appLogger.e('Failed to persist move', error: e);
     }
-
-    // Determine the "after" item ID based on where the item is now
-    final afterPlaylistItemId = _getAfterPlaylistItemId(newIndex, showError: false);
-    if (afterPlaylistItemId == null) {
-      if (mounted) {
-        showErrorSnackBar(context, t.playlists.errorReordering);
-        _revertMove(newIndex, originalIndex);
-      }
-      return;
-    }
-
-    appLogger.d('Persisting move from $originalIndex to $newIndex (after ID: $afterPlaylistItemId)');
-
-    // Call API to persist the change (UI is already updated)
-    final success = await client.movePlaylistItem(
-      playlistId: widget.playlist.ratingKey,
-      playlistItemId: movedItem.playlistItemID!,
-      afterPlaylistItemId: afterPlaylistItemId,
-    );
 
     if (!success) {
       // Revert on failure
@@ -360,16 +343,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     if (items.isEmpty || index < 0 || index >= items.length) return;
     final item = items[index];
 
-    // Check if item has playlistItemID (required for removal)
-    if (item.playlistItemID == null) {
-      appLogger.e('Cannot remove: item missing playlistItemID');
-      if (mounted) {
-        showErrorSnackBar(context, t.playlists.errorRemoving);
-      }
-      return;
-    }
-
-    appLogger.d('Removing item ${item.title} (playlistItemID: ${item.playlistItemID}) from playlist');
+    appLogger.d('Removing item ${item.title} from playlist');
 
     // Optimistically update UI
     setState(() {
@@ -382,11 +356,12 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       }
     });
 
-    // Call API to persist the change
-    final success = await client.removeFromPlaylist(
-      playlistId: widget.playlist.ratingKey,
-      playlistItemId: item.playlistItemID.toString(),
-    );
+    bool success = false;
+    try {
+      success = await mediaClient.removeFromPlaylist(playlistId: widget.playlist.id, item: item);
+    } catch (e) {
+      appLogger.e('Failed to remove playlist item', error: e);
+    }
 
     if (mounted) {
       if (success) {
@@ -407,19 +382,12 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   Future<void> _playFromItem(int index) async {
     if (items.isEmpty || index < 0 || index >= items.length) return;
 
-    final plexClient = _getClientForPlaylist();
     final selectedItem = items[index];
-
-    final launcher = PlayQueueLauncher(
-      context: context,
-      client: plexClient,
-      serverId: widget.playlist.serverId,
-      serverName: widget.playlist.serverName,
-    );
-
-    await launcher.launchFromPlaylistItem(
-      playlist: widget.playlist,
-      selectedItem: selectedItem,
+    final launcher = MediaListPlaybackLauncher.forItem(context, widget.playlist);
+    await launcher.launchFromCollectionOrPlaylist(
+      item: widget.playlist,
+      shuffle: false,
+      startItem: selectedItem,
       showLoadingIndicator: true,
     );
   }
@@ -528,7 +496,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       }
       if (key.isLeftKey) {
         // Navigate left within columns
-        if (_focusedColumn == 0 && !widget.playlist.smart) {
+        if (_focusedColumn == 0 && !_isReadOnly) {
           // Go to drag handle (column 1)
           setState(() => _focusedColumn = 1);
           return KeyEventResult.handled;
@@ -540,7 +508,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       }
       if (key.isRightKey) {
         // Navigate right within columns
-        if (_focusedColumn == 0) {
+        if (_focusedColumn == 0 && !_isReadOnly) {
           // Go to remove button (column 2)
           setState(() => _focusedColumn = 2);
           return KeyEventResult.handled;
@@ -554,7 +522,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         if (_focusedColumn == 0) {
           // Play from this item
           _playFromItem(_focusedIndex);
-        } else if (_focusedColumn == 1 && !widget.playlist.smart) {
+        } else if (_focusedColumn == 1 && !_isReadOnly) {
           // Enter move mode
           setState(() {
             _movingIndex = _focusedIndex;
@@ -612,7 +580,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
     // For regular playlists, wrap the scroll view with the Focus widget
     // (Focus is a RenderObject widget and cannot directly wrap a sliver)
-    final needsListFocus = !widget.playlist.smart && items.isNotEmpty;
+    final needsListFocus = !_isReadOnly && items.isNotEmpty;
 
     Widget scrollView = CustomScrollView(
       controller: scrollController,
@@ -649,11 +617,12 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         ),
         ...buildStateSlivers(),
         if (items.isNotEmpty)
-          if (widget.playlist.smart)
-            // Smart playlists: Use focusable grid view (cannot be reordered)
+          if (_isReadOnly)
+            // Smart playlists / Jellyfin playlists: focusable grid view
+            // (read-only, no reordering or removal)
             buildFocusableGrid(items: items, onRefresh: updateItem)
           else
-            // Regular playlists: Use sliver reorderable list
+            // Plex regular playlists: sliver reorderable list
             _buildReorderableList(isKeyboardMode),
       ],
     );
@@ -700,15 +669,23 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         final isFocused = inKeyboardMode && index == _focusedIndex && !isAppBarFocused;
         final isMoving = index == _movingIndex;
 
+        // Both backends populate playlistItemId in playlist responses; the
+        // backend prefix avoids collisions if the same numeric/uuid string
+        // ever shows up across servers in the same key namespace.
+        final keyId = switch (item) {
+          PlexMediaItem(:final playlistItemId?) => 'p:$playlistItemId',
+          JellyfinMediaItem(:final playlistItemId?) => 'j:$playlistItemId',
+          _ => item.id,
+        };
         return RepaintBoundary(
-          key: ValueKey(item.playlistItemID ?? item.ratingKey),
+          key: ValueKey(keyId),
           child: PlaylistItemCard(
             item: item,
             index: index,
             onRemove: () => _removeItem(index),
             onTap: () => _playFromItem(index),
             onRefresh: updateItem,
-            canReorder: !widget.playlist.smart,
+            canReorder: !_isReadOnly,
             isFocused: isFocused,
             focusedColumn: isFocused ? _focusedColumn : null,
             isMoving: isMoving,

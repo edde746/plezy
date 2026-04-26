@@ -1,4 +1,4 @@
-import '../../utils/plex_external_ids.dart';
+import '../../utils/external_ids.dart';
 
 /// External IDs for matching Plex items against Trakt's catalog.
 ///
@@ -32,5 +32,5 @@ class TraktIds {
     tvdb: (json['tvdb'] as num?)?.toInt(),
   );
 
-  factory TraktIds.fromExternal(PlexExternalIds ids) => TraktIds(imdb: ids.imdb, tmdb: ids.tmdb, tvdb: ids.tvdb);
+  factory TraktIds.fromExternal(ExternalIds ids) => TraktIds(imdb: ids.imdb, tmdb: ids.tmdb, tvdb: ids.tvdb);
 }

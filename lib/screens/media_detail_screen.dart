@@ -19,24 +19,28 @@ import '../focus/focusable_wrapper.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
 import '../widgets/focus_builders.dart';
+import '../exceptions/media_server_exceptions.dart';
+import '../media/media_backend.dart';
+import '../media/media_hub.dart';
+import '../utils/provider_extensions.dart';
+import '../media/media_item.dart';
+import '../media/media_item_types.dart';
+import '../media/media_kind.dart';
+import '../media/media_role.dart';
 import '../widgets/media_card.dart';
 import '../i18n/strings.g.dart';
-import '../widgets/plex_optimized_image.dart';
-import '../utils/plex_image_helper.dart';
-import '../../services/plex_client.dart';
-import '../services/plex_api_cache.dart';
+import '../widgets/optimized_media_image.dart';
+import '../utils/media_image_helper.dart';
+import '../services/plex_client.dart';
+import '../media/media_server_client.dart';
+import '../services/media_list_playback_launcher.dart';
 import '../services/offline_watch_sync_service.dart';
-import '../utils/plex_cache_parser.dart';
-import '../models/plex_metadata.dart';
-import '../models/plex_role.dart';
-import '../models/plex_video_playback_data.dart';
 import '../utils/content_utils.dart';
 import '../utils/rating_utils.dart';
 import '../models/download_models.dart';
 import '../services/download_storage_service.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
-import '../providers/playback_state_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/grid_size_calculator.dart';
 import '../providers/download_provider.dart';
@@ -64,12 +68,12 @@ import '../widgets/episode_card.dart';
 import 'actor_media_screen.dart';
 import '../widgets/focusable_tab_chip.dart';
 import '../widgets/hub_section.dart';
-import '../models/plex_hub.dart';
+import '../widgets/loading_indicator_box.dart';
 
 enum _SyncRuleAction { edit, remove, delete }
 
 class MediaDetailScreen extends StatefulWidget {
-  final PlexMetadata metadata;
+  final MediaItem metadata;
   final bool isOffline;
 
   /// If provided, auto-selects this season index when the screen loads.
@@ -84,18 +88,20 @@ class MediaDetailScreen extends StatefulWidget {
 
 class _MediaDetailScreenState extends State<MediaDetailScreen>
     with WatchStateAware, DeletionAware, MountedSetStateMixin, ServerBoundMediaMixin {
-  List<PlexMetadata> _seasons = [];
+  /// Public input alias — used as the live source of truth until the detail
+  /// fetch returns. Holds backend-neutral [MediaItem] data.
+  MediaItem get _metadata => _fullMetadata ?? widget.metadata;
+  List<MediaItem> _seasons = [];
   bool _isLoadingSeasons = false;
   Completer<void>? _seasonsCompleter;
-  List<PlexMetadata> _episodes = [];
+  List<MediaItem> _episodes = [];
   bool _isLoadingEpisodes = false;
   bool _showEpisodesDirectly = false;
-  PlexMetadata? _fullMetadata;
-  PlexMetadata? _onDeckEpisode;
-  PlexVideoPlaybackData? _playbackData;
+  MediaItem? _fullMetadata;
+  MediaItem? _onDeckEpisode;
   bool _isLoadingMetadata = true;
-  List<PlexMetadata>? _extras;
-  List<PlexHub> _relatedHubs = [];
+  List<MediaItem>? _extras;
+  List<MediaHub> _relatedHubs = [];
   List<GlobalKey<HubSectionState>> _relatedHubKeys = [];
   late final ScrollController _scrollController;
   final ScrollController _extrasScrollController = ScrollController();
@@ -104,7 +110,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   // Inline season tabs
   int _selectedSeasonIndex = 0;
-  final Map<String, List<PlexMetadata>> _episodeCache = {};
+  final Map<String, List<MediaItem>> _episodeCache = {};
   bool _isLoadingSeasonEpisodes = false;
   List<FocusNode> _seasonTabFocusNodes = [];
   final Map<int, GlobalKey<MediaContextMenuState>> _seasonContextMenuKeys = {};
@@ -144,20 +150,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   final _infoRowsSectionKey = GlobalKey();
 
   @override
-  PlexMetadata get serverBoundMetadata => widget.metadata;
+  MediaItem get serverBoundMetadata => _metadata;
 
   @override
   bool get isServerBoundOffline => widget.isOffline;
 
   // WatchStateAware: watch the show/movie and all season/episode ratingKeys
   @override
-  Set<String>? get watchedRatingKeys {
-    final keys = <String>{widget.metadata.ratingKey};
+  Set<String>? get watchedIds {
+    final keys = <String>{_metadata.id};
     for (final season in _seasons) {
-      keys.add(season.ratingKey);
+      keys.add(season.id);
     }
     for (final ep in _episodes) {
-      keys.add(ep.ratingKey);
+      keys.add(ep.id);
     }
     return keys;
   }
@@ -170,37 +176,57 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final serverId = serverBoundServerId;
     if (serverId == null) return null;
 
-    final keys = <String>{toServerBoundGlobalKey(widget.metadata.ratingKey, serverId: serverId)};
+    final keys = <String>{toServerBoundGlobalKey(_metadata.id, serverId: serverId)};
     for (final season in _seasons) {
-      keys.add(toServerBoundGlobalKey(season.ratingKey, serverId: season.serverId ?? serverId));
+      keys.add(toServerBoundGlobalKey(season.id, serverId: season.serverId ?? serverId));
     }
     for (final ep in _episodes) {
-      keys.add(toServerBoundGlobalKey(ep.ratingKey, serverId: ep.serverId ?? serverId));
+      keys.add(toServerBoundGlobalKey(ep.id, serverId: ep.serverId ?? serverId));
     }
     return keys;
   }
 
   @override
   void onWatchStateChanged(WatchStateEvent event) {
-    if (!widget.isOffline) {
-      // If the event matches an episode currently shown, update it directly
-      final epIndex = _episodes.indexWhere((e) => e.ratingKey == event.ratingKey);
-      if (epIndex != -1) {
-        _updateEpisodeWatchState(event.ratingKey);
-      } else {
-        _refreshWatchState();
+    final epIndex = _episodes.indexWhere((e) => e.id == event.itemId);
+
+    if (widget.isOffline) {
+      // Offline: skip network refetch — patch the affected episode (or
+      // the show metadata) in-memory using the local watch flag the event
+      // already carries. The sync service drains queued actions to the
+      // server when the device reconnects.
+      if (epIndex != -1 && event.isNowWatched != null) {
+        setStateIfMounted(() {
+          final updated = _episodes[epIndex].copyWith(
+            viewCount: event.isNowWatched! ? 1 : 0,
+            viewOffsetMs: event.isNowWatched! ? _episodes[epIndex].viewOffsetMs : 0,
+          );
+          _episodes[epIndex] = updated;
+          _syncEpisodeToCache(epIndex, updated);
+        });
+      } else if (event.itemId == _metadata.id) {
+        unawaited(_updateWatchStateOffline());
       }
+      return;
+    }
+
+    // Online: re-fetch the affected row so server-derived counters
+    // (parent leafCounts, lastViewedAt) refresh too.
+    if (epIndex != -1) {
+      _updateEpisodeWatchState(event.itemId);
+    } else {
+      _refreshWatchState();
     }
   }
 
   @override
-  Set<String>? get deletionRatingKeys {
-    final keys = <String>{widget.metadata.ratingKey};
+  Set<String>? get deletionIds {
+    final keys = <String>{_metadata.id};
     for (final season in _seasons) {
-      keys.add(season.ratingKey);
+      keys.add(season.id);
     }
     for (final ep in _episodes) {
-      keys.add(ep.ratingKey);
+      keys.add(ep.id);
     }
     return keys;
   }
@@ -213,12 +239,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final serverId = serverBoundServerId;
     if (serverId == null) return null;
 
-    final keys = <String>{toServerBoundGlobalKey(widget.metadata.ratingKey, serverId: serverId)};
+    final keys = <String>{toServerBoundGlobalKey(_metadata.id, serverId: serverId)};
     for (final season in _seasons) {
-      keys.add(toServerBoundGlobalKey(season.ratingKey, serverId: season.serverId ?? serverId));
+      keys.add(toServerBoundGlobalKey(season.id, serverId: season.serverId ?? serverId));
     }
     for (final ep in _episodes) {
-      keys.add(toServerBoundGlobalKey(ep.ratingKey, serverId: ep.serverId ?? serverId));
+      keys.add(toServerBoundGlobalKey(ep.id, serverId: ep.serverId ?? serverId));
     }
     return keys;
   }
@@ -229,22 +255,27 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (event.isDownloadOnly && !widget.isOffline) return;
     if (!event.isDownloadOnly && widget.isOffline) return;
 
-    // When showing episodes directly (season view or flattened), handle episode deletion
-    if (_showEpisodesDirectly) {
-      final epIndex = _episodes.indexWhere((e) => e.ratingKey == event.ratingKey);
-      if (epIndex != -1) {
-        setState(() {
-          _episodes.removeAt(epIndex);
-        });
-        if (_episodes.isEmpty && (widget.metadata.isSeason || widget.metadata.isShow) && mounted) {
-          Navigator.of(context).pop();
-        }
-        return;
+    // Drop the episode from any visible/cached list. This fires whether we're
+    // showing a flattened episode list or a season-tabs view of a show.
+    final epIndex = _episodes.indexWhere((e) => e.id == event.itemId);
+    if (epIndex != -1) {
+      setState(() {
+        _episodes.removeAt(epIndex);
+      });
+    }
+    for (final cached in _episodeCache.values) {
+      cached.removeWhere((e) => e.id == event.itemId);
+    }
+
+    if (epIndex != -1 && _showEpisodesDirectly) {
+      if (_episodes.isEmpty && (_metadata.isSeason || _metadata.isShow) && mounted) {
+        Navigator.of(context).pop();
       }
+      return;
     }
 
     // If we have a season that matches the rating key exactly, then remove it from our list
-    final seasonIndex = _seasons.indexWhere((s) => s.ratingKey == event.ratingKey);
+    final seasonIndex = _seasons.indexWhere((s) => s.id == event.itemId);
     if (seasonIndex != -1) {
       setState(() {
         _seasons.removeAt(seasonIndex);
@@ -263,7 +294,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // If all children were deleted, remove our item.
     // Otherwise, just update the counts.
     for (final parentKey in event.parentChain) {
-      final idx = _seasons.indexWhere((s) => s.ratingKey == parentKey);
+      final idx = _seasons.indexWhere((s) => s.id == parentKey);
       if (idx != -1) {
         final season = _seasons[idx];
         final newLeafCount = (season.leafCount ?? 1) - 1;
@@ -292,56 +323,61 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Lightweight refresh for watch state changes - no loader, preserves scroll
   Future<void> _refreshWatchState() async {
-    final client = _getClientForMetadata(context);
-    if (client == null) return;
+    // Backend-neutral. Plex bundles metadata + on-deck in one round-trip
+    // (`?includeOnDeck=1`); Jellyfin's [fetchItemWithOnDeck] returns
+    // onDeckEpisode=null and on-deck repopulates from cached lists on
+    // the next navigation.
+    final mediaClient = _getMediaClientForMetadata(context);
+    if (mediaClient == null) return;
+    final serverId = _metadata.serverId;
+    if (serverId == null) return;
+    final serverName = _metadata.serverName;
 
     try {
-      // Fetch updated metadata + on-deck without showing loader
-      final result = await client.getMetadataWithImagesAndOnDeck(widget.metadata.ratingKey);
-      final metadata = result['metadata'] as PlexMetadata?;
-      final onDeckEpisode = result['onDeckEpisode'] as PlexMetadata?;
-
+      final result = await mediaClient.fetchItemWithOnDeck(_metadata.id);
+      final metadata = result.item;
+      final onDeckEpisode = result.onDeckEpisode;
       if (metadata != null) {
         setStateIfMounted(() {
-          _fullMetadata = metadata.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName);
-          _onDeckEpisode = onDeckEpisode?.copyWith(
-            serverId: widget.metadata.serverId,
-            serverName: widget.metadata.serverName,
-          );
+          _fullMetadata = metadata.copyWith(serverId: serverId, serverName: serverName);
+          if (onDeckEpisode != null) {
+            _onDeckEpisode = onDeckEpisode.copyWith(serverId: serverId, serverName: serverName);
+          }
         });
       }
 
-      // Refresh seasons for updated watched counts (also without loader)
-      if (widget.metadata.isShow) {
-        final seasons = await client.getChildren(widget.metadata.ratingKey);
-        // Clear episode cache so stale watch state data isn't reused
+      if (_metadata.isShow) {
+        final seasons = await mediaClient.fetchChildren(_metadata.id);
         _episodeCache.clear();
         setStateIfMounted(() {
-          _seasons = seasons
-              .map((s) => s.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
-              .toList();
+          _seasons = seasons.map((s) => s.copyWith(serverId: serverId, serverName: serverName)).toList();
         });
-        // Re-fetch episodes for the currently selected season
-        if (!_showEpisodesDirectly && _seasons.isNotEmpty) {
+        if (_showEpisodesDirectly) {
+          await _fetchAllEpisodes();
+        } else if (_seasons.isNotEmpty) {
           unawaited(_fetchSeasonEpisodes(_selectedSeasonIndex));
         }
-      } else if (widget.metadata.isSeason) {
+      } else if (_metadata.isSeason) {
+        _episodeCache.clear();
         await _fetchAllEpisodes();
       }
     } catch (e) {
-      // Silently fail - data will refresh on next navigation
+      appLogger.d('Watch-state refresh failed', error: e);
     }
   }
 
-  /// Update a single episode's watch state without refetching everything
+  /// Update a single episode's watch state without refetching everything.
+  /// Backend-neutral so Jellyfin items refresh in place when their
+  /// watched flag changes (the previous Plex-only path no-op'd for
+  /// Jellyfin and left the row stale).
   Future<void> _updateEpisodeWatchState(String ratingKey) async {
-    final client = _getClientForMetadata(context);
-    if (client == null) return;
+    final mediaClient = _getMediaClientForMetadata(context);
+    if (mediaClient == null) return;
     try {
-      final refreshed = await client.getMetadataWithImages(ratingKey);
+      final refreshed = await mediaClient.fetchItem(ratingKey);
       if (refreshed != null) {
         setStateIfMounted(() {
-          final i = _episodes.indexWhere((e) => e.ratingKey == ratingKey);
+          final i = _episodes.indexWhere((e) => e.id == ratingKey);
           if (i != -1) {
             _episodes[i] = refreshed;
             _syncEpisodeToCache(i, refreshed);
@@ -439,7 +475,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Build action buttons row (play, shuffle, download, mark watched)
-  Widget _buildActionButtons(PlexMetadata metadata) {
+  Widget _buildActionButtons(MediaItem metadata) {
     final playButtonLabel = _getPlayButtonLabel(metadata);
     final playButtonIcon = AppIcon(_getPlayButtonIcon(metadata), fill: 1, size: 20);
 
@@ -479,7 +515,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           metadata: metadata,
           isOffline: widget.isOffline,
           onRefresh: _loadFullMetadata,
-          playbackData: _playbackData,
         );
       }
     }
@@ -585,6 +620,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             Consumer<DownloadProvider>(
               builder: (context, downloadProvider, _) {
                 final globalKey = metadata.globalKey;
+                final ruleKey = _syncRuleKeyForMetadata(context, downloadProvider, metadata);
                 final progress = downloadProvider.getProgress(globalKey);
                 final isQueueing = downloadProvider.isQueueing(globalKey);
 
@@ -599,7 +635,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 if (isQueueing) {
                   return IconButton.filledTonal(
                     onPressed: null,
-                    icon: const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                    icon: const LoadingIndicatorBox(size: 20),
                     iconSize: 20,
                     style: actionButtonStyle(),
                   );
@@ -642,7 +678,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 if (progress?.status == DownloadStatus.paused) {
                   return IconButton.filledTonal(
                     onPressed: () async {
-                      final client = _getClientForMetadata(context);
+                      final client = _getMediaClientForMetadata(context);
                       if (client == null) return;
                       await downloadProvider.resumeDownload(globalKey, client);
                       if (context.mounted) {
@@ -660,7 +696,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 if (progress?.status == DownloadStatus.failed) {
                   return IconButton.filledTonal(
                     onPressed: () async {
-                      final client = _getClientForMetadata(context);
+                      final client = _getMediaClientForMetadata(context);
                       if (client == null) return;
 
                       final versionConfig = await _resolveDownloadVersion(context, metadata, client);
@@ -705,7 +741,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           showSuccessSnackBar(context, t.downloads.downloadDeleted);
                         }
                       } else if (retry && context.mounted) {
-                        final client = _getClientForMetadata(context);
+                        final client = _getMediaClientForMetadata(context);
                         if (client == null) return;
 
                         final versionConfig = await _resolveDownloadVersion(context, metadata, client);
@@ -733,19 +769,25 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
                 // State 7: Partial Download (some episodes downloaded, not all)
                 if (progress?.status == DownloadStatus.partial) {
-                  final hasSyncRule = downloadProvider.hasSyncRule(globalKey);
+                  final hasSyncRule = downloadProvider.hasSyncRule(ruleKey);
                   final currentFile = progress?.currentFile;
 
                   if (hasSyncRule) {
                     // Synced partial — this is the normal state for sync rules
-                    final syncRule = downloadProvider.getSyncRule(globalKey);
+                    final syncRule = downloadProvider.getSyncRule(ruleKey);
                     final isEnabled = syncRule?.enabled ?? true;
                     final tooltip = currentFile != null
                         ? '$currentFile (syncing ${t.downloads.keepNUnwatched(count: syncRule?.episodeCount.toString() ?? '?')})'
                         : t.downloads.keepSynced;
 
                     return IconButton.filledTonal(
-                      onPressed: () => _showSyncRuleActions(context, downloadProvider, metadata, globalKey),
+                      onPressed: () => _showSyncRuleActions(
+                        context,
+                        downloadProvider,
+                        metadata,
+                        ruleKey: ruleKey,
+                        downloadGlobalKey: globalKey,
+                      ),
                       tooltip: tooltip,
                       icon: AppIcon(isEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
                       iconSize: 20,
@@ -759,7 +801,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
                   return IconButton.filledTonal(
                     onPressed: () async {
-                      final client = _getClientForMetadata(context);
+                      final client = _getMediaClientForMetadata(context);
                       if (client == null) return;
 
                       final versionConfig = await _resolveDownloadVersion(context, metadata, client);
@@ -787,14 +829,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
                 // State 8: Downloaded/Completed (can delete)
                 if (downloadProvider.isDownloaded(globalKey)) {
-                  final hasSyncRule = downloadProvider.hasSyncRule(globalKey);
+                  final hasSyncRule = downloadProvider.hasSyncRule(ruleKey);
 
                   if (hasSyncRule) {
                     // Synced + complete — show sync icon
-                    final syncRule = downloadProvider.getSyncRule(globalKey);
+                    final syncRule = downloadProvider.getSyncRule(ruleKey);
                     final isEnabled = syncRule?.enabled ?? true;
                     return IconButton.filledTonal(
-                      onPressed: () => _showSyncRuleActions(context, downloadProvider, metadata, globalKey),
+                      onPressed: () => _showSyncRuleActions(
+                        context,
+                        downloadProvider,
+                        metadata,
+                        ruleKey: ruleKey,
+                        downloadGlobalKey: globalKey,
+                      ),
                       icon: AppIcon(isEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
                       tooltip: t.downloads.keepNUnwatched(count: syncRule?.episodeCount.toString() ?? '?'),
                       iconSize: 20,
@@ -828,7 +876,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 // State 9: Not downloaded (default - can download)
                 return IconButton.filledTonal(
                   onPressed: () async {
-                    final client = _getClientForMetadata(context);
+                    final client = _getMediaClientForMetadata(context);
                     if (client == null) return;
 
                     try {
@@ -864,9 +912,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   // Offline mode: queue action for later sync
                   final offlineWatch = context.read<OfflineWatchProvider>();
                   if (isWatched) {
-                    await offlineWatch.markAsUnwatched(serverId: metadata.serverId!, ratingKey: metadata.ratingKey);
+                    await offlineWatch.markAsUnwatched(serverId: metadata.serverId!, itemId: metadata.id);
                   } else {
-                    await offlineWatch.markAsWatched(serverId: metadata.serverId!, ratingKey: metadata.ratingKey);
+                    await offlineWatch.markAsWatched(serverId: metadata.serverId!, itemId: metadata.id);
                   }
                   if (mounted) {
                     showAppSnackBar(
@@ -877,14 +925,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     unawaited(_loadOfflineOnDeckEpisode());
                   }
                 } else {
-                  // Online mode: send to server
-                  final client = _getClientForMetadata(context);
+                  // Online mode: dispatch via the right backend's neutral
+                  // method so Jellyfin items hit /UserPlayedItems and Plex
+                  // items hit /:/scrobble.
+                  final serverId = metadata.serverId;
+                  if (serverId == null) return;
+                  final client = context.tryGetMediaClientForServer(serverId);
                   if (client == null) return;
 
                   if (isWatched) {
-                    await client.markAsUnwatched(metadata.ratingKey, metadata: metadata);
+                    await client.markUnwatched(metadata);
                   } else {
-                    await client.markAsWatched(metadata.ratingKey, metadata: metadata);
+                    await client.markWatched(metadata);
                   }
                   if (mounted) {
                     _watchStateChanged = true;
@@ -975,24 +1027,31 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Build all rating chips for the metadata.
   /// When both critic and audience ratings are from Rotten Tomatoes,
   /// they are combined into a single badge.
-  List<Widget> _buildRatingChips(PlexMetadata metadata) {
+  List<Widget> _buildRatingChips(MediaItem metadata) {
     final chips = <Widget>[];
+    // Plex-only fields (audienceRating / ratingImage / audienceRatingImage)
+    // — Jellyfin lacks rating-source attribution. Pull them via a typed
+    // narrow so the rest of the chip layout stays backend-neutral.
+    final plex = metadata is PlexMediaItem ? metadata : null;
+    final audienceRating = plex?.audienceRating;
+    final ratingImage = plex?.ratingImage;
+    final audienceRatingImage = plex?.audienceRatingImage;
     final bothRT =
         metadata.rating != null &&
-        metadata.audienceRating != null &&
-        isRottenTomatoes(metadata.ratingImage) &&
-        isRottenTomatoes(metadata.audienceRatingImage);
+        audienceRating != null &&
+        isRottenTomatoes(ratingImage) &&
+        isRottenTomatoes(audienceRatingImage);
 
     if (bothRT) {
-      final critic = parseRatingImage(metadata.ratingImage, metadata.rating)!;
-      final audience = parseRatingImage(metadata.audienceRatingImage, metadata.audienceRating)!;
+      final critic = parseRatingImage(ratingImage, metadata.rating)!;
+      final audience = parseRatingImage(audienceRatingImage, audienceRating)!;
       chips.add(_buildCombinedRtChip(critic, audience));
     } else {
       if (metadata.rating != null) {
-        chips.add(_buildRatingChip(metadata.ratingImage, metadata.rating!, Symbols.star_rounded));
+        chips.add(_buildRatingChip(ratingImage, metadata.rating!, Symbols.star_rounded));
       }
-      if (metadata.audienceRating != null) {
-        chips.add(_buildRatingChip(metadata.audienceRatingImage, metadata.audienceRating!, Symbols.people_rounded));
+      if (audienceRating != null) {
+        chips.add(_buildRatingChip(audienceRatingImage, audienceRating, Symbols.people_rounded));
       }
     }
 
@@ -1004,7 +1063,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return chips;
   }
 
-  Widget _buildUserRatingChip(PlexMetadata metadata) {
+  Widget _buildUserRatingChip(MediaItem metadata) {
+    final mediaClient = _getMediaClientForMetadata(context);
+    final isNumeric = mediaClient?.capabilities.numericUserRating ?? true;
     final hasRating = metadata.userRating != null && metadata.userRating! > 0;
     final starValue = hasRating ? metadata.userRating! / 2.0 : 0.0;
     final colorScheme = Theme.of(context).colorScheme;
@@ -1014,9 +1075,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final bgColor = showFocus ? colorScheme.inverseSurface : colorScheme.secondaryContainer.withValues(alpha: 0.8);
     final fgColor = showFocus ? colorScheme.onInverseSurface : colorScheme.onSecondaryContainer;
 
+    final activate = isNumeric ? () => _showRatingDialog(metadata, starValue) : () => _toggleLike(metadata);
+
+    final iconData = isNumeric ? Symbols.star_rounded : Symbols.thumb_up_rounded;
+    final activeIconColor = isNumeric ? Colors.amber : Colors.teal;
+    // Numeric backends show the formatted rating when set; binary backends
+    // rely on the filled icon to communicate the like state and keep the
+    // "Rate" label as the action prompt either way.
+    final label = isNumeric && hasRating ? formatRating(starValue) : t.mediaMenu.rate;
+
     return FocusableWrapper(
       focusNode: _ratingChipFocusNode,
-      onSelect: () => _showRatingDialog(metadata, starValue),
+      onSelect: activate,
       borderRadius: 100,
       disableScale: true,
       focusColor: Colors.transparent,
@@ -1034,7 +1104,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         return KeyEventResult.ignored;
       },
       child: GestureDetector(
-        onTap: () => _showRatingDialog(metadata, starValue),
+        onTap: activate,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOutCubic,
@@ -1044,14 +1114,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               AppIcon(
-                Symbols.star_rounded,
+                iconData,
                 fill: hasRating ? 1 : 0,
-                color: showFocus ? fgColor : (hasRating ? Colors.amber : fgColor),
+                color: showFocus ? fgColor : (hasRating ? activeIconColor : fgColor),
                 size: 16,
               ),
               const SizedBox(width: 4),
               Text(
-                hasRating ? formatRating(starValue) : t.mediaMenu.rate,
+                label,
                 style: TextStyle(color: fgColor, fontSize: 13, fontWeight: FontWeight.w500),
               ),
             ],
@@ -1061,30 +1131,56 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  void _showRatingDialog(PlexMetadata metadata, double currentStarValue) {
+  /// Like/unlike toggle for backends that only support binary ratings
+  /// (Jellyfin). Maps to [MediaServerClient.rate] with 10 (like) or -1
+  /// (clear) — the Jellyfin client routes those through POST/DELETE on
+  /// `/UserItems/{id}/Rating`.
+  Future<void> _toggleLike(MediaItem metadata) async {
+    final client = _getMediaClientForMetadata(context);
+    if (client == null) return;
+    final wasLiked = metadata.userRating != null && metadata.userRating! >= 6;
+    final newRating = wasLiked ? -1.0 : 10.0;
+    try {
+      await client.rate(metadata, newRating);
+      setStateIfMounted(() {
+        _fullMetadata = _fullMetadata?.copyWith(userRating: wasLiked ? 0 : 10);
+      });
+    } on MediaServerHttpException catch (e) {
+      appLogger.w('Failed to toggle rating', error: e);
+      if (mounted) showErrorSnackBar(context, t.errors.failedToRate);
+    }
+  }
+
+  void _showRatingDialog(MediaItem metadata, double currentStarValue) {
     showModalBottomSheet(
       context: context,
       builder: (context) => RatingBottomSheet(
         currentRating: currentStarValue,
         onRate: (stars) async {
-          final client = _getClientForMetadata(this.context);
+          final client = _getMediaClientForMetadata(this.context);
           if (client == null) return;
           final plexRating = stars * 2.0; // Convert 0-5 stars to 0-10 scale
-          final success = await client.rateItem(metadata.ratingKey, plexRating);
-          if (success) {
+          try {
+            await client.rate(metadata, plexRating);
             setStateIfMounted(() {
               _fullMetadata = _fullMetadata?.copyWith(userRating: plexRating);
             });
+          } on MediaServerHttpException catch (e) {
+            appLogger.w('Failed to set rating', error: e);
+            if (mounted) showErrorSnackBar(this.context, t.errors.failedToRate);
           }
         },
         onClear: () async {
-          final client = _getClientForMetadata(this.context);
+          final client = _getMediaClientForMetadata(this.context);
           if (client == null) return;
-          final success = await client.rateItem(metadata.ratingKey, -1);
-          if (success) {
+          try {
+            await client.rate(metadata, -1);
             setStateIfMounted(() {
               _fullMetadata = _fullMetadata?.copyWith(userRating: 0);
             });
+          } on MediaServerHttpException catch (e) {
+            appLogger.w('Failed to clear rating', error: e);
+            if (mounted) showErrorSnackBar(this.context, t.errors.failedToRate);
           }
         },
       ),
@@ -1117,15 +1213,27 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  /// Get the correct PlexClient for this metadata's server
-  /// Returns null in offline mode or if serverId is null
-  PlexClient? _getClientForMetadata(BuildContext context) {
-    return getServerBoundClient(context);
+  /// Backend-neutral counterpart of [getServerBoundPlexClient]. Returns a
+  /// [MediaServerClient] for Jellyfin items too, so image URLs use the
+  /// right server's transcoder.
+  MediaServerClient? _getMediaClientForMetadata(BuildContext context) {
+    return getServerBoundMediaClient(context);
   }
 
-  void _navigateToActorMedia(PlexRole actor) {
-    final personId = actor.id?.toString() ?? actor.tagKey;
-    if (personId == null || widget.metadata.serverId == null) return;
+  String _syncRuleKeyForMetadata(BuildContext context, DownloadProvider downloadProvider, MediaItem metadata) {
+    final serverId = metadata.serverId;
+    final client = _getMediaClientForMetadata(context);
+    if (client == null || serverId == null) return metadata.globalKey;
+    return downloadProvider.syncRuleKeyForClient(client, metadata.id, serverId: serverId);
+  }
+
+  void _navigateToActorMedia(MediaRole actor) {
+    // Plex-only today — Jellyfin's `/Persons/{id}/Items` isn't wired yet.
+    // Cast cards still render for parity, but tapping is a no-op until the
+    // Jellyfin path lands.
+    if (_metadata.backend != MediaBackend.plex) return;
+    final personId = actor.id;
+    if (personId == null || _metadata.serverId == null) return;
 
     Navigator.push(
       context,
@@ -1133,10 +1241,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         builder: (_) => ActorMediaScreen(
           actorName: actor.tag,
           personId: personId,
-          actorThumb: actor.thumb,
+          actorThumb: actor.thumbPath,
           characterName: actor.role,
-          serverId: widget.metadata.serverId!,
-          serverName: widget.metadata.serverName,
+          serverId: _metadata.serverId!,
+          serverName: _metadata.serverName,
+          backend: _metadata.backend,
         ),
       ),
     );
@@ -1145,20 +1254,22 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Resolve version selection for download using shared utility.
   Future<DownloadVersionConfig?> _resolveDownloadVersion(
     BuildContext context,
-    PlexMetadata metadata,
-    PlexClient client,
+    MediaItem metadata,
+    MediaServerClient client,
   ) {
-    return resolveDownloadVersion(context, metadata, client, fallbackVersions: _fullMetadata?.mediaVersions);
+    final fallback = _fullMetadata?.mediaVersions;
+    return resolveDownloadVersion(context, metadata, client, fallbackVersions: fallback);
   }
 
   /// Shows actions for a synced item: edit count, remove rule, delete downloads.
   Future<void> _showSyncRuleActions(
     BuildContext context,
     DownloadProvider downloadProvider,
-    PlexMetadata metadata,
-    String globalKey,
-  ) async {
-    final syncRule = downloadProvider.getSyncRule(globalKey);
+    MediaItem metadata, {
+    required String ruleKey,
+    required String downloadGlobalKey,
+  }) async {
+    final syncRule = downloadProvider.getSyncRule(ruleKey);
     if (syncRule == null) return;
 
     final selected = await showOptionPickerDialog<_SyncRuleAction>(
@@ -1178,7 +1289,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final updated = await editSyncRuleCount(
           context,
           downloadProvider: downloadProvider,
-          globalKey: globalKey,
+          globalKey: ruleKey,
           currentCount: syncRule.episodeCount,
         );
         if (updated && context.mounted) {
@@ -1189,7 +1300,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final removed = await confirmAndRemoveSyncRule(
           context,
           downloadProvider: downloadProvider,
-          globalKey: globalKey,
+          globalKey: ruleKey,
           displayTitle: metadata.displayTitle,
         );
         if (removed && context.mounted) {
@@ -1203,8 +1314,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           message: t.downloads.deleteConfirm(title: metadata.displayTitle),
         );
         if (confirmed && context.mounted) {
-          await downloadProvider.deleteSyncRule(globalKey);
-          await downloadProvider.deleteDownload(globalKey);
+          await downloadProvider.deleteSyncRule(ruleKey);
+          await downloadProvider.deleteDownload(downloadGlobalKey);
           if (context.mounted) {
             showSuccessSnackBar(context, t.downloads.downloadDeleted);
           }
@@ -1219,22 +1330,22 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     // Offline mode: try to load full metadata from cache (has clearLogo, summary, etc.)
     if (widget.isOffline) {
-      final cachedMetadata = await PlexApiCache.instance.getMetadata(
-        widget.metadata.serverId ?? '',
-        widget.metadata.ratingKey,
+      final cachedMetadata = await context.read<DownloadProvider>().lookupOfflineMetadata(
+        _metadata.serverId ?? '',
+        _metadata.id,
       );
       if (!mounted) return;
       setState(() {
-        _fullMetadata = cachedMetadata ?? widget.metadata;
+        _fullMetadata = cachedMetadata ?? _metadata;
         _isLoadingMetadata = false;
       });
 
-      if (widget.metadata.isShow) {
+      if (_metadata.isShow) {
         _loadSeasonsFromDownloads();
         // Get offline OnDeck episode
         unawaited(_loadOfflineOnDeckEpisode());
-      } else if (widget.metadata.isSeason) {
-        _seasons = [widget.metadata];
+      } else if (_metadata.isSeason) {
+        _seasons = [_metadata];
         _showEpisodesDirectly = true;
         _loadEpisodesFromDownloads();
       }
@@ -1242,84 +1353,63 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     try {
-      // Use server-specific client for this metadata
-      final client = _getClientForMetadata(context);
+      // Backend-neutral lookup. Plex returns the OnDeck episode bundled in
+      // the same response (`?includeOnDeck=1`); Jellyfin's
+      // [fetchItemWithOnDeck] returns onDeckEpisode=null and the UI
+      // populates resume separately if needed.
+      final client = getServerBoundMediaClient(context);
       if (client == null) {
-        // No client available, use passed metadata
+        // Truly orphaned item (server gone) — fall back to widget metadata
+        // and let downstream loaders no-op gracefully.
         setState(() {
-          _fullMetadata = widget.metadata;
+          _fullMetadata = _metadata;
           _isLoadingMetadata = false;
         });
         return;
       }
 
-      // Fetch full metadata with clearLogo and OnDeck episode
-      final result = await client.getMetadataWithImagesAndOnDeck(widget.metadata.ratingKey);
-      final metadata = result['metadata'] as PlexMetadata?;
-      final onDeckEpisode = result['onDeckEpisode'] as PlexMetadata?;
-      final playbackData = result['playbackData'] as PlexVideoPlaybackData?;
+      final result = await client.fetchItemWithOnDeck(_metadata.id);
+      final metadata = result.item;
+      final onDeckEpisode = result.onDeckEpisode;
 
       if (!mounted) return;
 
-      if (metadata != null) {
-        // Preserve serverId from original metadata
-        final metadataWithServerId = metadata.copyWith(
-          serverId: widget.metadata.serverId,
-          serverName: widget.metadata.serverName,
-        );
-        final onDeckWithServerId = onDeckEpisode?.copyWith(
-          serverId: widget.metadata.serverId,
-          serverName: widget.metadata.serverName,
-        );
+      // Preserve serverId from original metadata
+      final serverId = _metadata.serverId;
+      final serverName = _metadata.serverName;
+      final base = (metadata ?? _metadata).copyWith(serverId: serverId, serverName: serverName);
+      final onDeckWithServerId = onDeckEpisode?.copyWith(serverId: serverId, serverName: serverName);
 
-        setState(() {
-          _fullMetadata = metadataWithServerId;
-          _onDeckEpisode = onDeckWithServerId;
-          _playbackData = playbackData;
-          _isLoadingMetadata = false;
-        });
-
-        // Load seasons if it's a show
-        if (metadata.isShow) {
-          unawaited(_loadSeasons());
-        } else if (metadata.isSeason) {
-          _seasons = [widget.metadata];
-          _showEpisodesDirectly = true;
-          unawaited(_fetchAllEpisodes());
-        }
-
-        // Load extras (trailers, behind-the-scenes, etc.)
-        unawaited(_loadExtras());
-        unawaited(_loadRelatedHubs());
-
-        return;
-      }
-
-      // Fallback to passed metadata
       setState(() {
-        _fullMetadata = widget.metadata;
+        _fullMetadata = base;
+        _onDeckEpisode = onDeckWithServerId;
         _isLoadingMetadata = false;
       });
 
-      if (widget.metadata.isShow) {
+      if (base.isShow) {
         unawaited(_loadSeasons());
-      } else if (widget.metadata.isSeason) {
-        _seasons = [widget.metadata];
+      } else if (base.isSeason) {
+        _seasons = [base];
         _showEpisodesDirectly = true;
         unawaited(_fetchAllEpisodes());
       }
+
+      // [_loadExtras] and [_loadRelatedHubs] short-circuit for non-Plex
+      // backends; safe to call unconditionally.
+      unawaited(_loadExtras());
+      unawaited(_loadRelatedHubs());
     } catch (e) {
       // Fallback to passed metadata on error
       if (!mounted) return;
       setState(() {
-        _fullMetadata = widget.metadata;
+        _fullMetadata = _metadata;
         _isLoadingMetadata = false;
       });
 
-      if (widget.metadata.isShow) {
+      if (_metadata.isShow) {
         unawaited(_loadSeasons());
-      } else if (widget.metadata.isSeason) {
-        _seasons = [widget.metadata];
+      } else if (_metadata.isSeason) {
+        _seasons = [_metadata];
         _showEpisodesDirectly = true;
         unawaited(_fetchAllEpisodes());
       }
@@ -1328,38 +1418,53 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   Future<void> _loadSeasons() async {
     _seasonsCompleter = Completer<void>();
-    setState(() {
+    setStateIfMounted(() {
       _isLoadingSeasons = true;
     });
 
-    try {
-      // Use server-specific client for this metadata
-      final client = _getClientForMetadata(context);
+    final serverId = _metadata.serverId;
+    final client = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
+    if (client == null) {
+      setStateIfMounted(() => _isLoadingSeasons = false);
+      if (!(_seasonsCompleter?.isCompleted ?? true)) _seasonsCompleter?.complete();
+      return;
+    }
 
-      // Fetch seasons and library prefs in parallel
-      final sectionId = (_fullMetadata ?? widget.metadata).librarySectionID?.toString();
-      final seasonsFuture = client?.getChildren(widget.metadata.ratingKey) ?? Future.value(<PlexMetadata>[]);
-      final prefsFuture = (sectionId != null && client != null)
+    try {
+      // Plex has a server-side "flatten seasons" preference;
+      // Jellyfin has no equivalent, so fetch the prefs only when we have
+      // a Plex client and a section id. The library section id came from
+      // Plex as an int but lands in [MediaItem.libraryId] as the string
+      // form (or null on Jellyfin items).
+      final sectionId = (_fullMetadata ?? _metadata).libraryId;
+      final seasonsFuture = client.fetchChildren(_metadata.id);
+      final prefsFuture = (client is PlexClient && sectionId != null)
           ? client.getLibrarySectionPrefs(sectionId)
           : Future.value(<String, dynamic>{});
 
       final results = await Future.wait([seasonsFuture, prefsFuture]);
-      final seasons = results[0] as List<PlexMetadata>;
+      final seasons = results[0] as List<MediaItem>;
       final prefs = results[1] as Map<String, dynamic>;
 
-      // Preserve serverId for each season
+      // Preserve serverId for each season.
       final seasonsWithServerId = seasons
-          .map((season) => season.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
+          .map((season) => season.copyWith(serverId: serverId, serverName: _metadata.serverName))
           .toList();
 
-      // Check the server setting the season display mode
-      const flattenSeasonsAlways = 1;
-      const flattenSeasonsSingleSeason = 2;
-      final flattenSeasons = int.tryParse(prefs['flattenSeasons']?.toString() ?? '');
-      final isAlways = flattenSeasons == flattenSeasonsAlways;
-      final isSingleSeason = flattenSeasons == flattenSeasonsSingleSeason;
-      final shouldShowEpisodesDirectly =
-          isAlways || seasonsWithServerId.isEmpty || (isSingleSeason && seasonsWithServerId.length == 1);
+      // Plex's flattenSeasons modes: 1 = always, 2 = single-season only.
+      // Jellyfin falls through to "flatten when there's a single season".
+      bool shouldShowEpisodesDirectly;
+      if (client is PlexClient) {
+        const flattenSeasonsAlways = 1;
+        const flattenSeasonsSingleSeason = 2;
+        final flattenSeasons = int.tryParse(prefs['flattenSeasons']?.toString() ?? '');
+        final isAlways = flattenSeasons == flattenSeasonsAlways;
+        final isSingleSeason = flattenSeasons == flattenSeasonsSingleSeason;
+        shouldShowEpisodesDirectly =
+            isAlways || seasonsWithServerId.isEmpty || (isSingleSeason && seasonsWithServerId.length == 1);
+      } else {
+        shouldShowEpisodesDirectly = seasonsWithServerId.length <= 1;
+      }
 
       // Create focus nodes for season tabs
       _updateSeasonTabFocusNodes(seasonsWithServerId.length);
@@ -1380,7 +1485,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         // Fetch episodes for the auto-selected season
         unawaited(_fetchSeasonEpisodes(onDeckSeasonIndex));
       }
-    } catch (e) {
+    } catch (e, st) {
+      appLogger.w('Seasons load failed', error: e, stackTrace: st);
       setStateIfMounted(() {
         _isLoadingSeasons = false;
       });
@@ -1399,36 +1505,36 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     });
 
     final downloadProvider = context.read<DownloadProvider>();
-    final episodes = downloadProvider.getDownloadedEpisodesForShow(widget.metadata.ratingKey);
+    final episodes = downloadProvider.getDownloadedEpisodesForShow(_metadata.id);
 
     // Group episodes by season
-    final Map<int, List<PlexMetadata>> seasonMap = {};
+    final Map<int, List<MediaItem>> seasonMap = {};
     for (final episode in episodes) {
       final seasonNum = episode.parentIndex ?? 0;
       seasonMap.putIfAbsent(seasonNum, () => []).add(episode);
     }
 
-    // Create season metadata from episodes
+    // Create synthetic season MediaItems from the grouped episodes.
     final seasons = seasonMap.entries.map((entry) {
       final firstEp = entry.value.first;
-      return PlexMetadata(
-        ratingKey: firstEp.parentRatingKey ?? '',
-        key: '/library/metadata/${firstEp.parentRatingKey}',
-        type: 'season',
+      return MediaItem(
+        id: firstEp.parentId ?? '',
+        backend: _metadata.backend,
+        kind: MediaKind.season,
         title: firstEp.parentTitle ?? 'Season ${entry.key}',
         index: entry.key,
         leafCount: entry.value.length,
-        thumb: firstEp.parentThumb,
-        parentRatingKey: firstEp.grandparentRatingKey,
-        serverId: widget.metadata.serverId,
-        serverName: widget.metadata.serverName,
+        thumbPath: firstEp.parentThumbPath,
+        parentId: firstEp.grandparentId,
+        serverId: _metadata.serverId,
+        serverName: _metadata.serverName,
       );
     }).toList()..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
 
     // Create focus nodes for season tabs and cache episodes per season
     _updateSeasonTabFocusNodes(seasons.length);
     for (final entry in seasonMap.entries) {
-      final seasonRatingKey = entry.value.first.parentRatingKey ?? '';
+      final seasonRatingKey = entry.value.first.parentId ?? '';
       _episodeCache[seasonRatingKey] = entry.value..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
     }
 
@@ -1453,8 +1559,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Load episodes from downloaded content for a season
   void _loadEpisodesFromDownloads() {
     final downloadProvider = context.read<DownloadProvider>();
-    final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(widget.metadata.parentRatingKey ?? '');
-    final seasonEpisodes = allEpisodes.where((ep) => ep.parentIndex == widget.metadata.index).toList()
+    final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(_metadata.parentId ?? '');
+    final seasonEpisodes = allEpisodes.where((ep) => ep.parentIndex == _metadata.index).toList()
       ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
 
     setState(() {
@@ -1475,7 +1581,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Find the season index matching the initial selection or on-deck episode, or fall back to 0
-  int _findOnDeckSeasonIndex(List<PlexMetadata> seasons) {
+  int _findOnDeckSeasonIndex(List<MediaItem> seasons) {
     // Prefer explicit initial season (from navigation)
     if (widget.initialSeasonIndex != null && seasons.isNotEmpty) {
       final idx = seasons.indexWhere((s) => s.index == widget.initialSeasonIndex);
@@ -1498,7 +1604,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final season = _seasons[seasonIndex];
 
     // Check cache first
-    final cached = _episodeCache[season.ratingKey];
+    final cached = _episodeCache[season.id];
     if (cached != null) {
       setStateIfMounted(() {
         _episodes = List.of(cached);
@@ -1513,25 +1619,35 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (widget.isOffline) {
         // Offline: load from downloads
         final downloadProvider = context.read<DownloadProvider>();
-        final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(widget.metadata.ratingKey);
+        final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(_metadata.id);
         final seasonEpisodes = allEpisodes.where((ep) => ep.parentIndex == season.index).toList()
           ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
-        _episodeCache[season.ratingKey] = seasonEpisodes;
+        _episodeCache[season.id] = seasonEpisodes;
         setStateIfMounted(() {
           _episodes = List.of(seasonEpisodes);
           _isLoadingSeasonEpisodes = false;
         });
       } else {
-        final client = _getClientForMetadata(context);
-        if (client == null) {
+        // Resolve the right backend client so Jellyfin (where the typed
+        // PlexClient helper returns null) loads episodes too.
+        final serverId = _metadata.serverId;
+        final mediaClient = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
+        if (serverId == null || mediaClient == null) {
           setStateIfMounted(() => _isLoadingSeasonEpisodes = false);
           return;
         }
-        final episodes = await client.getChildren(season.ratingKey);
+        final episodes = await mediaClient.fetchChildren(season.id);
         final episodesWithServerId = episodes
-            .map((e) => e.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
+            .map(
+              (e) => e.copyWith(
+                serverId: _metadata.serverId,
+                serverName: _metadata.serverName,
+                grandparentId: _metadata.id,
+                grandparentTitle: _metadata.title,
+              ),
+            )
             .toList();
-        _episodeCache[season.ratingKey] = episodesWithServerId;
+        _episodeCache[season.id] = episodesWithServerId;
         setStateIfMounted(() {
           _episodes = List.of(episodesWithServerId);
           _isLoadingSeasonEpisodes = false;
@@ -1542,10 +1658,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
-  /// Load extras (trailers, behind-the-scenes, etc.)
+  /// Load extras (trailers, behind-the-scenes, etc.). Plex-only — Jellyfin
+  /// has no equivalent of `fetchExtras`.
   Future<void> _loadExtras() async {
     // Only load extras for movies and shows
-    if (!widget.metadata.isMovie && !widget.metadata.isShow) {
+    if (!_metadata.isMovie && !_metadata.isShow) {
       return;
     }
 
@@ -1554,17 +1671,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return;
     }
 
+    if (_metadata.backend != MediaBackend.plex) return;
+
     try {
-      final client = _getClientForMetadata(context);
+      final client = getServerBoundPlexClient(context);
       if (client == null) {
         return;
       }
 
-      final extras = await client.getExtras(widget.metadata.ratingKey);
+      final extras = await client.fetchExtras(_metadata.id);
 
-      // Preserve serverId for each extra (needed for multi-server setups)
+      // Preserve serverId for each extra (needed for multi-server setups).
       final extrasWithServerId = extras
-          .map((extra) => extra.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
+          .map((extra) => extra.copyWith(serverId: _metadata.serverId, serverName: _metadata.serverName))
           .toList();
 
       setStateIfMounted(() {
@@ -1575,9 +1694,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
-  /// Load related hubs (collections, similar, "more from" director/actor)
+  /// Load related hubs (collections, similar, "more from" director/actor).
+  /// Backend-neutral — both Plex and Jellyfin implement
+  /// [MediaServerClient.fetchRelatedHubs].
   Future<void> _loadRelatedHubs() async {
-    if (!widget.metadata.isMovie && !widget.metadata.isShow) {
+    if (!_metadata.isMovie && !_metadata.isShow) {
       return;
     }
 
@@ -1585,15 +1706,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return;
     }
 
-    try {
-      final client = _getClientForMetadata(context);
-      if (client == null) return;
+    final serverId = _metadata.serverId;
+    final client = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
+    if (client == null) return;
 
-      final hubs = await client.getRelatedHubs(widget.metadata.ratingKey);
+    try {
+      final relatedHubs = await client.fetchRelatedHubs(_metadata.id);
 
       setStateIfMounted(() {
-        _relatedHubs = hubs;
-        _relatedHubKeys = List.generate(hubs.length, (_) => GlobalKey<HubSectionState>());
+        _relatedHubs = relatedHubs;
+        _relatedHubKeys = List.generate(relatedHubs.length, (_) => GlobalKey<HubSectionState>());
       });
     } catch (e) {
       // Silently fail - related sections won't appear if fetch fails
@@ -1603,7 +1725,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Focus the first visible section above cast: season tabs → overview → play button.
   /// Shared by cast UP, extras UP, and related hub UP handlers.
   void _focusSectionAboveCast() {
-    final metadata = _fullMetadata ?? widget.metadata;
+    final metadata = _fullMetadata ?? _metadata;
     if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty && _seasonTabFocusNodes.isNotEmpty) {
       _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
       _scrollSectionIntoView(_seasonsSectionKey);
@@ -1618,8 +1740,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Focus the first visible section above extras: cast → season tabs → overview → play button.
   void _focusSectionAboveExtras() {
-    final metadata = _fullMetadata ?? widget.metadata;
-    if (metadata.role != null && metadata.role!.isNotEmpty) {
+    final metadata = _fullMetadata ?? _metadata;
+    if (metadata.roles != null && metadata.roles!.isNotEmpty) {
       _castFocusNode.requestFocus();
       _scrollSectionIntoView(_castSectionKey);
     } else {
@@ -1628,7 +1750,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   bool get _hasInfoRows {
-    final metadata = _fullMetadata ?? widget.metadata;
+    final metadata = _fullMetadata ?? _metadata;
     return metadata.studio != null || metadata.contentRating != null;
   }
 
@@ -1671,7 +1793,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     if (!key.isDownKey) return KeyEventResult.ignored;
 
-    final metadata = _fullMetadata ?? widget.metadata;
+    final metadata = _fullMetadata ?? _metadata;
 
     // DOWN order: overview → seasons → cast → extras
     if (metadata.summary != null && metadata.summary!.isNotEmpty) {
@@ -1693,7 +1815,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return KeyEventResult.handled;
     }
 
-    if (metadata.role != null && metadata.role!.isNotEmpty) {
+    if (metadata.roles != null && metadata.roles!.isNotEmpty) {
       _castFocusNode.requestFocus();
       _scrollSectionIntoView(_castSectionKey);
       return KeyEventResult.handled;
@@ -1727,7 +1849,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isBackKey) return KeyEventResult.ignored;
     if (!event.isActionable) return KeyEventResult.ignored;
 
-    final metadata = _fullMetadata ?? widget.metadata;
+    final metadata = _fullMetadata ?? _metadata;
 
     // UP: always play button (overview is directly below play)
     if (key.isUpKey) {
@@ -1743,7 +1865,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       } else if (_episodes.isNotEmpty) {
         _firstEpisodeFocusNode.requestFocus();
         _scrollSectionIntoView(_seasonsSectionKey);
-      } else if (metadata.role != null && metadata.role!.isNotEmpty) {
+      } else if (metadata.roles != null && metadata.roles!.isNotEmpty) {
         _castFocusNode.requestFocus();
         _scrollSectionIntoView(_castSectionKey);
       } else if (_extras != null && _extras!.isNotEmpty) {
@@ -1797,14 +1919,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             final season = _seasons[index];
             final contextMenuKey = _seasonContextMenuKeys.putIfAbsent(index, () => GlobalKey<MediaContextMenuState>());
             Offset? tapPosition;
-            final posterPath = season.thumb;
+            final posterPath = season.thumbPath;
             Widget? topImage;
             if (showPosters && posterPath != null && posterPath.isNotEmpty) {
               const posterWidth = 72.0;
               const posterHeight = 108.0;
-              final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
-              final client = _getClientForMetadata(context);
-              final imageUrl = PlexImageHelper.getOptimizedImageUrl(
+              final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+              final client = _getMediaClientForMetadata(context);
+              final imageUrl = MediaImageHelper.getOptimizedImageUrl(
                 client: client,
                 thumbPath: posterPath,
                 maxWidth: posterWidth,
@@ -1812,7 +1934,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 devicePixelRatio: dpr,
                 imageType: ImageType.poster,
               );
-              final (memWidth, _) = PlexImageHelper.getMemCacheDimensions(
+              final (memWidth, _) = MediaImageHelper.getMemCacheDimensions(
                 displayWidth: (posterWidth * dpr).round(),
                 displayHeight: (posterHeight * dpr).round(),
                 imageType: ImageType.poster,
@@ -1987,8 +2109,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (key.isBackKey) return KeyEventResult.ignored;
     if (!event.isActionable) return KeyEventResult.ignored;
 
-    final metadata = _fullMetadata ?? widget.metadata;
-    final roleCount = metadata.role?.length ?? 0;
+    final metadata = _fullMetadata ?? _metadata;
+    final roleCount = metadata.roles?.length ?? 0;
 
     // LEFT: previous cast member
     if (key.isLeftKey) {
@@ -2044,9 +2166,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     // SELECT: navigate to actor media
     if (key.isSelectKey) {
-      final metadata = _fullMetadata ?? widget.metadata;
-      if (_focusedCastIndex < (metadata.role?.length ?? 0)) {
-        _navigateToActorMedia(metadata.role![_focusedCastIndex]);
+      final metadata = _fullMetadata ?? _metadata;
+      if (_focusedCastIndex < (metadata.roles?.length ?? 0)) {
+        _navigateToActorMedia(metadata.roles![_focusedCastIndex]);
       }
       return KeyEventResult.handled;
     }
@@ -2094,7 +2216,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return KeyEventResult.handled;
   }
 
-  IconData _getRelatedHubIcon(PlexHub hub) {
+  IconData _getRelatedHubIcon(MediaHub hub) {
     final lower = hub.title.toLowerCase();
     if (lower.contains('collection')) return Symbols.video_library_rounded;
     if (lower.contains('similar')) return Symbols.auto_awesome_rounded;
@@ -2105,7 +2227,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Build episode list directly when the library hides seasons for single-season shows
   Widget _buildEpisodesList() {
-    final client = _getClientForMetadata(context);
+    final client = _getMediaClientForMetadata(context);
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -2132,7 +2254,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               ? () {
                   if (!_showEpisodesDirectly) {
                     _focusSelectedSeasonTab();
-                  } else if ((_fullMetadata ?? widget.metadata).summary?.isNotEmpty == true) {
+                  } else if ((_fullMetadata ?? _metadata).summary?.isNotEmpty == true) {
                     _overviewFocusNode.requestFocus();
                     _scrollSectionIntoView(_overviewSectionKey);
                   } else {
@@ -2148,7 +2270,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               metadata: episode,
               isOffline: widget.isOffline,
               onRefresh: () async {
-                final refreshed = await client?.getMetadataWithImages(episode.ratingKey);
+                final refreshed = await client?.fetchItem(episode.id);
                 if (refreshed != null) {
                   setStateIfMounted(() {
                     _episodes[index] = refreshed;
@@ -2161,10 +2283,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           onRefresh: widget.isOffline
               ? null
               : (ratingKey) async {
-                  final refreshed = await client?.getMetadataWithImages(ratingKey);
+                  final refreshed = await client?.fetchItem(ratingKey);
                   if (refreshed != null) {
                     setStateIfMounted(() {
-                      final i = _episodes.indexWhere((e) => e.ratingKey == ratingKey);
+                      final i = _episodes.indexWhere((e) => e.id == ratingKey);
                       if (i != -1) {
                         _episodes[i] = refreshed;
                         _syncEpisodeToCache(i, refreshed);
@@ -2179,11 +2301,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Sync an updated episode back into the episode cache
-  void _syncEpisodeToCache(int episodeIndex, PlexMetadata updated) {
+  void _syncEpisodeToCache(int episodeIndex, MediaItem updated) {
     if (_showEpisodesDirectly || _seasons.isEmpty) return;
     if (_selectedSeasonIndex >= _seasons.length) return;
     final season = _seasons[_selectedSeasonIndex];
-    final cached = _episodeCache[season.ratingKey];
+    final cached = _episodeCache[season.id];
     if (cached != null && episodeIndex < cached.length) {
       cached[episodeIndex] = updated;
     }
@@ -2196,20 +2318,42 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     } else if (_seasons.isNotEmpty) {
       // Clear cache for current season and re-fetch
       final season = _seasons[_selectedSeasonIndex];
-      _episodeCache.remove(season.ratingKey);
+      _episodeCache.remove(season.id);
       await _fetchSeasonEpisodes(_selectedSeasonIndex);
     }
   }
 
   Future<void> _fetchAllEpisodes() async {
     if (_seasons.isEmpty) return;
-    final client = _getClientForMetadata(context);
+    final serverId = _metadata.serverId;
+    if (serverId == null) return;
+    final client = context.tryGetMediaClientForServer(serverId);
     if (client == null) return;
     setStateIfMounted(() => _isLoadingEpisodes = true);
     try {
-      final episodeLists = await Future.wait(_seasons.map((season) => client.getChildren(season.ratingKey)));
+      // One-shot recursive expansion — Plex `/grandchildren`, Jellyfin
+      // Recursive=true. Replaces the previous per-season fan-out so a
+      // many-season show flatten doesn't fan out N parallel HTTP calls.
+      // Enrich each episode with serverId/serverName/grandparent fields —
+      // Jellyfin's recursive query doesn't always populate them, and the
+      // copy is a no-op for Plex where the mapper already does.
+      final episodes = await client.fetchPlayableDescendants(_metadata.id);
+      final fallbackGrandparentId = _metadata.isSeason ? (_metadata.grandparentId ?? _metadata.parentId) : _metadata.id;
+      final fallbackGrandparentTitle = _metadata.isSeason
+          ? (_metadata.grandparentTitle ?? _metadata.parentTitle)
+          : _metadata.title;
+      final enriched = episodes
+          .map(
+            (e) => e.copyWith(
+              serverId: serverId,
+              serverName: _metadata.serverName,
+              grandparentId: e.grandparentId ?? fallbackGrandparentId,
+              grandparentTitle: e.grandparentTitle ?? fallbackGrandparentTitle,
+            ),
+          )
+          .toList();
       setStateIfMounted(() {
-        _episodes = episodeLists.expand((e) => e).toList();
+        _episodes = enriched;
         _isLoadingEpisodes = false;
       });
     } catch (e, st) {
@@ -2221,7 +2365,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Load the next unwatched episode for offline mode (offline OnDeck)
   Future<void> _loadOfflineOnDeckEpisode() async {
     final offlineWatchProvider = context.read<OfflineWatchProvider>();
-    final nextEpisode = await offlineWatchProvider.getNextUnwatchedEpisode(widget.metadata.ratingKey);
+    final nextEpisode = await offlineWatchProvider.getNextUnwatchedEpisode(_metadata.id);
 
     if (nextEpisode != null) {
       setStateIfMounted(() {
@@ -2231,38 +2375,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
-  /// Offline: update viewCount in the API cache and re-read metadata from it.
+  /// Offline: patch the in-memory metadata so the UI reflects a queued
+  /// watch/unwatch action immediately. The sync service holds the truth
+  /// for offline state and will reconcile with the server on reconnect,
+  /// so we don't need to round-trip through the per-backend cache here.
   Future<void> _updateWatchStateOffline() async {
-    final serverId = widget.metadata.serverId;
+    final serverId = _metadata.serverId;
     if (serverId == null) return;
-
-    final ratingKey = widget.metadata.ratingKey;
-    final cache = PlexApiCache.instance;
-    final syncService = context.read<OfflineWatchSyncService>();
-
-    final endpoint = '/library/metadata/$ratingKey';
-    final cached = await cache.get(serverId, endpoint);
-    final json = PlexCacheParser.extractFirstMetadata(cached);
-    if (json == null) return;
-
-    final localStatus = await syncService.getLocalWatchStatus('$serverId:$ratingKey');
-    if (localStatus == true) {
-      json['viewCount'] = 1;
-    } else if (localStatus == false) {
-      json['viewCount'] = 0;
-      json['viewOffset'] = 0;
-    }
-
-    await cache.put(serverId, endpoint, {
-      'MediaContainer': {
-        'Metadata': [json],
-      },
-    });
-
+    final localStatus = await context.read<OfflineWatchSyncService>().getLocalWatchStatus('$serverId:${_metadata.id}');
+    if (localStatus == null) return;
     setStateIfMounted(() {
-      _fullMetadata = PlexMetadata.fromJsonWithImages(
-        json,
-      ).copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName);
+      final base = _fullMetadata ?? _metadata;
+      _fullMetadata = base.copyWith(
+        viewCount: localStatus ? 1 : 0,
+        // Reset the resume position when transitioning to unwatched, mirroring
+        // the previous Plex cache-mutation behavior.
+        viewOffsetMs: localStatus ? base.viewOffsetMs : 0,
+      );
     });
   }
 
@@ -2295,19 +2424,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final firstSeason = _seasons.firstWhere((s) => (s.index ?? 0) > 0, orElse: () => _seasons.first);
 
       // Get episodes of the first season
-      List<PlexMetadata> episodes;
+      List<MediaItem> episodes;
       if (!mounted) return;
       if (widget.isOffline) {
         // In offline mode, get episodes from downloads
         final downloadProvider = context.read<DownloadProvider>();
-        final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(widget.metadata.ratingKey);
+        final allEpisodes = downloadProvider.getDownloadedEpisodesForShow(_metadata.id);
         // Filter to episodes of this season
         episodes = allEpisodes.where((ep) => ep.parentIndex == firstSeason.index).toList()
           ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
       } else {
-        final client = _getClientForMetadata(context);
+        final client = getServerBoundMediaClient(context);
         if (client == null) return;
-        episodes = await client.getChildren(firstSeason.ratingKey);
+        episodes = await client.fetchChildren(firstSeason.id);
       }
 
       if (episodes.isEmpty) {
@@ -2320,10 +2449,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // Play the first episode
       final firstEpisode = episodes.first;
       // Preserve serverId for the episode
-      final episodeWithServerId = firstEpisode.copyWith(
-        serverId: widget.metadata.serverId,
-        serverName: widget.metadata.serverName,
-      );
+      final episodeWithServerId = firstEpisode.copyWith(serverId: _metadata.serverId, serverName: _metadata.serverName);
       if (mounted) {
         appLogger.d('Playing first episode: ${episodeWithServerId.title}');
         await navigateToVideoPlayerWithRefresh(
@@ -2340,10 +2466,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
-  /// Handle shuffle play using play queues
-  /// Note: Shuffle requires server connectivity (play queue API)
-  Future<void> _handleShufflePlayWithQueue(BuildContext context, PlexMetadata metadata) async {
-    // Shuffle requires server connectivity
+  /// Handle shuffle play. Routes through [MediaListPlaybackLauncher.forItem]
+  /// so Plex uses its server-side `/playQueues` and Jellyfin builds a local
+  /// shuffled queue from `fetchClientSideEpisodeQueue`.
+  Future<void> _handleShufflePlayWithQueue(BuildContext context, MediaItem metadata) async {
     if (widget.isOffline) {
       if (context.mounted) {
         showErrorSnackBar(context, 'Shuffle not available offline');
@@ -2351,79 +2477,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return;
     }
 
-    final client = _getClientForMetadata(context);
-    if (client == null) return;
-
-    final playbackState = context.read<PlaybackStateProvider>();
-
-    try {
-      if (context.mounted) {
-        showLoadingDialog(context);
-      }
-
-      // Determine the rating key for the play queue
-      String showRatingKey;
-      if (metadata.isShow) {
-        showRatingKey = metadata.ratingKey;
-      } else if (metadata.isSeason) {
-        // For seasons, we need the show's rating key
-        // The season's parentRatingKey should point to the show
-        if (metadata.parentRatingKey == null) {
-          throw Exception('Season is missing parentRatingKey');
-        }
-        showRatingKey = metadata.parentRatingKey!;
-      } else {
-        throw Exception('Shuffle play only works for shows and seasons');
-      }
-
-      // Create a shuffled play queue for the show
-      final playQueue = await client.createShowPlayQueue(showRatingKey: showRatingKey, shuffle: 1);
-
-      // Close loading indicator
-      if (context.mounted) {
-        Navigator.pop(context);
-      }
-
-      if (playQueue == null || playQueue.items == null || playQueue.items!.isEmpty) {
-        if (context.mounted) {
-          showErrorSnackBar(context, t.messages.noEpisodesFound);
-        }
-        return;
-      }
-
-      // Initialize playback state with the play queue
-      await playbackState.setPlaybackFromPlayQueue(playQueue, showRatingKey);
-
-      // Set the client for the playback state provider
-      playbackState.setClient(client);
-
-      // Navigate to the first episode in the shuffled queue
-      final firstEpisode = playQueue.items!.first.copyWith(
-        serverId: metadata.serverId,
-        serverName: metadata.serverName,
-      );
-
-      if (context.mounted) {
-        await navigateToVideoPlayer(context, metadata: firstEpisode);
-        // Refresh metadata when returning from video player
-        unawaited(_loadFullMetadata());
-      }
-    } catch (e) {
-      // Close loading indicator if it's still open
-      if (context.mounted && Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
-
-      if (context.mounted) {
-        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-      }
+    final launcher = MediaListPlaybackLauncher.forItem(context, metadata);
+    final result = await launcher.launchShuffledShow(metadata: metadata);
+    if (result is PlayQueueSuccess && mounted) {
+      unawaited(_loadFullMetadata());
     }
   }
 
   @override
   Widget build(BuildContext context) {
     // Use full metadata if loaded, otherwise use passed metadata
-    final metadata = _fullMetadata ?? widget.metadata;
+    final metadata = _fullMetadata ?? _metadata;
     final isShow = metadata.isShow;
     final isMobile = PlatformDetector.isMobile(context);
     final isTv = PlatformDetector.isTV();
@@ -2474,20 +2538,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                         SizedBox(
                           height: headerHeight,
                           width: double.infinity,
-                          child: (metadata.art != null || metadata.backgroundSquare != null)
+                          child: (metadata.artPath != null || metadata.backgroundSquarePath != null)
                               ? Builder(
                                   builder: (context) {
                                     final containerAspect = size.width / headerHeight;
                                     final heroArtPath = metadata.heroArt(containerAspectRatio: containerAspect);
 
                                     // Check for offline local file first
-                                    if (widget.isOffline && widget.metadata.serverId != null) {
+                                    if (widget.isOffline && _metadata.serverId != null) {
                                       final localPath = context.read<DownloadProvider>().getArtworkLocalPath(
-                                        widget.metadata.serverId!,
+                                        _metadata.serverId!,
                                         heroArtPath,
                                       );
                                       if (localPath != null && File(localPath).existsSync()) {
-                                        return PlexOptimizedImage(
+                                        return OptimizedMediaImage(
                                           client: null,
                                           imagePath: null,
                                           localFilePath: localPath,
@@ -2501,10 +2565,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                     }
 
                                     // Online - use network image
-                                    final client = _getClientForMetadata(context);
+                                    final client = _getMediaClientForMetadata(context);
                                     final mqSize = MediaQuery.sizeOf(context);
-                                    final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
-                                    final imageUrl = PlexImageHelper.getOptimizedImageUrl(
+                                    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+                                    final imageUrl = MediaImageHelper.getOptimizedImageUrl(
                                       client: client,
                                       thumbPath: heroArtPath,
                                       maxWidth: mqSize.width,
@@ -2513,7 +2577,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                       imageType: ImageType.art,
                                     );
 
-                                    final (_, memHeight) = PlexImageHelper.getMemCacheDimensions(
+                                    final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
                                       displayWidth: (mqSize.width * dpr).round(),
                                       displayHeight: (mqSize.height * 0.6 * dpr).round(),
                                       imageType: ImageType.art,
@@ -2569,20 +2633,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   // Clear logo or title
-                                  if (metadata.clearLogo != null)
+                                  if (metadata.clearLogoPath != null)
                                     SizedBox(
                                       height: 120,
                                       width: 400,
                                       child: Builder(
                                         builder: (context) {
                                           // Check for offline local file first
-                                          if (widget.isOffline && widget.metadata.serverId != null) {
+                                          if (widget.isOffline && _metadata.serverId != null) {
                                             final localPath = context.read<DownloadProvider>().getArtworkLocalPath(
-                                              widget.metadata.serverId!,
-                                              metadata.clearLogo,
+                                              _metadata.serverId!,
+                                              metadata.clearLogoPath,
                                             );
                                             if (localPath != null && File(localPath).existsSync()) {
-                                              return PlexOptimizedImage(
+                                              return OptimizedMediaImage(
                                                 client: null,
                                                 imagePath: null,
                                                 localFilePath: localPath,
@@ -2598,11 +2662,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                           }
 
                                           // Online - use network image
-                                          final client = _getClientForMetadata(context);
-                                          final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);
-                                          final logoUrl = PlexImageHelper.getOptimizedImageUrl(
+                                          final client = _getMediaClientForMetadata(context);
+                                          final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+                                          final logoUrl = MediaImageHelper.getOptimizedImageUrl(
                                             client: client,
-                                            thumbPath: metadata.clearLogo,
+                                            thumbPath: metadata.clearLogoPath,
                                             maxWidth: 400,
                                             maxHeight: 120,
                                             devicePixelRatio: dpr,
@@ -2661,11 +2725,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                     runSpacing: 8,
                                     children: [
                                       if (metadata.year != null) _buildMetadataChip('${metadata.year}'),
-                                      if (metadata.editionTitle != null) _buildMetadataChip(metadata.editionTitle!),
+                                      if (metadata case PlexMediaItem(:final editionTitle?))
+                                        _buildMetadataChip(editionTitle),
                                       if (metadata.contentRating != null)
                                         _buildMetadataChip(formatContentRating(metadata.contentRating!)),
-                                      if (metadata.duration != null)
-                                        _buildMetadataChip(formatDurationTextual(metadata.duration!)),
+                                      if (metadata.durationMs != null)
+                                        _buildMetadataChip(formatDurationTextual(metadata.durationMs!)),
                                       ..._buildRatingChips(metadata),
                                     ],
                                   ),
@@ -2807,7 +2872,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           ],
 
                           // Cast
-                          if (metadata.role != null && metadata.role!.isNotEmpty) ...[
+                          if (metadata.roles != null && metadata.roles!.isNotEmpty) ...[
                             Text(
                               key: _castSectionKey,
                               t.discover.cast,
@@ -2934,24 +2999,26 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Get the primary trailer from the extras list
-  PlexMetadata? _getPrimaryTrailer() {
+  MediaItem? _getPrimaryTrailer() {
     if (_extras == null || _extras!.isEmpty) return null;
 
-    // If there's a primaryExtraKey, try to find that specific trailer
-    final metadata = _fullMetadata ?? widget.metadata;
-    if (metadata.primaryExtraKey != null) {
-      // Extract rating key from primaryExtraKey (e.g., "/library/metadata/52601" -> "52601")
-      final primaryKey = metadata.primaryExtraKey!.split('/').last;
+    // If there's a trailerKey (Plex `primaryExtraKey`), try to find that specific trailer
+    final metadata = _fullMetadata ?? _metadata;
+    if (metadata case PlexMediaItem(:final trailerKey?)) {
+      // Extract rating key from trailerKey (e.g., "/library/metadata/52601" -> "52601")
+      final primaryKey = trailerKey.split('/').last;
       try {
-        return _extras!.firstWhere((extra) => extra.ratingKey == primaryKey);
+        return _extras!.firstWhere((extra) => extra.id == primaryKey);
       } catch (_) {
         // Primary key not found, fall through to find any trailer
       }
     }
 
-    // Otherwise, find the first item with subtype 'trailer'
+    // Otherwise, find the first item with subtype 'trailer'. Extras are
+    // always Plex-sourced so the cast is safe; non-Plex backends route
+    // around this method entirely.
     try {
-      return _extras!.firstWhere((extra) => extra.subtype == 'trailer');
+      return _extras!.firstWhere((extra) => extra is PlexMediaItem && extra.subtype == 'trailer');
     } catch (_) {
       // No trailer found, return null (button won't appear)
       return null;
@@ -2960,7 +3027,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Build the cast section with locked focus pattern for D-pad navigation
   /// Uses same layout pattern as seasons/extras (ListView.builder + Padding(horizontal: 2))
-  Widget _buildCastSection(PlexMetadata metadata) {
+  Widget _buildCastSection(MediaItem metadata) {
     final cardWidth = _getResponsiveCardWidth();
     const innerPadding = 3.0;
     final imageSize = cardWidth;
@@ -2985,9 +3052,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             scrollDirection: Axis.horizontal,
             clipBehavior: Clip.none,
             padding: const EdgeInsets.symmetric(vertical: 5),
-            itemCount: metadata.role!.length,
+            itemCount: metadata.roles!.length,
             itemBuilder: (context, index) {
-              final actor = metadata.role![index];
+              final actor = metadata.roles![index];
               final isFocused = hasFocus && index == _focusedCastIndex;
 
               return Padding(
@@ -3006,9 +3073,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                            child: PlexOptimizedImage(
-                              client: _getClientForMetadata(context),
-                              imagePath: actor.thumb,
+                            child: OptimizedMediaImage(
+                              client: getServerBoundMediaClient(context),
+                              imagePath: actor.thumbPath,
                               width: imageSize,
                               height: imageSize,
                               fit: BoxFit.cover,
@@ -3112,7 +3179,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  String _getPlayButtonLabel(PlexMetadata metadata) {
+  String _getPlayButtonLabel(MediaItem metadata) {
     // For TV shows - use compact S1E1 format
     if (metadata.isShow) {
       if (_onDeckEpisode != null) {
@@ -3133,19 +3200,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return '';
   }
 
-  IconData _getPlayButtonIcon(PlexMetadata metadata) {
+  IconData _getPlayButtonIcon(MediaItem metadata) {
     // For TV shows
     if (metadata.isShow) {
       if (_onDeckEpisode != null) {
         final episode = _onDeckEpisode!;
         // Check if episode has been partially watched
-        if (episode.viewOffset != null && episode.viewOffset! > 0) {
+        if (episode.viewOffsetMs != null && episode.viewOffsetMs! > 0) {
           return Symbols.resume_rounded; // Resume icon
         }
       }
     } else {
       // For movies or episodes
-      if (metadata.viewOffset != null && metadata.viewOffset! > 0) {
+      if (metadata.viewOffsetMs != null && metadata.viewOffsetMs! > 0) {
         return Symbols.resume_rounded; // Resume icon
       }
     }

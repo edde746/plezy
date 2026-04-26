@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../connection/connection_registry.dart';
 import '../../i18n/strings.g.dart';
+import '../../profiles/active_plex_identity.dart';
+import '../../profiles/active_profile_provider.dart';
+import '../../profiles/plex_home_service.dart';
+import '../../profiles/profile_connection_registry.dart';
 import '../../providers/companion_remote_provider.dart';
-import '../../providers/user_profile_provider.dart';
 import '../../focus/focusable_button.dart';
 import '../../utils/app_logger.dart';
 
@@ -34,7 +38,6 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
 
   Future<void> _ensureServerRunning() async {
     final provider = context.read<CompanionRemoteProvider>();
-    if (provider.isHostServerRunning) return;
 
     setState(() {
       _isStarting = true;
@@ -42,10 +45,37 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
     });
 
     try {
-      final home = context.read<UserProfileProvider>().home;
-      await provider.ensureCryptoReady(home);
+      final connections = context.read<ConnectionRegistry>();
+      final activeProfile = context.read<ActiveProfileProvider>();
+      final profileConnections = context.read<ProfileConnectionRegistry>();
+      final plexHome = context.read<PlexHomeService>();
+      final identity = await resolveActivePlexIdentity(
+        activeProfile: activeProfile,
+        connections: connections,
+        profileConnections: profileConnections,
+      );
       if (!mounted) return;
-      await provider.startHostServer();
+      final home = identity == null ? null : await plexHome.materializePlexHomeForConnection(identity.account.id);
+      if (!mounted) return;
+      final ok = await provider.ensureCryptoReady(
+        home,
+        connections: connections,
+        activeProfile: activeProfile,
+        profileConnections: profileConnections,
+        identity: identity,
+        plexHomeForConnection: plexHome.materializePlexHomeForConnection,
+      );
+      if (!mounted) return;
+      if (!ok) {
+        setState(() {
+          _isStarting = false;
+          _errorMessage = t.companionRemote.pairing.cryptoInitFailed;
+        });
+        return;
+      }
+      if (!provider.isHostServerRunning) {
+        await provider.startHostServer();
+      }
 
       if (mounted) setState(() => _isStarting = false);
     } catch (e) {

@@ -18,52 +18,45 @@ void main() {
 
     test('reset rebuilds against current SharedPreferences', () async {
       final first = await StorageService.getInstance();
-      await first.savePlexToken('token-1');
+      await first.prefs.setString('plex_token', 'token-1');
       BaseSharedPreferencesService.resetForTesting();
 
       final second = await StorageService.getInstance();
       expect(identical(first, second), isFalse);
       // Reset only the cached singleton, not the underlying prefs — values survive.
+      // ignore: deprecated_member_use_from_same_package
       expect(second.getPlexToken(), 'token-1');
     });
   });
 
   // ============================================================
-  // Plex token / client identifier
+  // Plex token / client identifier (legacy, retained for migration)
   // ============================================================
 
-  group('PlexToken & ClientIdentifier', () {
-    test('savePlexToken persists value', () async {
+  group('PlexToken & ClientIdentifier (legacy migration slots)', () {
+    test('getPlexToken reads the legacy slot', () async {
       final s = await StorageService.getInstance();
+      // ignore: deprecated_member_use_from_same_package
       expect(s.getPlexToken(), isNull);
-      await s.savePlexToken('abc-123');
+      await s.prefs.setString('plex_token', 'abc-123');
+      // ignore: deprecated_member_use_from_same_package
       expect(s.getPlexToken(), 'abc-123');
-    });
-
-    test('saveClientIdentifier persists value', () async {
-      final s = await StorageService.getInstance();
-      expect(s.getClientIdentifier(), isNull);
-      await s.saveClientIdentifier('client-xyz');
-      expect(s.getClientIdentifier(), 'client-xyz');
     });
 
     test('getOrCreateClientIdentifier returns existing value when set', () async {
       final s = await StorageService.getInstance();
-      await s.saveClientIdentifier('preset-id');
+      await s.prefs.setString('client_identifier', 'preset-id');
       final result = await s.getOrCreateClientIdentifier();
       expect(result, 'preset-id');
-      expect(s.getClientIdentifier(), 'preset-id');
     });
 
     test('getOrCreateClientIdentifier generates and persists a UUID on first call', () async {
       final s = await StorageService.getInstance();
-      expect(s.getClientIdentifier(), isNull);
 
       final generated = await s.getOrCreateClientIdentifier();
       expect(generated, isNotEmpty);
       // UUIDv4 has 5 hyphen-separated segments.
       expect(generated.split('-'), hasLength(5));
-      expect(s.getClientIdentifier(), generated);
 
       // Second call returns the same value, not a new UUID.
       final again = await s.getOrCreateClientIdentifier();
@@ -72,10 +65,9 @@ void main() {
 
     test('getOrCreateClientIdentifier replaces empty stored value', () async {
       final s = await StorageService.getInstance();
-      await s.saveClientIdentifier('');
+      await s.prefs.setString('client_identifier', '');
       final generated = await s.getOrCreateClientIdentifier();
       expect(generated, isNotEmpty);
-      expect(s.getClientIdentifier(), generated);
     });
   });
 
@@ -105,47 +97,40 @@ void main() {
   });
 
   // ============================================================
-  // Multi-server JSON list & order
+  // Multi-server slot (legacy, only `getServersListJson` retained for migration)
   // ============================================================
 
-  group('Servers list & order', () {
-    test('servers list JSON round-trips', () async {
+  group('Servers list (legacy migration slot)', () {
+    test('legacy raw read returns null when nothing is stored', () async {
       final s = await StorageService.getInstance();
+      // ignore: deprecated_member_use_from_same_package
       expect(s.getServersListJson(), isNull);
-      const payload = '[{"name":"home"}]';
-      await s.saveServersListJson(payload);
-      expect(s.getServersListJson(), payload);
     });
 
     test('clearServersList removes the value', () async {
       final s = await StorageService.getInstance();
-      await s.saveServersListJson('[{"x":1}]');
+      // Write directly under the legacy key — the public setter is gone.
+      await s.prefs.setString('servers_list', '[{"x":1}]');
+      // ignore: deprecated_member_use_from_same_package
+      expect(s.getServersListJson(), '[{"x":1}]');
       await s.clearServersList();
+      // ignore: deprecated_member_use_from_same_package
       expect(s.getServersListJson(), isNull);
     });
 
-    test('server order round-trips and clears', () async {
+    test('clearMultiServerData clears legacy list + order + endpoint prefixes', () async {
       final s = await StorageService.getInstance();
-      expect(s.getServerOrder(), isNull);
-
-      await s.saveServerOrder(['srv-2', 'srv-1', 'srv-3']);
-      expect(s.getServerOrder(), ['srv-2', 'srv-1', 'srv-3']);
-
-      await s.clearServerOrder();
-      expect(s.getServerOrder(), isNull);
-    });
-
-    test('clearMultiServerData clears list + order + endpoint prefixes', () async {
-      final s = await StorageService.getInstance();
-      await s.saveServersListJson('[{"x":1}]');
-      await s.saveServerOrder(['a', 'b']);
+      // Write legacy values directly — the setters are gone.
+      await s.prefs.setString('servers_list', '[{"x":1}]');
+      await s.prefs.setString('server_order', json.encode(['a', 'b']));
       await s.saveServerEndpoint('a', 'http://foo.test');
       await s.saveServerEndpoint('b', 'http://bar.test');
 
       await s.clearMultiServerData();
 
+      // ignore: deprecated_member_use_from_same_package
       expect(s.getServersListJson(), isNull);
-      expect(s.getServerOrder(), isNull);
+      expect(s.prefs.getString('server_order'), isNull);
       expect(s.getServerEndpoint('a'), isNull);
       expect(s.getServerEndpoint('b'), isNull);
     });
@@ -190,7 +175,7 @@ void main() {
   });
 
   // ============================================================
-  // Library order (List<String>)
+  // Library order (List<String>) — scoped to active profile
   // ============================================================
 
   group('Library order', () {
@@ -205,39 +190,77 @@ void main() {
       expect(s.getLibraryOrder(), ['c', 'a', 'b']);
     });
 
-    test('legacy unscoped value migrates into scoped key when user UUID is set', () async {
+    test('legacy unscoped value migrates into scoped key when an active profile is set', () async {
       final s = await StorageService.getInstance();
 
       // Write a legacy (unscoped) library order, mimicking pre-multi-user data.
       await s.prefs.setString('library_order', json.encode(['x', 'y']));
 
-      // Set a current user UUID so reads/writes become scoped.
-      await s.saveCurrentUserUUID('user-1');
+      // Set an active profile so reads/writes become scoped.
+      await s.setActiveProfileId('local-user-1');
 
       final read = s.getLibraryOrder();
       expect(read, ['x', 'y']);
 
       // Migration should have copied the legacy value under the scoped key.
-      final scopedRaw = s.prefs.getString('user_user-1_library_order');
+      final scopedRaw = s.prefs.getString('user_local-user-1_library_order');
       expect(scopedRaw, json.encode(['x', 'y']));
+      expect(s.prefs.getString('library_order'), isNull);
+    });
+
+    test('migrated legacy order is not inherited by another profile', () async {
+      final s = await StorageService.getInstance();
+      await s.prefs.setString('library_order', json.encode(['legacy']));
+
+      await s.setActiveProfileId('local-user-1');
+      expect(s.getLibraryOrder(), ['legacy']);
+
+      await s.setActiveProfileId('local-user-2');
+      expect(s.getLibraryOrder(), isNull);
     });
 
     test('per-user scoping isolates orders', () async {
       final s = await StorageService.getInstance();
 
-      await s.saveCurrentUserUUID('user-1');
+      await s.setActiveProfileId('local-user-1');
       await s.saveLibraryOrder(['u1-a', 'u1-b']);
 
-      await s.saveCurrentUserUUID('user-2');
+      await s.setActiveProfileId('local-user-2');
       expect(s.getLibraryOrder(), isNull);
       await s.saveLibraryOrder(['u2-a']);
 
       // Switch back — user-1 sees their own list.
-      await s.saveCurrentUserUUID('user-1');
+      await s.setActiveProfileId('local-user-1');
       expect(s.getLibraryOrder(), ['u1-a', 'u1-b']);
 
-      await s.saveCurrentUserUUID('user-2');
+      await s.setActiveProfileId('local-user-2');
       expect(s.getLibraryOrder(), ['u2-a']);
+    });
+
+    test('plex_home profile id parses out the home-user UUID for the prefix', () async {
+      final s = await StorageService.getInstance();
+      // Format: `plex-home-{accountConnectionId}-{homeUserUuid}` where both
+      // the accountConnectionId AND the UUID contain hyphens. The scope must
+      // be the FULL 36-char UUID — `lastIndexOf('-')` would slice inside the
+      // UUID and break legacy `currentUserUUID`-scoped storage migration.
+      await s.setActiveProfileId('plex-home-plex.abc-def-123-aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee');
+      await s.saveLibraryOrder(['x']);
+      expect(s.prefs.getString('user_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee_library_order'), json.encode(['x']));
+    });
+
+    test('legacy currentUserUUID scope migrates into the plex-home profile slot', () async {
+      // Regression: with the old `lastIndexOf('-')` parser, the scope was
+      // only the trailing 12 hex chars of the UUID, so the per-user prefs
+      // written under the legacy `currentUserUUID` (which used the FULL
+      // UUID as the prefix) would not be picked up after migration.
+      final s = await StorageService.getInstance();
+      const uuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+
+      // Pre-seed the legacy per-user-scoped order under the full UUID.
+      await s.prefs.setString('user_${uuid}_library_order', json.encode(['legacy']));
+
+      await s.setActiveProfileId('plex-home-plex.abc-def-123-$uuid');
+      expect(s.getLibraryOrder(), ['legacy']);
     });
   });
 
@@ -261,6 +284,19 @@ void main() {
       await s.saveLibraryFilters({'genre': 'horror'}, sectionId: 'sec-1');
       expect(s.getLibraryFilters(sectionId: 'sec-1'), {'genre': 'horror'});
       expect(s.getLibraryFilters(), {'global': 'true'});
+    });
+
+    test('legacy per-section filters migrate once into scoped key', () async {
+      final s = await StorageService.getInstance();
+      await s.prefs.setString('library_filters_sec-1', json.encode({'genre': 'drama'}));
+
+      await s.setActiveProfileId('local-user-1');
+      expect(s.getLibraryFilters(sectionId: 'sec-1'), {'genre': 'drama'});
+      expect(s.prefs.getString('user_local-user-1_library_filters_sec-1'), json.encode({'genre': 'drama'}));
+      expect(s.prefs.getString('library_filters_sec-1'), isNull);
+
+      await s.setActiveProfileId('local-user-2');
+      expect(s.getLibraryFilters(sectionId: 'sec-1'), isEmpty);
     });
 
     test('library sort round-trips with descending flag', () async {
@@ -304,56 +340,18 @@ void main() {
   });
 
   // ============================================================
-  // User profile / UUID
+  // Current user UUID (legacy slot retained for migration)
   // ============================================================
 
-  group('User profile & UUID', () {
-    test('saveUserProfile + getUserProfile round-trip preserves nested data', () async {
+  group('CurrentUserUUID (legacy migration slot)', () {
+    test('clearCurrentUserUUID wipes the slot', () async {
       final s = await StorageService.getInstance();
-      expect(s.getUserProfile(), isNull);
-      final profile = {'id': 1, 'username': 'edde', 'email': 'e@example.test'};
-      await s.saveUserProfile(profile);
-      expect(s.getUserProfile(), profile);
-    });
-
-    test('saveCurrentUserUUID + clearCurrentUserUUID', () async {
-      final s = await StorageService.getInstance();
-      await s.saveCurrentUserUUID('u-1');
+      await s.prefs.setString('current_user_uuid', 'u-1');
+      // ignore: deprecated_member_use_from_same_package
       expect(s.getCurrentUserUUID(), 'u-1');
       await s.clearCurrentUserUUID();
+      // ignore: deprecated_member_use_from_same_package
       expect(s.getCurrentUserUUID(), isNull);
-    });
-  });
-
-  // ============================================================
-  // Home users cache (TTL)
-  // ============================================================
-
-  group('Home users cache', () {
-    test('saved cache is readable while non-expired', () async {
-      final s = await StorageService.getInstance();
-      await s.saveHomeUsersCache({'users': []});
-      expect(s.getHomeUsersCache(), {'users': []});
-    });
-
-    test('expired cache returns null and self-clears', () async {
-      final s = await StorageService.getInstance();
-      await s.saveHomeUsersCache({'users': []});
-      // Force-expire the cache by writing a past timestamp under the expiry key.
-      await s.prefs.setInt('home_users_cache_expiry', DateTime.now().millisecondsSinceEpoch - 1000);
-      expect(s.getHomeUsersCache(), isNull);
-      // After self-clear, both keys are gone.
-      expect(s.prefs.getString('home_users_cache'), isNull);
-      expect(s.prefs.getInt('home_users_cache_expiry'), isNull);
-    });
-
-    test('clearHomeUsersCache removes both data and expiry', () async {
-      final s = await StorageService.getInstance();
-      await s.saveHomeUsersCache({'users': []});
-      await s.clearHomeUsersCache();
-      expect(s.getHomeUsersCache(), isNull);
-      expect(s.prefs.getString('home_users_cache'), isNull);
-      expect(s.prefs.getInt('home_users_cache_expiry'), isNull);
     });
   });
 
@@ -376,7 +374,7 @@ void main() {
       await s.saveTotalEpisodeCount('srv:s1', 1);
       await s.saveTotalEpisodeCount('srv:s2', 2);
       // Unrelated keys must not bleed in.
-      await s.savePlexToken('tok');
+      await s.prefs.setString('plex_token', 'tok');
 
       final counts = s.loadAllEpisodeCounts();
       expect(counts, {'srv:s1': 1, 'srv:s2': 2});
@@ -400,37 +398,38 @@ void main() {
     test('removes credential keys, plex token, and multi-server data', () async {
       final s = await StorageService.getInstance();
 
-      await s.savePlexToken('tok-x');
-      await s.saveClientIdentifier('client-x');
-      await s.saveUserProfile({'id': 99});
-      await s.saveHomeUsersCache({'users': []});
-      await s.saveServersListJson('[{"x":1}]');
-      await s.saveServerOrder(['a']);
+      // Seed every legacy slot directly — the runtime setters were removed
+      // when we collapsed the legacy/new dual-write.
+      await s.prefs.setString('plex_token', 'tok-x');
+      await s.prefs.setString('client_identifier', 'client-x');
+      await s.prefs.setString('servers_list', '[{"x":1}]');
+      await s.prefs.setString('server_order', json.encode(['a']));
       await s.saveServerEndpoint('a', 'http://foo.test');
 
-      // Library prefs and unrelated counters: write WITHOUT a current-user UUID
-      // so they land on the legacy unscoped key. The credentials clear path
-      // wipes current_user_uuid; we want to confirm library data is untouched.
+      // Library prefs and unrelated counters: write WITHOUT an active profile id
+      // so they land on the legacy unscoped key.
       await s.saveLibraryOrder(['lib-1']);
       await s.saveTotalEpisodeCount('srv:s1', 7);
 
-      // Now set a user UUID — clearCredentials should remove this.
-      await s.saveCurrentUserUUID('u-x');
+      // Now seed current_user_uuid — clearCredentials should remove this.
+      await s.prefs.setString('current_user_uuid', 'u-x');
 
       await s.clearCredentials();
 
       // Credential-bucket keys all gone.
+      // ignore: deprecated_member_use_from_same_package
       expect(s.getPlexToken(), isNull);
-      expect(s.getClientIdentifier(), isNull);
+      expect(s.prefs.getString('client_identifier'), isNull);
+      // ignore: deprecated_member_use_from_same_package
       expect(s.getCurrentUserUUID(), isNull);
-      expect(s.getUserProfile(), isNull);
 
       // Multi-server data wiped.
+      // ignore: deprecated_member_use_from_same_package
       expect(s.getServersListJson(), isNull);
-      expect(s.getServerOrder(), isNull);
+      expect(s.prefs.getString('server_order'), isNull);
       expect(s.getServerEndpoint('a'), isNull);
 
-      // Library prefs and unrelated state untouched (user UUID is gone, so
+      // Library prefs and unrelated state untouched (no scope active, so
       // the scoped read falls through to the same legacy key it was written to).
       expect(s.getLibraryOrder(), ['lib-1']);
       expect(s.getTotalEpisodeCount('srv:s1'), 7);
@@ -446,7 +445,7 @@ void main() {
       final s = await StorageService.getInstance();
 
       // user-1's library prefs
-      await s.saveCurrentUserUUID('user-1');
+      await s.setActiveProfileId('local-user-1');
       await s.saveLibraryOrder(['u1-a', 'u1-b']);
       await s.saveSelectedLibraryKey('u1-key');
       await s.saveLibraryFilters({'genre': 'horror'}, sectionId: 'sec-1');
@@ -456,7 +455,7 @@ void main() {
       await s.saveHiddenLibraries({'h-1'});
 
       // user-2's library prefs (must not be touched by clearing user-1)
-      await s.saveCurrentUserUUID('user-2');
+      await s.setActiveProfileId('local-user-2');
       await s.saveLibraryOrder(['u2-a']);
       await s.saveSelectedLibraryKey('u2-key');
 
@@ -465,7 +464,7 @@ void main() {
       expect(s.getLibraryOrder(), isNull);
       expect(s.getSelectedLibraryKey(), isNull);
 
-      await s.saveCurrentUserUUID('user-1');
+      await s.setActiveProfileId('local-user-1');
       expect(s.getLibraryOrder(), ['u1-a', 'u1-b']);
       expect(s.getSelectedLibraryKey(), 'u1-key');
       expect(s.getLibraryFilters(sectionId: 'sec-1'), {'genre': 'horror'});
@@ -484,6 +483,20 @@ void main() {
       expect(s.getLibraryTab('sec-1'), isNull);
       expect(s.getHiddenLibraries(), isEmpty);
     });
+
+    test('clearing scoped prefs also consumes pending legacy values', () async {
+      final s = await StorageService.getInstance();
+      await s.prefs.setString('library_order', json.encode(['legacy']));
+      await s.prefs.setString('library_filters_sec-1', json.encode({'genre': 'drama'}));
+
+      await s.setActiveProfileId('local-user-1');
+      await s.clearLibraryPreferences();
+
+      expect(s.getLibraryOrder(), isNull);
+      expect(s.getLibraryFilters(sectionId: 'sec-1'), isEmpty);
+      expect(s.prefs.getString('library_order'), isNull);
+      expect(s.prefs.getString('library_filters_sec-1'), isNull);
+    });
   });
 
   // ============================================================
@@ -494,17 +507,17 @@ void main() {
     test('combines credentials and library-preferences clear', () async {
       final s = await StorageService.getInstance();
 
-      await s.savePlexToken('tok');
-      await s.saveCurrentUserUUID('user-1');
+      await s.prefs.setString('plex_token', 'tok');
+      await s.setActiveProfileId('local-user-1');
       await s.saveLibraryOrder(['lib-a']);
       await s.saveHiddenLibraries({'h-1'});
 
       await s.clearUserData();
 
+      // ignore: deprecated_member_use_from_same_package
       expect(s.getPlexToken(), isNull);
-      // current_user_uuid is part of the credentials bucket; clearing it
-      // means the scoped-key prefix flips to empty and reads return null.
-      expect(s.getCurrentUserUUID(), isNull);
+      // setActiveProfileId is unaffected by clearCredentials, so the prefix
+      // is still active — clearLibraryPreferences cleared the scoped values.
       expect(s.getLibraryOrder(), isNull);
       expect(s.getHiddenLibraries(), isEmpty);
     });

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_library.dart';
 import 'package:plezy/mixins/library_tab_state.dart';
-import 'package:plezy/models/plex_library.dart';
 import 'package:provider/provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
@@ -22,12 +24,12 @@ import 'package:plezy/services/multi_server_manager.dart';
 //     [PlexClient] inside a [MultiServerManager] (which itself requires a
 //     server registry, network, and prefs) or a deep fake of the manager's
 //     client cache. Not worth it for a mixin whose only contribution is
-//     `context.getClientForLibrary(library)`.
+//     `context.getPlexClientForLibrary(library)`.
 
 class _Probe extends StatefulWidget {
   const _Probe({required this.library, required this.onState});
 
-  final PlexLibrary library;
+  final MediaLibrary library;
   final void Function(_ProbeState state, BuildContext context) onState;
 
   @override
@@ -36,7 +38,7 @@ class _Probe extends StatefulWidget {
 
 class _ProbeState extends State<_Probe> with LibraryTabStateMixin<_Probe> {
   @override
-  PlexLibrary get library => widget.library;
+  MediaLibrary get library => widget.library;
 
   @override
   Widget build(BuildContext context) {
@@ -49,8 +51,8 @@ class _ProbeState extends State<_Probe> with LibraryTabStateMixin<_Probe> {
   }
 }
 
-PlexLibrary _lib({String? serverId, String key = '1'}) =>
-    PlexLibrary(key: key, title: 'Movies', type: 'movie', serverId: serverId);
+MediaLibrary _lib({String? serverId, String key = '1'}) =>
+    MediaLibrary(id: key, backend: MediaBackend.plex, title: 'Movies', kind: MediaKind.movie, serverId: serverId);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -65,7 +67,7 @@ void main() {
 
       expect(identical(state.library, library), isTrue);
       expect(state.library.serverId, 'srv-A');
-      expect(state.library.key, 'lib-1');
+      expect(state.library.id, 'lib-1');
     });
 
     testWidgets('getClientForLibrary throws when no server matches and no fallback online', (tester) async {

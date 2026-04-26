@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:auto_updater/auto_updater.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:logger/logger.dart';
-import 'package:plezy/utils/plex_http_client.dart';
+import 'package:plezy/utils/media_server_http_client.dart';
 import 'base_shared_preferences_service.dart';
 
 /// Service to check for new versions on GitHub

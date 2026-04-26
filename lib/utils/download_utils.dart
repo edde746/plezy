@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../i18n/strings.g.dart';
-import '../models/plex_metadata.dart';
+import '../media/media_item.dart';
+import '../media/media_kind.dart';
+import '../media/media_server_client.dart';
 import '../database/app_database.dart';
 import '../providers/download_provider.dart';
-import '../services/plex_client.dart';
 import '../services/sync_rule_executor.dart';
 import 'content_utils.dart';
 import 'dialogs.dart';
 import 'download_version_utils.dart';
-import 'global_key_utils.dart';
 import 'snackbar_helper.dart';
 
 /// Dialog option for the download picker. Typed to avoid stringly-typed values.
@@ -51,17 +51,17 @@ class DownloadResult {
 /// Returns a [DownloadResult], or null if cancelled.
 Future<DownloadResult?> showDownloadOptionsAndQueue(
   BuildContext context, {
-  required PlexMetadata metadata,
-  required PlexClient client,
+  required MediaItem metadata,
+  required MediaServerClient client,
   required DownloadProvider downloadProvider,
 }) async {
-  final mt = metadata.mediaType;
+  final kind = metadata.kind;
 
   var filter = DownloadFilter.all;
   int? maxCount;
   bool keepSynced = false;
 
-  if (mt == PlexMediaType.show || mt == PlexMediaType.season) {
+  if (kind == MediaKind.show || kind == MediaKind.season) {
     int? customCount;
     final selected = await showOptionPickerDialog<_DownloadChoice>(
       context,
@@ -103,7 +103,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
     }
 
     // For unwatched-based options on shows, offer sync vs one-time download
-    if (filter == DownloadFilter.unwatched && mt == PlexMediaType.show && context.mounted) {
+    if (filter == DownloadFilter.unwatched && kind == MediaKind.show && context.mounted) {
       final syncChoice = await showOptionPickerDialog<_SyncChoice>(
         context,
         title: t.downloads.downloadNow,
@@ -125,16 +125,17 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   // Create or update sync rule before queueing (so the rule exists even if queue fails)
   bool syncRuleUpdated = false;
   if (keepSynced) {
-    final globalKey = buildGlobalKey(metadata.serverId ?? client.serverId, metadata.ratingKey);
-    syncRuleUpdated = downloadProvider.hasSyncRule(globalKey);
-
     final syncCount = maxCount ?? 0; // 0 means "all unwatched" for the rule
+    final ruleKey = downloadProvider.syncRuleKeyFor(metadata.serverId ?? client.serverId, metadata.id);
+    syncRuleUpdated = downloadProvider.hasSyncRule(ruleKey);
+
     await downloadProvider.createSyncRule(
       serverId: metadata.serverId ?? client.serverId,
-      ratingKey: metadata.ratingKey,
-      targetType: metadata.type ?? ContentTypes.show,
+      ratingKey: metadata.id,
+      targetType: metadata.kind.id.isNotEmpty ? metadata.kind.id : ContentTypes.show,
       episodeCount: syncCount,
       mediaIndex: versionConfig.mediaIndex,
+      targetMetadata: metadata,
     );
   }
 
@@ -162,10 +163,10 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
 /// [targetType] must be [ContentTypes.collection] or [ContentTypes.playlist].
 Future<DownloadResult?> showListDownloadOptionsAndQueue(
   BuildContext context, {
-  required PlexMetadata rootMetadata,
+  required MediaItem rootMetadata,
   required String targetType,
-  required List<PlexMetadata> items,
-  required PlexClient client,
+  required List<MediaItem> items,
+  required MediaServerClient client,
   required DownloadProvider downloadProvider,
 }) async {
   assert(targetType == ContentTypes.collection || targetType == ContentTypes.playlist);
@@ -192,20 +193,20 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
   if (syncChoice == null || !context.mounted) return null;
 
   final serverId = rootMetadata.serverId ?? client.serverId;
-  final globalKey = buildGlobalKey(serverId, rootMetadata.ratingKey);
   final filterString = selectedFilter == DownloadFilter.unwatched ? SyncRuleFilter.unwatched : SyncRuleFilter.all;
 
   bool syncRuleCreated = false;
   bool syncRuleUpdated = false;
 
   if (syncChoice == _SyncChoice.keepSynced) {
-    if (downloadProvider.hasSyncRule(globalKey)) {
-      await downloadProvider.updateSyncRuleFilter(globalKey, filterString);
+    final ruleKey = downloadProvider.syncRuleKeyFor(serverId, rootMetadata.id);
+    if (downloadProvider.hasSyncRule(ruleKey)) {
+      await downloadProvider.updateSyncRuleFilter(ruleKey, filterString);
       syncRuleUpdated = true;
     } else {
       await downloadProvider.createSyncRule(
         serverId: serverId,
-        ratingKey: rootMetadata.ratingKey,
+        ratingKey: rootMetadata.id,
         targetType: targetType,
         episodeCount: 0,
         mediaIndex: 0,
@@ -229,9 +230,9 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
 /// Shows the shared list-download dialog for a playlist.
 Future<DownloadResult?> showPlaylistDownloadOptionsAndQueue(
   BuildContext context, {
-  required PlexMetadata playlistMetadata,
-  required List<PlexMetadata> items,
-  required PlexClient client,
+  required MediaItem playlistMetadata,
+  required List<MediaItem> items,
+  required MediaServerClient client,
   required DownloadProvider downloadProvider,
 }) => showListDownloadOptionsAndQueue(
   context,
@@ -245,9 +246,9 @@ Future<DownloadResult?> showPlaylistDownloadOptionsAndQueue(
 /// Shows the shared list-download dialog for a collection.
 Future<DownloadResult?> showCollectionDownloadOptionsAndQueue(
   BuildContext context, {
-  required PlexMetadata collectionMetadata,
-  required List<PlexMetadata> items,
-  required PlexClient client,
+  required MediaItem collectionMetadata,
+  required List<MediaItem> items,
+  required MediaServerClient client,
   required DownloadProvider downloadProvider,
 }) => showListDownloadOptionsAndQueue(
   context,

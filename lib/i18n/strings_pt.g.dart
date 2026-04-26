@@ -11,7 +11,7 @@ import 'package:slang/generated.dart';
 import 'strings.g.dart';
 
 // Path: <root>
-class TranslationsPt with BaseTranslations<AppLocale, Translations> implements Translations {
+class TranslationsPt extends Translations with BaseTranslations<AppLocale, Translations> {
 	/// You can call this constructor and build your own translation instance of this locale.
 	/// Constructing via the enum [AppLocale.build] is preferred.
 	TranslationsPt({Map<String, Node>? overrides, PluralResolver? cardinalResolver, PluralResolver? ordinalResolver, TranslationMetadata<AppLocale, Translations>? meta})
@@ -21,7 +21,9 @@ class TranslationsPt with BaseTranslations<AppLocale, Translations> implements T
 		    overrides: overrides ?? {},
 		    cardinalResolver: cardinalResolver,
 		    ordinalResolver: ordinalResolver,
-		  ) {
+		  ),
+		  super(cardinalResolver: cardinalResolver, ordinalResolver: ordinalResolver) {
+		super.$meta.setFlatMapFunction($meta.getTranslation); // copy base translations to super.$meta
 		$meta.setFlatMapFunction(_flatMapFunction);
 	}
 
@@ -29,7 +31,7 @@ class TranslationsPt with BaseTranslations<AppLocale, Translations> implements T
 	@override final TranslationMetadata<AppLocale, Translations> $meta;
 
 	/// Access flat map
-	@override dynamic operator[](String key) => $meta.getTranslation(key);
+	@override dynamic operator[](String key) => $meta.getTranslation(key) ?? super.$meta.getTranslation(key);
 
 	late final TranslationsPt _root = this; // ignore: unused_field
 
@@ -55,6 +57,8 @@ class TranslationsPt with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsSubtitlingStylingPt subtitlingStyling = _TranslationsSubtitlingStylingPt._(_root);
 	@override late final _TranslationsMpvConfigPt mpvConfig = _TranslationsMpvConfigPt._(_root);
 	@override late final _TranslationsDialogPt dialog = _TranslationsDialogPt._(_root);
+	@override late final _TranslationsProfilesPt profiles = _TranslationsProfilesPt._(_root);
+	@override late final _TranslationsConnectionsPt connections = _TranslationsConnectionsPt._(_root);
 	@override late final _TranslationsDiscoverPt discover = _TranslationsDiscoverPt._(_root);
 	@override late final _TranslationsErrorsPt errors = _TranslationsErrorsPt._(_root);
 	@override late final _TranslationsLibrariesPt libraries = _TranslationsLibrariesPt._(_root);
@@ -78,11 +82,12 @@ class TranslationsPt with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsServerTasksPt serverTasks = _TranslationsServerTasksPt._(_root);
 	@override late final _TranslationsTraktPt trakt = _TranslationsTraktPt._(_root);
 	@override late final _TranslationsTrackersPt trackers = _TranslationsTrackersPt._(_root);
+	@override late final _TranslationsAddServerPt addServer = _TranslationsAddServerPt._(_root);
 }
 
 // Path: app
-class _TranslationsAppPt implements TranslationsAppEn {
-	_TranslationsAppPt._(this._root);
+class _TranslationsAppPt extends TranslationsAppEn {
+	_TranslationsAppPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -91,12 +96,13 @@ class _TranslationsAppPt implements TranslationsAppEn {
 }
 
 // Path: auth
-class _TranslationsAuthPt implements TranslationsAuthEn {
-	_TranslationsAuthPt._(this._root);
+class _TranslationsAuthPt extends TranslationsAuthEn {
+	_TranslationsAuthPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
 	// Translations
+	@override String get signIn => 'Entrar';
 	@override String get signInWithPlex => 'Entrar com Plex';
 	@override String get showQRCode => 'Mostrar QR Code';
 	@override String get authenticate => 'Autenticar';
@@ -104,11 +110,19 @@ class _TranslationsAuthPt implements TranslationsAuthEn {
 	@override String get scanQRToSignIn => 'Escaneie este QR code para entrar';
 	@override String get waitingForAuth => 'Aguardando autenticação...\nConclua o login no seu navegador.';
 	@override String get useBrowser => 'Usar navegador';
+	@override String get or => 'ou';
+	@override String get connectToJellyfin => 'Conectar ao Jellyfin';
+	@override String get useQuickConnect => 'Usar Quick Connect';
+	@override String get quickConnectCode => 'Código do Quick Connect';
+	@override String get quickConnectInstructions => 'Abra o seu servidor Jellyfin num navegador, inicie sessão e escolha Quick Connect no menu do utilizador. Insira este código para aprovar o início de sessão.';
+	@override String get quickConnectWaiting => 'A aguardar aprovação…';
+	@override String get quickConnectCancel => 'Cancelar';
+	@override String get quickConnectExpired => 'O código do Quick Connect expirou antes da aprovação. Tente novamente.';
 }
 
 // Path: common
-class _TranslationsCommonPt implements TranslationsCommonEn {
-	_TranslationsCommonPt._(this._root);
+class _TranslationsCommonPt extends TranslationsCommonEn {
+	_TranslationsCommonPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -160,8 +174,8 @@ class _TranslationsCommonPt implements TranslationsCommonEn {
 }
 
 // Path: screens
-class _TranslationsScreensPt implements TranslationsScreensEn {
-	_TranslationsScreensPt._(this._root);
+class _TranslationsScreensPt extends TranslationsScreensEn {
+	_TranslationsScreensPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -174,8 +188,8 @@ class _TranslationsScreensPt implements TranslationsScreensEn {
 }
 
 // Path: update
-class _TranslationsUpdatePt implements TranslationsUpdateEn {
-	_TranslationsUpdatePt._(this._root);
+class _TranslationsUpdatePt extends TranslationsUpdateEn {
+	_TranslationsUpdatePt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -190,8 +204,8 @@ class _TranslationsUpdatePt implements TranslationsUpdateEn {
 }
 
 // Path: settings
-class _TranslationsSettingsPt implements TranslationsSettingsEn {
-	_TranslationsSettingsPt._(this._root);
+class _TranslationsSettingsPt extends TranslationsSettingsEn {
+	_TranslationsSettingsPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -226,12 +240,12 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get gridView => 'Grade';
 	@override String get listView => 'Lista';
 	@override String get showHeroSection => 'Mostrar Seção de Destaque';
-	@override String get useGlobalHubs => 'Usar Layout Plex Home';
-	@override String get useGlobalHubsDescription => 'Mostrar hubs da página inicial como o cliente oficial Plex. Quando desativado, mostra recomendações por biblioteca.';
+	@override String get useGlobalHubs => 'Use Home Layout';
+	@override String get useGlobalHubsDescription => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.';
 	@override String get showServerNameOnHubs => 'Mostrar Nome do Servidor nos Hubs';
 	@override String get showServerNameOnHubsDescription => 'Sempre exibir o nome do servidor nos títulos dos hubs. Quando desativado, mostra apenas para nomes duplicados.';
 	@override String get groupLibrariesByServer => 'Agrupar Bibliotecas por Servidor';
-	@override String get groupLibrariesByServerDescription => 'Mostra um cabeçalho para cada servidor Plex na barra lateral quando você está conectado a vários servidores.';
+	@override String get groupLibrariesByServerDescription => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.';
 	@override String get alwaysKeepSidebarOpen => 'Manter Barra Lateral Sempre Aberta';
 	@override String get alwaysKeepSidebarOpenDescription => 'A barra lateral fica expandida e a área de conteúdo se ajusta';
 	@override String get showUnwatchedCount => 'Mostrar Contagem de Não Assistidos';
@@ -385,8 +399,8 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 }
 
 // Path: search
-class _TranslationsSearchPt implements TranslationsSearchEn {
-	_TranslationsSearchPt._(this._root);
+class _TranslationsSearchPt extends TranslationsSearchEn {
+	_TranslationsSearchPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -398,8 +412,8 @@ class _TranslationsSearchPt implements TranslationsSearchEn {
 }
 
 // Path: hotkeys
-class _TranslationsHotkeysPt implements TranslationsHotkeysEn {
-	_TranslationsHotkeysPt._(this._root);
+class _TranslationsHotkeysPt extends TranslationsHotkeysEn {
+	_TranslationsHotkeysPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -410,8 +424,8 @@ class _TranslationsHotkeysPt implements TranslationsHotkeysEn {
 }
 
 // Path: fileInfo
-class _TranslationsFileInfoPt implements TranslationsFileInfoEn {
-	_TranslationsFileInfoPt._(this._root);
+class _TranslationsFileInfoPt extends TranslationsFileInfoEn {
+	_TranslationsFileInfoPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -444,8 +458,8 @@ class _TranslationsFileInfoPt implements TranslationsFileInfoEn {
 }
 
 // Path: mediaMenu
-class _TranslationsMediaMenuPt implements TranslationsMediaMenuEn {
-	_TranslationsMediaMenuPt._(this._root);
+class _TranslationsMediaMenuPt extends TranslationsMediaMenuEn {
+	_TranslationsMediaMenuPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -468,8 +482,8 @@ class _TranslationsMediaMenuPt implements TranslationsMediaMenuEn {
 }
 
 // Path: accessibility
-class _TranslationsAccessibilityPt implements TranslationsAccessibilityEn {
-	_TranslationsAccessibilityPt._(this._root);
+class _TranslationsAccessibilityPt extends TranslationsAccessibilityEn {
+	_TranslationsAccessibilityPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -485,8 +499,8 @@ class _TranslationsAccessibilityPt implements TranslationsAccessibilityEn {
 }
 
 // Path: tooltips
-class _TranslationsTooltipsPt implements TranslationsTooltipsEn {
-	_TranslationsTooltipsPt._(this._root);
+class _TranslationsTooltipsPt extends TranslationsTooltipsEn {
+	_TranslationsTooltipsPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -498,8 +512,8 @@ class _TranslationsTooltipsPt implements TranslationsTooltipsEn {
 }
 
 // Path: videoControls
-class _TranslationsVideoControlsPt implements TranslationsVideoControlsEn {
-	_TranslationsVideoControlsPt._(this._root);
+class _TranslationsVideoControlsPt extends TranslationsVideoControlsEn {
+	_TranslationsVideoControlsPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -574,8 +588,8 @@ class _TranslationsVideoControlsPt implements TranslationsVideoControlsEn {
 }
 
 // Path: userStatus
-class _TranslationsUserStatusPt implements TranslationsUserStatusEn {
-	_TranslationsUserStatusPt._(this._root);
+class _TranslationsUserStatusPt extends TranslationsUserStatusEn {
+	_TranslationsUserStatusPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -587,8 +601,8 @@ class _TranslationsUserStatusPt implements TranslationsUserStatusEn {
 }
 
 // Path: messages
-class _TranslationsMessagesPt implements TranslationsMessagesEn {
-	_TranslationsMessagesPt._(this._root);
+class _TranslationsMessagesPt extends TranslationsMessagesEn {
+	_TranslationsMessagesPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -607,7 +621,7 @@ class _TranslationsMessagesPt implements TranslationsMessagesEn {
 	@override String get musicNotSupported => 'Reprodução de música ainda não é suportada';
 	@override String get noDescriptionAvailable => 'Nenhuma descrição disponível';
 	@override String get noProfilesAvailable => 'Nenhum perfil disponível';
-	@override String get contactAdminForProfiles => 'Contacte o seu administrador Plex para adicionar perfis';
+	@override String get contactAdminForProfiles => 'Contact your server administrator to add profiles';
 	@override String get unableToDetermineLibrarySection => 'Não é possível determinar a secção da biblioteca para este item';
 	@override String get logsCleared => 'Logs limpos';
 	@override String get logsCopied => 'Logs copiados para a área de transferência';
@@ -636,8 +650,8 @@ class _TranslationsMessagesPt implements TranslationsMessagesEn {
 }
 
 // Path: subtitlingStyling
-class _TranslationsSubtitlingStylingPt implements TranslationsSubtitlingStylingEn {
-	_TranslationsSubtitlingStylingPt._(this._root);
+class _TranslationsSubtitlingStylingPt extends TranslationsSubtitlingStylingEn {
+	_TranslationsSubtitlingStylingPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -658,8 +672,8 @@ class _TranslationsSubtitlingStylingPt implements TranslationsSubtitlingStylingE
 }
 
 // Path: mpvConfig
-class _TranslationsMpvConfigPt implements TranslationsMpvConfigEn {
-	_TranslationsMpvConfigPt._(this._root);
+class _TranslationsMpvConfigPt extends TranslationsMpvConfigEn {
+	_TranslationsMpvConfigPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -681,8 +695,8 @@ class _TranslationsMpvConfigPt implements TranslationsMpvConfigEn {
 }
 
 // Path: dialog
-class _TranslationsDialogPt implements TranslationsDialogEn {
-	_TranslationsDialogPt._(this._root);
+class _TranslationsDialogPt extends TranslationsDialogEn {
+	_TranslationsDialogPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -690,9 +704,77 @@ class _TranslationsDialogPt implements TranslationsDialogEn {
 	@override String get confirmAction => 'Confirmar Ação';
 }
 
+// Path: profiles
+class _TranslationsProfilesPt extends TranslationsProfilesEn {
+	_TranslationsProfilesPt._(TranslationsPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get addPlezyProfile => 'Adicionar perfil Plezy';
+	@override String get switchingProfile => 'Mudando perfil…';
+	@override String get deleteThisProfileTitle => 'Excluir este perfil?';
+	@override String deleteThisProfileMessage({required Object displayName}) => '${displayName} será removido. As conexões não serão afetadas.';
+	@override String get active => 'Ativo';
+	@override String get manage => 'Gerenciar';
+	@override String get delete => 'Excluir';
+	@override String get signOut => 'Sair';
+	@override String get signOutPlexTitle => 'Sair do Plex?';
+	@override String signOutPlexMessage({required Object displayName}) => '${displayName} e todos os usuários do Plex Home desta conta serão removidos deste dispositivo. Você pode entrar novamente a qualquer momento.';
+	@override String get signedOutPlex => 'Saiu do Plex.';
+	@override String get signOutFailed => 'Falha ao sair.';
+	@override String get sectionTitle => 'Perfis';
+	@override String get summarySingle => 'Adicione perfis para mesclar usuários gerenciados e identidades locais';
+	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} perfis · ativo: ${activeName}';
+	@override String summaryMultiple({required Object count}) => '${count} perfis';
+	@override String get removeConnectionTitle => 'Remover conexão?';
+	@override String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => '${displayName} perderá o acesso a ${connectionLabel}. A conexão em si continua disponível para outros perfis.';
+	@override String get deleteProfileTitle => 'Excluir perfil?';
+	@override String deleteProfileMessage({required Object displayName}) => 'Isso remove ${displayName} e todas as suas conexões deste dispositivo. Os servidores Plex/Jellyfin subjacentes não são afetados.';
+	@override String get profileNameLabel => 'Nome do perfil';
+	@override String get pinProtectionLabel => 'Proteção por PIN';
+	@override String get pinManagedByPlex => 'PIN gerenciado pelo Plex. Edite em plex.tv.';
+	@override String get noPinSetEditOnPlex => 'Nenhum PIN definido. Para exigir um, edite o usuário Home em plex.tv.';
+	@override String get setPin => 'Definir PIN';
+	@override String get connectionsLabel => 'Conexões';
+	@override String get add => 'Adicionar';
+	@override String get deleteProfileButton => 'Excluir perfil';
+	@override String get noConnectionsHint => 'Sem conexões — adicione uma para usar este perfil.';
+	@override String get plexHomeAccount => 'Conta Plex Home';
+	@override String get connectionDefault => 'Padrão';
+	@override String get makeDefault => 'Definir como padrão';
+	@override String get removeConnection => 'Remover';
+	@override String borrowAddTo({required Object displayName}) => 'Adicionar a ${displayName}';
+	@override String get borrowExplain => 'Tome emprestada uma conexão de outro perfil. Perfis de origem protegidos por PIN pedem o PIN antes de compartilhar.';
+	@override String get borrowEmpty => 'Nada para emprestar ainda.';
+	@override String get borrowEmptySubtitle => 'Conecte primeiro uma conta Plex ou servidor Jellyfin a outro perfil e volte aqui.';
+	@override String get newProfile => 'Novo perfil';
+	@override String get profileNameHint => 'ex.: Visitantes, Crianças, Sala de família';
+	@override String get pinProtectionOptional => 'Proteção por PIN (opcional)';
+	@override String get pinExplain => 'PIN de 4 dígitos necessário para alternar para este perfil. Barreira suave — quem puder limpar os dados do app pode contorná-la.';
+	@override String get continueButton => 'Continuar';
+	@override String get pinsDontMatch => 'Os PINs não correspondem';
+}
+
+// Path: connections
+class _TranslationsConnectionsPt extends TranslationsConnectionsEn {
+	_TranslationsConnectionsPt._(TranslationsPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get sectionTitle => 'Conexões';
+	@override String get addConnection => 'Adicionar conexão';
+	@override String get addConnectionSubtitleNoProfile => 'Faça login com Plex ou conecte um servidor Jellyfin';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Adicionar a ${displayName} — conta Plex, servidor Jellyfin ou emprestar de outro perfil';
+	@override String sessionExpiredOne({required Object name}) => 'Sessão expirada para ${name}';
+	@override String sessionExpiredMany({required Object count}) => 'Sessão expirada para ${count} servidores';
+	@override String get signInAgain => 'Entrar novamente';
+}
+
 // Path: discover
-class _TranslationsDiscoverPt implements TranslationsDiscoverEn {
-	_TranslationsDiscoverPt._(this._root);
+class _TranslationsDiscoverPt extends TranslationsDiscoverEn {
+	_TranslationsDiscoverPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -702,6 +784,8 @@ class _TranslationsDiscoverPt implements TranslationsDiscoverEn {
 	@override String get noContentAvailable => 'Nenhum conteúdo disponível';
 	@override String get addMediaToLibraries => 'Adicione mídias às suas bibliotecas';
 	@override String get continueWatching => 'Continuar Assistindo';
+	@override String get nextUp => 'A seguir';
+	@override String get recentlyAdded => 'Adicionados recentemente';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Sinopse';
 	@override String get cast => 'Elenco';
@@ -714,15 +798,15 @@ class _TranslationsDiscoverPt implements TranslationsDiscoverEn {
 }
 
 // Path: errors
-class _TranslationsErrorsPt implements TranslationsErrorsEn {
-	_TranslationsErrorsPt._(this._root);
+class _TranslationsErrorsPt extends TranslationsErrorsEn {
+	_TranslationsErrorsPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
 	// Translations
 	@override String searchFailed({required Object error}) => 'Falha na busca: ${error}';
 	@override String connectionTimeout({required Object context}) => 'Tempo de conexão esgotado ao carregar ${context}';
-	@override String get connectionFailed => 'Não foi possível conectar ao servidor Plex';
+	@override String get connectionFailed => 'Unable to connect to media server';
 	@override String failedToLoad({required Object context, required Object error}) => 'Falha ao carregar ${context}: ${error}';
 	@override String get noClientAvailable => 'Nenhum cliente disponível';
 	@override String authenticationFailed({required Object error}) => 'Falha na autenticação: ${error}';
@@ -731,11 +815,13 @@ class _TranslationsErrorsPt implements TranslationsErrorsEn {
 	@override String get invalidToken => 'Token inválido';
 	@override String failedToVerifyToken({required Object error}) => 'Falha ao verificar token: ${error}';
 	@override String failedToSwitchProfile({required Object displayName}) => 'Falha ao trocar para ${displayName}';
+	@override String failedToDeleteProfile({required Object displayName}) => 'Falha ao excluir ${displayName}';
+	@override String get failedToRate => 'Não foi possível atualizar a classificação';
 }
 
 // Path: libraries
-class _TranslationsLibrariesPt implements TranslationsLibrariesEn {
-	_TranslationsLibrariesPt._(this._root);
+class _TranslationsLibrariesPt extends TranslationsLibrariesEn {
+	_TranslationsLibrariesPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -780,11 +866,13 @@ class _TranslationsLibrariesPt implements TranslationsLibrariesEn {
 	@override String get folders => 'pastas';
 	@override late final _TranslationsLibrariesTabsPt tabs = _TranslationsLibrariesTabsPt._(_root);
 	@override late final _TranslationsLibrariesGroupingsPt groupings = _TranslationsLibrariesGroupingsPt._(_root);
+	@override late final _TranslationsLibrariesFilterCategoriesPt filterCategories = _TranslationsLibrariesFilterCategoriesPt._(_root);
+	@override late final _TranslationsLibrariesSortLabelsPt sortLabels = _TranslationsLibrariesSortLabelsPt._(_root);
 }
 
 // Path: about
-class _TranslationsAboutPt implements TranslationsAboutEn {
-	_TranslationsAboutPt._(this._root);
+class _TranslationsAboutPt extends TranslationsAboutEn {
+	_TranslationsAboutPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -792,13 +880,13 @@ class _TranslationsAboutPt implements TranslationsAboutEn {
 	@override String get title => 'Sobre';
 	@override String get openSourceLicenses => 'Licenças Open Source';
 	@override String versionLabel({required Object version}) => 'Versão ${version}';
-	@override String get appDescription => 'Um belo cliente Plex para Flutter';
+	@override String get appDescription => 'Um belo cliente Plex e Jellyfin para Flutter';
 	@override String get viewLicensesDescription => 'Ver licenças de bibliotecas de terceiros';
 }
 
 // Path: serverSelection
-class _TranslationsServerSelectionPt implements TranslationsServerSelectionEn {
-	_TranslationsServerSelectionPt._(this._root);
+class _TranslationsServerSelectionPt extends TranslationsServerSelectionEn {
+	_TranslationsServerSelectionPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -809,8 +897,8 @@ class _TranslationsServerSelectionPt implements TranslationsServerSelectionEn {
 }
 
 // Path: hubDetail
-class _TranslationsHubDetailPt implements TranslationsHubDetailEn {
-	_TranslationsHubDetailPt._(this._root);
+class _TranslationsHubDetailPt extends TranslationsHubDetailEn {
+	_TranslationsHubDetailPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -823,8 +911,8 @@ class _TranslationsHubDetailPt implements TranslationsHubDetailEn {
 }
 
 // Path: logs
-class _TranslationsLogsPt implements TranslationsLogsEn {
-	_TranslationsLogsPt._(this._root);
+class _TranslationsLogsPt extends TranslationsLogsEn {
+	_TranslationsLogsPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -835,8 +923,8 @@ class _TranslationsLogsPt implements TranslationsLogsEn {
 }
 
 // Path: licenses
-class _TranslationsLicensesPt implements TranslationsLicensesEn {
-	_TranslationsLicensesPt._(this._root);
+class _TranslationsLicensesPt extends TranslationsLicensesEn {
+	_TranslationsLicensesPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -848,8 +936,8 @@ class _TranslationsLicensesPt implements TranslationsLicensesEn {
 }
 
 // Path: navigation
-class _TranslationsNavigationPt implements TranslationsNavigationEn {
-	_TranslationsNavigationPt._(this._root);
+class _TranslationsNavigationPt extends TranslationsNavigationEn {
+	_TranslationsNavigationPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -860,8 +948,8 @@ class _TranslationsNavigationPt implements TranslationsNavigationEn {
 }
 
 // Path: liveTv
-class _TranslationsLiveTvPt implements TranslationsLiveTvEn {
-	_TranslationsLiveTvPt._(this._root);
+class _TranslationsLiveTvPt extends TranslationsLiveTvEn {
+	_TranslationsLiveTvPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -892,8 +980,8 @@ class _TranslationsLiveTvPt implements TranslationsLiveTvEn {
 }
 
 // Path: collections
-class _TranslationsCollectionsPt implements TranslationsCollectionsEn {
-	_TranslationsCollectionsPt._(this._root);
+class _TranslationsCollectionsPt extends TranslationsCollectionsEn {
+	_TranslationsCollectionsPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -923,8 +1011,8 @@ class _TranslationsCollectionsPt implements TranslationsCollectionsEn {
 }
 
 // Path: playlists
-class _TranslationsPlaylistsPt implements TranslationsPlaylistsEn {
-	_TranslationsPlaylistsPt._(this._root);
+class _TranslationsPlaylistsPt extends TranslationsPlaylistsEn {
+	_TranslationsPlaylistsPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -957,8 +1045,8 @@ class _TranslationsPlaylistsPt implements TranslationsPlaylistsEn {
 }
 
 // Path: watchTogether
-class _TranslationsWatchTogetherPt implements TranslationsWatchTogetherEn {
-	_TranslationsWatchTogetherPt._(this._root);
+class _TranslationsWatchTogetherPt extends TranslationsWatchTogetherEn {
+	_TranslationsWatchTogetherPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1021,11 +1109,13 @@ class _TranslationsWatchTogetherPt implements TranslationsWatchTogetherEn {
 	@override String get recentRooms => 'Salas recentes';
 	@override String get renameRoom => 'Renomear sala';
 	@override String get removeRoom => 'Remover';
+	@override String get guestSwitchUnavailable => 'Não foi possível trocar — servidor indisponível para sincronização';
+	@override String get guestSwitchFailed => 'Não foi possível trocar — conteúdo não encontrado neste servidor';
 }
 
 // Path: downloads
-class _TranslationsDownloadsPt implements TranslationsDownloadsEn {
-	_TranslationsDownloadsPt._(this._root);
+class _TranslationsDownloadsPt extends TranslationsDownloadsEn {
+	_TranslationsDownloadsPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1078,12 +1168,18 @@ class _TranslationsDownloadsPt implements TranslationsDownloadsEn {
 	@override String get editSyncFilter => 'Filtro de sincronização';
 	@override String get syncAllItems => 'Sincronizando todos os itens';
 	@override String get syncUnwatchedItems => 'Sincronizando itens não vistos';
+	@override String syncRuleServerContext({required Object server, required Object status}) => 'Servidor: ${server} • ${status}';
+	@override String get syncRuleAvailable => 'Disponível';
+	@override String get syncRuleOffline => 'Offline';
+	@override String get syncRuleSignInRequired => 'Início de sessão necessário';
+	@override String get syncRuleNotAvailableForProfile => 'Indisponível para o perfil atual';
+	@override String get syncRuleUnknownServer => 'Servidor desconhecido';
 	@override String get syncRuleListCreated => 'Regra de sincronização criada';
 }
 
 // Path: shaders
-class _TranslationsShadersPt implements TranslationsShadersEn {
-	_TranslationsShadersPt._(this._root);
+class _TranslationsShadersPt extends TranslationsShadersEn {
+	_TranslationsShadersPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1106,8 +1202,8 @@ class _TranslationsShadersPt implements TranslationsShadersEn {
 }
 
 // Path: companionRemote
-class _TranslationsCompanionRemotePt implements TranslationsCompanionRemoteEn {
-	_TranslationsCompanionRemotePt._(this._root);
+class _TranslationsCompanionRemotePt extends TranslationsCompanionRemoteEn {
+	_TranslationsCompanionRemotePt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1120,8 +1216,8 @@ class _TranslationsCompanionRemotePt implements TranslationsCompanionRemoteEn {
 }
 
 // Path: videoSettings
-class _TranslationsVideoSettingsPt implements TranslationsVideoSettingsEn {
-	_TranslationsVideoSettingsPt._(this._root);
+class _TranslationsVideoSettingsPt extends TranslationsVideoSettingsEn {
+	_TranslationsVideoSettingsPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1139,8 +1235,8 @@ class _TranslationsVideoSettingsPt implements TranslationsVideoSettingsEn {
 }
 
 // Path: externalPlayer
-class _TranslationsExternalPlayerPt implements TranslationsExternalPlayerEn {
-	_TranslationsExternalPlayerPt._(this._root);
+class _TranslationsExternalPlayerPt extends TranslationsExternalPlayerEn {
+	_TranslationsExternalPlayerPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1163,8 +1259,8 @@ class _TranslationsExternalPlayerPt implements TranslationsExternalPlayerEn {
 }
 
 // Path: metadataEdit
-class _TranslationsMetadataEditPt implements TranslationsMetadataEditEn {
-	_TranslationsMetadataEditPt._(this._root);
+class _TranslationsMetadataEditPt extends TranslationsMetadataEditEn {
+	_TranslationsMetadataEditPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1246,8 +1342,8 @@ class _TranslationsMetadataEditPt implements TranslationsMetadataEditEn {
 }
 
 // Path: matchScreen
-class _TranslationsMatchScreenPt implements TranslationsMatchScreenEn {
-	_TranslationsMatchScreenPt._(this._root);
+class _TranslationsMatchScreenPt extends TranslationsMatchScreenEn {
+	_TranslationsMatchScreenPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1267,8 +1363,8 @@ class _TranslationsMatchScreenPt implements TranslationsMatchScreenEn {
 }
 
 // Path: serverTasks
-class _TranslationsServerTasksPt implements TranslationsServerTasksEn {
-	_TranslationsServerTasksPt._(this._root);
+class _TranslationsServerTasksPt extends TranslationsServerTasksEn {
+	_TranslationsServerTasksPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1279,8 +1375,8 @@ class _TranslationsServerTasksPt implements TranslationsServerTasksEn {
 }
 
 // Path: trakt
-class _TranslationsTraktPt implements TranslationsTraktEn {
-	_TranslationsTraktPt._(this._root);
+class _TranslationsTraktPt extends TranslationsTraktEn {
+	_TranslationsTraktPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1297,8 +1393,8 @@ class _TranslationsTraktPt implements TranslationsTraktEn {
 }
 
 // Path: trackers
-class _TranslationsTrackersPt implements TranslationsTrackersEn {
-	_TranslationsTrackersPt._(this._root);
+class _TranslationsTrackersPt extends TranslationsTrackersEn {
+	_TranslationsTrackersPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1318,9 +1414,50 @@ class _TranslationsTrackersPt implements TranslationsTrackersEn {
 	@override late final _TranslationsTrackersLibraryFilterPt libraryFilter = _TranslationsTrackersLibraryFilterPt._(_root);
 }
 
+// Path: addServer
+class _TranslationsAddServerPt extends TranslationsAddServerEn {
+	_TranslationsAddServerPt._(TranslationsPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get addJellyfinTitle => 'Adicionar servidor Jellyfin';
+	@override String get jellyfinUrlIntro => 'Insira a URL do seu servidor Jellyfin — ex.: `https://jellyfin.example.com`. Você pode entrar em seguida.';
+	@override String get serverUrl => 'URL do servidor';
+	@override String get findServer => 'Encontrar servidor';
+	@override String get username => 'Usuário';
+	@override String get password => 'Senha';
+	@override String get signIn => 'Entrar';
+	@override String get change => 'Alterar';
+	@override String get required => 'Obrigatório';
+	@override String couldNotReachServer({required Object error}) => 'Não foi possível conectar ao servidor: ${error}';
+	@override String signInFailed({required Object error}) => 'Falha ao entrar: ${error}';
+	@override String quickConnectFailed({required Object error}) => 'Quick Connect falhou: ${error}';
+	@override String get addPlexTitle => 'Entrar com Plex';
+	@override String get plexAuthIntro => 'Escolha como entrar no Plex. O fluxo do navegador abre plex.tv onde você confirma a conexão; a opção QR é prática para TV / dispositivos remotos.';
+	@override String get plexQRPrompt => 'Escaneie este código QR para entrar.';
+	@override String get waitingForPlexConfirmation => 'Aguardando o plex.tv confirmar o login…';
+	@override String get pinExpired => 'O PIN expirou antes do login. Tente novamente.';
+	@override String get duplicatePlexAccount => 'Este dispositivo já está conectado a uma conta Plex. Saia nas configurações para trocar de conta.';
+	@override String failedToRegisterAccount({required Object error}) => 'Falha ao registrar a conta: ${error}';
+	@override String get enterJellyfinUrlError => 'Insira a URL do seu servidor Jellyfin';
+	@override String get addConnectionTitle => 'Adicionar conexão';
+	@override String addConnectionTitleScoped({required Object name}) => 'Adicionar a ${name}';
+	@override String get addConnectionIntroGlobal => 'Adicione outro servidor de mídia. Você pode misturar contas Plex e servidores Jellyfin — itens de cada backend conectado aparecem juntos na tela inicial.';
+	@override String get addConnectionIntroScoped => 'Adicione um novo servidor ou pegue um emprestado de outro perfil.';
+	@override String get signInWithPlexCard => 'Entrar com Plex';
+	@override String get signInWithPlexCardSubtitle => 'Autorize este dispositivo na sua conta Plex. Servidores compartilhados com a conta vêm junto automaticamente.';
+	@override String get signInWithPlexCardSubtitleScoped => 'Autorize uma nova conta Plex. Seus usuários Home aparecem como perfis.';
+	@override String get connectToJellyfinCard => 'Conectar ao Jellyfin';
+	@override String get connectToJellyfinCardSubtitle => 'Insira a URL do seu servidor Jellyfin e entre com usuário + senha (Quick Connect em breve).';
+	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Entre em um servidor Jellyfin. Vinculado a ${name}.';
+	@override String get borrowFromAnotherProfile => 'Pegar emprestado de outro perfil';
+	@override String get borrowFromAnotherProfileSubtitle => 'Reutilize uma conexão já associada a outro perfil. Perfis de origem protegidos por PIN solicitarão o PIN.';
+}
+
 // Path: hotkeys.actions
-class _TranslationsHotkeysActionsPt implements TranslationsHotkeysActionsEn {
-	_TranslationsHotkeysActionsPt._(this._root);
+class _TranslationsHotkeysActionsPt extends TranslationsHotkeysActionsEn {
+	_TranslationsHotkeysActionsPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1349,8 +1486,8 @@ class _TranslationsHotkeysActionsPt implements TranslationsHotkeysActionsEn {
 }
 
 // Path: videoControls.pipErrors
-class _TranslationsVideoControlsPipErrorsPt implements TranslationsVideoControlsPipErrorsEn {
-	_TranslationsVideoControlsPipErrorsPt._(this._root);
+class _TranslationsVideoControlsPipErrorsPt extends TranslationsVideoControlsPipErrorsEn {
+	_TranslationsVideoControlsPipErrorsPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1365,8 +1502,8 @@ class _TranslationsVideoControlsPipErrorsPt implements TranslationsVideoControls
 }
 
 // Path: libraries.tabs
-class _TranslationsLibrariesTabsPt implements TranslationsLibrariesTabsEn {
-	_TranslationsLibrariesTabsPt._(this._root);
+class _TranslationsLibrariesTabsPt extends TranslationsLibrariesTabsEn {
+	_TranslationsLibrariesTabsPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1378,8 +1515,8 @@ class _TranslationsLibrariesTabsPt implements TranslationsLibrariesTabsEn {
 }
 
 // Path: libraries.groupings
-class _TranslationsLibrariesGroupingsPt implements TranslationsLibrariesGroupingsEn {
-	_TranslationsLibrariesGroupingsPt._(this._root);
+class _TranslationsLibrariesGroupingsPt extends TranslationsLibrariesGroupingsEn {
+	_TranslationsLibrariesGroupingsPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1393,9 +1530,40 @@ class _TranslationsLibrariesGroupingsPt implements TranslationsLibrariesGrouping
 	@override String get folders => 'Pastas';
 }
 
+// Path: libraries.filterCategories
+class _TranslationsLibrariesFilterCategoriesPt extends TranslationsLibrariesFilterCategoriesEn {
+	_TranslationsLibrariesFilterCategoriesPt._(TranslationsPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get genre => 'Gênero';
+	@override String get year => 'Ano';
+	@override String get contentRating => 'Classificação';
+	@override String get tag => 'Tag';
+}
+
+// Path: libraries.sortLabels
+class _TranslationsLibrariesSortLabelsPt extends TranslationsLibrariesSortLabelsEn {
+	_TranslationsLibrariesSortLabelsPt._(TranslationsPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Título';
+	@override String get dateAdded => 'Data de adição';
+	@override String get releaseDate => 'Data de lançamento';
+	@override String get rating => 'Avaliação';
+	@override String get lastPlayed => 'Última reprodução';
+	@override String get playCount => 'Reproduções';
+	@override String get random => 'Aleatório';
+	@override String get dateShared => 'Data de compartilhamento';
+	@override String get latestEpisodeAirDate => 'Última data de exibição do episódio';
+}
+
 // Path: companionRemote.session
-class _TranslationsCompanionRemoteSessionPt implements TranslationsCompanionRemoteSessionEn {
-	_TranslationsCompanionRemoteSessionPt._(this._root);
+class _TranslationsCompanionRemoteSessionPt extends TranslationsCompanionRemoteSessionEn {
+	_TranslationsCompanionRemoteSessionPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1415,8 +1583,8 @@ class _TranslationsCompanionRemoteSessionPt implements TranslationsCompanionRemo
 }
 
 // Path: companionRemote.pairing
-class _TranslationsCompanionRemotePairingPt implements TranslationsCompanionRemotePairingEn {
-	_TranslationsCompanionRemotePairingPt._(this._root);
+class _TranslationsCompanionRemotePairingPt extends TranslationsCompanionRemotePairingEn {
+	_TranslationsCompanionRemotePairingPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1439,8 +1607,8 @@ class _TranslationsCompanionRemotePairingPt implements TranslationsCompanionRemo
 }
 
 // Path: companionRemote.remote
-class _TranslationsCompanionRemoteRemotePt implements TranslationsCompanionRemoteRemoteEn {
-	_TranslationsCompanionRemoteRemotePt._(this._root);
+class _TranslationsCompanionRemoteRemotePt extends TranslationsCompanionRemoteRemoteEn {
+	_TranslationsCompanionRemoteRemotePt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1475,8 +1643,8 @@ class _TranslationsCompanionRemoteRemotePt implements TranslationsCompanionRemot
 }
 
 // Path: trackers.services
-class _TranslationsTrackersServicesPt implements TranslationsTrackersServicesEn {
-	_TranslationsTrackersServicesPt._(this._root);
+class _TranslationsTrackersServicesPt extends TranslationsTrackersServicesEn {
+	_TranslationsTrackersServicesPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1487,8 +1655,8 @@ class _TranslationsTrackersServicesPt implements TranslationsTrackersServicesEn 
 }
 
 // Path: trackers.deviceCode
-class _TranslationsTrackersDeviceCodePt implements TranslationsTrackersDeviceCodeEn {
-	_TranslationsTrackersDeviceCodePt._(this._root);
+class _TranslationsTrackersDeviceCodePt extends TranslationsTrackersDeviceCodeEn {
+	_TranslationsTrackersDeviceCodePt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1501,8 +1669,8 @@ class _TranslationsTrackersDeviceCodePt implements TranslationsTrackersDeviceCod
 }
 
 // Path: trackers.oauthProxy
-class _TranslationsTrackersOauthProxyPt implements TranslationsTrackersOauthProxyEn {
-	_TranslationsTrackersOauthProxyPt._(this._root);
+class _TranslationsTrackersOauthProxyPt extends TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1514,8 +1682,8 @@ class _TranslationsTrackersOauthProxyPt implements TranslationsTrackersOauthProx
 }
 
 // Path: trackers.libraryFilter
-class _TranslationsTrackersLibraryFilterPt implements TranslationsTrackersLibraryFilterEn {
-	_TranslationsTrackersLibraryFilterPt._(this._root);
+class _TranslationsTrackersLibraryFilterPt extends TranslationsTrackersLibraryFilterEn {
+	_TranslationsTrackersLibraryFilterPt._(TranslationsPt root) : this._root = root, super.internal(root);
 
 	final TranslationsPt _root; // ignore: unused_field
 
@@ -1543,6 +1711,7 @@ extension on TranslationsPt {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
+			'auth.signIn' => 'Entrar',
 			'auth.signInWithPlex' => 'Entrar com Plex',
 			'auth.showQRCode' => 'Mostrar QR Code',
 			'auth.authenticate' => 'Autenticar',
@@ -1550,6 +1719,14 @@ extension on TranslationsPt {
 			'auth.scanQRToSignIn' => 'Escaneie este QR code para entrar',
 			'auth.waitingForAuth' => 'Aguardando autenticação...\nConclua o login no seu navegador.',
 			'auth.useBrowser' => 'Usar navegador',
+			'auth.or' => 'ou',
+			'auth.connectToJellyfin' => 'Conectar ao Jellyfin',
+			'auth.useQuickConnect' => 'Usar Quick Connect',
+			'auth.quickConnectCode' => 'Código do Quick Connect',
+			'auth.quickConnectInstructions' => 'Abra o seu servidor Jellyfin num navegador, inicie sessão e escolha Quick Connect no menu do utilizador. Insira este código para aprovar o início de sessão.',
+			'auth.quickConnectWaiting' => 'A aguardar aprovação…',
+			'auth.quickConnectCancel' => 'Cancelar',
+			'auth.quickConnectExpired' => 'O código do Quick Connect expirou antes da aprovação. Tente novamente.',
 			'common.cancel' => 'Cancelar',
 			'common.save' => 'Salvar',
 			'common.close' => 'Fechar',
@@ -1636,12 +1813,12 @@ extension on TranslationsPt {
 			'settings.gridView' => 'Grade',
 			'settings.listView' => 'Lista',
 			'settings.showHeroSection' => 'Mostrar Seção de Destaque',
-			'settings.useGlobalHubs' => 'Usar Layout Plex Home',
-			'settings.useGlobalHubsDescription' => 'Mostrar hubs da página inicial como o cliente oficial Plex. Quando desativado, mostra recomendações por biblioteca.',
+			'settings.useGlobalHubs' => 'Use Home Layout',
+			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.',
 			'settings.showServerNameOnHubs' => 'Mostrar Nome do Servidor nos Hubs',
 			'settings.showServerNameOnHubsDescription' => 'Sempre exibir o nome do servidor nos títulos dos hubs. Quando desativado, mostra apenas para nomes duplicados.',
 			'settings.groupLibrariesByServer' => 'Agrupar Bibliotecas por Servidor',
-			'settings.groupLibrariesByServerDescription' => 'Mostra um cabeçalho para cada servidor Plex na barra lateral quando você está conectado a vários servidores.',
+			'settings.groupLibrariesByServerDescription' => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.',
 			'settings.alwaysKeepSidebarOpen' => 'Manter Barra Lateral Sempre Aberta',
 			'settings.alwaysKeepSidebarOpenDescription' => 'A barra lateral fica expandida e a área de conteúdo se ajusta',
 			'settings.showUnwatchedCount' => 'Mostrar Contagem de Não Assistidos',
@@ -1962,7 +2139,7 @@ extension on TranslationsPt {
 			'messages.musicNotSupported' => 'Reprodução de música ainda não é suportada',
 			'messages.noDescriptionAvailable' => 'Nenhuma descrição disponível',
 			'messages.noProfilesAvailable' => 'Nenhum perfil disponível',
-			'messages.contactAdminForProfiles' => 'Contacte o seu administrador Plex para adicionar perfis',
+			'messages.contactAdminForProfiles' => 'Contact your server administrator to add profiles',
 			'messages.unableToDetermineLibrarySection' => 'Não é possível determinar a secção da biblioteca para este item',
 			'messages.logsCleared' => 'Logs limpos',
 			'messages.logsCopied' => 'Logs copiados para a área de transferência',
@@ -2016,11 +2193,65 @@ extension on TranslationsPt {
 			'mpvConfig.confirmDeletePreset' => 'Tem certeza que deseja excluir esta predefinição?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirmar Ação',
+			'profiles.addPlezyProfile' => 'Adicionar perfil Plezy',
+			'profiles.switchingProfile' => 'Mudando perfil…',
+			'profiles.deleteThisProfileTitle' => 'Excluir este perfil?',
+			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName} será removido. As conexões não serão afetadas.',
+			'profiles.active' => 'Ativo',
+			'profiles.manage' => 'Gerenciar',
+			'profiles.delete' => 'Excluir',
+			'profiles.signOut' => 'Sair',
+			'profiles.signOutPlexTitle' => 'Sair do Plex?',
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} e todos os usuários do Plex Home desta conta serão removidos deste dispositivo. Você pode entrar novamente a qualquer momento.',
+			'profiles.signedOutPlex' => 'Saiu do Plex.',
+			'profiles.signOutFailed' => 'Falha ao sair.',
+			'profiles.sectionTitle' => 'Perfis',
+			'profiles.summarySingle' => 'Adicione perfis para mesclar usuários gerenciados e identidades locais',
+			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} perfis · ativo: ${activeName}',
+			'profiles.summaryMultiple' => ({required Object count}) => '${count} perfis',
+			'profiles.removeConnectionTitle' => 'Remover conexão?',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName} perderá o acesso a ${connectionLabel}. A conexão em si continua disponível para outros perfis.',
+			'profiles.deleteProfileTitle' => 'Excluir perfil?',
+			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Isso remove ${displayName} e todas as suas conexões deste dispositivo. Os servidores Plex/Jellyfin subjacentes não são afetados.',
+			'profiles.profileNameLabel' => 'Nome do perfil',
+			'profiles.pinProtectionLabel' => 'Proteção por PIN',
+			'profiles.pinManagedByPlex' => 'PIN gerenciado pelo Plex. Edite em plex.tv.',
+			'profiles.noPinSetEditOnPlex' => 'Nenhum PIN definido. Para exigir um, edite o usuário Home em plex.tv.',
+			'profiles.setPin' => 'Definir PIN',
+			'profiles.connectionsLabel' => 'Conexões',
+			'profiles.add' => 'Adicionar',
+			'profiles.deleteProfileButton' => 'Excluir perfil',
+			'profiles.noConnectionsHint' => 'Sem conexões — adicione uma para usar este perfil.',
+			_ => null,
+		} ?? switch (path) {
+			'profiles.plexHomeAccount' => 'Conta Plex Home',
+			'profiles.connectionDefault' => 'Padrão',
+			'profiles.makeDefault' => 'Definir como padrão',
+			'profiles.removeConnection' => 'Remover',
+			'profiles.borrowAddTo' => ({required Object displayName}) => 'Adicionar a ${displayName}',
+			'profiles.borrowExplain' => 'Tome emprestada uma conexão de outro perfil. Perfis de origem protegidos por PIN pedem o PIN antes de compartilhar.',
+			'profiles.borrowEmpty' => 'Nada para emprestar ainda.',
+			'profiles.borrowEmptySubtitle' => 'Conecte primeiro uma conta Plex ou servidor Jellyfin a outro perfil e volte aqui.',
+			'profiles.newProfile' => 'Novo perfil',
+			'profiles.profileNameHint' => 'ex.: Visitantes, Crianças, Sala de família',
+			'profiles.pinProtectionOptional' => 'Proteção por PIN (opcional)',
+			'profiles.pinExplain' => 'PIN de 4 dígitos necessário para alternar para este perfil. Barreira suave — quem puder limpar os dados do app pode contorná-la.',
+			'profiles.continueButton' => 'Continuar',
+			'profiles.pinsDontMatch' => 'Os PINs não correspondem',
+			'connections.sectionTitle' => 'Conexões',
+			'connections.addConnection' => 'Adicionar conexão',
+			'connections.addConnectionSubtitleNoProfile' => 'Faça login com Plex ou conecte um servidor Jellyfin',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Adicionar a ${displayName} — conta Plex, servidor Jellyfin ou emprestar de outro perfil',
+			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessão expirada para ${name}',
+			'connections.sessionExpiredMany' => ({required Object count}) => 'Sessão expirada para ${count} servidores',
+			'connections.signInAgain' => 'Entrar novamente',
 			'discover.title' => 'Descobrir',
 			'discover.switchProfile' => 'Trocar Perfil',
 			'discover.noContentAvailable' => 'Nenhum conteúdo disponível',
 			'discover.addMediaToLibraries' => 'Adicione mídias às suas bibliotecas',
 			'discover.continueWatching' => 'Continuar Assistindo',
+			'discover.nextUp' => 'A seguir',
+			'discover.recentlyAdded' => 'Adicionados recentemente',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Sinopse',
 			'discover.cast' => 'Elenco',
@@ -2032,7 +2263,7 @@ extension on TranslationsPt {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min restantes',
 			'errors.searchFailed' => ({required Object error}) => 'Falha na busca: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Tempo de conexão esgotado ao carregar ${context}',
-			'errors.connectionFailed' => 'Não foi possível conectar ao servidor Plex',
+			'errors.connectionFailed' => 'Unable to connect to media server',
 			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Falha ao carregar ${context}: ${error}',
 			'errors.noClientAvailable' => 'Nenhum cliente disponível',
 			'errors.authenticationFailed' => ({required Object error}) => 'Falha na autenticação: ${error}',
@@ -2041,6 +2272,8 @@ extension on TranslationsPt {
 			'errors.invalidToken' => 'Token inválido',
 			'errors.failedToVerifyToken' => ({required Object error}) => 'Falha ao verificar token: ${error}',
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Falha ao trocar para ${displayName}',
+			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Falha ao excluir ${displayName}',
+			'errors.failedToRate' => 'Não foi possível atualizar a classificação',
 			'libraries.title' => 'Bibliotecas',
 			'libraries.scanLibraryFiles' => 'Escanear Arquivos da Biblioteca',
 			'libraries.scanLibrary' => 'Escanear Biblioteca',
@@ -2054,8 +2287,6 @@ extension on TranslationsPt {
 			'libraries.analyzing' => ({required Object title}) => 'Analisando "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Análise iniciada para "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Falha ao analisar biblioteca: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.noLibrariesFound' => 'Nenhuma biblioteca encontrada',
 			'libraries.allLibrariesHidden' => 'Todas as bibliotecas estão ocultas',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Bibliotecas ocultas (${count})',
@@ -2092,10 +2323,23 @@ extension on TranslationsPt {
 			'libraries.groupings.seasons' => 'Temporadas',
 			'libraries.groupings.episodes' => 'Episódios',
 			'libraries.groupings.folders' => 'Pastas',
+			'libraries.filterCategories.genre' => 'Gênero',
+			'libraries.filterCategories.year' => 'Ano',
+			'libraries.filterCategories.contentRating' => 'Classificação',
+			'libraries.filterCategories.tag' => 'Tag',
+			'libraries.sortLabels.title' => 'Título',
+			'libraries.sortLabels.dateAdded' => 'Data de adição',
+			'libraries.sortLabels.releaseDate' => 'Data de lançamento',
+			'libraries.sortLabels.rating' => 'Avaliação',
+			'libraries.sortLabels.lastPlayed' => 'Última reprodução',
+			'libraries.sortLabels.playCount' => 'Reproduções',
+			'libraries.sortLabels.random' => 'Aleatório',
+			'libraries.sortLabels.dateShared' => 'Data de compartilhamento',
+			'libraries.sortLabels.latestEpisodeAirDate' => 'Última data de exibição do episódio',
 			'about.title' => 'Sobre',
 			'about.openSourceLicenses' => 'Licenças Open Source',
 			'about.versionLabel' => ({required Object version}) => 'Versão ${version}',
-			'about.appDescription' => 'Um belo cliente Plex para Flutter',
+			'about.appDescription' => 'Um belo cliente Plex e Jellyfin para Flutter',
 			'about.viewLicensesDescription' => 'Ver licenças de bibliotecas de terceiros',
 			'serverSelection.allServerConnectionsFailed' => 'Falha ao conectar a qualquer servidor. Verifique sua rede e tente novamente.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Nenhum servidor encontrado para ${username} (${email})',
@@ -2243,6 +2487,8 @@ extension on TranslationsPt {
 			'watchTogether.recentRooms' => 'Salas recentes',
 			'watchTogether.renameRoom' => 'Renomear sala',
 			'watchTogether.removeRoom' => 'Remover',
+			'watchTogether.guestSwitchUnavailable' => 'Não foi possível trocar — servidor indisponível para sincronização',
+			'watchTogether.guestSwitchFailed' => 'Não foi possível trocar — conteúdo não encontrado neste servidor',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Gerenciar',
 			'downloads.tvShows' => 'Séries de TV',
@@ -2291,6 +2537,12 @@ extension on TranslationsPt {
 			'downloads.editSyncFilter' => 'Filtro de sincronização',
 			'downloads.syncAllItems' => 'Sincronizando todos os itens',
 			'downloads.syncUnwatchedItems' => 'Sincronizando itens não vistos',
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Servidor: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => 'Disponível',
+			'downloads.syncRuleOffline' => 'Offline',
+			'downloads.syncRuleSignInRequired' => 'Início de sessão necessário',
+			'downloads.syncRuleNotAvailableForProfile' => 'Indisponível para o perfil atual',
+			'downloads.syncRuleUnknownServer' => 'Servidor desconhecido',
 			'downloads.syncRuleListCreated' => 'Regra de sincronização criada',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'Sem aprimoramento de vídeo',
@@ -2484,6 +2736,8 @@ extension on TranslationsPt {
 			'trakt.disconnectConfirmBody' => 'O Plezy deixará de enviar eventos de reprodução ao Trakt. Você pode reconectar a qualquer momento.',
 			'trakt.scrobble' => 'Scrobbling em tempo real',
 			'trakt.scrobbleDescription' => 'Envia eventos de reprodução, pausa e parada ao Trakt durante a exibição.',
+			_ => null,
+		} ?? switch (path) {
 			'trakt.watchedSync' => 'Sincronizar status de assistido',
 			'trakt.watchedSyncDescription' => 'Ao marcar itens como assistidos no Plezy, eles também serão marcados no Trakt.',
 			'trackers.title' => 'Rastreadores',
@@ -2519,6 +2773,38 @@ extension on TranslationsPt {
 			'trackers.libraryFilter.modeHintWhitelist' => 'Sincronizar apenas as bibliotecas marcadas abaixo.',
 			'trackers.libraryFilter.libraries' => 'Bibliotecas',
 			'trackers.libraryFilter.noLibraries' => 'Nenhuma biblioteca disponível',
+			'addServer.addJellyfinTitle' => 'Adicionar servidor Jellyfin',
+			'addServer.jellyfinUrlIntro' => 'Insira a URL do seu servidor Jellyfin — ex.: `https://jellyfin.example.com`. Você pode entrar em seguida.',
+			'addServer.serverUrl' => 'URL do servidor',
+			'addServer.findServer' => 'Encontrar servidor',
+			'addServer.username' => 'Usuário',
+			'addServer.password' => 'Senha',
+			'addServer.signIn' => 'Entrar',
+			'addServer.change' => 'Alterar',
+			'addServer.required' => 'Obrigatório',
+			'addServer.couldNotReachServer' => ({required Object error}) => 'Não foi possível conectar ao servidor: ${error}',
+			'addServer.signInFailed' => ({required Object error}) => 'Falha ao entrar: ${error}',
+			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect falhou: ${error}',
+			'addServer.addPlexTitle' => 'Entrar com Plex',
+			'addServer.plexAuthIntro' => 'Escolha como entrar no Plex. O fluxo do navegador abre plex.tv onde você confirma a conexão; a opção QR é prática para TV / dispositivos remotos.',
+			'addServer.plexQRPrompt' => 'Escaneie este código QR para entrar.',
+			'addServer.waitingForPlexConfirmation' => 'Aguardando o plex.tv confirmar o login…',
+			'addServer.pinExpired' => 'O PIN expirou antes do login. Tente novamente.',
+			'addServer.duplicatePlexAccount' => 'Este dispositivo já está conectado a uma conta Plex. Saia nas configurações para trocar de conta.',
+			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Falha ao registrar a conta: ${error}',
+			'addServer.enterJellyfinUrlError' => 'Insira a URL do seu servidor Jellyfin',
+			'addServer.addConnectionTitle' => 'Adicionar conexão',
+			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Adicionar a ${name}',
+			'addServer.addConnectionIntroGlobal' => 'Adicione outro servidor de mídia. Você pode misturar contas Plex e servidores Jellyfin — itens de cada backend conectado aparecem juntos na tela inicial.',
+			'addServer.addConnectionIntroScoped' => 'Adicione um novo servidor ou pegue um emprestado de outro perfil.',
+			'addServer.signInWithPlexCard' => 'Entrar com Plex',
+			'addServer.signInWithPlexCardSubtitle' => 'Autorize este dispositivo na sua conta Plex. Servidores compartilhados com a conta vêm junto automaticamente.',
+			'addServer.signInWithPlexCardSubtitleScoped' => 'Autorize uma nova conta Plex. Seus usuários Home aparecem como perfis.',
+			'addServer.connectToJellyfinCard' => 'Conectar ao Jellyfin',
+			'addServer.connectToJellyfinCardSubtitle' => 'Insira a URL do seu servidor Jellyfin e entre com usuário + senha (Quick Connect em breve).',
+			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Entre em um servidor Jellyfin. Vinculado a ${name}.',
+			'addServer.borrowFromAnotherProfile' => 'Pegar emprestado de outro perfil',
+			'addServer.borrowFromAnotherProfileSubtitle' => 'Reutilize uma conexão já associada a outro perfil. Perfis de origem protegidos por PIN solicitarão o PIN.',
 			_ => null,
 		};
 	}

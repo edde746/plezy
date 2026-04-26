@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
-import '../../providers/user_profile_provider.dart';
+import '../../profiles/active_profile_provider.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../focus/focusable_slider.dart';
 import '../../utils/platform_detector.dart';
@@ -338,9 +338,9 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
   );
 
   Widget _buildRequireProfileSelection() {
-    return Consumer<UserProfileProvider>(
-      builder: (context, userProfileProvider, child) {
-        if (!userProfileProvider.hasMultipleUsers) return const SizedBox.shrink();
+    return Consumer<ActiveProfileProvider>(
+      builder: (context, activeProvider, child) {
+        if (!activeProvider.hasMultipleProfiles) return const SizedBox.shrink();
         return _buildListenableSwitch(
           icon: Symbols.person_rounded,
           title: t.settings.requireProfileSelectionOnOpen,

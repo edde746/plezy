@@ -4,9 +4,11 @@ import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:http/http.dart' as http;
 
 import '../utils/platform_detector.dart';
-import '../utils/plex_http_client.dart';
+import '../utils/media_server_http_client.dart';
 
-/// Custom cache manager for Plex image transcoding with HTTP/2 multiplexing.
+/// Custom cache manager for media-server image transcoding with HTTP/2
+/// multiplexing. Used for both Plex and Jellyfin artwork (the class name
+/// predates Jellyfin support — it's backend-neutral).
 ///
 /// Uses the platform-native HTTP client so iOS/macOS (CupertinoClient) and
 /// Android (CronetClient) benefit from HTTP/2 connection multiplexing —

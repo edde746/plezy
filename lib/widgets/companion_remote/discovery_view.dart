@@ -3,10 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../connection/connection_registry.dart';
 import '../../i18n/strings.g.dart';
+import '../../models/plex/plex_home.dart';
+import '../../profiles/active_plex_identity.dart';
+import '../../profiles/active_profile_provider.dart';
+import '../../profiles/plex_home_service.dart';
+import '../../profiles/profile_connection_registry.dart';
 import '../../providers/companion_remote_provider.dart';
-import '../../providers/user_profile_provider.dart';
 import '../../utils/app_logger.dart';
+import '../loading_indicator_box.dart';
 
 /// Discovers LAN hosts and provides UI to connect to them.
 class DiscoveryView extends StatefulWidget {
@@ -38,8 +44,26 @@ class _DiscoveryViewState extends State<DiscoveryView> {
   }
 
   Future<void> _initCryptoAndDiscover() async {
-    final home = context.read<UserProfileProvider>().home;
-    await _provider.ensureCryptoReady(home);
+    final connections = context.read<ConnectionRegistry>();
+    final activeProfile = context.read<ActiveProfileProvider>();
+    final profileConnections = context.read<ProfileConnectionRegistry>();
+    final plexHome = context.read<PlexHomeService>();
+    final identity = await resolveActivePlexIdentity(
+      activeProfile: activeProfile,
+      connections: connections,
+      profileConnections: profileConnections,
+    );
+    if (!mounted) return;
+    final home = await _resolveHome(identity?.account.id);
+    if (!mounted) return;
+    await _provider.ensureCryptoReady(
+      home,
+      connections: connections,
+      activeProfile: activeProfile,
+      profileConnections: profileConnections,
+      identity: identity,
+      plexHomeForConnection: plexHome.materializePlexHomeForConnection,
+    );
     if (!mounted) return;
 
     if (_provider.isCryptoReady) {
@@ -52,6 +76,11 @@ class _DiscoveryViewState extends State<DiscoveryView> {
         _errorMessage = t.companionRemote.pairing.cryptoInitFailed;
       });
     }
+  }
+
+  Future<PlexHome?> _resolveHome(String? connectionId) {
+    if (connectionId == null) return Future<PlexHome?>.value();
+    return context.read<PlexHomeService>().materializePlexHomeForConnection(connectionId);
   }
 
   void _startDiscovery() {
@@ -240,9 +269,7 @@ class _DiscoveryViewState extends State<DiscoveryView> {
               leading: Icon(_platformIcon(host.platform), size: 32),
               title: Text(host.name),
               subtitle: Text(host.platform),
-              trailing: _isConnecting
-                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.arrow_forward),
+              trailing: _isConnecting ? const LoadingIndicatorBox(size: 24) : const Icon(Icons.arrow_forward),
               onTap: _isConnecting ? null : () => _connect(() => _provider.connectToDiscoveredHost(host)),
             ),
           ),
@@ -305,9 +332,7 @@ class _DiscoveryViewState extends State<DiscoveryView> {
                           if (!_formKey.currentState!.validate()) return;
                           _connect(() => _provider.connectToManualHost(_hostAddressController.text.trim()));
                         },
-                  icon: _isConnecting
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.link),
+                  icon: _isConnecting ? const LoadingIndicatorBox(size: 16) : const Icon(Icons.link),
                   label: Text(_isConnecting ? t.companionRemote.pairing.connecting : t.common.connect),
                 ),
               ],

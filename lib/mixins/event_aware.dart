@@ -11,7 +11,7 @@ StreamSubscription<E> subscribeToHierarchicalEvents<E extends HierarchicalEventM
   required bool Function() mounted,
   required String? Function() serverId,
   required Set<String>? Function() globalKeys,
-  required Set<String>? Function() ratingKeys,
+  required Set<String>? Function() itemIds,
   required void Function(E event) onEvent,
 }) {
   return notifier.stream.listen((event) {
@@ -28,8 +28,8 @@ StreamSubscription<E> subscribeToHierarchicalEvents<E extends HierarchicalEventM
       return;
     }
 
-    final rk = ratingKeys();
-    if (rk == null || event.affectsAnyOf(rk)) {
+    final ids = itemIds();
+    if (ids == null || event.affectsAnyOf(ids)) {
       onEvent(event);
     }
   });

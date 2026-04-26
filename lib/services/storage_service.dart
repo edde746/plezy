@@ -2,26 +2,21 @@ import 'dart:convert';
 
 import 'package:uuid/uuid.dart';
 
+import '../profiles/profile.dart';
 import '../utils/log_redaction_manager.dart';
 import 'base_shared_preferences_service.dart';
 
 class StorageService extends BaseSharedPreferencesService {
-  static const String _keyServerUrl = 'server_url';
-  static const String _keyToken = 'token';
   static const String _keyPlexToken = 'plex_token';
-  static const String _keyServerData = 'server_data';
   static const String _keyClientId = 'client_identifier';
-  static const String _keySelectedLibraryIndex = 'selected_library_index';
   static const String _keySelectedLibraryKey = 'selected_library_key';
   static const String _keyLibraryFilters = 'library_filters';
   static const String _keyLibraryOrder = 'library_order';
-  static const String _keyUserProfile = 'user_profile';
   static const String _keyCurrentUserUUID = 'current_user_uuid';
-  static const String _keyHomeUsersCache = 'home_users_cache';
-  static const String _keyHomeUsersCacheExpiry = 'home_users_cache_expiry';
   static const String _keyHiddenLibraries = 'hidden_libraries';
   static const String _keyServersList = 'servers_list';
   static const String _keyServerOrder = 'server_order';
+  static const String _keyActiveProfileId = 'active_app_profile_id';
 
   // Key prefixes for per-id storage
   static const String _prefixServerEndpoint = 'server_endpoint_';
@@ -29,25 +24,12 @@ class StorageService extends BaseSharedPreferencesService {
   static const String _prefixLibrarySort = 'library_sort_';
   static const String _prefixLibraryGrouping = 'library_grouping_';
   static const String _prefixLibraryTab = 'library_tab_';
+  static const String _prefixPlexHomeUsers = 'plex_home_users_';
+  static const String _prefixProfileLastUsed = 'profile_last_used_';
   // Key groups for bulk clearing
-  static const List<String> _credentialKeys = [
-    _keyServerUrl,
-    _keyToken,
-    _keyPlexToken,
-    _keyServerData,
-    _keyClientId,
-    _keyUserProfile,
-    _keyCurrentUserUUID,
-    _keyHomeUsersCache,
-    _keyHomeUsersCacheExpiry,
-  ];
+  static const List<String> _credentialKeys = [_keyPlexToken, _keyClientId, _keyCurrentUserUUID];
 
-  static const List<String> _libraryPreferenceKeys = [
-    _keySelectedLibraryIndex,
-    _keyLibraryFilters,
-    _keyLibraryOrder,
-    _keyHiddenLibraries,
-  ];
+  static const List<String> _libraryPreferenceKeys = [_keyLibraryFilters, _keyLibraryOrder, _keyHiddenLibraries];
 
   StorageService._();
 
@@ -57,18 +39,36 @@ class StorageService extends BaseSharedPreferencesService {
 
   @override
   Future<void> onInit() async {
-    // Seed known values so logs can redact immediately on startup.
-    LogRedactionManager.registerServerUrl(prefs.getString(_keyServerUrl));
-    LogRedactionManager.registerToken(prefs.getString(_keyToken));
+    // Seed known values so logs can redact immediately on startup. Reading
+    // the legacy plex_token slot here is acceptable: it's a one-shot
+    // redaction-priming read for any tokens lingering from before the
+    // migration ran (after migration the slot is empty so this is a no-op).
+    // ignore: deprecated_member_use_from_same_package
     LogRedactionManager.registerToken(getPlexToken());
   }
 
   // User-scoped storage for per-profile library settings
 
-  /// Returns `'user_{uuid}_'` for the current user, or `''` if no user is set.
+  /// Returns the scope identifier for the active profile, or `null` if no
+  /// profile is active.
+  ///
+  /// For Plex Home profiles (id format `plex-home-{connId}-{homeUserUuid}`)
+  /// the scope is the home-user UUID — keeps per-user library prefs working
+  /// the same way the legacy `currentUserUUID` did. For local profiles, the
+  /// full profile id is the scope.
+  String? activeUserScope() => _activeUserScope();
+
+  String? _activeUserScope() {
+    final id = getActiveProfileId();
+    if (id == null) return null;
+    return parsePlexHomeProfileId(id)?.homeUserUuid ?? id;
+  }
+
+  /// Returns `'user_{scope}_'` for the active profile, or `''` if no
+  /// profile is active.
   String get _userPrefix {
-    final uuid = getCurrentUserUUID();
-    return uuid != null ? 'user_${uuid}_' : '';
+    final scope = _activeUserScope();
+    return scope != null ? 'user_${scope}_' : '';
   }
 
   /// Read a string with user-scoped key, migrating from legacy key if needed.
@@ -78,17 +78,10 @@ class StorageService extends BaseSharedPreferencesService {
     if (value != null || _userPrefix.isEmpty) return value;
     // One-time migration from legacy global key
     final legacy = prefs.getString(baseKey);
-    if (legacy != null) prefs.setString(scopedKey, legacy);
-    return legacy;
-  }
-
-  /// Read an int with user-scoped key, migrating from legacy key if needed.
-  int? _getScopedInt(String baseKey) {
-    final scopedKey = '$_userPrefix$baseKey';
-    final value = prefs.getInt(scopedKey);
-    if (value != null || _userPrefix.isEmpty) return value;
-    final legacy = prefs.getInt(baseKey);
-    if (legacy != null) prefs.setInt(scopedKey, legacy);
+    if (legacy != null) {
+      prefs.setString(scopedKey, legacy);
+      prefs.remove(baseKey);
+    }
     return legacy;
   }
 
@@ -106,32 +99,35 @@ class StorageService extends BaseSharedPreferencesService {
     await prefs.remove('$_prefixServerEndpoint$serverId');
   }
 
-  // Plex.tv Token (for API access)
-  Future<void> savePlexToken(String token) async {
-    await prefs.setString(_keyPlexToken, token);
-    LogRedactionManager.registerToken(token);
-  }
-
+  // Plex.tv Token — read once by [ConnectionBootstrap.migrateLegacyPlexAccount]
+  // on the upgrade run. The new pipeline stores Plex account tokens on
+  // [PlexAccountConnection.accountToken] in [ConnectionRegistry].
+  @Deprecated(
+    'Read PlexAccountConnection.accountToken from ConnectionRegistry instead. '
+    'Only ConnectionBootstrap.migrateLegacyPlexAccount may use this.',
+  )
   String? getPlexToken() {
     return prefs.getString(_keyPlexToken);
   }
 
-  // Client Identifier
-  Future<void> saveClientIdentifier(String clientId) async {
-    await prefs.setString(_keyClientId, clientId);
+  /// Drop the legacy `plex_token` slot. Called by
+  /// [ConnectionBootstrap.migrateLegacyPlexAccount] after the token has
+  /// been moved into a [PlexAccountConnection] row, so a later sign-out
+  /// doesn't get resurrected on next launch (the migration would
+  /// otherwise see the orphaned token and re-create the connection).
+  Future<void> clearLegacyPlexToken() async {
+    await prefs.remove(_keyPlexToken);
   }
 
-  String? getClientIdentifier() {
-    return prefs.getString(_keyClientId);
-  }
-
-  /// Return the persisted client identifier, generating and saving a UUID on
-  /// first call. Ensures Plex sees the same device across reconnects.
+  /// Return the persisted device identifier, generating and saving a UUID on
+  /// first call. Used by Plex's `X-Plex-Client-Identifier` header so plex.tv
+  /// sees the same device across launches; not Plex-specific in itself —
+  /// Jellyfin's `DeviceId` header reuses the same value too.
   Future<String> getOrCreateClientIdentifier() async {
-    final existing = getClientIdentifier();
+    final existing = prefs.getString(_keyClientId);
     if (existing != null && existing.isNotEmpty) return existing;
     final generated = const Uuid().v4();
-    await saveClientIdentifier(generated);
+    await prefs.setString(_keyClientId, generated);
     return generated;
   }
 
@@ -139,10 +135,6 @@ class StorageService extends BaseSharedPreferencesService {
   Future<void> clearCredentials() async {
     await Future.wait([..._credentialKeys.map((k) => prefs.remove(k)), clearMultiServerData()]);
     LogRedactionManager.clearTrackedValues();
-  }
-
-  int? getSelectedLibraryIndex() {
-    return _getScopedInt(_keySelectedLibraryIndex);
   }
 
   // Selected Library Key (replaces index-based selection)
@@ -190,7 +182,10 @@ class StorageService extends BaseSharedPreferencesService {
     if (result != null || _userPrefix.isEmpty) return result;
     // One-time migration from legacy key
     result = _readJsonMap(baseKey, legacyStringOk: true);
-    if (result != null) _setJsonMap(scopedKey, result);
+    if (result != null) {
+      _setJsonMap(scopedKey, result);
+      prefs.remove(baseKey);
+    }
     return result;
   }
 
@@ -246,6 +241,14 @@ class StorageService extends BaseSharedPreferencesService {
       _clearKeysWithPrefix('$prefix$_prefixLibraryFilters'),
       _clearKeysWithPrefix('$prefix$_prefixLibraryGrouping'),
       _clearKeysWithPrefix('$prefix$_prefixLibraryTab'),
+      if (prefix.isNotEmpty) ...[
+        ..._libraryPreferenceKeys.map(prefs.remove),
+        prefs.remove(_keySelectedLibraryKey),
+        _clearKeysWithPrefix(_prefixLibrarySort),
+        _clearKeysWithPrefix(_prefixLibraryFilters),
+        _clearKeysWithPrefix(_prefixLibraryGrouping),
+        _clearKeysWithPrefix(_prefixLibraryTab),
+      ],
     ]);
   }
 
@@ -261,53 +264,25 @@ class StorageService extends BaseSharedPreferencesService {
     if (value != null || _userPrefix.isEmpty) return value;
     // One-time migration from legacy key
     final legacy = _getStringList(baseKey);
-    if (legacy != null) _setStringList(scopedKey, legacy);
+    if (legacy != null) {
+      _setStringList(scopedKey, legacy);
+      prefs.remove(baseKey);
+    }
     return legacy;
   }
 
-  // User Profile (stored as JSON string)
-  Future<void> saveUserProfile(Map<String, dynamic> profileJson) async {
-    await _setJsonMap(_keyUserProfile, profileJson);
-  }
-
-  Map<String, dynamic>? getUserProfile() {
-    return _readJsonMap(_keyUserProfile);
-  }
-
-  // Current User UUID
-  Future<void> saveCurrentUserUUID(String uuid) async {
-    await prefs.setString(_keyCurrentUserUUID, uuid);
-  }
-
+  // Current User UUID — read once by [ConnectionBootstrap._promoteActiveProfileFromLegacy]
+  // on the upgrade run, then cleared. Replaced by
+  // [getActiveProfileId] / [setActiveProfileId].
+  @Deprecated(
+    'Use setActiveProfileId / getActiveProfileId. '
+    'Only ConnectionBootstrap._promoteActiveProfileFromLegacy may read this.',
+  )
   String? getCurrentUserUUID() {
     return prefs.getString(_keyCurrentUserUUID);
   }
 
-  // Home Users Cache (stored as JSON string with expiry)
-  Future<void> saveHomeUsersCache(Map<String, dynamic> homeData) async {
-    await _setJsonMap(_keyHomeUsersCache, homeData);
-
-    // Set cache expiry to 1 hour from now
-    final expiry = DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch;
-    await prefs.setInt(_keyHomeUsersCacheExpiry, expiry);
-  }
-
-  Map<String, dynamic>? getHomeUsersCache() {
-    final expiry = prefs.getInt(_keyHomeUsersCacheExpiry);
-    if (expiry == null || DateTime.now().millisecondsSinceEpoch > expiry) {
-      // Cache expired, clear it
-      clearHomeUsersCache();
-      return null;
-    }
-
-    return _readJsonMap(_keyHomeUsersCache);
-  }
-
-  Future<void> clearHomeUsersCache() async {
-    await Future.wait([prefs.remove(_keyHomeUsersCache), prefs.remove(_keyHomeUsersCacheExpiry)]);
-  }
-
-  // Clear current user UUID (for server switching)
+  /// Clears the legacy `currentUserUUID` slot. Used by the upgrade migration.
   Future<void> clearCurrentUserUUID() async {
     await prefs.remove(_keyCurrentUserUUID);
   }
@@ -318,18 +293,22 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   // Multi-Server Support Methods
+  //
+  // Servers now live on [PlexAccountConnection.servers] in
+  // [ConnectionRegistry]. The legacy `servers_list` JSON slot is read once
+  // by [ConnectionBootstrap.migrateLegacyPlexAccount] and then dropped.
 
-  /// Get servers list as JSON string
+  /// Get legacy servers list as JSON string. Use [ConnectionRegistry] for
+  /// fresh data; this exists only for the boot-time migration.
+  @Deprecated(
+    'Read PlexAccountConnection.servers from ConnectionRegistry. '
+    'Only ConnectionBootstrap.migrateLegacyPlexAccount may use this.',
+  )
   String? getServersListJson() {
     return prefs.getString(_keyServersList);
   }
 
-  /// Save servers list as JSON string
-  Future<void> saveServersListJson(String serversJson) async {
-    await prefs.setString(_keyServersList, serversJson);
-  }
-
-  /// Clear servers list
+  /// Clear the legacy servers list.
   Future<void> clearServersList() async {
     await prefs.remove(_keyServersList);
   }
@@ -339,16 +318,59 @@ class StorageService extends BaseSharedPreferencesService {
     await Future.wait([clearServersList(), clearServerOrder(), _clearKeysWithPrefix(_prefixServerEndpoint)]);
   }
 
-  /// Server Order (stored as JSON list of server IDs)
-  Future<void> saveServerOrder(List<String> serverIds) async {
-    await _setStringList(_keyServerOrder, serverIds);
-  }
-
-  List<String>? getServerOrder() => _getStringList(_keyServerOrder);
-
-  /// Clear server order
+  /// Clear legacy server order.
   Future<void> clearServerOrder() async {
     await prefs.remove(_keyServerOrder);
+  }
+
+  // Active app-level profile (kids mode / multi-user gating)
+
+  String? getActiveProfileId() => prefs.getString(_keyActiveProfileId);
+
+  Future<void> setActiveProfileId(String id) async {
+    await prefs.setString(_keyActiveProfileId, id);
+  }
+
+  Future<void> clearActiveProfileId() async {
+    await prefs.remove(_keyActiveProfileId);
+  }
+
+  // Per-connection Plex Home users cache. Plex Home profiles are not
+  // persisted as Profile rows — they're fetched live by [PlexHomeService]
+  // and cached here so the picker can paint immediately on cold start.
+  // Stored as a JSON list of [PlexHomeUser] payloads, no TTL — the service
+  // refreshes in the background via stale-while-revalidate.
+  Future<void> savePlexHomeUsersCache(String connectionId, List<Map<String, dynamic>> users) async {
+    await prefs.setString('$_prefixPlexHomeUsers$connectionId', json.encode(users));
+  }
+
+  String? getPlexHomeUsersCacheJson(String connectionId) {
+    return prefs.getString('$_prefixPlexHomeUsers$connectionId');
+  }
+
+  Future<void> clearPlexHomeUsersCache(String connectionId) async {
+    await prefs.remove('$_prefixPlexHomeUsers$connectionId');
+  }
+
+  Future<void> clearAllPlexHomeUsersCache() async {
+    await _clearKeysWithPrefix(_prefixPlexHomeUsers);
+  }
+
+  // `lastUsedAt` for ordering and future filtering of profiles by recency
+  // (currently surfaced via `Profile.lastUsedAt`). Stored separately so it
+  // works for both DB-backed local profiles and virtual Plex Home profiles
+  // (which don't have a Profile row to update).
+  Future<void> markProfileUsed(String profileId, DateTime at) async {
+    await prefs.setInt('$_prefixProfileLastUsed$profileId', at.millisecondsSinceEpoch);
+  }
+
+  DateTime? getProfileLastUsed(String profileId) {
+    final ms = prefs.getInt('$_prefixProfileLastUsed$profileId');
+    return ms == null ? null : DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  Future<void> clearAllProfileLastUsed() async {
+    await _clearKeysWithPrefix(_prefixProfileLastUsed);
   }
 
   // Episode Count Persistence (for partial download detection)

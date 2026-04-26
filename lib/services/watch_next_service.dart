@@ -2,13 +2,14 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
 
-import '../models/plex_metadata.dart';
+import '../media/media_item.dart';
+import '../media/media_item_types.dart';
+import '../media/media_kind.dart';
+import '../media/media_server_client.dart';
 import '../utils/app_logger.dart';
-import '../utils/content_utils.dart';
-import 'plex_client.dart';
 import 'settings_service.dart' show EpisodePosterMode;
 
-/// Service for syncing Plex "On Deck" content to Android TV's Watch Next row.
+/// Service for syncing On Deck / Continue Watching content to Android TV's Watch Next row.
 class WatchNextService {
   static const MethodChannel _channel = MethodChannel('com.plezy/watch_next');
 
@@ -54,8 +55,8 @@ class WatchNextService {
 
   /// Sync On Deck items to Watch Next row.
   Future<bool> syncFromOnDeck(
-    List<PlexMetadata> onDeckItems,
-    PlexClient Function(String serverId) getClientForServerId, {
+    List<MediaItem> onDeckItems,
+    MediaServerClient Function(String serverId) getClientForServerId, {
     bool hideSpoilers = false,
   }) async {
     if (!Platform.isAndroid) return false;
@@ -112,11 +113,11 @@ class WatchNextService {
   }
 
   Map<String, dynamic> _convertToWatchNextItem(
-    PlexMetadata item,
-    PlexClient Function(String serverId) getClientForServerId, {
+    MediaItem item,
+    MediaServerClient Function(String serverId) getClientForServerId, {
     bool hideSpoilers = false,
   }) {
-    final contentId = _buildContentId(item.serverId, item.ratingKey);
+    final contentId = _buildContentId(item.serverId, item.id);
 
     String? posterUri;
     try {
@@ -128,7 +129,7 @@ class WatchNextService {
         }
         thumbPath ??= item.posterThumb(mode: EpisodePosterMode.episodeThumbnail, mixedHubContext: true);
         if (thumbPath != null) {
-          posterUri = client.getThumbnailUrl(thumbPath);
+          posterUri = client.thumbnailUrl(thumbPath);
         }
       }
     } catch (e) {
@@ -137,11 +138,11 @@ class WatchNextService {
 
     final String title;
     final String? episodeTitle;
-    if (item.mediaType == PlexMediaType.episode && item.grandparentTitle != null) {
+    if (item.kind == MediaKind.episode && item.grandparentTitle != null) {
       title = item.grandparentTitle!;
       episodeTitle = item.title;
     } else {
-      title = item.title!;
+      title = item.title ?? '';
       episodeTitle = null;
     }
 
@@ -155,9 +156,9 @@ class WatchNextService {
       'episodeTitle': episodeTitle,
       'description': item.summary,
       'posterUri': posterUri,
-      'type': item.mediaType.name,
-      'duration': item.duration ?? 0,
-      'lastPlaybackPosition': item.viewOffset ?? 0,
+      'type': item.kind.name,
+      'duration': item.durationMs ?? 0,
+      'lastPlaybackPosition': item.viewOffsetMs ?? 0,
       'lastEngagementTime': lastEngagementTime,
       'seriesTitle': item.grandparentTitle,
       'seasonNumber': item.parentIndex,

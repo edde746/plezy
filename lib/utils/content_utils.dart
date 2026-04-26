@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../models/plex_metadata.dart';
-
 /// Content type constants used throughout the app
 class ContentTypes {
   ContentTypes._();
@@ -33,11 +31,12 @@ class ContentTypeHelper {
   /// Checks if the given type is video content (movie, show, episode, or season)
   static bool isVideoContent(String type) => ContentTypes.videoTypes.contains(type.toLowerCase());
 
-  /// Checks if the given library is a music library
+  /// Checks if the given [MediaLibrary] is a music library.
   static bool isMusicLibrary(dynamic lib) {
     if (lib == null) return false;
     try {
-      final type = (lib as dynamic).type as String?;
+      // ignore: avoid_dynamic_calls — duck-typed across library shapes
+      final type = (lib as dynamic).kind?.id as String?;
       return type?.toLowerCase() == ContentTypes.artist;
     } catch (e) {
       return false;
@@ -79,31 +78,4 @@ String formatContentRating(String? contentRating) {
   }
 
   return contentRating;
-}
-
-/// Extension on PlexMetadata for type checking convenience methods
-extension PlexMetadataType on PlexMetadata {
-  String get _lowerType => type?.toLowerCase() ?? '';
-
-  bool get isShow => _lowerType == ContentTypes.show;
-  bool get isMovie => _lowerType == ContentTypes.movie;
-  bool get isSeason => _lowerType == ContentTypes.season;
-  bool get isEpisode => _lowerType == ContentTypes.episode;
-  bool get isCollection => _lowerType == ContentTypes.collection;
-  bool get isMusicContent => ContentTypes.musicTypes.contains(_lowerType);
-  bool get isVideoContent => ContentTypes.videoTypes.contains(_lowerType);
-
-  /// Whether this episode should have spoiler protection applied.
-  /// True when the item is an unwatched episode watched less than 50%.
-  bool get shouldHideSpoiler {
-    if (!isEpisode) return false;
-    if (isWatched) return false;
-    if (viewOffset != null && viewOffset! > 0 && duration != null && duration! > 0) {
-      return viewOffset! / duration! < 0.5;
-    }
-    return true;
-  }
-
-  /// Non-spoiler art path for episodes (show/season background).
-  String? get spoilerSafeArt => grandparentArt ?? art;
 }

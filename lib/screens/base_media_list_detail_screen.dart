@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import '../../services/plex_client.dart';
-import '../models/plex_metadata.dart';
+import '../media/media_item.dart';
+import '../media/media_playlist.dart';
+import '../media/media_server_client.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/provider_extensions.dart';
-import '../services/play_queue_launcher.dart';
-import '../models/plex_playlist.dart';
+import '../services/media_list_playback_launcher.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
 import '../mixins/refreshable.dart';
@@ -19,15 +19,16 @@ import 'libraries/state_messages.dart';
 /// Provides common state management and playback functionality
 abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State<T> with Refreshable, ItemUpdatable {
   // State properties - concrete implementations to avoid duplication
-  List<PlexMetadata> items = [];
+  List<MediaItem> items = [];
   bool isLoading = false;
   String? errorMessage;
 
-  @override
-  PlexClient get client => _getClientForMediaItem();
+  /// Backend-neutral client for the media item's server.
+  MediaServerClient get mediaClient => _getMediaClientForMediaItem();
 
-  /// The media item being displayed (collection or playlist)
-  dynamic get mediaItem;
+  /// The media item being displayed (collection or playlist) — either a
+  /// [MediaItem] or a [MediaPlaylist].
+  Object get mediaItem;
 
   /// Title to display in app bar
   String get title;
@@ -38,34 +39,27 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
   /// Optional icon to show when list is empty
   IconData? get emptyIcon => null;
 
-  /// Get the correct PlexClient for this media item's server
-  PlexClient _getClientForMediaItem() {
-    // Try to get serverId from the media item
+  String? _resolveMediaItemServerId() {
+    final item = mediaItem;
     String? serverId;
-
-    // Check if mediaItem has serverId property
-    if (mediaItem is PlexMetadata) {
-      serverId = (mediaItem as PlexMetadata).serverId;
-    } else if (mediaItem != null) {
-      // For playlists or other types, use dynamic access
-      try {
-        final dynamic item = mediaItem;
-        serverId = item.serverId as String?;
-      } catch (_) {
-        // Ignore if serverId is not available
-      }
+    if (item is MediaItem) {
+      serverId = item.serverId;
+    } else if (item is MediaPlaylist) {
+      serverId = item.serverId;
     }
-
-    // If serverId is null, fall back to first available server
     if (serverId == null) {
       final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
       serverId = multiServerProvider.onlineServerIds.firstOrNull;
-      if (serverId == null) {
-        throw Exception(t.errors.noClientAvailable);
-      }
     }
+    return serverId;
+  }
 
-    return context.getClientForServer(serverId);
+  MediaServerClient _getMediaClientForMediaItem() {
+    final serverId = _resolveMediaItemServerId();
+    if (serverId == null) {
+      throw Exception(t.errors.noClientAvailable);
+    }
+    return context.getMediaClientWithFallback(serverId);
   }
 
   @override
@@ -83,7 +77,11 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
   /// Shuffle play all items in the list
   Future<void> shufflePlayItems() => _playWithShuffle(true);
 
-  /// Internal helper to play items with optional shuffle
+  /// Internal helper to play items with optional shuffle.
+  ///
+  /// Dispatches to the right launcher implementation based on the item's
+  /// backend — Plex uses server-side `/playQueues`, Jellyfin builds an
+  /// in-memory queue via [JellyfinSequentialLauncher].
   Future<void> _playWithShuffle(bool shuffle) async {
     if (items.isEmpty) {
       if (mounted) {
@@ -92,26 +90,18 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
       return;
     }
 
-    final client = _getClientForMediaItem();
     final item = mediaItem;
-
-    final launcher = PlayQueueLauncher(
-      context: context,
-      client: client,
-      serverId: item is PlexMetadata ? item.serverId : (item as PlexPlaylist).serverId,
-      serverName: item is PlexMetadata ? item.serverName : (item as PlexPlaylist).serverName,
-    );
-
+    final launcher = MediaListPlaybackLauncher.forItem(context, item);
     await launcher.launchFromCollectionOrPlaylist(item: item, shuffle: shuffle, showLoadingIndicator: false);
   }
 
   @override
-  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
+  void updateItemInLists(String itemId, MediaItem updatedItem) {
     if (mounted) {
       setState(() {
-        final index = items.indexWhere((item) => item.ratingKey == ratingKey);
+        final index = items.indexWhere((it) => it.id == itemId);
         if (index != -1) {
-          items[index] = updatedMetadata;
+          items[index] = updatedItem;
         }
       });
     }
@@ -187,7 +177,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
 /// Handles the common pattern of fetching, tagging, and setting items
 mixin StandardItemLoader<T extends StatefulWidget> on BaseMediaListDetailScreen<T> {
   /// Fetch items from the API (must be implemented by subclass)
-  Future<List<PlexMetadata>> fetchItems();
+  Future<List<MediaItem>> fetchItems();
 
   /// Get error message for failed load (can be overridden)
   String getLoadErrorMessage(Object error) {

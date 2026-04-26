@@ -1,10 +1,11 @@
 import 'dart:async';
 
-import '../../models/plex_metadata.dart';
+import '../../media/media_item.dart';
+import '../../media/media_kind.dart';
+import '../../media/media_server_client.dart';
 import '../../models/trakt/trakt_ids.dart';
 import '../../models/trakt/trakt_scrobble_request.dart';
 import '../../utils/app_logger.dart';
-import '../plex_client.dart';
 import '../settings_service.dart';
 import '../trackers/tracker_constants.dart';
 import '../trackers/tracker_id_resolver.dart';
@@ -85,30 +86,29 @@ class TraktScrobbleService {
 
   bool get _canScrobble => _isEnabled && _client != null;
 
-  Future<void> startPlayback(PlexMetadata metadata, PlexClient plexClient, {bool isLive = false}) async {
+  Future<void> startPlayback(MediaItem metadata, MediaServerClient client, {bool isLive = false}) async {
     if (!_canScrobble) return;
     if (isLive) return;
 
-    final type = metadata.mediaType;
-    if (type != PlexMediaType.movie && type != PlexMediaType.episode) return;
+    final type = metadata.kind;
+    if (type != MediaKind.movie && type != MediaKind.episode) return;
 
     final settings = SettingsService.instanceOrNull;
-    if (settings != null &&
-        !settings.isLibraryAllowedForTracker(TrackerService.trakt, metadata.librarySectionGlobalKey)) {
-      appLogger.d('Trakt: library filtered out for ${metadata.ratingKey}');
+    if (settings != null && !settings.isLibraryAllowedForTracker(TrackerService.trakt, metadata.libraryGlobalKey)) {
+      appLogger.d('Trakt: library filtered out for ${metadata.id}');
       return;
     }
 
     // Seed with the resume offset so the first real position update doesn't
     // look like a seek when resuming mid-item.
-    _currentPosition = metadata.viewOffset != null ? Duration(milliseconds: metadata.viewOffset!) : Duration.zero;
-    _currentDuration = metadata.duration != null ? Duration(milliseconds: metadata.duration!) : Duration.zero;
+    _currentPosition = metadata.viewOffsetMs != null ? Duration(milliseconds: metadata.viewOffsetMs!) : Duration.zero;
+    _currentDuration = metadata.durationMs != null ? Duration(milliseconds: metadata.durationMs!) : Duration.zero;
     _lastSeekCheckpointAt = null;
-    _resolver = TrackerIdResolver(plexClient, needsFribb: () => false);
+    _resolver = TrackerIdResolver(client, needsFribb: () => false);
 
     final body = await _buildBody(metadata);
     if (body == null) {
-      appLogger.d('Trakt: skipping scrobble — no usable IDs for ${metadata.ratingKey}');
+      appLogger.d('Trakt: skipping scrobble — no usable IDs for ${metadata.id}');
       cancelInFlight();
       return;
     }
@@ -156,12 +156,12 @@ class TraktScrobbleService {
     cancelInFlight();
   }
 
-  Future<TraktScrobbleRequest?> _buildBody(PlexMetadata metadata) async {
+  Future<TraktScrobbleRequest?> _buildBody(MediaItem metadata) async {
     final resolver = _resolver;
     if (resolver == null) return null;
 
-    if (metadata.mediaType == PlexMediaType.movie) {
-      final ids = await resolver.resolveForMovie(metadata.ratingKey);
+    if (metadata.kind == MediaKind.movie) {
+      final ids = await resolver.resolveForMovie(metadata.id);
       if (ids == null) return null;
       return TraktScrobbleRequest.movie(ids: TraktIds.fromExternal(ids.external));
     }

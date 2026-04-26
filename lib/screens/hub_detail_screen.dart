@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import '../../services/plex_client.dart';
-import '../models/plex_hub.dart';
-import '../models/plex_metadata.dart';
-import '../models/plex_sort.dart';
+import '../media/media_hub.dart';
+import '../media/media_item.dart';
+import '../media/media_sort.dart';
 import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
-import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/grid_size_calculator.dart';
+import '../utils/provider_extensions.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/media_grid_delegate.dart';
 import '../widgets/desktop_app_bar.dart';
@@ -25,7 +24,7 @@ import 'focusable_detail_screen_mixin.dart';
 
 /// Screen to display full content of a recommendation hub
 class HubDetailScreen extends StatefulWidget {
-  final PlexHub hub;
+  final MediaHub hub;
 
   const HubDetailScreen({super.key, required this.hub});
 
@@ -35,12 +34,10 @@ class HubDetailScreen extends StatefulWidget {
 
 class _HubDetailScreenState extends State<HubDetailScreen>
     with Refreshable, GridFocusNodeMixin, FocusableDetailScreenMixin {
-  PlexClient get client => _getClientForHub();
-
-  List<PlexMetadata> _items = [];
-  List<PlexMetadata> _filteredItems = [];
-  List<PlexSort> _sortOptions = [];
-  PlexSort? _selectedSort;
+  List<MediaItem> _items = [];
+  List<MediaItem> _filteredItems = [];
+  List<MediaSort> _sortOptions = [];
+  MediaSort? _selectedSort;
   bool _isSortDescending = false;
   bool _isLoading = false;
   String? _errorMessage;
@@ -76,11 +73,6 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
   FocusNode _focusNodeForIndex(int index) => focusNodeForIndex(index, firstItemFocusNode, prefix: 'hub_detail_item');
 
-  /// Get the correct PlexClient for this hub's server
-  PlexClient _getClientForHub() {
-    return context.getClientForServer(widget.hub.serverId!);
-  }
-
   @override
   void initState() {
     super.initState();
@@ -105,16 +97,23 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
   Future<void> _loadSorts() async {
     try {
-      final client = _getClientForHub();
+      final serverId = widget.hub.serverId;
+      if (serverId == null) {
+        appLogger.w('Hub has no serverId; using default sort options');
+        if (!mounted) return;
+        setState(() {
+          _sortOptions = _getDefaultSortOptions();
+        });
+        return;
+      }
 
-      // Get the library key from the hub key
-      // Hub keys can have various formats:
-      // - /hubs/sections/1/...
-      // - /library/sections/1/all?...
-      final hubKey = widget.hub.hubKey;
+      // Hub ids can have various formats:
+      // - /hubs/sections/1/... (Plex)
+      // - /library/sections/1/all?... (Plex)
+      // - home.recent / library.<id>.continue (Jellyfin synthesized)
+      final hubKey = widget.hub.id;
       appLogger.d('Hub key: $hubKey');
 
-      // Try different patterns
       RegExpMatch? match = RegExp(r'/hubs/sections/(\d+)').firstMatch(hubKey);
       match ??= RegExp(r'/library/sections/(\d+)').firstMatch(hubKey);
       match ??= RegExp(r'sections/(\d+)').firstMatch(hubKey);
@@ -123,42 +122,37 @@ class _HubDetailScreenState extends State<HubDetailScreen>
         final sectionId = match.group(1)!;
         appLogger.d('Loading sorts for section: $sectionId');
 
-        // Load sorts for this library
-        final sorts = await client.getLibrarySorts(sectionId);
+        final client = context.tryGetMediaClientForServer(serverId);
+        final sorts = client == null ? const <MediaSort>[] : await client.fetchSortOptions(sectionId);
 
         appLogger.d('Loaded ${sorts.length} sorts');
 
         if (!mounted) return;
         setState(() {
           _sortOptions = sorts.isNotEmpty ? sorts : _getDefaultSortOptions();
-          // Don't set a default sort - let items stay in original order
         });
       } else {
         appLogger.w('Could not extract section ID from hub key: $hubKey');
-        // Provide default sort options even if we can't get library-specific ones
         if (!mounted) return;
         setState(() {
           _sortOptions = _getDefaultSortOptions();
-          // Don't set a default sort - let items stay in original order
         });
       }
     } catch (e) {
       appLogger.e('Failed to load sorts', error: e);
-      // Provide default sort options on error
       if (!mounted) return;
       setState(() {
         _sortOptions = _getDefaultSortOptions();
-        // Don't set a default sort - let items stay in original order
       });
     }
   }
 
-  List<PlexSort> _getDefaultSortOptions() {
+  List<MediaSort> _getDefaultSortOptions() {
     return [
-      PlexSort(key: 'titleSort', title: t.hubDetail.title, defaultDirection: 'asc'),
-      PlexSort(key: 'year', descKey: 'year:desc', title: t.hubDetail.releaseYear, defaultDirection: 'desc'),
-      PlexSort(key: 'addedAt', descKey: 'addedAt:desc', title: t.hubDetail.dateAdded, defaultDirection: 'desc'),
-      PlexSort(key: 'rating', descKey: 'rating:desc', title: t.hubDetail.rating, defaultDirection: 'desc'),
+      MediaSort(key: 'titleSort', title: t.hubDetail.title, defaultDirection: 'asc'),
+      MediaSort(key: 'year', descKey: 'year:desc', title: t.hubDetail.releaseYear, defaultDirection: 'desc'),
+      MediaSort(key: 'addedAt', descKey: 'addedAt:desc', title: t.hubDetail.dateAdded, defaultDirection: 'desc'),
+      MediaSort(key: 'rating', descKey: 'rating:desc', title: t.hubDetail.rating, defaultDirection: 'desc'),
     ];
   }
 
@@ -226,21 +220,25 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   Future<void> _loadMoreItems() async {
     if (_isLoading) return;
 
+    final serverId = widget.hub.serverId;
+    if (serverId == null) {
+      appLogger.w('Hub has no serverId; cannot load more items for ${widget.hub.id}');
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final client = _getClientForHub();
-
-      // Fetch items from the hub, tagged with server info at the source
-      var items = await client.getHubContent(widget.hub.hubKey);
+      final client = context.tryGetMediaClientForServer(serverId);
+      var items = client == null ? const <MediaItem>[] : await client.fetchMoreHubItems(widget.hub.id);
 
       // Filter to specific library if this hub was split from a multi-library hub
-      final sectionFilter = widget.hub.librarySectionID;
+      final sectionFilter = int.tryParse(widget.hub.libraryId ?? '');
       if (sectionFilter != null) {
-        items = items.where((item) => item.librarySectionID == sectionFilter).toList();
+        items = items.where((item) => int.tryParse(item.libraryId ?? '') == sectionFilter).toList();
       }
 
       if (!mounted) return;
@@ -250,7 +248,6 @@ class _HubDetailScreenState extends State<HubDetailScreen>
         _isLoading = false;
       });
 
-      // Apply any existing sort
       _applySort();
 
       appLogger.d('Loaded ${items.length} items for hub: ${widget.hub.title}');
@@ -267,7 +264,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   void _handleItemRefresh(String ratingKey) {
     // Refresh the specific item in the list
     setState(() {
-      final index = _items.indexWhere((item) => item.ratingKey == ratingKey);
+      final index = _items.indexWhere((item) => item.id == ratingKey);
       if (index != -1) {
         // The item will be refreshed by the MediaCard itself
         appLogger.d('Item refresh requested for: $ratingKey');

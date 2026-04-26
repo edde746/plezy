@@ -1,4 +1,4 @@
-import '../../utils/plex_external_ids.dart';
+import '../../utils/external_ids.dart';
 import 'anime_ids.dart';
 
 /// Immutable per-playback context passed from the coordinator to each
@@ -9,7 +9,7 @@ import 'anime_ids.dart';
 /// in the Fribb mapping). General-purpose trackers (Simkl) prefer Plex IDs;
 /// anime-only trackers (MAL, AniList) no-op when [anime] is null.
 class TrackerContext {
-  final PlexExternalIds external;
+  final ExternalIds external;
   final AnimeIds? anime;
 
   final bool isMovie;
@@ -35,7 +35,7 @@ class TrackerContext {
   });
 
   factory TrackerContext.movie({
-    required PlexExternalIds external,
+    required ExternalIds external,
     required AnimeIds? anime,
     required String ratingKey,
     required String? libraryGlobalKey,
@@ -50,7 +50,7 @@ class TrackerContext {
   }
 
   factory TrackerContext.episode({
-    required PlexExternalIds external,
+    required ExternalIds external,
     required AnimeIds? anime,
     required String ratingKey,
     required String? libraryGlobalKey,

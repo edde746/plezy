@@ -1,7 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/plex_metadata.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/services/plex_client.dart';
 import 'package:plezy/services/track_manager.dart';
 
 import '../test_helpers/prefs.dart';
@@ -28,19 +29,14 @@ import '../test_helpers/prefs.dart';
 //     `SettingsService.getInstance()` returning a service AND `Player.streams`
 //     emitting Tracks. Out of scope without re-implementing the player.
 //   - `onAudioTrackChanged` / `onSubtitleTrackChanged` — server-sync paths
-//     require a fully-faked PlexClient and PlexMediaInfo with realistic
+//     require a fully-faked PlexClient and MediaSourceInfo with realistic
 //     stream IDs. The matching logic itself lives in [TrackSelectionService]
 //     and is covered there.
 //   - `onBackendSwitched` — wraps applyTrackSelectionWhenReady and is
 //     therefore gated on the same SettingsService dependency.
 //   - `resumeAfterSubtitleLoad` — schedules a real wall-clock fallback Timer.
 
-PlexMetadata _meta({String ratingKey = 'rk1'}) => PlexMetadata(ratingKey: ratingKey, type: 'movie');
-
-class _FakePlexClient implements PlexClient {
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
+MediaItem _meta({String id = 'rk1'}) => MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie);
 
 /// Player that records calls and can be configured per-test.
 class _FakePlayer implements Player {
@@ -84,20 +80,28 @@ class _FakePlayer implements Player {
 
 TrackManager _make({
   required _FakePlayer player,
-  PlexMetadata? metadata,
+  MediaItem? metadata,
   bool active = true,
   void Function(String, {Duration? duration})? showMessage,
 }) {
   return TrackManager(
     player: player,
     isActive: () => active,
-    getClient: () => _FakePlexClient(),
+    persistTrackPreference: _noopPersister,
     getProfileSettings: () => null,
     waitForProfileSettings: () async {},
     metadata: metadata ?? _meta(),
     showMessage: showMessage,
   );
 }
+
+Future<void> _noopPersister({
+  required String id,
+  required int partId,
+  required String trackType,
+  String? languageCode,
+  int? streamID,
+}) async {}
 
 void main() {
   // The constructor doesn't touch prefs, but [dispose] / [applyTrackSelection]
@@ -114,7 +118,7 @@ void main() {
       final mgr = TrackManager(
         player: player,
         isActive: () => true,
-        getClient: () => _FakePlexClient(),
+        persistTrackPreference: _noopPersister,
         getProfileSettings: () => null,
         waitForProfileSettings: () async {},
         metadata: _meta(),
@@ -127,7 +131,7 @@ void main() {
       expect(mgr.preferredAudioTrack?.id, 'a-1');
       expect(mgr.preferredSubtitleTrack?.id, 's-1');
       expect(mgr.preferredSecondarySubtitleTrack?.id, 's-2');
-      expect(mgr.metadata.ratingKey, 'rk1');
+      expect(mgr.metadata.id, 'rk1');
       expect(mgr.waitingForExternalSubsTrackSelection, isFalse);
       expect(mgr.lastExternalSubtitles, isEmpty);
       expect(mgr.mediaInfo, isNull);
@@ -137,11 +141,11 @@ void main() {
       final mgr = _make(player: _FakePlayer());
       addTearDown(mgr.dispose);
 
-      mgr.metadata = _meta(ratingKey: 'next');
+      mgr.metadata = _meta(id: 'next');
       mgr.preferredAudioTrack = const AudioTrack(id: 'a2', language: 'fre');
       mgr.waitingForExternalSubsTrackSelection = true;
 
-      expect(mgr.metadata.ratingKey, 'next');
+      expect(mgr.metadata.id, 'next');
       expect(mgr.preferredAudioTrack?.id, 'a2');
       expect(mgr.waitingForExternalSubsTrackSelection, isTrue);
     });

@@ -40,52 +40,55 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	Translations $copyWith({TranslationMetadata<AppLocale, Translations>? meta}) => Translations(meta: meta ?? this.$meta);
 
 	// Translations
-	late final TranslationsAppEn app = TranslationsAppEn._(_root);
-	late final TranslationsAuthEn auth = TranslationsAuthEn._(_root);
-	late final TranslationsCommonEn common = TranslationsCommonEn._(_root);
-	late final TranslationsScreensEn screens = TranslationsScreensEn._(_root);
-	late final TranslationsUpdateEn update = TranslationsUpdateEn._(_root);
-	late final TranslationsSettingsEn settings = TranslationsSettingsEn._(_root);
-	late final TranslationsSearchEn search = TranslationsSearchEn._(_root);
-	late final TranslationsHotkeysEn hotkeys = TranslationsHotkeysEn._(_root);
-	late final TranslationsFileInfoEn fileInfo = TranslationsFileInfoEn._(_root);
-	late final TranslationsMediaMenuEn mediaMenu = TranslationsMediaMenuEn._(_root);
-	late final TranslationsAccessibilityEn accessibility = TranslationsAccessibilityEn._(_root);
-	late final TranslationsTooltipsEn tooltips = TranslationsTooltipsEn._(_root);
-	late final TranslationsVideoControlsEn videoControls = TranslationsVideoControlsEn._(_root);
-	late final TranslationsUserStatusEn userStatus = TranslationsUserStatusEn._(_root);
-	late final TranslationsMessagesEn messages = TranslationsMessagesEn._(_root);
-	late final TranslationsSubtitlingStylingEn subtitlingStyling = TranslationsSubtitlingStylingEn._(_root);
-	late final TranslationsMpvConfigEn mpvConfig = TranslationsMpvConfigEn._(_root);
-	late final TranslationsDialogEn dialog = TranslationsDialogEn._(_root);
-	late final TranslationsDiscoverEn discover = TranslationsDiscoverEn._(_root);
-	late final TranslationsErrorsEn errors = TranslationsErrorsEn._(_root);
-	late final TranslationsLibrariesEn libraries = TranslationsLibrariesEn._(_root);
-	late final TranslationsAboutEn about = TranslationsAboutEn._(_root);
-	late final TranslationsServerSelectionEn serverSelection = TranslationsServerSelectionEn._(_root);
-	late final TranslationsHubDetailEn hubDetail = TranslationsHubDetailEn._(_root);
-	late final TranslationsLogsEn logs = TranslationsLogsEn._(_root);
-	late final TranslationsLicensesEn licenses = TranslationsLicensesEn._(_root);
-	late final TranslationsNavigationEn navigation = TranslationsNavigationEn._(_root);
-	late final TranslationsLiveTvEn liveTv = TranslationsLiveTvEn._(_root);
-	late final TranslationsCollectionsEn collections = TranslationsCollectionsEn._(_root);
-	late final TranslationsPlaylistsEn playlists = TranslationsPlaylistsEn._(_root);
-	late final TranslationsWatchTogetherEn watchTogether = TranslationsWatchTogetherEn._(_root);
-	late final TranslationsDownloadsEn downloads = TranslationsDownloadsEn._(_root);
-	late final TranslationsShadersEn shaders = TranslationsShadersEn._(_root);
-	late final TranslationsCompanionRemoteEn companionRemote = TranslationsCompanionRemoteEn._(_root);
-	late final TranslationsVideoSettingsEn videoSettings = TranslationsVideoSettingsEn._(_root);
-	late final TranslationsExternalPlayerEn externalPlayer = TranslationsExternalPlayerEn._(_root);
-	late final TranslationsMetadataEditEn metadataEdit = TranslationsMetadataEditEn._(_root);
-	late final TranslationsMatchScreenEn matchScreen = TranslationsMatchScreenEn._(_root);
-	late final TranslationsServerTasksEn serverTasks = TranslationsServerTasksEn._(_root);
-	late final TranslationsTraktEn trakt = TranslationsTraktEn._(_root);
-	late final TranslationsTrackersEn trackers = TranslationsTrackersEn._(_root);
+	late final TranslationsAppEn app = TranslationsAppEn.internal(_root);
+	late final TranslationsAuthEn auth = TranslationsAuthEn.internal(_root);
+	late final TranslationsCommonEn common = TranslationsCommonEn.internal(_root);
+	late final TranslationsScreensEn screens = TranslationsScreensEn.internal(_root);
+	late final TranslationsUpdateEn update = TranslationsUpdateEn.internal(_root);
+	late final TranslationsSettingsEn settings = TranslationsSettingsEn.internal(_root);
+	late final TranslationsSearchEn search = TranslationsSearchEn.internal(_root);
+	late final TranslationsHotkeysEn hotkeys = TranslationsHotkeysEn.internal(_root);
+	late final TranslationsFileInfoEn fileInfo = TranslationsFileInfoEn.internal(_root);
+	late final TranslationsMediaMenuEn mediaMenu = TranslationsMediaMenuEn.internal(_root);
+	late final TranslationsAccessibilityEn accessibility = TranslationsAccessibilityEn.internal(_root);
+	late final TranslationsTooltipsEn tooltips = TranslationsTooltipsEn.internal(_root);
+	late final TranslationsVideoControlsEn videoControls = TranslationsVideoControlsEn.internal(_root);
+	late final TranslationsUserStatusEn userStatus = TranslationsUserStatusEn.internal(_root);
+	late final TranslationsMessagesEn messages = TranslationsMessagesEn.internal(_root);
+	late final TranslationsSubtitlingStylingEn subtitlingStyling = TranslationsSubtitlingStylingEn.internal(_root);
+	late final TranslationsMpvConfigEn mpvConfig = TranslationsMpvConfigEn.internal(_root);
+	late final TranslationsDialogEn dialog = TranslationsDialogEn.internal(_root);
+	late final TranslationsProfilesEn profiles = TranslationsProfilesEn.internal(_root);
+	late final TranslationsConnectionsEn connections = TranslationsConnectionsEn.internal(_root);
+	late final TranslationsDiscoverEn discover = TranslationsDiscoverEn.internal(_root);
+	late final TranslationsErrorsEn errors = TranslationsErrorsEn.internal(_root);
+	late final TranslationsLibrariesEn libraries = TranslationsLibrariesEn.internal(_root);
+	late final TranslationsAboutEn about = TranslationsAboutEn.internal(_root);
+	late final TranslationsServerSelectionEn serverSelection = TranslationsServerSelectionEn.internal(_root);
+	late final TranslationsHubDetailEn hubDetail = TranslationsHubDetailEn.internal(_root);
+	late final TranslationsLogsEn logs = TranslationsLogsEn.internal(_root);
+	late final TranslationsLicensesEn licenses = TranslationsLicensesEn.internal(_root);
+	late final TranslationsNavigationEn navigation = TranslationsNavigationEn.internal(_root);
+	late final TranslationsLiveTvEn liveTv = TranslationsLiveTvEn.internal(_root);
+	late final TranslationsCollectionsEn collections = TranslationsCollectionsEn.internal(_root);
+	late final TranslationsPlaylistsEn playlists = TranslationsPlaylistsEn.internal(_root);
+	late final TranslationsWatchTogetherEn watchTogether = TranslationsWatchTogetherEn.internal(_root);
+	late final TranslationsDownloadsEn downloads = TranslationsDownloadsEn.internal(_root);
+	late final TranslationsShadersEn shaders = TranslationsShadersEn.internal(_root);
+	late final TranslationsCompanionRemoteEn companionRemote = TranslationsCompanionRemoteEn.internal(_root);
+	late final TranslationsVideoSettingsEn videoSettings = TranslationsVideoSettingsEn.internal(_root);
+	late final TranslationsExternalPlayerEn externalPlayer = TranslationsExternalPlayerEn.internal(_root);
+	late final TranslationsMetadataEditEn metadataEdit = TranslationsMetadataEditEn.internal(_root);
+	late final TranslationsMatchScreenEn matchScreen = TranslationsMatchScreenEn.internal(_root);
+	late final TranslationsServerTasksEn serverTasks = TranslationsServerTasksEn.internal(_root);
+	late final TranslationsTraktEn trakt = TranslationsTraktEn.internal(_root);
+	late final TranslationsTrackersEn trackers = TranslationsTrackersEn.internal(_root);
+	late final TranslationsAddServerEn addServer = TranslationsAddServerEn.internal(_root);
 }
 
 // Path: app
 class TranslationsAppEn {
-	TranslationsAppEn._(this._root);
+	TranslationsAppEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -97,11 +100,14 @@ class TranslationsAppEn {
 
 // Path: auth
 class TranslationsAuthEn {
-	TranslationsAuthEn._(this._root);
+	TranslationsAuthEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+
+	/// en: 'Sign in'
+	String get signIn => 'Sign in';
 
 	/// en: 'Sign in with Plex'
 	String get signInWithPlex => 'Sign in with Plex';
@@ -123,11 +129,35 @@ class TranslationsAuthEn {
 
 	/// en: 'Use browser'
 	String get useBrowser => 'Use browser';
+
+	/// en: 'or'
+	String get or => 'or';
+
+	/// en: 'Connect to Jellyfin'
+	String get connectToJellyfin => 'Connect to Jellyfin';
+
+	/// en: 'Use Quick Connect'
+	String get useQuickConnect => 'Use Quick Connect';
+
+	/// en: 'Quick Connect code'
+	String get quickConnectCode => 'Quick Connect code';
+
+	/// en: 'Open your Jellyfin server in a web browser, sign in, and choose Quick Connect from the user menu. Enter this code to approve sign-in.'
+	String get quickConnectInstructions => 'Open your Jellyfin server in a web browser, sign in, and choose Quick Connect from the user menu. Enter this code to approve sign-in.';
+
+	/// en: 'Waiting for approval…'
+	String get quickConnectWaiting => 'Waiting for approval…';
+
+	/// en: 'Cancel'
+	String get quickConnectCancel => 'Cancel';
+
+	/// en: 'Quick Connect code expired before approval. Please try again.'
+	String get quickConnectExpired => 'Quick Connect code expired before approval. Please try again.';
 }
 
 // Path: common
 class TranslationsCommonEn {
-	TranslationsCommonEn._(this._root);
+	TranslationsCommonEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -268,7 +298,7 @@ class TranslationsCommonEn {
 
 // Path: screens
 class TranslationsScreensEn {
-	TranslationsScreensEn._(this._root);
+	TranslationsScreensEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -292,7 +322,7 @@ class TranslationsScreensEn {
 
 // Path: update
 class TranslationsUpdateEn {
-	TranslationsUpdateEn._(this._root);
+	TranslationsUpdateEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -322,7 +352,7 @@ class TranslationsUpdateEn {
 
 // Path: settings
 class TranslationsSettingsEn {
-	TranslationsSettingsEn._(this._root);
+	TranslationsSettingsEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -418,11 +448,11 @@ class TranslationsSettingsEn {
 	/// en: 'Show Hero Section'
 	String get showHeroSection => 'Show Hero Section';
 
-	/// en: 'Use Plex Home Layout'
-	String get useGlobalHubs => 'Use Plex Home Layout';
+	/// en: 'Use Home Layout'
+	String get useGlobalHubs => 'Use Home Layout';
 
-	/// en: 'Show home page hubs like the official Plex client. When off, shows per-library recommendations instead.'
-	String get useGlobalHubsDescription => 'Show home page hubs like the official Plex client. When off, shows per-library recommendations instead.';
+	/// en: 'Show home page hubs like the official client. When off, shows per-library recommendations instead.'
+	String get useGlobalHubsDescription => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.';
 
 	/// en: 'Show Server Name on Hubs'
 	String get showServerNameOnHubs => 'Show Server Name on Hubs';
@@ -433,8 +463,8 @@ class TranslationsSettingsEn {
 	/// en: 'Group Libraries by Server'
 	String get groupLibrariesByServer => 'Group Libraries by Server';
 
-	/// en: 'Show a header for each Plex server in the sidebar when you're connected to multiple servers.'
-	String get groupLibrariesByServerDescription => 'Show a header for each Plex server in the sidebar when you\'re connected to multiple servers.';
+	/// en: 'Show a header for each media server in the sidebar when you're connected to multiple servers.'
+	String get groupLibrariesByServerDescription => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.';
 
 	/// en: 'Always Keep Sidebar Open'
 	String get alwaysKeepSidebarOpen => 'Always Keep Sidebar Open';
@@ -889,7 +919,7 @@ class TranslationsSettingsEn {
 
 // Path: search
 class TranslationsSearchEn {
-	TranslationsSearchEn._(this._root);
+	TranslationsSearchEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -910,7 +940,7 @@ class TranslationsSearchEn {
 
 // Path: hotkeys
 class TranslationsHotkeysEn {
-	TranslationsHotkeysEn._(this._root);
+	TranslationsHotkeysEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -922,12 +952,12 @@ class TranslationsHotkeysEn {
 	/// en: 'Clear shortcut'
 	String get clearShortcut => 'Clear shortcut';
 
-	late final TranslationsHotkeysActionsEn actions = TranslationsHotkeysActionsEn._(_root);
+	late final TranslationsHotkeysActionsEn actions = TranslationsHotkeysActionsEn.internal(_root);
 }
 
 // Path: fileInfo
 class TranslationsFileInfoEn {
-	TranslationsFileInfoEn._(this._root);
+	TranslationsFileInfoEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1011,7 +1041,7 @@ class TranslationsFileInfoEn {
 
 // Path: mediaMenu
 class TranslationsMediaMenuEn {
-	TranslationsMediaMenuEn._(this._root);
+	TranslationsMediaMenuEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1065,7 +1095,7 @@ class TranslationsMediaMenuEn {
 
 // Path: accessibility
 class TranslationsAccessibilityEn {
-	TranslationsAccessibilityEn._(this._root);
+	TranslationsAccessibilityEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1098,7 +1128,7 @@ class TranslationsAccessibilityEn {
 
 // Path: tooltips
 class TranslationsTooltipsEn {
-	TranslationsTooltipsEn._(this._root);
+	TranslationsTooltipsEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1119,7 +1149,7 @@ class TranslationsTooltipsEn {
 
 // Path: videoControls
 class TranslationsVideoControlsEn {
-	TranslationsVideoControlsEn._(this._root);
+	TranslationsVideoControlsEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1293,7 +1323,7 @@ class TranslationsVideoControlsEn {
 	/// en: 'Picture-in-picture failed to start'
 	String get pipFailed => 'Picture-in-picture failed to start';
 
-	late final TranslationsVideoControlsPipErrorsEn pipErrors = TranslationsVideoControlsPipErrorsEn._(_root);
+	late final TranslationsVideoControlsPipErrorsEn pipErrors = TranslationsVideoControlsPipErrorsEn.internal(_root);
 
 	/// en: 'Chapters'
 	String get chapters => 'Chapters';
@@ -1328,7 +1358,7 @@ class TranslationsVideoControlsEn {
 
 // Path: userStatus
 class TranslationsUserStatusEn {
-	TranslationsUserStatusEn._(this._root);
+	TranslationsUserStatusEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1349,7 +1379,7 @@ class TranslationsUserStatusEn {
 
 // Path: messages
 class TranslationsMessagesEn {
-	TranslationsMessagesEn._(this._root);
+	TranslationsMessagesEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1397,8 +1427,8 @@ class TranslationsMessagesEn {
 	/// en: 'No profiles available'
 	String get noProfilesAvailable => 'No profiles available';
 
-	/// en: 'Contact your Plex administrator to add profiles'
-	String get contactAdminForProfiles => 'Contact your Plex administrator to add profiles';
+	/// en: 'Contact your server administrator to add profiles'
+	String get contactAdminForProfiles => 'Contact your server administrator to add profiles';
 
 	/// en: 'Unable to determine library section for this item'
 	String get unableToDetermineLibrarySection => 'Unable to determine library section for this item';
@@ -1478,7 +1508,7 @@ class TranslationsMessagesEn {
 
 // Path: subtitlingStyling
 class TranslationsSubtitlingStylingEn {
-	TranslationsSubtitlingStylingEn._(this._root);
+	TranslationsSubtitlingStylingEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1526,7 +1556,7 @@ class TranslationsSubtitlingStylingEn {
 
 // Path: mpvConfig
 class TranslationsMpvConfigEn {
-	TranslationsMpvConfigEn._(this._root);
+	TranslationsMpvConfigEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1577,7 +1607,7 @@ class TranslationsMpvConfigEn {
 
 // Path: dialog
 class TranslationsDialogEn {
-	TranslationsDialogEn._(this._root);
+	TranslationsDialogEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1587,9 +1617,177 @@ class TranslationsDialogEn {
 	String get confirmAction => 'Confirm Action';
 }
 
+// Path: profiles
+class TranslationsProfilesEn {
+	TranslationsProfilesEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Add Plezy profile'
+	String get addPlezyProfile => 'Add Plezy profile';
+
+	/// en: 'Switching profile…'
+	String get switchingProfile => 'Switching profile…';
+
+	/// en: 'Delete this profile?'
+	String get deleteThisProfileTitle => 'Delete this profile?';
+
+	/// en: '${displayName} will be removed. Connections themselves are not affected.'
+	String deleteThisProfileMessage({required Object displayName}) => '${displayName} will be removed. Connections themselves are not affected.';
+
+	/// en: 'Active'
+	String get active => 'Active';
+
+	/// en: 'Manage'
+	String get manage => 'Manage';
+
+	/// en: 'Delete'
+	String get delete => 'Delete';
+
+	/// en: 'Sign out'
+	String get signOut => 'Sign out';
+
+	/// en: 'Sign out of Plex?'
+	String get signOutPlexTitle => 'Sign out of Plex?';
+
+	/// en: '${displayName} and every Plex Home user on this account will be removed from this device. You can sign back in any time.'
+	String signOutPlexMessage({required Object displayName}) => '${displayName} and every Plex Home user on this account will be removed from this device. You can sign back in any time.';
+
+	/// en: 'Signed out of Plex.'
+	String get signedOutPlex => 'Signed out of Plex.';
+
+	/// en: 'Sign out failed.'
+	String get signOutFailed => 'Sign out failed.';
+
+	/// en: 'Profiles'
+	String get sectionTitle => 'Profiles';
+
+	/// en: 'Add profiles to mix managed users and local identities'
+	String get summarySingle => 'Add profiles to mix managed users and local identities';
+
+	/// en: '${count} profiles · active: ${activeName}'
+	String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} profiles · active: ${activeName}';
+
+	/// en: '${count} profiles'
+	String summaryMultiple({required Object count}) => '${count} profiles';
+
+	/// en: 'Remove connection?'
+	String get removeConnectionTitle => 'Remove connection?';
+
+	/// en: '${displayName} will lose access to ${connectionLabel}. The connection itself stays available to other profiles.'
+	String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => '${displayName} will lose access to ${connectionLabel}. The connection itself stays available to other profiles.';
+
+	/// en: 'Delete profile?'
+	String get deleteProfileTitle => 'Delete profile?';
+
+	/// en: 'This removes ${displayName} and all its connections from this device. The underlying Plex/Jellyfin servers aren't affected.'
+	String deleteProfileMessage({required Object displayName}) => 'This removes ${displayName} and all its connections from this device. The underlying Plex/Jellyfin servers aren\'t affected.';
+
+	/// en: 'Profile name'
+	String get profileNameLabel => 'Profile name';
+
+	/// en: 'PIN protection'
+	String get pinProtectionLabel => 'PIN protection';
+
+	/// en: 'PIN managed by Plex. Edit on plex.tv.'
+	String get pinManagedByPlex => 'PIN managed by Plex. Edit on plex.tv.';
+
+	/// en: 'No PIN set. To require one, edit the home user on plex.tv.'
+	String get noPinSetEditOnPlex => 'No PIN set. To require one, edit the home user on plex.tv.';
+
+	/// en: 'Set PIN'
+	String get setPin => 'Set PIN';
+
+	/// en: 'Connections'
+	String get connectionsLabel => 'Connections';
+
+	/// en: 'Add'
+	String get add => 'Add';
+
+	/// en: 'Delete profile'
+	String get deleteProfileButton => 'Delete profile';
+
+	/// en: 'No connections — add one to use this profile.'
+	String get noConnectionsHint => 'No connections — add one to use this profile.';
+
+	/// en: 'Plex Home account'
+	String get plexHomeAccount => 'Plex Home account';
+
+	/// en: 'Default'
+	String get connectionDefault => 'Default';
+
+	/// en: 'Make default'
+	String get makeDefault => 'Make default';
+
+	/// en: 'Remove'
+	String get removeConnection => 'Remove';
+
+	/// en: 'Add to ${displayName}'
+	String borrowAddTo({required Object displayName}) => 'Add to ${displayName}';
+
+	/// en: 'Borrow a connection from another profile. PIN-protected source profiles ask for the PIN before sharing.'
+	String get borrowExplain => 'Borrow a connection from another profile. PIN-protected source profiles ask for the PIN before sharing.';
+
+	/// en: 'Nothing to borrow yet.'
+	String get borrowEmpty => 'Nothing to borrow yet.';
+
+	/// en: 'Connect a Plex account or Jellyfin server to another profile first, then come back here.'
+	String get borrowEmptySubtitle => 'Connect a Plex account or Jellyfin server to another profile first, then come back here.';
+
+	/// en: 'New profile'
+	String get newProfile => 'New profile';
+
+	/// en: 'e.g. Guests, Kids, Family Room'
+	String get profileNameHint => 'e.g. Guests, Kids, Family Room';
+
+	/// en: 'PIN protection (optional)'
+	String get pinProtectionOptional => 'PIN protection (optional)';
+
+	/// en: '4-digit PIN required to switch into this profile. Soft barrier — anyone who can clear app data can bypass it.'
+	String get pinExplain => '4-digit PIN required to switch into this profile. Soft barrier — anyone who can clear app data can bypass it.';
+
+	/// en: 'Continue'
+	String get continueButton => 'Continue';
+
+	/// en: 'PINs don't match'
+	String get pinsDontMatch => 'PINs don\'t match';
+}
+
+// Path: connections
+class TranslationsConnectionsEn {
+	TranslationsConnectionsEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Connections'
+	String get sectionTitle => 'Connections';
+
+	/// en: 'Add connection'
+	String get addConnection => 'Add connection';
+
+	/// en: 'Sign in with Plex or connect a Jellyfin server'
+	String get addConnectionSubtitleNoProfile => 'Sign in with Plex or connect a Jellyfin server';
+
+	/// en: 'Add to ${displayName} — Plex account, Jellyfin server, or borrow from another profile'
+	String addConnectionSubtitleScoped({required Object displayName}) => 'Add to ${displayName} — Plex account, Jellyfin server, or borrow from another profile';
+
+	/// en: 'Session expired for ${name}'
+	String sessionExpiredOne({required Object name}) => 'Session expired for ${name}';
+
+	/// en: 'Session expired for ${count} servers'
+	String sessionExpiredMany({required Object count}) => 'Session expired for ${count} servers';
+
+	/// en: 'Sign in again'
+	String get signInAgain => 'Sign in again';
+}
+
 // Path: discover
 class TranslationsDiscoverEn {
-	TranslationsDiscoverEn._(this._root);
+	TranslationsDiscoverEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1609,6 +1807,12 @@ class TranslationsDiscoverEn {
 
 	/// en: 'Continue Watching'
 	String get continueWatching => 'Continue Watching';
+
+	/// en: 'Next Up'
+	String get nextUp => 'Next Up';
+
+	/// en: 'Recently Added'
+	String get recentlyAdded => 'Recently Added';
 
 	/// en: 'S${season}E${episode}'
 	String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
@@ -1640,7 +1844,7 @@ class TranslationsDiscoverEn {
 
 // Path: errors
 class TranslationsErrorsEn {
-	TranslationsErrorsEn._(this._root);
+	TranslationsErrorsEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1652,8 +1856,8 @@ class TranslationsErrorsEn {
 	/// en: 'Connection timeout while loading ${context}'
 	String connectionTimeout({required Object context}) => 'Connection timeout while loading ${context}';
 
-	/// en: 'Unable to connect to Plex server'
-	String get connectionFailed => 'Unable to connect to Plex server';
+	/// en: 'Unable to connect to media server'
+	String get connectionFailed => 'Unable to connect to media server';
 
 	/// en: 'Failed to load ${context}: ${error}'
 	String failedToLoad({required Object context, required Object error}) => 'Failed to load ${context}: ${error}';
@@ -1678,11 +1882,17 @@ class TranslationsErrorsEn {
 
 	/// en: 'Failed to switch to ${displayName}'
 	String failedToSwitchProfile({required Object displayName}) => 'Failed to switch to ${displayName}';
+
+	/// en: 'Failed to delete ${displayName}'
+	String failedToDeleteProfile({required Object displayName}) => 'Failed to delete ${displayName}';
+
+	/// en: 'Couldn't update rating'
+	String get failedToRate => 'Couldn\'t update rating';
 }
 
 // Path: libraries
 class TranslationsLibrariesEn {
-	TranslationsLibrariesEn._(this._root);
+	TranslationsLibrariesEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1802,13 +2012,15 @@ class TranslationsLibrariesEn {
 	/// en: 'folders'
 	String get folders => 'folders';
 
-	late final TranslationsLibrariesTabsEn tabs = TranslationsLibrariesTabsEn._(_root);
-	late final TranslationsLibrariesGroupingsEn groupings = TranslationsLibrariesGroupingsEn._(_root);
+	late final TranslationsLibrariesTabsEn tabs = TranslationsLibrariesTabsEn.internal(_root);
+	late final TranslationsLibrariesGroupingsEn groupings = TranslationsLibrariesGroupingsEn.internal(_root);
+	late final TranslationsLibrariesFilterCategoriesEn filterCategories = TranslationsLibrariesFilterCategoriesEn.internal(_root);
+	late final TranslationsLibrariesSortLabelsEn sortLabels = TranslationsLibrariesSortLabelsEn.internal(_root);
 }
 
 // Path: about
 class TranslationsAboutEn {
-	TranslationsAboutEn._(this._root);
+	TranslationsAboutEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1823,8 +2035,8 @@ class TranslationsAboutEn {
 	/// en: 'Version ${version}'
 	String versionLabel({required Object version}) => 'Version ${version}';
 
-	/// en: 'A beautiful Plex client for Flutter'
-	String get appDescription => 'A beautiful Plex client for Flutter';
+	/// en: 'A beautiful Plex and Jellyfin client for Flutter'
+	String get appDescription => 'A beautiful Plex and Jellyfin client for Flutter';
 
 	/// en: 'View licenses of third-party libraries'
 	String get viewLicensesDescription => 'View licenses of third-party libraries';
@@ -1832,7 +2044,7 @@ class TranslationsAboutEn {
 
 // Path: serverSelection
 class TranslationsServerSelectionEn {
-	TranslationsServerSelectionEn._(this._root);
+	TranslationsServerSelectionEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1850,7 +2062,7 @@ class TranslationsServerSelectionEn {
 
 // Path: hubDetail
 class TranslationsHubDetailEn {
-	TranslationsHubDetailEn._(this._root);
+	TranslationsHubDetailEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1874,7 +2086,7 @@ class TranslationsHubDetailEn {
 
 // Path: logs
 class TranslationsLogsEn {
-	TranslationsLogsEn._(this._root);
+	TranslationsLogsEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1892,7 +2104,7 @@ class TranslationsLogsEn {
 
 // Path: licenses
 class TranslationsLicensesEn {
-	TranslationsLicensesEn._(this._root);
+	TranslationsLicensesEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1913,7 +2125,7 @@ class TranslationsLicensesEn {
 
 // Path: navigation
 class TranslationsNavigationEn {
-	TranslationsNavigationEn._(this._root);
+	TranslationsNavigationEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -1931,7 +2143,7 @@ class TranslationsNavigationEn {
 
 // Path: liveTv
 class TranslationsLiveTvEn {
-	TranslationsLiveTvEn._(this._root);
+	TranslationsLiveTvEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2009,7 +2221,7 @@ class TranslationsLiveTvEn {
 
 // Path: collections
 class TranslationsCollectionsEn {
-	TranslationsCollectionsEn._(this._root);
+	TranslationsCollectionsEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2084,7 +2296,7 @@ class TranslationsCollectionsEn {
 
 // Path: playlists
 class TranslationsPlaylistsEn {
-	TranslationsPlaylistsEn._(this._root);
+	TranslationsPlaylistsEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2168,7 +2380,7 @@ class TranslationsPlaylistsEn {
 
 // Path: watchTogether
 class TranslationsWatchTogetherEn {
-	TranslationsWatchTogetherEn._(this._root);
+	TranslationsWatchTogetherEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2347,11 +2559,17 @@ class TranslationsWatchTogetherEn {
 
 	/// en: 'Remove'
 	String get removeRoom => 'Remove';
+
+	/// en: 'Couldn't switch — server unavailable for sync'
+	String get guestSwitchUnavailable => 'Couldn\'t switch — server unavailable for sync';
+
+	/// en: 'Couldn't switch — content not found on this server'
+	String get guestSwitchFailed => 'Couldn\'t switch — content not found on this server';
 }
 
 // Path: downloads
 class TranslationsDownloadsEn {
-	TranslationsDownloadsEn._(this._root);
+	TranslationsDownloadsEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2501,13 +2719,31 @@ class TranslationsDownloadsEn {
 	/// en: 'Syncing unwatched items'
 	String get syncUnwatchedItems => 'Syncing unwatched items';
 
+	/// en: 'Server: ${server} • ${status}'
+	String syncRuleServerContext({required Object server, required Object status}) => 'Server: ${server} • ${status}';
+
+	/// en: 'Available'
+	String get syncRuleAvailable => 'Available';
+
+	/// en: 'Offline'
+	String get syncRuleOffline => 'Offline';
+
+	/// en: 'Sign in required'
+	String get syncRuleSignInRequired => 'Sign in required';
+
+	/// en: 'Not available for current profile'
+	String get syncRuleNotAvailableForProfile => 'Not available for current profile';
+
+	/// en: 'Unknown server'
+	String get syncRuleUnknownServer => 'Unknown server';
+
 	/// en: 'Sync rule created'
 	String get syncRuleListCreated => 'Sync rule created';
 }
 
 // Path: shaders
 class TranslationsShadersEn {
-	TranslationsShadersEn._(this._root);
+	TranslationsShadersEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2561,7 +2797,7 @@ class TranslationsShadersEn {
 
 // Path: companionRemote
 class TranslationsCompanionRemoteEn {
-	TranslationsCompanionRemoteEn._(this._root);
+	TranslationsCompanionRemoteEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2573,14 +2809,14 @@ class TranslationsCompanionRemoteEn {
 	/// en: 'Connected to ${name}'
 	String connectedTo({required Object name}) => 'Connected to ${name}';
 
-	late final TranslationsCompanionRemoteSessionEn session = TranslationsCompanionRemoteSessionEn._(_root);
-	late final TranslationsCompanionRemotePairingEn pairing = TranslationsCompanionRemotePairingEn._(_root);
-	late final TranslationsCompanionRemoteRemoteEn remote = TranslationsCompanionRemoteRemoteEn._(_root);
+	late final TranslationsCompanionRemoteSessionEn session = TranslationsCompanionRemoteSessionEn.internal(_root);
+	late final TranslationsCompanionRemotePairingEn pairing = TranslationsCompanionRemotePairingEn.internal(_root);
+	late final TranslationsCompanionRemoteRemoteEn remote = TranslationsCompanionRemoteRemoteEn.internal(_root);
 }
 
 // Path: videoSettings
 class TranslationsVideoSettingsEn {
-	TranslationsVideoSettingsEn._(this._root);
+	TranslationsVideoSettingsEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2619,7 +2855,7 @@ class TranslationsVideoSettingsEn {
 
 // Path: externalPlayer
 class TranslationsExternalPlayerEn {
-	TranslationsExternalPlayerEn._(this._root);
+	TranslationsExternalPlayerEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2673,7 +2909,7 @@ class TranslationsExternalPlayerEn {
 
 // Path: metadataEdit
 class TranslationsMetadataEditEn {
-	TranslationsMetadataEditEn._(this._root);
+	TranslationsMetadataEditEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2904,7 +3140,7 @@ class TranslationsMetadataEditEn {
 
 // Path: matchScreen
 class TranslationsMatchScreenEn {
-	TranslationsMatchScreenEn._(this._root);
+	TranslationsMatchScreenEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2949,7 +3185,7 @@ class TranslationsMatchScreenEn {
 
 // Path: serverTasks
 class TranslationsServerTasksEn {
-	TranslationsServerTasksEn._(this._root);
+	TranslationsServerTasksEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -2967,7 +3203,7 @@ class TranslationsServerTasksEn {
 
 // Path: trakt
 class TranslationsTraktEn {
-	TranslationsTraktEn._(this._root);
+	TranslationsTraktEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3003,7 +3239,7 @@ class TranslationsTraktEn {
 
 // Path: trackers
 class TranslationsTrackersEn {
-	TranslationsTrackersEn._(this._root);
+	TranslationsTrackersEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3036,15 +3272,120 @@ class TranslationsTrackersEn {
 	/// en: 'Couldn't connect to ${service}. Try again.'
 	String connectFailed({required Object service}) => 'Couldn\'t connect to ${service}. Try again.';
 
-	late final TranslationsTrackersServicesEn services = TranslationsTrackersServicesEn._(_root);
-	late final TranslationsTrackersDeviceCodeEn deviceCode = TranslationsTrackersDeviceCodeEn._(_root);
-	late final TranslationsTrackersOauthProxyEn oauthProxy = TranslationsTrackersOauthProxyEn._(_root);
-	late final TranslationsTrackersLibraryFilterEn libraryFilter = TranslationsTrackersLibraryFilterEn._(_root);
+	late final TranslationsTrackersServicesEn services = TranslationsTrackersServicesEn.internal(_root);
+	late final TranslationsTrackersDeviceCodeEn deviceCode = TranslationsTrackersDeviceCodeEn.internal(_root);
+	late final TranslationsTrackersOauthProxyEn oauthProxy = TranslationsTrackersOauthProxyEn.internal(_root);
+	late final TranslationsTrackersLibraryFilterEn libraryFilter = TranslationsTrackersLibraryFilterEn.internal(_root);
+}
+
+// Path: addServer
+class TranslationsAddServerEn {
+	TranslationsAddServerEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Add Jellyfin server'
+	String get addJellyfinTitle => 'Add Jellyfin server';
+
+	/// en: 'Enter your Jellyfin server URL — e.g. `https://jellyfin.example.com`. You can sign in afterwards.'
+	String get jellyfinUrlIntro => 'Enter your Jellyfin server URL — e.g. `https://jellyfin.example.com`. You can sign in afterwards.';
+
+	/// en: 'Server URL'
+	String get serverUrl => 'Server URL';
+
+	/// en: 'Find server'
+	String get findServer => 'Find server';
+
+	/// en: 'Username'
+	String get username => 'Username';
+
+	/// en: 'Password'
+	String get password => 'Password';
+
+	/// en: 'Sign in'
+	String get signIn => 'Sign in';
+
+	/// en: 'Change'
+	String get change => 'Change';
+
+	/// en: 'Required'
+	String get required => 'Required';
+
+	/// en: 'Could not reach the server: ${error}'
+	String couldNotReachServer({required Object error}) => 'Could not reach the server: ${error}';
+
+	/// en: 'Sign-in failed: ${error}'
+	String signInFailed({required Object error}) => 'Sign-in failed: ${error}';
+
+	/// en: 'Quick Connect failed: ${error}'
+	String quickConnectFailed({required Object error}) => 'Quick Connect failed: ${error}';
+
+	/// en: 'Sign in with Plex'
+	String get addPlexTitle => 'Sign in with Plex';
+
+	/// en: 'Choose how to sign in to Plex. The browser flow opens plex.tv where you confirm the connection; the QR option is handy for TV / remote devices.'
+	String get plexAuthIntro => 'Choose how to sign in to Plex. The browser flow opens plex.tv where you confirm the connection; the QR option is handy for TV / remote devices.';
+
+	/// en: 'Scan this QR code to sign in.'
+	String get plexQRPrompt => 'Scan this QR code to sign in.';
+
+	/// en: 'Waiting for plex.tv to confirm your sign-in…'
+	String get waitingForPlexConfirmation => 'Waiting for plex.tv to confirm your sign-in…';
+
+	/// en: 'PIN expired before sign-in. Please try again.'
+	String get pinExpired => 'PIN expired before sign-in. Please try again.';
+
+	/// en: 'This device is already signed in to a Plex account. Sign out from settings to switch accounts.'
+	String get duplicatePlexAccount => 'This device is already signed in to a Plex account. Sign out from settings to switch accounts.';
+
+	/// en: 'Failed to register account: ${error}'
+	String failedToRegisterAccount({required Object error}) => 'Failed to register account: ${error}';
+
+	/// en: 'Enter your Jellyfin server URL'
+	String get enterJellyfinUrlError => 'Enter your Jellyfin server URL';
+
+	/// en: 'Add connection'
+	String get addConnectionTitle => 'Add connection';
+
+	/// en: 'Add to ${name}'
+	String addConnectionTitleScoped({required Object name}) => 'Add to ${name}';
+
+	/// en: 'Add another media server. You can mix Plex accounts and Jellyfin servers — items from every connected backend appear together on the home screen.'
+	String get addConnectionIntroGlobal => 'Add another media server. You can mix Plex accounts and Jellyfin servers — items from every connected backend appear together on the home screen.';
+
+	/// en: 'Add a new server, or borrow one from another profile.'
+	String get addConnectionIntroScoped => 'Add a new server, or borrow one from another profile.';
+
+	/// en: 'Sign in with Plex'
+	String get signInWithPlexCard => 'Sign in with Plex';
+
+	/// en: 'Authorize this device against your Plex account. Servers shared with the account come along automatically.'
+	String get signInWithPlexCardSubtitle => 'Authorize this device against your Plex account. Servers shared with the account come along automatically.';
+
+	/// en: 'Authorize a new Plex account. Its Home users appear as profiles.'
+	String get signInWithPlexCardSubtitleScoped => 'Authorize a new Plex account. Its Home users appear as profiles.';
+
+	/// en: 'Connect to Jellyfin'
+	String get connectToJellyfinCard => 'Connect to Jellyfin';
+
+	/// en: 'Enter your Jellyfin server URL and sign in with username + password (Quick Connect coming soon).'
+	String get connectToJellyfinCardSubtitle => 'Enter your Jellyfin server URL and sign in with username + password (Quick Connect coming soon).';
+
+	/// en: 'Sign in to a Jellyfin server. Binds to ${name}.'
+	String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Sign in to a Jellyfin server. Binds to ${name}.';
+
+	/// en: 'Borrow from another profile'
+	String get borrowFromAnotherProfile => 'Borrow from another profile';
+
+	/// en: 'Reuse a connection that's already attached to a different profile. PIN-protected source profiles ask for the PIN.'
+	String get borrowFromAnotherProfileSubtitle => 'Reuse a connection that\'s already attached to a different profile. PIN-protected source profiles ask for the PIN.';
 }
 
 // Path: hotkeys.actions
 class TranslationsHotkeysActionsEn {
-	TranslationsHotkeysActionsEn._(this._root);
+	TranslationsHotkeysActionsEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3116,7 +3457,7 @@ class TranslationsHotkeysActionsEn {
 
 // Path: videoControls.pipErrors
 class TranslationsVideoControlsPipErrorsEn {
-	TranslationsVideoControlsPipErrorsEn._(this._root);
+	TranslationsVideoControlsPipErrorsEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3146,7 +3487,7 @@ class TranslationsVideoControlsPipErrorsEn {
 
 // Path: libraries.tabs
 class TranslationsLibrariesTabsEn {
-	TranslationsLibrariesTabsEn._(this._root);
+	TranslationsLibrariesTabsEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3167,7 +3508,7 @@ class TranslationsLibrariesTabsEn {
 
 // Path: libraries.groupings
 class TranslationsLibrariesGroupingsEn {
-	TranslationsLibrariesGroupingsEn._(this._root);
+	TranslationsLibrariesGroupingsEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3195,9 +3536,66 @@ class TranslationsLibrariesGroupingsEn {
 	String get folders => 'Folders';
 }
 
+// Path: libraries.filterCategories
+class TranslationsLibrariesFilterCategoriesEn {
+	TranslationsLibrariesFilterCategoriesEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Genre'
+	String get genre => 'Genre';
+
+	/// en: 'Year'
+	String get year => 'Year';
+
+	/// en: 'Content Rating'
+	String get contentRating => 'Content Rating';
+
+	/// en: 'Tag'
+	String get tag => 'Tag';
+}
+
+// Path: libraries.sortLabels
+class TranslationsLibrariesSortLabelsEn {
+	TranslationsLibrariesSortLabelsEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Title'
+	String get title => 'Title';
+
+	/// en: 'Date Added'
+	String get dateAdded => 'Date Added';
+
+	/// en: 'Release Date'
+	String get releaseDate => 'Release Date';
+
+	/// en: 'Rating'
+	String get rating => 'Rating';
+
+	/// en: 'Last Played'
+	String get lastPlayed => 'Last Played';
+
+	/// en: 'Play Count'
+	String get playCount => 'Play Count';
+
+	/// en: 'Random'
+	String get random => 'Random';
+
+	/// en: 'Date Shared'
+	String get dateShared => 'Date Shared';
+
+	/// en: 'Latest Episode Air Date'
+	String get latestEpisodeAirDate => 'Latest Episode Air Date';
+}
+
 // Path: companionRemote.session
 class TranslationsCompanionRemoteSessionEn {
-	TranslationsCompanionRemoteSessionEn._(this._root);
+	TranslationsCompanionRemoteSessionEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3242,7 +3640,7 @@ class TranslationsCompanionRemoteSessionEn {
 
 // Path: companionRemote.pairing
 class TranslationsCompanionRemotePairingEn {
-	TranslationsCompanionRemotePairingEn._(this._root);
+	TranslationsCompanionRemotePairingEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3296,7 +3694,7 @@ class TranslationsCompanionRemotePairingEn {
 
 // Path: companionRemote.remote
 class TranslationsCompanionRemoteRemoteEn {
-	TranslationsCompanionRemoteRemoteEn._(this._root);
+	TranslationsCompanionRemoteRemoteEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3386,7 +3784,7 @@ class TranslationsCompanionRemoteRemoteEn {
 
 // Path: trackers.services
 class TranslationsTrackersServicesEn {
-	TranslationsTrackersServicesEn._(this._root);
+	TranslationsTrackersServicesEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3404,7 +3802,7 @@ class TranslationsTrackersServicesEn {
 
 // Path: trackers.deviceCode
 class TranslationsTrackersDeviceCodeEn {
-	TranslationsTrackersDeviceCodeEn._(this._root);
+	TranslationsTrackersDeviceCodeEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3428,7 +3826,7 @@ class TranslationsTrackersDeviceCodeEn {
 
 // Path: trackers.oauthProxy
 class TranslationsTrackersOauthProxyEn {
-	TranslationsTrackersOauthProxyEn._(this._root);
+	TranslationsTrackersOauthProxyEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3449,7 +3847,7 @@ class TranslationsTrackersOauthProxyEn {
 
 // Path: trackers.libraryFilter
 class TranslationsTrackersLibraryFilterEn {
-	TranslationsTrackersLibraryFilterEn._(this._root);
+	TranslationsTrackersLibraryFilterEn.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
@@ -3501,6 +3899,7 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
+			'auth.signIn' => 'Sign in',
 			'auth.signInWithPlex' => 'Sign in with Plex',
 			'auth.showQRCode' => 'Show QR Code',
 			'auth.authenticate' => 'Authenticate',
@@ -3508,6 +3907,14 @@ extension on Translations {
 			'auth.scanQRToSignIn' => 'Scan this QR code to sign in',
 			'auth.waitingForAuth' => 'Waiting for authentication...\nPlease complete sign-in in your browser.',
 			'auth.useBrowser' => 'Use browser',
+			'auth.or' => 'or',
+			'auth.connectToJellyfin' => 'Connect to Jellyfin',
+			'auth.useQuickConnect' => 'Use Quick Connect',
+			'auth.quickConnectCode' => 'Quick Connect code',
+			'auth.quickConnectInstructions' => 'Open your Jellyfin server in a web browser, sign in, and choose Quick Connect from the user menu. Enter this code to approve sign-in.',
+			'auth.quickConnectWaiting' => 'Waiting for approval…',
+			'auth.quickConnectCancel' => 'Cancel',
+			'auth.quickConnectExpired' => 'Quick Connect code expired before approval. Please try again.',
 			'common.cancel' => 'Cancel',
 			'common.save' => 'Save',
 			'common.close' => 'Close',
@@ -3594,12 +4001,12 @@ extension on Translations {
 			'settings.gridView' => 'Grid',
 			'settings.listView' => 'List',
 			'settings.showHeroSection' => 'Show Hero Section',
-			'settings.useGlobalHubs' => 'Use Plex Home Layout',
-			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official Plex client. When off, shows per-library recommendations instead.',
+			'settings.useGlobalHubs' => 'Use Home Layout',
+			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.',
 			'settings.showServerNameOnHubs' => 'Show Server Name on Hubs',
 			'settings.showServerNameOnHubsDescription' => 'Always display the server name in hub titles. When off, only shows for duplicate hub names.',
 			'settings.groupLibrariesByServer' => 'Group Libraries by Server',
-			'settings.groupLibrariesByServerDescription' => 'Show a header for each Plex server in the sidebar when you\'re connected to multiple servers.',
+			'settings.groupLibrariesByServerDescription' => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.',
 			'settings.alwaysKeepSidebarOpen' => 'Always Keep Sidebar Open',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidebar stays expanded and content area adjusts to fit',
 			'settings.showUnwatchedCount' => 'Show Unwatched Count',
@@ -3920,7 +4327,7 @@ extension on Translations {
 			'messages.musicNotSupported' => 'Music playback is not yet supported',
 			'messages.noDescriptionAvailable' => 'No description available',
 			'messages.noProfilesAvailable' => 'No profiles available',
-			'messages.contactAdminForProfiles' => 'Contact your Plex administrator to add profiles',
+			'messages.contactAdminForProfiles' => 'Contact your server administrator to add profiles',
 			'messages.unableToDetermineLibrarySection' => 'Unable to determine library section for this item',
 			'messages.logsCleared' => 'Logs cleared',
 			'messages.logsCopied' => 'Logs copied to clipboard',
@@ -3974,11 +4381,65 @@ extension on Translations {
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirm Action',
+			'profiles.addPlezyProfile' => 'Add Plezy profile',
+			'profiles.switchingProfile' => 'Switching profile…',
+			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
+			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName} will be removed. Connections themselves are not affected.',
+			'profiles.active' => 'Active',
+			'profiles.manage' => 'Manage',
+			'profiles.delete' => 'Delete',
+			'profiles.signOut' => 'Sign out',
+			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} and every Plex Home user on this account will be removed from this device. You can sign back in any time.',
+			'profiles.signedOutPlex' => 'Signed out of Plex.',
+			'profiles.signOutFailed' => 'Sign out failed.',
+			'profiles.sectionTitle' => 'Profiles',
+			'profiles.summarySingle' => 'Add profiles to mix managed users and local identities',
+			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiles · active: ${activeName}',
+			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiles',
+			'profiles.removeConnectionTitle' => 'Remove connection?',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName} will lose access to ${connectionLabel}. The connection itself stays available to other profiles.',
+			'profiles.deleteProfileTitle' => 'Delete profile?',
+			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'This removes ${displayName} and all its connections from this device. The underlying Plex/Jellyfin servers aren\'t affected.',
+			'profiles.profileNameLabel' => 'Profile name',
+			'profiles.pinProtectionLabel' => 'PIN protection',
+			'profiles.pinManagedByPlex' => 'PIN managed by Plex. Edit on plex.tv.',
+			'profiles.noPinSetEditOnPlex' => 'No PIN set. To require one, edit the home user on plex.tv.',
+			'profiles.setPin' => 'Set PIN',
+			'profiles.connectionsLabel' => 'Connections',
+			'profiles.add' => 'Add',
+			'profiles.deleteProfileButton' => 'Delete profile',
+			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
+			_ => null,
+		} ?? switch (path) {
+			'profiles.plexHomeAccount' => 'Plex Home account',
+			'profiles.connectionDefault' => 'Default',
+			'profiles.makeDefault' => 'Make default',
+			'profiles.removeConnection' => 'Remove',
+			'profiles.borrowAddTo' => ({required Object displayName}) => 'Add to ${displayName}',
+			'profiles.borrowExplain' => 'Borrow a connection from another profile. PIN-protected source profiles ask for the PIN before sharing.',
+			'profiles.borrowEmpty' => 'Nothing to borrow yet.',
+			'profiles.borrowEmptySubtitle' => 'Connect a Plex account or Jellyfin server to another profile first, then come back here.',
+			'profiles.newProfile' => 'New profile',
+			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
+			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
+			'profiles.pinExplain' => '4-digit PIN required to switch into this profile. Soft barrier — anyone who can clear app data can bypass it.',
+			'profiles.continueButton' => 'Continue',
+			'profiles.pinsDontMatch' => 'PINs don\'t match',
+			'connections.sectionTitle' => 'Connections',
+			'connections.addConnection' => 'Add connection',
+			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin server',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName} — Plex account, Jellyfin server, or borrow from another profile',
+			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
+			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expired for ${count} servers',
+			'connections.signInAgain' => 'Sign in again',
 			'discover.title' => 'Discover',
 			'discover.switchProfile' => 'Switch Profile',
 			'discover.noContentAvailable' => 'No content available',
 			'discover.addMediaToLibraries' => 'Add some media to your libraries',
 			'discover.continueWatching' => 'Continue Watching',
+			'discover.nextUp' => 'Next Up',
+			'discover.recentlyAdded' => 'Recently Added',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overview',
 			'discover.cast' => 'Cast',
@@ -3990,7 +4451,7 @@ extension on Translations {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
 			'errors.searchFailed' => ({required Object error}) => 'Search failed: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
-			'errors.connectionFailed' => 'Unable to connect to Plex server',
+			'errors.connectionFailed' => 'Unable to connect to media server',
 			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Failed to load ${context}: ${error}',
 			'errors.noClientAvailable' => 'No client available',
 			'errors.authenticationFailed' => ({required Object error}) => 'Authentication failed: ${error}',
@@ -3999,6 +4460,8 @@ extension on Translations {
 			'errors.invalidToken' => 'Invalid token',
 			'errors.failedToVerifyToken' => ({required Object error}) => 'Failed to verify token: ${error}',
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Failed to switch to ${displayName}',
+			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
+			'errors.failedToRate' => 'Couldn\'t update rating',
 			'libraries.title' => 'Libraries',
 			'libraries.scanLibraryFiles' => 'Scan Library Files',
 			'libraries.scanLibrary' => 'Scan Library',
@@ -4012,8 +4475,6 @@ extension on Translations {
 			'libraries.analyzing' => ({required Object title}) => 'Analyzing "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analysis started for "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Failed to analyze library: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.noLibrariesFound' => 'No libraries found',
 			'libraries.allLibrariesHidden' => 'All libraries are hidden',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Hidden libraries (${count})',
@@ -4050,10 +4511,23 @@ extension on Translations {
 			'libraries.groupings.seasons' => 'Seasons',
 			'libraries.groupings.episodes' => 'Episodes',
 			'libraries.groupings.folders' => 'Folders',
+			'libraries.filterCategories.genre' => 'Genre',
+			'libraries.filterCategories.year' => 'Year',
+			'libraries.filterCategories.contentRating' => 'Content Rating',
+			'libraries.filterCategories.tag' => 'Tag',
+			'libraries.sortLabels.title' => 'Title',
+			'libraries.sortLabels.dateAdded' => 'Date Added',
+			'libraries.sortLabels.releaseDate' => 'Release Date',
+			'libraries.sortLabels.rating' => 'Rating',
+			'libraries.sortLabels.lastPlayed' => 'Last Played',
+			'libraries.sortLabels.playCount' => 'Play Count',
+			'libraries.sortLabels.random' => 'Random',
+			'libraries.sortLabels.dateShared' => 'Date Shared',
+			'libraries.sortLabels.latestEpisodeAirDate' => 'Latest Episode Air Date',
 			'about.title' => 'About',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
-			'about.appDescription' => 'A beautiful Plex client for Flutter',
+			'about.appDescription' => 'A beautiful Plex and Jellyfin client for Flutter',
 			'about.viewLicensesDescription' => 'View licenses of third-party libraries',
 			'serverSelection.allServerConnectionsFailed' => 'Failed to connect to any servers. Please check your network and try again.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
@@ -4201,6 +4675,8 @@ extension on Translations {
 			'watchTogether.recentRooms' => 'Recent Rooms',
 			'watchTogether.renameRoom' => 'Rename Room',
 			'watchTogether.removeRoom' => 'Remove',
+			'watchTogether.guestSwitchUnavailable' => 'Couldn\'t switch — server unavailable for sync',
+			'watchTogether.guestSwitchFailed' => 'Couldn\'t switch — content not found on this server',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',
@@ -4249,6 +4725,12 @@ extension on Translations {
 			'downloads.editSyncFilter' => 'Sync filter',
 			'downloads.syncAllItems' => 'Syncing all items',
 			'downloads.syncUnwatchedItems' => 'Syncing unwatched items',
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => 'Available',
+			'downloads.syncRuleOffline' => 'Offline',
+			'downloads.syncRuleSignInRequired' => 'Sign in required',
+			'downloads.syncRuleNotAvailableForProfile' => 'Not available for current profile',
+			'downloads.syncRuleUnknownServer' => 'Unknown server',
 			'downloads.syncRuleListCreated' => 'Sync rule created',
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
@@ -4442,6 +4924,8 @@ extension on Translations {
 			'trakt.disconnectConfirmBody' => 'Plezy will stop sending playback events to Trakt. You can reconnect at any time.',
 			'trakt.scrobble' => 'Real-time scrobbling',
 			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
+			_ => null,
+		} ?? switch (path) {
 			'trakt.watchedSync' => 'Sync watched status',
 			'trakt.watchedSyncDescription' => 'When you mark items watched in Plezy, mark them on Trakt.',
 			'trackers.title' => 'Trackers',
@@ -4477,6 +4961,38 @@ extension on Translations {
 			'trackers.libraryFilter.modeHintWhitelist' => 'Sync only the libraries checked below.',
 			'trackers.libraryFilter.libraries' => 'Libraries',
 			'trackers.libraryFilter.noLibraries' => 'No libraries available',
+			'addServer.addJellyfinTitle' => 'Add Jellyfin server',
+			'addServer.jellyfinUrlIntro' => 'Enter your Jellyfin server URL — e.g. `https://jellyfin.example.com`. You can sign in afterwards.',
+			'addServer.serverUrl' => 'Server URL',
+			'addServer.findServer' => 'Find server',
+			'addServer.username' => 'Username',
+			'addServer.password' => 'Password',
+			'addServer.signIn' => 'Sign in',
+			'addServer.change' => 'Change',
+			'addServer.required' => 'Required',
+			'addServer.couldNotReachServer' => ({required Object error}) => 'Could not reach the server: ${error}',
+			'addServer.signInFailed' => ({required Object error}) => 'Sign-in failed: ${error}',
+			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect failed: ${error}',
+			'addServer.addPlexTitle' => 'Sign in with Plex',
+			'addServer.plexAuthIntro' => 'Choose how to sign in to Plex. The browser flow opens plex.tv where you confirm the connection; the QR option is handy for TV / remote devices.',
+			'addServer.plexQRPrompt' => 'Scan this QR code to sign in.',
+			'addServer.waitingForPlexConfirmation' => 'Waiting for plex.tv to confirm your sign-in…',
+			'addServer.pinExpired' => 'PIN expired before sign-in. Please try again.',
+			'addServer.duplicatePlexAccount' => 'This device is already signed in to a Plex account. Sign out from settings to switch accounts.',
+			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Failed to register account: ${error}',
+			'addServer.enterJellyfinUrlError' => 'Enter your Jellyfin server URL',
+			'addServer.addConnectionTitle' => 'Add connection',
+			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Add to ${name}',
+			'addServer.addConnectionIntroGlobal' => 'Add another media server. You can mix Plex accounts and Jellyfin servers — items from every connected backend appear together on the home screen.',
+			'addServer.addConnectionIntroScoped' => 'Add a new server, or borrow one from another profile.',
+			'addServer.signInWithPlexCard' => 'Sign in with Plex',
+			'addServer.signInWithPlexCardSubtitle' => 'Authorize this device against your Plex account. Servers shared with the account come along automatically.',
+			'addServer.signInWithPlexCardSubtitleScoped' => 'Authorize a new Plex account. Its Home users appear as profiles.',
+			'addServer.connectToJellyfinCard' => 'Connect to Jellyfin',
+			'addServer.connectToJellyfinCardSubtitle' => 'Enter your Jellyfin server URL and sign in with username + password (Quick Connect coming soon).',
+			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Sign in to a Jellyfin server. Binds to ${name}.',
+			'addServer.borrowFromAnotherProfile' => 'Borrow from another profile',
+			'addServer.borrowFromAnotherProfileSubtitle' => 'Reuse a connection that\'s already attached to a different profile. PIN-protected source profiles ask for the PIN.',
 			_ => null,
 		};
 	}

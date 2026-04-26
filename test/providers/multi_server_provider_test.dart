@@ -89,6 +89,107 @@ void main() {
       p.dispose();
     });
 
+    group('visibility filter', () {
+      test('setVisibleServerIds replaces the filter and notifies', () {
+        final p = MultiServerProvider(manager, aggregation);
+        var notified = 0;
+        p.addListener(() => notified++);
+
+        // Empty set is a real value (different from null) — switching from
+        // null → {} should notify so consumers know the active profile has
+        // no servers, not "all servers".
+        p.setVisibleServerIds(<String>{});
+        expect(notified, 1);
+
+        p.setVisibleServerIds({'a', 'b'});
+        expect(notified, 2);
+
+        // Idempotent: same membership is a no-op.
+        p.setVisibleServerIds({'b', 'a'});
+        expect(notified, 2);
+
+        // Clearing back to null after a real filter is a state change.
+        p.setVisibleServerIds(null);
+        expect(notified, 3);
+
+        p.dispose();
+      });
+
+      test('addToVisibleServerIds initializes filter when null', () {
+        final p = MultiServerProvider(manager, aggregation);
+        var notified = 0;
+        p.addListener(() => notified++);
+
+        // No prior filter — first add seeds it as a one-element set.
+        p.addToVisibleServerIds('srv-1');
+        expect(notified, 1);
+
+        // Build up incrementally.
+        p.addToVisibleServerIds('srv-2');
+        expect(notified, 2);
+
+        // Idempotent on already-present ids.
+        p.addToVisibleServerIds('srv-1');
+        expect(notified, 2);
+
+        p.dispose();
+      });
+
+      test('onlineServerIds respect the visibility filter', () {
+        final p = MultiServerProvider(manager, aggregation);
+        // updateServerStatus only populates _serverStatus, not _plexServers, so
+        // we exercise the filter via onlineServerIds (which is keyed off
+        // status). The serverIds list requires actual server registration
+        // which goes through addPlexAccount/addJellyfinConnection — beyond
+        // what this unit test needs to cover.
+        manager.updateServerStatus('srv-1', true);
+        manager.updateServerStatus('srv-2', true);
+        manager.updateServerStatus('srv-3', false);
+
+        // No filter — every online id passes through.
+        expect(p.onlineServerIds, containsAll({'srv-1', 'srv-2'}));
+
+        p.setVisibleServerIds({'srv-1'});
+        expect(p.onlineServerIds, ['srv-1']);
+        expect(p.isServerOnline('srv-2'), isFalse, reason: 'filtered out even when manager reports online');
+
+        // Empty filter blocks everything — covers the "no connections" path
+        // for a freshly-created profile that hasn't borrowed anything yet.
+        p.setVisibleServerIds(<String>{});
+        expect(p.onlineServerIds, isEmpty);
+
+        p.dispose();
+      });
+
+      test('setVisibleServerIds immediately hides Live TV servers outside the filter', () {
+        final p = MultiServerProvider(manager, aggregation);
+        p.debugSetLiveTvServersForTesting([
+          LiveTvServerInfo(serverId: 'srv-1', dvrKey: 'dvr-1'),
+          LiveTvServerInfo(serverId: 'srv-2', dvrKey: 'dvr-2'),
+        ]);
+
+        p.setVisibleServerIds({'srv-1'});
+
+        expect(p.hasLiveTv, isTrue);
+        expect(p.liveTvServers.map((s) => s.serverId), ['srv-1']);
+        expect(p.liveTvServers.single.dvrKey, 'dvr-1');
+
+        p.dispose();
+      });
+
+      test('setVisibleServerIds empty immediately clears stale Live TV state', () {
+        final p = MultiServerProvider(manager, aggregation);
+        p.debugSetLiveTvServersForTesting([LiveTvServerInfo(serverId: 'srv-1', dvrKey: 'dvr-1')]);
+
+        p.setVisibleServerIds(<String>{});
+
+        expect(p.hasLiveTv, isFalse);
+        expect(p.liveTvServers, isEmpty);
+
+        p.dispose();
+      });
+    });
+
     test('dispose runs cleanly and cancels the status subscription', () async {
       final p = MultiServerProvider(manager, aggregation);
 
