@@ -363,6 +363,8 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => 'Показывать диалог подтверждения при нажатии «назад» для выхода из приложения';
 	@override String get forceTvMode => 'Принудительный режим ТВ';
 	@override String get forceTvModeDescription => 'Использовать макет ТВ независимо от автоматического определения. Полезно на устройствах Android TV, которые не сообщают о функции leanback. Приложение перезапустится при изменении.';
+	@override String get startInFullscreen => 'Запускать в полноэкранном режиме';
+	@override String get startInFullscreenDescription => 'Открывать Plezy в полноэкранном режиме при запуске';
 	@override String get autoHidePerformanceOverlay => 'Автоскрытие оверлея производительности';
 	@override String get autoHidePerformanceOverlayDescription => 'Скрывать оверлей производительности вместе с элементами управления воспроизведением';
 	@override String get showNavBarLabels => 'Показывать подписи панели навигации';
@@ -372,6 +374,7 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get display => 'Display';
 	@override String get homeScreen => 'Home Screen';
 	@override String get navigation => 'Navigation';
+	@override String get window => 'Window';
 	@override String get content => 'Content';
 	@override String get player => 'Player';
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
@@ -1765,6 +1768,8 @@ extension on TranslationsRu {
 			'settings.confirmExitOnBackDescription' => 'Показывать диалог подтверждения при нажатии «назад» для выхода из приложения',
 			'settings.forceTvMode' => 'Принудительный режим ТВ',
 			'settings.forceTvModeDescription' => 'Использовать макет ТВ независимо от автоматического определения. Полезно на устройствах Android TV, которые не сообщают о функции leanback. Приложение перезапустится при изменении.',
+			'settings.startInFullscreen' => 'Запускать в полноэкранном режиме',
+			'settings.startInFullscreenDescription' => 'Открывать Plezy в полноэкранном режиме при запуске',
 			'settings.autoHidePerformanceOverlay' => 'Автоскрытие оверлея производительности',
 			'settings.autoHidePerformanceOverlayDescription' => 'Скрывать оверлей производительности вместе с элементами управления воспроизведением',
 			'settings.showNavBarLabels' => 'Показывать подписи панели навигации',
@@ -1774,6 +1779,7 @@ extension on TranslationsRu {
 			'settings.display' => 'Display',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
+			'settings.window' => 'Window',
 			'settings.content' => 'Content',
 			'settings.player' => 'Player',
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
@@ -2043,11 +2049,11 @@ extension on TranslationsRu {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Не удалось проанализировать библиотеку: ${error}',
 			'libraries.noLibrariesFound' => 'Библиотеки не найдены',
 			'libraries.allLibrariesHidden' => 'Все библиотеки скрыты',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Скрытые библиотеки (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Эта библиотека пуста',
 			'libraries.all' => 'Все',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.clearAll' => 'Очистить все',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Вы уверены, что хотите сканировать "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Вы уверены, что хотите проанализировать "${title}"?',

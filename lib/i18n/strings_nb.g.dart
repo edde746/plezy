@@ -363,6 +363,8 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => 'Vis en bekreftelsesdialog når du trykker tilbake for å avslutte appen';
 	@override String get forceTvMode => 'Tving TV-modus';
 	@override String get forceTvModeDescription => 'Bruk TV-oppsettet uavhengig av automatisk gjenkjenning. Nyttig på Android TV-enheter som ikke rapporterer leanback-funksjonen. Starter appen på nytt ved endring.';
+	@override String get startInFullscreen => 'Start i fullskjerm';
+	@override String get startInFullscreenDescription => 'Åpne Plezy i fullskjermmodus ved oppstart';
 	@override String get autoHidePerformanceOverlay => 'Skjul ytelsesoverlegg automatisk';
 	@override String get autoHidePerformanceOverlayDescription => 'Fade ytelsesoverlegget med avspillingskontrollene';
 	@override String get showNavBarLabels => 'Vis navigasjonsfeltlabeler';
@@ -372,6 +374,7 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get display => 'Display';
 	@override String get homeScreen => 'Home Screen';
 	@override String get navigation => 'Navigation';
+	@override String get window => 'Window';
 	@override String get content => 'Content';
 	@override String get player => 'Player';
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
@@ -1765,6 +1768,8 @@ extension on TranslationsNb {
 			'settings.confirmExitOnBackDescription' => 'Vis en bekreftelsesdialog når du trykker tilbake for å avslutte appen',
 			'settings.forceTvMode' => 'Tving TV-modus',
 			'settings.forceTvModeDescription' => 'Bruk TV-oppsettet uavhengig av automatisk gjenkjenning. Nyttig på Android TV-enheter som ikke rapporterer leanback-funksjonen. Starter appen på nytt ved endring.',
+			'settings.startInFullscreen' => 'Start i fullskjerm',
+			'settings.startInFullscreenDescription' => 'Åpne Plezy i fullskjermmodus ved oppstart',
 			'settings.autoHidePerformanceOverlay' => 'Skjul ytelsesoverlegg automatisk',
 			'settings.autoHidePerformanceOverlayDescription' => 'Fade ytelsesoverlegget med avspillingskontrollene',
 			'settings.showNavBarLabels' => 'Vis navigasjonsfeltlabeler',
@@ -1774,6 +1779,7 @@ extension on TranslationsNb {
 			'settings.display' => 'Display',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
+			'settings.window' => 'Window',
 			'settings.content' => 'Content',
 			'settings.player' => 'Player',
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
@@ -2043,11 +2049,11 @@ extension on TranslationsNb {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kunne ikke analysere bibliotek: ${error}',
 			'libraries.noLibrariesFound' => 'Ingen biblioteker funnet',
 			'libraries.allLibrariesHidden' => 'Alle biblioteker er skjult',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Skjulte biblioteker (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Dette biblioteket er tomt',
 			'libraries.all' => 'Alle',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.clearAll' => 'Tøm alle',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Er du sikker på at du vil skanne "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Er du sikker på at du vil analysere "${title}"?',

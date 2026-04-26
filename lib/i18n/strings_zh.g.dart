@@ -363,6 +363,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => '按返回键退出应用时显示确认对话框';
 	@override String get forceTvMode => '强制 TV 模式';
 	@override String get forceTvModeDescription => '无论自动检测结果如何都使用 TV 布局。适用于未报告 leanback 功能的 Android TV 设备。更改后将重启应用。';
+	@override String get startInFullscreen => '以全屏模式启动';
+	@override String get startInFullscreenDescription => '启动时以全屏模式打开 Plezy';
 	@override String get autoHidePerformanceOverlay => '自动隐藏性能叠加层';
 	@override String get autoHidePerformanceOverlayDescription => '性能叠加层随播放控件一起淡入淡出';
 	@override String get showNavBarLabels => '显示导航栏标签';
@@ -372,6 +374,7 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get display => 'Display';
 	@override String get homeScreen => 'Home Screen';
 	@override String get navigation => 'Navigation';
+	@override String get window => 'Window';
 	@override String get content => 'Content';
 	@override String get player => 'Player';
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
@@ -1765,6 +1768,8 @@ extension on TranslationsZh {
 			'settings.confirmExitOnBackDescription' => '按返回键退出应用时显示确认对话框',
 			'settings.forceTvMode' => '强制 TV 模式',
 			'settings.forceTvModeDescription' => '无论自动检测结果如何都使用 TV 布局。适用于未报告 leanback 功能的 Android TV 设备。更改后将重启应用。',
+			'settings.startInFullscreen' => '以全屏模式启动',
+			'settings.startInFullscreenDescription' => '启动时以全屏模式打开 Plezy',
 			'settings.autoHidePerformanceOverlay' => '自动隐藏性能叠加层',
 			'settings.autoHidePerformanceOverlayDescription' => '性能叠加层随播放控件一起淡入淡出',
 			'settings.showNavBarLabels' => '显示导航栏标签',
@@ -1774,6 +1779,7 @@ extension on TranslationsZh {
 			'settings.display' => 'Display',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
+			'settings.window' => 'Window',
 			'settings.content' => 'Content',
 			'settings.player' => 'Player',
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
@@ -2043,11 +2049,11 @@ extension on TranslationsZh {
 			'libraries.failedToAnalyze' => ({required Object error}) => '无法分析媒体库: ${error}',
 			'libraries.noLibrariesFound' => '未找到媒体库',
 			'libraries.allLibrariesHidden' => '所有媒体库已隐藏',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '已隐藏的媒体库 (${count})',
 			'libraries.thisLibraryIsEmpty' => '此媒体库为空',
 			'libraries.all' => '全部',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.clearAll' => '全部清除',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '确定要扫描 “${title}” 吗？',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '确定要分析 “${title}” 吗？',

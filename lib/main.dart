@@ -207,6 +207,13 @@ Future<void> _bootstrapApp() async {
   // Start global fullscreen state monitoring
   FullscreenStateManager().startMonitoring();
 
+  // Apply "start in fullscreen" preference on Windows/Linux. macOS is
+  // excluded — its native fullscreen animation is awkward at launch and
+  // the OS already restores window state.
+  if ((Platform.isWindows || Platform.isLinux) && settings.read(SettingsService.startInFullscreen)) {
+    unawaited(FullscreenStateManager().enterFullscreen());
+  }
+
   // Initialize gamepad service (all platforms — universal_gamepad auto-registers
   // and intercepts input events, so we must listen to re-dispatch them)
   GamepadService.instance.start();

@@ -363,6 +363,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => '戻るボタンでアプリを終了する際に確認ダイアログを表示';
 	@override String get forceTvMode => 'TVモードを強制';
 	@override String get forceTvModeDescription => '自動検出に関係なくTVレイアウトを使用します。leanback機能を報告しないAndroid TVデバイスで便利です。変更するとアプリが再起動されます。';
+	@override String get startInFullscreen => '全画面表示で起動';
+	@override String get startInFullscreenDescription => '起動時にPlezyを全画面モードで開きます';
 	@override String get autoHidePerformanceOverlay => 'パフォーマンスオーバーレイを自動非表示';
 	@override String get autoHidePerformanceOverlayDescription => '再生コントロールと一緒にパフォーマンスオーバーレイをフェードする';
 	@override String get showNavBarLabels => 'ナビゲーションバーラベルを表示';
@@ -372,6 +374,7 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get display => 'Display';
 	@override String get homeScreen => 'Home Screen';
 	@override String get navigation => 'Navigation';
+	@override String get window => 'Window';
 	@override String get content => 'Content';
 	@override String get player => 'Player';
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
@@ -1765,6 +1768,8 @@ extension on TranslationsJa {
 			'settings.confirmExitOnBackDescription' => '戻るボタンでアプリを終了する際に確認ダイアログを表示',
 			'settings.forceTvMode' => 'TVモードを強制',
 			'settings.forceTvModeDescription' => '自動検出に関係なくTVレイアウトを使用します。leanback機能を報告しないAndroid TVデバイスで便利です。変更するとアプリが再起動されます。',
+			'settings.startInFullscreen' => '全画面表示で起動',
+			'settings.startInFullscreenDescription' => '起動時にPlezyを全画面モードで開きます',
 			'settings.autoHidePerformanceOverlay' => 'パフォーマンスオーバーレイを自動非表示',
 			'settings.autoHidePerformanceOverlayDescription' => '再生コントロールと一緒にパフォーマンスオーバーレイをフェードする',
 			'settings.showNavBarLabels' => 'ナビゲーションバーラベルを表示',
@@ -1774,6 +1779,7 @@ extension on TranslationsJa {
 			'settings.display' => 'Display',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
+			'settings.window' => 'Window',
 			'settings.content' => 'Content',
 			'settings.player' => 'Player',
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
@@ -2043,11 +2049,11 @@ extension on TranslationsJa {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'ライブラリの解析に失敗しました: ${error}',
 			'libraries.noLibrariesFound' => 'ライブラリが見つかりません',
 			'libraries.allLibrariesHidden' => 'すべてのライブラリが非表示です',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '非表示のライブラリ (${count})',
 			'libraries.thisLibraryIsEmpty' => 'このライブラリは空です',
 			'libraries.all' => 'すべて',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.clearAll' => 'すべてクリア',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '"${title}"をスキャンしてもよろしいですか？',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '"${title}"を解析してもよろしいですか？',

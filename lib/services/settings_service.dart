@@ -354,6 +354,7 @@ class SettingsService extends BaseSharedPreferencesService {
     'enable_companion_remote_server',
     defaultValue: PlatformDetector.isDesktopOS(),
   );
+  static const startInFullscreen = BoolPref('start_in_fullscreen');
 
   static const bufferSize = _BufferSizePref();
   static const libraryDensity = _LibraryDensityPref();

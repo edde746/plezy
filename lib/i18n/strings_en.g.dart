@@ -829,6 +829,12 @@ class TranslationsSettingsEn {
 	/// en: 'Use the TV layout regardless of auto-detection. Useful on Android TV devices that don't report the leanback feature. Restarts the app on change.'
 	String get forceTvModeDescription => 'Use the TV layout regardless of auto-detection. Useful on Android TV devices that don\'t report the leanback feature. Restarts the app on change.';
 
+	/// en: 'Start in fullscreen'
+	String get startInFullscreen => 'Start in fullscreen';
+
+	/// en: 'Open Plezy in fullscreen mode at launch'
+	String get startInFullscreenDescription => 'Open Plezy in fullscreen mode at launch';
+
 	/// en: 'Auto-Hide Performance Overlay'
 	String get autoHidePerformanceOverlay => 'Auto-Hide Performance Overlay';
 
@@ -855,6 +861,9 @@ class TranslationsSettingsEn {
 
 	/// en: 'Navigation'
 	String get navigation => 'Navigation';
+
+	/// en: 'Window'
+	String get window => 'Window';
 
 	/// en: 'Content'
 	String get content => 'Content';
@@ -3707,6 +3716,8 @@ extension on Translations {
 			'settings.confirmExitOnBackDescription' => 'Show a confirmation dialog when pressing back to exit the app',
 			'settings.forceTvMode' => 'Force TV mode',
 			'settings.forceTvModeDescription' => 'Use the TV layout regardless of auto-detection. Useful on Android TV devices that don\'t report the leanback feature. Restarts the app on change.',
+			'settings.startInFullscreen' => 'Start in fullscreen',
+			'settings.startInFullscreenDescription' => 'Open Plezy in fullscreen mode at launch',
 			'settings.autoHidePerformanceOverlay' => 'Auto-Hide Performance Overlay',
 			'settings.autoHidePerformanceOverlayDescription' => 'Fade the performance overlay with the playback controls',
 			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
@@ -3716,6 +3727,7 @@ extension on Translations {
 			'settings.display' => 'Display',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
+			'settings.window' => 'Window',
 			'settings.content' => 'Content',
 			'settings.player' => 'Player',
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
@@ -3985,11 +3997,11 @@ extension on Translations {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Failed to analyze library: ${error}',
 			'libraries.noLibrariesFound' => 'No libraries found',
 			'libraries.allLibrariesHidden' => 'All libraries are hidden',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Hidden libraries (${count})',
 			'libraries.thisLibraryIsEmpty' => 'This library is empty',
 			'libraries.all' => 'All',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.clearAll' => 'Clear All',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Are you sure you want to scan "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Are you sure you want to analyze "${title}"?',

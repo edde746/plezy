@@ -363,6 +363,8 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => 'Pokaż dialog potwierdzenia przy naciśnięciu wstecz, aby wyjść z aplikacji';
 	@override String get forceTvMode => 'Wymuś tryb TV';
 	@override String get forceTvModeDescription => 'Użyj układu TV niezależnie od automatycznego wykrywania. Przydatne na urządzeniach Android TV, które nie zgłaszają funkcji leanback. Po zmianie aplikacja zostanie zrestartowana.';
+	@override String get startInFullscreen => 'Uruchom na pełnym ekranie';
+	@override String get startInFullscreenDescription => 'Otwiera Plezy w trybie pełnoekranowym przy uruchomieniu';
 	@override String get autoHidePerformanceOverlay => 'Automatycznie ukrywaj nakładkę wydajności';
 	@override String get autoHidePerformanceOverlayDescription => 'Wygaszaj nakładkę wydajności wraz z kontrolkami odtwarzania';
 	@override String get showNavBarLabels => 'Pokaż etykiety paska nawigacji';
@@ -372,6 +374,7 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get display => 'Display';
 	@override String get homeScreen => 'Home Screen';
 	@override String get navigation => 'Navigation';
+	@override String get window => 'Window';
 	@override String get content => 'Content';
 	@override String get player => 'Player';
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
@@ -1765,6 +1768,8 @@ extension on TranslationsPl {
 			'settings.confirmExitOnBackDescription' => 'Pokaż dialog potwierdzenia przy naciśnięciu wstecz, aby wyjść z aplikacji',
 			'settings.forceTvMode' => 'Wymuś tryb TV',
 			'settings.forceTvModeDescription' => 'Użyj układu TV niezależnie od automatycznego wykrywania. Przydatne na urządzeniach Android TV, które nie zgłaszają funkcji leanback. Po zmianie aplikacja zostanie zrestartowana.',
+			'settings.startInFullscreen' => 'Uruchom na pełnym ekranie',
+			'settings.startInFullscreenDescription' => 'Otwiera Plezy w trybie pełnoekranowym przy uruchomieniu',
 			'settings.autoHidePerformanceOverlay' => 'Automatycznie ukrywaj nakładkę wydajności',
 			'settings.autoHidePerformanceOverlayDescription' => 'Wygaszaj nakładkę wydajności wraz z kontrolkami odtwarzania',
 			'settings.showNavBarLabels' => 'Pokaż etykiety paska nawigacji',
@@ -1774,6 +1779,7 @@ extension on TranslationsPl {
 			'settings.display' => 'Display',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
+			'settings.window' => 'Window',
 			'settings.content' => 'Content',
 			'settings.player' => 'Player',
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
@@ -2043,11 +2049,11 @@ extension on TranslationsPl {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Nie udało się przeanalizować biblioteki: ${error}',
 			'libraries.noLibrariesFound' => 'Nie znaleziono bibliotek',
 			'libraries.allLibrariesHidden' => 'Wszystkie biblioteki są ukryte',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Ukryte biblioteki (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Ta biblioteka jest pusta',
 			'libraries.all' => 'Wszystkie',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.clearAll' => 'Wyczyść wszystko',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Czy na pewno chcesz zeskanować "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Czy na pewno chcesz przeanalizować "${title}"?',

@@ -77,6 +77,12 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
             if (!PlatformDetector.shouldUseSideNavigation(context)) _buildShowNavBarLabels(),
             _buildShowUnwatchedCount(),
 
+            // --- Window (Windows/Linux only) ---
+            if (Platform.isWindows || Platform.isLinux) ...[
+              SettingsSectionHeader(t.settings.window),
+              _buildStartInFullscreen(),
+            ],
+
             // --- Content ---
             SettingsSectionHeader(t.settings.content),
             _buildLiveTvDefaultFavorites(),
@@ -341,6 +347,13 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
     title: t.settings.confirmExitOnBack,
     subtitle: t.settings.confirmExitOnBackDescription,
     pref: settings.SettingsService.confirmExitOnBack,
+  );
+
+  Widget _buildStartInFullscreen() => _buildListenableSwitch(
+    icon: Symbols.fullscreen_rounded,
+    title: t.settings.startInFullscreen,
+    subtitle: t.settings.startInFullscreenDescription,
+    pref: settings.SettingsService.startInFullscreen,
   );
 
   Widget _buildForceTvMode() => _buildListenableSwitch(

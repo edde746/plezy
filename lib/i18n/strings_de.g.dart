@@ -363,6 +363,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => 'Bestätigungsdialog anzeigen, wenn Zurück zum Beenden der App gedrückt wird';
 	@override String get forceTvMode => 'TV-Modus erzwingen';
 	@override String get forceTvModeDescription => 'TV-Layout unabhängig von der automatischen Erkennung verwenden. Nützlich für Android-TV-Geräte, die das Leanback-Feature nicht melden. Startet die App bei Änderung neu.';
+	@override String get startInFullscreen => 'Im Vollbildmodus starten';
+	@override String get startInFullscreenDescription => 'Plezy beim Start im Vollbildmodus öffnen';
 	@override String get autoHidePerformanceOverlay => 'Leistungsoverlay automatisch ausblenden';
 	@override String get autoHidePerformanceOverlayDescription => 'Leistungsoverlay mit den Wiedergabesteuerungen ein-/ausblenden';
 	@override String get showNavBarLabels => 'Navigationsleisten-Beschriftungen anzeigen';
@@ -372,6 +374,7 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get display => 'Display';
 	@override String get homeScreen => 'Home Screen';
 	@override String get navigation => 'Navigation';
+	@override String get window => 'Window';
 	@override String get content => 'Content';
 	@override String get player => 'Player';
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
@@ -1765,6 +1768,8 @@ extension on TranslationsDe {
 			'settings.confirmExitOnBackDescription' => 'Bestätigungsdialog anzeigen, wenn Zurück zum Beenden der App gedrückt wird',
 			'settings.forceTvMode' => 'TV-Modus erzwingen',
 			'settings.forceTvModeDescription' => 'TV-Layout unabhängig von der automatischen Erkennung verwenden. Nützlich für Android-TV-Geräte, die das Leanback-Feature nicht melden. Startet die App bei Änderung neu.',
+			'settings.startInFullscreen' => 'Im Vollbildmodus starten',
+			'settings.startInFullscreenDescription' => 'Plezy beim Start im Vollbildmodus öffnen',
 			'settings.autoHidePerformanceOverlay' => 'Leistungsoverlay automatisch ausblenden',
 			'settings.autoHidePerformanceOverlayDescription' => 'Leistungsoverlay mit den Wiedergabesteuerungen ein-/ausblenden',
 			'settings.showNavBarLabels' => 'Navigationsleisten-Beschriftungen anzeigen',
@@ -1774,6 +1779,7 @@ extension on TranslationsDe {
 			'settings.display' => 'Display',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
+			'settings.window' => 'Window',
 			'settings.content' => 'Content',
 			'settings.player' => 'Player',
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
@@ -2043,11 +2049,11 @@ extension on TranslationsDe {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Analyse der Mediathek fehlgeschlagen: ${error}',
 			'libraries.noLibrariesFound' => 'Keine Mediatheken gefunden',
 			'libraries.allLibrariesHidden' => 'Alle Mediatheken sind ausgeblendet',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Ausgeblendete Mediatheken (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Diese Mediathek ist leer',
 			'libraries.all' => 'Alle',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.clearAll' => 'Alle löschen',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '„${title}“ wirklich scannen?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '„${title}“ wirklich analysieren?',

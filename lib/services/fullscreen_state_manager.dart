@@ -61,6 +61,21 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
     }
   }
 
+  /// Enter fullscreen, preserving maximized state on Windows/Linux for restoration on exit.
+  Future<void> enterFullscreen() async {
+    if (Platform.isMacOS) {
+      await MacOSWindowService.enterFullscreen();
+    } else if (Platform.isWindows) {
+      await NativeWindowService.setFullScreen(true);
+    } else {
+      _wasMaximized = await windowManager.isMaximized();
+      if (_wasMaximized) {
+        await windowManager.unmaximize();
+      }
+      await windowManager.setFullScreen(true);
+    }
+  }
+
   /// Exit fullscreen, restoring maximized state if needed
   Future<void> exitFullscreen() async {
     if (Platform.isMacOS) {

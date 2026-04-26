@@ -363,6 +363,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다';
 	@override String get forceTvMode => 'TV 모드 강제 사용';
 	@override String get forceTvModeDescription => '자동 감지와 관계없이 TV 레이아웃을 사용합니다. leanback 기능을 보고하지 않는 Android TV 기기에 유용합니다. 변경 시 앱이 다시 시작됩니다.';
+	@override String get startInFullscreen => '전체화면으로 시작';
+	@override String get startInFullscreenDescription => '실행 시 Plezy를 전체화면 모드로 엽니다';
 	@override String get autoHidePerformanceOverlay => '성능 오버레이 자동 숨기기';
 	@override String get autoHidePerformanceOverlayDescription => '재생 컨트롤과 함께 성능 오버레이를 페이드 처리';
 	@override String get showNavBarLabels => '내비게이션 바 라벨 표시';
@@ -372,6 +374,7 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get display => 'Display';
 	@override String get homeScreen => 'Home Screen';
 	@override String get navigation => 'Navigation';
+	@override String get window => 'Window';
 	@override String get content => 'Content';
 	@override String get player => 'Player';
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
@@ -1765,6 +1768,8 @@ extension on TranslationsKo {
 			'settings.confirmExitOnBackDescription' => '뒤로 버튼을 눌러 앱을 종료할 때 확인 대화상자를 표시합니다',
 			'settings.forceTvMode' => 'TV 모드 강제 사용',
 			'settings.forceTvModeDescription' => '자동 감지와 관계없이 TV 레이아웃을 사용합니다. leanback 기능을 보고하지 않는 Android TV 기기에 유용합니다. 변경 시 앱이 다시 시작됩니다.',
+			'settings.startInFullscreen' => '전체화면으로 시작',
+			'settings.startInFullscreenDescription' => '실행 시 Plezy를 전체화면 모드로 엽니다',
 			'settings.autoHidePerformanceOverlay' => '성능 오버레이 자동 숨기기',
 			'settings.autoHidePerformanceOverlayDescription' => '재생 컨트롤과 함께 성능 오버레이를 페이드 처리',
 			'settings.showNavBarLabels' => '내비게이션 바 라벨 표시',
@@ -1774,6 +1779,7 @@ extension on TranslationsKo {
 			'settings.display' => 'Display',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
+			'settings.window' => 'Window',
 			'settings.content' => 'Content',
 			'settings.player' => 'Player',
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
@@ -2043,11 +2049,11 @@ extension on TranslationsKo {
 			'libraries.failedToAnalyze' => ({required Object error}) => '미디어 라이브러리 분석 실패: ${error}',
 			'libraries.noLibrariesFound' => '미디어 라이브러리 없음',
 			'libraries.allLibrariesHidden' => '모든 라이브러리가 숨겨졌습니다',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '숨겨진 라이브러리 (${count})',
 			'libraries.thisLibraryIsEmpty' => '이 미디어 라이브러리는 비어 있습니다',
 			'libraries.all' => '전체',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.clearAll' => '모두 삭제',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => '「${title}」를 스캔 하시겠습니까?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => '「${title}」를 분석 하시겠습니까?',

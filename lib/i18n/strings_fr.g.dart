@@ -363,6 +363,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => 'Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter';
 	@override String get forceTvMode => 'Forcer le mode TV';
 	@override String get forceTvModeDescription => 'Utiliser la mise en page TV quelle que soit la détection automatique. Utile sur les appareils Android TV qui ne signalent pas la fonctionnalité leanback. Redémarre l\'application lors du changement.';
+	@override String get startInFullscreen => 'Démarrer en plein écran';
+	@override String get startInFullscreenDescription => 'Ouvrir Plezy en mode plein écran au lancement';
 	@override String get autoHidePerformanceOverlay => 'Masquer auto. superposition performances';
 	@override String get autoHidePerformanceOverlayDescription => 'Faire apparaître/disparaître la superposition avec les contrôles de lecture';
 	@override String get showNavBarLabels => 'Afficher les libellés de la barre de navigation';
@@ -372,6 +374,7 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get display => 'Display';
 	@override String get homeScreen => 'Home Screen';
 	@override String get navigation => 'Navigation';
+	@override String get window => 'Window';
 	@override String get content => 'Content';
 	@override String get player => 'Player';
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
@@ -1765,6 +1768,8 @@ extension on TranslationsFr {
 			'settings.confirmExitOnBackDescription' => 'Afficher une boîte de dialogue de confirmation en appuyant sur retour pour quitter',
 			'settings.forceTvMode' => 'Forcer le mode TV',
 			'settings.forceTvModeDescription' => 'Utiliser la mise en page TV quelle que soit la détection automatique. Utile sur les appareils Android TV qui ne signalent pas la fonctionnalité leanback. Redémarre l\'application lors du changement.',
+			'settings.startInFullscreen' => 'Démarrer en plein écran',
+			'settings.startInFullscreenDescription' => 'Ouvrir Plezy en mode plein écran au lancement',
 			'settings.autoHidePerformanceOverlay' => 'Masquer auto. superposition performances',
 			'settings.autoHidePerformanceOverlayDescription' => 'Faire apparaître/disparaître la superposition avec les contrôles de lecture',
 			'settings.showNavBarLabels' => 'Afficher les libellés de la barre de navigation',
@@ -1774,6 +1779,7 @@ extension on TranslationsFr {
 			'settings.display' => 'Display',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
+			'settings.window' => 'Window',
 			'settings.content' => 'Content',
 			'settings.player' => 'Player',
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
@@ -2043,11 +2049,11 @@ extension on TranslationsFr {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Échec de l\'analyse de la bibliothèque: ${error}',
 			'libraries.noLibrariesFound' => 'Aucune bibliothèque trouvée',
 			'libraries.allLibrariesHidden' => 'Toutes les bibliothèques sont masquées',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Bibliothèques masquées (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Cette bibliothèque est vide',
 			'libraries.all' => 'Tout',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.clearAll' => 'Tout effacer',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir lancer le scan de "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Êtes-vous sûr de vouloir analyser "${title}"?',

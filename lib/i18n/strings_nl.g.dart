@@ -363,6 +363,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => 'Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten';
 	@override String get forceTvMode => 'TV-modus forceren';
 	@override String get forceTvModeDescription => 'Gebruik de TV-indeling ongeacht automatische detectie. Handig op Android TV-apparaten die de leanback-functie niet melden. Start de app opnieuw bij wijziging.';
+	@override String get startInFullscreen => 'Starten in volledig scherm';
+	@override String get startInFullscreenDescription => 'Open Plezy bij het starten in volledig scherm';
 	@override String get autoHidePerformanceOverlay => 'Prestatie-overlay automatisch verbergen';
 	@override String get autoHidePerformanceOverlayDescription => 'Laat de prestatie-overlay meevervagen met de afspeelknoppen';
 	@override String get showNavBarLabels => 'Navigatiebalk labels tonen';
@@ -372,6 +374,7 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get display => 'Display';
 	@override String get homeScreen => 'Home Screen';
 	@override String get navigation => 'Navigation';
+	@override String get window => 'Window';
 	@override String get content => 'Content';
 	@override String get player => 'Player';
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
@@ -1765,6 +1768,8 @@ extension on TranslationsNl {
 			'settings.confirmExitOnBackDescription' => 'Toon een bevestigingsvenster bij het drukken op terug om de app af te sluiten',
 			'settings.forceTvMode' => 'TV-modus forceren',
 			'settings.forceTvModeDescription' => 'Gebruik de TV-indeling ongeacht automatische detectie. Handig op Android TV-apparaten die de leanback-functie niet melden. Start de app opnieuw bij wijziging.',
+			'settings.startInFullscreen' => 'Starten in volledig scherm',
+			'settings.startInFullscreenDescription' => 'Open Plezy bij het starten in volledig scherm',
 			'settings.autoHidePerformanceOverlay' => 'Prestatie-overlay automatisch verbergen',
 			'settings.autoHidePerformanceOverlayDescription' => 'Laat de prestatie-overlay meevervagen met de afspeelknoppen',
 			'settings.showNavBarLabels' => 'Navigatiebalk labels tonen',
@@ -1774,6 +1779,7 @@ extension on TranslationsNl {
 			'settings.display' => 'Display',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
+			'settings.window' => 'Window',
 			'settings.content' => 'Content',
 			'settings.player' => 'Player',
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
@@ -2043,11 +2049,11 @@ extension on TranslationsNl {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kon bibliotheek niet analyseren: ${error}',
 			'libraries.noLibrariesFound' => 'Geen bibliotheken gevonden',
 			'libraries.allLibrariesHidden' => 'Alle bibliotheken zijn verborgen',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Verborgen bibliotheken (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Deze bibliotheek is leeg',
 			'libraries.all' => 'Alles',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.clearAll' => 'Alles wissen',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt scannen?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Weet je zeker dat je "${title}" wilt analyseren?',

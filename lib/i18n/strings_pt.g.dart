@@ -363,6 +363,8 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get confirmExitOnBackDescription => 'Mostrar diálogo de confirmação ao pressionar voltar para sair do app';
 	@override String get forceTvMode => 'Forçar modo TV';
 	@override String get forceTvModeDescription => 'Usar o layout de TV independentemente da detecção automática. Útil em dispositivos Android TV que não reportam o recurso leanback. Reinicia o app ao alterar.';
+	@override String get startInFullscreen => 'Iniciar em tela cheia';
+	@override String get startInFullscreenDescription => 'Abrir o Plezy em modo de tela cheia ao iniciar';
 	@override String get autoHidePerformanceOverlay => 'Ocultar overlay de desempenho automaticamente';
 	@override String get autoHidePerformanceOverlayDescription => 'Desvanecer o overlay de desempenho com os controles de reprodução';
 	@override String get showNavBarLabels => 'Mostrar Rótulos da Barra de Navegação';
@@ -372,6 +374,7 @@ class _TranslationsSettingsPt implements TranslationsSettingsEn {
 	@override String get display => 'Display';
 	@override String get homeScreen => 'Home Screen';
 	@override String get navigation => 'Navigation';
+	@override String get window => 'Window';
 	@override String get content => 'Content';
 	@override String get player => 'Player';
 	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
@@ -1765,6 +1768,8 @@ extension on TranslationsPt {
 			'settings.confirmExitOnBackDescription' => 'Mostrar diálogo de confirmação ao pressionar voltar para sair do app',
 			'settings.forceTvMode' => 'Forçar modo TV',
 			'settings.forceTvModeDescription' => 'Usar o layout de TV independentemente da detecção automática. Útil em dispositivos Android TV que não reportam o recurso leanback. Reinicia o app ao alterar.',
+			'settings.startInFullscreen' => 'Iniciar em tela cheia',
+			'settings.startInFullscreenDescription' => 'Abrir o Plezy em modo de tela cheia ao iniciar',
 			'settings.autoHidePerformanceOverlay' => 'Ocultar overlay de desempenho automaticamente',
 			'settings.autoHidePerformanceOverlayDescription' => 'Desvanecer o overlay de desempenho com os controles de reprodução',
 			'settings.showNavBarLabels' => 'Mostrar Rótulos da Barra de Navegação',
@@ -1774,6 +1779,7 @@ extension on TranslationsPt {
 			'settings.display' => 'Display',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
+			'settings.window' => 'Window',
 			'settings.content' => 'Content',
 			'settings.player' => 'Player',
 			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
@@ -2043,11 +2049,11 @@ extension on TranslationsPt {
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Falha ao analisar biblioteca: ${error}',
 			'libraries.noLibrariesFound' => 'Nenhuma biblioteca encontrada',
 			'libraries.allLibrariesHidden' => 'Todas as bibliotecas estão ocultas',
+			_ => null,
+		} ?? switch (path) {
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Bibliotecas ocultas (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Esta biblioteca está vazia',
 			'libraries.all' => 'Todos',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.clearAll' => 'Limpar Tudo',
 			'libraries.scanLibraryConfirm' => ({required Object title}) => 'Tem certeza que deseja escanear "${title}"?',
 			'libraries.analyzeLibraryConfirm' => ({required Object title}) => 'Tem certeza que deseja analisar "${title}"?',
