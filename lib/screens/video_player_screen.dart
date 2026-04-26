@@ -2364,7 +2364,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     if (Platform.isWindows && _displayModeService != null) {
       FullscreenStateManager().removeListener(_onFullscreenChanged);
     }
-    if (!_isReplacingWithVideo && Platform.isWindows && _displayModeService != null && _displayModeService!.anyChangeApplied) {
+    if (!_isReplacingWithVideo &&
+        Platform.isWindows &&
+        _displayModeService != null &&
+        _displayModeService!.anyChangeApplied) {
       if (_displayModeService!.hdrStateChanged && player != null) {
         player!.setProperty('target-colorspace-hint', 'no');
       }
