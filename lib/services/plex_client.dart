@@ -1304,6 +1304,14 @@ class PlexClient {
           mediaIndex = 0;
         }
 
+        if (!availableVersions[mediaIndex].isPlayable) {
+          final fallback = availableVersions.indexWhere((v) => v.isPlayable);
+          if (fallback >= 0) {
+            appLogger.w('Version $mediaIndex inaccessible/missing — falling back to version $fallback');
+            mediaIndex = fallback;
+          }
+        }
+
         final media = mediaList[mediaIndex];
         if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
           final part = media['Part'][0];
@@ -1348,8 +1356,12 @@ class PlexClient {
     try {
       data = await _fetchWithCacheFallback<Map<String, dynamic>>(
         cacheKey: '/library/metadata/$ratingKey',
-        networkCall: () =>
-            _http.get('/library/metadata/$ratingKey', queryParameters: {'includeMarkers': 1, 'includeChapters': 1}),
+        // checkFiles=1 populates Part.accessible/exists so we can skip
+        // deleted-but-still-indexed versions before play.
+        networkCall: () => _http.get(
+          '/library/metadata/$ratingKey',
+          queryParameters: {'includeMarkers': 1, 'includeChapters': 1, 'checkFiles': 1},
+        ),
         parseCache: (cached) => cached as Map<String, dynamic>?,
         parseResponse: (response) => response.data as Map<String, dynamic>?,
       );

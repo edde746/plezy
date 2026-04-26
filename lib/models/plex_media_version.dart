@@ -8,10 +8,24 @@ part 'plex_media_version.g.dart';
 
 int _flexibleIntOrZero(Object? v) => flexibleInt(v) ?? 0;
 
-Object? _readPartKey(Map json, String key) {
+Map? _firstPart(Map json) {
   final parts = flexibleList(json['Part']);
-  return parts != null && parts.isNotEmpty ? parts.first['key']?.toString() ?? '' : '';
+  return (parts != null && parts.isNotEmpty) ? parts.first as Map : null;
 }
+
+Object? _readPartKey(Map json, String key) => _firstPart(json)?['key']?.toString() ?? '';
+Object? _readPartAccessible(Map json, String key) => _firstPart(json)?['accessible'];
+Object? _readPartExists(Map json, String key) => _firstPart(json)?['exists'];
+
+/// Tri-state: distinguishes "Plex told us false" from "field absent".
+/// `flexibleBool` collapses both to false, which would mark every version
+/// unplayable on servers that omit these fields.
+bool? _flexibleBoolNullable(Object? v) => switch (v) {
+  final bool b => b,
+  final int n => n == 1,
+  final String s => s == '1',
+  _ => null,
+};
 
 @JsonSerializable(createToJson: false)
 class PlexMediaVersion {
@@ -31,6 +45,10 @@ class PlexMediaVersion {
   final String? container;
   @JsonKey(readValue: _readPartKey)
   final String partKey;
+  @JsonKey(readValue: _readPartAccessible, fromJson: _flexibleBoolNullable)
+  final bool? accessible;
+  @JsonKey(readValue: _readPartExists, fromJson: _flexibleBoolNullable)
+  final bool? exists;
 
   PlexMediaVersion({
     required this.id,
@@ -41,11 +59,17 @@ class PlexMediaVersion {
     this.height,
     this.container,
     required this.partKey,
+    this.accessible,
+    this.exists,
   });
 
   /// Creates a PlexMediaVersion from Plex API Media object.
   /// Values may be String or int depending on the response format (XML vs JSON).
   factory PlexMediaVersion.fromJson(Map<String, dynamic> json) => _$PlexMediaVersionFromJson(json);
+
+  /// Defaults to true when fields are absent — only an explicit false from
+  /// Plex (requires `checkFiles=1` on the request) marks the version unplayable.
+  bool get isPlayable => accessible != false && exists != false;
 
   /// Display label with detailed information: "1080p H.264 MKV (8.5 Mbps)"
   String get displayLabel {

@@ -16,4 +16,8 @@ PlexMediaVersion _$PlexMediaVersionFromJson(Map<String, dynamic> json) =>
       height: flexibleInt(json['height']),
       container: readStringField(json, 'container') as String?,
       partKey: _readPartKey(json, 'partKey') as String,
+      accessible: _flexibleBoolNullable(
+        _readPartAccessible(json, 'accessible'),
+      ),
+      exists: _flexibleBoolNullable(_readPartExists(json, 'exists')),
     );
