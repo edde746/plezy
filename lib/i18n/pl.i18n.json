@@ -55,7 +55,8 @@
     "startingOfflineMode": "Uruchamianie trybu offline...",
     "loading": "Ładowanie...",
     "fullscreen": "Pełny ekran",
-    "exitFullscreen": "Wyjdź z pełnego ekranu"
+    "exitFullscreen": "Wyjdź z pełnego ekranu",
+    "pressBackAgainToExit": "Naciśnij wstecz ponownie, aby wyjść"
   },
   "screens": {
     "licenses": "Licencje",

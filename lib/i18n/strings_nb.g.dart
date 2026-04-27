@@ -157,6 +157,7 @@ class _TranslationsCommonNb implements TranslationsCommonEn {
 	@override String get loading => 'Laster...';
 	@override String get fullscreen => 'Fullskjerm';
 	@override String get exitFullscreen => 'Avslutt fullskjerm';
+	@override String get pressBackAgainToExit => 'Trykk tilbake igjen for å avslutte';
 }
 
 // Path: screens
@@ -1594,6 +1595,7 @@ extension on TranslationsNb {
 			'common.loading' => 'Laster...',
 			'common.fullscreen' => 'Fullskjerm',
 			'common.exitFullscreen' => 'Avslutt fullskjerm',
+			'common.pressBackAgainToExit' => 'Trykk tilbake igjen for å avslutte',
 			'screens.licenses' => 'Lisenser',
 			'screens.switchProfile' => 'Bytt profil',
 			'screens.subtitleStyling' => 'Undertekststil',
@@ -2053,9 +2055,9 @@ extension on TranslationsNb {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kunne ikke tømme papirkurv: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyserer "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse startet for "${title}"',
-			'libraries.failedToAnalyze' => ({required Object error}) => 'Kunne ikke analysere bibliotek: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => 'Kunne ikke analysere bibliotek: ${error}',
 			'libraries.noLibrariesFound' => 'Ingen biblioteker funnet',
 			'libraries.allLibrariesHidden' => 'Alle biblioteker er skjult',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Skjulte biblioteker (${count})',

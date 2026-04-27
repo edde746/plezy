@@ -55,7 +55,8 @@
     "startingOfflineMode": "正在启动离线模式...",
     "loading": "加载中...",
     "fullscreen": "全屏",
-    "exitFullscreen": "退出全屏"
+    "exitFullscreen": "退出全屏",
+    "pressBackAgainToExit": "再按一次返回退出"
   },
   "screens": {
     "licenses": "许可证",

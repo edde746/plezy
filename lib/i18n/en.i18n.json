@@ -55,7 +55,8 @@
     "startingOfflineMode": "Starting offline mode...",
     "loading": "Loading...",
     "fullscreen": "Fullscreen",
-    "exitFullscreen": "Exit fullscreen"
+    "exitFullscreen": "Exit fullscreen",
+    "pressBackAgainToExit": "Press back again to exit"
   },
   "screens": {
     "licenses": "Licenses",

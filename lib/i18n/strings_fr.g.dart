@@ -157,6 +157,7 @@ class _TranslationsCommonFr implements TranslationsCommonEn {
 	@override String get loading => 'Chargement...';
 	@override String get fullscreen => 'Plein écran';
 	@override String get exitFullscreen => 'Quitter le plein écran';
+	@override String get pressBackAgainToExit => 'Appuyez à nouveau sur retour pour quitter';
 }
 
 // Path: screens
@@ -1594,6 +1595,7 @@ extension on TranslationsFr {
 			'common.loading' => 'Chargement...',
 			'common.fullscreen' => 'Plein écran',
 			'common.exitFullscreen' => 'Quitter le plein écran',
+			'common.pressBackAgainToExit' => 'Appuyez à nouveau sur retour pour quitter',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Changer de profil',
 			'screens.subtitleStyling' => 'Configuration des sous-titres',
@@ -2053,9 +2055,9 @@ extension on TranslationsFr {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Échec de la suppression des éléments supprimés: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyse de "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'L\'analyse a commencé pour "${title}"',
-			'libraries.failedToAnalyze' => ({required Object error}) => 'Échec de l\'analyse de la bibliothèque: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => 'Échec de l\'analyse de la bibliothèque: ${error}',
 			'libraries.noLibrariesFound' => 'Aucune bibliothèque trouvée',
 			'libraries.allLibrariesHidden' => 'Toutes les bibliothèques sont masquées',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Bibliothèques masquées (${count})',

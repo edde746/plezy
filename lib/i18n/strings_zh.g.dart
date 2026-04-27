@@ -157,6 +157,7 @@ class _TranslationsCommonZh implements TranslationsCommonEn {
 	@override String get loading => '加载中...';
 	@override String get fullscreen => '全屏';
 	@override String get exitFullscreen => '退出全屏';
+	@override String get pressBackAgainToExit => '再按一次返回退出';
 }
 
 // Path: screens
@@ -1594,6 +1595,7 @@ extension on TranslationsZh {
 			'common.loading' => '加载中...',
 			'common.fullscreen' => '全屏',
 			'common.exitFullscreen' => '退出全屏',
+			'common.pressBackAgainToExit' => '再按一次返回退出',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
@@ -2053,9 +2055,9 @@ extension on TranslationsZh {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '无法清空回收站: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '正在分析 “${title}”...',
 			'libraries.analysisStarted' => ({required Object title}) => '已开始分析 “${title}”',
-			'libraries.failedToAnalyze' => ({required Object error}) => '无法分析媒体库: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => '无法分析媒体库: ${error}',
 			'libraries.noLibrariesFound' => '未找到媒体库',
 			'libraries.allLibrariesHidden' => '所有媒体库已隐藏',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '已隐藏的媒体库 (${count})',

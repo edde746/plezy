@@ -157,6 +157,7 @@ class _TranslationsCommonDa implements TranslationsCommonEn {
 	@override String get loading => 'Indlæser...';
 	@override String get fullscreen => 'Fuldskærm';
 	@override String get exitFullscreen => 'Forlad fuldskærm';
+	@override String get pressBackAgainToExit => 'Tryk tilbage igen for at afslutte';
 }
 
 // Path: screens
@@ -1594,6 +1595,7 @@ extension on TranslationsDa {
 			'common.loading' => 'Indlæser...',
 			'common.fullscreen' => 'Fuldskærm',
 			'common.exitFullscreen' => 'Forlad fuldskærm',
+			'common.pressBackAgainToExit' => 'Tryk tilbage igen for at afslutte',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Skift profil',
 			'screens.subtitleStyling' => 'Undertekststil',
@@ -2053,9 +2055,9 @@ extension on TranslationsDa {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Kunne ikke tømme papirkurv: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyserer "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse startet for "${title}"',
-			'libraries.failedToAnalyze' => ({required Object error}) => 'Kunne ikke analysere bibliotek: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => 'Kunne ikke analysere bibliotek: ${error}',
 			'libraries.noLibrariesFound' => 'Ingen biblioteker fundet',
 			'libraries.allLibrariesHidden' => 'Alle biblioteker er skjult',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Skjulte biblioteker (${count})',

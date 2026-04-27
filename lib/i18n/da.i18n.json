@@ -55,7 +55,8 @@
     "startingOfflineMode": "Starter offlinetilstand...",
     "loading": "Indlæser...",
     "fullscreen": "Fuldskærm",
-    "exitFullscreen": "Forlad fuldskærm"
+    "exitFullscreen": "Forlad fuldskærm",
+    "pressBackAgainToExit": "Tryk tilbage igen for at afslutte"
   },
   "screens": {
     "licenses": "Licenser",
