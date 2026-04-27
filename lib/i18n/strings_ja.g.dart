@@ -157,6 +157,7 @@ class _TranslationsCommonJa implements TranslationsCommonEn {
 	@override String get loading => '読み込み中...';
 	@override String get fullscreen => 'フルスクリーン';
 	@override String get exitFullscreen => 'フルスクリーンを終了';
+	@override String get pressBackAgainToExit => 'もう一度押すと終了します';
 }
 
 // Path: screens
@@ -1594,6 +1595,7 @@ extension on TranslationsJa {
 			'common.loading' => '読み込み中...',
 			'common.fullscreen' => 'フルスクリーン',
 			'common.exitFullscreen' => 'フルスクリーンを終了',
+			'common.pressBackAgainToExit' => 'もう一度押すと終了します',
 			'screens.licenses' => 'ライセンス',
 			'screens.switchProfile' => 'プロフィール切替',
 			'screens.subtitleStyling' => '字幕スタイル',
@@ -2053,9 +2055,9 @@ extension on TranslationsJa {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'ゴミ箱を空にできませんでした: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}"を解析中...',
 			'libraries.analysisStarted' => ({required Object title}) => '"${title}"の解析を開始しました',
-			'libraries.failedToAnalyze' => ({required Object error}) => 'ライブラリの解析に失敗しました: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => 'ライブラリの解析に失敗しました: ${error}',
 			'libraries.noLibrariesFound' => 'ライブラリが見つかりません',
 			'libraries.allLibrariesHidden' => 'すべてのライブラリが非表示です',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '非表示のライブラリ (${count})',

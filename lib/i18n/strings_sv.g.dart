@@ -157,6 +157,7 @@ class _TranslationsCommonSv implements TranslationsCommonEn {
 	@override String get loading => 'Laddar...';
 	@override String get fullscreen => 'Helskärm';
 	@override String get exitFullscreen => 'Avsluta helskärm';
+	@override String get pressBackAgainToExit => 'Tryck bakåt igen för att avsluta';
 }
 
 // Path: screens
@@ -1594,6 +1595,7 @@ extension on TranslationsSv {
 			'common.loading' => 'Laddar...',
 			'common.fullscreen' => 'Helskärm',
 			'common.exitFullscreen' => 'Avsluta helskärm',
+			'common.pressBackAgainToExit' => 'Tryck bakåt igen för att avsluta',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
@@ -2053,9 +2055,9 @@ extension on TranslationsSv {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Misslyckades att tömma papperskorg: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyserar "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analys startad för "${title}"',
-			'libraries.failedToAnalyze' => ({required Object error}) => 'Misslyckades att analysera bibliotek: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => 'Misslyckades att analysera bibliotek: ${error}',
 			'libraries.noLibrariesFound' => 'Inga bibliotek hittades',
 			'libraries.allLibrariesHidden' => 'Alla bibliotek är dolda',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Dolda bibliotek (${count})',

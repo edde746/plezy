@@ -157,6 +157,7 @@ class _TranslationsCommonDe implements TranslationsCommonEn {
 	@override String get loading => 'Laden...';
 	@override String get fullscreen => 'Vollbild';
 	@override String get exitFullscreen => 'Vollbild verlassen';
+	@override String get pressBackAgainToExit => 'Erneut Zurück drücken zum Beenden';
 }
 
 // Path: screens
@@ -1594,6 +1595,7 @@ extension on TranslationsDe {
 			'common.loading' => 'Laden...',
 			'common.fullscreen' => 'Vollbild',
 			'common.exitFullscreen' => 'Vollbild verlassen',
+			'common.pressBackAgainToExit' => 'Erneut Zurück drücken zum Beenden',
 			'screens.licenses' => 'Lizenzen',
 			'screens.switchProfile' => 'Profil wechseln',
 			'screens.subtitleStyling' => 'Untertitel-Stil',
@@ -2053,9 +2055,9 @@ extension on TranslationsDe {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Papierkorb konnte nicht geleert werden: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analysiere „${title}“...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse gestartet für „${title}“',
-			'libraries.failedToAnalyze' => ({required Object error}) => 'Analyse der Mediathek fehlgeschlagen: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => 'Analyse der Mediathek fehlgeschlagen: ${error}',
 			'libraries.noLibrariesFound' => 'Keine Mediatheken gefunden',
 			'libraries.allLibrariesHidden' => 'Alle Mediatheken sind ausgeblendet',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Ausgeblendete Mediatheken (${count})',

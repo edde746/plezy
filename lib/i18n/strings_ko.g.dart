@@ -157,6 +157,7 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 	@override String get loading => '로딩 중...';
 	@override String get fullscreen => '전체화면';
 	@override String get exitFullscreen => '전체화면 종료';
+	@override String get pressBackAgainToExit => '한 번 더 누르면 종료됩니다';
 }
 
 // Path: screens
@@ -1594,6 +1595,7 @@ extension on TranslationsKo {
 			'common.loading' => '로딩 중...',
 			'common.fullscreen' => '전체화면',
 			'common.exitFullscreen' => '전체화면 종료',
+			'common.pressBackAgainToExit' => '한 번 더 누르면 종료됩니다',
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
@@ -2053,9 +2055,9 @@ extension on TranslationsKo {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => '휴지통 비우기 실패: ${error}',
 			'libraries.analyzing' => ({required Object title}) => '"${title}" 분석 중...',
 			'libraries.analysisStarted' => ({required Object title}) => '"${title}" 분석 시작됨',
-			'libraries.failedToAnalyze' => ({required Object error}) => '미디어 라이브러리 분석 실패: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => '미디어 라이브러리 분석 실패: ${error}',
 			'libraries.noLibrariesFound' => '미디어 라이브러리 없음',
 			'libraries.allLibrariesHidden' => '모든 라이브러리가 숨겨졌습니다',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '숨겨진 라이브러리 (${count})',

@@ -55,7 +55,8 @@
     "startingOfflineMode": "오프라인 모드 시작 중...",
     "loading": "로딩 중...",
     "fullscreen": "전체화면",
-    "exitFullscreen": "전체화면 종료"
+    "exitFullscreen": "전체화면 종료",
+    "pressBackAgainToExit": "한 번 더 누르면 종료됩니다"
   },
   "screens": {
     "licenses": "라이선스",

@@ -55,7 +55,8 @@
     "startingOfflineMode": "Iniciando modo offline...",
     "loading": "Carregando...",
     "fullscreen": "Tela cheia",
-    "exitFullscreen": "Sair da tela cheia"
+    "exitFullscreen": "Sair da tela cheia",
+    "pressBackAgainToExit": "Pressione voltar novamente para sair"
   },
   "screens": {
     "licenses": "Licenças",

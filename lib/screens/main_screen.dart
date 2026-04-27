@@ -132,6 +132,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   final FocusScopeNode _contentFocusScope = FocusScopeNode(debugLabel: 'Content');
   bool _isSidebarFocused = false;
 
+  /// Timestamp of the most recent mobile back press while on the home tab.
+  /// Used by [_handleMobileBack] to require a second press within 2s to exit.
+  DateTime? _lastBackPressAt;
+
   @override
   void initState() {
     super.initState();
@@ -701,6 +705,31 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
     });
   }
 
+  /// Mobile (bottom-nav) Android back behavior:
+  ///   - On a non-home tab: switch to the home tab.
+  ///   - On the home tab: show a snackbar; a second back within 3s exits.
+  /// "Home" is the first visible tab for the current online/offline mode.
+  void _handleMobileBack() {
+    final tabs = _getVisibleTabs(_isOffline);
+    if (tabs.isEmpty) return;
+    final homeTab = tabs.first.id;
+
+    if (_currentTab != homeTab) {
+      _selectTab(homeTab);
+      _lastBackPressAt = null;
+      return;
+    }
+
+    final now = DateTime.now();
+    final last = _lastBackPressAt;
+    if (last != null && now.difference(last) < const Duration(seconds: 3)) {
+      unawaited(SystemNavigator.pop());
+      return;
+    }
+    _lastBackPressAt = now;
+    showMainSnackBar(t.common.pressBackAgainToExit, duration: const Duration(seconds: 3));
+  }
+
   /// F11 toggles OS fullscreen from anywhere in the main UI. The in-player
   /// hotkey (default `f`) only works while the player is mounted; this is
   /// the escape hatch when fullscreen persists after the player closes.
@@ -1021,70 +1050,77 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       );
     }
 
-    return OverlaySheetHost(
-      child: ScaffoldMessenger(
-        key: mainScaffoldMessengerKey,
-        child: Scaffold(
-          body: _buildTickerAwareStack(),
-          bottomNavigationBar: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Reconnect bar when offline
-              if (_isOffline)
-                Material(
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: InkWell(
-                    onTap: _isReconnecting ? null : _triggerReconnect,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (_isReconnecting)
-                            SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleMobileBack();
+      },
+      child: OverlaySheetHost(
+        child: ScaffoldMessenger(
+          key: mainScaffoldMessengerKey,
+          child: Scaffold(
+            body: _buildTickerAwareStack(),
+            bottomNavigationBar: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Reconnect bar when offline
+                if (_isOffline)
+                  Material(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: InkWell(
+                      onTap: _isReconnecting ? null : _triggerReconnect,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (_isReconnecting)
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              )
+                            else
+                              Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                            const SizedBox(width: 8),
+                            Text(
+                              t.common.reconnect,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
                                 color: Theme.of(context).colorScheme.primary,
                               ),
-                            )
-                          else
-                            Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
-                          const SizedBox(width: 8),
-                          Text(
-                            t.common.reconnect,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Theme.of(context).colorScheme.primary,
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
+                Consumer<SettingsProvider>(
+                  builder: (context, settingsProvider, child) {
+                    final hideLabels = !settingsProvider.showNavBarLabels;
+                    return NavigationBarTheme(
+                      data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
+                      child: NavigationBar(
+                        selectedIndex: _currentIndex,
+                        onDestinationSelected: (i) {
+                          final tabs = _getVisibleTabs(_isOffline);
+                          if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
+                        },
+                        labelBehavior: hideLabels
+                            ? NavigationDestinationLabelBehavior.alwaysHide
+                            : NavigationDestinationLabelBehavior.alwaysShow,
+                        destinations: _buildNavDestinations(_isOffline),
+                      ),
+                    );
+                  },
                 ),
-              Consumer<SettingsProvider>(
-                builder: (context, settingsProvider, child) {
-                  final hideLabels = !settingsProvider.showNavBarLabels;
-                  return NavigationBarTheme(
-                    data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
-                    child: NavigationBar(
-                      selectedIndex: _currentIndex,
-                      onDestinationSelected: (i) {
-                        final tabs = _getVisibleTabs(_isOffline);
-                        if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
-                      },
-                      labelBehavior: hideLabels
-                          ? NavigationDestinationLabelBehavior.alwaysHide
-                          : NavigationDestinationLabelBehavior.alwaysShow,
-                      destinations: _buildNavDestinations(_isOffline),
-                    ),
-                  );
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

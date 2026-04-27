@@ -55,7 +55,8 @@
     "startingOfflineMode": "Démarrage en mode hors-ligne...",
     "loading": "Chargement...",
     "fullscreen": "Plein écran",
-    "exitFullscreen": "Quitter le plein écran"
+    "exitFullscreen": "Quitter le plein écran",
+    "pressBackAgainToExit": "Appuyez à nouveau sur retour pour quitter"
   },
   "screens": {
     "licenses": "Licenses",

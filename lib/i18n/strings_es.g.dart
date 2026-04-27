@@ -157,6 +157,7 @@ class _TranslationsCommonEs implements TranslationsCommonEn {
 	@override String get loading => 'Cargando...';
 	@override String get fullscreen => 'Pantalla completa';
 	@override String get exitFullscreen => 'Salir de pantalla completa';
+	@override String get pressBackAgainToExit => 'Presiona atrás otra vez para salir';
 }
 
 // Path: screens
@@ -1594,6 +1595,7 @@ extension on TranslationsEs {
 			'common.loading' => 'Cargando...',
 			'common.fullscreen' => 'Pantalla completa',
 			'common.exitFullscreen' => 'Salir de pantalla completa',
+			'common.pressBackAgainToExit' => 'Presiona atrás otra vez para salir',
 			'screens.licenses' => 'Licencias',
 			'screens.switchProfile' => 'Cambiar Perfil',
 			'screens.subtitleStyling' => 'Estilo de Subtítulos',
@@ -2053,9 +2055,9 @@ extension on TranslationsEs {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Error al vaciar papelera: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analizando "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Análisis iniciado para "${title}"',
-			'libraries.failedToAnalyze' => ({required Object error}) => 'Error al analizar la biblioteca: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => 'Error al analizar la biblioteca: ${error}',
 			'libraries.noLibrariesFound' => 'No se encontraron bibliotecas',
 			'libraries.allLibrariesHidden' => 'Todas las bibliotecas están ocultas',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Bibliotecas ocultas (${count})',

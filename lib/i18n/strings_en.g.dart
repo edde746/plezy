@@ -264,6 +264,9 @@ class TranslationsCommonEn {
 
 	/// en: 'Exit fullscreen'
 	String get exitFullscreen => 'Exit fullscreen';
+
+	/// en: 'Press back again to exit'
+	String get pressBackAgainToExit => 'Press back again to exit';
 }
 
 // Path: screens
@@ -3552,6 +3555,7 @@ extension on Translations {
 			'common.loading' => 'Loading...',
 			'common.fullscreen' => 'Fullscreen',
 			'common.exitFullscreen' => 'Exit fullscreen',
+			'common.pressBackAgainToExit' => 'Press back again to exit',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
@@ -4011,9 +4015,9 @@ extension on Translations {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Failed to empty trash: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analyzing "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analysis started for "${title}"',
-			'libraries.failedToAnalyze' => ({required Object error}) => 'Failed to analyze library: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => 'Failed to analyze library: ${error}',
 			'libraries.noLibrariesFound' => 'No libraries found',
 			'libraries.allLibrariesHidden' => 'All libraries are hidden',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Hidden libraries (${count})',

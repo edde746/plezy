@@ -157,6 +157,7 @@ class _TranslationsCommonIt implements TranslationsCommonEn {
 	@override String get loading => 'Caricamento...';
 	@override String get fullscreen => 'Schermo intero';
 	@override String get exitFullscreen => 'Esci da schermo intero';
+	@override String get pressBackAgainToExit => 'Premi di nuovo indietro per uscire';
 }
 
 // Path: screens
@@ -1594,6 +1595,7 @@ extension on TranslationsIt {
 			'common.loading' => 'Caricamento...',
 			'common.fullscreen' => 'Schermo intero',
 			'common.exitFullscreen' => 'Esci da schermo intero',
+			'common.pressBackAgainToExit' => 'Premi di nuovo indietro per uscire',
 			'screens.licenses' => 'Licenze',
 			'screens.switchProfile' => 'Cambia profilo',
 			'screens.subtitleStyling' => 'Stile sottotitoli',
@@ -2053,9 +2055,9 @@ extension on TranslationsIt {
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Impossibile svuotare cestino: ${error}',
 			'libraries.analyzing' => ({required Object title}) => 'Analisi "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analisi iniziata per "${title}"',
-			'libraries.failedToAnalyze' => ({required Object error}) => 'Impossibile analizzare libreria: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.failedToAnalyze' => ({required Object error}) => 'Impossibile analizzare libreria: ${error}',
 			'libraries.noLibrariesFound' => 'Nessuna libreria trovata',
 			'libraries.allLibrariesHidden' => 'Tutte le librerie sono nascoste',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Librerie nascoste (${count})',
