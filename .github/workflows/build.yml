@@ -66,11 +66,37 @@ jobs:
       - name: Build APKs
         run: flutter build apk --release --split-per-abi --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }} --obfuscate --split-debug-info=debug-info/android-apk
 
-      - name: Upload symbols to bugs.plezy.app
+      - name: Stage symbols for upload
         if: github.repository == 'edde746/plezy'
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-        run: ./scripts/upload-symbols.sh android-apk
+        continue-on-error: true
+        run: |
+          SYMBOL_ROOT="symbol-inputs/android-apk"
+          rm -rf "$SYMBOL_ROOT"
+          mkdir -p "$SYMBOL_ROOT"
+
+          if [ -d "debug-info/android-apk" ]; then
+            mkdir -p "$SYMBOL_ROOT/debug-info"
+            cp -R "debug-info/android-apk" "$SYMBOL_ROOT/debug-info/"
+          fi
+
+          if [ -d "build/app/intermediates/merged_native_libs" ]; then
+            while IFS= read -r -d '' file; do
+              mkdir -p "$SYMBOL_ROOT/$(dirname "$file")"
+              cp "$file" "$SYMBOL_ROOT/$file"
+            done < <(find build/app/intermediates/merged_native_libs -name '*.so' -type f -print0)
+          fi
+
+          find "$SYMBOL_ROOT" -type f -print -quit | grep -q .
+
+      - name: Upload symbols artifact
+        if: github.repository == 'edde746/plezy'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: symbols-android-apk
+          path: symbol-inputs/android-apk
+          retention-days: 3
+          if-no-files-found: error
 
       - name: Clean up keystore
         if: always()
@@ -140,11 +166,37 @@ jobs:
       - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/ios
 
-      - name: Upload symbols to bugs.plezy.app
+      - name: Stage symbols for upload
         if: github.repository == 'edde746/plezy'
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-        run: ./scripts/upload-symbols.sh ios
+        continue-on-error: true
+        run: |
+          SYMBOL_ROOT="symbol-inputs/ios"
+          rm -rf "$SYMBOL_ROOT"
+          mkdir -p "$SYMBOL_ROOT"
+
+          if [ -d "debug-info/ios" ]; then
+            mkdir -p "$SYMBOL_ROOT/debug-info"
+            cp -R "debug-info/ios" "$SYMBOL_ROOT/debug-info/"
+          fi
+
+          if [ -d "build/ios" ]; then
+            while IFS= read -r -d '' file; do
+              mkdir -p "$SYMBOL_ROOT/$(dirname "$file")"
+              cp "$file" "$SYMBOL_ROOT/$file"
+            done < <(find build/ios -path '*.dSYM/Contents/Resources/DWARF/*' -type f -print0)
+          fi
+
+          find "$SYMBOL_ROOT" -type f -print -quit | grep -q .
+
+      - name: Upload symbols artifact
+        if: github.repository == 'edde746/plezy'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: symbols-ios
+          path: symbol-inputs/ios
+          retention-days: 3
+          if-no-files-found: error
 
       - name: Create IPA
         run: |
@@ -204,11 +256,37 @@ jobs:
       - name: Build macOS
         run: flutter build macos --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/macos
 
-      - name: Upload symbols to bugs.plezy.app
+      - name: Stage symbols for upload
         if: github.repository == 'edde746/plezy'
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-        run: ./scripts/upload-symbols.sh macos
+        continue-on-error: true
+        run: |
+          SYMBOL_ROOT="symbol-inputs/macos"
+          rm -rf "$SYMBOL_ROOT"
+          mkdir -p "$SYMBOL_ROOT"
+
+          if [ -d "debug-info/macos" ]; then
+            mkdir -p "$SYMBOL_ROOT/debug-info"
+            cp -R "debug-info/macos" "$SYMBOL_ROOT/debug-info/"
+          fi
+
+          if [ -d "build/macos/Build/Products/Release" ]; then
+            while IFS= read -r -d '' file; do
+              mkdir -p "$SYMBOL_ROOT/$(dirname "$file")"
+              cp "$file" "$SYMBOL_ROOT/$file"
+            done < <(find build/macos/Build/Products/Release -path '*.dSYM/Contents/Resources/DWARF/*' -type f -print0)
+          fi
+
+          find "$SYMBOL_ROOT" -type f -print -quit | grep -q .
+
+      - name: Upload symbols artifact
+        if: github.repository == 'edde746/plezy'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: symbols-macos
+          path: symbol-inputs/macos
+          retention-days: 3
+          if-no-files-found: error
 
       - name: Import Code Signing Certificate
         env:
@@ -361,12 +439,45 @@ jobs:
       - name: Build Windows x64
         run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/windows-x64
 
-      - name: Upload symbols to bugs.plezy.app
+      - name: Stage symbols for upload
         if: github.repository == 'edde746/plezy'
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
         shell: pwsh
-        run: ./scripts/upload-symbols.ps1 windows-x64
+        continue-on-error: true
+        run: |
+          $symbolRoot = 'symbol-inputs/windows-x64'
+          Remove-Item -Path $symbolRoot -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path $symbolRoot -Force | Out-Null
+
+          $debugInfo = 'debug-info/windows-x64'
+          if (Test-Path $debugInfo) {
+            $debugInfoRoot = Join-Path $symbolRoot 'debug-info'
+            New-Item -ItemType Directory -Path $debugInfoRoot -Force | Out-Null
+            Copy-Item -Path $debugInfo -Destination $debugInfoRoot -Recurse -Force
+          }
+
+          $pdbRoot = 'build/windows/x64/runner/Release'
+          if (Test-Path $pdbRoot) {
+            Get-ChildItem -Path $pdbRoot -Filter '*.pdb' -Recurse | ForEach-Object {
+              $relative = [System.IO.Path]::GetRelativePath((Get-Location).Path, $_.FullName)
+              $destination = Join-Path $symbolRoot $relative
+              New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+              Copy-Item -Path $_.FullName -Destination $destination -Force
+            }
+          }
+
+          if (-not (Get-ChildItem -Path $symbolRoot -File -Recurse)) {
+            throw 'No symbol files staged'
+          }
+
+      - name: Upload symbols artifact
+        if: github.repository == 'edde746/plezy'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: symbols-windows-x64
+          path: symbol-inputs/windows-x64
+          retention-days: 3
+          if-no-files-found: error
 
       - name: Upload x64 build
         uses: actions/upload-artifact@v4
@@ -405,12 +516,45 @@ jobs:
       - name: Build Windows arm64
         run: flutter build windows --release --dart-define=ENABLE_UPDATE_CHECK=true ${{ env.SENTRY_DART_DEFINE }} ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.SENTRY_ENV_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }} --split-debug-info=debug-info/windows-arm64
 
-      - name: Upload symbols to bugs.plezy.app
+      - name: Stage symbols for upload
         if: github.repository == 'edde746/plezy'
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
         shell: pwsh
-        run: ./scripts/upload-symbols.ps1 windows-arm64
+        continue-on-error: true
+        run: |
+          $symbolRoot = 'symbol-inputs/windows-arm64'
+          Remove-Item -Path $symbolRoot -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path $symbolRoot -Force | Out-Null
+
+          $debugInfo = 'debug-info/windows-arm64'
+          if (Test-Path $debugInfo) {
+            $debugInfoRoot = Join-Path $symbolRoot 'debug-info'
+            New-Item -ItemType Directory -Path $debugInfoRoot -Force | Out-Null
+            Copy-Item -Path $debugInfo -Destination $debugInfoRoot -Recurse -Force
+          }
+
+          $pdbRoot = 'build/windows/arm64/runner/Release'
+          if (Test-Path $pdbRoot) {
+            Get-ChildItem -Path $pdbRoot -Filter '*.pdb' -Recurse | ForEach-Object {
+              $relative = [System.IO.Path]::GetRelativePath((Get-Location).Path, $_.FullName)
+              $destination = Join-Path $symbolRoot $relative
+              New-Item -ItemType Directory -Path (Split-Path -Parent $destination) -Force | Out-Null
+              Copy-Item -Path $_.FullName -Destination $destination -Force
+            }
+          }
+
+          if (-not (Get-ChildItem -Path $symbolRoot -File -Recurse)) {
+            throw 'No symbol files staged'
+          }
+
+      - name: Upload symbols artifact
+        if: github.repository == 'edde746/plezy'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: symbols-windows-arm64
+          path: symbol-inputs/windows-arm64
+          retention-days: 3
+          if-no-files-found: error
 
       - name: Upload arm64 build
         uses: actions/upload-artifact@v4
@@ -558,11 +702,37 @@ jobs:
         env:
           PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/x86_64-linux-gnu/pkgconfig
 
-      - name: Upload symbols to bugs.plezy.app
+      - name: Stage symbols for upload
         if: github.repository == 'edde746/plezy'
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-        run: ./scripts/upload-symbols.sh linux-x64
+        continue-on-error: true
+        run: |
+          SYMBOL_ROOT="symbol-inputs/linux-x64"
+          rm -rf "$SYMBOL_ROOT"
+          mkdir -p "$SYMBOL_ROOT"
+
+          if [ -d "debug-info/linux-x64" ]; then
+            mkdir -p "$SYMBOL_ROOT/debug-info"
+            cp -R "debug-info/linux-x64" "$SYMBOL_ROOT/debug-info/"
+          fi
+
+          if [ -d "build/linux" ]; then
+            while IFS= read -r -d '' file; do
+              mkdir -p "$SYMBOL_ROOT/$(dirname "$file")"
+              cp "$file" "$SYMBOL_ROOT/$file"
+            done < <(find build/linux -path '*/release/bundle/plezy' -type f -print0)
+          fi
+
+          find "$SYMBOL_ROOT" -type f -print -quit | grep -q .
+
+      - name: Upload symbols artifact
+        if: github.repository == 'edde746/plezy'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: symbols-linux-x64
+          path: symbol-inputs/linux-x64
+          retention-days: 3
+          if-no-files-found: error
 
       - name: Build Linux Packages
         run: ARCH_SUFFIX=x64 OUTPUT_DIR=$GITHUB_WORKSPACE python3 linux/packaging/build-packages.py
@@ -672,11 +842,37 @@ jobs:
         env:
           PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/aarch64-linux-gnu/pkgconfig
 
-      - name: Upload symbols to bugs.plezy.app
+      - name: Stage symbols for upload
         if: github.repository == 'edde746/plezy'
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-        run: ./scripts/upload-symbols.sh linux-arm64
+        continue-on-error: true
+        run: |
+          SYMBOL_ROOT="symbol-inputs/linux-arm64"
+          rm -rf "$SYMBOL_ROOT"
+          mkdir -p "$SYMBOL_ROOT"
+
+          if [ -d "debug-info/linux-arm64" ]; then
+            mkdir -p "$SYMBOL_ROOT/debug-info"
+            cp -R "debug-info/linux-arm64" "$SYMBOL_ROOT/debug-info/"
+          fi
+
+          if [ -d "build/linux" ]; then
+            while IFS= read -r -d '' file; do
+              mkdir -p "$SYMBOL_ROOT/$(dirname "$file")"
+              cp "$file" "$SYMBOL_ROOT/$file"
+            done < <(find build/linux -path '*/release/bundle/plezy' -type f -print0)
+          fi
+
+          find "$SYMBOL_ROOT" -type f -print -quit | grep -q .
+
+      - name: Upload symbols artifact
+        if: github.repository == 'edde746/plezy'
+        continue-on-error: true
+        uses: actions/upload-artifact@v4
+        with:
+          name: symbols-linux-arm64
+          path: symbol-inputs/linux-arm64
+          retention-days: 3
+          if-no-files-found: error
 
       - name: Find bundle directory
         id: find-bundle
@@ -739,6 +935,51 @@ jobs:
             plezy-linux-arm64.rpm
             plezy-linux-arm64.pkg.tar.zst
 
+  upload-symbols:
+    if: github.repository == 'edde746/plezy'
+    needs: [build-android, build-ios, build-macos, build-windows-x64, build-windows-arm64, build-linux-x64, build-linux-arm64]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: android-apk
+            os: ubuntu-latest
+            command: ./scripts/upload-symbols.sh android-apk symbol-inputs/android-apk
+          - platform: ios
+            os: ubuntu-latest
+            command: ./scripts/upload-symbols.sh ios symbol-inputs/ios
+          - platform: macos
+            os: ubuntu-latest
+            command: ./scripts/upload-symbols.sh macos symbol-inputs/macos
+          - platform: windows-x64
+            os: windows-latest
+            command: ./scripts/upload-symbols.ps1 windows-x64 symbol-inputs/windows-x64
+          - platform: windows-arm64
+            os: windows-latest
+            command: ./scripts/upload-symbols.ps1 windows-arm64 symbol-inputs/windows-arm64
+          - platform: linux-x64
+            os: ubuntu-latest
+            command: ./scripts/upload-symbols.sh linux-x64 symbol-inputs/linux-x64
+          - platform: linux-arm64
+            os: ubuntu-latest
+            command: ./scripts/upload-symbols.sh linux-arm64 symbol-inputs/linux-arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download symbols artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: symbols-${{ matrix.platform }}
+          path: symbol-inputs/${{ matrix.platform }}
+
+      - name: Upload symbols to bugs.plezy.app
+        env:
+          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
+        run: ${{ matrix.command }}
+
   create-release:
     needs: [build-android, build-ios, build-macos, package-windows, build-linux-x64, build-linux-arm64]
     runs-on: ubuntu-latest
@@ -750,10 +991,53 @@ jobs:
           sparse-checkout: pubspec.yaml
           sparse-checkout-cone-mode: false
 
-      - name: Download all artifacts
+      - name: Download Android artifacts
         uses: actions/download-artifact@v4
         with:
-          path: artifacts
+          name: android-apk
+          path: artifacts/android-apk
+
+      - name: Download iOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-ipa
+          path: artifacts/ios-ipa
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-dmg
+          path: artifacts/macos-dmg
+
+      - name: Download Windows x64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-x64-portable
+          path: artifacts/windows-x64-portable
+
+      - name: Download Windows arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-arm64-portable
+          path: artifacts/windows-arm64-portable
+
+      - name: Download Windows installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          path: artifacts/windows-installer
+
+      - name: Download Linux x64 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-x64
+          path: artifacts/linux-x64
+
+      - name: Download Linux arm64 artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-arm64
+          path: artifacts/linux-arm64
 
       - name: Display structure of downloaded files
         run: ls -R artifacts

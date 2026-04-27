@@ -1,17 +1,28 @@
 #!/usr/bin/env bash
-# Usage: upload-symbols.sh <platform>
-# Env: BUGS_ADMIN_TOKEN (required), BUGS_URL (default https://bugs.plezy.app)
+# Usage: upload-symbols.sh <platform> [source-root]
+# Env: BUGS_ADMIN_TOKEN (required unless BUGS_UPLOAD_DRY_RUN is set), BUGS_URL (default https://bugs.plezy.app)
 # Platforms: macos | ios | android-apk | android-aab | linux-x64 | linux-arm64
 set -euo pipefail
 
 PLATFORM="${1:?platform arg required}"
-TOKEN="${BUGS_ADMIN_TOKEN:?BUGS_ADMIN_TOKEN env var required}"
 URL="${BUGS_URL:-https://bugs.plezy.app}"
 MAX_ATTEMPTS="${BUGS_UPLOAD_ATTEMPTS:-5}"
+DRY_RUN="${BUGS_UPLOAD_DRY_RUN:-}"
+
+if [ -z "$DRY_RUN" ]; then
+  TOKEN="${BUGS_ADMIN_TOKEN:?BUGS_ADMIN_TOKEN env var required}"
+else
+  TOKEN="${BUGS_ADMIN_TOKEN:-}"
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$ROOT"
+
+SOURCE_ROOT="${2:-$ROOT}"
+if [[ "$SOURCE_ROOT" != /* ]]; then
+  SOURCE_ROOT="$ROOT/$SOURCE_ROOT"
+fi
 
 RELEASE="plezy@$(git rev-parse --short HEAD)"
 ENDPOINT="${URL}/api/0/projects/plezy/plezy/files/dsyms/"
@@ -25,8 +36,8 @@ add_matches() {
 }
 
 add_debug_info() {
-  if [ -d "debug-info/${PLATFORM}" ]; then
-    add_matches "debug-info/${PLATFORM}" -type f
+  if [ -d "${SOURCE_ROOT}/debug-info/${PLATFORM}" ]; then
+    add_matches "${SOURCE_ROOT}/debug-info/${PLATFORM}" -type f
   fi
 }
 
@@ -53,6 +64,12 @@ upload_file() {
   local fail_arg
 
   size="$(file_size "$file")"
+
+  if [ -n "$DRY_RUN" ]; then
+    echo "dry-run: would upload symbols ${index}/${total}: ${file} (${size} bytes)"
+    return 0
+  fi
+
   body="$(mktemp)"
   fail_arg="$(curl_fail_arg)"
 
@@ -100,16 +117,16 @@ add_debug_info
 
 case "$PLATFORM" in
   macos)
-    add_matches build/macos/Build/Products/Release -path '*.dSYM/Contents/Resources/DWARF/*' -type f
+    add_matches "${SOURCE_ROOT}/build/macos/Build/Products/Release" -path '*.dSYM/Contents/Resources/DWARF/*' -type f
     ;;
   ios)
-    add_matches build/ios -path '*.dSYM/Contents/Resources/DWARF/*' -type f
+    add_matches "${SOURCE_ROOT}/build/ios" -path '*.dSYM/Contents/Resources/DWARF/*' -type f
     ;;
   linux-x64|linux-arm64)
-    add_matches build/linux -path '*/release/bundle/plezy' -type f
+    add_matches "${SOURCE_ROOT}/build/linux" -path '*/release/bundle/plezy' -type f
     ;;
   android-apk|android-aab)
-    add_matches build/app/intermediates/merged_native_libs -name '*.so' -type f
+    add_matches "${SOURCE_ROOT}/build/app/intermediates/merged_native_libs" -name '*.so' -type f
     ;;
   *)
     echo "unknown platform: $PLATFORM" >&2
