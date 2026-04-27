@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Plezy Updates</title>
+    <item>
+      <title>Version 1.35.0</title>
+      <sparkle:version>76</sparkle:version>
+      <sparkle:shortVersionString>1.35.0</sparkle:shortVersionString>
+      <sparkle:releaseNotesLink>https://gh-html.edde746.dev/edde746/plezy/1.35.0</sparkle:releaseNotesLink>
+      <enclosure url="https://github.com/edde746/plezy/releases/download/1.35.0/plezy-macos.dmg"
+       length="67231905" type="application/octet-stream"
+       sparkle:edSignature="Ar96Ke0XRfdj3Cs8V7lhZ+TrZ5iz6t6R2b8PbYD7rpZFksCsIjPefRh5hEl6ymPwgf0G0p94f9vI7N/yBTvMDQ=="
+       sparkle:os="macos" />
+      <enclosure url="https://github.com/edde746/plezy/releases/download/1.35.0/plezy-windows-installer.exe"
+       length="113587024" type="application/octet-stream"
+       sparkle:edSignature="FVrYYI1IhHayrWlFv5gsrBcWiXmyc9LF+27uT+kvH0fXbHHdnN9xCTJESldAqmmx4E2n5a23msX7Zo7wGD1BBQ=="
+       sparkle:installerArguments="/SILENT /SP-"
+       sparkle:os="windows" />
+    </item>
+  </channel>
+</rss>
