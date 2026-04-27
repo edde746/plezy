@@ -80,10 +80,18 @@ class SettingsExportService {
   };
 
   /// Prefix denylist. A key is excluded if it starts with any of these.
-  /// `trakt_` covers OAuth session tokens and the runtime sync queue — the
-  /// `enable_trakt_*` feature toggles don't match this prefix and stay
-  /// exportable.
-  static const List<String> _denyPrefixes = ['server_endpoint_', 'episode_count_', 'watched_threshold_', 'trakt_'];
+  /// The tracker prefixes (`trakt_`, `mal_`, `anilist_`, `simkl_`) cover
+  /// OAuth session tokens and runtime sync queues. The `enable_*` feature
+  /// toggles use a different prefix and stay exportable.
+  static const List<String> _denyPrefixes = [
+    'server_endpoint_',
+    'episode_count_',
+    'watched_threshold_',
+    'trakt_',
+    'mal_',
+    'anilist_',
+    'simkl_',
+  ];
 
   /// Literal prefix used by [StorageService._userPrefix] for any scoped key.
   static const String _userPrefixRoot = 'user_';

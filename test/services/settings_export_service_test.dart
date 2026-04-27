@@ -114,6 +114,48 @@ void main() {
       expect(p, contains('enable_trakt_scrobble'));
     });
 
+    test('drops MAL / AniList / SIMKL session keys but keeps their feature toggles', () async {
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      // Stripped tracker session tokens — these would carry access_token /
+      // refresh_token JSON if they leaked into the export.
+      await prefs.setString('mal_session', '{"access_token":"a","refresh_token":"r"}');
+      await prefs.setString('anilist_session', '{"access_token":"a"}');
+      await prefs.setString('simkl_session', '{"access_token":"a"}');
+      // Feature toggles use the `enable_` prefix and SHOULD survive.
+      await prefs.setBool('enable_mal_scrobble', true);
+      await prefs.setBool('enable_anilist_scrobble', true);
+      await prefs.setBool('enable_simkl_scrobble', true);
+
+      final out = SettingsExportService.buildExportMap(prefs);
+      final p = out['prefs'] as Map<String, dynamic>;
+
+      expect(p, isNot(contains('mal_session')));
+      expect(p, isNot(contains('anilist_session')));
+      expect(p, isNot(contains('simkl_session')));
+      expect(p, contains('enable_mal_scrobble'));
+      expect(p, contains('enable_anilist_scrobble'));
+      expect(p, contains('enable_simkl_scrobble'));
+    });
+
+    test('user-scoped tracker sessions are dropped after the user prefix is stripped', () async {
+      final prefs = await BaseSharedPreferencesService.sharedCache();
+      // TrackerAccountStore writes under user_{uuid}_{baseKey}. After the
+      // active-user prefix is stripped on export, the key falls under the
+      // tracker prefix denylist.
+      await prefs.setString('user_alice_mal_session', '{"access_token":"a"}');
+      await prefs.setString('user_alice_anilist_session', '{"access_token":"a"}');
+      await prefs.setString('user_alice_simkl_session', '{"access_token":"a"}');
+      await prefs.setString('user_alice_trakt_session', '{"access_token":"a"}');
+
+      final out = SettingsExportService.buildExportMap(prefs, currentUserUuid: 'alice');
+      final p = out['prefs'] as Map<String, dynamic>;
+
+      expect(p, isNot(contains('mal_session')));
+      expect(p, isNot(contains('anilist_session')));
+      expect(p, isNot(contains('simkl_session')));
+      expect(p, isNot(contains('trakt_session')));
+    });
+
     test('drops the internal migration flag', () async {
       final prefs = await BaseSharedPreferencesService.sharedCache();
       await prefs.setBool('buffer_size_migrated_to_auto', true);
