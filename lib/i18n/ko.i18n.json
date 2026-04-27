@@ -116,6 +116,8 @@
     "showUnwatchedCountDescription": "시리즈 및 시즌에 미시청 에피소드 수 표시",
     "showEpisodeNumberOnCards": "카드에 에피소드 번호 표시",
     "showEpisodeNumberOnCardsDescription": "에피소드 카드에 시즌과 함께 에피소드 번호(예: S2 E3)를 표시합니다",
+    "showSeasonPostersOnTabs": "탭에 시즌 포스터 표시",
+    "showSeasonPostersOnTabsDescription": "프로그램 상세 페이지의 각 시즌 탭 위에 해당 시즌의 포스터를 표시합니다",
     "hideSpoilers": "미시청 에피소드 스포일러 숨기기",
     "hideSpoilersDescription": "아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다",
     "playerBackend": "플레이어 백엔드",

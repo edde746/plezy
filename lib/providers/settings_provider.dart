@@ -54,6 +54,7 @@ class SettingsProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   bool get alwaysKeepSidebarOpen => _read(SettingsService.alwaysKeepSidebarOpen, false);
   bool get showUnwatchedCount => _read(SettingsService.showUnwatchedCount, true);
   bool get showEpisodeNumberOnCards => _read(SettingsService.showEpisodeNumberOnCards, true);
+  bool get showSeasonPostersOnTabs => _read(SettingsService.showSeasonPostersOnTabs, false);
   bool get hideSpoilers => _read(SettingsService.hideSpoilers, false);
   bool get showNavBarLabels => _read(SettingsService.showNavBarLabels, true);
   bool get liveTvDefaultFavorites => _read(SettingsService.liveTvDefaultFavorites, false);
@@ -72,6 +73,7 @@ class SettingsProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   Future<void> setAlwaysKeepSidebarOpen(bool value) => _set(SettingsService.alwaysKeepSidebarOpen, value);
   Future<void> setShowUnwatchedCount(bool value) => _set(SettingsService.showUnwatchedCount, value);
   Future<void> setShowEpisodeNumberOnCards(bool value) => _set(SettingsService.showEpisodeNumberOnCards, value);
+  Future<void> setShowSeasonPostersOnTabs(bool value) => _set(SettingsService.showSeasonPostersOnTabs, value);
   Future<void> setHideSpoilers(bool value) => _set(SettingsService.hideSpoilers, value);
   Future<void> setShowNavBarLabels(bool value) => _set(SettingsService.showNavBarLabels, value);
   Future<void> setLiveTvDefaultFavorites(bool value) => _set(SettingsService.liveTvDefaultFavorites, value);

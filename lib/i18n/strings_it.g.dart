@@ -238,6 +238,8 @@ class _TranslationsSettingsIt implements TranslationsSettingsEn {
 	@override String get showUnwatchedCountDescription => 'Mostra il numero di episodi non visti per serie e stagioni';
 	@override String get showEpisodeNumberOnCards => 'Mostra numero episodio sulle schede';
 	@override String get showEpisodeNumberOnCardsDescription => 'Mostra il numero dell\'episodio accanto alla stagione (es. S2 E3) sulle schede degli episodi';
+	@override String get showSeasonPostersOnTabs => 'Mostra poster delle stagioni sulle schede';
+	@override String get showSeasonPostersOnTabsDescription => 'Mostra il poster della stagione sopra ogni scheda di stagione nella pagina di dettaglio di una serie';
 	@override String get hideSpoilers => 'Nascondi spoiler per episodi non visti';
 	@override String get hideSpoilersDescription => 'Sfoca le miniature e nascondi le descrizioni degli episodi che non hai ancora guardato';
 	@override String get playerBackend => 'Motore di riproduzione';
@@ -1646,6 +1648,8 @@ extension on TranslationsIt {
 			'settings.showUnwatchedCountDescription' => 'Mostra il numero di episodi non visti per serie e stagioni',
 			'settings.showEpisodeNumberOnCards' => 'Mostra numero episodio sulle schede',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Mostra il numero dell\'episodio accanto alla stagione (es. S2 E3) sulle schede degli episodi',
+			'settings.showSeasonPostersOnTabs' => 'Mostra poster delle stagioni sulle schede',
+			'settings.showSeasonPostersOnTabsDescription' => 'Mostra il poster della stagione sopra ogni scheda di stagione nella pagina di dettaglio di una serie',
 			'settings.hideSpoilers' => 'Nascondi spoiler per episodi non visti',
 			'settings.hideSpoilersDescription' => 'Sfoca le miniature e nascondi le descrizioni degli episodi che non hai ancora guardato',
 			'settings.playerBackend' => 'Motore di riproduzione',
@@ -2050,10 +2054,10 @@ extension on TranslationsIt {
 			'libraries.analyzing' => ({required Object title}) => 'Analisi "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analisi iniziata per "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Impossibile analizzare libreria: ${error}',
-			'libraries.noLibrariesFound' => 'Nessuna libreria trovata',
-			'libraries.allLibrariesHidden' => 'Tutte le librerie sono nascoste',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => 'Nessuna libreria trovata',
+			'libraries.allLibrariesHidden' => 'Tutte le librerie sono nascoste',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Librerie nascoste (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Questa libreria è vuota',
 			'libraries.all' => 'Tutto',

@@ -238,6 +238,8 @@ class _TranslationsSettingsNl implements TranslationsSettingsEn {
 	@override String get showUnwatchedCountDescription => 'Toon aantal ongekeken afleveringen bij series en seizoenen';
 	@override String get showEpisodeNumberOnCards => 'Afleveringsnummer op kaarten tonen';
 	@override String get showEpisodeNumberOnCardsDescription => 'Toon het afleveringsnummer naast het seizoen (bijv. S2 E3) op afleveringskaarten';
+	@override String get showSeasonPostersOnTabs => 'Toon seizoensposters op tabbladen';
+	@override String get showSeasonPostersOnTabsDescription => 'Toon de poster van het seizoen boven elk seizoenstabblad op de detailpagina van een serie';
 	@override String get hideSpoilers => 'Spoilers voor ongekeken afleveringen verbergen';
 	@override String get hideSpoilersDescription => 'Miniaturen vervagen en beschrijvingen verbergen voor afleveringen die je nog niet hebt gezien';
 	@override String get playerBackend => 'Speler backend';
@@ -1646,6 +1648,8 @@ extension on TranslationsNl {
 			'settings.showUnwatchedCountDescription' => 'Toon aantal ongekeken afleveringen bij series en seizoenen',
 			'settings.showEpisodeNumberOnCards' => 'Afleveringsnummer op kaarten tonen',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Toon het afleveringsnummer naast het seizoen (bijv. S2 E3) op afleveringskaarten',
+			'settings.showSeasonPostersOnTabs' => 'Toon seizoensposters op tabbladen',
+			'settings.showSeasonPostersOnTabsDescription' => 'Toon de poster van het seizoen boven elk seizoenstabblad op de detailpagina van een serie',
 			'settings.hideSpoilers' => 'Spoilers voor ongekeken afleveringen verbergen',
 			'settings.hideSpoilersDescription' => 'Miniaturen vervagen en beschrijvingen verbergen voor afleveringen die je nog niet hebt gezien',
 			'settings.playerBackend' => 'Speler backend',
@@ -2050,10 +2054,10 @@ extension on TranslationsNl {
 			'libraries.analyzing' => ({required Object title}) => 'Analyseren "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse gestart voor "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kon bibliotheek niet analyseren: ${error}',
-			'libraries.noLibrariesFound' => 'Geen bibliotheken gevonden',
-			'libraries.allLibrariesHidden' => 'Alle bibliotheken zijn verborgen',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => 'Geen bibliotheken gevonden',
+			'libraries.allLibrariesHidden' => 'Alle bibliotheken zijn verborgen',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Verborgen bibliotheken (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Deze bibliotheek is leeg',
 			'libraries.all' => 'Alles',

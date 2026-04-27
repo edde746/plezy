@@ -116,6 +116,8 @@
     "showUnwatchedCountDescription": "Wyświetl liczbę nieobejrzanych odcinków w serialach i sezonach",
     "showEpisodeNumberOnCards": "Pokaż numer odcinka na kartach",
     "showEpisodeNumberOnCardsDescription": "Wyświetla numer odcinka obok sezonu (np. S2 E3) na kartach odcinków",
+    "showSeasonPostersOnTabs": "Pokaż plakaty sezonów na zakładkach",
+    "showSeasonPostersOnTabsDescription": "Wyświetla plakat sezonu nad każdą zakładką sezonu na stronie szczegółów serialu",
     "hideSpoilers": "Ukryj spoilery nieobejrzanych odcinków",
     "hideSpoilersDescription": "Rozmyj miniatury i ukryj opisy odcinków, których jeszcze nie obejrzałeś",
     "playerBackend": "Backend odtwarzacza",

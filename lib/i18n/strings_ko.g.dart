@@ -238,6 +238,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get showUnwatchedCountDescription => '시리즈 및 시즌에 미시청 에피소드 수 표시';
 	@override String get showEpisodeNumberOnCards => '카드에 에피소드 번호 표시';
 	@override String get showEpisodeNumberOnCardsDescription => '에피소드 카드에 시즌과 함께 에피소드 번호(예: S2 E3)를 표시합니다';
+	@override String get showSeasonPostersOnTabs => '탭에 시즌 포스터 표시';
+	@override String get showSeasonPostersOnTabsDescription => '프로그램 상세 페이지의 각 시즌 탭 위에 해당 시즌의 포스터를 표시합니다';
 	@override String get hideSpoilers => '미시청 에피소드 스포일러 숨기기';
 	@override String get hideSpoilersDescription => '아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다';
 	@override String get playerBackend => '플레이어 백엔드';
@@ -1646,6 +1648,8 @@ extension on TranslationsKo {
 			'settings.showUnwatchedCountDescription' => '시리즈 및 시즌에 미시청 에피소드 수 표시',
 			'settings.showEpisodeNumberOnCards' => '카드에 에피소드 번호 표시',
 			'settings.showEpisodeNumberOnCardsDescription' => '에피소드 카드에 시즌과 함께 에피소드 번호(예: S2 E3)를 표시합니다',
+			'settings.showSeasonPostersOnTabs' => '탭에 시즌 포스터 표시',
+			'settings.showSeasonPostersOnTabsDescription' => '프로그램 상세 페이지의 각 시즌 탭 위에 해당 시즌의 포스터를 표시합니다',
 			'settings.hideSpoilers' => '미시청 에피소드 스포일러 숨기기',
 			'settings.hideSpoilersDescription' => '아직 시청하지 않은 에피소드의 썸네일을 흐리게 하고 설명을 숨깁니다',
 			'settings.playerBackend' => '플레이어 백엔드',
@@ -2050,10 +2054,10 @@ extension on TranslationsKo {
 			'libraries.analyzing' => ({required Object title}) => '"${title}" 분석 중...',
 			'libraries.analysisStarted' => ({required Object title}) => '"${title}" 분석 시작됨',
 			'libraries.failedToAnalyze' => ({required Object error}) => '미디어 라이브러리 분석 실패: ${error}',
-			'libraries.noLibrariesFound' => '미디어 라이브러리 없음',
-			'libraries.allLibrariesHidden' => '모든 라이브러리가 숨겨졌습니다',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => '미디어 라이브러리 없음',
+			'libraries.allLibrariesHidden' => '모든 라이브러리가 숨겨졌습니다',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '숨겨진 라이브러리 (${count})',
 			'libraries.thisLibraryIsEmpty' => '이 미디어 라이브러리는 비어 있습니다',
 			'libraries.all' => '전체',

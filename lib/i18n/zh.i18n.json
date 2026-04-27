@@ -116,6 +116,8 @@
     "showUnwatchedCountDescription": "在剧集和季上显示未观看的集数",
     "showEpisodeNumberOnCards": "在卡片上显示集数",
     "showEpisodeNumberOnCardsDescription": "在剧集卡片上，季号旁同时显示集数（例如 S2 E3）",
+    "showSeasonPostersOnTabs": "在选项卡上显示季海报",
+    "showSeasonPostersOnTabsDescription": "在剧集详情页中，每个季选项卡的上方显示该季的海报",
     "hideSpoilers": "隐藏未看剧集的剧透内容",
     "hideSpoilersDescription": "模糊未观看剧集的缩略图并隐藏其描述",
     "playerBackend": "播放器引擎",

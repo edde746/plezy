@@ -238,6 +238,8 @@ class _TranslationsSettingsDe implements TranslationsSettingsEn {
 	@override String get showUnwatchedCountDescription => 'Zeigt die Anzahl nicht gesehener Episoden bei Serien und Staffeln an';
 	@override String get showEpisodeNumberOnCards => 'Episodennummer auf Karten anzeigen';
 	@override String get showEpisodeNumberOnCardsDescription => 'Episodennummer neben der Staffel (z. B. S2 E3) auf Episodenkarten anzeigen';
+	@override String get showSeasonPostersOnTabs => 'Staffelposter auf Tabs anzeigen';
+	@override String get showSeasonPostersOnTabsDescription => 'Zeigt das Poster der Staffel über jedem Staffel-Tab auf der Detailseite einer Serie an';
 	@override String get hideSpoilers => 'Spoiler für nicht gesehene Episoden verbergen';
 	@override String get hideSpoilersDescription => 'Vorschaubilder unscharf machen und Beschreibungen für noch nicht gesehene Episoden ausblenden';
 	@override String get playerBackend => 'Player-Backend';
@@ -1646,6 +1648,8 @@ extension on TranslationsDe {
 			'settings.showUnwatchedCountDescription' => 'Zeigt die Anzahl nicht gesehener Episoden bei Serien und Staffeln an',
 			'settings.showEpisodeNumberOnCards' => 'Episodennummer auf Karten anzeigen',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Episodennummer neben der Staffel (z. B. S2 E3) auf Episodenkarten anzeigen',
+			'settings.showSeasonPostersOnTabs' => 'Staffelposter auf Tabs anzeigen',
+			'settings.showSeasonPostersOnTabsDescription' => 'Zeigt das Poster der Staffel über jedem Staffel-Tab auf der Detailseite einer Serie an',
 			'settings.hideSpoilers' => 'Spoiler für nicht gesehene Episoden verbergen',
 			'settings.hideSpoilersDescription' => 'Vorschaubilder unscharf machen und Beschreibungen für noch nicht gesehene Episoden ausblenden',
 			'settings.playerBackend' => 'Player-Backend',
@@ -2050,10 +2054,10 @@ extension on TranslationsDe {
 			'libraries.analyzing' => ({required Object title}) => 'Analysiere „${title}“...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse gestartet für „${title}“',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Analyse der Mediathek fehlgeschlagen: ${error}',
-			'libraries.noLibrariesFound' => 'Keine Mediatheken gefunden',
-			'libraries.allLibrariesHidden' => 'Alle Mediatheken sind ausgeblendet',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => 'Keine Mediatheken gefunden',
+			'libraries.allLibrariesHidden' => 'Alle Mediatheken sind ausgeblendet',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Ausgeblendete Mediatheken (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Diese Mediathek ist leer',
 			'libraries.all' => 'Alle',

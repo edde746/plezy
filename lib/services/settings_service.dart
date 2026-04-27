@@ -312,6 +312,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const alwaysKeepSidebarOpen = BoolPref('always_keep_sidebar_open');
   static const showUnwatchedCount = BoolPref('show_unwatched_count', defaultValue: true);
   static const showEpisodeNumberOnCards = BoolPref('show_episode_number_on_cards', defaultValue: true);
+  static const showSeasonPostersOnTabs = BoolPref('show_season_posters_on_tabs');
   static const hideSpoilers = BoolPref('hide_spoilers');
   static const showNavBarLabels = BoolPref('show_nav_bar_labels', defaultValue: true);
   static const globalShaderPreset = StringPref('global_shader_preset', defaultValue: 'none');
@@ -678,6 +679,7 @@ class SettingsService extends BaseSharedPreferencesService {
     alwaysKeepSidebarOpen.key,
     showUnwatchedCount.key,
     showEpisodeNumberOnCards.key,
+    showSeasonPostersOnTabs.key,
     hideSpoilers.key,
     showNavBarLabels.key,
     globalShaderPreset.key,

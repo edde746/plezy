@@ -238,6 +238,8 @@ class _TranslationsSettingsZh implements TranslationsSettingsEn {
 	@override String get showUnwatchedCountDescription => '在剧集和季上显示未观看的集数';
 	@override String get showEpisodeNumberOnCards => '在卡片上显示集数';
 	@override String get showEpisodeNumberOnCardsDescription => '在剧集卡片上，季号旁同时显示集数（例如 S2 E3）';
+	@override String get showSeasonPostersOnTabs => '在选项卡上显示季海报';
+	@override String get showSeasonPostersOnTabsDescription => '在剧集详情页中，每个季选项卡的上方显示该季的海报';
 	@override String get hideSpoilers => '隐藏未看剧集的剧透内容';
 	@override String get hideSpoilersDescription => '模糊未观看剧集的缩略图并隐藏其描述';
 	@override String get playerBackend => '播放器引擎';
@@ -1646,6 +1648,8 @@ extension on TranslationsZh {
 			'settings.showUnwatchedCountDescription' => '在剧集和季上显示未观看的集数',
 			'settings.showEpisodeNumberOnCards' => '在卡片上显示集数',
 			'settings.showEpisodeNumberOnCardsDescription' => '在剧集卡片上，季号旁同时显示集数（例如 S2 E3）',
+			'settings.showSeasonPostersOnTabs' => '在选项卡上显示季海报',
+			'settings.showSeasonPostersOnTabsDescription' => '在剧集详情页中，每个季选项卡的上方显示该季的海报',
 			'settings.hideSpoilers' => '隐藏未看剧集的剧透内容',
 			'settings.hideSpoilersDescription' => '模糊未观看剧集的缩略图并隐藏其描述',
 			'settings.playerBackend' => '播放器引擎',
@@ -2050,10 +2054,10 @@ extension on TranslationsZh {
 			'libraries.analyzing' => ({required Object title}) => '正在分析 “${title}”...',
 			'libraries.analysisStarted' => ({required Object title}) => '已开始分析 “${title}”',
 			'libraries.failedToAnalyze' => ({required Object error}) => '无法分析媒体库: ${error}',
-			'libraries.noLibrariesFound' => '未找到媒体库',
-			'libraries.allLibrariesHidden' => '所有媒体库已隐藏',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => '未找到媒体库',
+			'libraries.allLibrariesHidden' => '所有媒体库已隐藏',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '已隐藏的媒体库 (${count})',
 			'libraries.thisLibraryIsEmpty' => '此媒体库为空',
 			'libraries.all' => '全部',

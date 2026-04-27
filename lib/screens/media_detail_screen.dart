@@ -1786,6 +1786,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Build inline season tab chips with LEFT/RIGHT/DOWN focus navigation
   Widget _buildSeasonTabs() {
+    final showPosters = context.select<SettingsProvider, bool>((p) => p.showSeasonPostersOnTabs);
     return HorizontalScrollWithArrows(
       controller: _seasonTabsScrollController,
       builder: (scrollController) => SingleChildScrollView(
@@ -1798,7 +1799,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             Offset? tapPosition;
             final posterPath = season.thumb;
             Widget? topImage;
-            if (posterPath != null && posterPath.isNotEmpty) {
+            if (showPosters && posterPath != null && posterPath.isNotEmpty) {
               const posterWidth = 72.0;
               const posterHeight = 108.0;
               final dpr = PlexImageHelper.effectiveDevicePixelRatio(context);

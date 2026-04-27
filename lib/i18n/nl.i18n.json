@@ -116,6 +116,8 @@
     "showUnwatchedCountDescription": "Toon aantal ongekeken afleveringen bij series en seizoenen",
     "showEpisodeNumberOnCards": "Afleveringsnummer op kaarten tonen",
     "showEpisodeNumberOnCardsDescription": "Toon het afleveringsnummer naast het seizoen (bijv. S2 E3) op afleveringskaarten",
+    "showSeasonPostersOnTabs": "Toon seizoensposters op tabbladen",
+    "showSeasonPostersOnTabsDescription": "Toon de poster van het seizoen boven elk seizoenstabblad op de detailpagina van een serie",
     "hideSpoilers": "Spoilers voor ongekeken afleveringen verbergen",
     "hideSpoilersDescription": "Miniaturen vervagen en beschrijvingen verbergen voor afleveringen die je nog niet hebt gezien",
     "playerBackend": "Speler backend",
