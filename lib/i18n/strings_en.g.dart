@@ -454,6 +454,12 @@ class TranslationsSettingsEn {
 	/// en: 'Show episode number alongside the season (e.g. S2 E3) on episode cards'
 	String get showEpisodeNumberOnCardsDescription => 'Show episode number alongside the season (e.g. S2 E3) on episode cards';
 
+	/// en: 'Show Season Posters on Tabs'
+	String get showSeasonPostersOnTabs => 'Show Season Posters on Tabs';
+
+	/// en: 'Display the season's poster above each season tab on a show's detail page'
+	String get showSeasonPostersOnTabsDescription => 'Display the season\'s poster above each season tab on a show\'s detail page';
+
 	/// en: 'Hide Spoilers for Unwatched Episodes'
 	String get hideSpoilers => 'Hide Spoilers for Unwatched Episodes';
 
@@ -3600,6 +3606,8 @@ extension on Translations {
 			'settings.showUnwatchedCountDescription' => 'Display unwatched episode count on shows and seasons',
 			'settings.showEpisodeNumberOnCards' => 'Show Episode Number on Cards',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Show episode number alongside the season (e.g. S2 E3) on episode cards',
+			'settings.showSeasonPostersOnTabs' => 'Show Season Posters on Tabs',
+			'settings.showSeasonPostersOnTabsDescription' => 'Display the season\'s poster above each season tab on a show\'s detail page',
 			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
 			'settings.hideSpoilersDescription' => 'Blur thumbnails and hide descriptions for episodes you haven\'t watched yet',
 			'settings.playerBackend' => 'Player Backend',
@@ -4004,10 +4012,10 @@ extension on Translations {
 			'libraries.analyzing' => ({required Object title}) => 'Analyzing "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analysis started for "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Failed to analyze library: ${error}',
-			'libraries.noLibrariesFound' => 'No libraries found',
-			'libraries.allLibrariesHidden' => 'All libraries are hidden',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => 'No libraries found',
+			'libraries.allLibrariesHidden' => 'All libraries are hidden',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Hidden libraries (${count})',
 			'libraries.thisLibraryIsEmpty' => 'This library is empty',
 			'libraries.all' => 'All',

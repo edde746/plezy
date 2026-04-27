@@ -238,6 +238,8 @@ class _TranslationsSettingsPl implements TranslationsSettingsEn {
 	@override String get showUnwatchedCountDescription => 'Wyświetl liczbę nieobejrzanych odcinków w serialach i sezonach';
 	@override String get showEpisodeNumberOnCards => 'Pokaż numer odcinka na kartach';
 	@override String get showEpisodeNumberOnCardsDescription => 'Wyświetla numer odcinka obok sezonu (np. S2 E3) na kartach odcinków';
+	@override String get showSeasonPostersOnTabs => 'Pokaż plakaty sezonów na zakładkach';
+	@override String get showSeasonPostersOnTabsDescription => 'Wyświetla plakat sezonu nad każdą zakładką sezonu na stronie szczegółów serialu';
 	@override String get hideSpoilers => 'Ukryj spoilery nieobejrzanych odcinków';
 	@override String get hideSpoilersDescription => 'Rozmyj miniatury i ukryj opisy odcinków, których jeszcze nie obejrzałeś';
 	@override String get playerBackend => 'Backend odtwarzacza';
@@ -1646,6 +1648,8 @@ extension on TranslationsPl {
 			'settings.showUnwatchedCountDescription' => 'Wyświetl liczbę nieobejrzanych odcinków w serialach i sezonach',
 			'settings.showEpisodeNumberOnCards' => 'Pokaż numer odcinka na kartach',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Wyświetla numer odcinka obok sezonu (np. S2 E3) na kartach odcinków',
+			'settings.showSeasonPostersOnTabs' => 'Pokaż plakaty sezonów na zakładkach',
+			'settings.showSeasonPostersOnTabsDescription' => 'Wyświetla plakat sezonu nad każdą zakładką sezonu na stronie szczegółów serialu',
 			'settings.hideSpoilers' => 'Ukryj spoilery nieobejrzanych odcinków',
 			'settings.hideSpoilersDescription' => 'Rozmyj miniatury i ukryj opisy odcinków, których jeszcze nie obejrzałeś',
 			'settings.playerBackend' => 'Backend odtwarzacza',
@@ -2050,10 +2054,10 @@ extension on TranslationsPl {
 			'libraries.analyzing' => ({required Object title}) => 'Analizowanie "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analiza rozpoczęta dla "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Nie udało się przeanalizować biblioteki: ${error}',
-			'libraries.noLibrariesFound' => 'Nie znaleziono bibliotek',
-			'libraries.allLibrariesHidden' => 'Wszystkie biblioteki są ukryte',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => 'Nie znaleziono bibliotek',
+			'libraries.allLibrariesHidden' => 'Wszystkie biblioteki są ukryte',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Ukryte biblioteki (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Ta biblioteka jest pusta',
 			'libraries.all' => 'Wszystkie',

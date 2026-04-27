@@ -238,6 +238,8 @@ class _TranslationsSettingsRu implements TranslationsSettingsEn {
 	@override String get showUnwatchedCountDescription => 'Отображать количество непросмотренных эпизодов для сериалов и сезонов';
 	@override String get showEpisodeNumberOnCards => 'Показывать номер эпизода на карточках';
 	@override String get showEpisodeNumberOnCardsDescription => 'Отображать номер эпизода рядом с сезоном (напр. S2 E3) на карточках эпизодов';
+	@override String get showSeasonPostersOnTabs => 'Показывать постеры сезонов на вкладках';
+	@override String get showSeasonPostersOnTabsDescription => 'Отображать постер сезона над каждой вкладкой сезона на странице сведений сериала';
 	@override String get hideSpoilers => 'Скрыть спойлеры непросмотренных эпизодов';
 	@override String get hideSpoilersDescription => 'Размывать миниатюры и скрывать описания эпизодов, которые вы ещё не смотрели';
 	@override String get playerBackend => 'Бэкенд плеера';
@@ -1646,6 +1648,8 @@ extension on TranslationsRu {
 			'settings.showUnwatchedCountDescription' => 'Отображать количество непросмотренных эпизодов для сериалов и сезонов',
 			'settings.showEpisodeNumberOnCards' => 'Показывать номер эпизода на карточках',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Отображать номер эпизода рядом с сезоном (напр. S2 E3) на карточках эпизодов',
+			'settings.showSeasonPostersOnTabs' => 'Показывать постеры сезонов на вкладках',
+			'settings.showSeasonPostersOnTabsDescription' => 'Отображать постер сезона над каждой вкладкой сезона на странице сведений сериала',
 			'settings.hideSpoilers' => 'Скрыть спойлеры непросмотренных эпизодов',
 			'settings.hideSpoilersDescription' => 'Размывать миниатюры и скрывать описания эпизодов, которые вы ещё не смотрели',
 			'settings.playerBackend' => 'Бэкенд плеера',
@@ -2050,10 +2054,10 @@ extension on TranslationsRu {
 			'libraries.analyzing' => ({required Object title}) => 'Анализ "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Анализ начат для "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Не удалось проанализировать библиотеку: ${error}',
-			'libraries.noLibrariesFound' => 'Библиотеки не найдены',
-			'libraries.allLibrariesHidden' => 'Все библиотеки скрыты',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => 'Библиотеки не найдены',
+			'libraries.allLibrariesHidden' => 'Все библиотеки скрыты',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Скрытые библиотеки (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Эта библиотека пуста',
 			'libraries.all' => 'Все',

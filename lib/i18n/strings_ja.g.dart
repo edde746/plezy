@@ -238,6 +238,8 @@ class _TranslationsSettingsJa implements TranslationsSettingsEn {
 	@override String get showUnwatchedCountDescription => '番組とシーズンに未視聴エピソード数を表示';
 	@override String get showEpisodeNumberOnCards => 'カードにエピソード番号を表示';
 	@override String get showEpisodeNumberOnCardsDescription => 'エピソードカードにシーズンと並べてエピソード番号（例: S2 E3）を表示';
+	@override String get showSeasonPostersOnTabs => 'タブにシーズンポスターを表示';
+	@override String get showSeasonPostersOnTabsDescription => '番組の詳細ページで、各シーズンタブの上にそのシーズンのポスターを表示します';
 	@override String get hideSpoilers => '未視聴エピソードのネタバレを非表示';
 	@override String get hideSpoilersDescription => 'まだ視聴していないエピソードのサムネイルをぼかし、説明を非表示';
 	@override String get playerBackend => 'プレーヤーバックエンド';
@@ -1646,6 +1648,8 @@ extension on TranslationsJa {
 			'settings.showUnwatchedCountDescription' => '番組とシーズンに未視聴エピソード数を表示',
 			'settings.showEpisodeNumberOnCards' => 'カードにエピソード番号を表示',
 			'settings.showEpisodeNumberOnCardsDescription' => 'エピソードカードにシーズンと並べてエピソード番号（例: S2 E3）を表示',
+			'settings.showSeasonPostersOnTabs' => 'タブにシーズンポスターを表示',
+			'settings.showSeasonPostersOnTabsDescription' => '番組の詳細ページで、各シーズンタブの上にそのシーズンのポスターを表示します',
 			'settings.hideSpoilers' => '未視聴エピソードのネタバレを非表示',
 			'settings.hideSpoilersDescription' => 'まだ視聴していないエピソードのサムネイルをぼかし、説明を非表示',
 			'settings.playerBackend' => 'プレーヤーバックエンド',
@@ -2050,10 +2054,10 @@ extension on TranslationsJa {
 			'libraries.analyzing' => ({required Object title}) => '"${title}"を解析中...',
 			'libraries.analysisStarted' => ({required Object title}) => '"${title}"の解析を開始しました',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'ライブラリの解析に失敗しました: ${error}',
-			'libraries.noLibrariesFound' => 'ライブラリが見つかりません',
-			'libraries.allLibrariesHidden' => 'すべてのライブラリが非表示です',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => 'ライブラリが見つかりません',
+			'libraries.allLibrariesHidden' => 'すべてのライブラリが非表示です',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '非表示のライブラリ (${count})',
 			'libraries.thisLibraryIsEmpty' => 'このライブラリは空です',
 			'libraries.all' => 'すべて',

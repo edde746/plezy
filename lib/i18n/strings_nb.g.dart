@@ -238,6 +238,8 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get showUnwatchedCountDescription => 'Vis antall usette episoder på serier og sesonger';
 	@override String get showEpisodeNumberOnCards => 'Vis episodenummer på kort';
 	@override String get showEpisodeNumberOnCardsDescription => 'Vis episodenummer ved siden av sesongen (f.eks. S2 E3) på episodekort';
+	@override String get showSeasonPostersOnTabs => 'Vis sesongplakater på faner';
+	@override String get showSeasonPostersOnTabsDescription => 'Vis sesongens plakat over hver sesongfane på en series detaljside';
 	@override String get hideSpoilers => 'Skjul spoilere for usette episoder';
 	@override String get hideSpoilersDescription => 'Slør miniatyrbilder og skjul beskrivelser for episoder du ikke har sett ennå';
 	@override String get playerBackend => 'Spillermotor';
@@ -1646,6 +1648,8 @@ extension on TranslationsNb {
 			'settings.showUnwatchedCountDescription' => 'Vis antall usette episoder på serier og sesonger',
 			'settings.showEpisodeNumberOnCards' => 'Vis episodenummer på kort',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Vis episodenummer ved siden av sesongen (f.eks. S2 E3) på episodekort',
+			'settings.showSeasonPostersOnTabs' => 'Vis sesongplakater på faner',
+			'settings.showSeasonPostersOnTabsDescription' => 'Vis sesongens plakat over hver sesongfane på en series detaljside',
 			'settings.hideSpoilers' => 'Skjul spoilere for usette episoder',
 			'settings.hideSpoilersDescription' => 'Slør miniatyrbilder og skjul beskrivelser for episoder du ikke har sett ennå',
 			'settings.playerBackend' => 'Spillermotor',
@@ -2050,10 +2054,10 @@ extension on TranslationsNb {
 			'libraries.analyzing' => ({required Object title}) => 'Analyserer "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse startet for "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kunne ikke analysere bibliotek: ${error}',
-			'libraries.noLibrariesFound' => 'Ingen biblioteker funnet',
-			'libraries.allLibrariesHidden' => 'Alle biblioteker er skjult',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => 'Ingen biblioteker funnet',
+			'libraries.allLibrariesHidden' => 'Alle biblioteker er skjult',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Skjulte biblioteker (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Dette biblioteket er tomt',
 			'libraries.all' => 'Alle',

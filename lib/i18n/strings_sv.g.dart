@@ -238,6 +238,8 @@ class _TranslationsSettingsSv implements TranslationsSettingsEn {
 	@override String get showUnwatchedCountDescription => 'Visa antal osedda avsnitt för serier och säsonger';
 	@override String get showEpisodeNumberOnCards => 'Visa avsnittsnummer på kort';
 	@override String get showEpisodeNumberOnCardsDescription => 'Visa avsnittsnummer tillsammans med säsongen (t.ex. S2 E3) på avsnittskort';
+	@override String get showSeasonPostersOnTabs => 'Visa säsongsaffischer på flikar';
+	@override String get showSeasonPostersOnTabsDescription => 'Visa säsongens affisch ovanför varje säsongsflik på en series detaljsida';
 	@override String get hideSpoilers => 'Dölj spoilers för osedda avsnitt';
 	@override String get hideSpoilersDescription => 'Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu';
 	@override String get playerBackend => 'Spelarmotor';
@@ -1646,6 +1648,8 @@ extension on TranslationsSv {
 			'settings.showUnwatchedCountDescription' => 'Visa antal osedda avsnitt för serier och säsonger',
 			'settings.showEpisodeNumberOnCards' => 'Visa avsnittsnummer på kort',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Visa avsnittsnummer tillsammans med säsongen (t.ex. S2 E3) på avsnittskort',
+			'settings.showSeasonPostersOnTabs' => 'Visa säsongsaffischer på flikar',
+			'settings.showSeasonPostersOnTabsDescription' => 'Visa säsongens affisch ovanför varje säsongsflik på en series detaljsida',
 			'settings.hideSpoilers' => 'Dölj spoilers för osedda avsnitt',
 			'settings.hideSpoilersDescription' => 'Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu',
 			'settings.playerBackend' => 'Spelarmotor',
@@ -2050,10 +2054,10 @@ extension on TranslationsSv {
 			'libraries.analyzing' => ({required Object title}) => 'Analyserar "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analys startad för "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Misslyckades att analysera bibliotek: ${error}',
-			'libraries.noLibrariesFound' => 'Inga bibliotek hittades',
-			'libraries.allLibrariesHidden' => 'Alla bibliotek är dolda',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => 'Inga bibliotek hittades',
+			'libraries.allLibrariesHidden' => 'Alla bibliotek är dolda',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Dolda bibliotek (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Detta bibliotek är tomt',
 			'libraries.all' => 'Alla',

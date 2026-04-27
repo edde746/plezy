@@ -116,6 +116,8 @@
     "showUnwatchedCountDescription": "Vis antall usette episoder på serier og sesonger",
     "showEpisodeNumberOnCards": "Vis episodenummer på kort",
     "showEpisodeNumberOnCardsDescription": "Vis episodenummer ved siden av sesongen (f.eks. S2 E3) på episodekort",
+    "showSeasonPostersOnTabs": "Vis sesongplakater på faner",
+    "showSeasonPostersOnTabsDescription": "Vis sesongens plakat over hver sesongfane på en series detaljside",
     "hideSpoilers": "Skjul spoilere for usette episoder",
     "hideSpoilersDescription": "Slør miniatyrbilder og skjul beskrivelser for episoder du ikke har sett ennå",
     "playerBackend": "Spillermotor",

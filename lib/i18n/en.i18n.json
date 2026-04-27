@@ -116,6 +116,8 @@
     "showUnwatchedCountDescription": "Display unwatched episode count on shows and seasons",
     "showEpisodeNumberOnCards": "Show Episode Number on Cards",
     "showEpisodeNumberOnCardsDescription": "Show episode number alongside the season (e.g. S2 E3) on episode cards",
+    "showSeasonPostersOnTabs": "Show Season Posters on Tabs",
+    "showSeasonPostersOnTabsDescription": "Display the season's poster above each season tab on a show's detail page",
     "hideSpoilers": "Hide Spoilers for Unwatched Episodes",
     "hideSpoilersDescription": "Blur thumbnails and hide descriptions for episodes you haven't watched yet",
     "playerBackend": "Player Backend",

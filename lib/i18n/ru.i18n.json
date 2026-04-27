@@ -116,6 +116,8 @@
     "showUnwatchedCountDescription": "Отображать количество непросмотренных эпизодов для сериалов и сезонов",
     "showEpisodeNumberOnCards": "Показывать номер эпизода на карточках",
     "showEpisodeNumberOnCardsDescription": "Отображать номер эпизода рядом с сезоном (напр. S2 E3) на карточках эпизодов",
+    "showSeasonPostersOnTabs": "Показывать постеры сезонов на вкладках",
+    "showSeasonPostersOnTabsDescription": "Отображать постер сезона над каждой вкладкой сезона на странице сведений сериала",
     "hideSpoilers": "Скрыть спойлеры непросмотренных эпизодов",
     "hideSpoilersDescription": "Размывать миниатюры и скрывать описания эпизодов, которые вы ещё не смотрели",
     "playerBackend": "Бэкенд плеера",

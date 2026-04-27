@@ -116,6 +116,8 @@
     "showUnwatchedCountDescription": "Visa antal osedda avsnitt för serier och säsonger",
     "showEpisodeNumberOnCards": "Visa avsnittsnummer på kort",
     "showEpisodeNumberOnCardsDescription": "Visa avsnittsnummer tillsammans med säsongen (t.ex. S2 E3) på avsnittskort",
+    "showSeasonPostersOnTabs": "Visa säsongsaffischer på flikar",
+    "showSeasonPostersOnTabsDescription": "Visa säsongens affisch ovanför varje säsongsflik på en series detaljsida",
     "hideSpoilers": "Dölj spoilers för osedda avsnitt",
     "hideSpoilersDescription": "Gör miniatyrer suddiga och dölj beskrivningar för avsnitt du inte har sett ännu",
     "playerBackend": "Spelarmotor",

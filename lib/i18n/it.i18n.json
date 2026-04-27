@@ -116,6 +116,8 @@
     "showUnwatchedCountDescription": "Mostra il numero di episodi non visti per serie e stagioni",
     "showEpisodeNumberOnCards": "Mostra numero episodio sulle schede",
     "showEpisodeNumberOnCardsDescription": "Mostra il numero dell'episodio accanto alla stagione (es. S2 E3) sulle schede degli episodi",
+    "showSeasonPostersOnTabs": "Mostra poster delle stagioni sulle schede",
+    "showSeasonPostersOnTabsDescription": "Mostra il poster della stagione sopra ogni scheda di stagione nella pagina di dettaglio di una serie",
     "hideSpoilers": "Nascondi spoiler per episodi non visti",
     "hideSpoilersDescription": "Sfoca le miniature e nascondi le descrizioni degli episodi che non hai ancora guardato",
     "playerBackend": "Motore di riproduzione",

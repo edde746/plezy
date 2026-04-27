@@ -238,6 +238,8 @@ class _TranslationsSettingsFr implements TranslationsSettingsEn {
 	@override String get showUnwatchedCountDescription => 'Afficher le nombre d\'épisodes non visionnés pour les séries et saisons';
 	@override String get showEpisodeNumberOnCards => 'Afficher le numéro d\'épisode sur les cartes';
 	@override String get showEpisodeNumberOnCardsDescription => 'Afficher le numéro d\'épisode à côté de la saison (ex. S2 E3) sur les cartes d\'épisodes';
+	@override String get showSeasonPostersOnTabs => 'Afficher les posters de saison sur les onglets';
+	@override String get showSeasonPostersOnTabsDescription => 'Afficher le poster de la saison au-dessus de chaque onglet de saison sur la page de détail d\'une série';
 	@override String get hideSpoilers => 'Masquer les spoilers des épisodes non vus';
 	@override String get hideSpoilersDescription => 'Flouter les miniatures et masquer les descriptions des épisodes que vous n\'avez pas encore regardés';
 	@override String get playerBackend => 'Moteur de lecture';
@@ -1646,6 +1648,8 @@ extension on TranslationsFr {
 			'settings.showUnwatchedCountDescription' => 'Afficher le nombre d\'épisodes non visionnés pour les séries et saisons',
 			'settings.showEpisodeNumberOnCards' => 'Afficher le numéro d\'épisode sur les cartes',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Afficher le numéro d\'épisode à côté de la saison (ex. S2 E3) sur les cartes d\'épisodes',
+			'settings.showSeasonPostersOnTabs' => 'Afficher les posters de saison sur les onglets',
+			'settings.showSeasonPostersOnTabsDescription' => 'Afficher le poster de la saison au-dessus de chaque onglet de saison sur la page de détail d\'une série',
 			'settings.hideSpoilers' => 'Masquer les spoilers des épisodes non vus',
 			'settings.hideSpoilersDescription' => 'Flouter les miniatures et masquer les descriptions des épisodes que vous n\'avez pas encore regardés',
 			'settings.playerBackend' => 'Moteur de lecture',
@@ -2050,10 +2054,10 @@ extension on TranslationsFr {
 			'libraries.analyzing' => ({required Object title}) => 'Analyse de "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'L\'analyse a commencé pour "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Échec de l\'analyse de la bibliothèque: ${error}',
-			'libraries.noLibrariesFound' => 'Aucune bibliothèque trouvée',
-			'libraries.allLibrariesHidden' => 'Toutes les bibliothèques sont masquées',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => 'Aucune bibliothèque trouvée',
+			'libraries.allLibrariesHidden' => 'Toutes les bibliothèques sont masquées',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Bibliothèques masquées (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Cette bibliothèque est vide',
 			'libraries.all' => 'Tout',

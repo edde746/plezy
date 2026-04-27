@@ -238,6 +238,8 @@ class _TranslationsSettingsDa implements TranslationsSettingsEn {
 	@override String get showUnwatchedCountDescription => 'Vis antal usete episoder på serier og sæsoner';
 	@override String get showEpisodeNumberOnCards => 'Vis episodenummer på kort';
 	@override String get showEpisodeNumberOnCardsDescription => 'Vis episodenummer ved siden af sæsonen (f.eks. S2 E3) på episodekort';
+	@override String get showSeasonPostersOnTabs => 'Vis sæsonplakater på faner';
+	@override String get showSeasonPostersOnTabsDescription => 'Vis sæsonens plakat over hver sæsonfane på en series detaljeside';
 	@override String get hideSpoilers => 'Skjul spoilere for usete episoder';
 	@override String get hideSpoilersDescription => 'Slør miniaturebilleder og skjul beskrivelser for episoder, du ikke har set endnu';
 	@override String get playerBackend => 'Afspillerbackend';
@@ -1646,6 +1648,8 @@ extension on TranslationsDa {
 			'settings.showUnwatchedCountDescription' => 'Vis antal usete episoder på serier og sæsoner',
 			'settings.showEpisodeNumberOnCards' => 'Vis episodenummer på kort',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Vis episodenummer ved siden af sæsonen (f.eks. S2 E3) på episodekort',
+			'settings.showSeasonPostersOnTabs' => 'Vis sæsonplakater på faner',
+			'settings.showSeasonPostersOnTabsDescription' => 'Vis sæsonens plakat over hver sæsonfane på en series detaljeside',
 			'settings.hideSpoilers' => 'Skjul spoilere for usete episoder',
 			'settings.hideSpoilersDescription' => 'Slør miniaturebilleder og skjul beskrivelser for episoder, du ikke har set endnu',
 			'settings.playerBackend' => 'Afspillerbackend',
@@ -2050,10 +2054,10 @@ extension on TranslationsDa {
 			'libraries.analyzing' => ({required Object title}) => 'Analyserer "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse startet for "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kunne ikke analysere bibliotek: ${error}',
-			'libraries.noLibrariesFound' => 'Ingen biblioteker fundet',
-			'libraries.allLibrariesHidden' => 'Alle biblioteker er skjult',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => 'Ingen biblioteker fundet',
+			'libraries.allLibrariesHidden' => 'Alle biblioteker er skjult',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Skjulte biblioteker (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Dette bibliotek er tomt',
 			'libraries.all' => 'Alle',

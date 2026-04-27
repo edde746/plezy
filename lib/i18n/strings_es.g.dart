@@ -238,6 +238,8 @@ class _TranslationsSettingsEs implements TranslationsSettingsEn {
 	@override String get showUnwatchedCountDescription => 'Mostrar el conteo de episodios no vistos en series y temporadas';
 	@override String get showEpisodeNumberOnCards => 'Mostrar número de episodio en las tarjetas';
 	@override String get showEpisodeNumberOnCardsDescription => 'Muestra el número de episodio junto a la temporada (p. ej. S2 E3) en las tarjetas de episodios';
+	@override String get showSeasonPostersOnTabs => 'Mostrar pósters de temporada en las pestañas';
+	@override String get showSeasonPostersOnTabsDescription => 'Muestra el póster de la temporada sobre cada pestaña de temporada en la página de detalles de una serie';
 	@override String get hideSpoilers => 'Ocultar spoilers de episodios no vistos';
 	@override String get hideSpoilersDescription => 'Difuminar miniaturas y ocultar descripciones de episodios que aún no has visto';
 	@override String get playerBackend => 'Reproductor';
@@ -1646,6 +1648,8 @@ extension on TranslationsEs {
 			'settings.showUnwatchedCountDescription' => 'Mostrar el conteo de episodios no vistos en series y temporadas',
 			'settings.showEpisodeNumberOnCards' => 'Mostrar número de episodio en las tarjetas',
 			'settings.showEpisodeNumberOnCardsDescription' => 'Muestra el número de episodio junto a la temporada (p. ej. S2 E3) en las tarjetas de episodios',
+			'settings.showSeasonPostersOnTabs' => 'Mostrar pósters de temporada en las pestañas',
+			'settings.showSeasonPostersOnTabsDescription' => 'Muestra el póster de la temporada sobre cada pestaña de temporada en la página de detalles de una serie',
 			'settings.hideSpoilers' => 'Ocultar spoilers de episodios no vistos',
 			'settings.hideSpoilersDescription' => 'Difuminar miniaturas y ocultar descripciones de episodios que aún no has visto',
 			'settings.playerBackend' => 'Reproductor',
@@ -2050,10 +2054,10 @@ extension on TranslationsEs {
 			'libraries.analyzing' => ({required Object title}) => 'Analizando "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Análisis iniciado para "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Error al analizar la biblioteca: ${error}',
-			'libraries.noLibrariesFound' => 'No se encontraron bibliotecas',
-			'libraries.allLibrariesHidden' => 'Todas las bibliotecas están ocultas',
 			_ => null,
 		} ?? switch (path) {
+			'libraries.noLibrariesFound' => 'No se encontraron bibliotecas',
+			'libraries.allLibrariesHidden' => 'Todas las bibliotecas están ocultas',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Bibliotecas ocultas (${count})',
 			'libraries.thisLibraryIsEmpty' => 'Esta biblioteca está vacía',
 			'libraries.all' => 'Todos',
