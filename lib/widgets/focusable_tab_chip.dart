@@ -142,19 +142,14 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
       focusNode: focusNode,
       onKeyEvent: _handleKeyEvent,
       onTap: widget.onSelect,
-      padding: hasImage
-          ? const EdgeInsets.all(8)
-          : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: hasImage ? const EdgeInsets.all(8) : const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       backgroundColor: backgroundColor,
       borderRadius: hasImage ? 12 : 20,
       child: hasImage
           ? Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(6),
-                  child: widget.topImage!,
-                ),
+                ClipRRect(borderRadius: BorderRadius.circular(6), child: widget.topImage!),
                 const SizedBox(height: 6),
                 label,
               ],
