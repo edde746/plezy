@@ -37,23 +37,36 @@ class PlayerNative extends PlayerBase {
   // Initialization
   // ============================================
 
+  // Memoizes the in-flight init Future so concurrent callers (e.g. the
+  // parallel `requestAudioFocus()` and `setProperty()` paths kicked off in
+  // VideoPlayerScreen._initializePlayer) share one `invoke('initialize')`.
+  // Two concurrent invokes on Android caused MpvPlayerPlugin.handleInitialize
+  // to dispose-and-recreate the in-flight core, hanging playback (#930).
+  Future<void>? _initFuture;
+
   Future<void> _ensureInitialized() async {
     if (initialized) return;
+    return _initFuture ??= _doInitialize();
+  }
 
+  Future<void> _doInitialize() async {
     try {
       final result = await invoke<Object>('initialize');
+      final bool ok;
       if (result is int) {
         // Linux: initialize returns the texture ID
         _textureIdValue = result;
-        initialized = true;
+        ok = true;
       } else {
-        initialized = result == true;
+        ok = result == true;
       }
-      if (!initialized) {
+      if (!ok) {
         throw Exception('Failed to initialize player');
       }
 
-      // Subscribe to MPV properties
+      // Subscribe to MPV properties before flipping `initialized` so partial
+      // failures don't leave us in a half-initialized state that the memoized
+      // future would falsely treat as ready.
       await observeProperty('time-pos', 'double');
       await observeProperty('duration', 'double');
       await observeProperty('seekable', 'flag');
@@ -69,7 +82,10 @@ class PlayerNative extends PlayerBase {
       await observeProperty('demuxer-cache-state', _nodeFormat);
       await observeProperty('audio-device-list', _nodeFormat);
       await observeProperty('audio-device', 'string');
+
+      initialized = true;
     } catch (e) {
+      _initFuture = null;
       errorController.add(PlayerError('Initialization failed: $e'));
       rethrow;
     }

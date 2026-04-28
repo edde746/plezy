@@ -28,6 +28,13 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
     private val nameToId = mutableMapOf<String, Int>()
     private var sessionGeneration = 0
 
+    // Pending `MethodChannel.Result`s for an init that is currently in flight.
+    // Concurrent `invoke('initialize')` calls share the same outcome instead
+    // of each tearing down the in-flight core and starting their own — which
+    // was the root cause of #930.
+    private val pendingInitResults = mutableListOf<MethodChannel.Result>()
+    @Volatile private var isInitializing = false
+
     // FlutterPlugin
 
     override fun onAttachedToEngine(binding: FlutterPlugin.FlutterPluginBinding) {
@@ -58,6 +65,9 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
         ++sessionGeneration
         playerCore?.dispose()
         playerCore = null
+        // Any in-flight init callback would never fire (its scope is cancelled
+        // by dispose), so close out queued callers explicitly.
+        completePendingInits(success = false)
         activity = null
         activityBinding = null
         Log.d(TAG, "Detached from activity")
@@ -123,33 +133,70 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             return
         }
 
-        currentActivity.runOnUiThread {
-            try {
-                // Dispose stale core idempotently
-                playerCore?.dispose()
-                playerCore = null
+        // Coalesce concurrent inits: the second caller waits for the first
+        // call's outcome instead of disposing the in-flight core. The Dart
+        // side memoizes too, but this is defense in depth for any direct
+        // `invoke('initialize')` that bypasses _ensureInitialized.
+        synchronized(pendingInitResults) {
+            pendingInitResults += result
+            if (isInitializing) {
+                Log.d(TAG, "Init already in flight, queuing caller")
+                return
+            }
+            isInitializing = true
+        }
 
-                val gen = ++sessionGeneration
-                val core = MpvPlayerCore(currentActivity).apply {
+        currentActivity.runOnUiThread {
+            val gen: Int
+            val core: MpvPlayerCore
+            try {
+                // Caller invariant: dispose() was already called explicitly,
+                // OR `playerCore?.isInitialized == true` and we early-exited
+                // above. We never tear down a core that's mid-initialization.
+                if (playerCore != null && playerCore?.isInitialized != true) {
+                    Log.w(TAG, "Discarding stale uninitialized core before re-init")
+                    playerCore?.dispose()
+                    playerCore = null
+                }
+
+                gen = ++sessionGeneration
+                core = MpvPlayerCore(currentActivity).apply {
                     delegate = this@MpvPlayerPlugin
                 }
                 playerCore = core
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to initialize: ${e.message}", e)
+                completePendingInits(success = false, errorMessage = e.message)
+                return@runOnUiThread
+            }
 
-                core.initialize { success ->
-                    if (gen != sessionGeneration || playerCore !== core) {
-                        Log.d(TAG, "Stale init callback (gen=$gen, current=$sessionGeneration)")
-                        result.success(false)
-                        return@initialize
-                    }
+            core.initialize { success ->
+                val stale = gen != sessionGeneration || playerCore !== core
+                if (stale) {
+                    Log.d(TAG, "Stale init callback (gen=$gen, current=$sessionGeneration)")
+                } else {
                     // Start hidden - now safe because setVisible operates on the container,
                     // not the SurfaceView directly (matching ExoPlayer's approach)
                     core.setVisible(false)
                     Log.d(TAG, "Initialized: $success")
-                    result.success(success)
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize: ${e.message}", e)
-                result.error("INIT_FAILED", e.message, null)
+                completePendingInits(success = !stale && success)
+            }
+        }
+    }
+
+    private fun completePendingInits(success: Boolean, errorMessage: String? = null) {
+        val pending = synchronized(pendingInitResults) {
+            isInitializing = false
+            val copy = pendingInitResults.toList()
+            pendingInitResults.clear()
+            copy
+        }
+        for (r in pending) {
+            if (errorMessage != null) {
+                r.error("INIT_FAILED", errorMessage, null)
+            } else {
+                r.success(success)
             }
         }
     }
@@ -159,6 +206,10 @@ class MpvPlayerPlugin : FlutterPlugin, MethodChannel.MethodCallHandler,
             val core = playerCore
             ++sessionGeneration
             playerCore = null
+
+            // Any in-flight init callback is cancelled with the scope, so
+            // close out queued callers here instead of leaking them.
+            completePendingInits(success = false)
 
             core?.dispose {
                 Log.d(TAG, "Disposed")

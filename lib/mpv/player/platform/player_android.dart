@@ -54,20 +54,31 @@ class PlayerAndroid extends PlayerBase {
   // Initialization
   // ============================================
 
+  // Memoizes the in-flight init Future so concurrent callers share one
+  // `invoke('initialize')`. ExoPlayer's native handleInitialize is
+  // synchronous and would mask a Dart-side race anyway, but we mirror the
+  // pattern from PlayerNative for consistency and to avoid a partial-init
+  // hole if any observeProperty call throws.
+  Future<void>? _initFuture;
+
   Future<void> _ensureInitialized() async {
     if (initialized) return;
+    return _initFuture ??= _doInitialize();
+  }
 
+  Future<void> _doInitialize() async {
     try {
       final result = await invoke<bool>('initialize', {
         'bufferSizeBytes': _bufferSizeBytes,
         'tunnelingEnabled': _tunnelingEnabled,
       });
-      initialized = result == true;
-      if (!initialized) {
+      if (result != true) {
         throw Exception('Failed to initialize ExoPlayer');
       }
 
-      // Register property observers so the plugin knows propId mappings
+      // Register property observers before flipping `initialized` so partial
+      // failures don't leave us in a half-initialized state that the memoized
+      // future would falsely treat as ready.
       await observeProperty('time-pos', 'double');
       await observeProperty('duration', 'double');
       await observeProperty('seekable', 'flag');
@@ -80,7 +91,10 @@ class PlayerAndroid extends PlayerBase {
       await observeProperty('aid', 'string');
       await observeProperty('sid', 'string');
       await observeProperty('demuxer-cache-time', 'double');
+
+      initialized = true;
     } catch (e) {
+      _initFuture = null;
       errorController.add(PlayerError('Initialization failed: $e'));
       rethrow;
     }
