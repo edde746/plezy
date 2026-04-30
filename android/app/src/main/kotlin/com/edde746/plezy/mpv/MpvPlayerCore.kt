@@ -154,7 +154,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
                 holder.addCallback(this@MpvPlayerCore)
                 setZOrderOnTop(false)
                 setZOrderMediaOverlay(false)
-                FlutterOverlayHelper.applyCompositionOrder(this, 0)
+                FlutterOverlayHelper.applyCompositionOrder(this, -2)
             }
 
             // Add SurfaceView to container
@@ -165,7 +165,9 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
             contentView.addView(surfaceContainer, 0)
 
             // Find FlutterView and set it on top of our video surface.
-            // Stack (top → bottom): Flutter UI (compositionOrder=1) > video (0).
+            // compositionOrder maps directly to SurfaceView mSubLayer on API 36+:
+            // negative is hole-punched behind the parent canvas, non-negative is above.
+            // Stack (back → front): video (-2, hole-punched) → parent canvas → Flutter UI (+1).
             FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)?.let { container ->
                 FlutterOverlayHelper.configureFlutterZOrder(contentView, container, compositionOrder = 1)
                 flutterOverlayApplied = true

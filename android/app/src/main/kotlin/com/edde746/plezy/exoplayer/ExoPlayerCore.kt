@@ -221,7 +221,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             // container is already at the front to avoid recursing the view tree
             // and re-writing compositionOrder each time.
             if (contentView.getChildAt(contentView.childCount - 1) === container) return@post
-            FlutterOverlayHelper.configureFlutterZOrder(contentView, container, compositionOrder = 2)
+            FlutterOverlayHelper.configureFlutterZOrder(contentView, container, compositionOrder = 1)
         }
     }
 
@@ -234,7 +234,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                     child.setZOrderOnTop(false)
                     child.setZOrderMediaOverlay(true)
                     child.holder.setFormat(PixelFormat.TRANSLUCENT)
-                    FlutterOverlayHelper.applyCompositionOrder(child, 1)
+                    FlutterOverlayHelper.applyCompositionOrder(child, -1)
                 } else if (child is TextureView) {
                     child.isOpaque = false
                 }
@@ -307,7 +307,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
                 holder.addCallback(surfaceCallback)
                 setZOrderOnTop(false)
                 setZOrderMediaOverlay(false)
-                FlutterOverlayHelper.applyCompositionOrder(this, 0)
+                FlutterOverlayHelper.applyCompositionOrder(this, -2)
             }
 
             videoAspectContainer!!.addView(surfaceView)
@@ -330,11 +330,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             val contentView = activity.findViewById<ViewGroup>(android.R.id.content)
             contentView.addView(surfaceContainer, 0)
 
-            // Find FlutterView and configure z-order
-            // Stack (top → bottom): Flutter UI (compositionOrder=2) > subtitle overlay
-            // (1) > video (0). On pre-36 this falls back to legacy bucket ordering.
+            // Find FlutterView and configure z-order. compositionOrder maps directly to
+            // SurfaceView mSubLayer on API 36+: negative values are hole-punched behind
+            // the parent canvas, non-negative are composited above. Media3's
+            // CanvasSubtitleOutput renders SRT/VTT/SDH text on the parent canvas, so the
+            // video and libass surfaces must be negative for non-ASS subs to be visible.
+            // Stack (back → front): video (-2) → libass overlay (-1) → parent canvas
+            // (CanvasSubtitleOutput) → Flutter UI (+1). Pre-36 falls back to legacy buckets.
             FlutterOverlayHelper.findFlutterContainer(contentView, surfaceContainer)?.let { container ->
-                FlutterOverlayHelper.configureFlutterZOrder(contentView, container, compositionOrder = 2)
+                FlutterOverlayHelper.configureFlutterZOrder(contentView, container, compositionOrder = 1)
             }
 
             ensureFlutterOverlayOnTop()
@@ -490,8 +494,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             // Add ASS overlay view to SubtitleView for OVERLAY modes.
             // We use AssSubtitleSurfaceView directly (not AssSubtitleView) so we get a
             // SurfaceFlinger-layer-backed overlay that eglPresentationTimeANDROID can
-            // vsync-pin. Z-order: default video SurfaceView < this MediaOverlay-flagged
-            // SurfaceView < Flutter TextureView in the window.
+            // vsync-pin. Z-order: video SurfaceView (-2) < this MediaOverlay-flagged
+            // SurfaceView (-1) < parent canvas < Flutter SurfaceView (+1) in the window.
             //
             // Inserted at child index 0 so the SurfaceView's transparent punch runs BEFORE
             // SubtitleView's built-in CanvasSubtitleOutput child renders non-ASS cues.
