@@ -27,6 +27,16 @@ bool? _flexibleBoolNullable(Object? v) => switch (v) {
   _ => null,
 };
 
+final _videoResolution = RegExp(r'^(\d+)(k?)$', caseSensitive: false);
+
+/// Plex uses numeric heights for SD/HD and values like `4k`/`8k` for UHD+.
+String _videoResolutionDisplayLabel(String resolution) {
+  final value = resolution.trim();
+  final match = _videoResolution.firstMatch(value);
+  if (match == null) return value;
+  return match.group(2)!.isEmpty ? '${match.group(1)}p' : '${match.group(1)}K';
+}
+
 @JsonSerializable(createToJson: false)
 class PlexMediaVersion {
   @JsonKey(fromJson: _flexibleIntOrZero)
@@ -77,7 +87,7 @@ class PlexMediaVersion {
 
     // Add resolution
     if (videoResolution != null && videoResolution!.isNotEmpty) {
-      parts.add('${videoResolution}p');
+      parts.add(_videoResolutionDisplayLabel(videoResolution!));
     } else if (height != null) {
       parts.add('${height}p');
     }

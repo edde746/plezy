@@ -100,4 +100,17 @@ void main() {
       expect(v.isPlayable, isTrue);
     });
   });
+
+  group('PlexMediaVersion displayLabel', () {
+    test('formats Plex videoResolution for display', () {
+      expect(PlexMediaVersion(id: 1, partKey: '/k', videoResolution: '1080').displayLabel, startsWith('1080p '));
+      for (final resolution in ['4k', '4K']) {
+        expect(PlexMediaVersion(id: 1, partKey: '/k', videoResolution: resolution).displayLabel, startsWith('4K '));
+      }
+      for (final resolution in ['8k', '8K']) {
+        expect(PlexMediaVersion(id: 1, partKey: '/k', videoResolution: resolution).displayLabel, startsWith('8K '));
+      }
+      expect(PlexMediaVersion(id: 1, partKey: '/k', videoResolution: 'sd').displayLabel, startsWith('sd '));
+    });
+  });
 }
