@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../../focus/input_mode_tracker.dart';
-import '../../../models/plex_library.dart';
+import '../../../media/media_library.dart';
 import '../../../utils/app_logger.dart';
 import '../../../mixins/library_tab_state.dart';
 import '../../../mixins/refreshable.dart';
@@ -22,7 +22,7 @@ import '../content_state_builder.dart';
 /// - [errorContext]: Context for error messages (defaults to "content")
 /// - [getRefreshStream]: Stream to listen for refresh events
 abstract class BaseLibraryTab<T> extends StatefulWidget {
-  final PlexLibrary library;
+  final MediaLibrary library;
   final String? viewMode;
   final String? density;
 
@@ -62,7 +62,7 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   bool get wantKeepAlive => true;
 
   @override
-  PlexLibrary get library => widget.library;
+  MediaLibrary get library => widget.library;
 
   @override
   void refresh() {

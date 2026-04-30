@@ -6,8 +6,8 @@ import 'package:rate_limiter/rate_limiter.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../i18n/strings.g.dart';
+import '../media/media_item.dart';
 import '../mixins/refreshable.dart';
-import '../models/plex_metadata.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
@@ -30,7 +30,7 @@ class _SearchScreenState extends State<SearchScreen>
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode(debugLabel: 'SearchInput');
   final _firstResultFocusNode = FocusNode(debugLabel: 'SearchFirstResult');
-  List<PlexMetadata> _searchResults = [];
+  List<MediaItem> _searchResults = [];
   bool _isSearching = false;
   bool _hasSearched = false;
   late final Debounce _searchDebounce;
@@ -99,10 +99,10 @@ class _SearchScreenState extends State<SearchScreen>
       }
 
       // Search across all connected servers
-      final results = await multiServerProvider.aggregationService.searchAcrossServers(query);
+      final neutral = await multiServerProvider.aggregationService.searchAcrossServers(query);
       if (mounted) {
         setState(() {
-          _searchResults = results;
+          _searchResults = neutral;
           _isSearching = false;
           _lastSearchedQuery = query.trim();
         });
@@ -213,7 +213,7 @@ class _SearchScreenState extends State<SearchScreen>
             forceListMode: true,
             disableScale: true,
             focusNode: index == 0 ? _firstResultFocusNode : null,
-            onListRefresh: () => updateItem(item.ratingKey),
+            onListRefresh: () => updateItem(item.id),
             onNavigateLeft: _navigateToSidebar,
             onNavigateUp: index == 0 ? focusSearchInput : null,
             showServerName: showServerName,

@@ -13,7 +13,7 @@ import '../../providers/multi_server_provider.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/bottom_sheet_header.dart';
 import '../../widgets/overlay_sheet.dart';
-import '../../widgets/plex_optimized_image.dart';
+import '../../widgets/optimized_media_image.dart';
 
 class ReorderFavoritesSheet extends StatefulWidget {
   final List<FavoriteChannel> favorites;
@@ -239,12 +239,12 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
               buildDefaultDragHandles: false,
               itemBuilder: (context, index) {
                 final fav = _tempFavorites[index];
-                final channel = widget.channelMap[fav.id];
+                final channel = widget.channelMap[fav.stableKey];
                 final isFocused = isKeyboardMode && index == _focusedIndex;
                 final isMoving = index == _movingIndex;
 
                 return _buildFavoriteTile(
-                  key: ValueKey(fav.id),
+                  key: ValueKey(fav.stableKey),
                   fav: fav,
                   channel: channel,
                   index: index,
@@ -304,7 +304,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
               width: 40,
               height: 40,
               child: channel?.thumb != null && client != null
-                  ? PlexOptimizedImage.thumb(
+                  ? OptimizedMediaImage.thumb(
                       client: client,
                       imagePath: channel!.thumb,
                       width: 40,

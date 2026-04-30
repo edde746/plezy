@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../media/media_library.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
-import '../models/plex_library.dart';
 import '../services/data_aggregation_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
@@ -15,7 +15,7 @@ enum LibrariesLoadState { initial, loading, loaded, error }
 /// instead of independently fetching library data.
 class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   DataAggregationService? _aggregationService;
-  List<PlexLibrary> _libraries = [];
+  List<MediaLibrary> _libraries = [];
   LibrariesLoadState _loadState = LibrariesLoadState.initial;
   String? _errorMessage;
 
@@ -24,7 +24,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   Future<void>? _inFlightLoad;
 
   /// Unmodifiable list of all libraries (filtered for supported types, ordered)
-  List<PlexLibrary> get libraries => List.unmodifiable(_libraries);
+  List<MediaLibrary> get libraries => List.unmodifiable(_libraries);
 
   /// Whether libraries are currently being loaded
   bool get isLoading => _loadState == LibrariesLoadState.loading;
@@ -64,8 +64,10 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     safeNotifyListeners();
 
     try {
-      // Fetch libraries from all servers
-      final allLibraries = await _aggregationService!.getLibrariesFromAllServers();
+      // Fetch libraries from every connected backend (Plex + Jellyfin).
+      // The aggregation service converts Plex-typed responses to MediaLibrary
+      // internally; Jellyfin clients return MediaLibrary natively.
+      final allLibraries = await _aggregationService!.getMediaLibrariesFromAllServers();
 
       // Filter out music libraries (not supported)
       final filteredLibraries = allLibraries.where((lib) => !ContentTypeHelper.isMusicLibrary(lib)).toList();
@@ -99,7 +101,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   }
 
   /// Update the library order and persist it.
-  Future<void> updateLibraryOrder(List<PlexLibrary> orderedLibraries) async {
+  Future<void> updateLibraryOrder(List<MediaLibrary> orderedLibraries) async {
     _libraries = List.from(orderedLibraries);
     safeNotifyListeners();
 
@@ -121,7 +123,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
   }
 
   /// Apply saved library order to a list of libraries.
-  List<PlexLibrary> _applyLibraryOrder(List<PlexLibrary> libraries, List<String>? savedOrder) {
+  List<MediaLibrary> _applyLibraryOrder(List<MediaLibrary> libraries, List<String>? savedOrder) {
     if (savedOrder == null || savedOrder.isEmpty) {
       return libraries;
     }
@@ -130,7 +132,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     final libraryMap = {for (final lib in libraries) lib.globalKey: lib};
 
     // Build ordered list based on saved order
-    final orderedLibraries = <PlexLibrary>[];
+    final orderedLibraries = <MediaLibrary>[];
     for (final key in savedOrder) {
       final lib = libraryMap.remove(key);
       if (lib != null) {

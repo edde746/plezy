@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import '../../models/plex_filter.dart';
+import '../../media/media_filter.dart';
+import '../../services/plex_client.dart';
 import '../../utils/scroll_utils.dart';
 import '../../widgets/app_bar_back_button.dart';
 import '../../widgets/bottom_sheet_header.dart';
@@ -11,11 +12,17 @@ import '../../utils/provider_extensions.dart';
 import '../../i18n/strings.g.dart';
 
 class FiltersBottomSheet extends StatefulWidget {
-  final List<PlexFilter> filters;
+  final List<MediaFilter> filters;
   final Map<String, String> selectedFilters;
   final Function(Map<String, String>) onFiltersChanged;
   final String serverId;
   final String libraryKey;
+
+  /// Optional pre-fetched values per filter name. When non-null the sheet
+  /// reads from this instead of calling `client.getFilterValues` — used
+  /// for Jellyfin libraries where values come back in the same call that
+  /// lists the categories.
+  final Map<String, List<MediaFilterValue>>? cachedValues;
 
   const FiltersBottomSheet({
     super.key,
@@ -24,6 +31,7 @@ class FiltersBottomSheet extends StatefulWidget {
     required this.onFiltersChanged,
     required this.serverId,
     required this.libraryKey,
+    this.cachedValues,
   });
 
   @override
@@ -31,13 +39,13 @@ class FiltersBottomSheet extends StatefulWidget {
 }
 
 class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
-  PlexFilter? _currentFilter;
-  List<PlexFilterValue> _filterValues = [];
+  MediaFilter? _currentFilter;
+  List<MediaFilterValue> _filterValues = [];
   bool _isLoadingValues = false;
   final Map<String, String> _tempSelectedFilters = {};
   static final Map<String, String> _filterDisplayNames = {}; // Cache for display names
   static const int _maxCachedDisplayNames = 1000;
-  late List<PlexFilter> _sortedFilters;
+  late List<MediaFilter> _sortedFilters;
   late final FocusNode _initialFocusNode;
   final _valuesFirstItemKey = GlobalKey();
   final _valuesScrollController = ScrollController();
@@ -68,20 +76,35 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     _sortedFilters = [...booleanFilters, ...regularFilters];
   }
 
-  bool _isBooleanFilter(PlexFilter filter) {
+  bool _isBooleanFilter(MediaFilter filter) {
     return filter.filterType == 'boolean';
   }
 
-  Future<void> _loadFilterValues(PlexFilter filter) async {
+  Future<void> _loadFilterValues(MediaFilter filter) async {
     setState(() {
       _currentFilter = filter;
       _isLoadingValues = true;
     });
 
     try {
-      final client = context.getClientForServer(widget.serverId);
-
-      final values = await client.getFilterValues(filter.key);
+      // Cached path (Jellyfin) — `/Items/Filters` returned values inline.
+      final cached = widget.cachedValues?[filter.filter];
+      // Backend-neutral lookup so a Jellyfin server with an empty/missing
+      // cache row doesn't throw from `getPlexClientForServer`. Jellyfin's
+      // canonical filter values come from the cached `/Items/Filters`
+      // payload; if that's unavailable, an empty list is the honest answer
+      // until a `getFilterValues` lands on [MediaServerClient].
+      final List<MediaFilterValue> values;
+      if (cached != null) {
+        values = cached;
+      } else {
+        final client = context.tryGetMediaClientForServer(widget.serverId);
+        if (client is PlexClient) {
+          values = await client.getFilterValues(filter.key);
+        } else {
+          values = const [];
+        }
+      }
       if (!mounted) return;
       setState(() {
         _filterValues = values;

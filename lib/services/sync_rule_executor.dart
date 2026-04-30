@@ -1,8 +1,10 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../database/app_database.dart';
+import '../media/media_item.dart';
+import '../media/media_kind.dart';
+import '../media/media_server_client.dart';
 import '../models/download_models.dart';
-import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_utils.dart';
 import '../utils/episode_collection.dart';
@@ -10,7 +12,7 @@ import '../utils/global_key_utils.dart';
 import 'download_manager_service.dart';
 import 'multi_server_manager.dart';
 import 'offline_mode_source.dart';
-import 'plex_client.dart';
+import 'playlist_items_loader.dart';
 
 /// Sync-rule filter values stored in `SyncRules.downloadFilter`.
 class SyncRuleFilter {
@@ -66,10 +68,11 @@ class SyncRuleExecutor {
   /// [queueSingleDownload] queues a single movie/episode and returns `true` if it
   /// was actually queued (false when the item was already present).
   Future<List<SyncRuleResult>> executeSyncRules({
+    required String profileId,
     required MultiServerManager serverManager,
     required Map<String, DownloadProgress> downloads,
-    required Map<String, PlexMetadata> metadata,
-    required Future<bool> Function(PlexMetadata episode, PlexClient client, {int mediaIndex}) queueSingleDownload,
+    required Map<String, MediaItem> metadata,
+    required Future<bool> Function(MediaItem episode, MediaServerClient client, {int mediaIndex}) queueSingleDownload,
     bool force = false,
   }) async {
     if (_isExecuting) {
@@ -104,7 +107,7 @@ class SyncRuleExecutor {
 
     _isExecuting = true;
     try {
-      final rules = await _database.getSyncRules();
+      final rules = await _database.getSyncRules(profileId: profileId);
       if (rules.isEmpty) return [];
 
       appLogger.i('Executing ${rules.length} sync rules');
@@ -138,11 +141,12 @@ class SyncRuleExecutor {
   /// Execute one rule by global key. Used for the eager trigger after
   /// `addToPlaylist` / `addToCollection`. Not throttled by the cooldown.
   Future<SyncRuleResult?> executeSingleRule({
+    required String profileId,
     required String globalKey,
     required MultiServerManager serverManager,
     required Map<String, DownloadProgress> downloads,
-    required Map<String, PlexMetadata> metadata,
-    required Future<bool> Function(PlexMetadata episode, PlexClient client, {int mediaIndex}) queueSingleDownload,
+    required Map<String, MediaItem> metadata,
+    required Future<bool> Function(MediaItem episode, MediaServerClient client, {int mediaIndex}) queueSingleDownload,
   }) async {
     if (_isExecuting) {
       appLogger.d('Sync rule execution already in progress, skipping single-rule run for $globalKey');
@@ -160,7 +164,7 @@ class SyncRuleExecutor {
     }
 
     final rule = await _database.getSyncRule(globalKey);
-    if (rule == null || !rule.enabled) {
+    if (rule == null || !rule.enabled || rule.profileId != profileId) {
       return null;
     }
 
@@ -185,13 +189,28 @@ class SyncRuleExecutor {
     required SyncRuleItem rule,
     required MultiServerManager serverManager,
     required Map<String, DownloadProgress> downloads,
-    required Map<String, PlexMetadata> metadata,
-    required Future<bool> Function(PlexMetadata episode, PlexClient client, {int mediaIndex}) queueSingleDownload,
+    required Map<String, MediaItem> metadata,
+    required Future<bool> Function(MediaItem episode, MediaServerClient client, {int mediaIndex}) queueSingleDownload,
   }) async {
     final client = serverManager.getClient(rule.serverId);
     if (client == null || !serverManager.isServerOnline(rule.serverId)) {
-      appLogger.d('Skipping sync rule ${rule.globalKey} — server offline');
+      appLogger.d('Skipping sync rule ${rule.globalKey} — server offline or unavailable');
       return null;
+    }
+
+    // Migration safety net for rules created before targetMetadata was passed
+    // at creation time: fetch the rule target's title once so the snackbar
+    // doesn't fall back to "Unknown". On failure, keep the original map.
+    var resolvedMetadata = metadata;
+    if (metadata[rule.globalKey]?.title == null) {
+      try {
+        final fetched = await client.fetchItem(rule.ratingKey);
+        if (fetched != null) {
+          resolvedMetadata = {...metadata, rule.globalKey: fetched};
+        }
+      } catch (e) {
+        appLogger.d('Sync rule ${rule.globalKey}: title fetch failed', error: e);
+      }
     }
 
     switch (rule.targetType) {
@@ -200,8 +219,10 @@ class SyncRuleExecutor {
         return _executeEpisodeRule(
           rule: rule,
           client: client,
+          clientScopeId: _clientScopeIdFor(client, rule.serverId),
+          profileId: rule.profileId,
           downloads: downloads,
-          metadata: metadata,
+          metadata: resolvedMetadata,
           queueSingleDownload: queueSingleDownload,
         );
       case ContentTypes.collection:
@@ -209,8 +230,10 @@ class SyncRuleExecutor {
         return _executeListRule(
           rule: rule,
           client: client,
+          clientScopeId: _clientScopeIdFor(client, rule.serverId),
+          profileId: rule.profileId,
           downloads: downloads,
-          metadata: metadata,
+          metadata: resolvedMetadata,
           queueSingleDownload: queueSingleDownload,
         );
       default:
@@ -219,21 +242,35 @@ class SyncRuleExecutor {
     }
   }
 
+  String? _clientScopeIdFor(MediaServerClient client, String serverId) {
+    final cacheServerId = client.cacheServerId;
+    return cacheServerId == serverId || cacheServerId.isEmpty ? null : cacheServerId;
+  }
+
   /// Keep [rule.episodeCount] unwatched episodes queued for a show/season
   /// (0 = all). Always "unwatched" — watched/all filtering doesn't apply here.
   Future<SyncRuleResult?> _executeEpisodeRule({
     required SyncRuleItem rule,
-    required PlexClient client,
+    required MediaServerClient client,
+    required String? clientScopeId,
+    required String profileId,
     required Map<String, DownloadProgress> downloads,
-    required Map<String, PlexMetadata> metadata,
-    required Future<bool> Function(PlexMetadata episode, PlexClient client, {int mediaIndex}) queueSingleDownload,
+    required Map<String, MediaItem> metadata,
+    required Future<bool> Function(MediaItem episode, MediaServerClient client, {int mediaIndex}) queueSingleDownload,
   }) async {
-    final unwatchedEpisodes = <PlexMetadata>[];
+    final fromServer = <MediaItem>[];
     if (rule.targetType == ContentTypes.show) {
-      await collectEpisodesForShow(client, rule.ratingKey, unwatchedOnly: true, out: unwatchedEpisodes);
+      await collectEpisodesForShow(client, rule.ratingKey, unwatchedOnly: true, out: fromServer);
     } else {
-      await collectEpisodesForSeason(client, rule.ratingKey, unwatchedOnly: true, out: unwatchedEpisodes);
+      await collectEpisodesForSeason(client, rule.ratingKey, unwatchedOnly: true, out: fromServer);
     }
+
+    final unwatchedEpisodes = await _excludeLocallyWatched(
+      episodes: fromServer,
+      serverId: rule.serverId,
+      profileId: profileId,
+      clientScopeId: clientScopeId,
+    );
 
     if (unwatchedEpisodes.isEmpty) {
       appLogger.d('Sync rule ${rule.globalKey}: no unwatched episodes available');
@@ -243,7 +280,7 @@ class SyncRuleExecutor {
 
     int alreadyHave = 0;
     for (final ep in unwatchedEpisodes) {
-      final gk = buildGlobalKey(rule.serverId, ep.ratingKey);
+      final gk = buildGlobalKey(rule.serverId, ep.id);
       if (_isActiveDownload(downloads[gk])) alreadyHave++;
     }
 
@@ -260,14 +297,14 @@ class SyncRuleExecutor {
     for (final ep in unwatchedEpisodes) {
       if (queued >= deficit) break;
 
-      final gk = buildGlobalKey(rule.serverId, ep.ratingKey);
+      final gk = buildGlobalKey(rule.serverId, ep.id);
       if (_isActiveDownload(downloads[gk])) continue;
 
       final episodeWithServer = ep.serverId != null ? ep : ep.copyWith(serverId: rule.serverId);
       final ok = await queueSingleDownload(episodeWithServer, client, mediaIndex: rule.mediaIndex);
       if (ok) {
         queued++;
-        appLogger.d('Sync rule ${rule.globalKey}: queued ${ep.title}');
+        appLogger.i('Sync rule ${rule.globalKey}: queued ${ep.title ?? ep.id}');
       }
     }
 
@@ -284,16 +321,23 @@ class SyncRuleExecutor {
   /// downloaded. No deficit cap. `mediaIndex` is always 0 for these rules.
   Future<SyncRuleResult?> _executeListRule({
     required SyncRuleItem rule,
-    required PlexClient client,
+    required MediaServerClient client,
+    required String? clientScopeId,
+    required String profileId,
     required Map<String, DownloadProgress> downloads,
-    required Map<String, PlexMetadata> metadata,
-    required Future<bool> Function(PlexMetadata episode, PlexClient client, {int mediaIndex}) queueSingleDownload,
+    required Map<String, MediaItem> metadata,
+    required Future<bool> Function(MediaItem episode, MediaServerClient client, {int mediaIndex}) queueSingleDownload,
   }) async {
-    final List<PlexMetadata> rootItems;
+    final List<MediaItem> rootItems;
     try {
-      rootItems = rule.targetType == ContentTypes.collection
-          ? await client.fetchAllCollectionItems(rule.ratingKey)
-          : await client.fetchAllPlaylistItems(rule.ratingKey);
+      // Page list calls so long collections/playlists don't truncate at the
+      // default limit. Plex collections use a distinct collections endpoint;
+      // Jellyfin's collection page implementation maps to its children API.
+      if (rule.targetType == ContentTypes.collection) {
+        rootItems = await _fetchAllCollectionItems(client, rule.ratingKey);
+      } else {
+        rootItems = await _fetchAllPlaylistItems(client, rule.ratingKey);
+      }
     } catch (e) {
       appLogger.w('Sync rule ${rule.globalKey}: failed to fetch list items: $e');
       return null;
@@ -306,8 +350,17 @@ class SyncRuleExecutor {
     }
 
     final unwatchedOnly = rule.downloadFilter == SyncRuleFilter.unwatched;
-    final candidates = <PlexMetadata>[];
-    await _collectItemsForList(client, rootItems, unwatchedOnly: unwatchedOnly, out: candidates);
+    final collected = <MediaItem>[];
+    await _collectItemsForList(client, rootItems, unwatchedOnly: unwatchedOnly, out: collected);
+
+    final candidates = unwatchedOnly
+        ? await _excludeLocallyWatched(
+            episodes: collected,
+            serverId: rule.serverId,
+            profileId: profileId,
+            clientScopeId: clientScopeId,
+          )
+        : collected;
 
     if (candidates.isEmpty) {
       appLogger.d('Sync rule ${rule.globalKey}: no candidates after filtering');
@@ -317,14 +370,14 @@ class SyncRuleExecutor {
 
     int queued = 0;
     for (final item in candidates) {
-      final gk = buildGlobalKey(rule.serverId, item.ratingKey);
+      final gk = buildGlobalKey(rule.serverId, item.id);
       if (_isActiveDownload(downloads[gk])) continue;
 
       final itemWithServer = item.serverId != null ? item : item.copyWith(serverId: rule.serverId);
       final ok = await queueSingleDownload(itemWithServer, client, mediaIndex: 0);
       if (ok) {
         queued++;
-        appLogger.d('Sync rule ${rule.globalKey}: queued ${item.title}');
+        appLogger.i('Sync rule ${rule.globalKey}: queued ${item.title ?? item.id}');
       }
     }
 
@@ -336,31 +389,83 @@ class SyncRuleExecutor {
     return SyncRuleResult(globalKey: rule.globalKey, title: displayTitle, queuedCount: queued);
   }
 
+  /// Page through every item in a playlist; the neutral
+  /// [MediaServerClient.fetchPlaylistItems] caps each page (Plex at 100,
+  /// Jellyfin honours `limit`).
+  Future<List<MediaItem>> _fetchAllPlaylistItems(MediaServerClient client, String playlistId) async {
+    return fetchAllPlaylistItems(client, playlistId);
+  }
+
+  /// Page through every item in a collection. Plex requires
+  /// [MediaServerClient.fetchCollectionPage] because collection children live
+  /// under `/library/collections/{id}/children`, not metadata children.
+  Future<List<MediaItem>> _fetchAllCollectionItems(MediaServerClient client, String collectionId) async {
+    final all = <MediaItem>[];
+    const pageSize = 100;
+    var offset = 0;
+    while (true) {
+      final page = await client.fetchCollectionPage(collectionId, start: offset, size: pageSize);
+      if (page.items.isEmpty) break;
+      all.addAll(page.items);
+      if (all.length >= page.totalCount || page.items.length < pageSize) break;
+      offset += page.items.length;
+    }
+    return all;
+  }
+
   /// Walks [items] and collects playable movie/episode entries into [out].
   /// Shows and seasons are expanded into their episodes; music and nested
   /// collections/playlists are skipped.
   Future<void> _collectItemsForList(
-    PlexClient client,
-    List<PlexMetadata> items, {
+    MediaServerClient client,
+    List<MediaItem> items, {
     required bool unwatchedOnly,
-    required List<PlexMetadata> out,
+    required List<MediaItem> out,
   }) async {
     for (final item in items) {
-      final type = item.type?.toLowerCase();
-      switch (type) {
-        case ContentTypes.movie:
-        case ContentTypes.episode:
+      switch (item.kind) {
+        case MediaKind.movie:
+        case MediaKind.episode:
           if (unwatchedOnly && item.isWatched && !item.hasActiveProgress) break;
           out.add(item);
-        case ContentTypes.show:
-          await collectEpisodesForShow(client, item.ratingKey, unwatchedOnly: unwatchedOnly, out: out);
-        case ContentTypes.season:
-          await collectEpisodesForSeason(client, item.ratingKey, unwatchedOnly: unwatchedOnly, out: out);
+        case MediaKind.show:
+          await collectEpisodesForShow(client, item.id, unwatchedOnly: unwatchedOnly, out: out);
+        case MediaKind.season:
+          await collectEpisodesForSeason(client, item.id, unwatchedOnly: unwatchedOnly, out: out);
         default:
           // Skip music, clips, nested collections/playlists, unknown types.
           break;
       }
     }
+  }
+
+  /// Drop items the user already marked watched locally — the server response
+  /// still shows them as unwatched until the next bidirectional-sync push
+  /// drains the OfflineWatchProgress queue, which can be many seconds away.
+  /// Without this filter, sync rules immediately re-queue an episode the
+  /// user just marked watched on a downloaded-detail screen.
+  Future<List<MediaItem>> _excludeLocallyWatched({
+    required List<MediaItem> episodes,
+    required String serverId,
+    required String profileId,
+    String? clientScopeId,
+  }) async {
+    if (episodes.isEmpty) return episodes;
+    final keys = episodes.map((ep) => buildGlobalKey(serverId, ep.id)).toSet();
+    final actions = await _database.getLatestWatchActionsForKeys(
+      keys,
+      profileId: profileId,
+      filterProfile: true,
+      clientScopeIdsByGlobalKey: {for (final key in keys) key: clientScopeId},
+    );
+    if (actions.isEmpty) return episodes;
+    return episodes.where((ep) {
+      final action = actions[buildGlobalKey(serverId, ep.id)];
+      if (action == null) return true;
+      if (action.actionType == OfflineActionType.watched.id) return false;
+      if (action.actionType == OfflineActionType.progress.id && action.shouldMarkWatched) return false;
+      return true;
+    }).toList();
   }
 
   static bool _isActiveDownload(DownloadProgress? p) =>

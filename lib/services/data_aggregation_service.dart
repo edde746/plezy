@@ -1,48 +1,71 @@
 import 'dart:async';
 
-import 'plex_client.dart';
-import '../models/plex_hub.dart';
-import '../models/plex_library.dart';
-import '../models/plex_metadata.dart';
+import '../media/media_hub.dart';
+import '../media/media_item.dart';
+import '../media/media_kind.dart';
+import '../media/media_library.dart';
+import '../media/media_server_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
 import 'multi_server_manager.dart';
-import 'plex_auth_service.dart';
 
-/// Service for aggregating data from multiple Plex servers
+/// Cross-server aggregation: fans calls out to every online client and
+/// merges the results. Single-server operations now go through the
+/// [MediaServerClient] interface directly (resolved via
+/// [ProviderExtensions.tryGetMediaClientForServer] etc.), so this service
+/// only owns the genuinely multi-server flows: home/discover hubs, on-deck,
+/// search, and the global library list.
 class DataAggregationService {
   final MultiServerManager _serverManager;
 
   DataAggregationService(this._serverManager);
 
-  /// Fetch libraries from all online servers
-  /// Libraries are automatically tagged with server info by PlexClient
-  Future<List<PlexLibrary>> getLibrariesFromAllServers() async {
-    return _perServer<PlexLibrary>(
-      operationName: 'fetching libraries',
-      operation: (serverId, client, server) async {
-        return await client.getLibraries();
-      },
-    );
+  /// Fetch libraries from all online clients regardless of backend, returning
+  /// neutral [MediaLibrary]s.
+  Future<List<MediaLibrary>> getMediaLibrariesFromAllServers() async {
+    final clients = _serverManager.onlineClients;
+    if (clients.isEmpty) {
+      appLogger.w('No online servers available for fetching libraries (neutral)');
+      return [];
+    }
+    final futures = clients.entries.map((entry) async {
+      try {
+        return await entry.value.fetchLibraries();
+      } catch (e, stackTrace) {
+        appLogger.e('Failed neutral library fetch from ${entry.key}', error: e, stackTrace: stackTrace);
+        return <MediaLibrary>[];
+      }
+    });
+    final results = await Future.wait(futures);
+    return [for (final list in results) ...list];
   }
 
-  /// Fetch "On Deck" (Continue Watching) from all servers and merge by recency
-  /// Items are automatically tagged with server info by PlexClient
-  Future<List<PlexMetadata>> getOnDeckFromAllServers({int? limit, Set<String>? hiddenLibraryKeys}) async {
-    final allOnDeck = await _perServer<PlexMetadata>(
-      operationName: 'fetching on deck',
-      operation: (serverId, client, server) async {
-        return await client.getContinueWatching();
-      },
-    );
+  /// Fetch "On Deck" (Continue Watching) from all servers and merge by recency.
+  /// Items are tagged with server info by the underlying client. Returns
+  /// neutral [MediaItem]s.
+  Future<List<MediaItem>> getOnDeckFromAllServers({int? limit, Set<String>? hiddenLibraryKeys}) async {
+    final clients = _serverManager.onlineClients;
+    if (clients.isEmpty) {
+      appLogger.w('No online servers available for fetching on deck');
+      return [];
+    }
+    final futures = clients.entries.map((entry) async {
+      final client = entry.value;
+      try {
+        return await client.fetchContinueWatching();
+      } catch (e, st) {
+        appLogger.e('Failed on-deck fetch from ${entry.key}', error: e, stackTrace: st);
+        return <MediaItem>[];
+      }
+    });
+    final allOnDeck = (await Future.wait(futures)).expand((l) => l).toList();
 
     // Filter out items from hidden libraries
-    List<PlexMetadata> filteredOnDeck = allOnDeck;
+    List<MediaItem> filteredOnDeck = allOnDeck;
     if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
       filteredOnDeck = allOnDeck.where((item) {
-        final librarySectionId = item.librarySectionID;
-        if (librarySectionId == null) return true; // Keep if no section ID
-        final globalKey = buildGlobalKey(item.serverId!, librarySectionId.toString());
+        if (item.libraryId == null || item.serverId == null) return true;
+        final globalKey = buildGlobalKey(item.serverId!, item.libraryId!);
         return !hiddenLibraryKeys.contains(globalKey);
       }).toList();
     }
@@ -62,194 +85,127 @@ class DataAggregationService {
     return result;
   }
 
-  /// Fetch recommendation hubs from all servers
+  /// Fetch recommendation hubs from all servers as neutral [MediaHub]s.
   /// When useGlobalHubs is true (default), uses the global /hubs endpoint
-  /// to get the true home page hubs like "Recently Added Movies", "Recently Added TV"
-  /// When false, uses per-library hubs from /hubs/sections/{sectionId}
-  Future<List<PlexHub>> getHubsFromAllServers({
+  /// to get the true home page hubs like "Recently Added Movies", "Recently
+  /// Added TV"; when false, uses per-library hubs from
+  /// /hubs/sections/{sectionId}.
+  Future<List<MediaHub>> getHubsFromAllServers({
     int? limit,
     Set<String>? hiddenLibraryKeys,
-    Map<String, List<PlexLibrary>>? librariesByServer,
     bool useGlobalHubs = true,
   }) async {
     final clients = _serverManager.onlineClients;
-
     if (clients.isEmpty) {
       appLogger.w('No online servers available for fetching hubs');
       return [];
     }
 
-    // For global hubs, fetch libraries to split "Recently Added" hubs by library
-    final libraries = useGlobalHubs
-        ? (librariesByServer ?? groupLibrariesByServer(await getLibrariesFromAllServers()))
-        : librariesByServer;
+    // For global hubs, pre-fetch libraries to split "Recently Added" hubs
+    // by library and resolve human-readable names.
+    final libraries = useGlobalHubs ? _groupLibrariesByServer(await getMediaLibrariesFromAllServers()) : null;
 
-    return useGlobalHubs
-        ? _fetchGlobalHubs(clients, limit: limit, hiddenLibraryKeys: hiddenLibraryKeys, librariesByServer: libraries)
-        : _fetchLibraryHubs(
-            clients,
-            limit: limit,
-            hiddenLibraryKeys: hiddenLibraryKeys,
-            librariesByServer: librariesByServer,
-          );
-  }
-
-  /// Fetch global hubs using /hubs endpoint (matches official Plex client)
-  Future<List<PlexHub>> _fetchGlobalHubs(
-    Map<String, PlexClient> clients, {
-    int? limit,
-    Set<String>? hiddenLibraryKeys,
-    Map<String, List<PlexLibrary>>? librariesByServer,
-  }) async {
-    appLogger.d('Fetching global hubs from ${clients.length} servers');
-
-    // Fetch global hubs from all servers in parallel
-    final hubFutures = clients.entries.map((entry) async {
+    final futures = clients.entries.map((entry) async {
       final serverId = entry.key;
       final client = entry.value;
-
       try {
-        final hubs = await client.getGlobalHubs(limit: limit ?? 10);
-        appLogger.d('Fetched ${hubs.length} global hubs from server $serverId');
-
-        // Filter out items from hidden libraries if specified
-        if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
-          return hubs
-              .map((hub) {
-                final filteredItems = hub.items.where((item) {
-                  // Build the global key for the item's library section
-                  final librarySectionId = item.librarySectionID;
-                  if (librarySectionId == null) return true; // Keep if no section ID
-                  final globalKey = buildGlobalKey(serverId, librarySectionId.toString());
-                  return !hiddenLibraryKeys.contains(globalKey);
-                }).toList();
-
-                if (filteredItems.isEmpty) return null;
-
-                return PlexHub(
-                  hubKey: hub.hubKey,
-                  title: hub.title,
-                  type: hub.type,
-                  hubIdentifier: hub.hubIdentifier,
-                  size: filteredItems.length,
-                  more: hub.more,
-                  items: filteredItems,
-                  serverId: hub.serverId,
-                  serverName: hub.serverName,
-                );
-              })
-              .whereType<PlexHub>()
-              .toList();
-        }
-
-        return hubs;
+        final hubs = useGlobalHubs
+            ? await client.fetchGlobalHubs(limit: limit ?? 10)
+            : await _fetchLibraryHubsForClient(client, limit: limit ?? 10, hiddenLibraryKeys: hiddenLibraryKeys);
+        return _postProcessHubs(
+          hubs,
+          serverId: serverId,
+          hiddenLibraryKeys: hiddenLibraryKeys,
+          libraries: libraries?[serverId],
+          splitRecentlyAdded: useGlobalHubs,
+        );
       } catch (e, stackTrace) {
         appLogger.e('Failed to fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
-        return <PlexHub>[];
+        return <MediaHub>[];
       }
     });
 
-    final results = await Future.wait(hubFutures);
-    // Split "Recently Added" hubs that combine items from multiple libraries
-    final splitResults = results.map((hubs) => _splitRecentlyAddedHubs(hubs, librariesByServer)).toList();
-    final result = _collectAndLimitResults(splitResults, limit);
-
-    appLogger.i('Fetched ${result.length} global hubs from all servers');
-
-    return result;
+    final results = await Future.wait(futures);
+    final all = <MediaHub>[];
+    for (final list in results) {
+      all.addAll(list);
+    }
+    return limit != null && limit < all.length ? all.sublist(0, limit) : all;
   }
 
-  /// Fetch per-library hubs using /hubs/sections/{sectionId} endpoint
-  Future<List<PlexHub>> _fetchLibraryHubs(
-    Map<String, PlexClient> clients, {
-    int? limit,
+  /// Per-library hub fetch for a single client. Filters to visible
+  /// movie/show libraries (Plex hides music libraries from this surface) and
+  /// concatenates the results.
+  Future<List<MediaHub>> _fetchLibraryHubsForClient(
+    MediaServerClient client, {
+    required int limit,
     Set<String>? hiddenLibraryKeys,
-    Map<String, List<PlexLibrary>>? librariesByServer,
   }) async {
-    // Use pre-fetched libraries or fetch and group them
-    final libraries = librariesByServer ?? groupLibrariesByServer(await getLibrariesFromAllServers());
-
-    appLogger.d('Fetching per-library hubs from ${clients.length} servers');
-
-    // Fetch from all servers in parallel using cached libraries
-    final hubFutures = clients.entries.map((entry) async {
-      final serverId = entry.key;
-      final client = entry.value;
-
-      try {
-        // Use pre-fetched libraries for this server
-        final serverLibraries = libraries[serverId] ?? <PlexLibrary>[];
-        if (serverLibraries.isEmpty) {
-          appLogger.w('No libraries available for server $serverId');
-          return <PlexHub>[];
-        }
-
-        // Filter to only visible movie/show libraries
-        final visibleLibraries = serverLibraries.where((library) {
-          if (library.type != 'movie' && library.type != 'show') {
-            return false;
-          }
-          if (library.hidden != null && library.hidden != 0) {
-            return false;
-          }
-          // Check app-level hidden libraries
-          if (hiddenLibraryKeys != null && hiddenLibraryKeys.contains(library.globalKey)) {
-            return false;
-          }
-          return true;
-        }).toList();
-
-        // Fetch hubs from all libraries in parallel
-        final libraryHubFutures = visibleLibraries.map((library) async {
-          try {
-            // Hubs are now tagged with server info at the source
-            final hubs = await client.getLibraryHubs(library.key);
-            appLogger.d('Fetched ${hubs.length} hubs for ${library.title} on $serverId');
-            return hubs;
-          } catch (e) {
-            appLogger.w('Failed to fetch hubs for library ${library.title}: $e');
-            return <PlexHub>[];
-          }
-        });
-
-        final libraryHubResults = await Future.wait(libraryHubFutures);
-
-        // Flatten all library hubs
-        final serverHubs = <PlexHub>[];
-        for (final hubs in libraryHubResults) {
-          serverHubs.addAll(hubs);
-        }
-
-        return serverHubs;
-      } catch (e, stackTrace) {
-        appLogger.e('Failed to fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
-        return <PlexHub>[];
-      }
+    final libs = await client.fetchLibraries();
+    final visible = libs.where((l) {
+      if (l.kind != MediaKind.movie && l.kind != MediaKind.show) return false;
+      if (l.hidden) return false;
+      if (hiddenLibraryKeys != null && hiddenLibraryKeys.contains(l.globalKey)) return false;
+      return true;
     });
-
-    final results = await Future.wait(hubFutures);
-    final result = _collectAndLimitResults(results, limit);
-
-    appLogger.i('Fetched ${result.length} library hubs from all servers');
-
-    return result;
+    final futures = visible.map((l) => client.fetchLibraryHubs(l.id, limit: limit));
+    final results = await Future.wait(futures);
+    return [for (final list in results) ...list];
   }
 
-  /// Search across all online servers
-  /// Results are automatically tagged with server info by PlexClient
-  Future<List<PlexMetadata>> searchAcrossServers(String query, {int? limit}) async {
+  /// Filter hidden-library items, optionally split multi-library "Recently
+  /// Added" hubs by section, and drop empty hubs.
+  List<MediaHub> _postProcessHubs(
+    List<MediaHub> hubs, {
+    required String serverId,
+    Set<String>? hiddenLibraryKeys,
+    List<MediaLibrary>? libraries,
+    required bool splitRecentlyAdded,
+  }) {
+    var filtered = hubs;
+    if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
+      filtered = filtered
+          .map((hub) {
+            final filteredItems = hub.items.where((item) {
+              final libraryId = item.libraryId;
+              if (libraryId == null) return true;
+              final globalKey = buildGlobalKey(serverId, libraryId);
+              return !hiddenLibraryKeys.contains(globalKey);
+            }).toList();
+            if (filteredItems.isEmpty) return null;
+            return hub.copyWith(items: filteredItems, size: filteredItems.length);
+          })
+          .whereType<MediaHub>()
+          .toList();
+    }
+
+    if (splitRecentlyAdded) {
+      filtered = _splitRecentlyAddedHubs(filtered, libraries);
+    }
+    return filtered;
+  }
+
+  /// Search across all online servers (Plex + Jellyfin). Returns neutral
+  /// [MediaItem]s.
+  Future<List<MediaItem>> searchAcrossServers(String query, {int? limit}) async {
     if (query.trim().isEmpty) {
       return [];
     }
 
-    final allResults = await _perServer<PlexMetadata>(
-      operationName: 'searching for "$query"',
-      operation: (serverId, client, server) async {
-        return await client.search(query);
-      },
-    );
+    final clients = _serverManager.onlineClients;
+    if (clients.isEmpty) return [];
 
-    // Apply limit if specified
+    final futures = clients.entries.map((entry) async {
+      final client = entry.value;
+      try {
+        return await client.searchItems(query, limit: limit ?? 30);
+      } catch (e, st) {
+        appLogger.e('Search failed on ${entry.key}', error: e, stackTrace: st);
+        return <MediaItem>[];
+      }
+    });
+
+    final allResults = (await Future.wait(futures)).expand((l) => l).toList();
     final result = limit != null && limit < allResults.length ? allResults.sublist(0, limit) : allResults;
 
     appLogger.i('Found ${result.length} search results across all servers');
@@ -257,27 +213,9 @@ class DataAggregationService {
     return result;
   }
 
-  /// Get libraries for a specific server
-  Future<List<PlexLibrary>> getLibrariesForServer(String serverId) async {
-    final client = _serverManager.getClient(serverId);
-
-    if (client == null) {
-      appLogger.w('No client found for server $serverId');
-      return [];
-    }
-
-    try {
-      // Libraries are automatically tagged with server info by PlexClient
-      return await client.getLibraries();
-    } catch (e, stackTrace) {
-      appLogger.e('Failed to fetch libraries for server $serverId', error: e, stackTrace: stackTrace);
-      return [];
-    }
-  }
-
-  /// Group libraries by server
-  Map<String, List<PlexLibrary>> groupLibrariesByServer(List<PlexLibrary> libraries) {
-    final grouped = <String, List<PlexLibrary>>{};
+  /// Group libraries by server (internal aggregation helper).
+  Map<String, List<MediaLibrary>> _groupLibrariesByServer(List<MediaLibrary> libraries) {
+    final grouped = <String, List<MediaLibrary>>{};
 
     for (final library in libraries) {
       final serverId = library.serverId;
@@ -289,39 +227,28 @@ class DataAggregationService {
     return grouped;
   }
 
-  // Private helper methods
-
-  /// Collect results from multiple lists and optionally limit the total count.
-  List<T> _collectAndLimitResults<T>(List<List<T>> results, int? limit) {
-    final all = <T>[];
-    for (final items in results) {
-      all.addAll(items);
-    }
-    return limit != null && limit < all.length ? all.sublist(0, limit) : all;
-  }
-
   /// Split "Recently Added" hubs that contain items from multiple libraries
   /// into separate per-library hubs, matching the official Plex client behavior.
-  List<PlexHub> _splitRecentlyAddedHubs(List<PlexHub> hubs, Map<String, List<PlexLibrary>>? librariesByServer) {
-    final result = <PlexHub>[];
+  List<MediaHub> _splitRecentlyAddedHubs(List<MediaHub> hubs, List<MediaLibrary>? libraries) {
+    final result = <MediaHub>[];
 
     for (final hub in hubs) {
-      final hubId = hub.hubIdentifier?.toLowerCase() ?? '';
+      final hubId = hub.identifier?.toLowerCase() ?? '';
       if (!hubId.contains('.recent')) {
         result.add(hub);
         continue;
       }
 
-      // Group items by librarySectionID
-      final groups = <int, List<PlexMetadata>>{};
-      final ungrouped = <PlexMetadata>[];
+      // Group items by libraryId
+      final groups = <String, List<MediaItem>>{};
+      final ungrouped = <MediaItem>[];
 
       for (final item in hub.items) {
-        final sectionId = item.librarySectionID;
-        if (sectionId == null) {
+        final libraryId = item.libraryId;
+        if (libraryId == null) {
           ungrouped.add(item);
         } else {
-          groups.putIfAbsent(sectionId, () => []).add(item);
+          groups.putIfAbsent(libraryId, () => []).add(item);
         }
       }
 
@@ -334,116 +261,42 @@ class DataAggregationService {
       // Multiple libraries — create one hub per library
       for (final entry in groups.entries) {
         final items = entry.value;
-        final libraryName = _resolveLibraryName(items.first, librariesByServer);
+        final libraryName = _resolveLibraryName(items.first, libraries);
         final title = libraryName != null ? 'Recently Added in $libraryName' : hub.title;
 
         result.add(
-          PlexHub(
-            hubKey: hub.hubKey,
+          hub.copyWith(
             title: title,
-            type: hub.type,
-            hubIdentifier: '${hub.hubIdentifier}_${entry.key}',
+            identifier: '${hub.identifier}_${entry.key}',
             size: items.length,
-            more: hub.more,
             items: items,
-            serverId: hub.serverId,
-            serverName: hub.serverName,
-            librarySectionID: entry.key,
+            libraryId: entry.key,
           ),
         );
       }
 
       // Keep ungrouped items in a hub with the original title
       if (ungrouped.isNotEmpty) {
-        result.add(
-          PlexHub(
-            hubKey: hub.hubKey,
-            title: hub.title,
-            type: hub.type,
-            hubIdentifier: hub.hubIdentifier,
-            size: ungrouped.length,
-            more: hub.more,
-            items: ungrouped,
-            serverId: hub.serverId,
-            serverName: hub.serverName,
-          ),
-        );
+        result.add(hub.copyWith(size: ungrouped.length, items: ungrouped));
       }
     }
 
     return result;
   }
 
-  /// Resolve library name from item metadata or library lookup map.
-  String? _resolveLibraryName(PlexMetadata item, Map<String, List<PlexLibrary>>? librariesByServer) {
-    // Try librarySectionTitle from the item itself (Plex API often includes it)
-    if (item.librarySectionTitle != null && item.librarySectionTitle!.isNotEmpty) {
-      return item.librarySectionTitle;
+  /// Resolve a library name from an item's [libraryTitle] or by looking up
+  /// the library in the supplied list.
+  String? _resolveLibraryName(MediaItem item, List<MediaLibrary>? libraries) {
+    if (item.libraryTitle != null && item.libraryTitle!.isNotEmpty) {
+      return item.libraryTitle;
     }
-
-    // Fall back to library lookup
-    if (librariesByServer != null && item.serverId != null && item.librarySectionID != null) {
-      final serverLibraries = librariesByServer[item.serverId];
-      if (serverLibraries != null) {
-        for (final lib in serverLibraries) {
-          if (lib.key == item.librarySectionID.toString()) {
-            return lib.title;
-          }
+    if (libraries != null && item.libraryId != null) {
+      for (final lib in libraries) {
+        if (lib.id == item.libraryId) {
+          return lib.title;
         }
       }
     }
-
     return null;
-  }
-
-  /// Base helper for per-server fan-out operations
-  ///
-  /// Returns raw results as (serverId, result) tuples.
-  /// Used by [_perServer] and [_perServerGrouped] for different aggregation strategies.
-  Future<List<(String serverId, List<T> result)>> _perServerRaw<T>({
-    required String operationName,
-    required Future<List<T>> Function(String serverId, PlexClient client, PlexServer? server) operation,
-  }) async {
-    final clients = _serverManager.onlineClients;
-
-    if (clients.isEmpty) {
-      appLogger.w('No online servers available for $operationName');
-      return [];
-    }
-
-    appLogger.d('$operationName from ${clients.length} servers');
-
-    final futures = clients.entries.map((entry) async {
-      final serverId = entry.key;
-      final client = entry.value;
-      final server = _serverManager.getServer(serverId);
-      final sw = Stopwatch()..start();
-
-      try {
-        final result = await operation(serverId, client, server);
-        appLogger.d(
-          '$operationName for server $serverId completed in ${sw.elapsedMilliseconds}ms with ${result.length} items',
-        );
-        return (serverId, result);
-      } catch (e, stackTrace) {
-        appLogger.e('Failed $operationName from server $serverId', error: e, stackTrace: stackTrace);
-        appLogger.d('$operationName for server $serverId failed after ${sw.elapsedMilliseconds}ms');
-        return (serverId, <T>[]);
-      }
-    });
-
-    return await Future.wait(futures);
-  }
-
-  /// Higher-order helper for per-server fan-out operations
-  ///
-  /// Iterates over all online clients, executes the operation for each server,
-  /// handles errors, updates server status, and flattens results into a single list.
-  Future<List<T>> _perServer<T>({
-    required String operationName,
-    required Future<List<T>> Function(String serverId, PlexClient client, PlexServer? server) operation,
-  }) async {
-    final results = await _perServerRaw(operationName: operationName, operation: operation);
-    return [for (final (_, items) in results) ...items];
   }
 }

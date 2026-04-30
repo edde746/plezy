@@ -4,7 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../i18n/strings.g.dart';
-import '../../../models/plex_metadata.dart';
+import '../../../media/media_item.dart';
 import '../../../providers/playback_state_provider.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/provider_extensions.dart';
@@ -12,14 +12,14 @@ import '../../../utils/scroll_utils.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
-import '../../plex_optimized_image.dart';
+import '../../optimized_media_image.dart';
 
 const _kThumbWidth = 60.0;
 const _kThumbHeight = 34.0;
 
 /// Bottom sheet for viewing and navigating the play queue
 class QueueSheet extends StatefulWidget {
-  final Function(PlexMetadata) onItemSelected;
+  final Function(MediaItem) onItemSelected;
 
   const QueueSheet({super.key, required this.onItemSelected});
 
@@ -51,7 +51,7 @@ class _QueueSheetState extends State<QueueSheet> {
             child: Text(t.videoControls.noQueueItems, style: TextStyle(color: tokens(context).textMuted)),
           );
         } else {
-          final currentIndex = items.indexWhere((item) => item.playQueueItemID == currentItemID);
+          final currentIndex = items.indexWhere((item) => playbackState.playQueueItemIdFor(item) == currentItemID);
           if (!_didInitialScroll && currentIndex > 0) {
             _didInitialScroll = true;
             scrollToCurrentItem(_scrollController, _firstItemKey, currentIndex);
@@ -62,14 +62,14 @@ class _QueueSheetState extends State<QueueSheet> {
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
-              final isCurrent = item.playQueueItemID == currentItemID;
+              final isCurrent = playbackState.playQueueItemIdFor(item) == currentItemID;
 
               final primaryColor = Theme.of(context).colorScheme.primary;
               return FocusableListTile(
                 key: index == 0 ? _firstItemKey : null,
                 leading: _buildThumbnail(context, item, isCurrent),
                 title: Text(
-                  item.title!,
+                  item.title ?? '',
                   style: TextStyle(
                     color: isCurrent ? primaryColor : null,
                     fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
@@ -101,11 +101,11 @@ class _QueueSheetState extends State<QueueSheet> {
     );
   }
 
-  Widget? _buildThumbnail(BuildContext context, PlexMetadata item, bool isCurrent) {
-    if (item.thumb == null) return null;
+  Widget? _buildThumbnail(BuildContext context, MediaItem item, bool isCurrent) {
+    if (item.thumbPath == null) return null;
 
     // Try to get client for thumbnails, may fail in offline mode
-    final client = context.tryGetClientForServer(item.serverId);
+    final client = context.tryGetMediaClientForServer(item.serverId);
 
     return SizedBox(
       width: _kThumbWidth,
@@ -114,9 +114,9 @@ class _QueueSheetState extends State<QueueSheet> {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.all(Radius.circular(4)),
-            child: PlexOptimizedImage.thumb(
+            child: OptimizedMediaImage.thumb(
               client: client,
-              imagePath: item.thumb,
+              imagePath: item.thumbPath,
               width: _kThumbWidth,
               height: _kThumbHeight,
               fit: BoxFit.cover,
@@ -138,7 +138,7 @@ class _QueueSheetState extends State<QueueSheet> {
     );
   }
 
-  String _buildSubtitle(PlexMetadata item) {
+  String _buildSubtitle(MediaItem item) {
     if (item.grandparentTitle != null && item.parentIndex != null && item.index != null) {
       return '${item.grandparentTitle} \u00b7 S${item.parentIndex}E${item.index}';
     }
@@ -146,8 +146,9 @@ class _QueueSheetState extends State<QueueSheet> {
       return item.grandparentTitle!;
     }
     if (item.year != null) {
-      return item.editionTitle != null ? '${item.year} · ${item.editionTitle}' : '${item.year}';
+      final edition = item.editionTitle;
+      return edition != null ? '${item.year} · $edition' : '${item.year}';
     }
-    return item.mediaType.name;
+    return item.kind.name;
   }
 }

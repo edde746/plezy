@@ -3,10 +3,11 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../focus/focusable_wrapper.dart';
 import '../i18n/strings.g.dart';
+import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../models/download_models.dart';
-import '../models/plex_metadata.dart';
-import '../utils/content_utils.dart';
 import '../utils/dialogs.dart';
+import '../utils/global_key_utils.dart';
 import 'download_status_icon.dart';
 
 /// Represents a node in the download tree
@@ -17,7 +18,7 @@ class DownloadTreeNode {
   final double progress; // 0.0-1.0
   final DownloadStatus status;
   final List<DownloadTreeNode> children;
-  final PlexMetadata? metadata;
+  final MediaItem? metadata;
   final DownloadProgress? downloadProgress;
 
   const DownloadTreeNode({
@@ -48,7 +49,7 @@ enum DownloadNodeType { show, season, episode, movie }
 /// Movies appear at top level
 class DownloadTreeView extends StatefulWidget {
   final Map<String, DownloadProgress> downloads;
-  final Map<String, PlexMetadata> metadata;
+  final Map<String, MediaItem> metadata;
   final void Function(String globalKey)? onPause;
   final void Function(String globalKey)? onResume;
   final void Function(String globalKey)? onRetry;
@@ -133,7 +134,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
       if (meta.isEpisode) {
         // Group episodes by show
-        final showKey = meta.grandparentRatingKey ?? 'unknown';
+        final showKey = meta.grandparentId ?? 'unknown';
         showGroups.putIfAbsent(showKey, () => []);
         showGroups[showKey]!.add(entry);
       } else if (meta.isMovie) {
@@ -170,7 +171,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
         final meta = widget.metadata[episode.key];
         if (meta == null) continue;
 
-        final seasonKey = meta.parentRatingKey ?? 'unknown';
+        final seasonKey = meta.parentId ?? 'unknown';
         seasonGroups.putIfAbsent(seasonKey, () => []);
         seasonGroups[seasonKey]!.add(episode);
       }
@@ -408,10 +409,17 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
     return keys;
   }
 
-  /// Delete all children of a container node
+  /// Delete all children of a container node via the container's globalKey
+  /// so deleteDownload's transitive show/season path cleans up all maps.
   void _deleteAllChildren(DownloadTreeNode node) {
-    final allKeys = _getAllChildKeys(node);
-    for (final key in allKeys) {
+    final containerKey = resolveDownloadContainerGlobalKey(node, widget.metadata);
+    if (containerKey != null) {
+      widget.onDelete?.call(containerKey);
+      return;
+    }
+
+    // Container globalKey unresolvable; fall back to per-leaf delete.
+    for (final key in _getAllChildKeys(node)) {
       widget.onDelete?.call(key);
     }
   }
@@ -430,6 +438,42 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
     return keys;
   }
+}
+
+/// Tree-node keys for shows/seasons aren't provider globalKeys; reconstruct
+/// from any leaf episode's serverId + grandparentId/parentId.
+@visibleForTesting
+String? resolveDownloadContainerGlobalKey(DownloadTreeNode node, Map<String, MediaItem> metadata) {
+  final firstLeafKey = _firstLeafKey(node);
+  if (firstLeafKey == null) return null;
+  final firstLeafMeta = metadata[firstLeafKey];
+  final serverId = firstLeafMeta?.serverId;
+  if (serverId == null) return null;
+  switch (node.type) {
+    case DownloadNodeType.show:
+      final showRatingKey = firstLeafMeta!.grandparentId;
+      if (showRatingKey == null) return null;
+      return buildGlobalKey(serverId, showRatingKey);
+    case DownloadNodeType.season:
+      final seasonRatingKey = firstLeafMeta!.parentId;
+      if (seasonRatingKey == null) return null;
+      return buildGlobalKey(serverId, seasonRatingKey);
+    case DownloadNodeType.episode:
+    case DownloadNodeType.movie:
+      return null;
+  }
+}
+
+String? _firstLeafKey(DownloadTreeNode node) {
+  for (final child in node.children) {
+    if (child.hasChildren) {
+      final result = _firstLeafKey(child);
+      if (result != null) return result;
+    } else {
+      return child.key;
+    }
+  }
+  return null;
 }
 
 /// Helper class to store a node with its depth in the flattened tree

@@ -11,10 +11,12 @@ import 'media_card.dart';
 /// - Handles SELECT key for activation with long-press detection
 /// - Accepts optional external focusNode for programmatic focus control
 class FocusableMediaCard extends StatefulWidget {
-  final dynamic item; // PlexMetadata or PlexPlaylist
+  /// Either a [MediaItem] or a [MediaPlaylist]. Typed as [Object] because
+  /// Dart has no nominal union type. Forwarded as-is to the inner [MediaCard].
+  final Object item;
   final double? width;
   final double? height;
-  final void Function(String ratingKey)? onRefresh;
+  final void Function(String itemId)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh;
   final bool forceGridMode;

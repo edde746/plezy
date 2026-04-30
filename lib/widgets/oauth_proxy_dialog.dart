@@ -7,6 +7,7 @@ import '../i18n/strings.g.dart';
 import '../services/trackers/oauth_proxy_client.dart';
 import '../utils/snackbar_helper.dart';
 import 'dialog_action_button.dart';
+import 'loading_indicator_box.dart';
 
 /// Sign-in dialog for OAuth-proxy flows (MAL, AniList).
 ///
@@ -80,7 +81,7 @@ class OAuthProxyDialog extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+              const LoadingIndicatorBox(size: 16),
               const SizedBox(width: 12),
               Expanded(child: Text(t.trackers.deviceCode.waitingForAuthorization, style: theme.textTheme.bodySmall)),
             ],

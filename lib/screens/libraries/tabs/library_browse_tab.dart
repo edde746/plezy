@@ -4,24 +4,30 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../../utils/plex_http_client.dart';
-import '../../../utils/plex_http_exception.dart';
+import '../../../media/library_first_character.dart';
+import '../../../media/library_query.dart';
+import '../../../media/media_item.dart';
+import '../../../providers/multi_server_provider.dart';
+import '../../../utils/media_server_http_client.dart';
+import '../../../exceptions/media_server_exceptions.dart';
 import '../../../focus/dpad_navigator.dart';
 import '../../../focus/input_mode_tracker.dart';
-import '../../../../services/plex_client.dart';
-import '../../../models/plex_metadata.dart';
-import '../../../models/plex_filter.dart';
-import '../../../models/plex_first_character.dart';
-import '../../../models/plex_sort.dart';
+import '../../../media/media_filter.dart';
+import '../../../media/media_sort.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../services/image_cache_service.dart';
+import '../../../services/library_query_translator.dart';
+import '../../../services/plex_constants.dart';
 import '../../../utils/error_message_utils.dart';
 import '../../../utils/grid_size_calculator.dart';
 import '../../../utils/layout_constants.dart';
-import '../../../utils/plex_image_helper.dart';
+import '../../../utils/media_image_helper.dart';
+import '../../../utils/provider_extensions.dart';
 import '../alpha_jump_bar.dart';
 import '../alpha_jump_helper.dart';
 import '../alpha_scroll_handle.dart';
+import '../library_alpha_bar_strategy.dart';
+import '../library_filter_sort_loader.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../widgets/focusable_filter_chip.dart';
 import '../../../widgets/media_grid_delegate.dart';
@@ -49,7 +55,7 @@ import 'base_library_tab.dart';
 
 /// Browse tab for library screen
 /// Shows library items with grouping, filtering, and sorting
-class LibraryBrowseTab extends BaseLibraryTab<PlexMetadata> {
+class LibraryBrowseTab extends BaseLibraryTab<MediaItem> {
   const LibraryBrowseTab({
     super.key,
     required super.library,
@@ -65,10 +71,10 @@ class LibraryBrowseTab extends BaseLibraryTab<PlexMetadata> {
   State<LibraryBrowseTab> createState() => _LibraryBrowseTabState();
 }
 
-class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBrowseTab>
+class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrowseTab>
     with ItemUpdatable, LibraryTabFocusMixin, GridFocusNodeMixin, DeletionAware, PaginatedItemLoader<LibraryBrowseTab> {
   @override
-  PlexClient get client => getClientForLibrary();
+  String? get itemServerId => widget.library.serverId;
 
   String _toGlobalKey(String ratingKey, {String? serverId}) =>
       buildGlobalKey(serverId ?? widget.library.serverId ?? '', ratingKey);
@@ -77,7 +83,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   String? get deletionServerId => widget.library.serverId;
 
   @override
-  Set<String>? get deletionRatingKeys => loadedItems.values.map((e) => e.ratingKey).toSet();
+  Set<String>? get deletionIds => loadedItems.values.map((e) => e.id).toSet();
 
   @override
   Set<String>? get deletionGlobalKeys {
@@ -87,7 +93,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     for (final item in loadedItems.values) {
       final serverId = item.serverId ?? widget.library.serverId;
       if (serverId == null) return null;
-      keys.add(_toGlobalKey(item.ratingKey, serverId: serverId));
+      keys.add(_toGlobalKey(item.id, serverId: serverId));
     }
     return keys;
   }
@@ -95,7 +101,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   @override
   void onDeletionEvent(DeletionEvent event) {
     // If we have an item that matches the rating key exactly, remove it and rebuild indices
-    final matchEntry = loadedItems.entries.where((e) => e.value.ratingKey == event.ratingKey).firstOrNull;
+    final matchEntry = loadedItems.entries.where((e) => e.value.id == event.itemId).firstOrNull;
     if (matchEntry != null) {
       setState(() {
         removeLoadedItemAndShift(matchEntry.key);
@@ -107,7 +113,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     // If all children were deleted, remove our item.
     // Otherwise, just update the counts.
     for (final parentKey in event.parentChain) {
-      final parentEntry = loadedItems.entries.where((e) => e.value.ratingKey == parentKey).firstOrNull;
+      final parentEntry = loadedItems.entries.where((e) => e.value.id == parentKey).firstOrNull;
       if (parentEntry != null) {
         final item = parentEntry.value;
         final newLeafCount = (item.leafCount ?? 1) - event.leafCount;
@@ -126,7 +132,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
     // If neither the item nor its parents are loaded (evicted), the event
     // was already filtered by DeletionAware's upstream check against
-    // deletionGlobalKeys/deletionRatingKeys, so this point is unreachable.
+    // deletionGlobalKeys/deletionIds, so this point is unreachable.
     // The grid self-corrects when the next page fetch updates totalSize from
     // the server response on the next scroll.
   }
@@ -138,10 +144,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   int get itemCount => totalSize;
 
   @override
-  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
+  void updateItemInLists(String itemId, MediaItem updatedMetadata) {
     setState(() {
       for (final entry in loadedItems.entries) {
-        if (entry.value.ratingKey == ratingKey) {
+        if (entry.value.id == itemId) {
           loadedItems[entry.key] = updatedMetadata;
           break;
         }
@@ -150,16 +156,37 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   }
 
   // Browse-specific state (not in base class)
-  List<PlexFilter> _filters = [];
-  List<PlexSort> _sortOptions = [];
+  List<MediaFilter> _filters = [];
+  List<MediaSort> _sortOptions = [];
   Map<String, String> _selectedFilters = {};
-  PlexSort? _selectedSort;
+  MediaSort? _selectedSort;
   bool _isSortDescending = false;
   String _selectedGrouping = 'all'; // all, seasons, episodes, folders
 
   // Alpha jump bar state
-  List<PlexFirstCharacter> _firstCharacters = [];
+  List<LibraryFirstCharacter> _firstCharacters = [];
   AlphaJumpHelper _alphaHelper = AlphaJumpHelper(const []);
+  late final LibraryAlphaBarStrategy _alphaStrategy = LibraryAlphaBarStrategy.forBackend(
+    widget.library.backend,
+    // Resolved on demand and only invoked by [PlexAlphaBarStrategy], which is
+    // only constructed when the library's backend is Plex — the bang is safe.
+    plexClientProvider: () {
+      final manager = context.read<MultiServerProvider>().serverManager;
+      return manager.getPlexClient(widget.library.serverId ?? '')!;
+    },
+    libraryKey: widget.library.id,
+    isShared: widget.library.isShared,
+  );
+
+  /// On Jellyfin libraries the alpha bar acts as a filter (matches the
+  /// JF web client's UX). Holds the active letter (`#`, `A`–`Z`) or null
+  /// when no filter is applied.
+  String? _jellyfinAlphaPrefix;
+
+  /// Pre-fetched filter values for Jellyfin libraries — populated by
+  /// `_loadContent` and consumed by the FiltersBottomSheet so the sheet
+  /// doesn't need to call back into a Plex client for value listings.
+  Map<String, List<MediaFilterValue>> _jellyfinFilterValues = const {};
   final ValueNotifier<int> _currentFirstVisibleIndex = ValueNotifier<int>(0);
   int _currentColumnCount = 1;
   double _lastCrossAxisExtent = 0;
@@ -240,7 +267,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   // Override loadData to use our custom _loadContent
   @override
-  Future<List<PlexMetadata>> loadData() async {
+  Future<List<MediaItem>> loadData() async {
     // This is called by base class loadItems(), but we override loadItems() entirely
     // So this just returns empty - actual loading is done in _loadContent
     return [];
@@ -264,7 +291,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
   // Override buildContent - not used since we override build()
   @override
-  Widget buildContent(List<PlexMetadata> items) => const SizedBox.shrink();
+  Widget buildContent(List<MediaItem> items) => const SizedBox.shrink();
 
   /// Focus the first item in the grid/list/folder tree (for tab activation)
   @override
@@ -334,45 +361,32 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
 
     _resetForFullReload();
 
-    // Extract context dependencies before async gap - use server-specific client
-    final client = getClientForLibrary();
-
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-      items = [];
-      resetPaginationState();
-      // Clear filter/sort state while loading to prevent showing stale options
-      _filters = [];
-      _sortOptions = [];
-      _selectedFilters = {};
-      _selectedSort = null;
-      _isSortDescending = false;
-      _selectedGrouping = _getDefaultGrouping();
-      _firstCharacters = [];
-      _alphaHelper = AlphaJumpHelper(const []);
-    });
+    _resetTopOfPageState();
     _currentFirstVisibleIndex.value = 0;
 
+    // Plex returns categories from `/library/sections/{id}/filters` +
+    // `/sorts`; Jellyfin maps `/Items/Filters` into the same shape with
+    // values pre-cached and a hardcoded client-side sort list. Both flow
+    // through the unified [MediaServerClient.fetchLibraryFiltersWithValues].
+    final loader = LibraryFilterSortLoader(clientFor: context.getMediaClientForLibrary);
+
     try {
+      // Filters+sorts must resolve before items so the saved-sort restoration
+      // can match a saved key against the just-loaded sort list, and so the
+      // first item fetch already includes the restored sort param.
+      final loaded = await loader.load(widget.library);
       final storage = await StorageService.getInstance();
-
-      // Load filters and sorts for this library
-      final filters = await client.getLibraryFilters(widget.library.key);
-      final sorts = await client.getLibrarySorts(widget.library.key);
-
-      // Load saved preferences
       final savedFilters = storage.getLibraryFilters(sectionId: widget.library.globalKey);
       final savedSort = storage.getLibrarySort(widget.library.globalKey);
       final savedGrouping = storage.getLibraryGrouping(widget.library.globalKey);
 
-      // Check if request was superseded
-      if (generation != _contentRequestId) return;
-
-      if (!mounted) return;
+      if (generation != _contentRequestId || !mounted) return;
       setState(() {
-        _filters = filters;
-        _sortOptions = sorts;
+        _filters = loaded.filters;
+        _sortOptions = loaded.sorts;
+        // Plex returns no cached values (filters fetched lazily per-category);
+        // assigning the empty map is a no-op for Plex and a real payload for Jellyfin.
+        _jellyfinFilterValues = loaded.cachedValues;
         _selectedFilters = Map.from(savedFilters);
         _selectedGrouping = savedGrouping ?? _getDefaultGrouping();
 
@@ -380,7 +394,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         if (savedSort != null) {
           final sortKey = savedSort['key'] as String?;
           if (sortKey != null) {
-            final sort = sorts.where((s) => s.key == sortKey).firstOrNull;
+            final sort = loaded.sorts.where((s) => s.key == sortKey).firstOrNull;
             if (sort != null) {
               _selectedSort = sort;
               _isSortDescending = (savedSort['descending'] as bool?) ?? false;
@@ -401,6 +415,25 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     }
   }
 
+  /// Initial UI state both Plex and Jellyfin paths need before fetching:
+  /// loading flag set, lists cleared, filter/sort caches reset.
+  void _resetTopOfPageState() {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+      items = [];
+      resetPaginationState();
+      _filters = [];
+      _sortOptions = [];
+      _selectedFilters = {};
+      _selectedSort = null;
+      _isSortDescending = false;
+      _selectedGrouping = _getDefaultGrouping();
+      _firstCharacters = [];
+      _alphaHelper = AlphaJumpHelper(const []);
+    });
+  }
+
   /// Build the filter params map for API calls
   Map<String, String> _buildFilterParams() {
     final filterParams = Map<String, String>.from(_selectedFilters);
@@ -413,7 +446,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
       }
     } else if (_selectedGrouping == 'all' && widget.library.isShared) {
       // Shared libraries: filter to video content only (exclude library section entries)
-      filterParams['type'] = '1,2,3,4';
+      filterParams['type'] = PlexMetadataType.videoCsv;
     }
 
     // Add sort
@@ -422,6 +455,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     }
 
     filterParams['includeCollections'] = '1';
+
+    // Jellyfin alpha-bar filter — picked up by DataAggregationService and
+    // converted to NameStartsWith / NameLessThan on the wire.
+    if (_jellyfinAlphaPrefix != null) {
+      filterParams['alphaPrefix'] = _jellyfinAlphaPrefix!;
+    }
 
     return filterParams;
   }
@@ -465,23 +504,29 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   }
 
   @override
-  Future<LibraryContentResult> fetchPage(int start, int size, AbortController? abort) {
-    return getClientForLibrary().getLibraryContent(
-      widget.library.key,
-      start: start,
-      size: size,
-      filters: _buildFilterParams(),
+  Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) async {
+    final client = context.getMediaClientForLibrary(widget.library);
+    final query = libraryQueryFromPlexMap(
+      map: _buildFilterParams(),
+      libraryKind: widget.library.kind,
+      offset: start,
+      limit: size,
+    );
+    return client.fetchLibraryPagedContent(
+      widget.library.id,
+      query: query,
+      libraryKind: widget.library.kind,
       abort: abort,
     );
   }
 
   @override
-  void onPageLoaded(int start, List<PlexMetadata> pageItems) {
+  void onPageLoaded(int start, List<MediaItem> pageItems) {
     _prefetchImages(start, pageItems);
   }
 
   String _getDefaultGrouping() {
-    final type = widget.library.type.toLowerCase();
+    final type = widget.library.kind.id.toLowerCase();
     if (type == 'show') return 'shows';
     if (type == 'movie') return 'movies';
     return 'all';
@@ -503,16 +548,21 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   }
 
   List<String> _getGroupingOptions() {
-    final type = widget.library.type.toLowerCase();
+    final type = widget.library.kind.id.toLowerCase();
+    // Folder browsing relies on a section folder API
+    // (Plex `/library/sections/{id}/folders`); gated by capability so any
+    // future backend that exposes the same can opt in without touching
+    // this method.
+    final canFolder = context.tryGetMediaClientForServer(widget.library.serverId)?.capabilities.folderGrouping ?? false;
     if (type == 'show') {
-      return ['shows', 'seasons', 'episodes', 'folders'];
+      return ['shows', 'seasons', 'episodes', if (canFolder) 'folders'];
     } else if (type == 'movie') {
-      return ['movies', 'folders'];
+      return ['movies', if (canFolder) 'folders'];
     } else if (type == 'mixed') {
       // Shared libraries: all video content types, no folders
       return ['all', 'movies', 'shows', 'seasons', 'episodes'];
     }
-    return ['all', 'folders'];
+    return ['all', if (canFolder) 'folders'];
   }
 
   String _getGroupingLabel(String grouping) {
@@ -533,7 +583,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   }
 
   String _getErrorMessage(dynamic error) {
-    if (error is PlexHttpException) {
+    if (error is MediaServerHttpException) {
       return mapHttpErrorToMessage(error, context: t.libraries.content);
     }
     return mapUnexpectedErrorToMessage(error, context: t.libraries.content);
@@ -601,6 +651,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
         selectedFilters: _selectedFilters,
         serverId: widget.library.serverId!,
         libraryKey: widget.library.globalKey,
+        // Pre-populated values arrive only from backends that bundle them
+        // with the category listing (Jellyfin's `/Items/Filters`). The empty
+        // map for Plex libraries falls through to lazy `getFilterValues`.
+        cachedValues: _jellyfinFilterValues.isEmpty ? null : _jellyfinFilterValues,
         onFiltersChanged: (filters) async {
           setState(() {
             _selectedFilters.clear();
@@ -622,7 +676,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
     // Track pending state in local variables so the callbacks don't trigger
     // setState/_loadItems while the sheet is open (which would steal focus).
-    PlexSort? pendingSort = _selectedSort;
+    MediaSort? pendingSort = _selectedSort;
     bool pendingDescending = _isSortDescending;
     bool pendingCleared = false;
     OverlaySheetController.of(context)
@@ -752,46 +806,39 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   /// The letter currently visible at the top of the grid, determined by
   /// how many items we've scrolled past relative to the API's cumulative
   /// firstCharacter counts.
-  String _alphaLetterFor(int index) => _alphaHelper.currentLetter(index);
+  String _alphaLetterFor(int index) =>
+      _alphaStrategy.currentLetter(index, _alphaHelper, jellyfinAlphaPrefix: _jellyfinAlphaPrefix);
 
   /// Whether the alpha jump bar should be shown.
   /// Only shown when sorting by title (titleSort) and not in folders mode.
-  bool get _shouldShowAlphaJumpBar {
-    if (_selectedGrouping == 'folders') return false;
-    if (_firstCharacters.isEmpty) return false;
-    if (_firstCharacters.length < 6 || _alphaHelper.totalItemCount < 80) return false;
-    // Show when no sort is selected (default is titleSort) or when explicitly sorting by title
-    final sortKey = _selectedSort?.key ?? '';
-    return sortKey.isEmpty || sortKey.startsWith('titleSort');
-  }
+  bool get _shouldShowAlphaJumpBar => _alphaStrategy.shouldShow(
+    totalItemCount: totalSize,
+    loadedCharacterCount: _firstCharacters.length,
+    sortKey: _selectedSort?.key,
+    isFolderGrouping: _selectedGrouping == 'folders',
+    jellyfinAlphaPrefix: _jellyfinAlphaPrefix,
+    isPhone: _isPhone(context),
+  );
 
   /// Fetch first characters for the current library/filter state
   Future<void> _loadFirstCharacters({int? requestId}) async {
-    // Shared libraries don't support first characters
-    if (widget.library.isShared) return;
     final currentRequestId = requestId ?? ++_firstCharactersRequestId;
-    final client = getClientForLibrary();
     final filterParams = Map<String, String>.from(_selectedFilters);
     final typeId = _getGroupingTypeId();
 
-    filterParams['includeCollections'] = '1';
-
     try {
-      final chars = await client.getFirstCharacters(
-        widget.library.key,
-        type: typeId.isNotEmpty ? int.tryParse(typeId) : null,
-        filters: filterParams.isNotEmpty ? filterParams : null,
+      final result = await _alphaStrategy.loadCharacters(
+        filters: filterParams,
+        typeId: typeId.isNotEmpty ? int.tryParse(typeId) : null,
       );
       if (!mounted || currentRequestId != _firstCharactersRequestId) return;
-
       setState(() {
-        _firstCharacters = chars;
-        _alphaHelper = AlphaJumpHelper(chars);
+        _firstCharacters = result.chars;
+        _alphaHelper = result.helper;
       });
     } catch (_) {
       // Non-critical — hide the bar on failure
       if (!mounted || currentRequestId != _firstCharactersRequestId) return;
-
       setState(() {
         _firstCharacters = [];
         _alphaHelper = AlphaJumpHelper(const []);
@@ -879,11 +926,24 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     return (row * _currentColumnCount).clamp(0, maxIndex);
   }
 
-  /// Scroll to the item at [targetIndex], loading more pages if necessary.
-  /// The target index is a cumulative offset from the API's firstCharacter
-  /// counts — the same model used by [_currentAlphaLetter] so highlight
-  /// and jump always agree.
+  /// Handle a tap on the letter at [targetIndex] in the alpha bar. The
+  /// active [LibraryAlphaBarStrategy] owns the per-backend behaviour and
+  /// invokes one of the two callbacks — Plex scrolls the grid to the
+  /// cumulative item offset, Jellyfin toggles a `NameStartsWith` filter
+  /// (matches the JF web client UX).
   void _jumpToIndex(int targetIndex) {
+    _alphaStrategy.onLetterPressed(
+      targetIndex,
+      _alphaHelper,
+      currentJellyfinPrefix: _jellyfinAlphaPrefix,
+      onPlexJump: _scrollGridToIndex,
+      onJellyfinPrefixChange: _applyJellyfinAlphaPrefix,
+    );
+  }
+
+  /// Scroll the grid so the item at [targetIndex] becomes the first visible
+  /// row. Used by [PlexAlphaBarStrategy] via [_jumpToIndex].
+  void _scrollGridToIndex(int targetIndex) {
     _jumpScrollGeneration++;
     _isJumpScrolling = true;
 
@@ -892,6 +952,24 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     _currentFirstVisibleIndex.value = clamped;
 
     _scrollToItemIndex(clamped);
+  }
+
+  /// Apply the new Jellyfin `NameStartsWith` prefix from the alpha bar and
+  /// refetch from the top of the now-filtered dataset. Used by
+  /// [JellyfinAlphaBarStrategy] via [_jumpToIndex].
+  void _applyJellyfinAlphaPrefix(String? nextPrefix) {
+    setState(() {
+      _jellyfinAlphaPrefix = nextPrefix;
+      // Clear loaded items + total so the grid blanks while the new filtered
+      // page loads. PaginatedItemLoader internals will repopulate from
+      // offset 0 once the next fetchPage call returns.
+      resetPaginationState();
+      isLoading = true;
+    });
+    if (_scrollController.hasClients) {
+      _scrollController.jumpTo(0);
+    }
+    _loadItems();
   }
 
   /// Scroll the grid so that [index] is visible just below the chips bar
@@ -944,7 +1022,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
           _buildChipsBar(),
           Expanded(
             child: FolderTreeView(
-              libraryKey: widget.library.key,
+              libraryKey: widget.library.id,
               serverId: widget.library.serverId,
               onRefresh: updateItem,
               firstItemFocusNode: firstItemFocusNode,
@@ -1077,7 +1155,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
   }
 
   /// Prefetch images for items near the viewport to reduce pop-in.
-  void _prefetchImages(int startIndex, List<PlexMetadata> items) {
+  void _prefetchImages(int startIndex, List<MediaItem> items) {
     if (!_scrollController.hasClients || _lastCrossAxisExtent <= 0 || _currentColumnCount < 1) return;
 
     final offset = _scrollController.offset;
@@ -1094,30 +1172,30 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     // Prefetch 2 rows beyond visible area
     final prefetchEnd = visibleEnd + 2 * _currentColumnCount;
 
-    final client = getClientForLibrary();
-    final devicePixelRatio = PlexImageHelper.effectiveDevicePixelRatio(context);
+    final client = getMediaClientForLibrary();
+    final devicePixelRatio = MediaImageHelper.effectiveDevicePixelRatio(context);
 
     for (var i = 0; i < items.length; i++) {
       final index = startIndex + i;
       if (index < firstVisible || index > prefetchEnd) continue;
 
-      final thumb = items[i].thumb;
+      final thumb = items[i].thumbPath;
       if (thumb == null || thumb.isEmpty) continue;
 
-      final imageUrl = PlexImageHelper.getOptimizedImageUrl(
+      final imageUrl = MediaImageHelper.getOptimizedImageUrl(
         client: client,
         thumbPath: thumb,
         maxWidth: itemWidth,
         maxHeight: itemHeight,
         devicePixelRatio: devicePixelRatio,
-        enableTranscoding: PlexImageHelper.shouldTranscode(thumb),
+        enableTranscoding: MediaImageHelper.shouldTranscode(thumb),
         imageType: ImageType.poster,
       );
       if (imageUrl.isEmpty) continue;
 
       final scaledWidth = itemWidth * devicePixelRatio;
       final scaledHeight = itemHeight * devicePixelRatio;
-      final (_, memHeight) = PlexImageHelper.getMemCacheDimensions(
+      final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
         displayWidth: scaledWidth.isFinite && scaledWidth > 0 ? scaledWidth.round() : 0,
         displayHeight: scaledHeight.isFinite && scaledHeight > 0 ? scaledHeight.round() : 0,
         imageType: ImageType.poster,
@@ -1333,7 +1411,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<PlexMetadata, LibraryBr
     final focusNode = index == 0 ? firstItemFocusNode : getGridItemFocusNode(index, prefix: 'browse_grid_item');
 
     return FocusableMediaCard(
-      key: Key(item.ratingKey),
+      key: Key(item.id),
       item: item,
       focusNode: focusNode,
       disableScale: disableScale,

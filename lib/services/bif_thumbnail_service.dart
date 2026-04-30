@@ -2,6 +2,7 @@ import '../utils/isolate_helper.dart';
 import 'dart:typed_data';
 
 import 'plex_client.dart';
+import 'scrub_preview_source.dart';
 import '../utils/app_logger.dart';
 
 /// A single BIF thumbnail entry: timestamp in milliseconds + JPEG bytes.
@@ -62,7 +63,7 @@ List<BifEntry> _parseBifBytes(Uint8List bytes) {
 }
 
 /// Caches a full BIF file in memory and serves thumbnails by timestamp.
-class BifThumbnailService {
+class BifThumbnailService implements ScrubPreviewSource {
   List<BifEntry>? _entries;
 
   /// Download and parse the BIF file for [partId].
@@ -83,7 +84,15 @@ class BifThumbnailService {
   }
 
   /// Whether thumbnails have been loaded successfully.
+  @override
   bool get isAvailable => _entries != null && _entries!.isNotEmpty;
+
+  @override
+  ScrubFrame? getFrame(Duration time) {
+    final bytes = getThumbnail(time);
+    if (bytes == null) return null;
+    return BytesScrubFrame(bytes);
+  }
 
   /// Return the JPEG bytes for the thumbnail nearest to [time].
   /// Uses binary search for O(log n) lookup.
@@ -109,6 +118,7 @@ class BifThumbnailService {
   }
 
   /// Release cached data.
+  @override
   void dispose() {
     _entries = null;
   }

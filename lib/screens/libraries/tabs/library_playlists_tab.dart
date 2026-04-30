@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import '../../../models/plex_playlist.dart';
+import '../../../media/media_playlist.dart';
 import '../../../utils/library_refresh_notifier.dart';
 import '../../../widgets/focusable_media_card.dart';
 import '../../../i18n/strings.g.dart';
@@ -10,7 +10,7 @@ import 'library_grid_tab_state.dart';
 
 /// Playlists tab for library screen
 /// Shows playlists that contain items from the current library
-class LibraryPlaylistsTab extends BaseLibraryTab<PlexPlaylist> {
+class LibraryPlaylistsTab extends BaseLibraryTab<MediaPlaylist> {
   const LibraryPlaylistsTab({
     super.key,
     required super.library,
@@ -26,7 +26,7 @@ class LibraryPlaylistsTab extends BaseLibraryTab<PlexPlaylist> {
   State<LibraryPlaylistsTab> createState() => _LibraryPlaylistsTabState();
 }
 
-class _LibraryPlaylistsTabState extends LibraryGridTabState<PlexPlaylist, LibraryPlaylistsTab> {
+class _LibraryPlaylistsTabState extends LibraryGridTabState<MediaPlaylist, LibraryPlaylistsTab> {
   @override
   String get focusNodeDebugLabel => 'playlists_first_item';
 
@@ -43,18 +43,17 @@ class _LibraryPlaylistsTabState extends LibraryGridTabState<PlexPlaylist, Librar
   Stream<void>? getRefreshStream() => LibraryRefreshNotifier().playlistsStream;
 
   @override
-  Future<List<PlexPlaylist>> loadData() async {
-    // Use server-specific client for this library
-    final client = getClientForLibrary();
-
-    // Playlists are automatically tagged with server info by PlexClient
-    return await client.getLibraryPlaylists(playlistType: 'video');
+  Future<List<MediaPlaylist>> loadData() async {
+    // Both backends return playlists scoped to the server (not the library) —
+    // neither Plex nor Jellyfin's API filters playlists by section.
+    final client = getMediaClientForLibrary();
+    return client.fetchPlaylists(playlistType: 'video');
   }
 
   @override
-  Widget buildGridItem(BuildContext context, PlexPlaylist playlist, int index, [GridItemContext? gridContext]) {
+  Widget buildGridItem(BuildContext context, MediaPlaylist playlist, int index, [GridItemContext? gridContext]) {
     return FocusableMediaCard(
-      key: Key(playlist.ratingKey),
+      key: Key(playlist.id),
       item: playlist,
       focusNode: index == 0 ? firstItemFocusNode : null,
       disableScale: gridContext?.isListMode ?? false,

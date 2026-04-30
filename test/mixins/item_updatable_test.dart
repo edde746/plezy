@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/mixins/item_updatable.dart';
-import 'package:plezy/models/plex_metadata.dart';
-import 'package:plezy/services/plex_client.dart';
 
-/// Probe that mixes in [ItemUpdatable] without supplying a real [PlexClient].
-///
-/// The `client` getter throws — these tests deliberately do not exercise the
-/// `updateItem` network path (which would require a real or fake [PlexClient],
-/// and PlexClient has a private constructor so it cannot be subclassed in
-/// tests without modifying production code). Instead, we exercise the
-/// `updateItemInLists` contract directly: that's the override-point screens
-/// implement, and the only piece [ItemUpdatable] adds on top of a plain
-/// `setState` call site.
+/// Probe that mixes in [ItemUpdatable]. These tests exercise the
+/// `updateItemInLists` contract directly — the override-point screens
+/// implement and the only piece [ItemUpdatable] adds on top of a plain
+/// `setState` call site. The network path (`updateItem`) keys off
+/// `itemServerId`; left null here so it short-circuits.
 class _Probe extends StatefulWidget {
   const _Probe({this.onState});
   final void Function(_ProbeState)? onState;
@@ -23,24 +20,18 @@ class _Probe extends StatefulWidget {
 
 class _ProbeState extends State<_Probe> with ItemUpdatable {
   /// In-memory list, mirroring the typical screen pattern: a list keyed by
-  /// `ratingKey` whose entries get swapped out by `updateItemInLists`.
-  final List<PlexMetadata> items = <PlexMetadata>[];
+  /// `id` whose entries get swapped out by `updateItemInLists`.
+  final List<MediaItem> items = <MediaItem>[];
 
   /// Records every `updateItemInLists` invocation for assertions.
-  final List<({String ratingKey, PlexMetadata metadata})> updates = [];
+  final List<({String itemId, MediaItem metadata})> updates = [];
 
   @override
-  PlexClient get client => throw UnimplementedError(
-    'updateItem network path requires a real PlexClient; not testable without '
-    'a fake. See test header for the gap.',
-  );
-
-  @override
-  void updateItemInLists(String ratingKey, PlexMetadata updatedMetadata) {
-    updates.add((ratingKey: ratingKey, metadata: updatedMetadata));
-    final index = items.indexWhere((item) => item.ratingKey == ratingKey);
+  void updateItemInLists(String itemId, MediaItem updatedItem) {
+    updates.add((itemId: itemId, metadata: updatedItem));
+    final index = items.indexWhere((item) => item.id == itemId);
     if (index != -1) {
-      items[index] = updatedMetadata;
+      items[index] = updatedItem;
     }
   }
 
@@ -54,7 +45,8 @@ class _ProbeState extends State<_Probe> with ItemUpdatable {
   Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-PlexMetadata _meta(String ratingKey, {String? title}) => PlexMetadata(ratingKey: ratingKey, title: title);
+MediaItem _meta(String id, {String? title}) =>
+    MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie, title: title);
 
 void main() {
   group('ItemUpdatable', () {
@@ -65,7 +57,7 @@ void main() {
       expect(state, isA<ItemUpdatable>());
     });
 
-    testWidgets('updateItemInLists is called with the forwarded ratingKey/metadata', (tester) async {
+    testWidgets('updateItemInLists is called with the forwarded itemId/metadata', (tester) async {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s));
 
@@ -73,11 +65,11 @@ void main() {
       state.updateItemInLists('42', updated);
 
       expect(state.updates, hasLength(1));
-      expect(state.updates.first.ratingKey, '42');
+      expect(state.updates.first.itemId, '42');
       expect(identical(state.updates.first.metadata, updated), isTrue);
     });
 
-    testWidgets('updateItemInLists swaps a matching entry by ratingKey', (tester) async {
+    testWidgets('updateItemInLists swaps a matching entry by id', (tester) async {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s));
 
@@ -93,7 +85,7 @@ void main() {
       expect(identical(state.items[1], replacement), isTrue);
     });
 
-    testWidgets('updateItemInLists is a no-op for an unknown ratingKey', (tester) async {
+    testWidgets('updateItemInLists is a no-op for an unknown id', (tester) async {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s));
 
@@ -103,7 +95,7 @@ void main() {
 
       state.updateItemInLists('999', _meta('999'));
 
-      expect(state.items.map((i) => i.ratingKey).toList(), ['1', '2']);
+      expect(state.items.map((i) => i.id).toList(), ['1', '2']);
       // Still recorded — the contract is "we received this update", regardless
       // of whether the screen's list contained the key.
       expect(state.updates, hasLength(1));
@@ -119,7 +111,7 @@ void main() {
       state.updateItemInLists('2', _meta('2', title: 'B'));
       state.updateItemInLists('1', _meta('1', title: 'A2'));
 
-      expect(state.updates.map((u) => u.ratingKey).toList(), ['1', '2', '1']);
+      expect(state.updates.map((u) => u.itemId).toList(), ['1', '2', '1']);
       expect(state.items[0].title, 'A2');
       expect(state.items[1].title, 'B');
     });

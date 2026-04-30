@@ -1,3 +1,5 @@
+import 'url_utils.dart';
+
 class LogRedactionManager {
   // Size limits for bounded sets (FIFO eviction when exceeded)
   static const int _maxTokens = 50;
@@ -14,6 +16,20 @@ class LogRedactionManager {
 
   /// Pattern-based catch-all for Plex tokens in query strings/headers.
   static final RegExp _plexTokenQueryParam = RegExp(r'X-Plex-Token=[^&#\s]+', caseSensitive: false);
+
+  /// Pattern-based catch-all for Jellyfin tokens carried as `api_key=` query
+  /// params (URL-embedded auth path used for thumbnails and direct streams).
+  static final RegExp _jellyfinApiKeyQueryParam = RegExp(r'api_key=[^&#\s]+', caseSensitive: false);
+
+  /// Pattern-based catch-all for Jellyfin Quick Connect auth handles.
+  static final RegExp _jellyfinQuickConnectSecretQueryParam = RegExp(r'secret=[^&#\s]+', caseSensitive: false);
+
+  /// Pattern-based catch-all for the legacy Emby/Jellyfin header form.
+  static final RegExp _embyTokenHeader = RegExp(r'X-Emby-Token[:=]\s*[^,;&#\s"]+', caseSensitive: false);
+
+  /// Pattern-based catch-all for the `Authorization: MediaBrowser ... Token="..."`
+  /// header that Jellyfin's SDK and Findroid both send.
+  static final RegExp _mediaBrowserTokenHeader = RegExp(r'Token="[^"]+"', caseSensitive: false);
 
   // Combined regex for single-pass redaction (rebuilt on set changes)
   static RegExp? _combinedPattern;
@@ -50,7 +66,7 @@ class LogRedactionManager {
       return;
     }
 
-    final strippedSlash = normalized.endsWith('/') ? normalized.substring(0, normalized.length - 1) : normalized;
+    final strippedSlash = stripTrailingSlash(normalized);
 
     if (strippedSlash.isNotEmpty) {
       _addWithLimit(_urls, strippedSlash, _maxUrls);
@@ -96,12 +112,22 @@ class LogRedactionManager {
     // Pass 2: Strip X-Plex-Token query parameters (pattern-based, no pre-registration needed)
     redacted = redacted.replaceAll(_plexTokenQueryParam, 'X-Plex-Token=[REDACTED]');
 
+    // Pass 2b: Strip Jellyfin api_key/Quick Connect query parameters and Emby/MediaBrowser headers.
+    redacted = redacted.replaceAll(_jellyfinApiKeyQueryParam, 'api_key=[REDACTED]');
+    redacted = redacted.replaceAll(_jellyfinQuickConnectSecretQueryParam, 'secret=[REDACTED]');
+    redacted = redacted.replaceAllMapped(_embyTokenHeader, (m) {
+      final value = m.group(0)!;
+      final separator = value.contains(':') ? ':' : '=';
+      return 'X-Emby-Token$separator [REDACTED]';
+    });
+    redacted = redacted.replaceAll(_mediaBrowserTokenHeader, 'Token="[REDACTED]"');
+
     // Pass 3: All tracked values in single pass
     if (_combinedPattern != null) {
       redacted = redacted.replaceAllMapped(_combinedPattern!, (match) {
         final value = match.group(0)!;
         if (_tokens.contains(value)) return '[REDACTED_TOKEN]';
-        if (_urls.contains(value)) return _maskUrlPreview(value);
+        if (_urls.contains(value)) return '[REDACTED_URL]';
         return '[REDACTED]';
       });
     }
@@ -154,30 +180,5 @@ class LogRedactionManager {
         'x$separator'
         'x$separator'
         '$last';
-  }
-
-  static String _maskUrlPreview(String url) {
-    const startPreviewLength = 12;
-    const endPreviewLength = 8;
-
-    if (url.isEmpty) {
-      return '[REDACTED_URL]';
-    }
-
-    if (url.length <= 4) {
-      return '[REDACTED_URL]';
-    }
-
-    final startLength = url.length <= startPreviewLength ? (url.length / 2).ceil() : startPreviewLength;
-    final remainingForEnd = url.length - startLength;
-    final endLength = remainingForEnd <= endPreviewLength ? remainingForEnd : endPreviewLength;
-
-    final start = url.substring(0, startLength);
-    if (endLength <= 0) {
-      return '$start...[REDACTED_URL]';
-    }
-
-    final end = url.substring(url.length - endLength);
-    return '$start...[REDACTED_URL]...$end';
   }
 }

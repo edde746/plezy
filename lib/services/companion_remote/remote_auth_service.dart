@@ -5,14 +5,17 @@ import 'dart:typed_data';
 import 'package:crypto/crypto.dart' as crypto;
 import 'package:cryptography/cryptography.dart';
 
-import '../../models/plex_home.dart';
+import '../../models/plex/plex_home.dart';
 import '../../utils/app_logger.dart';
 
 /// Cryptographic authentication service for companion remote.
 ///
-/// Proves same-home membership via a shared secret derived from Plex home data.
-/// This authenticates **group membership**, not individual user identity —
-/// any device in the same Plex home can connect.
+/// Proves same-account membership via a backend-derived shared secret.
+///
+/// Plex uses the Plex Home metadata available to signed-in devices. Jellyfin
+/// uses the stable server/user identity available after sign-in, matching the
+/// same local-LAN trust model: peers that know the same backend identity can
+/// discover and authenticate each other without a central pairing round-trip.
 class RemoteAuthService {
   RemoteAuthService._();
   static final instance = RemoteAuthService._();
@@ -21,10 +24,9 @@ class RemoteAuthService {
   static final _hkdf = Hkdf(hmac: Hmac(Sha256()), outputLength: 32);
   static final _aesGcm = AesGcm.with256bits();
 
-  // Cached home secret — derived in memory, never persisted
-  List<int>? _cachedHomeSecret;
-  int? _cachedHomeId;
-  String? _cachedAdminUUID;
+  // Cached account secret — derived in memory, never persisted.
+  List<int>? _cachedSecret;
+  String? _cachedSecretKey;
 
   /// Build canonical IKM bytes from home data.
   /// Format: [4-byte BE len][utf8 bytes] for each field, in fixed order.
@@ -44,8 +46,9 @@ class RemoteAuthService {
   /// This is derived in memory from cached Plex data — never persisted.
   Future<List<int>> deriveHomeSecret(int homeId, String adminUUID) async {
     // Return cached if inputs unchanged
-    if (_cachedHomeSecret != null && _cachedHomeId == homeId && _cachedAdminUUID == adminUUID) {
-      return _cachedHomeSecret!;
+    final cacheKey = 'plex:$homeId:${adminUUID.toLowerCase()}';
+    if (_cachedSecret != null && _cachedSecretKey == cacheKey) {
+      return _cachedSecret!;
     }
 
     final hkdf = _hkdf;
@@ -57,12 +60,11 @@ class RemoteAuthService {
       info: utf8.encode('home-secret'),
     );
 
-    _cachedHomeSecret = await secretKey.extractBytes();
-    _cachedHomeId = homeId;
-    _cachedAdminUUID = adminUUID;
+    _cachedSecret = await secretKey.extractBytes();
+    _cachedSecretKey = cacheKey;
 
     appLogger.d('RemoteAuth: Derived home secret');
-    return _cachedHomeSecret!;
+    return _cachedSecret!;
   }
 
   /// Derive the long-term home secret from a PlexHome object.
@@ -72,6 +74,32 @@ class RemoteAuthService {
       throw StateError('PlexHome has no admin user');
     }
     return deriveHomeSecret(home.id, admin.uuid);
+  }
+
+  /// Derive a companion remote secret from a Jellyfin server/user identity.
+  Future<List<int>> deriveJellyfinSecret({required String serverMachineId, required String userId}) async {
+    final normalizedServerId = serverMachineId.toLowerCase();
+    final normalizedUserId = userId.toLowerCase();
+    final cacheKey = 'jellyfin:$normalizedServerId:$normalizedUserId';
+    if (_cachedSecret != null && _cachedSecretKey == cacheKey) {
+      return _cachedSecret!;
+    }
+
+    final buf = BytesWriter();
+    _writeLengthPrefixed(buf, utf8.encode(normalizedServerId));
+    _writeLengthPrefixed(buf, utf8.encode(normalizedUserId));
+
+    final secretKey = await _hkdf.deriveKey(
+      secretKey: SecretKey(buf.toBytes()),
+      nonce: utf8.encode('plezy-remote-v1'),
+      info: utf8.encode('jellyfin-secret'),
+    );
+
+    _cachedSecret = await secretKey.extractBytes();
+    _cachedSecretKey = cacheKey;
+
+    appLogger.d('RemoteAuth: Derived Jellyfin secret');
+    return _cachedSecret!;
   }
 
   /// Derive per-session encryption key from homeSecret + both nonces.
@@ -109,6 +137,14 @@ class RemoteAuthService {
       info: utf8.encode('discovery'),
     );
     return key.extractBytes();
+  }
+
+  /// Stable, non-secret identifier used to select the matching auth context
+  /// during the WebSocket handshake without broadcasting it over UDP.
+  String computeAuthContextId(List<int> homeSecret) {
+    final hmac = crypto.Hmac(crypto.sha256, homeSecret);
+    final bytes = hmac.convert(utf8.encode('auth-context-id')).bytes.take(16).toList();
+    return 'v1.${base64UrlEncode(bytes).replaceAll('=', '')}';
   }
 
   /// Compute rotating discovery tag for beacon filtering.
@@ -349,9 +385,8 @@ class RemoteAuthService {
 
   /// Clear cached home secret (e.g. on logout).
   void clearCache() {
-    _cachedHomeSecret = null;
-    _cachedHomeId = null;
-    _cachedAdminUUID = null;
+    _cachedSecret = null;
+    _cachedSecretKey = null;
   }
 
   // Static direction constants for external use

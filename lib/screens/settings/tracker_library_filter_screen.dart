@@ -3,7 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
-import '../../models/plex_library.dart';
+import '../../media/media_library.dart';
 import '../../providers/libraries_provider.dart';
 import '../../services/settings_service.dart';
 import '../../services/trackers/tracker_constants.dart';
@@ -160,12 +160,12 @@ class _TrackerLibraryFilterScreenState extends State<TrackerLibraryFilterScreen>
     );
   }
 
-  static Map<String, List<PlexLibrary>> _groupByServer(List<PlexLibrary> libs) {
-    final out = <String, List<PlexLibrary>>{};
+  static Map<String, List<MediaLibrary>> _groupByServer(List<MediaLibrary> libs) {
+    final out = <String, List<MediaLibrary>>{};
     for (final lib in libs) {
       final serverId = lib.serverId;
       if (serverId == null) continue;
-      out.putIfAbsent(serverId, () => <PlexLibrary>[]).add(lib);
+      out.putIfAbsent(serverId, () => <MediaLibrary>[]).add(lib);
     }
     return out;
   }

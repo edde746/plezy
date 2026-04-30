@@ -7,10 +7,11 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
 import '../../focus/dpad_navigator.dart';
+import '../../media/media_item.dart';
 import '../../mpv/mpv.dart';
-import '../../models/plex_media_info.dart';
-import '../../models/plex_metadata.dart';
+import '../../media/media_source_info.dart';
 import '../../services/fullscreen_state_manager.dart';
+import '../../services/scrub_preview_source.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/formatters.dart';
@@ -30,10 +31,10 @@ import 'widgets/track_chapter_controls.dart';
 /// Desktop-specific video controls layout with top bar and bottom controls
 class DesktopVideoControls extends StatefulWidget {
   final Player player;
-  final PlexMetadata metadata;
+  final MediaItem metadata;
   final VoidCallback? onNext;
   final VoidCallback? onPrevious;
-  final List<PlexChapter> chapters;
+  final List<MediaChapter> chapters;
   final bool chaptersLoaded;
   final int seekTimeSmall;
   final VoidCallback onSeekToPreviousChapter;
@@ -61,7 +62,7 @@ class DesktopVideoControls extends StatefulWidget {
   final ValueNotifier<bool>? hasFirstFrame;
 
   /// Optional callback that returns thumbnail image bytes for a given timestamp.
-  final Uint8List? Function(Duration time)? thumbnailDataBuilder;
+  final ScrubFrame? Function(Duration time)? thumbnailDataBuilder;
 
   /// Channel name for live TV display
   final String? liveChannelName;
@@ -84,7 +85,7 @@ class DesktopVideoControls extends StatefulWidget {
   final bool showQueueTab;
 
   /// Called when a queue item is selected in the content strip
-  final Function(PlexMetadata)? onQueueItemSelected;
+  final Function(MediaItem)? onQueueItemSelected;
 
   /// Called to cancel auto-hide timer (e.g., when content strip is shown)
   final VoidCallback? onCancelAutoHide;

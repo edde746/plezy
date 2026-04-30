@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../i18n/strings.g.dart';
-import '../../../models/plex_subtitle_search_result.dart';
+import '../../../models/plex/plex_subtitle_search_result.dart';
+import '../../../services/plex_client.dart';
 import '../../../utils/language_codes.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../../utils/snackbar_helper.dart';
@@ -13,6 +14,7 @@ import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../widgets/pill_input_decoration.dart';
 import 'base_video_control_sheet.dart';
+import '../../loading_indicator_box.dart';
 
 class SubtitleSearchSheet extends StatefulWidget {
   final String ratingKey;
@@ -77,7 +79,18 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
     });
 
     try {
-      final client = context.getClientForServer(widget.serverId);
+      // Defense-in-depth: searchSubtitles is Plex-only. The UI gates this
+      // sheet on `subtitleSearchSupported` upstream, but if a future caller
+      // reaches us with a Jellyfin server, fail soft instead of throwing.
+      final neutral = context.tryGetMediaClientForServer(widget.serverId);
+      final client = neutral is PlexClient ? neutral : null;
+      if (client == null) {
+        if (!mounted) return;
+        setState(() {
+          _isSearching = false;
+        });
+        return;
+      }
       final title = _titleController.text.trim();
       final results = await client.searchSubtitles(
         widget.ratingKey,
@@ -117,7 +130,15 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
     setState(() => _downloadingKey = result.key);
 
     try {
-      final client = context.getClientForServer(widget.serverId);
+      // Same Plex-only guard as in [_search]. Don't throw if a Jellyfin
+      // server somehow reaches the download path.
+      final neutral = context.tryGetMediaClientForServer(widget.serverId);
+      final client = neutral is PlexClient ? neutral : null;
+      if (client == null) {
+        if (!mounted) return;
+        setState(() => _downloadingKey = null);
+        return;
+      }
       final success = await client.downloadSubtitle(
         widget.ratingKey,
         key: result.key,
@@ -248,7 +269,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
 
         Widget? trailing;
         if (isDownloading) {
-          trailing = const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2));
+          trailing = const LoadingIndicatorBox(size: 20);
         } else {
           final trailingChildren = <Widget>[];
           if (result.perfectMatch) {

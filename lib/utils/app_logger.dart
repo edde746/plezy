@@ -115,8 +115,10 @@ class MemoryAwareLogPrinter extends LogPrinter {
       MemoryLogOutput._currentSize -= removed.estimatedSize;
     }
 
-    // Delegate to wrapped printer for console output
-    return _wrappedPrinter.log(event);
+    // Delegate a redacted event to the wrapped printer for console output.
+    return _wrappedPrinter.log(
+      LogEvent(event.level, message, time: event.time, error: error, stackTrace: event.stackTrace),
+    );
   }
 }
 

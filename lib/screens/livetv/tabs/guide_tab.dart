@@ -13,19 +13,19 @@ import '../../../i18n/strings.g.dart';
 import '../../../models/livetv_channel.dart';
 import '../../../models/livetv_program.dart';
 import '../../../providers/multi_server_provider.dart';
-import '../../../services/plex_client.dart';
+import '../../../media/media_server_client.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/formatters.dart';
-import '../../../utils/plex_image_helper.dart';
+import '../../../utils/media_image_helper.dart';
 import '../../../utils/live_tv_player_navigation.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/overlay_sheet.dart';
-import '../../../widgets/plex_optimized_image.dart';
+import '../../../widgets/optimized_media_image.dart';
 import '../program_details_sheet.dart';
 
 class GuideTab extends StatefulWidget {
   final List<LiveTvChannel> channels;
-  final Set<String> favoriteChannelIds;
+  final bool Function(LiveTvChannel channel)? isFavoriteChannel;
   final void Function(LiveTvChannel)? onToggleFavorite;
   final VoidCallback? onNavigateUp;
   final VoidCallback? onBack;
@@ -33,7 +33,7 @@ class GuideTab extends StatefulWidget {
   const GuideTab({
     super.key,
     required this.channels,
-    this.favoriteChannelIds = const {},
+    this.isFavoriteChannel,
     this.onToggleFavorite,
     this.onNavigateUp,
     this.onBack,
@@ -200,13 +200,15 @@ class GuideTabState extends State<GuideTab> {
       for (final serverInfo in liveTvServers) {
         if (!queriedServers.add(serverInfo.serverId)) continue;
         try {
-          final client = multiServer.getClientForServer(serverInfo.serverId);
-          if (client == null) continue;
+          final genericClient = multiServer.getClientForServer(serverInfo.serverId);
+          if (genericClient == null) continue;
 
           final startEpoch = _gridStart.millisecondsSinceEpoch ~/ 1000;
           final endEpoch = _gridEnd.millisecondsSinceEpoch ~/ 1000;
 
-          final programs = await client.getEpgGrid(beginsAt: startEpoch, endsAt: endEpoch);
+          final fromDt = DateTime.fromMillisecondsSinceEpoch(startEpoch * 1000, isUtc: true);
+          final toDt = DateTime.fromMillisecondsSinceEpoch(endEpoch * 1000, isUtc: true);
+          final programs = await genericClient.liveTv.fetchSchedule(from: fromDt, to: toDt);
           allPrograms.addAll(programs);
         } catch (e) {
           appLogger.e('Failed to load programs from server ${serverInfo.serverId}', error: e);
@@ -262,23 +264,7 @@ class GuideTabState extends State<GuideTab> {
 
   Future<void> _tuneChannel(LiveTvChannel channel) async {
     final multiServer = context.read<MultiServerProvider>();
-
-    final serverInfo =
-        multiServer.liveTvServers.where((s) => s.serverId == channel.serverId).firstOrNull ??
-        multiServer.liveTvServers.firstOrNull;
-
-    if (serverInfo == null) return;
-
-    final client = multiServer.getClientForServer(serverInfo.serverId);
-    if (client == null) return;
-
-    await navigateToLiveTv(
-      context,
-      client: client,
-      dvrKey: serverInfo.dvrKey,
-      channel: channel,
-      channels: widget.channels,
-    );
+    await tuneAndNavigateToLiveTv(context, multiServer: multiServer, channel: channel, channels: widget.channels);
   }
 
   // ---------------------------------------------------------------------------
@@ -906,7 +892,7 @@ class GuideTabState extends State<GuideTab> {
       onTap: () => _tuneChannel(channel),
       onLongPress: widget.onToggleFavorite != null ? () => widget.onToggleFavorite!(channel) : null,
       isFocused: isFocused,
-      isFavorite: widget.favoriteChannelIds.contains(channel.key),
+      isFavorite: widget.isFavoriteChannel?.call(channel) ?? false,
       fallbackBuilder: () => _buildChannelNameFallback(channel, theme),
     );
   }
@@ -1115,12 +1101,12 @@ class GuideTabState extends State<GuideTab> {
     final client = multiServer.getClientForServer(channel.serverId ?? '');
     String? posterUrl;
     if (program.thumb != null && client != null) {
-      posterUrl = PlexImageHelper.getOptimizedImageUrl(
+      posterUrl = MediaImageHelper.getOptimizedImageUrl(
         client: client,
         thumbPath: program.thumb,
         maxWidth: 80,
         maxHeight: 120,
-        devicePixelRatio: PlexImageHelper.effectiveDevicePixelRatio(context),
+        devicePixelRatio: MediaImageHelper.effectiveDevicePixelRatio(context),
         imageType: ImageType.poster,
       );
     }
@@ -1139,7 +1125,7 @@ class _ChannelCell extends StatefulWidget {
   final double rowHeight;
   final double channelColumnWidth;
   final String? channelThumb;
-  final PlexClient? client;
+  final MediaServerClient? client;
   final LiveTvChannel channel;
   final ThemeData theme;
   final VoidCallback onTap;
@@ -1201,7 +1187,7 @@ class _ChannelCellState extends State<_ChannelCell> {
                     opacity: showAction ? 0.3 : 1.0,
                     duration: const Duration(milliseconds: 150),
                     child: widget.channelThumb != null && widget.client != null
-                        ? PlexOptimizedImage.thumb(
+                        ? OptimizedMediaImage.thumb(
                             client: widget.client!,
                             imagePath: widget.channelThumb,
                             width: widget.channelColumnWidth - 16,

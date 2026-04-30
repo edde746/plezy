@@ -1,380 +1,306 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+
+import '../connection/connection.dart';
+import '../connection/connection_registry.dart';
+import '../media/media_server_user_profile.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
-import '../utils/plex_http_exception.dart';
-import '../models/plex_home.dart';
-import '../models/plex_home_user.dart';
-import '../models/plex_user_profile.dart';
+import '../profiles/active_profile_provider.dart';
+import '../profiles/profile.dart';
+import '../profiles/profile_connection.dart';
+import '../profiles/profile_connection_registry.dart';
+import '../services/jellyfin_client.dart';
+import '../services/multi_server_manager.dart';
 import '../services/plex_auth_service.dart';
 import '../services/storage_service.dart';
 import '../utils/app_logger.dart';
-import '../screens/profile/pin_entry_dialog.dart';
 
+/// Holds the *current user's playback preferences* (audio/subtitle language
+/// defaults) for the active profile. Plex profiles fetch from
+/// `https://clients.plex.tv/api/v2/user`; Jellyfin profiles fetch from
+/// `/Users/Me` on the bound Jellyfin server.
+///
+/// Profile *identity* and *switching* are owned by [ActiveProfileProvider]
+/// and [ActiveProfileBinder]. This provider is just the settings cache so
+/// the video player can apply the active user's defaults.
+///
+/// Plex settings are fetched with the *active Home user's token* (minted via
+/// `/home/users/{uuid}/switch` and cached in
+/// the parent [ProfileConnection.userToken], or stored on the
+/// [ProfileConnection] row for local profiles). Falling back to the
+/// account-owner's token would silently return the *owner's* settings —
+/// wrong defaults for kid profiles, parental restrictions, etc.
 class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  PlexHome? _home;
-  PlexHomeUser? _currentUser;
-  PlexUserProfile? _profileSettings;
+  MediaServerUserProfile? _profileSettings;
   bool _isLoading = false;
   String? _error;
   bool _isInitialized = false;
 
-  PlexHome? get home => _home;
-  PlexHomeUser? get currentUser => _currentUser;
-  PlexUserProfile? get profileSettings => _profileSettings;
+  MediaServerUserProfile? get profileSettings => _profileSettings;
   bool get isLoading => _isLoading;
   String? get error => _error;
-  bool get hasMultipleUsers => _home?.hasMultipleUsers ?? false;
-
-  bool get needsInitialProfileSelection => _home != null && _home!.users.isNotEmpty && _currentUser == null;
 
   PlexAuthService? _authService;
   StorageService? _storageService;
+  ConnectionRegistry? _connectionRegistry;
+  ProfileConnectionRegistry? _profileConnectionRegistry;
+  ActiveProfileProvider? _activeProfile;
+  MultiServerManager? _serverManager;
+  String? _lastSeenActiveId;
+  StreamSubscription<List<ProfileConnection>>? _profileConnectionSubscription;
+  String? _watchedProfileConnectionProfileId;
+  ProfileConnectionRegistry? _watchedProfileConnectionRegistry;
 
-  // Callback for data invalidation when switching profiles
-  // Receives the list of servers with new profile tokens for reconnection
-  Future<void> Function(List<PlexServer>)? _onDataInvalidationRequested;
-
-  /// Set a callback to be called when profile switching requires data invalidation
-  /// The callback receives the list of servers with the new profile's access tokens
-  void setDataInvalidationCallback(Future<void> Function(List<PlexServer>)? callback) {
-    _onDataInvalidationRequested = callback;
+  /// Wire the dependencies needed to resolve the active user's token / client.
+  /// May be called multiple times (proxy provider re-builds) — only the
+  /// most recent values are kept; we re-attach the listener on the new
+  /// [activeProfile] each time so settings refresh whenever the active
+  /// profile changes (or the binder finishes wiring up its token).
+  void attach({
+    required ConnectionRegistry connections,
+    required ActiveProfileProvider activeProfile,
+    required ProfileConnectionRegistry profileConnections,
+    MultiServerManager? serverManager,
+  }) {
+    _connectionRegistry = connections;
+    final profileConnectionsChanged = !identical(_profileConnectionRegistry, profileConnections);
+    _profileConnectionRegistry = profileConnections;
+    _serverManager = serverManager;
+    if (!identical(_activeProfile, activeProfile)) {
+      _activeProfile?.removeListener(_onActiveProfileChanged);
+      _activeProfile = activeProfile;
+      _lastSeenActiveId = activeProfile.activeId;
+      activeProfile.addListener(_onActiveProfileChanged);
+    }
+    if (profileConnectionsChanged) {
+      _profileConnectionSubscription?.cancel();
+      _profileConnectionSubscription = null;
+      _watchedProfileConnectionProfileId = null;
+      _watchedProfileConnectionRegistry = null;
+    }
+    _watchActiveProfileConnections(activeProfile.active);
   }
 
-  /// Trigger data invalidation for all screens with the new profile's servers
-  Future<void> _invalidateAllData(List<PlexServer> servers) async {
-    if (_onDataInvalidationRequested != null) {
-      await _onDataInvalidationRequested!(servers);
-      appLogger.d('Data invalidation triggered for profile switch with ${servers.length} servers');
+  void _onActiveProfileChanged() {
+    final ap = _activeProfile;
+    if (ap == null) return;
+    // Only refresh on actual profile change, not on every binding-state
+    // tick — refreshProfileSettings awaits awaitBindingSettle internally
+    // so it'll always read the fresh post-bind token.
+    final id = ap.activeId;
+    if (id == _lastSeenActiveId) return;
+    _lastSeenActiveId = id;
+    _watchActiveProfileConnections(ap.active);
+    if (_isInitialized) unawaited(refreshProfileSettings());
+  }
+
+  void _watchActiveProfileConnections(Profile? profile) {
+    final registry = _profileConnectionRegistry;
+    final profileId = profile?.id;
+    if (identical(_watchedProfileConnectionRegistry, registry) && _watchedProfileConnectionProfileId == profileId) {
+      return;
     }
+
+    _profileConnectionSubscription?.cancel();
+    _profileConnectionSubscription = null;
+    _watchedProfileConnectionRegistry = registry;
+    _watchedProfileConnectionProfileId = profileId;
+
+    if (registry == null || profileId == null) return;
+    _profileConnectionSubscription = registry.watchForProfile(profileId).listen((_) {
+      if (_isInitialized) unawaited(refreshProfileSettings());
+    });
   }
 
   Future<void> initialize() async {
-    // Prevent duplicate initialization once we have usable data.
-    // If initialized state exists but home data is missing, retry bootstrap.
-    if (_isInitialized && _home != null) {
-      appLogger.d('UserProfileProvider: Already initialized, skipping');
+    if (_isInitialized && _profileSettings != null) {
       return;
     }
-    if (_isInitialized && _home == null) {
-      appLogger.w('UserProfileProvider: Initialized but home data missing, retrying initialization');
-    }
-
-    appLogger.d('UserProfileProvider: Initializing...');
+    appLogger.d('UserProfileProvider: initializing');
     try {
       _authService = await PlexAuthService.create();
       _storageService = await StorageService.getInstance();
-      await _loadCachedData();
 
-      // If no cached home data or it's expired, try to load from API
-      if (_home == null) {
-        appLogger.d('UserProfileProvider: No cached home data, attempting to load from API');
-        try {
-          await loadHomeUsers();
-        } catch (e) {
-          appLogger.w('UserProfileProvider: Failed to load home users during initialization', error: e);
-          // Don't set error here as it's not critical for app startup
-        }
-      }
-
-      // Fetch fresh profile settings from API
-      appLogger.d('UserProfileProvider: Fetching profile settings from API');
       try {
         await refreshProfileSettings();
       } catch (e) {
-        appLogger.w('UserProfileProvider: Failed to fetch profile settings during initialization', error: e);
-        // Don't set error here, cached profile (if any) was already loaded
+        appLogger.w('UserProfileProvider: failed to fetch profile settings during initialization', error: e);
       }
 
       _isInitialized = true;
-      appLogger.d('UserProfileProvider: Initialization complete');
     } catch (e) {
-      appLogger.e('UserProfileProvider: Critical initialization failure', error: e);
+      appLogger.e('UserProfileProvider: critical initialization failure', error: e);
       _setError('Failed to initialize profile services');
-      // Ensure services are null on failure
-      _authService = null;
-      _storageService = null;
-      _isInitialized = false; // Allow retry on failure
-    }
-  }
-
-  Future<void> _loadCachedData() async {
-    if (_storageService == null) return;
-
-    // Load cached home users
-    final cachedHomeData = _storageService!.getHomeUsersCache();
-    if (cachedHomeData != null) {
-      try {
-        _home = PlexHome.fromJson(cachedHomeData);
-      } catch (e) {
-        appLogger.w('Failed to load cached home data', error: e);
-      }
-    }
-
-    // Load current user UUID
-    final currentUserUUID = _storageService!.getCurrentUserUUID();
-    if (currentUserUUID != null && _home != null) {
-      _currentUser = _home!.getUserByUUID(currentUserUUID);
-    }
-
-    // Profile settings are NOT cached - they will be fetched fresh from API
-    // in refreshProfileSettings()
-
-    safeNotifyListeners();
-  }
-
-  /// Fetch the user's profile settings from the API
-  Future<void> refreshProfileSettings() async {
-    if (_authService == null || _storageService == null) {
-      appLogger.w('refreshProfileSettings: Services not initialized, skipping');
-      return;
-    }
-
-    appLogger.d('Fetching user profile settings from Plex API');
-    try {
-      final currentToken = _storageService!.getPlexToken();
-      if (currentToken == null) {
-        appLogger.w('refreshProfileSettings: No Plex token available, cannot fetch profile');
-        return;
-      }
-
-      final profile = await _authService!.getUserProfile(currentToken);
-      _profileSettings = profile;
-
-      appLogger.i('Successfully fetched user profile settings from API');
-
-      safeNotifyListeners();
-    } catch (e) {
-      appLogger.w('Failed to fetch user profile settings from API', error: e);
-      // Don't set error state, profile will remain null or keep existing value
-    }
-  }
-
-  Future<void> loadHomeUsers({bool forceRefresh = false}) async {
-    appLogger.d('loadHomeUsers called - forceRefresh: $forceRefresh');
-
-    // Auto-initialize services if not ready
-    if (_authService == null || _storageService == null) {
-      appLogger.d('loadHomeUsers: Services not initialized, initializing services...');
-      _authService = await PlexAuthService.create();
-      _storageService = await StorageService.getInstance();
-      await _loadCachedData();
-
-      // Double-check after initialization
-      if (_authService == null || _storageService == null) {
-        appLogger.e('loadHomeUsers: Failed to initialize services');
-        _setError('Failed to initialize services');
-        return;
-      }
-    }
-
-    // Use cached data if available and not forcing refresh
-    if (!forceRefresh && _home != null) {
-      appLogger.d('loadHomeUsers: Using cached data, users count: ${_home!.users.length}');
-      return;
-    }
-
-    _setLoading(true);
-    _clearError();
-
-    try {
-      final currentToken = _storageService!.getPlexToken();
-      if (currentToken == null) {
-        throw Exception('No Plex.tv authentication token available');
-      }
-      appLogger.d('loadHomeUsers: Using Plex.tv token');
-
-      appLogger.d('loadHomeUsers: Fetching home users from API');
-      final home = await _authService!.getHomeUsers(currentToken);
-      _home = home;
-
-      appLogger.i('loadHomeUsers: Success! Home users count: ${home.users.length}');
-      appLogger.d('loadHomeUsers: Users: ${home.users.map((u) => u.displayName).join(', ')}');
-
-      // Cache the home data
-      await _storageService!.saveHomeUsersCache(home.toJson());
-
-      // Set current user if not already set
-      if (_currentUser == null) {
-        final currentUserUUID = _storageService!.getCurrentUserUUID();
-        if (currentUserUUID != null) {
-          _currentUser = home.getUserByUUID(currentUserUUID);
-          appLogger.d('loadHomeUsers: Set current user from UUID: ${_currentUser?.displayName}');
-        } else {
-          // Avoid auto-selecting protected profiles on first login.
-          // If there's exactly one unprotected profile, select it automatically.
-          if (home.users.length == 1 && !home.users.first.requiresPassword) {
-            _currentUser = home.users.first;
-            await _storageService!.saveCurrentUserUUID(_currentUser!.uuid);
-            appLogger.d('loadHomeUsers: Auto-selected only unprotected user: ${_currentUser?.displayName}');
-          } else {
-            appLogger.d('loadHomeUsers: No current user selected yet, waiting for explicit profile selection');
-          }
-        }
-      }
-
-      safeNotifyListeners();
-    } catch (e) {
-      _setError('Failed to load home users: $e');
-      appLogger.e('Failed to load home users', error: e);
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<bool> switchToUser(PlexHomeUser user, BuildContext? context, {bool verifyPin = false}) async {
-    if (_authService == null || _storageService == null) {
-      _setError('Services not initialized');
-      return false;
-    }
-
-    if (user.uuid == _currentUser?.uuid && !(verifyPin && user.requiresPassword)) {
-      return true;
-    }
-
-    _setLoading(true);
-    _clearError();
-
-    return await _attemptUserSwitch(user, context, null);
-  }
-
-  Future<bool> _attemptUserSwitch(PlexHomeUser user, BuildContext? context, String? errorMessage) async {
-    try {
-      final currentToken = _storageService!.getPlexToken();
-      if (currentToken == null) {
-        throw Exception('No Plex.tv authentication token available');
-      }
-
-      // Check if user requires PIN
-      String? pin;
-      if (user.requiresPassword && context != null && context.mounted) {
-        pin = await showPinEntryDialog(context, user.displayName, errorMessage: errorMessage);
-
-        // User cancelled the PIN dialog
-        if (pin == null) {
-          _setLoading(false);
-          return false;
-        }
-      }
-
-      final switchResponse = await _authService!.switchToUser(user.uuid, currentToken, pin: pin);
-
-      // switchResponse.authToken is the new user's Plex.tv token
-      // Fetch servers with this token to get the proper server access tokens
-      appLogger.d('Got new user Plex.tv token, fetching servers...');
-
-      final servers = await _authService!.fetchServers(switchResponse.authToken);
-      if (servers.isEmpty) {
-        throw Exception('No servers available for this user');
-      }
-
-      appLogger.d('Fetched ${servers.length} servers for new profile');
-
-      // Save the new Plex.tv token for future profile operations
-      await _storageService!.savePlexToken(switchResponse.authToken);
-
-      // Update current user UUID in storage
-      await _storageService!.saveCurrentUserUUID(user.uuid);
-
-      // Update current user
-      _currentUser = user;
-
-      // Update user profile settings (fresh from API)
-      _profileSettings = switchResponse.profile;
-      appLogger.d(
-        'Updated profile settings for user: ${user.displayName}',
-        error: {
-          'defaultAudioLanguage': _profileSettings?.defaultAudioLanguage ?? 'not set',
-          'defaultSubtitleLanguage': _profileSettings?.defaultSubtitleLanguage ?? 'not set',
-        },
-      );
-
-      safeNotifyListeners();
-
-      // Invalidate all cached data and reconnect to all servers with new tokens
-      // The callback will handle server reconnection using the servers list
-      await _invalidateAllData(servers);
-
-      appLogger.d('Profile switch complete, all servers reconnected with new tokens');
-
-      appLogger.i('Successfully switched to user: ${user.displayName}');
-      return true;
-    } catch (e) {
-      // Check if it's a PIN validation error
-      if (e is PlexHttpException && e.statusCode == 403) {
-        final errors = (e.responseData is Map) ? (e.responseData as Map)['errors'] as List? : null;
-        if (errors != null && errors.isNotEmpty) {
-          final errorCode = errors.first['code'] as int?;
-          final errorMessage = errors.first['message'] as String?;
-
-          // Error code 1041 means invalid PIN
-          if (errorCode == 1041) {
-            appLogger.w('Invalid PIN for user: ${user.displayName}');
-            _clearError(); // Clear any previous error state
-
-            // Retry with error message if context is still available
-            if (context != null && context.mounted) {
-              return await _attemptUserSwitch(user, context, errorMessage ?? 'Incorrect PIN. Please try again.');
-            }
-
-            // If context not available, return false without showing error
-            appLogger.d('Cannot retry PIN entry - context not available');
-            return false;
-          }
-        }
-      }
-
-      // Only show error for non-PIN validation errors
-      _setError('Failed to switch user: $e');
-      appLogger.e('Failed to switch to user: ${user.displayName}', error: e);
-      return false;
-    } finally {
-      _setLoading(false);
-    }
-  }
-
-  Future<void> refreshCurrentUser() async {
-    if (_currentUser != null) {
-      await loadHomeUsers(forceRefresh: true);
-
-      // Update current user from refreshed data
-      if (_home != null) {
-        _currentUser = _home!.getUserByUUID(_currentUser!.uuid);
-        safeNotifyListeners();
-      }
-    }
-  }
-
-  Future<void> logout() async {
-    if (_storageService == null) return;
-
-    _setLoading(true);
-
-    try {
-      await _storageService!.clearUserData();
-
-      // Clear user-specific provider state and reset initialization so
-      // the next sign-in performs a full bootstrap.
-      _home = null;
-      _currentUser = null;
-      _profileSettings = null;
-      _onDataInvalidationRequested = null;
       _authService = null;
       _storageService = null;
       _isInitialized = false;
-
-      _clearError();
-      safeNotifyListeners();
-
-      appLogger.i('User logged out successfully');
-    } catch (e) {
-      appLogger.e('Error during logout', error: e);
-    } finally {
-      _setLoading(false);
     }
   }
 
-  void _setLoading(bool loading) {
-    _isLoading = loading;
+  /// Fetch the user's profile settings from the API. Best-effort: failures
+  /// leave [profileSettings] unchanged (cached or null).
+  Future<void> refreshProfileSettings() async {
+    if (_authService == null || _storageService == null) {
+      _authService = await PlexAuthService.create();
+      _storageService = await StorageService.getInstance();
+    }
+
+    // Wait for the binder to finish wiring up the active profile so we
+    // read the freshly-minted user-token rather than racing the cache.
+    await _activeProfile?.awaitBindingSettle();
+
+    final settingsConnection = await _resolveActiveSettingsConnection();
+    final connection = settingsConnection?.connection;
+    if (connection is JellyfinConnection) {
+      final jellyfinClient = _resolveJellyfinClient(connection);
+      if (jellyfinClient == null) {
+        appLogger.d('UserProfileProvider: default Jellyfin client unavailable, skipping settings refresh');
+        return;
+      }
+      final profile = await jellyfinClient.fetchUserProfile();
+      if (profile != null) {
+        _profileSettings = profile;
+        safeNotifyListeners();
+      }
+      return;
+    }
+
+    final userToken = await _resolveActivePlexUserToken(preferred: settingsConnection);
+    if (userToken == null || userToken.isEmpty) {
+      appLogger.d('UserProfileProvider: no token for active profile, skipping settings refresh');
+      return;
+    }
+
+    try {
+      final profile = await _authService!.getUserProfile(userToken);
+      _profileSettings = profile;
+      safeNotifyListeners();
+    } catch (e) {
+      appLogger.w('UserProfileProvider: failed to fetch user profile settings', error: e);
+    }
+  }
+
+  JellyfinClient? _resolveJellyfinClient(JellyfinConnection conn) {
+    final manager = _serverManager;
+    if (manager == null) return null;
+    final client = manager.getClient(conn.serverMachineId);
+    return client is JellyfinClient ? client : null;
+  }
+
+  /// Resolve the *active Home user's* plex.tv token, in priority order:
+  ///   1. The [ProfileConnection]'s `userToken`. For Plex Home profiles
+  ///      this is the parent connection's row (written by
+  ///      `_bindPlexHome`); for local profiles bound to a Plex account
+  ///      it's the default join row (`listForProfile` orders default
+  ///      first).
+  ///   2. The parent / first plex account's token as a last resort —
+  ///      wrong user identity, but at least keeps the call from
+  ///      no-op'ing for fresh installs that haven't completed a bind yet.
+  /// Returns `null` only when the device has no Plex account at all
+  /// (Jellyfin-only setup) or no profile is active.
+  Future<String?> _resolveActivePlexUserToken({
+    ({ProfileConnection profileConnection, Connection connection})? preferred,
+  }) async {
+    final connections = _connectionRegistry;
+    final activeProfile = _activeProfile;
+    if (connections == null || activeProfile == null) return null;
+
+    final profile = activeProfile.active;
+    if (profile == null) return null;
+
+    final plexAccounts = (await connections.list()).whereType<PlexAccountConnection>().toList();
+    if (plexAccounts.isEmpty) return null;
+
+    final pcRegistry = _profileConnectionRegistry;
+
+    if (profile.kind == ProfileKind.plexHome) {
+      final parentId = profile.parentConnectionId;
+      final uuid = profile.plexHomeUserUuid;
+      if (parentId == null || uuid == null) return null;
+      if (pcRegistry != null) {
+        final pc = await pcRegistry.get(profile.id, parentId);
+        if (pc?.hasToken == true) return pc!.userToken;
+      }
+      // Pre-bind fallback: the binder hasn't run yet (or it failed), so
+      // there's no user-scoped token. Return the parent account token —
+      // it'll fetch the *owner's* settings, but that's still better than
+      // no settings at all on first launch.
+      for (final acc in plexAccounts) {
+        if (acc.id == parentId) return acc.accountToken;
+      }
+      return null;
+    }
+
+    // Local profile — read the user-token off the default ProfileConnection
+    // (listForProfile orders default first). Each connection persists its
+    // own minted token, so this is already user-scoped.
+    final resolved = preferred ?? await _resolveActiveSettingsConnection();
+    if (resolved?.connection is PlexAccountConnection && resolved!.profileConnection.hasToken) {
+      return resolved.profileConnection.userToken;
+    }
+    final resolvedConnection = resolved?.connection;
+    if (resolvedConnection is PlexAccountConnection) {
+      return resolvedConnection.accountToken;
+    }
+    return plexAccounts.first.accountToken;
+  }
+
+  Future<({ProfileConnection profileConnection, Connection connection})?> _resolveActiveSettingsConnection() async {
+    final pcRegistry = _profileConnectionRegistry;
+    final activeProfile = _activeProfile;
+    final connections = _connectionRegistry;
+    if (pcRegistry == null || activeProfile == null || connections == null) return null;
+
+    final profile = activeProfile.active;
+    if (profile == null || profile.kind == ProfileKind.plexHome) return null;
+
+    final pcs = await pcRegistry.listForProfile(profile.id);
+    if (pcs.isEmpty) return null;
+
+    final connectionsList = await connections.list();
+    final byId = {for (final c in connectionsList) c.id: c};
+    for (final pc in pcs) {
+      final conn = byId[pc.connectionId];
+      if (conn != null) return (profileConnection: pc, connection: conn);
+    }
+    return null;
+  }
+
+  @visibleForTesting
+  Future<Connection?> debugResolveActiveSettingsConnectionForTesting() async {
+    return (await _resolveActiveSettingsConnection())?.connection;
+  }
+
+  @visibleForTesting
+  Future<String?> debugResolveActivePlexUserTokenForTesting() {
+    return _resolveActivePlexUserToken();
+  }
+
+  @visibleForTesting
+  String? get debugWatchedProfileConnectionProfileId => _watchedProfileConnectionProfileId;
+
+  /// Logout — clear settings and credentials. Called from the discover
+  /// screen "sign out" action; the rest of the teardown (clearing
+  /// connections, profiles, etc.) happens in the screen's logout flow.
+  Future<void> logout() async {
+    _isLoading = true;
     safeNotifyListeners();
+    try {
+      _storageService ??= await StorageService.getInstance();
+      await _storageService!.clearUserData();
+      _profileSettings = null;
+      _authService = null;
+      _storageService = null;
+      _isInitialized = false;
+      _clearError();
+      appLogger.i('UserProfileProvider: logged out');
+    } catch (e) {
+      appLogger.e('UserProfileProvider: logout error', error: e);
+    } finally {
+      _isLoading = false;
+      safeNotifyListeners();
+    }
   }
 
   void _setError(String error) {
@@ -384,5 +310,12 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
   void _clearError() {
     _error = null;
+  }
+
+  @override
+  void dispose() {
+    _activeProfile?.removeListener(_onActiveProfileChanged);
+    _profileConnectionSubscription?.cancel();
+    super.dispose();
   }
 }

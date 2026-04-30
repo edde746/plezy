@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
-import '../models/plex_metadata.dart';
-import '../services/plex_client.dart';
-import '../utils/plex_http_client.dart';
-import '../utils/plex_http_exception.dart';
+import '../media/library_query.dart';
+import '../media/media_item.dart';
+import '../utils/media_server_http_client.dart';
+import '../exceptions/media_server_exceptions.dart';
 
 /// Sparse-loading state + fetch orchestration for paginated item grids/lists.
 ///
@@ -22,7 +22,7 @@ import '../utils/plex_http_exception.dart';
 /// 3. On dispose, subclass calls [disposePagination].
 mixin PaginatedItemLoader<W extends StatefulWidget> on State<W> {
   /// Sparse map of loaded items, keyed by position.
-  final Map<int, PlexMetadata> loadedItems = {};
+  final Map<int, MediaItem> loadedItems = {};
 
   /// Total items on the server. 0 until the first page completes.
   int totalSize = 0;
@@ -43,12 +43,12 @@ mixin PaginatedItemLoader<W extends StatefulWidget> on State<W> {
   VoidCallback? _scheduledRetry;
 
   /// Fetch a page of items. Subclass implements this — typically delegating
-  /// to a paginated `PlexClient` method that returns a [LibraryContentResult].
-  Future<LibraryContentResult> fetchPage(int start, int size, AbortController? abort);
+  /// to a paginated client method that returns a [LibraryPage] of [MediaItem].
+  Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort);
 
   /// Hook fired after each successful page merge. Default: no-op.
   /// Override for image prefetch, syncing a base-class `items` list, etc.
-  void onPageLoaded(int start, List<PlexMetadata> items) {}
+  void onPageLoaded(int start, List<MediaItem> items) {}
 
   /// Synchronously clear pagination state and bump the generation counter.
   /// Call from inside the subclass's `setState` before awaiting
@@ -69,7 +69,7 @@ mixin PaginatedItemLoader<W extends StatefulWidget> on State<W> {
 
   /// Fetch the first page. Await from outside `setState`. Mutates
   /// [loadedItems] and [totalSize] on success; throws on failure.
-  Future<LibraryContentResult> loadInitialPage(int pageSize) async {
+  Future<LibraryPage<MediaItem>> loadInitialPage(int pageSize) async {
     final generation = _requestId;
     final result = await fetchPage(0, pageSize, _cancelToken);
     if (generation != _requestId || !mounted) return result;
@@ -77,7 +77,7 @@ mixin PaginatedItemLoader<W extends StatefulWidget> on State<W> {
     for (var i = 0; i < result.items.length; i++) {
       loadedItems[i] = result.items[i];
     }
-    totalSize = result.totalSize;
+    totalSize = result.totalCount;
     onPageLoaded(0, result.items);
     return result;
   }
@@ -160,7 +160,7 @@ mixin PaginatedItemLoader<W extends StatefulWidget> on State<W> {
   /// [totalSize] even if [index] wasn't in the sparse map (evicted).
   void removeLoadedItemAndShift(int index) {
     loadedItems.remove(index);
-    final shifted = <int, PlexMetadata>{};
+    final shifted = <int, MediaItem>{};
     for (final entry in loadedItems.entries) {
       if (entry.key > index) {
         shifted[entry.key - 1] = entry.value;
@@ -229,14 +229,14 @@ mixin PaginatedItemLoader<W extends StatefulWidget> on State<W> {
         for (var i = 0; i < result.items.length; i++) {
           loadedItems[start + i] = result.items[i];
         }
-        if (result.totalSize != totalSize) totalSize = result.totalSize;
+        if (result.totalCount != totalSize) totalSize = result.totalCount;
       });
 
       _retryCount = 0;
       onPageLoaded(start, result.items);
       return true;
     } catch (e) {
-      if (e is PlexHttpException && e.type == PlexHttpErrorType.cancelled) return false;
+      if (e is MediaServerHttpException && e.type == MediaServerHttpErrorType.cancelled) return false;
       _retryCount++;
       final delay = Duration(milliseconds: 500 * (1 << _retryCount.clamp(0, 4)));
       _retryTimer?.cancel();

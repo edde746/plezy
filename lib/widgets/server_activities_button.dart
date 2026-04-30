@@ -8,7 +8,7 @@ import '../focus/key_event_utils.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_tokens.dart';
 import 'package:plezy/widgets/app_icon.dart';
-import '../models/plex_activity.dart';
+import '../models/plex/plex_activity.dart';
 import '../providers/multi_server_provider.dart';
 
 class ServerActivitiesButton extends StatefulWidget {
@@ -91,7 +91,8 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
     final serverIds = multiServer.onlineServerIds;
 
     final futures = serverIds.map((serverId) async {
-      final client = multiServer.getClientForServer(serverId);
+      // Plex-only: `/activities` API is Plex-specific.
+      final client = multiServer.getPlexClientForServer(serverId);
       if (client == null) return null;
       final activities = await client.getActivities();
       return _ServerResult(serverId: serverId, serverName: client.serverName ?? serverId, activities: activities);
@@ -133,7 +134,8 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
 
   Future<void> _cancelActivity(String serverId, String uuid) async {
     final multiServer = Provider.of<MultiServerProvider>(context, listen: false);
-    final client = multiServer.getClientForServer(serverId);
+    // Plex-only: `/activities` API is Plex-specific.
+    final client = multiServer.getPlexClientForServer(serverId);
     if (client == null) return;
     try {
       await client.cancelActivity(uuid);

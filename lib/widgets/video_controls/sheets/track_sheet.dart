@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../../models/plex_media_info.dart';
+import '../../../media/media_source_info.dart';
 import '../../../mpv/mpv.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../utils/scroll_utils.dart';
@@ -30,9 +30,14 @@ class TrackSheet extends StatelessWidget {
   /// player's in-stream audio selection (the transcoded stream only has one
   /// audio track).
   final bool isTranscoding;
-  final List<PlexAudioTrack> sourceAudioTracks;
+  final List<MediaAudioTrack> sourceAudioTracks;
   final int? selectedAudioStreamId;
   final ValueChanged<int>? onSwitchAudioStreamId;
+
+  /// Whether OpenSubtitles search is supported by the active server. Plex
+  /// proxies the OpenSubtitles plugin; Jellyfin doesn't expose an
+  /// equivalent today.
+  final bool subtitleSearchSupported;
 
   const TrackSheet({
     super.key,
@@ -48,6 +53,7 @@ class TrackSheet extends StatelessWidget {
     this.sourceAudioTracks = const [],
     this.selectedAudioStreamId,
     this.onSwitchAudioStreamId,
+    this.subtitleSearchSupported = true,
   });
 
   @override
@@ -130,6 +136,7 @@ class TrackSheet extends StatelessWidget {
                           onSecondaryTrackChanged: onSecondarySubtitleTrackChanged,
                           supportsSecondary: supportsSecondary,
                           showHeader: true,
+                          subtitleSearchSupported: subtitleSearchSupported,
                         ),
                       ),
                     ),
@@ -153,6 +160,7 @@ class TrackSheet extends StatelessWidget {
                 onSecondaryTrackChanged: onSecondarySubtitleTrackChanged,
                 supportsSecondary: supportsSecondary,
                 showHeader: false,
+                subtitleSearchSupported: subtitleSearchSupported,
               );
             },
           ),
@@ -163,7 +171,7 @@ class TrackSheet extends StatelessWidget {
 }
 
 class _SourceAudioColumn extends StatefulWidget {
-  final List<PlexAudioTrack> tracks;
+  final List<MediaAudioTrack> tracks;
   final int? selectedStreamId;
   final ValueChanged<int> onSelected;
   final bool showHeader;
@@ -318,6 +326,7 @@ class _SubtitleColumn extends StatefulWidget {
   final Function(SubtitleTrack)? onSecondaryTrackChanged;
   final bool supportsSecondary;
   final bool showHeader;
+  final bool subtitleSearchSupported;
 
   const _SubtitleColumn({
     required this.tracks,
@@ -331,6 +340,7 @@ class _SubtitleColumn extends StatefulWidget {
     this.onSecondaryTrackChanged,
     this.supportsSecondary = false,
     required this.showHeader,
+    this.subtitleSearchSupported = true,
   });
 
   @override
@@ -469,7 +479,7 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
             },
           ),
         ),
-        if (widget.ratingKey.isNotEmpty) ...[
+        if (widget.ratingKey.isNotEmpty && widget.subtitleSearchSupported) ...[
           Divider(height: 1, color: Theme.of(context).dividerColor),
           FocusableListTile(
             leading: const AppIcon(Symbols.search_rounded),

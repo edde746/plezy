@@ -14,7 +14,7 @@ import '../services/settings_service.dart' show EpisodePosterMode;
 import '../utils/grid_size_calculator.dart';
 import '../theme/mono_tokens.dart';
 import '../focus/locked_hub_controller.dart';
-import '../models/plex_hub.dart';
+import '../media/media_hub.dart';
 import '../screens/hub_detail_screen.dart';
 import '../utils/media_navigation_helper.dart';
 import 'focus_builders.dart';
@@ -32,7 +32,7 @@ import '../i18n/strings.g.dart';
 /// - Children render focus visuals based on the passed index
 /// - Focus never "escapes" to random elements
 class HubSection extends StatefulWidget {
-  final PlexHub hub;
+  final MediaHub hub;
   final IconData icon;
   final void Function(String)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
@@ -97,7 +97,7 @@ class HubSectionState extends State<HubSection> {
   @override
   void initState() {
     super.initState();
-    _hubFocusNode = FocusNode(debugLabel: 'hub_${widget.hub.hubKey}');
+    _hubFocusNode = FocusNode(debugLabel: 'hub_${widget.hub.id}');
     _hubFocusNode.addListener(_onFocusChange);
   }
 
@@ -143,7 +143,7 @@ class HubSectionState extends State<HubSection> {
     final clamped = index.clamp(0, _totalItemCount - 1);
     _focusedIndex = clamped;
     // Remember this position for this specific hub
-    HubFocusMemory.setForHub(widget.hub.hubKey, clamped);
+    HubFocusMemory.setForHub(widget.hub.id, clamped);
     _scrollToIndex(clamped);
     _hubFocusNode.requestFocus();
     // ignore: no-empty-block - setState triggers rebuild to update focus styling
@@ -155,7 +155,7 @@ class HubSectionState extends State<HubSection> {
 
   /// Request focus using the stored memory for this hub
   void requestFocusFromMemory() {
-    final index = HubFocusMemory.getForHub(widget.hub.hubKey, _totalItemCount);
+    final index = HubFocusMemory.getForHub(widget.hub.id, _totalItemCount);
     requestFocusAt(index);
   }
 
@@ -244,7 +244,7 @@ class HubSectionState extends State<HubSection> {
         setState(() {
           _focusedIndex--;
         });
-        HubFocusMemory.setForHub(widget.hub.hubKey, _focusedIndex);
+        HubFocusMemory.setForHub(widget.hub.id, _focusedIndex);
         _scrollToIndex(_focusedIndex);
       } else if (widget.onNavigateToSidebar != null) {
         // At leftmost item: navigate to sidebar
@@ -260,7 +260,7 @@ class HubSectionState extends State<HubSection> {
         setState(() {
           _focusedIndex++;
         });
-        HubFocusMemory.setForHub(widget.hub.hubKey, _focusedIndex);
+        HubFocusMemory.setForHub(widget.hub.id, _focusedIndex);
         _scrollToIndex(_focusedIndex);
       }
       return KeyEventResult.handled;
@@ -530,7 +530,7 @@ class HubSectionState extends State<HubSection> {
     setState(() {
       _focusedIndex = index;
     });
-    HubFocusMemory.setForHub(widget.hub.hubKey, index);
+    HubFocusMemory.setForHub(widget.hub.id, index);
     _hubFocusNode.requestFocus();
   }
 }

@@ -152,6 +152,17 @@ void main() {
 
       expect(await db.select(db.apiCache).get(), isEmpty);
     });
+
+    test('clearVolatile preserves pinned offline metadata', () async {
+      await cache.put('srv-a', '/library/metadata/1', mediaContainer(ratingKey: '1'));
+      await cache.put('srv-a', '/library/metadata/2', mediaContainer(ratingKey: '2'));
+      await cache.pinForOffline('srv-a', '1');
+
+      await cache.clearVolatile();
+
+      expect(await cache.get('srv-a', '/library/metadata/1'), isNotNull);
+      expect(await cache.get('srv-a', '/library/metadata/2'), isNull);
+    });
   });
 
   // ============================================================
@@ -161,29 +172,29 @@ void main() {
   group('pinning', () {
     test('isPinned defaults to false for a freshly cached item', () async {
       await cache.put('srv', '/library/metadata/1', mediaContainer());
-      expect(await cache.isPinned('srv', '1'), isFalse);
+      expect(await cache.isPinnedRatingKey('srv', '1'), isFalse);
     });
 
     test('isPinned returns false when the item is not cached at all', () async {
-      expect(await cache.isPinned('srv', 'missing'), isFalse);
+      expect(await cache.isPinnedRatingKey('srv', 'missing'), isFalse);
     });
 
     test('pinForOffline marks the row as pinned', () async {
       await cache.put('srv', '/library/metadata/1', mediaContainer());
       await cache.pinForOffline('srv', '1');
-      expect(await cache.isPinned('srv', '1'), isTrue);
+      expect(await cache.isPinnedRatingKey('srv', '1'), isTrue);
     });
 
     test('unpinForOffline reverts the pin', () async {
       await cache.put('srv', '/library/metadata/1', mediaContainer());
       await cache.pinForOffline('srv', '1');
       await cache.unpinForOffline('srv', '1');
-      expect(await cache.isPinned('srv', '1'), isFalse);
+      expect(await cache.isPinnedRatingKey('srv', '1'), isFalse);
     });
 
     test('pinForOffline on missing row is a no-op (no insert, no throw)', () async {
       await cache.pinForOffline('srv', 'missing');
-      expect(await cache.isPinned('srv', 'missing'), isFalse);
+      expect(await cache.isPinnedRatingKey('srv', 'missing'), isFalse);
     });
 
     test('getPinnedKeys extracts ratingKeys from pinned rows for the server', () async {
@@ -244,7 +255,7 @@ void main() {
 
       final meta = await cache.getMetadata('srv', '42');
       expect(meta, isNotNull);
-      expect(meta!.ratingKey, '42');
+      expect(meta!.id, '42');
       expect(meta.title, 'Hello');
       expect(meta.serverId, 'srv');
     });

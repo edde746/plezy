@@ -4,7 +4,8 @@ publish_to: "none"
 version: 1.35.2+78
 
 environment:
-  sdk: ^3.8.1
+  sdk: ">=3.10.7 <4.0.0"
+  flutter: ">=3.38.4"
 
 dependencies:
   flutter:
@@ -69,6 +70,7 @@ dependencies:
   cupertino_http: ^2.4.0
   cronet_http: ^1.6.0
   win_http: ^0.2.0
+  collection: ^1.18.0
 
 dev_dependencies:
   flutter_test:
@@ -77,7 +79,7 @@ dev_dependencies:
   build_runner: ^2.13.0
   json_serializable: ^6.7.1
   slang_build_runner: ^4.14.0
-  dart_code_linter: ^3.2.1
+  dart_code_linter: ^4.0.2
   drift_dev: ^2.28.3
   shared_preferences_platform_interface: ^2.4.0
   path_provider_platform_interface: ^2.1.0
@@ -119,6 +121,8 @@ flutter:
   assets:
     - assets/plezy.png
     - assets/plezy_adaptive_foreground.svg
+    - assets/plex_chevron.svg
+    - assets/jellyfin_icon.svg
     - assets/trakt_circlemark.svg
     - assets/mal_mark.svg
     - assets/anilist_mark.svg

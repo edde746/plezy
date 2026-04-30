@@ -1,0 +1,31 @@
+import '../../media/media_source_info.dart';
+import '../../media/media_version.dart';
+
+/// Consolidated data model containing all information needed for video playback.
+/// This model combines data from multiple Plex API endpoints to reduce redundant requests.
+class PlexVideoPlaybackData {
+  /// Direct video URL for playback
+  final String? videoUrl;
+
+  /// Media information including audio/subtitle tracks and chapters
+  final MediaSourceInfo? mediaInfo;
+
+  /// Available media versions/qualities for this content
+  final List<MediaVersion> availableVersions;
+
+  /// Markers for intro/credits skip functionality
+  final List<MediaMarker> markers;
+
+  PlexVideoPlaybackData({
+    required this.videoUrl,
+    required this.mediaInfo,
+    required this.availableVersions,
+    this.markers = const [],
+  });
+
+  /// Returns true if this playback data has a valid video URL
+  bool get hasValidVideoUrl => videoUrl != null && videoUrl!.isNotEmpty;
+
+  /// Returns true if media info is available
+  bool get hasMediaInfo => mediaInfo != null;
+}

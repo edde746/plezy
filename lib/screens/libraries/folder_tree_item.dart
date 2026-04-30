@@ -6,21 +6,23 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_wrapper.dart';
-import '../../models/plex_metadata.dart';
+import '../../media/media_item.dart';
+import '../../media/media_item_types.dart';
+import '../../media/media_kind.dart';
 import '../../providers/settings_provider.dart';
 import '../../services/settings_service.dart' show EpisodePosterMode;
-import '../../utils/content_utils.dart';
 import '../../utils/formatters.dart';
 import '../../utils/provider_extensions.dart';
 import '../../widgets/media_progress_bar.dart';
-import '../../widgets/plex_optimized_image.dart';
+import '../../widgets/optimized_media_image.dart';
 import '../../theme/mono_tokens.dart';
 import '../../i18n/strings.g.dart';
+import '../../widgets/loading_indicator_box.dart';
 
 /// Individual item in the folder tree
 /// Can be either a folder (expandable) or a file (tappable)
 class FolderTreeItem extends StatelessWidget {
-  final PlexMetadata item;
+  final MediaItem item;
   final int depth;
   final bool isExpanded;
   final bool isFolder;
@@ -54,12 +56,12 @@ class FolderTreeItem extends StatelessWidget {
       return Symbols.folder_rounded;
     }
 
-    return switch (item.mediaType) {
-      PlexMediaType.movie => Symbols.movie_rounded,
-      PlexMediaType.show => Symbols.tv_rounded,
-      PlexMediaType.season => Symbols.video_library_rounded,
-      PlexMediaType.episode => Symbols.play_circle_rounded,
-      PlexMediaType.collection => Symbols.collections_rounded,
+    return switch (item.kind) {
+      MediaKind.movie => Symbols.movie_rounded,
+      MediaKind.show => Symbols.tv_rounded,
+      MediaKind.season => Symbols.video_library_rounded,
+      MediaKind.episode => Symbols.play_circle_rounded,
+      MediaKind.collection => Symbols.collections_rounded,
       _ => Symbols.insert_drive_file_rounded,
     };
   }
@@ -98,8 +100,8 @@ class FolderTreeItem extends StatelessWidget {
     if (item.year != null) {
       parts.add(item.year.toString());
     }
-    if (item.duration != null && item.duration! > 0) {
-      parts.add(formatDurationTextual(item.duration!));
+    if (item.durationMs != null && item.durationMs! > 0) {
+      parts.add(formatDurationTextual(item.durationMs!));
     }
     if (item.rating != null) {
       parts.add('★ ${item.rating!.toStringAsFixed(1)}');
@@ -118,9 +120,7 @@ class FolderTreeItem extends StatelessWidget {
         children: [
           SizedBox(
             width: 24,
-            child: isLoading
-                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                : AppIcon(expandIcon, fill: 1, size: 20),
+            child: isLoading ? const LoadingIndicatorBox(size: 16) : AppIcon(expandIcon, fill: 1, size: 20),
           ),
           const SizedBox(width: 8),
           AppIcon(_getIcon(), fill: 1, size: 20, color: Theme.of(context).colorScheme.primary),
@@ -228,13 +228,14 @@ class FolderTreeItem extends StatelessWidget {
     double height,
   ) {
     final posterUrl = item.posterThumb(mode: episodePosterMode);
-    final client = serverId != null ? context.getClientForServer(serverId!) : null;
+    // Backend-neutral so Jellyfin items render via Jellyfin's transcoder.
+    final client = context.tryGetMediaClientWithFallback(serverId);
     final shouldBlur =
         hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
 
     Widget image;
     if (item.usesWideAspectRatio(episodePosterMode)) {
-      image = PlexOptimizedImage.thumb(
+      image = OptimizedMediaImage.thumb(
         client: client,
         imagePath: posterUrl,
         width: width,
@@ -242,7 +243,7 @@ class FolderTreeItem extends StatelessWidget {
         fit: BoxFit.cover,
       );
     } else {
-      image = PlexOptimizedImage.poster(
+      image = OptimizedMediaImage.poster(
         client: client,
         imagePath: posterUrl,
         width: width,
@@ -260,8 +261,7 @@ class FolderTreeItem extends StatelessWidget {
   }
 
   Widget _buildWatchOverlay(BuildContext context, bool showUnwatchedCount) {
-    final hasActiveProgress =
-        item.viewOffset != null && item.duration != null && item.viewOffset! > 0 && item.viewOffset! < item.duration!;
+    final hasActiveProgress = item.hasActiveProgress;
 
     return Stack(
       children: [
@@ -283,7 +283,7 @@ class FolderTreeItem extends StatelessWidget {
         // Unwatched count for shows/seasons
         if (showUnwatchedCount &&
             !item.isWatched &&
-            (item.mediaType == PlexMediaType.show || item.mediaType == PlexMediaType.season) &&
+            (item.kind == MediaKind.show || item.kind == MediaKind.season) &&
             (item.leafCount != null && item.leafCount! > 0 && item.viewedLeafCount != null))
           Positioned(
             top: 3,
@@ -311,7 +311,7 @@ class FolderTreeItem extends StatelessWidget {
             right: 0,
             child: ClipRRect(
               borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(6), bottomRight: Radius.circular(6)),
-              child: MediaProgressBar(viewOffset: item.viewOffset!, duration: item.duration!),
+              child: MediaProgressBar(viewOffset: item.viewOffsetMs!, duration: item.durationMs!),
             ),
           ),
         // Season progress

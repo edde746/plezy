@@ -1,37 +1,37 @@
-import '../../models/plex_metadata.dart';
+import '../../media/media_item.dart';
+import '../../media/media_server_client.dart';
 import '../../models/trackers/anime_ids.dart';
 import '../../models/trackers/fribb_mapping_row.dart';
-import '../../utils/plex_external_ids.dart';
-import '../plex_client.dart';
+import '../../utils/external_ids.dart';
 import 'fribb_mapping_store.dart';
 
 /// Paired ID output: always-present Plex external IDs (tvdb/imdb/tmdb) plus
 /// optional Fribb-sourced anime IDs (mal/anilist/simkl). Simkl uses [external]
 /// directly for non-anime titles; MAL/AniList no-op when [anime] is null.
 class TrackerIds {
-  final PlexExternalIds external;
+  final ExternalIds external;
   final AnimeIds? anime;
 
   const TrackerIds({required this.external, required this.anime});
 }
 
-/// Resolves Plex ratingKeys → tracker external IDs. Returns both Plex
+/// Resolves item ids → tracker external IDs. Returns both backend-native
 /// external IDs (used by Trakt and by Simkl for non-anime matches) and Fribb
 /// anime IDs (used by MAL/AniList, and by Simkl for anime precision).
 /// Episodes resolve against the show's GUIDs because Fribb only maps
-/// show-level external IDs; split-cour disambiguation uses the Plex season
+/// show-level external IDs; split-cour disambiguation uses the season
 /// number.
 ///
 /// The Fribb lookup is skipped when [needsFribb] returns false — set this way
 /// for Trakt (which never uses anime IDs) and for a Simkl-only configuration,
 /// so those users don't pay the 5.6 MB mapping download they'll never need.
 class TrackerIdResolver {
-  final PlexClient _client;
+  final MediaServerClient _client;
   final FribbMappingStore _store;
   final bool Function() _needsFribb;
 
-  /// Null entries mean "Plex had no GUIDs" — cached so scrubbing on an
-  /// un-matched item doesn't re-hit Plex every position update.
+  /// Null entries mean "the server had no IDs" — cached so scrubbing on an
+  /// un-matched item doesn't re-hit the server every position update.
   final Map<String, TrackerIds?> _cache = {};
 
   TrackerIdResolver(this._client, {bool Function()? needsFribb, FribbMappingStore? store})
@@ -40,30 +40,36 @@ class TrackerIdResolver {
 
   static bool _returnTrue() => true;
 
-  /// Resolve IDs for a movie.
-  Future<TrackerIds?> resolveForMovie(String ratingKey) async {
-    if (_cache.containsKey(ratingKey)) return _cache[ratingKey];
+  /// Fetch external IDs for an item via the neutral
+  /// [MediaServerClient.fetchExternalIds] surface — Plex hits
+  /// `/library/metadata/{id}?includeGuids=1`, Jellyfin reads the inline
+  /// `ProviderIds` map.
+  Future<ExternalIds> _fetchExternalIds(String itemId) => _client.fetchExternalIds(itemId);
 
-    final external = PlexExternalIds.fromGuids(await _client.fetchExternalGuids(ratingKey));
+  /// Resolve IDs for a movie.
+  Future<TrackerIds?> resolveForMovie(String itemId) async {
+    if (_cache.containsKey(itemId)) return _cache[itemId];
+
+    final external = await _fetchExternalIds(itemId);
     final ids = await _build(external, isEpisodeSeason: null, isMovie: true);
-    _cache[ratingKey] = ids;
+    _cache[itemId] = ids;
     return ids;
   }
 
   /// Resolve IDs for an episode. Looks up the *show's* external IDs (via
-  /// `grandparentRatingKey`), then disambiguates among candidate Fribb rows
-  /// using the episode's season number.
-  Future<TrackerIds?> resolveShowForEpisode(PlexMetadata episode) async {
-    final showRatingKey = episode.grandparentRatingKey;
-    if (showRatingKey == null || showRatingKey.isEmpty) return null;
+  /// `grandparentId`), then disambiguates among candidate Fribb rows using
+  /// the episode's season number.
+  Future<TrackerIds?> resolveShowForEpisode(MediaItem episode) async {
+    final showId = episode.grandparentId;
+    if (showId == null || showId.isEmpty) return null;
 
     final season = episode.parentIndex;
-    // Cache under the (showRatingKey, season) pair so a show with multiple
-    // Fribb rows caches each season separately during a marathon.
-    final cacheKey = season != null ? '$showRatingKey#s$season' : showRatingKey;
+    // Cache under the (showId, season) pair so a show with multiple Fribb
+    // rows caches each season separately during a marathon.
+    final cacheKey = season != null ? '$showId#s$season' : showId;
     if (_cache.containsKey(cacheKey)) return _cache[cacheKey];
 
-    final external = PlexExternalIds.fromGuids(await _client.fetchExternalGuids(showRatingKey));
+    final external = await _fetchExternalIds(showId);
     final ids = await _build(external, isEpisodeSeason: season, isMovie: false);
     _cache[cacheKey] = ids;
     return ids;
@@ -71,7 +77,7 @@ class TrackerIdResolver {
 
   void clearCache() => _cache.clear();
 
-  Future<TrackerIds?> _build(PlexExternalIds external, {int? isEpisodeSeason, required bool isMovie}) async {
+  Future<TrackerIds?> _build(ExternalIds external, {int? isEpisodeSeason, required bool isMovie}) async {
     if (!external.hasAny) return null;
     if (!_needsFribb()) return TrackerIds(external: external, anime: null);
     final rows = await _store.lookup(tvdbId: external.tvdb, tmdbId: external.tmdb, imdbId: external.imdb);

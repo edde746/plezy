@@ -1,51 +1,48 @@
-import '../models/plex_metadata.dart';
-import '../services/plex_client.dart';
-import '../utils/app_logger.dart';
-import '../utils/content_utils.dart';
+import '../media/media_item.dart';
+import '../media/media_kind.dart';
+import '../media/media_server_client.dart';
 
-/// Walk the children of a show and collect every episode into [out].
+/// Collect every episode of a show into [out] using the backend's one-shot
+/// recursive-leaves call ([MediaServerClient.fetchPlayableDescendants] —
+/// Plex's `/library/metadata/{id}/allLeaves`, Jellyfin's
+/// `/Items?Recursive=true&IncludeItemTypes=Movie,Episode`). Avoids walking
+/// show → seasons → episodes client-side, so large series come back in one
+/// trip and aren't capped by any per-page Limit.
 ///
-/// - Per-season fetch failures are logged and skipped (one bad season doesn't
-///   discard progress from the others).
-/// - A failure to fetch the show's own children is logged and leaves [out]
-///   empty.
-/// - [unwatchedOnly] skips episodes that are watched and have no active
-///   progress.
+/// A failure of the underlying call propagates to the caller — both
+/// [DownloadProvider.queueDownload] and the sync rule executor wrap their
+/// invocations so the user-facing error surfaces / the rule run is rolled
+/// back.
 Future<void> collectEpisodesForShow(
-  PlexClient client,
+  MediaServerClient client,
   String showRatingKey, {
   required bool unwatchedOnly,
-  required List<PlexMetadata> out,
-}) async {
-  final List<PlexMetadata> seasons;
-  try {
-    seasons = await client.getChildren(showRatingKey);
-  } catch (e) {
-    appLogger.w('Episode collection: show $showRatingKey getChildren failed, skipping', error: e);
-    return;
-  }
-  for (final season in seasons) {
-    if (season.type != ContentTypes.season) continue;
-    try {
-      await collectEpisodesForSeason(client, season.ratingKey, unwatchedOnly: unwatchedOnly, out: out);
-    } catch (e) {
-      appLogger.w('Episode collection: season ${season.ratingKey} fetch failed, skipping', error: e);
-    }
-  }
+  required List<MediaItem> out,
+}) {
+  return _collectPlayable(client, showRatingKey, unwatchedOnly: unwatchedOnly, out: out);
 }
 
-/// Fetch the episodes of a season and append the ones passing [unwatchedOnly]
-/// to [out]. Throws if the underlying `getChildren` fails — callers that want
-/// per-season resilience should wrap in try/catch (see [collectEpisodesForShow]).
+/// Collect every episode of a single season into [out] via the same
+/// one-shot endpoint. On a season the leaves *are* the episodes, so the
+/// shape matches the show case.
 Future<void> collectEpisodesForSeason(
-  PlexClient client,
+  MediaServerClient client,
   String seasonRatingKey, {
   required bool unwatchedOnly,
-  required List<PlexMetadata> out,
+  required List<MediaItem> out,
+}) {
+  return _collectPlayable(client, seasonRatingKey, unwatchedOnly: unwatchedOnly, out: out);
+}
+
+Future<void> _collectPlayable(
+  MediaServerClient client,
+  String parentId, {
+  required bool unwatchedOnly,
+  required List<MediaItem> out,
 }) async {
-  final episodes = await client.getChildren(seasonRatingKey);
-  for (final ep in episodes) {
-    if (ep.type != ContentTypes.episode) continue;
+  final leaves = await client.fetchPlayableDescendants(parentId);
+  for (final ep in leaves) {
+    if (ep.kind != MediaKind.episode) continue;
     if (unwatchedOnly && ep.isWatched && !ep.hasActiveProgress) continue;
     out.add(ep);
   }

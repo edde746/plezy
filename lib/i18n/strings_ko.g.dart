@@ -11,7 +11,7 @@ import 'package:slang/generated.dart';
 import 'strings.g.dart';
 
 // Path: <root>
-class TranslationsKo with BaseTranslations<AppLocale, Translations> implements Translations {
+class TranslationsKo extends Translations with BaseTranslations<AppLocale, Translations> {
 	/// You can call this constructor and build your own translation instance of this locale.
 	/// Constructing via the enum [AppLocale.build] is preferred.
 	TranslationsKo({Map<String, Node>? overrides, PluralResolver? cardinalResolver, PluralResolver? ordinalResolver, TranslationMetadata<AppLocale, Translations>? meta})
@@ -21,7 +21,9 @@ class TranslationsKo with BaseTranslations<AppLocale, Translations> implements T
 		    overrides: overrides ?? {},
 		    cardinalResolver: cardinalResolver,
 		    ordinalResolver: ordinalResolver,
-		  ) {
+		  ),
+		  super(cardinalResolver: cardinalResolver, ordinalResolver: ordinalResolver) {
+		super.$meta.setFlatMapFunction($meta.getTranslation); // copy base translations to super.$meta
 		$meta.setFlatMapFunction(_flatMapFunction);
 	}
 
@@ -29,7 +31,7 @@ class TranslationsKo with BaseTranslations<AppLocale, Translations> implements T
 	@override final TranslationMetadata<AppLocale, Translations> $meta;
 
 	/// Access flat map
-	@override dynamic operator[](String key) => $meta.getTranslation(key);
+	@override dynamic operator[](String key) => $meta.getTranslation(key) ?? super.$meta.getTranslation(key);
 
 	late final TranslationsKo _root = this; // ignore: unused_field
 
@@ -55,6 +57,8 @@ class TranslationsKo with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsSubtitlingStylingKo subtitlingStyling = _TranslationsSubtitlingStylingKo._(_root);
 	@override late final _TranslationsMpvConfigKo mpvConfig = _TranslationsMpvConfigKo._(_root);
 	@override late final _TranslationsDialogKo dialog = _TranslationsDialogKo._(_root);
+	@override late final _TranslationsProfilesKo profiles = _TranslationsProfilesKo._(_root);
+	@override late final _TranslationsConnectionsKo connections = _TranslationsConnectionsKo._(_root);
 	@override late final _TranslationsDiscoverKo discover = _TranslationsDiscoverKo._(_root);
 	@override late final _TranslationsErrorsKo errors = _TranslationsErrorsKo._(_root);
 	@override late final _TranslationsLibrariesKo libraries = _TranslationsLibrariesKo._(_root);
@@ -78,11 +82,12 @@ class TranslationsKo with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsServerTasksKo serverTasks = _TranslationsServerTasksKo._(_root);
 	@override late final _TranslationsTraktKo trakt = _TranslationsTraktKo._(_root);
 	@override late final _TranslationsTrackersKo trackers = _TranslationsTrackersKo._(_root);
+	@override late final _TranslationsAddServerKo addServer = _TranslationsAddServerKo._(_root);
 }
 
 // Path: app
-class _TranslationsAppKo implements TranslationsAppEn {
-	_TranslationsAppKo._(this._root);
+class _TranslationsAppKo extends TranslationsAppEn {
+	_TranslationsAppKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -91,12 +96,13 @@ class _TranslationsAppKo implements TranslationsAppEn {
 }
 
 // Path: auth
-class _TranslationsAuthKo implements TranslationsAuthEn {
-	_TranslationsAuthKo._(this._root);
+class _TranslationsAuthKo extends TranslationsAuthEn {
+	_TranslationsAuthKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
+	@override String get signIn => '로그인';
 	@override String get signInWithPlex => 'Plex 계정으로 로그인';
 	@override String get showQRCode => 'QR 코드';
 	@override String get authenticate => '인증';
@@ -104,11 +110,19 @@ class _TranslationsAuthKo implements TranslationsAuthEn {
 	@override String get scanQRToSignIn => 'QR 코드를 스캔하여 로그인';
 	@override String get waitingForAuth => '인증 대기 중... 브라우저에서 로그인을 완료해 주세요.';
 	@override String get useBrowser => '브라우저 사용';
+	@override String get or => '또는';
+	@override String get connectToJellyfin => 'Jellyfin에 연결';
+	@override String get useQuickConnect => 'Quick Connect 사용';
+	@override String get quickConnectCode => 'Quick Connect 코드';
+	@override String get quickConnectInstructions => '웹 브라우저에서 Jellyfin 서버를 열어 로그인한 뒤 사용자 메뉴에서 Quick Connect를 선택하세요. 이 코드를 입력해 로그인을 승인하세요.';
+	@override String get quickConnectWaiting => '승인 대기 중…';
+	@override String get quickConnectCancel => '취소';
+	@override String get quickConnectExpired => '승인되기 전에 Quick Connect 코드가 만료되었습니다. 다시 시도하세요.';
 }
 
 // Path: common
-class _TranslationsCommonKo implements TranslationsCommonEn {
-	_TranslationsCommonKo._(this._root);
+class _TranslationsCommonKo extends TranslationsCommonEn {
+	_TranslationsCommonKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -160,8 +174,8 @@ class _TranslationsCommonKo implements TranslationsCommonEn {
 }
 
 // Path: screens
-class _TranslationsScreensKo implements TranslationsScreensEn {
-	_TranslationsScreensKo._(this._root);
+class _TranslationsScreensKo extends TranslationsScreensEn {
+	_TranslationsScreensKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -174,8 +188,8 @@ class _TranslationsScreensKo implements TranslationsScreensEn {
 }
 
 // Path: update
-class _TranslationsUpdateKo implements TranslationsUpdateEn {
-	_TranslationsUpdateKo._(this._root);
+class _TranslationsUpdateKo extends TranslationsUpdateEn {
+	_TranslationsUpdateKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -190,8 +204,8 @@ class _TranslationsUpdateKo implements TranslationsUpdateEn {
 }
 
 // Path: settings
-class _TranslationsSettingsKo implements TranslationsSettingsEn {
-	_TranslationsSettingsKo._(this._root);
+class _TranslationsSettingsKo extends TranslationsSettingsEn {
+	_TranslationsSettingsKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -226,12 +240,12 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 	@override String get gridView => '그리드 보기';
 	@override String get listView => '목록 보기';
 	@override String get showHeroSection => '주요 추천 영역 표시';
-	@override String get useGlobalHubs => 'Plex 홈 레이아웃 사용';
-	@override String get useGlobalHubsDescription => '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.';
+	@override String get useGlobalHubs => 'Use Home Layout';
+	@override String get useGlobalHubsDescription => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.';
 	@override String get showServerNameOnHubs => '허브에 서버 이름 표시';
 	@override String get showServerNameOnHubsDescription => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.';
 	@override String get groupLibrariesByServer => '서버별로 라이브러리 그룹화';
-	@override String get groupLibrariesByServerDescription => '여러 서버에 연결되어 있을 때 사이드바에 각 Plex 서버의 헤더를 표시합니다.';
+	@override String get groupLibrariesByServerDescription => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.';
 	@override String get alwaysKeepSidebarOpen => '사이드바 항상 열어두기';
 	@override String get alwaysKeepSidebarOpenDescription => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다';
 	@override String get showUnwatchedCount => '미시청 수 표시';
@@ -385,8 +399,8 @@ class _TranslationsSettingsKo implements TranslationsSettingsEn {
 }
 
 // Path: search
-class _TranslationsSearchKo implements TranslationsSearchEn {
-	_TranslationsSearchKo._(this._root);
+class _TranslationsSearchKo extends TranslationsSearchEn {
+	_TranslationsSearchKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -398,8 +412,8 @@ class _TranslationsSearchKo implements TranslationsSearchEn {
 }
 
 // Path: hotkeys
-class _TranslationsHotkeysKo implements TranslationsHotkeysEn {
-	_TranslationsHotkeysKo._(this._root);
+class _TranslationsHotkeysKo extends TranslationsHotkeysEn {
+	_TranslationsHotkeysKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -410,8 +424,8 @@ class _TranslationsHotkeysKo implements TranslationsHotkeysEn {
 }
 
 // Path: fileInfo
-class _TranslationsFileInfoKo implements TranslationsFileInfoEn {
-	_TranslationsFileInfoKo._(this._root);
+class _TranslationsFileInfoKo extends TranslationsFileInfoEn {
+	_TranslationsFileInfoKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -444,8 +458,8 @@ class _TranslationsFileInfoKo implements TranslationsFileInfoEn {
 }
 
 // Path: mediaMenu
-class _TranslationsMediaMenuKo implements TranslationsMediaMenuEn {
-	_TranslationsMediaMenuKo._(this._root);
+class _TranslationsMediaMenuKo extends TranslationsMediaMenuEn {
+	_TranslationsMediaMenuKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -468,8 +482,8 @@ class _TranslationsMediaMenuKo implements TranslationsMediaMenuEn {
 }
 
 // Path: accessibility
-class _TranslationsAccessibilityKo implements TranslationsAccessibilityEn {
-	_TranslationsAccessibilityKo._(this._root);
+class _TranslationsAccessibilityKo extends TranslationsAccessibilityEn {
+	_TranslationsAccessibilityKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -485,8 +499,8 @@ class _TranslationsAccessibilityKo implements TranslationsAccessibilityEn {
 }
 
 // Path: tooltips
-class _TranslationsTooltipsKo implements TranslationsTooltipsEn {
-	_TranslationsTooltipsKo._(this._root);
+class _TranslationsTooltipsKo extends TranslationsTooltipsEn {
+	_TranslationsTooltipsKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -498,8 +512,8 @@ class _TranslationsTooltipsKo implements TranslationsTooltipsEn {
 }
 
 // Path: videoControls
-class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
-	_TranslationsVideoControlsKo._(this._root);
+class _TranslationsVideoControlsKo extends TranslationsVideoControlsEn {
+	_TranslationsVideoControlsKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -574,8 +588,8 @@ class _TranslationsVideoControlsKo implements TranslationsVideoControlsEn {
 }
 
 // Path: userStatus
-class _TranslationsUserStatusKo implements TranslationsUserStatusEn {
-	_TranslationsUserStatusKo._(this._root);
+class _TranslationsUserStatusKo extends TranslationsUserStatusEn {
+	_TranslationsUserStatusKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -587,8 +601,8 @@ class _TranslationsUserStatusKo implements TranslationsUserStatusEn {
 }
 
 // Path: messages
-class _TranslationsMessagesKo implements TranslationsMessagesEn {
-	_TranslationsMessagesKo._(this._root);
+class _TranslationsMessagesKo extends TranslationsMessagesEn {
+	_TranslationsMessagesKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -607,7 +621,7 @@ class _TranslationsMessagesKo implements TranslationsMessagesEn {
 	@override String get musicNotSupported => '음악 재생 미지원';
 	@override String get noDescriptionAvailable => '설명이 없습니다';
 	@override String get noProfilesAvailable => '사용 가능한 프로필이 없습니다';
-	@override String get contactAdminForProfiles => '프로필을 추가하려면 Plex 관리자에게 문의하세요';
+	@override String get contactAdminForProfiles => 'Contact your server administrator to add profiles';
 	@override String get unableToDetermineLibrarySection => '이 항목의 라이브러리 섹션을 확인할 수 없습니다';
 	@override String get logsCleared => '로그가 삭제 되었습니다';
 	@override String get logsCopied => '로그가 클립보드에 복사 되었습니다';
@@ -636,8 +650,8 @@ class _TranslationsMessagesKo implements TranslationsMessagesEn {
 }
 
 // Path: subtitlingStyling
-class _TranslationsSubtitlingStylingKo implements TranslationsSubtitlingStylingEn {
-	_TranslationsSubtitlingStylingKo._(this._root);
+class _TranslationsSubtitlingStylingKo extends TranslationsSubtitlingStylingEn {
+	_TranslationsSubtitlingStylingKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -658,8 +672,8 @@ class _TranslationsSubtitlingStylingKo implements TranslationsSubtitlingStylingE
 }
 
 // Path: mpvConfig
-class _TranslationsMpvConfigKo implements TranslationsMpvConfigEn {
-	_TranslationsMpvConfigKo._(this._root);
+class _TranslationsMpvConfigKo extends TranslationsMpvConfigEn {
+	_TranslationsMpvConfigKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -681,8 +695,8 @@ class _TranslationsMpvConfigKo implements TranslationsMpvConfigEn {
 }
 
 // Path: dialog
-class _TranslationsDialogKo implements TranslationsDialogEn {
-	_TranslationsDialogKo._(this._root);
+class _TranslationsDialogKo extends TranslationsDialogEn {
+	_TranslationsDialogKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -690,9 +704,77 @@ class _TranslationsDialogKo implements TranslationsDialogEn {
 	@override String get confirmAction => '확인';
 }
 
+// Path: profiles
+class _TranslationsProfilesKo extends TranslationsProfilesEn {
+	_TranslationsProfilesKo._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get addPlezyProfile => 'Plezy 프로필 추가';
+	@override String get switchingProfile => '프로필 전환 중…';
+	@override String get deleteThisProfileTitle => '이 프로필을 삭제하시겠습니까?';
+	@override String deleteThisProfileMessage({required Object displayName}) => '${displayName} 이(가) 제거됩니다. 연결 자체는 영향을 받지 않습니다.';
+	@override String get active => '활성';
+	@override String get manage => '관리';
+	@override String get delete => '삭제';
+	@override String get signOut => '로그아웃';
+	@override String get signOutPlexTitle => 'Plex에서 로그아웃하시겠습니까?';
+	@override String signOutPlexMessage({required Object displayName}) => '${displayName} 및 이 계정의 모든 Plex Home 사용자가 이 기기에서 제거됩니다. 언제든지 다시 로그인할 수 있습니다.';
+	@override String get signedOutPlex => 'Plex에서 로그아웃되었습니다.';
+	@override String get signOutFailed => '로그아웃에 실패했습니다.';
+	@override String get sectionTitle => '프로필';
+	@override String get summarySingle => '관리되는 사용자와 로컬 ID를 혼합하려면 프로필을 추가하세요';
+	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count}개 프로필 · 활성: ${activeName}';
+	@override String summaryMultiple({required Object count}) => '${count}개 프로필';
+	@override String get removeConnectionTitle => '연결을 제거하시겠습니까?';
+	@override String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => '${displayName}이(가) ${connectionLabel}에 대한 액세스를 잃게 됩니다. 연결 자체는 다른 프로필에서 계속 사용할 수 있습니다.';
+	@override String get deleteProfileTitle => '프로필을 삭제하시겠습니까?';
+	@override String deleteProfileMessage({required Object displayName}) => '이 기기에서 ${displayName}과(와) 모든 연결이 제거됩니다. 기본 Plex/Jellyfin 서버에는 영향을 주지 않습니다.';
+	@override String get profileNameLabel => '프로필 이름';
+	@override String get pinProtectionLabel => 'PIN 보호';
+	@override String get pinManagedByPlex => 'PIN은 Plex에서 관리됩니다. plex.tv에서 편집하세요.';
+	@override String get noPinSetEditOnPlex => '설정된 PIN이 없습니다. 요구하려면 plex.tv에서 Home 사용자를 편집하세요.';
+	@override String get setPin => 'PIN 설정';
+	@override String get connectionsLabel => '연결';
+	@override String get add => '추가';
+	@override String get deleteProfileButton => '프로필 삭제';
+	@override String get noConnectionsHint => '연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.';
+	@override String get plexHomeAccount => 'Plex Home 계정';
+	@override String get connectionDefault => '기본값';
+	@override String get makeDefault => '기본값으로 설정';
+	@override String get removeConnection => '제거';
+	@override String borrowAddTo({required Object displayName}) => '${displayName}에 추가';
+	@override String get borrowExplain => '다른 프로필에서 연결을 빌립니다. PIN 보호된 원본 프로필은 공유 전에 PIN을 요구합니다.';
+	@override String get borrowEmpty => '아직 빌릴 것이 없습니다.';
+	@override String get borrowEmptySubtitle => '먼저 다른 프로필에 Plex 계정 또는 Jellyfin 서버를 연결한 다음 여기로 돌아오세요.';
+	@override String get newProfile => '새 프로필';
+	@override String get profileNameHint => '예: 손님, 어린이, 가족실';
+	@override String get pinProtectionOptional => 'PIN 보호 (선택 사항)';
+	@override String get pinExplain => '이 프로필로 전환하려면 4자리 PIN이 필요합니다. 부드러운 장벽 — 앱 데이터를 지울 수 있는 사람은 우회할 수 있습니다.';
+	@override String get continueButton => '계속';
+	@override String get pinsDontMatch => 'PIN이 일치하지 않습니다';
+}
+
+// Path: connections
+class _TranslationsConnectionsKo extends TranslationsConnectionsEn {
+	_TranslationsConnectionsKo._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get sectionTitle => '연결';
+	@override String get addConnection => '연결 추가';
+	@override String get addConnectionSubtitleNoProfile => 'Plex로 로그인하거나 Jellyfin 서버에 연결';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => '${displayName} 에 추가 — Plex 계정, Jellyfin 서버 또는 다른 프로필에서 빌리기';
+	@override String sessionExpiredOne({required Object name}) => '${name} 의 세션이 만료되었습니다';
+	@override String sessionExpiredMany({required Object count}) => '${count} 개의 서버에서 세션이 만료되었습니다';
+	@override String get signInAgain => '다시 로그인';
+}
+
 // Path: discover
-class _TranslationsDiscoverKo implements TranslationsDiscoverEn {
-	_TranslationsDiscoverKo._(this._root);
+class _TranslationsDiscoverKo extends TranslationsDiscoverEn {
+	_TranslationsDiscoverKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -702,6 +784,8 @@ class _TranslationsDiscoverKo implements TranslationsDiscoverEn {
 	@override String get noContentAvailable => '사용 가능한 콘텐츠가 없습니다';
 	@override String get addMediaToLibraries => '미디어 라이브러리에 미디어를 추가해 주세요';
 	@override String get continueWatching => '계속 시청';
+	@override String get nextUp => '다음 에피소드';
+	@override String get recentlyAdded => '최근에 추가됨';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => '개요';
 	@override String get cast => '출연진';
@@ -714,15 +798,15 @@ class _TranslationsDiscoverKo implements TranslationsDiscoverEn {
 }
 
 // Path: errors
-class _TranslationsErrorsKo implements TranslationsErrorsEn {
-	_TranslationsErrorsKo._(this._root);
+class _TranslationsErrorsKo extends TranslationsErrorsEn {
+	_TranslationsErrorsKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
 	@override String searchFailed({required Object error}) => '검색 실패: ${error}';
 	@override String connectionTimeout({required Object context}) => '${context} 로드 중 연결 시간 초과';
-	@override String get connectionFailed => 'Plex 서버에 연결할 수 없음';
+	@override String get connectionFailed => 'Unable to connect to media server';
 	@override String failedToLoad({required Object context, required Object error}) => '${context} 로드 실패: ${error}';
 	@override String get noClientAvailable => '사용 가능한 클라이언트가 없습니다';
 	@override String authenticationFailed({required Object error}) => '인증 실패: ${error}';
@@ -731,11 +815,13 @@ class _TranslationsErrorsKo implements TranslationsErrorsEn {
 	@override String get invalidToken => '토큰이 유효하지 않습니다';
 	@override String failedToVerifyToken({required Object error}) => '토큰을 확인할 수 없습니다: ${error}';
 	@override String failedToSwitchProfile({required Object displayName}) => '${displayName}으로 전환할 수 없습니다';
+	@override String failedToDeleteProfile({required Object displayName}) => '${displayName}을(를) 삭제할 수 없습니다';
+	@override String get failedToRate => '평점을 업데이트하지 못했습니다';
 }
 
 // Path: libraries
-class _TranslationsLibrariesKo implements TranslationsLibrariesEn {
-	_TranslationsLibrariesKo._(this._root);
+class _TranslationsLibrariesKo extends TranslationsLibrariesEn {
+	_TranslationsLibrariesKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -780,11 +866,13 @@ class _TranslationsLibrariesKo implements TranslationsLibrariesEn {
 	@override String get folders => '폴더';
 	@override late final _TranslationsLibrariesTabsKo tabs = _TranslationsLibrariesTabsKo._(_root);
 	@override late final _TranslationsLibrariesGroupingsKo groupings = _TranslationsLibrariesGroupingsKo._(_root);
+	@override late final _TranslationsLibrariesFilterCategoriesKo filterCategories = _TranslationsLibrariesFilterCategoriesKo._(_root);
+	@override late final _TranslationsLibrariesSortLabelsKo sortLabels = _TranslationsLibrariesSortLabelsKo._(_root);
 }
 
 // Path: about
-class _TranslationsAboutKo implements TranslationsAboutEn {
-	_TranslationsAboutKo._(this._root);
+class _TranslationsAboutKo extends TranslationsAboutEn {
+	_TranslationsAboutKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -792,13 +880,13 @@ class _TranslationsAboutKo implements TranslationsAboutEn {
 	@override String get title => '소개';
 	@override String get openSourceLicenses => '오픈소스 라이선스';
 	@override String versionLabel({required Object version}) => '버전 ${version}';
-	@override String get appDescription => '아름다운 Flutter Plex 클라이언트';
+	@override String get appDescription => '아름다운 Flutter용 Plex 및 Jellyfin 클라이언트';
 	@override String get viewLicensesDescription => '타사 라이브러리 라이선스 보기';
 }
 
 // Path: serverSelection
-class _TranslationsServerSelectionKo implements TranslationsServerSelectionEn {
-	_TranslationsServerSelectionKo._(this._root);
+class _TranslationsServerSelectionKo extends TranslationsServerSelectionEn {
+	_TranslationsServerSelectionKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -809,8 +897,8 @@ class _TranslationsServerSelectionKo implements TranslationsServerSelectionEn {
 }
 
 // Path: hubDetail
-class _TranslationsHubDetailKo implements TranslationsHubDetailEn {
-	_TranslationsHubDetailKo._(this._root);
+class _TranslationsHubDetailKo extends TranslationsHubDetailEn {
+	_TranslationsHubDetailKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -823,8 +911,8 @@ class _TranslationsHubDetailKo implements TranslationsHubDetailEn {
 }
 
 // Path: logs
-class _TranslationsLogsKo implements TranslationsLogsEn {
-	_TranslationsLogsKo._(this._root);
+class _TranslationsLogsKo extends TranslationsLogsEn {
+	_TranslationsLogsKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -835,8 +923,8 @@ class _TranslationsLogsKo implements TranslationsLogsEn {
 }
 
 // Path: licenses
-class _TranslationsLicensesKo implements TranslationsLicensesEn {
-	_TranslationsLicensesKo._(this._root);
+class _TranslationsLicensesKo extends TranslationsLicensesEn {
+	_TranslationsLicensesKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -848,8 +936,8 @@ class _TranslationsLicensesKo implements TranslationsLicensesEn {
 }
 
 // Path: navigation
-class _TranslationsNavigationKo implements TranslationsNavigationEn {
-	_TranslationsNavigationKo._(this._root);
+class _TranslationsNavigationKo extends TranslationsNavigationEn {
+	_TranslationsNavigationKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -860,8 +948,8 @@ class _TranslationsNavigationKo implements TranslationsNavigationEn {
 }
 
 // Path: liveTv
-class _TranslationsLiveTvKo implements TranslationsLiveTvEn {
-	_TranslationsLiveTvKo._(this._root);
+class _TranslationsLiveTvKo extends TranslationsLiveTvEn {
+	_TranslationsLiveTvKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -892,8 +980,8 @@ class _TranslationsLiveTvKo implements TranslationsLiveTvEn {
 }
 
 // Path: collections
-class _TranslationsCollectionsKo implements TranslationsCollectionsEn {
-	_TranslationsCollectionsKo._(this._root);
+class _TranslationsCollectionsKo extends TranslationsCollectionsEn {
+	_TranslationsCollectionsKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -923,8 +1011,8 @@ class _TranslationsCollectionsKo implements TranslationsCollectionsEn {
 }
 
 // Path: playlists
-class _TranslationsPlaylistsKo implements TranslationsPlaylistsEn {
-	_TranslationsPlaylistsKo._(this._root);
+class _TranslationsPlaylistsKo extends TranslationsPlaylistsEn {
+	_TranslationsPlaylistsKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -957,8 +1045,8 @@ class _TranslationsPlaylistsKo implements TranslationsPlaylistsEn {
 }
 
 // Path: watchTogether
-class _TranslationsWatchTogetherKo implements TranslationsWatchTogetherEn {
-	_TranslationsWatchTogetherKo._(this._root);
+class _TranslationsWatchTogetherKo extends TranslationsWatchTogetherEn {
+	_TranslationsWatchTogetherKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1021,11 +1109,13 @@ class _TranslationsWatchTogetherKo implements TranslationsWatchTogetherEn {
 	@override String get recentRooms => '최근 방';
 	@override String get renameRoom => '방 이름 변경';
 	@override String get removeRoom => '제거';
+	@override String get guestSwitchUnavailable => '전환할 수 없음 — 동기화 서버를 사용할 수 없습니다';
+	@override String get guestSwitchFailed => '전환할 수 없음 — 이 서버에서 콘텐츠를 찾을 수 없습니다';
 }
 
 // Path: downloads
-class _TranslationsDownloadsKo implements TranslationsDownloadsEn {
-	_TranslationsDownloadsKo._(this._root);
+class _TranslationsDownloadsKo extends TranslationsDownloadsEn {
+	_TranslationsDownloadsKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1078,12 +1168,18 @@ class _TranslationsDownloadsKo implements TranslationsDownloadsEn {
 	@override String get editSyncFilter => '동기화 필터';
 	@override String get syncAllItems => '모든 항목 동기화 중';
 	@override String get syncUnwatchedItems => '시청하지 않은 항목 동기화 중';
+	@override String syncRuleServerContext({required Object server, required Object status}) => '서버: ${server} • ${status}';
+	@override String get syncRuleAvailable => '사용 가능';
+	@override String get syncRuleOffline => '오프라인';
+	@override String get syncRuleSignInRequired => '로그인 필요';
+	@override String get syncRuleNotAvailableForProfile => '현재 프로필에서 사용할 수 없음';
+	@override String get syncRuleUnknownServer => '알 수 없는 서버';
 	@override String get syncRuleListCreated => '동기화 규칙이 생성되었습니다';
 }
 
 // Path: shaders
-class _TranslationsShadersKo implements TranslationsShadersEn {
-	_TranslationsShadersKo._(this._root);
+class _TranslationsShadersKo extends TranslationsShadersEn {
+	_TranslationsShadersKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1106,8 +1202,8 @@ class _TranslationsShadersKo implements TranslationsShadersEn {
 }
 
 // Path: companionRemote
-class _TranslationsCompanionRemoteKo implements TranslationsCompanionRemoteEn {
-	_TranslationsCompanionRemoteKo._(this._root);
+class _TranslationsCompanionRemoteKo extends TranslationsCompanionRemoteEn {
+	_TranslationsCompanionRemoteKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1120,8 +1216,8 @@ class _TranslationsCompanionRemoteKo implements TranslationsCompanionRemoteEn {
 }
 
 // Path: videoSettings
-class _TranslationsVideoSettingsKo implements TranslationsVideoSettingsEn {
-	_TranslationsVideoSettingsKo._(this._root);
+class _TranslationsVideoSettingsKo extends TranslationsVideoSettingsEn {
+	_TranslationsVideoSettingsKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1139,8 +1235,8 @@ class _TranslationsVideoSettingsKo implements TranslationsVideoSettingsEn {
 }
 
 // Path: externalPlayer
-class _TranslationsExternalPlayerKo implements TranslationsExternalPlayerEn {
-	_TranslationsExternalPlayerKo._(this._root);
+class _TranslationsExternalPlayerKo extends TranslationsExternalPlayerEn {
+	_TranslationsExternalPlayerKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1163,8 +1259,8 @@ class _TranslationsExternalPlayerKo implements TranslationsExternalPlayerEn {
 }
 
 // Path: metadataEdit
-class _TranslationsMetadataEditKo implements TranslationsMetadataEditEn {
-	_TranslationsMetadataEditKo._(this._root);
+class _TranslationsMetadataEditKo extends TranslationsMetadataEditEn {
+	_TranslationsMetadataEditKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1246,8 +1342,8 @@ class _TranslationsMetadataEditKo implements TranslationsMetadataEditEn {
 }
 
 // Path: matchScreen
-class _TranslationsMatchScreenKo implements TranslationsMatchScreenEn {
-	_TranslationsMatchScreenKo._(this._root);
+class _TranslationsMatchScreenKo extends TranslationsMatchScreenEn {
+	_TranslationsMatchScreenKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1267,8 +1363,8 @@ class _TranslationsMatchScreenKo implements TranslationsMatchScreenEn {
 }
 
 // Path: serverTasks
-class _TranslationsServerTasksKo implements TranslationsServerTasksEn {
-	_TranslationsServerTasksKo._(this._root);
+class _TranslationsServerTasksKo extends TranslationsServerTasksEn {
+	_TranslationsServerTasksKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1279,8 +1375,8 @@ class _TranslationsServerTasksKo implements TranslationsServerTasksEn {
 }
 
 // Path: trakt
-class _TranslationsTraktKo implements TranslationsTraktEn {
-	_TranslationsTraktKo._(this._root);
+class _TranslationsTraktKo extends TranslationsTraktEn {
+	_TranslationsTraktKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1297,8 +1393,8 @@ class _TranslationsTraktKo implements TranslationsTraktEn {
 }
 
 // Path: trackers
-class _TranslationsTrackersKo implements TranslationsTrackersEn {
-	_TranslationsTrackersKo._(this._root);
+class _TranslationsTrackersKo extends TranslationsTrackersEn {
+	_TranslationsTrackersKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1318,9 +1414,50 @@ class _TranslationsTrackersKo implements TranslationsTrackersEn {
 	@override late final _TranslationsTrackersLibraryFilterKo libraryFilter = _TranslationsTrackersLibraryFilterKo._(_root);
 }
 
+// Path: addServer
+class _TranslationsAddServerKo extends TranslationsAddServerEn {
+	_TranslationsAddServerKo._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get addJellyfinTitle => 'Jellyfin 서버 추가';
+	@override String get jellyfinUrlIntro => 'Jellyfin 서버 URL을 입력하세요 — 예: `https://jellyfin.example.com`. 이후에 로그인할 수 있습니다.';
+	@override String get serverUrl => '서버 URL';
+	@override String get findServer => '서버 찾기';
+	@override String get username => '사용자 이름';
+	@override String get password => '비밀번호';
+	@override String get signIn => '로그인';
+	@override String get change => '변경';
+	@override String get required => '필수';
+	@override String couldNotReachServer({required Object error}) => '서버에 연결할 수 없습니다: ${error}';
+	@override String signInFailed({required Object error}) => '로그인 실패: ${error}';
+	@override String quickConnectFailed({required Object error}) => 'Quick Connect 실패: ${error}';
+	@override String get addPlexTitle => 'Plex로 로그인';
+	@override String get plexAuthIntro => 'Plex에 로그인할 방법을 선택하세요. 브라우저 플로우는 plex.tv를 열어 연결을 확인하며, QR 옵션은 TV나 원격 장치에 편리합니다.';
+	@override String get plexQRPrompt => '이 QR 코드를 스캔하여 로그인하세요.';
+	@override String get waitingForPlexConfirmation => 'plex.tv에서 로그인을 확인하는 중…';
+	@override String get pinExpired => '로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.';
+	@override String get duplicatePlexAccount => '이 기기는 이미 Plex 계정에 로그인되어 있습니다. 계정을 변경하려면 설정에서 로그아웃하세요.';
+	@override String failedToRegisterAccount({required Object error}) => '계정 등록 실패: ${error}';
+	@override String get enterJellyfinUrlError => 'Jellyfin 서버 URL을 입력하세요';
+	@override String get addConnectionTitle => '연결 추가';
+	@override String addConnectionTitleScoped({required Object name}) => '${name}에 추가';
+	@override String get addConnectionIntroGlobal => '다른 미디어 서버를 추가하세요. Plex 계정과 Jellyfin 서버를 함께 사용할 수 있으며, 연결된 모든 백엔드의 항목이 홈 화면에 함께 표시됩니다.';
+	@override String get addConnectionIntroScoped => '새 서버를 추가하거나 다른 프로필에서 빌리세요.';
+	@override String get signInWithPlexCard => 'Plex로 로그인';
+	@override String get signInWithPlexCardSubtitle => '이 기기를 Plex 계정으로 인증합니다. 계정과 공유된 서버가 자동으로 함께 추가됩니다.';
+	@override String get signInWithPlexCardSubtitleScoped => '새 Plex 계정을 인증합니다. 해당 Home 사용자가 프로필로 표시됩니다.';
+	@override String get connectToJellyfinCard => 'Jellyfin에 연결';
+	@override String get connectToJellyfinCardSubtitle => 'Jellyfin 서버 URL을 입력하고 사용자 이름 + 비밀번호로 로그인하세요 (Quick Connect는 곧 지원 예정).';
+	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Jellyfin 서버에 로그인합니다. ${name}에 연결됩니다.';
+	@override String get borrowFromAnotherProfile => '다른 프로필에서 빌리기';
+	@override String get borrowFromAnotherProfileSubtitle => '이미 다른 프로필에 연결된 연결을 재사용합니다. PIN으로 보호된 소스 프로필은 PIN을 요청합니다.';
+}
+
 // Path: hotkeys.actions
-class _TranslationsHotkeysActionsKo implements TranslationsHotkeysActionsEn {
-	_TranslationsHotkeysActionsKo._(this._root);
+class _TranslationsHotkeysActionsKo extends TranslationsHotkeysActionsEn {
+	_TranslationsHotkeysActionsKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1349,8 +1486,8 @@ class _TranslationsHotkeysActionsKo implements TranslationsHotkeysActionsEn {
 }
 
 // Path: videoControls.pipErrors
-class _TranslationsVideoControlsPipErrorsKo implements TranslationsVideoControlsPipErrorsEn {
-	_TranslationsVideoControlsPipErrorsKo._(this._root);
+class _TranslationsVideoControlsPipErrorsKo extends TranslationsVideoControlsPipErrorsEn {
+	_TranslationsVideoControlsPipErrorsKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1365,8 +1502,8 @@ class _TranslationsVideoControlsPipErrorsKo implements TranslationsVideoControls
 }
 
 // Path: libraries.tabs
-class _TranslationsLibrariesTabsKo implements TranslationsLibrariesTabsEn {
-	_TranslationsLibrariesTabsKo._(this._root);
+class _TranslationsLibrariesTabsKo extends TranslationsLibrariesTabsEn {
+	_TranslationsLibrariesTabsKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1378,8 +1515,8 @@ class _TranslationsLibrariesTabsKo implements TranslationsLibrariesTabsEn {
 }
 
 // Path: libraries.groupings
-class _TranslationsLibrariesGroupingsKo implements TranslationsLibrariesGroupingsEn {
-	_TranslationsLibrariesGroupingsKo._(this._root);
+class _TranslationsLibrariesGroupingsKo extends TranslationsLibrariesGroupingsEn {
+	_TranslationsLibrariesGroupingsKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1393,9 +1530,40 @@ class _TranslationsLibrariesGroupingsKo implements TranslationsLibrariesGrouping
 	@override String get folders => '폴더';
 }
 
+// Path: libraries.filterCategories
+class _TranslationsLibrariesFilterCategoriesKo extends TranslationsLibrariesFilterCategoriesEn {
+	_TranslationsLibrariesFilterCategoriesKo._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get genre => '장르';
+	@override String get year => '연도';
+	@override String get contentRating => '시청 등급';
+	@override String get tag => '태그';
+}
+
+// Path: libraries.sortLabels
+class _TranslationsLibrariesSortLabelsKo extends TranslationsLibrariesSortLabelsEn {
+	_TranslationsLibrariesSortLabelsKo._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '제목';
+	@override String get dateAdded => '추가된 날짜';
+	@override String get releaseDate => '출시일';
+	@override String get rating => '평점';
+	@override String get lastPlayed => '마지막 재생';
+	@override String get playCount => '재생 횟수';
+	@override String get random => '무작위';
+	@override String get dateShared => '공유된 날짜';
+	@override String get latestEpisodeAirDate => '최신 에피소드 방영일';
+}
+
 // Path: companionRemote.session
-class _TranslationsCompanionRemoteSessionKo implements TranslationsCompanionRemoteSessionEn {
-	_TranslationsCompanionRemoteSessionKo._(this._root);
+class _TranslationsCompanionRemoteSessionKo extends TranslationsCompanionRemoteSessionEn {
+	_TranslationsCompanionRemoteSessionKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1415,8 +1583,8 @@ class _TranslationsCompanionRemoteSessionKo implements TranslationsCompanionRemo
 }
 
 // Path: companionRemote.pairing
-class _TranslationsCompanionRemotePairingKo implements TranslationsCompanionRemotePairingEn {
-	_TranslationsCompanionRemotePairingKo._(this._root);
+class _TranslationsCompanionRemotePairingKo extends TranslationsCompanionRemotePairingEn {
+	_TranslationsCompanionRemotePairingKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1439,8 +1607,8 @@ class _TranslationsCompanionRemotePairingKo implements TranslationsCompanionRemo
 }
 
 // Path: companionRemote.remote
-class _TranslationsCompanionRemoteRemoteKo implements TranslationsCompanionRemoteRemoteEn {
-	_TranslationsCompanionRemoteRemoteKo._(this._root);
+class _TranslationsCompanionRemoteRemoteKo extends TranslationsCompanionRemoteRemoteEn {
+	_TranslationsCompanionRemoteRemoteKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1475,8 +1643,8 @@ class _TranslationsCompanionRemoteRemoteKo implements TranslationsCompanionRemot
 }
 
 // Path: trackers.services
-class _TranslationsTrackersServicesKo implements TranslationsTrackersServicesEn {
-	_TranslationsTrackersServicesKo._(this._root);
+class _TranslationsTrackersServicesKo extends TranslationsTrackersServicesEn {
+	_TranslationsTrackersServicesKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1487,8 +1655,8 @@ class _TranslationsTrackersServicesKo implements TranslationsTrackersServicesEn 
 }
 
 // Path: trackers.deviceCode
-class _TranslationsTrackersDeviceCodeKo implements TranslationsTrackersDeviceCodeEn {
-	_TranslationsTrackersDeviceCodeKo._(this._root);
+class _TranslationsTrackersDeviceCodeKo extends TranslationsTrackersDeviceCodeEn {
+	_TranslationsTrackersDeviceCodeKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1501,8 +1669,8 @@ class _TranslationsTrackersDeviceCodeKo implements TranslationsTrackersDeviceCod
 }
 
 // Path: trackers.oauthProxy
-class _TranslationsTrackersOauthProxyKo implements TranslationsTrackersOauthProxyEn {
-	_TranslationsTrackersOauthProxyKo._(this._root);
+class _TranslationsTrackersOauthProxyKo extends TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1514,8 +1682,8 @@ class _TranslationsTrackersOauthProxyKo implements TranslationsTrackersOauthProx
 }
 
 // Path: trackers.libraryFilter
-class _TranslationsTrackersLibraryFilterKo implements TranslationsTrackersLibraryFilterEn {
-	_TranslationsTrackersLibraryFilterKo._(this._root);
+class _TranslationsTrackersLibraryFilterKo extends TranslationsTrackersLibraryFilterEn {
+	_TranslationsTrackersLibraryFilterKo._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
 
@@ -1543,6 +1711,7 @@ extension on TranslationsKo {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
+			'auth.signIn' => '로그인',
 			'auth.signInWithPlex' => 'Plex 계정으로 로그인',
 			'auth.showQRCode' => 'QR 코드',
 			'auth.authenticate' => '인증',
@@ -1550,6 +1719,14 @@ extension on TranslationsKo {
 			'auth.scanQRToSignIn' => 'QR 코드를 스캔하여 로그인',
 			'auth.waitingForAuth' => '인증 대기 중... 브라우저에서 로그인을 완료해 주세요.',
 			'auth.useBrowser' => '브라우저 사용',
+			'auth.or' => '또는',
+			'auth.connectToJellyfin' => 'Jellyfin에 연결',
+			'auth.useQuickConnect' => 'Quick Connect 사용',
+			'auth.quickConnectCode' => 'Quick Connect 코드',
+			'auth.quickConnectInstructions' => '웹 브라우저에서 Jellyfin 서버를 열어 로그인한 뒤 사용자 메뉴에서 Quick Connect를 선택하세요. 이 코드를 입력해 로그인을 승인하세요.',
+			'auth.quickConnectWaiting' => '승인 대기 중…',
+			'auth.quickConnectCancel' => '취소',
+			'auth.quickConnectExpired' => '승인되기 전에 Quick Connect 코드가 만료되었습니다. 다시 시도하세요.',
 			'common.cancel' => '취소',
 			'common.save' => '저장',
 			'common.close' => '닫기',
@@ -1636,12 +1813,12 @@ extension on TranslationsKo {
 			'settings.gridView' => '그리드 보기',
 			'settings.listView' => '목록 보기',
 			'settings.showHeroSection' => '주요 추천 영역 표시',
-			'settings.useGlobalHubs' => 'Plex 홈 레이아웃 사용',
-			'settings.useGlobalHubsDescription' => '공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.',
+			'settings.useGlobalHubs' => 'Use Home Layout',
+			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.',
 			'settings.showServerNameOnHubs' => '허브에 서버 이름 표시',
 			'settings.showServerNameOnHubsDescription' => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.',
 			'settings.groupLibrariesByServer' => '서버별로 라이브러리 그룹화',
-			'settings.groupLibrariesByServerDescription' => '여러 서버에 연결되어 있을 때 사이드바에 각 Plex 서버의 헤더를 표시합니다.',
+			'settings.groupLibrariesByServerDescription' => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.',
 			'settings.alwaysKeepSidebarOpen' => '사이드바 항상 열어두기',
 			'settings.alwaysKeepSidebarOpenDescription' => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다',
 			'settings.showUnwatchedCount' => '미시청 수 표시',
@@ -1962,7 +2139,7 @@ extension on TranslationsKo {
 			'messages.musicNotSupported' => '음악 재생 미지원',
 			'messages.noDescriptionAvailable' => '설명이 없습니다',
 			'messages.noProfilesAvailable' => '사용 가능한 프로필이 없습니다',
-			'messages.contactAdminForProfiles' => '프로필을 추가하려면 Plex 관리자에게 문의하세요',
+			'messages.contactAdminForProfiles' => 'Contact your server administrator to add profiles',
 			'messages.unableToDetermineLibrarySection' => '이 항목의 라이브러리 섹션을 확인할 수 없습니다',
 			'messages.logsCleared' => '로그가 삭제 되었습니다',
 			'messages.logsCopied' => '로그가 클립보드에 복사 되었습니다',
@@ -2016,11 +2193,65 @@ extension on TranslationsKo {
 			'mpvConfig.confirmDeletePreset' => '이 프리셋을 삭제 하시겠습니까?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '확인',
+			'profiles.addPlezyProfile' => 'Plezy 프로필 추가',
+			'profiles.switchingProfile' => '프로필 전환 중…',
+			'profiles.deleteThisProfileTitle' => '이 프로필을 삭제하시겠습니까?',
+			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName} 이(가) 제거됩니다. 연결 자체는 영향을 받지 않습니다.',
+			'profiles.active' => '활성',
+			'profiles.manage' => '관리',
+			'profiles.delete' => '삭제',
+			'profiles.signOut' => '로그아웃',
+			'profiles.signOutPlexTitle' => 'Plex에서 로그아웃하시겠습니까?',
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} 및 이 계정의 모든 Plex Home 사용자가 이 기기에서 제거됩니다. 언제든지 다시 로그인할 수 있습니다.',
+			'profiles.signedOutPlex' => 'Plex에서 로그아웃되었습니다.',
+			'profiles.signOutFailed' => '로그아웃에 실패했습니다.',
+			'profiles.sectionTitle' => '프로필',
+			'profiles.summarySingle' => '관리되는 사용자와 로컬 ID를 혼합하려면 프로필을 추가하세요',
+			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count}개 프로필 · 활성: ${activeName}',
+			'profiles.summaryMultiple' => ({required Object count}) => '${count}개 프로필',
+			'profiles.removeConnectionTitle' => '연결을 제거하시겠습니까?',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName}이(가) ${connectionLabel}에 대한 액세스를 잃게 됩니다. 연결 자체는 다른 프로필에서 계속 사용할 수 있습니다.',
+			'profiles.deleteProfileTitle' => '프로필을 삭제하시겠습니까?',
+			'profiles.deleteProfileMessage' => ({required Object displayName}) => '이 기기에서 ${displayName}과(와) 모든 연결이 제거됩니다. 기본 Plex/Jellyfin 서버에는 영향을 주지 않습니다.',
+			'profiles.profileNameLabel' => '프로필 이름',
+			'profiles.pinProtectionLabel' => 'PIN 보호',
+			'profiles.pinManagedByPlex' => 'PIN은 Plex에서 관리됩니다. plex.tv에서 편집하세요.',
+			'profiles.noPinSetEditOnPlex' => '설정된 PIN이 없습니다. 요구하려면 plex.tv에서 Home 사용자를 편집하세요.',
+			'profiles.setPin' => 'PIN 설정',
+			'profiles.connectionsLabel' => '연결',
+			'profiles.add' => '추가',
+			'profiles.deleteProfileButton' => '프로필 삭제',
+			'profiles.noConnectionsHint' => '연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.',
+			_ => null,
+		} ?? switch (path) {
+			'profiles.plexHomeAccount' => 'Plex Home 계정',
+			'profiles.connectionDefault' => '기본값',
+			'profiles.makeDefault' => '기본값으로 설정',
+			'profiles.removeConnection' => '제거',
+			'profiles.borrowAddTo' => ({required Object displayName}) => '${displayName}에 추가',
+			'profiles.borrowExplain' => '다른 프로필에서 연결을 빌립니다. PIN 보호된 원본 프로필은 공유 전에 PIN을 요구합니다.',
+			'profiles.borrowEmpty' => '아직 빌릴 것이 없습니다.',
+			'profiles.borrowEmptySubtitle' => '먼저 다른 프로필에 Plex 계정 또는 Jellyfin 서버를 연결한 다음 여기로 돌아오세요.',
+			'profiles.newProfile' => '새 프로필',
+			'profiles.profileNameHint' => '예: 손님, 어린이, 가족실',
+			'profiles.pinProtectionOptional' => 'PIN 보호 (선택 사항)',
+			'profiles.pinExplain' => '이 프로필로 전환하려면 4자리 PIN이 필요합니다. 부드러운 장벽 — 앱 데이터를 지울 수 있는 사람은 우회할 수 있습니다.',
+			'profiles.continueButton' => '계속',
+			'profiles.pinsDontMatch' => 'PIN이 일치하지 않습니다',
+			'connections.sectionTitle' => '연결',
+			'connections.addConnection' => '연결 추가',
+			'connections.addConnectionSubtitleNoProfile' => 'Plex로 로그인하거나 Jellyfin 서버에 연결',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} 에 추가 — Plex 계정, Jellyfin 서버 또는 다른 프로필에서 빌리기',
+			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 의 세션이 만료되었습니다',
+			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 개의 서버에서 세션이 만료되었습니다',
+			'connections.signInAgain' => '다시 로그인',
 			'discover.title' => '발견',
 			'discover.switchProfile' => '사용자 전환',
 			'discover.noContentAvailable' => '사용 가능한 콘텐츠가 없습니다',
 			'discover.addMediaToLibraries' => '미디어 라이브러리에 미디어를 추가해 주세요',
 			'discover.continueWatching' => '계속 시청',
+			'discover.nextUp' => '다음 에피소드',
+			'discover.recentlyAdded' => '최근에 추가됨',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => '개요',
 			'discover.cast' => '출연진',
@@ -2032,7 +2263,7 @@ extension on TranslationsKo {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes}분 남음',
 			'errors.searchFailed' => ({required Object error}) => '검색 실패: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => '${context} 로드 중 연결 시간 초과',
-			'errors.connectionFailed' => 'Plex 서버에 연결할 수 없음',
+			'errors.connectionFailed' => 'Unable to connect to media server',
 			'errors.failedToLoad' => ({required Object context, required Object error}) => '${context} 로드 실패: ${error}',
 			'errors.noClientAvailable' => '사용 가능한 클라이언트가 없습니다',
 			'errors.authenticationFailed' => ({required Object error}) => '인증 실패: ${error}',
@@ -2041,6 +2272,8 @@ extension on TranslationsKo {
 			'errors.invalidToken' => '토큰이 유효하지 않습니다',
 			'errors.failedToVerifyToken' => ({required Object error}) => '토큰을 확인할 수 없습니다: ${error}',
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => '${displayName}으로 전환할 수 없습니다',
+			'errors.failedToDeleteProfile' => ({required Object displayName}) => '${displayName}을(를) 삭제할 수 없습니다',
+			'errors.failedToRate' => '평점을 업데이트하지 못했습니다',
 			'libraries.title' => '미디어 라이브러리',
 			'libraries.scanLibraryFiles' => '미디어 라이브러리 파일 스캔',
 			'libraries.scanLibrary' => '미디어 라이브러리 스캔',
@@ -2054,8 +2287,6 @@ extension on TranslationsKo {
 			'libraries.analyzing' => ({required Object title}) => '"${title}" 분석 중...',
 			'libraries.analysisStarted' => ({required Object title}) => '"${title}" 분석 시작됨',
 			'libraries.failedToAnalyze' => ({required Object error}) => '미디어 라이브러리 분석 실패: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.noLibrariesFound' => '미디어 라이브러리 없음',
 			'libraries.allLibrariesHidden' => '모든 라이브러리가 숨겨졌습니다',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => '숨겨진 라이브러리 (${count})',
@@ -2092,10 +2323,23 @@ extension on TranslationsKo {
 			'libraries.groupings.seasons' => '시즌',
 			'libraries.groupings.episodes' => '화',
 			'libraries.groupings.folders' => '폴더',
+			'libraries.filterCategories.genre' => '장르',
+			'libraries.filterCategories.year' => '연도',
+			'libraries.filterCategories.contentRating' => '시청 등급',
+			'libraries.filterCategories.tag' => '태그',
+			'libraries.sortLabels.title' => '제목',
+			'libraries.sortLabels.dateAdded' => '추가된 날짜',
+			'libraries.sortLabels.releaseDate' => '출시일',
+			'libraries.sortLabels.rating' => '평점',
+			'libraries.sortLabels.lastPlayed' => '마지막 재생',
+			'libraries.sortLabels.playCount' => '재생 횟수',
+			'libraries.sortLabels.random' => '무작위',
+			'libraries.sortLabels.dateShared' => '공유된 날짜',
+			'libraries.sortLabels.latestEpisodeAirDate' => '최신 에피소드 방영일',
 			'about.title' => '소개',
 			'about.openSourceLicenses' => '오픈소스 라이선스',
 			'about.versionLabel' => ({required Object version}) => '버전 ${version}',
-			'about.appDescription' => '아름다운 Flutter Plex 클라이언트',
+			'about.appDescription' => '아름다운 Flutter용 Plex 및 Jellyfin 클라이언트',
 			'about.viewLicensesDescription' => '타사 라이브러리 라이선스 보기',
 			'serverSelection.allServerConnectionsFailed' => '어떤 서버에도 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => '${username} (${email})의 서버를 찾을 수 없습니다.',
@@ -2243,6 +2487,8 @@ extension on TranslationsKo {
 			'watchTogether.recentRooms' => '최근 방',
 			'watchTogether.renameRoom' => '방 이름 변경',
 			'watchTogether.removeRoom' => '제거',
+			'watchTogether.guestSwitchUnavailable' => '전환할 수 없음 — 동기화 서버를 사용할 수 없습니다',
+			'watchTogether.guestSwitchFailed' => '전환할 수 없음 — 이 서버에서 콘텐츠를 찾을 수 없습니다',
 			'downloads.title' => '다운로드',
 			'downloads.manage' => '관리',
 			'downloads.tvShows' => 'TV 프로그램',
@@ -2291,6 +2537,12 @@ extension on TranslationsKo {
 			'downloads.editSyncFilter' => '동기화 필터',
 			'downloads.syncAllItems' => '모든 항목 동기화 중',
 			'downloads.syncUnwatchedItems' => '시청하지 않은 항목 동기화 중',
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '서버: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => '사용 가능',
+			'downloads.syncRuleOffline' => '오프라인',
+			'downloads.syncRuleSignInRequired' => '로그인 필요',
+			'downloads.syncRuleNotAvailableForProfile' => '현재 프로필에서 사용할 수 없음',
+			'downloads.syncRuleUnknownServer' => '알 수 없는 서버',
 			'downloads.syncRuleListCreated' => '동기화 규칙이 생성되었습니다',
 			'shaders.title' => '셰이더',
 			'shaders.noShaderDescription' => '비디오 향상 없음',
@@ -2484,6 +2736,8 @@ extension on TranslationsKo {
 			'trakt.disconnectConfirmBody' => 'Plezy가 Trakt로 재생 이벤트를 보내지 않습니다. 언제든지 다시 연결할 수 있습니다.',
 			'trakt.scrobble' => '실시간 스크로블',
 			'trakt.scrobbleDescription' => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.',
+			_ => null,
+		} ?? switch (path) {
 			'trakt.watchedSync' => '시청 상태 동기화',
 			'trakt.watchedSyncDescription' => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.',
 			'trackers.title' => '트래커',
@@ -2519,6 +2773,38 @@ extension on TranslationsKo {
 			'trackers.libraryFilter.modeHintWhitelist' => '아래에 선택한 라이브러리만 동기화합니다.',
 			'trackers.libraryFilter.libraries' => '라이브러리',
 			'trackers.libraryFilter.noLibraries' => '사용 가능한 라이브러리가 없습니다',
+			'addServer.addJellyfinTitle' => 'Jellyfin 서버 추가',
+			'addServer.jellyfinUrlIntro' => 'Jellyfin 서버 URL을 입력하세요 — 예: `https://jellyfin.example.com`. 이후에 로그인할 수 있습니다.',
+			'addServer.serverUrl' => '서버 URL',
+			'addServer.findServer' => '서버 찾기',
+			'addServer.username' => '사용자 이름',
+			'addServer.password' => '비밀번호',
+			'addServer.signIn' => '로그인',
+			'addServer.change' => '변경',
+			'addServer.required' => '필수',
+			'addServer.couldNotReachServer' => ({required Object error}) => '서버에 연결할 수 없습니다: ${error}',
+			'addServer.signInFailed' => ({required Object error}) => '로그인 실패: ${error}',
+			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect 실패: ${error}',
+			'addServer.addPlexTitle' => 'Plex로 로그인',
+			'addServer.plexAuthIntro' => 'Plex에 로그인할 방법을 선택하세요. 브라우저 플로우는 plex.tv를 열어 연결을 확인하며, QR 옵션은 TV나 원격 장치에 편리합니다.',
+			'addServer.plexQRPrompt' => '이 QR 코드를 스캔하여 로그인하세요.',
+			'addServer.waitingForPlexConfirmation' => 'plex.tv에서 로그인을 확인하는 중…',
+			'addServer.pinExpired' => '로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.',
+			'addServer.duplicatePlexAccount' => '이 기기는 이미 Plex 계정에 로그인되어 있습니다. 계정을 변경하려면 설정에서 로그아웃하세요.',
+			'addServer.failedToRegisterAccount' => ({required Object error}) => '계정 등록 실패: ${error}',
+			'addServer.enterJellyfinUrlError' => 'Jellyfin 서버 URL을 입력하세요',
+			'addServer.addConnectionTitle' => '연결 추가',
+			'addServer.addConnectionTitleScoped' => ({required Object name}) => '${name}에 추가',
+			'addServer.addConnectionIntroGlobal' => '다른 미디어 서버를 추가하세요. Plex 계정과 Jellyfin 서버를 함께 사용할 수 있으며, 연결된 모든 백엔드의 항목이 홈 화면에 함께 표시됩니다.',
+			'addServer.addConnectionIntroScoped' => '새 서버를 추가하거나 다른 프로필에서 빌리세요.',
+			'addServer.signInWithPlexCard' => 'Plex로 로그인',
+			'addServer.signInWithPlexCardSubtitle' => '이 기기를 Plex 계정으로 인증합니다. 계정과 공유된 서버가 자동으로 함께 추가됩니다.',
+			'addServer.signInWithPlexCardSubtitleScoped' => '새 Plex 계정을 인증합니다. 해당 Home 사용자가 프로필로 표시됩니다.',
+			'addServer.connectToJellyfinCard' => 'Jellyfin에 연결',
+			'addServer.connectToJellyfinCardSubtitle' => 'Jellyfin 서버 URL을 입력하고 사용자 이름 + 비밀번호로 로그인하세요 (Quick Connect는 곧 지원 예정).',
+			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Jellyfin 서버에 로그인합니다. ${name}에 연결됩니다.',
+			'addServer.borrowFromAnotherProfile' => '다른 프로필에서 빌리기',
+			'addServer.borrowFromAnotherProfileSubtitle' => '이미 다른 프로필에 연결된 연결을 재사용합니다. PIN으로 보호된 소스 프로필은 PIN을 요청합니다.',
 			_ => null,
 		};
 	}

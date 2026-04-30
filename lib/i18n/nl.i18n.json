@@ -3,13 +3,22 @@
     "title": "Plezy"
   },
   "auth": {
+    "signIn": "Inloggen",
     "signInWithPlex": "Inloggen met Plex",
     "showQRCode": "Toon QR-code",
     "authenticate": "Authenticeren",
     "authenticationTimeout": "Authenticatie verlopen. Probeer opnieuw.",
     "scanQRToSignIn": "Scan deze QR-code om in te loggen",
     "waitingForAuth": "Wachten op authenticatie...\nVoltooi het inloggen in je browser.",
-    "useBrowser": "Gebruik browser"
+    "useBrowser": "Gebruik browser",
+    "or": "of",
+    "connectToJellyfin": "Verbinden met Jellyfin",
+    "useQuickConnect": "Quick Connect gebruiken",
+    "quickConnectCode": "Quick Connect-code",
+    "quickConnectInstructions": "Open je Jellyfin-server in een webbrowser, log in en kies Quick Connect in het gebruikersmenu. Voer deze code in om de aanmelding goed te keuren.",
+    "quickConnectWaiting": "Wachten op goedkeuring…",
+    "quickConnectCancel": "Annuleren",
+    "quickConnectExpired": "De Quick Connect-code is verlopen voordat hij werd goedgekeurd. Probeer het opnieuw."
   },
   "common": {
     "cancel": "Annuleren",
@@ -104,12 +113,12 @@
     "gridView": "Raster",
     "listView": "Lijst",
     "showHeroSection": "Toon hoofdsectie",
-    "useGlobalHubs": "Plex Home-indeling gebruiken",
-    "useGlobalHubsDescription": "Toon startpagina-hubs zoals de officiële Plex-client. Indien uitgeschakeld, worden in plaats daarvan aanbevelingen per bibliotheek getoond.",
+    "useGlobalHubs": "Use Home Layout",
+    "useGlobalHubsDescription": "Show home page hubs like the official client. When off, shows per-library recommendations instead.",
     "showServerNameOnHubs": "Servernaam tonen bij hubs",
     "showServerNameOnHubsDescription": "Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.",
     "groupLibrariesByServer": "Bibliotheken groeperen per server",
-    "groupLibrariesByServerDescription": "Toont een kop voor elke Plex-server in de zijbalk wanneer je met meerdere servers verbonden bent.",
+    "groupLibrariesByServerDescription": "Show a header for each media server in the sidebar when you're connected to multiple servers.",
     "alwaysKeepSidebarOpen": "Zijbalk altijd open houden",
     "alwaysKeepSidebarOpenDescription": "Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan",
     "showUnwatchedCount": "Aantal ongekeken tonen",
@@ -452,7 +461,7 @@
     "musicNotSupported": "Muziek afspelen wordt nog niet ondersteund",
     "noDescriptionAvailable": "Geen beschrijving beschikbaar",
     "noProfilesAvailable": "Geen profielen beschikbaar",
-    "contactAdminForProfiles": "Neem contact op met je Plex-beheerder om profielen toe te voegen",
+    "contactAdminForProfiles": "Contact your server administrator to add profiles",
     "unableToDetermineLibrarySection": "Kan bibliotheeksectie voor dit item niet bepalen",
     "logsCleared": "Logs gewist",
     "logsCopied": "Logs gekopieerd naar klembord",
@@ -513,12 +522,68 @@
   "dialog": {
     "confirmAction": "Bevestig actie"
   },
+  "profiles": {
+    "addPlezyProfile": "Plezy-profiel toevoegen",
+    "switchingProfile": "Profiel wisselen…",
+    "deleteThisProfileTitle": "Dit profiel verwijderen?",
+    "deleteThisProfileMessage": "${displayName} wordt verwijderd. Verbindingen worden niet aangetast.",
+    "active": "Actief",
+    "manage": "Beheren",
+    "delete": "Verwijderen",
+    "signOut": "Afmelden",
+    "signOutPlexTitle": "Afmelden bij Plex?",
+    "signOutPlexMessage": "${displayName} en alle Plex Home-gebruikers van dit account worden van dit apparaat verwijderd. Je kunt op elk moment opnieuw inloggen.",
+    "signedOutPlex": "Afgemeld bij Plex.",
+    "signOutFailed": "Afmelden mislukt.",
+    "sectionTitle": "Profielen",
+    "summarySingle": "Voeg profielen toe om beheerde gebruikers en lokale identiteiten te combineren",
+    "summaryMultipleWithActive": "${count} profielen · actief: ${activeName}",
+    "summaryMultiple": "${count} profielen",
+    "removeConnectionTitle": "Verbinding verwijderen?",
+    "removeConnectionMessage": "${displayName} verliest toegang tot ${connectionLabel}. De verbinding blijft beschikbaar voor andere profielen.",
+    "deleteProfileTitle": "Profiel verwijderen?",
+    "deleteProfileMessage": "Hiermee worden ${displayName} en al zijn verbindingen van dit apparaat verwijderd. De onderliggende Plex/Jellyfin-servers worden niet beïnvloed.",
+    "profileNameLabel": "Profielnaam",
+    "pinProtectionLabel": "PIN-beveiliging",
+    "pinManagedByPlex": "PIN wordt beheerd door Plex. Bewerk op plex.tv.",
+    "noPinSetEditOnPlex": "Geen PIN ingesteld. Bewerk de Home-gebruiker op plex.tv om er één te vereisen.",
+    "setPin": "PIN instellen",
+    "connectionsLabel": "Verbindingen",
+    "add": "Toevoegen",
+    "deleteProfileButton": "Profiel verwijderen",
+    "noConnectionsHint": "Geen verbindingen — voeg er één toe om dit profiel te gebruiken.",
+    "plexHomeAccount": "Plex Home-account",
+    "connectionDefault": "Standaard",
+    "makeDefault": "Als standaard instellen",
+    "removeConnection": "Verwijderen",
+    "borrowAddTo": "Toevoegen aan ${displayName}",
+    "borrowExplain": "Leen een verbinding van een ander profiel. PIN-beveiligde bronprofielen vragen om de PIN voordat ze delen.",
+    "borrowEmpty": "Nog niets te lenen.",
+    "borrowEmptySubtitle": "Verbind eerst een Plex-account of Jellyfin-server met een ander profiel en kom dan hier terug.",
+    "newProfile": "Nieuw profiel",
+    "profileNameHint": "bijv. Gasten, Kinderen, Woonkamer",
+    "pinProtectionOptional": "PIN-beveiliging (optioneel)",
+    "pinExplain": "4-cijferige PIN vereist om naar dit profiel te schakelen. Zachte barrière — iedereen die appgegevens kan wissen, kan deze omzeilen.",
+    "continueButton": "Doorgaan",
+    "pinsDontMatch": "PIN-codes komen niet overeen"
+  },
+  "connections": {
+    "sectionTitle": "Verbindingen",
+    "addConnection": "Verbinding toevoegen",
+    "addConnectionSubtitleNoProfile": "Meld je aan met Plex of verbind een Jellyfin-server",
+    "addConnectionSubtitleScoped": "Toevoegen aan ${displayName} — Plex-account, Jellyfin-server of lenen van een ander profiel",
+    "sessionExpiredOne": "Sessie verlopen voor ${name}",
+    "sessionExpiredMany": "Sessie verlopen voor ${count} servers",
+    "signInAgain": "Opnieuw aanmelden"
+  },
   "discover": {
     "title": "Ontdekken",
     "switchProfile": "Wissel van profiel",
     "noContentAvailable": "Geen inhoud beschikbaar",
     "addMediaToLibraries": "Voeg wat media toe aan je bibliotheken",
     "continueWatching": "Verder kijken",
+    "nextUp": "Volgende",
+    "recentlyAdded": "Recent toegevoegd",
     "playEpisode": "S${season}E${episode}",
     "overview": "Overzicht",
     "cast": "Acteurs",
@@ -532,7 +597,7 @@
   "errors": {
     "searchFailed": "Zoeken mislukt: ${error}",
     "connectionTimeout": "Verbinding time-out tijdens laden ${context}",
-    "connectionFailed": "Kan geen verbinding maken met Plex server",
+    "connectionFailed": "Unable to connect to media server",
     "failedToLoad": "Kon ${context} niet laden: ${error}",
     "noClientAvailable": "Geen client beschikbaar",
     "authenticationFailed": "Authenticatie mislukt: ${error}",
@@ -540,7 +605,9 @@
     "pleaseEnterToken": "Voer een token in",
     "invalidToken": "Ongeldig token",
     "failedToVerifyToken": "Kon token niet verifiëren: ${error}",
-    "failedToSwitchProfile": "Kon niet wisselen naar ${displayName}"
+    "failedToSwitchProfile": "Kon niet wisselen naar ${displayName}",
+    "failedToDeleteProfile": "Kon ${displayName} niet verwijderen",
+    "failedToRate": "Beoordeling kon niet worden bijgewerkt"
   },
   "libraries": {
     "title": "Bibliotheken",
@@ -595,13 +662,30 @@
       "seasons": "Seizoenen",
       "episodes": "Afleveringen",
       "folders": "Mappen"
+    },
+    "filterCategories": {
+      "genre": "Genre",
+      "year": "Jaar",
+      "contentRating": "Leeftijdsclassificatie",
+      "tag": "Tag"
+    },
+    "sortLabels": {
+      "title": "Titel",
+      "dateAdded": "Toegevoegd op",
+      "releaseDate": "Uitgavedatum",
+      "rating": "Beoordeling",
+      "lastPlayed": "Laatst afgespeeld",
+      "playCount": "Aantal afspelingen",
+      "random": "Willekeurig",
+      "dateShared": "Gedeeld op",
+      "latestEpisodeAirDate": "Laatste afleveringsuitzending"
     }
   },
   "about": {
     "title": "Over",
     "openSourceLicenses": "Open Source licenties",
     "versionLabel": "Versie ${version}",
-    "appDescription": "Een mooie Plex client voor Flutter",
+    "appDescription": "Een mooie Plex- en Jellyfin-client voor Flutter",
     "viewLicensesDescription": "Bekijk licenties van third-party bibliotheken"
   },
   "serverSelection": {
@@ -766,7 +850,9 @@
     "waitingForParticipants": "Wachten tot anderen geladen zijn...",
     "recentRooms": "Recente kamers",
     "renameRoom": "Kamer hernoemen",
-    "removeRoom": "Verwijderen"
+    "removeRoom": "Verwijderen",
+    "guestSwitchUnavailable": "Kon niet schakelen — server niet beschikbaar voor synchronisatie",
+    "guestSwitchFailed": "Kon niet schakelen — inhoud niet gevonden op deze server"
   },
   "downloads": {
     "title": "Downloads",
@@ -817,6 +903,12 @@
     "editSyncFilter": "Synchronisatiefilter",
     "syncAllItems": "Alle items synchroniseren",
     "syncUnwatchedItems": "Ongekeken items synchroniseren",
+    "syncRuleServerContext": "Server: ${server} • ${status}",
+    "syncRuleAvailable": "Beschikbaar",
+    "syncRuleOffline": "Offline",
+    "syncRuleSignInRequired": "Inloggen vereist",
+    "syncRuleNotAvailableForProfile": "Niet beschikbaar voor huidig profiel",
+    "syncRuleUnknownServer": "Onbekende server",
     "syncRuleListCreated": "Synchronisatieregel aangemaakt"
   },
   "shaders": {
@@ -1077,5 +1169,39 @@
       "libraries": "Bibliotheken",
       "noLibraries": "Geen bibliotheken beschikbaar"
     }
+  },
+  "addServer": {
+    "addJellyfinTitle": "Jellyfin-server toevoegen",
+    "jellyfinUrlIntro": "Voer de URL van je Jellyfin-server in — bijv. `https://jellyfin.example.com`. Je kunt daarna inloggen.",
+    "serverUrl": "Server-URL",
+    "findServer": "Server zoeken",
+    "username": "Gebruikersnaam",
+    "password": "Wachtwoord",
+    "signIn": "Inloggen",
+    "change": "Wijzigen",
+    "required": "Vereist",
+    "couldNotReachServer": "Kon de server niet bereiken: ${error}",
+    "signInFailed": "Inloggen mislukt: ${error}",
+    "quickConnectFailed": "Quick Connect mislukt: ${error}",
+    "addPlexTitle": "Inloggen met Plex",
+    "plexAuthIntro": "Kies hoe je wilt inloggen bij Plex. De browserflow opent plex.tv waar je de verbinding bevestigt; de QR-optie is handig voor TV / externe apparaten.",
+    "plexQRPrompt": "Scan deze QR-code om in te loggen.",
+    "waitingForPlexConfirmation": "Wachten tot plex.tv je inloggen bevestigt…",
+    "pinExpired": "PIN verlopen vóór inloggen. Probeer opnieuw.",
+    "duplicatePlexAccount": "Dit apparaat is al ingelogd op een Plex-account. Log uit via instellingen om van account te wisselen.",
+    "failedToRegisterAccount": "Account registreren mislukt: ${error}",
+    "enterJellyfinUrlError": "Voer de URL van je Jellyfin-server in",
+    "addConnectionTitle": "Verbinding toevoegen",
+    "addConnectionTitleScoped": "Toevoegen aan ${name}",
+    "addConnectionIntroGlobal": "Voeg nog een mediaserver toe. Je kunt Plex-accounts en Jellyfin-servers combineren — items van alle gekoppelde backends verschijnen samen op het startscherm.",
+    "addConnectionIntroScoped": "Voeg een nieuwe server toe, of leen er een van een ander profiel.",
+    "signInWithPlexCard": "Inloggen met Plex",
+    "signInWithPlexCardSubtitle": "Autoriseer dit apparaat met je Plex-account. Servers gedeeld met het account worden automatisch toegevoegd.",
+    "signInWithPlexCardSubtitleScoped": "Autoriseer een nieuw Plex-account. De bijbehorende Home-gebruikers verschijnen als profielen.",
+    "connectToJellyfinCard": "Verbinden met Jellyfin",
+    "connectToJellyfinCardSubtitle": "Voer de URL van je Jellyfin-server in en log in met gebruikersnaam + wachtwoord (Quick Connect komt eraan).",
+    "connectToJellyfinCardSubtitleScoped": "Log in op een Jellyfin-server. Wordt gekoppeld aan ${name}.",
+    "borrowFromAnotherProfile": "Lenen van een ander profiel",
+    "borrowFromAnotherProfileSubtitle": "Hergebruik een verbinding die al aan een ander profiel is gekoppeld. PIN-beveiligde bronprofielen vragen om de PIN."
   }
 }

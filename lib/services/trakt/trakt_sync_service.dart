@@ -38,8 +38,9 @@ class TraktSyncService {
   StreamSubscription<WatchStateEvent>? _subscription;
   final TraktSyncQueue _queue = TraktSyncQueue();
 
-  /// One resolver per Plex server, kept alive across events so the per-rating-
-  /// key GUID cache survives a binge-watch session.
+  /// One resolver per server, kept alive across events so the per-item
+  /// external-id cache survives a binge-watch session. Backend-neutral —
+  /// Plex resolves via `?includeGuids=1`, Jellyfin reads inline `ProviderIds`.
   final Map<String, TrackerIdResolver> _resolvers = {};
 
   /// Fallback buffer for items that failed to persist to the on-disk queue
@@ -69,8 +70,8 @@ class TraktSyncService {
     _isEnabled = enabled;
   }
 
-  /// Switch to a different account. Drops cached resolvers (their PlexClients
-  /// are tied to the previous user's tokens) and rebinds the queue.
+  /// Switch to a different account. Drops cached resolvers (their backing
+  /// clients are tied to the previous user's tokens) and rebinds the queue.
   void rebindToProfile(String userUuid, TraktSession? session, {required void Function() onSessionInvalidated}) {
     _client?.dispose();
     _client = session != null ? TraktClient(session, onSessionInvalidated: onSessionInvalidated) : null;
@@ -95,10 +96,13 @@ class TraktSyncService {
     final cached = _resolvers[serverId];
     if (cached != null) return cached;
 
-    final plexClient = _serverManager?.getClient(serverId);
-    if (plexClient == null) return null;
+    // Backend-neutral: TrackerIdResolver pulls external IDs through
+    // MediaServerClient.fetchExternalIds — Plex hits `?includeGuids=1`,
+    // Jellyfin reads the inline `ProviderIds` map.
+    final mediaClient = _serverManager?.getClient(serverId);
+    if (mediaClient == null) return null;
 
-    final resolver = TrackerIdResolver(plexClient, needsFribb: () => false);
+    final resolver = TrackerIdResolver(mediaClient, needsFribb: () => false);
     _resolvers[serverId] = resolver;
     return resolver;
   }
@@ -107,19 +111,19 @@ class TraktSyncService {
     if (!_canPush) return;
     if (event.changeType == WatchStateChangeType.progressUpdate) return;
 
-    final kind = TraktMediaKind.tryFromPlexType(event.mediaType);
+    final kind = TraktMediaKind.tryFromMediaKindId(event.mediaType);
     if (kind == null) return;
 
     final settings = SettingsService.instanceOrNull;
     if (settings != null && !settings.isLibraryAllowedForTracker(TrackerService.trakt, event.librarySectionGlobalKey)) {
-      appLogger.d('Trakt sync: library filtered out for ${event.ratingKey}');
+      appLogger.d('Trakt sync: library filtered out for ${event.itemId}');
       return;
     }
 
     final op = event.changeType == WatchStateChangeType.watched ? TraktSyncOp.add : TraktSyncOp.remove;
     await _push(
       op: op,
-      ratingKey: event.ratingKey,
+      ratingKey: event.itemId,
       serverId: event.serverId,
       kind: kind,
       watchedAtIso: DateTime.now().toUtc().toIso8601String(),
@@ -135,7 +139,7 @@ class TraktSyncService {
   }) async {
     final resolver = _resolverFor(serverId);
     if (resolver == null) {
-      appLogger.d('Trakt sync: no PlexClient for server $serverId, skipping');
+      appLogger.d('Trakt sync: no client registered for server $serverId, skipping');
       return;
     }
 
@@ -147,10 +151,12 @@ class TraktSyncService {
       resolved = await resolver.resolveForMovie(ratingKey);
     } else {
       // Episode — need show IDs + season/episode index. The WatchStateEvent
-      // doesn't carry the index, so fetch episode metadata.
-      final plexClient = _serverManager?.getClient(serverId);
-      if (plexClient == null) return;
-      final episodeMeta = await plexClient.getMetadataWithImages(ratingKey);
+      // doesn't carry the index, so fetch episode metadata via the neutral
+      // MediaServerClient surface (Plex `/library/metadata`, Jellyfin
+      // `/Users/{id}/Items/{id}`).
+      final mediaClient = _serverManager?.getClient(serverId);
+      if (mediaClient == null) return;
+      final episodeMeta = await mediaClient.fetchItem(ratingKey);
       if (episodeMeta == null) return;
       season = episodeMeta.parentIndex;
       number = episodeMeta.index;

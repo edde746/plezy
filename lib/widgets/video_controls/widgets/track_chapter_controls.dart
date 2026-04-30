@@ -3,14 +3,14 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 
 import '../../../focus/dpad_navigator.dart';
+import '../../../media/media_item.dart';
+import '../../../media/media_version.dart';
 import '../../../mpv/mpv.dart';
-import '../../../models/plex_media_info.dart';
-import '../../../models/plex_media_version.dart';
+import '../../../media/media_source_info.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../utils/platform_detector.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../widgets/overlay_sheet.dart';
-import '../../../models/plex_metadata.dart';
 import '../models/track_controls_state.dart';
 import '../../../models/transcode_quality_preset.dart';
 import '../sheets/chapter_sheet.dart';
@@ -25,7 +25,7 @@ import '../video_control_button.dart';
 /// Row of track and chapter control buttons for the video player
 class TrackChapterControls extends StatelessWidget {
   final Player player;
-  final List<PlexChapter> chapters;
+  final List<MediaChapter> chapters;
   final bool chaptersLoaded;
   final TrackControlsState trackControlsState;
   final Function(Duration position)? onSeekCompleted;
@@ -63,7 +63,7 @@ class TrackChapterControls extends StatelessWidget {
     this.hideChaptersAndQueue = false,
   });
 
-  List<PlexMediaVersion> get availableVersions => trackControlsState.availableVersions;
+  List<MediaVersion> get availableVersions => trackControlsState.availableVersions;
   int get selectedMediaIndex => trackControlsState.selectedMediaIndex;
   TranscodeQualityPreset get selectedQualityPreset => trackControlsState.selectedQualityPreset;
   bool get serverSupportsTranscoding => trackControlsState.serverSupportsTranscoding;
@@ -98,7 +98,7 @@ class TrackChapterControls extends StatelessWidget {
   bool get isLive => trackControlsState.isLive;
   bool get subtitlesVisible => trackControlsState.subtitlesVisible;
   bool get showQueueButton => trackControlsState.showQueueButton;
-  Function(PlexMetadata)? get onQueueItemSelected => trackControlsState.onQueueItemSelected;
+  Function(MediaItem)? get onQueueItemSelected => trackControlsState.onQueueItemSelected;
   String get ratingKey => trackControlsState.ratingKey;
   String? get mediaTitle => trackControlsState.mediaTitle;
   Future<void> Function()? get onSubtitleDownloaded => trackControlsState.onSubtitleDownloaded;
@@ -273,6 +273,7 @@ class TrackChapterControls extends StatelessWidget {
                         sourceAudioTracks: trackControlsState.sourceAudioTracks,
                         selectedAudioStreamId: trackControlsState.selectedAudioStreamId,
                         onSwitchAudioStreamId: trackControlsState.onSwitchAudioStreamId,
+                        subtitleSearchSupported: trackControlsState.subtitleSearchSupported,
                       ),
                     )
                     .whenComplete(() => onStartAutoHide?.call());
@@ -342,12 +343,21 @@ class TrackChapterControls extends StatelessWidget {
             (onSwitchVersion != null || onSwitchQualityPreset != null);
         if (showVersionQuality) {
           final currentIndex = buttonIndex;
+          // Tooltip narrows to whichever column the sheet will actually
+          // render — Jellyfin items only show the version list, so calling
+          // the button "Version & Quality" implies a quality picker that
+          // isn't there.
+          final buttonLabel = serverSupportsTranscoding
+              ? (availableVersions.length > 1
+                    ? t.videoControls.versionQualityButton
+                    : t.videoControls.qualityColumnHeader)
+              : t.videoControls.versionColumnHeader;
           buttons.add(
             _buildTrackButton(
               buttonIndex: currentIndex,
               icon: Symbols.high_quality_rounded,
-              tooltip: t.videoControls.versionQualityButton,
-              semanticLabel: t.videoControls.versionQualityButton,
+              tooltip: buttonLabel,
+              semanticLabel: buttonLabel,
               tracks: tracks,
               isMobile: isMobile,
               isDesktop: isDesktop,

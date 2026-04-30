@@ -1,10 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/play_queue_response.dart';
-import 'package:plezy/models/plex_metadata.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/play_queue.dart';
+import 'package:plezy/models/plex/play_queue_response.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
 
-PlexMetadata _item(String ratingKey, int playQueueItemID) =>
-    PlexMetadata(ratingKey: ratingKey, playQueueItemID: playQueueItemID, title: 'Episode $ratingKey');
+PlexMediaItem _item(String ratingKey, int playQueueItemID) => PlexMediaItem(
+  id: ratingKey,
+  kind: MediaKind.episode,
+  playQueueItemId: playQueueItemID,
+  title: 'Episode $ratingKey',
+);
+
+PlexMediaItem _miItem(String id, int playQueueItemId) =>
+    PlexMediaItem(id: id, kind: MediaKind.episode, playQueueItemId: playQueueItemId);
 
 PlayQueueResponse _queue({
   int playQueueID = 1,
@@ -12,7 +22,7 @@ PlayQueueResponse _queue({
   bool shuffled = false,
   int? totalCount,
   int? size,
-  List<PlexMetadata>? items,
+  List<MediaItem>? items,
 }) {
   return PlayQueueResponse(
     playQueueID: playQueueID,
@@ -110,7 +120,7 @@ void main() {
       // Not in queue mode → no-op
       var notified = 0;
       p.addListener(() => notified++);
-      p.setCurrentItem(_item('a', 5));
+      p.setCurrentItem(_miItem('a', 5));
       expect(p.currentPlayQueueItemID, isNull);
       expect(notified, 0);
 
@@ -122,12 +132,12 @@ void main() {
       // setPlaybackFromPlayQueue notifies once
       final preNotify = notified;
 
-      p.setCurrentItem(_item('b', 2002));
+      p.setCurrentItem(_miItem('b', 2002));
       expect(p.currentPlayQueueItemID, 2002);
       expect(notified, preNotify + 1);
 
-      // Item without playQueueItemID → no update, no notify
-      p.setCurrentItem(PlexMetadata(ratingKey: 'd'));
+      // Item without playQueueItemId → no update, no notify
+      p.setCurrentItem(MediaItem(id: 'd', backend: MediaBackend.plex, kind: MediaKind.episode));
       expect(p.currentPlayQueueItemID, 2002);
 
       p.dispose();
@@ -140,8 +150,8 @@ void main() {
 
       final next = await p.getNextEpisode('b');
       expect(next, isNotNull);
-      expect(next!.ratingKey, 'c');
-      expect(next.playQueueItemID, 1003);
+      expect(next!.id, 'c');
+      expect((next as PlexMediaItem).playQueueItemId, 1003);
 
       // currentPlayQueueItemID is NOT updated by getNextEpisode (setCurrentItem does that).
       expect(p.currentPlayQueueItemID, 1002);
@@ -174,8 +184,8 @@ void main() {
 
       final prev = await p.getPreviousEpisode('b');
       expect(prev, isNotNull);
-      expect(prev!.ratingKey, 'a');
-      expect(prev.playQueueItemID, 1001);
+      expect(prev!.id, 'a');
+      expect((prev as PlexMediaItem).playQueueItemId, 1001);
 
       p.dispose();
     });
@@ -204,7 +214,7 @@ void main() {
         _queue(playQueueID: 1, selectedItemID: 1, totalCount: 1, items: [_item('a', 1)]),
         null,
       );
-      expect(() => p.loadedItems.add(_item('mutated', 999)), throwsUnsupportedError);
+      expect(() => p.loadedItems.add(_miItem('mutated', 999)), throwsUnsupportedError);
       p.dispose();
     });
 
@@ -214,6 +224,29 @@ void main() {
       // clearShuffle and setPlaybackFromPlayQueue both notify; must not throw.
       p.clearShuffle();
       await p.setPlaybackFromPlayQueue(_queue(playQueueID: 1, totalCount: 1, items: [_item('a', 1)]), null);
+    });
+
+    test('playQueueItemIdFor returns synthetic ids for Jellyfin local queue items', () {
+      // Anchor: VideoPlayerScreen.initState gates clearShuffle on
+      // `playQueueItemIdFor(meta) != null` so a Jellyfin playlist queue
+      // survives entry into the player. If this returns null for queue
+      // members, the player wipes the launcher-set queue and prev/next
+      // walks the show instead of the playlist.
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+
+      final ep1 = MediaItem(id: 'ep1', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
+      final ep2 = MediaItem(id: 'ep2', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
+      final outsider = MediaItem(id: 'ep-other', backend: MediaBackend.jellyfin, kind: MediaKind.episode);
+
+      p.setPlaybackFromLocalQueue(
+        LocalPlayQueue(id: 'jellyfin:playlist-X', items: [ep1, ep2], currentIndex: 0, backendId: 'jellyfin'),
+        contextKey: 'playlist-X',
+      );
+
+      expect(p.playQueueItemIdFor(ep1), 0);
+      expect(p.playQueueItemIdFor(ep2), 1);
+      expect(p.playQueueItemIdFor(outsider), isNull);
     });
   });
 }

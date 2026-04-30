@@ -10,22 +10,22 @@ import '../mixins/context_menu_tap_mixin.dart';
 import '../models/download_models.dart';
 import '../providers/download_provider.dart';
 import '../providers/settings_provider.dart';
-import '../utils/content_utils.dart';
+import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../widgets/collapsible_text.dart';
 import '../widgets/download_status_icon.dart';
-import '../widgets/plex_optimized_image.dart';
-import '../models/plex_metadata.dart';
+import '../widgets/optimized_media_image.dart';
 import '../utils/platform_detector.dart';
 import '../utils/formatters.dart';
 import '../widgets/media_context_menu.dart';
 import '../widgets/placeholder_container.dart';
 import '../theme/mono_tokens.dart';
-import '../../services/plex_client.dart';
+import '../media/media_server_client.dart';
 
 /// Episode card widget with D-pad long-press support
 class EpisodeCard extends StatefulWidget {
-  final PlexMetadata episode;
-  final PlexClient? client;
+  final MediaItem episode;
+  final MediaServerClient? client;
   final VoidCallback onTap;
   final Future<void> Function(String)? onRefresh;
   final Future<void> Function()? onListRefresh;
@@ -62,8 +62,8 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
     );
     return Row(
       children: [
-        if (widget.episode.duration != null)
-          Text(formatDurationTimestamp(Duration(milliseconds: widget.episode.duration!)), style: mutedStyle),
+        if (widget.episode.durationMs != null)
+          Text(formatDurationTimestamp(Duration(milliseconds: widget.episode.durationMs!)), style: mutedStyle),
         if (widget.episode.originallyAvailableAt != null) ...[
           dot,
           Text(formatFullDate(widget.episode.originallyAvailableAt!), style: mutedStyle),
@@ -94,12 +94,12 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
     // Hide progress when offline (not tracked)
     final hasProgress =
         !widget.isOffline &&
-        widget.episode.viewOffset != null &&
-        widget.episode.duration != null &&
-        widget.episode.viewOffset! > 0;
-    final progress = hasProgress ? widget.episode.viewOffset! / widget.episode.duration! : 0.0;
+        widget.episode.viewOffsetMs != null &&
+        widget.episode.durationMs != null &&
+        widget.episode.viewOffsetMs! > 0;
+    final progress = hasProgress ? widget.episode.viewOffsetMs! / widget.episode.durationMs! : 0.0;
 
-    final hasActiveProgress = hasProgress && widget.episode.viewOffset! < widget.episode.duration!;
+    final hasActiveProgress = hasProgress && widget.episode.viewOffsetMs! < widget.episode.durationMs!;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
@@ -118,7 +118,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
           onListRefresh: widget.onListRefresh,
           onTap: widget.onTap,
           child: InkWell(
-            key: Key(widget.episode.ratingKey),
+            key: Key(widget.episode.id),
             borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
             onTap: widget.onTap,
             onTapDown: storeTapPosition,
@@ -336,7 +336,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
 
   Widget _buildEpisodeThumbnail() {
     if (widget.isOffline && widget.localPosterPath != null) {
-      return PlexOptimizedImage.thumb(
+      return OptimizedMediaImage.thumb(
         client: null,
         imagePath: null,
         localFilePath: widget.localPosterPath,
@@ -345,10 +345,10 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
             const PlaceholderContainer(child: AppIcon(Symbols.movie_rounded, fill: 1, size: 32)),
       );
     }
-    if (widget.episode.thumb != null) {
-      return PlexOptimizedImage.thumb(
+    if (widget.episode.thumbPath != null) {
+      return OptimizedMediaImage.thumb(
         client: widget.client,
-        imagePath: widget.episode.thumb,
+        imagePath: widget.episode.thumbPath,
         filterQuality: FilterQuality.medium,
         fit: BoxFit.cover,
         placeholder: (context, url) => const PlaceholderContainer(),

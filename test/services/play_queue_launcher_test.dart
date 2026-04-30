@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/plex_metadata.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/play_queue_launcher.dart';
 import 'package:plezy/services/plex_client.dart';
 
@@ -77,10 +79,10 @@ void main() {
         ),
       );
 
-      final launcher = PlayQueueLauncher(context: capturedContext, client: _StubPlexClient());
+      final launcher = PlexPlayQueueLauncher(context: capturedContext, client: _StubPlexClient());
       final result = await launcher.launchShuffledShow(
-        // 'movie' is not 'show' / 'season'.
-        metadata: PlexMetadata(ratingKey: 'rk1', type: 'movie'),
+        // movie is not show / season.
+        metadata: MediaItem(id: 'rk1', backend: MediaBackend.plex, kind: MediaKind.movie),
         showLoadingIndicator: false,
       );
 
@@ -102,7 +104,7 @@ void main() {
         ),
       );
 
-      final launcher = PlayQueueLauncher(context: capturedContext, client: _StubPlexClient());
+      final launcher = PlexPlayQueueLauncher(context: capturedContext, client: _StubPlexClient());
       // Passing a String — neither a PlexMetadata nor a PlexPlaylist.
       final result = await launcher.launchFromCollectionOrPlaylist(item: 'not-a-real-item', shuffle: false);
 
@@ -129,7 +131,7 @@ void main() {
       );
 
       final client = _StubPlexClient();
-      final launcher = PlayQueueLauncher(
+      final launcher = PlexPlayQueueLauncher(
         context: capturedContext,
         client: client,
         serverId: 'srv-A',

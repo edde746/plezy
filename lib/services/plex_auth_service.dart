@@ -2,12 +2,13 @@ import 'dart:async';
 import 'dart:io' show InternetAddress;
 import 'storage_service.dart';
 import 'plex_client.dart';
-import '../models/plex_user_profile.dart';
-import '../models/plex_home.dart';
+import '../models/plex/plex_user_profile.dart';
+import '../models/plex/plex_home.dart';
 import '../models/user_switch_response.dart';
 import '../utils/app_logger.dart';
-import '../utils/connection_constants.dart';
-import '../utils/plex_http_client.dart';
+import '../utils/media_server_timeouts.dart';
+import '../utils/media_server_http_client.dart';
+import '../utils/poll_with_backoff.dart';
 
 /// Redacts the middle of an IP address or hostname for safe logging.
 /// E.g. `192.168.1.50` → `192.***.***.50`, `my.server.example.com` → `my.***.***. com`.
@@ -44,7 +45,7 @@ class PlexAuthService {
   static const String _plexApiBase = 'https://plex.tv/api/v2';
   static const String _clientsApi = 'https://clients.plex.tv/api/v2';
 
-  final PlexHttpClient _http;
+  final MediaServerHttpClient _http;
   final String _clientIdentifier;
 
   PlexAuthService._(this._http, this._clientIdentifier);
@@ -55,9 +56,9 @@ class PlexAuthService {
 
   static Future<PlexAuthService> create() async {
     final storage = await StorageService.getInstance();
-    final http = PlexHttpClient(
-      connectTimeout: ConnectionTimeouts.plexTvConnect,
-      receiveTimeout: ConnectionTimeouts.plexTvReceive,
+    final http = MediaServerHttpClient(
+      connectTimeout: MediaServerTimeouts.plexTvConnect,
+      receiveTimeout: MediaServerTimeouts.plexTvReceive,
     );
     final clientIdentifier = await storage.getOrCreateClientIdentifier();
     return PlexAuthService._(http, clientIdentifier);
@@ -79,15 +80,15 @@ class PlexAuthService {
     return headers;
   }
 
-  Future<PlexResponse> _getUser(String authToken) {
+  Future<MediaServerResponse> _getUser(String authToken) {
     return _http.get(
       '$_plexApiBase/user',
       headers: _getCommonHeaders(authToken: authToken),
-      timeout: ConnectionTimeouts.plexTvReceive,
+      timeout: MediaServerTimeouts.plexTvReceive,
     );
   }
 
-  void _checkStatus(PlexResponse response) => throwIfHttpError(response);
+  void _checkStatus(MediaServerResponse response) => throwIfHttpError(response);
 
   /// Verify if a plex.tv token is valid
   Future<bool> verifyToken(String authToken) async {
@@ -104,7 +105,7 @@ class PlexAuthService {
     final response = await _http.post(
       '$_plexApiBase/pins?strong=true',
       headers: _getCommonHeaders(),
-      timeout: ConnectionTimeouts.plexTvReceive,
+      timeout: MediaServerTimeouts.plexTvReceive,
     );
     _checkStatus(response);
     return response.data as Map<String, dynamic>;
@@ -127,7 +128,7 @@ class PlexAuthService {
       final response = await _http.get(
         '$_plexApiBase/pins/$pinId',
         headers: _getCommonHeaders(),
-        timeout: ConnectionTimeouts.plexTvReceive,
+        timeout: MediaServerTimeouts.plexTvReceive,
       );
 
       final data = response.data as Map<String, dynamic>;
@@ -145,27 +146,12 @@ class PlexAuthService {
     int pinId, {
     Duration timeout = const Duration(minutes: 2),
     bool Function()? shouldCancel,
-  }) async {
-    final endTime = DateTime.now().add(timeout);
-    var backoff = const Duration(seconds: 1);
-    const maxBackoff = Duration(seconds: 5);
-
-    while (DateTime.now().isBefore(endTime)) {
-      if (shouldCancel != null && shouldCancel()) {
-        return null;
-      }
-
-      final token = await checkPin(pinId);
-      if (token != null) {
-        return token;
-      }
-
-      await Future.delayed(backoff);
-      final next = backoff * 2;
-      backoff = next > maxBackoff ? maxBackoff : next;
-    }
-
-    return null; // Timeout
+  }) {
+    return pollWithBackoff<String>(
+      probe: () => checkPin(pinId),
+      endTime: DateTime.now().add(timeout),
+      shouldCancel: shouldCancel,
+    );
   }
 
   /// Fetch available Plex servers for the authenticated user
@@ -401,8 +387,8 @@ class PlexServer {
       return;
     }
 
-    const preferredTimeout = ConnectionTimeouts.preferredEndpointProbe;
-    const raceTimeout = ConnectionTimeouts.connectionRace;
+    const preferredTimeout = MediaServerTimeouts.preferredEndpointProbe;
+    const raceTimeout = MediaServerTimeouts.connectionRace;
 
     final candidates = _buildPrioritizedCandidates();
     if (candidates.isEmpty) {
@@ -760,7 +746,7 @@ class PlexServer {
     final result = await PlexClient.testConnectionWithLatency(
       httpsUrl,
       accessToken,
-      timeout: ConnectionTimeouts.connectionRace,
+      timeout: MediaServerTimeouts.connectionRace,
       clientIdentifier: clientIdentifier,
     );
 

@@ -3,13 +3,22 @@
     "title": "Plezy"
   },
   "auth": {
+    "signIn": "登录",
     "signInWithPlex": "使用 Plex 登录",
     "showQRCode": "显示二维码",
     "authenticate": "验证",
     "authenticationTimeout": "验证超时。请重试。",
     "scanQRToSignIn": "扫描二维码登录",
     "waitingForAuth": "等待验证中...\n请在你的浏览器中完成登录。",
-    "useBrowser": "使用浏览器"
+    "useBrowser": "使用浏览器",
+    "or": "或",
+    "connectToJellyfin": "连接到 Jellyfin",
+    "useQuickConnect": "使用 Quick Connect",
+    "quickConnectCode": "Quick Connect 代码",
+    "quickConnectInstructions": "在浏览器中打开你的 Jellyfin 服务器，登录后从用户菜单中选择 Quick Connect。输入此代码以批准登录。",
+    "quickConnectWaiting": "等待批准…",
+    "quickConnectCancel": "取消",
+    "quickConnectExpired": "Quick Connect 代码在批准前已过期。请重试。"
   },
   "common": {
     "cancel": "取消",
@@ -104,12 +113,12 @@
     "gridView": "网格视图",
     "listView": "列表视图",
     "showHeroSection": "显示主要精选区",
-    "useGlobalHubs": "使用 Plex 主页布局",
-    "useGlobalHubsDescription": "显示与官方 Plex 客户端相同的主页推荐。关闭时将显示按媒体库分类的推荐。",
+    "useGlobalHubs": "Use Home Layout",
+    "useGlobalHubsDescription": "Show home page hubs like the official client. When off, shows per-library recommendations instead.",
     "showServerNameOnHubs": "在推荐栏显示服务器名称",
     "showServerNameOnHubsDescription": "始终在推荐栏标题中显示服务器名称。关闭时仅在推荐栏名称重复时显示。",
     "groupLibrariesByServer": "按服务器分组媒体库",
-    "groupLibrariesByServerDescription": "当您连接到多个服务器时，在侧边栏中为每个 Plex 服务器显示一个标题。",
+    "groupLibrariesByServerDescription": "Show a header for each media server in the sidebar when you're connected to multiple servers.",
     "alwaysKeepSidebarOpen": "始终保持侧边栏展开",
     "alwaysKeepSidebarOpenDescription": "侧边栏保持展开状态，内容区域自动调整",
     "showUnwatchedCount": "显示未观看数量",
@@ -452,7 +461,7 @@
     "musicNotSupported": "尚不支持播放音乐",
     "noDescriptionAvailable": "暂无描述",
     "noProfilesAvailable": "没有可用的用户",
-    "contactAdminForProfiles": "请联系您的 Plex 管理员添加用户",
+    "contactAdminForProfiles": "Contact your server administrator to add profiles",
     "unableToDetermineLibrarySection": "无法确定此项目的库分区",
     "logsCleared": "日志已清除",
     "logsCopied": "日志已复制到剪贴板",
@@ -513,12 +522,68 @@
   "dialog": {
     "confirmAction": "确认操作"
   },
+  "profiles": {
+    "addPlezyProfile": "添加 Plezy 配置文件",
+    "switchingProfile": "切换配置文件中…",
+    "deleteThisProfileTitle": "删除此配置文件？",
+    "deleteThisProfileMessage": "${displayName} 将被移除。连接本身不受影响。",
+    "active": "活跃",
+    "manage": "管理",
+    "delete": "删除",
+    "signOut": "退出登录",
+    "signOutPlexTitle": "退出 Plex 登录？",
+    "signOutPlexMessage": "${displayName} 以及该账户下的所有 Plex Home 用户将从此设备移除。您可以随时重新登录。",
+    "signedOutPlex": "已退出 Plex 登录。",
+    "signOutFailed": "退出登录失败。",
+    "sectionTitle": "配置文件",
+    "summarySingle": "添加配置文件以混合托管用户和本地身份",
+    "summaryMultipleWithActive": "${count} 个配置文件 · 活跃：${activeName}",
+    "summaryMultiple": "${count} 个配置文件",
+    "removeConnectionTitle": "移除连接？",
+    "removeConnectionMessage": "${displayName} 将失去对 ${connectionLabel} 的访问权限。连接本身仍可供其他配置文件使用。",
+    "deleteProfileTitle": "删除配置文件？",
+    "deleteProfileMessage": "这将从此设备中删除 ${displayName} 及其所有连接。底层的 Plex/Jellyfin 服务器不会受到影响。",
+    "profileNameLabel": "配置文件名称",
+    "pinProtectionLabel": "PIN 保护",
+    "pinManagedByPlex": "PIN 由 Plex 管理。在 plex.tv 上编辑。",
+    "noPinSetEditOnPlex": "未设置 PIN。如需要求 PIN，请在 plex.tv 上编辑 Home 用户。",
+    "setPin": "设置 PIN",
+    "connectionsLabel": "连接",
+    "add": "添加",
+    "deleteProfileButton": "删除配置文件",
+    "noConnectionsHint": "没有连接 — 添加一个以使用此配置文件。",
+    "plexHomeAccount": "Plex Home 账户",
+    "connectionDefault": "默认",
+    "makeDefault": "设为默认",
+    "removeConnection": "移除",
+    "borrowAddTo": "添加到 ${displayName}",
+    "borrowExplain": "从另一个配置文件借用连接。PIN 保护的源配置文件在共享前会要求输入 PIN。",
+    "borrowEmpty": "暂无可借用的内容。",
+    "borrowEmptySubtitle": "请先将 Plex 账户或 Jellyfin 服务器连接到另一个配置文件，然后回到这里。",
+    "newProfile": "新建配置文件",
+    "profileNameHint": "例如：访客、儿童、家庭房",
+    "pinProtectionOptional": "PIN 保护（可选）",
+    "pinExplain": "切换到此配置文件需要 4 位 PIN。软屏障 — 任何能清除应用数据的人都可以绕过它。",
+    "continueButton": "继续",
+    "pinsDontMatch": "PIN 不匹配"
+  },
+  "connections": {
+    "sectionTitle": "连接",
+    "addConnection": "添加连接",
+    "addConnectionSubtitleNoProfile": "使用 Plex 登录或连接 Jellyfin 服务器",
+    "addConnectionSubtitleScoped": "添加到 ${displayName} — Plex 帐户、Jellyfin 服务器或从其他配置文件借用",
+    "sessionExpiredOne": "${name} 的会话已过期",
+    "sessionExpiredMany": "${count} 个服务器的会话已过期",
+    "signInAgain": "重新登录"
+  },
   "discover": {
     "title": "发现",
     "switchProfile": "切换用户",
     "noContentAvailable": "没有可用内容",
     "addMediaToLibraries": "请向你的媒体库添加一些媒体",
     "continueWatching": "继续观看",
+    "nextUp": "接下来",
+    "recentlyAdded": "最近添加",
     "playEpisode": "S${season}E${episode}",
     "overview": "概述",
     "cast": "演员表",
@@ -532,7 +597,7 @@
   "errors": {
     "searchFailed": "搜索失败: ${error}",
     "connectionTimeout": "加载 ${context} 时连接超时",
-    "connectionFailed": "无法连接到 Plex 服务器",
+    "connectionFailed": "Unable to connect to media server",
     "failedToLoad": "无法加载 ${context}: ${error}",
     "noClientAvailable": "没有可用客户端",
     "authenticationFailed": "验证失败: ${error}",
@@ -540,7 +605,9 @@
     "pleaseEnterToken": "请输入一个令牌",
     "invalidToken": "令牌无效",
     "failedToVerifyToken": "无法验证令牌: ${error}",
-    "failedToSwitchProfile": "无法切换到 ${displayName}"
+    "failedToSwitchProfile": "无法切换到 ${displayName}",
+    "failedToDeleteProfile": "无法删除 ${displayName}",
+    "failedToRate": "无法更新评分"
   },
   "libraries": {
     "title": "媒体库",
@@ -595,13 +662,30 @@
       "seasons": "季",
       "episodes": "集",
       "folders": "文件夹"
+    },
+    "filterCategories": {
+      "genre": "类型",
+      "year": "年份",
+      "contentRating": "内容分级",
+      "tag": "标签"
+    },
+    "sortLabels": {
+      "title": "标题",
+      "dateAdded": "添加日期",
+      "releaseDate": "发行日期",
+      "rating": "评分",
+      "lastPlayed": "最近播放",
+      "playCount": "播放次数",
+      "random": "随机",
+      "dateShared": "共享日期",
+      "latestEpisodeAirDate": "最新一集播出日期"
     }
   },
   "about": {
     "title": "关于",
     "openSourceLicenses": "开源许可证",
     "versionLabel": "版本 ${version}",
-    "appDescription": "一款精美的 Flutter Plex 客户端",
+    "appDescription": "一款精美的 Flutter Plex 和 Jellyfin 客户端",
     "viewLicensesDescription": "查看第三方库的许可证"
   },
   "serverSelection": {
@@ -766,7 +850,9 @@
     "waitingForParticipants": "等待其他人加载...",
     "recentRooms": "最近的房间",
     "renameRoom": "重命名房间",
-    "removeRoom": "移除"
+    "removeRoom": "移除",
+    "guestSwitchUnavailable": "无法切换 — 服务器无法同步",
+    "guestSwitchFailed": "无法切换 — 在此服务器上未找到内容"
   },
   "downloads": {
     "title": "下载",
@@ -817,6 +903,12 @@
     "editSyncFilter": "同步筛选",
     "syncAllItems": "同步所有项目",
     "syncUnwatchedItems": "同步未观看项目",
+    "syncRuleServerContext": "服务器: ${server} • ${status}",
+    "syncRuleAvailable": "可用",
+    "syncRuleOffline": "离线",
+    "syncRuleSignInRequired": "需要登录",
+    "syncRuleNotAvailableForProfile": "当前个人资料不可用",
+    "syncRuleUnknownServer": "未知服务器",
     "syncRuleListCreated": "同步规则已创建"
   },
   "shaders": {
@@ -1077,5 +1169,39 @@
       "libraries": "媒体库",
       "noLibraries": "没有可用的媒体库"
     }
+  },
+  "addServer": {
+    "addJellyfinTitle": "添加 Jellyfin 服务器",
+    "jellyfinUrlIntro": "输入你的 Jellyfin 服务器 URL — 例如 `https://jellyfin.example.com`。可在之后登录。",
+    "serverUrl": "服务器 URL",
+    "findServer": "查找服务器",
+    "username": "用户名",
+    "password": "密码",
+    "signIn": "登录",
+    "change": "更改",
+    "required": "必填",
+    "couldNotReachServer": "无法连接到服务器: ${error}",
+    "signInFailed": "登录失败: ${error}",
+    "quickConnectFailed": "Quick Connect 失败: ${error}",
+    "addPlexTitle": "使用 Plex 登录",
+    "plexAuthIntro": "选择登录 Plex 的方式。浏览器流程会打开 plex.tv 让你确认连接；QR 选项适合电视 / 远程设备。",
+    "plexQRPrompt": "扫描此 QR 码以登录。",
+    "waitingForPlexConfirmation": "等待 plex.tv 确认登录…",
+    "pinExpired": "PIN 在登录前已过期。请重试。",
+    "duplicatePlexAccount": "此设备已登录到一个 Plex 帐户。请在设置中退出登录以切换帐户。",
+    "failedToRegisterAccount": "注册帐户失败: ${error}",
+    "enterJellyfinUrlError": "输入你的 Jellyfin 服务器 URL",
+    "addConnectionTitle": "添加连接",
+    "addConnectionTitleScoped": "添加到 ${name}",
+    "addConnectionIntroGlobal": "添加另一台媒体服务器。你可以混合使用 Plex 帐户和 Jellyfin 服务器 — 所有已连接后端的项目会一起显示在主页。",
+    "addConnectionIntroScoped": "添加新服务器，或从另一个配置文件借用。",
+    "signInWithPlexCard": "使用 Plex 登录",
+    "signInWithPlexCardSubtitle": "为你的 Plex 帐户授权此设备。与该帐户共享的服务器会自动加入。",
+    "signInWithPlexCardSubtitleScoped": "授权一个新的 Plex 帐户。其 Home 用户会显示为配置文件。",
+    "connectToJellyfinCard": "连接到 Jellyfin",
+    "connectToJellyfinCardSubtitle": "输入你的 Jellyfin 服务器 URL，使用用户名 + 密码登录（Quick Connect 即将支持）。",
+    "connectToJellyfinCardSubtitleScoped": "登录到 Jellyfin 服务器。绑定到 ${name}。",
+    "borrowFromAnotherProfile": "从另一个配置文件借用",
+    "borrowFromAnotherProfileSubtitle": "重用已附加到另一个配置文件的连接。受 PIN 保护的来源配置文件会要求输入 PIN。"
   }
 }

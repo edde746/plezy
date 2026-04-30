@@ -31,6 +31,51 @@ void main() {
       expect(result.contains('[REDACTED]'), isTrue);
     });
 
+    test('redacts Jellyfin api_key query parameter without registration', () {
+      final input = 'https://example.com/Items/1/Images/Primary?api_key=jelly-token-123&fmt=jpg';
+      final result = LogRedactionManager.redact(input);
+      expect(result.contains('jelly-token-123'), isFalse);
+      expect(result.contains('api_key=[REDACTED]'), isTrue);
+      expect(result.contains('fmt=jpg'), isTrue);
+    });
+
+    test('api_key redaction is case-insensitive', () {
+      final result = LogRedactionManager.redact('API_KEY=topsecret&z=1');
+      expect(result.contains('topsecret'), isFalse);
+      expect(result.contains('api_key=[REDACTED]'), isTrue);
+    });
+
+    test('redacts Jellyfin Quick Connect secret query parameter without registration', () {
+      final input = 'https://example.com/QuickConnect/Connect?secret=quick-secret-123&next=1';
+      final result = LogRedactionManager.redact(input);
+      expect(result.contains('quick-secret-123'), isFalse);
+      expect(result.contains('secret=[REDACTED]'), isTrue);
+      expect(result.contains('next=1'), isTrue);
+    });
+
+    test('Quick Connect secret redaction is case-insensitive and preserves other params', () {
+      final result = LogRedactionManager.redact('SECRET=a%2Fb%20c&Authenticated=false');
+      expect(result.contains('a%2Fb%20c'), isFalse);
+      expect(result.contains('secret=[REDACTED]'), isTrue);
+      expect(result.contains('Authenticated=false'), isTrue);
+    });
+
+    test('redacts X-Emby-Token header form', () {
+      final result = LogRedactionManager.redact('X-Emby-Token: emby-secret');
+      expect(result.contains('emby-secret'), isFalse);
+      expect(result.contains('[REDACTED]'), isTrue);
+    });
+
+    test('redacts MediaBrowser Authorization Token segment', () {
+      final input =
+          'Authorization: MediaBrowser Client="Plezy", Device="Plezy", DeviceId="dev-1", Version="1.0", Token="opaque-jellyfin-token"';
+      final result = LogRedactionManager.redact(input);
+      expect(result.contains('opaque-jellyfin-token'), isFalse);
+      expect(result.contains('Token="[REDACTED]"'), isTrue);
+      // Surrounding metadata stays intact for debugging.
+      expect(result.contains('Client="Plezy"'), isTrue);
+    });
+
     test('masks IPv4 addresses with dots', () {
       final result = LogRedactionManager.redact('connect to 192.168.1.42 now');
       expect(result.contains('192.168.1.42'), isFalse);
@@ -86,12 +131,12 @@ void main() {
   });
 
   group('registerServerUrl', () {
-    test('masks a registered server URL with start/end preview', () {
+    test('fully redacts a registered server URL', () {
       LogRedactionManager.registerServerUrl('https://my-cool-plex-server.example.com');
       final result = LogRedactionManager.redact('GET https://my-cool-plex-server.example.com/library/sections');
       expect(result.contains('my-cool-plex-server'), isFalse);
-      // start preview length is 12, end preview length is 8
-      expect(result.contains('...[REDACTED_URL]...'), isTrue);
+      expect(result.contains('https://'), isFalse);
+      expect(result.contains('[REDACTED_URL]'), isTrue);
     });
 
     test('skips IPv4-host URLs (regex IP redaction handles them)', () {

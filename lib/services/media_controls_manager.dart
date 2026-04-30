@@ -1,9 +1,9 @@
 import 'package:os_media_controls/os_media_controls.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 
-import 'plex_client.dart';
-import '../models/plex_metadata.dart';
-import '../utils/content_utils.dart';
+import '../media/media_server_client.dart';
+import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../utils/app_logger.dart';
 
 /// Manages OS media controls integration for video playback.
@@ -36,14 +36,17 @@ class MediaControlsManager {
 
   /// Update media metadata displayed in OS media controls
   ///
-  /// This includes title, artist, artwork, and duration.
-  Future<void> updateMetadata({required PlexMetadata metadata, PlexClient? client, Duration? duration}) async {
+  /// This includes title, artist, artwork, and duration. Backend-neutral —
+  /// the [MediaServerClient.thumbnailUrl] adapter handles per-backend URL
+  /// shape (Plex's `/photo/:/transcode` proxy vs. Jellyfin's
+  /// self-authenticated image URL).
+  Future<void> updateMetadata({required MediaItem metadata, MediaServerClient? client, Duration? duration}) async {
     try {
       // Build artwork URL if client is available
       String? artworkUrl;
-      if (client != null && metadata.thumb != null) {
+      if (client != null && metadata.thumbPath != null) {
         try {
-          artworkUrl = client.getThumbnailUrl(metadata.thumb!);
+          artworkUrl = client.thumbnailUrl(metadata.thumbPath!);
           appLogger.d('Artwork URL for media controls: $artworkUrl');
         } catch (e) {
           appLogger.w('Failed to build artwork URL', error: e);
@@ -53,7 +56,7 @@ class MediaControlsManager {
       // Update OS media controls
       await OsMediaControls.setMetadata(
         MediaMetadata(
-          title: metadata.title!,
+          title: metadata.title ?? '',
           artist: _buildArtist(metadata),
           artworkUrl: artworkUrl,
           duration: duration,
@@ -169,7 +172,7 @@ class MediaControlsManager {
   /// For episodes: "Show Name - Season X Episode Y"
   /// For movies: Director or studio
   /// For other content: Fallback to year or empty
-  String _buildArtist(PlexMetadata metadata) {
+  String _buildArtist(MediaItem metadata) {
     if (metadata.isEpisode) {
       final parts = <String>[];
 
@@ -188,7 +191,6 @@ class MediaControlsManager {
       return parts.join(' • ');
     } else if (metadata.isMovie) {
       // For movies, use director or studio
-      // Note: These fields may need to be added to PlexMetadata model
       if (metadata.year != null) {
         return metadata.year.toString();
       }

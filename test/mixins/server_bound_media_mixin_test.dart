@@ -1,14 +1,16 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/mixins/server_bound_media_mixin.dart';
-import 'package:plezy/models/plex_metadata.dart';
 
 /// Probe widget exposing the mixin's surface so tests can read its getters
 /// and call its helpers against a real BuildContext.
 class _Probe extends StatefulWidget {
   const _Probe({required this.metadata, required this.offline, required this.onState});
 
-  final PlexMetadata metadata;
+  final MediaItem metadata;
   final bool offline;
   final void Function(_ProbeState state, BuildContext context) onState;
 
@@ -18,7 +20,7 @@ class _Probe extends StatefulWidget {
 
 class _ProbeState extends State<_Probe> with ServerBoundMediaMixin<_Probe> {
   @override
-  PlexMetadata get serverBoundMetadata => widget.metadata;
+  MediaItem get serverBoundMetadata => widget.metadata;
 
   @override
   bool get isServerBoundOffline => widget.offline;
@@ -34,8 +36,8 @@ class _ProbeState extends State<_Probe> with ServerBoundMediaMixin<_Probe> {
   }
 }
 
-PlexMetadata _meta({String? serverId, String ratingKey = 'rk1'}) =>
-    PlexMetadata(ratingKey: ratingKey, serverId: serverId);
+MediaItem _meta({String? serverId, String ratingKey = 'rk1'}) =>
+    MediaItem(id: ratingKey, backend: MediaBackend.plex, kind: MediaKind.movie, serverId: serverId);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -124,7 +126,7 @@ void main() {
       expect(state.toServerBoundGlobalKey('rk-1'), ':rk-1');
     });
 
-    testWidgets('getServerBoundClient returns null in offline mode regardless of providers', (tester) async {
+    testWidgets('getServerBoundPlexClient returns null in offline mode regardless of providers', (tester) async {
       late _ProbeState state;
       late BuildContext ctx;
       await tester.pumpWidget(
@@ -141,7 +143,7 @@ void main() {
 
       // The provider extension short-circuits to null when isOffline is true,
       // so no MultiServerProvider is required to exercise this branch.
-      expect(state.getServerBoundClient(ctx), isNull);
+      expect(state.getServerBoundPlexClient(ctx), isNull);
     });
   });
 }

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../models/plex_first_character.dart';
+import '../../media/library_first_character.dart';
 import 'alpha_jump_helper.dart';
 
 /// Vertical strip of letters for jumping through sorted library items.
@@ -14,7 +14,7 @@ import 'alpha_jump_helper.dart';
 /// highest-count letters (by item size) and drops the rest.
 /// Supports both touch (tap/drag) and D-pad (up/down/select) input.
 class AlphaJumpBar extends StatefulWidget {
-  final List<PlexFirstCharacter> firstCharacters;
+  final List<LibraryFirstCharacter> firstCharacters;
   final void Function(int targetIndex) onJump;
 
   /// The letter currently visible at the top of the grid, derived from the
@@ -101,7 +101,11 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
   }
 
   /// Find the nearest displayed letter at or before [letter] in the full list.
+  /// Returns an empty string when [letter] is empty so callers can render an
+  /// "unhighlighted" state — important for the Jellyfin filter UX where no
+  /// letter is selected by default.
   String _nearestDisplayed(String letter) {
+    if (letter.isEmpty) return '';
     if (_displayed.isEmpty) return letter;
     if (_displayed.contains(letter)) return letter;
     final pos = _helper.letters.indexOf(letter);

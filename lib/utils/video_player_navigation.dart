@@ -4,16 +4,14 @@ import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
 
+import '../media/media_item.dart';
 import '../mpv/mpv.dart';
-import '../models/plex_metadata.dart';
-import '../models/plex_video_playback_data.dart';
 import '../models/transcode_quality_preset.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
 import '../services/settings_service.dart';
-import '../utils/provider_extensions.dart';
 import 'app_logger.dart';
 
 const String kVideoPlayerRouteName = '/video_player';
@@ -35,7 +33,7 @@ class WatchTogetherPlaybackNavigationException implements Exception {
 ///
 /// Parameters:
 /// - [context]: The build context for navigation
-/// - [metadata]: The Plex metadata for the content to play
+/// - [metadata]: The neutral [MediaItem] for the content to play
 /// - [preferredAudioTrack]: Optional audio track to select on playback start
 /// - [preferredSubtitleTrack]: Optional subtitle track to select on playback start
 /// - [selectedMediaIndex]: Optional media version index to use; if not provided,
@@ -48,7 +46,7 @@ class WatchTogetherPlaybackNavigationException implements Exception {
 /// was watched, or null if navigation was cancelled.
 Future<bool?> navigateToVideoPlayer(
   BuildContext context, {
-  required PlexMetadata metadata,
+  required MediaItem metadata,
   AudioTrack? preferredAudioTrack,
   SubtitleTrack? preferredSubtitleTrack,
   SubtitleTrack? preferredSecondarySubtitleTrack,
@@ -56,28 +54,24 @@ Future<bool?> navigateToVideoPlayer(
   TranscodeQualityPreset? selectedQualityPreset,
   bool usePushReplacement = false,
   bool isOffline = false,
-  PlexVideoPlaybackData? playbackData,
 }) async {
   // Extract context-dependent values before any async operations
   final navigator = Navigator.of(context);
   final downloadProvider = context.read<DownloadProvider>();
-  final client = isOffline ? null : context.getClientForMetadata(metadata);
+  // Use the manager-routed lookup so Jellyfin items don't trip the
+  // Plex-only client. The player branches on the returned type internally.
+  final manager = context.read<MultiServerProvider>().serverManager;
+  final mediaClient = isOffline ? null : manager.getClient(metadata.serverId ?? '');
 
   // Load saved media version preference if not explicitly provided
   int mediaIndex = selectedMediaIndex ?? 0;
-  var effectivePlaybackData = playbackData;
   if (selectedMediaIndex == null) {
     try {
       final settingsService = await SettingsService.getInstance();
-      final seriesKey = metadata.grandparentRatingKey ?? metadata.ratingKey;
+      final seriesKey = metadata.grandparentId ?? metadata.id;
       final savedPreference = settingsService.read(SettingsService.mediaVersionPreferences)[seriesKey];
       if (savedPreference != null) {
         mediaIndex = savedPreference;
-        // Pre-parsed playbackData was built with mediaIndex=0; invalidate if
-        // the resolved index differs so the player re-fetches with the correct one
-        if (savedPreference != 0) {
-          effectivePlaybackData = null;
-        }
       }
     } catch (e) {
       // Ignore errors loading preference, use default
@@ -102,7 +96,7 @@ Future<bool?> navigateToVideoPlayer(
         launched = await ExternalPlayerService.launch(
           context: context,
           metadata: metadata,
-          client: client!,
+          client: mediaClient,
           mediaIndex: mediaIndex,
         );
       }
@@ -116,10 +110,10 @@ Future<bool?> navigateToVideoPlayer(
 
   // Prevent stacking an identical video player when already active
   if (!usePushReplacement &&
-      VideoPlayerScreenState.activeRatingKey == metadata.ratingKey &&
+      VideoPlayerScreenState.activeId == metadata.id &&
       VideoPlayerScreenState.activeMediaIndex == mediaIndex) {
     appLogger.d(
-      'Video player already active for ${metadata.ratingKey} (mediaIndex=$mediaIndex), skipping duplicate navigation',
+      'Video player already active for ${metadata.id} (mediaIndex=$mediaIndex), skipping duplicate navigation',
     );
     return null;
   }
@@ -134,7 +128,6 @@ Future<bool?> navigateToVideoPlayer(
       selectedMediaIndex: mediaIndex,
       selectedQualityPreset: selectedQualityPreset,
       isOffline: isOffline,
-      playbackData: effectivePlaybackData,
     ),
     transitionDuration: Duration.zero,
     reverseTransitionDuration: Duration.zero,
@@ -152,14 +145,14 @@ Future<bool?> navigateToVideoPlayer(
 ///
 /// Parameters:
 /// - [context]: The build context for navigation
-/// - [metadata]: The Plex metadata for the content to play
+/// - [metadata]: The neutral [MediaItem] for the content to play
 /// - [isOffline]: If true, plays from downloaded content
 /// - [onRefresh]: Optional callback to refresh data when returning from playback
 ///   (only called when not offline)
 /// - All other parameters are passed through to [navigateToVideoPlayer]
 Future<bool?> navigateToVideoPlayerWithRefresh(
   BuildContext context, {
-  required PlexMetadata metadata,
+  required MediaItem metadata,
   bool isOffline = false,
   VoidCallback? onRefresh,
   AudioTrack? preferredAudioTrack,
@@ -167,7 +160,6 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   SubtitleTrack? preferredSecondarySubtitleTrack,
   int? selectedMediaIndex,
   bool usePushReplacement = false,
-  PlexVideoPlaybackData? playbackData,
 }) async {
   final result = await navigateToVideoPlayer(
     context,
@@ -178,7 +170,6 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
     preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
     selectedMediaIndex: selectedMediaIndex,
     usePushReplacement: usePushReplacement,
-    playbackData: playbackData,
   );
 
   appLogger.d('Returned from playback, refreshing metadata');
@@ -205,7 +196,7 @@ Future<void> navigateToWatchTogetherPlayback(
     throw const WatchTogetherPlaybackNavigationException('Watch Together server is unavailable');
   }
 
-  final metadata = await client.getMetadataWithImages(ratingKey);
+  final metadata = await client.fetchItem(ratingKey);
   if (metadata == null) {
     throw const WatchTogetherPlaybackNavigationException('Current Watch Together media is unavailable');
   }

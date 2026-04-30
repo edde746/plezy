@@ -3,13 +3,22 @@
     "title": "Plezy"
   },
   "auth": {
+    "signIn": "로그인",
     "signInWithPlex": "Plex 계정으로 로그인",
     "showQRCode": "QR 코드",
     "authenticate": "인증",
     "authenticationTimeout": "인증 시간이 초과되었습니다. 다시 시도해 주세요.",
     "scanQRToSignIn": "QR 코드를 스캔하여 로그인",
     "waitingForAuth": "인증 대기 중... 브라우저에서 로그인을 완료해 주세요.",
-    "useBrowser": "브라우저 사용"
+    "useBrowser": "브라우저 사용",
+    "or": "또는",
+    "connectToJellyfin": "Jellyfin에 연결",
+    "useQuickConnect": "Quick Connect 사용",
+    "quickConnectCode": "Quick Connect 코드",
+    "quickConnectInstructions": "웹 브라우저에서 Jellyfin 서버를 열어 로그인한 뒤 사용자 메뉴에서 Quick Connect를 선택하세요. 이 코드를 입력해 로그인을 승인하세요.",
+    "quickConnectWaiting": "승인 대기 중…",
+    "quickConnectCancel": "취소",
+    "quickConnectExpired": "승인되기 전에 Quick Connect 코드가 만료되었습니다. 다시 시도하세요."
   },
   "common": {
     "cancel": "취소",
@@ -104,12 +113,12 @@
     "gridView": "그리드 보기",
     "listView": "목록 보기",
     "showHeroSection": "주요 추천 영역 표시",
-    "useGlobalHubs": "Plex 홈 레이아웃 사용",
-    "useGlobalHubsDescription": "공식 Plex 클라이언트처럼 홈 페이지 허브를 표시합니다. 끄면 라이브러리별 추천이 대신 표시됩니다.",
+    "useGlobalHubs": "Use Home Layout",
+    "useGlobalHubsDescription": "Show home page hubs like the official client. When off, shows per-library recommendations instead.",
     "showServerNameOnHubs": "허브에 서버 이름 표시",
     "showServerNameOnHubsDescription": "허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.",
     "groupLibrariesByServer": "서버별로 라이브러리 그룹화",
-    "groupLibrariesByServerDescription": "여러 서버에 연결되어 있을 때 사이드바에 각 Plex 서버의 헤더를 표시합니다.",
+    "groupLibrariesByServerDescription": "Show a header for each media server in the sidebar when you're connected to multiple servers.",
     "alwaysKeepSidebarOpen": "사이드바 항상 열어두기",
     "alwaysKeepSidebarOpenDescription": "사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다",
     "showUnwatchedCount": "미시청 수 표시",
@@ -452,7 +461,7 @@
     "musicNotSupported": "음악 재생 미지원",
     "noDescriptionAvailable": "설명이 없습니다",
     "noProfilesAvailable": "사용 가능한 프로필이 없습니다",
-    "contactAdminForProfiles": "프로필을 추가하려면 Plex 관리자에게 문의하세요",
+    "contactAdminForProfiles": "Contact your server administrator to add profiles",
     "unableToDetermineLibrarySection": "이 항목의 라이브러리 섹션을 확인할 수 없습니다",
     "logsCleared": "로그가 삭제 되었습니다",
     "logsCopied": "로그가 클립보드에 복사 되었습니다",
@@ -513,12 +522,68 @@
   "dialog": {
     "confirmAction": "확인"
   },
+  "profiles": {
+    "addPlezyProfile": "Plezy 프로필 추가",
+    "switchingProfile": "프로필 전환 중…",
+    "deleteThisProfileTitle": "이 프로필을 삭제하시겠습니까?",
+    "deleteThisProfileMessage": "${displayName} 이(가) 제거됩니다. 연결 자체는 영향을 받지 않습니다.",
+    "active": "활성",
+    "manage": "관리",
+    "delete": "삭제",
+    "signOut": "로그아웃",
+    "signOutPlexTitle": "Plex에서 로그아웃하시겠습니까?",
+    "signOutPlexMessage": "${displayName} 및 이 계정의 모든 Plex Home 사용자가 이 기기에서 제거됩니다. 언제든지 다시 로그인할 수 있습니다.",
+    "signedOutPlex": "Plex에서 로그아웃되었습니다.",
+    "signOutFailed": "로그아웃에 실패했습니다.",
+    "sectionTitle": "프로필",
+    "summarySingle": "관리되는 사용자와 로컬 ID를 혼합하려면 프로필을 추가하세요",
+    "summaryMultipleWithActive": "${count}개 프로필 · 활성: ${activeName}",
+    "summaryMultiple": "${count}개 프로필",
+    "removeConnectionTitle": "연결을 제거하시겠습니까?",
+    "removeConnectionMessage": "${displayName}이(가) ${connectionLabel}에 대한 액세스를 잃게 됩니다. 연결 자체는 다른 프로필에서 계속 사용할 수 있습니다.",
+    "deleteProfileTitle": "프로필을 삭제하시겠습니까?",
+    "deleteProfileMessage": "이 기기에서 ${displayName}과(와) 모든 연결이 제거됩니다. 기본 Plex/Jellyfin 서버에는 영향을 주지 않습니다.",
+    "profileNameLabel": "프로필 이름",
+    "pinProtectionLabel": "PIN 보호",
+    "pinManagedByPlex": "PIN은 Plex에서 관리됩니다. plex.tv에서 편집하세요.",
+    "noPinSetEditOnPlex": "설정된 PIN이 없습니다. 요구하려면 plex.tv에서 Home 사용자를 편집하세요.",
+    "setPin": "PIN 설정",
+    "connectionsLabel": "연결",
+    "add": "추가",
+    "deleteProfileButton": "프로필 삭제",
+    "noConnectionsHint": "연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.",
+    "plexHomeAccount": "Plex Home 계정",
+    "connectionDefault": "기본값",
+    "makeDefault": "기본값으로 설정",
+    "removeConnection": "제거",
+    "borrowAddTo": "${displayName}에 추가",
+    "borrowExplain": "다른 프로필에서 연결을 빌립니다. PIN 보호된 원본 프로필은 공유 전에 PIN을 요구합니다.",
+    "borrowEmpty": "아직 빌릴 것이 없습니다.",
+    "borrowEmptySubtitle": "먼저 다른 프로필에 Plex 계정 또는 Jellyfin 서버를 연결한 다음 여기로 돌아오세요.",
+    "newProfile": "새 프로필",
+    "profileNameHint": "예: 손님, 어린이, 가족실",
+    "pinProtectionOptional": "PIN 보호 (선택 사항)",
+    "pinExplain": "이 프로필로 전환하려면 4자리 PIN이 필요합니다. 부드러운 장벽 — 앱 데이터를 지울 수 있는 사람은 우회할 수 있습니다.",
+    "continueButton": "계속",
+    "pinsDontMatch": "PIN이 일치하지 않습니다"
+  },
+  "connections": {
+    "sectionTitle": "연결",
+    "addConnection": "연결 추가",
+    "addConnectionSubtitleNoProfile": "Plex로 로그인하거나 Jellyfin 서버에 연결",
+    "addConnectionSubtitleScoped": "${displayName} 에 추가 — Plex 계정, Jellyfin 서버 또는 다른 프로필에서 빌리기",
+    "sessionExpiredOne": "${name} 의 세션이 만료되었습니다",
+    "sessionExpiredMany": "${count} 개의 서버에서 세션이 만료되었습니다",
+    "signInAgain": "다시 로그인"
+  },
   "discover": {
     "title": "발견",
     "switchProfile": "사용자 전환",
     "noContentAvailable": "사용 가능한 콘텐츠가 없습니다",
     "addMediaToLibraries": "미디어 라이브러리에 미디어를 추가해 주세요",
     "continueWatching": "계속 시청",
+    "nextUp": "다음 에피소드",
+    "recentlyAdded": "최근에 추가됨",
     "playEpisode": "S${season}E${episode}",
     "overview": "개요",
     "cast": "출연진",
@@ -532,7 +597,7 @@
   "errors": {
     "searchFailed": "검색 실패: ${error}",
     "connectionTimeout": "${context} 로드 중 연결 시간 초과",
-    "connectionFailed": "Plex 서버에 연결할 수 없음",
+    "connectionFailed": "Unable to connect to media server",
     "failedToLoad": "${context} 로드 실패: ${error}",
     "noClientAvailable": "사용 가능한 클라이언트가 없습니다",
     "authenticationFailed": "인증 실패: ${error}",
@@ -540,7 +605,9 @@
     "pleaseEnterToken": "토큰을 입력해 주세요",
     "invalidToken": "토큰이 유효하지 않습니다",
     "failedToVerifyToken": "토큰을 확인할 수 없습니다: ${error}",
-    "failedToSwitchProfile": "${displayName}으로 전환할 수 없습니다"
+    "failedToSwitchProfile": "${displayName}으로 전환할 수 없습니다",
+    "failedToDeleteProfile": "${displayName}을(를) 삭제할 수 없습니다",
+    "failedToRate": "평점을 업데이트하지 못했습니다"
   },
   "libraries": {
     "title": "미디어 라이브러리",
@@ -595,13 +662,30 @@
       "seasons": "시즌",
       "episodes": "화",
       "folders": "폴더"
+    },
+    "filterCategories": {
+      "genre": "장르",
+      "year": "연도",
+      "contentRating": "시청 등급",
+      "tag": "태그"
+    },
+    "sortLabels": {
+      "title": "제목",
+      "dateAdded": "추가된 날짜",
+      "releaseDate": "출시일",
+      "rating": "평점",
+      "lastPlayed": "마지막 재생",
+      "playCount": "재생 횟수",
+      "random": "무작위",
+      "dateShared": "공유된 날짜",
+      "latestEpisodeAirDate": "최신 에피소드 방영일"
     }
   },
   "about": {
     "title": "소개",
     "openSourceLicenses": "오픈소스 라이선스",
     "versionLabel": "버전 ${version}",
-    "appDescription": "아름다운 Flutter Plex 클라이언트",
+    "appDescription": "아름다운 Flutter용 Plex 및 Jellyfin 클라이언트",
     "viewLicensesDescription": "타사 라이브러리 라이선스 보기"
   },
   "serverSelection": {
@@ -766,7 +850,9 @@
     "waitingForParticipants": "다른 참가자의 로딩을 기다리는 중...",
     "recentRooms": "최근 방",
     "renameRoom": "방 이름 변경",
-    "removeRoom": "제거"
+    "removeRoom": "제거",
+    "guestSwitchUnavailable": "전환할 수 없음 — 동기화 서버를 사용할 수 없습니다",
+    "guestSwitchFailed": "전환할 수 없음 — 이 서버에서 콘텐츠를 찾을 수 없습니다"
   },
   "downloads": {
     "title": "다운로드",
@@ -817,6 +903,12 @@
     "editSyncFilter": "동기화 필터",
     "syncAllItems": "모든 항목 동기화 중",
     "syncUnwatchedItems": "시청하지 않은 항목 동기화 중",
+    "syncRuleServerContext": "서버: ${server} • ${status}",
+    "syncRuleAvailable": "사용 가능",
+    "syncRuleOffline": "오프라인",
+    "syncRuleSignInRequired": "로그인 필요",
+    "syncRuleNotAvailableForProfile": "현재 프로필에서 사용할 수 없음",
+    "syncRuleUnknownServer": "알 수 없는 서버",
     "syncRuleListCreated": "동기화 규칙이 생성되었습니다"
   },
   "shaders": {
@@ -1077,5 +1169,39 @@
       "libraries": "라이브러리",
       "noLibraries": "사용 가능한 라이브러리가 없습니다"
     }
+  },
+  "addServer": {
+    "addJellyfinTitle": "Jellyfin 서버 추가",
+    "jellyfinUrlIntro": "Jellyfin 서버 URL을 입력하세요 — 예: `https://jellyfin.example.com`. 이후에 로그인할 수 있습니다.",
+    "serverUrl": "서버 URL",
+    "findServer": "서버 찾기",
+    "username": "사용자 이름",
+    "password": "비밀번호",
+    "signIn": "로그인",
+    "change": "변경",
+    "required": "필수",
+    "couldNotReachServer": "서버에 연결할 수 없습니다: ${error}",
+    "signInFailed": "로그인 실패: ${error}",
+    "quickConnectFailed": "Quick Connect 실패: ${error}",
+    "addPlexTitle": "Plex로 로그인",
+    "plexAuthIntro": "Plex에 로그인할 방법을 선택하세요. 브라우저 플로우는 plex.tv를 열어 연결을 확인하며, QR 옵션은 TV나 원격 장치에 편리합니다.",
+    "plexQRPrompt": "이 QR 코드를 스캔하여 로그인하세요.",
+    "waitingForPlexConfirmation": "plex.tv에서 로그인을 확인하는 중…",
+    "pinExpired": "로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.",
+    "duplicatePlexAccount": "이 기기는 이미 Plex 계정에 로그인되어 있습니다. 계정을 변경하려면 설정에서 로그아웃하세요.",
+    "failedToRegisterAccount": "계정 등록 실패: ${error}",
+    "enterJellyfinUrlError": "Jellyfin 서버 URL을 입력하세요",
+    "addConnectionTitle": "연결 추가",
+    "addConnectionTitleScoped": "${name}에 추가",
+    "addConnectionIntroGlobal": "다른 미디어 서버를 추가하세요. Plex 계정과 Jellyfin 서버를 함께 사용할 수 있으며, 연결된 모든 백엔드의 항목이 홈 화면에 함께 표시됩니다.",
+    "addConnectionIntroScoped": "새 서버를 추가하거나 다른 프로필에서 빌리세요.",
+    "signInWithPlexCard": "Plex로 로그인",
+    "signInWithPlexCardSubtitle": "이 기기를 Plex 계정으로 인증합니다. 계정과 공유된 서버가 자동으로 함께 추가됩니다.",
+    "signInWithPlexCardSubtitleScoped": "새 Plex 계정을 인증합니다. 해당 Home 사용자가 프로필로 표시됩니다.",
+    "connectToJellyfinCard": "Jellyfin에 연결",
+    "connectToJellyfinCardSubtitle": "Jellyfin 서버 URL을 입력하고 사용자 이름 + 비밀번호로 로그인하세요 (Quick Connect는 곧 지원 예정).",
+    "connectToJellyfinCardSubtitleScoped": "Jellyfin 서버에 로그인합니다. ${name}에 연결됩니다.",
+    "borrowFromAnotherProfile": "다른 프로필에서 빌리기",
+    "borrowFromAnotherProfileSubtitle": "이미 다른 프로필에 연결된 연결을 재사용합니다. PIN으로 보호된 소스 프로필은 PIN을 요청합니다."
   }
 }

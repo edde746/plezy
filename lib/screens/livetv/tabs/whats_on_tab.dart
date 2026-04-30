@@ -9,9 +9,9 @@ import '../../../focus/dpad_navigator.dart';
 import '../../../focus/key_event_utils.dart';
 import '../../../focus/locked_hub_controller.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../media/media_item_types.dart';
 import '../../../models/livetv_channel.dart';
 import '../../../models/livetv_hub_result.dart';
-import '../../../models/plex_metadata.dart';
 import '../../../providers/multi_server_provider.dart';
 import '../../../providers/settings_provider.dart';
 import '../../../utils/grid_size_calculator.dart';
@@ -23,7 +23,7 @@ import '../../../widgets/focus_builders.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../utils/scroll_utils.dart';
 import '../../../widgets/horizontal_scroll_with_arrows.dart';
-import '../../../widgets/plex_optimized_image.dart';
+import '../../../widgets/optimized_media_image.dart';
 import '../live_tv_actions_mixin.dart';
 import '../live_tv_show_schedule_screen.dart';
 
@@ -84,7 +84,8 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
       for (final serverInfo in liveTvServers) {
         if (!queriedServers.add(serverInfo.serverId)) continue;
         try {
-          final client = multiServer.getClientForServer(serverInfo.serverId);
+          // Plex-only: Live TV hubs API is Plex-specific.
+          final client = multiServer.getPlexClientForServer(serverInfo.serverId);
           if (client == null) continue;
 
           final hubs = await client.getLiveTvHubs();
@@ -142,7 +143,7 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
     if (entry.program.isCurrentlyAiring && channel != null) {
       // Live → play directly
       tuneChannel(channel);
-    } else if (entry.metadata.mediaType == PlexMediaType.show) {
+    } else if (entry.metadata.isShow) {
       // Show with upcoming episodes → show full schedule
       Navigator.of(context).push(
         MaterialPageRoute(
@@ -158,7 +159,7 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
       showProgramDetails(
         program: entry.program,
         channel: channel,
-        posterThumb: entry.metadata.grandparentThumb ?? entry.metadata.thumb,
+        posterThumb: entry.metadata.grandparentThumbPath ?? entry.metadata.thumbPath,
         posterServerId: entry.metadata.serverId ?? '',
       );
     }
@@ -187,7 +188,7 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
             onLongPress: (entry) => showProgramDetails(
               program: entry.program,
               channel: findChannel(entry.program.channelIdentifier),
-              posterThumb: entry.metadata.grandparentThumb ?? entry.metadata.thumb,
+              posterThumb: entry.metadata.grandparentThumbPath ?? entry.metadata.thumbPath,
               posterServerId: entry.metadata.serverId ?? '',
             ),
             onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
@@ -533,7 +534,7 @@ class _LiveTvPosterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final metadata = entry.metadata;
     // Always use poster image: show poster for episodes, thumb for others
-    final posterImage = metadata.grandparentThumb ?? metadata.thumb;
+    final posterImage = metadata.grandparentThumbPath ?? metadata.thumbPath;
 
     return FocusBuilders.buildLockedFocusWrapper(
       context: context,
@@ -553,8 +554,8 @@ class _LiveTvPosterCard extends StatelessWidget {
                 height: posterHeight,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                  child: PlexOptimizedImage.poster(
-                    client: context.getClientWithFallback(metadata.serverId),
+                  child: OptimizedMediaImage.poster(
+                    client: context.tryGetMediaClientWithFallback(metadata.serverId),
                     imagePath: posterImage,
                     width: double.infinity,
                     height: double.infinity,

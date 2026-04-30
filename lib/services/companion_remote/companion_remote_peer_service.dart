@@ -10,6 +10,7 @@ import '../../models/companion_remote/remote_command.dart';
 import '../../models/companion_remote/remote_session.dart';
 import '../../utils/app_logger.dart';
 import '../base_peer_service.dart';
+import 'remote_auth_context.dart';
 import 'remote_auth_service.dart';
 
 // Re-export so callers that import from here get the types.
@@ -31,6 +32,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
   String? _myPeerId;
   String? _hostAddress; // Format: "ip:port"
   RemoteSessionRole? _role;
+  String? _selectedAuthContextId;
+  String? _selectedHostClientId;
 
   // Encrypted channel state
   List<int>? _sessionEncKey;
@@ -65,6 +68,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
   String? get myPeerId => _myPeerId;
   String? get hostAddress => _hostAddress;
   RemoteSessionRole? get role => _role;
+  String? get selectedAuthContextId => _selectedAuthContextId;
+  String? get selectedHostClientId => _selectedHostClientId;
   bool get isHost => _role == RemoteSessionRole.host;
   bool get isConnected => _clientSocket != null || (_channel != null && _channel?.closeCode == null);
 
@@ -109,6 +114,31 @@ class CompanionRemotePeerService with KeepaliveMixin {
     String clientIdentifier,
     List<String> homeUserUUIDs,
   ) async {
+    final auth = RemoteAuthService.instance;
+    return createSessionForContexts(deviceName, platform, [
+      RemoteAuthContext(
+        id: auth.computeAuthContextId(homeSecret),
+        backend: 'legacy',
+        connectionId: '',
+        homeSecret: homeSecret,
+        discoveryKey: const [],
+        clientIdentifier: clientIdentifier,
+        userUuid: homeUserUUIDs.isEmpty ? '' : homeUserUUIDs.first,
+        allowedUserUuids: homeUserUUIDs,
+      ),
+    ]);
+  }
+
+  /// Create a host session that accepts any of the provided remote identities.
+  Future<({List<String> addresses, int port})> createSessionForContexts(
+    String deviceName,
+    String platform,
+    List<RemoteAuthContext> authContexts,
+  ) async {
+    if (authContexts.isEmpty) {
+      throw const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'No auth contexts available');
+    }
+
     if (_server != null) {
       await disconnect();
     }
@@ -139,15 +169,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
           try {
             final socket = await WebSocketTransformer.upgrade(request);
             final sourceIp = request.connectionInfo?.remoteAddress.address ?? 'unknown';
-            _handleNewWebSocketConnection(
-              socket,
-              deviceName,
-              platform,
-              homeSecret,
-              clientIdentifier,
-              homeUserUUIDs,
-              sourceIp,
-            );
+            _handleNewWebSocketConnection(socket, deviceName, platform, authContexts, sourceIp);
           } catch (e) {
             appLogger.e('CompanionRemote: Failed to upgrade WebSocket', error: e);
           }
@@ -177,9 +199,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
     WebSocket socket,
     String hostDeviceName,
     String hostPlatform,
-    List<int> homeSecret,
-    String hostClientId,
-    List<String> homeUserUUIDs,
+    List<RemoteAuthContext> authContexts,
     String sourceIp,
   ) {
     appLogger.d('CompanionRemote: New WebSocket connection from $sourceIp');
@@ -197,8 +217,19 @@ class CompanionRemotePeerService with KeepaliveMixin {
       return;
     }
 
-    // Send challenge: hostNonce + hostClientId
-    socket.add(jsonEncode({'type': 'challenge', 'nonce': base64Encode(hostNonce), 'hostClientId': hostClientId}));
+    final primaryContext = authContexts.first;
+
+    // Send challenge: legacy hostClientId plus all selectable auth contexts.
+    socket.add(
+      jsonEncode({
+        'type': 'challenge',
+        'nonce': base64Encode(hostNonce),
+        'hostClientId': primaryContext.clientIdentifier,
+        'authContexts': [
+          for (final context in authContexts) {'id': context.id, 'hostClientId': context.clientIdentifier},
+        ],
+      }),
+    );
 
     // Authentication timeout
     authTimeout = Timer(const Duration(seconds: 10), () {
@@ -221,6 +252,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
               final clientIdentifier = json['clientIdentifier'] as String?;
               final deviceName = json['deviceName'] as String?;
               final platform = json['platform'] as String?;
+              final authContextId = json['authContextId'] as String?;
 
               if (authTag == null ||
                   clientNonceB64 == null ||
@@ -234,9 +266,28 @@ class CompanionRemotePeerService with KeepaliveMixin {
               }
 
               final clientNonce = base64Decode(clientNonceB64);
+              RemoteAuthContext? selectedContext;
+              if (authContextId != null && authContextId.isNotEmpty) {
+                for (final context in authContexts) {
+                  if (context.id == authContextId) {
+                    selectedContext = context;
+                    break;
+                  }
+                }
+              } else if (authContexts.length == 1) {
+                selectedContext = primaryContext;
+              }
 
-              // Verify userUUID is in home users list
-              if (!homeUserUUIDs.contains(userUUID)) {
+              if (selectedContext == null) {
+                _recordFailedAuth(sourceIp);
+                appLogger.w('CompanionRemote: Auth failed — unknown auth context');
+                socket.add(jsonEncode({'type': 'authFailed'}));
+                unawaited(socket.close(4003, 'Authentication failed'));
+                return;
+              }
+
+              // Verify userUUID is allowed for the selected profile connection.
+              if (selectedContext.allowedUserUuids.isNotEmpty && !selectedContext.allowedUserUuids.contains(userUUID)) {
                 _recordFailedAuth(sourceIp);
                 appLogger.w('CompanionRemote: Auth failed — unknown user');
                 socket.add(jsonEncode({'type': 'authFailed'}));
@@ -247,10 +298,10 @@ class CompanionRemotePeerService with KeepaliveMixin {
               // Verify auth tag
               final valid = auth.verifyAuthTag(
                 authTag: authTag,
-                homeSecret: homeSecret,
+                homeSecret: selectedContext.homeSecret,
                 hostNonce: hostNonce,
                 clientNonce: clientNonce,
-                hostClientId: hostClientId,
+                hostClientId: selectedContext.clientIdentifier,
                 userUUID: userUUID,
                 clientIdentifier: clientIdentifier,
                 deviceName: deviceName,
@@ -270,7 +321,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
               isAuthenticated = true;
               authTimeout?.cancel();
 
-              final sessionEncKey = await auth.deriveSessionEncKey(homeSecret, hostNonce, clientNonce);
+              final sessionEncKey = await auth.deriveSessionEncKey(selectedContext.homeSecret, hostNonce, clientNonce);
 
               // Close existing client if present
               if (_clientSocket != null) {
@@ -283,6 +334,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
               _sendCounter = 0;
               _recvCounter = 0;
               _isAuthenticated = true;
+              _selectedAuthContextId = selectedContext.id;
+              _selectedHostClientId = selectedContext.clientIdentifier;
 
               appLogger.d('CompanionRemote: Client authenticated: $deviceName ($platform)');
 
@@ -330,6 +383,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
           _clientSocket = null;
           _sessionEncKey = null;
           _isAuthenticated = false;
+          _selectedAuthContextId = null;
+          _selectedHostClientId = null;
           _deviceDisconnectedController.add(null);
           _connectionStateController.add(RemoteSessionStatus.disconnected);
           stopKeepalive();
@@ -368,6 +423,40 @@ class CompanionRemotePeerService with KeepaliveMixin {
     String userUUID,
     String clientIdentifier,
   ) async {
+    final auth = RemoteAuthService.instance;
+    final context = RemoteAuthContext(
+      id: auth.computeAuthContextId(homeSecret),
+      backend: 'legacy',
+      connectionId: '',
+      homeSecret: homeSecret,
+      discoveryKey: const [],
+      clientIdentifier: clientIdentifier,
+      userUuid: userUUID,
+      allowedUserUuids: [userUUID],
+    );
+    return joinSessionWithContexts(
+      deviceName,
+      platform,
+      hostAddress,
+      [context],
+      authContextId: context.id,
+      expectedHostClientId: hostClientId,
+    );
+  }
+
+  /// Join a host session with any local auth context that the host also supports.
+  Future<void> joinSessionWithContexts(
+    String deviceName,
+    String platform,
+    String hostAddress,
+    List<RemoteAuthContext> authContexts, {
+    String? authContextId,
+    String expectedHostClientId = '',
+  }) async {
+    if (authContexts.isEmpty) {
+      throw const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'No auth contexts available');
+    }
+
     if (_channel != null) {
       await disconnect();
     }
@@ -447,26 +536,70 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
               if (messageType == 'challenge') {
                 hostNonce = base64Decode(json['nonce'] as String);
-                receivedHostClientId = json['hostClientId'] as String;
+                final legacyHostClientId = json['hostClientId'] as String? ?? '';
+                final challengeContextHostIds = <String, String>{};
+                final challengeContexts = json['authContexts'] as List<dynamic>? ?? const [];
+                for (final item in challengeContexts) {
+                  if (item is! Map) continue;
+                  final id = item['id'] as String?;
+                  final hostClientId = item['hostClientId'] as String?;
+                  if (id != null && id.isNotEmpty && hostClientId != null && hostClientId.isNotEmpty) {
+                    challengeContextHostIds[id] = hostClientId;
+                  }
+                }
+
+                RemoteAuthContext? selectedContext;
+                if (authContextId != null && authContextId.isNotEmpty) {
+                  for (final context in authContexts) {
+                    if (context.id == authContextId) {
+                      selectedContext = context;
+                      break;
+                    }
+                  }
+                } else if (challengeContextHostIds.isNotEmpty) {
+                  for (final context in authContexts) {
+                    if (challengeContextHostIds.containsKey(context.id)) {
+                      selectedContext = context;
+                      break;
+                    }
+                  }
+                } else {
+                  selectedContext = authContexts.first;
+                }
+
+                if (selectedContext == null ||
+                    (challengeContextHostIds.isNotEmpty && !challengeContextHostIds.containsKey(selectedContext.id))) {
+                  appLogger.w('CompanionRemote: No shared auth context with host');
+                  if (!completer.isCompleted) {
+                    completer.completeError(
+                      const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'No shared identity'),
+                    );
+                  }
+                  unawaited(_channel?.sink.close(4003, 'Authentication failed'));
+                  return;
+                }
+
+                receivedHostClientId = challengeContextHostIds[selectedContext.id] ?? legacyHostClientId;
                 clientNonce = auth.generateNonce();
 
-                if (hostClientId.isNotEmpty && receivedHostClientId != hostClientId) {
+                if (expectedHostClientId.isNotEmpty && receivedHostClientId != expectedHostClientId) {
                   appLogger.w('CompanionRemote: Host client ID mismatch');
                   if (!completer.isCompleted) {
                     completer.completeError(
                       const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'Host identity mismatch'),
                     );
                   }
+                  unawaited(_channel?.sink.close(4003, 'Authentication failed'));
                   return;
                 }
 
                 final authTag = auth.computeAuthTag(
-                  homeSecret: homeSecret,
+                  homeSecret: selectedContext.homeSecret,
                   hostNonce: hostNonce!,
                   clientNonce: clientNonce!,
                   hostClientId: receivedHostClientId!,
-                  userUUID: userUUID,
-                  clientIdentifier: clientIdentifier,
+                  userUUID: selectedContext.userUuid,
+                  clientIdentifier: selectedContext.clientIdentifier,
                   deviceName: deviceName,
                   platform: platform,
                 );
@@ -474,18 +607,21 @@ class CompanionRemotePeerService with KeepaliveMixin {
                 _channel!.sink.add(
                   jsonEncode({
                     'type': 'auth',
+                    'authContextId': selectedContext.id,
                     'clientNonce': base64Encode(clientNonce!),
-                    'userUUID': userUUID,
-                    'clientIdentifier': clientIdentifier,
+                    'userUUID': selectedContext.userUuid,
+                    'clientIdentifier': selectedContext.clientIdentifier,
                     'deviceName': deviceName,
                     'platform': platform,
                     'authTag': authTag,
                   }),
                 );
 
-                _sessionEncKey = await auth.deriveSessionEncKey(homeSecret, hostNonce!, clientNonce!);
+                _sessionEncKey = await auth.deriveSessionEncKey(selectedContext.homeSecret, hostNonce!, clientNonce!);
                 _sendCounter = 0;
                 _recvCounter = 0;
+                _selectedAuthContextId = selectedContext.id;
+                _selectedHostClientId = receivedHostClientId;
               } else if (messageType == 'authFailed') {
                 appLogger.w('CompanionRemote: Authentication failed');
                 if (!completer.isCompleted) {
@@ -509,6 +645,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
           _connectionStateController.add(RemoteSessionStatus.disconnected);
           _isAuthenticated = false;
           _sessionEncKey = null;
+          _selectedAuthContextId = null;
+          _selectedHostClientId = null;
           stopKeepalive();
         },
         onError: (error) {
@@ -566,15 +704,48 @@ class CompanionRemotePeerService with KeepaliveMixin {
     String userUUID,
     String clientIdentifier,
   ) async {
+    final auth = RemoteAuthService.instance;
+    final context = RemoteAuthContext(
+      id: auth.computeAuthContextId(homeSecret),
+      backend: 'legacy',
+      connectionId: '',
+      homeSecret: homeSecret,
+      discoveryKey: const [],
+      clientIdentifier: clientIdentifier,
+      userUuid: userUUID,
+      allowedUserUuids: [userUUID],
+    );
+    return joinSessionRacingWithContexts(
+      deviceName,
+      platform,
+      hostAddresses,
+      [context],
+      authContextId: context.id,
+      expectedHostClientId: hostClientId,
+    );
+  }
+
+  /// Race WebSocket connections and authenticate with the selected shared identity.
+  Future<String> joinSessionRacingWithContexts(
+    String deviceName,
+    String platform,
+    List<String> hostAddresses,
+    List<RemoteAuthContext> authContexts, {
+    String? authContextId,
+    String expectedHostClientId = '',
+  }) async {
+    if (authContexts.isEmpty) {
+      throw const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'No auth contexts available');
+    }
+
     if (hostAddresses.length == 1) {
-      await joinSession(
+      await joinSessionWithContexts(
         deviceName,
         platform,
         hostAddresses.first,
-        homeSecret,
-        hostClientId,
-        userUUID,
-        clientIdentifier,
+        authContexts,
+        authContextId: authContextId,
+        expectedHostClientId: expectedHostClientId,
       );
       return hostAddresses.first;
     }
@@ -642,7 +813,14 @@ class CompanionRemotePeerService with KeepaliveMixin {
       cleanup();
 
       // Set up the proper managed connection on the winning address
-      await joinSession(deviceName, platform, winner, homeSecret, hostClientId, userUUID, clientIdentifier);
+      await joinSessionWithContexts(
+        deviceName,
+        platform,
+        winner,
+        authContexts,
+        authContextId: authContextId,
+        expectedHostClientId: expectedHostClientId,
+      );
       return winner;
     } on TimeoutException {
       cleanup();
@@ -791,6 +969,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
     _myPeerId = null;
     _hostAddress = null;
     _role = null;
+    _selectedAuthContextId = null;
+    _selectedHostClientId = null;
     _sessionEncKey = null;
     _sendCounter = 0;
     _recvCounter = 0;

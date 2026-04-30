@@ -3,23 +3,26 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../media/media_item.dart';
+import '../media/media_server_client.dart';
 import '../models/external_player_models.dart';
-import '../models/plex_metadata.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
 import '../i18n/strings.g.dart';
-import 'plex_client.dart';
 import 'settings_service.dart';
 
 const _externalPlayerChannel = MethodChannel('com.plezy/external_player');
 
 class ExternalPlayerService {
-  /// Launch an external player with either a pre-resolved [videoUrl] (e.g. local
-  /// file path for downloaded content) or by fetching the streaming URL from [client].
+  /// Launch an external player with either a pre-resolved [videoUrl] (e.g.
+  /// a local file path for downloaded content) or by asking [client] to
+  /// resolve the streaming URL for [metadata]. Each backend implements
+  /// `resolveExternalPlaybackUrl` for the right shape (Plex part URL,
+  /// Jellyfin `/Videos/{id}/stream?Static=true`).
   static Future<bool> launch({
     required BuildContext context,
-    PlexMetadata? metadata,
-    PlexClient? client,
+    MediaItem? metadata,
+    MediaServerClient? client,
     int mediaIndex = 0,
     String? videoUrl,
   }) async {
@@ -29,15 +32,14 @@ class ExternalPlayerService {
       if (videoUrl != null) {
         resolvedUrl = videoUrl;
       } else if (client != null && metadata != null) {
-        final playbackData = await client.getVideoPlaybackData(metadata.ratingKey, mediaIndex: mediaIndex);
-
-        if (!playbackData.hasValidVideoUrl) {
+        final url = await client.resolveExternalPlaybackUrl(metadata, mediaIndex: mediaIndex);
+        if (url == null || url.isEmpty) {
           if (context.mounted) {
             showErrorSnackBar(context, t.messages.fileInfoNotAvailable);
           }
           return false;
         }
-        resolvedUrl = playbackData.videoUrl!;
+        resolvedUrl = url;
       } else {
         appLogger.e('ExternalPlayerService.launch requires either videoUrl or client+metadata');
         return false;

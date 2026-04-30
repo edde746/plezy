@@ -9,9 +9,9 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_wrapper.dart';
+import '../../profiles/active_profile_provider.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
-import '../../utils/provider_extensions.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/dialog_action_button.dart';
@@ -22,6 +22,7 @@ import '../providers/watch_together_provider.dart';
 import '../services/recent_rooms_service.dart';
 import '../services/watch_together_peer_service.dart';
 import '../widgets/join_session_dialog.dart';
+import '../../widgets/loading_indicator_box.dart';
 
 /// Main screen for Watch Together functionality
 ///
@@ -98,7 +99,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
 
   bool get _isBusy => _isCreating || _isJoining || _enteringRoomCode != null;
 
-  String? get _plexDisplayName => context.userProfile.currentUser?.displayName;
+  String? get _plexDisplayName => context.read<ActiveProfileProvider>().active?.displayName;
 
   Future<void> _checkHealth() async {
     try {
@@ -170,9 +171,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
                   onPressed: _isBusy ? null : _createSession,
                   child: FilledButton.icon(
                     onPressed: _isBusy ? null : _createSession,
-                    icon: _isCreating
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Symbols.add_rounded),
+                    icon: _isCreating ? const LoadingIndicatorBox(size: 20) : const Icon(Symbols.add_rounded),
                     label: Text(_isCreating ? t.watchTogether.creating : t.watchTogether.createSession),
                   ),
                 ),
@@ -184,9 +183,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
                   onPressed: _isBusy ? null : _joinSession,
                   child: OutlinedButton.icon(
                     onPressed: _isBusy ? null : _joinSession,
-                    icon: _isJoining
-                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                        : const Icon(Symbols.group_add_rounded),
+                    icon: _isJoining ? const LoadingIndicatorBox(size: 20) : const Icon(Symbols.group_add_rounded),
                     label: Text(_isJoining ? t.watchTogether.joining : t.watchTogether.joinSession),
                   ),
                 ),
@@ -370,9 +367,7 @@ class _RecentRoomTile extends StatelessWidget {
         onLongPress: () => _showActions(context),
         child: ListTile(
           shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-          leading: isEntering
-              ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-              : const Icon(Symbols.meeting_room_rounded),
+          leading: isEntering ? const LoadingIndicatorBox(size: 24) : const Icon(Symbols.meeting_room_rounded),
           title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: room.name != null
               ? Text(
@@ -674,9 +669,7 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
                 onPressed: _isJoining ? null : _joinCurrentPlayback,
                 child: FilledButton.icon(
                   onPressed: _isJoining ? null : _joinCurrentPlayback,
-                  icon: _isJoining
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Symbols.play_arrow_rounded),
+                  icon: _isJoining ? const LoadingIndicatorBox() : const Icon(Symbols.play_arrow_rounded),
                   label: Text(_isJoining ? t.watchTogether.joining : t.watchTogether.joinCurrentPlayback),
                 ),
               ),

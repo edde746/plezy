@@ -1,4 +1,4 @@
-import 'plex_user_profile.dart';
+import 'plex/plex_user_profile.dart';
 
 class UserSwitchResponse {
   final int id;

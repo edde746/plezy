@@ -1,4 +1,4 @@
-import '../models/plex_metadata.dart';
+import '../media/media_item.dart';
 import 'app_logger.dart';
 import 'base_notifier.dart';
 import 'global_key_utils.dart';
@@ -6,11 +6,11 @@ import 'hierarchical_event_mixin.dart';
 
 /// Event representing a media item deletion with parent chain for hierarchical invalidation
 class DeletionEvent with HierarchicalEventMixin {
-  /// The ratingKey of the deleted item
+  /// The id of the deleted item (Plex ratingKey, Jellyfin GUID, …).
   @override
-  final String ratingKey;
+  final String itemId;
 
-  /// Composite key: serverId:ratingKey
+  /// Composite key: serverId:itemId
   @override
   final String globalKey;
 
@@ -19,8 +19,8 @@ class DeletionEvent with HierarchicalEventMixin {
   final String serverId;
 
   /// Parent chain for hierarchical invalidation
-  /// For an episode: [seasonRatingKey, showRatingKey]
-  /// For a season: [showRatingKey]
+  /// For an episode: [seasonId, showId]
+  /// For a season: [showId]
   /// For a movie: []
   @override
   final List<String> parentChain;
@@ -37,13 +37,13 @@ class DeletionEvent with HierarchicalEventMixin {
   final bool isDownloadOnly;
 
   DeletionEvent({
-    required this.ratingKey,
+    required this.itemId,
     required this.serverId,
     required this.parentChain,
     required this.mediaType,
     this.leafCount = 1,
     this.isDownloadOnly = false,
-  }) : globalKey = buildGlobalKey(serverId, ratingKey);
+  }) : globalKey = buildGlobalKey(serverId, itemId);
 
   @override
   String toString() => 'DeletionEvent(deleted: $globalKey, type: $mediaType, parents: $parentChain)';
@@ -64,7 +64,7 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
   Stream<DeletionEvent> forServer(String serverId) => stream.where((e) => e.serverId == serverId);
 
   /// Filter for events affecting a specific item or its children
-  Stream<DeletionEvent> forItem(String ratingKey) => stream.where((e) => e.affectsItem(ratingKey));
+  Stream<DeletionEvent> forItem(String itemId) => stream.where((e) => e.affectsItem(itemId));
 
   /// Emit a deletion event with logging
   @override
@@ -73,15 +73,15 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
     super.notify(event);
   }
 
-  /// Helper to emit a deletion event from metadata
-  void notifyDeleted({required PlexMetadata metadata, bool isDownloadOnly = false}) {
+  /// Helper to emit a deletion event from a [MediaItem].
+  void notifyDeletedItem({required MediaItem item, bool isDownloadOnly = false}) {
     notify(
       DeletionEvent(
-        ratingKey: metadata.ratingKey,
-        serverId: metadata.serverId ?? '',
-        parentChain: metadata.parentChain,
-        mediaType: metadata.type ?? '',
-        leafCount: metadata.leafCount ?? 1,
+        itemId: item.id,
+        serverId: item.serverId ?? '',
+        parentChain: item.parentChain,
+        mediaType: item.kind.id,
+        leafCount: item.leafCount ?? 1,
         isDownloadOnly: isDownloadOnly,
       ),
     );

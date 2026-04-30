@@ -1,7 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/plex_media_info.dart';
-import 'package:plezy/models/plex_metadata.dart';
-import 'package:plezy/models/plex_user_profile.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_server_user_profile.dart';
+import 'package:plezy/media/media_source_info.dart';
+import 'package:plezy/models/jellyfin/jellyfin_user_profile.dart';
+import 'package:plezy/models/plex/plex_user_profile.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/track_selection_service.dart';
 
@@ -39,8 +43,14 @@ import 'package:plezy/services/track_selection_service.dart';
 // Fixtures
 // ============================================================
 
-PlexMetadata _meta({String? audioLanguage, String? subtitleLanguage}) =>
-    PlexMetadata(ratingKey: 'rk1', audioLanguage: audioLanguage, subtitleLanguage: subtitleLanguage);
+MediaItem _meta({MediaBackend backend = MediaBackend.plex, String? audioLanguage, String? subtitleLanguage}) =>
+    MediaItem(
+      id: 'rk1',
+      backend: backend,
+      kind: MediaKind.movie,
+      audioLanguage: audioLanguage,
+      subtitleLanguage: subtitleLanguage,
+    );
 
 PlexUserProfile _profile({
   bool autoSelectAudio = true,
@@ -65,13 +75,32 @@ PlexUserProfile _profile({
   );
 }
 
+JellyfinUserProfile _jellyfinProfile({
+  String? defaultAudioLanguage,
+  String? defaultSubtitleLanguage,
+  SubtitlePlaybackMode? subtitleMode,
+}) {
+  return JellyfinUserProfile(
+    autoSelectAudio: true,
+    defaultAudioLanguage: defaultAudioLanguage,
+    defaultSubtitleLanguage: defaultSubtitleLanguage,
+    subtitleMode: subtitleMode,
+  );
+}
+
 AudioTrack _audio(String id, {String? lang, String? title, String? codec, int? channels, bool isDefault = false}) =>
     AudioTrack(id: id, language: lang, title: title, codec: codec, channels: channels, isDefault: isDefault);
 
-SubtitleTrack _sub(String id, {String? lang, String? title, String? codec, bool isDefault = false}) =>
-    SubtitleTrack(id: id, language: lang, title: title, codec: codec, isDefault: isDefault);
+SubtitleTrack _sub(
+  String id, {
+  String? lang,
+  String? title,
+  String? codec,
+  bool isDefault = false,
+  bool isForced = false,
+}) => SubtitleTrack(id: id, language: lang, title: title, codec: codec, isDefault: isDefault, isForced: isForced);
 
-PlexAudioTrack _plexAudio(
+MediaAudioTrack _plexAudio(
   int id, {
   String? language,
   String? languageCode,
@@ -80,7 +109,7 @@ PlexAudioTrack _plexAudio(
   bool selected = false,
   String? codec,
 }) {
-  return PlexAudioTrack(
+  return MediaAudioTrack(
     id: id,
     language: language,
     languageCode: languageCode ?? language,
@@ -91,7 +120,7 @@ PlexAudioTrack _plexAudio(
   );
 }
 
-PlexSubtitleTrack _plexSub(
+MediaSubtitleTrack _plexSub(
   int id, {
   String? language,
   String? languageCode,
@@ -100,7 +129,7 @@ PlexSubtitleTrack _plexSub(
   bool forced = false,
   String? codec,
 }) {
-  return PlexSubtitleTrack(
+  return MediaSubtitleTrack(
     id: id,
     language: language,
     languageCode: languageCode ?? language,
@@ -111,8 +140,17 @@ PlexSubtitleTrack _plexSub(
   );
 }
 
-PlexMediaInfo _info({List<PlexAudioTrack>? audio, List<PlexSubtitleTrack>? subs}) =>
-    PlexMediaInfo(videoUrl: '', audioTracks: audio ?? const [], subtitleTracks: subs ?? const [], chapters: const []);
+MediaSourceInfo _info({
+  List<MediaAudioTrack>? audio,
+  List<MediaSubtitleTrack>? subs,
+  int? defaultSubtitleStreamIndex,
+}) => MediaSourceInfo(
+  videoUrl: '',
+  audioTracks: audio ?? const [],
+  subtitleTracks: subs ?? const [],
+  chapters: const [],
+  defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
+);
 
 /// Minimal Player stub — TrackSelectionService never reads from the player
 /// in any of the public-pure helpers we test.
@@ -121,7 +159,7 @@ class _StubPlayer implements Player {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-TrackSelectionService _svc({PlexMetadata? metadata, PlexUserProfile? profile, PlexMediaInfo? info}) {
+TrackSelectionService _svc({MediaItem? metadata, MediaServerUserProfile? profile, MediaSourceInfo? info}) {
   return TrackSelectionService(
     player: _StubPlayer(),
     metadata: metadata ?? _meta(),
@@ -303,7 +341,7 @@ void main() {
       // matcher resolves on Plex's selected (French).
       final result = _svc(info: info).selectAudioTrack(tracks, null);
       expect(result, isNotNull);
-      expect(result!.priority, TrackSelectionPriority.plexSelected);
+      expect(result!.priority, TrackSelectionPriority.serverSelected);
       expect(result.track.language, 'fre');
     });
 
@@ -378,7 +416,7 @@ void main() {
         ],
       );
       final result = _svc(info: info).selectSubtitleTrack(tracks, null, null);
-      expect(result.priority, TrackSelectionPriority.plexSelected);
+      expect(result.priority, TrackSelectionPriority.serverSelected);
       expect(result.track.language, 'fre');
     });
 
@@ -392,8 +430,123 @@ void main() {
         ],
       );
       final result = _svc(info: info).selectSubtitleTrack(tracks, null, null);
-      expect(result.priority, TrackSelectionPriority.plexSelected);
+      expect(result.priority, TrackSelectionPriority.serverSelected);
       expect(result.track.id, 'no');
+    });
+
+    test('Jellyfin media info with subs but none selected falls through to default fallback', () {
+      final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'fre', isDefault: true)];
+      final info = _info(
+        subs: [
+          _plexSub(10, language: 'eng'),
+          _plexSub(11, language: 'fre'),
+        ],
+      );
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        info: info,
+      ).selectSubtitleTrack(tracks, null, null);
+      expect(result.priority, TrackSelectionPriority.defaultTrack);
+      expect(result.track.id, '2');
+    });
+
+    test('Jellyfin explicit DefaultSubtitleStreamIndex=-1 forces subtitles off', () {
+      final tracks = [_sub('1', lang: 'eng', isDefault: true), _sub('2', lang: 'fre')];
+      final info = _info(
+        defaultSubtitleStreamIndex: -1,
+        subs: [
+          _plexSub(10, language: 'eng'),
+          _plexSub(11, language: 'fre'),
+        ],
+      );
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        info: info,
+      ).selectSubtitleTrack(tracks, null, null);
+      expect(result.priority, TrackSelectionPriority.serverSelected);
+      expect(result.track.id, 'no');
+    });
+
+    test('Jellyfin SubtitleMode.None forces subtitles off', () {
+      final tracks = [_sub('1', lang: 'eng', isDefault: true)];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.none),
+      ).selectSubtitleTrack(tracks, null, null);
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, 'no');
+    });
+
+    test('Jellyfin SubtitleMode.OnlyForced selects matching forced subtitle', () {
+      final tracks = [
+        _sub('1', lang: 'eng'),
+        _sub('2', lang: 'eng', isForced: true),
+        _sub('3', lang: 'jpn', isForced: true),
+      ];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.onlyForced),
+      ).selectSubtitleTrack(tracks, null, null);
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, '2');
+    });
+
+    test('Jellyfin SubtitleMode.OnlyForced turns off when no forced subtitle exists', () {
+      final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'jpn')];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.onlyForced),
+      ).selectSubtitleTrack(tracks, null, null);
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, 'no');
+    });
+
+    test('Jellyfin SubtitleMode.Always selects preferred subtitle language', () {
+      final tracks = [_sub('1', lang: 'jpn'), _sub('2', lang: 'eng')];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.always),
+      ).selectSubtitleTrack(tracks, null, null);
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, '2');
+    });
+
+    test('Jellyfin SubtitleMode.Always falls back to default then first subtitle', () {
+      final tracks = [_sub('1', lang: 'jpn'), _sub('2', lang: 'fre', isDefault: true)];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(defaultSubtitleLanguage: 'eng', subtitleMode: SubtitlePlaybackMode.always),
+      ).selectSubtitleTrack(tracks, null, null);
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, '2');
+    });
+
+    test('Jellyfin SubtitleMode.Smart uses forced subtitle when audio matches preferred language', () {
+      final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'eng', isForced: true)];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(
+          defaultAudioLanguage: 'eng',
+          defaultSubtitleLanguage: 'eng',
+          subtitleMode: SubtitlePlaybackMode.smart,
+        ),
+      ).selectSubtitleTrack(tracks, null, _audio('A', lang: 'eng'));
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, '2');
+    });
+
+    test('Jellyfin SubtitleMode.Smart uses preferred subtitle when audio differs', () {
+      final tracks = [_sub('1', lang: 'jpn'), _sub('2', lang: 'eng')];
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        profile: _jellyfinProfile(
+          defaultAudioLanguage: 'eng',
+          defaultSubtitleLanguage: 'eng',
+          subtitleMode: SubtitlePlaybackMode.smart,
+        ),
+      ).selectSubtitleTrack(tracks, null, _audio('A', lang: 'jpn'));
+      expect(result.priority, TrackSelectionPriority.profile);
+      expect(result.track.id, '2');
     });
 
     test('Priority 3: default-flagged track when no Plex info', () {

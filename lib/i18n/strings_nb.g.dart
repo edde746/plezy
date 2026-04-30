@@ -11,7 +11,7 @@ import 'package:slang/generated.dart';
 import 'strings.g.dart';
 
 // Path: <root>
-class TranslationsNb with BaseTranslations<AppLocale, Translations> implements Translations {
+class TranslationsNb extends Translations with BaseTranslations<AppLocale, Translations> {
 	/// You can call this constructor and build your own translation instance of this locale.
 	/// Constructing via the enum [AppLocale.build] is preferred.
 	TranslationsNb({Map<String, Node>? overrides, PluralResolver? cardinalResolver, PluralResolver? ordinalResolver, TranslationMetadata<AppLocale, Translations>? meta})
@@ -21,7 +21,9 @@ class TranslationsNb with BaseTranslations<AppLocale, Translations> implements T
 		    overrides: overrides ?? {},
 		    cardinalResolver: cardinalResolver,
 		    ordinalResolver: ordinalResolver,
-		  ) {
+		  ),
+		  super(cardinalResolver: cardinalResolver, ordinalResolver: ordinalResolver) {
+		super.$meta.setFlatMapFunction($meta.getTranslation); // copy base translations to super.$meta
 		$meta.setFlatMapFunction(_flatMapFunction);
 	}
 
@@ -29,7 +31,7 @@ class TranslationsNb with BaseTranslations<AppLocale, Translations> implements T
 	@override final TranslationMetadata<AppLocale, Translations> $meta;
 
 	/// Access flat map
-	@override dynamic operator[](String key) => $meta.getTranslation(key);
+	@override dynamic operator[](String key) => $meta.getTranslation(key) ?? super.$meta.getTranslation(key);
 
 	late final TranslationsNb _root = this; // ignore: unused_field
 
@@ -55,6 +57,8 @@ class TranslationsNb with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsSubtitlingStylingNb subtitlingStyling = _TranslationsSubtitlingStylingNb._(_root);
 	@override late final _TranslationsMpvConfigNb mpvConfig = _TranslationsMpvConfigNb._(_root);
 	@override late final _TranslationsDialogNb dialog = _TranslationsDialogNb._(_root);
+	@override late final _TranslationsProfilesNb profiles = _TranslationsProfilesNb._(_root);
+	@override late final _TranslationsConnectionsNb connections = _TranslationsConnectionsNb._(_root);
 	@override late final _TranslationsDiscoverNb discover = _TranslationsDiscoverNb._(_root);
 	@override late final _TranslationsErrorsNb errors = _TranslationsErrorsNb._(_root);
 	@override late final _TranslationsLibrariesNb libraries = _TranslationsLibrariesNb._(_root);
@@ -78,11 +82,12 @@ class TranslationsNb with BaseTranslations<AppLocale, Translations> implements T
 	@override late final _TranslationsServerTasksNb serverTasks = _TranslationsServerTasksNb._(_root);
 	@override late final _TranslationsTraktNb trakt = _TranslationsTraktNb._(_root);
 	@override late final _TranslationsTrackersNb trackers = _TranslationsTrackersNb._(_root);
+	@override late final _TranslationsAddServerNb addServer = _TranslationsAddServerNb._(_root);
 }
 
 // Path: app
-class _TranslationsAppNb implements TranslationsAppEn {
-	_TranslationsAppNb._(this._root);
+class _TranslationsAppNb extends TranslationsAppEn {
+	_TranslationsAppNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -91,12 +96,13 @@ class _TranslationsAppNb implements TranslationsAppEn {
 }
 
 // Path: auth
-class _TranslationsAuthNb implements TranslationsAuthEn {
-	_TranslationsAuthNb._(this._root);
+class _TranslationsAuthNb extends TranslationsAuthEn {
+	_TranslationsAuthNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
 	// Translations
+	@override String get signIn => 'Logg på';
 	@override String get signInWithPlex => 'Logg inn med Plex';
 	@override String get showQRCode => 'Vis QR-kode';
 	@override String get authenticate => 'Autentiser';
@@ -104,11 +110,19 @@ class _TranslationsAuthNb implements TranslationsAuthEn {
 	@override String get scanQRToSignIn => 'Skann denne QR-koden for å logge inn';
 	@override String get waitingForAuth => 'Venter på autentisering...\nFullfør innloggingen i nettleseren din.';
 	@override String get useBrowser => 'Bruk nettleser';
+	@override String get or => 'eller';
+	@override String get connectToJellyfin => 'Koble til Jellyfin';
+	@override String get useQuickConnect => 'Bruk Quick Connect';
+	@override String get quickConnectCode => 'Quick Connect-kode';
+	@override String get quickConnectInstructions => 'Åpne Jellyfin-serveren din i en nettleser, logg inn, og velg Quick Connect i brukermenyen. Skriv inn denne koden for å godkjenne påloggingen.';
+	@override String get quickConnectWaiting => 'Venter på godkjenning…';
+	@override String get quickConnectCancel => 'Avbryt';
+	@override String get quickConnectExpired => 'Quick Connect-koden utløp før godkjenning. Prøv igjen.';
 }
 
 // Path: common
-class _TranslationsCommonNb implements TranslationsCommonEn {
-	_TranslationsCommonNb._(this._root);
+class _TranslationsCommonNb extends TranslationsCommonEn {
+	_TranslationsCommonNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -160,8 +174,8 @@ class _TranslationsCommonNb implements TranslationsCommonEn {
 }
 
 // Path: screens
-class _TranslationsScreensNb implements TranslationsScreensEn {
-	_TranslationsScreensNb._(this._root);
+class _TranslationsScreensNb extends TranslationsScreensEn {
+	_TranslationsScreensNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -174,8 +188,8 @@ class _TranslationsScreensNb implements TranslationsScreensEn {
 }
 
 // Path: update
-class _TranslationsUpdateNb implements TranslationsUpdateEn {
-	_TranslationsUpdateNb._(this._root);
+class _TranslationsUpdateNb extends TranslationsUpdateEn {
+	_TranslationsUpdateNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -190,8 +204,8 @@ class _TranslationsUpdateNb implements TranslationsUpdateEn {
 }
 
 // Path: settings
-class _TranslationsSettingsNb implements TranslationsSettingsEn {
-	_TranslationsSettingsNb._(this._root);
+class _TranslationsSettingsNb extends TranslationsSettingsEn {
+	_TranslationsSettingsNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -226,12 +240,12 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 	@override String get gridView => 'Rutenett';
 	@override String get listView => 'Liste';
 	@override String get showHeroSection => 'Vis fremhevet seksjon';
-	@override String get useGlobalHubs => 'Bruk Plex Home-layout';
-	@override String get useGlobalHubsDescription => 'Vis hjemmeside-huber som den offisielle Plex-klienten. Når av, vises per-bibliotek-anbefalinger i stedet.';
+	@override String get useGlobalHubs => 'Use Home Layout';
+	@override String get useGlobalHubsDescription => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.';
 	@override String get showServerNameOnHubs => 'Vis servernavn på huber';
 	@override String get showServerNameOnHubsDescription => 'Vis alltid servernavnet i hubtitler. Når av, vises kun for dupliserte hubnavn.';
 	@override String get groupLibrariesByServer => 'Grupper biblioteker etter server';
-	@override String get groupLibrariesByServerDescription => 'Vis en overskrift for hver Plex-server i sidefeltet når du er koblet til flere servere.';
+	@override String get groupLibrariesByServerDescription => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.';
 	@override String get alwaysKeepSidebarOpen => 'Hold sidefeltet alltid åpent';
 	@override String get alwaysKeepSidebarOpenDescription => 'Sidefeltet forblir utvidet og innholdsområdet tilpasser seg';
 	@override String get showUnwatchedCount => 'Vis antall usette';
@@ -385,8 +399,8 @@ class _TranslationsSettingsNb implements TranslationsSettingsEn {
 }
 
 // Path: search
-class _TranslationsSearchNb implements TranslationsSearchEn {
-	_TranslationsSearchNb._(this._root);
+class _TranslationsSearchNb extends TranslationsSearchEn {
+	_TranslationsSearchNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -398,8 +412,8 @@ class _TranslationsSearchNb implements TranslationsSearchEn {
 }
 
 // Path: hotkeys
-class _TranslationsHotkeysNb implements TranslationsHotkeysEn {
-	_TranslationsHotkeysNb._(this._root);
+class _TranslationsHotkeysNb extends TranslationsHotkeysEn {
+	_TranslationsHotkeysNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -410,8 +424,8 @@ class _TranslationsHotkeysNb implements TranslationsHotkeysEn {
 }
 
 // Path: fileInfo
-class _TranslationsFileInfoNb implements TranslationsFileInfoEn {
-	_TranslationsFileInfoNb._(this._root);
+class _TranslationsFileInfoNb extends TranslationsFileInfoEn {
+	_TranslationsFileInfoNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -444,8 +458,8 @@ class _TranslationsFileInfoNb implements TranslationsFileInfoEn {
 }
 
 // Path: mediaMenu
-class _TranslationsMediaMenuNb implements TranslationsMediaMenuEn {
-	_TranslationsMediaMenuNb._(this._root);
+class _TranslationsMediaMenuNb extends TranslationsMediaMenuEn {
+	_TranslationsMediaMenuNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -468,8 +482,8 @@ class _TranslationsMediaMenuNb implements TranslationsMediaMenuEn {
 }
 
 // Path: accessibility
-class _TranslationsAccessibilityNb implements TranslationsAccessibilityEn {
-	_TranslationsAccessibilityNb._(this._root);
+class _TranslationsAccessibilityNb extends TranslationsAccessibilityEn {
+	_TranslationsAccessibilityNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -485,8 +499,8 @@ class _TranslationsAccessibilityNb implements TranslationsAccessibilityEn {
 }
 
 // Path: tooltips
-class _TranslationsTooltipsNb implements TranslationsTooltipsEn {
-	_TranslationsTooltipsNb._(this._root);
+class _TranslationsTooltipsNb extends TranslationsTooltipsEn {
+	_TranslationsTooltipsNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -498,8 +512,8 @@ class _TranslationsTooltipsNb implements TranslationsTooltipsEn {
 }
 
 // Path: videoControls
-class _TranslationsVideoControlsNb implements TranslationsVideoControlsEn {
-	_TranslationsVideoControlsNb._(this._root);
+class _TranslationsVideoControlsNb extends TranslationsVideoControlsEn {
+	_TranslationsVideoControlsNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -574,8 +588,8 @@ class _TranslationsVideoControlsNb implements TranslationsVideoControlsEn {
 }
 
 // Path: userStatus
-class _TranslationsUserStatusNb implements TranslationsUserStatusEn {
-	_TranslationsUserStatusNb._(this._root);
+class _TranslationsUserStatusNb extends TranslationsUserStatusEn {
+	_TranslationsUserStatusNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -587,8 +601,8 @@ class _TranslationsUserStatusNb implements TranslationsUserStatusEn {
 }
 
 // Path: messages
-class _TranslationsMessagesNb implements TranslationsMessagesEn {
-	_TranslationsMessagesNb._(this._root);
+class _TranslationsMessagesNb extends TranslationsMessagesEn {
+	_TranslationsMessagesNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -607,7 +621,7 @@ class _TranslationsMessagesNb implements TranslationsMessagesEn {
 	@override String get musicNotSupported => 'Musikkavspilling støttes ikke ennå';
 	@override String get noDescriptionAvailable => 'Ingen beskrivelse tilgjengelig';
 	@override String get noProfilesAvailable => 'Ingen profiler tilgjengelige';
-	@override String get contactAdminForProfiles => 'Kontakt Plex-administratoren for å legge til profiler';
+	@override String get contactAdminForProfiles => 'Contact your server administrator to add profiles';
 	@override String get unableToDetermineLibrarySection => 'Kan ikke fastslå bibliotekseksjonen for dette elementet';
 	@override String get logsCleared => 'Logger tømt';
 	@override String get logsCopied => 'Logger kopiert til utklippstavle';
@@ -636,8 +650,8 @@ class _TranslationsMessagesNb implements TranslationsMessagesEn {
 }
 
 // Path: subtitlingStyling
-class _TranslationsSubtitlingStylingNb implements TranslationsSubtitlingStylingEn {
-	_TranslationsSubtitlingStylingNb._(this._root);
+class _TranslationsSubtitlingStylingNb extends TranslationsSubtitlingStylingEn {
+	_TranslationsSubtitlingStylingNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -658,8 +672,8 @@ class _TranslationsSubtitlingStylingNb implements TranslationsSubtitlingStylingE
 }
 
 // Path: mpvConfig
-class _TranslationsMpvConfigNb implements TranslationsMpvConfigEn {
-	_TranslationsMpvConfigNb._(this._root);
+class _TranslationsMpvConfigNb extends TranslationsMpvConfigEn {
+	_TranslationsMpvConfigNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -681,8 +695,8 @@ class _TranslationsMpvConfigNb implements TranslationsMpvConfigEn {
 }
 
 // Path: dialog
-class _TranslationsDialogNb implements TranslationsDialogEn {
-	_TranslationsDialogNb._(this._root);
+class _TranslationsDialogNb extends TranslationsDialogEn {
+	_TranslationsDialogNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -690,9 +704,77 @@ class _TranslationsDialogNb implements TranslationsDialogEn {
 	@override String get confirmAction => 'Bekreft handling';
 }
 
+// Path: profiles
+class _TranslationsProfilesNb extends TranslationsProfilesEn {
+	_TranslationsProfilesNb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get addPlezyProfile => 'Legg til Plezy-profil';
+	@override String get switchingProfile => 'Bytter profil…';
+	@override String get deleteThisProfileTitle => 'Slett denne profilen?';
+	@override String deleteThisProfileMessage({required Object displayName}) => '${displayName} fjernes. Tilkoblinger påvirkes ikke.';
+	@override String get active => 'Aktiv';
+	@override String get manage => 'Administrer';
+	@override String get delete => 'Slett';
+	@override String get signOut => 'Logg ut';
+	@override String get signOutPlexTitle => 'Logge ut av Plex?';
+	@override String signOutPlexMessage({required Object displayName}) => '${displayName} og alle Plex Home-brukere på denne kontoen fjernes fra denne enheten. Du kan logge inn igjen når som helst.';
+	@override String get signedOutPlex => 'Logget ut av Plex.';
+	@override String get signOutFailed => 'Utlogging mislyktes.';
+	@override String get sectionTitle => 'Profiler';
+	@override String get summarySingle => 'Legg til profiler for å blande administrerte brukere og lokale identiteter';
+	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} profiler · aktiv: ${activeName}';
+	@override String summaryMultiple({required Object count}) => '${count} profiler';
+	@override String get removeConnectionTitle => 'Fjerne tilkobling?';
+	@override String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => '${displayName} mister tilgang til ${connectionLabel}. Tilkoblingen er fortsatt tilgjengelig for andre profiler.';
+	@override String get deleteProfileTitle => 'Slette profil?';
+	@override String deleteProfileMessage({required Object displayName}) => 'Dette fjerner ${displayName} og alle dens tilkoblinger fra denne enheten. De underliggende Plex/Jellyfin-serverne berøres ikke.';
+	@override String get profileNameLabel => 'Profilnavn';
+	@override String get pinProtectionLabel => 'PIN-beskyttelse';
+	@override String get pinManagedByPlex => 'PIN administreres av Plex. Rediger på plex.tv.';
+	@override String get noPinSetEditOnPlex => 'Ingen PIN er satt. For å kreve én, rediger Home-brukeren på plex.tv.';
+	@override String get setPin => 'Sett PIN';
+	@override String get connectionsLabel => 'Tilkoblinger';
+	@override String get add => 'Legg til';
+	@override String get deleteProfileButton => 'Slett profil';
+	@override String get noConnectionsHint => 'Ingen tilkoblinger — legg til én for å bruke denne profilen.';
+	@override String get plexHomeAccount => 'Plex Home-konto';
+	@override String get connectionDefault => 'Standard';
+	@override String get makeDefault => 'Gjør til standard';
+	@override String get removeConnection => 'Fjern';
+	@override String borrowAddTo({required Object displayName}) => 'Legg til ${displayName}';
+	@override String get borrowExplain => 'Lån en tilkobling fra en annen profil. PIN-beskyttede kildeprofiler ber om PIN før deling.';
+	@override String get borrowEmpty => 'Ingenting å låne enda.';
+	@override String get borrowEmptySubtitle => 'Koble først en Plex-konto eller Jellyfin-server til en annen profil, og kom så tilbake hit.';
+	@override String get newProfile => 'Ny profil';
+	@override String get profileNameHint => 'f.eks. Gjester, Barn, Familierom';
+	@override String get pinProtectionOptional => 'PIN-beskyttelse (valgfri)';
+	@override String get pinExplain => '4-sifret PIN kreves for å bytte til denne profilen. Myk barriere — alle som kan fjerne appdata kan omgå den.';
+	@override String get continueButton => 'Fortsett';
+	@override String get pinsDontMatch => 'PIN-ene samsvarer ikke';
+}
+
+// Path: connections
+class _TranslationsConnectionsNb extends TranslationsConnectionsEn {
+	_TranslationsConnectionsNb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get sectionTitle => 'Tilkoblinger';
+	@override String get addConnection => 'Legg til tilkobling';
+	@override String get addConnectionSubtitleNoProfile => 'Logg inn med Plex eller koble til en Jellyfin-server';
+	@override String addConnectionSubtitleScoped({required Object displayName}) => 'Legg til ${displayName} — Plex-konto, Jellyfin-server eller lån fra en annen profil';
+	@override String sessionExpiredOne({required Object name}) => 'Økten er utløpt for ${name}';
+	@override String sessionExpiredMany({required Object count}) => 'Økten er utløpt for ${count} servere';
+	@override String get signInAgain => 'Logg inn igjen';
+}
+
 // Path: discover
-class _TranslationsDiscoverNb implements TranslationsDiscoverEn {
-	_TranslationsDiscoverNb._(this._root);
+class _TranslationsDiscoverNb extends TranslationsDiscoverEn {
+	_TranslationsDiscoverNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -702,6 +784,8 @@ class _TranslationsDiscoverNb implements TranslationsDiscoverEn {
 	@override String get noContentAvailable => 'Ingen innhold tilgjengelig';
 	@override String get addMediaToLibraries => 'Legg til medier i bibliotekene dine';
 	@override String get continueWatching => 'Fortsett å se';
+	@override String get nextUp => 'Neste opp';
+	@override String get recentlyAdded => 'Nylig lagt til';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Oversikt';
 	@override String get cast => 'Skuespillere';
@@ -714,15 +798,15 @@ class _TranslationsDiscoverNb implements TranslationsDiscoverEn {
 }
 
 // Path: errors
-class _TranslationsErrorsNb implements TranslationsErrorsEn {
-	_TranslationsErrorsNb._(this._root);
+class _TranslationsErrorsNb extends TranslationsErrorsEn {
+	_TranslationsErrorsNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
 	// Translations
 	@override String searchFailed({required Object error}) => 'Søk mislyktes: ${error}';
 	@override String connectionTimeout({required Object context}) => 'Tidsavbrudd ved lasting av ${context}';
-	@override String get connectionFailed => 'Kunne ikke koble til Plex-server';
+	@override String get connectionFailed => 'Unable to connect to media server';
 	@override String failedToLoad({required Object context, required Object error}) => 'Kunne ikke laste ${context}: ${error}';
 	@override String get noClientAvailable => 'Ingen klient tilgjengelig';
 	@override String authenticationFailed({required Object error}) => 'Autentisering mislyktes: ${error}';
@@ -731,11 +815,13 @@ class _TranslationsErrorsNb implements TranslationsErrorsEn {
 	@override String get invalidToken => 'Ugyldig token';
 	@override String failedToVerifyToken({required Object error}) => 'Kunne ikke verifisere token: ${error}';
 	@override String failedToSwitchProfile({required Object displayName}) => 'Kunne ikke bytte til ${displayName}';
+	@override String failedToDeleteProfile({required Object displayName}) => 'Kunne ikke slette ${displayName}';
+	@override String get failedToRate => 'Kunne ikke oppdatere vurderingen';
 }
 
 // Path: libraries
-class _TranslationsLibrariesNb implements TranslationsLibrariesEn {
-	_TranslationsLibrariesNb._(this._root);
+class _TranslationsLibrariesNb extends TranslationsLibrariesEn {
+	_TranslationsLibrariesNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -780,11 +866,13 @@ class _TranslationsLibrariesNb implements TranslationsLibrariesEn {
 	@override String get folders => 'mapper';
 	@override late final _TranslationsLibrariesTabsNb tabs = _TranslationsLibrariesTabsNb._(_root);
 	@override late final _TranslationsLibrariesGroupingsNb groupings = _TranslationsLibrariesGroupingsNb._(_root);
+	@override late final _TranslationsLibrariesFilterCategoriesNb filterCategories = _TranslationsLibrariesFilterCategoriesNb._(_root);
+	@override late final _TranslationsLibrariesSortLabelsNb sortLabels = _TranslationsLibrariesSortLabelsNb._(_root);
 }
 
 // Path: about
-class _TranslationsAboutNb implements TranslationsAboutEn {
-	_TranslationsAboutNb._(this._root);
+class _TranslationsAboutNb extends TranslationsAboutEn {
+	_TranslationsAboutNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -792,13 +880,13 @@ class _TranslationsAboutNb implements TranslationsAboutEn {
 	@override String get title => 'Om';
 	@override String get openSourceLicenses => 'Åpen kildekode-lisenser';
 	@override String versionLabel({required Object version}) => 'Versjon ${version}';
-	@override String get appDescription => 'En vakker Plex-klient for Flutter';
+	@override String get appDescription => 'En vakker Plex- og Jellyfin-klient for Flutter';
 	@override String get viewLicensesDescription => 'Vis lisenser for tredjepartsbiblioteker';
 }
 
 // Path: serverSelection
-class _TranslationsServerSelectionNb implements TranslationsServerSelectionEn {
-	_TranslationsServerSelectionNb._(this._root);
+class _TranslationsServerSelectionNb extends TranslationsServerSelectionEn {
+	_TranslationsServerSelectionNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -809,8 +897,8 @@ class _TranslationsServerSelectionNb implements TranslationsServerSelectionEn {
 }
 
 // Path: hubDetail
-class _TranslationsHubDetailNb implements TranslationsHubDetailEn {
-	_TranslationsHubDetailNb._(this._root);
+class _TranslationsHubDetailNb extends TranslationsHubDetailEn {
+	_TranslationsHubDetailNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -823,8 +911,8 @@ class _TranslationsHubDetailNb implements TranslationsHubDetailEn {
 }
 
 // Path: logs
-class _TranslationsLogsNb implements TranslationsLogsEn {
-	_TranslationsLogsNb._(this._root);
+class _TranslationsLogsNb extends TranslationsLogsEn {
+	_TranslationsLogsNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -835,8 +923,8 @@ class _TranslationsLogsNb implements TranslationsLogsEn {
 }
 
 // Path: licenses
-class _TranslationsLicensesNb implements TranslationsLicensesEn {
-	_TranslationsLicensesNb._(this._root);
+class _TranslationsLicensesNb extends TranslationsLicensesEn {
+	_TranslationsLicensesNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -848,8 +936,8 @@ class _TranslationsLicensesNb implements TranslationsLicensesEn {
 }
 
 // Path: navigation
-class _TranslationsNavigationNb implements TranslationsNavigationEn {
-	_TranslationsNavigationNb._(this._root);
+class _TranslationsNavigationNb extends TranslationsNavigationEn {
+	_TranslationsNavigationNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -860,8 +948,8 @@ class _TranslationsNavigationNb implements TranslationsNavigationEn {
 }
 
 // Path: liveTv
-class _TranslationsLiveTvNb implements TranslationsLiveTvEn {
-	_TranslationsLiveTvNb._(this._root);
+class _TranslationsLiveTvNb extends TranslationsLiveTvEn {
+	_TranslationsLiveTvNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -892,8 +980,8 @@ class _TranslationsLiveTvNb implements TranslationsLiveTvEn {
 }
 
 // Path: collections
-class _TranslationsCollectionsNb implements TranslationsCollectionsEn {
-	_TranslationsCollectionsNb._(this._root);
+class _TranslationsCollectionsNb extends TranslationsCollectionsEn {
+	_TranslationsCollectionsNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -923,8 +1011,8 @@ class _TranslationsCollectionsNb implements TranslationsCollectionsEn {
 }
 
 // Path: playlists
-class _TranslationsPlaylistsNb implements TranslationsPlaylistsEn {
-	_TranslationsPlaylistsNb._(this._root);
+class _TranslationsPlaylistsNb extends TranslationsPlaylistsEn {
+	_TranslationsPlaylistsNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -957,8 +1045,8 @@ class _TranslationsPlaylistsNb implements TranslationsPlaylistsEn {
 }
 
 // Path: watchTogether
-class _TranslationsWatchTogetherNb implements TranslationsWatchTogetherEn {
-	_TranslationsWatchTogetherNb._(this._root);
+class _TranslationsWatchTogetherNb extends TranslationsWatchTogetherEn {
+	_TranslationsWatchTogetherNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1021,11 +1109,13 @@ class _TranslationsWatchTogetherNb implements TranslationsWatchTogetherEn {
 	@override String get recentRooms => 'Nylige rom';
 	@override String get renameRoom => 'Gi nytt navn til rom';
 	@override String get removeRoom => 'Fjern';
+	@override String get guestSwitchUnavailable => 'Kunne ikke bytte — server ikke tilgjengelig for synkronisering';
+	@override String get guestSwitchFailed => 'Kunne ikke bytte — innhold ble ikke funnet på denne serveren';
 }
 
 // Path: downloads
-class _TranslationsDownloadsNb implements TranslationsDownloadsEn {
-	_TranslationsDownloadsNb._(this._root);
+class _TranslationsDownloadsNb extends TranslationsDownloadsEn {
+	_TranslationsDownloadsNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1078,12 +1168,18 @@ class _TranslationsDownloadsNb implements TranslationsDownloadsEn {
 	@override String get editSyncFilter => 'Synkroniseringsfilter';
 	@override String get syncAllItems => 'Synkroniserer alle elementer';
 	@override String get syncUnwatchedItems => 'Synkroniserer usette elementer';
+	@override String syncRuleServerContext({required Object server, required Object status}) => 'Server: ${server} • ${status}';
+	@override String get syncRuleAvailable => 'Tilgjengelig';
+	@override String get syncRuleOffline => 'Frakoblet';
+	@override String get syncRuleSignInRequired => 'Innlogging kreves';
+	@override String get syncRuleNotAvailableForProfile => 'Ikke tilgjengelig for gjeldende profil';
+	@override String get syncRuleUnknownServer => 'Ukjent server';
 	@override String get syncRuleListCreated => 'Synkroniseringsregel opprettet';
 }
 
 // Path: shaders
-class _TranslationsShadersNb implements TranslationsShadersEn {
-	_TranslationsShadersNb._(this._root);
+class _TranslationsShadersNb extends TranslationsShadersEn {
+	_TranslationsShadersNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1106,8 +1202,8 @@ class _TranslationsShadersNb implements TranslationsShadersEn {
 }
 
 // Path: companionRemote
-class _TranslationsCompanionRemoteNb implements TranslationsCompanionRemoteEn {
-	_TranslationsCompanionRemoteNb._(this._root);
+class _TranslationsCompanionRemoteNb extends TranslationsCompanionRemoteEn {
+	_TranslationsCompanionRemoteNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1120,8 +1216,8 @@ class _TranslationsCompanionRemoteNb implements TranslationsCompanionRemoteEn {
 }
 
 // Path: videoSettings
-class _TranslationsVideoSettingsNb implements TranslationsVideoSettingsEn {
-	_TranslationsVideoSettingsNb._(this._root);
+class _TranslationsVideoSettingsNb extends TranslationsVideoSettingsEn {
+	_TranslationsVideoSettingsNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1139,8 +1235,8 @@ class _TranslationsVideoSettingsNb implements TranslationsVideoSettingsEn {
 }
 
 // Path: externalPlayer
-class _TranslationsExternalPlayerNb implements TranslationsExternalPlayerEn {
-	_TranslationsExternalPlayerNb._(this._root);
+class _TranslationsExternalPlayerNb extends TranslationsExternalPlayerEn {
+	_TranslationsExternalPlayerNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1163,8 +1259,8 @@ class _TranslationsExternalPlayerNb implements TranslationsExternalPlayerEn {
 }
 
 // Path: metadataEdit
-class _TranslationsMetadataEditNb implements TranslationsMetadataEditEn {
-	_TranslationsMetadataEditNb._(this._root);
+class _TranslationsMetadataEditNb extends TranslationsMetadataEditEn {
+	_TranslationsMetadataEditNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1246,8 +1342,8 @@ class _TranslationsMetadataEditNb implements TranslationsMetadataEditEn {
 }
 
 // Path: matchScreen
-class _TranslationsMatchScreenNb implements TranslationsMatchScreenEn {
-	_TranslationsMatchScreenNb._(this._root);
+class _TranslationsMatchScreenNb extends TranslationsMatchScreenEn {
+	_TranslationsMatchScreenNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1267,8 +1363,8 @@ class _TranslationsMatchScreenNb implements TranslationsMatchScreenEn {
 }
 
 // Path: serverTasks
-class _TranslationsServerTasksNb implements TranslationsServerTasksEn {
-	_TranslationsServerTasksNb._(this._root);
+class _TranslationsServerTasksNb extends TranslationsServerTasksEn {
+	_TranslationsServerTasksNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1279,8 +1375,8 @@ class _TranslationsServerTasksNb implements TranslationsServerTasksEn {
 }
 
 // Path: trakt
-class _TranslationsTraktNb implements TranslationsTraktEn {
-	_TranslationsTraktNb._(this._root);
+class _TranslationsTraktNb extends TranslationsTraktEn {
+	_TranslationsTraktNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1297,8 +1393,8 @@ class _TranslationsTraktNb implements TranslationsTraktEn {
 }
 
 // Path: trackers
-class _TranslationsTrackersNb implements TranslationsTrackersEn {
-	_TranslationsTrackersNb._(this._root);
+class _TranslationsTrackersNb extends TranslationsTrackersEn {
+	_TranslationsTrackersNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1318,9 +1414,50 @@ class _TranslationsTrackersNb implements TranslationsTrackersEn {
 	@override late final _TranslationsTrackersLibraryFilterNb libraryFilter = _TranslationsTrackersLibraryFilterNb._(_root);
 }
 
+// Path: addServer
+class _TranslationsAddServerNb extends TranslationsAddServerEn {
+	_TranslationsAddServerNb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get addJellyfinTitle => 'Legg til Jellyfin-server';
+	@override String get jellyfinUrlIntro => 'Oppgi URL-en til Jellyfin-serveren din — f.eks. `https://jellyfin.example.com`. Du kan logge på etterpå.';
+	@override String get serverUrl => 'Server-URL';
+	@override String get findServer => 'Finn server';
+	@override String get username => 'Brukernavn';
+	@override String get password => 'Passord';
+	@override String get signIn => 'Logg på';
+	@override String get change => 'Endre';
+	@override String get required => 'Påkrevd';
+	@override String couldNotReachServer({required Object error}) => 'Kunne ikke nå serveren: ${error}';
+	@override String signInFailed({required Object error}) => 'Pålogging mislyktes: ${error}';
+	@override String quickConnectFailed({required Object error}) => 'Quick Connect mislyktes: ${error}';
+	@override String get addPlexTitle => 'Logg på med Plex';
+	@override String get plexAuthIntro => 'Velg hvordan du vil logge på Plex. Nettleserflyten åpner plex.tv der du bekrefter tilkoblingen; QR-alternativet er praktisk for TV / fjern-enheter.';
+	@override String get plexQRPrompt => 'Skann denne QR-koden for å logge på.';
+	@override String get waitingForPlexConfirmation => 'Venter på at plex.tv bekrefter påloggingen…';
+	@override String get pinExpired => 'PIN-koden gikk ut før pålogging. Prøv igjen.';
+	@override String get duplicatePlexAccount => 'Denne enheten er allerede pålogget en Plex-konto. Logg ut fra innstillingene for å bytte konto.';
+	@override String failedToRegisterAccount({required Object error}) => 'Kunne ikke registrere kontoen: ${error}';
+	@override String get enterJellyfinUrlError => 'Oppgi URL-en til Jellyfin-serveren din';
+	@override String get addConnectionTitle => 'Legg til tilkobling';
+	@override String addConnectionTitleScoped({required Object name}) => 'Legg til i ${name}';
+	@override String get addConnectionIntroGlobal => 'Legg til enda en medieserver. Du kan blande Plex-kontoer og Jellyfin-servere — innhold fra alle tilkoblede backender vises sammen på startsiden.';
+	@override String get addConnectionIntroScoped => 'Legg til en ny server, eller lån en fra en annen profil.';
+	@override String get signInWithPlexCard => 'Logg på med Plex';
+	@override String get signInWithPlexCardSubtitle => 'Autoriser denne enheten mot Plex-kontoen din. Servere delt med kontoen følger med automatisk.';
+	@override String get signInWithPlexCardSubtitleScoped => 'Autoriser en ny Plex-konto. Dens Home-brukere vises som profiler.';
+	@override String get connectToJellyfinCard => 'Koble til Jellyfin';
+	@override String get connectToJellyfinCardSubtitle => 'Oppgi URL-en til Jellyfin-serveren din og logg på med brukernavn + passord (Quick Connect kommer snart).';
+	@override String connectToJellyfinCardSubtitleScoped({required Object name}) => 'Logg på en Jellyfin-server. Knyttes til ${name}.';
+	@override String get borrowFromAnotherProfile => 'Lån fra en annen profil';
+	@override String get borrowFromAnotherProfileSubtitle => 'Gjenbruk en tilkobling som allerede er tilknyttet en annen profil. PIN-beskyttede kildeprofiler ber om PIN.';
+}
+
 // Path: hotkeys.actions
-class _TranslationsHotkeysActionsNb implements TranslationsHotkeysActionsEn {
-	_TranslationsHotkeysActionsNb._(this._root);
+class _TranslationsHotkeysActionsNb extends TranslationsHotkeysActionsEn {
+	_TranslationsHotkeysActionsNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1349,8 +1486,8 @@ class _TranslationsHotkeysActionsNb implements TranslationsHotkeysActionsEn {
 }
 
 // Path: videoControls.pipErrors
-class _TranslationsVideoControlsPipErrorsNb implements TranslationsVideoControlsPipErrorsEn {
-	_TranslationsVideoControlsPipErrorsNb._(this._root);
+class _TranslationsVideoControlsPipErrorsNb extends TranslationsVideoControlsPipErrorsEn {
+	_TranslationsVideoControlsPipErrorsNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1365,8 +1502,8 @@ class _TranslationsVideoControlsPipErrorsNb implements TranslationsVideoControls
 }
 
 // Path: libraries.tabs
-class _TranslationsLibrariesTabsNb implements TranslationsLibrariesTabsEn {
-	_TranslationsLibrariesTabsNb._(this._root);
+class _TranslationsLibrariesTabsNb extends TranslationsLibrariesTabsEn {
+	_TranslationsLibrariesTabsNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1378,8 +1515,8 @@ class _TranslationsLibrariesTabsNb implements TranslationsLibrariesTabsEn {
 }
 
 // Path: libraries.groupings
-class _TranslationsLibrariesGroupingsNb implements TranslationsLibrariesGroupingsEn {
-	_TranslationsLibrariesGroupingsNb._(this._root);
+class _TranslationsLibrariesGroupingsNb extends TranslationsLibrariesGroupingsEn {
+	_TranslationsLibrariesGroupingsNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1393,9 +1530,40 @@ class _TranslationsLibrariesGroupingsNb implements TranslationsLibrariesGrouping
 	@override String get folders => 'Mapper';
 }
 
+// Path: libraries.filterCategories
+class _TranslationsLibrariesFilterCategoriesNb extends TranslationsLibrariesFilterCategoriesEn {
+	_TranslationsLibrariesFilterCategoriesNb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get genre => 'Sjanger';
+	@override String get year => 'År';
+	@override String get contentRating => 'Aldersgrense';
+	@override String get tag => 'Tag';
+}
+
+// Path: libraries.sortLabels
+class _TranslationsLibrariesSortLabelsNb extends TranslationsLibrariesSortLabelsEn {
+	_TranslationsLibrariesSortLabelsNb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Tittel';
+	@override String get dateAdded => 'Lagt til-dato';
+	@override String get releaseDate => 'Utgivelsesdato';
+	@override String get rating => 'Vurdering';
+	@override String get lastPlayed => 'Sist spilt';
+	@override String get playCount => 'Avspillinger';
+	@override String get random => 'Tilfeldig';
+	@override String get dateShared => 'Delingsdato';
+	@override String get latestEpisodeAirDate => 'Siste episodes sendedato';
+}
+
 // Path: companionRemote.session
-class _TranslationsCompanionRemoteSessionNb implements TranslationsCompanionRemoteSessionEn {
-	_TranslationsCompanionRemoteSessionNb._(this._root);
+class _TranslationsCompanionRemoteSessionNb extends TranslationsCompanionRemoteSessionEn {
+	_TranslationsCompanionRemoteSessionNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1415,8 +1583,8 @@ class _TranslationsCompanionRemoteSessionNb implements TranslationsCompanionRemo
 }
 
 // Path: companionRemote.pairing
-class _TranslationsCompanionRemotePairingNb implements TranslationsCompanionRemotePairingEn {
-	_TranslationsCompanionRemotePairingNb._(this._root);
+class _TranslationsCompanionRemotePairingNb extends TranslationsCompanionRemotePairingEn {
+	_TranslationsCompanionRemotePairingNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1439,8 +1607,8 @@ class _TranslationsCompanionRemotePairingNb implements TranslationsCompanionRemo
 }
 
 // Path: companionRemote.remote
-class _TranslationsCompanionRemoteRemoteNb implements TranslationsCompanionRemoteRemoteEn {
-	_TranslationsCompanionRemoteRemoteNb._(this._root);
+class _TranslationsCompanionRemoteRemoteNb extends TranslationsCompanionRemoteRemoteEn {
+	_TranslationsCompanionRemoteRemoteNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1475,8 +1643,8 @@ class _TranslationsCompanionRemoteRemoteNb implements TranslationsCompanionRemot
 }
 
 // Path: trackers.services
-class _TranslationsTrackersServicesNb implements TranslationsTrackersServicesEn {
-	_TranslationsTrackersServicesNb._(this._root);
+class _TranslationsTrackersServicesNb extends TranslationsTrackersServicesEn {
+	_TranslationsTrackersServicesNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1487,8 +1655,8 @@ class _TranslationsTrackersServicesNb implements TranslationsTrackersServicesEn 
 }
 
 // Path: trackers.deviceCode
-class _TranslationsTrackersDeviceCodeNb implements TranslationsTrackersDeviceCodeEn {
-	_TranslationsTrackersDeviceCodeNb._(this._root);
+class _TranslationsTrackersDeviceCodeNb extends TranslationsTrackersDeviceCodeEn {
+	_TranslationsTrackersDeviceCodeNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1501,8 +1669,8 @@ class _TranslationsTrackersDeviceCodeNb implements TranslationsTrackersDeviceCod
 }
 
 // Path: trackers.oauthProxy
-class _TranslationsTrackersOauthProxyNb implements TranslationsTrackersOauthProxyEn {
-	_TranslationsTrackersOauthProxyNb._(this._root);
+class _TranslationsTrackersOauthProxyNb extends TranslationsTrackersOauthProxyEn {
+	_TranslationsTrackersOauthProxyNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1514,8 +1682,8 @@ class _TranslationsTrackersOauthProxyNb implements TranslationsTrackersOauthProx
 }
 
 // Path: trackers.libraryFilter
-class _TranslationsTrackersLibraryFilterNb implements TranslationsTrackersLibraryFilterEn {
-	_TranslationsTrackersLibraryFilterNb._(this._root);
+class _TranslationsTrackersLibraryFilterNb extends TranslationsTrackersLibraryFilterEn {
+	_TranslationsTrackersLibraryFilterNb._(TranslationsNb root) : this._root = root, super.internal(root);
 
 	final TranslationsNb _root; // ignore: unused_field
 
@@ -1543,6 +1711,7 @@ extension on TranslationsNb {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
+			'auth.signIn' => 'Logg på',
 			'auth.signInWithPlex' => 'Logg inn med Plex',
 			'auth.showQRCode' => 'Vis QR-kode',
 			'auth.authenticate' => 'Autentiser',
@@ -1550,6 +1719,14 @@ extension on TranslationsNb {
 			'auth.scanQRToSignIn' => 'Skann denne QR-koden for å logge inn',
 			'auth.waitingForAuth' => 'Venter på autentisering...\nFullfør innloggingen i nettleseren din.',
 			'auth.useBrowser' => 'Bruk nettleser',
+			'auth.or' => 'eller',
+			'auth.connectToJellyfin' => 'Koble til Jellyfin',
+			'auth.useQuickConnect' => 'Bruk Quick Connect',
+			'auth.quickConnectCode' => 'Quick Connect-kode',
+			'auth.quickConnectInstructions' => 'Åpne Jellyfin-serveren din i en nettleser, logg inn, og velg Quick Connect i brukermenyen. Skriv inn denne koden for å godkjenne påloggingen.',
+			'auth.quickConnectWaiting' => 'Venter på godkjenning…',
+			'auth.quickConnectCancel' => 'Avbryt',
+			'auth.quickConnectExpired' => 'Quick Connect-koden utløp før godkjenning. Prøv igjen.',
 			'common.cancel' => 'Avbryt',
 			'common.save' => 'Lagre',
 			'common.close' => 'Lukk',
@@ -1636,12 +1813,12 @@ extension on TranslationsNb {
 			'settings.gridView' => 'Rutenett',
 			'settings.listView' => 'Liste',
 			'settings.showHeroSection' => 'Vis fremhevet seksjon',
-			'settings.useGlobalHubs' => 'Bruk Plex Home-layout',
-			'settings.useGlobalHubsDescription' => 'Vis hjemmeside-huber som den offisielle Plex-klienten. Når av, vises per-bibliotek-anbefalinger i stedet.',
+			'settings.useGlobalHubs' => 'Use Home Layout',
+			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.',
 			'settings.showServerNameOnHubs' => 'Vis servernavn på huber',
 			'settings.showServerNameOnHubsDescription' => 'Vis alltid servernavnet i hubtitler. Når av, vises kun for dupliserte hubnavn.',
 			'settings.groupLibrariesByServer' => 'Grupper biblioteker etter server',
-			'settings.groupLibrariesByServerDescription' => 'Vis en overskrift for hver Plex-server i sidefeltet når du er koblet til flere servere.',
+			'settings.groupLibrariesByServerDescription' => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.',
 			'settings.alwaysKeepSidebarOpen' => 'Hold sidefeltet alltid åpent',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidefeltet forblir utvidet og innholdsområdet tilpasser seg',
 			'settings.showUnwatchedCount' => 'Vis antall usette',
@@ -1962,7 +2139,7 @@ extension on TranslationsNb {
 			'messages.musicNotSupported' => 'Musikkavspilling støttes ikke ennå',
 			'messages.noDescriptionAvailable' => 'Ingen beskrivelse tilgjengelig',
 			'messages.noProfilesAvailable' => 'Ingen profiler tilgjengelige',
-			'messages.contactAdminForProfiles' => 'Kontakt Plex-administratoren for å legge til profiler',
+			'messages.contactAdminForProfiles' => 'Contact your server administrator to add profiles',
 			'messages.unableToDetermineLibrarySection' => 'Kan ikke fastslå bibliotekseksjonen for dette elementet',
 			'messages.logsCleared' => 'Logger tømt',
 			'messages.logsCopied' => 'Logger kopiert til utklippstavle',
@@ -2016,11 +2193,65 @@ extension on TranslationsNb {
 			'mpvConfig.confirmDeletePreset' => 'Er du sikker på at du vil slette denne forhåndsinnstillingen?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# kommentar',
 			'dialog.confirmAction' => 'Bekreft handling',
+			'profiles.addPlezyProfile' => 'Legg til Plezy-profil',
+			'profiles.switchingProfile' => 'Bytter profil…',
+			'profiles.deleteThisProfileTitle' => 'Slett denne profilen?',
+			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName} fjernes. Tilkoblinger påvirkes ikke.',
+			'profiles.active' => 'Aktiv',
+			'profiles.manage' => 'Administrer',
+			'profiles.delete' => 'Slett',
+			'profiles.signOut' => 'Logg ut',
+			'profiles.signOutPlexTitle' => 'Logge ut av Plex?',
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} og alle Plex Home-brukere på denne kontoen fjernes fra denne enheten. Du kan logge inn igjen når som helst.',
+			'profiles.signedOutPlex' => 'Logget ut av Plex.',
+			'profiles.signOutFailed' => 'Utlogging mislyktes.',
+			'profiles.sectionTitle' => 'Profiler',
+			'profiles.summarySingle' => 'Legg til profiler for å blande administrerte brukere og lokale identiteter',
+			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiler · aktiv: ${activeName}',
+			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiler',
+			'profiles.removeConnectionTitle' => 'Fjerne tilkobling?',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName} mister tilgang til ${connectionLabel}. Tilkoblingen er fortsatt tilgjengelig for andre profiler.',
+			'profiles.deleteProfileTitle' => 'Slette profil?',
+			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Dette fjerner ${displayName} og alle dens tilkoblinger fra denne enheten. De underliggende Plex/Jellyfin-serverne berøres ikke.',
+			'profiles.profileNameLabel' => 'Profilnavn',
+			'profiles.pinProtectionLabel' => 'PIN-beskyttelse',
+			'profiles.pinManagedByPlex' => 'PIN administreres av Plex. Rediger på plex.tv.',
+			'profiles.noPinSetEditOnPlex' => 'Ingen PIN er satt. For å kreve én, rediger Home-brukeren på plex.tv.',
+			'profiles.setPin' => 'Sett PIN',
+			'profiles.connectionsLabel' => 'Tilkoblinger',
+			'profiles.add' => 'Legg til',
+			'profiles.deleteProfileButton' => 'Slett profil',
+			'profiles.noConnectionsHint' => 'Ingen tilkoblinger — legg til én for å bruke denne profilen.',
+			_ => null,
+		} ?? switch (path) {
+			'profiles.plexHomeAccount' => 'Plex Home-konto',
+			'profiles.connectionDefault' => 'Standard',
+			'profiles.makeDefault' => 'Gjør til standard',
+			'profiles.removeConnection' => 'Fjern',
+			'profiles.borrowAddTo' => ({required Object displayName}) => 'Legg til ${displayName}',
+			'profiles.borrowExplain' => 'Lån en tilkobling fra en annen profil. PIN-beskyttede kildeprofiler ber om PIN før deling.',
+			'profiles.borrowEmpty' => 'Ingenting å låne enda.',
+			'profiles.borrowEmptySubtitle' => 'Koble først en Plex-konto eller Jellyfin-server til en annen profil, og kom så tilbake hit.',
+			'profiles.newProfile' => 'Ny profil',
+			'profiles.profileNameHint' => 'f.eks. Gjester, Barn, Familierom',
+			'profiles.pinProtectionOptional' => 'PIN-beskyttelse (valgfri)',
+			'profiles.pinExplain' => '4-sifret PIN kreves for å bytte til denne profilen. Myk barriere — alle som kan fjerne appdata kan omgå den.',
+			'profiles.continueButton' => 'Fortsett',
+			'profiles.pinsDontMatch' => 'PIN-ene samsvarer ikke',
+			'connections.sectionTitle' => 'Tilkoblinger',
+			'connections.addConnection' => 'Legg til tilkobling',
+			'connections.addConnectionSubtitleNoProfile' => 'Logg inn med Plex eller koble til en Jellyfin-server',
+			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Legg til ${displayName} — Plex-konto, Jellyfin-server eller lån fra en annen profil',
+			'connections.sessionExpiredOne' => ({required Object name}) => 'Økten er utløpt for ${name}',
+			'connections.sessionExpiredMany' => ({required Object count}) => 'Økten er utløpt for ${count} servere',
+			'connections.signInAgain' => 'Logg inn igjen',
 			'discover.title' => 'Oppdag',
 			'discover.switchProfile' => 'Bytt profil',
 			'discover.noContentAvailable' => 'Ingen innhold tilgjengelig',
 			'discover.addMediaToLibraries' => 'Legg til medier i bibliotekene dine',
 			'discover.continueWatching' => 'Fortsett å se',
+			'discover.nextUp' => 'Neste opp',
+			'discover.recentlyAdded' => 'Nylig lagt til',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Oversikt',
 			'discover.cast' => 'Skuespillere',
@@ -2032,7 +2263,7 @@ extension on TranslationsNb {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min igjen',
 			'errors.searchFailed' => ({required Object error}) => 'Søk mislyktes: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Tidsavbrudd ved lasting av ${context}',
-			'errors.connectionFailed' => 'Kunne ikke koble til Plex-server',
+			'errors.connectionFailed' => 'Unable to connect to media server',
 			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Kunne ikke laste ${context}: ${error}',
 			'errors.noClientAvailable' => 'Ingen klient tilgjengelig',
 			'errors.authenticationFailed' => ({required Object error}) => 'Autentisering mislyktes: ${error}',
@@ -2041,6 +2272,8 @@ extension on TranslationsNb {
 			'errors.invalidToken' => 'Ugyldig token',
 			'errors.failedToVerifyToken' => ({required Object error}) => 'Kunne ikke verifisere token: ${error}',
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Kunne ikke bytte til ${displayName}',
+			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Kunne ikke slette ${displayName}',
+			'errors.failedToRate' => 'Kunne ikke oppdatere vurderingen',
 			'libraries.title' => 'Biblioteker',
 			'libraries.scanLibraryFiles' => 'Skann bibliotekfiler',
 			'libraries.scanLibrary' => 'Skann bibliotek',
@@ -2054,8 +2287,6 @@ extension on TranslationsNb {
 			'libraries.analyzing' => ({required Object title}) => 'Analyserer "${title}"...',
 			'libraries.analysisStarted' => ({required Object title}) => 'Analyse startet for "${title}"',
 			'libraries.failedToAnalyze' => ({required Object error}) => 'Kunne ikke analysere bibliotek: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.noLibrariesFound' => 'Ingen biblioteker funnet',
 			'libraries.allLibrariesHidden' => 'Alle biblioteker er skjult',
 			'libraries.hiddenLibrariesCount' => ({required Object count}) => 'Skjulte biblioteker (${count})',
@@ -2092,10 +2323,23 @@ extension on TranslationsNb {
 			'libraries.groupings.seasons' => 'Sesonger',
 			'libraries.groupings.episodes' => 'Episoder',
 			'libraries.groupings.folders' => 'Mapper',
+			'libraries.filterCategories.genre' => 'Sjanger',
+			'libraries.filterCategories.year' => 'År',
+			'libraries.filterCategories.contentRating' => 'Aldersgrense',
+			'libraries.filterCategories.tag' => 'Tag',
+			'libraries.sortLabels.title' => 'Tittel',
+			'libraries.sortLabels.dateAdded' => 'Lagt til-dato',
+			'libraries.sortLabels.releaseDate' => 'Utgivelsesdato',
+			'libraries.sortLabels.rating' => 'Vurdering',
+			'libraries.sortLabels.lastPlayed' => 'Sist spilt',
+			'libraries.sortLabels.playCount' => 'Avspillinger',
+			'libraries.sortLabels.random' => 'Tilfeldig',
+			'libraries.sortLabels.dateShared' => 'Delingsdato',
+			'libraries.sortLabels.latestEpisodeAirDate' => 'Siste episodes sendedato',
 			'about.title' => 'Om',
 			'about.openSourceLicenses' => 'Åpen kildekode-lisenser',
 			'about.versionLabel' => ({required Object version}) => 'Versjon ${version}',
-			'about.appDescription' => 'En vakker Plex-klient for Flutter',
+			'about.appDescription' => 'En vakker Plex- og Jellyfin-klient for Flutter',
 			'about.viewLicensesDescription' => 'Vis lisenser for tredjepartsbiblioteker',
 			'serverSelection.allServerConnectionsFailed' => 'Kunne ikke koble til noen servere. Sjekk nettverket ditt og prøv igjen.',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'Ingen servere funnet for ${username} (${email})',
@@ -2243,6 +2487,8 @@ extension on TranslationsNb {
 			'watchTogether.recentRooms' => 'Nylige rom',
 			'watchTogether.renameRoom' => 'Gi nytt navn til rom',
 			'watchTogether.removeRoom' => 'Fjern',
+			'watchTogether.guestSwitchUnavailable' => 'Kunne ikke bytte — server ikke tilgjengelig for synkronisering',
+			'watchTogether.guestSwitchFailed' => 'Kunne ikke bytte — innhold ble ikke funnet på denne serveren',
 			'downloads.title' => 'Nedlastinger',
 			'downloads.manage' => 'Administrer',
 			'downloads.tvShows' => 'TV-serier',
@@ -2291,6 +2537,12 @@ extension on TranslationsNb {
 			'downloads.editSyncFilter' => 'Synkroniseringsfilter',
 			'downloads.syncAllItems' => 'Synkroniserer alle elementer',
 			'downloads.syncUnwatchedItems' => 'Synkroniserer usette elementer',
+			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
+			'downloads.syncRuleAvailable' => 'Tilgjengelig',
+			'downloads.syncRuleOffline' => 'Frakoblet',
+			'downloads.syncRuleSignInRequired' => 'Innlogging kreves',
+			'downloads.syncRuleNotAvailableForProfile' => 'Ikke tilgjengelig for gjeldende profil',
+			'downloads.syncRuleUnknownServer' => 'Ukjent server',
 			'downloads.syncRuleListCreated' => 'Synkroniseringsregel opprettet',
 			'shaders.title' => 'Shadere',
 			'shaders.noShaderDescription' => 'Ingen videoforbedring',
@@ -2484,6 +2736,8 @@ extension on TranslationsNb {
 			'trakt.disconnectConfirmBody' => 'Plezy slutter å sende avspillingshendelser til Trakt. Du kan koble til igjen når som helst.',
 			'trakt.scrobble' => 'Sanntids-scrobbling',
 			'trakt.scrobbleDescription' => 'Send avspillings-, pause- og stopphendelser til Trakt under avspilling.',
+			_ => null,
+		} ?? switch (path) {
 			'trakt.watchedSync' => 'Synkroniser sett-status',
 			'trakt.watchedSyncDescription' => 'Når du markerer noe som sett i Plezy, markeres det også på Trakt.',
 			'trackers.title' => 'Trackere',
@@ -2519,6 +2773,38 @@ extension on TranslationsNb {
 			'trackers.libraryFilter.modeHintWhitelist' => 'Synkroniser kun bibliotekene du markerer nedenfor.',
 			'trackers.libraryFilter.libraries' => 'Biblioteker',
 			'trackers.libraryFilter.noLibraries' => 'Ingen biblioteker tilgjengelige',
+			'addServer.addJellyfinTitle' => 'Legg til Jellyfin-server',
+			'addServer.jellyfinUrlIntro' => 'Oppgi URL-en til Jellyfin-serveren din — f.eks. `https://jellyfin.example.com`. Du kan logge på etterpå.',
+			'addServer.serverUrl' => 'Server-URL',
+			'addServer.findServer' => 'Finn server',
+			'addServer.username' => 'Brukernavn',
+			'addServer.password' => 'Passord',
+			'addServer.signIn' => 'Logg på',
+			'addServer.change' => 'Endre',
+			'addServer.required' => 'Påkrevd',
+			'addServer.couldNotReachServer' => ({required Object error}) => 'Kunne ikke nå serveren: ${error}',
+			'addServer.signInFailed' => ({required Object error}) => 'Pålogging mislyktes: ${error}',
+			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect mislyktes: ${error}',
+			'addServer.addPlexTitle' => 'Logg på med Plex',
+			'addServer.plexAuthIntro' => 'Velg hvordan du vil logge på Plex. Nettleserflyten åpner plex.tv der du bekrefter tilkoblingen; QR-alternativet er praktisk for TV / fjern-enheter.',
+			'addServer.plexQRPrompt' => 'Skann denne QR-koden for å logge på.',
+			'addServer.waitingForPlexConfirmation' => 'Venter på at plex.tv bekrefter påloggingen…',
+			'addServer.pinExpired' => 'PIN-koden gikk ut før pålogging. Prøv igjen.',
+			'addServer.duplicatePlexAccount' => 'Denne enheten er allerede pålogget en Plex-konto. Logg ut fra innstillingene for å bytte konto.',
+			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kunne ikke registrere kontoen: ${error}',
+			'addServer.enterJellyfinUrlError' => 'Oppgi URL-en til Jellyfin-serveren din',
+			'addServer.addConnectionTitle' => 'Legg til tilkobling',
+			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Legg til i ${name}',
+			'addServer.addConnectionIntroGlobal' => 'Legg til enda en medieserver. Du kan blande Plex-kontoer og Jellyfin-servere — innhold fra alle tilkoblede backender vises sammen på startsiden.',
+			'addServer.addConnectionIntroScoped' => 'Legg til en ny server, eller lån en fra en annen profil.',
+			'addServer.signInWithPlexCard' => 'Logg på med Plex',
+			'addServer.signInWithPlexCardSubtitle' => 'Autoriser denne enheten mot Plex-kontoen din. Servere delt med kontoen følger med automatisk.',
+			'addServer.signInWithPlexCardSubtitleScoped' => 'Autoriser en ny Plex-konto. Dens Home-brukere vises som profiler.',
+			'addServer.connectToJellyfinCard' => 'Koble til Jellyfin',
+			'addServer.connectToJellyfinCardSubtitle' => 'Oppgi URL-en til Jellyfin-serveren din og logg på med brukernavn + passord (Quick Connect kommer snart).',
+			'addServer.connectToJellyfinCardSubtitleScoped' => ({required Object name}) => 'Logg på en Jellyfin-server. Knyttes til ${name}.',
+			'addServer.borrowFromAnotherProfile' => 'Lån fra en annen profil',
+			'addServer.borrowFromAnotherProfileSubtitle' => 'Gjenbruk en tilkobling som allerede er tilknyttet en annen profil. PIN-beskyttede kildeprofiler ber om PIN.',
 			_ => null,
 		};
 	}

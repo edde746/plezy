@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../models/plex_first_character.dart';
+import '../../media/library_first_character.dart';
 import 'alpha_jump_helper.dart';
 
 /// Phone-optimized draggable scroll handle that appears on scroll and shows
@@ -11,7 +11,7 @@ import 'alpha_jump_helper.dart';
 ///
 /// Desktop/tablet/TV should use [AlphaJumpBar] instead.
 class AlphaScrollHandle extends StatefulWidget {
-  final List<PlexFirstCharacter> firstCharacters;
+  final List<LibraryFirstCharacter> firstCharacters;
   final void Function(int targetIndex) onJump;
 
   /// The letter currently visible at the top of the grid, derived from the

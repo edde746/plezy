@@ -4,20 +4,27 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import '../exceptions/media_server_exceptions.dart';
+import '../media/media_backend.dart';
+import '../media/media_item.dart';
+import '../media/media_kind.dart';
+import '../media/media_playlist.dart';
+import '../media/media_server_client.dart';
+import '../media/media_version.dart';
 import '../services/plex_client.dart';
-import '../services/play_queue_launcher.dart';
-import '../models/plex_metadata.dart';
-import '../models/plex_playlist.dart';
+import '../services/media_list_playback_launcher.dart';
+import '../services/playlist_items_loader.dart';
+import '../models/transcode_quality_preset.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
 import '../utils/quality_preset_labels.dart';
-import '../utils/content_utils.dart';
 import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
 import '../providers/offline_watch_provider.dart';
-import '../providers/user_profile_provider.dart';
+import '../profiles/active_profile_provider.dart';
+import '../profiles/profile.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
@@ -28,9 +35,9 @@ import '../utils/focus_utils.dart';
 import '../services/external_player_service.dart';
 import '../focus/focusable_button.dart';
 import '../focus/dpad_navigator.dart';
-import '../screens/match_screen.dart';
+import '../screens/plex_match_screen.dart';
 import '../screens/media_detail_screen.dart';
-import '../screens/metadata_edit_screen.dart';
+import '../screens/plex_metadata_edit_screen.dart';
 import '../utils/smart_deletion_handler.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
@@ -53,11 +60,24 @@ class _MenuAction {
   _MenuAction({required this.value, required this.icon, required this.label, this.hoverColor, this.foregroundColor});
 }
 
+bool isAdminActionAllowedForMediaItem({
+  required bool isOwnerOrAdmin,
+  required MediaBackend? itemBackend,
+  required Profile? activeProfile,
+}) {
+  final blockedByPlexHomeRole =
+      itemBackend == MediaBackend.plex && activeProfile != null && activeProfile.isPlexHome && !activeProfile.plexAdmin;
+  return isOwnerOrAdmin && !blockedByPlexHomeRole;
+}
+
 /// A reusable wrapper widget that adds a context menu (long press / right click)
 /// to any media item with appropriate actions based on the item type.
 class MediaContextMenu extends StatefulWidget {
-  final dynamic item; // Can be PlexMetadata or PlexPlaylist
-  final void Function(String ratingKey)? onRefresh;
+  /// Either a [MediaItem] or a [MediaPlaylist]. Typed as [Object] because
+  /// Dart has no nominal union type — guarded at runtime via the
+  /// [_itemAsMediaItem] / [_itemAsPlaylist] helpers.
+  final Object item;
+  final void Function(String itemId)? onRefresh;
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh; // For refreshing list after deletion
   final VoidCallback? onTap;
@@ -89,6 +109,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   bool get isContextMenuOpen => _isContextMenuOpen;
 
+  /// The widget's [item] cast as a [MediaItem]. Returns `null` for playlists.
+  MediaItem? get _mediaItem => widget.item is MediaItem ? widget.item as MediaItem : null;
+
+  /// The widget's [item] cast as a [MediaPlaylist]. Returns `null` for media items.
+  MediaPlaylist? get _playlist => widget.item is MediaPlaylist ? widget.item as MediaPlaylist : null;
+
   /// Show the context menu programmatically.
   /// Used for keyboard/gamepad long-press activation.
   /// If [position] is null, the menu will appear at the center of this widget.
@@ -108,15 +134,29 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     _showContextMenu(menuContext);
   }
 
-  /// Get the serverId from the item (PlexMetadata or PlexPlaylist)
-  String? get _itemServerId {
-    if (widget.item is PlexMetadata) return (widget.item as PlexMetadata).serverId;
-    if (widget.item is PlexPlaylist) return (widget.item as PlexPlaylist).serverId;
-    return null;
-  }
+  /// Get the serverId from the typed item.
+  String? get _itemServerId => switch (widget.item) {
+    MediaItem(:final serverId) => serverId,
+    MediaPlaylist(:final serverId) => serverId,
+    _ => null,
+  };
 
-  /// Get the correct PlexClient for this item's server
-  PlexClient _getClientForItem() => context.getClientWithFallback(_itemServerId);
+  /// Item identifier for refresh callbacks.
+  String _itemId() => switch (widget.item) {
+    MediaItem(:final id) => id,
+    MediaPlaylist(:final id) => id,
+    _ => '',
+  };
+
+  /// Get the correct PlexClient for this item's server. Throws on
+  /// non-Plex backends — Plex-only flows (Add to Collection, metadata
+  /// edit, etc.) call this directly. Backend-neutral flows must use
+  /// [_getMediaClientForItem] instead.
+  PlexClient _getClientForItem() => context.getPlexClientWithFallback(_itemServerId);
+
+  /// Backend-neutral client for the active item's server. Used by flows
+  /// that work for Jellyfin too (downloads, basic browse).
+  MediaServerClient _getMediaClientForItem() => context.getMediaClientWithFallback(_itemServerId);
 
   void _showContextMenu(BuildContext context) async {
     if (_isContextMenuOpen) return;
@@ -126,26 +166,48 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final previousFocus = FocusManager.instance.primaryFocus;
     bool didNavigate = false;
 
-    final isPlaylist = widget.item is PlexPlaylist;
-    final metadata = isPlaylist ? null : widget.item as PlexMetadata;
-    final mediaType = isPlaylist ? null : metadata!.mediaType;
-    final isCollection = mediaType == PlexMediaType.collection;
+    final mediaItem = _mediaItem;
+    final playlist = _playlist;
+    final isPlaylist = playlist != null;
+    final mediaKind = mediaItem?.kind;
+    final isCollection = mediaKind == MediaKind.collection;
 
-    final isPartiallyWatched = !isPlaylist && metadata!.isPartiallyWatched;
+    // Backend-aware gate: a few menu items remain Plex-only because the
+    // server-side feature has no Jellyfin equivalent (metadata edit, match).
+    // No fallback: items without a backend marker show only neutral actions —
+    // dispatching a Plex-only action against an unknown-backend item could
+    // crash or hit the wrong server.
+    final itemBackend = mediaItem?.backend ?? playlist?.backend;
+    final isPlex = itemBackend == MediaBackend.plex;
+
+    final isPartiallyWatched = mediaItem?.isPartiallyWatched ?? false;
 
     final hasActiveProgress =
-        mediaType != null &&
-        (mediaType == PlexMediaType.movie || mediaType == PlexMediaType.episode) &&
-        metadata?.hasActiveProgress == true;
+        mediaKind != null &&
+        (mediaKind == MediaKind.movie || mediaKind == MediaKind.episode) &&
+        mediaItem?.hasActiveProgress == true;
 
     // Check if we should use bottom sheet (on iOS and Android)
     final useBottomSheet = Platform.isIOS || Platform.isAndroid;
 
-    // Check if user has admin privileges (server owned + admin or single user)
+    // Check if user has admin privileges. Backend-neutral: Plex uses the
+    // server-owned flag (folded with the active Plex Home profile's admin
+    // bit, when applicable); Jellyfin uses `JellyfinConnection.isAdministrator`
+    // captured at sign-in.
     final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
-    final server = _itemServerId != null ? multiServerProvider.serverManager.getServer(_itemServerId!) : null;
-    final currentUser = context.read<UserProfileProvider>().currentUser;
-    final isAdmin = server?.owned == true && (currentUser == null || currentUser.admin);
+    final activeProfile = context.read<ActiveProfileProvider>().active;
+    final isOwnerOrAdmin = _itemServerId != null && multiServerProvider.serverManager.isOwnerOrAdmin(_itemServerId!);
+    final isAdmin = isAdminActionAllowedForMediaItem(
+      isOwnerOrAdmin: isOwnerOrAdmin,
+      itemBackend: itemBackend,
+      activeProfile: activeProfile,
+    );
+
+    // Backend capabilities — used to gate the "Play Version" item below.
+    // Reads the same `capabilities.videoTranscoding` flag the in-player
+    // sheet uses so the two surfaces never disagree about what's offered.
+    final mediaClient = _itemServerId != null ? multiServerProvider.getClientForServer(_itemServerId!) : null;
+    final canTranscode = mediaClient?.capabilities.videoTranscoding ?? false;
 
     // Build menu actions
     final menuActions = <_MenuAction>[];
@@ -160,9 +222,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       // Download + sync-rule management. Video playlists and any collection
       // qualify — collections can contain movies, episodes, and shows.
-      final isVideoPlaylist = isPlaylist && (widget.item as PlexPlaylist).playlistType == 'video';
+      final isVideoPlaylist = isPlaylist && playlist.playlistType == 'video';
       if ((isVideoPlaylist || isCollection) && !PlatformDetector.isAppleTV()) {
-        final hasRule = Provider.of<DownloadProvider>(context, listen: false).hasSyncRule(_itemGlobalKey());
+        final hasRule = Provider.of<DownloadProvider>(context, listen: false).hasSyncRule(_itemSyncRuleKey(context));
         if (hasRule) {
           menuActions.add(
             _MenuAction(value: 'manage_sync', icon: Symbols.sync_rounded, label: t.downloads.manageSyncRule),
@@ -196,14 +258,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       // Mark as Watched
-      if (!metadata!.isWatched || isPartiallyWatched || hasActiveProgress) {
+      if (!mediaItem!.isWatched || isPartiallyWatched || hasActiveProgress) {
         menuActions.add(
           _MenuAction(value: 'watch', icon: Symbols.check_circle_outline_rounded, label: t.mediaMenu.markAsWatched),
         );
       }
 
       // Mark as Unwatched
-      if (metadata.isWatched || isPartiallyWatched || hasActiveProgress) {
+      if (mediaItem.isWatched || isPartiallyWatched || hasActiveProgress) {
         menuActions.add(
           _MenuAction(
             value: 'unwatch',
@@ -225,39 +287,46 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       // Rate (for movies, shows, seasons, and episodes)
-      if (mediaType == PlexMediaType.movie ||
-          mediaType == PlexMediaType.show ||
-          mediaType == PlexMediaType.season ||
-          mediaType == PlexMediaType.episode) {
+      if (mediaKind == MediaKind.movie ||
+          mediaKind == MediaKind.show ||
+          mediaKind == MediaKind.season ||
+          mediaKind == MediaKind.episode) {
         menuActions.add(_MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate));
       }
 
       // Edit Metadata (for movies, shows, seasons, and episodes) — admin only
-      if (isAdmin &&
-          (mediaType == PlexMediaType.movie ||
-              mediaType == PlexMediaType.show ||
-              mediaType == PlexMediaType.season ||
-              mediaType == PlexMediaType.episode)) {
+      // Plex-only: opens PlexMetadataEditScreen which talks to Plex's
+      // `/library/metadata/{id}` PUT API; Jellyfin has no equivalent in v1.
+      if (isPlex &&
+          isAdmin &&
+          (mediaKind == MediaKind.movie ||
+              mediaKind == MediaKind.show ||
+              mediaKind == MediaKind.season ||
+              mediaKind == MediaKind.episode)) {
         menuActions.add(
           _MenuAction(value: 'edit_metadata', icon: Symbols.edit_rounded, label: t.metadataEdit.editMetadata),
         );
       }
 
-      if (isAdmin && (mediaType == PlexMediaType.movie || mediaType == PlexMediaType.show)) {
+      // Match / Unmatch — Plex-only (Jellyfin doesn't expose match agents).
+      if (isPlex && isAdmin && (mediaKind == MediaKind.movie || mediaKind == MediaKind.show)) {
+        final isUnmatched = _isUnmatched(mediaItem);
         menuActions.add(
           _MenuAction(
             value: 'match',
             icon: Symbols.search_rounded,
-            label: metadata.isUnmatched ? t.matchScreen.match : t.matchScreen.fixMatch,
+            label: isUnmatched ? t.matchScreen.match : t.matchScreen.fixMatch,
           ),
         );
-        if (!metadata.isUnmatched) {
+        if (!isUnmatched) {
           menuActions.add(_MenuAction(value: 'unmatch', icon: Symbols.link_off_rounded, label: t.matchScreen.unmatch));
         }
       }
 
-      // Remove from Collection (only when viewing items within a collection)
-      if (widget.collectionId != null) {
+      // Remove from Collection (only when viewing items within a collection).
+      // Plex-only — uses `removeFromCollection` API; Jellyfin's collection
+      // membership API isn't wired here yet.
+      if (isPlex && widget.collectionId != null) {
         menuActions.add(
           _MenuAction(
             value: 'remove_from_collection',
@@ -270,52 +339,60 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // Go to Series (for episodes and seasons) — hide if already on that series' detail screen
       final ancestorMediaDetail = context.findAncestorWidgetOfExactType<MediaDetailScreen>();
       final ancestorMeta = ancestorMediaDetail?.metadata;
-      final ancestorSeriesKey = ancestorMeta != null && ancestorMeta.isSeason
-          ? ancestorMeta.parentRatingKey
-          : ancestorMeta?.ratingKey;
-      // For episodes, the show key is grandparentRatingKey; for seasons, it's parentRatingKey
-      final itemSeriesKey = mediaType == PlexMediaType.episode
-          ? metadata.grandparentRatingKey
-          : metadata.parentRatingKey;
-      if ((mediaType == PlexMediaType.episode || mediaType == PlexMediaType.season) &&
+      final ancestorSeriesKey = ancestorMeta != null && ancestorMeta.kind == MediaKind.season
+          ? ancestorMeta.parentId
+          : ancestorMeta?.id;
+      // For episodes, the show key is grandparentId; for seasons, it's parentId
+      final itemSeriesKey = mediaKind == MediaKind.episode ? mediaItem.grandparentId : mediaItem.parentId;
+      if ((mediaKind == MediaKind.episode || mediaKind == MediaKind.season) &&
           itemSeriesKey != null &&
           ancestorSeriesKey != itemSeriesKey) {
         menuActions.add(_MenuAction(value: 'series', icon: Symbols.tv_rounded, label: t.mediaMenu.goToSeries));
       }
 
       // Go to Season (for episodes) — hide if already viewing that season's MediaDetailScreen
-      if (mediaType == PlexMediaType.episode &&
-          metadata.parentTitle != null &&
-          !(ancestorMeta != null && ancestorMeta.isSeason && ancestorMeta.ratingKey == metadata.parentRatingKey)) {
+      if (mediaKind == MediaKind.episode &&
+          mediaItem.parentTitle != null &&
+          !(ancestorMeta != null && ancestorMeta.kind == MediaKind.season && ancestorMeta.id == mediaItem.parentId)) {
         menuActions.add(
           _MenuAction(value: 'season', icon: Symbols.playlist_play_rounded, label: t.mediaMenu.goToSeason),
         );
       }
 
       // Shuffle Play (for shows and seasons)
-      if (mediaType == PlexMediaType.show || mediaType == PlexMediaType.season) {
+      if (mediaKind == MediaKind.show || mediaKind == MediaKind.season) {
         menuActions.add(
           _MenuAction(value: 'shuffle_play', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay),
         );
       }
 
-      // Play Version (for episodes and movies). Always shown — even for
-      // single-version items — so the user can still pick a streaming
-      // quality. The handler skips the version picker if only one version
-      // is present, jumping straight to the quality picker.
-      if (mediaType == PlexMediaType.episode || mediaType == PlexMediaType.movie) {
+      // Play Version (for episodes and movies). Hidden when there's
+      // nothing to choose: a single source on a backend that can't
+      // transcode (Jellyfin v1, or Plex installs without a working
+      // transcoder) would just bounce straight to playback with default
+      // settings, which is what the regular Play action already does.
+      // Both backends inline their version list in browse responses
+      // (`Media[]` for Plex, `MediaSources` for Jellyfin), so the count
+      // is known up front.
+      final versionCount = (mediaItem.mediaVersions ?? const []).length;
+      final hasVersionChoice = versionCount > 1;
+      if ((mediaKind == MediaKind.episode || mediaKind == MediaKind.movie) && (hasVersionChoice || canTranscode)) {
         menuActions.add(
           _MenuAction(value: 'play_version', icon: Symbols.video_file_rounded, label: t.mediaMenu.playVersion),
         );
       }
 
-      // File Info (for episodes and movies)
-      if (mediaType == PlexMediaType.episode || mediaType == PlexMediaType.movie) {
+      // File Info (for episodes and movies). Backend-neutral — both
+      // PlexClient and JellyfinClient implement [getFileInfo], reading
+      // codec/stream metadata from `Media`/`MediaSources` respectively.
+      // Hidden when the item has no backend marker so we don't fan out
+      // to an arbitrary client.
+      if (itemBackend != null && (mediaKind == MediaKind.episode || mediaKind == MediaKind.movie)) {
         menuActions.add(_MenuAction(value: 'fileinfo', icon: Symbols.info_rounded, label: t.mediaMenu.fileInfo));
       }
 
       // Play in External Player (for episodes and movies)
-      if (mediaType == PlexMediaType.episode || mediaType == PlexMediaType.movie) {
+      if (mediaKind == MediaKind.episode || mediaKind == MediaKind.movie) {
         menuActions.add(
           _MenuAction(
             value: 'play_external',
@@ -328,14 +405,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       // Download options (for episodes, movies, shows, and seasons).
       // Apple TV has no user-accessible file storage — skip entirely.
       if (!PlatformDetector.isAppleTV() &&
-          (mediaType == PlexMediaType.episode ||
-              mediaType == PlexMediaType.movie ||
-              mediaType == PlexMediaType.show ||
-              mediaType == PlexMediaType.season)) {
+          (mediaKind == MediaKind.episode ||
+              mediaKind == MediaKind.movie ||
+              mediaKind == MediaKind.show ||
+              mediaKind == MediaKind.season)) {
         final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-        final globalKey = metadata.globalKey;
-        final isDownloaded = downloadProvider.isDownloaded(globalKey);
-        final hasSyncRule = downloadProvider.hasSyncRule(globalKey);
+        final globalKey = mediaItem.globalKey;
+        final hasSyncRule = downloadProvider.hasSyncRule(_itemSyncRuleKey(context));
         final hasAnyDownload = downloadProvider.getProgress(globalKey) != null;
 
         if (hasSyncRule) {
@@ -351,8 +427,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
               _MenuAction(value: 'delete_download', icon: Symbols.delete_rounded, label: t.downloads.deleteDownload),
             );
           }
-        } else if (isDownloaded) {
-          // Show delete download option
+        } else if (hasAnyDownload) {
+          // Show delete option for any download state (completed, partial, queued, downloading, failed)
           menuActions.add(
             _MenuAction(value: 'delete_download', icon: Symbols.delete_rounded, label: t.downloads.deleteDownload),
           );
@@ -364,20 +440,26 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         }
       }
 
-      // Add to... (for episodes, movies, shows, and seasons)
-      if (mediaType == PlexMediaType.episode ||
-          mediaType == PlexMediaType.movie ||
-          mediaType == PlexMediaType.show ||
-          mediaType == PlexMediaType.season) {
+      // Add to... (for episodes, movies, shows, and seasons). Plex-only —
+      // uses `buildMetadataUri` + `addToPlaylist` / `addToCollection`. The
+      // Jellyfin item-add API is different and not wired here yet.
+      if (isPlex &&
+          (mediaKind == MediaKind.episode ||
+              mediaKind == MediaKind.movie ||
+              mediaKind == MediaKind.show ||
+              mediaKind == MediaKind.season)) {
         menuActions.add(_MenuAction(value: 'add_to', icon: Symbols.add_rounded, label: t.common.addTo));
       }
 
-      // Delete media item (for episodes, movies, shows, and seasons) — admin only
+      // Delete media item (for episodes, movies, shows, and seasons) — admin
+      // only. Backend-neutral: routed through `MediaServerClient.deleteMediaItem`,
+      // which both Plex and Jellyfin implement (DELETE /library/metadata/{id}
+      // and DELETE /Items/{id} respectively).
       if (isAdmin &&
-          (mediaType == PlexMediaType.episode ||
-              mediaType == PlexMediaType.movie ||
-              mediaType == PlexMediaType.show ||
-              mediaType == PlexMediaType.season)) {
+          (mediaKind == MediaKind.episode ||
+              mediaKind == MediaKind.movie ||
+              mediaKind == MediaKind.show ||
+              mediaKind == MediaKind.season)) {
         menuActions.add(
           _MenuAction(
             value: 'delete_media',
@@ -400,7 +482,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         context,
         showDragHandle: true,
         builder: (context) => _FocusableContextMenuSheet(
-          title: widget.item.displayTitle,
+          title: _itemDisplayTitle(),
           actions: menuActions,
           focusFirstItem: openedFromKeyboard,
         ),
@@ -433,47 +515,46 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         case 'play_from_beginning':
           didNavigate = true;
           if (context.mounted) {
-            await navigateToVideoPlayer(context, metadata: metadata!.copyWith(viewOffset: 0));
+            await navigateToVideoPlayer(context, metadata: mediaItem!.copyWith(viewOffsetMs: 0));
           }
           break;
 
         case 'watch':
           final isOffline = context.read<OfflineModeProvider>().isOffline;
-          if (isOffline && metadata?.serverId != null) {
+          if (isOffline && mediaItem?.serverId != null) {
             // Offline mode: queue action for later sync (emits WatchStateEvent)
             final offlineWatch = context.read<OfflineWatchProvider>();
-            await offlineWatch.markAsWatched(serverId: metadata!.serverId!, ratingKey: metadata.ratingKey);
+            await offlineWatch.markAsWatched(serverId: mediaItem!.serverId!, itemId: mediaItem.id);
             if (context.mounted) {
               showAppSnackBar(context, t.messages.markedAsWatchedOffline);
-              widget.onRefresh?.call(metadata.ratingKey);
+              widget.onRefresh?.call(mediaItem.id);
             }
           } else {
-            // Pass metadata to emit WatchStateEvent for cross-screen updates
-            await _executeAction(
-              context,
-              () => _getClientForItem().markAsWatched(metadata!.ratingKey, metadata: metadata),
-              t.messages.markedAsWatched,
-            );
+            // Resolve the right backend client — Plex hits scrobble, Jellyfin
+            // hits /UserPlayedItems. WatchStateNotifier event is fired in both
+            // paths so cross-screen UI updates regardless of backend.
+            await _executeAction(context, () async {
+              final client = context.tryGetMediaClientForServer(_itemServerId!);
+              if (client != null) await client.markWatched(mediaItem!);
+            }, t.messages.markedAsWatched);
           }
           break;
 
         case 'unwatch':
           final isOffline = context.read<OfflineModeProvider>().isOffline;
-          if (isOffline && metadata?.serverId != null) {
+          if (isOffline && mediaItem?.serverId != null) {
             // Offline mode: queue action for later sync (emits WatchStateEvent)
             final offlineWatch = context.read<OfflineWatchProvider>();
-            await offlineWatch.markAsUnwatched(serverId: metadata!.serverId!, ratingKey: metadata.ratingKey);
+            await offlineWatch.markAsUnwatched(serverId: mediaItem!.serverId!, itemId: mediaItem.id);
             if (context.mounted) {
               showAppSnackBar(context, t.messages.markedAsUnwatchedOffline);
-              widget.onRefresh?.call(metadata.ratingKey);
+              widget.onRefresh?.call(mediaItem.id);
             }
           } else {
-            // Pass metadata to emit WatchStateEvent for cross-screen updates
-            await _executeAction(
-              context,
-              () => _getClientForItem().markAsUnwatched(metadata!.ratingKey, metadata: metadata),
-              t.messages.markedAsUnwatched,
-            );
+            await _executeAction(context, () async {
+              final client = context.tryGetMediaClientForServer(_itemServerId!);
+              if (client != null) await client.markUnwatched(mediaItem!);
+            }, t.messages.markedAsUnwatched);
           }
           break;
 
@@ -482,15 +563,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           // This preserves the progression for partially watched items
           // and doesn't mark unwatched next episodes as watched
           try {
-            final client = _getClientForItem();
-            await client.removeFromOnDeck(metadata!.ratingKey);
+            final client = _getMediaClientForItem();
+            await client.removeFromContinueWatching(mediaItem!);
             if (context.mounted) {
               showSuccessSnackBar(context, t.messages.removedFromContinueWatching);
               // Use specific callback if provided, otherwise fallback to onRefresh
               if (widget.onRemoveFromContinueWatching != null) {
                 widget.onRemoveFromContinueWatching!();
               } else {
-                widget.onRefresh?.call(metadata.ratingKey);
+                widget.onRefresh?.call(mediaItem.id);
               }
             }
           } catch (e) {
@@ -503,8 +584,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         case 'rate':
           if (context.mounted) {
             try {
-              final client = _getClientForItem();
-              await _showRatingSheet(context, metadata!, client);
+              final client = _getMediaClientForItem();
+              await _showRatingSheet(context, mediaItem!, client);
             } catch (e) {
               if (context.mounted) {
                 showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
@@ -518,34 +599,37 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           if (context.mounted) {
             await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => MetadataEditScreen(metadata: metadata!)),
+              MaterialPageRoute(builder: (context) => PlexMetadataEditScreen(metadata: mediaItem!)),
             );
-            widget.onRefresh?.call(metadata!.ratingKey);
+            widget.onRefresh?.call(mediaItem!.id);
           }
           break;
 
         case 'match':
           didNavigate = true;
           if (context.mounted) {
-            await Navigator.push(context, MaterialPageRoute(builder: (context) => MatchScreen(metadata: metadata!)));
-            widget.onRefresh?.call(metadata!.ratingKey);
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => PlexMatchScreen(metadata: mediaItem!)),
+            );
+            widget.onRefresh?.call(mediaItem!.id);
           }
           break;
 
         case 'unmatch':
-          await _handleUnmatch(context, metadata!);
+          await _handleUnmatch(context, mediaItem!);
           break;
 
         case 'remove_from_collection':
-          await _handleRemoveFromCollection(context, metadata!);
+          await _handleRemoveFromCollection(context, mediaItem!);
           break;
 
         case 'series':
           didNavigate = true;
           await _navigateToRelated(
             context,
-            metadata!.mediaType == PlexMediaType.season ? metadata.parentRatingKey : metadata.grandparentRatingKey,
-            (metadata) => MediaDetailScreen(metadata: metadata),
+            mediaItem!.kind == MediaKind.season ? mediaItem.parentId : mediaItem.grandparentId,
+            (item) => MediaDetailScreen(metadata: item),
             t.messages.errorLoadingSeries,
           );
           break;
@@ -553,10 +637,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         case 'season':
           didNavigate = true;
           // Navigate to the show with the season tab pre-selected
-          final seasonParentKey = metadata!.mediaType == PlexMediaType.episode
-              ? metadata.grandparentRatingKey
-              : metadata.parentRatingKey;
-          final seasonIndex = metadata.parentIndex;
+          final seasonParentKey = mediaItem!.kind == MediaKind.episode ? mediaItem.grandparentId : mediaItem.parentId;
+          final seasonIndex = mediaItem.parentIndex;
           await _navigateToRelated(
             context,
             seasonParentKey,
@@ -622,7 +704,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           break;
 
         case 'delete_media':
-          await _handleDeleteMediaItem(context, mediaType);
+          await _handleDeleteMediaItem(context, mediaKind);
           break;
       }
     } finally {
@@ -646,7 +728,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       await action();
       if (context.mounted) {
         showSuccessSnackBar(context, successMessage);
-        widget.onRefresh?.call(widget.item.ratingKey);
+        widget.onRefresh?.call(_itemId());
       }
     } catch (e) {
       if (context.mounted) {
@@ -655,7 +737,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  Future<void> _handleUnmatch(BuildContext context, PlexMetadata metadata) async {
+  /// Plex-only: an item is unmatched when its [MediaItem.guid] is missing or
+  /// references the Plex no-agent marker.
+  bool _isUnmatched(MediaItem item) {
+    final g = item.guid;
+    return g == null || g.isEmpty || g.contains('agents.none://');
+  }
+
+  Future<void> _handleUnmatch(BuildContext context, MediaItem item) async {
     final confirmed = await showConfirmDialog(
       context,
       title: t.matchScreen.unmatch,
@@ -667,11 +756,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     final client = _getClientForItem();
     try {
-      final success = await client.unmatchItem(metadata.ratingKey);
+      final success = await client.unmatchItem(item.id);
       if (!context.mounted) return;
       if (success) {
         showSuccessSnackBar(context, t.matchScreen.unmatchSuccess);
-        widget.onRefresh?.call(metadata.ratingKey);
+        widget.onRefresh?.call(item.id);
       } else {
         showErrorSnackBar(context, t.matchScreen.unmatchFailed);
       }
@@ -685,19 +774,19 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Navigate to a related item (series or season)
   Future<void> _navigateToRelated(
     BuildContext context,
-    String? ratingKey,
-    Widget Function(PlexMetadata) screenBuilder,
+    String? id,
+    Widget Function(MediaItem) screenBuilder,
     String errorPrefix,
   ) async {
-    if (ratingKey == null) return;
+    if (id == null) return;
 
-    final client = _getClientForItem();
+    final client = _getMediaClientForItem();
 
     try {
-      final metadata = await client.getMetadataWithImages(ratingKey);
+      final metadata = await client.fetchItem(id);
       if (metadata != null && context.mounted) {
         await Navigator.push(context, MaterialPageRoute(builder: (context) => screenBuilder(metadata)));
-        widget.onRefresh?.call(widget.item.ratingKey);
+        widget.onRefresh?.call(_itemId());
       }
     } catch (e) {
       if (context.mounted) {
@@ -708,7 +797,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Show file info bottom sheet
   Future<void> _showFileInfo(BuildContext context) async {
-    final client = _getClientForItem();
+    final client = _getMediaClientForItem();
 
     try {
       if (context.mounted) {
@@ -716,8 +805,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       // Fetch file info
-      final metadata = widget.item as PlexMetadata;
-      final fileInfo = await client.getFileInfo(metadata.ratingKey);
+      final item = _mediaItem!;
+      final fileInfo = await client.getFileInfo(item);
 
       // Close loading indicator
       if (context.mounted) {
@@ -729,7 +818,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         await OverlaySheetController.showAdaptive(
           context,
           isScrollControlled: true,
-          builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: metadata.displayTitle),
+          builder: (context) => FileInfoBottomSheet(fileInfo: fileInfo, title: item.displayTitle),
         );
       } else if (context.mounted) {
         showErrorSnackBar(context, t.messages.fileInfoNotAvailable);
@@ -747,8 +836,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   Future<bool> _handlePlayVersion(BuildContext context) async {
-    final metadata = widget.item as PlexMetadata;
-    final versions = metadata.mediaVersions ?? const [];
+    final item = _mediaItem!;
+    // Same flag the in-player Version & Quality sheet reads — keeps both
+    // surfaces honest about what the active backend can actually do.
+    final canTranscode = _itemServerId == null
+        ? false
+        : (context.read<MultiServerProvider>().getClientForServer(_itemServerId!)?.capabilities.videoTranscoding ??
+              false);
+    final versions = item.mediaVersions ?? const [];
 
     int selectedVersionIndex = 0;
     if (versions.length > 1) {
@@ -757,36 +852,51 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       selectedVersionIndex = picked;
     }
 
-    final selectedVersion = selectedVersionIndex < versions.length ? versions[selectedVersionIndex] : null;
-    final selectedQuality = await showQualityPickerDialog(
-      context,
-      sourceBitrateKbps: selectedVersion?.bitrate,
-      sourceDurationMs: metadata.duration,
-    );
-    if (selectedQuality == null || !context.mounted) return false;
+    TranscodeQualityPreset selectedQuality = TranscodeQualityPreset.original;
+    if (canTranscode) {
+      final selectedVersion = selectedVersionIndex < versions.length ? versions[selectedVersionIndex] : null;
+      final picked = await showQualityPickerDialog(
+        context,
+        sourceBitrateKbps: selectedVersion?.bitrate,
+        sourceDurationMs: item.durationMs,
+        sourceSizeBytes: _versionSizeBytes(selectedVersion),
+      );
+      if (picked == null || !context.mounted) return false;
+      selectedQuality = picked;
+    }
 
     await navigateToVideoPlayer(
       context,
-      metadata: metadata,
+      metadata: item,
       selectedMediaIndex: selectedVersionIndex,
       selectedQualityPreset: selectedQuality,
     );
     return true;
   }
 
-  /// Handle shuffle play using play queues
+  /// Sum of [MediaPart.sizeBytes] across all parts of [version]. Returns
+  /// null when any part is missing a size (a partial sum would be misleading
+  /// for the "Original" row in the quality picker).
+  int? _versionSizeBytes(MediaVersion? version) {
+    if (version == null || version.parts.isEmpty) return null;
+    var total = 0;
+    for (final p in version.parts) {
+      final s = p.sizeBytes;
+      if (s == null || s <= 0) return null;
+      total += s;
+    }
+    return total > 0 ? total : null;
+  }
+
+  /// Handle shuffle play using play queues — dispatches via the
+  /// neutral [MediaListPlaybackLauncher] so Jellyfin items get routed to
+  /// [JellyfinSequentialLauncher] instead of falling through to the
+  /// Plex-only `/playQueues` flow.
   Future<void> _handleShufflePlayWithQueue(BuildContext context) async {
-    final client = _getClientForItem();
-    final metadata = widget.item as PlexMetadata;
-
-    final launcher = PlayQueueLauncher(
-      context: context,
-      client: client,
-      serverId: metadata.serverId,
-      serverName: metadata.serverName,
-    );
-
-    await launcher.launchShuffledShow(metadata: metadata, showLoadingIndicator: true);
+    final mediaItem = _mediaItem;
+    if (mediaItem == null) return;
+    final launcher = MediaListPlaybackLauncher.forItem(context, mediaItem);
+    await launcher.launchShuffledShow(metadata: mediaItem, showLoadingIndicator: true);
   }
 
   /// Show submenu for Add to... (Playlist or Collection)
@@ -810,14 +920,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Show dialog to select playlist and add item
   Future<void> _showAddToPlaylistDialog(BuildContext context) async {
-    final client = _getClientForItem();
+    final client = _getMediaClientForItem();
 
     try {
-      final metadata = widget.item as PlexMetadata;
-      final itemType = metadata.mediaType.name;
+      final item = _mediaItem!;
 
-      // Load playlists
-      final playlists = await client.getPlaylists(playlistType: 'video');
+      final playlists = await client.fetchPlaylists(playlistType: 'video');
 
       if (!context.mounted) return;
 
@@ -828,13 +936,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       );
 
       if (result == null || !context.mounted) return;
-
-      // Build URI for the item (works for all types: movies, episodes, seasons, shows)
-      // For seasons/shows, the Plex API should automatically expand to include all episodes
-      final itemUri = await client.buildMetadataUri(metadata.ratingKey);
-      appLogger.d('Built URI for $itemType: $itemUri');
-
-      if (!context.mounted) return;
 
       if (result == '_create_new') {
         // Create new playlist flow
@@ -850,8 +951,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         }
 
         // Create playlist with the item(s)
-        appLogger.d('Creating playlist "$playlistName" with URI length: ${itemUri.length}');
-        final newPlaylist = await client.createPlaylist(title: playlistName, uri: itemUri);
+        appLogger.d('Creating playlist "$playlistName" seeded with item ${item.id}');
+        final newPlaylist = await client.createPlaylist(title: playlistName, items: [item]);
 
         if (!context.mounted) return;
 
@@ -868,8 +969,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         }
       } else {
         // Add to existing playlist
-        appLogger.d('Adding to playlist $result with URI: $itemUri');
-        final success = await client.addToPlaylist(playlistId: result, uri: itemUri);
+        appLogger.d('Adding item ${item.id} to playlist $result');
+        final success = await client.addToPlaylist(playlistId: result, items: [item]);
 
         if (!context.mounted) return;
 
@@ -896,57 +997,39 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Show dialog to select collection and add item
   Future<void> _showAddToCollectionDialog(BuildContext context) async {
-    final client = _getClientForItem();
+    final client = _getMediaClientForItem();
 
     try {
-      final metadata = widget.item as PlexMetadata;
-      final itemType = metadata.mediaType;
+      final item = _mediaItem!;
+      final itemKind = item.kind;
 
-      // Get the library section ID from the item
-      // First try from the metadata itself
-      int? sectionId = metadata.librarySectionID;
-      appLogger.d('Attempting to get section ID for ${metadata.title}');
-      appLogger.d('  - librarySectionID: $sectionId');
-      appLogger.d('  - key: ${metadata.key}');
+      // Resolve the library/section id from the item itself, falling back to
+      // a metadata round-trip and the show's library if missing. Both
+      // backends store this on [MediaItem.libraryId].
+      String? libraryId = item.libraryId;
+      appLogger.d('Resolving libraryId for ${item.title} (initial: $libraryId)');
 
-      // If not available, fetch the full metadata which should include the section ID
-      if (sectionId == null) {
+      if (libraryId == null || libraryId.isEmpty) {
         try {
-          appLogger.d('  - Fetching full metadata for: ${metadata.ratingKey}');
-          final fullMetadata = await client.getMetadataWithImages(metadata.ratingKey);
-          if (fullMetadata != null) {
-            sectionId = fullMetadata.librarySectionID;
-            appLogger.d('  - Section ID from full metadata: $sectionId');
-          }
+          final fullMetadata = await client.fetchItem(item.id);
+          libraryId = fullMetadata?.libraryId;
+          appLogger.d('  - libraryId from full metadata: $libraryId');
         } catch (e) {
-          appLogger.w('Failed to get full metadata for section ID: $e');
+          appLogger.w('Failed to get full metadata for libraryId: $e');
         }
       }
 
-      // If still not found, try to extract from the key field
-      if (sectionId == null && metadata.key != null) {
-        final keyMatch = RegExp(r'/library/sections/(\d+)').firstMatch(metadata.key!);
-        if (keyMatch != null) {
-          sectionId = int.tryParse(keyMatch.group(1)!);
-          appLogger.d('  - Extracted from key: $sectionId');
-        }
-      }
-
-      // Last resort: try to get it from the item's parent (for episodes/seasons)
-      if (sectionId == null && metadata.grandparentRatingKey != null) {
+      if ((libraryId == null || libraryId.isEmpty) && item.grandparentId != null) {
         try {
-          appLogger.d('  - Trying to get from parent: ${metadata.grandparentRatingKey}');
-          final parentMeta = await client.getMetadataWithImages(metadata.grandparentRatingKey!);
-          sectionId = parentMeta?.librarySectionID;
-          appLogger.d('  - Parent sectionId: $sectionId');
+          final parentMeta = await client.fetchItem(item.grandparentId!);
+          libraryId = parentMeta?.libraryId;
+          appLogger.d('  - libraryId from grandparent: $libraryId');
         } catch (e) {
-          appLogger.w('Failed to get parent metadata for section ID: $e');
+          appLogger.w('Failed to get parent metadata for libraryId: $e');
         }
       }
 
-      appLogger.d('  - Final sectionId: $sectionId');
-
-      if (sectionId == null) {
+      if (libraryId == null || libraryId.isEmpty) {
         if (context.mounted) {
           showErrorSnackBar(context, t.messages.unableToDetermineLibrarySection);
         }
@@ -954,7 +1037,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
 
       // Load collections for this library section
-      final collections = await client.getLibraryCollections(sectionId.toString());
+      final collections = await client.fetchCollections(libraryId);
 
       if (!context.mounted) return;
 
@@ -965,12 +1048,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       );
 
       if (result == null || !context.mounted) return;
-
-      // Build URI for the item
-      final itemUri = await client.buildMetadataUri(metadata.ratingKey);
-      appLogger.d('Built URI for $itemType: $itemUri');
-
-      if (!context.mounted) return;
 
       if (result == '_create_new') {
         // Create new collection flow
@@ -985,32 +1062,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           return;
         }
 
-        // Create collection first (without items)
-        // Determine the collection type based on the item type
-        int? collectionType;
-        switch (itemType) {
-          case PlexMediaType.movie:
-            collectionType = 1;
-            break;
-          case PlexMediaType.show:
-            collectionType = 2;
-            break;
-          case PlexMediaType.season:
-            collectionType = 3;
-            break;
-          case PlexMediaType.episode:
-            collectionType = 4;
-            break;
-          default:
-            break;
-        }
-
-        appLogger.d('Creating collection "$collectionName" with type $collectionType');
+        appLogger.d('Creating collection "$collectionName" seeded with item ${item.id}');
         final newCollectionId = await client.createCollection(
-          sectionId: sectionId.toString(),
+          libraryId: libraryId,
           title: collectionName,
-          uri: '', // Empty for regular collections
-          type: collectionType,
+          items: [item],
+          itemKind: itemKind,
         );
 
         if (!context.mounted) return;
@@ -1018,23 +1075,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         if (context.mounted) {
           if (newCollectionId != null) {
             appLogger.d('Successfully created collection with ID: $newCollectionId');
-
-            // Now add the item to the newly created collection
-            appLogger.d('Adding item to new collection $newCollectionId with URI: $itemUri');
-            final addSuccess = await client.addToCollection(collectionId: newCollectionId, uri: itemUri);
-
-            if (!context.mounted) return;
-
-            if (addSuccess) {
-              appLogger.d('Successfully added item to new collection');
-              showSuccessSnackBar(context, t.collections.created);
-              // Trigger refresh of collections tab
-              LibraryRefreshNotifier().notifyCollectionsChanged();
-              _triggerEagerSyncIfRuleExists(context, client.serverId, newCollectionId);
-            } else {
-              appLogger.e('Failed to add item to new collection');
-              showErrorSnackBar(context, t.collections.errorAddingToCollection);
-            }
+            showSuccessSnackBar(context, t.collections.created);
+            // Trigger refresh of collections tab
+            LibraryRefreshNotifier().notifyCollectionsChanged();
+            _triggerEagerSyncIfRuleExists(context, client.serverId, newCollectionId);
           } else {
             appLogger.e('Failed to create collection - API returned null');
             showErrorSnackBar(context, t.collections.errorAddingToCollection);
@@ -1042,8 +1086,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         }
       } else {
         // Add to existing collection
-        appLogger.d('Adding to collection $result with URI: $itemUri');
-        final success = await client.addToCollection(collectionId: result, uri: itemUri);
+        appLogger.d('Adding item ${item.id} to collection $result');
+        final success = await client.addToCollection(collectionId: result, items: [item]);
 
         if (!context.mounted) return;
 
@@ -1068,31 +1112,39 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  /// Handle remove from collection action
-  Future<void> _showRatingSheet(BuildContext context, PlexMetadata metadata, PlexClient client) async {
-    final currentStarValue = (metadata.userRating != null && metadata.userRating! > 0)
-        ? metadata.userRating! / 2.0
-        : 0.0;
+  Future<void> _showRatingSheet(BuildContext context, MediaItem item, MediaServerClient client) async {
+    final currentStarValue = (item.userRating != null && item.userRating! > 0) ? item.userRating! / 2.0 : 0.0;
     await OverlaySheetController.showAdaptive(
       context,
       showDragHandle: true,
       builder: (context) => RatingBottomSheet(
         currentRating: currentStarValue,
         onRate: (stars) async {
-          final plexRating = stars * 2.0;
-          final success = await client.rateItem(metadata.ratingKey, plexRating);
-          if (success) widget.onRefresh?.call(metadata.ratingKey);
+          // 0-10 scale used by both Plex and Jellyfin rate endpoints.
+          final rating = stars * 2.0;
+          try {
+            await client.rate(item, rating);
+            widget.onRefresh?.call(item.id);
+          } on MediaServerHttpException catch (e) {
+            appLogger.w('Failed to set rating', error: e);
+            if (context.mounted) showErrorSnackBar(context, t.errors.failedToRate);
+          }
         },
         onClear: () async {
-          final success = await client.rateItem(metadata.ratingKey, -1);
-          if (success) widget.onRefresh?.call(metadata.ratingKey);
+          try {
+            await client.rate(item, -1);
+            widget.onRefresh?.call(item.id);
+          } on MediaServerHttpException catch (e) {
+            appLogger.w('Failed to clear rating', error: e);
+            if (context.mounted) showErrorSnackBar(context, t.errors.failedToRate);
+          }
         },
       ),
     );
   }
 
-  Future<void> _handleRemoveFromCollection(BuildContext context, PlexMetadata metadata) async {
-    final client = _getClientForItem();
+  Future<void> _handleRemoveFromCollection(BuildContext context, MediaItem item) async {
+    final client = _getMediaClientForItem();
 
     if (widget.collectionId == null) {
       appLogger.e('Cannot remove from collection: collectionId is null');
@@ -1103,14 +1155,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final confirmed = await showDeleteConfirmation(
       context,
       title: t.collections.removeFromCollection,
-      message: t.collections.removeFromCollectionConfirm(title: metadata.displayTitle),
+      message: t.collections.removeFromCollectionConfirm(title: item.displayTitle),
     );
 
     if (!confirmed || !context.mounted) return;
 
     try {
-      appLogger.d('Removing item ${metadata.ratingKey} from collection ${widget.collectionId}');
-      final success = await client.removeFromCollection(collectionId: widget.collectionId!, itemId: metadata.ratingKey);
+      appLogger.d('Removing item ${item.id} from collection ${widget.collectionId}');
+      final success = await client.removeFromCollection(collectionId: widget.collectionId!, item: item);
 
       if (context.mounted) {
         if (success) {
@@ -1141,26 +1193,22 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     await _launchCollectionOrPlaylist(context, shuffle: true);
   }
 
-  /// Launch playback for collection or playlist
+  /// Launch playback for collection or playlist.
+  ///
+  /// Dispatches to the right launcher implementation based on the item's
+  /// backend — Plex uses server-side `/playQueues`, Jellyfin builds an
+  /// in-memory queue locally.
   Future<void> _launchCollectionOrPlaylist(BuildContext context, {required bool shuffle}) async {
-    final client = _getClientForItem();
-    final item = widget.item;
-
-    final launcher = PlayQueueLauncher(
-      context: context,
-      client: client,
-      serverId: item is PlexMetadata ? item.serverId : (item as PlexPlaylist).serverId,
-      serverName: item is PlexMetadata ? item.serverName : (item as PlexPlaylist).serverName,
-    );
-
-    await launcher.launchFromCollectionOrPlaylist(item: item, shuffle: shuffle, showLoadingIndicator: false);
+    // Launcher accepts both MediaItem (for collections) and MediaPlaylist.
+    final launcher = MediaListPlaybackLauncher.forItem(context, widget.item);
+    await launcher.launchFromCollectionOrPlaylist(item: widget.item, shuffle: shuffle, showLoadingIndicator: false);
   }
 
   /// Handle delete action for collections and playlists
   Future<void> _handleDelete(BuildContext context, bool isCollection, bool isPlaylist) async {
-    final client = _getClientForItem();
+    final client = _getMediaClientForItem();
 
-    final itemTitle = widget.item.displayTitle;
+    final itemTitle = _itemDisplayTitle();
     final itemTypeLabel = isCollection ? t.collections.collection : t.playlists.playlist;
 
     // Show confirmation dialog
@@ -1178,12 +1226,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       bool success = false;
 
       if (isCollection) {
-        final metadata = widget.item as PlexMetadata;
-        final sectionId = metadata.librarySectionID?.toString() ?? '0';
-        success = await client.deleteCollection(sectionId, metadata.ratingKey);
+        success = await client.deleteCollection(_mediaItem!);
       } else if (isPlaylist) {
-        final playlist = widget.item as PlexPlaylist;
-        success = await client.deletePlaylist(playlist.ratingKey);
+        success = await client.deletePlaylist(_playlist!);
       }
 
       if (context.mounted) {
@@ -1208,11 +1253,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Handle play in external player action
   Future<void> _handlePlayExternal(BuildContext context) async {
-    final metadata = widget.item as PlexMetadata;
+    final item = _mediaItem!;
 
     // Check if the item is downloaded and use local file path if available
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    final globalKey = metadata.globalKey;
+    final globalKey = item.globalKey;
     if (downloadProvider.isDownloaded(globalKey)) {
       final videoPath = await downloadProvider.getVideoFilePath(globalKey);
       if (videoPath != null && context.mounted) {
@@ -1222,20 +1267,23 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     }
 
-    final client = _getClientForItem();
+    final client = _getMediaClientForItem();
     if (!context.mounted) return;
-    await ExternalPlayerService.launch(context: context, metadata: metadata, client: client);
+    await ExternalPlayerService.launch(context: context, metadata: item, client: client);
   }
 
   /// Handle download collection action — opens the same sync/one-time dialog
   /// as playlists, wired to [showCollectionDownloadOptionsAndQueue].
   Future<void> _handleDownloadCollection(BuildContext context) async {
-    final collection = widget.item as PlexMetadata;
+    final collection = _mediaItem!;
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    final client = _getClientForItem();
+    final client = _getMediaClientForItem();
 
     try {
-      final items = await client.fetchAllCollectionItems(collection.ratingKey);
+      // [fetchChildren] is the neutral equivalent of the previous Plex-only
+      // `fetchAllCollectionItemsAsMediaItems` — both backends return the
+      // collection's contents.
+      final items = await client.fetchChildren(collection.id);
       if (!context.mounted) return;
 
       final result = await showCollectionDownloadOptionsAndQueue(
@@ -1262,19 +1310,22 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   /// Handle download playlist action
   Future<void> _handleDownloadPlaylist(BuildContext context) async {
-    final playlist = widget.item as PlexPlaylist;
+    final playlist = _playlist!;
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    final client = _getClientForItem();
+    final client = _getMediaClientForItem();
 
     try {
-      final items = await client.fetchAllPlaylistItems(playlist.ratingKey);
+      // Page through the playlist via the neutral interface so Jellyfin
+      // playlists download too.
+      final items = await fetchAllPlaylistItems(client, playlist.id);
       if (!context.mounted) return;
 
-      final playlistMetadata = PlexMetadata(
-        ratingKey: playlist.ratingKey,
-        type: ContentTypes.playlist,
+      final playlistMetadata = MediaItem(
+        id: playlist.id,
+        backend: playlist.backend,
+        kind: MediaKind.playlist,
         title: playlist.title,
-        thumb: playlist.thumb,
+        thumbPath: playlist.thumbPath,
         serverId: playlist.serverId ?? client.serverId,
         serverName: playlist.serverName,
       );
@@ -1304,13 +1355,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Handle download action
   Future<void> _handleDownload(BuildContext context) async {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    final metadata = widget.item as PlexMetadata;
-    final client = _getClientForItem();
+    final item = _mediaItem!;
+    // Backend-agnostic resolve so Jellyfin items can be downloaded too.
+    final client = context.getMediaClientWithFallback(_itemServerId);
 
     try {
       final result = await showDownloadOptionsAndQueue(
         context,
-        metadata: metadata,
+        metadata: item,
         client: client,
         downloadProvider: downloadProvider,
       );
@@ -1332,14 +1384,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Handle delete download action
   Future<void> _handleDeleteDownload(BuildContext context) async {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    final metadata = widget.item as PlexMetadata;
-    final globalKey = metadata.globalKey;
+    final item = _mediaItem!;
+    final globalKey = item.globalKey;
 
     // Show confirmation dialog
     final confirmed = await showDeleteConfirmation(
       context,
       title: t.downloads.deleteDownload,
-      message: t.downloads.deleteConfirm(title: metadata.displayTitle),
+      message: t.downloads.deleteConfirm(title: item.displayTitle),
     );
 
     if (!confirmed || !context.mounted) return;
@@ -1350,10 +1402,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (context.mounted) {
         showSuccessSnackBar(context, t.downloads.downloadDeleted);
-        // Notify DeletionAware screens (e.g. offline season detail)
-        DeletionNotifier().notifyDeleted(metadata: metadata, isDownloadOnly: true);
-        // Refresh the view if needed
-        widget.onRefresh?.call(metadata.ratingKey);
+        // DownloadProvider.deleteDownload now broadcasts the DeletionEvent,
+        // so DeletionAware screens (e.g. offline season detail) update without
+        // a duplicate notification here.
+        widget.onRefresh?.call(item.id);
       }
     } catch (e) {
       appLogger.e('Failed to delete download', error: e);
@@ -1364,25 +1416,33 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   }
 
   /// Resolve the sync-rule global key for whatever the menu item is — works
-  /// for both PlexMetadata (shows/seasons/collections/movies/episodes) and
-  /// PlexPlaylist.
+  /// for items (shows/seasons/collections/movies/episodes) and playlists.
   String _itemGlobalKey() {
-    final item = widget.item;
-    if (item is PlexPlaylist) {
-      final serverId = item.serverId ?? _getClientForItem().serverId;
-      return buildGlobalKey(serverId, item.ratingKey);
-    }
-    return (item as PlexMetadata).globalKey;
+    final raw = widget.item;
+    return switch (raw) {
+      MediaItem() => raw.globalKey,
+      MediaPlaylist() => raw.globalKey,
+      _ => '',
+    };
   }
 
-  String _itemDisplayTitle() {
-    final item = widget.item;
-    if (item is PlexPlaylist) return item.title;
-    return (item as PlexMetadata).displayTitle;
+  String _itemSyncRuleKey(BuildContext context) {
+    final globalKey = _itemGlobalKey();
+    final serverId = _itemServerId;
+    if (serverId == null) return globalKey;
+    final client = context.tryGetMediaClientForServer(serverId);
+    if (client == null) return globalKey;
+    return context.read<DownloadProvider>().syncRuleKeyForClient(client, _itemId(), serverId: serverId);
   }
+
+  String _itemDisplayTitle() => switch (widget.item) {
+    MediaItem(:final displayTitle) => displayTitle,
+    MediaPlaylist(:final displayTitle) => displayTitle,
+    _ => '',
+  };
 
   Future<void> _handleManageSyncRule(BuildContext context) =>
-      manageSyncRule(context, downloadProvider: context.read<DownloadProvider>(), globalKey: _itemGlobalKey());
+      manageSyncRule(context, downloadProvider: context.read<DownloadProvider>(), globalKey: _itemSyncRuleKey(context));
 
   /// Fire-and-forget: if a sync rule exists for the target list, run it now so
   /// newly-added items download immediately instead of waiting for the next
@@ -1390,7 +1450,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   static void _triggerEagerSyncIfRuleExists(BuildContext context, String serverId, String listId) {
     try {
       final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-      final globalKey = buildGlobalKey(serverId, listId);
+      final client = Provider.of<MultiServerProvider>(context, listen: false).getClientForServer(serverId);
+      final globalKey = client == null
+          ? buildGlobalKey(serverId, listId)
+          : downloadProvider.syncRuleKeyForClient(client, listId, serverId: serverId);
       if (!downloadProvider.hasSyncRule(globalKey)) return;
       final serverManager = Provider.of<MultiServerProvider>(context, listen: false).serverManager;
       unawaited(
@@ -1407,15 +1470,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   Future<void> _handleRemoveSyncRule(BuildContext context) => removeSyncRuleAndSnack(
     context,
     downloadProvider: context.read<DownloadProvider>(),
-    globalKey: _itemGlobalKey(),
+    globalKey: _itemSyncRuleKey(context),
     displayTitle: _itemDisplayTitle(),
   );
 
   /// Handle delete media item action
   /// This permanently removes the media item and its associated files from the server
-  Future<void> _handleDeleteMediaItem(BuildContext context, PlexMediaType? mediaType) async {
-    final metadata = widget.item as PlexMetadata;
-    final isMultipleMediaItems = mediaType == PlexMediaType.show || mediaType == PlexMediaType.season;
+  Future<void> _handleDeleteMediaItem(BuildContext context, MediaKind? mediaKind) async {
+    final item = _mediaItem!;
+    final isMultipleMediaItems = mediaKind == MediaKind.show || mediaKind == MediaKind.season;
 
     // Show confirmation dialog
     final confirmed = await showDeleteConfirmation(
@@ -1428,14 +1491,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     if (!confirmed || !context.mounted) return;
 
     try {
-      final client = _getClientForItem();
-      final success = await client.deleteMediaItem(metadata.ratingKey);
+      final client = _getMediaClientForItem();
+      final success = await client.deleteMediaItem(item);
 
       if (context.mounted) {
         if (success) {
           showSuccessSnackBar(context, t.mediaMenu.mediaDeletedSuccessfully);
           // Broadcast deletion event for cross-screen propagation
-          DeletionNotifier().notifyDeleted(metadata: metadata);
+          DeletionNotifier().notifyDeletedItem(item: item);
           // Backward-compatible list refresh for screens that are not DeletionAware yet
           widget.onListRefresh?.call();
         } else {
@@ -1461,7 +1524,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
 /// Dialog to select a playlist or create a new one
 class _PlaylistSelectionDialog extends StatelessWidget {
-  final List<PlexPlaylist> playlists;
+  final List<MediaPlaylist> playlists;
 
   const _PlaylistSelectionDialog({required this.playlists});
 
@@ -1496,7 +1559,7 @@ class _PlaylistSelectionDialog extends StatelessWidget {
               subtitle: playlist.leafCount != null ? Text(subtitleText) : null,
               onTap: playlist.smart
                   ? null // Disable smart playlists
-                  : () => Navigator.pop(context, playlist.ratingKey),
+                  : () => Navigator.pop(context, playlist.id),
               enabled: !playlist.smart,
             );
           },
@@ -1515,7 +1578,7 @@ class _PlaylistSelectionDialog extends StatelessWidget {
 
 /// Dialog to select a collection or create a new one
 class _CollectionSelectionDialog extends StatefulWidget {
-  final List<PlexMetadata> collections;
+  final List<MediaItem> collections;
 
   const _CollectionSelectionDialog({required this.collections});
 
@@ -1525,7 +1588,7 @@ class _CollectionSelectionDialog extends StatefulWidget {
 
 class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> {
   final _filterController = TextEditingController();
-  late List<PlexMetadata> _filteredCollections = widget.collections;
+  late List<MediaItem> _filteredCollections = widget.collections;
 
   @override
   void dispose() {
@@ -1580,11 +1643,11 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
                   final collection = _filteredCollections[index - 1];
                   return ListTile(
                     leading: const AppIcon(Symbols.collections_rounded, fill: 1),
-                    title: Text(collection.title!),
+                    title: Text(collection.title ?? ''),
                     subtitle: collection.childCount != null
                         ? Text(t.playlists.itemCount(count: collection.childCount!))
                         : null,
-                    onTap: () => Navigator.pop(context, collection.ratingKey),
+                    onTap: () => Navigator.pop(context, collection.id),
                   );
                 },
               ),

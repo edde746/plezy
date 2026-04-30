@@ -5,7 +5,7 @@ import '../../models/livetv_channel.dart';
 import '../../models/livetv_program.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../utils/live_tv_player_navigation.dart';
-import '../../utils/plex_image_helper.dart';
+import '../../utils/media_image_helper.dart';
 import 'program_details_sheet.dart';
 
 /// Shared live-TV actions: channel lookup, tuning, and program-details sheet.
@@ -25,23 +25,16 @@ mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
   }
 
   /// Start live playback for [channel] on its owning server.
+  ///
+  /// Both backends route through the live-TV navigator so the player
+  /// inherits the live-only branches (no Trakt scrobble, no progress
+  /// scrobble, channel up/down nav, no resume bookmark). Plex passes a
+  /// `client + dvrKey` and tunes inside the player; Jellyfin pre-resolves
+  /// the channel's `/Videos/{id}/stream` URL and lets the engine play it
+  /// directly.
   Future<void> tuneChannel(LiveTvChannel channel) async {
     final multiServer = context.read<MultiServerProvider>();
-    final serverInfo =
-        multiServer.liveTvServers.where((s) => s.serverId == channel.serverId).firstOrNull ??
-        multiServer.liveTvServers.firstOrNull;
-    if (serverInfo == null) return;
-
-    final client = multiServer.getClientForServer(serverInfo.serverId);
-    if (client == null) return;
-
-    await navigateToLiveTv(
-      context,
-      client: client,
-      dvrKey: serverInfo.dvrKey,
-      channel: channel,
-      channels: liveTvChannels,
-    );
+    await tuneAndNavigateToLiveTv(context, multiServer: multiServer, channel: channel, channels: liveTvChannels);
   }
 
   /// Open the program-details bottom sheet. The poster is resolved from
@@ -56,12 +49,12 @@ mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
     final client = multiServer.getClientForServer(posterServerId);
     String? posterUrl;
     if (posterThumb != null && client != null) {
-      posterUrl = PlexImageHelper.getOptimizedImageUrl(
+      posterUrl = MediaImageHelper.getOptimizedImageUrl(
         client: client,
         thumbPath: posterThumb,
         maxWidth: 80,
         maxHeight: 120,
-        devicePixelRatio: PlexImageHelper.effectiveDevicePixelRatio(context),
+        devicePixelRatio: MediaImageHelper.effectiveDevicePixelRatio(context),
         imageType: ImageType.poster,
       );
     }

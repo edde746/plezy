@@ -39,3 +39,21 @@ List<dynamic>? flexibleList(Object? v) => switch (v) {
   final List l => l,
   _ => <dynamic>[v],
 };
+
+List<String>? stringListFromRaw(Object? raw, {String? mapKey, bool stringify = false, bool nullIfEmpty = false}) {
+  if (raw is! List) return null;
+  final result = <String>[];
+  for (final value in raw) {
+    final source = mapKey != null && value is Map ? value[mapKey] : value;
+    final string = stringify
+        ? source?.toString()
+        : source is String
+        ? source
+        : null;
+    if (string != null) result.add(string);
+  }
+  if (result.isEmpty && nullIfEmpty) return null;
+  return result;
+}
+
+List<T>? nullIfEmptyList<T>(List<T> values) => values.isEmpty ? null : values;

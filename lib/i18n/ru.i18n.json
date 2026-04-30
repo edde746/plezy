@@ -3,13 +3,22 @@
     "title": "Plezy"
   },
   "auth": {
+    "signIn": "Войти",
     "signInWithPlex": "Войти через Plex",
     "showQRCode": "Показать QR-код",
     "authenticate": "Аутентификация",
     "authenticationTimeout": "Время аутентификации истекло. Попробуйте снова.",
     "scanQRToSignIn": "Отсканируйте QR-код для входа",
     "waitingForAuth": "Ожидание аутентификации...\nЗавершите вход в браузере.",
-    "useBrowser": "Использовать браузер"
+    "useBrowser": "Использовать браузер",
+    "or": "или",
+    "connectToJellyfin": "Подключиться к Jellyfin",
+    "useQuickConnect": "Использовать Quick Connect",
+    "quickConnectCode": "Код Quick Connect",
+    "quickConnectInstructions": "Откройте сервер Jellyfin в браузере, войдите и выберите Quick Connect в меню пользователя. Введите этот код, чтобы подтвердить вход.",
+    "quickConnectWaiting": "Ожидание подтверждения…",
+    "quickConnectCancel": "Отмена",
+    "quickConnectExpired": "Срок действия кода Quick Connect истёк до подтверждения. Повторите попытку."
   },
   "common": {
     "cancel": "Отмена",
@@ -104,12 +113,12 @@
     "gridView": "Сетка",
     "listView": "Список",
     "showHeroSection": "Показать раздел избранного",
-    "useGlobalHubs": "Использовать макет Plex Home",
-    "useGlobalHubsDescription": "Показывать хабы главной страницы как в официальном клиенте Plex. При выключении показывает рекомендации по библиотекам.",
+    "useGlobalHubs": "Use Home Layout",
+    "useGlobalHubsDescription": "Show home page hubs like the official client. When off, shows per-library recommendations instead.",
     "showServerNameOnHubs": "Показывать имя сервера в хабах",
     "showServerNameOnHubsDescription": "Всегда показывать имя сервера в заголовках хабов. При выключении показывает только для дублирующихся имён.",
     "groupLibrariesByServer": "Группировать библиотеки по серверам",
-    "groupLibrariesByServerDescription": "Показывать заголовок для каждого сервера Plex на боковой панели при подключении к нескольким серверам.",
+    "groupLibrariesByServerDescription": "Show a header for each media server in the sidebar when you're connected to multiple servers.",
     "alwaysKeepSidebarOpen": "Всегда держать боковую панель открытой",
     "alwaysKeepSidebarOpenDescription": "Боковая панель остаётся развёрнутой, область контента подстраивается",
     "showUnwatchedCount": "Показывать количество непросмотренных",
@@ -452,7 +461,7 @@
     "musicNotSupported": "Воспроизведение музыки пока не поддерживается",
     "noDescriptionAvailable": "Описание недоступно",
     "noProfilesAvailable": "Профили недоступны",
-    "contactAdminForProfiles": "Обратитесь к администратору Plex, чтобы добавить профили",
+    "contactAdminForProfiles": "Contact your server administrator to add profiles",
     "unableToDetermineLibrarySection": "Не удаётся определить раздел библиотеки для этого элемента",
     "logsCleared": "Логи очищены",
     "logsCopied": "Логи скопированы в буфер обмена",
@@ -513,12 +522,68 @@
   "dialog": {
     "confirmAction": "Подтвердить действие"
   },
+  "profiles": {
+    "addPlezyProfile": "Добавить профиль Plezy",
+    "switchingProfile": "Переключение профиля…",
+    "deleteThisProfileTitle": "Удалить этот профиль?",
+    "deleteThisProfileMessage": "${displayName} будет удалён. Подключения не пострадают.",
+    "active": "Активный",
+    "manage": "Управление",
+    "delete": "Удалить",
+    "signOut": "Выйти",
+    "signOutPlexTitle": "Выйти из Plex?",
+    "signOutPlexMessage": "${displayName} и все пользователи Plex Home этой учётной записи будут удалены с этого устройства. Вы можете войти снова в любое время.",
+    "signedOutPlex": "Вы вышли из Plex.",
+    "signOutFailed": "Не удалось выйти.",
+    "sectionTitle": "Профили",
+    "summarySingle": "Добавьте профили, чтобы смешать управляемых пользователей и локальные идентификаторы",
+    "summaryMultipleWithActive": "${count} профилей · активный: ${activeName}",
+    "summaryMultiple": "${count} профилей",
+    "removeConnectionTitle": "Удалить соединение?",
+    "removeConnectionMessage": "${displayName} потеряет доступ к ${connectionLabel}. Само соединение останется доступным для других профилей.",
+    "deleteProfileTitle": "Удалить профиль?",
+    "deleteProfileMessage": "Это удалит ${displayName} и все его соединения с этого устройства. Сами серверы Plex/Jellyfin не будут затронуты.",
+    "profileNameLabel": "Имя профиля",
+    "pinProtectionLabel": "Защита PIN-кодом",
+    "pinManagedByPlex": "PIN управляется Plex. Редактируйте на plex.tv.",
+    "noPinSetEditOnPlex": "PIN не установлен. Чтобы требовать его, отредактируйте пользователя Home на plex.tv.",
+    "setPin": "Установить PIN",
+    "connectionsLabel": "Соединения",
+    "add": "Добавить",
+    "deleteProfileButton": "Удалить профиль",
+    "noConnectionsHint": "Нет соединений — добавьте одно, чтобы использовать этот профиль.",
+    "plexHomeAccount": "Аккаунт Plex Home",
+    "connectionDefault": "По умолчанию",
+    "makeDefault": "Сделать по умолчанию",
+    "removeConnection": "Удалить",
+    "borrowAddTo": "Добавить в ${displayName}",
+    "borrowExplain": "Заимствуйте соединение из другого профиля. Защищённые PIN-кодом исходные профили запросят PIN перед предоставлением доступа.",
+    "borrowEmpty": "Пока нечего заимствовать.",
+    "borrowEmptySubtitle": "Сначала подключите аккаунт Plex или сервер Jellyfin к другому профилю, а затем вернитесь сюда.",
+    "newProfile": "Новый профиль",
+    "profileNameHint": "например, Гости, Дети, Семейная комната",
+    "pinProtectionOptional": "Защита PIN-кодом (необязательно)",
+    "pinExplain": "Для переключения на этот профиль требуется 4-значный PIN. Мягкий барьер — любой, кто может очистить данные приложения, может его обойти.",
+    "continueButton": "Продолжить",
+    "pinsDontMatch": "PIN-коды не совпадают"
+  },
+  "connections": {
+    "sectionTitle": "Подключения",
+    "addConnection": "Добавить подключение",
+    "addConnectionSubtitleNoProfile": "Войдите через Plex или подключите сервер Jellyfin",
+    "addConnectionSubtitleScoped": "Добавить к ${displayName} — учётная запись Plex, сервер Jellyfin или заимствовать из другого профиля",
+    "sessionExpiredOne": "Сессия истекла для ${name}",
+    "sessionExpiredMany": "Сессия истекла для ${count} серверов",
+    "signInAgain": "Войти снова"
+  },
   "discover": {
     "title": "Обзор",
     "switchProfile": "Сменить профиль",
     "noContentAvailable": "Контент недоступен",
     "addMediaToLibraries": "Добавьте медиафайлы в ваши библиотеки",
     "continueWatching": "Продолжить просмотр",
+    "nextUp": "Далее",
+    "recentlyAdded": "Недавно добавленное",
     "playEpisode": "S${season}E${episode}",
     "overview": "Обзор",
     "cast": "В ролях",
@@ -532,7 +597,7 @@
   "errors": {
     "searchFailed": "Ошибка поиска: ${error}",
     "connectionTimeout": "Таймаут подключения при загрузке ${context}",
-    "connectionFailed": "Не удаётся подключиться к серверу Plex",
+    "connectionFailed": "Unable to connect to media server",
     "failedToLoad": "Не удалось загрузить ${context}: ${error}",
     "noClientAvailable": "Клиент недоступен",
     "authenticationFailed": "Ошибка аутентификации: ${error}",
@@ -540,7 +605,9 @@
     "pleaseEnterToken": "Введите токен",
     "invalidToken": "Недействительный токен",
     "failedToVerifyToken": "Не удалось проверить токен: ${error}",
-    "failedToSwitchProfile": "Не удалось переключиться на ${displayName}"
+    "failedToSwitchProfile": "Не удалось переключиться на ${displayName}",
+    "failedToDeleteProfile": "Не удалось удалить ${displayName}",
+    "failedToRate": "Не удалось обновить оценку"
   },
   "libraries": {
     "title": "Библиотеки",
@@ -595,13 +662,30 @@
       "seasons": "Сезоны",
       "episodes": "Эпизоды",
       "folders": "Папки"
+    },
+    "filterCategories": {
+      "genre": "Жанр",
+      "year": "Год",
+      "contentRating": "Возрастной рейтинг",
+      "tag": "Тег"
+    },
+    "sortLabels": {
+      "title": "Название",
+      "dateAdded": "Дата добавления",
+      "releaseDate": "Дата выхода",
+      "rating": "Рейтинг",
+      "lastPlayed": "Последний просмотр",
+      "playCount": "Количество просмотров",
+      "random": "Случайно",
+      "dateShared": "Дата открытия доступа",
+      "latestEpisodeAirDate": "Дата выхода последнего эпизода"
     }
   },
   "about": {
     "title": "О приложении",
     "openSourceLicenses": "Лицензии открытого ПО",
     "versionLabel": "Версия ${version}",
-    "appDescription": "Красивый клиент Plex на Flutter",
+    "appDescription": "Красивый клиент Plex и Jellyfin на Flutter",
     "viewLicensesDescription": "Просмотр лицензий сторонних библиотек"
   },
   "serverSelection": {
@@ -766,7 +850,9 @@
     "waitingForParticipants": "Ожидание загрузки у других...",
     "recentRooms": "Недавние комнаты",
     "renameRoom": "Переименовать комнату",
-    "removeRoom": "Удалить"
+    "removeRoom": "Удалить",
+    "guestSwitchUnavailable": "Не удалось переключиться — сервер недоступен для синхронизации",
+    "guestSwitchFailed": "Не удалось переключиться — содержимое не найдено на этом сервере"
   },
   "downloads": {
     "title": "Загрузки",
@@ -817,6 +903,12 @@
     "editSyncFilter": "Фильтр синхронизации",
     "syncAllItems": "Синхронизация всех элементов",
     "syncUnwatchedItems": "Синхронизация непросмотренных элементов",
+    "syncRuleServerContext": "Сервер: ${server} • ${status}",
+    "syncRuleAvailable": "Доступен",
+    "syncRuleOffline": "Офлайн",
+    "syncRuleSignInRequired": "Требуется вход",
+    "syncRuleNotAvailableForProfile": "Недоступно для текущего профиля",
+    "syncRuleUnknownServer": "Неизвестный сервер",
     "syncRuleListCreated": "Правило синхронизации создано"
   },
   "shaders": {
@@ -1077,5 +1169,39 @@
       "libraries": "Библиотеки",
       "noLibraries": "Библиотеки недоступны"
     }
+  },
+  "addServer": {
+    "addJellyfinTitle": "Добавить сервер Jellyfin",
+    "jellyfinUrlIntro": "Введите URL вашего сервера Jellyfin — например, `https://jellyfin.example.com`. Войти можно после.",
+    "serverUrl": "URL сервера",
+    "findServer": "Найти сервер",
+    "username": "Имя пользователя",
+    "password": "Пароль",
+    "signIn": "Войти",
+    "change": "Изменить",
+    "required": "Обязательно",
+    "couldNotReachServer": "Не удалось связаться с сервером: ${error}",
+    "signInFailed": "Не удалось войти: ${error}",
+    "quickConnectFailed": "Quick Connect не удался: ${error}",
+    "addPlexTitle": "Войти через Plex",
+    "plexAuthIntro": "Выберите способ входа в Plex. Поток в браузере открывает plex.tv, где вы подтверждаете подключение; QR-вариант удобен для TV или удалённых устройств.",
+    "plexQRPrompt": "Отсканируйте этот QR-код, чтобы войти.",
+    "waitingForPlexConfirmation": "Ожидание подтверждения от plex.tv…",
+    "pinExpired": "Срок действия PIN истёк до входа. Попробуйте снова.",
+    "duplicatePlexAccount": "Это устройство уже подключено к учётной записи Plex. Выйдите в настройках, чтобы сменить учётную запись.",
+    "failedToRegisterAccount": "Не удалось зарегистрировать учётную запись: ${error}",
+    "enterJellyfinUrlError": "Введите URL вашего сервера Jellyfin",
+    "addConnectionTitle": "Добавить подключение",
+    "addConnectionTitleScoped": "Добавить в ${name}",
+    "addConnectionIntroGlobal": "Добавьте ещё один медиасервер. Можно сочетать учётные записи Plex и серверы Jellyfin — элементы со всех подключённых бэкендов появятся вместе на главном экране.",
+    "addConnectionIntroScoped": "Добавьте новый сервер или одолжите из другого профиля.",
+    "signInWithPlexCard": "Войти через Plex",
+    "signInWithPlexCardSubtitle": "Авторизуйте это устройство в вашей учётной записи Plex. Серверы, общие с учётной записью, добавятся автоматически.",
+    "signInWithPlexCardSubtitleScoped": "Авторизуйте новую учётную запись Plex. Её Home-пользователи появятся как профили.",
+    "connectToJellyfinCard": "Подключиться к Jellyfin",
+    "connectToJellyfinCardSubtitle": "Введите URL сервера Jellyfin и войдите с именем пользователя и паролем (Quick Connect — скоро).",
+    "connectToJellyfinCardSubtitleScoped": "Войдите на сервер Jellyfin. Привязывается к ${name}.",
+    "borrowFromAnotherProfile": "Одолжить из другого профиля",
+    "borrowFromAnotherProfileSubtitle": "Повторно используйте подключение, уже привязанное к другому профилю. PIN-защищённые исходные профили запрашивают PIN."
   }
 }

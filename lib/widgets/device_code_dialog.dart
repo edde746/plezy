@@ -6,6 +6,7 @@ import '../i18n/strings.g.dart';
 import '../models/trackers/device_code.dart';
 import '../utils/snackbar_helper.dart';
 import 'dialog_action_button.dart';
+import 'loading_indicator_box.dart';
 
 /// Shared device-code activation dialog for Trakt and Simkl (RFC 8628).
 ///
@@ -71,7 +72,7 @@ class DeviceCodeDialog extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+              const LoadingIndicatorBox(size: 16),
               const SizedBox(width: 12),
               Expanded(child: Text(t.trackers.deviceCode.waitingForAuthorization, style: theme.textTheme.bodySmall)),
             ],

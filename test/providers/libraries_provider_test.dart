@@ -1,12 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/plex_library.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_library.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/services/storage_service.dart';
 
 import '../test_helpers/prefs.dart';
 
-PlexLibrary _lib(String key, {String type = 'movie', String? serverId, String title = 'L'}) =>
-    PlexLibrary(key: key, title: title, type: type, serverId: serverId);
+MediaLibrary _lib(String key, {String type = 'movie', String? serverId, String title = 'L'}) => MediaLibrary(
+  id: key,
+  backend: MediaBackend.plex,
+  title: title,
+  kind: MediaKind.fromString(type),
+  serverId: serverId,
+);
 
 void main() {
   setUp(resetSharedPreferencesForTest);

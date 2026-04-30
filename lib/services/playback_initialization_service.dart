@@ -1,24 +1,40 @@
-import 'plex_client.dart';
-import '../models/plex_media_info.dart';
-import '../models/plex_metadata.dart';
-import '../models/plex_video_playback_data.dart';
-import '../models/download_models.dart';
-import '../models/transcode_quality_preset.dart';
-import '../mpv/mpv.dart';
-import '../utils/app_logger.dart';
-import '../utils/global_key_utils.dart';
-import '../utils/plex_url_helper.dart';
-import '../i18n/strings.g.dart';
-import '../database/app_database.dart';
-import 'download_storage_service.dart';
 import 'dart:io';
 
-/// Service responsible for fetching video playback data from the Plex server
+import 'package:path/path.dart' as p;
+
+import '../database/app_database.dart';
+import '../media/media_item.dart';
+import '../media/media_item_types.dart';
+import '../media/media_server_client.dart';
+import '../media/media_source_info.dart';
+import '../models/download_models.dart';
+import '../models/transcode_quality_preset.dart';
+import '../mpv/models.dart';
+import '../utils/app_logger.dart';
+import '../utils/global_key_utils.dart';
+import 'cached_playback_metadata_service.dart';
+import 'download_storage_service.dart';
+import 'playback_initialization_types.dart';
+
+// Re-export so existing callers (video_player_screen) can keep importing
+// PlaybackException / PlaybackInitializationResult / TranscodeFallbackReason
+// via this service file.
+export 'playback_initialization_types.dart';
+
+/// Coordinates playback initialization across backends and modes.
+///
+/// **Online (client + network):** delegates to
+/// [MediaServerClient.getPlaybackInitialization] for the per-backend
+/// transcode-or-direct decision.
+///
+/// **Downloaded/offline:** when [preferOffline] finds a local copy, opens it
+/// immediately using per-backend cached [MediaSourceInfo] plus sidecar
+/// subtitles. This intentionally avoids any network-first metadata call.
 class PlaybackInitializationService {
-  final PlexClient client;
+  final MediaServerClient? client;
   final AppDatabase? database;
 
-  PlaybackInitializationService({required this.client, this.database});
+  PlaybackInitializationService({this.client, this.database});
 
   /// Format a video path as a URL (adds file:// prefix for file paths)
   String _formatVideoUrl(String path) {
@@ -85,276 +101,174 @@ class PlaybackInitializationService {
     }
   }
 
-  /// Fetch playback data for the given metadata
+  /// Fetch playback data for the given metadata.
   ///
-  /// Returns a PlaybackInitializationResult with video URL and available versions
-  /// If [preferOffline] is true and offline content is available, uses local file
-  /// If [playbackData] is provided, skips the network call to fetch it again.
-  /// When [qualityPreset] is non-original and online, the video URL is built
-  /// against Plex's transcode start endpoint and all subtitle tracks are
-  /// sidecar-attached since the transcoded stream carries none.
+  /// Online path: delegates to [MediaServerClient.getPlaybackInitialization].
+  ///
+  /// Downloaded/offline path: when [preferOffline] finds a downloaded copy,
+  /// builds from cached [MediaSourceInfo] and local sidecars immediately.
   Future<PlaybackInitializationResult> getPlaybackData({
-    required PlexMetadata metadata,
+    required MediaItem metadata,
     required int selectedMediaIndex,
     bool preferOffline = false,
-    PlexVideoPlaybackData? playbackData,
     TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
     int? selectedAudioStreamId,
     String? sessionIdentifier,
     String? transcodeSessionId,
   }) async {
+    final serverId = metadata.serverId ?? client?.serverId;
+
+    String? offlineVideoPath;
+    if (serverId != null && (preferOffline || client == null) && database != null) {
+      offlineVideoPath = await getOfflineVideoPath(serverId, metadata.id, mediaIndex: selectedMediaIndex);
+    }
+
+    // Downloaded playback must not wait on a live server. Cached media info
+    // preserves track labels where available; the local file is enough to play.
+    if (offlineVideoPath != null) {
+      appLogger.d('Using offline playback for ${metadata.id}');
+      return _buildOfflineResult(
+        metadata: metadata,
+        offlineVideoPath: offlineVideoPath,
+        selectedMediaIndex: selectedMediaIndex,
+      );
+    }
+
+    if (client == null) throw PlaybackException('No video URL available');
+
+    PlaybackInitializationResult result;
     try {
-      // Check for offline content first if preferOffline is enabled
-      String? offlineVideoPath;
-      if (preferOffline && database != null) {
-        offlineVideoPath = await getOfflineVideoPath(
-          client.serverId,
-          metadata.ratingKey,
-          mediaIndex: selectedMediaIndex,
-        );
-      }
-
-      // If offline video is available, use it
-      if (offlineVideoPath != null) {
-        appLogger.d('Using offline playback for ${metadata.ratingKey}');
-
-        // For offline playback, we still need to fetch media info for subtitles
-        // but use the local file path for video
-        try {
-          final data =
-              playbackData ?? await client.getVideoPlaybackData(metadata.ratingKey, mediaIndex: selectedMediaIndex);
-
-          // Build list of external subtitle tracks
-          final externalSubtitles = _buildExternalSubtitles(data.mediaInfo);
-
-          // Return result with local file path
-          return PlaybackInitializationResult(
-            availableVersions: data.availableVersions,
-            videoUrl: _formatVideoUrl(offlineVideoPath),
-            mediaInfo: data.mediaInfo,
-            externalSubtitles: externalSubtitles,
-            isOffline: true,
-          );
-        } catch (e) {
-          // If we can't fetch media info (e.g., no network), use offline-only mode
-          appLogger.w('Failed to fetch media info for offline video, using offline-only mode', error: e);
-          return PlaybackInitializationResult(
-            availableVersions: [],
-            videoUrl: _formatVideoUrl(offlineVideoPath),
-            mediaInfo: null,
-            externalSubtitles: const [],
-            isOffline: true,
-          );
-        }
-      }
-
-      // Use pre-parsed data or fall back to network streaming
-      final data =
-          playbackData ?? await client.getVideoPlaybackData(metadata.ratingKey, mediaIndex: selectedMediaIndex);
-
-      if (!data.hasValidVideoUrl) {
-        throw PlaybackException(t.messages.fileInfoNotAvailable);
-      }
-
-      final wantTranscode = !qualityPreset.isOriginal;
-      if (wantTranscode && sessionIdentifier != null && transcodeSessionId != null) {
-        final resolvedAudioId = _resolveAudioStreamId(selectedAudioStreamId, data.mediaInfo);
-        // Note: no `offsetMs` — seeking is handled by the player via the HLS
-        // manifest, matching Plex Web's behavior. Baking `offset=` into the URL
-        // makes the server pre-position the transcoder, but the resulting
-        // segments and mpv's native HLS positioning fight each other, leaving
-        // the player clock at 0 and desyncing sidecar subtitles.
-        final result = await client.buildTranscodeStartPath(
-          ratingKey: metadata.ratingKey,
-          mediaIndex: selectedMediaIndex,
-          preset: qualityPreset,
+      result = await client!.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: metadata,
+          selectedMediaIndex: selectedMediaIndex,
+          qualityPreset: qualityPreset,
+          selectedAudioStreamId: selectedAudioStreamId,
           sessionIdentifier: sessionIdentifier,
           transcodeSessionId: transcodeSessionId,
-          audioStreamId: resolvedAudioId,
-        );
-
-        if (result.outcome == TranscodeDecisionOutcome.transcodeOk && result.startPath != null) {
-          final transcodeUrl = '${client.config.baseUrl}${result.startPath}'.withPlexToken(client.config.token);
-          final sidecarSubs = _buildTranscodeSidecarSubtitles(data.mediaInfo);
-          return PlaybackInitializationResult(
-            availableVersions: data.availableVersions,
-            videoUrl: transcodeUrl,
-            mediaInfo: data.mediaInfo,
-            externalSubtitles: sidecarSubs,
-            isOffline: false,
-            isTranscoding: true,
-            activeAudioStreamId: resolvedAudioId,
-          );
-        }
-
-        // Decision failed or said direct-play only — fall through to direct-play path
-        // and surface the fallback reason so the UI can notify the user.
-        final fallbackReason = result.outcome == TranscodeDecisionOutcome.directPlayOnly
-            ? TranscodeFallbackReason.directPlayOnly
-            : TranscodeFallbackReason.decisionFailed;
-        appLogger.w('Transcode decision fell back to direct play: ${fallbackReason.name}');
-        return PlaybackInitializationResult(
-          availableVersions: data.availableVersions,
-          videoUrl: data.videoUrl,
-          mediaInfo: data.mediaInfo,
-          externalSubtitles: _buildExternalSubtitles(data.mediaInfo),
-          isOffline: false,
-          isTranscoding: false,
-          fallbackReason: fallbackReason,
-        );
-      }
-
-      // Build list of external subtitle tracks
-      final externalSubtitles = _buildExternalSubtitles(data.mediaInfo);
-
-      // Return result with available versions and video URL
-      return PlaybackInitializationResult(
-        availableVersions: data.availableVersions,
-        videoUrl: data.videoUrl,
-        mediaInfo: data.mediaInfo,
-        externalSubtitles: externalSubtitles,
-        isOffline: false,
+        ),
       );
     } catch (e) {
-      if (e is PlaybackException) {
-        rethrow;
+      rethrow;
+    }
+
+    return result;
+  }
+
+  /// Assemble a pure-offline result: local file + cached media info + sidecar
+  /// subtitles. Used both when [client] is null and when an online fetch throws.
+  Future<PlaybackInitializationResult> _buildOfflineResult({
+    required MediaItem metadata,
+    required String offlineVideoPath,
+    required int selectedMediaIndex,
+  }) async {
+    MediaSourceInfo? mediaInfo;
+    try {
+      final cacheServerId = await _resolveCacheServerId(metadata);
+      if (cacheServerId != null) {
+        mediaInfo = await CachedPlaybackMetadataService.fetchMediaSourceInfo(
+          backend: metadata.backend,
+          cacheServerId: cacheServerId,
+          itemId: metadata.id,
+          mediaIndex: selectedMediaIndex,
+        );
       }
-      throw PlaybackException(t.messages.errorLoading(error: e.toString()));
+    } catch (e) {
+      appLogger.d('Could not load cached media info for offline playback', error: e);
+    }
+
+    final sidecarSubtitles = await _discoverSidecarSubtitles(
+      offlineVideoPath,
+      metadata: metadata,
+      mediaInfo: mediaInfo,
+    );
+
+    return PlaybackInitializationResult(
+      availableVersions: const [],
+      videoUrl: _formatVideoUrl(offlineVideoPath),
+      mediaInfo: mediaInfo,
+      externalSubtitles: sidecarSubtitles,
+      isOffline: true,
+    );
+  }
+
+  Future<String?> _resolveCacheServerId(MediaItem metadata) async {
+    final liveClient = client;
+    if (liveClient != null) return liveClient.cacheServerId;
+
+    final serverId = metadata.serverId;
+    if (serverId == null) return null;
+    final db = database;
+    if (db == null) return serverId;
+
+    try {
+      final row = await (db.select(
+        db.downloadedMedia,
+      )..where((tbl) => tbl.globalKey.equals(buildGlobalKey(serverId, metadata.id)))).getSingleOrNull();
+      return row?.clientScopeId ?? serverId;
+    } catch (_) {
+      return serverId;
     }
   }
 
-  /// Pick the audio stream ID to send to the transcoder. Preference order:
-  /// explicit [explicit] → audio track with `selected == true` → first → null.
-  int? _resolveAudioStreamId(int? explicit, PlexMediaInfo? info) {
-    if (explicit != null) return explicit;
-    if (info == null) return null;
-    final tracks = info.audioTracks;
-    if (tracks.isEmpty) return null;
-    for (final track in tracks) {
-      if (track.selected) return track.id;
-    }
-    return tracks.first.id;
-  }
+  /// Find sidecar subtitle files written by the downloader. Plain file videos
+  /// use `{video}_subs/{trackId}.{ext}` with a legacy `{videoDir}/subtitles/*`
+  /// fallback. SAF videos are `content://` URIs, so sidecars live in the
+  /// app-managed subtitle directory keyed by server/item id.
+  Future<List<SubtitleTrack>> _discoverSidecarSubtitles(
+    String videoPath, {
+    required MediaItem metadata,
+    MediaSourceInfo? mediaInfo,
+  }) async {
+    final subtitles = <SubtitleTrack>[];
+    final dirs = videoPath.startsWith('content://')
+        ? await _safSidecarSubtitleDirs(metadata)
+        : await _fileSidecarSubtitleDirs(videoPath);
 
-  /// Build sidecar SubtitleTracks for ALL source subtitle streams (internal +
-  /// external) so the player can hot-swap between them when the main stream
-  /// is transcoded and has no embedded subs.
-  List<SubtitleTrack> _buildTranscodeSidecarSubtitles(PlexMediaInfo? mediaInfo) {
-    if (mediaInfo == null) return const [];
-    final token = client.config.token;
-    if (token == null) {
-      appLogger.w('No auth token available for transcode sidecar subtitles');
-      return const [];
-    }
+    for (final subsDir in dirs) {
+      if (!await subsDir.exists()) continue;
+      final entities = await subsDir.list().toList();
+      for (final entity in entities) {
+        if (entity is! File) continue;
+        final fileName = p.basenameWithoutExtension(entity.path);
+        final trackId = int.tryParse(fileName);
 
-    final tracks = <SubtitleTrack>[];
-    for (final sub in mediaInfo.subtitleTracks) {
-      try {
-        final url = sub.getTranscodeSidecarUrl(client.config.baseUrl, token);
-        tracks.add(
+        final cachedTrack = trackId != null
+            ? mediaInfo?.subtitleTracks.where((t) => t.id == trackId).firstOrNull
+            : null;
+
+        subtitles.add(
           SubtitleTrack.uri(
-            url,
-            title: sub.displayTitle ?? sub.language ?? 'Track ${sub.id}',
-            language: sub.languageCode,
+            'file://${entity.path}',
+            title: cachedTrack?.displayTitle ?? cachedTrack?.language ?? 'Subtitle $fileName',
+            language: cachedTrack?.languageCode,
           ),
         );
-      } catch (e) {
-        appLogger.w('Failed to build sidecar subtitle for stream ${sub.id}', error: e);
-      }
-    }
-    return tracks;
-  }
-
-  /// Build list of external subtitle tracks from media info
-  List<SubtitleTrack> _buildExternalSubtitles(PlexMediaInfo? mediaInfo) {
-    final externalSubtitles = <SubtitleTrack>[];
-
-    if (mediaInfo == null) {
-      return externalSubtitles;
-    }
-
-    final externalTracks = mediaInfo.subtitleTracks.where((PlexSubtitleTrack track) => track.isExternal).toList();
-
-    if (externalTracks.isNotEmpty) {
-      appLogger.d('Found ${externalTracks.length} external subtitle track(s)');
-    }
-
-    for (final plexTrack in externalTracks) {
-      try {
-        // Skip if no auth token is available
-        final token = client.config.token;
-        if (token == null) {
-          appLogger.w('No auth token available for external subtitles');
-          continue;
-        }
-
-        final url = plexTrack.getSubtitleUrl(client.config.baseUrl, token);
-
-        // Skip if URL couldn't be constructed
-        if (url == null) continue;
-
-        externalSubtitles.add(
-          SubtitleTrack.uri(
-            url,
-            title: plexTrack.displayTitle ?? plexTrack.language ?? 'Track ${plexTrack.id}',
-            language: plexTrack.languageCode,
-          ),
-        );
-      } catch (e) {
-        // Silent fallback - log error but continue with other subtitles
-        appLogger.w('Failed to add external subtitle track ${plexTrack.id}', error: e);
       }
     }
 
-    return externalSubtitles;
+    return subtitles;
   }
-}
 
-/// Reason the transcode branch fell back to direct play.
-enum TranscodeFallbackReason {
-  /// Plex decision said only direct-play is available.
-  directPlayOnly,
+  Future<List<Directory>> _fileSidecarSubtitleDirs(String videoPath) async {
+    final subsPath = videoPath.replaceAll(RegExp(r'\.[^.]+$'), '_subs');
+    final primary = Directory(subsPath);
+    if (await primary.exists()) return [primary];
+    return [Directory(p.join(File(videoPath).parent.path, 'subtitles'))];
+  }
 
-  /// The decision endpoint errored (HTTP error, code >= 2000, parse failure).
-  decisionFailed,
-}
+  Future<List<Directory>> _safSidecarSubtitleDirs(MediaItem metadata) async {
+    final serverId = metadata.serverId;
+    if (serverId == null) return const [];
 
-/// Result of playback initialization
-class PlaybackInitializationResult {
-  final List<dynamic> availableVersions;
-  final String? videoUrl;
-  final PlexMediaInfo? mediaInfo;
-  final List<SubtitleTrack> externalSubtitles;
-  final bool isOffline;
-
-  /// `true` when [videoUrl] is a Plex transcode start URL.
-  final bool isTranscoding;
-
-  /// Non-null when a non-original preset was requested but fallback kicked in.
-  final TranscodeFallbackReason? fallbackReason;
-
-  /// The Plex audio stream ID actually passed to the transcoder (`null` when
-  /// not transcoding or when no audio stream was selectable).
-  final int? activeAudioStreamId;
-
-  PlaybackInitializationResult({
-    required this.availableVersions,
-    this.videoUrl,
-    this.mediaInfo,
-    this.externalSubtitles = const [],
-    this.isOffline = false,
-    this.isTranscoding = false,
-    this.fallbackReason,
-    this.activeAudioStreamId,
-  });
-}
-
-/// Exception thrown when playback initialization fails
-class PlaybackException implements Exception {
-  final String message;
-
-  PlaybackException(this.message);
-
-  @override
-  String toString() => message;
+    final storage = DownloadStorageService.instance;
+    final dirs = <Directory>[];
+    if (metadata.isEpisode && metadata.title != null) {
+      dirs.add(await storage.getEpisodeSubtitlesDirectory(metadata));
+    } else if (metadata.isMovie && metadata.title != null) {
+      dirs.add(await storage.getMovieSubtitlesDirectory(metadata));
+    }
+    dirs.add(await storage.getSubtitlesDirectory(serverId, metadata.id));
+    return dirs;
+  }
 }

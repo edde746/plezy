@@ -1,21 +1,25 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/plex_metadata.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_item_types.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/utils/content_utils.dart';
 
-PlexMetadata _episode({int? viewOffset, int? duration, int? viewCount, int? leafCount, int? viewedLeafCount}) {
-  return PlexMetadata(
-    ratingKey: '1',
-    type: 'episode',
-    viewOffset: viewOffset,
-    duration: duration,
+MediaItem _episode({int? viewOffsetMs, int? durationMs, int? viewCount, int? leafCount, int? viewedLeafCount}) {
+  return MediaItem(
+    id: '1',
+    backend: MediaBackend.plex,
+    kind: MediaKind.episode,
+    viewOffsetMs: viewOffsetMs,
+    durationMs: durationMs,
     viewCount: viewCount,
     leafCount: leafCount,
     viewedLeafCount: viewedLeafCount,
   );
 }
 
-PlexMetadata _movie({int? viewCount}) {
-  return PlexMetadata(ratingKey: '1', type: 'movie', viewCount: viewCount);
+MediaItem _movie({int? viewCount}) {
+  return MediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.movie, viewCount: viewCount);
 }
 
 void main() {
@@ -50,10 +54,10 @@ void main() {
     });
   });
 
-  group('PlexMetadataType.shouldHideSpoiler', () {
+  group('MediaItemTypes.shouldHideSpoiler', () {
     test('false for non-episodes', () {
       expect(_movie().shouldHideSpoiler, isFalse);
-      final show = PlexMetadata(ratingKey: '1', type: 'show');
+      final show = MediaItem(id: '1', backend: MediaBackend.plex, kind: MediaKind.show);
       expect(show.shouldHideSpoiler, isFalse);
     });
 
@@ -62,22 +66,22 @@ void main() {
     });
 
     test('false when >= 50% watched', () {
-      expect(_episode(viewOffset: 5000, duration: 10000).shouldHideSpoiler, isFalse);
-      expect(_episode(viewOffset: 8000, duration: 10000).shouldHideSpoiler, isFalse);
+      expect(_episode(viewOffsetMs: 5000, durationMs: 10000).shouldHideSpoiler, isFalse);
+      expect(_episode(viewOffsetMs: 8000, durationMs: 10000).shouldHideSpoiler, isFalse);
     });
 
     test('true when < 50% watched', () {
-      expect(_episode(viewOffset: 1000, duration: 10000).shouldHideSpoiler, isTrue);
-      expect(_episode(viewOffset: 4999, duration: 10000).shouldHideSpoiler, isTrue);
+      expect(_episode(viewOffsetMs: 1000, durationMs: 10000).shouldHideSpoiler, isTrue);
+      expect(_episode(viewOffsetMs: 4999, durationMs: 10000).shouldHideSpoiler, isTrue);
     });
 
     test('true when no progress at all (unwatched)', () {
       expect(_episode().shouldHideSpoiler, isTrue);
-      expect(_episode(viewOffset: 0).shouldHideSpoiler, isTrue);
+      expect(_episode(viewOffsetMs: 0).shouldHideSpoiler, isTrue);
     });
 
     test('true when duration is missing', () {
-      expect(_episode(viewOffset: 500).shouldHideSpoiler, isTrue);
+      expect(_episode(viewOffsetMs: 500).shouldHideSpoiler, isTrue);
     });
   });
 

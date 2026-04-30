@@ -509,3 +509,22 @@ Future<String?> showPinEntryDialog(BuildContext context, String userName, {Strin
     builder: (context) => PinEntryDialog(userName: userName, errorMessage: errorMessage),
   );
 }
+
+/// Two-step "set + confirm" PIN entry. Returns the matching PIN, or null
+/// when the user cancels. On mismatch, surfaces a snackbar via [onMismatch]
+/// (or no-op if not provided) and returns null — the helper keeps the UX
+/// in one place so multiple call sites don't drift.
+Future<String?> captureAndConfirmPin(
+  BuildContext context, {
+  String setLabel = 'Set PIN',
+  String confirmLabel = 'Confirm PIN',
+  void Function(BuildContext)? onMismatch,
+}) async {
+  final pin = await showPinEntryDialog(context, setLabel);
+  if (pin == null || !context.mounted) return null;
+  final confirm = await showPinEntryDialog(context, confirmLabel);
+  if (confirm == null || !context.mounted) return null;
+  if (pin == confirm) return pin;
+  onMismatch?.call(context);
+  return null;
+}

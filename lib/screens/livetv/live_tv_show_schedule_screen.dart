@@ -47,8 +47,8 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
 
   Future<void> _loadSchedule() async {
     final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(widget.serverId);
-    if (client == null) {
+    final genericClient = multiServer.getClientForServer(widget.serverId);
+    if (genericClient == null) {
       if (mounted) setState(() => _isLoading = false);
       return;
     }
@@ -58,7 +58,9 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
     final beginsAt = now.subtract(const Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000;
     final endsAt = now.add(const Duration(hours: 48)).millisecondsSinceEpoch ~/ 1000;
 
-    final programs = await client.getEpgGrid(beginsAt: beginsAt, endsAt: endsAt);
+    final fromDt = DateTime.fromMillisecondsSinceEpoch(beginsAt * 1000, isUtc: true);
+    final toDt = DateTime.fromMillisecondsSinceEpoch(endsAt * 1000, isUtc: true);
+    final programs = await genericClient.liveTv.fetchSchedule(from: fromDt, to: toDt);
 
     // Filter for this show
     final filtered = programs.where((p) {

@@ -1,19 +1,26 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 
 import '../database/app_database.dart';
-import '../models/plex_metadata.dart';
+import '../database/download_operations.dart';
+import '../media/media_backend.dart';
+import '../media/media_item.dart';
+import '../media/media_kind.dart';
+import '../media/media_server_client.dart';
 import '../utils/app_logger.dart';
+import '../utils/global_key_utils.dart';
 import 'offline_mode_source.dart';
-import '../utils/plex_cache_parser.dart';
 import '../utils/watch_state_notifier.dart';
 import 'multi_server_manager.dart';
-import 'plex_api_cache.dart';
 import 'plex_client.dart';
 import 'settings_service.dart';
 
-/// Service for managing offline watch progress and syncing to Plex servers.
+/// Service for managing offline watch progress and syncing it back to the
+/// owning server. Backend-neutral over [MediaServerClient] — Plex actions
+/// hit `/:/scrobble` and `/:/timeline`, Jellyfin actions hit
+/// `/UserPlayedItems/{id}` and `/Sessions/Playing*` through the same queue.
 ///
 /// Handles:
 /// - Queuing progress updates when offline
@@ -31,18 +38,27 @@ class OfflineWatchSyncService extends ChangeNotifier {
   bool _isShutDown = false;
   DateTime? _lastSyncTime;
   bool _hasPerformedStartupSync = false;
+  String? _activeProfileId;
+  int? _availableProfileCount;
+  final Set<String> _legacyWatchActionsAdoptedForProfiles = <String>{};
 
   /// Callback to refresh download provider metadata after sync
   VoidCallback? onWatchStatesRefreshed;
 
   /// Get watched threshold for a server. Cascades:
-  /// 1. Online client's fetched server prefs
-  /// 2. Cached value in SettingsService
-  /// 3. Default 90%
+  /// 1. Plex's fetched server prefs (`/:/prefs`)
+  /// 2. Jellyfin's fixed [MediaServerClient.watchedThreshold] (0.9)
+  /// 3. Cached value in SettingsService
+  /// 4. Default 90%
   double getWatchedThreshold(String serverId) {
     final client = _serverManager.getClient(serverId);
-    if (client != null && client.serverPrefs.isNotEmpty) {
+    if (client is PlexClient && client.serverPrefs.isNotEmpty) {
       return client.watchedThresholdPercent / 100.0;
+    }
+    if (client != null && client.backend != MediaBackend.plex) {
+      // Jellyfin (and any future neutral backend) — the client exposes a
+      // fixed threshold that mirrors the wire-protocol behaviour.
+      return client.watchedThreshold;
     }
     final cached = SettingsService.instanceOrNull?.read(SettingsService.watchedThresholdPref(serverId)) ?? 90;
     return cached / 100.0;
@@ -58,7 +74,9 @@ class OfflineWatchSyncService extends ChangeNotifier {
     return const Duration(minutes: 2);
   }
 
-  /// Maximum sync attempts before giving up on an item
+  /// Maximum sync attempts before suppressing additional server-write retries.
+  /// Queued actions are retained so a transient outage or server bug never
+  /// silently drops local watch progress.
   static const int maxSyncAttempts = 5;
 
   OfflineWatchSyncService({required AppDatabase database, required MultiServerManager serverManager})
@@ -67,6 +85,34 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
   /// Whether a sync is currently in progress
   bool get isSyncing => _isSyncing;
+
+  void setActiveProfileId(String? profileId, {int? availableProfileCount}) {
+    _activeProfileId = profileId;
+    _availableProfileCount = availableProfileCount;
+    if (profileId != null && profileId.isNotEmpty) {
+      unawaited(_adoptLegacyWatchActionsForProfile(profileId, availableProfileCount: availableProfileCount));
+    }
+  }
+
+  Future<void> _adoptLegacyWatchActionsForProfile(String profileId, {int? availableProfileCount}) async {
+    if (profileId.isEmpty || !_legacyWatchActionsAdoptedForProfiles.add(profileId)) return;
+    if (availableProfileCount != 1) {
+      _legacyWatchActionsAdoptedForProfiles.remove(profileId);
+      return;
+    }
+    try {
+      await _database.adoptLegacyOfflineWatchActionsForProfile(profileId);
+    } catch (e, st) {
+      _legacyWatchActionsAdoptedForProfiles.remove(profileId);
+      appLogger.w('Failed to adopt legacy offline watch actions for $profileId', error: e, stackTrace: st);
+    }
+  }
+
+  Future<void> _adoptLegacyWatchActionsForActiveProfile() async {
+    final profileId = _activeProfileId;
+    if (profileId == null || profileId.isEmpty) return;
+    await _adoptLegacyWatchActionsForProfile(profileId, availableProfileCount: _availableProfileCount);
+  }
 
   /// Start monitoring for connectivity changes to auto-sync
   void startConnectivityMonitoring(OfflineModeSource source) {
@@ -164,51 +210,67 @@ class OfflineWatchSyncService extends ChangeNotifier {
   ///
   /// This is called during offline playback to track the watch position.
   /// If progress exceeds the server's threshold, shouldMarkWatched is set to true.
-  Future<void> queueProgressUpdate({
+  ///
+  /// The `ratingKey:` parameter on the underlying `_database` calls is
+  /// preserved as the on-disk column name; the in-memory parameter renamed
+  /// here is just the API-level identifier.
+  Future<String?> queueProgressUpdate({
     required String serverId,
-    required String ratingKey,
+    required String itemId,
     required int viewOffset,
     required int duration,
   }) async {
     final shouldMarkWatched = isWatchedByProgress(viewOffset, duration, serverId: serverId);
+    final clientScopeId = await _clientScopeIdForItem(serverId, itemId);
 
     await _database.upsertProgressAction(
+      profileId: _activeProfileId,
       serverId: serverId,
-      ratingKey: ratingKey,
+      clientScopeId: clientScopeId,
+      ratingKey: itemId,
       viewOffset: viewOffset,
       duration: duration,
       shouldMarkWatched: shouldMarkWatched,
     );
 
     appLogger.d(
-      'Queued offline progress: $serverId:$ratingKey at ${(viewOffset / 1000).toStringAsFixed(0)}s / ${(duration / 1000).toStringAsFixed(0)}s (${((viewOffset / duration) * 100).toStringAsFixed(1)}%)',
+      'Queued offline progress: $serverId:$itemId at ${(viewOffset / 1000).toStringAsFixed(0)}s / ${(duration / 1000).toStringAsFixed(0)}s (${((viewOffset / duration) * 100).toStringAsFixed(1)}%)',
     );
 
     notifyListeners();
+    return clientScopeId;
   }
 
   /// Queue a manual "mark as watched" action.
   ///
   /// Removes any conflicting actions for the same item.
-  Future<void> queueMarkWatched({required String serverId, required String ratingKey}) =>
-      _queueWatchStatusAction(serverId: serverId, ratingKey: ratingKey, actionType: OfflineActionType.watched.name);
+  Future<String?> queueMarkWatched({required String serverId, required String itemId}) =>
+      _queueWatchStatusAction(serverId: serverId, itemId: itemId, actionType: OfflineActionType.watched.id);
 
   /// Queue a manual "mark as unwatched" action.
   ///
   /// Removes any conflicting actions for the same item.
-  Future<void> queueMarkUnwatched({required String serverId, required String ratingKey}) =>
-      _queueWatchStatusAction(serverId: serverId, ratingKey: ratingKey, actionType: OfflineActionType.unwatched.name);
+  Future<String?> queueMarkUnwatched({required String serverId, required String itemId}) =>
+      _queueWatchStatusAction(serverId: serverId, itemId: itemId, actionType: OfflineActionType.unwatched.id);
 
   /// Internal helper to queue watch/unwatch actions.
-  Future<void> _queueWatchStatusAction({
+  Future<String?> _queueWatchStatusAction({
     required String serverId,
-    required String ratingKey,
+    required String itemId,
     required String actionType,
   }) async {
-    await _database.insertWatchAction(serverId: serverId, ratingKey: ratingKey, actionType: actionType);
+    final clientScopeId = await _clientScopeIdForItem(serverId, itemId);
+    await _database.insertWatchAction(
+      profileId: _activeProfileId,
+      serverId: serverId,
+      clientScopeId: clientScopeId,
+      ratingKey: itemId,
+      actionType: actionType,
+    );
 
-    appLogger.d('Queued offline mark $actionType: $serverId:$ratingKey');
+    appLogger.d('Queued offline mark $actionType: $serverId:$itemId');
     notifyListeners();
+    return clientScopeId;
   }
 
   /// Check if an item should be considered watched based on progress percentage.
@@ -224,8 +286,17 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// - `true` if item was marked as watched locally or progress >= server threshold
   /// - `false` if item was marked as unwatched locally
   /// - `null` if no local action exists (use cached server data)
-  Future<bool?> getLocalWatchStatus(String globalKey) async {
-    final action = await _database.getLatestWatchAction(globalKey);
+  Future<bool?> getLocalWatchStatus(String globalKey, {String? clientScopeId}) async {
+    await _adoptLegacyWatchActionsForActiveProfile();
+    final expectedScope = clientScopeId ?? _activeClientScopeIdForGlobalKey(globalKey);
+    final profileId = _activeProfileId;
+    final action = await _database.getLatestWatchAction(
+      globalKey,
+      profileId: profileId,
+      filterProfile: profileId != null,
+      clientScopeId: expectedScope,
+      filterClientScope: expectedScope != null,
+    );
     if (action == null) return null;
 
     switch (action.actionType) {
@@ -245,10 +316,21 @@ class OfflineWatchSyncService extends ChangeNotifier {
   ///
   /// Returns a map of globalKey -> watch status (true/false/null).
   /// More efficient than calling getLocalWatchStatus multiple times.
-  Future<Map<String, bool?>> getLocalWatchStatusesBatched(Set<String> globalKeys) async {
+  Future<Map<String, bool?>> getLocalWatchStatusesBatched(
+    Set<String> globalKeys, {
+    Map<String, String?>? clientScopeIdsByGlobalKey,
+  }) async {
     if (globalKeys.isEmpty) return {};
+    await _adoptLegacyWatchActionsForActiveProfile();
 
-    final actions = await _database.getLatestWatchActionsForKeys(globalKeys);
+    final scopes = clientScopeIdsByGlobalKey ?? _activeClientScopeIdsForGlobalKeys(globalKeys);
+    final profileId = _activeProfileId;
+    final actions = await _database.getLatestWatchActionsForKeys(
+      globalKeys,
+      profileId: profileId,
+      filterProfile: profileId != null,
+      clientScopeIdsByGlobalKey: scopes,
+    );
     final result = <String, bool?>{};
 
     for (final key in globalKeys) {
@@ -276,12 +358,21 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Get the local view offset (resume position) for a media item.
   ///
   /// Returns the locally tracked position, or null if none exists.
-  Future<int?> getLocalViewOffset(String globalKey) async {
-    final action = await _database.getLatestWatchAction(globalKey);
+  Future<int?> getLocalViewOffset(String globalKey, {String? clientScopeId}) async {
+    await _adoptLegacyWatchActionsForActiveProfile();
+    final expectedScope = clientScopeId ?? _activeClientScopeIdForGlobalKey(globalKey);
+    final profileId = _activeProfileId;
+    final action = await _database.getLatestWatchAction(
+      globalKey,
+      profileId: profileId,
+      filterProfile: profileId != null,
+      clientScopeId: expectedScope,
+      filterClientScope: expectedScope != null,
+    );
     if (action == null) return null;
 
     // Only return offset for progress actions
-    if (action.actionType == OfflineActionType.progress.name) {
+    if (action.actionType == OfflineActionType.progress.id) {
       return action.viewOffset;
     }
 
@@ -289,8 +380,12 @@ class OfflineWatchSyncService extends ChangeNotifier {
   }
 
   /// Get count of pending sync items.
-  Future<int> getPendingSyncCount() {
-    return _database.getPendingSyncCount();
+  Future<int> getPendingSyncCount() async {
+    await _adoptLegacyWatchActionsForActiveProfile();
+    final profileId = _activeProfileId;
+    return profileId == null || profileId.isEmpty
+        ? _database.getPendingSyncCount()
+        : _database.getPendingSyncCount(profileId: profileId);
   }
 
   /// Sync all pending items to their respective servers.
@@ -307,7 +402,11 @@ class OfflineWatchSyncService extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final pendingActions = await _database.getPendingWatchActions();
+      await _adoptLegacyWatchActionsForActiveProfile();
+      final profileId = _activeProfileId;
+      final pendingActions = profileId == null || profileId.isEmpty
+          ? await _database.getPendingWatchActions()
+          : await _database.getPendingWatchActions(profileId: profileId);
 
       if (pendingActions.isEmpty) {
         appLogger.d('No pending watch actions to sync');
@@ -316,58 +415,28 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
       appLogger.i('Syncing ${pendingActions.length} pending watch actions');
 
-      // First pass: handle retry limit exceeded and group by server
-      final actionsByServer = <String, List<OfflineWatchProgressItem>>{};
-
       for (final action in pendingActions) {
-        // Delete items that have exceeded retry limit
         if (action.syncAttempts >= maxSyncAttempts) {
           appLogger.w(
-            'Deleting action ${action.id} - exceeded retry limit '
+            'Skipping action ${action.id} - exceeded retry limit '
             '(${action.syncAttempts} attempts). Last error: ${action.lastError}',
           );
-          await _database.deleteWatchAction(action.id);
           continue;
         }
 
-        // Check if server still exists
-        if (_serverManager.getServer(action.serverId) == null) {
-          appLogger.w('Deleting action ${action.id} - server ${action.serverId} no longer exists');
-          await _database.deleteWatchAction(action.id);
-          continue;
-        }
-
-        actionsByServer.putIfAbsent(action.serverId, () => []).add(action);
-      }
-
-      // Second pass: process each server's actions with single connectivity check
-      for (final entry in actionsByServer.entries) {
-        final serverId = entry.key;
-        final actions = entry.value;
-
-        await _withOnlineClient(serverId, (client) async {
-          for (final action in actions) {
-            try {
-              await _syncAction(client, action);
-              // Success - delete the action from queue
-              await _database.deleteWatchAction(action.id);
-              appLogger.d('Successfully synced action ${action.id}: ${action.actionType} for ${action.ratingKey}');
-            } catch (e) {
-              appLogger.w('Failed to sync action ${action.id}: $e');
-              await _database.updateSyncAttempt(action.id, e.toString());
-            }
+        final synced = await _withOnlineClientForAction(action, (client) async {
+          try {
+            await _syncAction(client, action);
+            await _database.deleteWatchAction(action.id);
+            appLogger.d('Successfully synced action ${action.id}: ${action.actionType} for ${action.ratingKey}');
+          } catch (e) {
+            appLogger.w('Failed to sync action ${action.id}: $e');
+            await _database.updateSyncAttempt(action.id, e.toString());
           }
         });
-
-        // If _withOnlineClient returned null (server offline), mark actions for retry
-        if (_serverManager.getClient(serverId) == null || !_serverManager.isServerOnline(serverId)) {
-          for (final action in actions) {
-            // Only update if we haven't already processed it
-            final stillPending = await _database.getLatestWatchAction('${action.serverId}:${action.ratingKey}');
-            if (stillPending != null && stillPending.id == action.id) {
-              await _database.updateSyncAttempt(action.id, 'Server not available');
-            }
-          }
+        if (!synced) {
+          appLogger.d('Keeping action ${action.id} queued until server is available');
+          continue;
         }
       }
     } finally {
@@ -376,19 +445,102 @@ class OfflineWatchSyncService extends ChangeNotifier {
     }
   }
 
-  /// Execute a callback with an online client for the given server.
-  ///
-  /// Returns null if no client available or server is offline.
-  /// The callback receives the PlexClient and should return the result.
-  Future<T?> _withOnlineClient<T>(String serverId, Future<T> Function(PlexClient client) callback) async {
+  Future<String?> _clientScopeIdForItem(String serverId, String itemId) async {
+    // A downloaded row's clientScopeId is a cache/source hint, not an owner.
+    // Offline watch actions are user-owned, so a new local action follows the
+    // currently active scoped Jellyfin client. Once queued, _clientForAction
+    // replays that exact scope even if the active user changes later.
     final client = _serverManager.getClient(serverId);
+    if (client != null) {
+      final scopeId = client.cacheServerId;
+      if (scopeId != serverId) return scopeId;
+    }
+    final download = await _database.getDownloadedMedia(buildGlobalKey(serverId, itemId));
+    final downloadedScopeId = download?.clientScopeId;
+    if (downloadedScopeId != null && downloadedScopeId.isNotEmpty) return downloadedScopeId;
+    return null;
+  }
+
+  Future<({MediaServerClient client, String? clientScopeId})?> _clientForAction(OfflineWatchProgressItem action) async {
+    final scopeId = action.clientScopeId;
+    if (scopeId != null && scopeId.isNotEmpty) {
+      final scoped = _serverManager.getJellyfinClientByCompoundId(scopeId);
+      if (scoped != null) return (client: scoped, clientScopeId: scopeId);
+    }
+    final client = _serverManager.getClient(action.serverId);
+    if (client == null) return null;
+    if (client.backend == MediaBackend.jellyfin && client.cacheServerId != action.serverId) {
+      appLogger.w(
+        'Refusing to sync unscoped Jellyfin action ${action.id} for ${action.serverId}:${action.ratingKey}; '
+        'no queued client scope is available',
+      );
+      return null;
+    }
+    return (client: client, clientScopeId: action.clientScopeId);
+  }
+
+  Future<bool> _withOnlineClientForAction(
+    OfflineWatchProgressItem action,
+    Future<void> Function(MediaServerClient client) callback,
+  ) async {
+    final resolved = await _clientForAction(action);
+    if (resolved == null) {
+      appLogger.d('No client for server ${action.serverId} scope ${action.clientScopeId}, skipping');
+      return false;
+    }
+
+    if (!_serverManager.isClientOnline(action.serverId, clientScopeId: resolved.clientScopeId)) {
+      appLogger.d('Server ${action.serverId} scope ${resolved.clientScopeId} is offline, skipping');
+      return false;
+    }
+
+    await callback(resolved.client);
+    return true;
+  }
+
+  Map<String, String?> _activeClientScopeIdsForGlobalKeys(Set<String> globalKeys) {
+    final scopes = <String, String?>{};
+    for (final globalKey in globalKeys) {
+      final scopeId = _activeClientScopeIdForGlobalKey(globalKey);
+      if (scopeId != null) scopes[globalKey] = scopeId;
+    }
+    return scopes;
+  }
+
+  String? _activeClientScopeIdForGlobalKey(String globalKey) {
+    final parsed = parseGlobalKey(globalKey);
+    if (parsed == null) return null;
+    return _activeClientScopeIdForServer(parsed.serverId);
+  }
+
+  String? _activeClientScopeIdForServer(String serverId) {
+    final client = _serverManager.getClient(serverId);
+    if (client == null) return null;
+    final scopeId = client.cacheServerId;
+    return scopeId == serverId ? null : scopeId;
+  }
+
+  Future<MediaServerClient?> _clientForDownloadScope(String serverId, String? clientScopeId) async {
+    if (clientScopeId != null && clientScopeId.isNotEmpty) {
+      final scoped = _serverManager.getJellyfinClientByCompoundId(clientScopeId);
+      if (scoped != null) return scoped;
+    }
+    return _serverManager.getClient(serverId);
+  }
+
+  Future<T?> _withOnlineClientForDownloadScope<T>(
+    String serverId,
+    String? clientScopeId,
+    Future<T> Function(MediaServerClient client) callback,
+  ) async {
+    final client = await _clientForDownloadScope(serverId, clientScopeId);
     if (client == null) {
-      appLogger.d('No client for server $serverId, skipping');
+      appLogger.d('No client for server $serverId scope $clientScopeId, skipping');
       return null;
     }
 
-    if (!_serverManager.isServerOnline(serverId)) {
-      appLogger.d('Server $serverId is offline, skipping');
+    if (!_serverManager.isClientOnline(serverId, clientScopeId: clientScopeId)) {
+      appLogger.d('Server $serverId scope $clientScopeId is offline, skipping');
       return null;
     }
 
@@ -396,47 +548,66 @@ class OfflineWatchSyncService extends ChangeNotifier {
   }
 
   /// Sync a single action to the server.
-  Future<void> _syncAction(PlexClient client, OfflineWatchProgressItem action) async {
+  ///
+  /// Uses the neutral [MediaServerClient] surface so Jellyfin's
+  /// `/UserPlayedItems/{id}` and `/Sessions/Playing*` endpoints receive
+  /// the same queued state Plex's `/:/scrobble` and `/:/timeline` do.
+  Future<void> _syncAction(MediaServerClient client, OfflineWatchProgressItem action) async {
     // Fetch metadata so the WatchStateNotifier emission inside
-    // markAsWatched/markAsUnwatched carries enough context for downstream
+    // markWatched/markUnwatched carries enough context for downstream
     // listeners (UI invalidation, Trakt sync). Best-effort: a missed metadata
-    // fetch only suppresses the event, not the Plex API call.
+    // fetch falls back to a minimal MediaItem — the network call still goes
+    // through, just without a rich event payload.
     final emitsEvent =
-        action.actionType == OfflineActionType.watched.name ||
-        action.actionType == OfflineActionType.unwatched.name ||
-        (action.actionType == OfflineActionType.progress.name && action.shouldMarkWatched);
-    PlexMetadata? metadata;
+        action.actionType == OfflineActionType.watched.id ||
+        action.actionType == OfflineActionType.unwatched.id ||
+        (action.actionType == OfflineActionType.progress.id && action.shouldMarkWatched);
+    MediaItem? item;
     if (emitsEvent) {
       try {
-        metadata = await client.getMetadataWithImages(action.ratingKey);
+        item = await client.fetchItem(action.ratingKey);
       } catch (_) {
-        // Proceed without metadata — Plex still gets the call.
+        // Fall through to the synthetic item below.
       }
     }
+    item ??= MediaItem(
+      id: action.ratingKey,
+      backend: client.backend,
+      kind: MediaKind.unknown,
+      serverId: action.serverId,
+    );
 
     switch (action.actionType) {
       case 'watched':
-        await client.markAsWatched(action.ratingKey, metadata: metadata);
+        await client.markWatched(item);
         break;
 
       case 'unwatched':
-        await client.markAsUnwatched(action.ratingKey, metadata: metadata);
+        await client.markUnwatched(item);
         break;
 
       case 'progress':
-        // First, update the timeline with current position
+        // Push the resume position. Jellyfin's `/Sessions/Playing/Stopped`
+        // ignores events that arrive without an open session row, so we
+        // bracket with a Started call. Plex's `/:/timeline` collapses both
+        // into a single row and treats the second as the canonical state.
         if (action.viewOffset != null && action.duration != null) {
-          await client.updateProgress(
-            action.ratingKey,
-            time: action.viewOffset!,
-            state: 'stopped', // Use 'stopped' since we're syncing after the fact
-            duration: action.duration,
-          );
+          final position = Duration(milliseconds: action.viewOffset!);
+          final duration = Duration(milliseconds: action.duration!);
+          try {
+            await client.reportPlaybackStarted(itemId: action.ratingKey, position: position, duration: duration);
+          } catch (e) {
+            // Plex sometimes 5xxs the start when nothing follows; treat as
+            // best-effort and continue to the stop call which is the one
+            // that actually persists the resume position.
+            appLogger.d('Offline progress: started call failed (continuing)', error: e);
+          }
+          await client.reportPlaybackStopped(itemId: action.ratingKey, position: position, duration: duration);
         }
 
-        // If progress exceeded threshold, also mark as watched
+        // If progress exceeded threshold, also mark as watched.
         if (action.shouldMarkWatched) {
-          await client.markAsWatched(action.ratingKey, metadata: metadata);
+          await client.markWatched(item);
         }
         break;
     }
@@ -446,59 +617,60 @@ class OfflineWatchSyncService extends ChangeNotifier {
   ///
   /// Returns the number of episodes synced, or -1 on failure.
   Future<int> _syncSeasonEpisodes(
-    PlexClient client,
+    MediaServerClient client,
     String serverId,
     String seasonRatingKey,
     Set<String> downloadedEpisodeKeys,
   ) async {
     try {
-      final seasonEpisodes = await client.getChildren(seasonRatingKey);
+      final seasonEpisodes = await client.fetchChildren(seasonRatingKey);
       int synced = 0;
 
       for (final episode in seasonEpisodes) {
-        if (!downloadedEpisodeKeys.contains(episode.ratingKey)) continue;
+        if (!downloadedEpisodeKeys.contains(episode.id)) continue;
 
-        final cacheKey = '/library/metadata/${episode.ratingKey}';
-        final existing = await PlexApiCache.instance.get(serverId, cacheKey);
-        final existingMeta = PlexCacheParser.extractFirstMetadata(existing);
+        final cacheServerId = client.cacheServerId;
+        final prior = await client.cache.getMetadata(cacheServerId, episode.id);
+        final isWatched = (episode.viewCount ?? 0) > 0;
 
-        if (existingMeta != null) {
-          // Detect a watched-status flip from another device so listeners
-          // (UI, Trakt sync) get the change. `viewCount` going from 0 to >0
-          // (or back) is the canonical "marked watched" signal.
-          final wasWatched = ((existingMeta['viewCount'] as num?)?.toInt() ?? 0) > 0;
-          final isWatched = (episode.viewCount ?? 0) > 0;
-
-          // Only update watch-state fields — preserves Chapter/Marker/Media/etc.
-          existingMeta['viewCount'] = episode.viewCount;
-          existingMeta['viewOffset'] = episode.viewOffset;
-          existingMeta['lastViewedAt'] = episode.lastViewedAt;
-          existingMeta['viewedLeafCount'] = episode.viewedLeafCount;
-          await PlexApiCache.instance.put(serverId, cacheKey, {
-            'MediaContainer': {
-              'Metadata': [existingMeta],
-            },
-          });
-
+        if (prior != null) {
+          // Existing cached row — patch in the watch-state and rollup
+          // fields without disturbing Media/Chapter blobs.
+          final wasWatched = (prior.viewCount ?? 0) > 0;
+          await client.cache.applyWatchState(
+            serverId: cacheServerId,
+            itemId: episode.id,
+            isWatched: isWatched,
+            viewOffsetMs: episode.viewOffsetMs,
+            lastViewedAt: episode.lastViewedAt,
+            viewedLeafCount: episode.viewedLeafCount,
+          );
           if (wasWatched != isWatched) {
-            WatchStateNotifier().notifyWatched(metadata: episode, isNowWatched: isWatched);
-          }
-
-          // Repair corrupted entries (missing Media/Chapter from previous overwrites)
-          if (existingMeta['Media'] == null) {
-            try {
-              await client.getMetadataWithImages(episode.ratingKey);
-            } catch (e) {
-              appLogger.d('Cache repair fetch skipped for ${episode.ratingKey}', error: e);
-            }
+            WatchStateNotifier().notifyWatched(
+              item: episode,
+              isNowWatched: isWatched,
+              cacheServerId: client.cacheServerId,
+            );
           }
         } else {
-          // No existing entry — write what we have
-          await PlexApiCache.instance.put(serverId, cacheKey, {
-            'MediaContainer': {
-              'Metadata': [episode.toJson()],
-            },
-          });
+          // No cached row yet — populate the canonical row via fetchItem
+          // (cache-fallback mixin writes the response to cache for free)
+          // and then stamp the watch snapshot. Transition is unknowable
+          // without a prior row, so we skip the notify to match the
+          // previous synthesize-fresh-row behaviour.
+          try {
+            await client.fetchItem(episode.id);
+            await client.cache.applyWatchState(
+              serverId: cacheServerId,
+              itemId: episode.id,
+              isWatched: isWatched,
+              viewOffsetMs: episode.viewOffsetMs,
+              lastViewedAt: episode.lastViewedAt,
+              viewedLeafCount: episode.viewedLeafCount,
+            );
+          } catch (e) {
+            appLogger.d('Cache populate failed for ${episode.id}', error: e);
+          }
         }
         synced++;
       }
@@ -519,8 +691,24 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// instead of one API call per episode.
   Future<void> syncWatchStatesFromServer() async {
     try {
-      // Get all downloaded items from database
-      final downloadedItems = await _database.getAllDownloadedMetadata();
+      final profileId = _activeProfileId;
+      if (profileId == null || profileId.isEmpty) {
+        appLogger.d('Skipping watch-state pull — no active profile');
+        return;
+      }
+
+      await _database.adoptLegacyDownloadsForProfile(profileId);
+      final ownedKeys = await _database.getDownloadOwnerKeysForProfile(profileId);
+      if (ownedKeys.isEmpty) {
+        appLogger.d('No active-profile downloads to sync watch states for');
+        return;
+      }
+
+      // Pull watch state only for downloads visible to the active profile. The
+      // physical rows are shared across profiles, but server watch state is not.
+      final downloadedItems = (await _database.getAllDownloadedMetadata())
+          .where((item) => ownedKeys.contains(item.globalKey))
+          .toList();
 
       if (downloadedItems.isEmpty) {
         appLogger.d('No downloaded items to sync watch states for');
@@ -529,22 +717,25 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
       appLogger.i('Syncing watch states from server for ${downloadedItems.length} items');
 
-      // Separate episodes (with season parent) from other items (movies, etc.)
-      // Structure: serverId -> seasonRatingKey -> Set<episodeRatingKey>
-      final episodesByServerAndSeason = <String, Map<String, Set<String>>>{};
-      // Structure: serverId -> List<ratingKey>
-      final nonEpisodeItems = <String, List<String>>{};
+      // Separate episodes (with season parent) from other items (movies,
+      // etc.), using the active scoped client for user-owned Jellyfin watch
+      // state. Downloads are shared, but server watch state is per user.
+      // Structure: (serverId, clientScopeId) -> seasonRatingKey -> Set<episodeRatingKey>
+      final episodesByScopeAndSeason = <({String serverId, String? clientScopeId}), Map<String, Set<String>>>{};
+      // Structure: (serverId, clientScopeId) -> List<ratingKey>
+      final nonEpisodeItems = <({String serverId, String? clientScopeId}), List<String>>{};
 
       for (final item in downloadedItems) {
+        final scope = (serverId: item.serverId, clientScopeId: _activeClientScopeIdForServer(item.serverId));
         if (item.type == 'episode' && item.parentRatingKey != null) {
           // Group episodes by server and season for batch fetching
-          episodesByServerAndSeason
-              .putIfAbsent(item.serverId, () => {})
+          episodesByScopeAndSeason
+              .putIfAbsent(scope, () => {})
               .putIfAbsent(item.parentRatingKey!, () => {})
               .add(item.ratingKey);
         } else {
           // Movies, or episodes without parent (fallback to individual fetch)
-          nonEpisodeItems.putIfAbsent(item.serverId, () => []).add(item.ratingKey);
+          nonEpisodeItems.putIfAbsent(scope, () => []).add(item.ratingKey);
         }
       }
 
@@ -552,13 +743,13 @@ class OfflineWatchSyncService extends ChangeNotifier {
       int seasonCount = 0;
 
       // Fetch episodes by season (batch) - one API call per season
-      for (final serverEntry in episodesByServerAndSeason.entries) {
-        final serverId = serverEntry.key;
-        final seasonMap = serverEntry.value;
+      for (final scopeEntry in episodesByScopeAndSeason.entries) {
+        final scope = scopeEntry.key;
+        final seasonMap = scopeEntry.value;
 
-        await _withOnlineClient(serverId, (client) async {
+        await _withOnlineClientForDownloadScope(scope.serverId, scope.clientScopeId, (client) async {
           for (final seasonEntry in seasonMap.entries) {
-            final result = await _syncSeasonEpisodes(client, serverId, seasonEntry.key, seasonEntry.value);
+            final result = await _syncSeasonEpisodes(client, scope.serverId, seasonEntry.key, seasonEntry.value);
             if (result >= 0) {
               syncedCount += result;
               seasonCount++;
@@ -569,27 +760,29 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
       // Fetch non-episode items individually (movies, etc.)
       for (final entry in nonEpisodeItems.entries) {
-        final serverId = entry.key;
+        final scope = entry.key;
         final ratingKeys = entry.value;
 
-        await _withOnlineClient(serverId, (client) async {
+        await _withOnlineClientForDownloadScope(scope.serverId, scope.clientScopeId, (client) async {
           for (final ratingKey in ratingKeys) {
             try {
-              // Snapshot prior viewCount before the cache-refreshing fetch so we
+              // Snapshot prior viewCount through the neutral cache so we
               // can detect a watched-status change from another device.
-              final cacheKey = '/library/metadata/$ratingKey';
-              final priorCached = await PlexApiCache.instance.get(serverId, cacheKey);
-              final priorMeta = PlexCacheParser.extractFirstMetadata(priorCached);
-              final wasWatched = ((priorMeta?['viewCount'] as num?)?.toInt() ?? 0) > 0;
+              final prior = await client.cache.getMetadata(client.cacheServerId, ratingKey);
+              final wasWatched = (prior?.viewCount ?? 0) > 0;
 
-              // getMetadataWithImages already caches the full API response
-              // (with chapters/markers) via _fetchWithCacheFallback internally
-              final metadata = await client.getMetadataWithImages(ratingKey);
+              // fetchItem already caches the full API response (with
+              // chapters/markers) via the client's internal cache layer.
+              final metadata = await client.fetchItem(ratingKey);
               if (metadata != null) {
                 syncedCount++;
                 final isWatched = (metadata.viewCount ?? 0) > 0;
                 if (wasWatched != isWatched) {
-                  WatchStateNotifier().notifyWatched(metadata: metadata, isNowWatched: isWatched);
+                  WatchStateNotifier().notifyWatched(
+                    item: metadata,
+                    isNowWatched: isWatched,
+                    cacheServerId: client.cacheServerId,
+                  );
                 }
               }
             } catch (e) {

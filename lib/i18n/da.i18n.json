@@ -3,13 +3,22 @@
     "title": "Plezy"
   },
   "auth": {
+    "signIn": "Log ind",
     "signInWithPlex": "Log ind med Plex",
     "showQRCode": "Vis QR-kode",
     "authenticate": "Godkend",
     "authenticationTimeout": "Godkendelse fik timeout. Prøv igen.",
     "scanQRToSignIn": "Scan denne QR-kode for at logge ind",
     "waitingForAuth": "Venter på godkendelse...\nFærdiggør login i din browser.",
-    "useBrowser": "Brug browser"
+    "useBrowser": "Brug browser",
+    "or": "eller",
+    "connectToJellyfin": "Forbind til Jellyfin",
+    "useQuickConnect": "Brug Quick Connect",
+    "quickConnectCode": "Quick Connect-kode",
+    "quickConnectInstructions": "Åbn din Jellyfin-server i en webbrowser, log ind, og vælg Quick Connect i brugermenuen. Indtast denne kode for at godkende loginnet.",
+    "quickConnectWaiting": "Venter på godkendelse…",
+    "quickConnectCancel": "Annullér",
+    "quickConnectExpired": "Quick Connect-koden udløb inden godkendelse. Prøv igen."
   },
   "common": {
     "cancel": "Annuller",
@@ -104,12 +113,12 @@
     "gridView": "Gitter",
     "listView": "Liste",
     "showHeroSection": "Vis hero-sektion",
-    "useGlobalHubs": "Brug Plex Home-layout",
-    "useGlobalHubsDescription": "Vis startsidehubbe som den officielle Plex-klient. Når slået fra, vises anbefalinger per bibliotek.",
+    "useGlobalHubs": "Use Home Layout",
+    "useGlobalHubsDescription": "Show home page hubs like the official client. When off, shows per-library recommendations instead.",
     "showServerNameOnHubs": "Vis servernavn på hubbe",
     "showServerNameOnHubsDescription": "Vis altid servernavnet i hubtitler. Når slået fra, vises kun ved duplikerede navne.",
     "groupLibrariesByServer": "Grupper biblioteker efter server",
-    "groupLibrariesByServerDescription": "Vis en overskrift for hver Plex-server i sidepanelet, når du er forbundet til flere servere.",
+    "groupLibrariesByServerDescription": "Show a header for each media server in the sidebar when you're connected to multiple servers.",
     "alwaysKeepSidebarOpen": "Hold altid sidepanelet åbent",
     "alwaysKeepSidebarOpenDescription": "Sidepanelet forbliver udvidet, og indholdsområdet tilpasser sig",
     "showUnwatchedCount": "Vis antal usete",
@@ -452,7 +461,7 @@
     "musicNotSupported": "Musikafspilning understøttes endnu ikke",
     "noDescriptionAvailable": "Ingen beskrivelse tilgængelig",
     "noProfilesAvailable": "Ingen profiler tilgængelige",
-    "contactAdminForProfiles": "Kontakt din Plex-administrator for at tilføje profiler",
+    "contactAdminForProfiles": "Contact your server administrator to add profiles",
     "unableToDetermineLibrarySection": "Kan ikke bestemme biblioteksafdeling for dette element",
     "logsCleared": "Logs ryddet",
     "logsCopied": "Logs kopieret til udklipsholder",
@@ -513,12 +522,68 @@
   "dialog": {
     "confirmAction": "Bekræft handling"
   },
+  "profiles": {
+    "addPlezyProfile": "Tilføj Plezy-profil",
+    "switchingProfile": "Skifter profil…",
+    "deleteThisProfileTitle": "Slet denne profil?",
+    "deleteThisProfileMessage": "${displayName} fjernes. Forbindelser påvirkes ikke.",
+    "active": "Aktiv",
+    "manage": "Administrer",
+    "delete": "Slet",
+    "signOut": "Log ud",
+    "signOutPlexTitle": "Log ud af Plex?",
+    "signOutPlexMessage": "${displayName} og alle Plex Home-brugere på denne konto fjernes fra denne enhed. Du kan logge ind igen når som helst.",
+    "signedOutPlex": "Logget ud af Plex.",
+    "signOutFailed": "Log ud mislykkedes.",
+    "sectionTitle": "Profiler",
+    "summarySingle": "Tilføj profiler for at blande administrerede brugere og lokale identiteter",
+    "summaryMultipleWithActive": "${count} profiler · aktiv: ${activeName}",
+    "summaryMultiple": "${count} profiler",
+    "removeConnectionTitle": "Fjern forbindelse?",
+    "removeConnectionMessage": "${displayName} mister adgang til ${connectionLabel}. Forbindelsen forbliver tilgængelig for andre profiler.",
+    "deleteProfileTitle": "Slet profil?",
+    "deleteProfileMessage": "Dette fjerner ${displayName} og alle dens forbindelser fra denne enhed. De underliggende Plex/Jellyfin-servere påvirkes ikke.",
+    "profileNameLabel": "Profilnavn",
+    "pinProtectionLabel": "PIN-beskyttelse",
+    "pinManagedByPlex": "PIN administreres af Plex. Rediger på plex.tv.",
+    "noPinSetEditOnPlex": "Ingen PIN-kode angivet. For at kræve en, redigér Home-brugeren på plex.tv.",
+    "setPin": "Angiv PIN",
+    "connectionsLabel": "Forbindelser",
+    "add": "Tilføj",
+    "deleteProfileButton": "Slet profil",
+    "noConnectionsHint": "Ingen forbindelser — tilføj en for at bruge denne profil.",
+    "plexHomeAccount": "Plex Home-konto",
+    "connectionDefault": "Standard",
+    "makeDefault": "Gør til standard",
+    "removeConnection": "Fjern",
+    "borrowAddTo": "Tilføj til ${displayName}",
+    "borrowExplain": "Lån en forbindelse fra en anden profil. PIN-beskyttede kildeprofiler beder om PIN, før de deler.",
+    "borrowEmpty": "Intet at låne endnu.",
+    "borrowEmptySubtitle": "Tilslut først en Plex-konto eller Jellyfin-server til en anden profil, og kom så tilbage hertil.",
+    "newProfile": "Ny profil",
+    "profileNameHint": "fx. Gæster, Børn, Familiens stue",
+    "pinProtectionOptional": "PIN-beskyttelse (valgfri)",
+    "pinExplain": "4-cifret PIN-kode kræves for at skifte til denne profil. Blød barriere — enhver der kan slette appdata, kan omgå den.",
+    "continueButton": "Fortsæt",
+    "pinsDontMatch": "PIN-koder matcher ikke"
+  },
+  "connections": {
+    "sectionTitle": "Forbindelser",
+    "addConnection": "Tilføj forbindelse",
+    "addConnectionSubtitleNoProfile": "Log ind med Plex eller forbind til en Jellyfin-server",
+    "addConnectionSubtitleScoped": "Tilføj til ${displayName} — Plex-konto, Jellyfin-server eller lån fra en anden profil",
+    "sessionExpiredOne": "Sessionen er udløbet for ${name}",
+    "sessionExpiredMany": "Sessionen er udløbet for ${count} servere",
+    "signInAgain": "Log ind igen"
+  },
   "discover": {
     "title": "Opdag",
     "switchProfile": "Skift profil",
     "noContentAvailable": "Intet indhold tilgængeligt",
     "addMediaToLibraries": "Tilføj medier til dine biblioteker",
     "continueWatching": "Fortsæt med at se",
+    "nextUp": "Næste op",
+    "recentlyAdded": "Nyligt tilføjet",
     "playEpisode": "S${season}E${episode}",
     "overview": "Oversigt",
     "cast": "Rollebesætning",
@@ -532,7 +597,7 @@
   "errors": {
     "searchFailed": "Søgning mislykkedes: ${error}",
     "connectionTimeout": "Forbindelsestimeout ved indlæsning af ${context}",
-    "connectionFailed": "Kunne ikke forbinde til Plex-server",
+    "connectionFailed": "Unable to connect to media server",
     "failedToLoad": "Kunne ikke indlæse ${context}: ${error}",
     "noClientAvailable": "Ingen klient tilgængelig",
     "authenticationFailed": "Godkendelse mislykkedes: ${error}",
@@ -540,7 +605,9 @@
     "pleaseEnterToken": "Indtast et token",
     "invalidToken": "Ugyldigt token",
     "failedToVerifyToken": "Kunne ikke verificere token: ${error}",
-    "failedToSwitchProfile": "Kunne ikke skifte til ${displayName}"
+    "failedToSwitchProfile": "Kunne ikke skifte til ${displayName}",
+    "failedToDeleteProfile": "Kunne ikke slette ${displayName}",
+    "failedToRate": "Kunne ikke opdatere bedømmelsen"
   },
   "libraries": {
     "title": "Biblioteker",
@@ -595,13 +662,30 @@
       "seasons": "Sæsoner",
       "episodes": "Episoder",
       "folders": "Mapper"
+    },
+    "filterCategories": {
+      "genre": "Genre",
+      "year": "År",
+      "contentRating": "Aldersvurdering",
+      "tag": "Tag"
+    },
+    "sortLabels": {
+      "title": "Titel",
+      "dateAdded": "Tilføjet dato",
+      "releaseDate": "Udgivelsesdato",
+      "rating": "Vurdering",
+      "lastPlayed": "Sidst afspillet",
+      "playCount": "Antal afspilninger",
+      "random": "Tilfældig",
+      "dateShared": "Delt dato",
+      "latestEpisodeAirDate": "Seneste episodes premieredato"
     }
   },
   "about": {
     "title": "Om",
     "openSourceLicenses": "Open source-licenser",
     "versionLabel": "Version ${version}",
-    "appDescription": "En smuk Plex-klient til Flutter",
+    "appDescription": "En smuk Plex- og Jellyfin-klient til Flutter",
     "viewLicensesDescription": "Se licenser for tredjepartsbiblioteker"
   },
   "serverSelection": {
@@ -766,7 +850,9 @@
     "waitingForParticipants": "Venter på at andre indlæser...",
     "recentRooms": "Seneste rum",
     "renameRoom": "Omdøb rum",
-    "removeRoom": "Fjern"
+    "removeRoom": "Fjern",
+    "guestSwitchUnavailable": "Kunne ikke skifte — server ikke tilgængelig for synkronisering",
+    "guestSwitchFailed": "Kunne ikke skifte — indhold blev ikke fundet på denne server"
   },
   "downloads": {
     "title": "Downloads",
@@ -817,6 +903,12 @@
     "editSyncFilter": "Synkroniseringsfilter",
     "syncAllItems": "Synkroniserer alle elementer",
     "syncUnwatchedItems": "Synkroniserer usete elementer",
+    "syncRuleServerContext": "Server: ${server} • ${status}",
+    "syncRuleAvailable": "Tilgængelig",
+    "syncRuleOffline": "Offline",
+    "syncRuleSignInRequired": "Log ind påkrævet",
+    "syncRuleNotAvailableForProfile": "Ikke tilgængelig for nuværende profil",
+    "syncRuleUnknownServer": "Ukendt server",
     "syncRuleListCreated": "Synkroniseringsregel oprettet"
   },
   "shaders": {
@@ -1077,5 +1169,39 @@
       "libraries": "Biblioteker",
       "noLibraries": "Ingen biblioteker tilgængelige"
     }
+  },
+  "addServer": {
+    "addJellyfinTitle": "Tilføj Jellyfin-server",
+    "jellyfinUrlIntro": "Angiv URL'en til din Jellyfin-server — f.eks. `https://jellyfin.example.com`. Du kan logge ind bagefter.",
+    "serverUrl": "Server-URL",
+    "findServer": "Find server",
+    "username": "Brugernavn",
+    "password": "Adgangskode",
+    "signIn": "Log ind",
+    "change": "Ændr",
+    "required": "Påkrævet",
+    "couldNotReachServer": "Kunne ikke nå serveren: ${error}",
+    "signInFailed": "Login mislykkedes: ${error}",
+    "quickConnectFailed": "Quick Connect mislykkedes: ${error}",
+    "addPlexTitle": "Log ind med Plex",
+    "plexAuthIntro": "Vælg hvordan du vil logge ind på Plex. Browser-flowet åbner plex.tv, hvor du bekræfter forbindelsen; QR-koden er praktisk til TV / fjern-enheder.",
+    "plexQRPrompt": "Scan denne QR-kode for at logge ind.",
+    "waitingForPlexConfirmation": "Venter på at plex.tv bekræfter login…",
+    "pinExpired": "PIN udløb før login. Prøv igen.",
+    "duplicatePlexAccount": "Denne enhed er allerede logget ind på en Plex-konto. Log ud fra indstillingerne for at skifte konto.",
+    "failedToRegisterAccount": "Kunne ikke registrere kontoen: ${error}",
+    "enterJellyfinUrlError": "Angiv URL'en til din Jellyfin-server",
+    "addConnectionTitle": "Tilføj forbindelse",
+    "addConnectionTitleScoped": "Tilføj til ${name}",
+    "addConnectionIntroGlobal": "Tilføj endnu en medieserver. Du kan blande Plex-konti og Jellyfin-servere — indhold fra alle tilkoblede backender vises samlet på startsiden.",
+    "addConnectionIntroScoped": "Tilføj en ny server, eller lån en fra en anden profil.",
+    "signInWithPlexCard": "Log ind med Plex",
+    "signInWithPlexCardSubtitle": "Godkend denne enhed mod din Plex-konto. Servere delt med kontoen følger med automatisk.",
+    "signInWithPlexCardSubtitleScoped": "Godkend en ny Plex-konto. Dens Home-brugere vises som profiler.",
+    "connectToJellyfinCard": "Forbind til Jellyfin",
+    "connectToJellyfinCardSubtitle": "Angiv URL'en til din Jellyfin-server og log ind med brugernavn + adgangskode (Quick Connect kommer snart).",
+    "connectToJellyfinCardSubtitleScoped": "Log ind på en Jellyfin-server. Tilknyttes ${name}.",
+    "borrowFromAnotherProfile": "Lån fra en anden profil",
+    "borrowFromAnotherProfileSubtitle": "Genbrug en forbindelse, der allerede er tilknyttet en anden profil. PIN-beskyttede kilde-profiler beder om PIN."
   }
 }

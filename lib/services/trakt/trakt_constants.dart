@@ -54,12 +54,13 @@ enum TraktSyncOp {
       values.firstWhere((v) => v.name == name, orElse: () => throw ArgumentError('Unknown TraktSyncOp: $name'));
 }
 
-/// Trakt-relevant Plex media types.
+/// Trakt-relevant media types. Accepts the neutral [MediaKind.id] string
+/// (`'movie'`, `'episode'`) used across both Plex and Jellyfin watch events.
 enum TraktMediaKind {
   movie,
   episode;
 
-  static TraktMediaKind? tryFromPlexType(String type) => switch (type) {
+  static TraktMediaKind? tryFromMediaKindId(String type) => switch (type) {
     'movie' => movie,
     'episode' => episode,
     _ => null,

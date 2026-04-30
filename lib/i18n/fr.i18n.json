@@ -3,13 +3,22 @@
     "title": "Plezy"
   },
   "auth": {
+    "signIn": "Se connecter",
     "signInWithPlex": "S'inscrire avec Plex",
     "showQRCode": "Afficher le QR Code",
     "authenticate": "S'authentifier",
     "authenticationTimeout": "Délai d'authentification expiré. Veuillez réessayer.",
     "scanQRToSignIn": "Scannez ce QR code pour vous connecter",
     "waitingForAuth": "En attente d'authentification...\nVeuillez vous connecter dans votre navigateur.",
-    "useBrowser": "Utiliser le navigateur"
+    "useBrowser": "Utiliser le navigateur",
+    "or": "ou",
+    "connectToJellyfin": "Se connecter à Jellyfin",
+    "useQuickConnect": "Utiliser Quick Connect",
+    "quickConnectCode": "Code Quick Connect",
+    "quickConnectInstructions": "Ouvrez votre serveur Jellyfin dans un navigateur, connectez-vous et choisissez Quick Connect dans le menu utilisateur. Saisissez ce code pour valider la connexion.",
+    "quickConnectWaiting": "En attente d'approbation…",
+    "quickConnectCancel": "Annuler",
+    "quickConnectExpired": "Le code Quick Connect a expiré avant l'approbation. Veuillez réessayer."
   },
   "common": {
     "cancel": "Annuler",
@@ -104,12 +113,12 @@
     "gridView": "Grille",
     "listView": "Liste",
     "showHeroSection": "Afficher la section Hero",
-    "useGlobalHubs": "Utiliser la disposition Plex Home",
-    "useGlobalHubsDescription": "Afficher les hubs de la page d'accueil comme le client Plex officiel. Lorsque cette option est désactivée, affiche à la place les recommandations par bibliothèque.",
+    "useGlobalHubs": "Use Home Layout",
+    "useGlobalHubsDescription": "Show home page hubs like the official client. When off, shows per-library recommendations instead.",
     "showServerNameOnHubs": "Afficher le nom du serveur sur les hubs",
     "showServerNameOnHubsDescription": "Toujours afficher le nom du serveur dans les titres des hubs. Lorsque cette option est désactivée, seuls les noms de hubs en double s'affichent.",
     "groupLibrariesByServer": "Grouper les bibliothèques par serveur",
-    "groupLibrariesByServerDescription": "Affiche un en-tête pour chaque serveur Plex dans la barre latérale lorsque vous êtes connecté à plusieurs serveurs.",
+    "groupLibrariesByServerDescription": "Show a header for each media server in the sidebar when you're connected to multiple servers.",
     "alwaysKeepSidebarOpen": "Toujours garder la barre latérale ouverte",
     "alwaysKeepSidebarOpenDescription": "La barre latérale reste étendue et la zone de contenu s'adapte",
     "showUnwatchedCount": "Afficher le nombre non visionné",
@@ -452,7 +461,7 @@
     "musicNotSupported": "La lecture de musique n'est pas encore prise en charge",
     "noDescriptionAvailable": "Aucune description disponible",
     "noProfilesAvailable": "Aucun profil disponible",
-    "contactAdminForProfiles": "Contactez votre administrateur Plex pour ajouter des profils",
+    "contactAdminForProfiles": "Contact your server administrator to add profiles",
     "unableToDetermineLibrarySection": "Impossible de déterminer la section de la bibliothèque pour cet élément",
     "logsCleared": "Logs effacés",
     "logsCopied": "Logs copiés dans le presse-papier",
@@ -513,12 +522,68 @@
   "dialog": {
     "confirmAction": "Confirmer l'action"
   },
+  "profiles": {
+    "addPlezyProfile": "Ajouter un profil Plezy",
+    "switchingProfile": "Changement de profil…",
+    "deleteThisProfileTitle": "Supprimer ce profil ?",
+    "deleteThisProfileMessage": "${displayName} sera supprimé. Les connexions ne seront pas affectées.",
+    "active": "Actif",
+    "manage": "Gérer",
+    "delete": "Supprimer",
+    "signOut": "Se déconnecter",
+    "signOutPlexTitle": "Se déconnecter de Plex ?",
+    "signOutPlexMessage": "${displayName} et tous les utilisateurs Plex Home de ce compte seront supprimés de cet appareil. Vous pouvez vous reconnecter à tout moment.",
+    "signedOutPlex": "Déconnecté de Plex.",
+    "signOutFailed": "Échec de la déconnexion.",
+    "sectionTitle": "Profils",
+    "summarySingle": "Ajoutez des profils pour mélanger utilisateurs gérés et identités locales",
+    "summaryMultipleWithActive": "${count} profils · actif : ${activeName}",
+    "summaryMultiple": "${count} profils",
+    "removeConnectionTitle": "Retirer la connexion ?",
+    "removeConnectionMessage": "${displayName} perdra l'accès à ${connectionLabel}. La connexion reste disponible pour les autres profils.",
+    "deleteProfileTitle": "Supprimer le profil ?",
+    "deleteProfileMessage": "Cela supprime ${displayName} et toutes ses connexions de cet appareil. Les serveurs Plex/Jellyfin sous-jacents ne sont pas affectés.",
+    "profileNameLabel": "Nom du profil",
+    "pinProtectionLabel": "Protection par code PIN",
+    "pinManagedByPlex": "PIN géré par Plex. Modifier sur plex.tv.",
+    "noPinSetEditOnPlex": "Aucun PIN défini. Pour en exiger un, modifiez l'utilisateur Home sur plex.tv.",
+    "setPin": "Définir un PIN",
+    "connectionsLabel": "Connexions",
+    "add": "Ajouter",
+    "deleteProfileButton": "Supprimer le profil",
+    "noConnectionsHint": "Aucune connexion — ajoutez-en une pour utiliser ce profil.",
+    "plexHomeAccount": "Compte Plex Home",
+    "connectionDefault": "Par défaut",
+    "makeDefault": "Définir par défaut",
+    "removeConnection": "Retirer",
+    "borrowAddTo": "Ajouter à ${displayName}",
+    "borrowExplain": "Empruntez une connexion à un autre profil. Les profils sources protégés par PIN demandent le PIN avant de partager.",
+    "borrowEmpty": "Rien à emprunter pour le moment.",
+    "borrowEmptySubtitle": "Connectez d'abord un compte Plex ou un serveur Jellyfin à un autre profil, puis revenez ici.",
+    "newProfile": "Nouveau profil",
+    "profileNameHint": "ex. Invités, Enfants, Salon familial",
+    "pinProtectionOptional": "Protection par PIN (optionnelle)",
+    "pinExplain": "PIN à 4 chiffres requis pour basculer sur ce profil. Barrière souple — quiconque peut effacer les données de l'app peut la contourner.",
+    "continueButton": "Continuer",
+    "pinsDontMatch": "Les PIN ne correspondent pas"
+  },
+  "connections": {
+    "sectionTitle": "Connexions",
+    "addConnection": "Ajouter une connexion",
+    "addConnectionSubtitleNoProfile": "Connectez-vous avec Plex ou connectez un serveur Jellyfin",
+    "addConnectionSubtitleScoped": "Ajouter à ${displayName} — compte Plex, serveur Jellyfin ou emprunter à un autre profil",
+    "sessionExpiredOne": "Session expirée pour ${name}",
+    "sessionExpiredMany": "Session expirée pour ${count} serveurs",
+    "signInAgain": "Se reconnecter"
+  },
   "discover": {
     "title": "Découvrez",
     "switchProfile": "Changer de profil",
     "noContentAvailable": "Aucun contenu disponible",
     "addMediaToLibraries": "Ajoutez des médias à votre bibliothèque",
     "continueWatching": "Continuer à regarder",
+    "nextUp": "À suivre",
+    "recentlyAdded": "Récemment ajouté",
     "playEpisode": "S${season}E${episode}",
     "overview": "Aperçu",
     "cast": "Cast",
@@ -532,7 +597,7 @@
   "errors": {
     "searchFailed": "Recherche échouée: ${error}",
     "connectionTimeout": "Délai d'attente de connexion dépassé pendant le chargement ${context}",
-    "connectionFailed": "Impossible de se connecter au serveur Plex",
+    "connectionFailed": "Unable to connect to media server",
     "failedToLoad": "Échec du chargement ${context}: ${error}",
     "noClientAvailable": "Aucun client disponible",
     "authenticationFailed": "Échec de l'authentification: ${error}",
@@ -540,7 +605,9 @@
     "pleaseEnterToken": "Veuillez saisir un token",
     "invalidToken": "Token invalide",
     "failedToVerifyToken": "Échec de la vérification du token: ${error}",
-    "failedToSwitchProfile": "Impossible de changer de profil vers ${displayName}"
+    "failedToSwitchProfile": "Impossible de changer de profil vers ${displayName}",
+    "failedToDeleteProfile": "Impossible de supprimer ${displayName}",
+    "failedToRate": "Impossible de mettre à jour la note"
   },
   "libraries": {
     "title": "Bibliothèques",
@@ -595,13 +662,30 @@
       "seasons": "Saisons",
       "episodes": "Épisodes",
       "folders": "Dossiers"
+    },
+    "filterCategories": {
+      "genre": "Genre",
+      "year": "Année",
+      "contentRating": "Classification",
+      "tag": "Tag"
+    },
+    "sortLabels": {
+      "title": "Titre",
+      "dateAdded": "Date d'ajout",
+      "releaseDate": "Date de sortie",
+      "rating": "Note",
+      "lastPlayed": "Dernière lecture",
+      "playCount": "Lectures",
+      "random": "Aléatoire",
+      "dateShared": "Date de partage",
+      "latestEpisodeAirDate": "Dernière date de diffusion"
     }
   },
   "about": {
     "title": "À propos",
     "openSourceLicenses": "Licences Open Source",
     "versionLabel": "Version ${version}",
-    "appDescription": "Un magnifique client Plex pour Flutter",
+    "appDescription": "Un magnifique client Plex et Jellyfin pour Flutter",
     "viewLicensesDescription": "Afficher les licences des bibliothèques tierces"
   },
   "serverSelection": {
@@ -766,7 +850,9 @@
     "waitingForParticipants": "En attente du chargement des autres...",
     "recentRooms": "Salons récents",
     "renameRoom": "Renommer le salon",
-    "removeRoom": "Supprimer"
+    "removeRoom": "Supprimer",
+    "guestSwitchUnavailable": "Impossible de changer — serveur indisponible pour la synchronisation",
+    "guestSwitchFailed": "Impossible de changer — contenu introuvable sur ce serveur"
   },
   "downloads": {
     "title": "Téléchargements",
@@ -817,6 +903,12 @@
     "editSyncFilter": "Filtre de synchronisation",
     "syncAllItems": "Synchronisation de tous les éléments",
     "syncUnwatchedItems": "Synchronisation des éléments non vus",
+    "syncRuleServerContext": "Serveur : ${server} • ${status}",
+    "syncRuleAvailable": "Disponible",
+    "syncRuleOffline": "Hors ligne",
+    "syncRuleSignInRequired": "Connexion requise",
+    "syncRuleNotAvailableForProfile": "Non disponible pour le profil actuel",
+    "syncRuleUnknownServer": "Serveur inconnu",
     "syncRuleListCreated": "Règle de synchronisation créée"
   },
   "shaders": {
@@ -1077,5 +1169,39 @@
       "libraries": "Bibliothèques",
       "noLibraries": "Aucune bibliothèque disponible"
     }
+  },
+  "addServer": {
+    "addJellyfinTitle": "Ajouter un serveur Jellyfin",
+    "jellyfinUrlIntro": "Saisissez l'URL de votre serveur Jellyfin — p. ex. `https://jellyfin.example.com`. Vous pourrez vous connecter ensuite.",
+    "serverUrl": "URL du serveur",
+    "findServer": "Rechercher un serveur",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "signIn": "Se connecter",
+    "change": "Modifier",
+    "required": "Requis",
+    "couldNotReachServer": "Impossible de joindre le serveur : ${error}",
+    "signInFailed": "Échec de la connexion : ${error}",
+    "quickConnectFailed": "Échec de Quick Connect : ${error}",
+    "addPlexTitle": "Se connecter avec Plex",
+    "plexAuthIntro": "Choisissez comment vous connecter à Plex. Le flux navigateur ouvre plex.tv où vous confirmez la connexion ; l'option QR est pratique pour la TV ou les appareils distants.",
+    "plexQRPrompt": "Scannez ce QR code pour vous connecter.",
+    "waitingForPlexConfirmation": "En attente de la confirmation de plex.tv…",
+    "pinExpired": "Le PIN a expiré avant la connexion. Veuillez réessayer.",
+    "duplicatePlexAccount": "Cet appareil est déjà connecté à un compte Plex. Déconnectez-vous depuis les paramètres pour changer de compte.",
+    "failedToRegisterAccount": "Échec de l'enregistrement du compte : ${error}",
+    "enterJellyfinUrlError": "Saisissez l'URL de votre serveur Jellyfin",
+    "addConnectionTitle": "Ajouter une connexion",
+    "addConnectionTitleScoped": "Ajouter à ${name}",
+    "addConnectionIntroGlobal": "Ajoutez un autre serveur média. Vous pouvez mélanger comptes Plex et serveurs Jellyfin — les contenus de tous les backends connectés apparaissent ensemble sur l'écran d'accueil.",
+    "addConnectionIntroScoped": "Ajoutez un nouveau serveur, ou empruntez-en un à un autre profil.",
+    "signInWithPlexCard": "Se connecter avec Plex",
+    "signInWithPlexCardSubtitle": "Autorisez cet appareil avec votre compte Plex. Les serveurs partagés avec le compte suivent automatiquement.",
+    "signInWithPlexCardSubtitleScoped": "Autorisez un nouveau compte Plex. Ses utilisateurs Home apparaissent comme profils.",
+    "connectToJellyfinCard": "Se connecter à Jellyfin",
+    "connectToJellyfinCardSubtitle": "Saisissez l'URL de votre serveur Jellyfin et connectez-vous avec nom d'utilisateur + mot de passe (Quick Connect bientôt disponible).",
+    "connectToJellyfinCardSubtitleScoped": "Connectez-vous à un serveur Jellyfin. Lié à ${name}.",
+    "borrowFromAnotherProfile": "Emprunter à un autre profil",
+    "borrowFromAnotherProfileSubtitle": "Réutilisez une connexion déjà associée à un autre profil. Les profils source protégés par PIN demandent le PIN."
   }
 }

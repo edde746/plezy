@@ -11,16 +11,16 @@ import 'event_aware.dart';
 /// Example usage:
 /// ```dart
 /// class _MyScreenState extends State<MyScreen> with WatchStateAware {
-///   List<PlexMetadata> _items = [];
+///   List<MediaItem> _items = [];
 ///
 ///   @override
-///   Set<String>? get watchedRatingKeys =>
-///       _items.map((e) => e.ratingKey).toSet();
+///   Set<String>? get watchedIds =>
+///       _items.map((e) => e.id).toSet();
 ///
 ///   @override
 ///   void onWatchStateChanged(WatchStateEvent event) {
 ///     // Refresh affected item
-///     _refreshItem(event.ratingKey);
+///     _refreshItem(event.itemId);
 ///   }
 /// }
 /// ```
@@ -35,22 +35,22 @@ mixin WatchStateAware<T extends StatefulWidget> on State<T> {
   /// Override to specify which global keys this screen cares about.
   ///
   /// Use format `serverId:ratingKey`.
-  /// Return null to fall back to [watchedRatingKeys] matching.
+  /// Return null to fall back to [watchedIds] matching.
   Set<String>? get watchedGlobalKeys => null;
 
-  /// Override to specify which ratingKeys this screen cares about.
+  /// Override to specify which item ids this screen cares about.
   ///
   /// Return null to receive ALL events (not recommended for performance).
   /// Return an empty set to receive no events.
   ///
   /// The set should include:
-  /// - Direct items displayed (e.g., episode ratingKeys in a season view)
-  /// - Parent items that affect display (e.g., show ratingKey for on-deck)
-  Set<String>? get watchedRatingKeys;
+  /// - Direct items displayed (e.g., episode ids in a season view)
+  /// - Parent items that affect display (e.g., show id for on-deck)
+  Set<String>? get watchedIds;
 
   /// Called when a relevant watch state change occurs.
   ///
-  /// Only called if [watchedRatingKeys] is null or contains an affected key.
+  /// Only called if [watchedIds] is null or contains an affected key.
   void onWatchStateChanged(WatchStateEvent event);
 
   @override
@@ -61,7 +61,7 @@ mixin WatchStateAware<T extends StatefulWidget> on State<T> {
       mounted: () => mounted,
       serverId: () => watchStateServerId,
       globalKeys: () => watchedGlobalKeys,
-      ratingKeys: () => watchedRatingKeys,
+      itemIds: () => watchedIds,
       onEvent: onWatchStateChanged,
     );
   }

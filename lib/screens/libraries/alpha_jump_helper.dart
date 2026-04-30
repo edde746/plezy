@@ -1,14 +1,15 @@
 import '../../data/ducet_order.dart';
-import '../../models/plex_first_character.dart';
+import '../../media/library_first_character.dart';
 
 /// Shared letter-index mapping logic used by both [AlphaJumpBar] (desktop/tablet/TV)
 /// and [AlphaScrollHandle] (phone).
 ///
-/// Builds a dynamic letter list and cumulative index map from [PlexFirstCharacter]
-/// data returned by the Plex API. Only letters that have items are included,
-/// supporting non-Latin scripts (Korean, Japanese, Cyrillic, etc.).
+/// Builds a dynamic letter list and cumulative index map from [LibraryFirstCharacter]
+/// data returned by the server's first-character endpoint. Only letters that
+/// have items are included, supporting non-Latin scripts (Korean, Japanese,
+/// Cyrillic, etc.).
 ///
-/// The API's firstCharacter endpoint returns characters in Unicode codepoint
+/// Plex's `/firstCharacter` endpoint returns characters in Unicode codepoint
 /// order, which doesn't match the content endpoint's ICU locale-aware sort.
 /// We re-sort using ICU collation so cumulative indices are correct.
 class AlphaJumpHelper {
@@ -27,7 +28,7 @@ class AlphaJumpHelper {
 
   AlphaJumpHelper._(this.letters, this.letterToIndex, this.letterSizes, this.totalItemCount);
 
-  factory AlphaJumpHelper(List<PlexFirstCharacter> firstCharacters) {
+  factory AlphaJumpHelper(List<LibraryFirstCharacter> firstCharacters) {
     // Collect characters with their sizes.
     final entries = <({String letter, int size})>[];
     final letterSizes = <String, int>{};
