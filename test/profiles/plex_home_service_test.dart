@@ -110,6 +110,31 @@ void main() {
       expect(service.current[acct.id]!.first.uuid, 'seeded-uuid');
     });
 
+    test('reloadFromStorage picks up caches written after startup', () async {
+      final refreshBlocker = Completer<List<PlexHomeUser>>();
+      service = PlexHomeService(
+        connections: connections,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: (_) => refreshBlocker.future,
+      );
+      addTearDown(() {
+        if (!refreshBlocker.isCompleted) refreshBlocker.complete(const []);
+      });
+
+      await service.start();
+      expect(service.current, isEmpty);
+
+      final acct = _account('plex.migrated');
+      await connections.upsert(acct);
+      await storage.savePlexHomeUsersCache(acct.id, [_user('migrated-home-user').toJson()]);
+
+      await service.reloadFromStorage();
+
+      expect(service.current[acct.id], hasLength(1));
+      expect(service.current[acct.id]!.single.uuid, 'migrated-home-user');
+    });
+
     test('concurrent start calls await the same in-flight startup', () async {
       service = PlexHomeService(
         connections: connections,

@@ -1031,6 +1031,7 @@ class _SetupScreenState extends State<SetupScreen> {
       try {
         final connRegistry = context.read<ConnectionRegistry>();
         final profileRegistry = context.read<ProfileRegistry>();
+        final activeProfiles = context.read<ActiveProfileProvider>();
         final bootstrap = ConnectionBootstrap(
           storage: storage,
           connectionRegistry: connRegistry,
@@ -1038,6 +1039,11 @@ class _SetupScreenState extends State<SetupScreen> {
           profileRegistry: profileRegistry,
         );
         await bootstrap.run();
+        // Provider initialization starts before this screen runs the legacy
+        // migration. Reload after bootstrap so copied Plex Home users and the
+        // selected active profile are visible before setup decides binding is
+        // already settled and navigates to MainScreen.
+        await activeProfiles.reloadFromStorage();
       } catch (e, st) {
         appLogger.w('Boot-time migration failed', error: e, stackTrace: st);
       }
@@ -1129,8 +1135,14 @@ class _SetupScreenState extends State<SetupScreen> {
     // profile to bind. `initialize` is fire-and-forget at provider creation,
     // so awaiting here pulls control through the same future and triggers
     // the listener-driven rebind synchronously.
-    await activeProfile.initialize();
+    await activeProfile.reloadFromStorage();
     if (!mounted) return;
+
+    if (activeProfile.active == null && activeProfile.profiles.isEmpty) {
+      appLogger.w('Setup: stored connections exist but no profiles resolved after bootstrap; returning to auth');
+      unawaited(Navigator.pushReplacement(context, fadeRoute(const AuthScreen())));
+      return;
+    }
 
     // Wire the per-server status listener before either branch so the splash
     // checkmarks fill in even while the user is choosing a profile.

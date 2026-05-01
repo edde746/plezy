@@ -28,6 +28,7 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../libraries/state_messages.dart';
+import '../auth_screen.dart';
 import 'add_local_profile_screen.dart';
 import 'profile_detail_screen.dart';
 
@@ -245,9 +246,19 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
         .where((p) => p.id != activeProfile?.id && p.parentConnectionId != parentId)
         .toList();
     final binder = context.read<ActiveProfileBinder>();
+    final navigator = Navigator.of(context, rootNavigator: true);
 
     try {
       await connRegistry.remove(parentId);
+      final noConnectionsLeft = (await connRegistry.list()).isEmpty;
+      if (noConnectionsLeft) {
+        await active.clearActiveProfile();
+        unawaited(binder.rebindActive());
+        if (navigator.mounted) {
+          unawaited(navigator.pushAndRemoveUntil(MaterialPageRoute(builder: (_) => const AuthScreen()), (_) => false));
+        }
+        return;
+      }
       if (!mounted) return;
       // If the active virtual profile belonged to the removed account, make
       // the storage state explicit instead of relying on provider fallback.

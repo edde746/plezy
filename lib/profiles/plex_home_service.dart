@@ -82,6 +82,36 @@ class PlexHomeService {
     return future;
   }
 
+  /// Re-read per-connection Plex Home user caches from storage.
+  ///
+  /// This is used after boot-time legacy migration. The service is started
+  /// before [ConnectionBootstrap] runs, so it may have already missed the
+  /// copied `plex_home_users_{connectionId}` cache and new connection row.
+  Future<void> reloadFromStorage() async {
+    await start();
+    _storage ??= await StorageService.getInstance();
+
+    final current = await _connections.list();
+    final plexIds = current.whereType<PlexAccountConnection>().map((c) => c.id).toSet();
+    var changed = false;
+
+    for (final id in _byConnection.keys.toList()) {
+      if (!plexIds.contains(id)) {
+        _byConnection.remove(id);
+        changed = true;
+      }
+    }
+
+    for (final conn in current.whereType<PlexAccountConnection>()) {
+      final cached = _readCache(conn.id);
+      if (cached == null) continue;
+      _byConnection[conn.id] = cached;
+      changed = true;
+    }
+
+    if (changed) _emit();
+  }
+
   Future<void> _start() async {
     _storage ??= await StorageService.getInstance();
 

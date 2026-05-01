@@ -835,6 +835,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
 
     if (confirm && mounted) {
+      final navigator = Navigator.of(context, rootNavigator: true);
       // Use comprehensive logout through UserProfileProvider
       final userProfileProvider = Provider.of<UserProfileProvider>(context, listen: false);
       final multiServerProvider = context.read<MultiServerProvider>();
@@ -862,11 +863,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       await hiddenLibrariesProvider.refresh();
       playbackStateProvider.clearShuffle();
 
-      if (mounted) {
+      if (navigator.mounted) {
         unawaited(
-          Navigator.of(
-            context,
-          ).pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const AuthScreen()), (route) => false),
+          navigator.pushAndRemoveUntil(MaterialPageRoute(builder: (context) => const AuthScreen()), (route) => false),
         );
       }
     }

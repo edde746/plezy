@@ -125,18 +125,19 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     return future;
   }
 
-  Future<void> _initialize() async {
-    _storage ??= await StorageService.getInstance();
-    // Hydrate the Plex Home cache before we read it — `_plexHome.current`
-    // is only populated after start() finishes its disk-cache load.
-    await _plexHome.start();
+  /// Re-read connections, Plex Home cache, local profiles, and active id.
+  ///
+  /// Provider initialization starts before boot-time migration, so the first
+  /// snapshot can legitimately miss the migrated connection/profile state.
+  Future<void> reloadFromStorage() async {
+    await initialize();
+    await _plexHome.reloadFromStorage();
+    await _reloadSnapshot();
+    safeNotifyListeners();
+  }
 
-    _localProfiles = await _registry.list();
-    final initialConns = await _connections.list();
-    _connectionsById = {for (final c in initialConns) c.id: c};
-    _plexHomeUsers = _plexHome.current;
-    _recomputeProfiles();
-    _resolveActive();
+  Future<void> _initialize() async {
+    await _reloadSnapshot();
 
     _localSub = _registry.watchProfiles().listen((list) {
       _localProfiles = list;
@@ -159,6 +160,20 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
 
     _initialized = true;
     safeNotifyListeners();
+  }
+
+  Future<void> _reloadSnapshot() async {
+    _storage ??= await StorageService.getInstance();
+    // Hydrate the Plex Home cache before we read it — `_plexHome.current`
+    // is only populated after start() finishes its disk-cache load.
+    await _plexHome.start();
+
+    _localProfiles = await _registry.list();
+    final initialConns = await _connections.list();
+    _connectionsById = {for (final c in initialConns) c.id: c};
+    _plexHomeUsers = _plexHome.current;
+    _recomputeProfiles();
+    _resolveActive();
   }
 
   void _recomputeProfiles() {
