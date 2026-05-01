@@ -328,6 +328,8 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get autoSkipIntroDescription => 'Автоматически пропускать маркеры вступления через несколько секунд';
 	@override String get autoSkipCredits => 'Автопропуск титров';
 	@override String get autoSkipCreditsDescription => 'Автоматически пропускать титры и воспроизводить следующий эпизод';
+	@override String get forceSkipMarkerFallback => 'Принудительные резервные маркеры';
+	@override String get forceSkipMarkerFallbackDescription => 'Использовать шаблоны заголовков глав для маркеров пропуска, даже если Plex предоставляет встроенные маркеры';
 	@override String get autoSkipDelay => 'Задержка автопропуска';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Подождать ${seconds} секунд перед автопропуском';
 	@override String get introPattern => 'Шаблон маркера вступления';
@@ -1901,6 +1903,8 @@ extension on TranslationsRu {
 			'settings.autoSkipIntroDescription' => 'Автоматически пропускать маркеры вступления через несколько секунд',
 			'settings.autoSkipCredits' => 'Автопропуск титров',
 			'settings.autoSkipCreditsDescription' => 'Автоматически пропускать титры и воспроизводить следующий эпизод',
+			'settings.forceSkipMarkerFallback' => 'Принудительные резервные маркеры',
+			'settings.forceSkipMarkerFallbackDescription' => 'Использовать шаблоны заголовков глав для маркеров пропуска, даже если Plex предоставляет встроенные маркеры',
 			'settings.autoSkipDelay' => 'Задержка автопропуска',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Подождать ${seconds} секунд перед автопропуском',
 			'settings.introPattern' => 'Шаблон маркера вступления',
@@ -2220,10 +2224,10 @@ extension on TranslationsRu {
 			'profiles.setPin' => 'Установить PIN',
 			'profiles.connectionsLabel' => 'Соединения',
 			'profiles.add' => 'Добавить',
-			'profiles.deleteProfileButton' => 'Удалить профиль',
-			'profiles.noConnectionsHint' => 'Нет соединений — добавьте одно, чтобы использовать этот профиль.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.deleteProfileButton' => 'Удалить профиль',
+			'profiles.noConnectionsHint' => 'Нет соединений — добавьте одно, чтобы использовать этот профиль.',
 			'profiles.plexHomeAccount' => 'Аккаунт Plex Home',
 			'profiles.connectionDefault' => 'По умолчанию',
 			'profiles.makeDefault' => 'Сделать по умолчанию',
@@ -2734,10 +2738,10 @@ extension on TranslationsRu {
 			'trakt.connectedAs' => ({required Object username}) => 'Подключено как @${username}',
 			'trakt.disconnectConfirm' => 'Отключить аккаунт Trakt?',
 			'trakt.disconnectConfirmBody' => 'Plezy перестанет отправлять события воспроизведения в Trakt. Вы можете подключиться снова в любое время.',
-			'trakt.scrobble' => 'Скробблинг в реальном времени',
-			'trakt.scrobbleDescription' => 'Отправлять события воспроизведения, паузы и остановки в Trakt во время просмотра.',
 			_ => null,
 		} ?? switch (path) {
+			'trakt.scrobble' => 'Скробблинг в реальном времени',
+			'trakt.scrobbleDescription' => 'Отправлять события воспроизведения, паузы и остановки в Trakt во время просмотра.',
 			'trakt.watchedSync' => 'Синхронизация статуса просмотра',
 			'trakt.watchedSyncDescription' => 'Когда вы отмечаете элементы как просмотренные в Plezy, они отмечаются и в Trakt.',
 			'trackers.title' => 'Трекеры',

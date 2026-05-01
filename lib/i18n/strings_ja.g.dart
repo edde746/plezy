@@ -328,6 +328,8 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get autoSkipIntroDescription => '数秒後にイントロマーカーを自動的にスキップ';
 	@override String get autoSkipCredits => 'クレジットを自動スキップ';
 	@override String get autoSkipCreditsDescription => 'クレジットを自動的にスキップして次のエピソードを再生';
+	@override String get forceSkipMarkerFallback => 'フォールバックマーカーを強制';
+	@override String get forceSkipMarkerFallbackDescription => 'Plex がネイティブマーカーを提供している場合でも、スキップマーカーにはチャプタータイトルのパターンを使用する';
 	@override String get autoSkipDelay => '自動スキップの遅延';
 	@override String autoSkipDelayDescription({required Object seconds}) => '自動スキップまで${seconds}秒待機';
 	@override String get introPattern => 'イントロマーカーパターン';
@@ -1901,6 +1903,8 @@ extension on TranslationsJa {
 			'settings.autoSkipIntroDescription' => '数秒後にイントロマーカーを自動的にスキップ',
 			'settings.autoSkipCredits' => 'クレジットを自動スキップ',
 			'settings.autoSkipCreditsDescription' => 'クレジットを自動的にスキップして次のエピソードを再生',
+			'settings.forceSkipMarkerFallback' => 'フォールバックマーカーを強制',
+			'settings.forceSkipMarkerFallbackDescription' => 'Plex がネイティブマーカーを提供している場合でも、スキップマーカーにはチャプタータイトルのパターンを使用する',
 			'settings.autoSkipDelay' => '自動スキップの遅延',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '自動スキップまで${seconds}秒待機',
 			'settings.introPattern' => 'イントロマーカーパターン',
@@ -2220,10 +2224,10 @@ extension on TranslationsJa {
 			'profiles.setPin' => 'PINを設定',
 			'profiles.connectionsLabel' => '接続',
 			'profiles.add' => '追加',
-			'profiles.deleteProfileButton' => 'プロファイルを削除',
-			'profiles.noConnectionsHint' => '接続がありません — このプロファイルを使うには1つ追加してください。',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.deleteProfileButton' => 'プロファイルを削除',
+			'profiles.noConnectionsHint' => '接続がありません — このプロファイルを使うには1つ追加してください。',
 			'profiles.plexHomeAccount' => 'Plex Homeアカウント',
 			'profiles.connectionDefault' => 'デフォルト',
 			'profiles.makeDefault' => 'デフォルトに設定',
@@ -2734,10 +2738,10 @@ extension on TranslationsJa {
 			'trakt.connectedAs' => ({required Object username}) => '@${username} として接続済み',
 			'trakt.disconnectConfirm' => 'Trakt アカウントを切断しますか?',
 			'trakt.disconnectConfirmBody' => 'Plezy から Trakt への再生イベント送信が停止します。いつでも再接続できます。',
-			'trakt.scrobble' => 'リアルタイムのスクロブル',
-			'trakt.scrobbleDescription' => '再生中に再生・一時停止・停止イベントを Trakt に送信します。',
 			_ => null,
 		} ?? switch (path) {
+			'trakt.scrobble' => 'リアルタイムのスクロブル',
+			'trakt.scrobbleDescription' => '再生中に再生・一時停止・停止イベントを Trakt に送信します。',
 			'trakt.watchedSync' => '視聴済みステータスを同期',
 			'trakt.watchedSyncDescription' => 'Plezy で項目を視聴済みにすると、Trakt でも視聴済みになります。',
 			'trackers.title' => 'トラッカー',

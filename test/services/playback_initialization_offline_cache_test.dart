@@ -18,6 +18,7 @@ import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_media_info_mapper.dart';
 import 'package:plezy/services/playback_initialization_service.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/plex_mappers.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -180,7 +181,7 @@ void main() {
     expect(result.externalSubtitles.single.uri, Uri.file(subtitlePath).toString());
   });
 
-  test('cache-only playback extras parses Plex chapters and markers', () async {
+  test('cache-only playback extras fills missing Plex marker types from chapters', () async {
     await PlexApiCache.instance.put('srv-1', '/library/metadata/movie-1', _plexMetadataEnvelope());
 
     final extras = await CachedPlaybackMetadataService.fetchPlaybackExtras(
@@ -190,7 +191,7 @@ void main() {
     );
 
     expect(extras?.chapters.single.title, 'Intro');
-    expect(extras?.markers.single.type, 'credits');
+    expect(extras?.markers.map((m) => m.type), ['intro', 'credits']);
   });
 
   test('Plex extras parser skips malformed entries and keeps valid ones', () async {
@@ -203,7 +204,28 @@ void main() {
     );
 
     expect(extras?.chapters.map((c) => c.title), ['Intro']);
-    expect(extras?.markers.map((m) => m.type), ['credits']);
+    expect(extras?.markers.map((m) => m.type), ['intro', 'credits']);
+  });
+
+  test('Plex extras parser can force chapter fallback over native marker timings', () {
+    final extras = plexPlaybackExtrasFromCacheJson({
+      'Chapter': [
+        {'id': 1, 'index': 0, 'startTimeOffset': 5000, 'endTimeOffset': 45000, 'tag': 'Intro'},
+        {'id': 2, 'index': 1, 'startTimeOffset': 90000, 'endTimeOffset': 100000, 'tag': 'Credits'},
+      ],
+      'Marker': [
+        {'id': 10, 'type': 'intro', 'startTimeOffset': 12000, 'endTimeOffset': 30000},
+        {'id': 11, 'type': 'credits', 'startTimeOffset': 93000, 'endTimeOffset': 98000},
+      ],
+    }, forceChapterFallback: true);
+
+    final intro = extras.markers.firstWhere((m) => m.type == 'intro');
+    final credits = extras.markers.firstWhere((m) => m.type == 'credits');
+    expect(intro.startTimeOffset, 5000);
+    expect(intro.endTimeOffset, 45000);
+    expect(credits.startTimeOffset, 90000);
+    expect(credits.endTimeOffset, 100000);
+    expect(extras.markers.any((m) => m.id == 10 || m.id == 11), isFalse);
   });
 
   test('Jellyfin extras parser tolerates non-string chapter names', () {

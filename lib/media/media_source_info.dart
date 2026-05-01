@@ -244,15 +244,17 @@ class PlaybackExtras {
     return null;
   }
 
-  /// Returns [PlaybackExtras] using real markers when available, otherwise
-  /// synthesises markers from chapter titles matching intro/credits patterns.
-  /// When real markers exist, reclassifies markers with unknown types against
-  /// the patterns so non-standard type strings (e.g. "OP-Song") get recognized.
+  /// Returns [PlaybackExtras] using real markers when available, filling any
+  /// missing marker types from chapter titles matching intro/credits patterns.
+  /// [forceChapterFallback] prefers chapter-derived markers for any type they
+  /// provide. When real markers exist, reclassifies markers with unknown types
+  /// against the patterns so non-standard type strings get recognized.
   factory PlaybackExtras.withChapterFallback({
     required List<MediaChapter> chapters,
     required List<MediaMarker> markers,
     String? introPatternStr,
     String? creditsPatternStr,
+    bool forceChapterFallback = false,
   }) {
     final introPattern = RegExp(
       introPatternStr ?? r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$',
@@ -262,24 +264,6 @@ class PlaybackExtras {
       creditsPatternStr ?? r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$',
       caseSensitive: false,
     );
-
-    if (markers.isNotEmpty) {
-      // Reclassify markers with non-standard types against the patterns
-      final reclassified = markers.map((m) {
-        if (m.type == 'intro' || m.type == 'credits') return m;
-        final newType = _classifyChapterTitle(m.type, introPattern, creditsPattern);
-        if (newType != null) {
-          return MediaMarker(
-            id: m.id,
-            type: newType,
-            startTimeOffset: m.startTimeOffset,
-            endTimeOffset: m.endTimeOffset,
-          );
-        }
-        return m;
-      }).toList();
-      return PlaybackExtras(chapters: chapters, markers: reclassified);
-    }
 
     final synthetic = <MediaMarker>[];
     for (var i = 0; i < chapters.length; i++) {
@@ -297,6 +281,33 @@ class PlaybackExtras {
       if (end == null) continue;
 
       synthetic.add(MediaMarker(id: ch.id, type: type, startTimeOffset: start, endTimeOffset: end));
+    }
+
+    if (markers.isNotEmpty) {
+      // Reclassify markers with non-standard types against the patterns.
+      final reclassified = markers.map((m) {
+        if (m.type == 'intro' || m.type == 'credits') return m;
+        final newType = _classifyChapterTitle(m.type, introPattern, creditsPattern);
+        if (newType != null) {
+          return MediaMarker(
+            id: m.id,
+            type: newType,
+            startTimeOffset: m.startTimeOffset,
+            endTimeOffset: m.endTimeOffset,
+          );
+        }
+        return m;
+      }).toList();
+
+      if (synthetic.isEmpty) return PlaybackExtras(chapters: chapters, markers: reclassified);
+
+      final syntheticTypes = synthetic.map((m) => m.type).toSet();
+      final nativeTypes = reclassified.map((m) => m.type).toSet();
+      final merged = forceChapterFallback
+          ? <MediaMarker>[...reclassified.where((m) => !syntheticTypes.contains(m.type)), ...synthetic]
+          : <MediaMarker>[...reclassified, ...synthetic.where((m) => !nativeTypes.contains(m.type))];
+      merged.sort((a, b) => a.startTimeOffset.compareTo(b.startTimeOffset));
+      return PlaybackExtras(chapters: chapters, markers: merged);
     }
 
     return PlaybackExtras(chapters: chapters, markers: synthetic);

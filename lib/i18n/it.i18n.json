@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "Salta automaticamente i marcatori dell'intro dopo alcuni secondi",
     "autoSkipCredits": "Salta Crediti Automaticamente",
     "autoSkipCreditsDescription": "Salta automaticamente i crediti e riproduci l'episodio successivo",
+    "forceSkipMarkerFallback": "Forza marcatori fallback",
+    "forceSkipMarkerFallbackDescription": "Usa i pattern dei titoli dei capitoli per i marcatori di salto anche quando Plex fornisce marcatori nativi",
     "autoSkipDelay": "Ritardo Salto Automatico",
     "autoSkipDelayDescription": "Aspetta ${seconds} secondi prima del salto automatico",
     "introPattern": "Pattern marcatore intro",

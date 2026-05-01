@@ -328,6 +328,8 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get autoSkipIntroDescription => '几秒钟后自动跳过片头标记';
 	@override String get autoSkipCredits => '自动跳过片尾';
 	@override String get autoSkipCreditsDescription => '自动跳过片尾并播放下一集';
+	@override String get forceSkipMarkerFallback => '强制使用备用标记';
+	@override String get forceSkipMarkerFallbackDescription => '即使 Plex 提供原生标记，也使用章节标题模式作为跳过标记';
 	@override String get autoSkipDelay => '自动跳过延迟';
 	@override String autoSkipDelayDescription({required Object seconds}) => '自动跳过前等待 ${seconds} 秒';
 	@override String get introPattern => '片头标记模式';
@@ -1901,6 +1903,8 @@ extension on TranslationsZh {
 			'settings.autoSkipIntroDescription' => '几秒钟后自动跳过片头标记',
 			'settings.autoSkipCredits' => '自动跳过片尾',
 			'settings.autoSkipCreditsDescription' => '自动跳过片尾并播放下一集',
+			'settings.forceSkipMarkerFallback' => '强制使用备用标记',
+			'settings.forceSkipMarkerFallbackDescription' => '即使 Plex 提供原生标记，也使用章节标题模式作为跳过标记',
 			'settings.autoSkipDelay' => '自动跳过延迟',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '自动跳过前等待 ${seconds} 秒',
 			'settings.introPattern' => '片头标记模式',
@@ -2220,10 +2224,10 @@ extension on TranslationsZh {
 			'profiles.setPin' => '设置 PIN',
 			'profiles.connectionsLabel' => '连接',
 			'profiles.add' => '添加',
-			'profiles.deleteProfileButton' => '删除配置文件',
-			'profiles.noConnectionsHint' => '没有连接 — 添加一个以使用此配置文件。',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.deleteProfileButton' => '删除配置文件',
+			'profiles.noConnectionsHint' => '没有连接 — 添加一个以使用此配置文件。',
 			'profiles.plexHomeAccount' => 'Plex Home 账户',
 			'profiles.connectionDefault' => '默认',
 			'profiles.makeDefault' => '设为默认',
@@ -2734,10 +2738,10 @@ extension on TranslationsZh {
 			'trakt.connectedAs' => ({required Object username}) => '已以 @${username} 身份连接',
 			'trakt.disconnectConfirm' => '断开 Trakt 账户？',
 			'trakt.disconnectConfirmBody' => 'Plezy 将停止向 Trakt 发送播放事件。您随时可以重新连接。',
-			'trakt.scrobble' => '实时 Scrobble',
-			'trakt.scrobbleDescription' => '在播放时向 Trakt 发送播放、暂停和停止事件。',
 			_ => null,
 		} ?? switch (path) {
+			'trakt.scrobble' => '实时 Scrobble',
+			'trakt.scrobbleDescription' => '在播放时向 Trakt 发送播放、暂停和停止事件。',
 			'trakt.watchedSync' => '同步已观看状态',
 			'trakt.watchedSyncDescription' => '在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。',
 			'trackers.title' => '追踪器',

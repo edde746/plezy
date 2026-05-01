@@ -328,6 +328,8 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get autoSkipIntroDescription => 'Saltar automáticamente los marcadores de intro después de unos segundos';
 	@override String get autoSkipCredits => 'Saltar Créditos automáticamente';
 	@override String get autoSkipCreditsDescription => 'Saltar automáticamente los créditos y reproducir el siguiente episodio';
+	@override String get forceSkipMarkerFallback => 'Forzar marcadores alternativos';
+	@override String get forceSkipMarkerFallbackDescription => 'Usar patrones de títulos de capítulos para marcadores de salto incluso cuando Plex proporciona marcadores nativos';
 	@override String get autoSkipDelay => 'Retraso de Salto automático';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Esperar ${seconds} segundos antes de saltar automáticamente';
 	@override String get introPattern => 'Patrón de marcador de intro';
@@ -1901,6 +1903,8 @@ extension on TranslationsEs {
 			'settings.autoSkipIntroDescription' => 'Saltar automáticamente los marcadores de intro después de unos segundos',
 			'settings.autoSkipCredits' => 'Saltar Créditos automáticamente',
 			'settings.autoSkipCreditsDescription' => 'Saltar automáticamente los créditos y reproducir el siguiente episodio',
+			'settings.forceSkipMarkerFallback' => 'Forzar marcadores alternativos',
+			'settings.forceSkipMarkerFallbackDescription' => 'Usar patrones de títulos de capítulos para marcadores de salto incluso cuando Plex proporciona marcadores nativos',
 			'settings.autoSkipDelay' => 'Retraso de Salto automático',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Esperar ${seconds} segundos antes de saltar automáticamente',
 			'settings.introPattern' => 'Patrón de marcador de intro',
@@ -2220,10 +2224,10 @@ extension on TranslationsEs {
 			'profiles.setPin' => 'Establecer PIN',
 			'profiles.connectionsLabel' => 'Conexiones',
 			'profiles.add' => 'Añadir',
-			'profiles.deleteProfileButton' => 'Eliminar perfil',
-			'profiles.noConnectionsHint' => 'Sin conexiones — añade una para usar este perfil.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.deleteProfileButton' => 'Eliminar perfil',
+			'profiles.noConnectionsHint' => 'Sin conexiones — añade una para usar este perfil.',
 			'profiles.plexHomeAccount' => 'Cuenta Plex Home',
 			'profiles.connectionDefault' => 'Predeterminada',
 			'profiles.makeDefault' => 'Establecer como predeterminada',
@@ -2734,10 +2738,10 @@ extension on TranslationsEs {
 			'trakt.connectedAs' => ({required Object username}) => 'Conectado como @${username}',
 			'trakt.disconnectConfirm' => '¿Desconectar cuenta de Trakt?',
 			'trakt.disconnectConfirmBody' => 'Plezy dejará de enviar eventos de reproducción a Trakt. Puedes volver a conectar cuando quieras.',
-			'trakt.scrobble' => 'Scrobbling en tiempo real',
-			'trakt.scrobbleDescription' => 'Enviar eventos de reproducción, pausa y parada a Trakt durante la reproducción.',
 			_ => null,
 		} ?? switch (path) {
+			'trakt.scrobble' => 'Scrobbling en tiempo real',
+			'trakt.scrobbleDescription' => 'Enviar eventos de reproducción, pausa y parada a Trakt durante la reproducción.',
 			'trakt.watchedSync' => 'Sincronizar estado de visto',
 			'trakt.watchedSyncDescription' => 'Cuando marques elementos como vistos en Plezy, también se marcarán en Trakt.',
 			'trackers.title' => 'Rastreadores',

@@ -289,6 +289,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const clickVideoTogglesPlayback = BoolPref('click_video_toggles_playback');
   static const autoSkipIntro = BoolPref('auto_skip_intro');
   static const autoSkipCredits = BoolPref('auto_skip_credits');
+  static const forceSkipMarkerFallback = BoolPref('force_skip_marker_fallback');
   static const autoSkipDelay = IntPref('auto_skip_delay', defaultValue: 5);
   static const introPattern = StringPref('intro_pattern', defaultValue: defaultIntroPattern);
   static const creditsPattern = StringPref('credits_pattern', defaultValue: defaultCreditsPattern);

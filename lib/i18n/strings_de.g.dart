@@ -328,6 +328,8 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get autoSkipIntroDescription => 'Intro-Marker nach wenigen Sekunden automatisch überspringen';
 	@override String get autoSkipCredits => 'Abspann automatisch überspringen';
 	@override String get autoSkipCreditsDescription => 'Abspann automatisch überspringen und nächste Episode abspielen';
+	@override String get forceSkipMarkerFallback => 'Fallback-Markierungen erzwingen';
+	@override String get forceSkipMarkerFallbackDescription => 'Kapitel-Titelmuster für Überspring-Markierungen verwenden, auch wenn Plex native Markierungen bereitstellt';
 	@override String get autoSkipDelay => 'Verzögerung für automatisches Überspringen';
 	@override String autoSkipDelayDescription({required Object seconds}) => '${seconds} Sekunden vor dem automatischen Überspringen warten';
 	@override String get introPattern => 'Intro-Markierungsmuster';
@@ -1901,6 +1903,8 @@ extension on TranslationsDe {
 			'settings.autoSkipIntroDescription' => 'Intro-Marker nach wenigen Sekunden automatisch überspringen',
 			'settings.autoSkipCredits' => 'Abspann automatisch überspringen',
 			'settings.autoSkipCreditsDescription' => 'Abspann automatisch überspringen und nächste Episode abspielen',
+			'settings.forceSkipMarkerFallback' => 'Fallback-Markierungen erzwingen',
+			'settings.forceSkipMarkerFallbackDescription' => 'Kapitel-Titelmuster für Überspring-Markierungen verwenden, auch wenn Plex native Markierungen bereitstellt',
 			'settings.autoSkipDelay' => 'Verzögerung für automatisches Überspringen',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '${seconds} Sekunden vor dem automatischen Überspringen warten',
 			'settings.introPattern' => 'Intro-Markierungsmuster',
@@ -2220,10 +2224,10 @@ extension on TranslationsDe {
 			'profiles.setPin' => 'PIN festlegen',
 			'profiles.connectionsLabel' => 'Verbindungen',
 			'profiles.add' => 'Hinzufügen',
-			'profiles.deleteProfileButton' => 'Profil löschen',
-			'profiles.noConnectionsHint' => 'Keine Verbindungen — füge eine hinzu, um dieses Profil zu nutzen.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.deleteProfileButton' => 'Profil löschen',
+			'profiles.noConnectionsHint' => 'Keine Verbindungen — füge eine hinzu, um dieses Profil zu nutzen.',
 			'profiles.plexHomeAccount' => 'Plex Home-Konto',
 			'profiles.connectionDefault' => 'Standard',
 			'profiles.makeDefault' => 'Als Standard',
@@ -2734,10 +2738,10 @@ extension on TranslationsDe {
 			'trakt.connectedAs' => ({required Object username}) => 'Verbunden als @${username}',
 			'trakt.disconnectConfirm' => 'Trakt-Konto trennen?',
 			'trakt.disconnectConfirmBody' => 'Plezy sendet keine Wiedergabe-Ereignisse mehr an Trakt. Du kannst dich jederzeit erneut verbinden.',
-			'trakt.scrobble' => 'Echtzeit-Scrobbling',
-			'trakt.scrobbleDescription' => 'Sende Play-, Pause- und Stopp-Ereignisse während der Wiedergabe an Trakt.',
 			_ => null,
 		} ?? switch (path) {
+			'trakt.scrobble' => 'Echtzeit-Scrobbling',
+			'trakt.scrobbleDescription' => 'Sende Play-, Pause- und Stopp-Ereignisse während der Wiedergabe an Trakt.',
 			'trakt.watchedSync' => 'Gesehen-Status synchronisieren',
 			'trakt.watchedSyncDescription' => 'Wenn du Inhalte in Plezy als gesehen markierst, werden sie auch auf Trakt markiert.',
 			'trackers.title' => 'Tracker',

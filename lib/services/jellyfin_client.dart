@@ -476,6 +476,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     String itemId, {
     String? introPattern,
     String? creditsPattern,
+    bool forceChapterFallback = false,
     bool forceRefresh = false,
   }) async {
     final item = await fetchItem(itemId);
@@ -487,6 +488,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     String itemId, {
     String? introPattern,
     String? creditsPattern,
+    bool forceChapterFallback = false,
   }) async {
     final item = await cache.getMetadata(cacheServerId, itemId);
     if (item == null) return null;

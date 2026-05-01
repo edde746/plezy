@@ -36,6 +36,7 @@ class CachedPlaybackMetadataService {
     required String itemId,
     String? introPattern,
     String? creditsPattern,
+    bool forceChapterFallback = false,
   }) async {
     try {
       return switch (backend) {
@@ -44,6 +45,7 @@ class CachedPlaybackMetadataService {
           itemId,
           introPattern: introPattern,
           creditsPattern: creditsPattern,
+          forceChapterFallback: forceChapterFallback,
         ),
         MediaBackend.jellyfin => _fetchJellyfinPlaybackExtras(cacheServerId, itemId),
       };
@@ -67,10 +69,16 @@ class CachedPlaybackMetadataService {
     String itemId, {
     String? introPattern,
     String? creditsPattern,
+    bool forceChapterFallback = false,
   }) async {
     final metadata = await _plexMetadata(serverId, itemId);
     if (metadata == null) return null;
-    return plexPlaybackExtrasFromCacheJson(metadata, introPattern: introPattern, creditsPattern: creditsPattern);
+    return plexPlaybackExtrasFromCacheJson(
+      metadata,
+      introPattern: introPattern,
+      creditsPattern: creditsPattern,
+      forceChapterFallback: forceChapterFallback,
+    );
   }
 
   static Future<Map<String, dynamic>?> _plexMetadata(String serverId, String itemId) async {

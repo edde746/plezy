@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "Intro-markeringen na enkele seconden automatisch overslaan",
     "autoSkipCredits": "Credits Automatisch Overslaan",
     "autoSkipCreditsDescription": "Credits automatisch overslaan en volgende aflevering afspelen",
+    "forceSkipMarkerFallback": "Fallbackmarkeringen afdwingen",
+    "forceSkipMarkerFallbackDescription": "Gebruik hoofdstuktitelpatronen voor overslaanmarkeringen, zelfs wanneer Plex native markeringen biedt",
     "autoSkipDelay": "Vertraging Automatisch Overslaan",
     "autoSkipDelayDescription": "${seconds} seconden wachten voor automatisch overslaan",
     "introPattern": "Intromarkeringspatroon",

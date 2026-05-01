@@ -1205,6 +1205,7 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     String ratingKey, {
     String? introPattern,
     String? creditsPattern,
+    bool forceChapterFallback = false,
     bool forceRefresh = false,
   }) async {
     try {
@@ -1221,6 +1222,7 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
         metadataJson,
         introPattern: introPattern,
         creditsPattern: creditsPattern,
+        forceChapterFallback: forceChapterFallback,
       );
     } catch (e) {
       appLogger.w('Failed to get playback extras', error: e);
@@ -1233,7 +1235,13 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     Map<String, dynamic>? metadataJson, {
     String? introPattern,
     String? creditsPattern,
-  }) => plexPlaybackExtrasFromCacheJson(metadataJson, introPattern: introPattern, creditsPattern: creditsPattern);
+    bool forceChapterFallback = false,
+  }) => plexPlaybackExtrasFromCacheJson(
+    metadataJson,
+    introPattern: introPattern,
+    creditsPattern: creditsPattern,
+    forceChapterFallback: forceChapterFallback,
+  );
 
   /// Parse video playback data from raw metadata JSON (no network call).
   /// Used by [getVideoPlaybackData] to avoid redundant fetches when the
@@ -3661,15 +3669,22 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     String itemId, {
     String? introPattern,
     String? creditsPattern,
+    bool forceChapterFallback = false,
     bool forceRefresh = false,
-  }) =>
-      getPlaybackExtras(itemId, introPattern: introPattern, creditsPattern: creditsPattern, forceRefresh: forceRefresh);
+  }) => getPlaybackExtras(
+    itemId,
+    introPattern: introPattern,
+    creditsPattern: creditsPattern,
+    forceChapterFallback: forceChapterFallback,
+    forceRefresh: forceRefresh,
+  );
 
   @override
   Future<PlaybackExtras?> fetchPlaybackExtrasFromCacheOnly(
     String itemId, {
     String? introPattern,
     String? creditsPattern,
+    bool forceChapterFallback = false,
   }) async {
     final cached = await cache.get(serverId, '/library/metadata/$itemId');
     if (cached == null) return null;
@@ -3679,6 +3694,7 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
       metadataJson,
       introPattern: introPattern,
       creditsPattern: creditsPattern,
+      forceChapterFallback: forceChapterFallback,
     );
   }
 

@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "Spring automatisk intromarkører over efter få sekunder",
     "autoSkipCredits": "Auto-spring rulletekster",
     "autoSkipCreditsDescription": "Spring automatisk rulletekster over og afspil næste episode",
+    "forceSkipMarkerFallback": "Tving reservemarkører",
+    "forceSkipMarkerFallbackDescription": "Brug kapitel-titelmønstre til springmarkører, selv når Plex leverer indbyggede markører",
     "autoSkipDelay": "Auto-spring forsinkelse",
     "autoSkipDelayDescription": "Vent ${seconds} sekunder før automatisk spring",
     "introPattern": "Intromarkørmønster",

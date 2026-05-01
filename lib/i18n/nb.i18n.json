@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "Hopp automatisk over intromarkører etter noen sekunder",
     "autoSkipCredits": "Hopp over rulletekst automatisk",
     "autoSkipCreditsDescription": "Hopp automatisk over rulletekst og spill neste episode",
+    "forceSkipMarkerFallback": "Tving reservemarkører",
+    "forceSkipMarkerFallbackDescription": "Bruk kapitteltittel-mønstre for hoppmarkører selv når Plex leverer innebygde markører",
     "autoSkipDelay": "Forsinkelse for automatisk hopp",
     "autoSkipDelayDescription": "Vent ${seconds} sekunder før automatisk hopping",
     "introPattern": "Intromarkørmønster",

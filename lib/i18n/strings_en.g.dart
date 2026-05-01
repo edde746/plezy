@@ -712,6 +712,12 @@ class TranslationsSettingsEn {
 	/// en: 'Automatically skip credits and play next episode'
 	String get autoSkipCreditsDescription => 'Automatically skip credits and play next episode';
 
+	/// en: 'Force Fallback Markers'
+	String get forceSkipMarkerFallback => 'Force Fallback Markers';
+
+	/// en: 'Use chapter title patterns for skip markers even when Plex provides native markers'
+	String get forceSkipMarkerFallbackDescription => 'Use chapter title patterns for skip markers even when Plex provides native markers';
+
 	/// en: 'Auto Skip Delay'
 	String get autoSkipDelay => 'Auto Skip Delay';
 
@@ -4089,6 +4095,8 @@ extension on Translations {
 			'settings.autoSkipIntroDescription' => 'Automatically skip intro markers after a few seconds',
 			'settings.autoSkipCredits' => 'Auto Skip Credits',
 			'settings.autoSkipCreditsDescription' => 'Automatically skip credits and play next episode',
+			'settings.forceSkipMarkerFallback' => 'Force Fallback Markers',
+			'settings.forceSkipMarkerFallbackDescription' => 'Use chapter title patterns for skip markers even when Plex provides native markers',
 			'settings.autoSkipDelay' => 'Auto Skip Delay',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Wait ${seconds} seconds before auto-skipping',
 			'settings.introPattern' => 'Intro Marker Pattern',
@@ -4408,10 +4416,10 @@ extension on Translations {
 			'profiles.setPin' => 'Set PIN',
 			'profiles.connectionsLabel' => 'Connections',
 			'profiles.add' => 'Add',
-			'profiles.deleteProfileButton' => 'Delete profile',
-			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.deleteProfileButton' => 'Delete profile',
+			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			'profiles.plexHomeAccount' => 'Plex Home account',
 			'profiles.connectionDefault' => 'Default',
 			'profiles.makeDefault' => 'Make default',
@@ -4922,10 +4930,10 @@ extension on Translations {
 			'trakt.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'trakt.disconnectConfirm' => 'Disconnect Trakt account?',
 			'trakt.disconnectConfirmBody' => 'Plezy will stop sending playback events to Trakt. You can reconnect at any time.',
-			'trakt.scrobble' => 'Real-time scrobbling',
-			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
 			_ => null,
 		} ?? switch (path) {
+			'trakt.scrobble' => 'Real-time scrobbling',
+			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
 			'trakt.watchedSync' => 'Sync watched status',
 			'trakt.watchedSyncDescription' => 'When you mark items watched in Plezy, mark them on Trakt.',
 			'trackers.title' => 'Trackers',

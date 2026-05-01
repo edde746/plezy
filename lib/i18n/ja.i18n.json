@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "数秒後にイントロマーカーを自動的にスキップ",
     "autoSkipCredits": "クレジットを自動スキップ",
     "autoSkipCreditsDescription": "クレジットを自動的にスキップして次のエピソードを再生",
+    "forceSkipMarkerFallback": "フォールバックマーカーを強制",
+    "forceSkipMarkerFallbackDescription": "Plex がネイティブマーカーを提供している場合でも、スキップマーカーにはチャプタータイトルのパターンを使用する",
     "autoSkipDelay": "自動スキップの遅延",
     "autoSkipDelayDescription": "自動スキップまで${seconds}秒待機",
     "introPattern": "イントロマーカーパターン",

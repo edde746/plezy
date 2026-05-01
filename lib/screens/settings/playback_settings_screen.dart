@@ -42,6 +42,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
   bool _clickVideoTogglesPlayback = false;
   bool _autoSkipIntro = false;
   bool _autoSkipCredits = false;
+  bool _forceSkipMarkerFallback = false;
   int _autoSkipDelay = 5;
   String _introPattern = settings.SettingsService.defaultIntroPattern;
   String _creditsPattern = settings.SettingsService.defaultCreditsPattern;
@@ -83,6 +84,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       _clickVideoTogglesPlayback = _settingsService.read(settings.SettingsService.clickVideoTogglesPlayback);
       _autoSkipIntro = _settingsService.read(settings.SettingsService.autoSkipIntro);
       _autoSkipCredits = _settingsService.read(settings.SettingsService.autoSkipCredits);
+      _forceSkipMarkerFallback = _settingsService.read(settings.SettingsService.forceSkipMarkerFallback);
       _autoSkipDelay = _settingsService.read(settings.SettingsService.autoSkipDelay);
       _introPattern = _settingsService.read(settings.SettingsService.introPattern);
       _creditsPattern = _settingsService.read(settings.SettingsService.creditsPattern);
@@ -161,6 +163,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             SettingsSectionHeader(t.settings.autoSkip),
             _buildAutoSkipIntro(),
             _buildAutoSkipCredits(),
+            _buildForceSkipMarkerFallback(),
             _buildAutoSkipDelay(),
             _buildIntroPattern(),
             _buildCreditsPattern(),
@@ -591,6 +594,19 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       onChanged: (value) async {
         setState(() => _autoSkipCredits = value);
         await _settingsService.write(settings.SettingsService.autoSkipCredits, value);
+      },
+    );
+  }
+
+  Widget _buildForceSkipMarkerFallback() {
+    return SwitchListTile(
+      secondary: const AppIcon(Symbols.tune_rounded, fill: 1),
+      title: Text(t.settings.forceSkipMarkerFallback),
+      subtitle: Text(t.settings.forceSkipMarkerFallbackDescription),
+      value: _forceSkipMarkerFallback,
+      onChanged: (value) async {
+        setState(() => _forceSkipMarkerFallback = value);
+        await _settingsService.write(settings.SettingsService.forceSkipMarkerFallback, value);
       },
     );
   }

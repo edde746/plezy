@@ -1075,12 +1075,14 @@ PlaybackExtras plexPlaybackExtrasFromCacheJson(
   Map<String, dynamic>? metadataJson, {
   String? introPattern,
   String? creditsPattern,
+  bool forceChapterFallback = false,
 }) {
   return PlaybackExtras.withChapterFallback(
     chapters: plexChaptersFromCacheJson(metadataJson),
     markers: plexMarkersFromCacheJson(metadataJson),
     introPatternStr: introPattern,
     creditsPatternStr: creditsPattern,
+    forceChapterFallback: forceChapterFallback,
   );
 }
 

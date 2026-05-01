@@ -328,6 +328,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get autoSkipIntroDescription => '몇 초 후 오프닝을 자동으로 건너뛰기';
 	@override String get autoSkipCredits => '자동으로 엔딩 건너뛰기';
 	@override String get autoSkipCreditsDescription => '엔딩 크레딧 자동 건너뛰기 후 다음 에피소드 재생';
+	@override String get forceSkipMarkerFallback => '대체 마커 강제 사용';
+	@override String get forceSkipMarkerFallbackDescription => 'Plex가 기본 마커를 제공하더라도 건너뛰기 마커에 챕터 제목 패턴 사용';
 	@override String get autoSkipDelay => '자동 건너뛰기 지연';
 	@override String autoSkipDelayDescription({required Object seconds}) => '자동 건너뛰기 전 ${seconds} 초 대기';
 	@override String get introPattern => '인트로 마커 패턴';
@@ -1901,6 +1903,8 @@ extension on TranslationsKo {
 			'settings.autoSkipIntroDescription' => '몇 초 후 오프닝을 자동으로 건너뛰기',
 			'settings.autoSkipCredits' => '자동으로 엔딩 건너뛰기',
 			'settings.autoSkipCreditsDescription' => '엔딩 크레딧 자동 건너뛰기 후 다음 에피소드 재생',
+			'settings.forceSkipMarkerFallback' => '대체 마커 강제 사용',
+			'settings.forceSkipMarkerFallbackDescription' => 'Plex가 기본 마커를 제공하더라도 건너뛰기 마커에 챕터 제목 패턴 사용',
 			'settings.autoSkipDelay' => '자동 건너뛰기 지연',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '자동 건너뛰기 전 ${seconds} 초 대기',
 			'settings.introPattern' => '인트로 마커 패턴',
@@ -2220,10 +2224,10 @@ extension on TranslationsKo {
 			'profiles.setPin' => 'PIN 설정',
 			'profiles.connectionsLabel' => '연결',
 			'profiles.add' => '추가',
-			'profiles.deleteProfileButton' => '프로필 삭제',
-			'profiles.noConnectionsHint' => '연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.deleteProfileButton' => '프로필 삭제',
+			'profiles.noConnectionsHint' => '연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.',
 			'profiles.plexHomeAccount' => 'Plex Home 계정',
 			'profiles.connectionDefault' => '기본값',
 			'profiles.makeDefault' => '기본값으로 설정',
@@ -2734,10 +2738,10 @@ extension on TranslationsKo {
 			'trakt.connectedAs' => ({required Object username}) => '@${username}(으)로 연결됨',
 			'trakt.disconnectConfirm' => 'Trakt 계정 연결을 끊으시겠습니까?',
 			'trakt.disconnectConfirmBody' => 'Plezy가 Trakt로 재생 이벤트를 보내지 않습니다. 언제든지 다시 연결할 수 있습니다.',
-			'trakt.scrobble' => '실시간 스크로블',
-			'trakt.scrobbleDescription' => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.',
 			_ => null,
 		} ?? switch (path) {
+			'trakt.scrobble' => '실시간 스크로블',
+			'trakt.scrobbleDescription' => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.',
 			'trakt.watchedSync' => '시청 상태 동기화',
 			'trakt.watchedSyncDescription' => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.',
 			'trackers.title' => '트래커',

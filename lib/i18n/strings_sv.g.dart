@@ -328,6 +328,8 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get autoSkipIntroDescription => 'Hoppa automatiskt över intro-markörer efter några sekunder';
 	@override String get autoSkipCredits => 'Hoppa Över Credits Automatiskt';
 	@override String get autoSkipCreditsDescription => 'Hoppa automatiskt över credits och spela nästa avsnitt';
+	@override String get forceSkipMarkerFallback => 'Tvinga reservmarkörer';
+	@override String get forceSkipMarkerFallbackDescription => 'Använd kapiteltitelmönster för hoppmarkörer även när Plex tillhandahåller inbyggda markörer';
 	@override String get autoSkipDelay => 'Fördröjning Auto Hoppa Över';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Vänta ${seconds} sekunder innan automatisk överhoppning';
 	@override String get introPattern => 'Intromarkörsmönster';
@@ -1901,6 +1903,8 @@ extension on TranslationsSv {
 			'settings.autoSkipIntroDescription' => 'Hoppa automatiskt över intro-markörer efter några sekunder',
 			'settings.autoSkipCredits' => 'Hoppa Över Credits Automatiskt',
 			'settings.autoSkipCreditsDescription' => 'Hoppa automatiskt över credits och spela nästa avsnitt',
+			'settings.forceSkipMarkerFallback' => 'Tvinga reservmarkörer',
+			'settings.forceSkipMarkerFallbackDescription' => 'Använd kapiteltitelmönster för hoppmarkörer även när Plex tillhandahåller inbyggda markörer',
 			'settings.autoSkipDelay' => 'Fördröjning Auto Hoppa Över',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Vänta ${seconds} sekunder innan automatisk överhoppning',
 			'settings.introPattern' => 'Intromarkörsmönster',
@@ -2220,10 +2224,10 @@ extension on TranslationsSv {
 			'profiles.setPin' => 'Ange PIN',
 			'profiles.connectionsLabel' => 'Anslutningar',
 			'profiles.add' => 'Lägg till',
-			'profiles.deleteProfileButton' => 'Ta bort profil',
-			'profiles.noConnectionsHint' => 'Inga anslutningar — lägg till en för att använda den här profilen.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.deleteProfileButton' => 'Ta bort profil',
+			'profiles.noConnectionsHint' => 'Inga anslutningar — lägg till en för att använda den här profilen.',
 			'profiles.plexHomeAccount' => 'Plex Home-konto',
 			'profiles.connectionDefault' => 'Standard',
 			'profiles.makeDefault' => 'Gör till standard',
@@ -2734,10 +2738,10 @@ extension on TranslationsSv {
 			'trakt.connectedAs' => ({required Object username}) => 'Ansluten som @${username}',
 			'trakt.disconnectConfirm' => 'Koppla från Trakt-konto?',
 			'trakt.disconnectConfirmBody' => 'Plezy slutar skicka uppspelningshändelser till Trakt. Du kan ansluta igen när som helst.',
-			'trakt.scrobble' => 'Realtids-scrobbling',
-			'trakt.scrobbleDescription' => 'Skicka uppspelnings-, paus- och stopphändelser till Trakt under uppspelning.',
 			_ => null,
 		} ?? switch (path) {
+			'trakt.scrobble' => 'Realtids-scrobbling',
+			'trakt.scrobbleDescription' => 'Skicka uppspelnings-, paus- och stopphändelser till Trakt under uppspelning.',
 			'trakt.watchedSync' => 'Synkronisera tittad-status',
 			'trakt.watchedSyncDescription' => 'När du markerar något som tittat i Plezy markeras det också på Trakt.',
 			'trackers.title' => 'Spårare',

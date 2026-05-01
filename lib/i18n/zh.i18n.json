@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "几秒钟后自动跳过片头标记",
     "autoSkipCredits": "自动跳过片尾",
     "autoSkipCreditsDescription": "自动跳过片尾并播放下一集",
+    "forceSkipMarkerFallback": "强制使用备用标记",
+    "forceSkipMarkerFallbackDescription": "即使 Plex 提供原生标记，也使用章节标题模式作为跳过标记",
     "autoSkipDelay": "自动跳过延迟",
     "autoSkipDelayDescription": "自动跳过前等待 ${seconds} 秒",
     "introPattern": "片头标记模式",

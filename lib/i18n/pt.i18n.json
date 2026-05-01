@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "Pular marcadores de intro automaticamente após alguns segundos",
     "autoSkipCredits": "Pular Créditos Automaticamente",
     "autoSkipCreditsDescription": "Pular créditos automaticamente e reproduzir próximo episódio",
+    "forceSkipMarkerFallback": "Forçar marcadores alternativos",
+    "forceSkipMarkerFallbackDescription": "Usar padrões de títulos de capítulos para marcadores de pulo mesmo quando o Plex fornece marcadores nativos",
     "autoSkipDelay": "Atraso do Pulo Automático",
     "autoSkipDelayDescription": "Aguardar ${seconds} segundos antes de pular automaticamente",
     "introPattern": "Padrão de marcador de intro",

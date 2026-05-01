@@ -328,6 +328,8 @@ class _TranslationsSettingsPl extends TranslationsSettingsEn {
 	@override String get autoSkipIntroDescription => 'Automatycznie pomijaj znaczniki intro po kilku sekundach';
 	@override String get autoSkipCredits => 'Automatyczne pomijanie napisów końcowych';
 	@override String get autoSkipCreditsDescription => 'Automatycznie pomijaj napisy końcowe i odtwórz następny odcinek';
+	@override String get forceSkipMarkerFallback => 'Wymuś znaczniki awaryjne';
+	@override String get forceSkipMarkerFallbackDescription => 'Używaj wzorców tytułów rozdziałów dla znaczników pomijania, nawet gdy Plex udostępnia natywne znaczniki';
 	@override String get autoSkipDelay => 'Opóźnienie automatycznego pomijania';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Czekaj ${seconds} sekund przed automatycznym pominięciem';
 	@override String get introPattern => 'Wzorzec znacznika intro';
@@ -1901,6 +1903,8 @@ extension on TranslationsPl {
 			'settings.autoSkipIntroDescription' => 'Automatycznie pomijaj znaczniki intro po kilku sekundach',
 			'settings.autoSkipCredits' => 'Automatyczne pomijanie napisów końcowych',
 			'settings.autoSkipCreditsDescription' => 'Automatycznie pomijaj napisy końcowe i odtwórz następny odcinek',
+			'settings.forceSkipMarkerFallback' => 'Wymuś znaczniki awaryjne',
+			'settings.forceSkipMarkerFallbackDescription' => 'Używaj wzorców tytułów rozdziałów dla znaczników pomijania, nawet gdy Plex udostępnia natywne znaczniki',
 			'settings.autoSkipDelay' => 'Opóźnienie automatycznego pomijania',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Czekaj ${seconds} sekund przed automatycznym pominięciem',
 			'settings.introPattern' => 'Wzorzec znacznika intro',
@@ -2220,10 +2224,10 @@ extension on TranslationsPl {
 			'profiles.setPin' => 'Ustaw PIN',
 			'profiles.connectionsLabel' => 'Połączenia',
 			'profiles.add' => 'Dodaj',
-			'profiles.deleteProfileButton' => 'Usuń profil',
-			'profiles.noConnectionsHint' => 'Brak połączeń — dodaj jedno, aby używać tego profilu.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.deleteProfileButton' => 'Usuń profil',
+			'profiles.noConnectionsHint' => 'Brak połączeń — dodaj jedno, aby używać tego profilu.',
 			'profiles.plexHomeAccount' => 'Konto Plex Home',
 			'profiles.connectionDefault' => 'Domyślne',
 			'profiles.makeDefault' => 'Ustaw jako domyślne',
@@ -2734,10 +2738,10 @@ extension on TranslationsPl {
 			'trakt.connectedAs' => ({required Object username}) => 'Połączono jako @${username}',
 			'trakt.disconnectConfirm' => 'Rozłączyć konto Trakt?',
 			'trakt.disconnectConfirmBody' => 'Plezy przestanie wysyłać zdarzenia odtwarzania do Trakt. Możesz połączyć się ponownie w dowolnej chwili.',
-			'trakt.scrobble' => 'Scrobbling w czasie rzeczywistym',
-			'trakt.scrobbleDescription' => 'Wysyłaj zdarzenia odtwarzania, pauzy i zatrzymania do Trakt podczas odtwarzania.',
 			_ => null,
 		} ?? switch (path) {
+			'trakt.scrobble' => 'Scrobbling w czasie rzeczywistym',
+			'trakt.scrobbleDescription' => 'Wysyłaj zdarzenia odtwarzania, pauzy i zatrzymania do Trakt podczas odtwarzania.',
 			'trakt.watchedSync' => 'Synchronizuj status obejrzane',
 			'trakt.watchedSyncDescription' => 'Gdy oznaczysz pozycje jako obejrzane w Plezy, zostaną też oznaczone w Trakt.',
 			'trackers.title' => 'Trackery',

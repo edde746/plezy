@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "Skipper automatiquement l'introduction après quelques secondes",
     "autoSkipCredits": "Skip automatique des crédits",
     "autoSkipCreditsDescription": "Passer les crédits et passer à l'épisode suivant automatiquement",
+    "forceSkipMarkerFallback": "Forcer les marqueurs de repli",
+    "forceSkipMarkerFallbackDescription": "Utiliser les motifs de titres de chapitres pour les marqueurs de saut même si Plex fournit des marqueurs natifs",
     "autoSkipDelay": "Délai avant skip automatique",
     "autoSkipDelayDescription": "Attendre ${seconds} secondes avant l'auto-skip",
     "introPattern": "Modèle de marqueur d'intro",

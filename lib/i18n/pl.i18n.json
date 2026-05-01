@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "Automatycznie pomijaj znaczniki intro po kilku sekundach",
     "autoSkipCredits": "Automatyczne pomijanie napisów końcowych",
     "autoSkipCreditsDescription": "Automatycznie pomijaj napisy końcowe i odtwórz następny odcinek",
+    "forceSkipMarkerFallback": "Wymuś znaczniki awaryjne",
+    "forceSkipMarkerFallbackDescription": "Używaj wzorców tytułów rozdziałów dla znaczników pomijania, nawet gdy Plex udostępnia natywne znaczniki",
     "autoSkipDelay": "Opóźnienie automatycznego pomijania",
     "autoSkipDelayDescription": "Czekaj ${seconds} sekund przed automatycznym pominięciem",
     "introPattern": "Wzorzec znacznika intro",

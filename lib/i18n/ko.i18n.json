@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "몇 초 후 오프닝을 자동으로 건너뛰기",
     "autoSkipCredits": "자동으로 엔딩 건너뛰기",
     "autoSkipCreditsDescription": "엔딩 크레딧 자동 건너뛰기 후 다음 에피소드 재생",
+    "forceSkipMarkerFallback": "대체 마커 강제 사용",
+    "forceSkipMarkerFallbackDescription": "Plex가 기본 마커를 제공하더라도 건너뛰기 마커에 챕터 제목 패턴 사용",
     "autoSkipDelay": "자동 건너뛰기 지연",
     "autoSkipDelayDescription": "자동 건너뛰기 전 ${seconds} 초 대기",
     "introPattern": "인트로 마커 패턴",

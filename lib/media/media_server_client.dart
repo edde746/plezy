@@ -368,6 +368,7 @@ abstract class MediaServerClient {
     String itemId, {
     String? introPattern,
     String? creditsPattern,
+    bool forceChapterFallback = false,
     bool forceRefresh = false,
   });
 
@@ -380,6 +381,7 @@ abstract class MediaServerClient {
     String itemId, {
     String? introPattern,
     String? creditsPattern,
+    bool forceChapterFallback = false,
   });
 
   /// Cache-only [MediaSourceInfo] read for [itemId]. Used by the offline

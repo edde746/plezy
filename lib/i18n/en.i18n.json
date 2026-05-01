@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "Automatically skip intro markers after a few seconds",
     "autoSkipCredits": "Auto Skip Credits",
     "autoSkipCreditsDescription": "Automatically skip credits and play next episode",
+    "forceSkipMarkerFallback": "Force Fallback Markers",
+    "forceSkipMarkerFallbackDescription": "Use chapter title patterns for skip markers even when Plex provides native markers",
     "autoSkipDelay": "Auto Skip Delay",
     "autoSkipDelayDescription": "Wait ${seconds} seconds before auto-skipping",
     "introPattern": "Intro Marker Pattern",

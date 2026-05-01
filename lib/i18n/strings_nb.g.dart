@@ -328,6 +328,8 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get autoSkipIntroDescription => 'Hopp automatisk over intromarkører etter noen sekunder';
 	@override String get autoSkipCredits => 'Hopp over rulletekst automatisk';
 	@override String get autoSkipCreditsDescription => 'Hopp automatisk over rulletekst og spill neste episode';
+	@override String get forceSkipMarkerFallback => 'Tving reservemarkører';
+	@override String get forceSkipMarkerFallbackDescription => 'Bruk kapitteltittel-mønstre for hoppmarkører selv når Plex leverer innebygde markører';
 	@override String get autoSkipDelay => 'Forsinkelse for automatisk hopp';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Vent ${seconds} sekunder før automatisk hopping';
 	@override String get introPattern => 'Intromarkørmønster';
@@ -1901,6 +1903,8 @@ extension on TranslationsNb {
 			'settings.autoSkipIntroDescription' => 'Hopp automatisk over intromarkører etter noen sekunder',
 			'settings.autoSkipCredits' => 'Hopp over rulletekst automatisk',
 			'settings.autoSkipCreditsDescription' => 'Hopp automatisk over rulletekst og spill neste episode',
+			'settings.forceSkipMarkerFallback' => 'Tving reservemarkører',
+			'settings.forceSkipMarkerFallbackDescription' => 'Bruk kapitteltittel-mønstre for hoppmarkører selv når Plex leverer innebygde markører',
 			'settings.autoSkipDelay' => 'Forsinkelse for automatisk hopp',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Vent ${seconds} sekunder før automatisk hopping',
 			'settings.introPattern' => 'Intromarkørmønster',
@@ -2220,10 +2224,10 @@ extension on TranslationsNb {
 			'profiles.setPin' => 'Sett PIN',
 			'profiles.connectionsLabel' => 'Tilkoblinger',
 			'profiles.add' => 'Legg til',
-			'profiles.deleteProfileButton' => 'Slett profil',
-			'profiles.noConnectionsHint' => 'Ingen tilkoblinger — legg til én for å bruke denne profilen.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.deleteProfileButton' => 'Slett profil',
+			'profiles.noConnectionsHint' => 'Ingen tilkoblinger — legg til én for å bruke denne profilen.',
 			'profiles.plexHomeAccount' => 'Plex Home-konto',
 			'profiles.connectionDefault' => 'Standard',
 			'profiles.makeDefault' => 'Gjør til standard',
@@ -2734,10 +2738,10 @@ extension on TranslationsNb {
 			'trakt.connectedAs' => ({required Object username}) => 'Tilkoblet som @${username}',
 			'trakt.disconnectConfirm' => 'Koble fra Trakt-konto?',
 			'trakt.disconnectConfirmBody' => 'Plezy slutter å sende avspillingshendelser til Trakt. Du kan koble til igjen når som helst.',
-			'trakt.scrobble' => 'Sanntids-scrobbling',
-			'trakt.scrobbleDescription' => 'Send avspillings-, pause- og stopphendelser til Trakt under avspilling.',
 			_ => null,
 		} ?? switch (path) {
+			'trakt.scrobble' => 'Sanntids-scrobbling',
+			'trakt.scrobbleDescription' => 'Send avspillings-, pause- og stopphendelser til Trakt under avspilling.',
 			'trakt.watchedSync' => 'Synkroniser sett-status',
 			'trakt.watchedSyncDescription' => 'Når du markerer noe som sett i Plezy, markeres det også på Trakt.',
 			'trackers.title' => 'Trackere',

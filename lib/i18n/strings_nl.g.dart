@@ -328,6 +328,8 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get autoSkipIntroDescription => 'Intro-markeringen na enkele seconden automatisch overslaan';
 	@override String get autoSkipCredits => 'Credits Automatisch Overslaan';
 	@override String get autoSkipCreditsDescription => 'Credits automatisch overslaan en volgende aflevering afspelen';
+	@override String get forceSkipMarkerFallback => 'Fallbackmarkeringen afdwingen';
+	@override String get forceSkipMarkerFallbackDescription => 'Gebruik hoofdstuktitelpatronen voor overslaanmarkeringen, zelfs wanneer Plex native markeringen biedt';
 	@override String get autoSkipDelay => 'Vertraging Automatisch Overslaan';
 	@override String autoSkipDelayDescription({required Object seconds}) => '${seconds} seconden wachten voor automatisch overslaan';
 	@override String get introPattern => 'Intromarkeringspatroon';
@@ -1901,6 +1903,8 @@ extension on TranslationsNl {
 			'settings.autoSkipIntroDescription' => 'Intro-markeringen na enkele seconden automatisch overslaan',
 			'settings.autoSkipCredits' => 'Credits Automatisch Overslaan',
 			'settings.autoSkipCreditsDescription' => 'Credits automatisch overslaan en volgende aflevering afspelen',
+			'settings.forceSkipMarkerFallback' => 'Fallbackmarkeringen afdwingen',
+			'settings.forceSkipMarkerFallbackDescription' => 'Gebruik hoofdstuktitelpatronen voor overslaanmarkeringen, zelfs wanneer Plex native markeringen biedt',
 			'settings.autoSkipDelay' => 'Vertraging Automatisch Overslaan',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '${seconds} seconden wachten voor automatisch overslaan',
 			'settings.introPattern' => 'Intromarkeringspatroon',
@@ -2220,10 +2224,10 @@ extension on TranslationsNl {
 			'profiles.setPin' => 'PIN instellen',
 			'profiles.connectionsLabel' => 'Verbindingen',
 			'profiles.add' => 'Toevoegen',
-			'profiles.deleteProfileButton' => 'Profiel verwijderen',
-			'profiles.noConnectionsHint' => 'Geen verbindingen — voeg er één toe om dit profiel te gebruiken.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.deleteProfileButton' => 'Profiel verwijderen',
+			'profiles.noConnectionsHint' => 'Geen verbindingen — voeg er één toe om dit profiel te gebruiken.',
 			'profiles.plexHomeAccount' => 'Plex Home-account',
 			'profiles.connectionDefault' => 'Standaard',
 			'profiles.makeDefault' => 'Als standaard instellen',
@@ -2734,10 +2738,10 @@ extension on TranslationsNl {
 			'trakt.connectedAs' => ({required Object username}) => 'Verbonden als @${username}',
 			'trakt.disconnectConfirm' => 'Trakt-account loskoppelen?',
 			'trakt.disconnectConfirmBody' => 'Plezy stopt met het versturen van afspeelgebeurtenissen naar Trakt. Je kunt op elk moment opnieuw verbinden.',
-			'trakt.scrobble' => 'Realtime scrobbling',
-			'trakt.scrobbleDescription' => 'Verstuur play-, pauze- en stopgebeurtenissen tijdens afspelen naar Trakt.',
 			_ => null,
 		} ?? switch (path) {
+			'trakt.scrobble' => 'Realtime scrobbling',
+			'trakt.scrobbleDescription' => 'Verstuur play-, pauze- en stopgebeurtenissen tijdens afspelen naar Trakt.',
 			'trakt.watchedSync' => 'Bekeken-status synchroniseren',
 			'trakt.watchedSyncDescription' => 'Wanneer je items als bekeken markeert in Plezy, worden ze ook op Trakt gemarkeerd.',
 			'trackers.title' => 'Trackers',

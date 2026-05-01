@@ -1135,12 +1135,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       final settings = await SettingsService.getInstance();
       final introPattern = settings.read(SettingsService.introPattern);
       final creditsPattern = settings.read(SettingsService.creditsPattern);
+      final forceChapterFallback = settings.read(SettingsService.forceSkipMarkerFallback);
       // Backend-aware: Plex hits /library/metadata?includeChapters=1; Jellyfin
       // pulls Chapters from /Users/{userId}/Items/{id}.
       final extras = await client.fetchPlaybackExtras(
         widget.metadata.id,
         introPattern: introPattern,
         creditsPattern: creditsPattern,
+        forceChapterFallback: forceChapterFallback,
         forceRefresh: forceRefresh,
       );
       appLogger.d('_loadPlaybackExtras: got ${extras.chapters.length} chapters');
@@ -1156,6 +1158,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
           widget.metadata.id,
           introPattern: settings.read(SettingsService.introPattern),
           creditsPattern: settings.read(SettingsService.creditsPattern),
+          forceChapterFallback: settings.read(SettingsService.forceSkipMarkerFallback),
         );
         if (extras != null) {
           appLogger.d('_loadPlaybackExtras: loaded ${extras.chapters.length} chapters from cache');
@@ -1184,6 +1187,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         itemId: widget.metadata.id,
         introPattern: settings.read(SettingsService.introPattern),
         creditsPattern: settings.read(SettingsService.creditsPattern),
+        forceChapterFallback: settings.read(SettingsService.forceSkipMarkerFallback),
       );
       if (extras != null) _applyPlaybackExtras(extras);
     } catch (e) {

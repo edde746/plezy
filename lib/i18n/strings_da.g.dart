@@ -328,6 +328,8 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get autoSkipIntroDescription => 'Spring automatisk intromarkører over efter få sekunder';
 	@override String get autoSkipCredits => 'Auto-spring rulletekster';
 	@override String get autoSkipCreditsDescription => 'Spring automatisk rulletekster over og afspil næste episode';
+	@override String get forceSkipMarkerFallback => 'Tving reservemarkører';
+	@override String get forceSkipMarkerFallbackDescription => 'Brug kapitel-titelmønstre til springmarkører, selv når Plex leverer indbyggede markører';
 	@override String get autoSkipDelay => 'Auto-spring forsinkelse';
 	@override String autoSkipDelayDescription({required Object seconds}) => 'Vent ${seconds} sekunder før automatisk spring';
 	@override String get introPattern => 'Intromarkørmønster';
@@ -1901,6 +1903,8 @@ extension on TranslationsDa {
 			'settings.autoSkipIntroDescription' => 'Spring automatisk intromarkører over efter få sekunder',
 			'settings.autoSkipCredits' => 'Auto-spring rulletekster',
 			'settings.autoSkipCreditsDescription' => 'Spring automatisk rulletekster over og afspil næste episode',
+			'settings.forceSkipMarkerFallback' => 'Tving reservemarkører',
+			'settings.forceSkipMarkerFallbackDescription' => 'Brug kapitel-titelmønstre til springmarkører, selv når Plex leverer indbyggede markører',
 			'settings.autoSkipDelay' => 'Auto-spring forsinkelse',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Vent ${seconds} sekunder før automatisk spring',
 			'settings.introPattern' => 'Intromarkørmønster',
@@ -2220,10 +2224,10 @@ extension on TranslationsDa {
 			'profiles.setPin' => 'Angiv PIN',
 			'profiles.connectionsLabel' => 'Forbindelser',
 			'profiles.add' => 'Tilføj',
-			'profiles.deleteProfileButton' => 'Slet profil',
-			'profiles.noConnectionsHint' => 'Ingen forbindelser — tilføj en for at bruge denne profil.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.deleteProfileButton' => 'Slet profil',
+			'profiles.noConnectionsHint' => 'Ingen forbindelser — tilføj en for at bruge denne profil.',
 			'profiles.plexHomeAccount' => 'Plex Home-konto',
 			'profiles.connectionDefault' => 'Standard',
 			'profiles.makeDefault' => 'Gør til standard',
@@ -2734,10 +2738,10 @@ extension on TranslationsDa {
 			'trakt.connectedAs' => ({required Object username}) => 'Forbundet som @${username}',
 			'trakt.disconnectConfirm' => 'Frakobl Trakt-konto?',
 			'trakt.disconnectConfirmBody' => 'Plezy stopper med at sende afspilningsbegivenheder til Trakt. Du kan genoprette forbindelse når som helst.',
-			'trakt.scrobble' => 'Realtids-scrobbling',
-			'trakt.scrobbleDescription' => 'Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.',
 			_ => null,
 		} ?? switch (path) {
+			'trakt.scrobble' => 'Realtids-scrobbling',
+			'trakt.scrobbleDescription' => 'Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.',
 			'trakt.watchedSync' => 'Synkroniser sét-status',
 			'trakt.watchedSyncDescription' => 'Når du markerer ting som sét i Plezy, markeres de også på Trakt.',
 			'trackers.title' => 'Trackere',

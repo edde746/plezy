@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "Автоматически пропускать маркеры вступления через несколько секунд",
     "autoSkipCredits": "Автопропуск титров",
     "autoSkipCreditsDescription": "Автоматически пропускать титры и воспроизводить следующий эпизод",
+    "forceSkipMarkerFallback": "Принудительные резервные маркеры",
+    "forceSkipMarkerFallbackDescription": "Использовать шаблоны заголовков глав для маркеров пропуска, даже если Plex предоставляет встроенные маркеры",
     "autoSkipDelay": "Задержка автопропуска",
     "autoSkipDelayDescription": "Подождать ${seconds} секунд перед автопропуском",
     "introPattern": "Шаблон маркера вступления",

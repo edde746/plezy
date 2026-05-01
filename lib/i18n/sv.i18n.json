@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "Hoppa automatiskt över intro-markörer efter några sekunder",
     "autoSkipCredits": "Hoppa Över Credits Automatiskt",
     "autoSkipCreditsDescription": "Hoppa automatiskt över credits och spela nästa avsnitt",
+    "forceSkipMarkerFallback": "Tvinga reservmarkörer",
+    "forceSkipMarkerFallbackDescription": "Använd kapiteltitelmönster för hoppmarkörer även när Plex tillhandahåller inbyggda markörer",
     "autoSkipDelay": "Fördröjning Auto Hoppa Över",
     "autoSkipDelayDescription": "Vänta ${seconds} sekunder innan automatisk överhoppning",
     "introPattern": "Intromarkörsmönster",

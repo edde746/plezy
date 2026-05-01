@@ -201,6 +201,8 @@
     "autoSkipIntroDescription": "Intro-Marker nach wenigen Sekunden automatisch überspringen",
     "autoSkipCredits": "Abspann automatisch überspringen",
     "autoSkipCreditsDescription": "Abspann automatisch überspringen und nächste Episode abspielen",
+    "forceSkipMarkerFallback": "Fallback-Markierungen erzwingen",
+    "forceSkipMarkerFallbackDescription": "Kapitel-Titelmuster für Überspring-Markierungen verwenden, auch wenn Plex native Markierungen bereitstellt",
     "autoSkipDelay": "Verzögerung für automatisches Überspringen",
     "autoSkipDelayDescription": "${seconds} Sekunden vor dem automatischen Überspringen warten",
     "introPattern": "Intro-Markierungsmuster",
