@@ -88,7 +88,7 @@ Widget plexVideoControlsBuilder(
   Function(SubtitleTrack)? onSecondarySubtitleTrackChanged,
   Function(Duration position)? onSeekCompleted,
   VoidCallback? onBack,
-  VoidCallback? onReachedEnd,
+  void Function({required bool skipAutoPlayCountdown})? onReachedEnd,
   bool canControl = true,
   ValueNotifier<bool>? hasFirstFrame,
   FocusNode? playNextFocusNode,
@@ -219,9 +219,9 @@ class PlexVideoControls extends StatefulWidget {
   final VoidCallback? onBack;
 
   /// Called when the video has effectively reached the end (e.g. credits extend
-  /// to EOF and can't be seeked past). Parent should route this into its
-  /// normal completion flow so the auto-play-next setting is honored.
-  final VoidCallback? onReachedEnd;
+  /// to EOF and can't be seeked past). Parent should route this into its normal
+  /// completion flow so the auto-play-next setting is honored.
+  final void Function({required bool skipAutoPlayCountdown})? onReachedEnd;
 
   /// Whether the user can control playback (false in host-only mode for non-host).
   final bool canControl;
@@ -582,7 +582,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     });
   }
 
-  Future<void> _skipMarker() async {
+  Future<void> _skipMarker({bool skipAutoPlayCountdown = false}) async {
     if (_currentMarker == null) return;
 
     final marker = _currentMarker!;
@@ -591,10 +591,14 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     final isAtEnd = duration > Duration.zero && (duration - endTime).inMilliseconds <= 1000;
 
     if (marker.isCredits && isAtEnd) {
-      // Seeking to EOF is unreliable due to position stream throttling,
-      // so pause and defer to the parent's completion flow.
-      await widget.player.pause();
-      widget.onReachedEnd?.call();
+      if (!skipAutoPlayCountdown && widget.onNext != null) {
+        widget.onNext!.call();
+      } else {
+        // Seeking to EOF is unreliable due to position stream throttling,
+        // so pause and defer to the parent's completion flow.
+        await widget.player.pause();
+        widget.onReachedEnd?.call(skipAutoPlayCountdown: skipAutoPlayCountdown);
+      }
     } else {
       await _seekToPosition(endTime);
     }
@@ -632,7 +636,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
       if (timer.tick >= totalTicks) {
         timer.cancel();
-        _performAutoSkip();
+        _performAutoSkip(skipAutoPlayCountdown: true);
       }
     });
   }
@@ -666,9 +670,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   /// Perform the appropriate skip action based on marker type and next episode availability
-  void _performAutoSkip() {
+  void _performAutoSkip({bool skipAutoPlayCountdown = false}) {
     if (_currentMarker == null) return;
-    unawaited(_skipMarker());
+    unawaited(_skipMarker(skipAutoPlayCountdown: skipAutoPlayCountdown));
   }
 
   /// Check if auto-skip should be active for the current marker

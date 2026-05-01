@@ -2528,7 +2528,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     }
   }
 
-  void _onVideoCompleted(bool completed) async {
+  void _onVideoCompleted(bool completed, {bool skipAutoPlayCountdown = false}) async {
     // Live TV streams are continuous — ignore spurious EOF events caused by
     // inter-segment gaps in the chunked MKV transcode stream.
     if (widget.isLive) return;
@@ -2561,6 +2561,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       final settings = await SettingsService.getInstance();
       final autoPlayEnabled = settings.read(SettingsService.autoPlayNextEpisode);
+
+      if (skipAutoPlayCountdown && autoPlayEnabled) {
+        unawaited(_playNext());
+        return;
+      }
 
       if (!mounted) return;
       setState(() {
@@ -3787,7 +3792,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
                           }
                         },
                         onBack: _handleBackButton,
-                        onReachedEnd: () => _onVideoCompleted(true),
+                        onReachedEnd: ({skipAutoPlayCountdown = false}) =>
+                            _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown),
                         canControl: canControl,
                         hasFirstFrame: _hasFirstFrame,
                         playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
