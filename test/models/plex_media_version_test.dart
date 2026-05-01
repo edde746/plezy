@@ -118,7 +118,7 @@ void main() {
       for (final resolution in ['8k', '8K']) {
         expect(displayLabel(resolution), startsWith('8K '));
       }
-      expect(displayLabel('sd'), startsWith('sd '));
+      expect(displayLabel('sd'), startsWith('SD '));
     });
   });
 }
