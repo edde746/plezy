@@ -30,7 +30,7 @@ import '../widgets/sleep_timer_content.dart';
 import '../../../i18n/strings.g.dart';
 import 'base_video_control_sheet.dart';
 
-enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice, shader }
+enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice, shader, dvConversion }
 
 /// Reusable menu item widget for settings sheet
 class _SettingsMenuItem extends StatelessWidget {
@@ -137,6 +137,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   bool _autoPlayNextEpisode = true;
   bool _audioPassthrough = false;
   bool _audioNormalization = false;
+  String _dvConversionMode = 'auto';
 
   @override
   void initState() {
@@ -148,6 +149,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   Future<void> _loadSettings() async {
     final settings = await SettingsService.getInstance();
+    final dvConversionMode = kDebugMode && Platform.isAndroid && widget.player.playerType == 'exoplayer'
+        ? await widget.player.getProperty('dv-conversion-mode')
+        : null;
     if (!mounted) return;
     setState(() {
       _enableHDR = settings.read(SettingsService.enableHDR);
@@ -155,6 +159,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       _autoPlayNextEpisode = settings.read(SettingsService.autoPlayNextEpisode);
       _audioPassthrough = settings.read(SettingsService.audioPassthrough);
       _audioNormalization = settings.read(SettingsService.audioNormalization);
+      _dvConversionMode = _normalizeDvConversionMode(dvConversionMode);
     });
   }
 
@@ -210,6 +215,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       _audioNormalization = newValue;
     });
     await widget.player.setProperty('af', newValue ? 'loudnorm=I=-14:TP=-3:LRA=4' : '');
+  }
+
+  Future<void> _setDebugDvConversionMode(String mode) async {
+    await widget.player.setProperty('dv-conversion-mode', mode);
+    if (!mounted) return;
+    setState(() {
+      _dvConversionMode = mode;
+    });
+    OverlaySheetController.of(context).close();
   }
 
   void _navigateTo(_SettingsView view) {
@@ -297,6 +311,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return t.videoSettings.audioOutput;
       case _SettingsView.shader:
         return t.shaders.title;
+      case _SettingsView.dvConversion:
+        return 'DV Conversion Mode';
     }
   }
 
@@ -316,7 +332,27 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Symbols.speaker_rounded;
       case _SettingsView.shader:
         return Symbols.auto_fix_high_rounded;
+      case _SettingsView.dvConversion:
+        return Symbols.hdr_strong_rounded;
     }
+  }
+
+  String _normalizeDvConversionMode(String? mode) {
+    return switch (mode?.trim().toLowerCase()) {
+      'disabled' || 'native' => 'disabled',
+      'dv81' || 'p8' || 'p7_to_p8' || 'p7-to-p8' => 'dv81',
+      'hevc' || 'hevc_strip' || 'p7_to_hevc' || 'p7-to-hevc' => 'hevc_strip',
+      _ => 'auto',
+    };
+  }
+
+  String _formatDvConversionMode(String mode) {
+    return switch (_normalizeDvConversionMode(mode)) {
+      'disabled' => 'Native / Disabled',
+      'dv81' => 'P7 → P8.1',
+      'hevc_strip' => 'P7 → HEVC',
+      _ => 'Auto',
+    };
   }
 
   String _formatSleepTimer(SleepTimerService sleepTimer) {
@@ -512,6 +548,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           onTap: _togglePerformanceOverlay,
         ),
 
+        if (kDebugMode && Platform.isAndroid && widget.player.playerType == 'exoplayer')
+          _SettingsMenuItem(
+            icon: Symbols.hdr_strong_rounded,
+            title: 'DV Conversion Mode',
+            valueText: _formatDvConversionMode(_dvConversionMode),
+            isHighlighted: _dvConversionMode != 'auto',
+            onTap: () => _navigateTo(_SettingsView.dvConversion),
+          ),
+
         // Debug: Trigger MPV Fallback (Android ExoPlayer only)
         if (kDebugMode && Platform.isAndroid && widget.player.playerType == 'exoplayer')
           FocusableListTile(
@@ -534,6 +579,28 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                 player.debugSimulateServer500();
               }
             },
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDvConversionView() {
+    const modes = [
+      (value: 'auto', title: 'Auto', subtitle: 'Use device capability detection and normal fallback behavior'),
+      (value: 'disabled', title: 'Native / Disabled', subtitle: 'Force native DV7 and suppress DV conversion retry'),
+      (value: 'dv81', title: 'P7 → P8.1', subtitle: 'Force inline RPU conversion to Dolby Vision profile 8.1'),
+      (value: 'hevc_strip', title: 'P7 → HEVC', subtitle: 'Strip Dolby Vision RPU/EL layers and present plain HEVC'),
+    ];
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return ListView(
+      children: [
+        for (final mode in modes)
+          FocusableListTile(
+            title: Text(mode.title, style: TextStyle(color: _dvConversionMode == mode.value ? primary : null)),
+            subtitle: Text(mode.subtitle, style: TextStyle(color: tokens(context).textMuted, fontSize: 12)),
+            trailing: _dvConversionMode == mode.value ? AppIcon(Symbols.check_rounded, fill: 1, color: primary) : null,
+            onTap: () => _setDebugDvConversionMode(mode.value),
           ),
       ],
     );
@@ -854,6 +921,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             return _buildAudioDeviceView();
           case _SettingsView.shader:
             return _buildShaderView();
+          case _SettingsView.dvConversion:
+            return _buildDvConversionView();
         }
       }(),
     );

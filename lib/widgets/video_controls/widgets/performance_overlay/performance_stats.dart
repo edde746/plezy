@@ -56,6 +56,11 @@ class PerformanceStats {
   // DV conversion
   final bool dvConversionActive;
   final String dvConversionMode; // "DV81", "HEVC_STRIP", "DISABLED"
+  final int? dvConvertedRpus;
+  final int? dvRpuConversionFailures;
+  final int? dvRpuOutputTooSmall;
+  final int? dvAvgRpuConversionUs;
+  final int? dvAvgSampleProcessingUs;
 
   // App metrics
   final int? appMemoryBytes;
@@ -98,6 +103,11 @@ class PerformanceStats {
     this.cacheDuration,
     this.dvConversionActive = false,
     this.dvConversionMode = '',
+    this.dvConvertedRpus,
+    this.dvRpuConversionFailures,
+    this.dvRpuOutputTooSmall,
+    this.dvAvgRpuConversionUs,
+    this.dvAvgSampleProcessingUs,
     this.appMemoryBytes,
     this.uiFps,
   });
@@ -140,6 +150,11 @@ class PerformanceStats {
       cacheDuration = null,
       dvConversionActive = false,
       dvConversionMode = '',
+      dvConvertedRpus = null,
+      dvRpuConversionFailures = null,
+      dvRpuOutputTooSmall = null,
+      dvAvgRpuConversionUs = null,
+      dvAvgSampleProcessingUs = null,
       appMemoryBytes = null,
       uiFps = null;
 
@@ -254,6 +269,30 @@ class PerformanceStats {
 
   /// Format tunneled playback status with reason.
   String get tunneledPlaybackFormatted => tunnelingStatus ?? (tunneledPlayback ? 'Active' : 'Off');
+
+  /// Format DV conversion mode for display.
+  String get dvConversionFormatted => dvConversionMode == 'DV81' ? '7→8.1' : '7→HEVC';
+
+  /// Format DV RPU conversion totals.
+  String get dvRpuCountFormatted {
+    final converted = dvConvertedRpus ?? 0;
+    final failures = dvRpuConversionFailures ?? 0;
+    return failures > 0 ? '$converted ($failures failed)' : converted.toString();
+  }
+
+  /// Format DV conversion timing in microseconds.
+  String get dvAvgRpuConversionFormatted {
+    final us = dvAvgRpuConversionUs;
+    if (us == null || us <= 0) return 'N/A';
+    return '${us}us';
+  }
+
+  /// Format DV sample processing timing in microseconds.
+  String get dvAvgSampleProcessingFormatted {
+    final us = dvAvgSampleProcessingUs;
+    if (us == null || us <= 0) return 'N/A';
+    return '${us}us';
+  }
 
   /// Format app memory usage in MB.
   String get appMemoryFormatted {

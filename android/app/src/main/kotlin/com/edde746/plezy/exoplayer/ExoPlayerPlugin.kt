@@ -148,6 +148,7 @@ class ExoPlayerPlugin :
       }
       "setSubtitleStyle" -> handleSetSubtitleStyle(call, result)
       "setBoxFitMode" -> handleSetBoxFitMode(call, result)
+      "setDvConversionMode" -> handleSetDvConversionMode(call, result)
       "observeProperty" -> handleObserveProperty(call, result)
       "setMpvProperty" -> handleSetMpvProperty(call, result)
       "setLogLevel" -> {
@@ -543,6 +544,26 @@ class ExoPlayerPlugin :
       playerCore?.setBoxFitMode(mode)
       result.success(null)
     } ?: result.success(null)
+  }
+
+  private fun handleSetDvConversionMode(call: MethodCall, result: MethodChannel.Result) {
+    val mode = call.argument<String>("mode")
+    if (mode == null) {
+      result.error("INVALID_ARGS", "Missing 'mode'", null)
+      return
+    }
+    if (usingMpvFallback) {
+      result.success(false)
+      return
+    }
+    activity?.runOnUiThread {
+      val handled = playerCore?.setDebugDvConversionMode(mode) == true
+      if (handled) {
+        result.success(true)
+      } else {
+        result.error("INVALID_ARGS", "Invalid DV conversion mode: $mode", null)
+      }
+    } ?: result.error("NO_ACTIVITY", "Activity not available", null)
   }
 
   private fun handleSetMpvProperty(call: MethodCall, result: MethodChannel.Result) {

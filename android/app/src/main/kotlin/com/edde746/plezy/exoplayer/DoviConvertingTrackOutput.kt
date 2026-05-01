@@ -37,7 +37,7 @@ class DoviConvertingTrackOutput(
     private const val NAL_TYPE_UNSPEC63 = 63
     private const val LIBDOVI_MODE_TO_81 = 2
     private const val INITIAL_BUFFER_SIZE = 256 * 1024
-    private const val READ_CHUNK = 64 * 1024
+    private const val MAX_CONVERTED_RPU_SIZE = 16 * 1024
     private val ANNEX_B_START_CODE = byteArrayOf(0, 0, 0, 1)
   }
 
@@ -47,18 +47,28 @@ class DoviConvertingTrackOutput(
     private set
   var convertedRpuCount = 0L
     private set
+  var rpuConversionFailureCount = 0L
+    private set
+  var rpuOutputTooSmallCount = 0L
+    private set
+  val averageRpuConversionTimeUs: Long
+    get() = if (rpuConversionCallCount > 0) totalRpuConversionTimeUs / rpuConversionCallCount else 0L
+  val averageSampleProcessingTimeUs: Long
+    get() = if (sampleCount > 0) totalSampleProcessingTimeUs / sampleCount else 0L
 
   // Reusable buffers — grown as needed, never shrunk
   private var sampleBuf = ByteArray(INITIAL_BUFFER_SIZE)
   private var sampleLen = 0
   private var outputBuf = ByteArray(INITIAL_BUFFER_SIZE)
   private var outputLen = 0
-  private var readBuf = ByteArray(READ_CHUNK)
   private val outputParsable = ParsableByteArray()
   private var buffering = false
 
   // Sample counter for periodic logging
   private var sampleCount = 0L
+  private var rpuConversionCallCount = 0L
+  private var totalRpuConversionTimeUs = 0L
+  private var totalSampleProcessingTimeUs = 0L
 
   override fun format(format: Format) {
     if (!conversionActive) {
@@ -133,11 +143,9 @@ class DoviConvertingTrackOutput(
     }
 
     buffering = true
-    if (readBuf.size < length) readBuf = ByteArray(length)
-    val bytesRead = input.read(readBuf, 0, length)
+    ensureSampleCapacity(sampleLen + length)
+    val bytesRead = input.read(sampleBuf, sampleLen, length)
     if (bytesRead > 0) {
-      ensureSampleCapacity(sampleLen + bytesRead)
-      System.arraycopy(readBuf, 0, sampleBuf, sampleLen, bytesRead)
       sampleLen += bytesRead
     }
     return bytesRead
@@ -173,6 +181,7 @@ class DoviConvertingTrackOutput(
 
     val outLen: Int
     val outBuf: ByteArray
+    val processStartNs = System.nanoTime()
     val success = try {
       processNalUnits(srcLen)
       true
@@ -186,6 +195,9 @@ class DoviConvertingTrackOutput(
     } else {
       outLen = srcLen
       outBuf = sampleBuf
+    }
+    if (success) {
+      recordSampleProcessing((System.nanoTime() - processStartNs) / 1_000L)
     }
 
     // Skip empty samples (all NALs were DV layers) — don't confuse the decoder
@@ -299,17 +311,12 @@ class DoviConvertingTrackOutput(
           outputLen += nalLen
           kept++
         } else if (action == NalAction.CONVERT) {
-          val converted = DoviBridge.convertRpuNalu(
-            sampleBuf.copyOfRange(nalStart, nalStart + nalLen),
-            LIBDOVI_MODE_TO_81
-          )
-          if (converted != null) {
-            normalizeLayerId(converted, 0)
-            ensureOutputCapacity(outputLen + 4 + converted.size)
+          val convertedLen = convertRpuIntoOutput(nalStart, nalLen, outputLen + 4)
+          if (convertedLen >= 0) {
             System.arraycopy(ANNEX_B_START_CODE, 0, outputBuf, outputLen, 4)
             outputLen += 4
-            System.arraycopy(converted, 0, outputBuf, outputLen, converted.size)
-            outputLen += converted.size
+            normalizeLayerId(outputBuf, outputLen)
+            outputLen += convertedLen
             convertedRpuCount++
             kept++
           } else {
@@ -372,17 +379,12 @@ class DoviConvertingTrackOutput(
         outputLen += nalLen
         kept++
       } else if (action == NalAction.CONVERT) {
-        val converted = DoviBridge.convertRpuNalu(
-          sampleBuf.copyOfRange(nalStart, nalStart + nalLen),
-          LIBDOVI_MODE_TO_81
-        )
-        if (converted != null) {
-          normalizeLayerId(converted, 0)
-          ensureOutputCapacity(outputLen + 4 + converted.size)
-          writeInt32BE(outputBuf, outputLen, converted.size)
+        val convertedLen = convertRpuIntoOutput(nalStart, nalLen, outputLen + 4)
+        if (convertedLen >= 0) {
+          writeInt32BE(outputBuf, outputLen, convertedLen)
           outputLen += 4
-          System.arraycopy(converted, 0, outputBuf, outputLen, converted.size)
-          outputLen += converted.size
+          normalizeLayerId(outputBuf, outputLen)
+          outputLen += convertedLen
           convertedRpuCount++
           kept++
         } else {
@@ -408,6 +410,53 @@ class DoviConvertingTrackOutput(
   }
 
   private enum class NalAction { KEEP, STRIP, CONVERT }
+
+  private fun convertRpuIntoOutput(nalStart: Int, nalLen: Int, outputOffset: Int): Int {
+    ensureOutputCapacity(outputOffset + MAX_CONVERTED_RPU_SIZE)
+
+    var retriedAfterResize = false
+    while (true) {
+      val startNs = System.nanoTime()
+      val written = DoviBridge.convertRpuNalu(
+        payload = sampleBuf,
+        payloadOffset = nalStart,
+        payloadLength = nalLen,
+        output = outputBuf,
+        outputOffset = outputOffset,
+        outputCapacity = outputBuf.size,
+        mode = LIBDOVI_MODE_TO_81
+      )
+      totalRpuConversionTimeUs += (System.nanoTime() - startNs) / 1_000L
+      rpuConversionCallCount++
+
+      if (written >= 0) return written
+
+      if (written == DoviBridge.DESTINATION_TOO_SMALL) {
+        rpuOutputTooSmallCount++
+        if (!retriedAfterResize) {
+          val doubled = if (outputBuf.size <= Int.MAX_VALUE / 2) outputBuf.size * 2 else Int.MAX_VALUE
+          ensureOutputCapacity(maxOf(doubled, outputOffset + MAX_CONVERTED_RPU_SIZE))
+          retriedAfterResize = true
+          continue
+        }
+      }
+
+      rpuConversionFailureCount++
+      return written
+    }
+  }
+
+  private fun recordSampleProcessing(elapsedUs: Long) {
+    totalSampleProcessingTimeUs += elapsedUs
+    if (sampleCount <= 3 || (sampleCount > 0 && sampleCount % 500 == 0L)) {
+      Log.d(
+        TAG,
+        "Perf: avgSample=${averageSampleProcessingTimeUs}us, " +
+          "avgRpu=${averageRpuConversionTimeUs}us, converted=$convertedRpuCount, " +
+          "rpuFailures=$rpuConversionFailureCount, rpuTooSmall=$rpuOutputTooSmallCount"
+      )
+    }
+  }
 
   /** Classify a NAL at sampleBuf[offset..offset+len) without copying. */
   private fun processNalInline(offset: Int, len: Int): NalAction {

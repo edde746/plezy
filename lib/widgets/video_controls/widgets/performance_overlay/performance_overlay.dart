@@ -58,7 +58,7 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
         if (!isMpv) _metric('Tunneling', _stats.tunneledPlaybackFormatted),
         if (_stats.aspectName != null && _stats.aspectName!.isNotEmpty) _metric('Aspect', _stats.aspectName!),
         if (_stats.rotate != null && _stats.rotate != 0) _metric('Rotation', _stats.rotateFormatted),
-        if (_stats.dvConversionActive) _metric('DV', _stats.dvConversionMode == 'DV81' ? '7→8.1' : '7→HEVC'),
+        if (_stats.dvConversionActive) _metric('DV', _stats.dvConversionFormatted),
       ]),
       _buildSection(Symbols.volume_up_rounded, 'Audio', [
         if (_stats.audioCodec != null) _metric('Codec', _stats.audioCodec!),
@@ -81,6 +81,9 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
         if (isMpv) _metric('Display FPS', _stats.displayFpsFormatted),
         if (isMpv) _metric('A/V Sync', _stats.avsyncFormatted),
         _metric('Dropped', _stats.droppedFramesFormatted),
+        if (_stats.dvConversionActive) _metric('DV RPUs', _stats.dvRpuCountFormatted),
+        if (_stats.dvConversionActive) _metric('DV RPU Avg', _stats.dvAvgRpuConversionFormatted),
+        if (_stats.dvConversionActive) _metric('DV Sample Avg', _stats.dvAvgSampleProcessingFormatted),
       ]),
       if (_stats.hasHdrMetadata)
         _buildSection(Symbols.hdr_on_rounded, 'HDR', [

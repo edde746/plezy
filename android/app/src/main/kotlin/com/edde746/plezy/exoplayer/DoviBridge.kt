@@ -10,6 +10,9 @@ enum class DvConversionMode { DISABLED, DV81, HEVC_STRIP }
 object DoviBridge {
   private const val TAG = "DoviBridge"
 
+  const val CONVERT_FAILED = -1
+  const val DESTINATION_TOO_SMALL = -2
+
   private val nativeLoaded: Boolean by lazy {
     try {
       System.loadLibrary("dovi_bridge")
@@ -20,8 +23,11 @@ object DoviBridge {
     }
   }
 
-  fun isAvailable(): Boolean = nativeLoaded &&
-    runCatching { nativeIsConversionPathReady() }.getOrDefault(false)
+  private val conversionPathReady: Boolean by lazy {
+    nativeLoaded && runCatching { nativeIsConversionPathReady() }.getOrDefault(false)
+  }
+
+  fun isAvailable(): Boolean = conversionPathReady
 
   private fun deviceSupportsDvProfile(profile: Int, minApi: Int = 0): Boolean {
     try {
@@ -63,11 +69,21 @@ object DoviBridge {
     else -> DvConversionMode.HEVC_STRIP
   }
 
-  fun convertRpuNalu(payload: ByteArray, mode: Int = 2): ByteArray? {
-    if (!isAvailable() || payload.isEmpty()) return null
-    return runCatching { nativeConvertDv7RpuToDv81(payload, mode) }
+  fun convertRpuNalu(
+    payload: ByteArray,
+    payloadOffset: Int,
+    payloadLength: Int,
+    output: ByteArray,
+    outputOffset: Int,
+    outputCapacity: Int,
+    mode: Int = 2
+  ): Int {
+    if (!conversionPathReady || payloadLength <= 0) return CONVERT_FAILED
+    return runCatching {
+      nativeConvertDv7RpuToDv81(payload, payloadOffset, payloadLength, output, outputOffset, outputCapacity, mode)
+    }
       .onFailure { Log.w(TAG, "RPU conversion failed: ${it.message}") }
-      .getOrNull()
+      .getOrDefault(CONVERT_FAILED)
   }
 
   fun getVersion(): String? {
@@ -76,7 +92,15 @@ object DoviBridge {
   }
 
   @JvmStatic
-  private external fun nativeConvertDv7RpuToDv81(payload: ByteArray, mode: Int): ByteArray?
+  private external fun nativeConvertDv7RpuToDv81(
+    payload: ByteArray,
+    payloadOffset: Int,
+    payloadLength: Int,
+    output: ByteArray,
+    outputOffset: Int,
+    outputCapacity: Int,
+    mode: Int
+  ): Int
 
   @JvmStatic
   private external fun nativeIsConversionPathReady(): Boolean

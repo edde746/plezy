@@ -248,11 +248,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
   // DV conversion state
   private var dvMode: DvConversionMode = DvConversionMode.DISABLED
+  private var debugDvModeOverride: DvConversionMode? = null
   private var dv7RetryAttempted = false
 
   @Volatile private var activeDoviMkvWrapper: DoviExtractorWrapper? = null
 
   @Volatile private var activeDoviMp4Wrapper: DoviExtractorWrapper? = null
+
+  private fun getConfiguredDvMode(): DvConversionMode = debugDvModeOverride ?: DoviBridge.getConversionMode()
 
   fun initialize(bufferSizeBytes: Int? = null, tunnelingEnabled: Boolean = true): Boolean {
     if (isInitialized) {
@@ -261,7 +264,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     tunnelingUserEnabled = tunnelingEnabled
-    this.dvMode = DoviBridge.getConversionMode()
+    this.dvMode = getConfiguredDvMode()
     Log.i(
       TAG,
       "DV conversion: mode=$dvMode, bridge=${DoviBridge.isAvailable()}, " +
@@ -824,6 +827,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
    */
   private fun retryWithDvConversion(reason: String): Boolean {
     if (dv7RetryAttempted) return false
+    if (debugDvModeOverride == DvConversionMode.DISABLED) return false
     if (dvMode != DvConversionMode.DISABLED) return false
     if (!DoviBridge.isAvailable()) return false
     val uri = currentMediaUri ?: return false
@@ -1420,6 +1424,57 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     subtitleDelayUs.set((seconds * 1_000_000).toLong())
   }
 
+  fun setDebugDvConversionMode(mode: String): Boolean {
+    val override = when (mode.trim().lowercase()) {
+      "auto" -> null
+      "disabled", "native" -> DvConversionMode.DISABLED
+      "dv81", "p8", "p7_to_p8", "p7-to-p8" -> DvConversionMode.DV81
+      "hevc", "hevc_strip", "p7_to_hevc", "p7-to-hevc" -> DvConversionMode.HEVC_STRIP
+      else -> return false
+    }
+
+    debugDvModeOverride = override
+    dvMode = getConfiguredDvMode()
+    dv7RetryAttempted = override != null
+    activeDoviMkvWrapper = null
+    activeDoviMp4Wrapper = null
+
+    val debugMode = override?.name ?: "AUTO"
+    emitLog("info", "dv-debug", "Debug DV conversion mode set to $debugMode (active=$dvMode)")
+    reloadCurrentMediaForDvMode()
+    return true
+  }
+
+  private fun reloadCurrentMediaForDvMode() {
+    val player = exoPlayer ?: return
+    val uri = currentMediaUri ?: return
+    if (currentMediaIsLive) return
+
+    val savedPosition = maxOf(player.currentPosition, lastPosition, pendingStartPositionMs)
+    val savedPlayWhenReady = player.playWhenReady
+    pendingStartPositionMs = savedPosition
+    pendingPlayWhenReady = savedPlayWhenReady
+    decoderInitName = null
+    audioDecoderInitName = null
+    firstFrameRendered = false
+    stopFrameWatchdog()
+    cancelDecoderHangCheck()
+
+    trackSelector?.let { selector ->
+      selector.parameters = selector.buildUponParameters()
+        .setTunnelingEnabled(tunnelingUserEnabled)
+        .clearOverridesOfType(C.TRACK_TYPE_AUDIO)
+        .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+        .build()
+    }
+
+    val mediaItem = buildMediaItem(uri)
+    player.setMediaItem(mediaItem, savedPosition)
+    player.prepare()
+    player.playWhenReady = savedPlayWhenReady
+    emitLog("info", "dv-debug", "Reloaded media for DV mode $dvMode at ${savedPosition}ms")
+  }
+
   fun play() {
     pendingPlayWhenReady = null
     exoPlayer?.play()
@@ -1784,8 +1839,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         arrayOf(
           "dvConversionActive" to (dovi?.conversionActive == true),
           "dvConversionMode" to dvMode.name,
+          "dvConversionDebugMode" to (debugDvModeOverride?.name ?: "AUTO"),
           "dvStrippedNals" to (dovi?.strippedNalCount ?: 0L),
-          "dvConvertedRpus" to (dovi?.convertedRpuCount ?: 0L)
+          "dvConvertedRpus" to (dovi?.convertedRpuCount ?: 0L),
+          "dvRpuConversionFailures" to (dovi?.rpuConversionFailureCount ?: 0L),
+          "dvRpuOutputTooSmall" to (dovi?.rpuOutputTooSmallCount ?: 0L),
+          "dvAvgRpuConversionUs" to (dovi?.averageRpuConversionTimeUs ?: 0L),
+          "dvAvgSampleProcessingUs" to (dovi?.averageSampleProcessingTimeUs ?: 0L)
         )
       }
     )

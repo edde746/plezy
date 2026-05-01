@@ -208,6 +208,11 @@ class PerformanceStatsService {
         // DV conversion
         dvConversionActive: statsMap['dvConversionActive'] == true,
         dvConversionMode: statsMap['dvConversionMode'] as String? ?? '',
+        dvConvertedRpus: (statsMap['dvConvertedRpus'] as num?)?.toInt(),
+        dvRpuConversionFailures: (statsMap['dvRpuConversionFailures'] as num?)?.toInt(),
+        dvRpuOutputTooSmall: (statsMap['dvRpuOutputTooSmall'] as num?)?.toInt(),
+        dvAvgRpuConversionUs: (statsMap['dvAvgRpuConversionUs'] as num?)?.toInt(),
+        dvAvgSampleProcessingUs: (statsMap['dvAvgSampleProcessingUs'] as num?)?.toInt(),
         // App metrics
         appMemoryBytes: appMemory,
         uiFps: _currentUiFps,

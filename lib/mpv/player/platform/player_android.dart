@@ -191,6 +191,9 @@ class PlayerAndroid extends PlayerBase {
       case 'tunneled-playback':
         _tunnelingEnabled = value != 'no';
         break;
+      case 'dv-conversion-mode':
+        await invoke('setDvConversionMode', {'mode': value});
+        break;
       case 'sub-visibility':
         if (value == 'no') {
           // Store current subtitle track and disable
@@ -237,6 +240,10 @@ class PlayerAndroid extends PlayerBase {
         return (state.duration.inMilliseconds / 1000.0).toString();
       case 'seekable':
         return state.seekable ? 'yes' : 'no';
+      case 'dv-conversion-mode':
+        final stats = await getStats();
+        final mode = stats['dvConversionDebugMode'];
+        return mode?.toString().toLowerCase();
       // Video frame rate - query from ExoPlayer stats
       case 'container-fps':
         final fpsStats = await getStats();
