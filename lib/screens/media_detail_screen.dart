@@ -1220,6 +1220,35 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return getServerBoundMediaClient(context);
   }
 
+  MediaServerClient? _getArtworkMediaClient(BuildContext context) {
+    if (!widget.isOffline) return _getMediaClientForMetadata(context);
+    return context.tryGetMediaClientForServer(_metadata.serverId);
+  }
+
+  Widget? _buildOfflineArtworkIfAvailable(
+    BuildContext context, {
+    required String? artworkPath,
+    required BoxFit fit,
+    required ImageType imageType,
+    Alignment alignment = Alignment.center,
+    Widget Function(BuildContext, String, dynamic)? errorWidget,
+  }) {
+    if (!widget.isOffline || _metadata.serverId == null) return null;
+
+    final localPath = context.read<DownloadProvider>().getArtworkLocalPath(_metadata.serverId!, artworkPath);
+    if (localPath == null || !File(localPath).existsSync()) return null;
+
+    return OptimizedMediaImage(
+      client: null,
+      imagePath: null,
+      localFilePath: localPath,
+      fit: fit,
+      alignment: alignment,
+      imageType: imageType,
+      errorWidget: errorWidget,
+    );
+  }
+
   String _syncRuleKeyForMetadata(BuildContext context, DownloadProvider downloadProvider, MediaItem metadata) {
     final serverId = metadata.serverId;
     final client = _getMediaClientForMetadata(context);
@@ -2544,28 +2573,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                     final containerAspect = size.width / headerHeight;
                                     final heroArtPath = metadata.heroArt(containerAspectRatio: containerAspect);
 
-                                    // Check for offline local file first
-                                    if (widget.isOffline && _metadata.serverId != null) {
-                                      final localPath = context.read<DownloadProvider>().getArtworkLocalPath(
-                                        _metadata.serverId!,
-                                        heroArtPath,
-                                      );
-                                      if (localPath != null && File(localPath).existsSync()) {
-                                        return OptimizedMediaImage(
-                                          client: null,
-                                          imagePath: null,
-                                          localFilePath: localPath,
-                                          fit: BoxFit.cover,
-                                          imageType: ImageType.art,
-                                          errorWidget: (context, url, error) => const PlaceholderContainer(),
-                                        );
-                                      }
-                                      // Offline but no local file - show placeholder
-                                      return const PlaceholderContainer();
-                                    }
+                                    final localArtwork = _buildOfflineArtworkIfAvailable(
+                                      context,
+                                      artworkPath: heroArtPath,
+                                      fit: BoxFit.cover,
+                                      imageType: ImageType.art,
+                                      errorWidget: (context, url, error) => const PlaceholderContainer(),
+                                    );
+                                    if (localArtwork != null) return localArtwork;
 
-                                    // Online - use network image
-                                    final client = _getMediaClientForMetadata(context);
+                                    final client = _getArtworkMediaClient(context);
                                     final mqSize = MediaQuery.sizeOf(context);
                                     final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
                                     final imageUrl = MediaImageHelper.getOptimizedImageUrl(
@@ -2639,30 +2656,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                       width: 400,
                                       child: Builder(
                                         builder: (context) {
-                                          // Check for offline local file first
-                                          if (widget.isOffline && _metadata.serverId != null) {
-                                            final localPath = context.read<DownloadProvider>().getArtworkLocalPath(
-                                              _metadata.serverId!,
-                                              metadata.clearLogoPath,
-                                            );
-                                            if (localPath != null && File(localPath).existsSync()) {
-                                              return OptimizedMediaImage(
-                                                client: null,
-                                                imagePath: null,
-                                                localFilePath: localPath,
-                                                fit: BoxFit.contain,
-                                                alignment: Alignment.centerLeft,
-                                                imageType: ImageType.logo,
-                                                errorWidget: (context, url, error) =>
-                                                    _buildTitleText(context, metadata.displayTitle),
-                                              );
-                                            }
-                                            // Offline but no local file - show title text
-                                            return _buildTitleText(context, metadata.displayTitle);
-                                          }
+                                          final localArtwork = _buildOfflineArtworkIfAvailable(
+                                            context,
+                                            artworkPath: metadata.clearLogoPath,
+                                            fit: BoxFit.contain,
+                                            alignment: Alignment.centerLeft,
+                                            imageType: ImageType.logo,
+                                            errorWidget: (context, url, error) =>
+                                                _buildTitleText(context, metadata.displayTitle),
+                                          );
+                                          if (localArtwork != null) return localArtwork;
 
-                                          // Online - use network image
-                                          final client = _getMediaClientForMetadata(context);
+                                          final client = _getArtworkMediaClient(context);
                                           final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
                                           final logoUrl = MediaImageHelper.getOptimizedImageUrl(
                                             client: client,
