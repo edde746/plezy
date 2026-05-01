@@ -30,10 +30,14 @@ class FolderTreeView extends StatefulWidget {
   });
 
   @override
-  State<FolderTreeView> createState() => _FolderTreeViewState();
+  State<FolderTreeView> createState() => FolderTreeViewState();
 }
 
-class _FolderTreeViewState extends State<FolderTreeView> {
+/// Public state so parents can trigger a refresh via GlobalKey.
+class FolderTreeViewState extends State<FolderTreeView> {
+  /// Reload the root folders. Exposed for parent-driven pull-to-refresh.
+  Future<void> refresh() => _loadRootFolders();
+
   /// Folders/items returned by the Plex `/library/sections/{id}/folder`
   /// endpoint, mapped to neutral [MediaItem]s. The Plex `key` (folder URL)
   /// survives in [MediaItem.raw] under the `'key'` slot — see
@@ -202,29 +206,34 @@ class _FolderTreeViewState extends State<FolderTreeView> {
   @override
   Widget build(BuildContext context) {
     if (_isLoadingRoot) {
-      return const Center(child: CircularProgressIndicator());
+      return const SliverFillRemaining(hasScrollBody: false, child: Center(child: CircularProgressIndicator()));
     }
 
     if (_errorMessage != null) {
-      return ErrorStateWidget(
-        message: _errorMessage!,
-        icon: Symbols.error_outline_rounded,
-        onRetry: _loadRootFolders,
-        retryLabel: t.common.retry,
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: ErrorStateWidget(
+          message: _errorMessage!,
+          icon: Symbols.error_outline_rounded,
+          onRetry: _loadRootFolders,
+          retryLabel: t.common.retry,
+        ),
       );
     }
 
     if (_rootFolders.isEmpty) {
-      return EmptyStateWidget(message: t.libraries.noFoldersFound, icon: Symbols.folder_open_rounded);
+      return SliverFillRemaining(
+        hasScrollBody: false,
+        child: EmptyStateWidget(message: t.libraries.noFoldersFound, icon: Symbols.folder_open_rounded),
+      );
     }
 
     final flattened = <({MediaItem item, int depth, String path})>[];
     _flattenTreeItems(_rootFolders, 0, '', flattened);
 
-    return RefreshIndicator(
-      onRefresh: _loadRootFolders,
-      child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 8),
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      sliver: SliverList.builder(
         itemCount: flattened.length,
         itemBuilder: (context, index) {
           final entry = flattened[index];

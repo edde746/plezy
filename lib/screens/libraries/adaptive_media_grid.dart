@@ -96,39 +96,46 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
     final effectivePadding = basePadding.copyWith(top: basePadding.top + _focusDecorationPadding);
     final effectiveAspectRatio = childAspectRatio ?? GridLayoutConstants.posterAspectRatio;
 
-    if (viewMode == ViewMode.list) {
-      // In list view, all items are in a single column (first column)
-      return ListView.builder(
-        padding: effectivePadding,
-        // Allow focus decoration to render outside scroll bounds
-        clipBehavior: Clip.none,
-        itemCount: items.length,
-        itemBuilder: (ctx, index) {
-          final gridContext = enableSidebarNavigation
-              ? GridItemContext(
-                  isFirstRow: index == 0,
-                  isFirstColumn: true, // List view = single column
-                  isListMode: true,
-                  navigateToSidebar: () => _navigateToSidebar(context),
-                )
-              : null;
-          return itemBuilder(ctx, items[index], index, gridContext);
-        },
-      );
-    } else {
-      final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
-      final horizontalPadding = effectivePadding.left + effectivePadding.right;
-
-      // Use LayoutBuilder to get the actual available width (accounting for sidebar, etc.)
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final availableWidth = constraints.maxWidth - horizontalPadding;
-          final columnCount = GridSizeCalculator.getColumnCount(availableWidth, maxCrossAxisExtent);
-
-          return GridView.builder(
+    return CustomScrollView(
+      // Allow focus decoration to render outside scroll bounds
+      clipBehavior: Clip.none,
+      slivers: [
+        SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+        if (viewMode == ViewMode.list)
+          SliverPadding(
             padding: effectivePadding,
-            // Allow focus decoration to render outside scroll bounds
-            clipBehavior: Clip.none,
+            sliver: SliverList.builder(
+              itemCount: items.length,
+              itemBuilder: (ctx, index) {
+                final gridContext = enableSidebarNavigation
+                    ? GridItemContext(
+                        isFirstRow: index == 0,
+                        isFirstColumn: true, // List view = single column
+                        isListMode: true,
+                        navigateToSidebar: () => _navigateToSidebar(context),
+                      )
+                    : null;
+                return itemBuilder(ctx, items[index], index, gridContext);
+              },
+            ),
+          )
+        else
+          _buildGridSliver(context, density, effectivePadding, effectiveAspectRatio),
+      ],
+    );
+  }
+
+  Widget _buildGridSliver(BuildContext context, int density, EdgeInsets effectivePadding, double effectiveAspectRatio) {
+    final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
+
+    return SliverPadding(
+      padding: effectivePadding,
+      sliver: SliverLayoutBuilder(
+        builder: (context, constraints) {
+          // crossAxisExtent is the post-padding inner width.
+          final columnCount = GridSizeCalculator.getColumnCount(constraints.crossAxisExtent, maxCrossAxisExtent);
+
+          return SliverGrid.builder(
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: maxCrossAxisExtent,
               childAspectRatio: effectiveAspectRatio,
@@ -148,7 +155,7 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
             },
           );
         },
-      );
-    }
+      ),
+    );
   }
 }

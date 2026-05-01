@@ -121,6 +121,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   // Scroll controller for the outer CustomScrollView
   final ScrollController _outerScrollController = ScrollController();
 
+  /// Override the mixin's [focusTabBar] so we reveal the floating header
+  /// (which contains the tab chips) before requesting focus. Programmatic
+  /// requestFocus alone does not snap a floating SliverAppBar back into view.
+  @override
+  void focusTabBar() {
+    if (_outerScrollController.hasClients && _outerScrollController.offset > 0) {
+      _outerScrollController.jumpTo(0);
+    }
+    super.focusTabBar();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -876,7 +887,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   /// Build the app bar title - either dropdown on mobile or simple title on desktop
-  Widget _buildAppBarTitle(List<MediaLibrary> visibleLibraries, MediaLibrary? selectedLibrary) {
+  Widget _buildAppBarTitle(
+    List<MediaLibrary> visibleLibraries,
+    MediaLibrary? selectedLibrary, {
+    required bool groupByServer,
+  }) {
     // No selection at all, or visible list is empty AND we're not browsing a hidden library
     if (_selectedLibraryGlobalKey == null || (visibleLibraries.isEmpty && selectedLibrary == null)) {
       return Text(t.libraries.title);
@@ -902,16 +917,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
 
     // On mobile, show the dropdown
-    return _buildLibraryDropdownTitle(visibleLibraries);
+    return _buildLibraryDropdownTitle(visibleLibraries, groupByServer: groupByServer);
   }
 
-  Widget _buildLibraryDropdownTitle(List<MediaLibrary> visibleLibraries) {
+  Widget _buildLibraryDropdownTitle(List<MediaLibrary> visibleLibraries, {required bool groupByServer}) {
     final selectedLibrary =
         visibleLibraries.where((lib) => lib.globalKey == _selectedLibraryGlobalKey).firstOrNull ??
         visibleLibraries.firstOrNull;
     if (selectedLibrary == null) return Text(t.libraries.title);
-    final groupByServerSetting = context.select<SettingsProvider, bool>((p) => p.groupLibrariesByServer);
-    final showServerHeaders = _hasMultipleServers(visibleLibraries) && groupByServerSetting;
+    final showServerHeaders = _hasMultipleServers(visibleLibraries) && groupByServer;
 
     return PopupMenuButton<String>(
       key: _libraryDropdownKey,
@@ -972,121 +986,140 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         ? allLibraries.where((lib) => lib.globalKey == _selectedLibraryGlobalKey).firstOrNull
         : null;
 
-    return Scaffold(
-      body: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: CustomScrollView(
-          controller: _outerScrollController,
-          slivers: [
-            DesktopSliverAppBar(
-              title: _buildAppBarTitle(visibleLibraries, selectedLibrary),
-              pinned: true,
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-              surfaceTintColor: Colors.transparent,
-              shadowColor: Colors.transparent,
-              scrolledUnderElevation: 0,
-              actions: [
-                FocusableActionBar(
-                  key: _actionBarKey,
-                  onNavigateLeft: () => getTabChipFocusNode(_visibleTabs.length - 1).requestFocus(),
-                  onNavigateDown: _focusCurrentTab,
-                  actions: [
-                    if (allLibraries.isNotEmpty)
-                      FocusableAction(
-                        icon: Symbols.edit_rounded,
-                        tooltip: t.libraries.manageLibraries,
-                        onPressed: _showLibraryManagementSheet,
-                      ),
-                    FocusableAction(
-                      icon: Symbols.refresh_rounded,
-                      tooltip: t.common.refresh,
-                      onPressed: _refreshCurrentTab,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            if (isLoadingLibraries)
-              const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
-            else if (_errorMessage != null && visibleLibraries.isEmpty && selectedLibrary == null)
-              SliverFillRemaining(
-                child: ErrorStateWidget(
-                  message: _errorMessage!,
-                  icon: Symbols.error_outline_rounded,
-                  onRetry: () {
-                    final librariesProvider = context.read<LibrariesProvider>();
-                    librariesProvider.refresh();
-                  },
-                ),
-              )
-            else if (visibleLibraries.isEmpty && selectedLibrary == null)
-              SliverFillRemaining(
-                child: allLibraries.isEmpty
-                    ? EmptyStateWidget(message: t.libraries.noLibrariesFound, icon: Symbols.video_library_rounded)
-                    : EmptyStateWidget(
-                        message: t.libraries.allLibrariesHidden,
-                        icon: Symbols.visibility_off_rounded,
-                        onAction: _showLibraryManagementSheet,
-                        actionLabel: t.libraries.manageLibraries,
-                        actionIcon: Symbols.edit_rounded,
-                      ),
-              )
-            else ...[
-              // Tab selector chips (only on mobile - desktop has them in app bar)
-              if (selectedLibrary != null && !PlatformDetector.shouldUseSideNavigation(context))
-                SliverToBoxAdapter(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          for (int i = 0; i < _visibleTabs.length; i++) ...[
-                            if (i > 0) const SizedBox(width: 8),
-                            buildTabChip(
-                              _getTabLabel(_visibleTabs[i]),
-                              i,
-                              onSelectWhenActive: _focusCurrentTab,
-                              onNavigateDown: _focusCurrentTabFromTabBar,
-                              onNavigateRightFromLast: () => _actionBarKey.currentState?.requestFocusOnFirst(),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+    final showMobileTabsRow = selectedLibrary != null && !PlatformDetector.shouldUseSideNavigation(context);
 
-              // Tab content
-              if (selectedLibrary != null)
-                SliverFillRemaining(
-                  child: TabBarView(
-                    key: ValueKey(_selectedLibraryGlobalKey),
-                    controller: tabController,
-                    // Disable swipe on desktop - trackpad scrolling triggers accidental tab switches
-                    // See: https://github.com/flutter/flutter/issues/11132
-                    physics: PlatformDetector.isDesktop(context) ? const NeverScrollableScrollPhysics() : null,
-                    // Wrap each tab in ClipRect so horizontal overflow (e.g. hub rows
-                    // with Clip.none) doesn't bleed into adjacent tabs during swipe transitions.
-                    // The TabBarView's own clipBehavior only clips at the viewport level,
-                    // not per-page, so we need per-child clipping.
+    // Hoist Provider lookup out of any closures: NestedScrollView's
+    // headerSliverBuilder is invoked from a Builder downstream and Provider
+    // refuses context.select inside closures invoked from foreign builds.
+    final groupByServerSetting = context.select<SettingsProvider, bool>((p) => p.groupLibrariesByServer);
+
+    Widget appBar({required bool floating}) => DesktopSliverAppBar(
+      title: _buildAppBarTitle(visibleLibraries, selectedLibrary, groupByServer: groupByServerSetting),
+      // When showing the tab content, let the app bar float away with the
+      // content. Otherwise (loading / empty / error states) keep it pinned so
+      // it stays visible over the centered state widget.
+      pinned: !floating,
+      floating: floating,
+      snap: floating,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.transparent,
+      scrolledUnderElevation: 0,
+      actions: [
+        FocusableActionBar(
+          key: _actionBarKey,
+          onNavigateLeft: () => getTabChipFocusNode(_visibleTabs.length - 1).requestFocus(),
+          onNavigateDown: _focusCurrentTab,
+          actions: [
+            if (allLibraries.isNotEmpty)
+              FocusableAction(
+                icon: Symbols.edit_rounded,
+                tooltip: t.libraries.manageLibraries,
+                onPressed: _showLibraryManagementSheet,
+              ),
+            FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: _refreshCurrentTab),
+          ],
+        ),
+      ],
+    );
+
+    Widget buildSimpleScroll({required Widget body}) {
+      return CustomScrollView(
+        controller: _outerScrollController,
+        slivers: [
+          appBar(floating: false),
+          SliverFillRemaining(child: body),
+        ],
+      );
+    }
+
+    Widget body;
+    if (isLoadingLibraries) {
+      body = buildSimpleScroll(body: const Center(child: CircularProgressIndicator()));
+    } else if (_errorMessage != null && visibleLibraries.isEmpty && selectedLibrary == null) {
+      body = buildSimpleScroll(
+        body: ErrorStateWidget(
+          message: _errorMessage!,
+          icon: Symbols.error_outline_rounded,
+          onRetry: () {
+            final librariesProvider = context.read<LibrariesProvider>();
+            librariesProvider.refresh();
+          },
+        ),
+      );
+    } else if (visibleLibraries.isEmpty && selectedLibrary == null) {
+      body = buildSimpleScroll(
+        body: allLibraries.isEmpty
+            ? EmptyStateWidget(message: t.libraries.noLibrariesFound, icon: Symbols.video_library_rounded)
+            : EmptyStateWidget(
+                message: t.libraries.allLibrariesHidden,
+                icon: Symbols.visibility_off_rounded,
+                onAction: _showLibraryManagementSheet,
+                actionLabel: t.libraries.manageLibraries,
+                actionIcon: Symbols.edit_rounded,
+              ),
+      );
+    } else if (selectedLibrary != null) {
+      body = NestedScrollView(
+        controller: _outerScrollController,
+        floatHeaderSlivers: true,
+        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+          SliverOverlapAbsorber(
+            handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+            sliver: appBar(floating: true),
+          ),
+          if (showMobileTabsRow)
+            SliverToBoxAdapter(
+              child: Container(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
                     children: [
-                      for (int i = 0; i < _visibleTabs.length; i++)
-                        ClipRect(
-                          child: _buildTabContent(
-                            _visibleTabs[i],
-                            library: selectedLibrary,
-                            isActive: tabController.index == i,
-                            tabIndex: i,
-                          ),
+                      for (int i = 0; i < _visibleTabs.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 8),
+                        buildTabChip(
+                          _getTabLabel(_visibleTabs[i]),
+                          i,
+                          onSelectWhenActive: _focusCurrentTab,
+                          onNavigateDown: _focusCurrentTabFromTabBar,
+                          onNavigateRightFromLast: () => _actionBarKey.currentState?.requestFocusOnFirst(),
                         ),
+                      ],
                     ],
                   ),
                 ),
-            ],
+              ),
+            ),
+        ],
+        body: TabBarView(
+          key: ValueKey(_selectedLibraryGlobalKey),
+          controller: tabController,
+          // Disable swipe on desktop - trackpad scrolling triggers accidental tab switches
+          // See: https://github.com/flutter/flutter/issues/11132
+          physics: PlatformDetector.isDesktop(context) ? const NeverScrollableScrollPhysics() : null,
+          // Wrap each tab in ClipRect so horizontal overflow (e.g. hub rows
+          // with Clip.none) doesn't bleed into adjacent tabs during swipe transitions.
+          children: [
+            for (int i = 0; i < _visibleTabs.length; i++)
+              ClipRect(
+                child: _buildTabContent(
+                  _visibleTabs[i],
+                  library: selectedLibrary,
+                  isActive: tabController.index == i,
+                  tabIndex: i,
+                ),
+              ),
           ],
         ),
-      ),
+      );
+    } else {
+      body = buildSimpleScroll(body: const SizedBox.shrink());
+    }
+
+    return Scaffold(
+      body: ScrollConfiguration(behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false), child: body),
     );
   }
 }

@@ -102,6 +102,7 @@ class DesktopSliverAppBar extends StatelessWidget {
   final double? scrolledUnderElevation;
   final bool floating;
   final bool pinned;
+  final bool snap;
   final double? expandedHeight;
   final Widget? flexibleSpace;
   final PreferredSizeWidget? bottom;
@@ -119,6 +120,7 @@ class DesktopSliverAppBar extends StatelessWidget {
     this.scrolledUnderElevation,
     this.floating = false,
     this.pinned = false,
+    this.snap = false,
     this.expandedHeight,
     this.flexibleSpace,
     this.bottom,
@@ -145,6 +147,7 @@ class DesktopSliverAppBar extends StatelessWidget {
       scrolledUnderElevation: scrolledUnderElevation,
       floating: floating,
       pinned: pinned,
+      snap: snap,
       expandedHeight: expandedHeight,
       flexibleSpace: DesktopAppBarSections.buildFlexibleSpaceSection(flexibleSpace),
       bottom: bottom,

@@ -223,13 +223,23 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   final FocusNode _filtersChipFocusNode = FocusNode(debugLabel: 'filters_chip');
   final FocusNode _sortChipFocusNode = FocusNode(debugLabel: 'sort_chip');
 
-  // Scroll controller for the CustomScrollView
-  final ScrollController _scrollController = ScrollController();
+  // The inner CustomScrollView attaches its position to NestedScrollView's
+  // shared inner controller (via PrimaryScrollController), which has one
+  // position per kept-alive tab — making `controller.position` ambiguous and
+  // throw an assertion. We capture this tab's specific [ScrollPosition] from
+  // a Builder placed inside the slivers list, and address it directly for
+  // reads, listener attachment, and programmatic jumpTo/animateTo.
+  ScrollPosition? _innerPosition;
 
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScrollChanged);
+  // Lets us trigger pull-to-refresh on the folder tree, which now lives as a
+  // sliver inside the same CustomScrollView (no longer self-owning RefreshIndicator).
+  final GlobalKey<FolderTreeViewState> _folderTreeKey = GlobalKey<FolderTreeViewState>();
+
+  void _bindInnerPosition(ScrollPosition? position) {
+    if (position == _innerPosition) return;
+    _innerPosition?.removeListener(_onScrollChanged);
+    _innerPosition = position;
+    _innerPosition?.addListener(_onScrollChanged);
   }
 
   @override
@@ -238,8 +248,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _scrollActivityTimer?.cancel();
     _scrollIdleTimer?.cancel();
     _alphaUpdateTimer?.cancel();
-    _scrollController.removeListener(_onScrollChanged);
-    _scrollController.dispose();
+    _innerPosition?.removeListener(_onScrollChanged);
+    // _innerPosition is owned by the inner CustomScrollView's Scrollable.
     _groupingChipFocusNode.dispose();
     _filtersChipFocusNode.dispose();
     _sortChipFocusNode.dispose();
@@ -342,15 +352,15 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _jumpScrollGeneration++;
     _currentFirstVisibleIndex.value = 0;
 
-    // The browse tab state is kept alive across libraries, so ensure each
-    // library starts from top instead of inheriting the previous offset.
-    if (_scrollController.hasClients) {
-      _scrollController.jumpTo(0);
+    // The browse tab state is kept alive across libraries, so ensure this
+    // tab's scroll resets to 0 (other tabs keep their own positions).
+    final pos = _innerPosition;
+    if (pos != null) {
+      pos.jumpTo(0);
     } else {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && _scrollController.hasClients) {
-          _scrollController.jumpTo(0);
-        }
+        if (!mounted) return;
+        _innerPosition?.jumpTo(0);
       });
     }
   }
@@ -737,11 +747,28 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         ? lastFocusedGridIndex!
         : 0;
 
+    // Drop the chip's focus first so the targeted grid item's request isn't
+    // racing against the chip's still-held primary focus state. Without this,
+    // dpad DOWN from a chip occasionally fails to move focus to the grid.
+    if (FocusManager.instance.primaryFocus == _groupingChipFocusNode ||
+        FocusManager.instance.primaryFocus == _filtersChipFocusNode ||
+        FocusManager.instance.primaryFocus == _sortChipFocusNode) {
+      FocusManager.instance.primaryFocus?.unfocus();
+    }
+
     // Use firstItemFocusNode for index 0 (matches _buildMediaCardItem)
-    if (targetIndex == 0) {
-      firstItemFocusNode.requestFocus();
+    final target = targetIndex == 0
+        ? firstItemFocusNode
+        : getGridItemFocusNode(targetIndex, prefix: 'browse_grid_item');
+
+    // Defer to a post-frame so the focus node has a chance to attach if the
+    // grid item is being built/rebuilt in the same frame.
+    if (target.context != null) {
+      target.requestFocus();
     } else {
-      getGridItemFocusNode(targetIndex, prefix: 'browse_grid_item').requestFocus();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) target.requestFocus();
+      });
     }
   }
 
@@ -848,6 +875,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   /// Track scroll position and trigger debounced range loading.
   void _onScrollChanged() {
+    // The inner controller (PrimaryScrollController) is shared across tabs.
+    // Skip if this tab isn't active so we don't react to a sibling tab's
+    // scroll events.
+    if (!widget.isActive) return;
+
     // Debounced scroll-idle handler: load visible range when scrolling settles
     _scrollIdleTimer?.cancel();
     _scrollIdleTimer = Timer(const Duration(milliseconds: 200), () {
@@ -896,7 +928,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   /// Recompute the first-visible-index from the current scroll offset.
   void _updateVisibleIndex() {
-    final offset = _scrollController.offset;
+    final pos = _innerPosition;
+    if (pos == null) return;
+    final offset = pos.pixels;
     final firstInRow = _itemIndexFromScrollOffset(offset);
     // Use the last item in the first visible row so the highlighted letter
     // updates as soon as items with a new letter appear in that row.
@@ -908,7 +942,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   /// Compute the first visible item index from a scroll offset.
-  /// The visible area starts below the chips bar, so we offset accordingly.
+  /// Chips bar is the first sliver (height = _chipsBarHeight) followed by the
+  /// grid's own top padding before the first row.
   int _itemIndexFromScrollOffset(double offset) {
     if (_lastCrossAxisExtent <= 0 || _currentColumnCount < 1) return 0;
 
@@ -917,10 +952,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
     if (rowHeight <= 0) return 0;
 
-    // The visible area starts at _chipsBarHeight from the viewport top.
-    // Grid content starts at _effectiveTopPadding in scroll coordinates.
-    // First visible row = (offset + chipsBarHeight - effectiveTopPadding) / rowHeight
-    final contentOffset = (offset + _chipsBarHeight - _effectiveTopPadding).clamp(0.0, double.infinity);
+    // Items start at `_chipsBarHeight + _effectiveTopPadding` in scroll coords.
+    final contentOffset = (offset - _chipsBarHeight - _effectiveTopPadding).clamp(0.0, double.infinity);
     final row = (contentOffset / rowHeight).floor();
     final maxIndex = totalSize > 0 ? totalSize - 1 : 0;
     return (row * _currentColumnCount).clamp(0, maxIndex);
@@ -966,15 +999,14 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       resetPaginationState();
       isLoading = true;
     });
-    if (_scrollController.hasClients) {
-      _scrollController.jumpTo(0);
-    }
+    _innerPosition?.jumpTo(0);
     _loadItems();
   }
 
   /// Scroll the grid so that [index] is visible just below the chips bar
   void _scrollToItemIndex(int index) {
-    if (_currentColumnCount < 1 || _lastCrossAxisExtent <= 0 || !_scrollController.hasClients) {
+    final pos = _innerPosition;
+    if (_currentColumnCount < 1 || _lastCrossAxisExtent <= 0 || pos == null) {
       _isJumpScrolling = false;
       return;
     }
@@ -983,11 +1015,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
     final rowHeight = itemHeight + GridLayoutConstants.mainAxisSpacing;
     final targetRow = index ~/ _currentColumnCount;
-    // Position the target row right below the chips bar
-    final offset = _effectiveTopPadding + targetRow * rowHeight - _chipsBarHeight;
+    // Position the target row at the top of the viewport. Chips and the grid's
+    // top padding both precede the items in scroll coordinates.
+    final offset = _chipsBarHeight + _effectiveTopPadding + targetRow * rowHeight;
 
     final gen = _jumpScrollGeneration;
-    final maxExtent = _scrollController.position.maxScrollExtent;
+    final maxExtent = pos.maxScrollExtent;
     if (!maxExtent.isFinite) {
       _isJumpScrolling = false;
       return;
@@ -997,55 +1030,37 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // If a newer jump already superseded this one, skip the animation
     // entirely — the next call will handle the final position.
     if (gen != _jumpScrollGeneration) {
-      _scrollController.jumpTo(clampedOffset);
+      pos.jumpTo(clampedOffset);
       return;
     }
 
-    _scrollController
-        .animateTo(clampedOffset, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut)
-        .then((_) {
-          // Only clear the flag if no newer jump has started.
-          if (mounted && gen == _jumpScrollGeneration) {
-            _isJumpScrolling = false;
-          }
-        });
+    pos.animateTo(clampedOffset, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut).then((_) {
+      // Only clear the flag if no newer jump has started.
+      if (mounted && gen == _jumpScrollGeneration) {
+        _isJumpScrolling = false;
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
 
-    // For folders mode, use FolderTreeView instead of grid/list
-    if (_selectedGrouping == 'folders') {
-      return Column(
-        children: [
-          _buildChipsBar(),
-          Expanded(
-            child: FolderTreeView(
-              libraryKey: widget.library.id,
-              serverId: widget.library.serverId,
-              onRefresh: updateItem,
-              firstItemFocusNode: firstItemFocusNode,
-              onNavigateUp: _navigateToChips,
-            ),
-          ),
-        ],
-      );
-    }
+    // Chips are inline as a floating sliver in the inner scroll. The alpha
+    // jump bar is the only overlay; we offset it by the typical app bar height
+    // so it isn't obscured by the floating outer header. Using MediaQuery
+    // (not the absorber handle) avoids rebuilding during layout — listening to
+    // the handle from a builder fires notifyListeners during the build phase
+    // and triggers a setState-in-build assertion.
+    final media = MediaQuery.of(context);
+    final overlayTopPadding = media.padding.top + kToolbarHeight;
 
-    // For list/grid modes, use Stack with chips layered on top of grid.
-    // This allows the grid to use Clip.none for focus decorations while
-    // the chips bar (with background) covers any overflow at the top.
     return Stack(
       children: [
-        // Grid fills the entire area, with top padding for chips bar
         Positioned.fill(child: _buildScrollableContent()),
-        // Chips bar on top with solid background
-        Positioned(top: 0, left: 0, right: 0, child: _buildChipsBar()),
-        // Alpha jump bar / scroll handle on the right edge
         if (_shouldShowAlphaJumpBar)
           Positioned(
-            top: _chipsBarHeight,
+            top: overlayTopPadding,
             right: 0,
             bottom: 0,
             child: _isPhone(context)
@@ -1077,9 +1092,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     );
   }
 
-  /// Builds the scrollable content (grid/list) with scroll-idle loading
+  /// Builds the scrollable content with chips, then either folder tree or grid/list.
   Widget _buildScrollableContent() {
-    return NotificationListener<ScrollNotification>(
+    final isFolders = _selectedGrouping == 'folders';
+
+    Widget scrollView = NotificationListener<ScrollNotification>(
       onNotification: (notification) {
         // Track scroll activity for phone scroll handle and range-load gating
         if (notification is ScrollStartNotification) {
@@ -1093,13 +1110,57 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         }
         return false;
       },
-      child: CustomScrollView(
-        controller: _scrollController,
-        // Allow focus decoration to render outside scroll bounds
-        clipBehavior: Clip.none,
-        slivers: _buildContentSlivers(),
+      child: Builder(
+        builder: (context) => CustomScrollView(
+          // No explicit controller: this picks up NestedScrollView's
+          // PrimaryScrollController, which is what wires inner scroll deltas
+          // through to the outer floating header.
+          // Allow focus decoration to render outside scroll bounds.
+          clipBehavior: Clip.none,
+          slivers: [
+            SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+            // Capture-only sliver: an invisible Builder whose context lives
+            // inside this CustomScrollView, used to grab the per-tab
+            // ScrollPosition. NSV's shared inner controller has one position
+            // per kept-alive tab; we need this tab's specific one.
+            SliverToBoxAdapter(
+              child: Builder(
+                builder: (innerCtx) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      _bindInnerPosition(Scrollable.maybeOf(innerCtx)?.position);
+                    }
+                  });
+                  return const SizedBox.shrink();
+                },
+              ),
+            ),
+            // Floating chips: scroll off with content but snap back into view
+            // on upward direction reversal, matching the outer floating
+            // SliverAppBar's behavior.
+            SliverPersistentHeader(
+              floating: true,
+              pinned: false,
+              delegate: _ChipsBarDelegate(builder: (_) => _buildChipsBar(), height: _chipsBarHeight),
+            ),
+            ..._buildContentSlivers(),
+          ],
+        ),
       ),
     );
+
+    // Folders mode previously had its own RefreshIndicator inside FolderTreeView;
+    // it now lives at this level since FolderTreeView is a sliver.
+    if (isFolders) {
+      scrollView = RefreshIndicator(
+        onRefresh: () async {
+          await _folderTreeKey.currentState?.refresh();
+        },
+        child: scrollView,
+      );
+    }
+
+    return scrollView;
   }
 
   /// Self-healing: when a skeleton is rendered after scrolling stops,
@@ -1118,11 +1179,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   }
 
   /// Returns the first-visible index and visible count from the scroll
-  /// controller + grid metrics, or null if the viewport isn't measured yet.
+  /// position + grid metrics, or null if the viewport isn't measured yet.
   ({int firstIndex, int visibleCount})? _computeVisibleRange() {
-    if (_currentColumnCount < 1 || !_scrollController.hasClients || _lastCrossAxisExtent <= 0) return null;
-    final offset = _scrollController.offset;
-    final viewportHeight = _scrollController.position.viewportDimension;
+    final pos = _innerPosition;
+    if (_currentColumnCount < 1 || pos == null || _lastCrossAxisExtent <= 0) return null;
+    final offset = pos.pixels;
+    final viewportHeight = pos.viewportDimension;
     if (!viewportHeight.isFinite) return null;
 
     final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
@@ -1156,10 +1218,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   /// Prefetch images for items near the viewport to reduce pop-in.
   void _prefetchImages(int startIndex, List<MediaItem> items) {
-    if (!_scrollController.hasClients || _lastCrossAxisExtent <= 0 || _currentColumnCount < 1) return;
+    final pos = _innerPosition;
+    if (pos == null || _lastCrossAxisExtent <= 0 || _currentColumnCount < 1) return;
 
-    final offset = _scrollController.offset;
-    final viewportHeight = _scrollController.position.viewportDimension;
+    final offset = pos.pixels;
+    final viewportHeight = pos.viewportDimension;
     if (!viewportHeight.isFinite) return;
     final firstVisible = _itemIndexFromScrollOffset(offset);
     final itemWidth = _lastCrossAxisExtent / _currentColumnCount;
@@ -1285,6 +1348,21 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   /// Builds content as slivers for the CustomScrollView
   List<Widget> _buildContentSlivers() {
+    // Folders mode: hand off to the FolderTreeView sliver, which owns its own
+    // loading/empty/error states.
+    if (_selectedGrouping == 'folders') {
+      return [
+        FolderTreeView(
+          key: _folderTreeKey,
+          libraryKey: widget.library.id,
+          serverId: widget.library.serverId,
+          onRefresh: updateItem,
+          firstItemFocusNode: firstItemFocusNode,
+          onNavigateUp: _navigateToChips,
+        ),
+      ];
+    }
+
     if (isLoading && totalSize == 0 && loadedItems.isEmpty) {
       return [const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))];
     }
@@ -1319,11 +1397,11 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     ];
   }
 
-  // Top padding for grid content = chips bar height + extra space for focus decoration.
-  // Chips bar is ~48px, focus ring extends ~6px beyond item bounds.
-  // On phone there's no D-pad focus decoration so extra clearance is unnecessary.
-  static const double _gridTopPadding = _chipsBarHeight + 12.0;
-  static const double _gridTopPaddingPhone = _chipsBarHeight;
+  // Top padding for grid content. Chips are inline above the grid now, so this
+  // is purely focus-decoration clearance (~6px) on desktop. Phone has no D-pad
+  // focus ring so no extra clearance is needed.
+  static const double _gridTopPadding = 12.0;
+  static const double _gridTopPaddingPhone = 0.0;
 
   /// Width of the alpha jump bar widget
   static const double _alphaJumpBarWidth = 20.0;
@@ -1347,6 +1425,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             isFirstRow: index == 0,
             isFirstColumn: true, // List view = single column
             disableScale: true,
+            columnCount: 1,
+            itemCount: itemCount,
           ),
         ),
       );
@@ -1383,6 +1463,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
                 isFirstRow: GridSizeCalculator.isFirstRow(index, columnCount),
                 isFirstColumn: GridSizeCalculator.isFirstColumn(index, columnCount),
                 isLastColumn: (index % columnCount) == (columnCount - 1),
+                columnCount: columnCount,
+                itemCount: itemCount,
               ),
             );
           },
@@ -1397,6 +1479,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     required bool isFirstColumn,
     bool isLastColumn = false,
     bool disableScale = false,
+    int columnCount = 1,
+    int itemCount = 0,
   }) {
     final item = loadedItems[index];
 
@@ -1410,18 +1494,86 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     // All other items get managed focus nodes for restoration
     final focusNode = index == 0 ? firstItemFocusNode : getGridItemFocusNode(index, prefix: 'browse_grid_item');
 
+    // Explicit row navigation. Default directional focus traversal becomes
+    // unreliable while items are mounting/unmounting under fast scrolling and
+    // can spuriously jump to overlay widgets like the floating chips header.
+    VoidCallback? navigateUp;
+    if (isFirstRow) {
+      navigateUp = _navigateToChips;
+    } else if (columnCount > 0 && index >= columnCount) {
+      navigateUp = () => _focusGridItem(index - columnCount);
+    }
+
+    VoidCallback? navigateDown;
+    if (columnCount > 0 && index + columnCount < itemCount) {
+      navigateDown = () => _focusGridItem(index + columnCount);
+    }
+
+    VoidCallback? navigateLeft;
+    if (isFirstColumn) {
+      navigateLeft = _navigateToSidebar;
+    } else if (index > 0) {
+      navigateLeft = () => _focusGridItem(index - 1);
+    }
+
+    VoidCallback? navigateRight;
+    if (isLastColumn && _shouldShowAlphaJumpBar && !_isPhone(context)) {
+      navigateRight = _navigateToAlphaJumpBar;
+    } else if (!isLastColumn && index + 1 < itemCount) {
+      navigateRight = () => _focusGridItem(index + 1);
+    }
+
     return FocusableMediaCard(
       key: Key(item.id),
       item: item,
       focusNode: focusNode,
       disableScale: disableScale,
       onRefresh: updateItem,
-      onNavigateUp: isFirstRow ? _navigateToChips : null,
-      onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
-      onNavigateRight: isLastColumn && _shouldShowAlphaJumpBar && !_isPhone(context) ? _navigateToAlphaJumpBar : null,
+      onNavigateUp: navigateUp,
+      onNavigateDown: navigateDown,
+      onNavigateLeft: navigateLeft,
+      onNavigateRight: navigateRight,
       onBack: widget.onBack,
       onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
       onListRefresh: _loadItems,
     );
   }
+
+  /// Move focus to the grid item at [targetIndex] (or its skeleton's row).
+  /// Used by the explicit dpad navigation handlers.
+  void _focusGridItem(int targetIndex) {
+    if (targetIndex < 0 || targetIndex >= totalSize) return;
+    final node = targetIndex == 0 ? firstItemFocusNode : getGridItemFocusNode(targetIndex, prefix: 'browse_grid_item');
+    if (node.context != null) {
+      node.requestFocus();
+    } else {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) node.requestFocus();
+      });
+    }
+  }
+}
+
+/// SliverPersistentHeader delegate for the chips bar. Fixed-height floating
+/// header that snaps in on scroll direction reversal.
+class _ChipsBarDelegate extends SliverPersistentHeaderDelegate {
+  final WidgetBuilder builder;
+  final double height;
+
+  const _ChipsBarDelegate({required this.builder, required this.height});
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return SizedBox(height: height, child: builder(context));
+  }
+
+  @override
+  bool shouldRebuild(covariant _ChipsBarDelegate oldDelegate) =>
+      builder != oldDelegate.builder || height != oldDelegate.height;
 }

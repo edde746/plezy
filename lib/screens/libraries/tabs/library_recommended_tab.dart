@@ -136,28 +136,35 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   Widget buildContent(List<MediaHub> items) {
     _ensureHubKeys(items.length);
 
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(0, _focusDecorationPadding, 0, 8),
+    return CustomScrollView(
       // Allow focus decoration to render outside scroll bounds
       clipBehavior: Clip.none,
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final hub = items[index];
-        final isContinueWatching = _isContinueWatchingHub(hub);
+      slivers: [
+        SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(0, _focusDecorationPadding, 0, 8),
+          sliver: SliverList.builder(
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final hub = items[index];
+              final isContinueWatching = _isContinueWatchingHub(hub);
 
-        return HubSection(
-          key: index < _hubKeys.length ? _hubKeys[index] : null,
-          hub: hub,
-          icon: _getHubIcon(hub),
-          isInContinueWatching: isContinueWatching,
-          onRefresh: updateItem,
-          onRemoveFromContinueWatching: isContinueWatching ? _refreshContinueWatching : null,
-          onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
-          onBack: widget.onBack,
-          onNavigateUp: index == 0 ? widget.onBack : null,
-          onNavigateToSidebar: _navigateToSidebar,
-        );
-      },
+              return HubSection(
+                key: index < _hubKeys.length ? _hubKeys[index] : null,
+                hub: hub,
+                icon: _getHubIcon(hub),
+                isInContinueWatching: isContinueWatching,
+                onRefresh: updateItem,
+                onRemoveFromContinueWatching: isContinueWatching ? _refreshContinueWatching : null,
+                onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
+                onBack: widget.onBack,
+                onNavigateUp: index == 0 ? widget.onBack : null,
+                onNavigateToSidebar: _navigateToSidebar,
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

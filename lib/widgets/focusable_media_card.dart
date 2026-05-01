@@ -44,6 +44,11 @@ class FocusableMediaCard extends StatefulWidget {
   /// Used to navigate from the top row to filter chips.
   final VoidCallback? onNavigateUp;
 
+  /// Called when the user presses DOWN and there's no focusable item below.
+  /// When the grid wires explicit row navigation, this points at the item in
+  /// the next row (or null on the last row).
+  final VoidCallback? onNavigateDown;
+
   /// Called when the user presses LEFT and there's no focusable item to the left.
   /// Used to navigate from the first column to the sidebar.
   final VoidCallback? onNavigateLeft;
@@ -78,6 +83,7 @@ class FocusableMediaCard extends StatefulWidget {
     this.disableScale = false,
     this.focusNode,
     this.onNavigateUp,
+    this.onNavigateDown,
     this.onNavigateLeft,
     this.onNavigateRight,
     this.onBack,
@@ -99,6 +105,7 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
       onSelect: () => _mediaCardKey.currentState?.handleTap(),
       onLongPress: () => _mediaCardKey.currentState?.showContextMenu(),
       onNavigateUp: widget.onNavigateUp,
+      onNavigateDown: widget.onNavigateDown,
       onNavigateLeft: widget.onNavigateLeft,
       onNavigateRight: widget.onNavigateRight,
       onBack: widget.onBack,
