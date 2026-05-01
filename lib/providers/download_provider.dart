@@ -1488,10 +1488,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return deletedTitles;
   }
 
-  // ============================================================
-  // Sync Rules
-  // ============================================================
-
   /// All sync rules for the active profile (profile-scoped globalKey -> SyncRuleItem).
   Map<String, SyncRuleItem> get syncRules => Map.unmodifiable(_syncRules);
 

@@ -118,10 +118,6 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
   }
 }
 
-// ---------------------------------------------------------------------------
-// _TvPinInput — unified 4-digit PIN input
-// ---------------------------------------------------------------------------
-
 class _TvPinInput extends StatefulWidget {
   final ValueChanged<String> onSubmit;
   final VoidCallback onCancel;
@@ -204,8 +200,6 @@ class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInp
     final pin = _getPin();
     if (pin != null) widget.onSubmit(pin);
   }
-
-  // -- D-pad / keyboard handling (TV + desktop) --
 
   void _incrementDigit() {
     setState(() {
@@ -324,8 +318,6 @@ class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInp
     return KeyEventResult.ignored;
   }
 
-  // -- Mobile input handling --
-
   void _onMobileDigitChanged(int index, String value) {
     if (value.isEmpty) {
       // Backspace
@@ -436,10 +428,6 @@ class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInp
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// _DigitBox — single digit display box for TV/desktop
-// ---------------------------------------------------------------------------
 
 class _DigitBox extends StatelessWidget {
   final int? digit;

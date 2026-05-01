@@ -79,8 +79,6 @@ class ExternalPlayer {
   int get hashCode => id.hashCode;
 }
 
-// --- Launch helpers ---
-
 Future<bool> _launchWithUrl(String url) {
   return launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
 }
@@ -145,8 +143,6 @@ Future<bool> _launchCustom(String value, String url, CustomPlayerType type) asyn
     return _launchCommand(value, url);
   }
 }
-
-// --- Known Players ---
 
 class KnownPlayers {
   static final systemDefault = ExternalPlayer(id: 'system_default', name: 'System Default', launch: _launchWithUrl);

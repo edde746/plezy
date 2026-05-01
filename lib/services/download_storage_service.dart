@@ -38,34 +38,26 @@ class DownloadStorageService {
   Directory? _baseDownloadsDir;
   String? _artworkDirectoryPath;
 
-  // Custom path configuration
   SettingsService? _settingsService;
   String? _customDownloadPath;
   String _customPathType = 'file';
 
-  /// Check if currently using SAF mode (Android only)
   bool get isUsingSaf => Platform.isAndroid && _customPathType == 'saf' && _customDownloadPath != null;
 
-  /// Get the SAF base URI (only valid when isUsingSaf is true)
   String? get safBaseUri => isUsingSaf ? _customDownloadPath : null;
 
-  /// Get artwork directory path (cached, synchronous after first call)
   String? get artworkDirectoryPath => _artworkDirectoryPath;
 
-  /// Initialize with settings service (call during app startup)
   Future<void> initialize(SettingsService settingsService) async {
     _settingsService = settingsService;
     _customDownloadPath = settingsService.read(SettingsService.customDownloadPath);
     _customPathType = settingsService.read(SettingsService.customDownloadPathType) ?? 'file';
-    // Reset cached directories to force recalculation
     _baseDownloadsDir = null;
     _artworkDirectoryPath = null;
 
-    // Eagerly initialize artwork directory for sync access
     await getArtworkDirectory();
   }
 
-  /// Refresh custom path from settings (call when settings change)
   Future<void> refreshCustomPath() async {
     if (_settingsService != null) {
       _customDownloadPath = _settingsService!.read(SettingsService.customDownloadPath);
@@ -93,10 +85,8 @@ class DownloadStorageService {
     return 'S${season}E$ep - $episodeName';
   }
 
-  /// Check if using custom download path
   bool isUsingCustomPath() => _customDownloadPath != null;
 
-  /// Get current download path for display in settings
   Future<String> getCurrentDownloadPathDisplay() async {
     if (_customDownloadPath != null) {
       return _customDownloadPath!;
@@ -105,7 +95,6 @@ class DownloadStorageService {
     return dir.path;
   }
 
-  /// Check if a directory is writable
   Future<bool> isDirectoryWritable(Directory dir) async {
     try {
       if (!await dir.exists()) {
@@ -121,11 +110,9 @@ class DownloadStorageService {
     }
   }
 
-  /// Initialize and get base downloads directory
   Future<Directory> getDownloadsDirectory() async {
     if (_baseDownloadsDir != null) return _baseDownloadsDir!;
 
-    // Check for custom path first (file type only - SAF handled differently)
     if (_customDownloadPath != null && _customPathType == 'file') {
       final customDir = Directory(_customDownloadPath!);
       if (await isDirectoryWritable(customDir)) {
@@ -135,7 +122,6 @@ class DownloadStorageService {
       // Fall through to default if custom path is not writable
     }
 
-    // Default path logic
     final baseDir = await _getBaseAppDir();
     _baseDownloadsDir = await _ensureDirectoryExists(Directory(path.join(baseDir.path, 'downloads')));
     return _baseDownloadsDir!;
@@ -176,7 +162,6 @@ class DownloadStorageService {
   /// Example: artwork/a1b2c3d4e5f6.jpg
   String? getArtworkPathSync(String serverId, String thumbPath) {
     if (_artworkDirectoryPath == null) return null;
-    // Create hash from serverId:thumbPath for deduplication
     final hash = _hashArtworkPath(serverId, thumbPath);
     return path.join(_artworkDirectoryPath!, '$hash.jpg');
   }
@@ -189,7 +174,6 @@ class DownloadStorageService {
     return path.join(artworkDir.path, '$hash.jpg');
   }
 
-  /// Check if artwork already exists (for deduplication)
   Future<bool> artworkExists(String serverId, String thumbPath) async {
     final artworkPath = await getArtworkPathFromThumb(serverId, thumbPath);
     return File(artworkPath).exists();
@@ -201,19 +185,16 @@ class DownloadStorageService {
     return md5.convert(utf8.encode(combined)).toString();
   }
 
-  /// Get directory for a specific media item
   Future<Directory> getMediaDirectory(String serverId, String ratingKey) async {
     final baseDir = await getDownloadsDirectory();
     return _ensureDirectoryExists(Directory(path.join(baseDir.path, serverId, ratingKey)));
   }
 
-  /// Get video file path
   Future<String> getVideoFilePath(String serverId, String ratingKey, String extension) async {
     final mediaDir = await getMediaDirectory(serverId, ratingKey);
     return path.join(mediaDir.path, 'video.$extension');
   }
 
-  /// Get subtitles directory
   Future<Directory> getSubtitlesDirectory(String serverId, String ratingKey) async {
     final mediaDir = await getMediaDirectory(serverId, ratingKey);
     final subtitlesDir = Directory(path.join(mediaDir.path, 'subtitles'));
@@ -223,15 +204,10 @@ class DownloadStorageService {
     return subtitlesDir;
   }
 
-  /// Get subtitle file path
   Future<String> getSubtitlePath(String serverId, String ratingKey, int trackId, String extension) async {
     final subtitlesDir = await getSubtitlesDirectory(serverId, ratingKey);
     return path.join(subtitlesDir.path, '$trackId.$extension');
   }
-
-  // ============================================================
-  // USER-FRIENDLY PATH METHODS (for Files app visibility)
-  // ============================================================
 
   /// Sanitize a filename by removing invalid filesystem characters
   String _sanitizeFileName(String name) {
@@ -263,7 +239,6 @@ class DownloadStorageService {
     return year != null ? '$sanitized ($year)' : sanitized;
   }
 
-  /// Get the folder name for a movie: "Movie Name (YYYY)"
   String _getMovieFolderName(MediaItem movie) {
     return _formatTitleWithYear(movie.title!, movie.year);
   }
@@ -276,7 +251,6 @@ class DownloadStorageService {
     return _formatTitleWithYear(title, year);
   }
 
-  /// Get movie directory: downloads/Movies/{Movie Name} ({Year})/
   Future<Directory> getMovieDirectory(MediaItem movie) async {
     final baseDir = await getDownloadsDirectory();
     final movieFolder = _getMovieFolderName(movie);
@@ -336,21 +310,18 @@ class DownloadStorageService {
     return _ensureDirectoryExists(Directory(path.join(base.seasonDirPath, '${base.fileName}_subs')));
   }
 
-  /// Get episode subtitle path
   /// [showYear]: Pass the show's premiere year (not episode year)
   Future<String> getEpisodeSubtitlePath(MediaItem episode, int trackId, String extension, {int? showYear}) async {
     final subsDir = await getEpisodeSubtitlesDirectory(episode, showYear: showYear);
     return path.join(subsDir.path, '$trackId.$extension');
   }
 
-  /// Get subtitles directory for movie
   Future<Directory> getMovieSubtitlesDirectory(MediaItem movie) async {
     final movieDir = await getMovieDirectory(movie);
     final baseName = _getMovieFolderName(movie);
     return _ensureDirectoryExists(Directory(path.join(movieDir.path, '${baseName}_subs')));
   }
 
-  /// Get movie subtitle path
   Future<String> getMovieSubtitlePath(MediaItem movie, int trackId, String extension) async {
     final subsDir = await getMovieSubtitlesDirectory(movie);
     return path.join(subsDir.path, '$trackId.$extension');
@@ -375,14 +346,12 @@ class DownloadStorageService {
     }
     if (result != absolutePath) return result;
 
-    // Already relative or from a different base - return as-is
     return absolutePath;
   }
 
   /// Convert a relative file path to an absolute path (for file operations)
   /// Reconstructs the full path using the current app documents directory.
   Future<String> toAbsolutePath(String relativePath) async {
-    // If it's already an absolute path, return as-is
     if (path.isAbsolute(relativePath)) {
       return relativePath;
     }
@@ -463,13 +432,10 @@ class DownloadStorageService {
     return fallback;
   }
 
-  /// Get path components for SAF based on media type
-  /// Returns list of directory names to create under the SAF base
   List<String> getMovieSafPathComponents(MediaItem movie) {
     return ['Movies', _getMovieFolderName(movie)];
   }
 
-  /// Get path components for episode SAF storage
   List<String> getEpisodeSafPathComponents(MediaItem episode, {int? showYear}) {
     final showFolder = _getShowFolderName(episode, showYear: showYear);
     final seasonNum = padNumber(episode.parentIndex ?? 0, 2);
@@ -489,12 +455,10 @@ class DownloadStorageService {
     return ['TV Shows', showFolder, 'Season $seasonNum'];
   }
 
-  /// Get SAF file name for a movie
   String getMovieSafFileName(MediaItem movie, String extension) {
     return '${_getMovieFolderName(movie)}.$extension';
   }
 
-  /// Get SAF file name for an episode
   String getEpisodeSafFileName(MediaItem episode, String extension) {
     final fileName = _formatEpisodeFileName(episode);
     return '$fileName.$extension';
@@ -503,7 +467,6 @@ class DownloadStorageService {
   /// Get the extension-less episode filename used for SAF lookups.
   String getEpisodeSafBaseName(MediaItem episode) => _formatEpisodeFileName(episode);
 
-  /// Check if a path is a SAF content URI
   bool isSafUri(String storedPath) {
     return storedPath.startsWith('content://');
   }
@@ -513,7 +476,6 @@ class DownloadStorageService {
   /// For file paths, ensures the path is absolute
   Future<String> getReadablePath(String storedPath) async {
     if (isSafUri(storedPath)) {
-      // SAF content:// URIs are already readable by media players
       return storedPath;
     }
     return await ensureAbsolutePath(storedPath);

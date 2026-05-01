@@ -30,10 +30,6 @@ class PlayerAndroid extends PlayerBase {
   @override
   bool get supportsSecondarySubtitles => false;
 
-  // ============================================
-  // Platform-Specific Event Handling
-  // ============================================
-
   @override
   void handlePlayerEvent(String name, Map? data) {
     // Handle Android-specific events
@@ -49,10 +45,6 @@ class PlayerAndroid extends PlayerBase {
     // Delegate to base class for common events
     super.handlePlayerEvent(name, data);
   }
-
-  // ============================================
-  // Initialization
-  // ============================================
 
   // Memoizes the in-flight init Future so concurrent callers share one
   // `invoke('initialize')`. ExoPlayer's native handleInitialize is
@@ -99,10 +91,6 @@ class PlayerAndroid extends PlayerBase {
       rethrow;
     }
   }
-
-  // ============================================
-  // Playback Control
-  // ============================================
 
   @override
   Future<void> open(
@@ -154,10 +142,6 @@ class PlayerAndroid extends PlayerBase {
     await runSeek(() => invoke('seek', {'positionMs': position.inMilliseconds}));
   }
 
-  // ============================================
-  // Track Selection
-  // ============================================
-
   @override
   Future<void> selectAudioTrack(AudioTrack track) async {
     await invoke('selectAudioTrack', {'trackId': track.id});
@@ -173,10 +157,6 @@ class PlayerAndroid extends PlayerBase {
     await invoke('addSubtitleTrack', {'uri': uri, 'title': title, 'language': language, 'select': select});
   }
 
-  // ============================================
-  // Volume and Rate
-  // ============================================
-
   @override
   Future<void> setVolume(double volume) async {
     await invoke('setVolume', {'volume': volume});
@@ -186,10 +166,6 @@ class PlayerAndroid extends PlayerBase {
   Future<void> setRate(double rate) async {
     await invoke('setRate', {'rate': rate});
   }
-
-  // ============================================
-  // MPV Properties (Compatibility Layer)
-  // ============================================
 
   @override
   Future<void> setProperty(String name, String value) async {
@@ -352,10 +328,6 @@ class PlayerAndroid extends PlayerBase {
     }
   }
 
-  // ============================================
-  // Subtitle Styling (ExoPlayer Native)
-  // ============================================
-
   /// Apply subtitle styling to the native ExoPlayer layer.
   ///
   /// For non-ASS subtitles, applies CaptionStyleCompat (color, border, background).
@@ -385,20 +357,12 @@ class PlayerAndroid extends PlayerBase {
     });
   }
 
-  // ============================================
-  // Box-fit / video scaling mode
-  // ============================================
-
   /// Apply the box-fit mode to the native ExoPlayer layer.
   /// Maps to AspectRatioFrameLayout resize mode: 0=FIT, 1=ZOOM, 2=FILL.
   Future<void> setBoxFitMode(int mode) async {
     if (disposed || !initialized) return;
     await invoke('setBoxFitMode', {'mode': mode});
   }
-
-  // ============================================
-  // Frame Rate Matching
-  // ============================================
 
   @override
   Future<bool> setVideoFrameRate(double fps, int durationMs, {int extraDelayMs = 0}) async {
@@ -423,10 +387,6 @@ class PlayerAndroid extends PlayerBase {
     await invoke('updateFrame');
   }
 
-  // ============================================
-  // Audio Focus
-  // ============================================
-
   @override
   Future<bool> requestAudioFocus() async {
     if (disposed) return false;
@@ -439,10 +399,6 @@ class PlayerAndroid extends PlayerBase {
     if (disposed || !initialized) return;
     await invoke('abandonAudioFocus');
   }
-
-  // ============================================
-  // Log Level
-  // ============================================
 
   @override
   Future<void> setLogLevel(String level) async {

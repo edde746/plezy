@@ -387,20 +387,12 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   @override
   void focusActiveTabIfReady() => _focusCurrentTab();
 
-  // ---------------------------------------------------------------------------
-  // Tab chips
-  // ---------------------------------------------------------------------------
-
   String _getTabLabel(LiveTvTab tab) {
     return switch (tab) {
       LiveTvTab.guide => t.liveTv.guide,
       LiveTvTab.whatsOn => t.liveTv.whatsOn,
     };
   }
-
-  // ---------------------------------------------------------------------------
-  // Build
-  // ---------------------------------------------------------------------------
 
   List<Widget> _buildTabChipItems() {
     return [

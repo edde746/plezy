@@ -267,10 +267,6 @@ class GuideTabState extends State<GuideTab> {
     await tuneAndNavigateToLiveTv(context, multiServer: multiServer, channel: channel, channels: widget.channels);
   }
 
-  // ---------------------------------------------------------------------------
-  // Focus key handling
-  // ---------------------------------------------------------------------------
-
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
@@ -415,10 +411,6 @@ class GuideTabState extends State<GuideTab> {
     return KeyEventResult.ignored;
   }
 
-  // ---------------------------------------------------------------------------
-  // Focus helpers
-  // ---------------------------------------------------------------------------
-
   LiveTvProgram? _findCurrentProgram(int channelIndex) {
     if (channelIndex < 0 || channelIndex >= widget.channels.length) return null;
     final channel = widget.channels[channelIndex];
@@ -501,10 +493,6 @@ class GuideTabState extends State<GuideTab> {
       _gridHorizontalController.jumpTo((left - 50).clamp(0.0, maxScroll));
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // Build
-  // ---------------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -760,10 +748,6 @@ class GuideTabState extends State<GuideTab> {
     });
   }
 
-  // ---------------------------------------------------------------------------
-  // Time navigation bar
-  // ---------------------------------------------------------------------------
-
   Widget _timeNavFocusWrap({required Widget child, required int index, required ThemeData theme}) {
     final isFocused = _hasFocus && _focusZone == _GuideZone.timeNav && _timeNavIndex == index;
     if (!isFocused) return child;
@@ -840,10 +824,6 @@ class GuideTabState extends State<GuideTab> {
     );
   }
 
-  // ---------------------------------------------------------------------------
-  // Time header & now indicator
-  // ---------------------------------------------------------------------------
-
   Widget _buildTimeHeader(ThemeData theme) {
     final is24Hour = MediaQuery.alwaysUse24HourFormatOf(context);
     final slots = <Widget>[];
@@ -871,10 +851,6 @@ class GuideTabState extends State<GuideTab> {
 
     return Row(children: slots);
   }
-
-  // ---------------------------------------------------------------------------
-  // Channel column
-  // ---------------------------------------------------------------------------
 
   Widget _buildChannelCell(LiveTvChannel channel, ThemeData theme, {required int index}) {
     final multiServer = context.read<MultiServerProvider>();
@@ -917,10 +893,6 @@ class GuideTabState extends State<GuideTab> {
       ],
     );
   }
-
-  // ---------------------------------------------------------------------------
-  // Program grid
-  // ---------------------------------------------------------------------------
 
   Widget _buildProgramRow(
     LiveTvChannel channel,

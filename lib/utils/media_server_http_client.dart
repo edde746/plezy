@@ -82,10 +82,6 @@ class MediaServerHttpClient {
   Duration connectTimeout;
   Duration receiveTimeout;
 
-  // ---------------------------------------------------------------------------
-  // Public request methods
-  // ---------------------------------------------------------------------------
-
   Future<MediaServerResponse> get(
     String path, {
     Map<String, dynamic>? queryParameters,
@@ -190,10 +186,6 @@ class MediaServerHttpClient {
 
   void close() => _client.close();
 
-  // ---------------------------------------------------------------------------
-  // Core send implementation
-  // ---------------------------------------------------------------------------
-
   Future<MediaServerResponse> _send(
     String method,
     String path, {
@@ -260,10 +252,6 @@ class MediaServerHttpClient {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // URI building
-  // ---------------------------------------------------------------------------
-
   /// Build a full URI from [baseUrl] + [path] + [queryParameters].
   /// Use this from callers that need to construct URLs with the client's
   /// current (possibly failover-switched) base, rather than reading
@@ -307,10 +295,6 @@ class MediaServerHttpClient {
 
   static bool _isAbsoluteUrl(String url) => url.startsWith('http://') || url.startsWith('https://');
 
-  // ---------------------------------------------------------------------------
-  // Body serialization
-  // ---------------------------------------------------------------------------
-
   /// Set the request body, choosing encoding based on the body type.
   void _setBody(http.Request request, Object? body) {
     if (body == null) return;
@@ -337,10 +321,6 @@ class MediaServerHttpClient {
       request.headers['content-type'] = 'application/json';
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // Response decoding
-  // ---------------------------------------------------------------------------
 
   /// Decode the response body: lenient UTF-8, then JSON parse if applicable.
   /// Large payloads are decoded in a background isolate.
@@ -374,10 +354,6 @@ class MediaServerHttpClient {
     }
     return null;
   }
-
-  // ---------------------------------------------------------------------------
-  // Logging
-  // ---------------------------------------------------------------------------
 
   void _logResponse(String method, Uri uri, int statusCode, int ms) {
     appLogger.d('$method ${LogRedactionManager.redact(uri.toString())} → $statusCode (${ms}ms)');

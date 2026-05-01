@@ -10,9 +10,6 @@ import '../utils/future_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/language_codes.dart';
 
-// ============================================================================
-// Track Matching Utilities
-// ============================================================================
 // These functions match MPV tracks to Plex tracks by properties (language,
 // codec, title, etc.) instead of list index, since the two may be ordered
 // differently.

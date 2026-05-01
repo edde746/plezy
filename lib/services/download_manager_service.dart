@@ -30,8 +30,6 @@ import 'package:sentry_flutter/sentry_flutter.dart';
 
 typedef MediaClientResolver = MediaServerClient? Function(String serverId, {String? clientScopeId});
 
-/// Context for a download that's been enqueued with background_downloader.
-/// Carries metadata needed between enqueue and completion callback.
 class _DownloadContext {
   final MediaItem metadata;
   final DownloadQueueItem queueItem;
@@ -59,15 +57,12 @@ class DownloadManagerService {
   final DownloadStorageService _storageService;
   final MediaServerHttpClient _http;
 
-  // Stream controller for download progress updates
   final _progressController = StreamController<DownloadProgress>.broadcast();
   Stream<DownloadProgress> get progressStream => _progressController.stream;
 
-  // Stream controller for deletion progress updates
   final _deletionProgressController = StreamController<DeletionProgress>.broadcast();
   Stream<DeletionProgress> get deletionProgressStream => _deletionProgressController.stream;
 
-  // Context for downloads enqueued in this session
   final Map<String, _DownloadContext> _pendingDownloadContext = {};
 
   // Items recovered with video complete but supplementary downloads missing
@@ -80,7 +75,6 @@ class DownloadManagerService {
 
   OfflineModeSource? _offlineSource;
 
-  // background_downloader state
   bool _fileDownloaderInitialized = false;
   static const _downloadGroup = 'video_downloads';
   static const _maxAppRetries = 3;
@@ -112,8 +106,6 @@ class DownloadManagerService {
   int _consecutiveQueueFailures = 0;
   static const _maxConsecutiveFailures = 3;
 
-  /// Public method to check if downloads should be blocked due to cellular-only setting
-  /// Can be used by DownloadProvider to show user-friendly error
   static Future<bool> shouldBlockDownloadOnCellular() async {
     final List<ConnectivityResult> connectivity;
     try {
@@ -149,7 +141,6 @@ class DownloadManagerService {
        _storageService = storageService,
        _http = http ?? httpClient;
 
-  /// Register a callback to resolve the correct [MediaServerClient] for a given serverId.
   void setClientResolver(MediaClientResolver resolver) {
     _clientResolver = resolver;
   }
@@ -383,10 +374,9 @@ class DownloadManagerService {
           progressBar: true,
         );
 
-    // Configure native holding queue: max 1 concurrent (Plex server limitation)
+    // Plex servers can reject concurrent media downloads.
     await FileDownloader().configure(globalConfig: (Config.holdingQueue, (1, 1, 1)));
 
-    // Track tasks for persistence across app restarts
     await FileDownloader().trackTasks();
     // Deliver status updates from iOS background-to-foreground transitions
     await FileDownloader().resumeFromBackground();
@@ -679,7 +669,6 @@ class DownloadManagerService {
     ]);
   }
 
-  /// Queue a download for a media item
   Future<void> queueDownload({
     required MediaItem metadata,
     required MediaServerClient client,
@@ -690,7 +679,6 @@ class DownloadManagerService {
   }) async {
     final globalKey = metadata.globalKey;
 
-    // Check if already downloading or completed
     final existing = await _database.getDownloadedMedia(globalKey);
     if (existing != null &&
         (existing.status == DownloadStatus.downloading.index || existing.status == DownloadStatus.completed.index)) {
@@ -698,7 +686,6 @@ class DownloadManagerService {
       return;
     }
 
-    // Insert into database
     await _database.insertDownload(
       serverId: metadata.serverId!,
       clientScopeId: client.cacheServerId == metadata.serverId ? null : client.cacheServerId,
@@ -716,7 +703,6 @@ class DownloadManagerService {
     // cache is warm and falls back to the existing entry on network error.
     await _pinMetadataForOffline(client, metadata);
 
-    // Add to queue
     await _database.addToQueue(
       mediaGlobalKey: globalKey,
       priority: priority,
@@ -726,7 +712,6 @@ class DownloadManagerService {
 
     _emitProgress(globalKey, DownloadStatus.queued, 0);
 
-    // Start processing if not already
     unawaited(_processQueue(client));
   }
 
@@ -1219,7 +1204,6 @@ class DownloadManagerService {
         }
       }
 
-      // Store video path in DB
       await _database.updateVideoFilePath(globalKey, storedPath);
       appLogger.d('Video download completed for $globalKey');
 
@@ -1229,7 +1213,6 @@ class DownloadManagerService {
         final client = ctx?.client ?? await _getClientForDownloadKey(globalKey);
         final showYear = ctx?.showYear;
 
-        // Get queue item settings (still in drift at this point)
         final queueItem =
             ctx?.queueItem ??
             await (_database.select(
@@ -1278,7 +1261,6 @@ class DownloadManagerService {
     }
   }
 
-  /// Resolve metadata from cache using a globalKey
   Future<MediaItem?> _resolveMetadata(String globalKey) async {
     final parsed = parseGlobalKey(globalKey);
     if (parsed == null) return null;
@@ -1292,7 +1274,6 @@ class DownloadManagerService {
     return (await _lookupMetadata(serverId, grandparentRatingKey, clientScopeId: clientScopeId))?.year;
   }
 
-  /// Re-derive the SAF file URI from metadata (for recovery when context is lost)
   Future<String?> _resolveSafStoredPath(MediaItem metadata, String ext, int? showYear) async {
     final safBaseUri = _storageService.safBaseUri;
     if (safBaseUri == null) return null;
@@ -1334,8 +1315,6 @@ class DownloadManagerService {
     return _fetchShowYear(serverId, metadata.grandparentId, clientScopeId: clientScopeId);
   }
 
-  /// Download artwork for a media item using hash-based storage
-  /// Downloads all artwork types: thumb/poster, clearLogo, and background art
   Future<void> _downloadArtwork(String globalKey, MediaItem metadata, MediaServerClient client) async {
     if (metadata.serverId == null) return;
 
@@ -1348,7 +1327,6 @@ class DownloadManagerService {
         await _downloadSingleArtwork(serverId, spec);
       }
 
-      // Store thumb reference in database (primary artwork for display)
       final storedThumbPath = metadata.thumbPath == null ? null : artworkStorageKey(metadata.thumbPath!);
       await _database.updateArtworkPaths(globalKey: globalKey, thumbPath: storedThumbPath);
 
@@ -1605,17 +1583,14 @@ class DownloadManagerService {
     await _database.removeFromQueue(globalKey);
   }
 
-  /// Delete a downloaded item and its files
   Future<void> deleteDownload(String globalKey) async {
     _cancelDownloadTimers(globalKey);
-    // Cancel if actively downloading via background_downloader
     final bgTaskId = await _database.getBgTaskId(globalKey);
     if (bgTaskId != null) {
       await FileDownloader().cancelTaskWithId(bgTaskId);
     }
     _pendingDownloadContext.remove(globalKey);
 
-    // Delete files from storage
     final parsed = parseGlobalKey(globalKey);
     if (parsed == null) {
       await _database.deleteDownload(globalKey);
@@ -1636,24 +1611,18 @@ class DownloadManagerService {
       return;
     }
 
-    // Determine total items to delete
     final totalItems = await _getTotalItemsToDelete(metadata, serverId, clientScopeId: clientScopeId);
 
-    // Emit initial progress
     _emitDeletionProgress(
       DeletionProgress(globalKey: globalKey, itemTitle: metadata.displayTitle, currentItem: 0, totalItems: totalItems),
     );
 
-    // Delete files from storage (with progress updates)
     await _deleteMediaFilesWithMetadata(serverId, ratingKey, clientScopeId: clientScopeId);
 
-    // Delete from API cache
     await _deleteForItemByServer(serverId, ratingKey, clientScopeId: clientScopeId);
 
-    // Delete from database
     await _database.deleteDownload(globalKey);
 
-    // Emit completion
     _emitDeletionProgress(
       DeletionProgress(
         globalKey: globalKey,
@@ -1664,7 +1633,6 @@ class DownloadManagerService {
     );
   }
 
-  /// Emit deletion progress update
   void _emitDeletionProgress(DeletionProgress progress) {
     if (_disposed) return;
     _deletionProgressController.add(progress);
@@ -1687,12 +1655,10 @@ class DownloadManagerService {
     }
   }
 
-  /// Delete media files using metadata to find correct paths
   Future<void> _deleteMediaFilesWithMetadata(String serverId, String ratingKey, {String? clientScopeId}) async {
     try {
       final gk = buildGlobalKey(serverId, ratingKey);
       final downloadRecord = await _database.getDownloadedMedia(gk);
-      // Get metadata from API cache
       final scopeId = clientScopeId ?? downloadRecord?.clientScopeId;
       final metadata = await _lookupMetadata(serverId, ratingKey, clientScopeId: scopeId);
 
@@ -1777,7 +1743,6 @@ class DownloadManagerService {
         return;
       }
 
-      // Build a set of all chapter thumb paths used by OTHER items on this server
       final otherItems = await _database.getDownloadsByServerId(serverId);
       final inUseThumbPaths = <String>{};
       for (final item in otherItems) {
@@ -1801,7 +1766,6 @@ class DownloadManagerService {
             continue;
           }
 
-          // Get artwork file path and delete
           final artworkPath = await _storageService.getArtworkPathFromThumb(serverId, thumbPath);
           if (await _deleteFileIfExists(File(artworkPath), 'chapter thumbnail')) {
             deletedCount++;
@@ -1819,7 +1783,6 @@ class DownloadManagerService {
     }
   }
 
-  /// Delete episode files
   Future<void> _deleteEpisodeFiles(MediaItem episode, String serverId, {String? clientScopeId}) async {
     try {
       final parentMetadata = episode.grandparentId != null
@@ -1827,7 +1790,6 @@ class DownloadManagerService {
           : null;
       final showYear = parentMetadata?.year;
 
-      // Delete video file
       final videoPathTemplate = await _storageService.getEpisodeVideoPath(episode, 'tmp', showYear: showYear);
       final videoPathWithoutExt = videoPathTemplate.substring(0, videoPathTemplate.lastIndexOf('.'));
       final actualVideoFile = await _findFileWithAnyExtension(videoPathWithoutExt);
@@ -1837,21 +1799,17 @@ class DownloadManagerService {
         await _deleteFileIfExists(File('${actualVideoFile.path}.part'), 'partial download');
       }
 
-      // Delete thumbnail
       final thumbPath = await _storageService.getEpisodeThumbnailPath(episode, showYear: showYear);
       await _deleteFileIfExists(File(thumbPath), 'episode thumbnail');
 
-      // Delete subtitles directory
       final subsDir = await _storageService.getEpisodeSubtitlesDirectory(episode, showYear: showYear);
       if (await subsDir.exists()) {
         await subsDir.delete(recursive: true);
         appLogger.i('Deleted episode subtitles: ${subsDir.path}');
       }
 
-      // Delete chapter thumbnails (with reference counting)
       await _deleteChapterThumbnails(serverId, episode.id, clientScopeId: clientScopeId);
 
-      // Clean up parent directories if empty
       await _cleanupEmptyDirectories(episode, showYear);
 
       // Safety net: verify the actual DB-recorded file is gone
@@ -1861,7 +1819,6 @@ class DownloadManagerService {
     }
   }
 
-  /// Delete season files
   Future<void> _deleteSeasonFiles(MediaItem season, String serverId, {String? clientScopeId}) async {
     try {
       final parentMetadata = season.parentId != null
@@ -1869,7 +1826,6 @@ class DownloadManagerService {
           : null;
       final showYear = parentMetadata?.year;
 
-      // Get all episodes in this season
       final episodesInSeason = await _database.getEpisodesBySeason(season.id, serverId: serverId);
 
       appLogger.d('Deleting ${episodesInSeason.length} episodes in season ${season.id}');
@@ -1946,10 +1902,8 @@ class DownloadManagerService {
     }
   }
 
-  /// Delete show files
   Future<void> _deleteShowFiles(MediaItem show, String serverId, {String? clientScopeId}) async {
     try {
-      // Get all episodes in this show
       final episodesInShow = await _database.getEpisodesByShow(show.id, serverId: serverId);
 
       appLogger.d('Deleting ${episodesInShow.length} episodes in show ${show.id}');
@@ -1971,7 +1925,6 @@ class DownloadManagerService {
     }
   }
 
-  /// Delete movie files
   Future<void> _deleteMovieFiles(MediaItem movie, String serverId, {String? clientScopeId}) async {
     try {
       final movieDir = await _storageService.getMovieDirectory(movie);
@@ -1980,7 +1933,6 @@ class DownloadManagerService {
         appLogger.i('Deleted movie directory: ${movieDir.path}');
       }
 
-      // Delete chapter thumbnails (with reference counting)
       await _deleteChapterThumbnails(serverId, movie.id, clientScopeId: clientScopeId);
 
       // Safety net: verify the actual DB-recorded file is gone
@@ -2161,7 +2113,6 @@ class DownloadManagerService {
       appLogger.w('Safety net: video still exists after metadata deletion, deleting: $videoPath');
       await videoFile.delete();
 
-      // Clean up .part file and subtitles directory alongside video
       await _deleteFileIfExists(File('$videoPath.part'), 'partial download');
       final subsPath = videoPath.replaceAll(RegExp(r'\.[^.]+$'), '_subs');
       final subsDir = Directory(subsPath);
@@ -2238,29 +2189,24 @@ class DownloadManagerService {
     }
   }
 
-  /// Check if season artwork is in use
   Future<bool> _isSeasonArtworkInUse(MediaItem episode, int? _) async {
     final seasonKey = episode.parentId;
     if (seasonKey == null) return false;
 
     final otherEpisodes = await _database.getEpisodesBySeason(seasonKey);
 
-    // Check if any episodes besides this one
     return otherEpisodes.any((e) => e.globalKey != episode.globalKey);
   }
 
-  /// Check if show artwork is in use
   Future<bool> _isShowArtworkInUse(MediaItem metadata, int? _) async {
     final showKey = metadata.grandparentId ?? metadata.parentId ?? metadata.id;
 
     // Use targeted query instead of full table scan
     final showEpisodes = await _database.getEpisodesByShow(showKey);
 
-    // Check if any episodes belong to this show besides the current item
     return showEpisodes.any((item) => item.globalKey != metadata.globalKey);
   }
 
-  /// Find file with any extension
   Future<File?> _findFileWithAnyExtension(String pathWithoutExt) async {
     final dir = Directory(path.dirname(pathWithoutExt));
     final baseName = path.basename(pathWithoutExt);
@@ -2293,10 +2239,8 @@ class DownloadManagerService {
         final videoDeleted = await _deleteFileIfExists(videoFile, 'video file');
 
         if (videoDeleted) {
-          // Delete .part file from interrupted downloads
           await _deleteFileIfExists(File('$videoPath.part'), 'partial download');
 
-          // Delete subtitle directory
           final subsPath = videoPath.replaceAll(RegExp(r'\.[^.]+$'), '_subs');
           final subsDir = Directory(subsPath);
           if (await subsDir.exists()) {
@@ -2304,7 +2248,6 @@ class DownloadManagerService {
             appLogger.i('Deleted subtitles: $subsPath');
           }
 
-          // Clean up empty parent directories
           await _cleanupEmptyParentDirectories(videoFile.parent);
         }
       }
@@ -2324,12 +2267,10 @@ class DownloadManagerService {
     }
   }
 
-  /// Get all downloaded media items (for loading persisted data)
   Future<List<DownloadedMediaItem>> getAllDownloads() {
     return _database.select(_database.downloadedMedia).get();
   }
 
-  /// Get a specific downloaded media item by globalKey
   Future<DownloadedMediaItem?> getDownloadedMedia(String globalKey) {
     return _database.getDownloadedMedia(globalKey);
   }

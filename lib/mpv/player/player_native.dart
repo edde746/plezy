@@ -33,10 +33,6 @@ class PlayerNative extends PlayerBase {
   /// but as JSON strings on Android/Windows.
   static final String _nodeFormat = (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node';
 
-  // ============================================
-  // Initialization
-  // ============================================
-
   // Memoizes the in-flight init Future so concurrent callers (e.g. the
   // parallel `requestAudioFocus()` and `setProperty()` paths kicked off in
   // VideoPlayerScreen._initializePlayer) share one `invoke('initialize')`.
@@ -90,10 +86,6 @@ class PlayerNative extends PlayerBase {
       rethrow;
     }
   }
-
-  // ============================================
-  // Playback Control
-  // ============================================
 
   /// Opens a content:// URI via the platform channel and returns the raw FD number.
   /// Returns null if the call fails.
@@ -174,10 +166,6 @@ class PlayerNative extends PlayerBase {
     await runSeek(() => command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']));
   }
 
-  // ============================================
-  // Track Selection
-  // ============================================
-
   @override
   Future<void> selectAudioTrack(AudioTrack track) async {
     await setProperty('aid', track.id);
@@ -201,10 +189,6 @@ class PlayerNative extends PlayerBase {
     await command(args);
   }
 
-  // ============================================
-  // Volume and Rate
-  // ============================================
-
   @override
   Future<void> setVolume(double volume) async {
     await setProperty('volume', volume.toString());
@@ -219,10 +203,6 @@ class PlayerNative extends PlayerBase {
   Future<void> setAudioDevice(AudioDevice device) async {
     await setProperty('audio-device', device.name);
   }
-
-  // ============================================
-  // MPV Properties
-  // ============================================
 
   @override
   Future<void> setProperty(String name, String value) async {
@@ -245,20 +225,12 @@ class PlayerNative extends PlayerBase {
     await invoke('command', {'args': args});
   }
 
-  // ============================================
-  // Log Level
-  // ============================================
-
   @override
   Future<void> setLogLevel(String level) async {
     if (disposed) return;
     await _ensureInitialized();
     await invoke('setLogLevel', {'level': level});
   }
-
-  // ============================================
-  // Passthrough
-  // ============================================
 
   @override
   Future<void> setAudioPassthrough(bool enabled) async {
@@ -270,10 +242,6 @@ class PlayerNative extends PlayerBase {
       await setProperty('audio-exclusive', 'no');
     }
   }
-
-  // ============================================
-  // Platform-Specific Overrides
-  // ============================================
 
   @override
   Future<void> updateFrame() async {

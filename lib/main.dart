@@ -146,11 +146,9 @@ Future<void> main() async {
 }
 
 Future<void> _bootstrapApp() async {
-  // Initialize settings first to get saved locale
   final settings = await SettingsService.getInstance();
   final savedLocale = settings.read(SettingsService.appLocale);
 
-  // Initialize localization with saved locale
   unawaited(LocaleSettings.setLocale(savedLocale));
 
   // Needed for formatting dates in different locales
@@ -165,10 +163,8 @@ Future<void> _bootstrapApp() async {
     PaintingBinding.instance.imageCache.maximumSizeBytes = 100 << 20; // 100MB
   }
 
-  // Initialize services in parallel where possible
   final futures = <Future<void>>[];
 
-  // Initialize window_manager for desktop platforms
   if (PlatformDetector.isDesktopOS()) {
     futures.add(windowManager.ensureInitialized());
   }
@@ -178,7 +174,6 @@ Future<void> _bootstrapApp() async {
     futures.add(TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode)));
   }
   if (Platform.isAndroid) {
-    // Initialize PiP service to listen for PiP state changes (Android only).
     PipService();
   }
 
@@ -188,21 +183,17 @@ Future<void> _bootstrapApp() async {
   // Hook Windows native fullscreen callback (no-op elsewhere).
   NativeWindowService.initialize();
 
-  // Initialize storage service
   futures.add(StorageService.getInstance());
 
-  // Wait for all parallel services to complete
   await Future.wait(futures);
 
   // The PLEX_TOKEN dart-define (screenshot automation) is consumed by
   // [ConnectionBootstrap.seedFromDevTokenDefine] later, when the registry
   // is available — keeps the deprecated legacy slots out of runtime paths.
 
-  // Initialize logger level based on debug setting
   final debugEnabled = settings.read(SettingsService.enableDebugLogging);
   setLoggerLevel(debugEnabled);
 
-  // Log app version and git commit at startup
   final packageInfo = await PackageInfo.fromPlatform();
   final commitSuffix = gitCommit.isNotEmpty ? ' (${gitCommit.substring(0, 7)})' : '';
   String renderer = '';
@@ -211,10 +202,8 @@ Future<void> _bootstrapApp() async {
   }
   appLogger.i('Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer');
 
-  // Initialize download storage service with settings
   await DownloadStorageService.instance.initialize(settings);
 
-  // Start global fullscreen state monitoring
   FullscreenStateManager().startMonitoring();
 
   // Apply "start in fullscreen" preference on Windows/Linux. macOS is
@@ -235,8 +224,6 @@ Future<void> _bootstrapApp() async {
 
   // Trakt scrobble service (all platforms)
   await TraktScrobbleService.instance.initialize();
-
-  // DTD service is available for MCP tooling connection if needed
 
   // Register bundled shader licenses
   _registerShaderLicenses();
@@ -788,7 +775,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return previous ?? OfflineWatchProvider(syncService: syncService, downloadProvider: downloadProvider);
           },
         ),
-        // Existing providers
         ChangeNotifierProxyProvider2<ActiveProfileProvider, ConnectionRegistry, UserProfileProvider>(
           create: (_) => UserProfileProvider(),
           update: (context, activeProfile, connections, previous) {

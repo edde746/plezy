@@ -372,7 +372,6 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
         return;
       }
 
-      // Parse libraries from the library provider
       final libraries = <PlexLibraryDto>[];
       final epg = <({String identifier, String gridEndpoint})>[];
 
@@ -554,11 +553,6 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     return ConnectionTestResult(success: true, latencyMs: avgLatency);
   }
 
-  // ============================================================================
-  // API Response Parsing Helpers
-  // ============================================================================
-
-  /// Extract MediaContainer from API response
   Map<String, dynamic>? _getMediaContainer(MediaServerResponse response) {
     if (response.data is Map && response.data.containsKey('MediaContainer')) {
       return response.data['MediaContainer'];
@@ -566,15 +560,11 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     return null;
   }
 
-  /// Tag a PlexMetadataDto with this client's serverId and serverName
   PlexMetadataDto _tagMetadata(PlexMetadataDto metadata) =>
       metadata.copyWith(serverId: serverId, serverName: serverName);
 
-  /// Create and tag a PlexMetadataDto from JSON
   PlexMetadataDto _createTaggedMetadata(Map<String, dynamic> json) => _tagMetadata(PlexMetadataDto.fromJson(json));
 
-  /// Extract list of PlexMetadataDto from response
-  /// Automatically tags all items with this client's serverId and serverName
   List<PlexMetadataDto> _extractMetadataList(MediaServerResponse response) {
     final container = _getMediaContainer(response);
     if (container != null && container['Metadata'] != null) {
@@ -583,7 +573,6 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     return [];
   }
 
-  /// Extract first metadata JSON from response (returns raw Map or null)
   Map<String, dynamic>? _getFirstMetadataJson(MediaServerResponse response) {
     final container = _getMediaContainer(response);
     if (container != null && container['Metadata'] != null && (container['Metadata'] as List).isNotEmpty) {
@@ -592,7 +581,6 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     return null;
   }
 
-  /// Generic helper to extract and map Directory list from response
   List<T> _extractDirectoryList<T>(MediaServerResponse response, T Function(Map<String, dynamic>) fromJson) {
     final container = _getMediaContainer(response);
     if (container != null && container['Directory'] != null) {
@@ -601,7 +589,6 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     return [];
   }
 
-  /// Extract PlexLibraryDto list from response with auto-tagging
   List<PlexLibraryDto> _extractLibraryList(MediaServerResponse response) {
     final container = _getMediaContainer(response);
     if (container != null && container['Directory'] != null) {
@@ -616,7 +603,6 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     return [];
   }
 
-  /// Extract PlexPlaylistDto list from response with auto-tagging
   List<PlexPlaylistDto> _extractPlaylistList(MediaServerResponse response) {
     final container = _getMediaContainer(response);
     if (container != null && container['Metadata'] != null) {
@@ -631,11 +617,6 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     return [];
   }
 
-  // ============================================================================
-  // API Methods
-  // ============================================================================
-
-  /// Get server identity
   Future<Map<String, dynamic>> getServerIdentity() async {
     final response = await _getWithFailover('/identity');
     return response.data;
@@ -981,8 +962,6 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
         'Failed to select streams',
       );
     }
-    // Si allParts est false, retourner true ou false explicitement (selon la logique souhaitée)
-    // Ici, on retourne true par défaut si rien n'est fait
     return true;
   }
 
@@ -1256,13 +1235,10 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
       if (metadataJson['Media'] != null && (metadataJson['Media'] as List).isNotEmpty) {
         final mediaList = metadataJson['Media'] as List;
 
-        // Parse available media versions first (convert via the internal
-        // mapper so PlaybackInitializationResult sees neutral MediaVersion).
         availableVersions = mediaList
             .map((media) => PlexMappers.mediaVersionFromJson(media as Map<String, dynamic>))
             .toList();
 
-        // Ensure the requested index is valid
         if (mediaIndex < 0 || mediaIndex >= mediaList.length) {
           mediaIndex = 0;
         }
@@ -1281,15 +1257,11 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
           final partKey = part['key'] as String?;
 
           if (partKey != null) {
-            // Get video URL
             videoUrl = '${config.baseUrl}$partKey'.withPlexToken(config.token);
 
-            // Parse streams using shared parser
             final streams = walkStreams(part['Stream'] as List<dynamic>?, _streamReader);
-            // Parse chapters using helper
             final chapters = _parseChapters(metadataJson);
 
-            // Create media info
             mediaInfo = MediaSourceInfo(
               videoUrl: videoUrl,
               audioTracks: streams.audioTracks,
@@ -1941,10 +1913,6 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     );
   }
 
-  // ============================================================================
-  // Metadata Editing Methods
-  // ============================================================================
-
   /// Update metadata fields for a media item
   Future<bool> updateMetadata({
     required int sectionId,
@@ -2099,10 +2067,6 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     );
   }
 
-  // ============================================================================
-  // Collection Methods
-  // ============================================================================
-
   /// Get all collections for a library section
   /// Returns collections as PlexMetadataDto objects with type="collection"
   Future<List<PlexMetadataDto>> _getLibraryCollections(String sectionId) async {
@@ -2254,10 +2218,6 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     }
     return result;
   }
-
-  // ============================================================================
-  // Play Queue Methods
-  // ============================================================================
 
   /// Parse a `/playQueues/{id}` response into a [PlayQueueResponse] with
   /// MediaItem-typed entries.
@@ -2496,10 +2456,6 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     return _getPlaylists(playlistType: playlistType);
   }
 
-  // ============================================================================
-  // Library Management Methods
-  // ============================================================================
-
   /// Scan/refresh a library section to detect new files
   Future<void> scanLibrary(String sectionId) async {
     await _getWithFailover('/library/sections/$sectionId/refresh');
@@ -2520,10 +2476,6 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
   Future<void> analyzeLibrary(String sectionId) async {
     await _getWithFailover('/library/sections/$sectionId/analyze');
   }
-
-  // ============================================================================
-  // Live TV / DVR Methods
-  // ============================================================================
 
   /// Get all DVR devices configured on this server
   Future<List<LiveTvDvr>> getDvrs() async {

@@ -123,7 +123,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       slivers: [
         SliverList(
           delegate: SliverChildListDelegate([
-            // --- Player ---
             SettingsSectionHeader(t.settings.player),
             if (Platform.isAndroid) _buildPlayerBackendSelector(),
             _buildExternalPlayerTile(),
@@ -139,12 +138,10 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             _buildBufferSizeSelector(),
             _buildDefaultQualityTile(),
 
-            // --- Subtitles & Config ---
             SettingsSectionHeader(t.settings.subtitlesAndConfig),
             _buildSubtitleStylingTile(),
             if (!Platform.isAndroid || !_useExoPlayer) _buildMpvConfigTile(),
 
-            // --- Seek & Timing ---
             SettingsSectionHeader(t.settings.seekAndTiming),
             _buildSmallSkipDuration(),
             _buildLargeSkipDuration(),
@@ -152,14 +149,12 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             _buildDefaultSleepTimer(),
             _buildMaxVolume(),
 
-            // --- Behavior ---
             SettingsSectionHeader(t.settings.behavior),
             if (DiscordRPCService.isAvailable) _buildDiscordRPC(),
             if (PlatformDetector.shouldActAsRemoteHost(context)) _buildCompanionRemoteServer(),
             _buildRememberTrackSelections(),
             if (!isMobile) _buildClickVideoTogglesPlayback(),
 
-            // --- Auto-Skip ---
             SettingsSectionHeader(t.settings.autoSkip),
             _buildAutoSkipIntro(),
             _buildAutoSkipCredits(),
@@ -173,8 +168,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       ],
     );
   }
-
-  // --- Player section ---
 
   Widget _buildPlayerBackendSelector() {
     return SegmentedSetting<bool>(
@@ -369,8 +362,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     );
   }
 
-  // --- Subtitles & Config section ---
-
   Widget _buildSubtitleStylingTile() {
     return ListTile(
       leading: const AppIcon(Symbols.subtitles_rounded, fill: 1),
@@ -394,8 +385,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       },
     );
   }
-
-  // --- Seek & Timing section ---
 
   Widget _buildSmallSkipDuration() {
     return ListTile(
@@ -515,8 +504,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     );
   }
 
-  // --- Behavior section ---
-
   Widget _buildDiscordRPC() {
     return SwitchListTile(
       secondary: const AppIcon(Symbols.chat_rounded, fill: 1),
@@ -569,8 +556,6 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       },
     );
   }
-
-  // --- Auto-Skip section ---
 
   Widget _buildAutoSkipIntro() {
     return SwitchListTile(

@@ -396,8 +396,6 @@ class _PlexMetadataEditScreenState extends State<PlexMetadataEditScreen> {
     return options.first.label;
   }
 
-  // ===== Field visibility =====
-
   bool get _showSortTitle => _mediaType != MediaKind.season;
   bool get _showOriginalTitle => _mediaType == MediaKind.movie || _mediaType == MediaKind.show;
   bool get _showReleaseDate => _mediaType != MediaKind.season;
@@ -839,8 +837,6 @@ class _PlexMetadataEditScreenState extends State<PlexMetadataEditScreen> {
     );
   }
 }
-
-// ===== Language option lists =====
 
 // Plex locale codes for metadata agent language.
 const _plexLocaleCodes = [

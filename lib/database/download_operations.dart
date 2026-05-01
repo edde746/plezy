@@ -4,7 +4,6 @@ import 'app_database.dart';
 import '../models/download_models.dart';
 import '../profiles/profile.dart';
 
-/// Extension methods on AppDatabase for download operations
 extension DownloadDatabaseOperations on AppDatabase {
   Future<void> addDownloadOwner({required String profileId, required String globalKey}) async {
     if (profileId.isEmpty) return;
@@ -76,7 +75,6 @@ extension DownloadDatabaseOperations on AppDatabase {
     }
   }
 
-  /// Insert a new download into the database.
   Future<void> insertDownload({
     required String serverId,
     String? clientScopeId,
@@ -104,7 +102,6 @@ extension DownloadDatabaseOperations on AppDatabase {
     );
   }
 
-  /// Add item to download queue
   Future<void> addToQueue({
     required String mediaGlobalKey,
     int priority = 0,
@@ -143,14 +140,12 @@ extension DownloadDatabaseOperations on AppDatabase {
     return result?.readTable(downloadQueue);
   }
 
-  /// Update download status
   Future<void> updateDownloadStatus(String globalKey, int status) async {
     await (update(
       downloadedMedia,
     )..where((t) => t.globalKey.equals(globalKey))).write(DownloadedMediaCompanion(status: Value(status)));
   }
 
-  /// Update download progress
   Future<void> updateDownloadProgress(String globalKey, int progress, int downloadedBytes, int totalBytes) async {
     await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
       DownloadedMediaCompanion(
@@ -161,7 +156,6 @@ extension DownloadDatabaseOperations on AppDatabase {
     );
   }
 
-  /// Update video file path
   Future<void> updateVideoFilePath(String globalKey, String filePath) async {
     await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
       DownloadedMediaCompanion(
@@ -171,16 +165,13 @@ extension DownloadDatabaseOperations on AppDatabase {
     );
   }
 
-  /// Update artwork paths
   Future<void> updateArtworkPaths({required String globalKey, String? thumbPath}) async {
     await (update(
       downloadedMedia,
     )..where((t) => t.globalKey.equals(globalKey))).write(DownloadedMediaCompanion(thumbPath: Value(thumbPath)));
   }
 
-  /// Update download error and increment retry count
   Future<void> updateDownloadError(String globalKey, String errorMessage) async {
-    // Get current retry count to increment it
     final existing = await getDownloadedMedia(globalKey);
     final currentCount = existing?.retryCount ?? 0;
 
@@ -189,31 +180,26 @@ extension DownloadDatabaseOperations on AppDatabase {
     );
   }
 
-  /// Clear download error and reset retry count (for retry)
   Future<void> clearDownloadError(String globalKey) async {
     await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
       const DownloadedMediaCompanion(errorMessage: Value(null), retryCount: Value(0)),
     );
   }
 
-  /// Remove item from queue
   Future<void> removeFromQueue(String mediaGlobalKey) async {
     await (delete(downloadQueue)..where((t) => t.mediaGlobalKey.equals(mediaGlobalKey))).go();
   }
 
-  /// Get downloaded media item
   Future<DownloadedMediaItem?> getDownloadedMedia(String globalKey) {
     return (select(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).getSingleOrNull();
   }
 
-  /// Delete a download
   Future<void> deleteDownload(String globalKey) async {
     await (delete(downloadOwners)..where((t) => t.globalKey.equals(globalKey))).go();
     await (delete(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).go();
     await (delete(downloadQueue)..where((t) => t.mediaGlobalKey.equals(globalKey))).go();
   }
 
-  /// Get all downloaded episodes for a season
   Future<List<DownloadedMediaItem>> getEpisodesBySeason(
     String seasonKey, {
     String? serverId,
@@ -229,7 +215,6 @@ extension DownloadDatabaseOperations on AppDatabase {
         .get();
   }
 
-  /// Get all downloaded episodes for a show
   Future<List<DownloadedMediaItem>> getEpisodesByShow(
     String showKey, {
     String? serverId,
@@ -245,7 +230,6 @@ extension DownloadDatabaseOperations on AppDatabase {
         .get();
   }
 
-  /// Get all downloaded items for a specific server
   Future<List<DownloadedMediaItem>> getDownloadsByServerId(String serverId) {
     return (select(downloadedMedia)..where((t) => t.serverId.equals(serverId))).get();
   }
@@ -268,14 +252,12 @@ extension DownloadDatabaseOperations on AppDatabase {
     return column.equals(clientScopeId);
   }
 
-  /// Update the background_downloader task ID for a download
   Future<void> updateBgTaskId(String globalKey, String? taskId) async {
     await (update(
       downloadedMedia,
     )..where((t) => t.globalKey.equals(globalKey))).write(DownloadedMediaCompanion(bgTaskId: Value(taskId)));
   }
 
-  /// Get the background_downloader task ID for a download
   Future<String?> getBgTaskId(String globalKey) async {
     final item = await getDownloadedMedia(globalKey);
     return item?.bgTaskId;

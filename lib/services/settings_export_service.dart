@@ -269,8 +269,6 @@ class SettingsExportService {
     return false;
   }
 
-  // --- File operations -----------------------------------------------------
-
   static Future<String> _defaultFileName() async {
     final now = DateTime.now();
     final y = now.year.toString().padLeft(4, '0');

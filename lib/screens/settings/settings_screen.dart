@@ -168,40 +168,28 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             ExcludeFocus(child: CustomAppBar(title: Text(t.settings.title), pinned: true)),
             SliverList(
               delegate: SliverChildListDelegate([
-                // --- Donate (non-store builds only) ---
                 if (DonationService.isEnabled) _buildDonateTile(),
 
-                // --- Appearance (navigation tile) ---
                 _buildAppearanceTile(),
 
-                // --- Playback (navigation tile) ---
                 _buildPlaybackTile(),
 
-                // --- Trackers (unified hub: Trakt + MAL + AniList + Simkl) ---
                 _buildTrackersTile(),
 
-                // --- Connections (Jellyfin servers) ---
                 _buildConnectionsSection(),
 
-                // --- Profiles (kids mode / multi-user) ---
                 _buildProfilesSection(),
 
-                // --- Downloads (inline) ---
                 if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
 
-                // --- Keyboard Shortcuts (inline, conditional) ---
                 if (_keyboardShortcutsSupported) ...[_buildKeyboardShortcutsSection()],
 
-                // --- Advanced (inline) ---
                 _buildAdvancedSection(),
 
-                // --- Updates (conditional) ---
                 if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection()],
 
-                // --- Backup (hidden on Apple TV — no file picker / storage) ---
                 if (!PlatformDetector.isAppleTV()) _buildBackupSection(),
 
-                // --- About ---
                 ListTile(
                   focusNode: _focusTracker.get(_kAbout),
                   leading: const AppIcon(Symbols.info_rounded, fill: 1),
@@ -614,8 +602,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       ],
     );
   }
-
-  // --- Dialogs ---
 
   Future<void> _showDownloadLocationDialog() async {
     final storageService = DownloadStorageService.instance;

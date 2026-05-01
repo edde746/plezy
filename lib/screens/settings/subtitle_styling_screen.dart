@@ -182,7 +182,6 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
       slivers: [
         SliverList(
           delegate: SliverChildListDelegate([
-            // --- Text ---
             SettingsSectionHeader(t.subtitlingStyling.text),
             ListTile(
               leading: const AppIcon(Symbols.subtitles_rounded, fill: 1),
@@ -279,7 +278,6 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               },
             ),
 
-            // --- Border ---
             SettingsSectionHeader(t.subtitlingStyling.border),
             ListTile(
               leading: const AppIcon(Symbols.border_style_rounded, fill: 1),
@@ -319,7 +317,6 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               }),
             ),
 
-            // --- Background ---
             SettingsSectionHeader(t.subtitlingStyling.background),
             ListTile(
               leading: const AppIcon(Symbols.opacity_rounded, fill: 1),

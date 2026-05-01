@@ -262,12 +262,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<double>? _mediaControlsRateSubscription;
   StreamSubscription<bool>? _mediaControlsSeekableSubscription;
   StreamSubscription<Map<String, bool>>? _serverStatusSubscription;
-  bool _isReplacingWithVideo = false; // Flag to skip orientation restoration during video-to-video navigation
+  bool _isReplacingWithVideo = false;
   bool _isDisposingForNavigation = false;
   bool _isHandlingBack = false;
   ScrubPreviewSource? _scrubPreviewSource;
 
-  // Live TV channel navigation
   int _liveChannelIndex = -1;
   String? _liveChannelName;
   MediaServerClient? _liveClient;
@@ -287,7 +286,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // the Jellyfin started/progress/stopped transition.
   JellyfinLiveSessionTracker _jellyfinLiveSession = JellyfinLiveSessionTracker();
 
-  // Live TV time-shift
   CaptureBuffer? _captureBuffer;
   int? _programBeginsAt;
   double _streamStartEpoch = 0;
@@ -299,16 +297,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   int _liveStreamFallbackLevel = 0;
   bool _isRetryingLiveStream = false;
 
-  // Auto-play next episode
   Timer? _autoPlayTimer;
   int _autoPlayCountdown = 5;
   bool _completionTriggered = false;
 
-  // Play Next dialog focus nodes (for TV D-pad navigation)
   late final FocusNode _playNextCancelFocusNode;
   late final FocusNode _playNextConfirmFocusNode;
 
-  // "Still watching?" prompt (sleep timer)
   bool _showStillWatchingPrompt = false;
   int _stillWatchingCountdown = 30;
   Timer? _stillWatchingTimer;
@@ -345,7 +340,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled) ||
       (Platform.isAndroid && _androidAutoPipTransitionInFlight);
 
-  // Services
   MediaControlsManager? _mediaControlsManager;
   PlaybackProgressTracker? _progressTracker;
   VideoFilterManager? _videoFilterManager;
@@ -354,10 +348,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   AmbientLightingService? _ambientLightingService;
   final EpisodeNavigationService _episodeNavigation = EpisodeNavigationService();
 
-  // Watch Together provider reference (stored early to use in dispose)
   WatchTogetherProvider? _watchTogetherProvider;
 
-  // Companion remote state (stored early for use in dispose)
   CompanionRemoteProvider? _companionRemoteProvider;
   VoidCallback? _savedOnHome;
 
@@ -373,12 +365,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   ScrubFrame? _getThumbnailData(Duration time) => _scrubPreviewSource?.getFrame(time);
 
-  final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false); // Track if video is currently buffering
-  final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false); // Track if first video frame has rendered
-  final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false); // Track if navigating away (for black overlay)
-  final ValueNotifier<bool> _controlsVisible = ValueNotifier<bool>(
-    true,
-  ); // Track if video controls are visible (for popup positioning)
+  final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false);
+  final ValueNotifier<bool> _controlsVisible = ValueNotifier<bool>(true);
 
   @override
   void initState() {
@@ -388,17 +378,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _activeId = widget.metadata.id;
     _activeMediaIndex = widget.selectedMediaIndex;
 
-    // Transcode session identifiers — reused across quality/version/audio
-    // switches so the server-side transcode session is preserved.
+    // Reused across quality/version/audio switches so the server-side
+    // transcode session is preserved.
     _playbackSessionIdentifier = widget.reusedSessionIdentifier ?? generateSessionIdentifier();
     _playbackTranscodeSessionId = widget.reusedTranscodeSessionId ?? generateSessionIdentifier();
     _selectedAudioStreamId = widget.selectedAudioStreamId;
     _effectiveIsOffline = widget.isOffline;
-    // Quality preset is resolved later when the SettingsProvider is available;
-    // see _resolveQualityPreset() called from _initializePlayer.
     _selectedQualityPreset = widget.selectedQualityPreset ?? TranscodeQualityPreset.original;
 
-    // Initialize live TV channel tracking
     _liveChannelIndex = widget.liveCurrentChannelIndex ?? -1;
     _liveChannelName = widget.liveChannelName;
     _liveClient = widget.liveClient;
@@ -411,11 +398,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _jellyfinLiveSession = JellyfinLiveSessionTracker(playSessionId: widget.liveSessionIdentifier);
     }
 
-    // Initialize Play Next dialog focus nodes
     _playNextCancelFocusNode = FocusNode(debugLabel: 'PlayNextCancel');
     _playNextConfirmFocusNode = FocusNode(debugLabel: 'PlayNextConfirm');
 
-    // Initialize "Still watching?" dialog focus nodes
     _stillWatchingPauseFocusNode = FocusNode(debugLabel: 'StillWatchingPause');
     _stillWatchingContinueFocusNode = FocusNode(debugLabel: 'StillWatchingContinue');
 
@@ -437,7 +422,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       appLogger.d('Preferred subtitle track: $subtitleDesc');
     }
 
-    // Update current item in playback state provider
     try {
       final playbackState = context.read<PlaybackStateProvider>();
 
@@ -459,22 +443,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       });
     } catch (e) {
-      // Provider might not be available yet during initialization
       appLogger.d('Deferred playback state update (provider not ready)', error: e);
     }
 
-    // Register app lifecycle observer
     WidgetsBinding.instance.addObserver(this);
 
-    // Wire companion remote playback callbacks
     _setupCompanionRemoteCallbacks();
 
-    // Show "Still watching?" prompt when sleep timer fires
     _sleepTimerSubscription = SleepTimerService().onPrompt.listen((_) {
       if (mounted) _showStillWatchingDialog();
     });
 
-    // Initialize player asynchronously with buffer size from settings
     _initializePlayer();
   }
 
@@ -682,7 +661,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (mounted) {
         setState(() => _playerInitializationError = null);
       }
-      // Load buffer size from settings
       final settingsService = await SettingsService.getInstance();
       _videoPlayerNavigationEnabled = settingsService.read(SettingsService.videoPlayerNavigationEnabled);
       _autoPipEnabled = settingsService.read(SettingsService.autoPip);
@@ -692,14 +670,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final debugLoggingEnabled = settingsService.read(SettingsService.enableDebugLogging);
       final useExoPlayer = settingsService.read(SettingsService.useExoPlayer);
 
-      // Initialize Windows display mode service.
       if (Platform.isWindows) {
         _displayModeService = DisplayModeService(settingsService, FullscreenStateManager());
         await _displayModeService!.syncWithNative();
         FullscreenStateManager().addListener(_onFullscreenChanged);
       }
 
-      // Create player (on Android, uses ExoPlayer by default, MPV as fallback)
       player = Player(useExoPlayer: useExoPlayer);
       _playerBackendLabel = player!.playerType;
 
@@ -771,7 +747,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (bufferSizeMB > 0) {
         final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
         await player!.setProperty('demuxer-max-bytes', bufferSizeBytes.toString());
-        // Set back-buffer to 1/4 of forward buffer
         final backBytes = bufferSizeBytes ~/ 4;
         await player!.setProperty('demuxer-max-back-bytes', backBytes.toString());
       }
@@ -791,7 +766,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             autoBackMB = 48;
           }
           if (bufferSizeMB == 0) {
-            // Auto mode: cap both forward and back buffer based on heap
             int autoForwardMB;
             if (heapMB <= 256) {
               autoForwardMB = 32;
@@ -813,7 +787,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await player!.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
       await player!.setProperty('hwdec', _getHwdecValue(enableHardwareDecoding));
 
-      // Subtitle styling
       await player!.setProperty('sub-font-size', settingsService.read(SettingsService.subtitleFontSize).toString());
       await player!.setProperty('sub-color', settingsService.read(SettingsService.subtitleTextColor));
       await player!.setProperty('sub-border-size', settingsService.read(SettingsService.subtitleBorderSize).toString());
@@ -833,7 +806,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       await player!.setProperty('sub-ass-video-aspect-override', '1');
       await player!.setProperty('sub-pos', settingsService.read(SettingsService.subtitlePosition).toString());
 
-      // Platform-specific settings
       if (Platform.isIOS) {
         await player!.setProperty('audio-exclusive', 'yes');
       }
@@ -851,26 +823,22 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         await player!.setProperty('hdr-enabled', enableHDR ? 'yes' : 'no');
       }
 
-      // Apply audio sync offset
       final audioSyncOffset = settingsService.read(SettingsService.audioSyncOffset);
       if (audioSyncOffset != 0) {
         final offsetSeconds = audioSyncOffset / 1000.0;
         await player!.setProperty('audio-delay', offsetSeconds.toString());
       }
 
-      // Apply subtitle sync offset
       final subtitleSyncOffset = settingsService.read(SettingsService.subtitleSyncOffset);
       if (subtitleSyncOffset != 0) {
         final offsetSeconds = subtitleSyncOffset / 1000.0;
         await player!.setProperty('sub-delay', offsetSeconds.toString());
       }
 
-      // Apply audio normalization (loudnorm filter)
       if (settingsService.read(SettingsService.audioNormalization)) {
         await player!.setProperty('af', 'loudnorm=I=-14:TP=-3:LRA=4');
       }
 
-      // Apply custom MPV config entries
       final customMpvConfig = SettingsService.parseMpvConfigText(settingsService.read(SettingsService.mpvConfigText));
       for (final entry in customMpvConfig.entries) {
         try {
@@ -881,15 +849,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       }
 
-      // Set max volume limit for volume boost
       final maxVolume = settingsService.read(SettingsService.maxVolume);
       await player!.setProperty('volume-max', maxVolume.toString());
 
-      // Apply saved volume (clamped to max volume)
       final savedVolume = settingsService.read(SettingsService.volume).clamp(0.0, maxVolume.toDouble());
       unawaited(player!.setVolume(savedVolume));
 
-      // Notify that player is ready
       if (mounted) {
         setState(() {
           _isPlayerInitialized = true;
@@ -906,7 +871,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         appLogger.d('Wakelock enabled for video playback');
       }
 
-      // Get the video URL and start playback
       await _startPlayback();
 
       // Set fullscreen mode and orientation based on rotation lock setting
@@ -941,7 +905,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         if (_positionSubscription != null) _positionSubscription!.cancel(),
       ]);
 
-      // Listen to playback state changes
       _playingSubscription = player!.streams.playing.listen(_onPlayingStateChanged);
 
       // Listen to completion. When mpv emits completed=false (file-loaded after a
@@ -955,7 +918,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _onVideoCompleted(done);
       });
 
-      // Listen to MPV errors
       _errorSubscription = player!.streams.error.listen(_onPlayerError);
 
       // warn is included so we can catch ffmpeg's "HTTP error 500" line in
@@ -964,12 +926,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           .where((log) => const {PlayerLogLevel.fatal, PlayerLogLevel.error, PlayerLogLevel.warn}.contains(log.level))
           .listen(_onPlayerLog);
 
-      // Listen for backend switched event (ExoPlayer -> MPV fallback on Android)
       if (Platform.isAndroid && useExoPlayer) {
         _backendSwitchedSubscription = player!.streams.backendSwitched.listen((_) => _onBackendSwitched());
       }
 
-      // Listen to buffering state
       _bufferingSubscription = player!.streams.buffering.listen((isBuffering) {
         _isBuffering.value = isBuffering;
       });
@@ -994,7 +954,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
       }
 
-      // Listen to playback restart to detect first frame ready
       _playbackRestartSubscription = player!.streams.playbackRestart.listen((_) async {
         _lastLogError = null;
         _sawServer500 = false;
@@ -1003,12 +962,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           _hasFirstFrame.value = true;
           unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'First frame ready', category: 'player')));
 
-          // Apply frame rate matching on Android if enabled
           if (Platform.isAndroid && settingsService.read(SettingsService.matchContentFrameRate)) {
             await _applyFrameRateMatching();
           }
 
-          // Apply Windows display mode matching (refresh rate, HDR)
           if (Platform.isWindows && _displayModeService != null) {
             await _applyWindowsDisplayMatching();
           }
@@ -1016,7 +973,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _trackManager?.onPlaybackRestart();
       });
 
-      // Listen to position for completion detection (fallback for unreliable MPV events)
       int? lastObservedPositionMs;
       _positionSubscription = player!.streams.position.listen((position) {
         // Fallback for cases where playbackRestart doesn't fire (observed on
@@ -2387,10 +2343,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   @override
   void dispose() {
-    // Unregister app lifecycle observer
     WidgetsBinding.instance.removeObserver(this);
 
-    // Clean up companion remote playback callbacks
     _cleanupCompanionRemoteCallbacks();
 
     // Notify Watch Together guests that host is exiting the player
@@ -2403,10 +2357,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _watchTogetherProvider!.notifyHostExitedPlayer();
     }
 
-    // Detach from Watch Together session
     _detachFromWatchTogetherSession();
 
-    // Dispose value notifiers
     _isBuffering.dispose();
     _hasFirstFrame.dispose();
     _isExiting.dispose();
@@ -2422,14 +2374,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _sendLiveTimeline('stopped');
     _stopLiveTimelineUpdates();
 
-    // Remove PiP state listener, clear callbacks, disable auto-PiP, and dispose video filter manager
     _videoPIPManager?.isPipActive.removeListener(_onPipStateChanged);
     _videoPIPManager?.onBeforeEnterPip = null;
     _videoPIPManager?.disableAutoPip();
     PipService.onAutoPipEntering = null;
     _videoFilterManager?.dispose();
 
-    // Release cached scrub-thumbnail data (BIF or trickplay)
     _scrubPreviewSource?.dispose();
 
     // Mark sleep timer for restart if truly exiting (not episode transition)
@@ -2437,7 +2387,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       SleepTimerService().markNeedsRestart();
     }
 
-    // Cancel stream subscriptions
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
     _errorSubscription?.cancel();
@@ -2455,34 +2404,26 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _mediaControlsSeekableSubscription?.cancel();
     _serverStatusSubscription?.cancel();
 
-    // Cancel auto-play timer
     _autoPlayTimer?.cancel();
 
-    // Cancel still watching timer
     _stillWatchingTimer?.cancel();
 
-    // Dispose Play Next dialog focus nodes
     _playNextCancelFocusNode.dispose();
     _playNextConfirmFocusNode.dispose();
 
-    // Dispose "Still watching?" dialog focus nodes
     _stillWatchingPauseFocusNode.dispose();
     _stillWatchingContinueFocusNode.dispose();
 
-    // Dispose screen-level focus node
     _screenFocusNode.removeListener(_onScreenFocusChanged);
     _screenFocusNode.dispose();
 
-    // Clear media controls and dispose manager
     _mediaControlsManager?.clear();
     _mediaControlsManager?.dispose();
 
-    // Clear Discord Rich Presence + send Trakt stop scrobble
     DiscordRPCService.instance.stopPlayback();
     TraktScrobbleService.instance.stopPlayback();
     TrackerCoordinator.instance.stopPlayback();
 
-    // Clean up Windows display mode service
     if (Platform.isWindows && _displayModeService != null) {
       FullscreenStateManager().removeListener(_onFullscreenChanged);
     }
@@ -2502,7 +2443,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       player!.abandonAudioFocus();
     }
 
-    // Disable wakelock when leaving the video player
     _setWakelock(false);
     appLogger.d('Wakelock disabled');
 
@@ -2513,10 +2453,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       // Restore orientation based on cached device type (no context needed)
       try {
         if (_isPhone) {
-          // Phone: portrait only
           SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
         } else {
-          // Tablet/Desktop: all orientations
           SystemChrome.setPreferredOrientations([
             DeviceOrientation.portraitUp,
             DeviceOrientation.portraitDown,
@@ -2820,7 +2758,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   bool _isSwitchingChannel = false;
 
-  /// Switch to an adjacent live TV channel (delta: +1 for next, -1 for previous)
   /// Start periodic timeline heartbeats for live TV transcode session.
   void _startLiveTimelineUpdates() {
     final generation = ++_liveTimelineGeneration;
@@ -3202,8 +3139,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _showPlayNextDialog = false;
     });
   }
-
-  // -- "Still watching?" prompt --
 
   void _showStillWatchingDialog() {
     // Don't show if auto-play dialog is already visible

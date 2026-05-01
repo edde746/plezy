@@ -215,10 +215,6 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  // ============================================================
-  // Offline Watch Progress Operations
-  // ============================================================
-
   Expression<bool> _clientScopePredicate(GeneratedColumn<String> column, String? clientScopeId) {
     return clientScopeId == null ? column.isNull() : column.equals(clientScopeId);
   }
@@ -446,10 +442,6 @@ class AppDatabase extends _$AppDatabase {
     return delete(offlineWatchProgress).go();
   }
 
-  // ============================================================
-  // Sync Rules Operations
-  // ============================================================
-
   Future<List<SyncRuleItem>> getSyncRules({String? profileId}) {
     final query = select(syncRules);
     if (profileId != null) {
@@ -549,10 +541,6 @@ class AppDatabase extends _$AppDatabase {
   Future<void> deleteSyncRule(String globalKey) async {
     await (delete(syncRules)..where((t) => t.globalKey.equals(globalKey))).go();
   }
-
-  // ============================================================
-  // Downloaded Media Queries for Watch State Sync
-  // ============================================================
 
   /// Get all downloaded media items (for syncing watch states)
   Future<List<DownloadedMediaItem>> getAllDownloadedMetadata() {

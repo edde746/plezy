@@ -510,10 +510,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     return methodChannel.invokeMethod<T>(method, args);
   }
 
-  // ============================================
-  // Default Implementations
-  // ============================================
-
   @override
   Future<void> playOrPause() async {
     if (_disposed) return;
@@ -576,10 +572,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> setLogLevel(String level) async {}
 
-  // ============================================
-  // Subtitle Fonts
-  // ============================================
-
   @override
   Future<void> configureSubtitleFonts() async {
     try {
@@ -596,10 +588,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
-  // ============================================
-  // Seek helpers
-  // ============================================
-
   /// Run a backend-specific seek call, swallowing the common "not ready" errors
   /// the native channel throws when the engine was torn down mid-seek.
   @protected
@@ -614,10 +602,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
       rethrow;
     }
   }
-
-  // ============================================
-  // Debug helpers
-  // ============================================
 
   /// Injects the log + error events that would fire when the server rejects the
   /// stream with HTTP 500 (shared-user bandwidth / transcoding limit). Used by
@@ -634,10 +618,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     );
     errorController.add(const PlayerError('HTTP 500', cause: PlayerError.serverHttp500));
   }
-
-  // ============================================
-  // Lifecycle
-  // ============================================
 
   @override
   Future<void> dispose() async {

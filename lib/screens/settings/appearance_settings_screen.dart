@@ -54,7 +54,6 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
       slivers: [
         SliverList(
           delegate: SliverChildListDelegate([
-            // --- Display ---
             SettingsSectionHeader(t.settings.display),
             _buildThemeSelector(),
             _buildLanguageSelector(),
@@ -64,13 +63,11 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
             _buildShowEpisodeNumberOnCards(),
             _buildShowSeasonPostersOnTabs(),
 
-            // --- Home Screen ---
             SettingsSectionHeader(t.settings.homeScreen),
             _buildShowHeroSection(),
             _buildUseGlobalHubs(),
             _buildShowServerNameOnHubs(),
 
-            // --- Navigation ---
             SettingsSectionHeader(t.settings.navigation),
             if (Platform.isAndroid) _buildForceTvMode(),
             if (PlatformDetector.shouldUseSideNavigation(context)) _buildAlwaysKeepSidebarOpen(),
@@ -78,13 +75,11 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
             if (!PlatformDetector.shouldUseSideNavigation(context)) _buildShowNavBarLabels(),
             _buildShowUnwatchedCount(),
 
-            // --- Window (Windows/Linux only) ---
             if (Platform.isWindows || Platform.isLinux) ...[
               SettingsSectionHeader(t.settings.window),
               _buildStartInFullscreen(),
             ],
 
-            // --- Content ---
             SettingsSectionHeader(t.settings.content),
             _buildLiveTvDefaultFavorites(),
             _buildHideSpoilers(),
@@ -97,8 +92,6 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
       ],
     );
   }
-
-  // --- Display section ---
 
   Widget _buildThemeSelector() {
     return Consumer<ThemeProvider>(
@@ -251,8 +244,6 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
     );
   }
 
-  // --- Home Screen section ---
-
   Widget _buildShowHeroSection() => _buildBoolToggle(
     icon: Symbols.featured_play_list_rounded,
     title: t.settings.showHeroSection,
@@ -276,8 +267,6 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
     getter: (p) => p.showServerNameOnHubs,
     setter: (p, v) => p.setShowServerNameOnHubs(v),
   );
-
-  // --- Navigation section ---
 
   Widget _buildAlwaysKeepSidebarOpen() => _buildBoolToggle(
     icon: Symbols.dock_to_left_rounded,
@@ -310,8 +299,6 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
     getter: (p) => p.showUnwatchedCount,
     setter: (p, v) => p.setShowUnwatchedCount(v),
   );
-
-  // --- Content section ---
 
   Widget _buildLiveTvDefaultFavorites() => _buildBoolToggle(
     icon: Symbols.star_rounded,
@@ -399,8 +386,6 @@ class _AppearanceSettingsScreenState extends State<AppearanceSettingsScreen> {
       ),
     );
   }
-
-  // --- Helpers ---
 
   String _getLanguageDisplayName(AppLocale locale) {
     switch (locale) {

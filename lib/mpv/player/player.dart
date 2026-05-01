@@ -53,10 +53,6 @@ abstract class Player {
   /// The type of player backend being used (e.g., 'mpv', 'exoplayer').
   String get playerType;
 
-  // ============================================
-  // Playback Control
-  // ============================================
-
   /// Open a media source for playback.
   ///
   /// [media] - The media source to open.
@@ -77,10 +73,6 @@ abstract class Player {
 
   /// Seek to a specific position.
   Future<void> seek(Duration position);
-
-  // ============================================
-  // Track Selection
-  // ============================================
 
   /// Select an audio track.
   Future<void> selectAudioTrack(AudioTrack track);
@@ -107,10 +99,6 @@ abstract class Player {
   /// [select] - Whether to select this track immediately.
   Future<void> addSubtitleTrack({required String uri, String? title, String? language, bool select = false});
 
-  // ============================================
-  // Volume and Rate
-  // ============================================
-
   /// Set the playback volume.
   ///
   /// [volume] - Volume level from 0.0 (muted) to 100.0 (max).
@@ -125,10 +113,6 @@ abstract class Player {
   ///
   /// [device] - The audio device to use.
   Future<void> setAudioDevice(AudioDevice device);
-
-  // ============================================
-  // MPV Properties (Advanced)
-  // ============================================
 
   /// Set an MPV property by name.
   ///
@@ -162,29 +146,17 @@ abstract class Player {
   /// [args] - Command and arguments as a list of strings.
   Future<void> command(List<String> args);
 
-  // ============================================
-  // Subtitle Fonts
-  // ============================================
-
   /// Configure subtitle fonts for libass rendering.
   ///
   /// Extracts a comprehensive Unicode font (Go Noto) to the cache directory
   /// and sets `sub-fonts-dir` and `sub-font` properties.
   Future<void> configureSubtitleFonts();
 
-  // ============================================
-  // Passthrough Mode (Audio)
-  // ============================================
-
   /// Enable or disable audio passthrough mode.
   ///
   /// When enabled, supported audio codecs (AC3, DTS, etc.) will be
   /// passed through to the audio device without decoding.
   Future<void> setAudioPassthrough(bool enabled);
-
-  // ============================================
-  // Visibility (macOS Metal Layer)
-  // ============================================
 
   /// Show or hide the video rendering layer.
   ///
@@ -200,10 +172,6 @@ abstract class Player {
   /// window size. Call this when the layout changes (e.g., device rotation).
   /// On other platforms, this is a no-op.
   Future<void> updateFrame();
-
-  // ============================================
-  // Frame Rate Matching (Android)
-  // ============================================
 
   /// Set the video frame rate for display refresh rate matching.
   ///
@@ -231,10 +199,6 @@ abstract class Player {
   /// On other platforms, this is a no-op.
   Future<void> clearVideoFrameRate();
 
-  // ============================================
-  // Audio Focus (Android)
-  // ============================================
-
   /// Request audio focus before starting playback.
   ///
   /// On Android, this notifies the system that the app wants to play audio,
@@ -252,10 +216,6 @@ abstract class Player {
   /// On other platforms, this is a no-op.
   Future<void> abandonAudioFocus();
 
-  // ============================================
-  // Lifecycle
-  // ============================================
-
   /// Whether the player has been disposed.
   bool get disposed;
 
@@ -263,10 +223,6 @@ abstract class Player {
   ///
   /// After calling this, the player instance should not be used.
   Future<void> dispose();
-
-  // ============================================
-  // Factory
-  // ============================================
 
   /// Creates a new player instance.
   ///

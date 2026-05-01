@@ -200,10 +200,8 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
   }
 }
 
-// ---------------------------------------------------------------------------
 // Hub section — horizontal scrolling row of poster cards (always 2:3 aspect)
 // Uses locked focus pattern: single Focus node at hub level, visual index in state.
-// ---------------------------------------------------------------------------
 
 class _LiveTvHubSection extends StatefulWidget {
   final LiveTvHubResult hub;
@@ -508,10 +506,6 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Poster card — always 2:3, shows poster image + title + subtitle
-// ---------------------------------------------------------------------------
 
 class _LiveTvPosterCard extends StatelessWidget {
   final LiveTvHubEntry entry;
