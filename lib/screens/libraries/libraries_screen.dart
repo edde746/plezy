@@ -19,12 +19,15 @@ import '../../media/media_library.dart';
 import '../../media/media_server_client.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/libraries_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/library_grouping.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/content_utils.dart';
+import '../../widgets/backend_badge.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../services/storage_service.dart';
@@ -762,53 +765,114 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     return nameCounts.entries.where((e) => e.value > 1).map((e) => e.key).toSet();
   }
 
-  /// Build dropdown menu items with server subtitle for non-unique names
-  List<PopupMenuEntry<String>> _buildGroupedLibraryMenuItems(List<MediaLibrary> visibleLibraries) {
-    // Find which library names are not unique
-    final nonUniqueNames = _getNonUniqueLibraryNames(visibleLibraries);
+  Widget _buildLibraryServerLabel(
+    MediaLibrary library,
+    TextStyle? style, {
+    double badgeSize = 11,
+    bool constrainText = false,
+    String? fallbackServerName,
+  }) {
+    final serverName = library.serverName ?? fallbackServerName;
+    if (serverName == null || serverName.isEmpty) return const SizedBox.shrink();
 
-    return visibleLibraries.map((library) {
-      final isSelected = library.globalKey == _selectedLibraryGlobalKey;
-      final showServerName = nonUniqueNames.contains(library.title) && library.serverName != null;
+    final text = Text(serverName, style: style, overflow: TextOverflow.ellipsis);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        BackendBadge(backend: library.backend, size: badgeSize, color: style?.color),
+        const SizedBox(width: 4),
+        if (constrainText) Flexible(child: text) else text,
+      ],
+    );
+  }
 
-      return PopupMenuItem<String>(
-        value: library.globalKey,
-        child: Row(
-          children: [
-            AppIcon(
-              ContentTypeHelper.getLibraryIcon(library.kind.id),
-              fill: 1,
-              size: 20,
-              color: isSelected ? Theme.of(context).colorScheme.primary : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    library.title,
-                    style: TextStyle(
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                      color: isSelected ? Theme.of(context).colorScheme.primary : null,
-                    ),
+  PopupMenuItem<String> _buildLibraryServerHeaderMenuItem(MediaLibrary library, String serverKey) {
+    final style = Theme.of(context).textTheme.labelSmall?.copyWith(
+      fontWeight: FontWeight.w600,
+      letterSpacing: 0.4,
+      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.65),
+    );
+    return PopupMenuItem<String>(
+      enabled: false,
+      height: 32,
+      child: _buildLibraryServerLabel(
+        library,
+        style,
+        badgeSize: 12,
+        constrainText: true,
+        fallbackServerName: serverKey,
+      ),
+    );
+  }
+
+  PopupMenuItem<String> _buildLibraryMenuItem(MediaLibrary library, {required bool showServerName}) {
+    final isSelected = library.globalKey == _selectedLibraryGlobalKey;
+    return PopupMenuItem<String>(
+      value: library.globalKey,
+      child: Row(
+        children: [
+          AppIcon(
+            ContentTypeHelper.getLibraryIcon(library.kind.id),
+            fill: 1,
+            size: 20,
+            color: isSelected ? Theme.of(context).colorScheme.primary : null,
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  library.title,
+                  style: TextStyle(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected ? Theme.of(context).colorScheme.primary : null,
                   ),
-                  if (showServerName)
-                    Text(
-                      library.serverName!,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                      ),
+                ),
+                if (showServerName)
+                  _buildLibraryServerLabel(
+                    library,
+                    TextStyle(
+                      fontSize: 11,
+                      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                     ),
-                ],
-              ),
+                    badgeSize: 10,
+                    constrainText: true,
+                  ),
+              ],
             ),
-          ],
-        ),
-      );
-    }).toList();
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build dropdown menu items with server subtitle when needed for clarity.
+  List<PopupMenuEntry<String>> _buildGroupedLibraryMenuItems(
+    List<MediaLibrary> visibleLibraries, {
+    required bool showServerHeaders,
+  }) {
+    if (!showServerHeaders) {
+      final nonUniqueNames = _getNonUniqueLibraryNames(visibleLibraries);
+      return visibleLibraries.map((library) {
+        final showServerName = library.serverName != null && nonUniqueNames.contains(library.title);
+        return _buildLibraryMenuItem(library, showServerName: showServerName);
+      }).toList();
+    }
+
+    final grouped = groupLibrariesByFirstAppearance(visibleLibraries);
+    final menuItems = <PopupMenuEntry<String>>[];
+    for (final serverKey in grouped.serverOrder) {
+      final bucket = grouped.byServer[serverKey]!;
+      if (serverKey.isNotEmpty) {
+        menuItems.add(_buildLibraryServerHeaderMenuItem(bucket.first, serverKey));
+      }
+      for (final library in bucket) {
+        menuItems.add(_buildLibraryMenuItem(library, showServerName: false));
+      }
+    }
+    return menuItems;
   }
 
   /// Build the app bar title - either dropdown on mobile or simple title on desktop
@@ -846,6 +910,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         visibleLibraries.where((lib) => lib.globalKey == _selectedLibraryGlobalKey).firstOrNull ??
         visibleLibraries.firstOrNull;
     if (selectedLibrary == null) return Text(t.libraries.title);
+    final groupByServerSetting = context.select<SettingsProvider, bool>((p) => p.groupLibrariesByServer);
+    final showServerHeaders = _hasMultipleServers(visibleLibraries) && groupByServerSetting;
 
     return PopupMenuButton<String>(
       key: _libraryDropdownKey,
@@ -854,7 +920,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       onSelected: (libraryGlobalKey) {
         _loadLibraryContent(libraryGlobalKey);
       },
-      itemBuilder: (context) => _buildGroupedLibraryMenuItems(visibleLibraries),
+      itemBuilder: (context) => _buildGroupedLibraryMenuItems(visibleLibraries, showServerHeaders: showServerHeaders),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Row(
@@ -868,11 +934,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(selectedLibrary.title, style: Theme.of(context).textTheme.titleMedium),
-                  Text(
-                    selectedLibrary.serverName!,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  _buildLibraryServerLabel(
+                    selectedLibrary,
+                    Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                     ),
+                    badgeSize: 10,
                   ),
                 ],
               )

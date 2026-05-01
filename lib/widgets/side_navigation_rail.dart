@@ -15,6 +15,7 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/settings_provider.dart';
 import '../utils/platform_detector.dart';
+import '../utils/library_grouping.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../theme/mono_tokens.dart';
@@ -284,7 +285,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     if (!showServerHeaders) {
       return libs.map((lib) => lib.globalKey).toList();
     }
-    final grouped = _groupByFirstAppearance(libs);
+    final grouped = groupLibrariesByFirstAppearance(libs);
     final result = <String>[];
     for (final serverKey in grouped.serverOrder) {
       if (serverKey.isNotEmpty) {
@@ -844,26 +845,6 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     return nameCounts.entries.where((e) => e.value > 1).map((e) => e.key).toSet();
   }
 
-  /// First-appearance grouping: walk libraries once, recording each serverId's
-  /// first-seen position and bucketing libraries underneath. Returns the server
-  /// order plus a per-server library list. Libraries without a serverId end up
-  /// in a synthetic '' bucket appearing at their first occurrence.
-  ({List<String> serverOrder, Map<String, List<MediaLibrary>> byServer}) _groupByFirstAppearance(
-    List<MediaLibrary> libs,
-  ) {
-    final order = <String>[];
-    final byServer = <String, List<MediaLibrary>>{};
-    for (final lib in libs) {
-      final key = lib.serverId ?? '';
-      if (!byServer.containsKey(key)) {
-        order.add(key);
-        byServer[key] = [];
-      }
-      byServer[key]!.add(lib);
-    }
-    return (serverOrder: order, byServer: byServer);
-  }
-
   Widget _buildLibraryGroupedColumn(List<MediaLibrary> libraries, dynamic t, {required bool showServerHeaders}) {
     if (!showServerHeaders) {
       final nonUniqueNames = _getNonUniqueLibraryNames(libraries);
@@ -876,7 +857,7 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       );
     }
 
-    final grouped = _groupByFirstAppearance(libraries);
+    final grouped = groupLibrariesByFirstAppearance(libraries);
     final children = <Widget>[];
     for (final serverKey in grouped.serverOrder) {
       final bucket = grouped.byServer[serverKey]!;
