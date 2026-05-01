@@ -19,6 +19,7 @@ class FocusableTextField extends StatelessWidget {
   final List<TextInputFormatter>? inputFormatters;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
+  final VoidCallback? onSelect;
   final bool autofocus;
 
   final VoidCallback? onNavigateLeft;
@@ -36,6 +37,7 @@ class FocusableTextField extends StatelessWidget {
     this.inputFormatters,
     this.onChanged,
     this.onSubmitted,
+    this.onSelect,
     this.autofocus = false,
     this.onNavigateLeft,
     this.onNavigateRight,
@@ -44,8 +46,16 @@ class FocusableTextField extends StatelessWidget {
   });
 
   KeyEventResult _handleKey(FocusNode _, KeyEvent event) {
-    if (!event.isActionable) return KeyEventResult.ignored;
     final key = event.logicalKey;
+
+    // Enter/numpad enter are left to TextField.onSubmitted. Handle only
+    // non-text submit keys that TV remotes/gamepads may send while editing.
+    if (onSelect != null && (key == LogicalKeyboardKey.select || key == LogicalKeyboardKey.gameButtonA)) {
+      if (event is KeyDownEvent) onSelect!();
+      return KeyEventResult.handled;
+    }
+
+    if (!event.isActionable) return KeyEventResult.ignored;
 
     if (key.isUpKey && onNavigateUp != null) {
       onNavigateUp!();

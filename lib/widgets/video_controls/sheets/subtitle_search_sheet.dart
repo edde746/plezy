@@ -3,6 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../focus/focusable_button.dart';
+import '../../../focus/focusable_text_field.dart';
+import '../../../focus/input_mode_tracker.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../models/plex/plex_subtitle_search_result.dart';
 import '../../../services/plex_client.dart';
@@ -38,6 +41,9 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
   String _languageCode = 'en';
   String _languageName = 'English';
   final _titleController = TextEditingController();
+  final _languageFocusNode = FocusNode(debugLabel: 'SubtitleSearch_language');
+  final _titleFocusNode = FocusNode(debugLabel: 'SubtitleSearch_title');
+  final _firstResultFocusNode = FocusNode(debugLabel: 'SubtitleSearch_firstResult');
   Timer? _debounceTimer;
 
   List<PlexSubtitleSearchResult>? _results;
@@ -67,6 +73,9 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
   @override
   void dispose() {
     _debounceTimer?.cancel();
+    _languageFocusNode.dispose();
+    _titleFocusNode.dispose();
+    _firstResultFocusNode.dispose();
     _titleController.dispose();
     super.dispose();
   }
@@ -116,12 +125,35 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
     _debounceTimer = Timer(const Duration(milliseconds: 500), _search);
   }
 
+  void _showLanguagePickerView() {
+    setState(() => _showLanguagePicker = true);
+    OverlaySheetController.of(context).refocus();
+  }
+
+  void _focusFirstResult() {
+    if (_results != null && _results!.isNotEmpty && !_isSearching && _error == null) {
+      _firstResultFocusNode.requestFocus();
+    }
+  }
+
+  Future<void> _submitSearchAndFocusFirstResult() async {
+    _debounceTimer?.cancel();
+    await _search();
+    if (!mounted || !InputModeTracker.isKeyboardMode(context)) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _focusFirstResult();
+    });
+  }
+
   void _onLanguageSelected(String code, String name) {
     setState(() {
       _languageCode = code;
       _languageName = name;
       _showLanguagePicker = false;
     });
+    OverlaySheetController.of(context).refocus();
     _search();
   }
 
@@ -178,6 +210,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
     }
 
     final fillColor = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08);
+    final hasResults = _results != null && _results!.isNotEmpty && !_isSearching && _error == null;
 
     return BaseVideoControlSheet(
       title: t.videoControls.searchSubtitles,
@@ -190,21 +223,29 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
             child: Row(
               children: [
                 // Language chip
-                Material(
-                  color: fillColor,
-                  borderRadius: pillInputRadius,
-                  child: InkWell(
+                FocusableButton(
+                  focusNode: _languageFocusNode,
+                  onPressed: _showLanguagePickerView,
+                  onNavigateRight: _titleFocusNode.requestFocus,
+                  onNavigateDown: hasResults ? _focusFirstResult : null,
+                  autoScroll: false,
+                  child: Material(
+                    color: fillColor,
                     borderRadius: pillInputRadius,
-                    onTap: () => setState(() => _showLanguagePicker = true),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(_languageName),
-                          const SizedBox(width: 2),
-                          const AppIcon(Symbols.arrow_drop_down_rounded, size: 20),
-                        ],
+                    child: InkWell(
+                      borderRadius: pillInputRadius,
+                      canRequestFocus: false,
+                      onTap: _showLanguagePickerView,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(_languageName),
+                            const SizedBox(width: 2),
+                            const AppIcon(Symbols.arrow_drop_down_rounded, size: 20),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -212,8 +253,9 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
                 const SizedBox(width: 8),
                 // Title search field
                 Expanded(
-                  child: TextField(
+                  child: FocusableTextField(
                     controller: _titleController,
+                    focusNode: _titleFocusNode,
                     decoration: pillInputDecoration(
                       context,
                       hintText: widget.mediaTitle ?? 'Title',
@@ -221,7 +263,10 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
                     ),
                     onChanged: _onTitleChanged,
                     textInputAction: TextInputAction.search,
-                    onSubmitted: (_) => _search(),
+                    onSubmitted: (_) => unawaited(_submitSearchAndFocusFirstResult()),
+                    onSelect: () => unawaited(_submitSearchAndFocusFirstResult()),
+                    onNavigateLeft: _languageFocusNode.requestFocus,
+                    onNavigateDown: hasResults ? _focusFirstResult : null,
                   ),
                 ),
               ],
@@ -289,6 +334,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
         }
 
         return FocusableListTile(
+          focusNode: index == 0 ? _firstResultFocusNode : null,
           title: Text(result.title ?? result.displayTitle ?? 'Unknown', maxLines: 1, overflow: TextOverflow.ellipsis),
           subtitle: Text(
             result.displayTitle ?? '',
@@ -317,6 +363,8 @@ class _LanguagePickerView extends StatefulWidget {
 
 class _LanguagePickerViewState extends State<_LanguagePickerView> {
   final _filterController = TextEditingController();
+  final _filterFocusNode = FocusNode(debugLabel: 'SubtitleLanguage_filter');
+  final _firstLanguageFocusNode = FocusNode(debugLabel: 'SubtitleLanguage_firstResult');
   late List<({String code, String name})> _allLanguages;
   List<({String code, String name})> _filteredLanguages = [];
 
@@ -329,8 +377,25 @@ class _LanguagePickerViewState extends State<_LanguagePickerView> {
 
   @override
   void dispose() {
+    _filterFocusNode.dispose();
+    _firstLanguageFocusNode.dispose();
     _filterController.dispose();
     super.dispose();
+  }
+
+  void _focusFirstLanguage() {
+    if (_filteredLanguages.isNotEmpty) {
+      _firstLanguageFocusNode.requestFocus();
+    }
+  }
+
+  void _focusFirstLanguageAfterSubmit() {
+    if (!InputModeTracker.isKeyboardMode(context)) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _focusFirstLanguage();
+    });
   }
 
   void _onFilterChanged(String query) {
@@ -356,8 +421,9 @@ class _LanguagePickerViewState extends State<_LanguagePickerView> {
         children: [
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: TextField(
+            child: FocusableTextField(
               controller: _filterController,
+              focusNode: _filterFocusNode,
               autofocus: true,
               decoration: pillInputDecoration(
                 context,
@@ -365,6 +431,9 @@ class _LanguagePickerViewState extends State<_LanguagePickerView> {
                 prefixIcon: const Icon(Symbols.search_rounded, size: 20),
               ),
               onChanged: _onFilterChanged,
+              onSubmitted: (_) => _focusFirstLanguageAfterSubmit(),
+              onSelect: _focusFirstLanguageAfterSubmit,
+              onNavigateDown: _filteredLanguages.isNotEmpty ? _focusFirstLanguage : null,
             ),
           ),
           Expanded(
@@ -374,6 +443,7 @@ class _LanguagePickerViewState extends State<_LanguagePickerView> {
                 final lang = _filteredLanguages[index];
                 final isSelected = lang.code == widget.currentCode;
                 return FocusableListTile(
+                  focusNode: index == 0 ? _firstLanguageFocusNode : null,
                   title: Text(
                     lang.name,
                     style: TextStyle(color: isSelected ? Theme.of(context).colorScheme.primary : null),
