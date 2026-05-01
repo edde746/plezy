@@ -1,0 +1,28 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{c,cc,cpp,h,hpp,m,mm}]
+indent_style = space
+indent_size = 2
+
+[*.dart]
+indent_style = space
+indent_size = 2
+
+[*.{kt,kts,java}]
+indent_style = space
+indent_size = 2
+ij_kotlin_code_style_defaults = KOTLIN_OFFICIAL
+ktlint_code_style = android_studio
+ktlint_standard_max-line-length = disabled
+ktlint_standard_no-wildcard-imports = disabled
+ktlint_standard_property-naming = disabled
+
+[*.swift]
+indent_style = space
+indent_size = 2

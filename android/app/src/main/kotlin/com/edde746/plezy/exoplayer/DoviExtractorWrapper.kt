@@ -14,22 +14,22 @@ import androidx.media3.extractor.TrackOutput
  * Shared by DoviExtractorWrapper for both MP4 and MKV containers.
  */
 class DoviExtractorOutputWrapper(
-    private val delegate: ExtractorOutput,
-    private val dvMode: DvConversionMode,
-    private val onVideoTrackWrapped: (DoviConvertingTrackOutput) -> Unit,
+  private val delegate: ExtractorOutput,
+  private val dvMode: DvConversionMode,
+  private val onVideoTrackWrapped: (DoviConvertingTrackOutput) -> Unit
 ) : ExtractorOutput {
-    override fun track(id: Int, type: Int): TrackOutput {
-        val original = delegate.track(id, type)
-        if (type == C.TRACK_TYPE_VIDEO) {
-            val wrapper = DoviConvertingTrackOutput(original, dvMode)
-            onVideoTrackWrapped(wrapper)
-            return wrapper
-        }
-        return original
+  override fun track(id: Int, type: Int): TrackOutput {
+    val original = delegate.track(id, type)
+    if (type == C.TRACK_TYPE_VIDEO) {
+      val wrapper = DoviConvertingTrackOutput(original, dvMode)
+      onVideoTrackWrapped(wrapper)
+      return wrapper
     }
+    return original
+  }
 
-    override fun endTracks() = delegate.endTracks()
-    override fun seekMap(seekMap: SeekMap) = delegate.seekMap(seekMap)
+  override fun endTracks() = delegate.endTracks()
+  override fun seekMap(seekMap: SeekMap) = delegate.seekMap(seekMap)
 }
 
 /**
@@ -38,23 +38,22 @@ class DoviExtractorOutputWrapper(
  * DV Profile 7 → 8.1 conversion via inline NAL processing.
  */
 class DoviExtractorWrapper(
-    private val delegate: Extractor,
-    private val dvMode: DvConversionMode = DvConversionMode.HEVC_STRIP,
+  private val delegate: Extractor,
+  private val dvMode: DvConversionMode = DvConversionMode.HEVC_STRIP
 ) : Extractor {
 
-    @Volatile var doviTrackOutput: DoviConvertingTrackOutput? = null
-        private set
+  @Volatile var doviTrackOutput: DoviConvertingTrackOutput? = null
+    private set
 
-    override fun sniff(input: ExtractorInput): Boolean = delegate.sniff(input)
+  override fun sniff(input: ExtractorInput): Boolean = delegate.sniff(input)
 
-    override fun init(output: ExtractorOutput) {
-        delegate.init(DoviExtractorOutputWrapper(output, dvMode) { doviTrackOutput = it })
-    }
+  override fun init(output: ExtractorOutput) {
+    delegate.init(DoviExtractorOutputWrapper(output, dvMode) { doviTrackOutput = it })
+  }
 
-    override fun read(input: ExtractorInput, seekPosition: PositionHolder): Int =
-        delegate.read(input, seekPosition)
+  override fun read(input: ExtractorInput, seekPosition: PositionHolder): Int = delegate.read(input, seekPosition)
 
-    override fun seek(position: Long, timeUs: Long) = delegate.seek(position, timeUs)
+  override fun seek(position: Long, timeUs: Long) = delegate.seek(position, timeUs)
 
-    override fun release() = delegate.release()
+  override fun release() = delegate.release()
 }

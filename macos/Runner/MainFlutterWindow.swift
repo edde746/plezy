@@ -24,10 +24,12 @@ class MainFlutterWindow: NSWindow {
     self.toolbar = toolbar
 
     // Register MPV player plugin for video playback
-    MpvPlayerPlugin.register(with: flutterViewController.registrar(forPlugin: "MpvPlayerPlugin"))
+    MpvPlayerPlugin.register(
+      with: flutterViewController.registrar(forPlugin: "MpvPlayerPlugin"))
 
     // Register window utils plugin for dynamic titlebar/fullscreen control from Dart
-    WindowUtilsPlugin.register(with: flutterViewController.registrar(forPlugin: "WindowUtilsPlugin"))
+    WindowUtilsPlugin.register(
+      with: flutterViewController.registrar(forPlugin: "WindowUtilsPlugin"))
     WindowUtilsPlugin.setWindow(self)
 
     // Set custom traffic light positions using centralized values from plugin

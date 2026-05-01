@@ -39,8 +39,7 @@ class MpvCore {
   void SetVisible(bool visible);
 
   // Window procedure handler for Flutter window messages.
-  std::optional<HRESULT> WindowProc(HWND hwnd, UINT message, WPARAM wparam,
-                                    LPARAM lparam);
+  std::optional<HRESULT> WindowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
 
  private:
   RECT GetGlobalRect(int32_t left, int32_t top, int32_t right, int32_t bottom);

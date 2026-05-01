@@ -30,11 +30,10 @@ static void CALLBACK SaveTimerProc(HWND, UINT, UINT_PTR, DWORD) {
 // Write a WINDOWPLACEMENT struct directly to the registry.
 static void WriteWindowPlacement(const WINDOWPLACEMENT& wp) {
   HKEY hKey;
-  if (RegCreateKeyExW(HKEY_CURRENT_USER, kWindowPlacementKey, 0, nullptr,
-                      REG_OPTION_NON_VOLATILE, KEY_WRITE, nullptr, &hKey,
-                      nullptr) == ERROR_SUCCESS) {
-    RegSetValueExW(hKey, kWindowPlacementValue, 0, REG_BINARY,
-                   reinterpret_cast<const BYTE*>(&wp), sizeof(wp));
+  if (RegCreateKeyExW(
+          HKEY_CURRENT_USER, kWindowPlacementKey, 0, nullptr, REG_OPTION_NON_VOLATILE, KEY_WRITE, nullptr, &hKey,
+          nullptr) == ERROR_SUCCESS) {
+    RegSetValueExW(hKey, kWindowPlacementValue, 0, REG_BINARY, reinterpret_cast<const BYTE*>(&wp), sizeof(wp));
     RegCloseKey(hKey);
   }
 }
@@ -51,17 +50,15 @@ static void SaveWindowPlacement(HWND hwnd) {
 // Returns whether the window should be maximized
 static bool LoadWindowPlacement(HWND hwnd) {
   HKEY hKey;
-  if (RegOpenKeyExW(HKEY_CURRENT_USER, kWindowPlacementKey, 0, KEY_READ,
-                    &hKey) != ERROR_SUCCESS)
-    return false;
+  if (RegOpenKeyExW(HKEY_CURRENT_USER, kWindowPlacementKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) return false;
 
   WINDOWPLACEMENT wp{};
   wp.length = sizeof(wp);
   DWORD size = sizeof(wp);
   bool wasMaximized = false;
 
-  if (RegQueryValueExW(hKey, kWindowPlacementValue, nullptr, nullptr,
-                       reinterpret_cast<BYTE*>(&wp), &size) == ERROR_SUCCESS &&
+  if (RegQueryValueExW(hKey, kWindowPlacementValue, nullptr, nullptr, reinterpret_cast<BYTE*>(&wp), &size) ==
+          ERROR_SUCCESS &&
       size == sizeof(wp)) {
     // Prevent restoring as minimized
     if (wp.showCmd == SW_SHOWMINIMIZED) wp.showCmd = SW_SHOWNORMAL;
@@ -80,8 +77,7 @@ static void DebounceSaveWindowPlacement(HWND hwnd) {
   g_saveTimerId = SetTimer(nullptr, 0, 500, SaveTimerProc);  // 500ms debounce
 }
 
-FlutterWindow::FlutterWindow(const flutter::DartProject& project)
-    : project_(project) {}
+FlutterWindow::FlutterWindow(const flutter::DartProject& project) : project_(project) {}
 
 FlutterWindow::~FlutterWindow() {}
 
@@ -94,8 +90,8 @@ bool FlutterWindow::OnCreate() {
 
   // The size here must match the window dimensions to avoid unnecessary surface
   // creation / destruction in the startup path.
-  flutter_controller_ = std::make_unique<flutter::FlutterViewController>(
-      frame.right - frame.left, frame.bottom - frame.top, project_);
+  flutter_controller_ =
+      std::make_unique<flutter::FlutterViewController>(frame.right - frame.left, frame.bottom - frame.top, project_);
   // Ensure that basic setup of the controller was successful.
   if (!flutter_controller_->engine() || !flutter_controller_->view()) {
     return false;
@@ -104,8 +100,7 @@ bool FlutterWindow::OnCreate() {
 
   // Register mpv player plugin.
   OutputDebugStringA("FlutterWindow: About to register MpvPlayerPlugin\n");
-  MpvPlayerPluginRegisterWithRegistrar(
-      flutter_controller_->engine()->GetRegistrarForPlugin("MpvPlayerPlugin"));
+  MpvPlayerPluginRegisterWithRegistrar(flutter_controller_->engine()->GetRegistrarForPlugin("MpvPlayerPlugin"));
   OutputDebugStringA("FlutterWindow: MpvPlayerPlugin registered\n");
 
   RegisterWindowChannel();
@@ -116,9 +111,8 @@ bool FlutterWindow::OnCreate() {
   HWND hwnd = GetHandle();
   bool maximized = LoadWindowPlacement(hwnd);
 
-  flutter_controller_->engine()->SetNextFrameCallback([this, maximized]() {
-    ::ShowWindow(this->GetHandle(), maximized ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL);
-  });
+  flutter_controller_->engine()->SetNextFrameCallback(
+      [this, maximized]() { ::ShowWindow(this->GetHandle(), maximized ? SW_SHOWMAXIMIZED : SW_SHOWNORMAL); });
 
   // Flutter can complete the first frame before the "show window" callback is
   // registered. The following call ensures a frame is pending to ensure the
@@ -152,14 +146,10 @@ void FlutterWindow::OnDestroy() {
 }
 
 LRESULT
-FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
-                              WPARAM const wparam,
-                              LPARAM const lparam) noexcept {
+FlutterWindow::MessageHandler(HWND hwnd, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept {
   // Give Flutter, including plugins, an opportunity to handle window messages.
   if (flutter_controller_) {
-    std::optional<LRESULT> result =
-        flutter_controller_->HandleTopLevelWindowProc(hwnd, message, wparam,
-                                                      lparam);
+    std::optional<LRESULT> result = flutter_controller_->HandleTopLevelWindowProc(hwnd, message, wparam, lparam);
     if (result) {
       return *result;
     }
@@ -196,40 +186,34 @@ FlutterWindow::MessageHandler(HWND hwnd, UINT const message,
 // ---------------------------------------------------------------------------
 void FlutterWindow::RegisterWindowChannel() {
   auto messenger = flutter_controller_->engine()->messenger();
-  window_channel_ =
-      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
-          messenger, "plezy/window",
-          &flutter::StandardMethodCodec::GetInstance());
+  window_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+      messenger, "plezy/window", &flutter::StandardMethodCodec::GetInstance());
 
-  window_channel_->SetMethodCallHandler(
-      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
-             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
-                 result) {
-        const std::string& name = call.method_name();
-        if (name == "setFullScreen") {
-          bool value = false;
-          if (const auto* args =
-                  std::get_if<flutter::EncodableMap>(call.arguments())) {
-            auto it = args->find(flutter::EncodableValue("isFullScreen"));
-            if (it != args->end()) {
-              if (const bool* b = std::get_if<bool>(&it->second)) value = *b;
-            }
-          }
-          SetNativeFullScreen(value);
-          result->Success();
-        } else if (name == "isFullScreen") {
-          result->Success(flutter::EncodableValue(is_fullscreen_));
-        } else {
-          result->NotImplemented();
+  window_channel_->SetMethodCallHandler([this](
+                                            const flutter::MethodCall<flutter::EncodableValue>& call,
+                                            std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result) {
+    const std::string& name = call.method_name();
+    if (name == "setFullScreen") {
+      bool value = false;
+      if (const auto* args = std::get_if<flutter::EncodableMap>(call.arguments())) {
+        auto it = args->find(flutter::EncodableValue("isFullScreen"));
+        if (it != args->end()) {
+          if (const bool* b = std::get_if<bool>(&it->second)) value = *b;
         }
-      });
+      }
+      SetNativeFullScreen(value);
+      result->Success();
+    } else if (name == "isFullScreen") {
+      result->Success(flutter::EncodableValue(is_fullscreen_));
+    } else {
+      result->NotImplemented();
+    }
+  });
 }
 
 void FlutterWindow::NotifyFullScreenChanged() {
   if (!window_channel_) return;
-  window_channel_->InvokeMethod(
-      "onFullScreenChanged",
-      std::make_unique<flutter::EncodableValue>(is_fullscreen_));
+  window_channel_->InvokeMethod("onFullScreenChanged", std::make_unique<flutter::EncodableValue>(is_fullscreen_));
 }
 
 void FlutterWindow::SetNativeFullScreen(bool fullscreen) {
@@ -255,8 +239,7 @@ void FlutterWindow::SetNativeFullScreen(bool fullscreen) {
     POINT center{(wr.left + wr.right) / 2, (wr.top + wr.bottom) / 2};
     MONITORINFO mi{};
     mi.cbSize = sizeof(mi);
-    if (!::GetMonitorInfoW(::MonitorFromPoint(center, MONITOR_DEFAULTTONEAREST),
-                           &mi)) {
+    if (!::GetMonitorInfoW(::MonitorFromPoint(center, MONITOR_DEFAULTTONEAREST), &mi)) {
       g_suppressPlacementSave = false;
       return;
     }
@@ -271,18 +254,15 @@ void FlutterWindow::SetNativeFullScreen(bool fullscreen) {
     // Strip frame/caption. Stripping WS_OVERLAPPEDWINDOW alone is enough to
     // make the following SetWindowPos use the given rect exactly — no need
     // to ShowWindow(SW_SHOWNORMAL) first (would cause a second relayout).
-    ::SetWindowLongPtr(
-        hwnd, GWL_STYLE, style_before_fullscreen_ & ~WS_OVERLAPPEDWINDOW);
+    ::SetWindowLongPtr(hwnd, GWL_STYLE, style_before_fullscreen_ & ~WS_OVERLAPPEDWINDOW);
     ::SetWindowLongPtr(
         hwnd, GWL_EXSTYLE,
-        ex_style_before_fullscreen_ &
-            ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE |
-              WS_EX_STATICEDGE));
+        ex_style_before_fullscreen_ & ~(WS_EX_DLGMODALFRAME | WS_EX_WINDOWEDGE | WS_EX_CLIENTEDGE | WS_EX_STATICEDGE));
 
     const RECT& r = mi.rcMonitor;
-    ::SetWindowPos(hwnd, HWND_TOP, r.left, r.top, r.right - r.left,
-                   r.bottom - r.top,
-                   SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE);
+    ::SetWindowPos(
+        hwnd, HWND_TOP, r.left, r.top, r.right - r.left, r.bottom - r.top,
+        SWP_FRAMECHANGED | SWP_NOZORDER | SWP_NOACTIVATE);
 
     is_fullscreen_ = true;
   } else {
@@ -298,9 +278,8 @@ void FlutterWindow::SetNativeFullScreen(bool fullscreen) {
     }
 
     // Force a frame refresh so restored chrome paints.
-    ::SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
-                   SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE |
-                       SWP_FRAMECHANGED);
+    ::SetWindowPos(
+        hwnd, nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
 
     is_fullscreen_ = false;
     placement_before_fullscreen_ = {};

@@ -1,12 +1,12 @@
 #ifndef MPV_PLAYER_H_
 #define MPV_PLAYER_H_
 
+#include <epoxy/egl.h>
+#include <epoxy/gl.h>
+#include <gtk/gtk.h>
 #include <mpv/client.h>
 #include <mpv/render.h>
 #include <mpv/render_gl.h>
-#include <gtk/gtk.h>
-#include <epoxy/gl.h>
-#include <epoxy/egl.h>
 
 #include <atomic>
 #include <functional>
@@ -84,8 +84,7 @@ class MpvPlayer {
   std::string GetProperty(const std::string& name);
 
   /// Observes an mpv property for changes.
-  void ObserveProperty(const std::string& name, const std::string& format,
-                       int id);
+  void ObserveProperty(const std::string& name, const std::string& format, int id);
 
   /// Renders a frame to the specified FBO.
   void Render(int width, int height, int fbo = 0);

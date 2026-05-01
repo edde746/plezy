@@ -1,0 +1,9 @@
+BasedOnStyle: Google
+AlignAfterOpenBracket: AlwaysBreak
+ColumnLimit: 120
+IndentWidth: 2
+ContinuationIndentWidth: 4
+DerivePointerAlignment: false
+LineEnding: LF
+PointerAlignment: Left
+SortIncludes: true

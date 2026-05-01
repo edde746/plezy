@@ -6,14 +6,14 @@
 
 @interface PIPViewController : NSViewController
 
-@property (nonatomic, copy, nullable) NSString *name;
-@property (nonatomic, weak, nullable) id<PIPViewControllerDelegate> delegate;
-@property (nonatomic, weak, nullable) NSWindow *replacementWindow;
-@property (nonatomic) NSRect replacementRect;
-@property (nonatomic) bool playing;
-@property (nonatomic) NSSize aspectRatio;
+@property(nonatomic, copy, nullable) NSString* name;
+@property(nonatomic, weak, nullable) id<PIPViewControllerDelegate> delegate;
+@property(nonatomic, weak, nullable) NSWindow* replacementWindow;
+@property(nonatomic) NSRect replacementRect;
+@property(nonatomic) bool playing;
+@property(nonatomic) NSSize aspectRatio;
 
-- (void)presentViewControllerAsPictureInPicture:(NSViewController *)viewController;
+- (void)presentViewControllerAsPictureInPicture:(NSViewController*)viewController;
 
 @end
 
@@ -21,12 +21,12 @@
 
 @optional
 // macOS 10.12-10.14
-- (BOOL)pipShouldClose:(PIPViewController *)pip;
+- (BOOL)pipShouldClose:(PIPViewController*)pip;
 // macOS 10.15+
-- (void)pipWillClose:(PIPViewController *)pip;
-- (void)pipDidClose:(PIPViewController *)pip;
-- (void)pipActionPlay:(PIPViewController *)pip;
-- (void)pipActionPause:(PIPViewController *)pip;
-- (void)pipActionStop:(PIPViewController *)pip;
+- (void)pipWillClose:(PIPViewController*)pip;
+- (void)pipDidClose:(PIPViewController*)pip;
+- (void)pipActionPlay:(PIPViewController*)pip;
+- (void)pipActionPause:(PIPViewController*)pip;
+- (void)pipActionStop:(PIPViewController*)pip;
 
 @end

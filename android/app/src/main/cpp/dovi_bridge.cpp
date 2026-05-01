@@ -1,5 +1,6 @@
-#include <jni.h>
 #include <android/log.h>
+#include <jni.h>
+
 #include <cstring>
 #include <new>
 
@@ -13,114 +14,110 @@
 
 static const char* BRIDGE_VERSION = "1.0.0";
 
-extern "C" JNIEXPORT jbyteArray JNICALL
-Java_com_edde746_plezy_exoplayer_DoviBridge_nativeConvertDv7RpuToDv81(
-    JNIEnv *env, jclass, jbyteArray payload, jint mode) {
+extern "C" JNIEXPORT jbyteArray JNICALL Java_com_edde746_plezy_exoplayer_DoviBridge_nativeConvertDv7RpuToDv81(
+    JNIEnv* env, jclass, jbyteArray payload, jint mode) {
 #if !DOVI_REAL_LINKED
-    return nullptr;
+  return nullptr;
 #else
-    if (payload == nullptr) return nullptr;
+  if (payload == nullptr) return nullptr;
 
-    jsize len = env->GetArrayLength(payload);
-    if (len <= 0) return nullptr;
+  jsize len = env->GetArrayLength(payload);
+  if (len <= 0) return nullptr;
 
-    // Valid RPU NALs are typically <2 KiB; reject unreasonable sizes
-    if (len > 8192) {
-        LOGW("RPU payload too large (%d bytes), skipping", len);
-        return nullptr;
-    }
+  // Valid RPU NALs are typically <2 KiB; reject unreasonable sizes
+  if (len > 8192) {
+    LOGW("RPU payload too large (%d bytes), skipping", len);
+    return nullptr;
+  }
 
-    // Copy to native heap so libdovi never touches JVM heap memory.
-    // GetByteArrayElements on ART may return a direct heap pointer; any
-    // out-of-bounds access by libdovi would corrupt adjacent JVM objects.
-    auto *buf = new (std::nothrow) uint8_t[static_cast<size_t>(len)];
-    if (buf == nullptr) return nullptr;
+  // Copy to native heap so libdovi never touches JVM heap memory.
+  // GetByteArrayElements on ART may return a direct heap pointer; any
+  // out-of-bounds access by libdovi would corrupt adjacent JVM objects.
+  auto* buf = new (std::nothrow) uint8_t[static_cast<size_t>(len)];
+  if (buf == nullptr) return nullptr;
 
-    env->GetByteArrayRegion(payload, 0, len, reinterpret_cast<jbyte *>(buf));
-    if (env->ExceptionCheck()) {
-        delete[] buf;
-        return nullptr;
-    }
-
-    // Try dovi_parse_unspec62_nalu first (handles escaped NALs), fallback to dovi_parse_rpu
-    DoviRpuOpaque *rpu = dovi_parse_unspec62_nalu(buf, static_cast<size_t>(len));
-
-    if (rpu == nullptr) {
-        delete[] buf;
-        return nullptr;
-    }
-
-    const char *err = dovi_rpu_get_error(rpu);
-    if (err != nullptr) {
-        // Fallback: try dovi_parse_rpu (raw RPU without NAL framing)
-        dovi_rpu_free(rpu);
-        rpu = dovi_parse_rpu(buf, static_cast<size_t>(len));
-        if (rpu == nullptr) {
-            delete[] buf;
-            return nullptr;
-        }
-        err = dovi_rpu_get_error(rpu);
-        if (err != nullptr) {
-            LOGW("RPU parse failed: %s", err);
-            dovi_rpu_free(rpu);
-            delete[] buf;
-            return nullptr;
-        }
-    }
-
+  env->GetByteArrayRegion(payload, 0, len, reinterpret_cast<jbyte*>(buf));
+  if (env->ExceptionCheck()) {
     delete[] buf;
+    return nullptr;
+  }
 
-    // Convert to target profile (mode 2 = P8.1 with no-op curves)
-    int32_t ret = dovi_convert_rpu_with_mode(rpu, static_cast<uint8_t>(mode));
-    if (ret != 0) {
-        err = dovi_rpu_get_error(rpu);
-        LOGW("RPU conversion failed (mode %d): %s", mode, err ? err : "unknown");
-        dovi_rpu_free(rpu);
-        return nullptr;
+  // Try dovi_parse_unspec62_nalu first (handles escaped NALs), fallback to dovi_parse_rpu
+  DoviRpuOpaque* rpu = dovi_parse_unspec62_nalu(buf, static_cast<size_t>(len));
+
+  if (rpu == nullptr) {
+    delete[] buf;
+    return nullptr;
+  }
+
+  const char* err = dovi_rpu_get_error(rpu);
+  if (err != nullptr) {
+    // Fallback: try dovi_parse_rpu (raw RPU without NAL framing)
+    dovi_rpu_free(rpu);
+    rpu = dovi_parse_rpu(buf, static_cast<size_t>(len));
+    if (rpu == nullptr) {
+      delete[] buf;
+      return nullptr;
     }
-
-    // Write back as UNSPEC62 NAL
-    const DoviData *out = dovi_write_unspec62_nalu(rpu);
-    if (out == nullptr || out->data == nullptr || out->len == 0) {
-        err = dovi_rpu_get_error(rpu);
-        LOGW("RPU write failed: %s", err ? err : "unknown");
-        if (out != nullptr) dovi_data_free(out);
-        dovi_rpu_free(rpu);
-        return nullptr;
+    err = dovi_rpu_get_error(rpu);
+    if (err != nullptr) {
+      LOGW("RPU parse failed: %s", err);
+      dovi_rpu_free(rpu);
+      delete[] buf;
+      return nullptr;
     }
+  }
 
-    if (out->len > 16384) {
-        LOGW("RPU output unexpectedly large (%zu bytes), discarding", out->len);
-        dovi_data_free(out);
-        dovi_rpu_free(rpu);
-        return nullptr;
-    }
+  delete[] buf;
 
-    jbyteArray result = env->NewByteArray(static_cast<jsize>(out->len));
-    if (result != nullptr) {
-        env->SetByteArrayRegion(result, 0, static_cast<jsize>(out->len),
-            reinterpret_cast<const jbyte *>(out->data));
-    }
+  // Convert to target profile (mode 2 = P8.1 with no-op curves)
+  int32_t ret = dovi_convert_rpu_with_mode(rpu, static_cast<uint8_t>(mode));
+  if (ret != 0) {
+    err = dovi_rpu_get_error(rpu);
+    LOGW("RPU conversion failed (mode %d): %s", mode, err ? err : "unknown");
+    dovi_rpu_free(rpu);
+    return nullptr;
+  }
 
+  // Write back as UNSPEC62 NAL
+  const DoviData* out = dovi_write_unspec62_nalu(rpu);
+  if (out == nullptr || out->data == nullptr || out->len == 0) {
+    err = dovi_rpu_get_error(rpu);
+    LOGW("RPU write failed: %s", err ? err : "unknown");
+    if (out != nullptr) dovi_data_free(out);
+    dovi_rpu_free(rpu);
+    return nullptr;
+  }
+
+  if (out->len > 16384) {
+    LOGW("RPU output unexpectedly large (%zu bytes), discarding", out->len);
     dovi_data_free(out);
     dovi_rpu_free(rpu);
+    return nullptr;
+  }
 
-    return result;
+  jbyteArray result = env->NewByteArray(static_cast<jsize>(out->len));
+  if (result != nullptr) {
+    env->SetByteArrayRegion(result, 0, static_cast<jsize>(out->len), reinterpret_cast<const jbyte*>(out->data));
+  }
+
+  dovi_data_free(out);
+  dovi_rpu_free(rpu);
+
+  return result;
 #endif
 }
 
 extern "C" JNIEXPORT jboolean JNICALL
-Java_com_edde746_plezy_exoplayer_DoviBridge_nativeIsConversionPathReady(
-    JNIEnv *, jclass) {
+Java_com_edde746_plezy_exoplayer_DoviBridge_nativeIsConversionPathReady(JNIEnv*, jclass) {
 #if DOVI_REAL_LINKED
-    return JNI_TRUE;
+  return JNI_TRUE;
 #else
-    return JNI_FALSE;
+  return JNI_FALSE;
 #endif
 }
 
 extern "C" JNIEXPORT jstring JNICALL
-Java_com_edde746_plezy_exoplayer_DoviBridge_nativeGetBridgeVersion(
-    JNIEnv *env, jclass) {
-    return env->NewStringUTF(BRIDGE_VERSION);
+Java_com_edde746_plezy_exoplayer_DoviBridge_nativeGetBridgeVersion(JNIEnv* env, jclass) {
+  return env->NewStringUTF(BRIDGE_VERSION);
 }

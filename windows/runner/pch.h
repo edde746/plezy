@@ -3,17 +3,17 @@
 
 #include <Windows.h>
 #include <dwmapi.h>
-
-#include <optional>
-#include <memory>
 #include <io.h>
 #include <stdio.h>
+
+#include <algorithm>
+#include <cmath>
+#include <functional>
 #include <iostream>
+#include <map>
+#include <memory>
+#include <optional>
 #include <string>
 #include <vector>
-#include <functional>
-#include <cmath>
-#include <algorithm>
-#include <map>
 
 #endif

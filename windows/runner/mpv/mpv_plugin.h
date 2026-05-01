@@ -16,8 +16,7 @@
 #include "mpv_player.h"
 
 // C-style registration function for the plugin.
-void MpvPlayerPluginRegisterWithRegistrar(
-    FlutterDesktopPluginRegistrarRef registrar);
+void MpvPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar);
 
 namespace mpv {
 
@@ -39,10 +38,8 @@ class MpvPlayerPlugin : public flutter::Plugin {
   HWND GetChildWindow();
 
   flutter::PluginRegistrarWindows* registrar_;
-  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
-      method_channel_;
-  std::unique_ptr<flutter::EventChannel<flutter::EncodableValue>>
-      event_channel_;
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> method_channel_;
+  std::unique_ptr<flutter::EventChannel<flutter::EncodableValue>> event_channel_;
   std::unique_ptr<flutter::EventSink<flutter::EncodableValue>> event_sink_;
 
   std::unique_ptr<MpvPlayer> player_;

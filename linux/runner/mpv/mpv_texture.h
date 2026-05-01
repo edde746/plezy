@@ -12,9 +12,7 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE(MpvTexture, mpv_texture, MPV, TEXTURE, FlTextureGL)
 
 /// Creates a new MpvTexture that renders mpv video to an offscreen FBO.
-MpvTexture* mpv_texture_new(mpv::MpvPlayer* player,
-                            FlTextureRegistrar* registrar,
-                            FlView* view);
+MpvTexture* mpv_texture_new(mpv::MpvPlayer* player, FlTextureRegistrar* registrar, FlView* view);
 
 /// Notifies Flutter that a new frame is available.
 void mpv_texture_mark_frame_available(MpvTexture* self);

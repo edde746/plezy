@@ -9,12 +9,9 @@ namespace mpv {
 
 MpvCore* MpvCore::GetInstance() { return instance_.get(); }
 
-void MpvCore::SetInstance(std::unique_ptr<MpvCore> instance) {
-  instance_ = std::move(instance);
-}
+void MpvCore::SetInstance(std::unique_ptr<MpvCore> instance) { instance_ = std::move(instance); }
 
-MpvCore::MpvCore(HWND flutter_window)
-    : flutter_window_(flutter_window) {}
+MpvCore::MpvCore(HWND flutter_window) : flutter_window_(flutter_window) {}
 
 MpvCore::~MpvCore() {
   // Close all mpv views.
@@ -29,8 +26,7 @@ void MpvCore::EnsureInitialized() {
   container_ = MpvContainer::GetInstance()->Get(flutter_window_);
 }
 
-void MpvCore::CreateMpvView(HWND mpv_hwnd, RECT rect,
-                            double device_pixel_ratio) {
+void MpvCore::CreateMpvView(HWND mpv_hwnd, RECT rect, double device_pixel_ratio) {
   ::SetParent(mpv_hwnd, container_);
   ::ShowWindow(mpv_hwnd, SW_SHOW);
 
@@ -43,21 +39,19 @@ void MpvCore::CreateMpvView(HWND mpv_hwnd, RECT rect,
   mpv_views_[mpv_hwnd] = rect;
 
   // Position the mpv view behind the Flutter window.
-  auto global_rect =
-      GetGlobalRect(rect.left, rect.top, rect.right, rect.bottom);
-  ::SetWindowPos(mpv_hwnd, flutter_window_, global_rect.left, global_rect.top,
-                 global_rect.right - global_rect.left,
-                 global_rect.bottom - global_rect.top, SWP_NOACTIVATE);
+  auto global_rect = GetGlobalRect(rect.left, rect.top, rect.right, rect.bottom);
+  ::SetWindowPos(
+      mpv_hwnd, flutter_window_, global_rect.left, global_rect.top, global_rect.right - global_rect.left,
+      global_rect.bottom - global_rect.top, SWP_NOACTIVATE);
 }
 
 void MpvCore::ResizeMpvView(HWND mpv_hwnd, RECT rect) {
   mpv_views_[mpv_hwnd] = rect;
-  auto global_rect =
-      GetGlobalRect(rect.left, rect.top, rect.right, rect.bottom);
+  auto global_rect = GetGlobalRect(rect.left, rect.top, rect.right, rect.bottom);
   // Use MoveWindow to trigger redraw.
-  ::MoveWindow(mpv_hwnd, global_rect.left, global_rect.top,
-               global_rect.right - global_rect.left,
-               global_rect.bottom - global_rect.top, TRUE);
+  ::MoveWindow(
+      mpv_hwnd, global_rect.left, global_rect.top, global_rect.right - global_rect.left,
+      global_rect.bottom - global_rect.top, TRUE);
 }
 
 void MpvCore::DisposeMpvView(HWND mpv_hwnd) {
@@ -76,24 +70,22 @@ void MpvCore::SetVisible(bool visible) {
   }
 }
 
-std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
-                                           WPARAM wparam, LPARAM lparam) {
+std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
   switch (message) {
     case WM_ACTIVATE: {
       RECT window_rect;
       ::GetWindowRect(flutter_window_, &window_rect);
       // Position container behind Flutter window.
-      ::SetWindowPos(container_, flutter_window_, window_rect.left,
-                     window_rect.top, window_rect.right - window_rect.left,
-                     window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
+      ::SetWindowPos(
+          container_, flutter_window_, window_rect.left, window_rect.top, window_rect.right - window_rect.left,
+          window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
       break;
     }
     case WM_SIZE: {
       // Handle Windows's minimize & maximize animations properly.
       // During these transitions, we hide the container and make Flutter opaque,
       // then restore after the animation completes using a Windows timer.
-      if (wparam != SIZE_RESTORED || last_wm_size_wparam_ == SIZE_MINIMIZED ||
-          last_wm_size_wparam_ == SIZE_MAXIMIZED ||
+      if (wparam != SIZE_RESTORED || last_wm_size_wparam_ == SIZE_MINIMIZED || last_wm_size_wparam_ == SIZE_MAXIMIZED ||
           was_window_hidden_due_to_minimize_) {
         was_window_hidden_due_to_minimize_ = false;
         DisableComposition();
@@ -112,17 +104,16 @@ std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
         // Update container position to match current Flutter window bounds
         RECT window_rect;
         ::GetWindowRect(flutter_window_, &window_rect);
-        ::SetWindowPos(container_, flutter_window_, window_rect.left,
-                       window_rect.top, window_rect.right - window_rect.left,
-                       window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
+        ::SetWindowPos(
+            container_, flutter_window_, window_rect.left, window_rect.top, window_rect.right - window_rect.left,
+            window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
 
         // Restore transparency if video is visible
         if (visible_) {
           EnableComposition();
 
           // Force a redraw to ensure Flutter's render surface is correctly sized
-          ::RedrawWindow(flutter_window_, nullptr, nullptr,
-                         RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+          ::RedrawWindow(flutter_window_, nullptr, nullptr, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
         }
       }
       break;
@@ -130,14 +121,12 @@ std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
     case WM_WINDOWPOSCHANGED: {
       RECT window_rect;
       ::GetWindowRect(flutter_window_, &window_rect);
-      if (window_rect.right - window_rect.left > 0 &&
-          window_rect.bottom - window_rect.top > 0) {
-        ::SetWindowPos(container_, flutter_window_, window_rect.left,
-                       window_rect.top, window_rect.right - window_rect.left,
-                       window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
+      if (window_rect.right - window_rect.left > 0 && window_rect.bottom - window_rect.top > 0) {
+        ::SetWindowPos(
+            container_, flutter_window_, window_rect.left, window_rect.top, window_rect.right - window_rect.left,
+            window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
         // Window is minimized (negative coordinates).
-        if (window_rect.left < 0 && window_rect.top < 0 &&
-            window_rect.right < 0 && window_rect.bottom < 0) {
+        if (window_rect.left < 0 && window_rect.top < 0 && window_rect.right < 0 && window_rect.bottom < 0) {
           DisableComposition();
           was_window_hidden_due_to_minimize_ = true;
         }
@@ -158,8 +147,7 @@ std::optional<HRESULT> MpvCore::WindowProc(HWND hwnd, UINT message,
   return std::nullopt;
 }
 
-RECT MpvCore::GetGlobalRect(int32_t left, int32_t top, int32_t right,
-                            int32_t bottom) {
+RECT MpvCore::GetGlobalRect(int32_t left, int32_t top, int32_t right, int32_t bottom) {
   // Expand client area to prevent transparent gaps.
   left -= static_cast<int32_t>(ceil(device_pixel_ratio_));
   top -= static_cast<int32_t>(ceil(device_pixel_ratio_));
@@ -177,8 +165,8 @@ RECT MpvCore::GetGlobalRect(int32_t left, int32_t top, int32_t right,
 }
 
 void MpvCore::EnableComposition() {
-  ::SetWindowPos(flutter_window_, nullptr, 0, 0, 0, 0,
-                 SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
+  ::SetWindowPos(
+      flutter_window_, nullptr, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE);
   if (!composition_enabled_) {
     SetWindowComposition(flutter_window_, 2, 0);
     composition_enabled_ = true;

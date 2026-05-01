@@ -1,9 +1,10 @@
 #ifndef SANITIZE_UTF8_H_
 #define SANITIZE_UTF8_H_
 
+#include <simdutf.h>
+
 #include <cstring>
 #include <string>
-#include <simdutf.h>
 
 // Sanitize a C string that may contain invalid UTF-8 sequences.
 // Uses simdutf for SIMD-accelerated validation (fast path for valid strings),

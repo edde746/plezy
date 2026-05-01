@@ -56,8 +56,7 @@ typedef struct _ACCENT_POLICY {
   DWORD AnimationId;
 } ACCENT_POLICY;
 
-typedef BOOL(WINAPI* _SetWindowCompositionAttribute)(
-    HWND, WINDOWCOMPOSITIONATTRIBDATA*);
+typedef BOOL(WINAPI* _SetWindowCompositionAttribute)(HWND, WINDOWCOMPOSITIONATTRIBDATA*);
 
 static _SetWindowCompositionAttribute g_set_window_composition_attribute = NULL;
 static bool g_set_window_composition_attribute_initialized = false;
@@ -71,8 +70,7 @@ static RTL_OSVERSIONINFOW GetWindowsVersion() {
   static RTL_OSVERSIONINFOW cached = []() {
     HMODULE hmodule = ::GetModuleHandleW(L"ntdll.dll");
     if (hmodule) {
-      RtlGetVersionPtr rtl_get_version_ptr =
-          (RtlGetVersionPtr)::GetProcAddress(hmodule, "RtlGetVersion");
+      RtlGetVersionPtr rtl_get_version_ptr = (RtlGetVersionPtr)::GetProcAddress(hmodule, "RtlGetVersion");
       if (rtl_get_version_ptr != nullptr) {
         RTL_OSVERSIONINFOW rovi = {0};
         rovi.dwOSVersionInfoSize = sizeof(rovi);
@@ -87,23 +85,20 @@ static RTL_OSVERSIONINFOW GetWindowsVersion() {
   return cached;
 }
 
-void SetWindowComposition(HWND window, int32_t accent_state,
-                          int32_t gradient_color) {
+void SetWindowComposition(HWND window, int32_t accent_state, int32_t gradient_color) {
   if (GetWindowsVersion().dwBuildNumber >= 18362) {
     if (!g_set_window_composition_attribute_initialized) {
       auto user32 = ::GetModuleHandleA("user32.dll");
       if (user32) {
         g_set_window_composition_attribute =
-            reinterpret_cast<_SetWindowCompositionAttribute>(
-                ::GetProcAddress(user32, "SetWindowCompositionAttribute"));
+            reinterpret_cast<_SetWindowCompositionAttribute>(::GetProcAddress(user32, "SetWindowCompositionAttribute"));
         if (g_set_window_composition_attribute) {
           g_set_window_composition_attribute_initialized = true;
         }
       }
     }
     if (g_set_window_composition_attribute) {
-      ACCENT_POLICY accent = {static_cast<ACCENT_STATE>(accent_state), 2,
-                              static_cast<DWORD>(gradient_color), 0};
+      ACCENT_POLICY accent = {static_cast<ACCENT_STATE>(accent_state), 2, static_cast<DWORD>(gradient_color), 0};
       WINDOWCOMPOSITIONATTRIBDATA data;
       data.Attrib = WCA_ACCENT_POLICY;
       data.pvData = &accent;

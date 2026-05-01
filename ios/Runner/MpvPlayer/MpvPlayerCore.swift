@@ -4,195 +4,195 @@ import UIKit
 /// Core MPV player using Metal rendering for iOS.
 class MpvPlayerCore: MpvPlayerCoreBase {
 
-    private var containerView: UIView?
-    private weak var window: UIWindow?
+  private var containerView: UIView?
+  private weak var window: UIWindow?
 
-    var isPipStarting = false
+  var isPipStarting = false
 
-    func initialize(in window: UIWindow) -> Bool {
-        guard !isInitialized else {
-            print("[MpvPlayerCore] Already initialized")
-            return true
-        }
-
-        self.window = window
-
-        let container = UIView(frame: window.bounds)
-        container.backgroundColor = .clear
-        container.isUserInteractionEnabled = false
-
-        let layer = MpvMetalLayer()
-        layer.frame = container.bounds
-        layer.contentsScale = UIScreen.main.nativeScale
-        layer.framebufferOnly = true
-        layer.backgroundColor = UIColor.black.cgColor
-
-        container.layer.addSublayer(layer)
-        containerView = container
-        metalLayer = layer
-
-        window.insertSubview(container, at: 0)
-
-        guard setupMpv() else {
-            print("[MpvPlayerCore] Failed to setup MPV")
-            layer.removeFromSuperlayer()
-            container.removeFromSuperview()
-            metalLayer = nil
-            containerView = nil
-            return false
-        }
-
-        setupNotifications()
-
-        isInitialized = true
-        print("[MpvPlayerCore] Initialized successfully with MPV")
-        return true
+  func initialize(in window: UIWindow) -> Bool {
+    guard !isInitialized else {
+      print("[MpvPlayerCore] Already initialized")
+      return true
     }
 
-    func switchToPipVO(layerPtr: UnsafeMutableRawPointer) -> Bool {
-        guard let mpv else { return false }
+    self.window = window
 
-        print("[MpvPlayerCore] Switching to pip VO for PiP")
+    let container = UIView(frame: window.bounds)
+    container.backgroundColor = .clear
+    container.isUserInteractionEnabled = false
 
-        metalLayer?.removeFromSuperlayer()
+    let layer = MpvMetalLayer()
+    layer.frame = container.bounds
+    layer.contentsScale = UIScreen.main.nativeScale
+    layer.framebufferOnly = true
+    layer.backgroundColor = UIColor.black.cgColor
 
-        mpv_set_property_string(mpv, "vid", "no")
+    container.layer.addSublayer(layer)
+    containerView = container
+    metalLayer = layer
 
-        var pointer = Int64(Int(bitPattern: layerPtr))
-        mpv_set_property(mpv, "wid", MPV_FORMAT_INT64, &pointer)
+    window.insertSubview(container, at: 0)
 
-        mpv_set_property_string(mpv, "vo", "pip")
-        mpv_set_property_string(mpv, "vid", "auto")
-
-        print("[MpvPlayerCore] Switched to pip VO successfully")
-        return true
+    guard setupMpv() else {
+      print("[MpvPlayerCore] Failed to setup MPV")
+      layer.removeFromSuperlayer()
+      container.removeFromSuperview()
+      metalLayer = nil
+      containerView = nil
+      return false
     }
 
-    func switchToGpuNextVO() -> Bool {
-        guard let mpv, let metalLayer else { return false }
+    setupNotifications()
 
-        print("[MpvPlayerCore] Switching back to gpu-next VO")
+    isInitialized = true
+    print("[MpvPlayerCore] Initialized successfully with MPV")
+    return true
+  }
 
-        mpv_set_property_string(mpv, "vid", "no")
+  func switchToPipVO(layerPtr: UnsafeMutableRawPointer) -> Bool {
+    guard let mpv else { return false }
 
-        var layer = metalLayer
-        mpv_set_property(mpv, "wid", MPV_FORMAT_INT64, &layer)
+    print("[MpvPlayerCore] Switching to pip VO for PiP")
 
-        applyGpuNextOptions()
-        mpv_set_property_string(mpv, "vid", "auto")
+    metalLayer?.removeFromSuperlayer()
 
-        if metalLayer.superlayer == nil, let containerView {
-            containerView.layer.addSublayer(metalLayer)
-        }
+    mpv_set_property_string(mpv, "vid", "no")
 
-        print("[MpvPlayerCore] Switched back to gpu-next VO successfully")
-        return true
+    var pointer = Int64(Int(bitPattern: layerPtr))
+    mpv_set_property(mpv, "wid", MPV_FORMAT_INT64, &pointer)
+
+    mpv_set_property_string(mpv, "vo", "pip")
+    mpv_set_property_string(mpv, "vid", "auto")
+
+    print("[MpvPlayerCore] Switched to pip VO successfully")
+    return true
+  }
+
+  func switchToGpuNextVO() -> Bool {
+    guard let mpv, let metalLayer else { return false }
+
+    print("[MpvPlayerCore] Switching back to gpu-next VO")
+
+    mpv_set_property_string(mpv, "vid", "no")
+
+    var layer = metalLayer
+    mpv_set_property(mpv, "wid", MPV_FORMAT_INT64, &layer)
+
+    applyGpuNextOptions()
+    mpv_set_property_string(mpv, "vid", "auto")
+
+    if metalLayer.superlayer == nil, let containerView {
+      containerView.layer.addSublayer(metalLayer)
     }
 
-    func setVisible(_ visible: Bool) {
-        guard let containerView else { return }
+    print("[MpvPlayerCore] Switched back to gpu-next VO successfully")
+    return true
+  }
 
-        if visible {
-            containerView.removeFromSuperview()
-            window?.insertSubview(containerView, at: 0)
-        }
+  func setVisible(_ visible: Bool) {
+    guard let containerView else { return }
 
-        containerView.isHidden = !visible
+    if visible {
+      containerView.removeFromSuperview()
+      window?.insertSubview(containerView, at: 0)
     }
 
-    func updateFrame(_ frame: CGRect? = nil) {
-        guard let metalLayer, let containerView else { return }
+    containerView.isHidden = !visible
+  }
 
-        if let frame {
-            containerView.frame = frame
-            metalLayer.frame = containerView.bounds
-        } else if let window {
-            containerView.frame = window.bounds
-            metalLayer.frame = containerView.bounds
-        }
+  func updateFrame(_ frame: CGRect? = nil) {
+    guard let metalLayer, let containerView else { return }
 
-        let scale = UIScreen.main.nativeScale
-        metalLayer.drawableSize = CGSize(
-            width: metalLayer.frame.width * scale,
-            height: metalLayer.frame.height * scale
-        )
+    if let frame {
+      containerView.frame = frame
+      metalLayer.frame = containerView.bounds
+    } else if let window {
+      containerView.frame = window.bounds
+      metalLayer.frame = containerView.bounds
     }
 
-    /// Nudge mpv to present the current paused frame after switching back from PiP.
-    func forceDraw() {
-        command(["seek", "0", "relative+exact"])
+    let scale = UIScreen.main.nativeScale
+    metalLayer.drawableSize = CGSize(
+      width: metalLayer.frame.width * scale,
+      height: metalLayer.frame.height * scale
+    )
+  }
+
+  /// Nudge mpv to present the current paused frame after switching back from PiP.
+  func forceDraw() {
+    command(["seek", "0", "relative+exact"])
+  }
+
+  override func updateEDRMode(sigPeak: Double) {
+    guard let metalLayer else { return }
+
+    var edrHeadroom: CGFloat = 1.0
+    #if os(iOS)
+      if #available(iOS 16.0, *) {
+        edrHeadroom = containerView?.window?.screen.potentialEDRHeadroom ?? 1.0
+        metalLayer.wantsExtendedDynamicRangeContent =
+          hdrEnabled && sigPeak > 1.0 && edrHeadroom > 1.0
+      }
+    #endif
+
+    let shouldEnableEDR = hdrEnabled && sigPeak > 1.0 && edrHeadroom > 1.0
+    print(
+      "[MpvPlayerCore] EDR mode: \(shouldEnableEDR) (hdrEnabled: \(hdrEnabled), sigPeak: \(sigPeak), headroom: \(edrHeadroom))"
+    )
+  }
+
+  func dispose() {
+    NotificationCenter.default.removeObserver(self)
+    disposeSharedState(destroySynchronously: false)
+
+    metalLayer?.removeFromSuperlayer()
+    metalLayer = nil
+    containerView?.removeFromSuperview()
+    containerView = nil
+    isInitialized = false
+    print("[MpvPlayerCore] Disposed")
+  }
+
+  deinit {
+    dispose()
+  }
+
+  private func setupNotifications() {
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(enterBackground),
+      name: UIApplication.didEnterBackgroundNotification,
+      object: nil
+    )
+    NotificationCenter.default.addObserver(
+      self,
+      selector: #selector(enterForeground),
+      name: UIApplication.willEnterForegroundNotification,
+      object: nil
+    )
+  }
+
+  @objc private func enterBackground() {
+    if isPipActive || isPipStarting {
+      print("[MpvPlayerCore] Entering background - PiP active/starting, keeping video")
+      return
     }
 
-    override func updateEDRMode(sigPeak: Double) {
-        guard let metalLayer else { return }
+    print("[MpvPlayerCore] Entering background - disabling video")
+    if mpv != nil {
+      mpv_set_option_string(mpv, "vid", "no")
+    }
+  }
 
-        var edrHeadroom: CGFloat = 1.0
-        #if os(iOS)
-        if #available(iOS 16.0, *) {
-            edrHeadroom = containerView?.window?.screen.potentialEDRHeadroom ?? 1.0
-            metalLayer.wantsExtendedDynamicRangeContent =
-                hdrEnabled && sigPeak > 1.0 && edrHeadroom > 1.0
-        }
-        #endif
-
-        let shouldEnableEDR = hdrEnabled && sigPeak > 1.0 && edrHeadroom > 1.0
-        print(
-            "[MpvPlayerCore] EDR mode: \(shouldEnableEDR) (hdrEnabled: \(hdrEnabled), sigPeak: \(sigPeak), headroom: \(edrHeadroom))"
-        )
+  @objc private func enterForeground() {
+    if isPipActive {
+      print("[MpvPlayerCore] Entering foreground - PiP active, skipping vid restore")
+      return
     }
 
-    func dispose() {
-        NotificationCenter.default.removeObserver(self)
-        disposeSharedState(destroySynchronously: false)
-
-        metalLayer?.removeFromSuperlayer()
-        metalLayer = nil
-        containerView?.removeFromSuperview()
-        containerView = nil
-        isInitialized = false
-        print("[MpvPlayerCore] Disposed")
+    print("[MpvPlayerCore] Entering foreground - enabling video")
+    if mpv != nil {
+      mpv_set_option_string(mpv, "vid", "auto")
     }
-
-    deinit {
-        dispose()
-    }
-
-    private func setupNotifications() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(enterBackground),
-            name: UIApplication.didEnterBackgroundNotification,
-            object: nil
-        )
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(enterForeground),
-            name: UIApplication.willEnterForegroundNotification,
-            object: nil
-        )
-    }
-
-    @objc private func enterBackground() {
-        if isPipActive || isPipStarting {
-            print("[MpvPlayerCore] Entering background - PiP active/starting, keeping video")
-            return
-        }
-
-        print("[MpvPlayerCore] Entering background - disabling video")
-        if mpv != nil {
-            mpv_set_option_string(mpv, "vid", "no")
-        }
-    }
-
-    @objc private func enterForeground() {
-        if isPipActive {
-            print("[MpvPlayerCore] Entering foreground - PiP active, skipping vid restore")
-            return
-        }
-
-        print("[MpvPlayerCore] Entering foreground - enabling video")
-        if mpv != nil {
-            mpv_set_option_string(mpv, "vid", "auto")
-        }
-    }
+  }
 }

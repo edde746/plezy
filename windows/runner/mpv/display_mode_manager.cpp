@@ -1,9 +1,9 @@
 #include "display_mode_manager.h"
 
-#include "sdk_26100.h"
-
-#include <cmath>
 #include <algorithm>
+#include <cmath>
+
+#include "sdk_26100.h"
 
 namespace mpv {
 
@@ -44,14 +44,12 @@ std::vector<DISPLAYCONFIG_PATH_INFO> DisplayModeManager::GetDisplayConfigPaths()
 
   // Retry loop for ERROR_INSUFFICIENT_BUFFER (Kodi pattern).
   do {
-    if (GetDisplayConfigBufferSizes(flags, &path_count, &mode_count) != ERROR_SUCCESS)
-      return {};
+    if (GetDisplayConfigBufferSizes(flags, &path_count, &mode_count) != ERROR_SUCCESS) return {};
 
     paths.resize(path_count);
     modes.resize(mode_count);
 
-    result = QueryDisplayConfig(flags, &path_count, paths.data(),
-                                &mode_count, modes.data(), nullptr);
+    result = QueryDisplayConfig(flags, &path_count, paths.data(), &mode_count, modes.data(), nullptr);
   } while (result == ERROR_INSUFFICIENT_BUFFER);
 
   if (result != ERROR_SUCCESS) return {};
@@ -60,8 +58,7 @@ std::vector<DISPLAYCONFIG_PATH_INFO> DisplayModeManager::GetDisplayConfigPaths()
   return paths;
 }
 
-std::optional<DisplayConfigId> DisplayModeManager::GetDisplayTargetId(
-    const std::wstring& gdi_device_name) {
+std::optional<DisplayConfigId> DisplayModeManager::GetDisplayTargetId(const std::wstring& gdi_device_name) {
   // Follows Kodi's GetDisplayTargetId: iterate QueryDisplayConfig paths,
   // match via DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME.viewGdiDeviceName.
   DISPLAYCONFIG_SOURCE_DEVICE_NAME source = {};
@@ -72,8 +69,7 @@ std::optional<DisplayConfigId> DisplayModeManager::GetDisplayTargetId(
     source.header.adapterId = path.sourceInfo.adapterId;
     source.header.id = path.sourceInfo.id;
 
-    if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS &&
-        gdi_device_name == source.viewGdiDeviceName) {
+    if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS && gdi_device_name == source.viewGdiDeviceName) {
       return DisplayConfigId{path.targetInfo.adapterId, path.targetInfo.id};
     }
   }
@@ -116,9 +112,13 @@ std::vector<DisplayMode> DisplayModeManager::EnumerateDisplayModes(HWND window) 
     if (a.height != b.height) return a.height < b.height;
     return a.refresh_rate < b.refresh_rate;
   });
-  modes.erase(std::unique(modes.begin(), modes.end(), [](const DisplayMode& a, const DisplayMode& b) {
-    return a.width == b.width && a.height == b.height && a.refresh_rate == b.refresh_rate;
-  }), modes.end());
+  modes.erase(
+      std::unique(
+          modes.begin(), modes.end(),
+          [](const DisplayMode& a, const DisplayMode& b) {
+            return a.width == b.width && a.height == b.height && a.refresh_rate == b.refresh_rate;
+          }),
+      modes.end());
 
   return modes;
 }
@@ -145,12 +145,10 @@ void DisplayModeManager::SaveOriginalMode(HWND window) {
 
   original_devmode_ = {};
   original_devmode_.dmSize = sizeof(original_devmode_);
-  EnumDisplaySettingsW(original_device_name_.c_str(), ENUM_CURRENT_SETTINGS,
-                       &original_devmode_);
+  EnumDisplaySettingsW(original_device_name_.c_str(), ENUM_CURRENT_SETTINGS, &original_devmode_);
 }
 
-bool DisplayModeManager::SetDisplayMode(HWND window, DWORD width, DWORD height,
-                                         DWORD refresh_rate) {
+bool DisplayModeManager::SetDisplayMode(HWND window, DWORD width, DWORD height, DWORD refresh_rate) {
   std::wstring device_name = GetMonitorDeviceName(window);
   if (device_name.empty()) return false;
 
@@ -175,25 +173,21 @@ bool DisplayModeManager::SetDisplayMode(HWND window, DWORD width, DWORD height,
     DEVMODEW registry_dm = {};
     registry_dm.dmSize = sizeof(registry_dm);
     if (EnumDisplaySettingsW(device_name.c_str(), ENUM_REGISTRY_SETTINGS, &registry_dm)) {
-      LONG rc = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr,
-                                          CDS_UPDATEREGISTRY | CDS_NORESET, nullptr);
+      LONG rc = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_UPDATEREGISTRY | CDS_NORESET, nullptr);
       if (rc == DISP_CHANGE_SUCCESSFUL) {
-        rc = ChangeDisplaySettingsExW(device_name.c_str(), nullptr, nullptr,
-                                       CDS_FULLSCREEN, nullptr);
+        rc = ChangeDisplaySettingsExW(device_name.c_str(), nullptr, nullptr, CDS_FULLSCREEN, nullptr);
         if (rc == DISP_CHANGE_SUCCESSFUL) changed = true;
 
         // Restore original registry settings.
         registry_dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;
-        ChangeDisplaySettingsExW(device_name.c_str(), &registry_dm, nullptr,
-                                  CDS_UPDATEREGISTRY | CDS_NORESET, nullptr);
+        ChangeDisplaySettingsExW(device_name.c_str(), &registry_dm, nullptr, CDS_UPDATEREGISTRY | CDS_NORESET, nullptr);
       }
     }
   }
 
   // Standard path / fallback.
   if (!changed) {
-    LONG rc = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr,
-                                        CDS_FULLSCREEN, nullptr);
+    LONG rc = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_FULLSCREEN, nullptr);
     if (rc == DISP_CHANGE_SUCCESSFUL) changed = true;
   }
 
@@ -210,9 +204,8 @@ bool DisplayModeManager::RestoreOriginalMode(HWND window) {
 
   original_devmode_.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;
 
-  LONG rc = ChangeDisplaySettingsExW(original_device_name_.c_str(),
-                                      &original_devmode_, nullptr,
-                                      CDS_FULLSCREEN, nullptr);
+  LONG rc =
+      ChangeDisplaySettingsExW(original_device_name_.c_str(), &original_devmode_, nullptr, CDS_FULLSCREEN, nullptr);
 
   if (rc == DISP_CHANGE_SUCCESSFUL) {
     mode_changed_ = false;
@@ -239,8 +232,7 @@ bool DisplayModeManager::IsHDRSupported(HWND window) {
   // Follows Kodi's GetDisplayHDRStatus pattern.
   if (IsWin11_24H2OrNewer()) {
     DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO_2 info = {};
-    info.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(
-        DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2);
+    info.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2);
     info.header.size = sizeof(info);
     info.header.adapterId = target_id->adapter_id;
     info.header.id = target_id->id;
@@ -275,8 +267,7 @@ bool DisplayModeManager::IsHDREnabled(HWND window) {
 
   if (IsWin11_24H2OrNewer()) {
     DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO_2 info = {};
-    info.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(
-        DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2);
+    info.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2);
     info.header.size = sizeof(info);
     info.header.adapterId = target_id->adapter_id;
     info.header.id = target_id->id;
@@ -331,8 +322,7 @@ bool DisplayModeManager::SetHDREnabled(HWND window, bool enabled) {
   // Source: Kodi WIN32Util.cpp:1276-1288.
   if (pre_toggle_dm.dmDisplayFrequency != 0) {
     pre_toggle_dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;
-    ChangeDisplaySettingsExW(device_name.c_str(), &pre_toggle_dm, nullptr,
-                              CDS_FULLSCREEN, nullptr);
+    ChangeDisplaySettingsExW(device_name.c_str(), &pre_toggle_dm, nullptr, CDS_FULLSCREEN, nullptr);
   }
 
   hdr_changed_ = true;
@@ -365,8 +355,7 @@ bool DisplayModeManager::RestoreOriginalHDRState(HWND window) {
   // Restore DEVMODEW after toggle.
   if (pre_toggle_dm.dmDisplayFrequency != 0) {
     pre_toggle_dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;
-    ChangeDisplaySettingsExW(original_hdr_device_name_.c_str(), &pre_toggle_dm,
-                              nullptr, CDS_FULLSCREEN, nullptr);
+    ChangeDisplaySettingsExW(original_hdr_device_name_.c_str(), &pre_toggle_dm, nullptr, CDS_FULLSCREEN, nullptr);
   }
 
   hdr_changed_ = false;
@@ -379,8 +368,7 @@ bool DisplayModeManager::RestoreOriginalHDRState(HWND window) {
 LONG DisplayModeManager::SetHDRStateForTarget(const DisplayConfigId& target, bool enabled) {
   if (IsWin11_24H2OrNewer()) {
     DISPLAYCONFIG_SET_HDR_STATE state = {};
-    state.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(
-        DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE);
+    state.header.type = static_cast<DISPLAYCONFIG_DEVICE_INFO_TYPE>(DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE);
     state.header.size = sizeof(state);
     state.header.adapterId = target.adapter_id;
     state.header.id = target.id;
@@ -399,44 +387,39 @@ LONG DisplayModeManager::SetHDRStateForTarget(const DisplayConfigId& target, boo
 
 bool DisplayModeManager::WriteRegistryDWORD(const wchar_t* value_name, DWORD value) {
   HKEY key;
-  if (RegCreateKeyExW(HKEY_CURRENT_USER, kRegistryPath, 0, nullptr,
-                       0, KEY_WRITE, nullptr, &key, nullptr) != ERROR_SUCCESS)
+  if (RegCreateKeyExW(HKEY_CURRENT_USER, kRegistryPath, 0, nullptr, 0, KEY_WRITE, nullptr, &key, nullptr) !=
+      ERROR_SUCCESS)
     return false;
-  LONG result = RegSetValueExW(key, value_name, 0, REG_DWORD,
-                                reinterpret_cast<const BYTE*>(&value), sizeof(value));
+  LONG result = RegSetValueExW(key, value_name, 0, REG_DWORD, reinterpret_cast<const BYTE*>(&value), sizeof(value));
   RegCloseKey(key);
   return result == ERROR_SUCCESS;
 }
 
-bool DisplayModeManager::WriteRegistryString(const wchar_t* value_name,
-                                              const std::wstring& value) {
+bool DisplayModeManager::WriteRegistryString(const wchar_t* value_name, const std::wstring& value) {
   HKEY key;
-  if (RegCreateKeyExW(HKEY_CURRENT_USER, kRegistryPath, 0, nullptr,
-                       0, KEY_WRITE, nullptr, &key, nullptr) != ERROR_SUCCESS)
+  if (RegCreateKeyExW(HKEY_CURRENT_USER, kRegistryPath, 0, nullptr, 0, KEY_WRITE, nullptr, &key, nullptr) !=
+      ERROR_SUCCESS)
     return false;
-  LONG result = RegSetValueExW(key, value_name, 0, REG_SZ,
-                                reinterpret_cast<const BYTE*>(value.c_str()),
-                                static_cast<DWORD>((value.size() + 1) * sizeof(wchar_t)));
+  LONG result = RegSetValueExW(
+      key, value_name, 0, REG_SZ, reinterpret_cast<const BYTE*>(value.c_str()),
+      static_cast<DWORD>((value.size() + 1) * sizeof(wchar_t)));
   RegCloseKey(key);
   return result == ERROR_SUCCESS;
 }
 
 bool DisplayModeManager::ReadRegistryDWORD(const wchar_t* value_name, DWORD& value) {
   HKEY key;
-  if (RegOpenKeyExW(HKEY_CURRENT_USER, kRegistryPath, 0, KEY_READ, &key) != ERROR_SUCCESS)
-    return false;
+  if (RegOpenKeyExW(HKEY_CURRENT_USER, kRegistryPath, 0, KEY_READ, &key) != ERROR_SUCCESS) return false;
   DWORD size = sizeof(value);
   DWORD type = 0;
-  LONG result = RegQueryValueExW(key, value_name, nullptr, &type,
-                                  reinterpret_cast<BYTE*>(&value), &size);
+  LONG result = RegQueryValueExW(key, value_name, nullptr, &type, reinterpret_cast<BYTE*>(&value), &size);
   RegCloseKey(key);
   return result == ERROR_SUCCESS && type == REG_DWORD;
 }
 
 bool DisplayModeManager::ReadRegistryString(const wchar_t* value_name, std::wstring& value) {
   HKEY key;
-  if (RegOpenKeyExW(HKEY_CURRENT_USER, kRegistryPath, 0, KEY_READ, &key) != ERROR_SUCCESS)
-    return false;
+  if (RegOpenKeyExW(HKEY_CURRENT_USER, kRegistryPath, 0, KEY_READ, &key) != ERROR_SUCCESS) return false;
   DWORD size = 0;
   DWORD type = 0;
   RegQueryValueExW(key, value_name, nullptr, &type, nullptr, &size);
@@ -445,8 +428,7 @@ bool DisplayModeManager::ReadRegistryString(const wchar_t* value_name, std::wstr
     return false;
   }
   value.resize(size / sizeof(wchar_t));
-  LONG result = RegQueryValueExW(key, value_name, nullptr, nullptr,
-                                  reinterpret_cast<BYTE*>(&value[0]), &size);
+  LONG result = RegQueryValueExW(key, value_name, nullptr, nullptr, reinterpret_cast<BYTE*>(&value[0]), &size);
   RegCloseKey(key);
   if (result != ERROR_SUCCESS) return false;
   // Remove trailing null.
@@ -456,8 +438,7 @@ bool DisplayModeManager::ReadRegistryString(const wchar_t* value_name, std::wstr
 
 bool DisplayModeManager::DeleteRegistryValue(const wchar_t* value_name) {
   HKEY key;
-  if (RegOpenKeyExW(HKEY_CURRENT_USER, kRegistryPath, 0, KEY_WRITE, &key) != ERROR_SUCCESS)
-    return false;
+  if (RegOpenKeyExW(HKEY_CURRENT_USER, kRegistryPath, 0, KEY_WRITE, &key) != ERROR_SUCCESS) return false;
   RegDeleteValueW(key, value_name);
   RegCloseKey(key);
   return true;
@@ -517,8 +498,7 @@ bool DisplayModeManager::RecoverIfNeeded(HWND window) {
       dm.dmDisplayFrequency = refresh;
       dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY;
 
-      LONG rc = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr,
-                                          CDS_FULLSCREEN, nullptr);
+      LONG rc = ChangeDisplaySettingsExW(device_name.c_str(), &dm, nullptr, CDS_FULLSCREEN, nullptr);
       if (rc == DISP_CHANGE_SUCCESSFUL) recovered = true;
     }
   }
@@ -542,8 +522,7 @@ bool DisplayModeManager::RecoverIfNeeded(HWND window) {
         // Restore display mode after HDR toggle.
         if (pre_dm.dmDisplayFrequency != 0) {
           pre_dm.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT | DM_DISPLAYFREQUENCY | DM_DISPLAYFLAGS;
-          ChangeDisplaySettingsExW(device_name.c_str(), &pre_dm, nullptr,
-                                    CDS_FULLSCREEN, nullptr);
+          ChangeDisplaySettingsExW(device_name.c_str(), &pre_dm, nullptr, CDS_FULLSCREEN, nullptr);
         }
       }
     }
@@ -556,10 +535,8 @@ bool DisplayModeManager::RecoverIfNeeded(HWND window) {
 
 // --- Refresh rate matching ---
 
-DWORD DisplayModeManager::FindBestRefreshRate(double video_fps,
-                                               const std::vector<DisplayMode>& modes,
-                                               DWORD current_width,
-                                               DWORD current_height) {
+DWORD DisplayModeManager::FindBestRefreshRate(
+    double video_fps, const std::vector<DisplayMode>& modes, DWORD current_width, DWORD current_height) {
   if (video_fps <= 0) return 0;
 
   // Collect unique refresh rates available at the current resolution.
@@ -592,8 +569,7 @@ DWORD DisplayModeManager::FindBestRefreshRate(double video_fps,
 
     // Prefer lowest multiplier (exact match > 2x > 3x > ...).
     // Among equal multipliers, prefer higher rate (shouldn't happen, but safe).
-    if (best_rate == 0 || multiplier < best_multiplier ||
-        (multiplier == best_multiplier && rate > best_rate)) {
+    if (best_rate == 0 || multiplier < best_multiplier || (multiplier == best_multiplier && rate > best_rate)) {
       best_rate = rate;
       best_multiplier = multiplier;
     }

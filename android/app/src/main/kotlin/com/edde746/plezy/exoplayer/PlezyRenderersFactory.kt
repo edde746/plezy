@@ -8,6 +8,7 @@ import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.util.Clock
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.analytics.PlayerId
 import androidx.media3.exoplayer.audio.AudioOutput
 import androidx.media3.exoplayer.audio.AudioOutputProvider
@@ -16,7 +17,6 @@ import androidx.media3.exoplayer.audio.AudioTrackAudioOutputProvider
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioTrackBufferSizeProvider
 import androidx.media3.exoplayer.audio.ForwardingAudioSink
-import androidx.media3.exoplayer.Renderer
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.abs
@@ -24,38 +24,38 @@ import kotlin.math.abs
 @OptIn(UnstableApi::class)
 class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context) {
 
-    /** Audio delay in microseconds. Shared with PositionFixAudioSink for live updates. */
-    val audioDelayUs = AtomicLong(0L)
+  /** Audio delay in microseconds. Shared with PositionFixAudioSink for live updates. */
+  val audioDelayUs = AtomicLong(0L)
 
-    override fun buildAudioSink(
-        context: Context,
-        enableFloatOutput: Boolean,
-        enableAudioOutputPlaybackParams: Boolean
-    ): AudioSink {
-        AudioTrackAudioOutputProvider.failOnSpuriousAudioTimestamp = false
+  override fun buildAudioSink(
+    context: Context,
+    enableFloatOutput: Boolean,
+    enableAudioOutputPlaybackParams: Boolean
+  ): AudioSink {
+    AudioTrackAudioOutputProvider.failOnSpuriousAudioTimestamp = false
 
-        val bufferSizeProvider = DefaultAudioTrackBufferSizeProvider.Builder()
-            .setMinPcmBufferDurationUs(500_000)
-            .setMaxPcmBufferDurationUs(1_000_000)
-            .setPcmBufferMultiplicationFactor(4)
-            .build()
+    val bufferSizeProvider = DefaultAudioTrackBufferSizeProvider.Builder()
+      .setMinPcmBufferDurationUs(500_000)
+      .setMaxPcmBufferDurationUs(1_000_000)
+      .setPcmBufferMultiplicationFactor(4)
+      .build()
 
-        val realProvider = AudioTrackAudioOutputProvider.Builder(context)
-            .setAudioTrackBufferSizeProvider(bufferSizeProvider)
-            .build()
+    val realProvider = AudioTrackAudioOutputProvider.Builder(context)
+      .setAudioTrackBufferSizeProvider(bufferSizeProvider)
+      .build()
 
-        // Shared position: RawPositionAudioOutput writes the raw AudioTrack position,
-        // PositionFixAudioSink reads it to bypass DefaultAudioSink's writtenDuration clamp.
-        val rawPositionUs = AtomicLong(Long.MIN_VALUE)
+    // Shared position: RawPositionAudioOutput writes the raw AudioTrack position,
+    // PositionFixAudioSink reads it to bypass DefaultAudioSink's writtenDuration clamp.
+    val rawPositionUs = AtomicLong(Long.MIN_VALUE)
 
-        val defaultSink = DefaultAudioSink.Builder(context)
-            .setEnableFloatOutput(enableFloatOutput)
-            .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
-            .setAudioOutputProvider(RawPositionOutputProvider(realProvider, rawPositionUs))
-            .build()
+    val defaultSink = DefaultAudioSink.Builder(context)
+      .setEnableFloatOutput(enableFloatOutput)
+      .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
+      .setAudioOutputProvider(RawPositionOutputProvider(realProvider, rawPositionUs))
+      .build()
 
-        return PositionFixAudioSink(defaultSink, rawPositionUs, audioDelayUs)
-    }
+    return PositionFixAudioSink(defaultSink, rawPositionUs, audioDelayUs)
+  }
 }
 
 /**
@@ -81,130 +81,132 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
  */
 @OptIn(UnstableApi::class)
 private class PositionFixAudioSink(
-    sink: AudioSink,
-    private val rawPositionUs: AtomicLong,
-    private val audioDelayUs: AtomicLong
+  sink: AudioSink,
+  private val rawPositionUs: AtomicLong,
+  private val audioDelayUs: AtomicLong
 ) : ForwardingAudioSink(sink) {
 
-    private var startMediaTimeUs = Long.MIN_VALUE
-    private var suppressedErrorCount = 0
+  private var startMediaTimeUs = Long.MIN_VALUE
+  private var suppressedErrorCount = 0
 
-    // Speed tracking for position bypass
-    private var currentSpeed = 1.0f
-    private var refMediaTimeUs = Long.MIN_VALUE
-    private var refRawPositionUs = 0L
+  // Speed tracking for position bypass
+  private var currentSpeed = 1.0f
+  private var refMediaTimeUs = Long.MIN_VALUE
+  private var refRawPositionUs = 0L
 
-    // Transient counter-offset: after seek/flush, ramp offset from 0 to full
-    // over recoveryDurationUs to prevent video frame drops.
-    private var recoveryDurationUs = 0L
+  // Transient counter-offset: after seek/flush, ramp offset from 0 to full
+  // over recoveryDurationUs to prevent video frame drops.
+  private var recoveryDurationUs = 0L
 
-    override fun handleBuffer(
-        buffer: ByteBuffer,
-        presentationTimeUs: Long,
-        encodedAccessUnitCount: Int
-    ): Boolean {
-        if (startMediaTimeUs == Long.MIN_VALUE) {
-            startMediaTimeUs = presentationTimeUs
-            refMediaTimeUs = presentationTimeUs
-            refRawPositionUs = 0
-            val delayUs = audioDelayUs.get()
-            recoveryDurationUs = if (delayUs == 0L) 0L else maxOf(200_000L, 2L * abs(delayUs))
+  override fun handleBuffer(
+    buffer: ByteBuffer,
+    presentationTimeUs: Long,
+    encodedAccessUnitCount: Int
+  ): Boolean {
+    if (startMediaTimeUs == Long.MIN_VALUE) {
+      startMediaTimeUs = presentationTimeUs
+      refMediaTimeUs = presentationTimeUs
+      refRawPositionUs = 0
+      val delayUs = audioDelayUs.get()
+      recoveryDurationUs = if (delayUs == 0L) 0L else maxOf(200_000L, 2L * abs(delayUs))
+    }
+    return super.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
+  }
+
+  override fun setPlaybackParameters(playbackParameters: PlaybackParameters) {
+    // Capture reference point before speed changes
+    val rawPos = rawPositionUs.get()
+    if (rawPos > 0 && refMediaTimeUs != Long.MIN_VALUE) {
+      refMediaTimeUs = refMediaTimeUs + ((rawPos - refRawPositionUs) * currentSpeed).toLong()
+      refRawPositionUs = rawPos
+    }
+    currentSpeed = playbackParameters.speed
+    super.setPlaybackParameters(playbackParameters)
+  }
+
+  override fun getCurrentPositionUs(sourceEnded: Boolean): Long {
+    val delegatePos = super.getCurrentPositionUs(sourceEnded)
+    if (delegatePos == Long.MIN_VALUE || refMediaTimeUs == Long.MIN_VALUE) {
+      return delegatePos
+    }
+
+    val rawPos = rawPositionUs.get()
+    val basePos = if (rawPos <= 0) {
+      delegatePos
+    } else {
+      val expectedPos = refMediaTimeUs + ((rawPos - refRawPositionUs) * currentSpeed).toLong()
+      if (expectedPos > delegatePos + 30_000) expectedPos else delegatePos
+    }
+
+    // Audio delay with transient counter-offset to prevent frame drops after seeks.
+    // After flush, offset ramps linearly from 0 to full over recoveryDurationUs.
+    val delayUs = audioDelayUs.get()
+    if (delayUs == 0L) return basePos
+
+    val elapsedUs = basePos - startMediaTimeUs
+    val netOffsetUs = if (recoveryDurationUs <= 0L || elapsedUs >= recoveryDurationUs) {
+      delayUs
+    } else {
+      (delayUs * elapsedUs) / recoveryDurationUs
+    }
+    return basePos + netOffsetUs
+  }
+
+  // --- Suppress timestamp discontinuity errors ---
+
+  override fun setListener(listener: AudioSink.Listener) {
+    super.setListener(
+      @OptIn(UnstableApi::class) object : AudioSink.Listener {
+        override fun onPositionDiscontinuity() = listener.onPositionDiscontinuity()
+        override fun onPositionAdvancing(playoutStartSystemTimeUs: Long) = listener.onPositionAdvancing(playoutStartSystemTimeUs)
+        override fun onUnderrun(bufferSize: Int, bufferSizeMs: Long, elapsedSinceLastFeedMs: Long) = listener.onUnderrun(bufferSize, bufferSizeMs, elapsedSinceLastFeedMs)
+        override fun onSkipSilenceEnabledChanged(skipSilenceEnabled: Boolean) = listener.onSkipSilenceEnabledChanged(skipSilenceEnabled)
+        override fun onOffloadBufferEmptying() = listener.onOffloadBufferEmptying()
+        override fun onOffloadBufferFull() = listener.onOffloadBufferFull()
+        override fun onAudioCapabilitiesChanged() = listener.onAudioCapabilitiesChanged()
+        override fun onAudioTrackInitialized(audioTrackConfig: AudioSink.AudioTrackConfig) = listener.onAudioTrackInitialized(audioTrackConfig)
+        override fun onAudioTrackReleased(audioTrackConfig: AudioSink.AudioTrackConfig) = listener.onAudioTrackReleased(audioTrackConfig)
+        override fun onSilenceSkipped() = listener.onSilenceSkipped()
+        override fun onAudioSessionIdChanged(audioSessionId: Int) = listener.onAudioSessionIdChanged(audioSessionId)
+
+        override fun onAudioSinkError(audioSinkError: Exception) {
+          if (isTimestampDiscontinuity(audioSinkError)) {
+            suppressedErrorCount++
+            return
+          }
+          listener.onAudioSinkError(audioSinkError)
         }
-        return super.handleBuffer(buffer, presentationTimeUs, encodedAccessUnitCount)
-    }
+      }
+    )
+  }
 
-    override fun setPlaybackParameters(playbackParameters: PlaybackParameters) {
-        // Capture reference point before speed changes
-        val rawPos = rawPositionUs.get()
-        if (rawPos > 0 && refMediaTimeUs != Long.MIN_VALUE) {
-            refMediaTimeUs = refMediaTimeUs + ((rawPos - refRawPositionUs) * currentSpeed).toLong()
-            refRawPositionUs = rawPos
-        }
-        currentSpeed = playbackParameters.speed
-        super.setPlaybackParameters(playbackParameters)
-    }
+  override fun flush() {
+    startMediaTimeUs = Long.MIN_VALUE
+    refMediaTimeUs = Long.MIN_VALUE
+    refRawPositionUs = 0
+    recoveryDurationUs = 0L
+    rawPositionUs.set(Long.MIN_VALUE)
+    super.flush()
+  }
 
-    override fun getCurrentPositionUs(sourceEnded: Boolean): Long {
-        val delegatePos = super.getCurrentPositionUs(sourceEnded)
-        if (delegatePos == Long.MIN_VALUE || refMediaTimeUs == Long.MIN_VALUE) {
-            return delegatePos
-        }
+  override fun reset() {
+    startMediaTimeUs = Long.MIN_VALUE
+    refMediaTimeUs = Long.MIN_VALUE
+    refRawPositionUs = 0
+    recoveryDurationUs = 0L
+    currentSpeed = 1.0f
+    rawPositionUs.set(Long.MIN_VALUE)
+    suppressedErrorCount = 0
+    super.reset()
+  }
 
-        val rawPos = rawPositionUs.get()
-        val basePos = if (rawPos <= 0) {
-            delegatePos
-        } else {
-            val expectedPos = refMediaTimeUs + ((rawPos - refRawPositionUs) * currentSpeed).toLong()
-            if (expectedPos > delegatePos + 30_000) expectedPos else delegatePos
-        }
-
-        // Audio delay with transient counter-offset to prevent frame drops after seeks.
-        // After flush, offset ramps linearly from 0 to full over recoveryDurationUs.
-        val delayUs = audioDelayUs.get()
-        if (delayUs == 0L) return basePos
-
-        val elapsedUs = basePos - startMediaTimeUs
-        val netOffsetUs = if (recoveryDurationUs <= 0L || elapsedUs >= recoveryDurationUs) {
-            delayUs
-        } else {
-            (delayUs * elapsedUs) / recoveryDurationUs
-        }
-        return basePos + netOffsetUs
-    }
-
-    // --- Suppress timestamp discontinuity errors ---
-
-    override fun setListener(listener: AudioSink.Listener) {
-        super.setListener(@OptIn(UnstableApi::class) object : AudioSink.Listener {
-            override fun onPositionDiscontinuity() = listener.onPositionDiscontinuity()
-            override fun onPositionAdvancing(playoutStartSystemTimeUs: Long) = listener.onPositionAdvancing(playoutStartSystemTimeUs)
-            override fun onUnderrun(bufferSize: Int, bufferSizeMs: Long, elapsedSinceLastFeedMs: Long) = listener.onUnderrun(bufferSize, bufferSizeMs, elapsedSinceLastFeedMs)
-            override fun onSkipSilenceEnabledChanged(skipSilenceEnabled: Boolean) = listener.onSkipSilenceEnabledChanged(skipSilenceEnabled)
-            override fun onOffloadBufferEmptying() = listener.onOffloadBufferEmptying()
-            override fun onOffloadBufferFull() = listener.onOffloadBufferFull()
-            override fun onAudioCapabilitiesChanged() = listener.onAudioCapabilitiesChanged()
-            override fun onAudioTrackInitialized(audioTrackConfig: AudioSink.AudioTrackConfig) = listener.onAudioTrackInitialized(audioTrackConfig)
-            override fun onAudioTrackReleased(audioTrackConfig: AudioSink.AudioTrackConfig) = listener.onAudioTrackReleased(audioTrackConfig)
-            override fun onSilenceSkipped() = listener.onSilenceSkipped()
-            override fun onAudioSessionIdChanged(audioSessionId: Int) = listener.onAudioSessionIdChanged(audioSessionId)
-
-            override fun onAudioSinkError(audioSinkError: Exception) {
-                if (isTimestampDiscontinuity(audioSinkError)) {
-                    suppressedErrorCount++
-                    return
-                }
-                listener.onAudioSinkError(audioSinkError)
-            }
-        })
-    }
-
-    override fun flush() {
-        startMediaTimeUs = Long.MIN_VALUE
-        refMediaTimeUs = Long.MIN_VALUE
-        refRawPositionUs = 0
-        recoveryDurationUs = 0L
-        rawPositionUs.set(Long.MIN_VALUE)
-        super.flush()
-    }
-
-    override fun reset() {
-        startMediaTimeUs = Long.MIN_VALUE
-        refMediaTimeUs = Long.MIN_VALUE
-        refRawPositionUs = 0
-        recoveryDurationUs = 0L
-        currentSpeed = 1.0f
-        rawPositionUs.set(Long.MIN_VALUE)
-        suppressedErrorCount = 0
-        super.reset()
-    }
-
-    private fun isTimestampDiscontinuity(e: Exception): Boolean {
-        val name = e.javaClass.simpleName
-        val msg = e.message ?: ""
-        return name == "InvalidAudioTrackTimestampException" ||
-                name == "UnexpectedDiscontinuityException" ||
-                msg.contains("timestamp discontinuity", ignoreCase = true)
-    }
+  private fun isTimestampDiscontinuity(e: Exception): Boolean {
+    val name = e.javaClass.simpleName
+    val msg = e.message ?: ""
+    return name == "InvalidAudioTrackTimestampException" ||
+      name == "UnexpectedDiscontinuityException" ||
+      msg.contains("timestamp discontinuity", ignoreCase = true)
+  }
 }
 
 /**
@@ -215,12 +217,12 @@ private class PositionFixAudioSink(
  */
 @OptIn(UnstableApi::class)
 internal class SubtitleDelayRenderer(
-    private val delegate: Renderer,
-    private val delayUs: AtomicLong
+  private val delegate: Renderer,
+  private val delayUs: AtomicLong
 ) : Renderer by delegate {
-    override fun render(positionUs: Long, elapsedRealtimeUs: Long) {
-        delegate.render(positionUs - delayUs.get(), elapsedRealtimeUs)
-    }
+  override fun render(positionUs: Long, elapsedRealtimeUs: Long) {
+    delegate.render(positionUs - delayUs.get(), elapsedRealtimeUs)
+  }
 }
 
 // --- AudioOutput wrapping: shares raw position with PositionFixAudioSink ---
@@ -232,117 +234,109 @@ internal class SubtitleDelayRenderer(
 
 @OptIn(UnstableApi::class)
 private class RawPositionOutputProvider(
-    private val delegate: AudioOutputProvider,
-    private val rawPositionUs: AtomicLong
+  private val delegate: AudioOutputProvider,
+  private val rawPositionUs: AtomicLong
 ) : AudioOutputProvider {
 
-    private var cachedOutput: RawPositionAudioOutput? = null
-    private var cachedConfig: AudioOutputProvider.OutputConfig? = null
+  private var cachedOutput: RawPositionAudioOutput? = null
+  private var cachedConfig: AudioOutputProvider.OutputConfig? = null
 
-    override fun getFormatSupport(config: AudioOutputProvider.FormatConfig) =
-        delegate.getFormatSupport(config)
+  override fun getFormatSupport(config: AudioOutputProvider.FormatConfig) = delegate.getFormatSupport(config)
 
-    override fun getOutputConfig(config: AudioOutputProvider.FormatConfig) =
-        delegate.getOutputConfig(config)
+  override fun getOutputConfig(config: AudioOutputProvider.FormatConfig) = delegate.getOutputConfig(config)
 
-    override fun getAudioOutput(config: AudioOutputProvider.OutputConfig): AudioOutput {
-        val cached = cachedOutput
-        if (cached != null && cachedConfig == config) {
-            cachedOutput = null
-            return cached
-        }
-        cached?.forceRelease()
-        cachedOutput = null
-
-        val realOutput = delegate.getAudioOutput(config)
-        cachedConfig = config
-        return RawPositionAudioOutput(realOutput, rawPositionUs, this)
+  override fun getAudioOutput(config: AudioOutputProvider.OutputConfig): AudioOutput {
+    val cached = cachedOutput
+    if (cached != null && cachedConfig == config) {
+      cachedOutput = null
+      return cached
     }
+    cached?.forceRelease()
+    cachedOutput = null
 
-    fun returnToCache(output: RawPositionAudioOutput) {
-        val existing = cachedOutput
-        if (existing != null && existing !== output) {
-            existing.forceRelease()
-        }
-        cachedOutput = output
+    val realOutput = delegate.getAudioOutput(config)
+    cachedConfig = config
+    return RawPositionAudioOutput(realOutput, rawPositionUs, this)
+  }
+
+  fun returnToCache(output: RawPositionAudioOutput) {
+    val existing = cachedOutput
+    if (existing != null && existing !== output) {
+      existing.forceRelease()
     }
+    cachedOutput = output
+  }
 
-    override fun addListener(listener: AudioOutputProvider.Listener) =
-        delegate.addListener(listener)
+  override fun addListener(listener: AudioOutputProvider.Listener) = delegate.addListener(listener)
 
-    override fun removeListener(listener: AudioOutputProvider.Listener) =
-        delegate.removeListener(listener)
+  override fun removeListener(listener: AudioOutputProvider.Listener) = delegate.removeListener(listener)
 
-    override fun setClock(clock: Clock) = delegate.setClock(clock)
+  override fun setClock(clock: Clock) = delegate.setClock(clock)
 
-    override fun release() {
-        cachedOutput?.forceRelease()
-        cachedOutput = null
-        cachedConfig = null
-        delegate.release()
-    }
+  override fun release() {
+    cachedOutput?.forceRelease()
+    cachedOutput = null
+    cachedConfig = null
+    delegate.release()
+  }
 }
 
 @OptIn(UnstableApi::class)
 private class RawPositionAudioOutput(
-    private val delegate: AudioOutput,
-    private val rawPositionUs: AtomicLong,
-    private val provider: RawPositionOutputProvider
+  private val delegate: AudioOutput,
+  private val rawPositionUs: AtomicLong,
+  private val provider: RawPositionOutputProvider
 ) : AudioOutput {
 
-    override fun getPositionUs(): Long {
-        val pos = delegate.getPositionUs()
-        rawPositionUs.set(pos)
-        return pos
+  override fun getPositionUs(): Long {
+    val pos = delegate.getPositionUs()
+    rawPositionUs.set(pos)
+    return pos
+  }
+
+  override fun play() = delegate.play()
+  override fun pause() = delegate.pause()
+
+  @Throws(AudioOutput.WriteException::class)
+  override fun write(buffer: ByteBuffer, size: Int, presentationTimeUs: Long) = delegate.write(buffer, size, presentationTimeUs)
+
+  override fun flush() {
+    rawPositionUs.set(Long.MIN_VALUE)
+    delegate.flush()
+  }
+
+  override fun stop() = delegate.stop()
+
+  override fun release() {
+    rawPositionUs.set(Long.MIN_VALUE)
+    if (Build.VERSION.SDK_INT >= 25) {
+      delegate.stop()
+      delegate.flush()
+      provider.returnToCache(this)
+    } else {
+      delegate.release()
     }
+  }
 
-    override fun play() = delegate.play()
-    override fun pause() = delegate.pause()
+  fun forceRelease() {
+    rawPositionUs.set(Long.MIN_VALUE)
+    delegate.release()
+  }
 
-    @Throws(AudioOutput.WriteException::class)
-    override fun write(buffer: ByteBuffer, size: Int, presentationTimeUs: Long) =
-        delegate.write(buffer, size, presentationTimeUs)
-
-    override fun flush() {
-        rawPositionUs.set(Long.MIN_VALUE)
-        delegate.flush()
-    }
-
-    override fun stop() = delegate.stop()
-
-    override fun release() {
-        rawPositionUs.set(Long.MIN_VALUE)
-        if (Build.VERSION.SDK_INT >= 25) {
-            delegate.stop()
-            delegate.flush()
-            provider.returnToCache(this)
-        } else {
-            delegate.release()
-        }
-    }
-
-    fun forceRelease() {
-        rawPositionUs.set(Long.MIN_VALUE)
-        delegate.release()
-    }
-
-    override fun setVolume(volume: Float) = delegate.setVolume(volume)
-    override fun isOffloadedPlayback() = delegate.isOffloadedPlayback()
-    override fun getAudioSessionId() = delegate.getAudioSessionId()
-    override fun getSampleRate() = delegate.getSampleRate()
-    override fun getBufferSizeInFrames() = delegate.getBufferSizeInFrames()
-    override fun getPlaybackParameters() = delegate.getPlaybackParameters()
-    override fun isStalled() = delegate.isStalled()
-    override fun addListener(listener: AudioOutput.Listener) = delegate.addListener(listener)
-    override fun removeListener(listener: AudioOutput.Listener) = delegate.removeListener(listener)
-    override fun setPlaybackParameters(playbackParameters: PlaybackParameters) =
-        delegate.setPlaybackParameters(playbackParameters)
-    override fun setOffloadDelayPadding(delayInFrames: Int, paddingInFrames: Int) =
-        delegate.setOffloadDelayPadding(delayInFrames, paddingInFrames)
-    override fun setOffloadEndOfStream() = delegate.setOffloadEndOfStream()
-    override fun setPlayerId(playerId: PlayerId) = delegate.setPlayerId(playerId)
-    override fun attachAuxEffect(effectId: Int) = delegate.attachAuxEffect(effectId)
-    override fun setAuxEffectSendLevel(level: Float) = delegate.setAuxEffectSendLevel(level)
-    override fun setPreferredDevice(preferredDevice: AudioDeviceInfo?) =
-        delegate.setPreferredDevice(preferredDevice)
+  override fun setVolume(volume: Float) = delegate.setVolume(volume)
+  override fun isOffloadedPlayback() = delegate.isOffloadedPlayback()
+  override fun getAudioSessionId() = delegate.getAudioSessionId()
+  override fun getSampleRate() = delegate.getSampleRate()
+  override fun getBufferSizeInFrames() = delegate.getBufferSizeInFrames()
+  override fun getPlaybackParameters() = delegate.getPlaybackParameters()
+  override fun isStalled() = delegate.isStalled()
+  override fun addListener(listener: AudioOutput.Listener) = delegate.addListener(listener)
+  override fun removeListener(listener: AudioOutput.Listener) = delegate.removeListener(listener)
+  override fun setPlaybackParameters(playbackParameters: PlaybackParameters) = delegate.setPlaybackParameters(playbackParameters)
+  override fun setOffloadDelayPadding(delayInFrames: Int, paddingInFrames: Int) = delegate.setOffloadDelayPadding(delayInFrames, paddingInFrames)
+  override fun setOffloadEndOfStream() = delegate.setOffloadEndOfStream()
+  override fun setPlayerId(playerId: PlayerId) = delegate.setPlayerId(playerId)
+  override fun attachAuxEffect(effectId: Int) = delegate.attachAuxEffect(effectId)
+  override fun setAuxEffectSendLevel(level: Float) = delegate.setAuxEffectSendLevel(level)
+  override fun setPreferredDevice(preferredDevice: AudioDeviceInfo?) = delegate.setPreferredDevice(preferredDevice)
 }

@@ -9,7 +9,7 @@
 
 void CreateAndAttachConsole() {
   if (::AllocConsole()) {
-    FILE *unused;
+    FILE* unused;
     freopen_s(&unused, "CONOUT$", "w", stdout);
     freopen_s(&unused, "CONOUT$", "w", stderr);
     std::ios::sync_with_stdio();
@@ -41,9 +41,7 @@ std::string Utf8FromUtf16(const wchar_t* utf16_string) {
   if (utf16_string == nullptr) {
     return std::string();
   }
-  int raw_length = ::WideCharToMultiByte(
-      CP_UTF8, WC_ERR_INVALID_CHARS, utf16_string,
-      -1, nullptr, 0, nullptr, nullptr);
+  int raw_length = ::WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, utf16_string, -1, nullptr, 0, nullptr, nullptr);
   if (raw_length <= 1) {
     return std::string();
   }
@@ -52,8 +50,7 @@ std::string Utf8FromUtf16(const wchar_t* utf16_string) {
   std::string utf8_string;
   utf8_string.resize(target_length);
   int converted_length = ::WideCharToMultiByte(
-      CP_UTF8, WC_ERR_INVALID_CHARS, utf16_string,
-      input_length, utf8_string.data(), target_length, nullptr, nullptr);
+      CP_UTF8, WC_ERR_INVALID_CHARS, utf16_string, input_length, utf8_string.data(), target_length, nullptr, nullptr);
   if (converted_length == 0) {
     return std::string();
   }

@@ -23,9 +23,8 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
   }
 
   // Create a child window for mpv to render into.
-  hwnd_ = ::CreateWindowW(L"STATIC", L"", WS_CHILD | WS_VISIBLE, 0, 0, 100, 100,
-                          container, nullptr, GetModuleHandle(nullptr),
-                          nullptr);
+  hwnd_ = ::CreateWindowW(
+      L"STATIC", L"", WS_CHILD | WS_VISIBLE, 0, 0, 100, 100, container, nullptr, GetModuleHandle(nullptr), nullptr);
   if (!hwnd_) {
     mpv_destroy(mpv_);
     mpv_ = nullptr;
@@ -118,8 +117,7 @@ void MpvPlayer::Command(const std::vector<std::string>& args) {
   mpv_command(mpv_, c_args.data());
 }
 
-void MpvPlayer::CommandAsync(const std::vector<std::string>& args,
-                              CommandCallback callback) {
+void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallback callback) {
   if (!mpv_) {
     if (callback) callback(0);
     return;
@@ -178,9 +176,7 @@ std::string MpvPlayer::GetProperty(const std::string& name) {
   return result;
 }
 
-void MpvPlayer::ObserveProperty(const std::string& name,
-                                const std::string& format,
-                                int id) {
+void MpvPlayer::ObserveProperty(const std::string& name, const std::string& format, int id) {
   if (!mpv_) return;
 
   // Check if already observing.
@@ -213,9 +209,10 @@ void MpvPlayer::SetRect(RECT rect, double device_pixel_ratio) {
   device_pixel_ratio_ = device_pixel_ratio;
 
   if (hwnd_ && container_ && flutter_window_) {
-    // The rect from Dart is in Flutter client area coordinates (0,0 is top-left of Flutter content).
-    // The container window is positioned to match the Flutter window's full bounds (including title bar).
-    // We need to offset the mpv window within the container to align with Flutter's client area.
+    // The rect from Dart is in Flutter client area coordinates (0,0 is top-left of Flutter
+    // content). The container window is positioned to match the Flutter window's full bounds
+    // (including title bar). We need to offset the mpv window within the container to align with
+    // Flutter's client area.
 
     // Get the Flutter window's window rect (screen coordinates, includes title bar)
     RECT window_rect;
@@ -310,17 +307,13 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     case MPV_EVENT_LOG_MESSAGE: {
       auto* msg = static_cast<mpv_event_log_message*>(event->data);
       char log_msg[512];
-      snprintf(log_msg, sizeof(log_msg), "MPV [%s] %s: %s",
-               msg->level, msg->prefix, msg->text);
+      snprintf(log_msg, sizeof(log_msg), "MPV [%s] %s: %s", msg->level, msg->prefix, msg->text);
       OutputDebugStringA(log_msg);
 
       flutter::EncodableMap data;
-      data[flutter::EncodableValue("prefix")] =
-          flutter::EncodableValue(SanitizeUtf8(msg->prefix));
-      data[flutter::EncodableValue("level")] =
-          flutter::EncodableValue(SanitizeUtf8(msg->level));
-      data[flutter::EncodableValue("text")] =
-          flutter::EncodableValue(SanitizeUtf8(msg->text));
+      data[flutter::EncodableValue("prefix")] = flutter::EncodableValue(SanitizeUtf8(msg->prefix));
+      data[flutter::EncodableValue("level")] = flutter::EncodableValue(SanitizeUtf8(msg->level));
+      data[flutter::EncodableValue("text")] = flutter::EncodableValue(SanitizeUtf8(msg->text));
       SendEvent("log-message", data);
       break;
     }
@@ -353,8 +346,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       }
 
       // Handle sig-peak for HDR detection
-      if (strcmp(prop->name, "video-params/sig-peak") == 0 &&
-          prop->format == MPV_FORMAT_DOUBLE && prop->data) {
+      if (strcmp(prop->name, "video-params/sig-peak") == 0 && prop->format == MPV_FORMAT_DOUBLE && prop->data) {
         double sigPeak = *static_cast<double*>(prop->data);
         last_sig_peak_ = sigPeak;
         UpdateHDRMode(sigPeak);
@@ -364,8 +356,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       // to null output (e.g. after sleep/wake or device unplug), re-set
       // audio-device to switch back to the real output.
       // Mirrors mpv's TOOLS/lua/ao-null-reload.lua for embedded libmpv.
-      if (strcmp(prop->name, "audio-device-list") == 0 &&
-          GetProperty("current-ao") == "null") {
+      if (strcmp(prop->name, "audio-device-list") == 0 && GetProperty("current-ao") == "null") {
         auto device = GetProperty("audio-device");
         if (!device.empty()) {
           mpv_set_property_string(mpv_, "audio-device", device.c_str());
@@ -378,13 +369,10 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     case MPV_EVENT_END_FILE: {
       auto* end = static_cast<mpv_event_end_file*>(event->data);
       flutter::EncodableMap data;
-      data[flutter::EncodableValue("reason")] =
-          flutter::EncodableValue(static_cast<int>(end->reason));
+      data[flutter::EncodableValue("reason")] = flutter::EncodableValue(static_cast<int>(end->reason));
       if (end->reason == MPV_END_FILE_REASON_ERROR) {
-        data[flutter::EncodableValue("error")] =
-            flutter::EncodableValue(static_cast<int>(end->error));
-        data[flutter::EncodableValue("message")] =
-            flutter::EncodableValue(SanitizeUtf8(mpv_error_string(end->error)));
+        data[flutter::EncodableValue("error")] = flutter::EncodableValue(static_cast<int>(end->error));
+        data[flutter::EncodableValue("message")] = flutter::EncodableValue(SanitizeUtf8(mpv_error_string(end->error)));
       }
       SendEvent("end-file", data);
       break;
@@ -443,8 +431,7 @@ void MpvPlayer::SendPropertyChange(const char* name, mpv_node* data) {
   }
 }
 
-void MpvPlayer::SendEvent(const std::string& name,
-                          const flutter::EncodableMap& data) {
+void MpvPlayer::SendEvent(const std::string& name, const flutter::EncodableMap& data) {
   flutter::EncodableMap event;
   event[flutter::EncodableValue("type")] = flutter::EncodableValue("event");
   event[flutter::EncodableValue("name")] = flutter::EncodableValue(name);

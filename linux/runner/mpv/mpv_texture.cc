@@ -1,7 +1,7 @@
 #include "mpv_texture.h"
 
-#include <epoxy/gl.h>
 #include <epoxy/egl.h>
+#include <epoxy/gl.h>
 
 // EGLImage extension function pointers
 typedef EGLImageKHR (*PFNEGLCREATEIMAGEKHRPROC)(EGLDisplay, EGLContext, EGLenum, EGLClientBuffer, const EGLint*);
@@ -17,7 +17,8 @@ static void init_egl_image_extensions() {
   if (!initialized) {
     _eglCreateImageKHR = (PFNEGLCREATEIMAGEKHRPROC)eglGetProcAddress("eglCreateImageKHR");
     _eglDestroyImageKHR = (PFNEGLDESTROYIMAGEKHRPROC)eglGetProcAddress("eglDestroyImageKHR");
-    _glEGLImageTargetTexture2DOES = (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
+    _glEGLImageTargetTexture2DOES =
+        (PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)eglGetProcAddress("glEGLImageTargetTexture2DOES");
     initialized = true;
   }
 }
@@ -25,9 +26,9 @@ static void init_egl_image_extensions() {
 struct _MpvTexture {
   FlTextureGL parent_instance;
 
-  mpv::MpvPlayer* player;          // not owned
-  FlTextureRegistrar* registrar;   // not owned
-  FlView* view;                    // not owned, for querying allocation size
+  mpv::MpvPlayer* player;         // not owned
+  FlTextureRegistrar* registrar;  // not owned
+  FlView* view;                   // not owned, for querying allocation size
 
   // mpv's FBO and texture (owned by mpv's isolated EGL context)
   GLuint mpv_fbo;
@@ -84,19 +85,16 @@ static void ensure_textures(MpvTexture* self, int32_t w, int32_t h) {
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA,
-               GL_UNSIGNED_BYTE, nullptr);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 
   glGenFramebuffers(1, &self->mpv_fbo);
   glBindFramebuffer(GL_FRAMEBUFFER, self->mpv_fbo);
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                         GL_TEXTURE_2D, self->mpv_texture, 0);
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self->mpv_texture, 0);
 
   // Create EGLImage from mpv's texture for cross-context sharing
-  EGLint image_attribs[] = { EGL_NONE };
+  EGLint image_attribs[] = {EGL_NONE};
   self->egl_image = _eglCreateImageKHR(
-      egl_display, egl_context, EGL_GL_TEXTURE_2D_KHR,
-      (EGLClientBuffer)(uintptr_t)self->mpv_texture, image_attribs);
+      egl_display, egl_context, EGL_GL_TEXTURE_2D_KHR, (EGLClientBuffer)(uintptr_t)self->mpv_texture, image_attribs);
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
   glBindTexture(GL_TEXTURE_2D, 0);
@@ -121,12 +119,8 @@ static void ensure_textures(MpvTexture* self, int32_t w, int32_t h) {
   glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-static gboolean mpv_texture_populate(FlTextureGL* gl_texture,
-                                     uint32_t* target,
-                                     uint32_t* name,
-                                     uint32_t* width,
-                                     uint32_t* height,
-                                     GError** error) {
+static gboolean mpv_texture_populate(
+    FlTextureGL* gl_texture, uint32_t* target, uint32_t* name, uint32_t* width, uint32_t* height, GError** error) {
   MpvTexture* self = MPV_TEXTURE(gl_texture);
 
   if (!self->player) {
@@ -137,8 +131,7 @@ static gboolean mpv_texture_populate(FlTextureGL* gl_texture,
   // since Flutter's GL context is current here.
   if (!self->player->HasRenderContext()) {
     if (!self->player->InitRenderContext()) {
-      g_set_error(error, g_quark_from_static_string("mpv"), 0,
-                  "Failed to create mpv render context");
+      g_set_error(error, g_quark_from_static_string("mpv"), 0, "Failed to create mpv render context");
       return FALSE;
     }
   }
@@ -201,9 +194,7 @@ static void mpv_texture_init(MpvTexture* self) {
   self->height = 0;
 }
 
-MpvTexture* mpv_texture_new(mpv::MpvPlayer* player,
-                            FlTextureRegistrar* registrar,
-                            FlView* view) {
+MpvTexture* mpv_texture_new(mpv::MpvPlayer* player, FlTextureRegistrar* registrar, FlView* view) {
   init_egl_image_extensions();
   MpvTexture* self = MPV_TEXTURE(g_object_new(MPV_TEXTURE_TYPE, nullptr));
   self->player = player;
@@ -214,8 +205,7 @@ MpvTexture* mpv_texture_new(mpv::MpvPlayer* player,
 
 void mpv_texture_mark_frame_available(MpvTexture* self) {
   if (self && self->registrar) {
-    fl_texture_registrar_mark_texture_frame_available(
-        self->registrar, FL_TEXTURE(self));
+    fl_texture_registrar_mark_texture_frame_available(self->registrar, FL_TEXTURE(self));
   }
 }
 
@@ -268,6 +258,4 @@ void mpv_texture_dispose(MpvTexture* self) {
   self->view = nullptr;
 }
 
-int64_t mpv_texture_get_id(MpvTexture* self) {
-  return fl_texture_get_id(FL_TEXTURE(self));
-}
+int64_t mpv_texture_get_id(MpvTexture* self) { return fl_texture_get_id(FL_TEXTURE(self)); }

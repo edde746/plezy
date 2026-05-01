@@ -1,8 +1,8 @@
 #include "mpv_player.h"
 
-#include <flutter_linux/flutter_linux.h>
-#include <epoxy/gl.h>
 #include <epoxy/egl.h>
+#include <epoxy/gl.h>
+#include <flutter_linux/flutter_linux.h>
 #include <gdk/gdk.h>
 #ifdef GDK_WINDOWING_X11
 #include <gdk/gdkx.h>
@@ -24,9 +24,7 @@ namespace mpv {
 
 MpvPlayer::MpvPlayer() {}
 
-MpvPlayer::~MpvPlayer() {
-  Dispose();
-}
+MpvPlayer::~MpvPlayer() { Dispose(); }
 
 bool MpvPlayer::Initialize() {
   if (mpv_) {
@@ -111,7 +109,7 @@ bool MpvPlayer::InitRenderContext() {
   }
 
   EGLint num_configs = 0;
-  EGLint config_attribs[] = { EGL_CONFIG_ID, config_id, EGL_NONE };
+  EGLint config_attribs[] = {EGL_CONFIG_ID, config_id, EGL_NONE};
   if (!eglChooseConfig(egl_display_, config_attribs, &config, 1, &num_configs) || num_configs == 0) {
     g_warning("MPV: Failed to get Flutter's EGL config");
     return false;
@@ -121,7 +119,8 @@ bool MpvPlayer::InitRenderContext() {
   // GL state pollution
   eglBindAPI(EGL_OPENGL_ES_API);
   EGLint context_attribs[] = {
-      EGL_CONTEXT_CLIENT_VERSION, 2,
+      EGL_CONTEXT_CLIENT_VERSION,
+      2,
       EGL_NONE,
   };
   egl_context_ = eglCreateContext(egl_display_, config, EGL_NO_CONTEXT, context_attribs);
@@ -142,8 +141,7 @@ bool MpvPlayer::InitRenderContext() {
   };
 
   mpv_render_param params[] = {
-      {MPV_RENDER_PARAM_API_TYPE,
-       const_cast<char*>(MPV_RENDER_API_TYPE_OPENGL)},
+      {MPV_RENDER_PARAM_API_TYPE, const_cast<char*>(MPV_RENDER_API_TYPE_OPENGL)},
       {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &gl_init_params},
       {MPV_RENDER_PARAM_INVALID, nullptr},  // slot for X11/Wayland display
       {MPV_RENDER_PARAM_INVALID, nullptr},
@@ -170,8 +168,7 @@ bool MpvPlayer::InitRenderContext() {
   eglMakeCurrent(egl_display_, flutter_draw, flutter_read, flutter_context);
 
   if (err < 0) {
-    g_warning("MPV: mpv_render_context_create() failed: %s",
-              mpv_error_string(err));
+    g_warning("MPV: mpv_render_context_create() failed: %s", mpv_error_string(err));
     eglDestroyContext(egl_display_, egl_context_);
     egl_context_ = EGL_NO_CONTEXT;
     return false;
@@ -287,8 +284,7 @@ void MpvPlayer::Command(const std::vector<std::string>& args) {
   mpv_command(mpv_, c_args.data());
 }
 
-void MpvPlayer::CommandAsync(const std::vector<std::string>& args,
-                              CommandCallback callback) {
+void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallback callback) {
   if (disposed_ || !mpv_) {
     if (callback) callback(0);
     return;
@@ -336,9 +332,7 @@ std::string MpvPlayer::GetProperty(const std::string& name) {
   return result;
 }
 
-void MpvPlayer::ObserveProperty(const std::string& name,
-                                const std::string& format,
-                                int id) {
+void MpvPlayer::ObserveProperty(const std::string& name, const std::string& format, int id) {
   if (disposed_ || !mpv_) return;
 
   if (observed_properties_.find(name) != observed_properties_.end()) {
@@ -403,8 +397,7 @@ void MpvPlayer::OnMpvWakeup(void* ctx) {
         }
         return G_SOURCE_REMOVE;
       },
-      player,
-      nullptr);
+      player, nullptr);
 }
 
 void MpvPlayer::OnMpvRenderUpdate(void* ctx) {
@@ -482,12 +475,9 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       g_message("MPV [%s] %s: %s", msg->level, msg->prefix, msg->text);
 
       FlValue* data = fl_value_new_map();
-      fl_value_set_string_take(data, "prefix",
-                               fl_value_new_string(SanitizeUtf8(msg->prefix).c_str()));
-      fl_value_set_string_take(data, "level",
-                               fl_value_new_string(SanitizeUtf8(msg->level).c_str()));
-      fl_value_set_string_take(data, "text",
-                               fl_value_new_string(SanitizeUtf8(msg->text).c_str()));
+      fl_value_set_string_take(data, "prefix", fl_value_new_string(SanitizeUtf8(msg->prefix).c_str()));
+      fl_value_set_string_take(data, "level", fl_value_new_string(SanitizeUtf8(msg->level).c_str()));
+      fl_value_set_string_take(data, "text", fl_value_new_string(SanitizeUtf8(msg->text).c_str()));
       SendEvent("log-message", data);
       fl_value_unref(data);
       break;
@@ -499,8 +489,7 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
 
       switch (prop->format) {
         case MPV_FORMAT_STRING:
-          node.u.string =
-              prop->data ? *static_cast<char**>(prop->data) : nullptr;
+          node.u.string = prop->data ? *static_cast<char**>(prop->data) : nullptr;
           break;
         case MPV_FORMAT_FLAG:
           node.u.flag = prop->data ? *static_cast<int*>(prop->data) : 0;
@@ -527,13 +516,11 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
     case MPV_EVENT_END_FILE: {
       auto* end = static_cast<mpv_event_end_file*>(event->data);
       FlValue* data = fl_value_new_map();
-      fl_value_set_string_take(data, "reason",
-                               fl_value_new_int(static_cast<int>(end->reason)));
+      fl_value_set_string_take(data, "reason", fl_value_new_int(static_cast<int>(end->reason)));
       if (end->reason == MPV_END_FILE_REASON_ERROR) {
-        fl_value_set_string_take(data, "error",
-                                 fl_value_new_int(static_cast<int>(end->error)));
-        fl_value_set_string_take(data, "message",
-                                 fl_value_new_string(SanitizeUtf8(mpv_error_string(end->error)).c_str()));
+        fl_value_set_string_take(data, "error", fl_value_new_int(static_cast<int>(end->error)));
+        fl_value_set_string_take(
+            data, "message", fl_value_new_string(SanitizeUtf8(mpv_error_string(end->error)).c_str()));
       }
       SendEvent("end-file", data);
       fl_value_unref(data);
@@ -578,9 +565,7 @@ FlValue* MpvPlayer::NodeToFlValue(mpv_node* node) {
     case MPV_FORMAT_NODE_MAP: {
       FlValue* map = fl_value_new_map();
       for (int i = 0; i < node->u.list->num; i++) {
-        fl_value_set_string_take(
-            map, node->u.list->keys[i],
-            NodeToFlValue(&node->u.list->values[i]));
+        fl_value_set_string_take(map, node->u.list->keys[i], NodeToFlValue(&node->u.list->values[i]));
       }
       return map;
     }

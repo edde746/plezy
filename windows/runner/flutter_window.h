@@ -21,8 +21,7 @@ class FlutterWindow : public Win32Window {
   // Win32Window:
   bool OnCreate() override;
   void OnDestroy() override;
-  LRESULT MessageHandler(HWND window, UINT const message, WPARAM const wparam,
-                         LPARAM const lparam) noexcept override;
+  LRESULT MessageHandler(HWND window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
  private:
   // The project to run.
@@ -32,8 +31,7 @@ class FlutterWindow : public Win32Window {
   std::unique_ptr<flutter::FlutterViewController> flutter_controller_;
 
   // Method channel exposing window controls to Dart (plezy/window).
-  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>>
-      window_channel_;
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> window_channel_;
 
   // Fullscreen state tracking for monitor-aware native fullscreen.
   // Maximize state lives inside `placement_before_fullscreen_.showCmd`.

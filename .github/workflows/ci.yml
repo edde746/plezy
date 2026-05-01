@@ -130,6 +130,29 @@ jobs:
             echo "No tests found, skipping test execution"
           fi
 
+  native-format:
+    name: Native Formatting
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Swift
+        uses: swift-actions/setup-swift@v3
+        with:
+          swift-version: "6.2"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Verify native formatting
+        run: scripts/format_native.sh --check
+
   dependency-check:
     name: Dependency Validation
     runs-on: ubuntu-latest

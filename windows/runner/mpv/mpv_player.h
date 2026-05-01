@@ -2,6 +2,7 @@
 #define MPV_PLAYER_H_
 
 #include <Windows.h>
+#include <flutter/encodable_value.h>
 #include <mpv/client.h>
 
 #include <atomic>
@@ -13,16 +14,13 @@
 #include <thread>
 #include <vector>
 
-#include <flutter/encodable_value.h>
-
 namespace mpv {
 
 // Wrapper for libmpv that handles initialization, commands, properties,
 // and event dispatching.
 class MpvPlayer {
  public:
-  using EventCallback =
-      std::function<void(const flutter::EncodableValue&)>;
+  using EventCallback = std::function<void(const flutter::EncodableValue&)>;
 
   MpvPlayer();
   ~MpvPlayer();
@@ -53,8 +51,7 @@ class MpvPlayer {
   std::string GetProperty(const std::string& name);
 
   // Observes an mpv property for changes.
-  void ObserveProperty(const std::string& name, const std::string& format,
-                       int id);
+  void ObserveProperty(const std::string& name, const std::string& format, int id);
 
   // Returns the mpv video window handle.
   HWND GetHwnd() const { return hwnd_; }
@@ -77,8 +74,7 @@ class MpvPlayer {
   void EventLoop();
   void HandleMpvEvent(mpv_event* event);
   void SendPropertyChange(const char* name, mpv_node* data);
-  void SendEvent(const std::string& name,
-                 const flutter::EncodableMap& data = {});
+  void SendEvent(const std::string& name, const flutter::EncodableMap& data = {});
 
   mpv_handle* mpv_ = nullptr;
   HWND hwnd_ = nullptr;
@@ -101,8 +97,8 @@ class MpvPlayer {
   std::mutex pending_commands_mutex_;
 
   // HDR state
-  bool hdr_enabled_ = true;      // User preference
-  double last_sig_peak_ = 0.0;   // Last known sig-peak for HDR content detection
+  bool hdr_enabled_ = true;     // User preference
+  double last_sig_peak_ = 0.0;  // Last known sig-peak for HDR content detection
 
   // HDR methods
   void SetHDREnabled(bool enabled);

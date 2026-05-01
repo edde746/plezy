@@ -26,10 +26,14 @@ struct DisplayConfigId {
 // Pure Win32 utility — no mpv or Flutter dependency.
 //
 // References:
-//   ChangeDisplaySettingsExW: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-changedisplaysettingsexw
-//   EnumDisplaySettingsW: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-enumdisplaysettingsw
-//   DisplayConfigGetDeviceInfo: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-displayconfiggetdeviceinfo
-//   DisplayConfigSetDeviceInfo: https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-displayconfigsetdeviceinfo
+//   ChangeDisplaySettingsExW:
+//   https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-changedisplaysettingsexw
+//   EnumDisplaySettingsW:
+//   https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-enumdisplaysettingsw
+//   DisplayConfigGetDeviceInfo:
+//   https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-displayconfiggetdeviceinfo
+//   DisplayConfigSetDeviceInfo:
+//   https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-displayconfigsetdeviceinfo
 //   Kodi impl: xbmc/platform/win32/DisplayUtilsWin32.cpp, xbmc/platform/win32/WIN32Util.cpp
 class DisplayModeManager {
  public:
@@ -98,9 +102,8 @@ class DisplayModeManager {
 
   // Find the best matching refresh rate for a given video fps from available modes.
   // Returns 0 if no suitable match found.
-  static DWORD FindBestRefreshRate(double video_fps,
-                                   const std::vector<DisplayMode>& modes,
-                                   DWORD current_width, DWORD current_height);
+  static DWORD FindBestRefreshRate(
+      double video_fps, const std::vector<DisplayMode>& modes, DWORD current_width, DWORD current_height);
 
  private:
   // Get the GDI device name for the monitor containing the window.

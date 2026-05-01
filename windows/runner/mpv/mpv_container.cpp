@@ -22,16 +22,13 @@ HWND MpvContainer::Create() {
   // Use WS_POPUP for a borderless window without title bar.
   // Use WS_EX_TOOLWINDOW | WS_EX_NOREDIRECTIONBITMAP to prevent shadow and DWM effects.
   handle_ = ::CreateWindowExW(
-      WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_NOREDIRECTIONBITMAP,
-      kClassName, kWindowName, WS_POPUP,
-      0, 0, 100, 100, nullptr, nullptr,
-      GetModuleHandle(nullptr), nullptr);
+      WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_NOREDIRECTIONBITMAP, kClassName, kWindowName, WS_POPUP, 0, 0, 100,
+      100, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
 
   // Disable DWM animations on the container.
   auto disable_window_transitions = TRUE;
-  DwmSetWindowAttribute(handle_, DWMWA_TRANSITIONS_FORCEDISABLED,
-                        &disable_window_transitions,
-                        sizeof(disable_window_transitions));
+  DwmSetWindowAttribute(
+      handle_, DWMWA_TRANSITIONS_FORCEDISABLED, &disable_window_transitions, sizeof(disable_window_transitions));
 
   return handle_;
 }
@@ -43,11 +40,10 @@ HWND MpvContainer::Get(HWND flutter_window) {
 
   RECT window_rect;
   ::GetWindowRect(flutter_window, &window_rect);
-  ::SetWindowPos(handle_, flutter_window, window_rect.left, window_rect.top,
-                 window_rect.right - window_rect.left,
-                 window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
-  ::SetWindowLongPtr(handle_, GWLP_USERDATA,
-                     reinterpret_cast<LONG_PTR>(flutter_window));
+  ::SetWindowPos(
+      handle_, flutter_window, window_rect.left, window_rect.top, window_rect.right - window_rect.left,
+      window_rect.bottom - window_rect.top, SWP_NOACTIVATE);
+  ::SetWindowLongPtr(handle_, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(flutter_window));
 
   ::ShowWindow(handle_, SW_SHOWNOACTIVATE);
   ::SetFocus(flutter_window);
@@ -55,10 +51,8 @@ HWND MpvContainer::Get(HWND flutter_window) {
   return handle_;
 }
 
-LRESULT CALLBACK MpvContainer::WindowProc(HWND const window,
-                                          UINT const message,
-                                          WPARAM const wparam,
-                                          LPARAM const lparam) noexcept {
+LRESULT CALLBACK
+MpvContainer::WindowProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept {
   switch (message) {
     case WM_DESTROY: {
       ::PostQuitMessage(0);
@@ -87,7 +81,6 @@ LRESULT CALLBACK MpvContainer::WindowProc(HWND const window,
   return ::DefWindowProc(window, message, wparam, lparam);
 }
 
-std::unique_ptr<MpvContainer> MpvContainer::instance_ =
-    std::make_unique<MpvContainer>();
+std::unique_ptr<MpvContainer> MpvContainer::instance_ = std::make_unique<MpvContainer>();
 
 }  // namespace mpv

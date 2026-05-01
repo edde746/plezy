@@ -59,7 +59,19 @@ else
   rm -f "$out"
 fi
 
-# 2. flutter analyze (mirrors ci.yml "Analyze code")
+# 2. Native formatting
+section "native format"
+out="$(mktemp)"
+if scripts/format_native.sh --check >"$out" 2>&1; then
+  ok "native files correctly formatted"
+else
+  fail "native formatting issues"
+  sed 's/^/    /' "$out"
+  FAILED=1
+fi
+rm -f "$out"
+
+# 3. flutter analyze (mirrors ci.yml "Analyze code")
 section "flutter analyze"
 out="$(mktemp)"
 flutter analyze >"$out" 2>&1 || true
@@ -76,7 +88,7 @@ else
 fi
 rm -f "$out"
 
-# 3. Unused code (mirrors ci.yml "Check for unused code")
+# 4. Unused code (mirrors ci.yml "Check for unused code")
 section "dart_code_linter: unused code"
 if ! have_dart_code_linter; then
   skip "dart_code_linter unresolved — run 'flutter pub get'"
@@ -93,7 +105,7 @@ else
   rm -f "$out"
 fi
 
-# 4. Unused files (mirrors ci.yml "Check for unused files")
+# 5. Unused files (mirrors ci.yml "Check for unused files")
 section "dart_code_linter: unused files"
 if ! have_dart_code_linter; then
   skip "dart_code_linter unresolved — run 'flutter pub get'"

@@ -26,8 +26,7 @@ class MpvContainer {
   HWND handle() const { return handle_; }
 
  private:
-  static LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wparam,
-                                     LPARAM lparam) noexcept;
+  static LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
 
   HWND handle_ = nullptr;
 
