@@ -345,6 +345,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   /// Focus the chips bar (for navigating from tab bar to content).
   /// Called by libraries screen when pressing DOWN on tab bar.
   void focusChipsBar() {
+    lastFocusedGridIndex = null;
     _groupingChipFocusNode.requestFocus();
   }
 
