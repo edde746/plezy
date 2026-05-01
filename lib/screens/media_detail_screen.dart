@@ -1227,7 +1227,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   Widget? _buildOfflineArtworkIfAvailable(
     BuildContext context, {
-    required String? artworkPath,
+    required Iterable<String?> artworkPaths,
     required BoxFit fit,
     required ImageType imageType,
     Alignment alignment = Alignment.center,
@@ -1235,17 +1235,71 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }) {
     if (!widget.isOffline || _metadata.serverId == null) return null;
 
-    final localPath = context.read<DownloadProvider>().getArtworkLocalPath(_metadata.serverId!, artworkPath);
-    if (localPath == null || !File(localPath).existsSync()) return null;
+    final downloadProvider = context.read<DownloadProvider>();
+    for (final artworkPath in artworkPaths) {
+      final localPath = downloadProvider.getArtworkLocalPath(_metadata.serverId!, artworkPath);
+      if (localPath == null || !File(localPath).existsSync()) continue;
 
-    return OptimizedMediaImage(
-      client: null,
-      imagePath: null,
-      localFilePath: localPath,
-      fit: fit,
-      alignment: alignment,
-      imageType: imageType,
-      errorWidget: errorWidget,
+      return OptimizedMediaImage(
+        client: null,
+        imagePath: null,
+        localFilePath: localPath,
+        fit: fit,
+        alignment: alignment,
+        imageType: imageType,
+        errorWidget: errorWidget,
+      );
+    }
+
+    return null;
+  }
+
+  Widget _buildHeroNetworkArtwork(
+    BuildContext context, {
+    required MediaServerClient? client,
+    required List<String> artworkPaths,
+    required Size mediaSize,
+    required double dpr,
+    required int memCacheHeight,
+    int index = 0,
+  }) {
+    if (index >= artworkPaths.length) return const PlaceholderContainer();
+
+    final imageUrl = MediaImageHelper.getOptimizedImageUrl(
+      client: client,
+      thumbPath: artworkPaths[index],
+      maxWidth: mediaSize.width,
+      maxHeight: mediaSize.height * 0.6,
+      devicePixelRatio: dpr,
+      imageType: ImageType.art,
+    );
+    if (imageUrl.isEmpty) {
+      return _buildHeroNetworkArtwork(
+        context,
+        client: client,
+        artworkPaths: artworkPaths,
+        mediaSize: mediaSize,
+        dpr: dpr,
+        memCacheHeight: memCacheHeight,
+        index: index + 1,
+      );
+    }
+
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      cacheManager: PlexImageCacheManager.instance,
+      fit: BoxFit.cover,
+      memCacheHeight: memCacheHeight,
+      placeholder: (context, url) => const PlaceholderContainer(),
+      errorWidget: (context, url, error) => _buildHeroNetworkArtwork(
+        context,
+        client: client,
+        artworkPaths: artworkPaths,
+        mediaSize: mediaSize,
+        dpr: dpr,
+        memCacheHeight: memCacheHeight,
+        index: index + 1,
+      ),
     );
   }
 
@@ -2567,51 +2621,42 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                         SizedBox(
                           height: headerHeight,
                           width: double.infinity,
-                          child: (metadata.artPath != null || metadata.backgroundSquarePath != null)
-                              ? Builder(
-                                  builder: (context) {
-                                    final containerAspect = size.width / headerHeight;
-                                    final heroArtPath = metadata.heroArt(containerAspectRatio: containerAspect);
+                          child: Builder(
+                            builder: (context) {
+                              final containerAspect = size.width / headerHeight;
+                              final heroArtPaths = metadata.heroArtCandidates(containerAspectRatio: containerAspect);
+                              if (heroArtPaths.isEmpty) return const PlaceholderContainer();
 
-                                    final localArtwork = _buildOfflineArtworkIfAvailable(
-                                      context,
-                                      artworkPath: heroArtPath,
-                                      fit: BoxFit.cover,
-                                      imageType: ImageType.art,
-                                      errorWidget: (context, url, error) => const PlaceholderContainer(),
-                                    );
-                                    if (localArtwork != null) return localArtwork;
+                              final localArtwork = _buildOfflineArtworkIfAvailable(
+                                context,
+                                artworkPaths: heroArtPaths,
+                                fit: BoxFit.cover,
+                                imageType: ImageType.art,
+                                errorWidget: (context, url, error) => const PlaceholderContainer(),
+                              );
+                              if (localArtwork != null) return localArtwork;
 
-                                    final client = _getArtworkMediaClient(context);
-                                    final mqSize = MediaQuery.sizeOf(context);
-                                    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-                                    final imageUrl = MediaImageHelper.getOptimizedImageUrl(
-                                      client: client,
-                                      thumbPath: heroArtPath,
-                                      maxWidth: mqSize.width,
-                                      maxHeight: mqSize.height * 0.6,
-                                      devicePixelRatio: dpr,
-                                      imageType: ImageType.art,
-                                    );
+                              final client = _getArtworkMediaClient(context);
+                              final mqSize = MediaQuery.sizeOf(context);
+                              final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+                              final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
+                                displayWidth: (mqSize.width * dpr).round(),
+                                displayHeight: (mqSize.height * 0.6 * dpr).round(),
+                                imageType: ImageType.art,
+                              );
 
-                                    final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
-                                      displayWidth: (mqSize.width * dpr).round(),
-                                      displayHeight: (mqSize.height * 0.6 * dpr).round(),
-                                      imageType: ImageType.art,
-                                    );
-                                    return blurArtwork(
-                                      CachedNetworkImage(
-                                        imageUrl: imageUrl,
-                                        cacheManager: PlexImageCacheManager.instance,
-                                        fit: BoxFit.cover,
-                                        memCacheHeight: memHeight,
-                                        placeholder: (context, url) => const PlaceholderContainer(),
-                                        errorWidget: (context, url, error) => const PlaceholderContainer(),
-                                      ),
-                                    );
-                                  },
-                                )
-                              : const PlaceholderContainer(),
+                              return blurArtwork(
+                                _buildHeroNetworkArtwork(
+                                  context,
+                                  client: client,
+                                  artworkPaths: heroArtPaths,
+                                  mediaSize: mqSize,
+                                  dpr: dpr,
+                                  memCacheHeight: memHeight,
+                                ),
+                              );
+                            },
+                          ),
                         ),
 
                         // Gradient overlay
@@ -2658,7 +2703,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                         builder: (context) {
                                           final localArtwork = _buildOfflineArtworkIfAvailable(
                                             context,
-                                            artworkPath: metadata.clearLogoPath,
+                                            artworkPaths: [metadata.clearLogoPath],
                                             fit: BoxFit.contain,
                                             alignment: Alignment.centerLeft,
                                             imageType: ImageType.logo,

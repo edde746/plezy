@@ -473,11 +473,23 @@ sealed class MediaItem {
   /// Returns the best hero art path based on the container's aspect ratio.
   /// Uses backgroundSquare when the container is closer to 1:1 than 16:9.
   String? heroArt({required double containerAspectRatio}) {
+    final candidates = heroArtCandidates(containerAspectRatio: containerAspectRatio);
+    if (candidates.isEmpty) return null;
+    return candidates.first;
+  }
+
+  /// Returns hero art candidates in display-preference order.
+  /// Near-square containers prefer square art, then fall back to wide cover art.
+  List<String> heroArtCandidates({required double containerAspectRatio}) {
     // Threshold = midpoint of 1:1 (1.0) and 16:9 (~1.78) ≈ 1.39
-    if (containerAspectRatio < 1.39 && backgroundSquarePath != null) {
-      return backgroundSquarePath;
+    final preferred = containerAspectRatio < 1.39 ? [backgroundSquarePath, artPath] : [artPath, backgroundSquarePath];
+
+    final candidates = <String>[];
+    for (final path in preferred) {
+      if (path == null || path.isEmpty || candidates.contains(path)) continue;
+      candidates.add(path);
     }
-    return artPath;
+    return candidates;
   }
 
   MediaItem copyWith({

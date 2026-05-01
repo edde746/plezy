@@ -16,6 +16,8 @@ MediaItem _movie({
   int? viewedLeafCount,
   int? durationMs,
   int? viewOffsetMs,
+  String? artPath,
+  String? backgroundSquarePath,
   MediaBackend backend = MediaBackend.plex,
 }) => MediaItem(
   id: id,
@@ -27,6 +29,8 @@ MediaItem _movie({
   viewedLeafCount: viewedLeafCount,
   durationMs: durationMs,
   viewOffsetMs: viewOffsetMs,
+  artPath: artPath,
+  backgroundSquarePath: backgroundSquarePath,
   serverId: 's1',
 );
 
@@ -69,6 +73,29 @@ void main() {
     test('show with no leaf info falls back to viewCount', () {
       final show = MediaItem(id: 's', backend: MediaBackend.plex, kind: MediaKind.show, viewCount: 1, serverId: 's1');
       expect(show.isWatched, isTrue);
+    });
+  });
+
+  group('MediaItem.heroArtCandidates', () {
+    test('near-square containers prefer square art before wide cover art', () {
+      final movie = _movie(artPath: '/art', backgroundSquarePath: '/square');
+
+      expect(movie.heroArtCandidates(containerAspectRatio: 1.0), ['/square', '/art']);
+      expect(movie.heroArt(containerAspectRatio: 1.0), '/square');
+    });
+
+    test('near-square containers fall back to wide cover art when square art is missing', () {
+      final movie = _movie(artPath: '/art');
+
+      expect(movie.heroArtCandidates(containerAspectRatio: 1.0), ['/art']);
+      expect(movie.heroArt(containerAspectRatio: 1.0), '/art');
+    });
+
+    test('wide containers prefer wide cover art before square art', () {
+      final movie = _movie(artPath: '/art', backgroundSquarePath: '/square');
+
+      expect(movie.heroArtCandidates(containerAspectRatio: 16 / 9), ['/art', '/square']);
+      expect(movie.heroArt(containerAspectRatio: 16 / 9), '/art');
     });
   });
 
