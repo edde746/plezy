@@ -188,7 +188,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
 
                 if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection()],
 
-                if (!PlatformDetector.isAppleTV()) _buildBackupSection(),
+                if (!PlatformDetector.isTV()) _buildBackupSection(),
 
                 ListTile(
                   focusNode: _focusTracker.get(_kAbout),
