@@ -240,12 +240,12 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get gridView => 'Rutnät';
 	@override String get listView => 'Lista';
 	@override String get showHeroSection => 'Visa hjältesektion';
-	@override String get useGlobalHubs => 'Use Home Layout';
-	@override String get useGlobalHubsDescription => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.';
+	@override String get useGlobalHubs => 'Använd startlayout';
+	@override String get useGlobalHubsDescription => 'Visa startsidans hubbar som den officiella klienten. När av, visas rekommendationer per bibliotek istället.';
 	@override String get showServerNameOnHubs => 'Visa servernamn på hubbar';
 	@override String get showServerNameOnHubsDescription => 'Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.';
 	@override String get groupLibrariesByServer => 'Gruppera bibliotek efter server';
-	@override String get groupLibrariesByServerDescription => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.';
+	@override String get groupLibrariesByServerDescription => 'Visa en rubrik för varje mediaserver i sidofältet när du är ansluten till flera servrar.';
 	@override String get alwaysKeepSidebarOpen => 'Håll sidofältet alltid öppet';
 	@override String get alwaysKeepSidebarOpenDescription => 'Sidofältet förblir expanderat och innehållsytan anpassas';
 	@override String get showUnwatchedCount => 'Visa antal osedda';
@@ -387,15 +387,15 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get showNavBarLabelsDescription => 'Visa textetiketter under navigeringsfältets ikoner';
 	@override String get liveTvDefaultFavorites => 'Standard till favoritkanaler';
 	@override String get liveTvDefaultFavoritesDescription => 'Visa bara favoritkanaler när du öppnar Live TV';
-	@override String get display => 'Display';
-	@override String get homeScreen => 'Home Screen';
-	@override String get navigation => 'Navigation';
-	@override String get window => 'Window';
-	@override String get content => 'Content';
-	@override String get player => 'Player';
-	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
-	@override String get seekAndTiming => 'Seek & Timing';
-	@override String get behavior => 'Behavior';
+	@override String get display => 'Skärm';
+	@override String get homeScreen => 'Hemskärm';
+	@override String get navigation => 'Navigering';
+	@override String get window => 'Fönster';
+	@override String get content => 'Innehåll';
+	@override String get player => 'Spelare';
+	@override String get subtitlesAndConfig => 'Undertexter och konfiguration';
+	@override String get seekAndTiming => 'Sök och timing';
+	@override String get behavior => 'Beteende';
 }
 
 // Path: search
@@ -621,7 +621,7 @@ class _TranslationsMessagesSv extends TranslationsMessagesEn {
 	@override String get musicNotSupported => 'Musikuppspelning stöds inte ännu';
 	@override String get noDescriptionAvailable => 'Ingen beskrivning tillgänglig';
 	@override String get noProfilesAvailable => 'Inga profiler tillgängliga';
-	@override String get contactAdminForProfiles => 'Contact your server administrator to add profiles';
+	@override String get contactAdminForProfiles => 'Kontakta din serveradministratör för att lägga till profiler';
 	@override String get unableToDetermineLibrarySection => 'Kan inte avgöra biblioteksavdelningen för detta objekt';
 	@override String get logsCleared => 'Loggar rensade';
 	@override String get logsCopied => 'Loggar kopierade till urklipp';
@@ -806,7 +806,7 @@ class _TranslationsErrorsSv extends TranslationsErrorsEn {
 	// Translations
 	@override String searchFailed({required Object error}) => 'Sökning misslyckades: ${error}';
 	@override String connectionTimeout({required Object context}) => 'Anslutnings-timeout vid laddning ${context}';
-	@override String get connectionFailed => 'Unable to connect to media server';
+	@override String get connectionFailed => 'Kan inte ansluta till mediaserver';
 	@override String failedToLoad({required Object context, required Object error}) => 'Misslyckades att ladda ${context}: ${error}';
 	@override String get noClientAvailable => 'Ingen klient tillgänglig';
 	@override String authenticationFailed({required Object error}) => 'Autentisering misslyckades: ${error}';
@@ -1813,12 +1813,12 @@ extension on TranslationsSv {
 			'settings.gridView' => 'Rutnät',
 			'settings.listView' => 'Lista',
 			'settings.showHeroSection' => 'Visa hjältesektion',
-			'settings.useGlobalHubs' => 'Use Home Layout',
-			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.',
+			'settings.useGlobalHubs' => 'Använd startlayout',
+			'settings.useGlobalHubsDescription' => 'Visa startsidans hubbar som den officiella klienten. När av, visas rekommendationer per bibliotek istället.',
 			'settings.showServerNameOnHubs' => 'Visa servernamn på hubbar',
 			'settings.showServerNameOnHubsDescription' => 'Visa alltid servernamnet i hubbtitlar. När av visas endast för duplicerade hubbnamn.',
 			'settings.groupLibrariesByServer' => 'Gruppera bibliotek efter server',
-			'settings.groupLibrariesByServerDescription' => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.',
+			'settings.groupLibrariesByServerDescription' => 'Visa en rubrik för varje mediaserver i sidofältet när du är ansluten till flera servrar.',
 			'settings.alwaysKeepSidebarOpen' => 'Håll sidofältet alltid öppet',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidofältet förblir expanderat och innehållsytan anpassas',
 			'settings.showUnwatchedCount' => 'Visa antal osedda',
@@ -1960,15 +1960,15 @@ extension on TranslationsSv {
 			'settings.showNavBarLabelsDescription' => 'Visa textetiketter under navigeringsfältets ikoner',
 			'settings.liveTvDefaultFavorites' => 'Standard till favoritkanaler',
 			'settings.liveTvDefaultFavoritesDescription' => 'Visa bara favoritkanaler när du öppnar Live TV',
-			'settings.display' => 'Display',
-			'settings.homeScreen' => 'Home Screen',
-			'settings.navigation' => 'Navigation',
-			'settings.window' => 'Window',
-			'settings.content' => 'Content',
-			'settings.player' => 'Player',
-			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
-			'settings.seekAndTiming' => 'Seek & Timing',
-			'settings.behavior' => 'Behavior',
+			'settings.display' => 'Skärm',
+			'settings.homeScreen' => 'Hemskärm',
+			'settings.navigation' => 'Navigering',
+			'settings.window' => 'Fönster',
+			'settings.content' => 'Innehåll',
+			'settings.player' => 'Spelare',
+			'settings.subtitlesAndConfig' => 'Undertexter och konfiguration',
+			'settings.seekAndTiming' => 'Sök och timing',
+			'settings.behavior' => 'Beteende',
 			'search.hint' => 'Sök filmer, serier, musik...',
 			'search.tryDifferentTerm' => 'Prova en annan sökterm',
 			'search.searchYourMedia' => 'Sök i dina media',
@@ -2139,7 +2139,7 @@ extension on TranslationsSv {
 			'messages.musicNotSupported' => 'Musikuppspelning stöds inte ännu',
 			'messages.noDescriptionAvailable' => 'Ingen beskrivning tillgänglig',
 			'messages.noProfilesAvailable' => 'Inga profiler tillgängliga',
-			'messages.contactAdminForProfiles' => 'Contact your server administrator to add profiles',
+			'messages.contactAdminForProfiles' => 'Kontakta din serveradministratör för att lägga till profiler',
 			'messages.unableToDetermineLibrarySection' => 'Kan inte avgöra biblioteksavdelningen för detta objekt',
 			'messages.logsCleared' => 'Loggar rensade',
 			'messages.logsCopied' => 'Loggar kopierade till urklipp',
@@ -2263,7 +2263,7 @@ extension on TranslationsSv {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min kvar',
 			'errors.searchFailed' => ({required Object error}) => 'Sökning misslyckades: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Anslutnings-timeout vid laddning ${context}',
-			'errors.connectionFailed' => 'Unable to connect to media server',
+			'errors.connectionFailed' => 'Kan inte ansluta till mediaserver',
 			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Misslyckades att ladda ${context}: ${error}',
 			'errors.noClientAvailable' => 'Ingen klient tillgänglig',
 			'errors.authenticationFailed' => ({required Object error}) => 'Autentisering misslyckades: ${error}',

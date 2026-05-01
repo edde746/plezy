@@ -240,12 +240,12 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get gridView => 'Сетка';
 	@override String get listView => 'Список';
 	@override String get showHeroSection => 'Показать раздел избранного';
-	@override String get useGlobalHubs => 'Use Home Layout';
-	@override String get useGlobalHubsDescription => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.';
+	@override String get useGlobalHubs => 'Использовать макет главной';
+	@override String get useGlobalHubsDescription => 'Показывать хабы главной страницы как в официальном клиенте. Если выключено, показывает рекомендации по библиотекам.';
 	@override String get showServerNameOnHubs => 'Показывать имя сервера в хабах';
 	@override String get showServerNameOnHubsDescription => 'Всегда показывать имя сервера в заголовках хабов. При выключении показывает только для дублирующихся имён.';
 	@override String get groupLibrariesByServer => 'Группировать библиотеки по серверам';
-	@override String get groupLibrariesByServerDescription => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.';
+	@override String get groupLibrariesByServerDescription => 'Показывать заголовок для каждого медиасервера в боковой панели при подключении к нескольким серверам.';
 	@override String get alwaysKeepSidebarOpen => 'Всегда держать боковую панель открытой';
 	@override String get alwaysKeepSidebarOpenDescription => 'Боковая панель остаётся развёрнутой, область контента подстраивается';
 	@override String get showUnwatchedCount => 'Показывать количество непросмотренных';
@@ -387,15 +387,15 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get showNavBarLabelsDescription => 'Отображать текстовые подписи под иконками панели навигации';
 	@override String get liveTvDefaultFavorites => 'Избранные каналы по умолчанию';
 	@override String get liveTvDefaultFavoritesDescription => 'Показывать только избранные каналы при открытии ТВ';
-	@override String get display => 'Display';
-	@override String get homeScreen => 'Home Screen';
-	@override String get navigation => 'Navigation';
-	@override String get window => 'Window';
-	@override String get content => 'Content';
-	@override String get player => 'Player';
-	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
-	@override String get seekAndTiming => 'Seek & Timing';
-	@override String get behavior => 'Behavior';
+	@override String get display => 'Экран';
+	@override String get homeScreen => 'Главный экран';
+	@override String get navigation => 'Навигация';
+	@override String get window => 'Окно';
+	@override String get content => 'Контент';
+	@override String get player => 'Плеер';
+	@override String get subtitlesAndConfig => 'Субтитры и конфигурация';
+	@override String get seekAndTiming => 'Перемотка и время';
+	@override String get behavior => 'Поведение';
 }
 
 // Path: search
@@ -621,7 +621,7 @@ class _TranslationsMessagesRu extends TranslationsMessagesEn {
 	@override String get musicNotSupported => 'Воспроизведение музыки пока не поддерживается';
 	@override String get noDescriptionAvailable => 'Описание недоступно';
 	@override String get noProfilesAvailable => 'Профили недоступны';
-	@override String get contactAdminForProfiles => 'Contact your server administrator to add profiles';
+	@override String get contactAdminForProfiles => 'Обратитесь к администратору сервера для добавления профилей';
 	@override String get unableToDetermineLibrarySection => 'Не удаётся определить раздел библиотеки для этого элемента';
 	@override String get logsCleared => 'Логи очищены';
 	@override String get logsCopied => 'Логи скопированы в буфер обмена';
@@ -806,7 +806,7 @@ class _TranslationsErrorsRu extends TranslationsErrorsEn {
 	// Translations
 	@override String searchFailed({required Object error}) => 'Ошибка поиска: ${error}';
 	@override String connectionTimeout({required Object context}) => 'Таймаут подключения при загрузке ${context}';
-	@override String get connectionFailed => 'Unable to connect to media server';
+	@override String get connectionFailed => 'Не удалось подключиться к медиасерверу';
 	@override String failedToLoad({required Object context, required Object error}) => 'Не удалось загрузить ${context}: ${error}';
 	@override String get noClientAvailable => 'Клиент недоступен';
 	@override String authenticationFailed({required Object error}) => 'Ошибка аутентификации: ${error}';
@@ -1813,12 +1813,12 @@ extension on TranslationsRu {
 			'settings.gridView' => 'Сетка',
 			'settings.listView' => 'Список',
 			'settings.showHeroSection' => 'Показать раздел избранного',
-			'settings.useGlobalHubs' => 'Use Home Layout',
-			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.',
+			'settings.useGlobalHubs' => 'Использовать макет главной',
+			'settings.useGlobalHubsDescription' => 'Показывать хабы главной страницы как в официальном клиенте. Если выключено, показывает рекомендации по библиотекам.',
 			'settings.showServerNameOnHubs' => 'Показывать имя сервера в хабах',
 			'settings.showServerNameOnHubsDescription' => 'Всегда показывать имя сервера в заголовках хабов. При выключении показывает только для дублирующихся имён.',
 			'settings.groupLibrariesByServer' => 'Группировать библиотеки по серверам',
-			'settings.groupLibrariesByServerDescription' => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.',
+			'settings.groupLibrariesByServerDescription' => 'Показывать заголовок для каждого медиасервера в боковой панели при подключении к нескольким серверам.',
 			'settings.alwaysKeepSidebarOpen' => 'Всегда держать боковую панель открытой',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Боковая панель остаётся развёрнутой, область контента подстраивается',
 			'settings.showUnwatchedCount' => 'Показывать количество непросмотренных',
@@ -1960,15 +1960,15 @@ extension on TranslationsRu {
 			'settings.showNavBarLabelsDescription' => 'Отображать текстовые подписи под иконками панели навигации',
 			'settings.liveTvDefaultFavorites' => 'Избранные каналы по умолчанию',
 			'settings.liveTvDefaultFavoritesDescription' => 'Показывать только избранные каналы при открытии ТВ',
-			'settings.display' => 'Display',
-			'settings.homeScreen' => 'Home Screen',
-			'settings.navigation' => 'Navigation',
-			'settings.window' => 'Window',
-			'settings.content' => 'Content',
-			'settings.player' => 'Player',
-			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
-			'settings.seekAndTiming' => 'Seek & Timing',
-			'settings.behavior' => 'Behavior',
+			'settings.display' => 'Экран',
+			'settings.homeScreen' => 'Главный экран',
+			'settings.navigation' => 'Навигация',
+			'settings.window' => 'Окно',
+			'settings.content' => 'Контент',
+			'settings.player' => 'Плеер',
+			'settings.subtitlesAndConfig' => 'Субтитры и конфигурация',
+			'settings.seekAndTiming' => 'Перемотка и время',
+			'settings.behavior' => 'Поведение',
 			'search.hint' => 'Поиск фильмов, сериалов, музыки...',
 			'search.tryDifferentTerm' => 'Попробуйте другой запрос',
 			'search.searchYourMedia' => 'Поиск в вашей медиатеке',
@@ -2139,7 +2139,7 @@ extension on TranslationsRu {
 			'messages.musicNotSupported' => 'Воспроизведение музыки пока не поддерживается',
 			'messages.noDescriptionAvailable' => 'Описание недоступно',
 			'messages.noProfilesAvailable' => 'Профили недоступны',
-			'messages.contactAdminForProfiles' => 'Contact your server administrator to add profiles',
+			'messages.contactAdminForProfiles' => 'Обратитесь к администратору сервера для добавления профилей',
 			'messages.unableToDetermineLibrarySection' => 'Не удаётся определить раздел библиотеки для этого элемента',
 			'messages.logsCleared' => 'Логи очищены',
 			'messages.logsCopied' => 'Логи скопированы в буфер обмена',
@@ -2263,7 +2263,7 @@ extension on TranslationsRu {
 			'discover.minutesLeft' => ({required Object minutes}) => 'Осталось ${minutes} мин',
 			'errors.searchFailed' => ({required Object error}) => 'Ошибка поиска: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Таймаут подключения при загрузке ${context}',
-			'errors.connectionFailed' => 'Unable to connect to media server',
+			'errors.connectionFailed' => 'Не удалось подключиться к медиасерверу',
 			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Не удалось загрузить ${context}: ${error}',
 			'errors.noClientAvailable' => 'Клиент недоступен',
 			'errors.authenticationFailed' => ({required Object error}) => 'Ошибка аутентификации: ${error}',

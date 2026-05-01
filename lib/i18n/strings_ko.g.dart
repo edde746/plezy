@@ -240,12 +240,12 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get gridView => '그리드 보기';
 	@override String get listView => '목록 보기';
 	@override String get showHeroSection => '주요 추천 영역 표시';
-	@override String get useGlobalHubs => 'Use Home Layout';
-	@override String get useGlobalHubsDescription => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.';
+	@override String get useGlobalHubs => '홈 레이아웃 사용';
+	@override String get useGlobalHubsDescription => '공식 클라이언트처럼 홈페이지 허브를 표시합니다. 끄면 라이브러리별 추천을 표시합니다.';
 	@override String get showServerNameOnHubs => '허브에 서버 이름 표시';
 	@override String get showServerNameOnHubsDescription => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.';
 	@override String get groupLibrariesByServer => '서버별로 라이브러리 그룹화';
-	@override String get groupLibrariesByServerDescription => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.';
+	@override String get groupLibrariesByServerDescription => '여러 서버에 연결된 경우 사이드바에 각 미디어 서버의 헤더를 표시합니다.';
 	@override String get alwaysKeepSidebarOpen => '사이드바 항상 열어두기';
 	@override String get alwaysKeepSidebarOpenDescription => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다';
 	@override String get showUnwatchedCount => '미시청 수 표시';
@@ -387,15 +387,15 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get showNavBarLabelsDescription => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다';
 	@override String get liveTvDefaultFavorites => '즐겨찾기 채널 기본 설정';
 	@override String get liveTvDefaultFavoritesDescription => '라이브 TV를 열 때 즐겨찾기 채널만 표시';
-	@override String get display => 'Display';
-	@override String get homeScreen => 'Home Screen';
-	@override String get navigation => 'Navigation';
-	@override String get window => 'Window';
-	@override String get content => 'Content';
-	@override String get player => 'Player';
-	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
-	@override String get seekAndTiming => 'Seek & Timing';
-	@override String get behavior => 'Behavior';
+	@override String get display => '디스플레이';
+	@override String get homeScreen => '홈 화면';
+	@override String get navigation => '탐색';
+	@override String get window => '창';
+	@override String get content => '콘텐츠';
+	@override String get player => '플레이어';
+	@override String get subtitlesAndConfig => '자막 및 구성';
+	@override String get seekAndTiming => '탐색 및 타이밍';
+	@override String get behavior => '동작';
 }
 
 // Path: search
@@ -621,7 +621,7 @@ class _TranslationsMessagesKo extends TranslationsMessagesEn {
 	@override String get musicNotSupported => '음악 재생 미지원';
 	@override String get noDescriptionAvailable => '설명이 없습니다';
 	@override String get noProfilesAvailable => '사용 가능한 프로필이 없습니다';
-	@override String get contactAdminForProfiles => 'Contact your server administrator to add profiles';
+	@override String get contactAdminForProfiles => '프로필을 추가하려면 서버 관리자에게 문의하세요';
 	@override String get unableToDetermineLibrarySection => '이 항목의 라이브러리 섹션을 확인할 수 없습니다';
 	@override String get logsCleared => '로그가 삭제 되었습니다';
 	@override String get logsCopied => '로그가 클립보드에 복사 되었습니다';
@@ -806,7 +806,7 @@ class _TranslationsErrorsKo extends TranslationsErrorsEn {
 	// Translations
 	@override String searchFailed({required Object error}) => '검색 실패: ${error}';
 	@override String connectionTimeout({required Object context}) => '${context} 로드 중 연결 시간 초과';
-	@override String get connectionFailed => 'Unable to connect to media server';
+	@override String get connectionFailed => '미디어 서버에 연결할 수 없습니다';
 	@override String failedToLoad({required Object context, required Object error}) => '${context} 로드 실패: ${error}';
 	@override String get noClientAvailable => '사용 가능한 클라이언트가 없습니다';
 	@override String authenticationFailed({required Object error}) => '인증 실패: ${error}';
@@ -1813,12 +1813,12 @@ extension on TranslationsKo {
 			'settings.gridView' => '그리드 보기',
 			'settings.listView' => '목록 보기',
 			'settings.showHeroSection' => '주요 추천 영역 표시',
-			'settings.useGlobalHubs' => 'Use Home Layout',
-			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.',
+			'settings.useGlobalHubs' => '홈 레이아웃 사용',
+			'settings.useGlobalHubsDescription' => '공식 클라이언트처럼 홈페이지 허브를 표시합니다. 끄면 라이브러리별 추천을 표시합니다.',
 			'settings.showServerNameOnHubs' => '허브에 서버 이름 표시',
 			'settings.showServerNameOnHubsDescription' => '허브 제목에 항상 서버 이름을 표시합니다. 끄면 중복된 허브 이름에만 표시됩니다.',
 			'settings.groupLibrariesByServer' => '서버별로 라이브러리 그룹화',
-			'settings.groupLibrariesByServerDescription' => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.',
+			'settings.groupLibrariesByServerDescription' => '여러 서버에 연결된 경우 사이드바에 각 미디어 서버의 헤더를 표시합니다.',
 			'settings.alwaysKeepSidebarOpen' => '사이드바 항상 열어두기',
 			'settings.alwaysKeepSidebarOpenDescription' => '사이드바가 확장된 상태로 유지되고 콘텐츠 영역이 맞춰집니다',
 			'settings.showUnwatchedCount' => '미시청 수 표시',
@@ -1960,15 +1960,15 @@ extension on TranslationsKo {
 			'settings.showNavBarLabelsDescription' => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다',
 			'settings.liveTvDefaultFavorites' => '즐겨찾기 채널 기본 설정',
 			'settings.liveTvDefaultFavoritesDescription' => '라이브 TV를 열 때 즐겨찾기 채널만 표시',
-			'settings.display' => 'Display',
-			'settings.homeScreen' => 'Home Screen',
-			'settings.navigation' => 'Navigation',
-			'settings.window' => 'Window',
-			'settings.content' => 'Content',
-			'settings.player' => 'Player',
-			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
-			'settings.seekAndTiming' => 'Seek & Timing',
-			'settings.behavior' => 'Behavior',
+			'settings.display' => '디스플레이',
+			'settings.homeScreen' => '홈 화면',
+			'settings.navigation' => '탐색',
+			'settings.window' => '창',
+			'settings.content' => '콘텐츠',
+			'settings.player' => '플레이어',
+			'settings.subtitlesAndConfig' => '자막 및 구성',
+			'settings.seekAndTiming' => '탐색 및 타이밍',
+			'settings.behavior' => '동작',
 			'search.hint' => '영화, 시리즈, 음악 등을 검색하세요...',
 			'search.tryDifferentTerm' => '다른 검색어를 시도해 보세요',
 			'search.searchYourMedia' => '미디어 검색',
@@ -2139,7 +2139,7 @@ extension on TranslationsKo {
 			'messages.musicNotSupported' => '음악 재생 미지원',
 			'messages.noDescriptionAvailable' => '설명이 없습니다',
 			'messages.noProfilesAvailable' => '사용 가능한 프로필이 없습니다',
-			'messages.contactAdminForProfiles' => 'Contact your server administrator to add profiles',
+			'messages.contactAdminForProfiles' => '프로필을 추가하려면 서버 관리자에게 문의하세요',
 			'messages.unableToDetermineLibrarySection' => '이 항목의 라이브러리 섹션을 확인할 수 없습니다',
 			'messages.logsCleared' => '로그가 삭제 되었습니다',
 			'messages.logsCopied' => '로그가 클립보드에 복사 되었습니다',
@@ -2263,7 +2263,7 @@ extension on TranslationsKo {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes}분 남음',
 			'errors.searchFailed' => ({required Object error}) => '검색 실패: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => '${context} 로드 중 연결 시간 초과',
-			'errors.connectionFailed' => 'Unable to connect to media server',
+			'errors.connectionFailed' => '미디어 서버에 연결할 수 없습니다',
 			'errors.failedToLoad' => ({required Object context, required Object error}) => '${context} 로드 실패: ${error}',
 			'errors.noClientAvailable' => '사용 가능한 클라이언트가 없습니다',
 			'errors.authenticationFailed' => ({required Object error}) => '인증 실패: ${error}',

@@ -240,12 +240,12 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get gridView => 'グリッド';
 	@override String get listView => 'リスト';
 	@override String get showHeroSection => 'ヒーローセクションを表示';
-	@override String get useGlobalHubs => 'Use Home Layout';
-	@override String get useGlobalHubsDescription => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.';
+	@override String get useGlobalHubs => 'ホームレイアウトを使用';
+	@override String get useGlobalHubsDescription => '公式クライアントのようにホームページのハブを表示します。オフにすると、ライブラリごとのおすすめが表示されます。';
 	@override String get showServerNameOnHubs => 'ハブにサーバー名を表示';
 	@override String get showServerNameOnHubsDescription => 'ハブタイトルに常にサーバー名を表示。オフにすると、重複名のみ表示。';
 	@override String get groupLibrariesByServer => 'サーバーごとにライブラリをグループ化';
-	@override String get groupLibrariesByServerDescription => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.';
+	@override String get groupLibrariesByServerDescription => '複数のサーバーに接続している場合、サイドバーに各メディアサーバーのヘッダーを表示します。';
 	@override String get alwaysKeepSidebarOpen => 'サイドバーを常に開いておく';
 	@override String get alwaysKeepSidebarOpenDescription => 'サイドバーを展開したまま、コンテンツ領域が調整される';
 	@override String get showUnwatchedCount => '未視聴数を表示';
@@ -387,15 +387,15 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get showNavBarLabelsDescription => 'ナビゲーションバーアイコンの下にテキストラベルを表示';
 	@override String get liveTvDefaultFavorites => 'お気に入りチャンネルをデフォルトに';
 	@override String get liveTvDefaultFavoritesDescription => 'ライブTV を開いたときにお気に入りチャンネルのみ表示';
-	@override String get display => 'Display';
-	@override String get homeScreen => 'Home Screen';
-	@override String get navigation => 'Navigation';
-	@override String get window => 'Window';
-	@override String get content => 'Content';
-	@override String get player => 'Player';
-	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
-	@override String get seekAndTiming => 'Seek & Timing';
-	@override String get behavior => 'Behavior';
+	@override String get display => 'ディスプレイ';
+	@override String get homeScreen => 'ホーム画面';
+	@override String get navigation => 'ナビゲーション';
+	@override String get window => 'ウィンドウ';
+	@override String get content => 'コンテンツ';
+	@override String get player => 'プレーヤー';
+	@override String get subtitlesAndConfig => '字幕と設定';
+	@override String get seekAndTiming => 'シークとタイミング';
+	@override String get behavior => '動作';
 }
 
 // Path: search
@@ -621,7 +621,7 @@ class _TranslationsMessagesJa extends TranslationsMessagesEn {
 	@override String get musicNotSupported => '音楽の再生はまだサポートされていません';
 	@override String get noDescriptionAvailable => '説明はありません';
 	@override String get noProfilesAvailable => '利用可能なプロフィールがありません';
-	@override String get contactAdminForProfiles => 'Contact your server administrator to add profiles';
+	@override String get contactAdminForProfiles => 'プロファイルを追加するにはサーバー管理者に連絡してください';
 	@override String get unableToDetermineLibrarySection => 'このアイテムのライブラリセクションを判別できません';
 	@override String get logsCleared => 'ログをクリアしました';
 	@override String get logsCopied => 'ログをクリップボードにコピーしました';
@@ -806,7 +806,7 @@ class _TranslationsErrorsJa extends TranslationsErrorsEn {
 	// Translations
 	@override String searchFailed({required Object error}) => '検索に失敗しました: ${error}';
 	@override String connectionTimeout({required Object context}) => '${context}の読み込み中に接続がタイムアウトしました';
-	@override String get connectionFailed => 'Unable to connect to media server';
+	@override String get connectionFailed => 'メディアサーバーに接続できません';
 	@override String failedToLoad({required Object context, required Object error}) => '${context}の読み込みに失敗しました: ${error}';
 	@override String get noClientAvailable => 'クライアントが利用できません';
 	@override String authenticationFailed({required Object error}) => '認証に失敗しました: ${error}';
@@ -1813,12 +1813,12 @@ extension on TranslationsJa {
 			'settings.gridView' => 'グリッド',
 			'settings.listView' => 'リスト',
 			'settings.showHeroSection' => 'ヒーローセクションを表示',
-			'settings.useGlobalHubs' => 'Use Home Layout',
-			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.',
+			'settings.useGlobalHubs' => 'ホームレイアウトを使用',
+			'settings.useGlobalHubsDescription' => '公式クライアントのようにホームページのハブを表示します。オフにすると、ライブラリごとのおすすめが表示されます。',
 			'settings.showServerNameOnHubs' => 'ハブにサーバー名を表示',
 			'settings.showServerNameOnHubsDescription' => 'ハブタイトルに常にサーバー名を表示。オフにすると、重複名のみ表示。',
 			'settings.groupLibrariesByServer' => 'サーバーごとにライブラリをグループ化',
-			'settings.groupLibrariesByServerDescription' => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.',
+			'settings.groupLibrariesByServerDescription' => '複数のサーバーに接続している場合、サイドバーに各メディアサーバーのヘッダーを表示します。',
 			'settings.alwaysKeepSidebarOpen' => 'サイドバーを常に開いておく',
 			'settings.alwaysKeepSidebarOpenDescription' => 'サイドバーを展開したまま、コンテンツ領域が調整される',
 			'settings.showUnwatchedCount' => '未視聴数を表示',
@@ -1960,15 +1960,15 @@ extension on TranslationsJa {
 			'settings.showNavBarLabelsDescription' => 'ナビゲーションバーアイコンの下にテキストラベルを表示',
 			'settings.liveTvDefaultFavorites' => 'お気に入りチャンネルをデフォルトに',
 			'settings.liveTvDefaultFavoritesDescription' => 'ライブTV を開いたときにお気に入りチャンネルのみ表示',
-			'settings.display' => 'Display',
-			'settings.homeScreen' => 'Home Screen',
-			'settings.navigation' => 'Navigation',
-			'settings.window' => 'Window',
-			'settings.content' => 'Content',
-			'settings.player' => 'Player',
-			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
-			'settings.seekAndTiming' => 'Seek & Timing',
-			'settings.behavior' => 'Behavior',
+			'settings.display' => 'ディスプレイ',
+			'settings.homeScreen' => 'ホーム画面',
+			'settings.navigation' => 'ナビゲーション',
+			'settings.window' => 'ウィンドウ',
+			'settings.content' => 'コンテンツ',
+			'settings.player' => 'プレーヤー',
+			'settings.subtitlesAndConfig' => '字幕と設定',
+			'settings.seekAndTiming' => 'シークとタイミング',
+			'settings.behavior' => '動作',
 			'search.hint' => '映画、番組、音楽を検索...',
 			'search.tryDifferentTerm' => '別の検索語をお試しください',
 			'search.searchYourMedia' => 'メディアを検索',
@@ -2139,7 +2139,7 @@ extension on TranslationsJa {
 			'messages.musicNotSupported' => '音楽の再生はまだサポートされていません',
 			'messages.noDescriptionAvailable' => '説明はありません',
 			'messages.noProfilesAvailable' => '利用可能なプロフィールがありません',
-			'messages.contactAdminForProfiles' => 'Contact your server administrator to add profiles',
+			'messages.contactAdminForProfiles' => 'プロファイルを追加するにはサーバー管理者に連絡してください',
 			'messages.unableToDetermineLibrarySection' => 'このアイテムのライブラリセクションを判別できません',
 			'messages.logsCleared' => 'ログをクリアしました',
 			'messages.logsCopied' => 'ログをクリップボードにコピーしました',
@@ -2263,7 +2263,7 @@ extension on TranslationsJa {
 			'discover.minutesLeft' => ({required Object minutes}) => '残り${minutes}分',
 			'errors.searchFailed' => ({required Object error}) => '検索に失敗しました: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => '${context}の読み込み中に接続がタイムアウトしました',
-			'errors.connectionFailed' => 'Unable to connect to media server',
+			'errors.connectionFailed' => 'メディアサーバーに接続できません',
 			'errors.failedToLoad' => ({required Object context, required Object error}) => '${context}の読み込みに失敗しました: ${error}',
 			'errors.noClientAvailable' => 'クライアントが利用できません',
 			'errors.authenticationFailed' => ({required Object error}) => '認証に失敗しました: ${error}',

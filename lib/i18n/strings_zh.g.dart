@@ -240,12 +240,12 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get gridView => '网格视图';
 	@override String get listView => '列表视图';
 	@override String get showHeroSection => '显示主要精选区';
-	@override String get useGlobalHubs => 'Use Home Layout';
-	@override String get useGlobalHubsDescription => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.';
+	@override String get useGlobalHubs => '使用主页布局';
+	@override String get useGlobalHubsDescription => '像官方客户端一样显示主页中心。关闭后，改为显示每个资料库的推荐。';
 	@override String get showServerNameOnHubs => '在推荐栏显示服务器名称';
 	@override String get showServerNameOnHubsDescription => '始终在推荐栏标题中显示服务器名称。关闭时仅在推荐栏名称重复时显示。';
 	@override String get groupLibrariesByServer => '按服务器分组媒体库';
-	@override String get groupLibrariesByServerDescription => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.';
+	@override String get groupLibrariesByServerDescription => '当连接到多个服务器时，在侧边栏中显示每个媒体服务器的标题。';
 	@override String get alwaysKeepSidebarOpen => '始终保持侧边栏展开';
 	@override String get alwaysKeepSidebarOpenDescription => '侧边栏保持展开状态，内容区域自动调整';
 	@override String get showUnwatchedCount => '显示未观看数量';
@@ -387,15 +387,15 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get showNavBarLabelsDescription => '在导航栏图标下方显示文字标签';
 	@override String get liveTvDefaultFavorites => '默认显示收藏频道';
 	@override String get liveTvDefaultFavoritesDescription => '打开直播电视时仅显示收藏频道';
-	@override String get display => 'Display';
-	@override String get homeScreen => 'Home Screen';
-	@override String get navigation => 'Navigation';
-	@override String get window => 'Window';
-	@override String get content => 'Content';
-	@override String get player => 'Player';
-	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
-	@override String get seekAndTiming => 'Seek & Timing';
-	@override String get behavior => 'Behavior';
+	@override String get display => '显示';
+	@override String get homeScreen => '主屏幕';
+	@override String get navigation => '导航';
+	@override String get window => '窗口';
+	@override String get content => '内容';
+	@override String get player => '播放器';
+	@override String get subtitlesAndConfig => '字幕与配置';
+	@override String get seekAndTiming => '跳转与计时';
+	@override String get behavior => '行为';
 }
 
 // Path: search
@@ -621,7 +621,7 @@ class _TranslationsMessagesZh extends TranslationsMessagesEn {
 	@override String get musicNotSupported => '尚不支持播放音乐';
 	@override String get noDescriptionAvailable => '暂无描述';
 	@override String get noProfilesAvailable => '没有可用的用户';
-	@override String get contactAdminForProfiles => 'Contact your server administrator to add profiles';
+	@override String get contactAdminForProfiles => '请联系服务器管理员添加用户配置';
 	@override String get unableToDetermineLibrarySection => '无法确定此项目的库分区';
 	@override String get logsCleared => '日志已清除';
 	@override String get logsCopied => '日志已复制到剪贴板';
@@ -806,7 +806,7 @@ class _TranslationsErrorsZh extends TranslationsErrorsEn {
 	// Translations
 	@override String searchFailed({required Object error}) => '搜索失败: ${error}';
 	@override String connectionTimeout({required Object context}) => '加载 ${context} 时连接超时';
-	@override String get connectionFailed => 'Unable to connect to media server';
+	@override String get connectionFailed => '无法连接到媒体服务器';
 	@override String failedToLoad({required Object context, required Object error}) => '无法加载 ${context}: ${error}';
 	@override String get noClientAvailable => '没有可用客户端';
 	@override String authenticationFailed({required Object error}) => '验证失败: ${error}';
@@ -1813,12 +1813,12 @@ extension on TranslationsZh {
 			'settings.gridView' => '网格视图',
 			'settings.listView' => '列表视图',
 			'settings.showHeroSection' => '显示主要精选区',
-			'settings.useGlobalHubs' => 'Use Home Layout',
-			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.',
+			'settings.useGlobalHubs' => '使用主页布局',
+			'settings.useGlobalHubsDescription' => '像官方客户端一样显示主页中心。关闭后，改为显示每个资料库的推荐。',
 			'settings.showServerNameOnHubs' => '在推荐栏显示服务器名称',
 			'settings.showServerNameOnHubsDescription' => '始终在推荐栏标题中显示服务器名称。关闭时仅在推荐栏名称重复时显示。',
 			'settings.groupLibrariesByServer' => '按服务器分组媒体库',
-			'settings.groupLibrariesByServerDescription' => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.',
+			'settings.groupLibrariesByServerDescription' => '当连接到多个服务器时，在侧边栏中显示每个媒体服务器的标题。',
 			'settings.alwaysKeepSidebarOpen' => '始终保持侧边栏展开',
 			'settings.alwaysKeepSidebarOpenDescription' => '侧边栏保持展开状态，内容区域自动调整',
 			'settings.showUnwatchedCount' => '显示未观看数量',
@@ -1960,15 +1960,15 @@ extension on TranslationsZh {
 			'settings.showNavBarLabelsDescription' => '在导航栏图标下方显示文字标签',
 			'settings.liveTvDefaultFavorites' => '默认显示收藏频道',
 			'settings.liveTvDefaultFavoritesDescription' => '打开直播电视时仅显示收藏频道',
-			'settings.display' => 'Display',
-			'settings.homeScreen' => 'Home Screen',
-			'settings.navigation' => 'Navigation',
-			'settings.window' => 'Window',
-			'settings.content' => 'Content',
-			'settings.player' => 'Player',
-			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
-			'settings.seekAndTiming' => 'Seek & Timing',
-			'settings.behavior' => 'Behavior',
+			'settings.display' => '显示',
+			'settings.homeScreen' => '主屏幕',
+			'settings.navigation' => '导航',
+			'settings.window' => '窗口',
+			'settings.content' => '内容',
+			'settings.player' => '播放器',
+			'settings.subtitlesAndConfig' => '字幕与配置',
+			'settings.seekAndTiming' => '跳转与计时',
+			'settings.behavior' => '行为',
 			'search.hint' => '搜索电影、系列、音乐...',
 			'search.tryDifferentTerm' => '尝试不同的搜索词',
 			'search.searchYourMedia' => '搜索媒体',
@@ -2139,7 +2139,7 @@ extension on TranslationsZh {
 			'messages.musicNotSupported' => '尚不支持播放音乐',
 			'messages.noDescriptionAvailable' => '暂无描述',
 			'messages.noProfilesAvailable' => '没有可用的用户',
-			'messages.contactAdminForProfiles' => 'Contact your server administrator to add profiles',
+			'messages.contactAdminForProfiles' => '请联系服务器管理员添加用户配置',
 			'messages.unableToDetermineLibrarySection' => '无法确定此项目的库分区',
 			'messages.logsCleared' => '日志已清除',
 			'messages.logsCopied' => '日志已复制到剪贴板',
@@ -2263,7 +2263,7 @@ extension on TranslationsZh {
 			'discover.minutesLeft' => ({required Object minutes}) => '剩余 ${minutes} 分钟',
 			'errors.searchFailed' => ({required Object error}) => '搜索失败: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => '加载 ${context} 时连接超时',
-			'errors.connectionFailed' => 'Unable to connect to media server',
+			'errors.connectionFailed' => '无法连接到媒体服务器',
 			'errors.failedToLoad' => ({required Object context, required Object error}) => '无法加载 ${context}: ${error}',
 			'errors.noClientAvailable' => '没有可用客户端',
 			'errors.authenticationFailed' => ({required Object error}) => '验证失败: ${error}',

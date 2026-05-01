@@ -240,12 +240,12 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get gridView => 'Raster';
 	@override String get listView => 'Lijst';
 	@override String get showHeroSection => 'Toon hoofdsectie';
-	@override String get useGlobalHubs => 'Use Home Layout';
-	@override String get useGlobalHubsDescription => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.';
+	@override String get useGlobalHubs => 'Startlayout gebruiken';
+	@override String get useGlobalHubsDescription => 'Toon startpagina-hubs zoals de officiële client. Indien uit, toont aanbevelingen per bibliotheek.';
 	@override String get showServerNameOnHubs => 'Servernaam tonen bij hubs';
 	@override String get showServerNameOnHubsDescription => 'Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.';
 	@override String get groupLibrariesByServer => 'Bibliotheken groeperen per server';
-	@override String get groupLibrariesByServerDescription => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.';
+	@override String get groupLibrariesByServerDescription => 'Toon een koptekst voor elke mediaserver in de zijbalk wanneer je met meerdere servers bent verbonden.';
 	@override String get alwaysKeepSidebarOpen => 'Zijbalk altijd open houden';
 	@override String get alwaysKeepSidebarOpenDescription => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan';
 	@override String get showUnwatchedCount => 'Aantal ongekeken tonen';
@@ -387,15 +387,15 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get showNavBarLabelsDescription => 'Tekstlabels onder de pictogrammen van de navigatiebalk weergeven';
 	@override String get liveTvDefaultFavorites => 'Standaard favoriete zenders';
 	@override String get liveTvDefaultFavoritesDescription => 'Toon alleen favoriete zenders bij het openen van Live TV';
-	@override String get display => 'Display';
-	@override String get homeScreen => 'Home Screen';
-	@override String get navigation => 'Navigation';
-	@override String get window => 'Window';
-	@override String get content => 'Content';
-	@override String get player => 'Player';
-	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
-	@override String get seekAndTiming => 'Seek & Timing';
-	@override String get behavior => 'Behavior';
+	@override String get display => 'Weergave';
+	@override String get homeScreen => 'Startscherm';
+	@override String get navigation => 'Navigatie';
+	@override String get window => 'Venster';
+	@override String get content => 'Inhoud';
+	@override String get player => 'Speler';
+	@override String get subtitlesAndConfig => 'Ondertitels en configuratie';
+	@override String get seekAndTiming => 'Zoeken en timing';
+	@override String get behavior => 'Gedrag';
 }
 
 // Path: search
@@ -621,7 +621,7 @@ class _TranslationsMessagesNl extends TranslationsMessagesEn {
 	@override String get musicNotSupported => 'Muziek afspelen wordt nog niet ondersteund';
 	@override String get noDescriptionAvailable => 'Geen beschrijving beschikbaar';
 	@override String get noProfilesAvailable => 'Geen profielen beschikbaar';
-	@override String get contactAdminForProfiles => 'Contact your server administrator to add profiles';
+	@override String get contactAdminForProfiles => 'Neem contact op met je serverbeheerder om profielen toe te voegen';
 	@override String get unableToDetermineLibrarySection => 'Kan bibliotheeksectie voor dit item niet bepalen';
 	@override String get logsCleared => 'Logs gewist';
 	@override String get logsCopied => 'Logs gekopieerd naar klembord';
@@ -806,7 +806,7 @@ class _TranslationsErrorsNl extends TranslationsErrorsEn {
 	// Translations
 	@override String searchFailed({required Object error}) => 'Zoeken mislukt: ${error}';
 	@override String connectionTimeout({required Object context}) => 'Verbinding time-out tijdens laden ${context}';
-	@override String get connectionFailed => 'Unable to connect to media server';
+	@override String get connectionFailed => 'Kan geen verbinding maken met mediaserver';
 	@override String failedToLoad({required Object context, required Object error}) => 'Kon ${context} niet laden: ${error}';
 	@override String get noClientAvailable => 'Geen client beschikbaar';
 	@override String authenticationFailed({required Object error}) => 'Authenticatie mislukt: ${error}';
@@ -1813,12 +1813,12 @@ extension on TranslationsNl {
 			'settings.gridView' => 'Raster',
 			'settings.listView' => 'Lijst',
 			'settings.showHeroSection' => 'Toon hoofdsectie',
-			'settings.useGlobalHubs' => 'Use Home Layout',
-			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.',
+			'settings.useGlobalHubs' => 'Startlayout gebruiken',
+			'settings.useGlobalHubsDescription' => 'Toon startpagina-hubs zoals de officiële client. Indien uit, toont aanbevelingen per bibliotheek.',
 			'settings.showServerNameOnHubs' => 'Servernaam tonen bij hubs',
 			'settings.showServerNameOnHubsDescription' => 'Toon altijd de servernaam in hub-titels. Indien uitgeschakeld, alleen bij dubbele hub-namen.',
 			'settings.groupLibrariesByServer' => 'Bibliotheken groeperen per server',
-			'settings.groupLibrariesByServerDescription' => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.',
+			'settings.groupLibrariesByServerDescription' => 'Toon een koptekst voor elke mediaserver in de zijbalk wanneer je met meerdere servers bent verbonden.',
 			'settings.alwaysKeepSidebarOpen' => 'Zijbalk altijd open houden',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Zijbalk blijft uitgevouwen en inhoudsgebied past zich aan',
 			'settings.showUnwatchedCount' => 'Aantal ongekeken tonen',
@@ -1960,15 +1960,15 @@ extension on TranslationsNl {
 			'settings.showNavBarLabelsDescription' => 'Tekstlabels onder de pictogrammen van de navigatiebalk weergeven',
 			'settings.liveTvDefaultFavorites' => 'Standaard favoriete zenders',
 			'settings.liveTvDefaultFavoritesDescription' => 'Toon alleen favoriete zenders bij het openen van Live TV',
-			'settings.display' => 'Display',
-			'settings.homeScreen' => 'Home Screen',
-			'settings.navigation' => 'Navigation',
-			'settings.window' => 'Window',
-			'settings.content' => 'Content',
-			'settings.player' => 'Player',
-			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
-			'settings.seekAndTiming' => 'Seek & Timing',
-			'settings.behavior' => 'Behavior',
+			'settings.display' => 'Weergave',
+			'settings.homeScreen' => 'Startscherm',
+			'settings.navigation' => 'Navigatie',
+			'settings.window' => 'Venster',
+			'settings.content' => 'Inhoud',
+			'settings.player' => 'Speler',
+			'settings.subtitlesAndConfig' => 'Ondertitels en configuratie',
+			'settings.seekAndTiming' => 'Zoeken en timing',
+			'settings.behavior' => 'Gedrag',
 			'search.hint' => 'Zoek films, series, muziek...',
 			'search.tryDifferentTerm' => 'Probeer een andere zoekterm',
 			'search.searchYourMedia' => 'Zoek in je media',
@@ -2139,7 +2139,7 @@ extension on TranslationsNl {
 			'messages.musicNotSupported' => 'Muziek afspelen wordt nog niet ondersteund',
 			'messages.noDescriptionAvailable' => 'Geen beschrijving beschikbaar',
 			'messages.noProfilesAvailable' => 'Geen profielen beschikbaar',
-			'messages.contactAdminForProfiles' => 'Contact your server administrator to add profiles',
+			'messages.contactAdminForProfiles' => 'Neem contact op met je serverbeheerder om profielen toe te voegen',
 			'messages.unableToDetermineLibrarySection' => 'Kan bibliotheeksectie voor dit item niet bepalen',
 			'messages.logsCleared' => 'Logs gewist',
 			'messages.logsCopied' => 'Logs gekopieerd naar klembord',
@@ -2263,7 +2263,7 @@ extension on TranslationsNl {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min over',
 			'errors.searchFailed' => ({required Object error}) => 'Zoeken mislukt: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Verbinding time-out tijdens laden ${context}',
-			'errors.connectionFailed' => 'Unable to connect to media server',
+			'errors.connectionFailed' => 'Kan geen verbinding maken met mediaserver',
 			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Kon ${context} niet laden: ${error}',
 			'errors.noClientAvailable' => 'Geen client beschikbaar',
 			'errors.authenticationFailed' => ({required Object error}) => 'Authenticatie mislukt: ${error}',

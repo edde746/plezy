@@ -240,12 +240,12 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get gridView => 'Rutenett';
 	@override String get listView => 'Liste';
 	@override String get showHeroSection => 'Vis fremhevet seksjon';
-	@override String get useGlobalHubs => 'Use Home Layout';
-	@override String get useGlobalHubsDescription => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.';
+	@override String get useGlobalHubs => 'Bruk startoppsett';
+	@override String get useGlobalHubsDescription => 'Vis startside-hubber som den offisielle klienten. Når av, vises anbefalinger per bibliotek i stedet.';
 	@override String get showServerNameOnHubs => 'Vis servernavn på huber';
 	@override String get showServerNameOnHubsDescription => 'Vis alltid servernavnet i hubtitler. Når av, vises kun for dupliserte hubnavn.';
 	@override String get groupLibrariesByServer => 'Grupper biblioteker etter server';
-	@override String get groupLibrariesByServerDescription => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.';
+	@override String get groupLibrariesByServerDescription => 'Vis en overskrift for hver medieserver i sidefeltet når du er koblet til flere servere.';
 	@override String get alwaysKeepSidebarOpen => 'Hold sidefeltet alltid åpent';
 	@override String get alwaysKeepSidebarOpenDescription => 'Sidefeltet forblir utvidet og innholdsområdet tilpasser seg';
 	@override String get showUnwatchedCount => 'Vis antall usette';
@@ -387,15 +387,15 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get showNavBarLabelsDescription => 'Vis tekstlabeler under navigasjonsfeltikoner';
 	@override String get liveTvDefaultFavorites => 'Standard til favorittkanaler';
 	@override String get liveTvDefaultFavoritesDescription => 'Vis kun favorittkanaler når du åpner Live TV';
-	@override String get display => 'Display';
-	@override String get homeScreen => 'Home Screen';
-	@override String get navigation => 'Navigation';
-	@override String get window => 'Window';
-	@override String get content => 'Content';
-	@override String get player => 'Player';
-	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
-	@override String get seekAndTiming => 'Seek & Timing';
-	@override String get behavior => 'Behavior';
+	@override String get display => 'Skjerm';
+	@override String get homeScreen => 'Hjemmeskjerm';
+	@override String get navigation => 'Navigering';
+	@override String get window => 'Vindu';
+	@override String get content => 'Innhold';
+	@override String get player => 'Spiller';
+	@override String get subtitlesAndConfig => 'Undertekster og konfigurasjon';
+	@override String get seekAndTiming => 'Søk og tidtaking';
+	@override String get behavior => 'Atferd';
 }
 
 // Path: search
@@ -621,7 +621,7 @@ class _TranslationsMessagesNb extends TranslationsMessagesEn {
 	@override String get musicNotSupported => 'Musikkavspilling støttes ikke ennå';
 	@override String get noDescriptionAvailable => 'Ingen beskrivelse tilgjengelig';
 	@override String get noProfilesAvailable => 'Ingen profiler tilgjengelige';
-	@override String get contactAdminForProfiles => 'Contact your server administrator to add profiles';
+	@override String get contactAdminForProfiles => 'Kontakt serveradministratoren din for å legge til profiler';
 	@override String get unableToDetermineLibrarySection => 'Kan ikke fastslå bibliotekseksjonen for dette elementet';
 	@override String get logsCleared => 'Logger tømt';
 	@override String get logsCopied => 'Logger kopiert til utklippstavle';
@@ -806,7 +806,7 @@ class _TranslationsErrorsNb extends TranslationsErrorsEn {
 	// Translations
 	@override String searchFailed({required Object error}) => 'Søk mislyktes: ${error}';
 	@override String connectionTimeout({required Object context}) => 'Tidsavbrudd ved lasting av ${context}';
-	@override String get connectionFailed => 'Unable to connect to media server';
+	@override String get connectionFailed => 'Kan ikke koble til medieserver';
 	@override String failedToLoad({required Object context, required Object error}) => 'Kunne ikke laste ${context}: ${error}';
 	@override String get noClientAvailable => 'Ingen klient tilgjengelig';
 	@override String authenticationFailed({required Object error}) => 'Autentisering mislyktes: ${error}';
@@ -1813,12 +1813,12 @@ extension on TranslationsNb {
 			'settings.gridView' => 'Rutenett',
 			'settings.listView' => 'Liste',
 			'settings.showHeroSection' => 'Vis fremhevet seksjon',
-			'settings.useGlobalHubs' => 'Use Home Layout',
-			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.',
+			'settings.useGlobalHubs' => 'Bruk startoppsett',
+			'settings.useGlobalHubsDescription' => 'Vis startside-hubber som den offisielle klienten. Når av, vises anbefalinger per bibliotek i stedet.',
 			'settings.showServerNameOnHubs' => 'Vis servernavn på huber',
 			'settings.showServerNameOnHubsDescription' => 'Vis alltid servernavnet i hubtitler. Når av, vises kun for dupliserte hubnavn.',
 			'settings.groupLibrariesByServer' => 'Grupper biblioteker etter server',
-			'settings.groupLibrariesByServerDescription' => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.',
+			'settings.groupLibrariesByServerDescription' => 'Vis en overskrift for hver medieserver i sidefeltet når du er koblet til flere servere.',
 			'settings.alwaysKeepSidebarOpen' => 'Hold sidefeltet alltid åpent',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Sidefeltet forblir utvidet og innholdsområdet tilpasser seg',
 			'settings.showUnwatchedCount' => 'Vis antall usette',
@@ -1960,15 +1960,15 @@ extension on TranslationsNb {
 			'settings.showNavBarLabelsDescription' => 'Vis tekstlabeler under navigasjonsfeltikoner',
 			'settings.liveTvDefaultFavorites' => 'Standard til favorittkanaler',
 			'settings.liveTvDefaultFavoritesDescription' => 'Vis kun favorittkanaler når du åpner Live TV',
-			'settings.display' => 'Display',
-			'settings.homeScreen' => 'Home Screen',
-			'settings.navigation' => 'Navigation',
-			'settings.window' => 'Window',
-			'settings.content' => 'Content',
-			'settings.player' => 'Player',
-			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
-			'settings.seekAndTiming' => 'Seek & Timing',
-			'settings.behavior' => 'Behavior',
+			'settings.display' => 'Skjerm',
+			'settings.homeScreen' => 'Hjemmeskjerm',
+			'settings.navigation' => 'Navigering',
+			'settings.window' => 'Vindu',
+			'settings.content' => 'Innhold',
+			'settings.player' => 'Spiller',
+			'settings.subtitlesAndConfig' => 'Undertekster og konfigurasjon',
+			'settings.seekAndTiming' => 'Søk og tidtaking',
+			'settings.behavior' => 'Atferd',
 			'search.hint' => 'Søk i filmer, serier, musikk...',
 			'search.tryDifferentTerm' => 'Prøv et annet søkeord',
 			'search.searchYourMedia' => 'Søk i mediene dine',
@@ -2139,7 +2139,7 @@ extension on TranslationsNb {
 			'messages.musicNotSupported' => 'Musikkavspilling støttes ikke ennå',
 			'messages.noDescriptionAvailable' => 'Ingen beskrivelse tilgjengelig',
 			'messages.noProfilesAvailable' => 'Ingen profiler tilgjengelige',
-			'messages.contactAdminForProfiles' => 'Contact your server administrator to add profiles',
+			'messages.contactAdminForProfiles' => 'Kontakt serveradministratoren din for å legge til profiler',
 			'messages.unableToDetermineLibrarySection' => 'Kan ikke fastslå bibliotekseksjonen for dette elementet',
 			'messages.logsCleared' => 'Logger tømt',
 			'messages.logsCopied' => 'Logger kopiert til utklippstavle',
@@ -2263,7 +2263,7 @@ extension on TranslationsNb {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min igjen',
 			'errors.searchFailed' => ({required Object error}) => 'Søk mislyktes: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Tidsavbrudd ved lasting av ${context}',
-			'errors.connectionFailed' => 'Unable to connect to media server',
+			'errors.connectionFailed' => 'Kan ikke koble til medieserver',
 			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Kunne ikke laste ${context}: ${error}',
 			'errors.noClientAvailable' => 'Ingen klient tilgjengelig',
 			'errors.authenticationFailed' => ({required Object error}) => 'Autentisering mislyktes: ${error}',

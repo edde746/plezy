@@ -240,12 +240,12 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get gridView => 'Raster';
 	@override String get listView => 'Liste';
 	@override String get showHeroSection => 'Hero-Bereich anzeigen';
-	@override String get useGlobalHubs => 'Use Home Layout';
-	@override String get useGlobalHubsDescription => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.';
+	@override String get useGlobalHubs => 'Startlayout verwenden';
+	@override String get useGlobalHubsDescription => 'Zeigt Hub-Empfehlungen der Startseite wie der offizielle Client. Wenn deaktiviert, werden stattdessen bibliotheksbezogene Empfehlungen angezeigt.';
 	@override String get showServerNameOnHubs => 'Servername bei Hubs anzeigen';
 	@override String get showServerNameOnHubsDescription => 'Zeigt immer den Servernamen in Hub-Titeln an. Wenn deaktiviert, nur bei doppelten Hub-Namen.';
 	@override String get groupLibrariesByServer => 'Mediatheken nach Server gruppieren';
-	@override String get groupLibrariesByServerDescription => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.';
+	@override String get groupLibrariesByServerDescription => 'Zeigt eine Überschrift für jeden Medienserver in der Seitenleiste an, wenn du mit mehreren Servern verbunden bist.';
 	@override String get alwaysKeepSidebarOpen => 'Seitenleiste immer geöffnet halten';
 	@override String get alwaysKeepSidebarOpenDescription => 'Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an';
 	@override String get showUnwatchedCount => 'Anzahl nicht gesehener Folgen anzeigen';
@@ -387,15 +387,15 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get showNavBarLabelsDescription => 'Textbeschriftungen unter den Symbolen der Navigationsleiste anzeigen';
 	@override String get liveTvDefaultFavorites => 'Standardmäßig Favoritenkanäle';
 	@override String get liveTvDefaultFavoritesDescription => 'Beim Öffnen von Live TV nur Favoritenkanäle anzeigen';
-	@override String get display => 'Display';
-	@override String get homeScreen => 'Home Screen';
+	@override String get display => 'Anzeige';
+	@override String get homeScreen => 'Startseite';
 	@override String get navigation => 'Navigation';
-	@override String get window => 'Window';
-	@override String get content => 'Content';
-	@override String get player => 'Player';
-	@override String get subtitlesAndConfig => 'Subtitles & Configuration';
-	@override String get seekAndTiming => 'Seek & Timing';
-	@override String get behavior => 'Behavior';
+	@override String get window => 'Fenster';
+	@override String get content => 'Inhalt';
+	@override String get player => 'Wiedergabe';
+	@override String get subtitlesAndConfig => 'Untertitel & Konfiguration';
+	@override String get seekAndTiming => 'Spulen & Timing';
+	@override String get behavior => 'Verhalten';
 }
 
 // Path: search
@@ -621,7 +621,7 @@ class _TranslationsMessagesDe extends TranslationsMessagesEn {
 	@override String get musicNotSupported => 'Musikwiedergabe wird noch nicht unterstützt';
 	@override String get noDescriptionAvailable => 'Keine Beschreibung verfügbar';
 	@override String get noProfilesAvailable => 'Keine Profile verfügbar';
-	@override String get contactAdminForProfiles => 'Contact your server administrator to add profiles';
+	@override String get contactAdminForProfiles => 'Kontaktiere deinen Serveradministrator, um Profile hinzuzufügen';
 	@override String get unableToDetermineLibrarySection => 'Bibliotheksbereich für dieses Element kann nicht ermittelt werden';
 	@override String get logsCleared => 'Protokolle gelöscht';
 	@override String get logsCopied => 'Protokolle in Zwischenablage kopiert';
@@ -806,7 +806,7 @@ class _TranslationsErrorsDe extends TranslationsErrorsEn {
 	// Translations
 	@override String searchFailed({required Object error}) => 'Suche fehlgeschlagen: ${error}';
 	@override String connectionTimeout({required Object context}) => 'Zeitüberschreitung beim Laden von ${context}';
-	@override String get connectionFailed => 'Unable to connect to media server';
+	@override String get connectionFailed => 'Keine Verbindung zum Medienserver möglich';
 	@override String failedToLoad({required Object context, required Object error}) => 'Fehler beim Laden von ${context}: ${error}';
 	@override String get noClientAvailable => 'Kein Client verfügbar';
 	@override String authenticationFailed({required Object error}) => 'Authentifizierung fehlgeschlagen: ${error}';
@@ -1813,12 +1813,12 @@ extension on TranslationsDe {
 			'settings.gridView' => 'Raster',
 			'settings.listView' => 'Liste',
 			'settings.showHeroSection' => 'Hero-Bereich anzeigen',
-			'settings.useGlobalHubs' => 'Use Home Layout',
-			'settings.useGlobalHubsDescription' => 'Show home page hubs like the official client. When off, shows per-library recommendations instead.',
+			'settings.useGlobalHubs' => 'Startlayout verwenden',
+			'settings.useGlobalHubsDescription' => 'Zeigt Hub-Empfehlungen der Startseite wie der offizielle Client. Wenn deaktiviert, werden stattdessen bibliotheksbezogene Empfehlungen angezeigt.',
 			'settings.showServerNameOnHubs' => 'Servername bei Hubs anzeigen',
 			'settings.showServerNameOnHubsDescription' => 'Zeigt immer den Servernamen in Hub-Titeln an. Wenn deaktiviert, nur bei doppelten Hub-Namen.',
 			'settings.groupLibrariesByServer' => 'Mediatheken nach Server gruppieren',
-			'settings.groupLibrariesByServerDescription' => 'Show a header for each media server in the sidebar when you\'re connected to multiple servers.',
+			'settings.groupLibrariesByServerDescription' => 'Zeigt eine Überschrift für jeden Medienserver in der Seitenleiste an, wenn du mit mehreren Servern verbunden bist.',
 			'settings.alwaysKeepSidebarOpen' => 'Seitenleiste immer geöffnet halten',
 			'settings.alwaysKeepSidebarOpenDescription' => 'Seitenleiste bleibt erweitert und Inhaltsbereich passt sich an',
 			'settings.showUnwatchedCount' => 'Anzahl nicht gesehener Folgen anzeigen',
@@ -1960,15 +1960,15 @@ extension on TranslationsDe {
 			'settings.showNavBarLabelsDescription' => 'Textbeschriftungen unter den Symbolen der Navigationsleiste anzeigen',
 			'settings.liveTvDefaultFavorites' => 'Standardmäßig Favoritenkanäle',
 			'settings.liveTvDefaultFavoritesDescription' => 'Beim Öffnen von Live TV nur Favoritenkanäle anzeigen',
-			'settings.display' => 'Display',
-			'settings.homeScreen' => 'Home Screen',
+			'settings.display' => 'Anzeige',
+			'settings.homeScreen' => 'Startseite',
 			'settings.navigation' => 'Navigation',
-			'settings.window' => 'Window',
-			'settings.content' => 'Content',
-			'settings.player' => 'Player',
-			'settings.subtitlesAndConfig' => 'Subtitles & Configuration',
-			'settings.seekAndTiming' => 'Seek & Timing',
-			'settings.behavior' => 'Behavior',
+			'settings.window' => 'Fenster',
+			'settings.content' => 'Inhalt',
+			'settings.player' => 'Wiedergabe',
+			'settings.subtitlesAndConfig' => 'Untertitel & Konfiguration',
+			'settings.seekAndTiming' => 'Spulen & Timing',
+			'settings.behavior' => 'Verhalten',
 			'search.hint' => 'Filme, Serien, Musik suchen...',
 			'search.tryDifferentTerm' => 'Anderen Suchbegriff versuchen',
 			'search.searchYourMedia' => 'In den eigenen Medien suchen',
@@ -2139,7 +2139,7 @@ extension on TranslationsDe {
 			'messages.musicNotSupported' => 'Musikwiedergabe wird noch nicht unterstützt',
 			'messages.noDescriptionAvailable' => 'Keine Beschreibung verfügbar',
 			'messages.noProfilesAvailable' => 'Keine Profile verfügbar',
-			'messages.contactAdminForProfiles' => 'Contact your server administrator to add profiles',
+			'messages.contactAdminForProfiles' => 'Kontaktiere deinen Serveradministrator, um Profile hinzuzufügen',
 			'messages.unableToDetermineLibrarySection' => 'Bibliotheksbereich für dieses Element kann nicht ermittelt werden',
 			'messages.logsCleared' => 'Protokolle gelöscht',
 			'messages.logsCopied' => 'Protokolle in Zwischenablage kopiert',
@@ -2263,7 +2263,7 @@ extension on TranslationsDe {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} Min übrig',
 			'errors.searchFailed' => ({required Object error}) => 'Suche fehlgeschlagen: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Zeitüberschreitung beim Laden von ${context}',
-			'errors.connectionFailed' => 'Unable to connect to media server',
+			'errors.connectionFailed' => 'Keine Verbindung zum Medienserver möglich',
 			'errors.failedToLoad' => ({required Object context, required Object error}) => 'Fehler beim Laden von ${context}: ${error}',
 			'errors.noClientAvailable' => 'Kein Client verfügbar',
 			'errors.authenticationFailed' => ({required Object error}) => 'Authentifizierung fehlgeschlagen: ${error}',
