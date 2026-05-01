@@ -61,4 +61,66 @@ void main() {
     expect(profile.parentConnectionId, account.id);
     expect(profile.displayName, 'Home User');
   });
+
+  test('initial profile selection is required when home users exist but no profile is active', () {
+    expect(
+      shouldPromptForInitialProfileSelection(
+        activeProfile: null,
+        hasProfiles: false,
+        accountHasHomeUsers: true,
+        requireProfileSelectionOnOpen: false,
+      ),
+      isTrue,
+    );
+  });
+
+  test('initial profile selection is skipped when a profile was auto-selected', () {
+    final profile = Profile(
+      id: 'local-owner',
+      kind: ProfileKind.local,
+      displayName: 'Owner',
+      createdAt: DateTime(2026, 1, 1),
+    );
+
+    expect(
+      shouldPromptForInitialProfileSelection(
+        activeProfile: profile,
+        hasProfiles: true,
+        accountHasHomeUsers: true,
+        requireProfileSelectionOnOpen: false,
+      ),
+      isFalse,
+    );
+  });
+
+  test('initial profile selection is required when the launch setting is enabled', () {
+    final profile = Profile(
+      id: 'local-owner',
+      kind: ProfileKind.local,
+      displayName: 'Owner',
+      createdAt: DateTime(2026, 1, 1),
+    );
+
+    expect(
+      shouldPromptForInitialProfileSelection(
+        activeProfile: profile,
+        hasProfiles: true,
+        accountHasHomeUsers: true,
+        requireProfileSelectionOnOpen: true,
+      ),
+      isTrue,
+    );
+  });
+
+  test('initial profile selection is skipped when no profiles are available', () {
+    expect(
+      shouldPromptForInitialProfileSelection(
+        activeProfile: null,
+        hasProfiles: false,
+        accountHasHomeUsers: false,
+        requireProfileSelectionOnOpen: false,
+      ),
+      isFalse,
+    );
+  });
 }

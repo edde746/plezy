@@ -26,6 +26,7 @@ void main() {
   late MultiServerProvider multiServerProvider;
   late ActiveProfileBinder binder;
   late StorageService storage;
+  late bool shouldDeferInitialBind;
 
   setUp(() async {
     resetSharedPreferencesForTest();
@@ -48,6 +49,7 @@ void main() {
     );
     manager = MultiServerManager();
     multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    shouldDeferInitialBind = false;
     binder = ActiveProfileBinder(
       activeProfile: activeProfile,
       connections: connections,
@@ -55,6 +57,7 @@ void main() {
       serverManager: manager,
       multiServerProvider: multiServerProvider,
       pinPrompt: (_, {String? errorMessage}) async => null,
+      shouldDeferInitialBind: (_) async => shouldDeferInitialBind,
     );
   });
 
@@ -66,6 +69,14 @@ void main() {
     await plexHome.dispose();
     await db.close();
   });
+
+  Future<Profile> createActiveLocalProfile(String id) async {
+    final profile = Profile(id: id, kind: ProfileKind.local, displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
+    await profiles.upsert(profile);
+    await storage.setActiveProfileId(profile.id);
+    await activeProfile.initialize();
+    return profile;
+  }
 
   test('local profile with no connections binds successfully with empty visibility', () async {
     final profile = Profile(
@@ -106,6 +117,31 @@ void main() {
     expect(activeProfile.lastBindingSucceeded, isTrue);
     expect(binder.debugLastBoundProfileId, profile.id);
     expect(notifications, lessThan(8));
+  });
+
+  test('initial bind can be deferred until profile selection', () async {
+    final profile = await createActiveLocalProfile('local-deferred');
+    shouldDeferInitialBind = true;
+
+    await binder.rebindActive();
+
+    expect(activeProfile.lastBindingSucceeded, isTrue);
+    expect(activeProfile.isBinding, isFalse);
+    expect(binder.debugLastBoundProfileId, isNull);
+    expect(binder.consumeUserInitiatedActivation(profile.id), isFalse);
+    expect(multiServerProvider.serverIds, isEmpty);
+  });
+
+  test('user initiated activation bypasses initial bind defer', () async {
+    final profile = await createActiveLocalProfile('local-user-initiated');
+    shouldDeferInitialBind = true;
+    binder.markUserInitiatedActivation(profile.id);
+
+    await binder.rebindActive();
+
+    expect(activeProfile.lastBindingSucceeded, isTrue);
+    expect(binder.debugLastBoundProfileId, profile.id);
+    expect(binder.consumeUserInitiatedActivation(profile.id), isFalse);
   });
 
   group('Plex Home token cache policy', () {

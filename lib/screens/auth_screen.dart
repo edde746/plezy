@@ -8,6 +8,7 @@ import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile.dart';
 import '../services/plex_auth_service.dart';
+import '../services/settings_service.dart';
 import '../services/storage_service.dart';
 import '../providers/user_profile_provider.dart';
 import '../i18n/strings.g.dart';
@@ -20,6 +21,7 @@ import '../widgets/backend_badge.dart';
 import '../widgets/dialog_action_button.dart';
 import 'auth/plex_pin_auth_flow.dart';
 import 'main_screen.dart';
+import 'profile/profile_switch_screen.dart';
 import 'settings/add_jellyfin_screen.dart';
 
 class AuthScreen extends StatefulWidget {
@@ -77,11 +79,10 @@ class _AuthScreenState extends State<AuthScreen> {
     await activeProfiles.activate(profile);
   }
 
-  /// Persist the new Plex account into the connection pipeline and
-  /// navigate to the main screen. The [ActiveProfileBinder] (mounted by
-  /// [MainScreen]) takes over from there: it picks up the active profile
-  /// id we set below and connects servers via
-  /// [MultiServerManager.refreshTokensForProfile].
+  /// Persist the new Plex account into the connection pipeline, resolve the
+  /// initial active profile when possible, and navigate to the main screen.
+  /// The top-level [ActiveProfileBinder] picks up the active profile id and
+  /// connects servers via [MultiServerManager.refreshTokensForProfile].
   Future<void> _connectToAllServersAndNavigate(String plexToken) async {
     if (!mounted) return;
 
@@ -130,14 +131,36 @@ class _AuthScreenState extends State<AuthScreen> {
       await connectionRegistry.upsert(accountConnection);
       await plexHome.refresh(accountConnection);
       if (!mounted) return;
-      await _selectInitialProfile(plexHome, context.read<ActiveProfileProvider>(), accountConnection);
+      final activeProfiles = context.read<ActiveProfileProvider>();
+      await _selectInitialProfile(plexHome, activeProfiles, accountConnection);
 
       if (!mounted) return;
+
+      final settings = await SettingsService.getInstance();
+      if (!mounted) return;
+
+      final promptHandled = shouldPromptForInitialProfileSelection(
+        activeProfile: activeProfiles.active,
+        hasProfiles: activeProfiles.profiles.isNotEmpty,
+        accountHasHomeUsers: plexHome.current[accountConnection.id]?.isNotEmpty == true,
+        requireProfileSelectionOnOpen:
+            settings.read(SettingsService.requireProfileSelectionOnOpen) && activeProfiles.hasMultipleProfiles,
+      );
+      if (promptHandled) {
+        final selected = await Navigator.of(
+          context,
+        ).push<bool>(MaterialPageRoute(builder: (_) => const ProfileSwitchScreen(requireSelection: true)));
+        if (!mounted) return;
+        if (selected != true || activeProfiles.active == null) {
+          setState(() => _isAuthenticating = false);
+          return;
+        }
+      }
 
       await context.read<UserProfileProvider>().initialize();
 
       if (!mounted) return;
-      unawaited(Navigator.pushReplacement(context, fadeRoute(const MainScreen())));
+      unawaited(Navigator.pushReplacement(context, fadeRoute(MainScreen(initialPromptHandled: promptHandled))));
     } catch (e) {
       appLogger.e('Failed to connect to servers', error: e);
       if (!mounted) return;
@@ -361,6 +384,16 @@ Profile? initialPlexHomeProfileFromCache(PlexHomeService plexHome, PlexAccountCo
   final users = plexHome.current[accountConn.id];
   if (users == null || users.length != 1) return null;
   return Profile.virtualPlexHome(connectionId: accountConn.id, homeUser: users.single);
+}
+
+@visibleForTesting
+bool shouldPromptForInitialProfileSelection({
+  required Profile? activeProfile,
+  required bool hasProfiles,
+  required bool accountHasHomeUsers,
+  required bool requireProfileSelectionOnOpen,
+}) {
+  return requireProfileSelectionOnOpen || (activeProfile == null && (hasProfiles || accountHasHomeUsers));
 }
 
 /// Stateful so the [TextEditingController] is disposed when the dialog

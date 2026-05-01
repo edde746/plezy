@@ -27,16 +27,19 @@ import 'profile_connection_registry.dart';
 /// token instead of re-prompting for the same PIN.
 Future<bool> activateProfileWithPin(BuildContext context, Profile profile) async {
   final active = context.read<ActiveProfileProvider>();
+  final binder = context.read<ActiveProfileBinder>();
 
   if (profile.isPlexHome) {
     if (profile.plexProtected) {
       final ok = await _preVerifyPlexHomePin(context, profile);
       if (!ok) return false;
     }
+    binder.markUserInitiatedActivation(profile.id);
     return active.activate(profile);
   }
 
   if (!profile.isPinProtected) {
+    binder.markUserInitiatedActivation(profile.id);
     return active.activate(profile);
   }
 
@@ -45,8 +48,11 @@ Future<bool> activateProfileWithPin(BuildContext context, Profile profile) async
     if (!context.mounted) return false;
     final pin = await showPinEntryDialog(context, profile.displayName, errorMessage: errorMessage);
     if (pin == null) return false; // user cancelled
-    final ok = await active.activate(profile, pin: pin);
-    if (ok) return true;
+    final hash = profile.pinHash;
+    if (hash != null && verifyPin(pin, hash)) {
+      binder.markUserInitiatedActivation(profile.id);
+      return active.activate(profile, pin: pin);
+    }
     errorMessage = 'Incorrect PIN. Please try again.';
   }
 }

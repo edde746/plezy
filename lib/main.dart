@@ -687,14 +687,22 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // mounts (and discover/libraries query) before any client exists.
         Provider<ActiveProfileBinder>(
           lazy: false,
-          create: (context) => ActiveProfileBinder(
-            activeProfile: context.read<ActiveProfileProvider>(),
-            connections: context.read<ConnectionRegistry>(),
-            profileConnections: context.read<ProfileConnectionRegistry>(),
-            serverManager: _serverManager,
-            multiServerProvider: context.read<MultiServerProvider>(),
-            pinPrompt: _rootPinPrompt,
-          )..start(),
+          create: (context) {
+            final activeProfile = context.read<ActiveProfileProvider>();
+            return ActiveProfileBinder(
+              activeProfile: activeProfile,
+              connections: context.read<ConnectionRegistry>(),
+              profileConnections: context.read<ProfileConnectionRegistry>(),
+              serverManager: _serverManager,
+              multiServerProvider: context.read<MultiServerProvider>(),
+              pinPrompt: _rootPinPrompt,
+              shouldDeferInitialBind: (_) async {
+                final settings = await SettingsService.getInstance();
+                return settings.read(SettingsService.requireProfileSelectionOnOpen) &&
+                    activeProfile.hasMultipleProfiles;
+              },
+            )..start();
+          },
           dispose: (_, binder) => binder.dispose(),
         ),
         // Offline mode provider - depends on MultiServerProvider

@@ -20,6 +20,8 @@ import 'profile_connection_registry.dart';
 /// (typically in `main_screen.dart`) should call `showPinEntryDialog`.
 typedef PlexHomePinPrompt = Future<String?> Function(Profile profile, {String? errorMessage});
 
+typedef ShouldDeferInitialBind = FutureOr<bool> Function(Profile profile);
+
 @visibleForTesting
 bool shouldUsePlexHomeTokenCache({required bool preVerified, required bool hasBoundOnce, required bool plexProtected}) {
   return preVerified || (!hasBoundOnce && !plexProtected);
@@ -52,6 +54,7 @@ class ActiveProfileBinder {
     required this.serverManager,
     required this.multiServerProvider,
     required this.pinPrompt,
+    this.shouldDeferInitialBind,
     PlexAuthService? plexAuth,
   }) : _plexAuth = plexAuth;
 
@@ -61,6 +64,7 @@ class ActiveProfileBinder {
   final MultiServerManager serverManager;
   final MultiServerProvider multiServerProvider;
   final PlexHomePinPrompt pinPrompt;
+  final ShouldDeferInitialBind? shouldDeferInitialBind;
 
   PlexAuthService? _plexAuth;
 
@@ -87,6 +91,7 @@ class ActiveProfileBinder {
   /// once by [_bindPlexHome] to permit the freshly cached user-token for
   /// that single rebind and avoid a duplicate PIN prompt.
   final Set<String> _plexHomePreVerified = {};
+  final Set<String> _userInitiatedActivations = {};
 
   bool get isSwitching => _isSwitching;
 
@@ -97,9 +102,18 @@ class ActiveProfileBinder {
     _plexHomePreVerified.add(profileId);
   }
 
+  void markUserInitiatedActivation(String profileId) {
+    _userInitiatedActivations.add(profileId);
+  }
+
   @visibleForTesting
   bool consumePlexHomePreVerified(String profileId) {
     return _plexHomePreVerified.remove(profileId);
+  }
+
+  @visibleForTesting
+  bool consumeUserInitiatedActivation(String profileId) {
+    return _userInitiatedActivations.remove(profileId);
   }
 
   void start() {
@@ -194,14 +208,21 @@ class ActiveProfileBinder {
         // waiting, doesn't surface a spurious "switch failed" error. Also
         // clear the runtime filter so stale clients from the previous
         // profile cannot leak into the no-selection state.
-        for (final serverId in serverManager.serverIds.toList()) {
-          serverManager.removeServer(serverId);
-        }
-        multiServerProvider.setVisibleServerIds(<String>{});
+        _clearBoundServers();
         success = true;
         return;
       }
       attemptedProfileId = profile.id;
+
+      final userInitiated = consumeUserInitiatedActivation(profile.id);
+      if (!userInitiated && !_hasBoundOnce && await _shouldDeferInitialBind(profile)) {
+        appLogger.i('ActiveProfileBinder: deferring initial bind for ${profile.displayName} until profile selection');
+        _clearBoundServers();
+        attemptedProfileId = null;
+        success = true;
+        return;
+      }
+
       appLogger.i('ActiveProfileBinder: rebinding for ${profile.displayName} (${profile.id})');
 
       final visibleServerIds = <String>{};
@@ -507,10 +528,29 @@ class ActiveProfileBinder {
     return _plexAuth ??= await PlexAuthService.create();
   }
 
+  Future<bool> _shouldDeferInitialBind(Profile profile) async {
+    final shouldDefer = shouldDeferInitialBind;
+    if (shouldDefer == null) return false;
+    try {
+      return await shouldDefer(profile);
+    } catch (e, st) {
+      appLogger.w('ActiveProfileBinder: defer check failed; continuing with bind', error: e, stackTrace: st);
+      return false;
+    }
+  }
+
+  void _clearBoundServers() {
+    for (final serverId in serverManager.serverIds.toList()) {
+      serverManager.removeServer(serverId);
+    }
+    multiServerProvider.setVisibleServerIds(<String>{});
+  }
+
   void dispose() {
     if (!_started) return;
     activeProfile.removeListener(_onActiveProfileChanged);
     _plexHomePreVerified.clear();
+    _userInitiatedActivations.clear();
     _plexAuth?.dispose();
     _plexAuth = null;
     _started = false;
