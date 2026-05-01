@@ -326,7 +326,8 @@ class PlexVideoControls extends StatefulWidget {
   State<PlexVideoControls> createState() => _PlexVideoControlsState();
 }
 
-class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListener, WidgetsBindingObserver {
+class _PlexVideoControlsState extends State<PlexVideoControls>
+    with WindowListener, WidgetsBindingObserver, TickerProviderStateMixin {
   bool _showControls = true;
   bool _forceShowControls = false;
   bool _isLoadingExtras = false;
@@ -361,6 +362,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   DateTime? _lastSkipTapTime;
   bool _lastSkipTapWasForward = true;
   DateTime? _lastSkipActionTime; // Debounce: prevents double-tap counting as 2 skips
+  DateTime? _lastSkipMarkerActionTime; // Debounce for skip-marker button only
   Timer? _singleTapTimer; // Timer for delayed single-tap action (toggle controls)
   // Seek throttle
   late final Throttle _seekThrottle;
@@ -380,6 +382,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   int _autoSkipDelay = 5;
   Timer? _autoSkipTimer;
   double _autoSkipProgress = 0.0;
+  AnimationController? _autoSkipController;
   // Skip button dismiss state
   bool _skipButtonDismissed = false;
   Timer? _skipButtonDismissTimer;
@@ -615,31 +618,41 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (!shouldAutoSkip || _autoSkipDelay <= 0) return;
 
     _autoSkipProgress = 0.0;
-    const tickDuration = Duration(milliseconds: 200);
-    final totalTicks = (_autoSkipDelay * 1000) / tickDuration.inMilliseconds;
 
-    if (totalTicks <= 0) return;
-
-    _autoSkipTimer = Timer.periodic(tickDuration, (timer) {
-      if (!mounted || _currentMarker != marker) {
-        timer.cancel();
-        return;
-      }
-
-      setState(() {
-        _autoSkipProgress = (timer.tick / totalTicks).clamp(0.0, 1.0);
+    _autoSkipController?.dispose();
+    _autoSkipController = AnimationController(duration: Duration(seconds: _autoSkipDelay), vsync: this)
+      ..addStatusListener((status) {
+        if (status == AnimationStatus.completed) {
+          if (!mounted || _currentMarker != marker) return;
+          _performAutoSkip();
+        }
       });
 
-      if (timer.tick >= totalTicks) {
-        timer.cancel();
-        _performAutoSkip();
-      }
-    });
+    final isTVPlatform = PlatformDetector.isTV();
+    if (isTVPlatform) {
+      // TV hardware: Use frame-rate capped Timer.periodic (200ms) to avoid performance regression
+      _autoSkipTimer = Timer.periodic(const Duration(milliseconds: 200), (timer) {
+        if (!mounted || _currentMarker != marker || _autoSkipController == null) {
+          timer.cancel();
+          return;
+        }
+        setState(() {
+          _autoSkipProgress = _autoSkipController!.value;
+        });
+      });
+    } else {
+      // Non-TV platforms: Avoid a controller listener and use AnimatedBuilder for button-only updates.
+    }
+
+    _autoSkipController!.forward(from: 0.0);
   }
 
   void _cancelAutoSkipTimer() {
     _autoSkipTimer?.cancel();
     _autoSkipTimer = null;
+    _autoSkipController?.stop();
+    _autoSkipController?.dispose();
+    _autoSkipController = null;
     if (mounted) {
       setState(() {
         _autoSkipProgress = 0.0;
@@ -665,9 +678,17 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _skipButtonDismissTimer = null;
   }
 
-  /// Perform the appropriate skip action based on marker type and next episode availability
+  /// Perform a debounced auto-skip from the marker button only.
   void _performAutoSkip() {
     if (_currentMarker == null) return;
+
+    // Debounce skip-marker presses separately from seek double-tap actions.
+    final now = DateTime.now();
+    if (_lastSkipMarkerActionTime != null && now.difference(_lastSkipMarkerActionTime!).inMilliseconds < 200) {
+      return;
+    }
+
+    _lastSkipMarkerActionTime = now;
     unawaited(_skipMarker());
   }
 
@@ -804,6 +825,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     _feedbackTimer?.cancel();
     _lockIconTimer?.cancel();
     _autoSkipTimer?.cancel();
+    _autoSkipController?.dispose();
     _skipButtonDismissTimer?.cancel();
     _singleTapTimer?.cancel();
     _seekThrottle.cancel();
@@ -987,6 +1009,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   /// Show controls in response to pointer activity (mouse/trackpad movement).
   void _showControlsFromPointerActivity() {
+    // Cancel auto-skip timer when user interacts with mouse/pointer
+    _cancelAutoSkipTimer();
+
     if (!_showControls) {
       setState(() {
         _showControls = true;
@@ -1001,9 +1026,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
     // Keep the overlay visible while the user is moving the pointer
     _restartHideTimerIfPlaying();
-
-    // Cancel auto-skip when user moves pointer over the player
-    _cancelAutoSkipTimer();
   }
 
   void _toggleControls() {
@@ -1019,8 +1041,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         _updateTrafficLightVisibility();
       }
     }
-    // Cancel auto-skip on any tap
-    _cancelAutoSkipTimer();
+    // Don't cancel auto-skip just for showing/hiding the overlay. If the user wants
+    // to interrupt, seeking/tapping the skip button already does that.
   }
 
   void _toggleRotationLock() async {
@@ -1367,6 +1389,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   }
 
   Future<void> _seekToPosition(Duration position, {bool notifyCompletion = true}) async {
+    // Cancel auto-skip when user manually seeks
+    _cancelAutoSkipTimer();
+
     final clamped = clampSeekPosition(widget.player, position);
     await widget.player.seek(clamped);
     if (notifyCompletion && mounted) {
@@ -2288,6 +2313,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                   // Stream-driven VLC-style pill (rate changes, backend-switch notifications)
                   Positioned.fill(
                     child: IgnorePointer(
+                      // Visual-only overlay; must not steal taps from controls/toggle layer below.
                       child: ListenableBuilder(
                         listenable: widget.toastController,
                         builder: (context, _) {
@@ -2463,22 +2489,119 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       baseButtonText = 'Skip Intro';
     }
 
-    final isAutoSkipActive = _autoSkipTimer?.isActive ?? false;
-    final shouldShowAutoSkip = _shouldShowAutoSkip();
-
-    final int remainingSeconds = isAutoSkipActive && shouldShowAutoSkip
-        ? (_autoSkipDelay - (_autoSkipProgress * _autoSkipDelay)).ceil().clamp(0, _autoSkipDelay)
-        : 0;
-
-    final String buttonText = isAutoSkipActive && shouldShowAutoSkip && remainingSeconds > 0
-        ? '$baseButtonText ($remainingSeconds)'
-        : baseButtonText;
+    final bool isTV = PlatformDetector.isTV();
     final IconData buttonIcon = showNextEpisode ? Symbols.skip_next_rounded : Symbols.fast_forward_rounded;
+
+    String getButtonText(double autoSkipProgress) {
+      if (isTV && _autoSkipController?.isAnimating == true && _shouldShowAutoSkip()) {
+        final remainingSeconds = ((_autoSkipDelay * (1.0 - autoSkipProgress))).ceil();
+        return remainingSeconds > 0 ? '$baseButtonText ($remainingSeconds)' : baseButtonText;
+      }
+      return baseButtonText;
+    }
+
+    Widget buildButtonContent() {
+      final bool isAutoSkipActive = _autoSkipController?.isAnimating ?? false;
+      final double autoSkipProgress = isTV ? _autoSkipProgress : (_autoSkipController?.value ?? 0.0);
+      final String buttonText = getButtonText(autoSkipProgress);
+
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            if (isAutoSkipActive) {
+              _cancelAutoSkipTimer();
+            }
+            _performAutoSkip();
+          },
+          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+          // Keep the hitbox to just the chip width.
+          child: IntrinsicWidth(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  // Netflix-ish base: grey chip with subtle shadow.
+                  color: Colors.grey.shade700.withValues(alpha: 0.9),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: Stack(
+                  children: [
+                    if (autoSkipProgress > 0 && !isTV)
+                      Positioned.fill(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: autoSkipProgress,
+                            heightFactor: 1,
+                            alignment: Alignment.centerLeft,
+                            child: const ColoredBox(color: Colors.white),
+                          ),
+                        ),
+                      ),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Stack(
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                buttonText,
+                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(width: 8),
+                              AppIcon(buttonIcon, fill: 1, color: Colors.white, size: 20),
+                            ],
+                          ),
+
+                          if (autoSkipProgress > 0 && !isTV)
+                            Positioned.fill(
+                              child: ClipRect(
+                                clipper: _ProgressClipper(autoSkipProgress),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        buttonText,
+                                        style: const TextStyle(
+                                          color: Colors.black,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      AppIcon(buttonIcon, fill: 1, color: Colors.black, size: 20),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final Widget content = (!isTV && _autoSkipController != null)
+        ? AnimatedBuilder(animation: _autoSkipController!, builder: (context, _) => buildButtonContent())
+        : buildButtonContent();
 
     return FocusableWrapper(
       focusNode: _skipMarkerFocusNode,
       onSelect: () {
-        if (isAutoSkipActive) {
+        if (_autoSkipController?.isAnimating == true) {
           _cancelAutoSkipTimer();
         }
         _performAutoSkip();
@@ -2494,67 +2617,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
         }
         return KeyEventResult.ignored;
       },
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            if (isAutoSkipActive) {
-              _cancelAutoSkipTimer();
-            }
-            _performAutoSkip();
-          },
-          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-          child: Stack(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      buttonText,
-                      style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(width: 8),
-                    AppIcon(buttonIcon, fill: 1, color: Colors.black, size: 20),
-                  ],
-                ),
-              ),
-              // Progress indicator overlay
-              if (isAutoSkipActive && shouldShowAutoSkip)
-                Positioned.fill(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          flex: (_autoSkipProgress * 100).round(),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          flex: ((1.0 - _autoSkipProgress) * 100).round(),
-                          child: Container(decoration: const BoxDecoration(color: Colors.transparent)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ),
-      ),
+      child: content,
     );
   }
 
@@ -2717,6 +2780,20 @@ class _LinuxKeepAlive extends StatefulWidget {
 
   @override
   State<_LinuxKeepAlive> createState() => _LinuxKeepAliveState();
+}
+
+class _ProgressClipper extends CustomClipper<Rect> {
+  final double progress;
+  const _ProgressClipper(this.progress);
+
+  @override
+  Rect getClip(Size size) {
+    final p = progress.clamp(0.0, 1.0);
+    return Rect.fromLTWH(0, 0, size.width * p, size.height);
+  }
+
+  @override
+  bool shouldReclip(covariant _ProgressClipper oldClipper) => oldClipper.progress != progress;
 }
 
 class _LinuxKeepAliveState extends State<_LinuxKeepAlive> {
