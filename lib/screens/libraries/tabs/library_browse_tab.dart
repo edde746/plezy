@@ -56,6 +56,11 @@ import 'base_library_tab.dart';
 /// Browse tab for library screen
 /// Shows library items with grouping, filtering, and sorting
 class LibraryBrowseTab extends BaseLibraryTab<MediaItem> {
+  /// Invoked whenever the tab resets its inner scroll position to the top
+  /// (filter/sort change, library reload, etc.). Lets the parent resync the
+  /// outer floating header — see `_resetOuterScroll` in libraries_screen.
+  final VoidCallback? onResetScroll;
+
   const LibraryBrowseTab({
     super.key,
     required super.library,
@@ -65,6 +70,7 @@ class LibraryBrowseTab extends BaseLibraryTab<MediaItem> {
     super.isActive,
     super.suppressAutoFocus,
     super.onBack,
+    this.onResetScroll,
   });
 
   @override
@@ -363,6 +369,10 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         _innerPosition?.jumpTo(0);
       });
     }
+
+    // Inner-only resets bypass NestedScrollView's natural delta surrender,
+    // leaving the outer floating header in its prior partially-hidden state.
+    widget.onResetScroll?.call();
   }
 
   Future<void> _loadContent() async {

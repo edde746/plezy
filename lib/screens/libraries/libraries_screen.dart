@@ -121,14 +121,31 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   // Scroll controller for the outer CustomScrollView
   final ScrollController _outerScrollController = ScrollController();
 
+  /// Reveal the floating header by jumping the outer NestedScrollView back
+  /// to offset 0. The outer position is preserved across content changes
+  /// (library switch, library reload, filter/sort change), so any time the
+  /// inner is reset to the top we must explicitly resync the outer — the
+  /// natural delta-surrender coordination only fires on user scroll gestures.
+  ///
+  /// Iterates `positions` rather than reading `offset` because the controller
+  /// is shared between the simple CustomScrollView (loading/empty/error) and
+  /// the NestedScrollView (selected library), and during the transition both
+  /// can briefly be attached — `offset` would throw on `_positions.single`.
+  void _resetOuterScroll() {
+    if (!_outerScrollController.hasClients) return;
+    for (final position in _outerScrollController.positions) {
+      if (position.pixels > 0) {
+        position.jumpTo(0);
+      }
+    }
+  }
+
   /// Override the mixin's [focusTabBar] so we reveal the floating header
   /// (which contains the tab chips) before requesting focus. Programmatic
   /// requestFocus alone does not snap a floating SliverAppBar back into view.
   @override
   void focusTabBar() {
-    if (_outerScrollController.hasClients && _outerScrollController.offset > 0) {
-      _outerScrollController.jumpTo(0);
-    }
+    _resetOuterScroll();
     super.focusTabBar();
   }
 
@@ -265,9 +282,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
 
     // Scroll outer view to top to ensure tab content (including chips bar) is visible
-    if (_outerScrollController.hasClients && _outerScrollController.offset > 0) {
-      _outerScrollController.jumpTo(0);
-    }
+    _resetOuterScroll();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -393,6 +408,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         suppressAutoFocus: suppressAutoFocus,
         onDataLoaded: () => _handleTabDataLoaded(tabIndex),
         onBack: focusTabBar,
+        onResetScroll: _resetOuterScroll,
       ),
       LibraryTabType.collections => LibraryCollectionsTab(
         key: _collectionsTabKey,
@@ -439,6 +455,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final selectedLibrary = allLibraries.where((lib) => lib.globalKey == libraryGlobalKey).firstOrNull;
     if (selectedLibrary == null) return;
 
+    final isLibraryChange = _selectedLibraryGlobalKey != libraryGlobalKey;
+
     // Update visible tabs and state in the same synchronous block so no
     // intermediate rebuild can see a mismatched controller/key pair.
     _updateVisibleTabs(_getVisibleTabs(selectedLibrary));
@@ -449,6 +467,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       // Clear loaded tabs tracking for new library
       _loadedTabs.clear();
     });
+
+    // The new TabBarView mounts with fresh inner positions at offset 0;
+    // bring the floating header back too. Also covers the case where the
+    // newly-active tab is not browse (which would otherwise have no inner
+    // jumpTo to catch via the browse-tab callback).
+    if (isLibraryChange) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _resetOuterScroll();
+      });
+    }
 
     // Mark that initial load is complete
     if (_isInitialLoad) {
