@@ -295,8 +295,7 @@ class PlexServer {
         final connection = PlexConnection.fromJson(c as Map<String, dynamic>);
         connections.add(connection);
 
-        if (connection.protocol == 'https' &&
-            (connection.uri.contains('.plex.direct') || _isIpLiteral(connection.address))) {
+        if (_allowsHttpFallback(connection)) {
           connections.add(connection.toHttpFallback());
         }
       } catch (e) {
@@ -653,12 +652,12 @@ class PlexServer {
       }
 
       // First, try the actual connection URI (may be HTTPS plex.direct)
-      final isPlexDirect = connection.uri.contains('.plex.direct');
+      final isPlexDirect = _isPlexDirectUri(connection.uri);
       final isHttps = connection.protocol == 'https';
       addCandidate(connection, connection.uri, isPlexDirect, isHttps);
 
-      if (isHttps && (isPlexDirect || _isIpLiteral(connection.address))) {
-        addCandidate(connection, connection.httpDirectUrl, false, false);
+      if (_allowsHttpFallback(connection)) {
+        addCandidate(connection, _httpFallbackUrl(connection), false, false);
       }
     }
 
@@ -712,29 +711,36 @@ class PlexServer {
       }
       httpsUrl = currentUrl.replaceFirst('http://', 'https://');
     } else {
-      // Raw IP endpoints can't present HTTPS certificates—prefer their plex.direct alias.
-      final plexDirectUri = candidate.connection.uri;
-      if (plexDirectUri.isEmpty) {
+      // Raw IP endpoints can't present HTTPS certificates, so prefer their
+      // plex.direct alias. Native custom hostnames on :32400 can be probed on
+      // the same host to avoid permanently downgrading to HTTP when HTTPS works.
+      final originalUri = candidate.connection.uri;
+      if (originalUri.isEmpty) {
         return null;
       }
 
-      if (plexDirectUri.startsWith('https://')) {
-        httpsUrl = plexDirectUri;
-      } else if (plexDirectUri.startsWith('http://')) {
-        httpsUrl = plexDirectUri.replaceFirst('http://', 'https://');
+      if (originalUri.startsWith('https://')) {
+        httpsUrl = originalUri;
+      } else if (originalUri.startsWith('http://')) {
+        httpsUrl = originalUri.replaceFirst('http://', 'https://');
       } else {
         return null;
       }
 
       final upgradedHost = Uri.tryParse(httpsUrl)?.host;
-      if (upgradedHost == null || !upgradedHost.toLowerCase().endsWith('.plex.direct')) {
+      if (upgradedHost == null) {
+        return null;
+      }
+
+      if (upgradedHost.toLowerCase().endsWith('.plex.direct')) {
+        resultingIsPlexDirect = true;
+      } else if (!_isNativePlexHostnameHttps(candidate.connection)) {
         appLogger.d(
-          'Skipping HTTPS upgrade for raw IP candidate: no plex.direct alias available',
+          'Skipping HTTPS upgrade for HTTP candidate: no safe HTTPS target available',
           error: {'candidate': currentUrl, 'target': httpsUrl},
         );
         return null;
       }
-      resultingIsPlexDirect = true;
     }
 
     if (httpsUrl == currentUrl) {
@@ -854,6 +860,50 @@ class PlexServer {
   static bool _isIpLiteral(String address) {
     final bare = address.startsWith('[') && address.endsWith(']') ? address.substring(1, address.length - 1) : address;
     return InternetAddress.tryParse(bare) != null;
+  }
+
+  static bool _allowsHttpFallback(PlexConnection connection) {
+    if (connection.protocol != 'https') return false;
+    return _isPlexDirectUri(connection.uri) ||
+        _isIpLiteral(connection.address) ||
+        _isNativePlexHostnameHttps(connection);
+  }
+
+  static String _httpFallbackUrl(PlexConnection connection) {
+    if (_isNativePlexHostnameHttps(connection)) {
+      return connection.uri.replaceFirst('https://', 'http://');
+    }
+    return connection.httpDirectUrl;
+  }
+
+  static bool _isPlexDirectUri(String uri) {
+    final host = Uri.tryParse(uri)?.host.toLowerCase();
+    return host?.endsWith('.plex.direct') ?? uri.contains('.plex.direct');
+  }
+
+  static bool _isNativePlexHostnameHttps(PlexConnection connection) {
+    if (connection.protocol != 'https' || connection.port != 32400 || _isIpLiteral(connection.address)) {
+      return false;
+    }
+
+    final uri = Uri.tryParse(connection.uri);
+    if (uri == null || uri.scheme != 'https' || uri.hasQuery || uri.hasFragment) {
+      return false;
+    }
+    if (uri.port != connection.port) {
+      return false;
+    }
+    if (uri.path.isNotEmpty && uri.path != '/') {
+      return false;
+    }
+
+    final address = _normalizedHost(connection.address);
+    return address.isNotEmpty && uri.host.toLowerCase() == address;
+  }
+
+  static String _normalizedHost(String host) {
+    final bare = host.startsWith('[') && host.endsWith(']') ? host.substring(1, host.length - 1) : host;
+    return bare.toLowerCase();
   }
 
   /// Returns true if the address is known to be unreachable from external
