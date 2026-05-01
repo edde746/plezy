@@ -48,20 +48,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     let center = NotificationCenter.default
     center.addObserver(
       self,
-      selector: #selector(windowWillEnterFullScreen),
-      name: NSWindow.willEnterFullScreenNotification,
-      object: window
-    )
-    center.addObserver(
-      self,
       selector: #selector(windowDidEnterFullScreen),
       name: NSWindow.didEnterFullScreenNotification,
-      object: window
-    )
-    center.addObserver(
-      self,
-      selector: #selector(windowWillExitFullScreen),
-      name: NSWindow.willExitFullScreenNotification,
       object: window
     )
     center.addObserver(
@@ -196,28 +184,14 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     dispose()
   }
 
-  @objc private func windowWillEnterFullScreen(_ notification: Notification) {
-    guard mpv != nil, !isPipActive else { return }
-    print("[MpvPlayerCore] willEnterFullScreen - disabling video output")
-    mpv_set_property_string(mpv, "vid", "no")
-  }
-
   @objc private func windowDidEnterFullScreen(_ notification: Notification) {
-    guard mpv != nil, !isPipActive else { return }
-    print("[MpvPlayerCore] didEnterFullScreen - re-enabling video output")
-    mpv_set_property_string(mpv, "vid", "auto")
-  }
-
-  @objc private func windowWillExitFullScreen(_ notification: Notification) {
-    guard mpv != nil, !isPipActive else { return }
-    print("[MpvPlayerCore] willExitFullScreen - disabling video output")
-    mpv_set_property_string(mpv, "vid", "no")
+    guard !isPipActive else { return }
+    updateFrame()
   }
 
   @objc private func windowDidExitFullScreen(_ notification: Notification) {
-    guard mpv != nil, !isPipActive else { return }
-    print("[MpvPlayerCore] didExitFullScreen - re-enabling video output")
-    mpv_set_property_string(mpv, "vid", "auto")
+    guard !isPipActive else { return }
+    updateFrame()
   }
 
   @objc private func windowOcclusionDidChange(_ notification: Notification) {
