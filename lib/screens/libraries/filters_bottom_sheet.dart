@@ -157,6 +157,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     if (_currentFilter != null) {
       // Show filter options view
       return Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Header with back button
           BottomSheetHeader(
@@ -166,11 +167,13 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
 
           // Filter options list
           if (_isLoadingValues)
-            const Expanded(child: Center(child: CircularProgressIndicator()))
+            const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()))
           else
-            Expanded(
+            Flexible(
               child: ListView.builder(
                 controller: _valuesScrollController,
+                primary: false,
+                shrinkWrap: true,
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 itemCount: _filterValues.length + 1,
                 itemBuilder: (context, index) {
@@ -218,6 +221,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
 
     // Show main filters view
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         // Header
         BottomSheetHeader(
@@ -238,8 +242,10 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
         ),
 
         // All Filters (boolean toggles first, then regular filters)
-        Expanded(
+        Flexible(
           child: ListView.builder(
+            primary: false,
+            shrinkWrap: true,
             padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: _sortedFilters.length,
             itemBuilder: (context, index) {

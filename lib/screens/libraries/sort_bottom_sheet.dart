@@ -103,12 +103,13 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         BottomSheetHeader(
           title: t.libraries.sortBy,
           action: widget.onClear != null ? TextButton(onPressed: _handleClear, child: Text(t.common.clear)) : null,
         ),
-        Expanded(
+        Flexible(
           child: RadioGroup<MediaSort>(
             groupValue: _currentSort,
             onChanged: (value) {
@@ -116,6 +117,8 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
             },
             child: ListView.builder(
               controller: _scrollController,
+              primary: false,
+              shrinkWrap: true,
               padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: widget.sortOptions.length,
               itemBuilder: (context, index) {
