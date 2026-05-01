@@ -639,6 +639,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       );
     } else {
       OverlaySheetController.of(context).show(
+        showDragHandle: true,
         builder: (context) => _LibraryManagementSheet(
           allLibraries: List.from(allLibraries),
           hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
@@ -1240,6 +1241,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     OverlaySheetController.pushAdaptive<String>(
       outerContext,
       builder: (context) => SafeArea(
+        top: false,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
