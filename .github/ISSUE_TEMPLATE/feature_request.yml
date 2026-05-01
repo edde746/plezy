@@ -54,8 +54,19 @@ body:
         - Windows
         - macOS
         - Android TV
+        - tvOS
         - Linux
         - All platforms
+
+  - type: dropdown
+    id: media-server
+    attributes:
+      label: Media Server
+      description: Is this for Jellyfin, Plex, or both?
+      multiple: true
+      options:
+        - Jellyfin
+        - Plex
 
   - type: textarea
     id: additional

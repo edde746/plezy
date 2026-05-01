@@ -68,9 +68,20 @@ body:
         - Windows
         - macOS
         - Android TV
+        - tvOS
         - Linux
     validations:
       required: true
+
+  - type: dropdown
+    id: media-server
+    attributes:
+      label: Media Server
+      description: Are you using Jellyfin or Plex?
+      multiple: true
+      options:
+        - Jellyfin
+        - Plex
 
   - type: input
     id: device
