@@ -145,24 +145,16 @@ void main() {
   });
 
   group('Plex Home token cache policy', () {
-    test('protected cold start revalidates PIN even when profile selection is not required', () {
-      expect(shouldUsePlexHomeTokenCache(preVerified: false, hasBoundOnce: false, plexProtected: true), isFalse);
-    });
-
-    test('protected cold start revalidates PIN when profile selection is required', () {
-      expect(shouldUsePlexHomeTokenCache(preVerified: false, hasBoundOnce: false, plexProtected: true), isFalse);
+    test('cold start uses cached token instead of forcing PIN revalidation', () {
+      expect(shouldUsePlexHomeTokenCache(preVerified: false, hasBoundOnce: false), isTrue);
     });
 
     test('preverified activation uses cache once regardless of setting', () {
-      expect(shouldUsePlexHomeTokenCache(preVerified: true, hasBoundOnce: false, plexProtected: true), isTrue);
-    });
-
-    test('unprotected cold start can use cached token', () {
-      expect(shouldUsePlexHomeTokenCache(preVerified: false, hasBoundOnce: false, plexProtected: false), isTrue);
+      expect(shouldUsePlexHomeTokenCache(preVerified: true, hasBoundOnce: false), isTrue);
     });
 
     test('user-initiated switches bypass cache after first bind', () {
-      expect(shouldUsePlexHomeTokenCache(preVerified: false, hasBoundOnce: true, plexProtected: false), isFalse);
+      expect(shouldUsePlexHomeTokenCache(preVerified: false, hasBoundOnce: true), isFalse);
     });
 
     test('preverified activation flag is consumed once per profile', () {

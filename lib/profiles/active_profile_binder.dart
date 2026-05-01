@@ -23,8 +23,8 @@ typedef PlexHomePinPrompt = Future<String?> Function(Profile profile, {String? e
 typedef ShouldDeferInitialBind = FutureOr<bool> Function(Profile profile);
 
 @visibleForTesting
-bool shouldUsePlexHomeTokenCache({required bool preVerified, required bool hasBoundOnce, required bool plexProtected}) {
-  return preVerified || (!hasBoundOnce && !plexProtected);
+bool shouldUsePlexHomeTokenCache({required bool preVerified, required bool hasBoundOnce}) {
+  return preVerified || !hasBoundOnce;
 }
 
 /// Wires the active [Profile] into [MultiServerManager] + [MultiServerProvider].
@@ -285,17 +285,12 @@ class ActiveProfileBinder {
 
     // Fast path: reuse the previously-minted user-token from the
     // [ProfileConnection] row for this profile's parent connection.
-    // Cold-start auto-resume can use cached tokens for unprotected Plex Home
-    // users only. Protected users must revalidate their PIN unless
-    // activateProfileWithPin has already minted the token in this same
-    // activation (pre-verified flag), in which case using the cache once skips
-    // a redundant second prompt without weakening the security model.
+    // Cold-start auto-resume can use cached tokens. Once a profile is bound in
+    // this session, switches bypass the cache so Plex revalidates PINs where
+    // needed. A just-preverified activation also uses the fresh cache once to
+    // avoid a redundant second prompt.
     final preVerified = consumePlexHomePreVerified(profile.id);
-    final useCache = shouldUsePlexHomeTokenCache(
-      preVerified: preVerified,
-      hasBoundOnce: _hasBoundOnce,
-      plexProtected: profile.plexProtected,
-    );
+    final useCache = shouldUsePlexHomeTokenCache(preVerified: preVerified, hasBoundOnce: _hasBoundOnce);
     String? cachedToken;
     if (useCache) {
       final pc = await profileConnections.get(profile.id, parentId);
