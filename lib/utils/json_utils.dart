@@ -18,6 +18,15 @@ bool flexibleBool(Object? v) => switch (v) {
   _ => false,
 };
 
+/// Parse a value that may be [bool], [int] (0/1), or [String] ('1') to [bool].
+/// Returns `null` for `null` or unrecognised values.
+bool? flexibleBoolNullable(Object? v) => switch (v) {
+  final bool b => b,
+  final int n => n == 1,
+  final String s => s == '1',
+  _ => null,
+};
+
 /// Parse a value that may be [double], [num], or [String] to [double].
 double? flexibleDouble(Object? v) => switch (v) {
   final num n => n.toDouble(),

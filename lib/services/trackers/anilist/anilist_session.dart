@@ -1,6 +1,5 @@
-import 'dart:convert';
-
 import '../oauth_proxy_client.dart';
+import '../tracker_session_utils.dart';
 
 /// Immutable AniList OAuth session.
 ///
@@ -14,7 +13,7 @@ class AnilistSession {
 
   const AnilistSession({required this.accessToken, required this.expiresAt, required this.createdAt, this.username});
 
-  bool get isExpired => DateTime.now().millisecondsSinceEpoch ~/ 1000 >= expiresAt;
+  bool get isExpired => isTrackerTokenExpired(expiresAt);
 
   AnilistSession copyWith({String? accessToken, int? expiresAt, String? username, int? createdAt}) {
     return AnilistSession(
@@ -43,11 +42,11 @@ class AnilistSession {
   /// and have no refresh; when the proxy doesn't echo an explicit expiry we
   /// default to the documented year.
   factory AnilistSession.fromProxyResult(OAuthProxyResult r) {
-    final createdAt = DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final createdAt = trackerSessionNowEpochSeconds();
     final expiresIn = r.expiresIn ?? 365 * 24 * 60 * 60;
     return AnilistSession(accessToken: r.accessToken, expiresAt: createdAt + expiresIn, createdAt: createdAt);
   }
 
-  String encode() => json.encode(toJson());
-  static AnilistSession decode(String raw) => AnilistSession.fromJson(json.decode(raw) as Map<String, dynamic>);
+  String encode() => encodeTrackerSessionJson(toJson());
+  static AnilistSession decode(String raw) => decodeTrackerSessionJson(raw, AnilistSession.fromJson);
 }

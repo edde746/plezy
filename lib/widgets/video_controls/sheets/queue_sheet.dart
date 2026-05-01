@@ -28,13 +28,11 @@ class QueueSheet extends StatefulWidget {
 }
 
 class _QueueSheetState extends State<QueueSheet> {
-  final _firstItemKey = GlobalKey();
-  final _scrollController = ScrollController();
-  bool _didInitialScroll = false;
+  final _initialScroll = InitialItemScrollController();
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _initialScroll.dispose();
     super.dispose();
   }
 
@@ -52,13 +50,10 @@ class _QueueSheetState extends State<QueueSheet> {
           );
         } else {
           final currentIndex = items.indexWhere((item) => playbackState.playQueueItemIdFor(item) == currentItemID);
-          if (!_didInitialScroll && currentIndex > 0) {
-            _didInitialScroll = true;
-            scrollToCurrentItem(_scrollController, _firstItemKey, currentIndex);
-          }
+          _initialScroll.maybeScrollTo(currentIndex);
 
           content = ListView.builder(
-            controller: _scrollController,
+            controller: _initialScroll.controller,
             itemCount: items.length,
             itemBuilder: (context, index) {
               final item = items[index];
@@ -66,7 +61,7 @@ class _QueueSheetState extends State<QueueSheet> {
 
               final primaryColor = Theme.of(context).colorScheme.primary;
               return FocusableListTile(
-                key: index == 0 ? _firstItemKey : null,
+                key: index == 0 ? _initialScroll.firstItemKey : null,
                 leading: _buildThumbnail(context, item, isCurrent),
                 title: Text(
                   item.title ?? '',

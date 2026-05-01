@@ -10,6 +10,7 @@ import '../../../utils/scroll_utils.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
+import 'sheet_column_header.dart';
 
 /// Combined sheet for selecting the media [version] (left) and transcode
 /// [quality] preset (right). The version column is hidden when there is only
@@ -137,35 +138,30 @@ class _VersionColumn extends StatefulWidget {
 }
 
 class _VersionColumnState extends State<_VersionColumn> {
-  final _firstItemKey = GlobalKey();
-  final _scrollController = ScrollController();
-  bool _didInitialScroll = false;
+  final _initialScroll = InitialItemScrollController();
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _initialScroll.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_didInitialScroll && widget.selectedIndex > 0) {
-      _didInitialScroll = true;
-      scrollToCurrentItem(_scrollController, _firstItemKey, widget.selectedIndex);
-    }
+    _initialScroll.maybeScrollTo(widget.selectedIndex);
 
     return Column(
       children: [
-        if (widget.showHeader) _ColumnHeader(label: t.videoControls.versionColumnHeader),
+        if (widget.showHeader) SheetColumnHeader(label: t.videoControls.versionColumnHeader),
         Expanded(
           child: ListView.builder(
-            controller: _scrollController,
+            controller: _initialScroll.controller,
             itemCount: widget.versions.length,
             itemBuilder: (context, index) {
               final version = widget.versions[index];
               final isSelected = index == widget.selectedIndex;
               return _SelectionTile(
-                key: index == 0 ? _firstItemKey : null,
+                key: index == 0 ? _initialScroll.firstItemKey : null,
                 label: version.displayLabel,
                 isSelected: isSelected,
                 onTap: () => widget.onSelected(index),
@@ -202,13 +198,11 @@ class _QualityColumn extends StatefulWidget {
 }
 
 class _QualityColumnState extends State<_QualityColumn> {
-  final _firstItemKey = GlobalKey();
-  final _scrollController = ScrollController();
-  bool _didInitialScroll = false;
+  final _initialScroll = InitialItemScrollController();
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _initialScroll.dispose();
     super.dispose();
   }
 
@@ -217,17 +211,14 @@ class _QualityColumnState extends State<_QualityColumn> {
     final presets = TranscodeQualityPreset.displayOrder;
     final selectedIndex = presets.indexOf(widget.selected);
 
-    if (!_didInitialScroll && selectedIndex > 0) {
-      _didInitialScroll = true;
-      scrollToCurrentItem(_scrollController, _firstItemKey, selectedIndex);
-    }
+    _initialScroll.maybeScrollTo(selectedIndex);
 
     return Column(
       children: [
-        if (widget.showHeader) _ColumnHeader(label: t.videoControls.qualityColumnHeader),
+        if (widget.showHeader) SheetColumnHeader(label: t.videoControls.qualityColumnHeader),
         Expanded(
           child: ListView.builder(
-            controller: _scrollController,
+            controller: _initialScroll.controller,
             itemCount: presets.length,
             itemBuilder: (context, index) {
               final preset = presets[index];
@@ -243,7 +234,7 @@ class _QualityColumnState extends State<_QualityColumn> {
               );
 
               return _SelectionTile(
-                key: index == 0 ? _firstItemKey : null,
+                key: index == 0 ? _initialScroll.firstItemKey : null,
                 label: qualityPresetLabel(preset),
                 trailingText: trailing,
                 isSelected: isSelected,
@@ -299,28 +290,6 @@ class _SelectionTile extends StatelessWidget {
       trailing: trailing,
       enabled: enabled,
       onTap: onTap,
-    );
-  }
-}
-
-class _ColumnHeader extends StatelessWidget {
-  final String label;
-
-  const _ColumnHeader({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
-      ),
     );
   }
 }

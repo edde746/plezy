@@ -1,4 +1,4 @@
-import 'dart:convert';
+import '../trackers/tracker_session_utils.dart';
 
 /// Immutable Trakt OAuth session.
 ///
@@ -30,10 +30,10 @@ class TraktSession {
   });
 
   /// Whether the access token has already expired.
-  bool get isExpired => DateTime.now().millisecondsSinceEpoch ~/ 1000 >= expiresAt;
+  bool get isExpired => isTrackerTokenExpired(expiresAt);
 
   /// Whether the access token will expire in the next 5 minutes.
-  bool get needsRefresh => DateTime.now().millisecondsSinceEpoch ~/ 1000 >= expiresAt - 300;
+  bool get needsRefresh => trackerTokenNeedsRefresh(expiresAt);
 
   TraktSession copyWith({
     String? accessToken,
@@ -76,7 +76,7 @@ class TraktSession {
   /// Build a session from Trakt's `/oauth/token` or `/oauth/device/token` response,
   /// which uses `expires_in` (relative seconds) rather than `expires_at`.
   factory TraktSession.fromTokenResponse(Map<String, dynamic> json) {
-    final createdAt = (json['created_at'] as num?)?.toInt() ?? DateTime.now().millisecondsSinceEpoch ~/ 1000;
+    final createdAt = (json['created_at'] as num?)?.toInt() ?? trackerSessionNowEpochSeconds();
     final expiresIn = (json['expires_in'] as num).toInt();
     return TraktSession(
       accessToken: json['access_token'] as String,
@@ -87,6 +87,6 @@ class TraktSession {
     );
   }
 
-  String encode() => json.encode(toJson());
-  static TraktSession decode(String raw) => TraktSession.fromJson(json.decode(raw) as Map<String, dynamic>);
+  String encode() => encodeTrackerSessionJson(toJson());
+  static TraktSession decode(String raw) => decodeTrackerSessionJson(raw, TraktSession.fromJson);
 }

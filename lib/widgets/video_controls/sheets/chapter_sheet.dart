@@ -41,13 +41,11 @@ class ChapterSheet extends StatefulWidget {
 }
 
 class _ChapterSheetState extends State<ChapterSheet> {
-  final _firstItemKey = GlobalKey();
-  final _scrollController = ScrollController();
-  bool _didInitialScroll = false;
+  final _initialScroll = InitialItemScrollController();
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _initialScroll.dispose();
     super.dispose();
   }
 
@@ -82,13 +80,10 @@ class _ChapterSheetState extends State<ChapterSheet> {
             child: Text(t.videoControls.noChaptersAvailable, style: TextStyle(color: tokens(context).textMuted)),
           );
         } else {
-          if (!_didInitialScroll && currentChapterIndex != null && currentChapterIndex > 0) {
-            _didInitialScroll = true;
-            scrollToCurrentItem(_scrollController, _firstItemKey, currentChapterIndex);
-          }
+          _initialScroll.maybeScrollTo(currentChapterIndex);
 
           content = ListView.builder(
-            controller: _scrollController,
+            controller: _initialScroll.controller,
             itemCount: widget.chapters.length,
             itemBuilder: (context, index) {
               final chapter = widget.chapters[index];
@@ -100,7 +95,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
                   : null;
 
               return FocusableListTile(
-                key: index == 0 ? _firstItemKey : null,
+                key: index == 0 ? _initialScroll.firstItemKey : null,
                 leading: chapter.thumb != null
                     ? SizedBox(
                         width: 60,

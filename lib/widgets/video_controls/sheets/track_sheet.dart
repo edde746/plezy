@@ -10,6 +10,7 @@ import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
+import 'sheet_column_header.dart';
 import 'subtitle_search_sheet.dart';
 import '../helpers/track_filter_helper.dart';
 import '../helpers/track_selection_helper.dart';
@@ -188,40 +189,33 @@ class _SourceAudioColumn extends StatefulWidget {
 }
 
 class _SourceAudioColumnState extends State<_SourceAudioColumn> {
-  final _firstItemKey = GlobalKey();
-  final _scrollController = ScrollController();
-  bool _didInitialScroll = false;
+  final _initialScroll = InitialItemScrollController();
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _initialScroll.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final selectedId = widget.selectedStreamId;
-    if (!_didInitialScroll && selectedId != null) {
-      final selectedIndex = widget.tracks.indexWhere((t) => t.id == selectedId);
-      if (selectedIndex > 0) {
-        _didInitialScroll = true;
-        scrollToCurrentItem(_scrollController, _firstItemKey, selectedIndex);
-      }
-    }
+    final selectedIndex = selectedId == null ? null : widget.tracks.indexWhere((t) => t.id == selectedId);
+    _initialScroll.maybeScrollTo(selectedIndex);
 
     return Column(
       children: [
-        if (widget.showHeader) _ColumnHeader(label: t.videoControls.audioLabel),
+        if (widget.showHeader) SheetColumnHeader(label: t.videoControls.audioLabel),
         Expanded(
           child: ListView.builder(
-            controller: _scrollController,
+            controller: _initialScroll.controller,
             itemCount: widget.tracks.length,
             itemBuilder: (context, index) {
               final track = widget.tracks[index];
               final isSelected = track.id == selectedId;
               return TrackSelectionHelper.buildTrackTile<AudioTrack>(
                 context: context,
-                key: index == 0 ? _firstItemKey : null,
+                key: index == 0 ? _initialScroll.firstItemKey : null,
                 label: track.label,
                 isSelected: isSelected,
                 onTap: () {
@@ -257,34 +251,26 @@ class _AudioColumn extends StatefulWidget {
 }
 
 class _AudioColumnState extends State<_AudioColumn> {
-  final _firstItemKey = GlobalKey();
-  final _scrollController = ScrollController();
-  bool _didInitialScroll = false;
+  final _initialScroll = InitialItemScrollController();
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _initialScroll.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final selectedId = widget.selection.audio?.id ?? '';
-
-    if (!_didInitialScroll) {
-      final selectedIndex = widget.tracks.indexWhere((t) => t.id == selectedId);
-      if (selectedIndex > 0) {
-        _didInitialScroll = true;
-        scrollToCurrentItem(_scrollController, _firstItemKey, selectedIndex);
-      }
-    }
+    final selectedIndex = widget.tracks.indexWhere((t) => t.id == selectedId);
+    _initialScroll.maybeScrollTo(selectedIndex);
 
     return Column(
       children: [
-        if (widget.showHeader) _ColumnHeader(label: t.videoControls.audioLabel),
+        if (widget.showHeader) SheetColumnHeader(label: t.videoControls.audioLabel),
         Expanded(
           child: ListView.builder(
-            controller: _scrollController,
+            controller: _initialScroll.controller,
             itemCount: widget.tracks.length,
             itemBuilder: (context, index) {
               final track = widget.tracks[index];
@@ -297,7 +283,7 @@ class _AudioColumnState extends State<_AudioColumn> {
               );
               return TrackSelectionHelper.buildTrackTile<AudioTrack>(
                 context: context,
-                key: index == 0 ? _firstItemKey : null,
+                key: index == 0 ? _initialScroll.firstItemKey : null,
                 label: label,
                 isSelected: track.id == selectedId,
                 onTap: () {
@@ -348,13 +334,11 @@ class _SubtitleColumn extends StatefulWidget {
 }
 
 class _SubtitleColumnState extends State<_SubtitleColumn> {
-  final _firstItemKey = GlobalKey();
-  final _scrollController = ScrollController();
-  bool _didInitialScroll = false;
+  final _initialScroll = InitialItemScrollController();
 
   @override
   void dispose() {
-    _scrollController.dispose();
+    _initialScroll.dispose();
     super.dispose();
   }
 
@@ -368,28 +352,22 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
     // +1 for "Off" row
     final itemCount = widget.tracks.length + 1;
 
-    if (!_didInitialScroll && !isOffSelected) {
-      // +1 because index 0 is the "Off" row
-      final selectedIndex = widget.tracks.indexWhere((t) => t.id == selectedSub.id) + 1;
-      if (selectedIndex > 0) {
-        _didInitialScroll = true;
-        scrollToCurrentItem(_scrollController, _firstItemKey, selectedIndex);
-      }
-    }
+    final selectedIndex = isOffSelected ? null : widget.tracks.indexWhere((t) => t.id == selectedSub.id) + 1;
+    _initialScroll.maybeScrollTo(selectedIndex);
 
     return Column(
       children: [
-        if (widget.showHeader) _ColumnHeader(label: t.videoControls.subtitlesLabel),
+        if (widget.showHeader) SheetColumnHeader(label: t.videoControls.subtitlesLabel),
         Expanded(
           child: ListView.builder(
-            controller: _scrollController,
+            controller: _initialScroll.controller,
             itemCount: itemCount,
             itemBuilder: (context, index) {
               // "Off" row
               if (index == 0) {
                 return TrackSelectionHelper.buildOffTile<SubtitleTrack>(
                   context: context,
-                  key: _firstItemKey,
+                  key: _initialScroll.firstItemKey,
                   isSelected: isOffSelected,
                   onTap: () {
                     // Turning off primary also clears secondary
@@ -497,28 +475,6 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
           ),
         ],
       ],
-    );
-  }
-}
-
-class _ColumnHeader extends StatelessWidget {
-  final String label;
-
-  const _ColumnHeader({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-        ),
-      ),
     );
   }
 }

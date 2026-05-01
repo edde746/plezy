@@ -33,16 +33,6 @@ import '../utils/obfuscation_utils.dart';
 /// `com.plexapp.agents.none://` and new-style `tv.plex.agents.none://`.
 const _unmatchedAgentMarker = 'agents.none://';
 
-List<String>? _tagsFromJsonList(List? json) =>
-    json?.cast<Map<String, dynamic>>().map((e) => e['tag'] as String).toList();
-
-bool? _flexibleBoolNullable(Object? v) => switch (v) {
-  final bool b => b,
-  final int n => n == 1,
-  final String s => s == '1',
-  _ => null,
-};
-
 class PlexRoleDto {
   final int? id;
   final String? filter;
@@ -103,8 +93,8 @@ class PlexMediaVersionDto {
       height: flexibleInt(json['height']),
       container: json['container']?.toString(),
       partKey: partKey,
-      accessible: _flexibleBoolNullable(part?['accessible']),
-      exists: _flexibleBoolNullable(part?['exists']),
+      accessible: flexibleBoolNullable(part?['accessible']),
+      exists: flexibleBoolNullable(part?['exists']),
     );
   }
 }
@@ -516,15 +506,15 @@ class PlexMetadataDto {
         childCount: flexibleInt(json['childCount']),
         role: roleList,
         mediaVersions: mediaList,
-        genre: _tagsFromJsonList(json['Genre'] as List?),
-        director: _tagsFromJsonList(json['Director'] as List?),
-        writer: _tagsFromJsonList(json['Writer'] as List?),
-        producer: _tagsFromJsonList(json['Producer'] as List?),
-        country: _tagsFromJsonList(json['Country'] as List?),
-        collection: _tagsFromJsonList(json['Collection'] as List?),
-        label: _tagsFromJsonList(json['Label'] as List?),
-        style: _tagsFromJsonList(json['Style'] as List?),
-        mood: _tagsFromJsonList(json['Mood'] as List?),
+        genre: stringListFromRaw(json['Genre'], mapKey: 'tag'),
+        director: stringListFromRaw(json['Director'], mapKey: 'tag'),
+        writer: stringListFromRaw(json['Writer'], mapKey: 'tag'),
+        producer: stringListFromRaw(json['Producer'], mapKey: 'tag'),
+        country: stringListFromRaw(json['Country'], mapKey: 'tag'),
+        collection: stringListFromRaw(json['Collection'], mapKey: 'tag'),
+        label: stringListFromRaw(json['Label'], mapKey: 'tag'),
+        style: stringListFromRaw(json['Style'], mapKey: 'tag'),
+        mood: stringListFromRaw(json['Mood'], mapKey: 'tag'),
         audioLanguage: json['audioLanguage'] as String?,
         subtitleLanguage: json['subtitleLanguage'] as String?,
         subtitleMode: flexibleInt(json['subtitleMode']),

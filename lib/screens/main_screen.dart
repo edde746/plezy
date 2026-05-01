@@ -6,17 +6,16 @@ import 'package:flutter/services.dart'
     show HardwareKeyboard, KeyDownEvent, KeyUpEvent, LogicalKeyboardKey, SystemNavigator;
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:window_manager/window_manager.dart';
 import '../i18n/strings.g.dart';
 import '../services/update_service.dart';
 import '../utils/app_logger.dart';
 import '../widgets/auth_error_banner.dart';
-import '../widgets/dialog_action_button.dart';
 import '../utils/dialogs.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
+import '../utils/update_dialog.dart';
 import '../utils/video_player_navigation.dart';
 import '../main.dart';
 import '../mixins/refreshable.dart';
@@ -459,59 +458,20 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
       final updateInfo = await UpdateService.checkForUpdatesOnStartup();
 
       if (updateInfo != null && updateInfo['hasUpdate'] == true && mounted) {
-        _showUpdateDialog(updateInfo);
+        await _showUpdateDialog(updateInfo);
       }
     } catch (e) {
       appLogger.e('Error checking for updates', error: e);
     }
   }
 
-  void _showUpdateDialog(Map<String, dynamic> updateInfo) {
-    showDialog(
-      context: context,
-      builder: (BuildContext dialogContext) {
-        return AlertDialog(
-          title: Text(t.update.available),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                t.update.versionAvailable(version: updateInfo['latestVersion']),
-                style: Theme.of(dialogContext).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                t.update.currentVersion(version: updateInfo['currentVersion']),
-                style: Theme.of(dialogContext).textTheme.bodySmall,
-              ),
-            ],
-          ),
-          actions: [
-            DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.later),
-            DialogActionButton(
-              onPressed: () async {
-                await UpdateService.skipVersion(updateInfo['latestVersion']);
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
-              },
-              label: t.update.skipVersion,
-            ),
-            DialogActionButton(
-              onPressed: () async {
-                final url = Uri.parse(updateInfo['releaseUrl']);
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url, mode: LaunchMode.externalApplication);
-                }
-                if (dialogContext.mounted) Navigator.pop(dialogContext);
-              },
-              label: t.update.viewRelease,
-              isPrimary: true,
-            ),
-          ],
-        );
-      },
-    );
-  }
+  Future<void> _showUpdateDialog(Map<String, dynamic> updateInfo) => showUpdateAvailableDialog(
+    context,
+    updateInfo,
+    title: t.update.available,
+    dismissLabel: t.common.later,
+    showSkipVersion: true,
+  );
 
   /// Set up the Watch Together navigation callback for guests
   void _setupWatchTogetherCallback() {

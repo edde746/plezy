@@ -60,6 +60,31 @@ void main() {
     });
   });
 
+  group('flexibleBoolNullable', () {
+    test('returns bool as-is', () {
+      expect(flexibleBoolNullable(true), isTrue);
+      expect(flexibleBoolNullable(false), isFalse);
+    });
+
+    test('maps 1 to true, other ints to false', () {
+      expect(flexibleBoolNullable(1), isTrue);
+      expect(flexibleBoolNullable(0), isFalse);
+      expect(flexibleBoolNullable(2), isFalse);
+    });
+
+    test("maps '1' string to true, other strings to false", () {
+      expect(flexibleBoolNullable('1'), isTrue);
+      expect(flexibleBoolNullable('0'), isFalse);
+      expect(flexibleBoolNullable('true'), isFalse);
+    });
+
+    test('returns null for null and unsupported types', () {
+      expect(flexibleBoolNullable(null), isNull);
+      expect(flexibleBoolNullable(1.0), isNull);
+      expect(flexibleBoolNullable(<String, Object>{}), isNull);
+    });
+  });
+
   group('flexibleDouble', () {
     test('parses num as double', () {
       expect(flexibleDouble(1.5), 1.5);

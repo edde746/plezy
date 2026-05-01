@@ -31,6 +31,7 @@ import '../../services/update_service.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/platform_detector.dart';
+import '../../utils/update_dialog.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/settings_section.dart';
@@ -879,44 +880,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   }
 
   void _showUpdateDialog() {
-    if (_updateInfo == null) return;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text(t.settings.updateAvailable),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                t.update.versionAvailable(version: _updateInfo!['latestVersion']),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                t.update.currentVersion(version: _updateInfo!['currentVersion']),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ),
-          actions: [
-            DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.close),
-            DialogActionButton(
-              onPressed: () async {
-                final url = Uri.parse(_updateInfo!['releaseUrl']);
-                if (await canLaunchUrl(url)) {
-                  await launchUrl(url, mode: LaunchMode.externalApplication);
-                }
-                if (context.mounted) Navigator.pop(context);
-              },
-              label: t.update.viewRelease,
-              isPrimary: true,
-            ),
-          ],
-        );
-      },
+    final updateInfo = _updateInfo;
+    if (updateInfo == null) return;
+    unawaited(
+      showUpdateAvailableDialog(context, updateInfo, title: t.settings.updateAvailable, dismissLabel: t.common.close),
     );
   }
 }
