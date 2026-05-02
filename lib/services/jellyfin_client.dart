@@ -45,10 +45,13 @@ import 'jellyfin_api_cache.dart';
 import 'jellyfin_mappers.dart';
 import 'jellyfin_media_info_mapper.dart';
 import 'jellyfin_playback_bundle.dart';
+import 'jellyfin_playback_urls.dart';
 import 'jellyfin_trickplay_service.dart';
 import 'playback_initialization_types.dart';
 import 'scrub_preview_source.dart';
 import '../mpv/mpv.dart';
+
+part 'jellyfin_client/live_tv_support.dart';
 
 /// [MediaServerClient] over a Jellyfin server.
 ///
@@ -1560,16 +1563,14 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
   /// can be omitted; for items with multiple versions Jellyfin uses the
   /// param to pick which file to serve.
   String buildDirectStreamUrl(String itemId, {String? container, String? mediaSourceId}) {
-    final params = <String, String>{
-      'Static': 'true',
-      'api_key': connection.accessToken,
-      'DeviceId': connection.deviceId,
-      'Container': ?container,
-      'MediaSourceId': ?mediaSourceId,
-    };
-    final query = params.entries.map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}').join('&');
-    final encodedItem = Uri.encodeComponent(itemId);
-    return '${connection.baseUrl}/Videos/$encodedItem/stream?$query';
+    return buildJellyfinDirectStreamUrl(
+      baseUrl: connection.baseUrl,
+      accessToken: connection.accessToken,
+      deviceId: connection.deviceId,
+      itemId: itemId,
+      container: container,
+      mediaSourceId: mediaSourceId,
+    );
   }
 
   /// Trickplay sprite-sheet URL. [width] picks one of the resolutions
@@ -1578,14 +1579,15 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
   /// Pass [mediaSourceId] when the item has more than one source so the
   /// server returns the matching version's tiles.
   String buildTrickplayTileUrl(String itemId, int width, int sheetIndex, {String? mediaSourceId}) {
-    final params = <String, String>{
-      'api_key': connection.accessToken,
-      'DeviceId': connection.deviceId,
-      'MediaSourceId': ?mediaSourceId,
-    };
-    final query = params.entries.map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}').join('&');
-    final encodedItem = Uri.encodeComponent(itemId);
-    return '${connection.baseUrl}/Videos/$encodedItem/Trickplay/$width/$sheetIndex.jpg?$query';
+    return buildJellyfinTrickplayTileUrl(
+      baseUrl: connection.baseUrl,
+      accessToken: connection.accessToken,
+      deviceId: connection.deviceId,
+      itemId: itemId,
+      width: width,
+      sheetIndex: sheetIndex,
+      mediaSourceId: mediaSourceId,
+    );
   }
 
   /// HLS master playlist URL for transcoded playback. Use when the file
@@ -1601,18 +1603,17 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     int? subtitleStreamIndex,
     String? playSessionId,
   }) {
-    final params = <String, String>{
-      'DeviceId': connection.deviceId,
-      'MediaSourceId': mediaSourceId,
-      'api_key': connection.accessToken,
-      'VideoBitrate': ?videoBitrate?.toString(),
-      'AudioStreamIndex': ?audioStreamIndex?.toString(),
-      'SubtitleStreamIndex': ?subtitleStreamIndex?.toString(),
-      'PlaySessionId': ?playSessionId,
-    };
-    final query = params.entries.map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}').join('&');
-    final encodedItem = Uri.encodeComponent(itemId);
-    return '${connection.baseUrl}/Videos/$encodedItem/master.m3u8?$query';
+    return buildJellyfinHlsStreamUrl(
+      baseUrl: connection.baseUrl,
+      accessToken: connection.accessToken,
+      deviceId: connection.deviceId,
+      itemId: itemId,
+      mediaSourceId: mediaSourceId,
+      videoBitrate: videoBitrate,
+      audioStreamIndex: audioStreamIndex,
+      subtitleStreamIndex: subtitleStreamIndex,
+      playSessionId: playSessionId,
+    );
   }
 
   /// Negotiate playback: returns the parsed `MediaSources[]` array and the
@@ -2156,102 +2157,5 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     // URLs. buildArtworkSpecs strips auth query params from localKey so the
     // storage layer never hashes or persists access tokens.
     return buildArtworkSpecs(item, (path) => path);
-  }
-}
-
-/// Jellyfin implementation of [LiveTvSupport]. Wraps the existing
-/// `fetchLiveTvChannels` / `fetchLiveTvPrograms` / `buildDirectStreamUrl`.
-class _JellyfinLiveTvSupport implements LiveTvSupport {
-  final JellyfinClient _client;
-  _JellyfinLiveTvSupport(this._client);
-
-  @override
-  Future<bool> isAvailable() => _client.hasLiveTv();
-
-  @override
-  Future<List<LiveTvDvr>> fetchDvrs() async => const [];
-
-  @override
-  Future<List<LiveTvChannel>> fetchChannels({String? lineup}) => _client.fetchLiveTvChannels();
-
-  @override
-  Future<List<LiveTvProgram>> fetchSchedule({DateTime? from, DateTime? to}) {
-    int? toEpoch(DateTime? dt) => dt == null ? null : dt.millisecondsSinceEpoch ~/ 1000;
-    return _client.fetchLiveTvPrograms(beginsAt: toEpoch(from), endsAt: toEpoch(to));
-  }
-
-  @override
-  Future<LiveTvStreamResolution?> resolveStreamUrl(String channelKey, {String? dvrKey}) async {
-    final info = await _client.getPlaybackInfo(channelKey);
-    final sources = info?['MediaSources'];
-    final source = sources is List && sources.isNotEmpty && sources.first is Map<String, dynamic>
-        ? sources.first as Map<String, dynamic>
-        : null;
-    if (source == null) return null;
-
-    final rawUrl = source['TranscodingUrl'] ?? source['DirectStreamUrl'];
-    final url = rawUrl is String && rawUrl.isNotEmpty
-        ? _client._withApiKey(rawUrl)
-        : _client.buildDirectStreamUrl(channelKey);
-    var playSessionId = info?['PlaySessionId'] as String?;
-    playSessionId ??= Uri.tryParse(url)?.queryParameters['PlaySessionId'];
-    return LiveTvStreamResolution(url: url, playSessionId: playSessionId);
-  }
-
-  /// SharedPreferences key for the locally-persisted favorite-channel list.
-  /// Keyed by the compound connection id (`{machineId}/{userId}`) so two
-  /// Jellyfin users on the same server don't share favorites.
-  String get _favoritesPrefsKey => 'jellyfin_fav_channels:${_client.connection.id}';
-
-  /// Legacy bare-machineId key, kept for one-shot migration.
-  String get _legacyFavoritesPrefsKey => 'jellyfin_fav_channels:${_client.serverId}';
-
-  @override
-  Future<String> buildFavoriteChannelSource({String? lineup}) async => 'server://${_client.serverId}/jellyfin';
-
-  @override
-  String get favoriteStoreKey => 'jellyfin:${_client.connection.id}';
-
-  @override
-  FavoriteChannelPersistenceMode get favoritePersistenceMode => FavoriteChannelPersistenceMode.serverSlice;
-
-  /// Local list is the source of truth (preserves order + display fields).
-  /// Server-side `IsFavorite` is mirrored on writes via [setFavoriteChannels].
-  @override
-  Future<List<FavoriteChannel>> fetchFavoriteChannels() async {
-    try {
-      return await _client._favoritesRepository.read(key: _favoritesPrefsKey, legacyKey: _legacyFavoritesPrefsKey);
-    } catch (e) {
-      appLogger.e('Failed to read Jellyfin favorite channels', error: e);
-      return const [];
-    }
-  }
-
-  @override
-  Future<void> setFavoriteChannels(List<FavoriteChannel> channels) async {
-    try {
-      final previous = await fetchFavoriteChannels();
-      final previousIds = previous.map((c) => c.id).toSet();
-      final newIds = channels.map((c) => c.id).toSet();
-
-      for (final id in newIds.difference(previousIds)) {
-        try {
-          await _client._setItemFavorite(id, true);
-        } catch (e) {
-          appLogger.w('Failed to mark Jellyfin channel $id favorite: $e');
-        }
-      }
-      for (final id in previousIds.difference(newIds)) {
-        try {
-          await _client._setItemFavorite(id, false);
-        } catch (e) {
-          appLogger.w('Failed to unmark Jellyfin channel $id favorite: $e');
-        }
-      }
-
-      await _client._favoritesRepository.write(_favoritesPrefsKey, channels);
-    } catch (e) {
-      appLogger.e('Failed to save Jellyfin favorite channels', error: e);
-    }
   }
 }
