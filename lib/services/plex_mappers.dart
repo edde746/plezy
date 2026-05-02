@@ -11,6 +11,7 @@
 // The client wraps the static methods with per-instance image-URL
 // resolution and server-tagging.
 
+import 'package:json_annotation/json_annotation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../media/media_backend.dart';
@@ -29,30 +30,35 @@ import '../utils/json_utils.dart';
 import '../utils/obfuscation_utils.dart';
 import 'file_info_parser.dart';
 
+part 'plex_mappers.g.dart';
+
 /// Shared suffix of both unmatched-agent URL schemes: legacy
 /// `com.plexapp.agents.none://` and new-style `tv.plex.agents.none://`.
 const _unmatchedAgentMarker = 'agents.none://';
 
+Map<String, dynamic> _obfuscatePlaylistJson(Map<String, dynamic> json) {
+  final copy = Map<String, dynamic>.from(json);
+  for (final key in const ['title', 'summary']) {
+    if (copy[key] is String) copy[key] = obfuscateText(copy[key] as String);
+  }
+  return copy;
+}
+
+@JsonSerializable(createToJson: false)
 class PlexRoleDto {
+  @JsonKey(fromJson: flexibleInt)
   final int? id;
   final String? filter;
   final String tag;
   final String? tagKey;
   final String? role;
   final String? thumb;
+  @JsonKey(fromJson: flexibleInt)
   final int? count;
 
   const PlexRoleDto({this.id, this.filter, required this.tag, this.tagKey, this.role, this.thumb, this.count});
 
-  factory PlexRoleDto.fromJson(Map<String, dynamic> json) => PlexRoleDto(
-    id: flexibleInt(json['id']),
-    filter: json['filter'] as String?,
-    tag: json['tag'] as String,
-    tagKey: json['tagKey'] as String?,
-    role: json['role'] as String?,
-    thumb: json['thumb'] as String?,
-    count: flexibleInt(json['count']),
-  );
+  factory PlexRoleDto.fromJson(Map<String, dynamic> json) => _$PlexRoleDtoFromJson(json);
 }
 
 class PlexMediaVersionDto {
@@ -99,19 +105,29 @@ class PlexMediaVersionDto {
   }
 }
 
+@JsonSerializable(createToJson: false)
 class PlexLibraryDto {
+  @JsonKey(readValue: readStringField, defaultValue: '')
   final String key;
+  @JsonKey(defaultValue: '')
   final String title;
+  @JsonKey(defaultValue: '')
   final String type;
   final String? agent;
   final String? scanner;
   final String? language;
   final String? uuid;
+  @JsonKey(fromJson: flexibleInt)
   final int? updatedAt;
+  @JsonKey(fromJson: flexibleInt)
   final int? createdAt;
+  @JsonKey(fromJson: flexibleInt)
   final int? hidden;
+  @JsonKey(includeFromJson: false)
   final String? serverId;
+  @JsonKey(includeFromJson: false)
   final String? serverName;
+  @JsonKey(includeFromJson: false)
   final bool isShared;
 
   const PlexLibraryDto({
@@ -130,20 +146,7 @@ class PlexLibraryDto {
     this.isShared = false,
   });
 
-  factory PlexLibraryDto.fromJson(Map<String, dynamic> json) {
-    return PlexLibraryDto(
-      key: json['key']?.toString() ?? '',
-      title: json['title'] as String? ?? '',
-      type: json['type'] as String? ?? '',
-      agent: json['agent'] as String?,
-      scanner: json['scanner'] as String?,
-      language: json['language'] as String?,
-      uuid: json['uuid'] as String?,
-      updatedAt: flexibleInt(json['updatedAt']),
-      createdAt: flexibleInt(json['createdAt']),
-      hidden: flexibleInt(json['hidden']),
-    );
-  }
+  factory PlexLibraryDto.fromJson(Map<String, dynamic> json) => _$PlexLibraryDtoFromJson(json);
 
   PlexLibraryDto copyWith({String? serverId, String? serverName, bool? isShared}) {
     return PlexLibraryDto(
@@ -166,25 +169,40 @@ class PlexLibraryDto {
   String get globalKey => serverId != null ? buildGlobalKey(serverId!, key) : key;
 }
 
+@JsonSerializable(createToJson: false)
 class PlexPlaylistDto {
+  @JsonKey(readValue: readStringField, defaultValue: '')
   final String ratingKey;
+  @JsonKey(defaultValue: '')
   final String key;
+  @JsonKey(defaultValue: '')
   final String type;
+  @JsonKey(defaultValue: '')
   final String title;
   final String? summary;
+  @JsonKey(defaultValue: false)
   final bool smart;
+  @JsonKey(defaultValue: '')
   final String playlistType;
+  @JsonKey(fromJson: flexibleInt)
   final int? duration;
+  @JsonKey(fromJson: flexibleInt)
   final int? leafCount;
   final String? composite;
+  @JsonKey(fromJson: flexibleInt)
   final int? addedAt;
+  @JsonKey(fromJson: flexibleInt)
   final int? updatedAt;
+  @JsonKey(fromJson: flexibleInt)
   final int? lastViewedAt;
+  @JsonKey(fromJson: flexibleInt)
   final int? viewCount;
   final String? content;
   final String? guid;
   final String? thumb;
+  @JsonKey(includeFromJson: false)
   final String? serverId;
+  @JsonKey(includeFromJson: false)
   final String? serverName;
 
   const PlexPlaylistDto({
@@ -209,33 +227,8 @@ class PlexPlaylistDto {
     this.serverName,
   });
 
-  factory PlexPlaylistDto.fromJson(Map<String, dynamic> json) {
-    String? title = json['title'] as String?;
-    String? summary = json['summary'] as String?;
-    if (kBlurArtwork) {
-      if (title != null) title = obfuscateText(title);
-      if (summary != null) summary = obfuscateText(summary);
-    }
-    return PlexPlaylistDto(
-      ratingKey: json['ratingKey']?.toString() ?? '',
-      key: json['key'] as String? ?? '',
-      type: json['type'] as String? ?? '',
-      title: title ?? '',
-      summary: summary,
-      smart: json['smart'] as bool? ?? false,
-      playlistType: json['playlistType'] as String? ?? '',
-      duration: flexibleInt(json['duration']),
-      leafCount: flexibleInt(json['leafCount']),
-      composite: json['composite'] as String?,
-      addedAt: flexibleInt(json['addedAt']),
-      updatedAt: flexibleInt(json['updatedAt']),
-      lastViewedAt: flexibleInt(json['lastViewedAt']),
-      viewCount: flexibleInt(json['viewCount']),
-      content: json['content'] as String?,
-      guid: json['guid'] as String?,
-      thumb: json['thumb'] as String?,
-    );
-  }
+  factory PlexPlaylistDto.fromJson(Map<String, dynamic> json) =>
+      _$PlexPlaylistDtoFromJson(kBlurArtwork ? _obfuscatePlaylistJson(json) : json);
 
   PlexPlaylistDto copyWith({String? serverId, String? serverName}) {
     return PlexPlaylistDto(

@@ -1,4 +1,5 @@
 import '../base_shared_preferences_service.dart';
+import 'tracker_session_utils.dart';
 
 /// Per-Plex-profile session persistence for any tracker service.
 ///
@@ -43,4 +44,11 @@ class TrackerAccountStore<T> {
     final prefs = await BaseSharedPreferencesService.sharedCache();
     await prefs.remove(_scopedKey(userUuid));
   }
+}
+
+TrackerAccountStore<T> createTrackerAccountStore<T extends EncodedTrackerSession>({
+  required String baseKey,
+  required T Function(String raw) decode,
+}) {
+  return TrackerAccountStore<T>(baseKey: baseKey, decode: decode, encode: (session) => session.encode());
 }

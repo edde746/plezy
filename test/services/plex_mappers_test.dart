@@ -338,6 +338,30 @@ void main() {
       expect(lib.hidden, isTrue);
     });
 
+    test('library DTO keeps generated parsing flexible and ignores client-only fields', () {
+      final dto = PlexLibraryDto.fromJson({
+        'key': 7,
+        'title': 'Music',
+        'type': 'artist',
+        'updatedAt': '1700000000',
+        'createdAt': '1600000000',
+        'hidden': '1',
+        'serverId': 'ignored-server',
+        'serverName': 'Ignored Server',
+        'isShared': true,
+      });
+
+      expect(dto.key, '7');
+      expect(dto.title, 'Music');
+      expect(dto.type, 'artist');
+      expect(dto.updatedAt, 1700000000);
+      expect(dto.createdAt, 1600000000);
+      expect(dto.hidden, 1);
+      expect(dto.serverId, isNull);
+      expect(dto.serverName, isNull);
+      expect(dto.isShared, isFalse);
+    });
+
     test('library with missing title/type falls back to empty strings', () {
       // Past regression: bare `as String` casts on title/type in
       // PlexLibraryDto.fromJson would throw TypeError when Plex omitted
@@ -486,6 +510,36 @@ void main() {
       expect(p.smart, isFalse);
       expect(p.playlistType, '');
     });
+
+    test('playlist DTO keeps generated parsing flexible and ignores client-only fields', () {
+      final dto = PlexPlaylistDto.fromJson({
+        'ratingKey': 888,
+        'title': 'Recently Added',
+        'duration': '14400000',
+        'leafCount': '5',
+        'addedAt': '1600000000',
+        'updatedAt': '1700000000',
+        'lastViewedAt': '1750000000',
+        'viewCount': '3',
+        'serverId': 'ignored-server',
+        'serverName': 'Ignored Server',
+      });
+
+      expect(dto.ratingKey, '888');
+      expect(dto.key, '');
+      expect(dto.type, '');
+      expect(dto.title, 'Recently Added');
+      expect(dto.smart, isFalse);
+      expect(dto.playlistType, '');
+      expect(dto.duration, 14400000);
+      expect(dto.leafCount, 5);
+      expect(dto.addedAt, 1600000000);
+      expect(dto.updatedAt, 1700000000);
+      expect(dto.lastViewedAt, 1750000000);
+      expect(dto.viewCount, 3);
+      expect(dto.serverId, isNull);
+      expect(dto.serverName, isNull);
+    });
   });
 
   group('PlexMappers DTO direct entry points', () {
@@ -521,6 +575,35 @@ void main() {
       expect(v.height, 2160);
       expect(v.container, 'mp4');
       expect(v.parts.single.streamPath, '/library/parts/42/file.mp4');
+    });
+
+    test('metadata toJson remains scalar-only for cache overlays', () {
+      const dto = PlexMetadataDto(
+        ratingKey: '1',
+        title: 'Test',
+        serverId: _serverId,
+        role: [PlexRoleDto(tag: 'Actor')],
+        genre: ['Action'],
+        mediaVersions: [PlexMediaVersionDto(id: 42, partKey: '/library/parts/42/file.mp4')],
+      );
+
+      final json = dto.toJson();
+
+      expect(json, containsPair('ratingKey', '1'));
+      expect(json, containsPair('title', 'Test'));
+      expect(json, isNot(contains('serverId')));
+      expect(json, isNot(contains('Role')));
+      expect(json, isNot(contains('Genre')));
+      expect(json, isNot(contains('Media')));
+    });
+
+    test('metadata copyWith preserves nullable values when null is passed', () {
+      const dto = PlexMetadataDto(ratingKey: '1', title: 'Test', summary: 'Summary');
+
+      final copied = dto.copyWith(title: null, summary: null);
+
+      expect(copied.title, 'Test');
+      expect(copied.summary, 'Summary');
     });
   });
 }

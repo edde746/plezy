@@ -5,7 +5,7 @@ import '../tracker_session_utils.dart';
 ///
 /// Implicit grant — no refresh token. Tokens are valid for 1 year; on expiry
 /// the user must re-auth.
-class AnilistSession {
+class AnilistSession with EncodedTrackerSession {
   final String accessToken;
   final int expiresAt;
   final String? username;
@@ -24,6 +24,7 @@ class AnilistSession {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() => {
     'access_token': accessToken,
     'expires_at': expiresAt,
@@ -47,6 +48,5 @@ class AnilistSession {
     return AnilistSession(accessToken: r.accessToken, expiresAt: createdAt + expiresIn, createdAt: createdAt);
   }
 
-  String encode() => encodeTrackerSessionJson(toJson());
   static AnilistSession decode(String raw) => decodeTrackerSessionJson(raw, AnilistSession.fromJson);
 }

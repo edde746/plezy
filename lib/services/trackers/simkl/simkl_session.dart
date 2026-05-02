@@ -4,7 +4,7 @@ import '../tracker_session_utils.dart';
 ///
 /// Simkl access tokens don't expire (per their docs), so there's no
 /// refresh_token — just the bearer and a display name for the settings UI.
-class SimklSession {
+class SimklSession with EncodedTrackerSession {
   final String accessToken;
   final String? username;
   final int createdAt;
@@ -17,6 +17,7 @@ class SimklSession {
     createdAt: createdAt ?? this.createdAt,
   );
 
+  @override
   Map<String, dynamic> toJson() => {'access_token': accessToken, 'username': username, 'created_at': createdAt};
 
   factory SimklSession.fromJson(Map<String, dynamic> json) => SimklSession(
@@ -30,6 +31,5 @@ class SimklSession {
   factory SimklSession.fromTokenResponse(Map<String, dynamic> json) =>
       SimklSession(accessToken: json['access_token'] as String, createdAt: trackerSessionNowEpochSeconds());
 
-  String encode() => encodeTrackerSessionJson(toJson());
   static SimklSession decode(String raw) => decodeTrackerSessionJson(raw, SimklSession.fromJson);
 }

@@ -5,7 +5,7 @@ import '../tracker_session_utils.dart';
 ///
 /// Access tokens expire in ~31 days. Refresh token rotates with each refresh
 /// (rare but documented in MAL's API contract).
-class MalSession {
+class MalSession with EncodedTrackerSession {
   final String accessToken;
   final String refreshToken;
   final int expiresAt;
@@ -33,6 +33,7 @@ class MalSession {
     );
   }
 
+  @override
   Map<String, dynamic> toJson() => {
     'access_token': accessToken,
     'refresh_token': refreshToken,
@@ -74,6 +75,5 @@ class MalSession {
     );
   }
 
-  String encode() => encodeTrackerSessionJson(toJson());
   static MalSession decode(String raw) => decodeTrackerSessionJson(raw, MalSession.fromJson);
 }

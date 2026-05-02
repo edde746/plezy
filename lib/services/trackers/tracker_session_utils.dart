@@ -9,6 +9,12 @@ bool isTrackerTokenExpired(int expiresAt, {int? nowSeconds}) =>
 bool trackerTokenNeedsRefresh(int expiresAt, {int refreshWindowSeconds = 300, int? nowSeconds}) =>
     (nowSeconds ?? trackerSessionNowEpochSeconds()) >= expiresAt - refreshWindowSeconds;
 
+mixin EncodedTrackerSession {
+  Map<String, dynamic> toJson();
+
+  String encode() => encodeTrackerSessionJson(toJson());
+}
+
 String encodeTrackerSessionJson(Map<String, dynamic> value) => convert.json.encode(value);
 
 T decodeTrackerSessionJson<T>(String raw, T Function(Map<String, dynamic> json) fromJson) {

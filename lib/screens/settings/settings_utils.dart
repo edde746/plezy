@@ -17,6 +17,58 @@ class DialogOption<T> {
   const DialogOption({required this.value, required this.title, this.subtitle});
 }
 
+typedef _SettingsDialogContentBuilder =
+    Widget Function(
+      BuildContext dialogContext,
+      BuildContext contentContext,
+      StateSetter setDialogState,
+      FocusNode saveFocusNode,
+    );
+
+typedef _SettingsDialogActionsBuilder = List<Widget> Function(BuildContext dialogContext, StateSetter setDialogState);
+
+void _showSettingsInputDialog({
+  required BuildContext context,
+  required String title,
+  required _SettingsDialogContentBuilder contentBuilder,
+  required Future<bool> Function(BuildContext dialogContext) onSave,
+  _SettingsDialogActionsBuilder? leadingActionsBuilder,
+  VoidCallback? onDispose,
+}) {
+  final saveFocusNode = FocusNode();
+
+  showDialog(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text(title),
+            content: contentBuilder(dialogContext, context, setDialogState, saveFocusNode),
+            actions: [
+              ...?leadingActionsBuilder?.call(dialogContext, setDialogState),
+              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+              DialogActionButton(
+                focusNode: saveFocusNode,
+                onPressed: () async {
+                  final shouldClose = await onSave(dialogContext);
+                  if (shouldClose && dialogContext.mounted) {
+                    Navigator.pop(dialogContext);
+                  }
+                },
+                label: t.common.save,
+              ),
+            ],
+          );
+        },
+      );
+    },
+  ).then((_) {
+    saveFocusNode.dispose();
+    onDispose?.call();
+  });
+}
+
 /// Shows a selection dialog with focusable rows for dpad/keyboard navigation.
 /// Used for settings with 5+ options (language, buffer size, etc.).
 Future<T?> showSelectionDialog<T>({
@@ -103,59 +155,43 @@ void _showNumericInputDialogTV({
   required Future<void> Function(int value) onSave,
 }) {
   int spinnerValue = currentValue;
-  final saveFocusNode = FocusNode();
 
-  showDialog(
+  _showSettingsInputDialog(
     context: context,
-    builder: (BuildContext dialogContext) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: Text(title),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TvNumberSpinner(
-                  value: spinnerValue,
-                  min: min,
-                  max: max,
-                  suffix: suffixText,
-                  autofocus: true,
-                  onChanged: (value) {
-                    setDialogState(() {
-                      spinnerValue = value;
-                    });
-                  },
-                  onConfirm: () => saveFocusNode.requestFocus(),
-                  onCancel: () => Navigator.pop(dialogContext),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  t.settings.durationHint(min: min, max: max),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
-                ),
-              ],
-            ),
-            actions: [
-              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
-              DialogActionButton(
-                focusNode: saveFocusNode,
-                onPressed: () async {
-                  await onSave(spinnerValue);
-                  if (dialogContext.mounted) {
-                    Navigator.pop(dialogContext);
-                  }
-                },
-                label: t.common.save,
-              ),
-            ],
-          );
-        },
+    title: title,
+    contentBuilder: (dialogContext, context, setDialogState, saveFocusNode) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TvNumberSpinner(
+            value: spinnerValue,
+            min: min,
+            max: max,
+            suffix: suffixText,
+            autofocus: true,
+            onChanged: (value) {
+              setDialogState(() {
+                spinnerValue = value;
+              });
+            },
+            onConfirm: () => saveFocusNode.requestFocus(),
+            onCancel: () => Navigator.pop(dialogContext),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            t.settings.durationHint(min: min, max: max),
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
+        ],
       );
     },
-  ).then((_) => saveFocusNode.dispose());
+    onSave: (_) async {
+      await onSave(spinnerValue);
+      return true;
+    },
+  );
 }
 
 void _showNumericInputDialogStandard({
@@ -170,66 +206,47 @@ void _showNumericInputDialogStandard({
 }) {
   final controller = TextEditingController(text: currentValue.toString());
   String? errorText;
-  final saveFocusNode = FocusNode();
 
-  showDialog(
+  _showSettingsInputDialog(
     context: context,
-    builder: (BuildContext dialogContext) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: Text(title),
-            content: TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: labelText,
-                hintText: t.settings.durationHint(min: min, max: max),
-                errorText: errorText,
-                suffixText: suffixText,
-              ),
-              autofocus: true,
-              textInputAction: TextInputAction.done,
-              onEditingComplete: () {
-                saveFocusNode.requestFocus();
-              },
-              onChanged: (value) {
-                final parsed = int.tryParse(value);
-                setDialogState(() {
-                  if (parsed == null) {
-                    errorText = t.settings.validationErrorEnterNumber;
-                  } else if (parsed < min || parsed > max) {
-                    errorText = t.settings.validationErrorDuration(min: min, max: max, unit: labelText.toLowerCase());
-                  } else {
-                    errorText = null;
-                  }
-                });
-              },
-            ),
-            actions: [
-              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
-              DialogActionButton(
-                focusNode: saveFocusNode,
-                onPressed: () async {
-                  final parsed = int.tryParse(controller.text);
-                  if (parsed != null && parsed >= min && parsed <= max) {
-                    await onSave(parsed);
-                    if (dialogContext.mounted) {
-                      Navigator.pop(dialogContext);
-                    }
-                  }
-                },
-                label: t.common.save,
-              ),
-            ],
-          );
+    title: title,
+    contentBuilder: (_, _, setDialogState, saveFocusNode) {
+      return TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          labelText: labelText,
+          hintText: t.settings.durationHint(min: min, max: max),
+          errorText: errorText,
+          suffixText: suffixText,
+        ),
+        autofocus: true,
+        textInputAction: TextInputAction.done,
+        onEditingComplete: () {
+          saveFocusNode.requestFocus();
+        },
+        onChanged: (value) {
+          final parsed = int.tryParse(value);
+          setDialogState(() {
+            if (parsed == null) {
+              errorText = t.settings.validationErrorEnterNumber;
+            } else if (parsed < min || parsed > max) {
+              errorText = t.settings.validationErrorDuration(min: min, max: max, unit: labelText.toLowerCase());
+            } else {
+              errorText = null;
+            }
+          });
         },
       );
     },
-  ).then((_) {
-    controller.dispose();
-    saveFocusNode.dispose();
-  });
+    onSave: (_) async {
+      final parsed = int.tryParse(controller.text);
+      if (parsed == null || parsed < min || parsed > max) return false;
+      await onSave(parsed);
+      return true;
+    },
+    onDispose: controller.dispose,
+  );
 }
 
 /// Convert `#RRGGBB` (or `#AARRGGBB`) hex to [Color]. Defaults to black on parse error.
@@ -301,35 +318,21 @@ void _showColorInputDialogTV({
   required Future<void> Function(String hex) onSave,
 }) {
   Color picked = hexToColor(currentHex);
-  final saveFocusNode = FocusNode();
-  showDialog(
+  _showSettingsInputDialog(
     context: context,
-    builder: (dialogContext) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: Text(title),
-            content: TvColorPicker(
-              initialColor: picked,
-              onColorChanged: (c) => setDialogState(() => picked = c),
-              onConfirm: () => saveFocusNode.requestFocus(),
-            ),
-            actions: [
-              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
-              DialogActionButton(
-                focusNode: saveFocusNode,
-                onPressed: () async {
-                  await onSave(colorToHex(picked));
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                },
-                label: t.common.save,
-              ),
-            ],
-          );
-        },
+    title: title,
+    contentBuilder: (_, _, setDialogState, saveFocusNode) {
+      return TvColorPicker(
+        initialColor: picked,
+        onColorChanged: (c) => setDialogState(() => picked = c),
+        onConfirm: () => saveFocusNode.requestFocus(),
       );
     },
-  ).then((_) => saveFocusNode.dispose());
+    onSave: (_) async {
+      await onSave(colorToHex(picked));
+      return true;
+    },
+  );
 }
 
 /// Shows a text input dialog with regex validation and reset-to-default support.
@@ -342,57 +345,43 @@ void showRegexInputDialog({
 }) {
   final controller = TextEditingController(text: currentValue);
   String? errorText;
-  final saveFocusNode = FocusNode();
 
-  showDialog(
+  _showSettingsInputDialog(
     context: context,
-    builder: (BuildContext dialogContext) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: Text(title),
-            content: TextField(
-              controller: controller,
-              decoration: InputDecoration(labelText: 'Regex', errorText: errorText),
-              autofocus: true,
-              textInputAction: TextInputAction.done,
-              onEditingComplete: () => saveFocusNode.requestFocus(),
-              onChanged: (value) {
-                setDialogState(() {
-                  try {
-                    RegExp(value, caseSensitive: false);
-                    errorText = null;
-                  } catch (_) {
-                    errorText = t.settings.invalidRegex;
-                  }
-                });
-              },
-            ),
-            actions: [
-              DialogActionButton(
-                onPressed: () {
-                  controller.text = defaultValue;
-                  setDialogState(() => errorText = null);
-                },
-                label: t.settings.resetToDefault,
-              ),
-              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
-              DialogActionButton(
-                focusNode: saveFocusNode,
-                onPressed: () async {
-                  if (errorText != null) return;
-                  await onSave(controller.text);
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                },
-                label: t.common.save,
-              ),
-            ],
-          );
+    title: title,
+    contentBuilder: (_, _, setDialogState, saveFocusNode) {
+      return TextField(
+        controller: controller,
+        decoration: InputDecoration(labelText: 'Regex', errorText: errorText),
+        autofocus: true,
+        textInputAction: TextInputAction.done,
+        onEditingComplete: () => saveFocusNode.requestFocus(),
+        onChanged: (value) {
+          setDialogState(() {
+            try {
+              RegExp(value, caseSensitive: false);
+              errorText = null;
+            } catch (_) {
+              errorText = t.settings.invalidRegex;
+            }
+          });
         },
       );
     },
-  ).then((_) {
-    controller.dispose();
-    saveFocusNode.dispose();
-  });
+    leadingActionsBuilder: (_, setDialogState) => [
+      DialogActionButton(
+        onPressed: () {
+          controller.text = defaultValue;
+          setDialogState(() => errorText = null);
+        },
+        label: t.settings.resetToDefault,
+      ),
+    ],
+    onSave: (_) async {
+      if (errorText != null) return false;
+      await onSave(controller.text);
+      return true;
+    },
+    onDispose: controller.dispose,
+  );
 }
