@@ -19,7 +19,6 @@ import '../../profiles/profile_connection.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../profiles/profile_registry.dart';
 import '../../profiles/profiles_view.dart';
-import '../../providers/download_provider.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
@@ -30,6 +29,7 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../libraries/state_messages.dart';
 import '../auth_screen.dart';
 import 'add_local_profile_screen.dart';
+import 'profile_delete_flow.dart';
 import 'profile_detail_screen.dart';
 
 /// Flat picker showing every [Profile] in the system — Plex Home users
@@ -285,40 +285,12 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> {
   }
 
   Future<void> _deleteProfile(Profile profile) async {
-    final confirmed = await showDeleteConfirmation(
+    await confirmAndDeleteProfile(
       context,
+      profile: profile,
       title: t.profiles.deleteThisProfileTitle,
       message: t.profiles.deleteThisProfileMessage(displayName: profile.displayName),
     );
-    if (!confirmed || !mounted) return;
-
-    final pcRegistry = context.read<ProfileConnectionRegistry>();
-    final registry = context.read<ProfileRegistry>();
-    final downloadProvider = context.read<DownloadProvider>();
-    final active = context.read<ActiveProfileProvider>();
-    final wasActive = active.activeId == profile.id;
-    try {
-      await downloadProvider.deleteDownloadsForProfile(profile.id);
-      await pcRegistry.removeAllForProfile(profile.id);
-      await registry.remove(profile.id);
-    } catch (e, st) {
-      appLogger.w('Failed to delete profile ${profile.id}', error: e, stackTrace: st);
-      if (mounted) {
-        showErrorSnackBar(context, t.errors.failedToDeleteProfile(displayName: profile.displayName));
-      }
-      return;
-    }
-
-    // If we just deleted the active profile, hand off to the first
-    // remaining one — otherwise the binder is left bound to a ghost.
-    if (wasActive) {
-      final remaining = active.profiles.where((p) => p.id != profile.id).toList();
-      if (remaining.isNotEmpty) {
-        await active.activate(remaining.first);
-      } else {
-        await active.clearActiveProfile();
-      }
-    }
   }
 
   List<_ChipData> _chipsFor(Profile profile, ProfilesView view) {

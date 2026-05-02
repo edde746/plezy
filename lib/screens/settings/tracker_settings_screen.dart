@@ -19,6 +19,7 @@ import '../../widgets/oauth_proxy_dialog.dart';
 import '../../widgets/settings_section.dart';
 import 'tracker_connect_launcher.dart';
 import 'tracker_library_filter_screen.dart';
+import 'tracker_settings_loader.dart';
 
 Future<void> startMalConnection(BuildContext context) {
   final account = context.read<TrackersProvider>();
@@ -134,25 +135,13 @@ class TrackerSettingsScreen extends StatefulWidget {
   State<TrackerSettingsScreen> createState() => _TrackerSettingsScreenState();
 }
 
-class _TrackerSettingsScreenState extends State<TrackerSettingsScreen> {
-  SettingsService? _settings;
+class _TrackerSettingsScreenState extends State<TrackerSettingsScreen>
+    with TrackerSettingsLoadMixin<TrackerSettingsScreen> {
   bool _scrobbleEnabled = true;
-  bool _loaded = false;
 
   @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final s = await SettingsService.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _settings = s;
-      _scrobbleEnabled = widget.config.readScrobbleEnabled(s);
-      _loaded = true;
-    });
+  void readTrackerSettings(SettingsService settings) {
+    _scrobbleEnabled = widget.config.readScrobbleEnabled(settings);
   }
 
   Future<void> _disconnect(TrackersProvider account) async {
@@ -170,7 +159,7 @@ class _TrackerSettingsScreenState extends State<TrackerSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final title = Text(widget.config.displayName);
-    if (!_loaded) {
+    if (!trackerSettingsLoaded) {
       return FocusedScrollScaffold(
         title: title,
         slivers: const [SliverFillRemaining(child: Center(child: CircularProgressIndicator()))],
@@ -209,13 +198,13 @@ class _TrackerSettingsScreenState extends State<TrackerSettingsScreen> {
                   value: _scrobbleEnabled,
                   onChanged: (value) async {
                     setState(() => _scrobbleEnabled = value);
-                    await widget.config.setScrobbleEnabled(_settings!, value);
+                    await widget.config.setScrobbleEnabled(trackerSettings!, value);
                   },
                 ),
                 ListTile(
                   leading: const AppIcon(Symbols.filter_list_rounded, fill: 1),
                   title: Text(t.trackers.libraryFilter.title),
-                  subtitle: Text(TrackerLibraryFilterScreen.subtitleFor(_settings!, widget.config.service)),
+                  subtitle: Text(TrackerLibraryFilterScreen.subtitleFor(trackerSettings!, widget.config.service)),
                   trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                   onTap: () async {
                     await Navigator.of(context).push(

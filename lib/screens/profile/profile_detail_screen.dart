@@ -9,7 +9,6 @@ import '../../connection/connection_registry.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/plex/plex_home_user.dart';
 import '../../profiles/active_profile_binder.dart';
-import '../../profiles/active_profile_provider.dart';
 import '../../profiles/plex_home_service.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_avatar.dart';
@@ -26,6 +25,7 @@ import '../../utils/dialogs.dart';
 import '../settings/add_connection_screen.dart';
 import 'pin_entry_dialog.dart';
 import 'pin_status_row.dart';
+import 'profile_delete_flow.dart';
 import 'profile_name_field.dart';
 
 /// Manage one [Profile] — rename, change PIN, list/add/remove
@@ -120,30 +120,14 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
   }
 
   Future<void> _deleteProfile() async {
-    final confirmed = await showDeleteConfirmation(
+    final deleted = await confirmAndDeleteProfile(
       context,
+      profile: _profile,
       title: t.profiles.deleteProfileTitle,
       message: t.profiles.deleteProfileMessage(displayName: _profile.displayName),
       confirmText: t.common.delete,
     );
-    if (!confirmed || !mounted) return;
-    final pcRegistry = context.read<ProfileConnectionRegistry>();
-    final profileRegistry = context.read<ProfileRegistry>();
-    final downloadProvider = context.read<DownloadProvider>();
-    final active = context.read<ActiveProfileProvider>();
-    final wasActive = active.activeId == _profile.id;
-    await downloadProvider.deleteDownloadsForProfile(_profile.id);
-    await pcRegistry.removeAllForProfile(_profile.id);
-    await profileRegistry.remove(_profile.id);
-    if (wasActive) {
-      final remaining = active.profiles.where((p) => p.id != _profile.id).toList();
-      if (remaining.isNotEmpty) {
-        await active.activate(remaining.first);
-      } else {
-        await active.clearActiveProfile();
-      }
-    }
-    if (!mounted) return;
+    if (!deleted || !mounted) return;
     Navigator.of(context).pop(true);
   }
 

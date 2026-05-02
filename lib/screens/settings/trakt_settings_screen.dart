@@ -16,6 +16,7 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
 import 'tracker_connect_launcher.dart';
 import 'tracker_library_filter_screen.dart';
+import 'tracker_settings_loader.dart';
 
 Future<void> startTraktConnection(BuildContext context) {
   final account = context.read<TraktAccountProvider>();
@@ -38,27 +39,14 @@ class TraktSettingsScreen extends StatefulWidget {
   State<TraktSettingsScreen> createState() => _TraktSettingsScreenState();
 }
 
-class _TraktSettingsScreenState extends State<TraktSettingsScreen> {
-  SettingsService? _settings;
+class _TraktSettingsScreenState extends State<TraktSettingsScreen> with TrackerSettingsLoadMixin<TraktSettingsScreen> {
   bool _scrobbleEnabled = true;
   bool _watchedSyncEnabled = true;
-  bool _loaded = false;
 
   @override
-  void initState() {
-    super.initState();
-    _loadSettings();
-  }
-
-  Future<void> _loadSettings() async {
-    final s = await SettingsService.getInstance();
-    if (!mounted) return;
-    setState(() {
-      _settings = s;
-      _scrobbleEnabled = s.read(SettingsService.enableTraktScrobble);
-      _watchedSyncEnabled = s.read(SettingsService.enableTraktWatchedSync);
-      _loaded = true;
-    });
+  void readTrackerSettings(SettingsService settings) {
+    _scrobbleEnabled = settings.read(SettingsService.enableTraktScrobble);
+    _watchedSyncEnabled = settings.read(SettingsService.enableTraktWatchedSync);
   }
 
   Future<void> _disconnect(TraktAccountProvider account) async {
@@ -77,7 +65,7 @@ class _TraktSettingsScreenState extends State<TraktSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_loaded) {
+    if (!trackerSettingsLoaded) {
       return FocusedScrollScaffold(
         title: Text(t.trakt.title),
         slivers: const [SliverFillRemaining(child: Center(child: CircularProgressIndicator()))],
@@ -118,7 +106,7 @@ class _TraktSettingsScreenState extends State<TraktSettingsScreen> {
                   value: _scrobbleEnabled,
                   onChanged: (value) async {
                     setState(() => _scrobbleEnabled = value);
-                    await _settings!.write(SettingsService.enableTraktScrobble, value);
+                    await trackerSettings!.write(SettingsService.enableTraktScrobble, value);
                     await TraktScrobbleService.instance.setEnabled(value);
                   },
                 ),
@@ -129,14 +117,14 @@ class _TraktSettingsScreenState extends State<TraktSettingsScreen> {
                   value: _watchedSyncEnabled,
                   onChanged: (value) async {
                     setState(() => _watchedSyncEnabled = value);
-                    await _settings!.write(SettingsService.enableTraktWatchedSync, value);
+                    await trackerSettings!.write(SettingsService.enableTraktWatchedSync, value);
                     await TraktSyncService.instance.setEnabled(value);
                   },
                 ),
                 ListTile(
                   leading: const AppIcon(Symbols.filter_list_rounded, fill: 1),
                   title: Text(t.trackers.libraryFilter.title),
-                  subtitle: Text(TrackerLibraryFilterScreen.subtitleFor(_settings!, TrackerService.trakt)),
+                  subtitle: Text(TrackerLibraryFilterScreen.subtitleFor(trackerSettings!, TrackerService.trakt)),
                   trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                   onTap: () async {
                     await Navigator.of(context).push(
