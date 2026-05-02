@@ -121,6 +121,9 @@ class WatchTogetherSyncManager {
     _player = player;
     _lastKnownPlaying = player.state.playing;
     _lastKnownRate = player.state.rate;
+    if (player.state.playing) {
+      _firstPlayCompleted = true;
+    }
 
     _setupPlayerSubscriptions();
     _setupMessageSubscription();
@@ -172,6 +175,14 @@ class WatchTogetherSyncManager {
     }
     final otherCount = peerIds.where((id) => id != _peerService.myPeerId).length;
     appLogger.d('WatchTogether: Initialized $otherCount existing participants (host=${_session.isHost})');
+  }
+
+  /// Remove readiness tracking for a peer that dropped at the relay level.
+  Future<void> handlePeerDisconnected(String peerId) async {
+    if (_peerReady.remove(peerId) != null) {
+      appLogger.d('WatchTogether: Removed disconnected peer readiness: $peerId');
+      await _resumeDeferredPlayIfReady(_playerAttachmentGeneration);
+    }
   }
 
   /// Detach the player and stop sync
@@ -631,6 +642,7 @@ class WatchTogetherSyncManager {
       case SyncMessageType.leave:
         if (message.peerId != null) {
           _peerReady.remove(message.peerId);
+          await _resumeDeferredPlayIfReady(queuedAttachmentGeneration);
         }
         break;
 
@@ -668,15 +680,7 @@ class WatchTogetherSyncManager {
           _peerReady[message.peerId!] = message.bufferingState ?? false;
           appLogger.d('WatchTogether: Peer ${message.peerId} player ready: ${message.bufferingState}');
 
-          if (_deferredPlay && isAllReady) {
-            _setDeferredPlay(false);
-            _firstPlayCompleted = true;
-            final pos = _deferredPlayPosition;
-            _deferredPlayPosition = null;
-            await _applyRemotePlay(position: pos, expectedAttachmentGeneration: queuedAttachmentGeneration);
-            // Broadcast play to all peers now that everyone is ready
-            _broadcastPlayPause(true);
-          }
+          await _resumeDeferredPlayIfReady(queuedAttachmentGeneration);
         }
         break;
 
@@ -714,10 +718,23 @@ class WatchTogetherSyncManager {
         );
         if (!didPlay) return false;
 
+        _firstPlayCompleted = true;
         _lastKnownPlaying = true;
         return true;
       },
     );
+  }
+
+  Future<void> _resumeDeferredPlayIfReady(int expectedAttachmentGeneration) async {
+    if (!_deferredPlay || !isAllReady) return;
+
+    _setDeferredPlay(false);
+    _firstPlayCompleted = true;
+    final pos = _deferredPlayPosition;
+    _deferredPlayPosition = null;
+    await _applyRemotePlay(position: pos, expectedAttachmentGeneration: expectedAttachmentGeneration);
+    // Broadcast play to all peers now that everyone is ready.
+    _broadcastPlayPause(true);
   }
 
   /// Apply remote pause command

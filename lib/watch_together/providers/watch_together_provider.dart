@@ -432,6 +432,7 @@ class WatchTogetherProvider with ChangeNotifier {
       final disconnectedName = _participants.where((p) => p.peerId == peerId).map((p) => p.displayName).firstOrNull;
 
       _participants.removeWhere((p) => p.peerId == peerId);
+      unawaited(_syncManager?.handlePeerDisconnected(peerId));
 
       // If host disconnected unexpectedly, start grace period for reconnection.
       // Skip if the host already sent a deliberate leave message.
