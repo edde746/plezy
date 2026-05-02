@@ -10,5 +10,8 @@ Future<R> tryIsolateRun<R>(R Function() computation) async {
     return await Isolate.run(computation);
   } on StateError {
     return computation();
+  } on ArgumentError catch (e) {
+    if (!e.toString().contains('Illegal argument in isolate message')) rethrow;
+    return computation();
   }
 }

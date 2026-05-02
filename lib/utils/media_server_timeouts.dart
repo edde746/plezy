@@ -10,6 +10,10 @@ class MediaServerTimeouts {
   /// HTTP receive timeout for streaming/large responses from a media server.
   static const receive = Duration(seconds: 120);
 
+  /// Retry budget for home `/hubs` startup calls. These endpoints can be slow
+  /// while Plex wakes idle disks, but should not block forever.
+  static const homeHubAttemptTimeouts = [Duration(seconds: 10), Duration(seconds: 5), Duration(milliseconds: 2500)];
+
   // ── Plex server discovery / endpoint racing ────────────────────
   /// Timeout for probing a cached/preferred endpoint before falling back to
   /// the full candidate race (used in [PlexServer.findBestWorkingConnection]).

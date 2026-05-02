@@ -44,6 +44,7 @@ import '../models/plex/plex_video_playback_data.dart';
 import '../models/transcode_quality_preset.dart';
 import '../utils/endpoint_failover_interceptor.dart';
 import '../utils/app_logger.dart';
+import '../utils/media_server_retry.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/plex_cache_parser.dart';
@@ -1068,13 +1069,20 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
   /// Uses /hubs?identifier=home.continue,home.ondeck which respects the
   /// server's OnDeckWindow preference (unlike /library/onDeck).
   Future<List<PlexMetadataDto>> _getContinueWatching({int count = 20}) async {
-    final response = await _getWithFailover(
-      '/hubs',
-      queryParameters: {'identifier': 'home.continue,home.ondeck', 'count': count, 'includeGuids': 1},
+    final response = await retryTransientMediaServerCall(
+      operation: 'Plex continue watching hubs',
+      attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
+      call: (timeout, abort) => _getWithFailover(
+        '/hubs',
+        queryParameters: {'identifier': 'home.continue,home.ondeck', 'count': count, 'includeGuids': 1},
+        timeout: timeout,
+        abort: abort,
+      ),
     );
     final sid = serverId;
     final sname = serverName;
-    final hubs = await tryIsolateRun(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
+    final data = response.data as Map<String, dynamic>;
+    final hubs = await tryIsolateRun(() => _processHubResponse(data, sid, sname));
     // Deduplicate across home.continue and home.ondeck hubs.
     // Like plex-web, episodes from the same show (same grandparentRatingKey)
     // are deduplicated, preferring the in-progress item (has viewOffset).
@@ -1521,7 +1529,8 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
       );
       final sid = serverId;
       final sname = serverName;
-      return await tryIsolateRun(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
+      final data = response.data as Map<String, dynamic>;
+      return await tryIsolateRun(() => _processHubResponse(data, sid, sname));
     } catch (e) {
       appLogger.e('Failed to get library hubs: $e');
     }
@@ -1533,10 +1542,20 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
   /// This matches the official Plex client's home page layout.
   Future<List<PlexHubDto>> _getGlobalHubs({int limit = 10}) async {
     try {
-      final response = await _getWithFailover('/hubs', queryParameters: {'count': limit, 'includeGuids': 1});
+      final response = await retryTransientMediaServerCall(
+        operation: 'Plex global hubs',
+        attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
+        call: (timeout, abort) => _getWithFailover(
+          '/hubs',
+          queryParameters: {'count': limit, 'includeGuids': 1},
+          timeout: timeout,
+          abort: abort,
+        ),
+      );
       final sid = serverId;
       final sname = serverName;
-      return await tryIsolateRun(() => _processHubResponse(response.data as Map<String, dynamic>, sid, sname));
+      final data = response.data as Map<String, dynamic>;
+      return await tryIsolateRun(() => _processHubResponse(data, sid, sname));
     } catch (e) {
       appLogger.e('Failed to get global hubs: $e');
     }
@@ -1549,9 +1568,10 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
       final response = await _getWithFailover('/hubs/metadata/$ratingKey/related', queryParameters: {'count': count});
       final sid = serverId;
       final sname = serverName;
+      final data = response.data as Map<String, dynamic>;
       return await tryIsolateRun(
         () => _processHubResponse(
-          response.data as Map<String, dynamic>,
+          data,
           sid,
           sname,
           filter: (item) {
