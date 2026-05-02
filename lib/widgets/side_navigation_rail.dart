@@ -22,6 +22,28 @@ import '../theme/mono_tokens.dart';
 import '../widgets/backend_badge.dart';
 import '../i18n/strings.g.dart';
 
+enum _LibraryNavSection { visible, hidden }
+
+sealed class _LibraryNavRow {
+  final _LibraryNavSection section;
+
+  const _LibraryNavRow({required this.section});
+}
+
+final class _LibraryServerHeaderRow extends _LibraryNavRow {
+  final String serverId;
+  final String serverName;
+
+  const _LibraryServerHeaderRow({required super.section, required this.serverId, required this.serverName});
+}
+
+final class _LibraryItemRow extends _LibraryNavRow {
+  final MediaLibrary library;
+  final bool showServerName;
+
+  const _LibraryItemRow({required super.section, required this.library, this.showServerName = false});
+}
+
 /// Reusable navigation rail item widget that handles focus, selection, and interaction
 class NavigationRailItem extends StatelessWidget {
   final IconData icon;
@@ -185,10 +207,11 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   static const _kReconnect = 'reconnect';
   static const _kFullscreen = 'fullscreen';
   static const _kHiddenLibraries = 'hiddenLibraries';
-  static const _kServerHeaderPrefix = 'serverHeader_';
+  static const _kServerHeaderPrefix = 'serverHeader';
+  static const _kLibraryItemPrefix = 'library';
 
   bool _hiddenLibrariesExpanded = false;
-  final Set<String> _collapsedServerIds = {};
+  final Set<String> _collapsedServerGroupKeys = {};
 
   // Unified focus state tracker for all nav items (main + libraries)
   late final FocusMemoryTracker _focusTracker;
@@ -261,8 +284,28 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     _focusTracker.restoreFocus(fallbackKey: _kHome);
   }
 
-  /// Build the set of valid focus keys (main nav + current libraries + server headers)
-  Set<String> _buildValidFocusKeys(List<MediaLibrary> libraries, Set<String> serverIds) {
+  String _serverHeaderFocusKey(_LibraryNavSection section, String serverId) =>
+      '$_kServerHeaderPrefix:${section.name}:$serverId';
+
+  String _libraryItemFocusKey(_LibraryNavSection section, MediaLibrary library) =>
+      '$_kLibraryItemPrefix:${section.name}:${library.globalKey}';
+
+  String _serverGroupStateKey(_LibraryNavSection section, String serverId) => '${section.name}:$serverId';
+
+  String _focusKeyForLibraryRow(_LibraryNavRow row) => switch (row) {
+    _LibraryServerHeaderRow(:final section, :final serverId) => _serverHeaderFocusKey(section, serverId),
+    _LibraryItemRow(:final section, :final library) => _libraryItemFocusKey(section, library),
+  };
+
+  Iterable<String> _focusKeysForLibraryRows(List<_LibraryNavRow> rows) => rows.map(_focusKeyForLibraryRow);
+
+  /// Build the set of valid focus keys (main nav + currently rendered library rows).
+  Set<String> _buildValidFocusKeys({
+    required List<_LibraryNavRow> visibleRows,
+    required List<_LibraryNavRow> hiddenRows,
+    required bool hasHiddenLibraries,
+    required bool hasLiveTv,
+  }) {
     return {
       _kHome,
       _kLibraries,
@@ -270,42 +313,74 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       _kDownloads,
       _kSettings,
       _kReconnect,
-      _kHiddenLibraries,
+      if (hasHiddenLibraries) _kHiddenLibraries,
       if (_showFullscreenToggle) _kFullscreen,
-      'liveTv',
-      ...libraries.map((lib) => lib.globalKey),
-      ...serverIds.map((id) => _kServerHeaderPrefix + id),
+      if (hasLiveTv) 'liveTv',
+      ..._focusKeysForLibraryRows(visibleRows),
+      if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
     };
   }
 
-  /// Build the visual order of library items inside the libraries body. Must
-  /// mirror what `_buildLibraryGroupedColumn` actually renders so D-pad
-  /// navigation lands on the visually next item.
-  List<String> _buildLibraryBodyOrder(List<MediaLibrary> libs, {required bool showServerHeaders}) {
+  /// Build rendered rows inside one library section. This is the single source
+  /// of truth for both widget rendering and D-pad focus ordering.
+  List<_LibraryNavRow> _buildLibraryRows(
+    List<MediaLibrary> libs, {
+    required _LibraryNavSection section,
+    required bool showServerHeaders,
+  }) {
     if (!showServerHeaders) {
-      return libs.map((lib) => lib.globalKey).toList();
+      final nonUniqueNames = _getNonUniqueLibraryNames(libs);
+      return libs.map((lib) {
+        return _LibraryItemRow(
+          section: section,
+          library: lib,
+          showServerName: nonUniqueNames.contains(lib.title) && lib.serverName != null,
+        );
+      }).toList();
     }
     final grouped = groupLibrariesByFirstAppearance(libs);
-    final result = <String>[];
+    final result = <_LibraryNavRow>[];
     for (final serverKey in grouped.serverOrder) {
+      final bucket = grouped.byServer[serverKey]!;
       if (serverKey.isNotEmpty) {
-        result.add(_kServerHeaderPrefix + serverKey);
+        result.add(
+          _LibraryServerHeaderRow(
+            section: section,
+            serverId: serverKey,
+            serverName: bucket.first.serverName ?? serverKey,
+          ),
+        );
       }
-      if (serverKey.isEmpty || !_collapsedServerIds.contains(serverKey)) {
-        for (final lib in grouped.byServer[serverKey]!) {
-          result.add(lib.globalKey);
+      if (serverKey.isEmpty || !_collapsedServerGroupKeys.contains(_serverGroupStateKey(section, serverKey))) {
+        for (final lib in bucket) {
+          result.add(_LibraryItemRow(section: section, library: lib));
         }
       }
     }
     return result;
   }
 
-  /// Ordered list of focusable keys matching visual top-to-bottom order.
-  List<String> _buildFocusOrder(
+  Set<String> _buildServerGroupStateKeys(
     List<MediaLibrary> visibleLibraries,
     List<MediaLibrary> hiddenLibraries, {
-    required bool hasLiveTv,
     required bool showServerHeaders,
+  }) {
+    if (!showServerHeaders) return {};
+
+    return {
+      for (final lib in visibleLibraries)
+        if (lib.serverId != null) _serverGroupStateKey(_LibraryNavSection.visible, lib.serverId!),
+      for (final lib in hiddenLibraries)
+        if (lib.serverId != null) _serverGroupStateKey(_LibraryNavSection.hidden, lib.serverId!),
+    };
+  }
+
+  /// Ordered list of focusable keys matching visual top-to-bottom order.
+  List<String> _buildFocusOrder(
+    List<_LibraryNavRow> visibleRows,
+    List<_LibraryNavRow> hiddenRows, {
+    required bool hasHiddenLibraries,
+    required bool hasLiveTv,
   }) {
     return [
       if (widget.isOfflineMode && widget.onReconnect != null) _kReconnect,
@@ -313,11 +388,10 @@ class SideNavigationRailState extends State<SideNavigationRail> {
         _kHome,
         _kLibraries,
         if (_librariesExpanded) ...[
-          ..._buildLibraryBodyOrder(visibleLibraries, showServerHeaders: showServerHeaders),
-          if (hiddenLibraries.isNotEmpty) ...[
+          ..._focusKeysForLibraryRows(visibleRows),
+          if (hasHiddenLibraries) ...[
             _kHiddenLibraries,
-            if (_hiddenLibrariesExpanded)
-              ..._buildLibraryBodyOrder(hiddenLibraries, showServerHeaders: showServerHeaders),
+            if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
           ],
         ],
         if (hasLiveTv) 'liveTv',
@@ -327,6 +401,18 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       _kSettings,
       if (_showFullscreenToggle) _kFullscreen,
     ];
+  }
+
+  void _debugAssertUniqueFocusOrder(List<String> focusOrder) {
+    assert(() {
+      final seen = <String>{};
+      for (final key in focusOrder) {
+        if (!seen.add(key)) {
+          throw FlutterError('SideNavigationRail focus order contains duplicate key: $key');
+        }
+      }
+      return true;
+    }());
   }
 
   /// Handle D-pad UP/DOWN by explicitly moving focus to the next/previous item.
@@ -426,9 +512,6 @@ class SideNavigationRailState extends State<SideNavigationRail> {
       }
     }
 
-    _focusTracker.pruneExcept(_buildValidFocusKeys(allLibraries, serverIds));
-    _collapsedServerIds.retainAll(serverIds);
-
     final isCollapsed = !_shouldExpand;
     final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
 
@@ -443,12 +526,34 @@ class SideNavigationRailState extends State<SideNavigationRail> {
         // Server grouping: only when multi-server AND the user-facing toggle is on.
         final groupByServerSetting = SettingsService.instanceOrNull!.read(SettingsService.groupLibrariesByServer);
         final showServerHeaders = serverIds.length > 1 && groupByServerSetting;
-        final focusOrder = _buildFocusOrder(
+        _collapsedServerGroupKeys.retainAll(
+          _buildServerGroupStateKeys(visibleLibraries, hiddenLibraries, showServerHeaders: showServerHeaders),
+        );
+        final visibleRows = _buildLibraryRows(
           visibleLibraries,
-          hiddenLibraries,
-          hasLiveTv: hasLiveTv,
+          section: _LibraryNavSection.visible,
           showServerHeaders: showServerHeaders,
         );
+        final hiddenRows = _buildLibraryRows(
+          hiddenLibraries,
+          section: _LibraryNavSection.hidden,
+          showServerHeaders: showServerHeaders,
+        );
+        _focusTracker.pruneExcept(
+          _buildValidFocusKeys(
+            visibleRows: visibleRows,
+            hiddenRows: hiddenRows,
+            hasHiddenLibraries: hiddenLibraries.isNotEmpty,
+            hasLiveTv: hasLiveTv,
+          ),
+        );
+        final focusOrder = _buildFocusOrder(
+          visibleRows,
+          hiddenRows,
+          hasHiddenLibraries: hiddenLibraries.isNotEmpty,
+          hasLiveTv: hasLiveTv,
+        );
+        _debugAssertUniqueFocusOrder(focusOrder);
         return TapRegion(
           onTapOutside: (_) {
             if (_isTouchExpanded) {
@@ -508,11 +613,11 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
                                 // Libraries section
                                 _buildLibrariesSection(
-                                  visibleLibraries,
-                                  hiddenLibraries,
+                                  visibleRows,
+                                  hiddenRows,
+                                  hiddenLibraries.length,
                                   t,
                                   isCollapsed: isCollapsed,
-                                  showServerHeaders: showServerHeaders,
                                 ),
 
                                 const SizedBox(height: 8),
@@ -679,17 +784,17 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   }
 
   Widget _buildLibrariesSection(
-    List<MediaLibrary> visibleLibraries,
-    List<MediaLibrary> hiddenLibraries,
+    List<_LibraryNavRow> visibleRows,
+    List<_LibraryNavRow> hiddenRows,
+    int hiddenLibraryCount,
     dynamic t, {
     bool isCollapsed = false,
-    bool showServerHeaders = false,
   }) {
     final librariesProvider = context.watch<LibrariesProvider>();
     final isLoading = librariesProvider.isLoading;
     final isLibrariesSelected = widget.selectedTab == NavigationTabId.libraries && widget.selectedLibraryKey == null;
     final isLibrariesFocused = _focusTracker.isFocused(_kLibraries);
-    final allEmpty = visibleLibraries.isEmpty && hiddenLibraries.isEmpty;
+    final allEmpty = visibleRows.isEmpty && hiddenLibraryCount == 0;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -822,12 +927,10 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                     ),
                   )
                 else ...[
-                  if (visibleLibraries.isNotEmpty)
-                    _buildLibraryGroupedColumn(visibleLibraries, t, showServerHeaders: showServerHeaders),
-                  if (hiddenLibraries.isNotEmpty) ...[
-                    _buildHiddenLibrariesHeader(hiddenLibraries.length, t),
-                    if (_hiddenLibrariesExpanded)
-                      _buildLibraryGroupedColumn(hiddenLibraries, t, showServerHeaders: showServerHeaders),
+                  if (visibleRows.isNotEmpty) _buildLibraryGroupedColumn(visibleRows, t),
+                  if (hiddenLibraryCount > 0) ...[
+                    _buildHiddenLibrariesHeader(hiddenLibraryCount, t),
+                    if (_hiddenLibrariesExpanded) _buildLibraryGroupedColumn(hiddenRows, t),
                   ],
                 ],
               ],
@@ -847,59 +950,52 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     return nameCounts.entries.where((e) => e.value > 1).map((e) => e.key).toSet();
   }
 
-  Widget _buildLibraryGroupedColumn(List<MediaLibrary> libraries, dynamic t, {required bool showServerHeaders}) {
-    if (!showServerHeaders) {
-      final nonUniqueNames = _getNonUniqueLibraryNames(libraries);
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: libraries.map((library) {
-          final showServerName = nonUniqueNames.contains(library.title) && library.serverName != null;
-          return _buildLibraryItem(library, t, showServerName: showServerName);
-        }).toList(),
-      );
-    }
-
-    final grouped = groupLibrariesByFirstAppearance(libraries);
-    final children = <Widget>[];
-    for (final serverKey in grouped.serverOrder) {
-      final bucket = grouped.byServer[serverKey]!;
-      // serverKey is '' when serverId is null — skip the header in that case.
-      if (serverKey.isNotEmpty) {
-        final serverName = bucket.first.serverName ?? serverKey;
-        children.add(_buildServerHeader(serverKey, serverName, t));
-      }
-      if (serverKey.isEmpty || !_collapsedServerIds.contains(serverKey)) {
-        for (final library in bucket) {
-          children.add(_buildLibraryItem(library, t, showServerName: false));
-        }
-      }
-    }
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: children);
+  Widget _buildLibraryGroupedColumn(List<_LibraryNavRow> rows, dynamic t) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: rows.map((row) {
+        return switch (row) {
+          _LibraryServerHeaderRow(:final section, :final serverId, :final serverName) => _buildServerHeader(
+            section,
+            serverId,
+            serverName,
+            t,
+          ),
+          _LibraryItemRow(:final section, :final library, :final showServerName) => _buildLibraryItem(
+            section,
+            library,
+            t,
+            showServerName: showServerName,
+          ),
+        };
+      }).toList(),
+    );
   }
 
-  Widget _buildServerHeader(String serverId, String serverName, dynamic t) {
+  Widget _buildServerHeader(_LibraryNavSection section, String serverId, String serverName, dynamic t) {
     // Resolve backend per server so the badge matches the brand. Falls back
     // to the generic `dns` icon if the client isn't registered yet (rare —
     // can happen during a profile switch before the manager rehydrates).
     final backend = context.read<MultiServerProvider>().serverManager.getClient(serverId)?.backend;
     return _buildCollapsibleHeader(
-      focusKey: _kServerHeaderPrefix + serverId,
+      focusKey: _serverHeaderFocusKey(section, serverId),
       icon: Symbols.dns_rounded,
       iconSize: 14,
       leading: backend == null ? null : BackendBadge(backend: backend, size: 14, color: t.textMuted),
       label: serverName,
       labelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.4, color: t.textMuted),
       verticalPadding: 6,
-      isExpanded: !_collapsedServerIds.contains(serverId),
-      onToggle: () => _toggleServerCollapse(serverId),
+      isExpanded: !_collapsedServerGroupKeys.contains(_serverGroupStateKey(section, serverId)),
+      onToggle: () => _toggleServerCollapse(section, serverId),
       t: t,
     );
   }
 
-  void _toggleServerCollapse(String serverId) {
+  void _toggleServerCollapse(_LibraryNavSection section, String serverId) {
+    final groupKey = _serverGroupStateKey(section, serverId);
     setState(() {
-      if (!_collapsedServerIds.add(serverId)) {
-        _collapsedServerIds.remove(serverId);
+      if (!_collapsedServerGroupKeys.add(groupKey)) {
+        _collapsedServerGroupKeys.remove(groupKey);
       }
     });
   }
@@ -991,11 +1087,12 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     );
   }
 
-  Widget _buildLibraryItem(MediaLibrary library, dynamic t, {bool showServerName = false}) {
+  Widget _buildLibraryItem(_LibraryNavSection section, MediaLibrary library, dynamic t, {bool showServerName = false}) {
     final isSelected =
         widget.selectedTab == NavigationTabId.libraries && widget.selectedLibraryKey == library.globalKey;
-    final isFocused = _focusTracker.isFocused(library.globalKey);
-    final focusNode = _focusTracker.get(library.globalKey);
+    final focusKey = _libraryItemFocusKey(section, library);
+    final isFocused = _focusTracker.isFocused(focusKey);
+    final focusNode = _focusTracker.get(focusKey);
 
     return Padding(
       padding: const EdgeInsets.only(left: 12),
