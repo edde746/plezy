@@ -223,6 +223,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   static const int _fetchSize = 200;
   Timer? _scrollIdleTimer;
   bool _rangeLoadScheduled = false;
+  bool _topScrollResetScheduled = false;
 
   // Focus nodes for filter chips
   final FocusNode _groupingChipFocusNode = FocusNode(debugLabel: 'grouping_chip');
@@ -360,20 +361,28 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _currentFirstVisibleIndex.value = 0;
 
     // The browse tab state is kept alive across libraries, so ensure this
-    // tab's scroll resets to 0 (other tabs keep their own positions).
-    final pos = _innerPosition;
-    if (pos != null) {
-      pos.jumpTo(0);
-    } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        _innerPosition?.jumpTo(0);
-      });
-    }
+    // tab's scroll resets to 0 (other tabs keep their own positions). Defer
+    // the jump because library changes call this from didUpdateWidget; jumping
+    // there dispatches scroll notifications while the AppBar is building.
+    _scheduleTopScrollReset();
+  }
 
-    // Inner-only resets bypass NestedScrollView's natural delta surrender,
-    // leaving the outer floating header in its prior partially-hidden state.
-    widget.onResetScroll?.call();
+  void _scheduleTopScrollReset() {
+    if (_topScrollResetScheduled) return;
+    _topScrollResetScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _topScrollResetScheduled = false;
+      if (!mounted) return;
+
+      final pos = _innerPosition;
+      if (pos != null && pos.hasPixels && pos.pixels != 0) {
+        pos.jumpTo(0);
+      }
+
+      // Inner-only resets bypass NestedScrollView's natural delta surrender,
+      // leaving the outer floating header in its prior partially-hidden state.
+      widget.onResetScroll?.call();
+    });
   }
 
   Future<void> _loadContent() async {
@@ -1010,7 +1019,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       resetPaginationState();
       isLoading = true;
     });
-    _innerPosition?.jumpTo(0);
+    _scheduleTopScrollReset();
     _loadItems();
   }
 
