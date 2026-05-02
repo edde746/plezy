@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../focus/focusable_text_field.dart';
+
 /// Bordered "Profile name" text field used by both the new-profile flow and
 /// the profile-detail rename row. Optional [trailing] slot for an inline Save
 /// button — pass `null` when the screen saves elsewhere (e.g. on Continue).
@@ -13,7 +15,7 @@ class ProfileNameField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final field = TextField(
+    final field = FocusableTextField(
       controller: controller,
       textInputAction: TextInputAction.done,
       decoration: InputDecoration(hintText: hintText, border: const OutlineInputBorder()),

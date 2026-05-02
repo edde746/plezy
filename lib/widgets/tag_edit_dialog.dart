@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/focusable_button.dart';
+import '../focus/focusable_text_field.dart';
 import '../i18n/strings.g.dart';
 import '../mixins/controller_disposer_mixin.dart';
 import '../widgets/app_icon.dart';
@@ -71,7 +72,7 @@ class _TagEditDialogState extends State<TagEditDialog> with ControllerDisposerMi
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            TextField(
+            FocusableTextField(
               controller: _controller,
               focusNode: _textFieldFocusNode,
               autofocus: true,

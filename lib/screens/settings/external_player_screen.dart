@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/widgets/app_icon.dart';
 
 import '../../focus/focusable_button.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/external_player_models.dart';
 import '../../services/settings_service.dart';
@@ -154,7 +155,7 @@ Future<void> _showAddCustomPlayerDialog(BuildContext context) async {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  TextField(
+                  FocusableTextField(
                     controller: nameController,
                     decoration: InputDecoration(labelText: t.externalPlayer.playerName, hintText: 'My Player'),
                     autofocus: true,
@@ -179,7 +180,7 @@ Future<void> _showAddCustomPlayerDialog(BuildContext context) async {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  TextField(
+                  FocusableTextField(
                     controller: valueController,
                     focusNode: valueFocusNode,
                     decoration: InputDecoration(labelText: fieldLabel, hintText: fieldHint),

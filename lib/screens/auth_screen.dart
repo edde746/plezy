@@ -16,6 +16,7 @@ import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../focus/focusable_button.dart';
+import '../focus/focusable_text_field.dart';
 import '../media/media_backend.dart';
 import '../utils/navigation_transitions.dart';
 import '../widgets/backend_badge.dart';
@@ -459,7 +460,7 @@ class _DebugTokenDialogState extends State<_DebugTokenDialog> with ControllerDis
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextFormField(
+          FocusableTextFormField(
             controller: _tokenController,
             decoration: InputDecoration(
               labelText: 'Plex Auth Token',

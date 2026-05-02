@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/dpad_navigator.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
@@ -164,9 +165,10 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
         }
         return KeyEventResult.ignored;
       },
-      child: TextField(
+      child: FocusableTextField(
         controller: _textController,
         focusNode: _textFieldFocusNode,
+        keyboardType: TextInputType.multiline,
         maxLines: null,
         minLines: 12,
         decoration: InputDecoration(

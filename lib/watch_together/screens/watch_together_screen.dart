@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../focus/focusable_button.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../services/settings_service.dart';
@@ -313,7 +314,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
         context: context,
         builder: (context) => AlertDialog(
           title: Text(t.watchTogether.renameRoom),
-          content: TextField(
+          content: FocusableTextField(
             controller: controller,
             autofocus: true,
             decoration: InputDecoration(hintText: room.code),

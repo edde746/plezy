@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../focus/dpad_navigator.dart';
 import '../focus/focus_theme.dart';
+import '../focus/focusable_text_field.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_repeat_helper.dart';
 import '../mixins/controller_disposer_mixin.dart';
@@ -169,7 +170,7 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
         ),
         const SizedBox(height: 16),
         // Hex input
-        TextField(
+        FocusableTextField(
           controller: _hexController,
           focusNode: _hexFocusNode,
           decoration: const InputDecoration(prefixText: '#', labelText: 'Hex', border: OutlineInputBorder()),

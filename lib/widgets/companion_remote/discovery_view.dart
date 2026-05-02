@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../connection/connection_registry.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/plex/plex_home.dart';
@@ -305,7 +306,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                TextFormField(
+                FocusableTextFormField(
                   controller: _hostAddressController,
                   decoration: InputDecoration(
                     labelText: t.companionRemote.session.hostAddress,

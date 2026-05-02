@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../focus/focus_memory_tracker.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../main_screen.dart';
@@ -654,7 +655,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         builder: (BuildContext dialogContext) {
           return AlertDialog(
             title: Text(t.settings.watchTogetherRelay),
-            content: TextField(
+            content: FocusableTextField(
               controller: controller,
               decoration: InputDecoration(labelText: 'URL', hintText: t.settings.watchTogetherRelayHint),
               autofocus: true,

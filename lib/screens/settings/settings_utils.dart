@@ -1,6 +1,7 @@
 import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../../widgets/dialog_action_button.dart';
@@ -211,7 +212,7 @@ void _showNumericInputDialogStandard({
     context: context,
     title: title,
     contentBuilder: (_, _, setDialogState, saveFocusNode) {
-      return TextField(
+      return FocusableTextField(
         controller: controller,
         keyboardType: TextInputType.number,
         decoration: InputDecoration(
@@ -350,7 +351,7 @@ void showRegexInputDialog({
     context: context,
     title: title,
     contentBuilder: (_, _, setDialogState, saveFocusNode) {
-      return TextField(
+      return FocusableTextField(
         controller: controller,
         decoration: InputDecoration(labelText: 'Regex', errorText: errorText),
         autofocus: true,

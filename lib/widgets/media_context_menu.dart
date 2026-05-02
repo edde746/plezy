@@ -35,6 +35,7 @@ import '../utils/dialogs.dart';
 import '../utils/focus_utils.dart';
 import '../services/external_player_service.dart';
 import '../focus/focusable_button.dart';
+import '../focus/focusable_text_field.dart';
 import '../focus/dpad_navigator.dart';
 import '../screens/plex_match_screen.dart';
 import '../screens/media_detail_screen.dart';
@@ -1610,7 +1611,7 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
           mainAxisSize: MainAxisSize.min,
           children: [
             if (widget.collections.length >= 10) ...[
-              TextField(
+              FocusableTextField(
                 controller: _filterController,
                 autofocus: true,
                 decoration: pillInputDecoration(

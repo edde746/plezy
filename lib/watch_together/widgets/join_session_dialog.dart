@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_button.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
@@ -53,7 +54,7 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
                 const SizedBox(height: 24),
 
                 // Session ID input
-                TextFormField(
+                FocusableTextFormField(
                   controller: _sessionIdController,
                   decoration: InputDecoration(
                     labelText: t.watchTogether.sessionCode,

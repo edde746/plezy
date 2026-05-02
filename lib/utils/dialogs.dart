@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../focus/focusable_button.dart';
+import '../focus/focusable_text_field.dart';
 import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
 import '../mixins/controller_disposer_mixin.dart';
@@ -254,10 +255,11 @@ class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog>
       title: Text(widget.title),
       content: SizedBox(
         width: 400,
-        child: TextField(
+        child: FocusableTextField(
           controller: _controller,
           autofocus: true,
           decoration: InputDecoration(labelText: widget.labelText),
+          keyboardType: TextInputType.multiline,
           maxLines: 8,
           minLines: 3,
         ),
@@ -315,7 +317,7 @@ class _TextInputDialogState extends State<_TextInputDialog>
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.title),
-      content: TextField(
+      content: FocusableTextField(
         controller: _controller,
         autofocus: true,
         decoration: InputDecoration(labelText: widget.labelText, hintText: widget.hintText),

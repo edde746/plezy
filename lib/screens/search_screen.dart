@@ -4,7 +4,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 
-import '../focus/dpad_navigator.dart';
+import '../focus/focusable_text_field.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../mixins/controller_disposer_mixin.dart';
@@ -168,37 +168,6 @@ class _SearchScreenState extends State<SearchScreen>
     MainScreenFocusScope.of(context)?.focusSidebar();
   }
 
-  /// Handle key events on the search input for D-pad navigation
-  KeyEventResult _handleSearchInputKeyEvent(FocusNode _, KeyEvent event) {
-    if (!event.isActionable) return KeyEventResult.ignored;
-
-    final key = event.logicalKey;
-
-    // DOWN: Focus first result if results exist and not loading
-    if (key.isDownKey && _searchResults.isNotEmpty && !_isSearching) {
-      _firstResultFocusNode.requestFocus();
-      return KeyEventResult.handled;
-    }
-
-    // LEFT at cursor position 0: Navigate to sidebar
-    if (key.isLeftKey && _searchController.selection.baseOffset == 0) {
-      _navigateToSidebar();
-      return KeyEventResult.handled;
-    }
-
-    // BACK: Clear search or navigate to sidebar
-    if (key.isBackKey) {
-      if (_searchController.text.isNotEmpty) {
-        _searchController.clear();
-      } else {
-        _navigateToSidebar();
-      }
-      return KeyEventResult.handled;
-    }
-
-    return KeyEventResult.ignored;
-  }
-
   Widget _buildResultsList(BuildContext context) {
     final multiServer = context.watch<MultiServerProvider>();
     final showServerName = multiServer.totalServerCount > 1;
@@ -234,25 +203,34 @@ class _SearchScreenState extends State<SearchScreen>
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-                child: Focus(
-                  onKeyEvent: _handleSearchInputKeyEvent,
-                  child: TextField(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    decoration: pillInputDecoration(
-                      context,
-                      hintText: t.search.hint,
-                      prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const AppIcon(Symbols.clear_rounded, fill: 1),
-                              onPressed: () {
-                                _searchController.clear();
-                                // State update handled by listener
-                              },
-                            )
-                          : null,
-                    ),
+                child: FocusableTextField(
+                  controller: _searchController,
+                  focusNode: _searchFocusNode,
+                  textInputAction: TextInputAction.search,
+                  onNavigateLeft: _navigateToSidebar,
+                  onNavigateDown: _searchResults.isNotEmpty && !_isSearching
+                      ? _firstResultFocusNode.requestFocus
+                      : null,
+                  onBack: () {
+                    if (_searchController.text.isNotEmpty) {
+                      _searchController.clear();
+                    } else {
+                      _navigateToSidebar();
+                    }
+                  },
+                  decoration: pillInputDecoration(
+                    context,
+                    hintText: t.search.hint,
+                    prefixIcon: const AppIcon(Symbols.search_rounded, fill: 1),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const AppIcon(Symbols.clear_rounded, fill: 1),
+                            onPressed: () {
+                              _searchController.clear();
+                              // State update handled by listener
+                            },
+                          )
+                        : null,
                   ),
                 ),
               ),

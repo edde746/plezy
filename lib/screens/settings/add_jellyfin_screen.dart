@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../connection/connection.dart';
 import '../../exceptions/media_server_exceptions.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../profiles/active_profile_binder.dart';
@@ -338,7 +339,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     return [
       Text(t.addServer.jellyfinUrlIntro, style: theme.textTheme.bodyMedium),
       const SizedBox(height: 16),
-      TextFormField(
+      FocusableTextFormField(
         controller: _urlController,
         keyboardType: TextInputType.url,
         autocorrect: false,
@@ -363,7 +364,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         const SizedBox(height: 16),
         _buildServerCard(theme),
         const SizedBox(height: 16),
-        TextFormField(
+        FocusableTextFormField(
           controller: _usernameController,
           autocorrect: false,
           enableSuggestions: false,
@@ -377,7 +378,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           validator: (v) => v == null || v.trim().isEmpty ? t.addServer.required : null,
         ),
         const SizedBox(height: 12),
-        TextFormField(
+        FocusableTextFormField(
           controller: _passwordController,
           focusNode: _passwordFocus,
           obscureText: true,
