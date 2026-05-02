@@ -24,6 +24,7 @@ jobs:
         with:
           channel: "stable"
           cache: true
+          pub-cache: false
 
       - name: Cache Pub dependencies
         uses: actions/cache@v4
@@ -107,6 +108,7 @@ jobs:
         with:
           channel: "stable"
           cache: true
+          pub-cache: false
 
       - name: Cache Pub dependencies
         uses: actions/cache@v4
@@ -162,6 +164,7 @@ jobs:
         with:
           channel: "stable"
           cache: true
+          pub-cache: false
 
       - name: Cache Pub dependencies
         uses: actions/cache@v4

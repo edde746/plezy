@@ -30,6 +30,7 @@ jobs:
         with:
           channel: "stable"
           cache: true
+          pub-cache: false
 
       - name: Cache Pub dependencies
         uses: actions/cache@v4
@@ -139,6 +140,7 @@ jobs:
         with:
           channel: "stable"
           cache: true
+          pub-cache: false
 
       - name: Cache Pub dependencies
         uses: actions/cache@v4
@@ -229,6 +231,7 @@ jobs:
         with:
           channel: "stable"
           cache: true
+          pub-cache: false
 
       - name: Cache Pub dependencies
         uses: actions/cache@v4
@@ -423,6 +426,7 @@ jobs:
         with:
           channel: "stable"
           cache: true
+          pub-cache: false
 
       - name: Cache Pub dependencies
         uses: actions/cache@v4
@@ -432,6 +436,12 @@ jobs:
           key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.lock') }}
           restore-keys: |
             ${{ runner.os }}-pub-
+
+      - name: Cache Windows native dependencies
+        uses: actions/cache@v4
+        with:
+          path: build/windows/x64/_deps
+          key: windows-native-x64-${{ hashFiles('windows/CMakeLists.txt') }}
 
       - name: Install dependencies
         run: flutter pub get
@@ -492,7 +502,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Cache Windows native dependencies
+        id: windows-native-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            build/windows/arm64/_deps
+            build/windows/arm64/mpv-dev-arm64
+          key: windows-native-arm64-${{ hashFiles('windows/CMakeLists.txt') }}
+
       - name: Install 7-Zip
+        if: steps.windows-native-cache.outputs.cache-hit != 'true'
         run: choco install 7zip -y
 
       - name: Setup Flutter
@@ -500,6 +520,7 @@ jobs:
         with:
           channel: "master"
           cache: true
+          pub-cache: false
 
       - name: Cache Pub dependencies
         uses: actions/cache@v4
@@ -659,6 +680,7 @@ jobs:
         with:
           channel: "stable"
           cache: true
+          pub-cache: false
 
       - name: Cache Pub dependencies
         uses: actions/cache@v4
@@ -799,6 +821,7 @@ jobs:
         with:
           channel: "master"
           cache: true
+          pub-cache: false
 
       - name: Cache Pub dependencies
         uses: actions/cache@v4
