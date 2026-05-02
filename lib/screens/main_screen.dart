@@ -893,6 +893,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
   bool _suppressBackAfterPop = false;
 
   KeyEventResult _handleBackKey(KeyEvent event) {
+    if (ModalRoute.of(context)?.isCurrent != true) {
+      return KeyEventResult.ignored;
+    }
+
     if (_suppressBackAfterPop && event.logicalKey.isBackKey) {
       if (event is KeyUpEvent) _suppressBackAfterPop = false;
       return KeyEventResult.handled;

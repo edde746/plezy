@@ -836,6 +836,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                           ...WidgetsApp.defaultShortcuts,
                           const SingleActivator(LogicalKeyboardKey.select): const ActivateIntent(),
                           const SingleActivator(LogicalKeyboardKey.gameButtonA): const ActivateIntent(),
+                          const SingleActivator(LogicalKeyboardKey.goBack): const DismissIntent(),
+                          const SingleActivator(LogicalKeyboardKey.browserBack): const DismissIntent(),
+                          const SingleActivator(LogicalKeyboardKey.gameButtonB): const DismissIntent(),
                         },
                         builder: (context, child) => ScaffoldMessenger(
                           key: rootScaffoldMessengerKey,
