@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, HttpClient;
 
 import 'package:cronet_http/cronet_http.dart';
 import 'package:cupertino_http/cupertino_http.dart';
@@ -12,6 +12,14 @@ import 'app_logger.dart';
 CronetEngine? _sharedEngine;
 
 bool _loggedPlatformClient = false;
+
+HttpClient? _linuxSingleton;
+
+HttpClient _getLinuxSingleton() {
+  return _linuxSingleton ??= HttpClient()
+    ..maxConnectionsPerHost = 12
+    ..idleTimeout = const Duration(seconds: 90);
+}
 
 void _logPlatformClient(String platform, String client) {
   if (_loggedPlatformClient) return;
@@ -54,6 +62,22 @@ http.Client createPlatformClient() {
       return IOClient();
     }
   }
+  // Explicit Linux singleton — HTTP/2 unavailable on Linux (dart-lang/http#1385),
+  // so we hold a persistent pool to avoid repeated TLS handshakes.
+  if (Platform.isLinux) {
+    _logPlatformClient('linux', 'IOClient (singleton)');
+    return IOClient(_getLinuxSingleton());
+  }
+  // Unknown/future platform — plain disposable IOClient.
   _logPlatformClient(Platform.operatingSystem, 'IOClient');
   return IOClient();
 }
+
+/// No-op on Linux — singleton must never be destroyed.
+void closePlexClient(http.Client client) {
+  if (Platform.isLinux) return;
+  client.close();
+}
+
+/// Fresh throwaway client for probes and connection tests.
+http.Client createProbeClient() => IOClient();

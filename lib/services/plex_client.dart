@@ -200,6 +200,7 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     Future<void> Function(String newBaseUrl)? onEndpointChanged,
     VoidCallback? onAllEndpointsExhausted,
     bool? seedTranscoderVideoSupport,
+    bool Function()? isCancelled,
   }) async {
     final client = PlexClient._(
       config,
@@ -217,6 +218,10 @@ class PlexClient with MediaServerCacheMixin implements MediaServerClient {
     // the background so the first playback doesn't pay the probe cost on its
     // hot path.
     if (seedTranscoderVideoSupport == null) {
+      unawaited(client.serverSupportsVideoTranscoding());
+    }
+    // Don't fire background work if the caller already timed out
+    if (isCancelled?.call() != true && seedTranscoderVideoSupport == null) {
       unawaited(client.serverSupportsVideoTranscoding());
     }
     return client;
