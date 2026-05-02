@@ -78,6 +78,3 @@ void closePlexClient(http.Client client) {
   if (Platform.isLinux) return;
   client.close();
 }
-
-/// Fresh throwaway client for probes and connection tests.
-http.Client createProbeClient() => IOClient();

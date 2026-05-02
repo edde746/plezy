@@ -5,5 +5,3 @@ import 'package:http/http.dart' as http;
 http.Client createPlatformClient() => throw UnsupportedError('No platform HTTP client available');
 
 void closePlexClient(http.Client client) => throw UnsupportedError('No platform HTTP client available');
-
-http.Client createProbeClient() => throw UnsupportedError('No platform HTTP client available');
