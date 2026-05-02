@@ -26,8 +26,8 @@ import '../media/media_version.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/json_utils.dart';
-import 'plex_constants.dart';
 import '../utils/obfuscation_utils.dart';
+import 'file_info_parser.dart';
 
 /// Shared suffix of both unmatched-agent URL schemes: legacy
 /// `com.plexapp.agents.none://` and new-style `tv.plex.agents.none://`.
@@ -1004,60 +1004,18 @@ MediaSourceInfo? plexMediaSourceInfoFromCacheJson(Map<String, dynamic> metadata,
   final selectedMedia = mediaIndex >= 0 && mediaIndex < media.length ? media[mediaIndex] : media.first;
   final parts = flexibleList(selectedMedia['Part']);
   if (parts == null || parts.isEmpty) return null;
-  final streams = flexibleList(parts.first['Stream']);
-
-  final audioTracks = <MediaAudioTrack>[];
-  final subtitleTracks = <MediaSubtitleTrack>[];
-  double? frameRate;
-
-  if (streams != null) {
-    for (final s in streams) {
-      try {
-        final streamType = s['streamType'] as int?;
-        if (streamType == PlexStreamType.video) {
-          frameRate ??= (s['frameRate'] as num?)?.toDouble();
-        } else if (streamType == PlexStreamType.audio) {
-          audioTracks.add(
-            MediaAudioTrack(
-              id: s['id'] as int,
-              index: s['index'] as int?,
-              codec: s['codec'] as String?,
-              language: s['language'] as String?,
-              languageCode: s['languageCode'] as String?,
-              title: s['title'] as String?,
-              displayTitle: s['displayTitle'] as String?,
-              channels: s['channels'] as int?,
-              selected: flexibleBool(s['selected']),
-            ),
-          );
-        } else if (streamType == PlexStreamType.subtitle) {
-          subtitleTracks.add(
-            MediaSubtitleTrack(
-              id: s['id'] as int,
-              index: s['index'] as int?,
-              codec: s['codec'] as String?,
-              language: s['language'] as String?,
-              languageCode: s['languageCode'] as String?,
-              title: s['title'] as String?,
-              displayTitle: s['displayTitle'] as String?,
-              selected: flexibleBool(s['selected']),
-              forced: flexibleBool(s['forced']),
-              key: s['key'] as String?,
-            ),
-          );
-        }
-      } catch (e) {
-        appLogger.d('Skipping malformed stream in cached metadata', error: e);
-      }
-    }
-  }
+  final streams = walkStreams(
+    flexibleList(parts.first['Stream']),
+    const PlexFileInfoStreamReader(),
+    onMalformed: (error, _, __) => appLogger.d('Skipping malformed stream in cached metadata', error: error),
+  );
 
   return MediaSourceInfo(
     videoUrl: '',
-    audioTracks: audioTracks,
-    subtitleTracks: subtitleTracks,
+    audioTracks: streams.audioTracks,
+    subtitleTracks: streams.subtitleTracks,
     chapters: const [],
-    frameRate: frameRate,
+    frameRate: streams.frameRate,
   );
 }
 

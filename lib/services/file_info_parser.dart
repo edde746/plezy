@@ -10,6 +10,43 @@ import 'plex_constants.dart';
 /// the four-tuple result.
 enum FileInfoStreamType { video, audio, subtitle }
 
+/// Normalised projection of a single entry in Jellyfin's `MediaStreams` array.
+/// Callers build their own typed output from this shared extraction so the
+/// field-name parsing only lives in one place.
+typedef JellyfinStreamFields = ({
+  String? type,
+  int index,
+  String? codec,
+  String? language,
+  String? languageCode,
+  String? title,
+  String? displayTitle,
+  bool isDefault,
+  bool isForced,
+  bool isExternal,
+  String? deliveryUrl,
+  int? channels,
+  double? frameRate,
+});
+
+JellyfinStreamFields parseJellyfinStreamFields(Map<String, dynamic> s, {int fallbackIndex = 0}) {
+  return (
+    type: (s['Type'] as String?)?.toLowerCase(),
+    index: flexibleInt(s['Index']) ?? fallbackIndex,
+    codec: s['Codec'] as String?,
+    language: s['DisplayLanguage'] as String? ?? s['Language'] as String?,
+    languageCode: s['Language'] as String?,
+    title: s['Title'] as String?,
+    displayTitle: s['DisplayTitle'] as String?,
+    isDefault: s['IsDefault'] as bool? ?? false,
+    isForced: s['IsForced'] as bool? ?? false,
+    isExternal: s['IsExternal'] as bool? ?? false,
+    deliveryUrl: s['DeliveryUrl'] as String?,
+    channels: flexibleInt(s['Channels']),
+    frameRate: flexibleDouble(s['RealFrameRate']) ?? flexibleDouble(s['AverageFrameRate']),
+  );
+}
+
 /// Single-pass result of walking a streams array. Keeps both the raw
 /// `videoStream` / `audioStream` map pointers (for callers that need to dig
 /// out keys the parsed track classes don't carry — e.g. `colorSpace`,
@@ -58,11 +95,17 @@ abstract class FileInfoStreamReader {
   double? frameRateOf(Map<String, dynamic> videoStream);
 }
 
+typedef MalformedStreamHandler = void Function(Object error, StackTrace stackTrace, Map<String, dynamic> stream);
+
 /// Walk [streams] in a single pass. Captures the first video / audio entries
 /// (later ones are ignored — both backends serve a single primary track per
 /// type), accumulates *all* audio / subtitle tracks for selection UIs, and
 /// extracts the frame rate from the video entry.
-FileInfoStreams walkStreams(List<dynamic>? streams, FileInfoStreamReader reader) {
+FileInfoStreams walkStreams(
+  List<dynamic>? streams,
+  FileInfoStreamReader reader, {
+  MalformedStreamHandler? onMalformed,
+}) {
   if (streams == null || streams.isEmpty) return FileInfoStreams.empty;
   final audioTracks = <MediaAudioTrack>[];
   final subtitleTracks = <MediaSubtitleTrack>[];
@@ -73,19 +116,24 @@ FileInfoStreams walkStreams(List<dynamic>? streams, FileInfoStreamReader reader)
   var subtitleIndex = 0;
   for (final raw in streams) {
     if (raw is! Map<String, dynamic>) continue;
-    final type = reader.typeOf(raw);
-    if (type == null) continue;
-    switch (type) {
-      case FileInfoStreamType.video:
-        videoStream ??= raw;
-        frameRate ??= reader.frameRateOf(raw);
-      case FileInfoStreamType.audio:
-        audioStream ??= raw;
-        audioIndex++;
-        audioTracks.add(reader.toAudioTrack(raw, audioIndex));
-      case FileInfoStreamType.subtitle:
-        subtitleIndex++;
-        subtitleTracks.add(reader.toSubtitleTrack(raw, subtitleIndex));
+    try {
+      final type = reader.typeOf(raw);
+      if (type == null) continue;
+      switch (type) {
+        case FileInfoStreamType.video:
+          videoStream ??= raw;
+          frameRate ??= reader.frameRateOf(raw);
+        case FileInfoStreamType.audio:
+          audioStream ??= raw;
+          audioIndex++;
+          audioTracks.add(reader.toAudioTrack(raw, audioIndex));
+        case FileInfoStreamType.subtitle:
+          subtitleIndex++;
+          subtitleTracks.add(reader.toSubtitleTrack(raw, subtitleIndex));
+      }
+    } catch (error, stackTrace) {
+      if (onMalformed == null) rethrow;
+      onMalformed(error, stackTrace, raw);
     }
   }
   return FileInfoStreams(
@@ -174,32 +222,35 @@ class JellyfinFileInfoStreamReader implements FileInfoStreamReader {
 
   @override
   MediaAudioTrack toAudioTrack(Map<String, dynamic> s, int autoIndex) {
+    final f = parseJellyfinStreamFields(s, fallbackIndex: autoIndex);
     return MediaAudioTrack(
-      id: (s['Index'] as int?) ?? autoIndex,
-      index: s['Index'] as int?,
-      codec: s['Codec'] as String?,
-      language: s['Language'] as String?,
-      languageCode: s['Language'] as String?,
-      title: s['Title'] as String?,
-      displayTitle: s['DisplayTitle'] as String?,
-      channels: s['Channels'] as int?,
-      selected: s['IsDefault'] == true,
+      id: f.index,
+      index: f.index,
+      codec: f.codec,
+      language: f.language,
+      languageCode: f.languageCode,
+      title: f.title,
+      displayTitle: f.displayTitle,
+      channels: f.channels,
+      selected: f.isDefault,
     );
   }
 
   @override
   MediaSubtitleTrack toSubtitleTrack(Map<String, dynamic> s, int autoIndex) {
+    final f = parseJellyfinStreamFields(s, fallbackIndex: autoIndex);
     return MediaSubtitleTrack(
-      id: (s['Index'] as int?) ?? autoIndex,
-      index: s['Index'] as int?,
-      codec: s['Codec'] as String?,
-      language: s['Language'] as String?,
-      languageCode: s['Language'] as String?,
-      title: s['Title'] as String?,
-      displayTitle: s['DisplayTitle'] as String?,
-      selected: s['IsDefault'] == true,
-      forced: s['IsForced'] == true,
-      key: null,
+      id: f.index,
+      index: f.index,
+      codec: f.codec,
+      language: f.language,
+      languageCode: f.languageCode,
+      title: f.title,
+      displayTitle: f.displayTitle,
+      selected: f.isDefault,
+      forced: f.isForced,
+      key: f.isExternal ? f.deliveryUrl : null,
+      external: f.isExternal,
     );
   }
 

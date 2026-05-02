@@ -2,6 +2,7 @@ import '../media/media_version.dart';
 import '../media/media_source_info.dart';
 import '../utils/jellyfin_time.dart';
 import '../utils/json_utils.dart';
+import 'file_info_parser.dart';
 import 'jellyfin_mappers.dart';
 
 /// Translate a Jellyfin `MediaSource` JSON object into [MediaSourceInfo] so the
@@ -24,62 +25,16 @@ MediaSourceInfo jellyfinMediaSourceToMediaSourceInfo(
   Object? chapters,
   Object? trickplay,
 }) {
-  final streams = source['MediaStreams'];
-  final audioTracks = <MediaAudioTrack>[];
-  final subtitleTracks = <MediaSubtitleTrack>[];
+  final rawStreams = source['MediaStreams'];
+  final parsedStreams = walkStreams(rawStreams is List ? rawStreams : null, const JellyfinFileInfoStreamReader());
   // partId stays null for Jellyfin because Plex's `/library/parts/{id}`
   // select-stream endpoint has no Jellyfin equivalent. Jellyfin track
   // persistence is driven by `/Sessions/Playing/Progress` stream indexes.
   const int? partId = null;
   final defaultAudioStreamIndex = flexibleInt(source['DefaultAudioStreamIndex']);
   final defaultSubtitleStreamIndex = flexibleInt(source['DefaultSubtitleStreamIndex']);
-  double? frameRate;
-
-  if (streams is List) {
-    for (final s in streams) {
-      if (s is! Map<String, dynamic>) continue;
-      final f = parseJellyfinStreamFields(s);
-      switch (f.type) {
-        case 'video':
-          frameRate ??= f.frameRate;
-          break;
-        case 'audio':
-          audioTracks.add(
-            MediaAudioTrack(
-              id: f.index,
-              index: f.index,
-              codec: f.codec,
-              language: f.language,
-              languageCode: f.languageCode,
-              title: f.title,
-              displayTitle: f.displayTitle,
-              channels: f.channels,
-              selected: defaultAudioStreamIndex != null ? f.index == defaultAudioStreamIndex : f.isDefault,
-            ),
-          );
-          break;
-        case 'subtitle':
-          subtitleTracks.add(
-            MediaSubtitleTrack(
-              id: f.index,
-              index: f.index,
-              codec: f.codec,
-              language: f.language,
-              languageCode: f.languageCode,
-              title: f.title,
-              displayTitle: f.displayTitle,
-              selected: defaultSubtitleStreamIndex != null
-                  ? f.index == defaultSubtitleStreamIndex
-                  : f.isDefault || f.isForced,
-              forced: f.isForced,
-              key: f.isExternal ? f.deliveryUrl : null,
-              external: f.isExternal,
-            ),
-          );
-          break;
-      }
-    }
-  }
+  final audioTracks = _withDefaultAudioSelection(parsedStreams.audioTracks, defaultAudioStreamIndex);
+  final subtitleTracks = _withDefaultSubtitleSelection(parsedStreams.subtitleTracks, defaultSubtitleStreamIndex);
 
   final mappedChapters = <MediaChapter>[];
   if (chapters is List) {
@@ -101,12 +56,49 @@ MediaSourceInfo jellyfinMediaSourceToMediaSourceInfo(
     subtitleTracks: subtitleTracks,
     chapters: mappedChapters,
     partId: partId,
-    frameRate: frameRate,
+    frameRate: parsedStreams.frameRate,
     mediaSourceId: mediaSourceId,
     defaultAudioStreamIndex: defaultAudioStreamIndex,
     defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
     trickplayByWidth: trickplayByWidth,
   );
+}
+
+List<MediaAudioTrack> _withDefaultAudioSelection(List<MediaAudioTrack> tracks, int? defaultStreamIndex) {
+  if (defaultStreamIndex == null) return tracks;
+  return [
+    for (final track in tracks)
+      MediaAudioTrack(
+        id: track.id,
+        index: track.index,
+        codec: track.codec,
+        language: track.language,
+        languageCode: track.languageCode,
+        title: track.title,
+        displayTitle: track.displayTitle,
+        channels: track.channels,
+        selected: track.index == defaultStreamIndex,
+      ),
+  ];
+}
+
+List<MediaSubtitleTrack> _withDefaultSubtitleSelection(List<MediaSubtitleTrack> tracks, int? defaultStreamIndex) {
+  return [
+    for (final track in tracks)
+      MediaSubtitleTrack(
+        id: track.id,
+        index: track.index,
+        codec: track.codec,
+        language: track.language,
+        languageCode: track.languageCode,
+        title: track.title,
+        displayTitle: track.displayTitle,
+        selected: defaultStreamIndex != null ? track.index == defaultStreamIndex : track.selected || track.forced,
+        forced: track.forced,
+        key: track.key,
+        external: track.external,
+      ),
+  ];
 }
 
 /// Parse Jellyfin chapters from the raw `BaseItemDto` payload into neutral

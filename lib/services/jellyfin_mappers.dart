@@ -10,49 +10,11 @@ import '../media/media_version.dart';
 import '../utils/jellyfin_time.dart';
 import '../utils/json_utils.dart';
 import '../utils/resolution_label.dart';
+import 'file_info_parser.dart';
 
 // Re-export so existing callers that pulled `resolutionLabelFromHeight`
 // from this file keep compiling without a bulk import rewrite.
 export '../utils/resolution_label.dart' show resolutionLabelFromHeight;
-
-/// Normalised projection of a single entry in Jellyfin's `MediaStreams` array.
-/// Both [JellyfinMappers._mediaStreams] and `jellyfinMediaSourceToMediaSourceInfo`
-/// build their own typed output (neutral [MediaStream] vs Plex-shaped
-/// `MediaAudioTrack`/`MediaSubtitleTrack`) from this shared extraction so the
-/// field-name parsing only lives in one place.
-typedef JellyfinStreamFields = ({
-  String? type,
-  int index,
-  String? codec,
-  String? language,
-  String? languageCode,
-  String? title,
-  String? displayTitle,
-  bool isDefault,
-  bool isForced,
-  bool isExternal,
-  String? deliveryUrl,
-  int? channels,
-  double? frameRate,
-});
-
-JellyfinStreamFields parseJellyfinStreamFields(Map<String, dynamic> s, {int fallbackIndex = 0}) {
-  return (
-    type: (s['Type'] as String?)?.toLowerCase(),
-    index: flexibleInt(s['Index']) ?? fallbackIndex,
-    codec: s['Codec'] as String?,
-    language: s['DisplayLanguage'] as String? ?? s['Language'] as String?,
-    languageCode: s['Language'] as String?,
-    title: s['Title'] as String?,
-    displayTitle: s['DisplayTitle'] as String?,
-    isDefault: s['IsDefault'] as bool? ?? false,
-    isForced: s['IsForced'] as bool? ?? false,
-    isExternal: s['IsExternal'] as bool? ?? false,
-    deliveryUrl: s['DeliveryUrl'] as String?,
-    channels: flexibleInt(s['Channels']),
-    frameRate: flexibleDouble(s['RealFrameRate']) ?? flexibleDouble(s['AverageFrameRate']),
-  );
-}
 
 Map<String, dynamic>? jellyfinFirstVideoStream(Object? streams) {
   if (streams is! List) return null;
@@ -164,6 +126,12 @@ class JellyfinMappers {
   static String _segment(String value) => Uri.encodeComponent(value);
 
   static String _query(String value) => Uri.encodeComponent(value);
+
+  static String _itemImagePath(String id, String type, {String? tag, int? imageIndex}) {
+    final indexPart = imageIndex != null ? '/$imageIndex' : '';
+    final tagPart = tag != null ? '?tag=${_query(tag)}' : '';
+    return '/Items/${_segment(id)}/Images/$type$indexPart$tagPart';
+  }
 
   /// Map a Jellyfin `BaseItemDto` (the `Items[]` shape returned by most
   /// browse endpoints) into a [MediaItem]. Returns `null` when the server
@@ -397,8 +365,7 @@ class JellyfinMappers {
     final id = person['Id'] as String?;
     final tag = person['PrimaryImageTag'] as String?;
     if (id == null) return null;
-    final tagPart = tag != null ? '?tag=${_query(tag)}' : '';
-    return '/Items/${_segment(id)}/Images/Primary$tagPart';
+    return _itemImagePath(id, 'Primary', tag: tag);
   }
 
   static List<MediaVersion>? _mediaVersions(Object? sources) {
@@ -464,28 +431,27 @@ class JellyfinMappers {
     String? tag;
     if (type == 'Backdrop' && backdropTags is List && backdropTags.isNotEmpty) {
       tag = backdropTags.first as String?;
-      return tag != null ? '/Items/${_segment(id)}/Images/Backdrop/0?tag=${_query(tag)}' : null;
+      return tag != null ? _itemImagePath(id, 'Backdrop', tag: tag, imageIndex: 0) : null;
     }
     if (tags is Map<String, dynamic>) {
       final value = tags[type];
       if (value is String) tag = value;
     }
     if (tag == null) return null;
-    return '/Items/${_segment(id)}/Images/$type?tag=${_query(tag)}';
+    return _itemImagePath(id, type, tag: tag);
   }
 
   static String? _seriesPrimaryImage(Map<String, dynamic> item) {
     final seriesId = item['SeriesId'] as String?;
     if (seriesId == null) return null;
     final tag = item['SeriesPrimaryImageTag'] as String?;
-    final tagPart = tag != null ? '?tag=${_query(tag)}' : '';
-    return '/Items/${_segment(seriesId)}/Images/Primary$tagPart';
+    return _itemImagePath(seriesId, 'Primary', tag: tag);
   }
 
   static String? _seriesBackdropImage(Map<String, dynamic> item) {
     final seriesId = item['SeriesId'] as String?;
     if (seriesId == null) return null;
-    return '/Items/${_segment(seriesId)}/Images/Backdrop/0';
+    return _itemImagePath(seriesId, 'Backdrop', imageIndex: 0);
   }
 
   /// Parent backdrop helper — works for episodes (parent = series) and
@@ -499,9 +465,9 @@ class JellyfinMappers {
     final tags = item['ParentBackdropImageTags'];
     if (tags is List && tags.isNotEmpty) {
       final tag = tags.first as String?;
-      if (tag != null) return '/Items/${_segment(parentId)}/Images/Backdrop/0?tag=${_query(tag)}';
+      if (tag != null) return _itemImagePath(parentId, 'Backdrop', tag: tag, imageIndex: 0);
     }
-    return '/Items/${_segment(parentId)}/Images/Backdrop/0';
+    return _itemImagePath(parentId, 'Backdrop', imageIndex: 0);
   }
 
   /// Parent logo helper — episodes/seasons inherit the series' logo via
@@ -511,15 +477,13 @@ class JellyfinMappers {
     final parentId = item['ParentLogoItemId'] as String?;
     if (parentId == null) return null;
     final tag = item['ParentLogoImageTag'] as String?;
-    final tagPart = tag != null ? '?tag=${_query(tag)}' : '';
-    return '/Items/${_segment(parentId)}/Images/Logo$tagPart';
+    return _itemImagePath(parentId, 'Logo', tag: tag);
   }
 
   static String? _imagePath(Map<String, dynamic> item, String idField, String tagField, String type) {
     final id = item[idField] as String?;
     if (id == null) return null;
     final tag = item[tagField] as String?;
-    final tagPart = tag != null ? '?tag=${_query(tag)}' : '';
-    return '/Items/${_segment(id)}/Images/$type$tagPart';
+    return _itemImagePath(id, type, tag: tag);
   }
 }
