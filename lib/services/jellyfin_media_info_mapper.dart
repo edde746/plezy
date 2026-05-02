@@ -102,12 +102,21 @@ List<MediaSubtitleTrack> _withDefaultSubtitleSelection(List<MediaSubtitleTrack> 
 }
 
 /// Parse Jellyfin chapters from the raw `BaseItemDto` payload into neutral
-/// playback extras. Markers are not exposed by Jellyfin, so the list is empty.
-PlaybackExtras jellyfinPlaybackExtrasFromRaw(dynamic raw, String itemId) {
+/// playback extras. Native Jellyfin media segments are passed in separately;
+/// chapter title fallback uses the same intro/credits patterns as Plex.
+PlaybackExtras jellyfinPlaybackExtrasFromRaw(
+  dynamic raw,
+  String itemId, {
+  String? introPattern,
+  String? creditsPattern,
+  bool forceChapterFallback = false,
+  List<MediaMarker> markers = const [],
+}) {
   String segment(String value) => Uri.encodeComponent(value);
   String query(String value) => Uri.encodeComponent(value);
 
   final chapters = raw is Map<String, dynamic> ? raw['Chapters'] : null;
+  final runtimeMs = raw is Map<String, dynamic> ? jellyfinTicksToMs(raw['RunTimeTicks']) : null;
   final mapped = <MediaChapter>[];
   if (chapters is List) {
     for (var i = 0; i < chapters.length; i++) {
@@ -123,9 +132,43 @@ PlaybackExtras jellyfinPlaybackExtrasFromRaw(dynamic raw, String itemId) {
         MediaChapter(id: i, index: i, startTimeOffset: startMs, title: entry['Name']?.toString(), thumb: thumb),
       );
     }
-    MediaChapter.backfillEndOffsets(mapped);
+    MediaChapter.backfillEndOffsets(mapped, runtimeMs: runtimeMs);
   }
-  return PlaybackExtras(chapters: mapped, markers: const []);
+  return PlaybackExtras.withChapterFallback(
+    chapters: mapped,
+    markers: markers,
+    introPatternStr: introPattern,
+    creditsPatternStr: creditsPattern,
+    forceChapterFallback: forceChapterFallback,
+  );
+}
+
+List<MediaMarker> jellyfinMediaSegmentsToMarkers(dynamic raw) {
+  final items = raw is Map ? raw['Items'] : raw;
+  if (items is! List) return const [];
+
+  final markers = <MediaMarker>[];
+  for (var i = 0; i < items.length; i++) {
+    final entry = items[i];
+    if (entry is! Map) continue;
+    final type = _jellyfinSegmentMarkerType(entry['Type']?.toString());
+    final start = jellyfinTicksToMs(entry['StartTicks']);
+    final end = jellyfinTicksToMs(entry['EndTicks']);
+    if (type == null || start == null || end == null || end <= start) continue;
+    markers.add(MediaMarker(id: i, type: type, startTimeOffset: start, endTimeOffset: end));
+  }
+  return markers;
+}
+
+String? _jellyfinSegmentMarkerType(String? value) {
+  switch (value?.toLowerCase()) {
+    case 'intro':
+      return 'intro';
+    case 'outro':
+    case 'credits':
+      return 'credits';
+  }
+  return null;
 }
 
 /// Coerce a Jellyfin trickplay manifest to `Map<int width, TrickplayInfo>`,

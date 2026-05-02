@@ -7,6 +7,7 @@ import '../media/media_source_info.dart';
 import '../utils/app_logger.dart';
 import '../utils/plex_cache_parser.dart';
 import 'api_cache.dart';
+import 'jellyfin_api_cache.dart';
 import 'jellyfin_media_info_mapper.dart';
 import 'plex_mappers.dart';
 
@@ -47,7 +48,13 @@ class CachedPlaybackMetadataService {
           creditsPattern: creditsPattern,
           forceChapterFallback: forceChapterFallback,
         ),
-        MediaBackend.jellyfin => _fetchJellyfinPlaybackExtras(cacheServerId, itemId),
+        MediaBackend.jellyfin => _fetchJellyfinPlaybackExtras(
+          cacheServerId,
+          itemId,
+          introPattern: introPattern,
+          creditsPattern: creditsPattern,
+          forceChapterFallback: forceChapterFallback,
+        ),
       };
     } catch (e) {
       appLogger.d('Cached playback extras unavailable for $cacheServerId:$itemId', error: e);
@@ -99,9 +106,35 @@ class CachedPlaybackMetadataService {
     return jellyfinMediaSourceToMediaSourceInfo(selected, chapters: raw['Chapters'], trickplay: raw['Trickplay']);
   }
 
-  static Future<PlaybackExtras?> _fetchJellyfinPlaybackExtras(String cacheServerId, String itemId) async {
+  static Future<PlaybackExtras?> _fetchJellyfinPlaybackExtras(
+    String cacheServerId,
+    String itemId, {
+    String? introPattern,
+    String? creditsPattern,
+    bool forceChapterFallback = false,
+  }) async {
     final raw = await _jellyfinRawItem(cacheServerId, itemId);
-    return jellyfinPlaybackExtrasFromRaw(raw, itemId);
+    final markers = await _jellyfinMediaSegmentMarkers(cacheServerId, itemId);
+    return jellyfinPlaybackExtrasFromRaw(
+      raw,
+      itemId,
+      introPattern: introPattern,
+      creditsPattern: creditsPattern,
+      forceChapterFallback: forceChapterFallback,
+      markers: markers,
+    );
+  }
+
+  static Future<List<MediaMarker>> _jellyfinMediaSegmentMarkers(String cacheServerId, String itemId) async {
+    try {
+      final raw = await ApiCache.forBackend(
+        MediaBackend.jellyfin,
+      ).get(cacheServerId, JellyfinApiCache.mediaSegmentsEndpoint(itemId));
+      return jellyfinMediaSegmentsToMarkers(raw);
+    } catch (e) {
+      appLogger.d('Cached Jellyfin media segments unavailable for $cacheServerId:$itemId', error: e);
+      return const [];
+    }
   }
 
   static Future<Map<String, dynamic>> _jellyfinRawItem(String cacheServerId, String itemId) async {

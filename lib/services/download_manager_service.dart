@@ -318,20 +318,28 @@ class DownloadManagerService {
     return null;
   }
 
-  /// Backend-aware "ensure cached & pin" — populates the read-path cache via
-  /// `client.fetchItem(...)` (idempotent: no-op if warm, falls back to
-  /// existing cache on network error) and then pins the row so it survives
-  /// general cache eviction.
+  /// Backend-aware "ensure cached & pin". Jellyfin loads playback extras so
+  /// both item metadata and native media segments are available offline; other
+  /// backends only need the item metadata row. Then pin cached rows so they
+  /// survive general cache eviction.
   Future<void> _pinMetadataForOffline(MediaServerClient client, MediaItem metadata) async {
     final serverId = metadata.serverId;
     if (serverId == null) {
       appLogger.w('Cannot pin metadata without serverId');
       return;
     }
-    try {
-      await client.fetchItem(metadata.id);
-    } catch (e) {
-      appLogger.w('fetchItem failed during offline-pin for ${metadata.globalKey}', error: e);
+    if (client.backend == MediaBackend.jellyfin) {
+      try {
+        await client.fetchPlaybackExtras(metadata.id);
+      } catch (e) {
+        appLogger.w('fetchPlaybackExtras failed during offline-pin for ${metadata.globalKey}', error: e);
+      }
+    } else {
+      try {
+        await client.fetchItem(metadata.id);
+      } catch (e) {
+        appLogger.w('fetchItem failed during offline-pin for ${metadata.globalKey}', error: e);
+      }
     }
     await ApiCache.forBackend(client.backend).pinForOffline(client.cacheServerId, metadata.id);
   }

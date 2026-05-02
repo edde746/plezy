@@ -131,6 +131,33 @@ void main() {
 
       expect(year, 2008);
     });
+
+    test('Jellyfin offline pinning keeps media segment cache rows with metadata', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      addTearDown(db.close);
+
+      await JellyfinApiCache.instance.put('jf-machine/user-a', '/Users/user-a/Items/item-1', {
+        'Id': 'item-1',
+        'Type': 'Episode',
+        'Name': 'Episode',
+      });
+      await JellyfinApiCache.instance.put('jf-machine/user-a', '/MediaSegments/item-1', {
+        'Items': [
+          {'Type': 'Intro', 'StartTicks': 10000000, 'EndTicks': 20000000},
+        ],
+      });
+
+      await JellyfinApiCache.instance.pinForOffline('jf-machine/user-a', 'item-1');
+
+      expect(await JellyfinApiCache.instance.isPinned('jf-machine/user-a', '/MediaSegments/item-1'), isTrue);
+
+      await JellyfinApiCache.instance.deleteForItem('jf-machine/user-a', 'item-1');
+
+      expect(await JellyfinApiCache.instance.get('jf-machine/user-a', '/Users/user-a/Items/item-1'), isNull);
+      expect(await JellyfinApiCache.instance.get('jf-machine/user-a', '/MediaSegments/item-1'), isNull);
+    });
   });
 }
 

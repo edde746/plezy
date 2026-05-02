@@ -354,8 +354,68 @@ void main() {
 
       expect(extras.chapters.single.thumb, '/Items/folder%2Fitem%20%231%3Fx/Images/Chapter/0?tag=chapter%2Ftag%20%3Fx');
     });
+
+    test('uses default OP and ED chapter patterns for skip markers', () {
+      final extras = jellyfinPlaybackExtrasFromRaw({
+        'RunTimeTicks': _ticks(150000),
+        'Chapters': [
+          {'Name': 'Prologue', 'StartPositionTicks': _ticks(0)},
+          {'Name': 'OP', 'StartPositionTicks': _ticks(10000)},
+          {'Name': 'Part A', 'StartPositionTicks': _ticks(90000)},
+          {'Name': 'ED', 'StartPositionTicks': _ticks(120000)},
+        ],
+      }, 'item-1');
+
+      expect(extras.markers.map((m) => m.type), ['intro', 'credits']);
+      expect(extras.markers[0].startTimeOffset, 10000);
+      expect(extras.markers[0].endTimeOffset, 90000);
+      expect(extras.markers[1].startTimeOffset, 120000);
+      expect(extras.markers[1].endTimeOffset, 150000);
+    });
+
+    test('parses native Jellyfin media segments into skip markers', () {
+      final markers = jellyfinMediaSegmentsToMarkers({
+        'Items': [
+          {'Type': 'Intro', 'StartTicks': _ticks(5000), 'EndTicks': _ticks(45000)},
+          {'Type': 'Outro', 'StartTicks': _ticks(90000), 'EndTicks': _ticks(100000)},
+          {'Type': 'Recap', 'StartTicks': _ticks(0), 'EndTicks': _ticks(4000)},
+        ],
+      });
+
+      expect(markers.map((m) => m.type), ['intro', 'credits']);
+      expect(markers[0].startTimeOffset, 5000);
+      expect(markers[0].endTimeOffset, 45000);
+      expect(markers[1].startTimeOffset, 90000);
+      expect(markers[1].endTimeOffset, 100000);
+    });
+
+    test('keeps native segments and fills missing marker types from chapters', () {
+      final extras = jellyfinPlaybackExtrasFromRaw(
+        {
+          'RunTimeTicks': _ticks(120000),
+          'Chapters': [
+            {'Name': 'Episode', 'StartPositionTicks': _ticks(0)},
+            {'Name': 'ED', 'StartPositionTicks': _ticks(90000)},
+          ],
+        },
+        'item-1',
+        markers: jellyfinMediaSegmentsToMarkers({
+          'Items': [
+            {'Type': 'Intro', 'StartTicks': _ticks(10000), 'EndTicks': _ticks(30000)},
+          ],
+        }),
+      );
+
+      expect(extras.markers.map((m) => m.type), ['intro', 'credits']);
+      expect(extras.markers[0].startTimeOffset, 10000);
+      expect(extras.markers[0].endTimeOffset, 30000);
+      expect(extras.markers[1].startTimeOffset, 90000);
+      expect(extras.markers[1].endTimeOffset, 120000);
+    });
   });
 }
+
+int _ticks(int ms) => ms * 10000;
 
 /// Build a Jellyfin TrickplayInfoDto-shaped JSON map for a fixture.
 Map<String, dynamic> _info({

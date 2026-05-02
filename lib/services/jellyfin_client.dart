@@ -469,11 +469,10 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     return fetchLibraryContent(libraryId, effective, abort: abort);
   }
 
-  /// Backend-neutral [PlaybackExtras] for [itemId]. Jellyfin only exposes
-  /// chapters at the item level (`raw['Chapters']`); markers don't exist
-  /// in the API so [PlaybackExtras.markers] is always empty. Chapter end
-  /// offsets are backfilled from the next chapter's start so the UI can
-  /// render duration ranges (Plex serves explicit ends).
+  /// Backend-neutral [PlaybackExtras] for [itemId]. Jellyfin exposes chapters
+  /// at the item level (`raw['Chapters']`) and native skip segments through a
+  /// separate `/MediaSegments/{itemId}` endpoint. Segment loading is best-effort
+  /// so older servers still use chapter title fallback.
   @override
   Future<PlaybackExtras> fetchPlaybackExtras(
     String itemId, {
@@ -483,7 +482,15 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     bool forceRefresh = false,
   }) async {
     final item = await fetchItem(itemId);
-    return _playbackExtrasFromRaw(item?.raw, itemId);
+    final markers = item == null ? const <MediaMarker>[] : await _fetchMediaSegmentMarkers(itemId);
+    return jellyfinPlaybackExtrasFromRaw(
+      item?.raw,
+      itemId,
+      introPattern: introPattern,
+      creditsPattern: creditsPattern,
+      forceChapterFallback: forceChapterFallback,
+      markers: markers,
+    );
   }
 
   @override
@@ -495,7 +502,15 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
   }) async {
     final item = await cache.getMetadata(cacheServerId, itemId);
     if (item == null) return null;
-    return _playbackExtrasFromRaw(item.raw, itemId);
+    final markers = await _fetchCachedMediaSegmentMarkers(itemId);
+    return jellyfinPlaybackExtrasFromRaw(
+      item.raw,
+      itemId,
+      introPattern: introPattern,
+      creditsPattern: creditsPattern,
+      forceChapterFallback: forceChapterFallback,
+      markers: markers,
+    );
   }
 
   @override
@@ -526,10 +541,43 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     );
   }
 
-  /// Parse Jellyfin chapter list from the `raw` payload of a [MediaItem]
-  /// or a fresh `BaseItemDto` map. End offsets are backfilled from the
-  /// next chapter's start so the seek-bar tick UI has duration ranges.
-  PlaybackExtras _playbackExtrasFromRaw(dynamic raw, String itemId) => jellyfinPlaybackExtrasFromRaw(raw, itemId);
+  Future<List<MediaMarker>> _fetchMediaSegmentMarkers(String itemId) async {
+    final endpoint = JellyfinApiCache.mediaSegmentsEndpoint(itemId);
+    try {
+      return await fetchWithCacheFallback<List<MediaMarker>>(
+            cacheKey: endpoint,
+            networkCall: () async {
+              final response = await _http.get(endpoint);
+              if (response.statusCode == 404) {
+                return MediaServerResponse(statusCode: 200, headers: response.headers, requestUri: response.requestUri);
+              }
+              throwIfHttpError(response);
+              return response;
+            },
+            parseCache: jellyfinMediaSegmentsToMarkers,
+            parseResponse: (response) => jellyfinMediaSegmentsToMarkers(response.data),
+          ) ??
+          const [];
+    } on MediaServerHttpException catch (e) {
+      if (e.statusCode != 404) {
+        appLogger.d('JellyfinClient.fetchPlaybackExtras media segments unavailable', error: e);
+      }
+      return const [];
+    } catch (e) {
+      appLogger.d('JellyfinClient.fetchPlaybackExtras media segments unavailable', error: e);
+      return const [];
+    }
+  }
+
+  Future<List<MediaMarker>> _fetchCachedMediaSegmentMarkers(String itemId) async {
+    try {
+      final data = await cache.get(cacheServerId, JellyfinApiCache.mediaSegmentsEndpoint(itemId));
+      return jellyfinMediaSegmentsToMarkers(data);
+    } catch (e) {
+      appLogger.d('JellyfinClient.fetchPlaybackExtras cached media segments unavailable', error: e);
+      return const [];
+    }
+  }
 
   static String _segment(String value) => Uri.encodeComponent(value);
 

@@ -361,9 +361,9 @@ abstract class MediaServerClient {
   Future<ExternalIds> fetchExternalIds(String itemId);
 
   // ── Hubs: extras ─────────────────────────────────────────────────
-  /// Chapters and intro/credits markers for [itemId]. Plex returns both
-  /// in one round trip; Jellyfin only has chapters (markers list is
-  /// empty). Implementations may cache.
+  /// Chapters and intro/credits markers for [itemId]. Plex returns both in one
+  /// round trip; Jellyfin combines item-level chapters with best-effort native
+  /// media segments. Implementations may cache.
   Future<PlaybackExtras> fetchPlaybackExtras(
     String itemId, {
     String? introPattern,
@@ -535,7 +535,13 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     }
     try {
       final response = await networkCall();
-      if (cacheResponse) await _putCacheResponse(cacheKey, response.data);
+      if (cacheResponse) {
+        try {
+          await _putCacheResponse(cacheKey, response.data);
+        } catch (e, st) {
+          appLogger.w('Cache write failed for $cacheKey', error: e, stackTrace: st);
+        }
+      }
       return parseResponse(response);
     } catch (e) {
       appLogger.w('Network request failed for $cacheKey, trying cache', error: e);
@@ -560,7 +566,13 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     if (cached != null) return parseCache(cached);
     if (isOfflineMode) return null;
     final response = await networkCall();
-    if (cacheResponse) await _putCacheResponse(cacheKey, response.data);
+    if (cacheResponse) {
+      try {
+        await _putCacheResponse(cacheKey, response.data);
+      } catch (e, st) {
+        appLogger.w('Cache write failed for $cacheKey', error: e, stackTrace: st);
+      }
+    }
     return parseResponse(response);
   }
 

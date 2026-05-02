@@ -173,7 +173,7 @@ class MediaChapter {
   /// Backfill missing `endTimeOffset` on each chapter from the next chapter's
   /// `startTimeOffset`. Jellyfin sends only starts; the seek-bar tick UI needs
   /// duration ranges. Mutates [chapters] in place and returns it.
-  static List<MediaChapter> backfillEndOffsets(List<MediaChapter> chapters) {
+  static List<MediaChapter> backfillEndOffsets(List<MediaChapter> chapters, {int? runtimeMs}) {
     for (var i = 0; i < chapters.length - 1; i++) {
       final c = chapters[i];
       if (c.endTimeOffset != null) continue;
@@ -185,6 +185,20 @@ class MediaChapter {
         title: c.title,
         thumb: c.thumb,
       );
+    }
+    if (runtimeMs != null && chapters.isNotEmpty) {
+      final last = chapters.last;
+      final start = last.startTimeOffset;
+      if (last.endTimeOffset == null && start != null && runtimeMs > start) {
+        chapters[chapters.length - 1] = MediaChapter(
+          id: last.id,
+          index: last.index,
+          startTimeOffset: start,
+          endTimeOffset: runtimeMs,
+          title: last.title,
+          thumb: last.thumb,
+        );
+      }
     }
     return chapters;
   }

@@ -41,20 +41,31 @@ class JellyfinApiCache extends ApiCache {
 
   String _itemPattern(String serverId, String itemId) => '$serverId:/Users/%/Items/$itemId';
 
-  /// Delete cached item metadata for [itemId] (single-item endpoint only;
-  /// children-list endpoints are out of scope for v1 — they'll get cleaned
-  /// up via [deleteForServer] or [clearAll]).
+  static String mediaSegmentsEndpoint(String itemId) => '/MediaSegments/${Uri.encodeComponent(itemId)}';
+
+  /// Delete cached item metadata and playback segment rows for [itemId].
+  /// Children-list endpoints are out of scope for v1 — they'll get cleaned up
+  /// via [deleteForServer] or [clearAll].
   @override
   Future<void> deleteForItem(String serverId, String itemId) async {
-    await (database.delete(database.apiCache)..where((t) => t.cacheKey.like(_itemPattern(serverId, itemId)))).go();
+    final endpoint = mediaSegmentsEndpoint(itemId);
+    await (database.delete(
+      database.apiCache,
+    )..where((t) => t.cacheKey.like(_itemPattern(serverId, itemId)) | t.cacheKey.equals('$serverId:$endpoint'))).go();
   }
 
   /// Pin the metadata row(s) for [itemId] so they survive cache eviction.
   @override
-  Future<void> pinForOffline(String serverId, String itemId) => pinByKeyPattern(_itemPattern(serverId, itemId));
+  Future<void> pinForOffline(String serverId, String itemId) async {
+    final endpoint = mediaSegmentsEndpoint(itemId);
+    await Future.wait([pinByKeyPattern(_itemPattern(serverId, itemId)), pin(serverId, endpoint)]);
+  }
 
   /// Unpin a previously pinned item.
-  Future<void> unpinForOffline(String serverId, String itemId) => unpinByKeyPattern(_itemPattern(serverId, itemId));
+  Future<void> unpinForOffline(String serverId, String itemId) async {
+    final endpoint = mediaSegmentsEndpoint(itemId);
+    await Future.wait([unpinByKeyPattern(_itemPattern(serverId, itemId)), unpin(serverId, endpoint)]);
+  }
 
   /// Whether the metadata for [itemId] is pinned for offline.
   ///

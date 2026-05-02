@@ -714,6 +714,80 @@ void main() {
       expect(capturedNextUp!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
     });
 
+    test('fetchPlaybackExtras loads native Jellyfin media segments', () async {
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          requests.add(req.url);
+          if (req.url.path == '/Users/user-1/Items/item-1') {
+            return http.Response(
+              jsonEncode({'Id': 'item-1', 'Type': 'Episode', 'Name': 'Episode', 'Chapters': []}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (req.url.path == '/MediaSegments/item-1') {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {'Type': 'Intro', 'StartTicks': 50000000, 'EndTicks': 450000000},
+                  {'Type': 'Outro', 'StartTicks': 900000000, 'EndTicks': 1000000000},
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final extras = await scoped.fetchPlaybackExtras('item-1');
+
+      expect(requests.map((uri) => uri.path), contains('/MediaSegments/item-1'));
+      expect(extras.markers.map((m) => m.type), ['intro', 'credits']);
+      expect(extras.markers.first.startTimeOffset, 5000);
+      expect(extras.markers.first.endTimeOffset, 45000);
+    });
+
+    test('fetchPlaybackExtras falls back to OP/ED chapters when media segments are unavailable', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Items/item-1') {
+            return http.Response(
+              jsonEncode({
+                'Id': 'item-1',
+                'Type': 'Episode',
+                'Name': 'Episode',
+                'RunTimeTicks': 1200000000,
+                'Chapters': [
+                  {'Name': 'OP', 'StartPositionTicks': 100000000},
+                  {'Name': 'Episode', 'StartPositionTicks': 450000000},
+                  {'Name': 'ED', 'StartPositionTicks': 900000000},
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (req.url.path == '/MediaSegments/item-1') {
+            return http.Response('not found', 404);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final extras = await scoped.fetchPlaybackExtras('item-1');
+
+      expect(extras.markers.map((m) => m.type), ['intro', 'credits']);
+      expect(extras.markers.first.endTimeOffset, 45000);
+      expect(extras.markers.last.endTimeOffset, 120000);
+    });
+
     test('fetchContinueWatching merges resume with non-resumable Next Up', () async {
       final requests = <Uri>[];
       final scoped = JellyfinClient.forTesting(

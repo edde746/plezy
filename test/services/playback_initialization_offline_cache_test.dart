@@ -237,6 +237,54 @@ void main() {
 
     expect(extras.chapters.single.title, '123');
   });
+
+  test('cache-only Jellyfin playback extras uses chapter fallback patterns', () async {
+    await JellyfinApiCache.instance.put('srv-1/user-1', '/Users/user-1/Items/item-1', {
+      'Id': 'item-1',
+      'Type': 'Episode',
+      'Name': 'Episode',
+      'RunTimeTicks': 1200000000,
+      'Chapters': [
+        {'Name': 'OP', 'StartPositionTicks': 100000000},
+        {'Name': 'Episode', 'StartPositionTicks': 450000000},
+        {'Name': 'ED', 'StartPositionTicks': 900000000},
+      ],
+    });
+
+    final extras = await CachedPlaybackMetadataService.fetchPlaybackExtras(
+      backend: MediaBackend.jellyfin,
+      cacheServerId: 'srv-1/user-1',
+      itemId: 'item-1',
+    );
+
+    expect(extras?.markers.map((m) => m.type), ['intro', 'credits']);
+    expect(extras?.markers.last.endTimeOffset, 120000);
+  });
+
+  test('cache-only Jellyfin playback extras uses cached native media segments', () async {
+    await JellyfinApiCache.instance.put('srv-1/user-1', '/Users/user-1/Items/item-1', {
+      'Id': 'item-1',
+      'Type': 'Episode',
+      'Name': 'Episode',
+      'Chapters': [],
+    });
+    await JellyfinApiCache.instance.put('srv-1/user-1', '/MediaSegments/item-1', {
+      'Items': [
+        {'Type': 'Intro', 'StartTicks': 50000000, 'EndTicks': 450000000},
+        {'Type': 'Outro', 'StartTicks': 900000000, 'EndTicks': 1000000000},
+      ],
+    });
+
+    final extras = await CachedPlaybackMetadataService.fetchPlaybackExtras(
+      backend: MediaBackend.jellyfin,
+      cacheServerId: 'srv-1/user-1',
+      itemId: 'item-1',
+    );
+
+    expect(extras?.markers.map((m) => m.type), ['intro', 'credits']);
+    expect(extras?.markers.first.startTimeOffset, 5000);
+    expect(extras?.markers.last.endTimeOffset, 100000);
+  });
 }
 
 class _FailingPlaybackClient implements MediaServerClient {
