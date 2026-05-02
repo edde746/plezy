@@ -20,9 +20,7 @@ import 'mal_session.dart';
 class MalAuthService extends OAuthProxyAuthServiceBase<MalSession> {
   final http.Client _http;
 
-  MalAuthService({OAuthProxyClient? proxy, http.Client? httpClient})
-    : _http = httpClient ?? platform.createPlatformClient(),
-      super(proxy: proxy);
+  MalAuthService({super.proxy, http.Client? httpClient}) : _http = httpClient ?? platform.createPlatformClient();
 
   @override
   String get service => 'mal';

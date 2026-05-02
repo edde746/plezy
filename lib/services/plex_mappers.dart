@@ -1007,7 +1007,7 @@ MediaSourceInfo? plexMediaSourceInfoFromCacheJson(Map<String, dynamic> metadata,
   final streams = walkStreams(
     flexibleList(parts.first['Stream']),
     const PlexFileInfoStreamReader(),
-    onMalformed: (error, _, __) => appLogger.d('Skipping malformed stream in cached metadata', error: error),
+    onMalformed: (error, _, _) => appLogger.d('Skipping malformed stream in cached metadata', error: error),
   );
 
   return MediaSourceInfo(

@@ -8,7 +8,7 @@ import 'anilist_session.dart';
 /// server-side so the device never sees the fragment. The proxy handles both
 /// state + client_secret; the device just gets the bearer token.
 class AnilistAuthService extends OAuthProxyAuthServiceBase<AnilistSession> {
-  AnilistAuthService({OAuthProxyClient? proxy}) : super(proxy: proxy);
+  AnilistAuthService({super.proxy});
 
   @override
   String get service => 'anilist';
