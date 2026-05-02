@@ -12,7 +12,7 @@ project 'Runner', {
 # compiled from tvos/Runner/Plugins/ via tvos/scripts/wire_plugins.rb.
 require 'json'
 
-tvos_pod_plugins = %w[universal_gamepad os_media_controls]
+tvos_pod_plugins = %w[universal_gamepad os_media_controls wakelock_plus]
 
 plugins_deps = File.expand_path('../.flutter-plugins-dependencies', __dir__)
 unless File.exist?(plugins_deps)

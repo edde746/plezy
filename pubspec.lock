@@ -1407,8 +1407,8 @@ packages:
     dependency: "direct main"
     description:
       path: wakelock_plus
-      ref: HEAD
-      resolved-ref: "0085d705c80a961a4a5eeaa4ee8f723dcf4bc9b8"
+      ref: "8595fee595c952b73d430f2eab05f2e0d858290e"
+      resolved-ref: "8595fee595c952b73d430f2eab05f2e0d858290e"
       url: "https://github.com/edde746/wakelock_plus"
     source: git
     version: "1.4.0"

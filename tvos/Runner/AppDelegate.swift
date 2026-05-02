@@ -3,6 +3,7 @@ import UIKit
 import AVFoundation
 import universal_gamepad
 import os_media_controls
+import wakelock_plus
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -43,6 +44,9 @@ import os_media_controls
     }
     if let r = self.registrar(forPlugin: "OsMediaControlsPlugin") {
       OsMediaControlsPlugin.register(with: r)
+    }
+    if let r = self.registrar(forPlugin: "WakelockPlusPlugin") {
+      WakelockPlusPlugin.register(with: r)
     }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
