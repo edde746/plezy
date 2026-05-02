@@ -1571,26 +1571,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 fit: BoxFit.contain,
                                 memCacheWidth: (400 * dpr).clamp(200, 800).round(),
                                 alignment: isLargeScreen ? Alignment.bottomLeft : Alignment.bottomCenter,
-                                placeholder: (context, url) {
-                                  final theme = Theme.of(context);
-                                  final colorScheme = theme.colorScheme;
-                                  return Align(
-                                    alignment: isLargeScreen ? Alignment.centerLeft : Alignment.center,
-                                    child: Text(
-                                      showName,
-                                      style: theme.textTheme.displaySmall?.copyWith(
-                                        color: colorScheme.onSurface.withValues(alpha: 0.3),
-                                        fontWeight: FontWeight.bold,
-                                        shadows: [
-                                          Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8),
-                                        ],
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: isLargeScreen ? TextAlign.left : TextAlign.center,
-                                    ),
-                                  );
-                                },
+                                placeholder: (context, url) => const SizedBox.shrink(),
                                 errorWidget: (context, url, error) {
                                   // Fallback to text if logo fails to load
                                   final theme = Theme.of(context);

@@ -2486,19 +2486,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                               fit: BoxFit.contain,
                               alignment: Alignment.centerLeft,
                               memCacheWidth: (400 * dpr).clamp(200, 800).round(),
-                              placeholder: (context, url) => Align(
-                                alignment: Alignment.centerLeft,
-                                child: Text(
-                                  metadata.displayTitle,
-                                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.3),
-                                    fontWeight: FontWeight.bold,
-                                    shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 8)],
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
+                              placeholder: (context, url) => const SizedBox.shrink(),
                               errorWidget: (context, url, error) => _buildTitleText(context, metadata.displayTitle),
                             ),
                             sigma: 10,
