@@ -307,23 +307,27 @@ class _NotInSessionViewState extends State<_NotInSessionView> {
 
   Future<void> _renameRoom(RecentRoom room) async {
     final controller = TextEditingController(text: room.name ?? '');
-    final name = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(t.watchTogether.renameRoom),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          decoration: InputDecoration(hintText: room.code),
-          onSubmitted: (value) => Navigator.pop(context, value),
+    String? name;
+    try {
+      name = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(t.watchTogether.renameRoom),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: InputDecoration(hintText: room.code),
+            onSubmitted: (value) => Navigator.pop(context, value),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+            FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: Text(t.common.save)),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(context, controller.text), child: Text(t.common.save)),
-        ],
-      ),
-    );
-    controller.dispose();
+      );
+    } finally {
+      controller.dispose();
+    }
     if (name == null || !mounted) return;
 
     await RecentRoomsService.renameRoom(room.code, name.isEmpty ? null : name);

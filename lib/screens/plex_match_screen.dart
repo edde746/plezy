@@ -7,6 +7,7 @@ import '../focus/focusable_text_field.dart';
 import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
+import '../mixins/controller_disposer_mixin.dart';
 import '../models/plex/plex_match_result.dart';
 import '../services/plex_client.dart';
 import '../utils/app_logger.dart';
@@ -33,10 +34,12 @@ class PlexMatchScreen extends StatefulWidget {
   State<PlexMatchScreen> createState() => _PlexMatchScreenState();
 }
 
-class _PlexMatchScreenState extends State<PlexMatchScreen> {
+class _PlexMatchScreenState extends State<PlexMatchScreen> with ControllerDisposerMixin {
   late final PlexClient _client;
-  late final TextEditingController _nameController;
-  late final TextEditingController _yearController;
+  late final TextEditingController _nameController = createTextEditingController(text: widget.metadata.title);
+  late final TextEditingController _yearController = createTextEditingController(
+    text: widget.metadata.year?.toString() ?? '',
+  );
   final _nameFocus = FocusNode();
   final _yearFocus = FocusNode();
   final _searchFocus = FocusNode();
@@ -58,8 +61,6 @@ class _PlexMatchScreenState extends State<PlexMatchScreen> {
   void initState() {
     super.initState();
     _client = context.getPlexClientWithFallback(widget.metadata.serverId);
-    _nameController = TextEditingController(text: widget.metadata.title);
-    _yearController = TextEditingController(text: widget.metadata.year?.toString() ?? '');
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (InputModeTracker.isKeyboardMode(context)) {
@@ -71,8 +72,6 @@ class _PlexMatchScreenState extends State<PlexMatchScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _yearController.dispose();
     _nameFocus.dispose();
     _yearFocus.dispose();
     _searchFocus.dispose();

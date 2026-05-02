@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../focus/focusable_button.dart';
 import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
+import '../mixins/controller_disposer_mixin.dart';
 import '../widgets/app_icon.dart';
 import '../widgets/dialog_action_button.dart';
 import '../widgets/focusable_list_tile.dart';
@@ -212,7 +213,7 @@ Future<String?> showMultilineTextInputDialog(
 /// Shared lifecycle for the two private text-input dialogs below: a single
 /// [TextEditingController] seeded from [initialValue], plus a focus node for
 /// the save button.
-mixin _TextInputDialogStateMixin<T extends StatefulWidget> on State<T> {
+mixin _TextInputDialogStateMixin<T extends StatefulWidget> on State<T>, ControllerDisposerMixin<T> {
   late final TextEditingController _controller;
   final _saveFocusNode = FocusNode();
 
@@ -221,12 +222,11 @@ mixin _TextInputDialogStateMixin<T extends StatefulWidget> on State<T> {
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: initialValue);
+    _controller = createTextEditingController(text: initialValue);
   }
 
   @override
   void dispose() {
-    _controller.dispose();
     _saveFocusNode.dispose();
     super.dispose();
   }
@@ -244,7 +244,7 @@ class _MultilineTextInputDialog extends StatefulWidget {
 }
 
 class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog>
-    with _TextInputDialogStateMixin<_MultilineTextInputDialog> {
+    with ControllerDisposerMixin, _TextInputDialogStateMixin<_MultilineTextInputDialog> {
   @override
   String? get initialValue => widget.initialValue;
 
@@ -299,7 +299,8 @@ class _TextInputDialog extends StatefulWidget {
   State<_TextInputDialog> createState() => _TextInputDialogState();
 }
 
-class _TextInputDialogState extends State<_TextInputDialog> with _TextInputDialogStateMixin<_TextInputDialog> {
+class _TextInputDialogState extends State<_TextInputDialog>
+    with ControllerDisposerMixin, _TextInputDialogStateMixin<_TextInputDialog> {
   @override
   String? get initialValue => widget.initialValue;
 

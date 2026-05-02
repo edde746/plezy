@@ -7,6 +7,7 @@ import '../../../focus/focusable_button.dart';
 import '../../../focus/focusable_text_field.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../mixins/controller_disposer_mixin.dart';
 import '../../../models/plex/plex_subtitle_search_result.dart';
 import '../../../services/plex_client.dart';
 import '../../../utils/language_codes.dart';
@@ -37,10 +38,10 @@ class SubtitleSearchSheet extends StatefulWidget {
   State<SubtitleSearchSheet> createState() => _SubtitleSearchSheetState();
 }
 
-class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
+class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with ControllerDisposerMixin {
   String _languageCode = 'en';
   String _languageName = 'English';
-  final _titleController = TextEditingController();
+  late final _titleController = createTextEditingController();
   final _languageFocusNode = FocusNode(debugLabel: 'SubtitleSearch_language');
   final _titleFocusNode = FocusNode(debugLabel: 'SubtitleSearch_title');
   final _firstResultFocusNode = FocusNode(debugLabel: 'SubtitleSearch_firstResult');
@@ -76,7 +77,6 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> {
     _languageFocusNode.dispose();
     _titleFocusNode.dispose();
     _firstResultFocusNode.dispose();
-    _titleController.dispose();
     super.dispose();
   }
 
@@ -361,8 +361,8 @@ class _LanguagePickerView extends StatefulWidget {
   State<_LanguagePickerView> createState() => _LanguagePickerViewState();
 }
 
-class _LanguagePickerViewState extends State<_LanguagePickerView> {
-  final _filterController = TextEditingController();
+class _LanguagePickerViewState extends State<_LanguagePickerView> with ControllerDisposerMixin {
+  late final _filterController = createTextEditingController();
   final _filterFocusNode = FocusNode(debugLabel: 'SubtitleLanguage_filter');
   final _firstLanguageFocusNode = FocusNode(debugLabel: 'SubtitleLanguage_firstResult');
   late List<({String code, String name})> _allLanguages;
@@ -379,7 +379,6 @@ class _LanguagePickerViewState extends State<_LanguagePickerView> {
   void dispose() {
     _filterFocusNode.dispose();
     _firstLanguageFocusNode.dispose();
-    _filterController.dispose();
     super.dispose();
   }
 

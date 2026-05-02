@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../connection/connection_registry.dart';
 import '../../i18n/strings.g.dart';
+import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/plex/plex_home.dart';
 import '../../profiles/active_plex_identity.dart';
 import '../../profiles/active_profile_provider.dart';
@@ -22,8 +23,8 @@ class DiscoveryView extends StatefulWidget {
   State<DiscoveryView> createState() => _DiscoveryViewState();
 }
 
-class _DiscoveryViewState extends State<DiscoveryView> {
-  final _hostAddressController = TextEditingController();
+class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMixin {
+  late final _hostAddressController = createTextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isConnecting = false;
   String? _errorMessage;
@@ -105,7 +106,6 @@ class _DiscoveryViewState extends State<DiscoveryView> {
 
   @override
   void dispose() {
-    _hostAddressController.dispose();
     _discoverySubscription?.cancel();
     _searchTimeout?.cancel();
     _provider.stopDiscovery();

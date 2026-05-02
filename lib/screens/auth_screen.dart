@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
+import '../mixins/controller_disposer_mixin.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile.dart';
@@ -409,16 +410,10 @@ class _DebugTokenDialog extends StatefulWidget {
   State<_DebugTokenDialog> createState() => _DebugTokenDialogState();
 }
 
-class _DebugTokenDialogState extends State<_DebugTokenDialog> {
-  final TextEditingController _tokenController = TextEditingController();
+class _DebugTokenDialogState extends State<_DebugTokenDialog> with ControllerDisposerMixin {
+  late final TextEditingController _tokenController = createTextEditingController();
   String? _errorMessage;
   bool _busy = false;
-
-  @override
-  void dispose() {
-    _tokenController.dispose();
-    super.dispose();
-  }
 
   Future<void> _submit() async {
     final token = _tokenController.text.trim();

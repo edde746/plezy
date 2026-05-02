@@ -10,6 +10,7 @@ import 'package:uuid/uuid.dart';
 import '../../connection/connection.dart';
 import '../../exceptions/media_server_exceptions.dart';
 import '../../i18n/strings.g.dart';
+import '../../mixins/controller_disposer_mixin.dart';
 import '../../profiles/active_profile_binder.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
@@ -64,10 +65,10 @@ class AddJellyfinScreen extends StatefulWidget {
   State<AddJellyfinScreen> createState() => _AddJellyfinScreenState();
 }
 
-class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormStateMixin {
-  final _urlController = TextEditingController();
-  final _usernameController = TextEditingController();
-  final _passwordController = TextEditingController();
+class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormStateMixin, ControllerDisposerMixin {
+  late final _urlController = createTextEditingController();
+  late final _usernameController = createTextEditingController();
+  late final _passwordController = createTextEditingController();
   // Owned so the username field can advance focus on Enter; mobile keyboards
   // act on `textInputAction: next` automatically but TV remotes / hardware
   // keyboards need the explicit `onFieldSubmitted` handler below.
@@ -86,9 +87,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     // setState after the widget is gone.
     _qcCancelled = true;
     _qcAttemptId++;
-    _urlController.dispose();
-    _usernameController.dispose();
-    _passwordController.dispose();
     _passwordFocus.dispose();
     super.dispose();
   }

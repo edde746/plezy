@@ -44,6 +44,69 @@ Map<String, dynamic> _obfuscatePlaylistJson(Map<String, dynamic> json) {
   return copy;
 }
 
+int _flexibleIntOrZero(Object? v) => flexibleInt(v) ?? 0;
+
+Map? _firstPartMap(Object? raw) {
+  final parts = flexibleList(raw);
+  if (parts == null || parts.isEmpty) return null;
+  final part = parts.first;
+  return part is Map ? part : null;
+}
+
+String _partKeyFromJson(Object? raw) => _firstPartMap(raw)?['key']?.toString() ?? '';
+
+bool? _partAccessibleFromJson(Object? raw) => flexibleBoolNullable(_firstPartMap(raw)?['accessible']);
+
+bool? _partExistsFromJson(Object? raw) => flexibleBoolNullable(_firstPartMap(raw)?['exists']);
+
+Object? _readPartKey(Map json, String _) => _partKeyFromJson(json['Part']);
+
+Object? _readPartAccessible(Map json, String _) => _partAccessibleFromJson(json['Part']);
+
+Object? _readPartExists(Map json, String _) => _partExistsFromJson(json['Part']);
+
+String _hubTitleFromJson(Object? raw) {
+  final title = raw as String? ?? 'Unknown';
+  return kBlurArtwork ? obfuscateText(title) : title;
+}
+
+Object? _readHubItems(Map json, String _) {
+  final entries = <Map<String, dynamic>>[];
+
+  void append(Object? raw, {required bool isDirectory}) {
+    if (raw is! List) return;
+    for (final item in raw) {
+      if (item is! Map) continue;
+      final entry = Map<String, dynamic>.from(item);
+      if (isDirectory && !entry.containsKey('type')) {
+        entry['type'] = (entry.containsKey('leafCount') || entry.containsKey('childCount')) ? 'show' : 'folder';
+      }
+      entries.add(entry);
+    }
+  }
+
+  append(json['Metadata'], isDirectory: false);
+  append(json['Directory'], isDirectory: true);
+  return entries;
+}
+
+List<PlexMetadataDto> _hubItemsFromJson(Object? raw) {
+  final items = <PlexMetadataDto>[];
+  if (raw is! List) return items;
+  for (final item in raw) {
+    try {
+      items.add(PlexMetadataDto.fromJsonWithImages(item as Map<String, dynamic>));
+    } catch (_) {
+      // Skip hub entries that fail to parse; Plex hubs can mix item shapes.
+    }
+  }
+  return items;
+}
+
+Object? _readMetadataRatingKey(Map json, String _) => (json['ratingKey'] ?? json['key'])?.toString() ?? '';
+
+List<String>? _tagListFromJson(Object? raw) => stringListFromRaw(raw, mapKey: 'tag');
+
 @JsonSerializable(createToJson: false)
 class PlexRoleDto {
   @JsonKey(fromJson: flexibleInt)
@@ -61,16 +124,27 @@ class PlexRoleDto {
   factory PlexRoleDto.fromJson(Map<String, dynamic> json) => _$PlexRoleDtoFromJson(json);
 }
 
+@JsonSerializable(createToJson: false)
 class PlexMediaVersionDto {
+  @JsonKey(fromJson: _flexibleIntOrZero)
   final int id;
+  @JsonKey(readValue: readStringField)
   final String? videoResolution;
+  @JsonKey(readValue: readStringField)
   final String? videoCodec;
+  @JsonKey(fromJson: flexibleInt)
   final int? bitrate;
+  @JsonKey(fromJson: flexibleInt)
   final int? width;
+  @JsonKey(fromJson: flexibleInt)
   final int? height;
+  @JsonKey(readValue: readStringField)
   final String? container;
+  @JsonKey(readValue: _readPartKey)
   final String partKey;
+  @JsonKey(readValue: _readPartAccessible)
   final bool? accessible;
+  @JsonKey(readValue: _readPartExists)
   final bool? exists;
 
   const PlexMediaVersionDto({
@@ -86,23 +160,7 @@ class PlexMediaVersionDto {
     this.exists,
   });
 
-  factory PlexMediaVersionDto.fromJson(Map<String, dynamic> json) {
-    final parts = flexibleList(json['Part']);
-    final part = parts != null && parts.isNotEmpty && parts.first is Map ? parts.first as Map : null;
-    final partKey = part?['key']?.toString() ?? '';
-    return PlexMediaVersionDto(
-      id: flexibleInt(json['id']) ?? 0,
-      videoResolution: json['videoResolution']?.toString(),
-      videoCodec: json['videoCodec']?.toString(),
-      bitrate: flexibleInt(json['bitrate']),
-      width: flexibleInt(json['width']),
-      height: flexibleInt(json['height']),
-      container: json['container']?.toString(),
-      partKey: partKey,
-      accessible: flexibleBoolNullable(part?['accessible']),
-      exists: flexibleBoolNullable(part?['exists']),
-    );
-  }
+  factory PlexMediaVersionDto.fromJson(Map<String, dynamic> json) => _$PlexMediaVersionDtoFromJson(json);
 }
 
 @JsonSerializable(createToJson: false)
@@ -255,15 +313,24 @@ class PlexPlaylistDto {
   }
 }
 
+@JsonSerializable(createToJson: false)
 class PlexHubDto {
+  @JsonKey(name: 'key', readValue: readStringField, defaultValue: '')
   final String hubKey;
+  @JsonKey(fromJson: _hubTitleFromJson)
   final String title;
+  @JsonKey(defaultValue: 'hub')
   final String type;
   final String? hubIdentifier;
+  @JsonKey(fromJson: _flexibleIntOrZero)
   final int size;
+  @JsonKey(fromJson: flexibleBool)
   final bool more;
+  @JsonKey(readValue: _readHubItems, fromJson: _hubItemsFromJson)
   final List<PlexMetadataDto> items;
+  @JsonKey(includeFromJson: false)
   final String? serverId;
+  @JsonKey(includeFromJson: false)
   final String? serverName;
 
   const PlexHubDto({
@@ -279,39 +346,18 @@ class PlexHubDto {
   });
 
   factory PlexHubDto.fromJson(Map<String, dynamic> json, {String? serverId, String? serverName}) {
-    final items = <PlexMetadataDto>[];
-    void parseEntries(List? entries, {bool isDirectory = false}) {
-      if (entries == null) return;
-      for (final item in entries) {
-        try {
-          Map<String, dynamic> entry = item as Map<String, dynamic>;
-          if (isDirectory && !entry.containsKey('type')) {
-            entry = Map<String, dynamic>.from(entry);
-            entry['type'] = (entry.containsKey('leafCount') || entry.containsKey('childCount')) ? 'show' : 'folder';
-          }
-          var parsed = PlexMetadataDto.fromJsonWithImages(entry);
-          if (serverId != null || serverName != null) {
-            parsed = parsed.copyWith(serverId: serverId, serverName: serverName);
-          }
-          items.add(parsed);
-        } catch (_) {
-          // Skip items that fail to parse
-        }
-      }
-    }
-
-    parseEntries(json['Metadata'] as List?);
-    parseEntries(json['Directory'] as List?, isDirectory: true);
+    final parsed = _$PlexHubDtoFromJson(json);
+    final items = serverId == null && serverName == null
+        ? parsed.items
+        : parsed.items.map((item) => item.copyWith(serverId: serverId, serverName: serverName)).toList();
 
     return PlexHubDto(
-      hubKey: json['key'] as String? ?? '',
-      title: kBlurArtwork
-          ? obfuscateText(json['title'] as String? ?? 'Unknown')
-          : json['title'] as String? ?? 'Unknown',
-      type: json['type'] as String? ?? 'hub',
-      hubIdentifier: json['hubIdentifier'] as String?,
+      hubKey: parsed.hubKey,
+      title: parsed.title,
+      type: parsed.type,
+      hubIdentifier: parsed.hubIdentifier,
       size: flexibleInt(json['size']) ?? items.length,
-      more: flexibleBool(json['more']),
+      more: parsed.more,
       items: items,
       serverId: serverId,
       serverName: serverName,
@@ -319,7 +365,9 @@ class PlexHubDto {
   }
 }
 
+@JsonSerializable(includeIfNull: false)
 class PlexMetadataDto {
+  @JsonKey(readValue: _readMetadataRatingKey, defaultValue: '')
   final String ratingKey;
   final String? key;
   final String? guid;
@@ -332,45 +380,74 @@ class PlexMetadataDto {
   final double? rating;
   final double? audienceRating;
   final double? userRating;
+  @JsonKey(fromJson: flexibleInt)
   final int? year;
   final String? originallyAvailableAt;
   final String? thumb;
   final String? art;
+  @JsonKey(fromJson: flexibleInt)
   final int? duration;
+  @JsonKey(fromJson: flexibleInt)
   final int? addedAt;
+  @JsonKey(fromJson: flexibleInt)
   final int? updatedAt;
+  @JsonKey(fromJson: flexibleInt)
   final int? lastViewedAt;
   final String? grandparentTitle;
   final String? grandparentThumb;
   final String? grandparentArt;
+  @JsonKey(readValue: readStringField)
   final String? grandparentRatingKey;
   final String? parentTitle;
   final String? parentThumb;
+  @JsonKey(readValue: readStringField)
   final String? parentRatingKey;
+  @JsonKey(fromJson: flexibleInt)
   final int? parentIndex;
+  @JsonKey(fromJson: flexibleInt)
   final int? index;
   final String? grandparentTheme;
+  @JsonKey(fromJson: flexibleInt)
   final int? viewOffset;
+  @JsonKey(fromJson: flexibleInt)
   final int? viewCount;
+  @JsonKey(fromJson: flexibleInt)
   final int? leafCount;
+  @JsonKey(fromJson: flexibleInt)
   final int? viewedLeafCount;
+  @JsonKey(fromJson: flexibleInt)
   final int? childCount;
+  @JsonKey(name: 'Role', includeToJson: false)
   final List<PlexRoleDto>? role;
+  @JsonKey(name: 'Media', includeToJson: false)
   final List<PlexMediaVersionDto>? mediaVersions;
+  @JsonKey(name: 'Genre', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? genre;
+  @JsonKey(name: 'Director', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? director;
+  @JsonKey(name: 'Writer', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? writer;
+  @JsonKey(name: 'Producer', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? producer;
+  @JsonKey(name: 'Country', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? country;
+  @JsonKey(name: 'Collection', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? collection;
+  @JsonKey(name: 'Label', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? label;
+  @JsonKey(name: 'Style', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? style;
+  @JsonKey(name: 'Mood', fromJson: _tagListFromJson, includeToJson: false)
   final List<String>? mood;
   final String? audioLanguage;
   final String? subtitleLanguage;
+  @JsonKey(fromJson: flexibleInt)
   final int? subtitleMode;
+  @JsonKey(fromJson: flexibleInt)
   final int? playlistItemID;
+  @JsonKey(fromJson: flexibleInt)
   final int? playQueueItemID;
+  @JsonKey(fromJson: flexibleInt)
   final int? librarySectionID;
   final String? librarySectionTitle;
   final String? ratingImage;
@@ -379,9 +456,12 @@ class PlexMetadataDto {
   final String? originalTitle;
   final String? editionTitle;
   final String? subtype;
+  @JsonKey(fromJson: flexibleInt)
   final int? extraType;
   final String? primaryExtraKey;
+  @JsonKey(includeFromJson: false, includeToJson: false)
   final String? serverId;
+  @JsonKey(includeFromJson: false, includeToJson: false)
   final String? serverName;
   final String? clearLogo;
   final String? backgroundSquare;
@@ -457,75 +537,7 @@ class PlexMetadataDto {
   factory PlexMetadataDto.fromJson(Map<String, dynamic> rawJson) {
     final json = kBlurArtwork ? _obfuscateJson(rawJson) : rawJson;
     try {
-      final roleList = (json['Role'] as List?)?.map((e) => PlexRoleDto.fromJson(e as Map<String, dynamic>)).toList();
-      final mediaList = (json['Media'] as List?)
-          ?.map((e) => PlexMediaVersionDto.fromJson(e as Map<String, dynamic>))
-          .toList();
-      return PlexMetadataDto(
-        ratingKey: (json['ratingKey'] ?? json['key'] ?? '').toString(),
-        key: json['key'] as String?,
-        guid: json['guid'] as String?,
-        studio: json['studio'] as String?,
-        type: json['type'] as String?,
-        title: json['title'] as String?,
-        titleSort: json['titleSort'] as String?,
-        contentRating: json['contentRating'] as String?,
-        summary: json['summary'] as String?,
-        rating: (json['rating'] as num?)?.toDouble(),
-        audienceRating: (json['audienceRating'] as num?)?.toDouble(),
-        userRating: (json['userRating'] as num?)?.toDouble(),
-        year: flexibleInt(json['year']),
-        originallyAvailableAt: json['originallyAvailableAt'] as String?,
-        thumb: json['thumb'] as String?,
-        art: json['art'] as String?,
-        duration: flexibleInt(json['duration']),
-        addedAt: flexibleInt(json['addedAt']),
-        updatedAt: flexibleInt(json['updatedAt']),
-        lastViewedAt: flexibleInt(json['lastViewedAt']),
-        grandparentTitle: json['grandparentTitle'] as String?,
-        grandparentThumb: json['grandparentThumb'] as String?,
-        grandparentArt: json['grandparentArt'] as String?,
-        grandparentRatingKey: json['grandparentRatingKey']?.toString(),
-        parentTitle: json['parentTitle'] as String?,
-        parentThumb: json['parentThumb'] as String?,
-        parentRatingKey: json['parentRatingKey']?.toString(),
-        parentIndex: flexibleInt(json['parentIndex']),
-        index: flexibleInt(json['index']),
-        grandparentTheme: json['grandparentTheme'] as String?,
-        viewOffset: flexibleInt(json['viewOffset']),
-        viewCount: flexibleInt(json['viewCount']),
-        leafCount: flexibleInt(json['leafCount']),
-        viewedLeafCount: flexibleInt(json['viewedLeafCount']),
-        childCount: flexibleInt(json['childCount']),
-        role: roleList,
-        mediaVersions: mediaList,
-        genre: stringListFromRaw(json['Genre'], mapKey: 'tag'),
-        director: stringListFromRaw(json['Director'], mapKey: 'tag'),
-        writer: stringListFromRaw(json['Writer'], mapKey: 'tag'),
-        producer: stringListFromRaw(json['Producer'], mapKey: 'tag'),
-        country: stringListFromRaw(json['Country'], mapKey: 'tag'),
-        collection: stringListFromRaw(json['Collection'], mapKey: 'tag'),
-        label: stringListFromRaw(json['Label'], mapKey: 'tag'),
-        style: stringListFromRaw(json['Style'], mapKey: 'tag'),
-        mood: stringListFromRaw(json['Mood'], mapKey: 'tag'),
-        audioLanguage: json['audioLanguage'] as String?,
-        subtitleLanguage: json['subtitleLanguage'] as String?,
-        subtitleMode: flexibleInt(json['subtitleMode']),
-        playlistItemID: flexibleInt(json['playlistItemID']),
-        playQueueItemID: flexibleInt(json['playQueueItemID']),
-        librarySectionID: flexibleInt(json['librarySectionID']),
-        librarySectionTitle: json['librarySectionTitle'] as String?,
-        ratingImage: json['ratingImage'] as String?,
-        audienceRatingImage: json['audienceRatingImage'] as String?,
-        tagline: json['tagline'] as String?,
-        originalTitle: json['originalTitle'] as String?,
-        editionTitle: json['editionTitle'] as String?,
-        subtype: json['subtype'] as String?,
-        extraType: flexibleInt(json['extraType']),
-        primaryExtraKey: json['primaryExtraKey'] as String?,
-        clearLogo: json['clearLogo'] as String?,
-        backgroundSquare: json['backgroundSquare'] as String?,
-      );
+      return _$PlexMetadataDtoFromJson(json);
     } on TypeError catch (e, st) {
       Sentry.captureException(
         e,
@@ -579,62 +591,7 @@ class PlexMetadataDto {
   /// Top-level scalar fields surface as a plain Plex JSON map. Used by the
   /// download-manager cache layer to overlay scalar updates on top of an
   /// existing Plex response without losing Chapter/Marker/Media arrays.
-  Map<String, dynamic> toJson() {
-    return {
-      'ratingKey': ratingKey,
-      if (key != null) 'key': key,
-      if (guid != null) 'guid': guid,
-      if (studio != null) 'studio': studio,
-      if (type != null) 'type': type,
-      if (title != null) 'title': title,
-      if (titleSort != null) 'titleSort': titleSort,
-      if (contentRating != null) 'contentRating': contentRating,
-      if (summary != null) 'summary': summary,
-      if (rating != null) 'rating': rating,
-      if (audienceRating != null) 'audienceRating': audienceRating,
-      if (userRating != null) 'userRating': userRating,
-      if (year != null) 'year': year,
-      if (originallyAvailableAt != null) 'originallyAvailableAt': originallyAvailableAt,
-      if (thumb != null) 'thumb': thumb,
-      if (art != null) 'art': art,
-      if (duration != null) 'duration': duration,
-      if (addedAt != null) 'addedAt': addedAt,
-      if (updatedAt != null) 'updatedAt': updatedAt,
-      if (lastViewedAt != null) 'lastViewedAt': lastViewedAt,
-      if (grandparentTitle != null) 'grandparentTitle': grandparentTitle,
-      if (grandparentThumb != null) 'grandparentThumb': grandparentThumb,
-      if (grandparentArt != null) 'grandparentArt': grandparentArt,
-      if (grandparentRatingKey != null) 'grandparentRatingKey': grandparentRatingKey,
-      if (parentTitle != null) 'parentTitle': parentTitle,
-      if (parentThumb != null) 'parentThumb': parentThumb,
-      if (parentRatingKey != null) 'parentRatingKey': parentRatingKey,
-      if (parentIndex != null) 'parentIndex': parentIndex,
-      if (index != null) 'index': index,
-      if (grandparentTheme != null) 'grandparentTheme': grandparentTheme,
-      if (viewOffset != null) 'viewOffset': viewOffset,
-      if (viewCount != null) 'viewCount': viewCount,
-      if (leafCount != null) 'leafCount': leafCount,
-      if (viewedLeafCount != null) 'viewedLeafCount': viewedLeafCount,
-      if (childCount != null) 'childCount': childCount,
-      if (audioLanguage != null) 'audioLanguage': audioLanguage,
-      if (subtitleLanguage != null) 'subtitleLanguage': subtitleLanguage,
-      if (subtitleMode != null) 'subtitleMode': subtitleMode,
-      if (playlistItemID != null) 'playlistItemID': playlistItemID,
-      if (playQueueItemID != null) 'playQueueItemID': playQueueItemID,
-      if (librarySectionID != null) 'librarySectionID': librarySectionID,
-      if (librarySectionTitle != null) 'librarySectionTitle': librarySectionTitle,
-      if (ratingImage != null) 'ratingImage': ratingImage,
-      if (audienceRatingImage != null) 'audienceRatingImage': audienceRatingImage,
-      if (tagline != null) 'tagline': tagline,
-      if (originalTitle != null) 'originalTitle': originalTitle,
-      if (editionTitle != null) 'editionTitle': editionTitle,
-      if (subtype != null) 'subtype': subtype,
-      if (extraType != null) 'extraType': extraType,
-      if (primaryExtraKey != null) 'primaryExtraKey': primaryExtraKey,
-      if (clearLogo != null) 'clearLogo': clearLogo,
-      if (backgroundSquare != null) 'backgroundSquare': backgroundSquare,
-    };
-  }
+  Map<String, dynamic> toJson() => _$PlexMetadataDtoToJson(this);
 
   PlexMetadataDto copyWith({
     String? ratingKey,

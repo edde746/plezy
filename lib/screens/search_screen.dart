@@ -7,6 +7,7 @@ import 'package:rate_limiter/rate_limiter.dart';
 import '../focus/dpad_navigator.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
+import '../mixins/controller_disposer_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/app_logger.dart';
@@ -26,8 +27,8 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen>
-    with Refreshable, FullRefreshable, SearchInputFocusable, FocusableTab {
-  final _searchController = TextEditingController();
+    with Refreshable, FullRefreshable, SearchInputFocusable, FocusableTab, ControllerDisposerMixin {
+  late final _searchController = createTextEditingController();
   final _searchFocusNode = FocusNode(debugLabel: 'SearchInput');
   final _firstResultFocusNode = FocusNode(debugLabel: 'SearchFirstResult');
   List<MediaItem> _searchResults = [];
@@ -49,7 +50,6 @@ class _SearchScreenState extends State<SearchScreen>
   void dispose() {
     _searchDebounce.cancel();
     _searchController.removeListener(_onSearchChanged);
-    _searchController.dispose();
     _searchFocusNode.dispose();
     _firstResultFocusNode.dispose();
     super.dispose();

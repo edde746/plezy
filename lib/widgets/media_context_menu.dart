@@ -11,6 +11,7 @@ import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
 import '../media/media_version.dart';
+import '../mixins/controller_disposer_mixin.dart';
 import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../services/playlist_items_loader.dart';
@@ -1586,15 +1587,9 @@ class _CollectionSelectionDialog extends StatefulWidget {
   State<_CollectionSelectionDialog> createState() => _CollectionSelectionDialogState();
 }
 
-class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> {
-  final _filterController = TextEditingController();
+class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> with ControllerDisposerMixin {
+  late final _filterController = createTextEditingController();
   late List<MediaItem> _filteredCollections = widget.collections;
-
-  @override
-  void dispose() {
-    _filterController.dispose();
-    super.dispose();
-  }
 
   void _onFilterChanged(String query) {
     final lower = query.toLowerCase();

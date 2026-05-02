@@ -9,6 +9,7 @@ import '../../focus/key_event_utils.dart';
 import '../../focus/key_repeat_helper.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
+import '../../mixins/controller_disposer_mixin.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
 
@@ -138,14 +139,14 @@ class _TvPinInput extends StatefulWidget {
   State<_TvPinInput> createState() => _TvPinInputState();
 }
 
-class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInput> {
+class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInput>, ControllerDisposerMixin {
   final List<int?> _digits = [null, null, null, null];
   int _activeIndex = 0;
   bool _isFocused = false;
 
   // Hidden text fields for mobile keyboard input
   final List<FocusNode> _mobileFocusNodes = List.generate(4, (_) => FocusNode());
-  final List<TextEditingController> _mobileControllers = List.generate(4, (_) => TextEditingController());
+  late final List<TextEditingController> _mobileControllers = List.generate(4, (_) => createTextEditingController());
 
   // Main focus node for TV/desktop keyboard handling
   late final FocusNode _focusNode;
@@ -171,9 +172,6 @@ class _TvPinInputState extends State<_TvPinInput> with KeyRepeatHelper<_TvPinInp
     _focusNode.dispose();
     for (final node in _mobileFocusNodes) {
       node.dispose();
-    }
-    for (final controller in _mobileControllers) {
-      controller.dispose();
     }
     super.dispose();
   }

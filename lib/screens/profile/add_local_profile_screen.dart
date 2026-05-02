@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../mixins/controller_disposer_mixin.dart';
 import '../../profiles/profile.dart';
 import '../../profiles/profile_registry.dart';
 import '../../utils/snackbar_helper.dart';
@@ -27,22 +28,10 @@ class AddLocalProfileScreen extends StatefulWidget {
   State<AddLocalProfileScreen> createState() => _AddLocalProfileScreenState();
 }
 
-class _AddLocalProfileScreenState extends State<AddLocalProfileScreen> {
-  late final TextEditingController _nameController;
+class _AddLocalProfileScreenState extends State<AddLocalProfileScreen> with ControllerDisposerMixin {
+  late final TextEditingController _nameController = createTextEditingController();
   String? _pinHash;
   bool _saving = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _nameController = TextEditingController();
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
-  }
 
   Future<void> _setPin() async {
     final pin = await captureAndConfirmPin(

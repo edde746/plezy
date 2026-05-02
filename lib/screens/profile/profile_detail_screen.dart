@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../connection/connection.dart';
 import '../../connection/connection_registry.dart';
 import '../../i18n/strings.g.dart';
+import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/plex/plex_home_user.dart';
 import '../../profiles/active_profile_binder.dart';
 import '../../profiles/plex_home_service.dart';
@@ -43,21 +44,14 @@ class ProfileDetailScreen extends StatefulWidget {
   State<ProfileDetailScreen> createState() => _ProfileDetailScreenState();
 }
 
-class _ProfileDetailScreenState extends State<ProfileDetailScreen> {
-  late final TextEditingController _nameController;
+class _ProfileDetailScreenState extends State<ProfileDetailScreen> with ControllerDisposerMixin {
+  late final TextEditingController _nameController = createTextEditingController(text: widget.profile.displayName);
   late Profile _profile;
 
   @override
   void initState() {
     super.initState();
     _profile = widget.profile;
-    _nameController = TextEditingController(text: widget.profile.displayName);
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
   }
 
   Future<void> _saveName() async {

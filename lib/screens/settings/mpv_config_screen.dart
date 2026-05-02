@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
+import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/mpv_config_models.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
@@ -20,17 +21,18 @@ class MpvConfigScreen extends StatefulWidget {
   State<MpvConfigScreen> createState() => _MpvConfigScreenState();
 }
 
-class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMixin {
+class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMixin, ControllerDisposerMixin {
   SettingsService get _settingsService => SettingsService.instanceOrNull!;
 
-  late final TextEditingController _textController;
+  late final TextEditingController _textController = createTextEditingController(
+    text: _settingsService.read(SettingsService.mpvConfigText),
+  );
   final _savePresetFocusNode = FocusNode();
   final _textFieldFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _textController = TextEditingController(text: _settingsService.read(SettingsService.mpvConfigText));
     // Sync the editor when the pref is mutated externally (e.g. loadMpvPreset).
     // Skip when the listener fires for the same value the controller already
     // holds — avoids fighting user-typed text mid-edit.
@@ -41,7 +43,6 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
 
   @override
   void dispose() {
-    _textController.dispose();
     _savePresetFocusNode.dispose();
     _textFieldFocusNode.dispose();
     super.dispose();

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../models/companion_remote/remote_session.dart';
 import '../../i18n/strings.g.dart';
+import '../../mixins/controller_disposer_mixin.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../utils/platform_detector.dart';
 import '../../theme/mono_tokens.dart';
@@ -659,14 +660,8 @@ class _SearchBottomSheet extends StatefulWidget {
   State<_SearchBottomSheet> createState() => _SearchBottomSheetState();
 }
 
-class _SearchBottomSheetState extends State<_SearchBottomSheet> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+class _SearchBottomSheetState extends State<_SearchBottomSheet> with ControllerDisposerMixin {
+  late final _controller = createTextEditingController();
 
   void _submit(String text) {
     final trimmed = text.trim();

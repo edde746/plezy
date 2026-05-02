@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
+import '../../mixins/controller_disposer_mixin.dart';
 
 /// Dialog for joining a watch together session
 class JoinSessionDialog extends StatefulWidget {
@@ -14,15 +15,9 @@ class JoinSessionDialog extends StatefulWidget {
   State<JoinSessionDialog> createState() => _JoinSessionDialogState();
 }
 
-class _JoinSessionDialogState extends State<JoinSessionDialog> {
+class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDisposerMixin {
   final _formKey = GlobalKey<FormState>();
-  final _sessionIdController = TextEditingController();
-
-  @override
-  void dispose() {
-    _sessionIdController.dispose();
-    super.dispose();
-  }
+  late final _sessionIdController = createTextEditingController();
 
   @override
   Widget build(BuildContext context) {

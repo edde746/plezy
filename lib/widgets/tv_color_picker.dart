@@ -5,6 +5,7 @@ import '../focus/dpad_navigator.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_repeat_helper.dart';
+import '../mixins/controller_disposer_mixin.dart';
 import '../theme/mono_tokens.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'app_icon.dart';
@@ -27,7 +28,7 @@ class TvColorPicker extends StatefulWidget {
   State<TvColorPicker> createState() => _TvColorPickerState();
 }
 
-class _TvColorPickerState extends State<TvColorPicker> {
+class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMixin {
   late int _hue;
   late int _saturation;
   late int _value;
@@ -41,13 +42,12 @@ class _TvColorPickerState extends State<TvColorPicker> {
     _hue = hsv.hue.round();
     _saturation = (hsv.saturation * 100).round();
     _value = (hsv.value * 100).round();
-    _hexController = TextEditingController(text: _currentHex());
+    _hexController = createTextEditingController(text: _currentHex());
     _hexFocusNode = FocusNode(debugLabel: 'TvColorPicker_hex', onKeyEvent: _handleHexKeyEvent);
   }
 
   @override
   void dispose() {
-    _hexController.dispose();
     _hexFocusNode.dispose();
     super.dispose();
   }
