@@ -8,6 +8,7 @@ import '../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../utils/platform_http_client_io.dart'
     as platform;
 import '../../watch_together/services/watch_together_peer_service.dart';
+import 'tracker_constants.dart';
 
 /// Client for the Plezy relay's `/auth/*` OAuth proxy.
 ///
@@ -34,7 +35,7 @@ class OAuthProxyClient {
           headers: {'Content-Type': 'application/json'},
           body: json.encode({'service': service}),
         )
-        .timeout(const Duration(seconds: 15));
+        .timeout(TrackerConstants.authRequestTimeout);
     if (res.statusCode != 200) {
       throw OAuthProxyException('start failed: HTTP ${res.statusCode}: ${res.body}');
     }
@@ -63,12 +64,15 @@ class OAuthProxyClient {
 
       final Object? raced;
       try {
-        raced = await Future.any<Object?>([_http.get(uri).timeout(const Duration(seconds: 65)), ?cancelFuture]);
+        raced = await Future.any<Object?>([
+          _http.get(uri).timeout(TrackerConstants.oauthProxyPollTimeout),
+          ?cancelFuture,
+        ]);
       } on TimeoutException {
         continue;
       } catch (e) {
         appLogger.d('oauth proxy: poll transient error', error: e);
-        await Future<void>.delayed(const Duration(seconds: 2));
+        await Future<void>.delayed(TrackerConstants.oauthProxyRetryDelay);
         continue;
       }
 

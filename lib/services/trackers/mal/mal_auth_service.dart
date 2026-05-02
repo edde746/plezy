@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -8,6 +7,8 @@ import '../../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../../utils/platform_http_client_io.dart'
     as platform;
 import '../oauth_proxy_client.dart';
+import '../oauth_proxy_auth_service.dart';
+import '../tracker_constants.dart';
 import 'mal_constants.dart';
 import 'mal_session.dart';
 
@@ -16,31 +17,23 @@ import 'mal_session.dart';
 /// New sessions come from the Plezy relay's OAuth proxy (PKCE is server-side).
 /// Refreshes are direct public-client calls against MAL's token endpoint —
 /// no proxy needed because refresh requires no redirect.
-class MalAuthService {
-  final OAuthProxyClient _proxy;
+class MalAuthService extends OAuthProxyAuthServiceBase<MalSession> {
   final http.Client _http;
 
   MalAuthService({OAuthProxyClient? proxy, http.Client? httpClient})
-    : _proxy = proxy ?? OAuthProxyClient(),
-      _http = httpClient ?? platform.createPlatformClient();
+    : _http = httpClient ?? platform.createPlatformClient(),
+      super(proxy: proxy);
 
+  @override
+  String get service => 'mal';
+
+  @override
+  MalSession buildSession(OAuthProxyResult result) => MalSession.fromProxyResult(result);
+
+  @override
   void dispose() {
-    _proxy.dispose();
+    super.dispose();
     _http.close();
-  }
-
-  /// Drive the full flow. Invokes [onCodeReady] with the QR URL once the
-  /// session is created, then long-polls for tokens. Returns null on cancel.
-  Future<MalSession?> authorize({
-    required void Function(OAuthProxyStart) onCodeReady,
-    bool Function()? shouldCancel,
-    Future<void>? onCancel,
-  }) async {
-    final start = await _proxy.start('mal');
-    onCodeReady(start);
-    final result = await _proxy.poll(start.session, shouldCancel: shouldCancel, onCancel: onCancel);
-    if (result == null) return null;
-    return MalSession.fromProxyResult(result);
   }
 
   Future<MalSession> refresh(MalSession current) async {
@@ -53,7 +46,7 @@ class MalAuthService {
             'refresh_token': current.refreshToken,
           },
         )
-        .timeout(const Duration(seconds: 20));
+        .timeout(TrackerConstants.requestTimeout);
 
     if (res.statusCode != 200) {
       appLogger.w('MAL: refresh failed (${res.statusCode}): ${res.body}');

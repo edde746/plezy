@@ -7,6 +7,7 @@ import '../../../utils/app_logger.dart';
 import '../../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../../utils/platform_http_client_io.dart'
     as platform;
+import '../tracker_constants.dart';
 import 'simkl_constants.dart';
 import 'simkl_session.dart';
 
@@ -16,8 +17,6 @@ import 'simkl_session.dart';
 /// simkl.com/settings/apps). [onSessionInvalidated] clears the local session
 /// in that case.
 class SimklClient {
-  static const Duration _requestTimeout = Duration(seconds: 20);
-
   final SimklSession session;
   final http.Client _http;
   final void Function() onSessionInvalidated;
@@ -49,7 +48,7 @@ class SimklClient {
       'GET' => _http.get(uri, headers: headers),
       'POST' => _http.post(uri, headers: headers, body: encoded),
       _ => throw ArgumentError('Unsupported HTTP method: $method'),
-    }.timeout(_requestTimeout);
+    }.timeout(TrackerConstants.requestTimeout);
     sw.stop();
     appLogger.d('Simkl $method ${uri.path} → ${res.statusCode} (${sw.elapsedMilliseconds}ms)');
 

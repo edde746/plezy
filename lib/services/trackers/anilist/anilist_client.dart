@@ -7,6 +7,7 @@ import '../../../utils/app_logger.dart';
 import '../../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../../utils/platform_http_client_io.dart'
     as platform;
+import '../tracker_constants.dart';
 import 'anilist_constants.dart';
 import 'anilist_session.dart';
 
@@ -15,8 +16,6 @@ import 'anilist_session.dart';
 /// No refresh endpoint — on 401 the session is terminal and
 /// [onSessionInvalidated] clears it so the user re-auths.
 class AnilistClient {
-  static const Duration _requestTimeout = Duration(seconds: 20);
-
   final AnilistSession _session;
   final http.Client _http;
   final void Function() onSessionInvalidated;
@@ -55,7 +54,7 @@ class AnilistClient {
     final body = json.encode({'query': query, 'variables': ?variables});
 
     final sw = Stopwatch()..start();
-    final res = await _http.post(uri, headers: headers, body: body).timeout(_requestTimeout);
+    final res = await _http.post(uri, headers: headers, body: body).timeout(TrackerConstants.requestTimeout);
     sw.stop();
     appLogger.d('AniList POST ${uri.path} → ${res.statusCode} (${sw.elapsedMilliseconds}ms)');
 

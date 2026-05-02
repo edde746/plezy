@@ -7,6 +7,8 @@ import '../../../utils/app_logger.dart';
 import '../../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../../utils/platform_http_client_io.dart'
     as platform;
+import '../future_coalescer.dart';
+import '../tracker_constants.dart';
 import 'mal_auth_service.dart';
 import 'mal_constants.dart';
 import 'mal_session.dart';
@@ -14,17 +16,15 @@ import 'mal_session.dart';
 /// HTTP wrapper for the MAL REST API.
 ///
 /// Refreshes the access token 5 minutes before expiry or on 401. Concurrent
-/// 401s are coalesced via [_refreshLock] (same pattern as `TraktClient`).
+/// 401s are coalesced so only one refresh request is in flight.
 class MalClient {
-  static const Duration _requestTimeout = Duration(seconds: 20);
-
   MalSession _session;
   final http.Client _http;
   final MalAuthService _auth;
   final void Function() onSessionInvalidated;
   final void Function(MalSession)? onSessionUpdated;
 
-  Future<MalSession>? _refreshLock;
+  final _refreshCoalescer = FutureCoalescer<MalSession>();
 
   MalClient(
     MalSession session, {
@@ -58,13 +58,7 @@ class MalClient {
     await _request('PATCH', '/anime/$animeId/my_list_status', formBody: fields);
   }
 
-  Future<MalSession> _refresh() {
-    final existing = _refreshLock;
-    if (existing != null) return existing;
-    final lock = _doRefresh();
-    _refreshLock = lock;
-    return lock.whenComplete(() => _refreshLock = null);
-  }
+  Future<MalSession> _refresh() => _refreshCoalescer.run(_doRefresh);
 
   Future<MalSession> _doRefresh() async {
     try {
@@ -143,7 +137,7 @@ class MalClient {
       'PUT' => _http.put(uri, headers: headers, body: encoded),
       'DELETE' => _http.delete(uri, headers: headers),
       _ => throw ArgumentError('Unsupported HTTP method: $method'),
-    }.timeout(_requestTimeout);
+    }.timeout(TrackerConstants.requestTimeout);
     sw.stop();
     appLogger.d('MAL $method ${uri.path} → ${res.statusCode} (${sw.elapsedMilliseconds}ms)');
     return res;

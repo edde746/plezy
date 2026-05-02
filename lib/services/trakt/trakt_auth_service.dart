@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../models/trackers/device_code.dart';
 import '../../utils/app_logger.dart';
 import '../trackers/device_code_auth_service.dart';
+import '../trackers/tracker_constants.dart';
 import 'trakt_constants.dart';
 import 'trakt_session.dart';
 
@@ -21,7 +22,7 @@ class TraktAuthService extends DeviceCodeAuthServiceBase<TraktSession> {
     final sw = Stopwatch()..start();
     final res = await httpClient
         .post(uri, headers: TraktConstants.headers(), body: json.encode({'client_id': TraktConstants.clientId}))
-        .timeout(const Duration(seconds: 15));
+        .timeout(TrackerConstants.authRequestTimeout);
     sw.stop();
     appLogger.d('Trakt POST ${uri.path} → ${res.statusCode} (${sw.elapsedMilliseconds}ms)');
 
@@ -57,7 +58,7 @@ class TraktAuthService extends DeviceCodeAuthServiceBase<TraktSession> {
               'client_secret': TraktConstants.clientSecret,
             }),
           )
-          .timeout(const Duration(seconds: 15));
+          .timeout(TrackerConstants.authRequestTimeout);
       appLogger.d('Trakt POST ${tokenUri.path} → ${res.statusCode}');
     } catch (e) {
       appLogger.d('Trakt device-code poll error (transient)', error: e);

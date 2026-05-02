@@ -9,17 +9,16 @@ import '../../utils/app_logger.dart';
 import '../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../utils/platform_http_client_io.dart'
     as platform;
+import '../trackers/future_coalescer.dart';
+import '../trackers/tracker_constants.dart';
 import 'trakt_constants.dart';
 import 'trakt_session.dart';
 
 /// HTTP wrapper for the Trakt REST API.
 ///
 /// Holds a [TraktSession] (refreshed in place on 401). Concurrent 401s are
-/// coalesced via [_refreshLock] so we only hit `/oauth/token` once per refresh.
+/// coalesced so we only hit `/oauth/token` once per refresh.
 class TraktClient {
-  static const Duration _requestTimeout = Duration(seconds: 20);
-  static const Duration _refreshTimeout = Duration(seconds: 15);
-  static const Duration _revokeTimeout = Duration(seconds: 10);
   static const Set<int> _scrobbleAllowedStatuses = {200, 201, 409};
 
   TraktSession _session;
@@ -29,7 +28,7 @@ class TraktClient {
   /// uses this to clear the stored session and notify the UI.
   final void Function() onSessionInvalidated;
 
-  Future<TraktSession>? _refreshLock;
+  final _refreshCoalescer = FutureCoalescer<TraktSession>();
 
   TraktClient(TraktSession session, {required this.onSessionInvalidated, http.Client? httpClient})
     : _session = session,
@@ -59,16 +58,9 @@ class TraktClient {
   Future<void> removeFromHistory(TraktScrobbleRequest item) =>
       _request('POST', '/sync/history/remove', body: item.toHistoryRemoveBody());
 
-  /// Refresh the access token. Coalesces concurrent calls via [_refreshLock] so
+  /// Refresh the access token. Coalesces concurrent calls so
   /// duplicate POSTs don't race when multiple in-flight requests hit 401.
-  Future<TraktSession> refresh() {
-    final existing = _refreshLock;
-    if (existing != null) return existing;
-
-    final lock = _doRefresh();
-    _refreshLock = lock;
-    return lock.whenComplete(() => _refreshLock = null);
-  }
+  Future<TraktSession> refresh() => _refreshCoalescer.run(_doRefresh);
 
   Future<TraktSession> _doRefresh() async {
     appLogger.d('Trakt: refreshing access token');
@@ -83,7 +75,7 @@ class TraktClient {
             'grant_type': 'refresh_token',
           }),
         )
-        .timeout(_refreshTimeout);
+        .timeout(TrackerConstants.refreshTimeout);
 
     if (res.statusCode == 200) {
       final body = json.decode(res.body) as Map<String, dynamic>;
@@ -109,7 +101,7 @@ class TraktClient {
               'client_secret': TraktConstants.clientSecret,
             }),
           )
-          .timeout(_revokeTimeout);
+          .timeout(TrackerConstants.revokeTimeout);
     } catch (e) {
       appLogger.d('Trakt: revoke failed (non-fatal)', error: e);
     }
@@ -165,7 +157,7 @@ class TraktClient {
       'PUT' => _http.put(uri, headers: headers, body: encoded),
       'DELETE' => _http.delete(uri, headers: headers),
       _ => throw ArgumentError('Unsupported HTTP method: $method'),
-    }.timeout(_requestTimeout);
+    }.timeout(TrackerConstants.requestTimeout);
     sw.stop();
 
     appLogger.d('Trakt $method ${uri.path} → ${res.statusCode} (${sw.elapsedMilliseconds}ms)');
