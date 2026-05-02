@@ -566,14 +566,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
       if (!mounted) return;
 
-      // Filter out Continue Watching / On Deck hubs (handled separately in hero section)
+      // Filter out playback-progress hubs handled by the top Continue Watching row.
       final filteredHubs = allHubs.where((hub) {
         final hubId = hub.identifier?.toLowerCase() ?? '';
         final title = hub.title.toLowerCase();
         return !hubId.contains('ondeck') &&
             !hubId.contains('continue') &&
+            !hubId.contains('nextup') &&
             !title.contains('continue watching') &&
-            !title.contains('on deck');
+            !title.contains('on deck') &&
+            !title.contains('next up');
       }).toList();
 
       // Sort hubs by the user's library order

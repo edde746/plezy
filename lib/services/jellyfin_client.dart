@@ -986,17 +986,23 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
 
   @override
   Future<List<MediaItem>> fetchContinueWatching({int count = 20}) async {
-    final response = await _http.get(
-      '/UserItems/Resume',
-      queryParameters: {
+    final results = await Future.wait([
+      _fetchItemsArray('/UserItems/Resume', {
         'userId': connection.userId,
         'Limit': count.toString(),
         'Fields': _browseFields,
         'MediaTypes': 'Video',
-      },
-    );
-    throwIfHttpError(response);
-    return _mapItems(_itemsArray(response.data));
+      }),
+      _safeFetchItemsArray('/Shows/NextUp', {
+        'userId': connection.userId,
+        'Limit': count.toString(),
+        'Fields': _browseFields,
+        'EnableResumable': 'false',
+        'EnableTotalRecordCount': 'false',
+      }),
+    ]);
+
+    return _mergeContinueWatchingAndNextUp(resume: _mapItems(results[0]), nextUp: _mapItems(results[1]), limit: count);
   }
 
   // ── Browse: hubs ─────────────────────────────────────────────────
@@ -1021,6 +1027,8 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'userId': connection.userId,
         'Limit': limit.toString(),
         'Fields': _browseFields,
+        'EnableResumable': 'false',
+        'EnableTotalRecordCount': 'false',
       }),
     ]);
 
@@ -1082,6 +1090,8 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'ParentId': libraryId,
         'Limit': limit.toString(),
         'Fields': _browseFields,
+        'EnableResumable': 'false',
+        'EnableTotalRecordCount': 'false',
       }),
     ]);
 
@@ -1154,6 +1164,8 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
           'Limit': effectiveLimit,
           'Fields': _browseFields,
           'ParentId': ?parentId,
+          'EnableResumable': 'false',
+          'EnableTotalRecordCount': 'false',
         });
         break;
       default:
@@ -1966,6 +1978,41 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
   }
 
   // ── Private helpers ──────────────────────────────────────────────
+
+  List<MediaItem> _mergeContinueWatchingAndNextUp({
+    required List<MediaItem> resume,
+    required List<MediaItem> nextUp,
+    required int limit,
+  }) {
+    if (limit <= 0) return const [];
+
+    final result = <MediaItem>[];
+    final seenIds = <String>{};
+    final seenSeriesIds = <String>{};
+
+    void add(MediaItem item) {
+      if (!seenIds.add(item.id)) return;
+      final seriesId = item.kind == MediaKind.episode ? item.grandparentId : null;
+      if (seriesId != null && !seenSeriesIds.add(seriesId)) return;
+      result.add(item);
+    }
+
+    for (final item in resume) {
+      add(item);
+      if (result.length >= limit) return result;
+    }
+    for (final item in nextUp) {
+      add(item);
+      if (result.length >= limit) return result;
+    }
+    return result;
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchItemsArray(String path, Map<String, dynamic> queryParameters) async {
+    final response = await _http.get(path, queryParameters: queryParameters);
+    throwIfHttpError(response);
+    return _itemsArray(response.data);
+  }
 
   Future<List<Map<String, dynamic>>> _safeFetchItemsArray(String path, Map<String, dynamic> queryParameters) async {
     try {

@@ -683,6 +683,171 @@ void main() {
       expect(result, hasLength(250));
       expect(starts, ['0', '200']);
     });
+
+    test('fetchItemWithOnDeck keeps resumable NextUp semantics for show detail lookup', () async {
+      Uri? capturedNextUp;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/Users/user-1/Items/show-1') {
+            return http.Response(
+              jsonEncode({'Id': 'show-1', 'Type': 'Series', 'Name': 'Show 1'}),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (req.url.path == '/Shows/NextUp') {
+            capturedNextUp = req.url;
+            return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.fetchItemWithOnDeck('show-1');
+
+      expect(capturedNextUp, isNotNull);
+      expect(capturedNextUp!.queryParameters['seriesId'], 'show-1');
+      expect(capturedNextUp!.queryParameters['Limit'], '1');
+      expect(capturedNextUp!.queryParameters.containsKey('EnableResumable'), isFalse);
+      expect(capturedNextUp!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
+    });
+
+    test('fetchContinueWatching merges resume with non-resumable Next Up', () async {
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          requests.add(req.url);
+          if (req.url.path == '/UserItems/Resume') {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {'Id': 'resume-show-1', 'Type': 'Episode', 'Name': 'Resume Show 1', 'SeriesId': 'show-1'},
+                  {'Id': 'resume-movie-1', 'Type': 'Movie', 'Name': 'Resume Movie 1'},
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (req.url.path == '/Shows/NextUp') {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {'Id': 'next-show-1', 'Type': 'Episode', 'Name': 'Next Show 1', 'SeriesId': 'show-1'},
+                  {'Id': 'next-show-2', 'Type': 'Episode', 'Name': 'Next Show 2', 'SeriesId': 'show-2'},
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchContinueWatching(count: 3);
+
+      expect(items.map((item) => item.id), ['resume-show-1', 'resume-movie-1', 'next-show-2']);
+      final resume = requests.singleWhere((uri) => uri.path == '/UserItems/Resume');
+      expect(resume.queryParameters['userId'], 'user-1');
+      expect(resume.queryParameters['Limit'], '3');
+      expect(resume.queryParameters['MediaTypes'], 'Video');
+      final nextUp = requests.singleWhere((uri) => uri.path == '/Shows/NextUp');
+      expect(nextUp.queryParameters['userId'], 'user-1');
+      expect(nextUp.queryParameters['Limit'], '3');
+      expect(nextUp.queryParameters['EnableResumable'], 'false');
+      expect(nextUp.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
+    });
+
+    test('fetchContinueWatching keeps resume items when Next Up fails', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/UserItems/Resume') {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {'Id': 'resume-movie-1', 'Type': 'Movie', 'Name': 'Resume Movie 1'},
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (req.url.path == '/Shows/NextUp') {
+            return http.Response('server error', 500);
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchContinueWatching();
+
+      expect(items.map((item) => item.id), ['resume-movie-1']);
+    });
+  });
+
+  group('JellyfinClient.fetchGlobalHubs URL builders', () {
+    late List<Uri> captured;
+
+    JellyfinClient buildClient() {
+      captured = [];
+      final mock = MockClient((req) async {
+        captured.add(req.url);
+        return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
+      });
+      return JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+    }
+
+    Uri capturedNextUpRequest() => captured.singleWhere((uri) => uri.path == '/Shows/NextUp');
+
+    test('global Next Up excludes resumable episodes without date cutoff', () async {
+      final client = buildClient();
+      addTearDown(client.close);
+
+      await client.fetchGlobalHubs(limit: 12);
+
+      final nextUp = capturedNextUpRequest();
+      expect(nextUp.queryParameters['userId'], 'user-1');
+      expect(nextUp.queryParameters['Limit'], '12');
+      expect(nextUp.queryParameters['EnableResumable'], 'false');
+      expect(nextUp.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
+    });
+  });
+
+  group('JellyfinClient.fetchLibraryHubs URL builders', () {
+    late List<Uri> captured;
+
+    JellyfinClient buildClient() {
+      captured = [];
+      final mock = MockClient((req) async {
+        captured.add(req.url);
+        return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
+      });
+      return JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+    }
+
+    test('library Next Up excludes resumable episodes without date cutoff', () async {
+      final client = buildClient();
+      addTearDown(client.close);
+
+      await client.fetchLibraryHubs('lib-99', limit: 12);
+
+      final nextUp = captured.singleWhere((uri) => uri.path == '/Shows/NextUp');
+      expect(nextUp.queryParameters['ParentId'], 'lib-99');
+      expect(nextUp.queryParameters['userId'], 'user-1');
+      expect(nextUp.queryParameters['Limit'], '12');
+      expect(nextUp.queryParameters['EnableResumable'], 'false');
+      expect(nextUp.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
+    });
   });
 
   group('JellyfinClient.fetchMoreHubItems URL builders', () {
@@ -731,6 +896,9 @@ void main() {
       expect(captured!.queryParameters['userId'], 'user-1');
       expect(captured!.queryParameters['Limit'], '25');
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
+      expect(captured!.queryParameters['EnableResumable'], 'false');
+      expect(captured!.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(captured!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
       client.close();
     });
 
@@ -767,6 +935,9 @@ void main() {
       expect(captured!.path, '/Shows/NextUp');
       expect(captured!.queryParameters['ParentId'], 'lib-99');
       expect(captured!.queryParameters['userId'], 'user-1');
+      expect(captured!.queryParameters['EnableResumable'], 'false');
+      expect(captured!.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(captured!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
       client.close();
     });
 
