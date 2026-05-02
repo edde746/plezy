@@ -41,7 +41,8 @@ import '../models/download_models.dart';
 import '../services/download_storage_service.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
-import '../providers/settings_provider.dart';
+import '../services/settings_service.dart';
+import '../widgets/settings_builder.dart';
 import '../utils/grid_size_calculator.dart';
 import '../providers/download_provider.dart';
 import '../providers/offline_watch_provider.dart';
@@ -1416,7 +1417,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Get the responsive card width used by seasons/extras/cast rows.
   /// Uses the shared grid size calculator for consistency with library grids.
   double _getResponsiveCardWidth() {
-    final density = context.read<SettingsProvider>().libraryDensity;
+    final density = SettingsService.instanceOrNull!.read(SettingsService.libraryDensity);
     final availableWidth = MediaQuery.sizeOf(context).width;
     return GridSizeCalculator.getCellWidth(availableWidth, context, density);
   }
@@ -1486,7 +1487,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   /// Build inline season tab chips with LEFT/RIGHT/DOWN focus navigation
   Widget _buildSeasonTabs() {
-    final showPosters = context.select<SettingsProvider, bool>((p) => p.showSeasonPostersOnTabs);
+    return SettingValueBuilder<bool>(
+      pref: SettingsService.showSeasonPostersOnTabs,
+      builder: (context, showPosters, _) => _buildSeasonTabsContent(context, showPosters),
+    );
+  }
+
+  Widget _buildSeasonTabsContent(BuildContext context, bool showPosters) {
     return HorizontalScrollWithArrows(
       controller: _seasonTabsScrollController,
       builder: (scrollController) => SingleChildScrollView(
@@ -2568,6 +2575,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Build the cast section with locked focus pattern for D-pad navigation
   /// Uses same layout pattern as seasons/extras (ListView.builder + Padding(horizontal: 2))
   Widget _buildCastSection(MediaItem metadata) {
+    return SettingValueBuilder<int>(
+      pref: SettingsService.libraryDensity,
+      builder: (context, libraryDensity, child) => _buildCastSectionContent(metadata),
+    );
+  }
+
+  Widget _buildCastSectionContent(MediaItem metadata) {
     final cardWidth = _getResponsiveCardWidth();
     const innerPadding = 3.0;
     final imageSize = cardWidth;
@@ -2655,6 +2669,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Widget _buildExtrasSection() {
+    return SettingValueBuilder<int>(
+      pref: SettingsService.libraryDensity,
+      builder: (context, libraryDensity, child) => _buildExtrasSectionContent(),
+    );
+  }
+
+  Widget _buildExtrasSectionContent() {
     final cardWidth = _getResponsiveCardWidth();
     // 16:9 aspect ratio for clip thumbnails (cardWidth includes 8px padding on each side)
     final posterHeight = (cardWidth - 16) * (9 / 16);

@@ -7,7 +7,8 @@ import '../services/settings_service.dart' as settings;
 import '../theme/mono_theme.dart';
 
 class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  late settings.SettingsService _settingsService;
+  settings.SettingsService? _settingsService;
+  ValueNotifier<settings.ThemeMode>? _themeModeListenable;
   settings.ThemeMode _themeMode = settings.ThemeMode.system;
   late Brightness _systemBrightness;
 
@@ -26,6 +27,7 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
 
   @override
   void dispose() {
+    _themeModeListenable?.removeListener(_onThemeModeSettingChanged);
     if (WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged == _onBrightnessChanged) {
       WidgetsBinding.instance.platformDispatcher.onPlatformBrightnessChanged = null;
     }
@@ -33,10 +35,30 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   }
 
   Future<void> _initializeSettings() async {
-    _settingsService = await settings.SettingsService.getInstance();
-    _themeMode = _settingsService.read(settings.SettingsService.themeMode);
-    _updateSplashTheme(_themeMode);
-    safeNotifyListeners();
+    final service = await settings.SettingsService.getInstance();
+    if (_settingsService == service && _themeModeListenable != null) {
+      _syncThemeMode(service.read(settings.SettingsService.themeMode));
+      return;
+    }
+
+    _themeModeListenable?.removeListener(_onThemeModeSettingChanged);
+    _settingsService = service;
+    _themeModeListenable = service.listenable(settings.SettingsService.themeMode)
+      ..addListener(_onThemeModeSettingChanged);
+    _syncThemeMode(_themeModeListenable!.value);
+  }
+
+  void _onThemeModeSettingChanged() {
+    final listenable = _themeModeListenable;
+    if (listenable == null) return;
+    _syncThemeMode(listenable.value);
+  }
+
+  void _syncThemeMode(settings.ThemeMode mode, {bool forceNotify = false}) {
+    final changed = _themeMode != mode;
+    _themeMode = mode;
+    _updateSplashTheme(mode);
+    if (changed || forceNotify) safeNotifyListeners();
   }
 
   settings.ThemeMode get themeMode => _themeMode;
@@ -78,22 +100,18 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   static const _themeChannel = MethodChannel('com.plezy/theme');
 
   Future<void> setThemeMode(settings.ThemeMode mode) async {
-    if (_themeMode != mode) {
-      _themeMode = mode;
-      await _settingsService.write(settings.SettingsService.themeMode, mode);
-      _updateSplashTheme(mode);
-      safeNotifyListeners();
-    }
+    if (_themeMode == mode) return;
+    final service = _settingsService ?? await settings.SettingsService.getInstance();
+    await service.write(settings.SettingsService.themeMode, mode);
+    if (_themeModeListenable == null) _syncThemeMode(mode);
   }
 
   /// Re-read the theme mode from SharedPreferences. Used after imports or
   /// resets that change persisted settings outside this provider.
   Future<void> reload() async {
-    _settingsService = await settings.SettingsService.getInstance();
-    final mode = _settingsService.read(settings.SettingsService.themeMode);
-    _themeMode = mode;
-    _updateSplashTheme(mode);
-    safeNotifyListeners();
+    await _initializeSettings();
+    final service = _settingsService;
+    if (service != null) _syncThemeMode(service.read(settings.SettingsService.themeMode), forceNotify: true);
   }
 
   void _updateSplashTheme(settings.ThemeMode mode) {

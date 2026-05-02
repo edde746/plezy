@@ -1,6 +1,7 @@
 import 'dart:async' show unawaited;
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/hotkey_model.dart';
@@ -10,9 +11,10 @@ import 'settings_service.dart';
 import '../utils/platform_detector.dart';
 import '../utils/player_utils.dart';
 
-class KeyboardShortcutsService {
+class KeyboardShortcutsService extends ChangeNotifier {
   static KeyboardShortcutsService? _instance;
   late SettingsService _settingsService;
+  final List<VoidCallback> _settingsDisposers = [];
   Map<String, String> _shortcuts = {}; // Legacy string shortcuts for backward compatibility
   Map<String, HotKey> _hotkeys = {}; // New HotKey objects
   int _seekTimeSmall = 10; // Default, loaded from settings
@@ -36,13 +38,57 @@ class KeyboardShortcutsService {
 
   Future<void> _init() async {
     _settingsService = await SettingsService.getInstance();
-    // Ensure settings service is fully initialized before loading data
-    await Future.delayed(Duration.zero); // Allow event loop to complete
-    _shortcuts = _settingsService.read(SettingsService.keyboardShortcuts); // Keep for legacy compatibility
-    _hotkeys = _settingsService.read(SettingsService.keyboardHotkeys); // Primary method
-    _seekTimeSmall = _settingsService.read(SettingsService.seekTimeSmall);
-    _seekTimeLarge = _settingsService.read(SettingsService.seekTimeLarge);
-    _maxVolume = _settingsService.read(SettingsService.maxVolume);
+    _bindSettings();
+    _syncFromSettings(notify: false);
+  }
+
+  void _bindSettings() {
+    if (_settingsDisposers.isNotEmpty) return;
+    void bind<T>(Pref<T> pref) {
+      final notifier = _settingsService.listenable(pref);
+      notifier.addListener(_onSettingsChanged);
+      _settingsDisposers.add(() => notifier.removeListener(_onSettingsChanged));
+    }
+
+    bind(SettingsService.keyboardShortcuts);
+    bind(SettingsService.keyboardHotkeys);
+    bind(SettingsService.seekTimeSmall);
+    bind(SettingsService.seekTimeLarge);
+    bind(SettingsService.maxVolume);
+  }
+
+  void _onSettingsChanged() => _syncFromSettings();
+
+  void _syncFromSettings({bool notify = true}) {
+    final shortcuts = _settingsService.read(SettingsService.keyboardShortcuts);
+    final hotkeys = _settingsService.read(SettingsService.keyboardHotkeys);
+    final seekTimeSmall = _settingsService.read(SettingsService.seekTimeSmall);
+    final seekTimeLarge = _settingsService.read(SettingsService.seekTimeLarge);
+    final maxVolume = _settingsService.read(SettingsService.maxVolume);
+
+    final changed =
+        !mapEquals(_shortcuts, shortcuts) ||
+        !_hotkeyMapsEqual(_hotkeys, hotkeys) ||
+        _seekTimeSmall != seekTimeSmall ||
+        _seekTimeLarge != seekTimeLarge ||
+        _maxVolume != maxVolume;
+
+    _shortcuts = Map<String, String>.from(shortcuts);
+    _hotkeys = Map<String, HotKey>.from(hotkeys);
+    _seekTimeSmall = seekTimeSmall;
+    _seekTimeLarge = seekTimeLarge;
+    _maxVolume = maxVolume;
+
+    if (notify && changed) notifyListeners();
+  }
+
+  bool _hotkeyMapsEqual(Map<String, HotKey> a, Map<String, HotKey> b) {
+    if (a.length != b.length) return false;
+    for (final entry in a.entries) {
+      final other = b[entry.key];
+      if (other == null || !_hotkeyEquals(entry.value, other)) return false;
+    }
+    return true;
   }
 
   Map<String, String> get shortcuts => Map.from(_shortcuts);
@@ -58,39 +104,32 @@ class KeyboardShortcutsService {
   }
 
   Future<void> setShortcut(String action, String key) async {
-    _shortcuts[action] = key;
-    await _settingsService.write(SettingsService.keyboardShortcuts, _shortcuts);
+    await _settingsService.write(SettingsService.keyboardShortcuts, {..._shortcuts, action: key});
   }
 
   Future<void> setHotkey(String action, HotKey hotkey) async {
-    // Update local cache first
-    _hotkeys[action] = hotkey;
-
-    // Save to persistent storage
-    await _settingsService.write(SettingsService.keyboardHotkeys, {
-      ..._settingsService.read(SettingsService.keyboardHotkeys),
-      action: hotkey,
-    });
-
-    // Verify local cache is still correct
-    if (_hotkeys[action] != hotkey) {
-      _hotkeys[action] = hotkey; // Restore correct value
-    }
+    await _settingsService.write(SettingsService.keyboardHotkeys, {..._hotkeys, action: hotkey});
   }
 
   Future<void> refreshFromStorage() async {
-    _hotkeys = _settingsService.read(SettingsService.keyboardHotkeys);
-    _seekTimeSmall = _settingsService.read(SettingsService.seekTimeSmall);
-    _seekTimeLarge = _settingsService.read(SettingsService.seekTimeLarge);
+    _syncFromSettings();
   }
 
   Future<void> resetToDefaults() async {
-    _shortcuts = SettingsService.defaultKeyboardShortcuts();
-    _hotkeys = SettingsService.defaultKeyboardHotkeys();
-    await _settingsService.write(SettingsService.keyboardShortcuts, _shortcuts);
-    await _settingsService.write(SettingsService.keyboardHotkeys, _hotkeys);
-    // Refresh cache to ensure consistency
-    await refreshFromStorage();
+    final shortcuts = SettingsService.defaultKeyboardShortcuts();
+    final hotkeys = SettingsService.defaultKeyboardHotkeys();
+    await _settingsService.write(SettingsService.keyboardShortcuts, shortcuts);
+    await _settingsService.write(SettingsService.keyboardHotkeys, hotkeys);
+  }
+
+  @override
+  void dispose() {
+    for (final dispose in _settingsDisposers) {
+      dispose();
+    }
+    _settingsDisposers.clear();
+    if (identical(_instance, this)) _instance = null;
+    super.dispose();
   }
 
   // Format HotKey for display

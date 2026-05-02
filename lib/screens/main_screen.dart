@@ -33,7 +33,7 @@ import '../providers/multi_server_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
-import '../providers/settings_provider.dart';
+import '../widgets/settings_builder.dart';
 import '../services/api_cache.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_watch_sync_service.dart';
@@ -1158,9 +1158,9 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
 
   Widget _buildContent(BuildContext context, bool useSideNav) {
     if (useSideNav) {
-      return Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, child) {
-          final alwaysExpanded = settingsProvider.alwaysKeepSidebarOpen;
+      return SettingValueBuilder<bool>(
+        pref: SettingsService.alwaysKeepSidebarOpen,
+        builder: (context, alwaysExpanded, _) {
           final contentLeftPadding = alwaysExpanded
               ? SideNavigationRailState.expandedWidth
               : SideNavigationRailState.collapsedWidth;
@@ -1283,9 +1283,10 @@ class _MainScreenState extends State<MainScreen> with RouteAware, WindowListener
                     ),
                   ),
                 ),
-              Consumer<SettingsProvider>(
-                builder: (context, settingsProvider, child) {
-                  final hideLabels = !settingsProvider.showNavBarLabels;
+              SettingValueBuilder<bool>(
+                pref: SettingsService.showNavBarLabels,
+                builder: (context, showNavBarLabels, _) {
+                  final hideLabels = !showNavBarLabels;
                   return NavigationBarTheme(
                     data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
                     child: NavigationBar(

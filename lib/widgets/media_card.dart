@@ -12,9 +12,9 @@ import '../media/media_playlist.dart';
 import '../mixins/context_menu_tap_mixin.dart';
 import '../providers/download_provider.dart';
 import '../services/download_storage_service.dart';
-import '../providers/settings_provider.dart';
-import '../screens/media_detail_screen.dart';
 import '../services/settings_service.dart';
+import 'settings_builder.dart';
+import '../screens/media_detail_screen.dart';
 import '../utils/content_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/formatters.dart';
@@ -163,13 +163,27 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
   @override
   Widget build(BuildContext context) {
+    return SettingsBuilder(
+      prefs: const [
+        SettingsService.viewMode,
+        SettingsService.libraryDensity,
+        SettingsService.episodePosterMode,
+        SettingsService.showEpisodeNumberOnCards,
+        SettingsService.hideSpoilers,
+        SettingsService.showUnwatchedCount,
+      ],
+      builder: _buildContent,
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
     final ViewMode viewMode;
     if (widget.forceListMode) {
       viewMode = ViewMode.list;
     } else if (widget.forceGridMode) {
       viewMode = ViewMode.grid;
     } else {
-      viewMode = context.select<SettingsProvider, ViewMode>((s) => s.viewMode);
+      viewMode = SettingsService.instanceOrNull!.read(SettingsService.viewMode);
     }
 
     final semanticLabel = _buildSemanticLabel();
@@ -185,7 +199,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             onLongPress: showContextMenuFromTap,
             onSecondaryTapDown: storeTapPosition,
             onSecondaryTap: showContextMenuFromTap,
-            density: context.select<SettingsProvider, int>((s) => s.libraryDensity),
+            density: SettingsService.instanceOrNull!.read(SettingsService.libraryDensity),
             isOffline: widget.isOffline,
             localPosterPath: localPosterPath,
             showServerName: widget.showServerName,
@@ -337,7 +351,7 @@ class _MediaCardList extends StatelessWidget {
     final base = _basePosterWidth();
     // For episodes with thumbnail mode, use wider width to maintain reasonable thumbnail size
     if (item is MediaItem) {
-      final mode = context.select<SettingsProvider, EpisodePosterMode>((s) => s.episodePosterMode);
+      final mode = SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
       if ((item as MediaItem).usesWideAspectRatio(mode)) {
         return base * 1.6; // Wider for 16:9 thumbnails
       }
@@ -349,7 +363,7 @@ class _MediaCardList extends StatelessWidget {
     final base = _basePosterWidth();
     // For episodes with thumbnail mode, use 16:9 aspect ratio
     if (item is MediaItem) {
-      final mode = context.select<SettingsProvider, EpisodePosterMode>((s) => s.episodePosterMode);
+      final mode = SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
       if ((item as MediaItem).usesWideAspectRatio(mode)) {
         // 16:9: height = width * 9/16 = base * 1.6 * 9/16 = base * 0.9
         return base * 0.9;
@@ -448,7 +462,7 @@ class _MediaCardList extends StatelessWidget {
 
       // For TV episodes, show S# (optionally with E#)
       if (mi.parentIndex != null && mi.index != null) {
-        final showEp = context.select<SettingsProvider, bool>((p) => p.showEpisodeNumberOnCards);
+        final showEp = SettingsService.instanceOrNull!.read(SettingsService.showEpisodeNumberOnCards);
         return showEp ? 'S${mi.parentIndex} E${mi.index}' : 'S${mi.parentIndex}';
       }
 
@@ -484,7 +498,7 @@ class _MediaCardList extends StatelessWidget {
       fontSize: _subtitleFontSize,
     );
     final episodeTitle = mi.displaySubtitle ?? mi.displayTitle;
-    final showEp = context.select<SettingsProvider, bool>((p) => p.showEpisodeNumberOnCards);
+    final showEp = SettingsService.instanceOrNull!.read(SettingsService.showEpisodeNumberOnCards);
     final episodeNum = (showEp && mi.index != null) ? ' E${mi.index}' : '';
     return Row(
       children: [
@@ -590,7 +604,7 @@ class _MediaCardList extends StatelessWidget {
                   ],
                   // Summary (hidden when spoiler protection is active)
                   if (!(item is MediaItem &&
-                          context.select<SettingsProvider, bool>((s) => s.hideSpoilers) &&
+                          SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers) &&
                           (item as MediaItem).shouldHideSpoiler) &&
                       _summary() != null) ...[
                     Text(
@@ -665,8 +679,8 @@ Widget _buildPosterImage(
       localFilePath: localPosterPath,
     );
   } else if (item is MediaItem) {
-    final episodePosterMode = context.select<SettingsProvider, EpisodePosterMode>((s) => s.episodePosterMode);
-    final hideSpoilers = context.select<SettingsProvider, bool>((s) => s.hideSpoilers);
+    final episodePosterMode = SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
+    final hideSpoilers = SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers);
     final shouldBlur =
         hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
     posterUrl = item.posterThumb(mode: episodePosterMode, mixedHubContext: mixedHubContext);
@@ -746,7 +760,7 @@ class _MediaCardHelpers {
     // For episodes, show "S# · Episode Title" with clickable season link
     if (mi.isEpisode && mi.parentIndex != null) {
       final episodeTitle = mi.displaySubtitle ?? mi.displayTitle;
-      final showEp = context.select<SettingsProvider, bool>((p) => p.showEpisodeNumberOnCards);
+      final showEp = SettingsService.instanceOrNull!.read(SettingsService.showEpisodeNumberOnCards);
       final episodeSuffix = (showEp && mi.index != null) ? ' E${mi.index}' : '';
       if (mi.parentId != null) {
         return Row(
@@ -791,7 +805,7 @@ class _MediaCardHelpers {
 
   /// Builds watch progress overlay (checkmark for watched, progress bar for in-progress)
   static Widget buildWatchProgress(BuildContext context, MediaItem mi) {
-    final showUnwatchedCount = context.select<SettingsProvider, bool>((s) => s.showUnwatchedCount);
+    final showUnwatchedCount = SettingsService.instanceOrNull!.read(SettingsService.showUnwatchedCount);
 
     final hasActiveProgress =
         mi.viewOffsetMs != null && mi.durationMs != null && mi.viewOffsetMs! > 0 && mi.viewOffsetMs! < mi.durationMs!;

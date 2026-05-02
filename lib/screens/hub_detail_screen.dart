@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:provider/provider.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_sort.dart';
-import '../providers/settings_provider.dart';
 import '../services/settings_service.dart';
+import '../widgets/settings_builder.dart';
 import '../utils/app_logger.dart';
 import '../utils/grid_size_calculator.dart';
 import '../utils/provider_extensions.dart';
@@ -310,11 +309,17 @@ class _HubDetailScreenState extends State<HubDetailScreen>
               else if (_filteredItems.isEmpty)
                 SliverFillRemaining(child: Center(child: Text(t.hubDetail.noItemsFound)))
               else
-                Builder(
+                SettingsBuilder(
+                  prefs: const [
+                    SettingsService.viewMode,
+                    SettingsService.episodePosterMode,
+                    SettingsService.libraryDensity,
+                  ],
                   builder: (context) {
-                    final settings = context.watch<SettingsProvider>();
-                    final isListMode = settings.viewMode == ViewMode.list;
-                    final episodePosterMode = settings.episodePosterMode;
+                    final svc = SettingsService.instanceOrNull!;
+                    final isListMode = svc.read(SettingsService.viewMode) == ViewMode.list;
+                    final episodePosterMode = svc.read(SettingsService.episodePosterMode);
+                    final libraryDensity = svc.read(SettingsService.libraryDensity);
 
                     // Determine hub content type for layout decisions
                     final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
@@ -360,7 +365,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                         builder: (context, constraints) {
                           final maxExtent = GridSizeCalculator.getMaxCrossAxisExtentWithPadding(
                             context,
-                            settings.libraryDensity,
+                            libraryDensity,
                             16,
                           );
                           final columnCount = GridSizeCalculator.getColumnCount(
@@ -371,7 +376,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                           return SliverGrid(
                             gridDelegate: MediaGridDelegate.createDelegate(
                               context: context,
-                              density: settings.libraryDensity,
+                              density: libraryDensity,
                               usePaddingAware: true,
                               horizontalPadding: 16,
                               useWideAspectRatio: useWideLayout,

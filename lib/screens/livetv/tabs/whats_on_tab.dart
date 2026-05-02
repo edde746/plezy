@@ -13,7 +13,8 @@ import '../../../media/media_item_types.dart';
 import '../../../models/livetv_channel.dart';
 import '../../../models/livetv_hub_result.dart';
 import '../../../providers/multi_server_provider.dart';
-import '../../../providers/settings_provider.dart';
+import '../../../services/settings_service.dart';
+import '../../../widgets/settings_builder.dart';
 import '../../../utils/grid_size_calculator.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../../utils/app_logger.dart';
@@ -423,7 +424,13 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
   @override
   Widget build(BuildContext context) {
     final hasFocus = _hubFocusNode.hasFocus;
-    final settings = context.watch<SettingsProvider>();
+    return SettingValueBuilder<int>(
+      pref: SettingsService.libraryDensity,
+      builder: (context, libraryDensity, _) => _buildContent(context, hasFocus, libraryDensity),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, bool hasFocus, int libraryDensity) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
@@ -455,11 +462,7 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
             onKeyEvent: _handleKeyEvent,
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final cardWidth = GridSizeCalculator.getCellWidth(
-                  constraints.maxWidth,
-                  context,
-                  settings.libraryDensity,
-                );
+                final cardWidth = GridSizeCalculator.getCellWidth(constraints.maxWidth, context, libraryDensity);
                 final posterWidth = cardWidth - 16;
                 final posterHeight = posterWidth * 1.5; // 2:3 aspect
                 final containerHeight = posterHeight + 66;

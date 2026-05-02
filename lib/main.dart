@@ -40,7 +40,6 @@ import 'providers/trackers_provider.dart';
 import 'providers/user_profile_provider.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
-import 'providers/settings_provider.dart';
 import 'providers/hidden_libraries_provider.dart';
 import 'providers/libraries_provider.dart';
 import 'providers/playback_state_provider.dart';
@@ -793,7 +792,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // session scoping. Hydrated and rebound by `_TrackerProfileBootstrap`.
         ChangeNotifierProvider(create: (context) => TraktAccountProvider()),
         ChangeNotifierProvider(create: (context) => TrackersProvider()),
-        ChangeNotifierProvider(create: (context) => SettingsProvider(), lazy: true),
         ChangeNotifierProvider(create: (context) => HiddenLibrariesProvider(), lazy: true),
         ChangeNotifierProvider(create: (context) => LibrariesProvider()),
         ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),

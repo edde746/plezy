@@ -21,7 +21,6 @@ import '../../services/download_storage_service.dart';
 import '../../services/file_picker_service.dart';
 import '../../services/saf_storage_service.dart';
 import '../../services/settings_export_service.dart';
-import '../../providers/settings_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/trackers_provider.dart';
 import '../../providers/trakt_account_provider.dart';
@@ -34,6 +33,8 @@ import '../../utils/platform_detector.dart';
 import '../../utils/update_dialog.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/dialog_action_button.dart';
+import '../../widgets/setting_tile.dart';
+import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
@@ -56,7 +57,6 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
-  late settings.SettingsService _settingsService;
   late final FocusMemoryTracker _focusTracker;
 
   // Focus tracking keys
@@ -83,15 +83,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
 
   KeyboardShortcutsService? _keyboardService;
   late final bool _keyboardShortcutsSupported = KeyboardShortcutsService.isPlatformSupported();
-  bool _isLoading = true;
-
-  bool _crashReporting = true;
-  bool _enableDebugLogging = false;
-  bool _downloadOnWifiOnly = false;
-  bool _autoRemoveWatchedDownloads = false;
-  bool _autoCheckUpdatesOnStartup = true;
-  bool _videoPlayerNavigationEnabled = false;
-  String? _customRelayUrl;
 
   // Update checking state
   bool _isCheckingForUpdate = false;
@@ -107,7 +98,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       },
       debugLabelPrefix: 'settings',
     );
-    _loadSettings();
+    if (_keyboardShortcutsSupported) {
+      KeyboardShortcutsService.getInstance().then((s) {
+        if (mounted) setState(() => _keyboardService = s);
+      });
+    }
   }
 
   @override
@@ -135,31 +130,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     return KeyEventResult.ignored;
   }
 
-  Future<void> _loadSettings() async {
-    _settingsService = await settings.SettingsService.getInstance();
-    if (_keyboardShortcutsSupported) {
-      _keyboardService = await KeyboardShortcutsService.getInstance();
-    }
-
-    if (!mounted) return;
-    setState(() {
-      _crashReporting = _settingsService.read(settings.SettingsService.crashReporting);
-      _enableDebugLogging = _settingsService.read(settings.SettingsService.enableDebugLogging);
-      _downloadOnWifiOnly = _settingsService.read(settings.SettingsService.downloadOnWifiOnly);
-      _autoRemoveWatchedDownloads = _settingsService.read(settings.SettingsService.autoRemoveWatchedDownloads);
-      _autoCheckUpdatesOnStartup = _settingsService.read(settings.SettingsService.autoCheckUpdatesOnStartup);
-      _videoPlayerNavigationEnabled = _settingsService.read(settings.SettingsService.videoPlayerNavigationEnabled);
-      _customRelayUrl = _settingsService.read(settings.SettingsService.customRelayUrl);
-      _isLoading = false;
-    });
-  }
+  settings.SettingsService get _settingsService => settings.SettingsService.instanceOrNull!;
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
     return Scaffold(
       body: Focus(
         onKeyEvent: _handleKeyEvent,
@@ -191,15 +165,12 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
 
                 if (!PlatformDetector.isTV()) _buildBackupSection(),
 
-                ListTile(
+                SettingNavigationTile(
                   focusNode: _focusTracker.get(_kAbout),
-                  leading: const AppIcon(Symbols.info_rounded, fill: 1),
-                  title: Text(t.settings.about),
-                  subtitle: Text(t.settings.aboutDescription),
-                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-                  onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutScreen()));
-                  },
+                  icon: Symbols.info_rounded,
+                  title: t.settings.about,
+                  subtitle: t.settings.aboutDescription,
+                  destinationBuilder: (context) => const AboutScreen(),
                 ),
                 const SizedBox(height: 24),
               ]),
@@ -227,34 +198,30 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   }
 
   Widget _buildAppearanceTile() {
-    return Consumer2<ThemeProvider, SettingsProvider>(
-      builder: (context, themeProvider, settingsProvider, child) {
-        final summary =
-            '${themeProvider.themeModeDisplayName} · ${t.settings.libraryDensity} ${settingsProvider.libraryDensity}';
-        return ListTile(
-          focusNode: _focusTracker.get(_kAppearance),
-          leading: const AppIcon(Symbols.palette_rounded, fill: 1),
-          title: Text(t.settings.appearance),
-          subtitle: Text(summary),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const AppearanceSettingsScreen()));
-          },
-        );
-      },
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, _) => SettingValueBuilder<int>(
+        pref: settings.SettingsService.libraryDensity,
+        builder: (context, libraryDensity, _) {
+          final summary = '${themeProvider.themeModeDisplayName} · ${t.settings.libraryDensity} $libraryDensity';
+          return SettingNavigationTile(
+            focusNode: _focusTracker.get(_kAppearance),
+            icon: Symbols.palette_rounded,
+            title: t.settings.appearance,
+            subtitle: summary,
+            destinationBuilder: (context) => const AppearanceSettingsScreen(),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildPlaybackTile() {
-    return ListTile(
+    return SettingNavigationTile(
       focusNode: _focusTracker.get(_kPlayback),
-      leading: const AppIcon(Symbols.play_circle_rounded, fill: 1),
-      title: Text(t.settings.videoPlayback),
-      subtitle: Text(t.settings.videoPlaybackDescription),
-      trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-      onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => const PlaybackSettingsScreen()));
-      },
+      icon: Symbols.play_circle_rounded,
+      title: t.settings.videoPlayback,
+      subtitle: t.settings.videoPlaybackDescription,
+      destinationBuilder: (context) => const PlaybackSettingsScreen(),
     );
   }
 
@@ -268,21 +235,23 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           if (trackers.isSimklConnected) t.trackers.services.simkl,
         ];
         final subtitle = connectedNames.isEmpty ? t.settings.trackersDescription : connectedNames.join(' · ');
-        return ListTile(
+        return SettingNavigationTile(
           focusNode: _focusTracker.get(_kTrackers),
-          leading: const AppIcon(Symbols.sync_rounded, fill: 1),
-          title: Text(t.settings.trackers),
-          subtitle: Text(subtitle),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const TrackersSettingsScreen()));
-          },
+          icon: Symbols.sync_rounded,
+          title: t.settings.trackers,
+          subtitle: subtitle,
+          destinationBuilder: (_) => const TrackersSettingsScreen(),
         );
       },
     );
   }
 
   Widget _buildConnectionsSection() {
+    final active = context.select<ActiveProfileProvider, Profile?>((p) => p.active);
+    final subtitle = active == null
+        ? t.connections.addConnectionSubtitleNoProfile
+        : t.connections.addConnectionSubtitleScoped(displayName: active.displayName);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -291,22 +260,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
         // and each profile's detail screen). The shortcut here just opens
         // the picker scoped to the active profile so users can add a Plex
         // account, Jellyfin server, or borrow from another profile.
-        ListTile(
-          leading: const AppIcon(Symbols.add_link_rounded, fill: 1),
-          title: Text(t.connections.addConnection),
-          subtitle: Builder(
-            builder: (context) {
-              // Select only the active profile slice — `context.watch`
-              // would rebuild on every provider notification.
-              final active = context.select<ActiveProfileProvider, Profile?>((p) => p.active);
-              return Text(
-                active == null
-                    ? t.connections.addConnectionSubtitleNoProfile
-                    : t.connections.addConnectionSubtitleScoped(displayName: active.displayName),
-              );
-            },
-          ),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+        SettingNavigationTile(
+          icon: Symbols.add_link_rounded,
+          title: t.connections.addConnection,
+          subtitle: subtitle,
           onTap: () {
             final active = context.read<ActiveProfileProvider>().active;
             Navigator.push(context, MaterialPageRoute(builder: (_) => AddConnectionScreen(targetProfile: active)));
@@ -330,14 +287,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             : (activeName != null
                   ? t.profiles.summaryMultipleWithActive(count: count, activeName: activeName)
                   : t.profiles.summaryMultiple(count: count));
-        return ListTile(
-          leading: const AppIcon(Symbols.group_rounded, fill: 1),
-          title: Text(t.profiles.sectionTitle),
-          subtitle: Text(subtitle),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileSwitchScreen()));
-          },
+        return SettingNavigationTile(
+          icon: Symbols.group_rounded,
+          title: t.profiles.sectionTitle,
+          subtitle: subtitle,
+          destinationBuilder: (_) => const ProfileSwitchScreen(),
         );
       },
     );
@@ -366,27 +320,19 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
               );
             },
           ),
-        SwitchListTile(
+        SettingSwitchTile(
           focusNode: _focusTracker.get(_kDownloadOnWifiOnly),
-          secondary: const AppIcon(Symbols.wifi_rounded, fill: 1),
-          title: Text(t.settings.downloadOnWifiOnly),
-          subtitle: Text(t.settings.downloadOnWifiOnlyDescription),
-          value: _downloadOnWifiOnly,
-          onChanged: (value) async {
-            setState(() => _downloadOnWifiOnly = value);
-            await _settingsService.write(settings.SettingsService.downloadOnWifiOnly, value);
-          },
+          pref: settings.SettingsService.downloadOnWifiOnly,
+          icon: Symbols.wifi_rounded,
+          title: t.settings.downloadOnWifiOnly,
+          subtitle: t.settings.downloadOnWifiOnlyDescription,
         ),
-        SwitchListTile(
+        SettingSwitchTile(
           focusNode: _focusTracker.get(_kAutoRemoveWatchedDownloads),
-          secondary: const AppIcon(Symbols.delete_sweep_rounded, fill: 1),
-          title: Text(t.settings.autoRemoveWatchedDownloads),
-          subtitle: Text(t.settings.autoRemoveWatchedDownloadsDescription),
-          value: _autoRemoveWatchedDownloads,
-          onChanged: (value) async {
-            setState(() => _autoRemoveWatchedDownloads = value);
-            await _settingsService.write(settings.SettingsService.autoRemoveWatchedDownloads, value);
-          },
+          pref: settings.SettingsService.autoRemoveWatchedDownloads,
+          icon: Symbols.delete_sweep_rounded,
+          title: t.settings.autoRemoveWatchedDownloads,
+          subtitle: t.settings.autoRemoveWatchedDownloadsDescription,
         ),
       ],
     );
@@ -399,12 +345,11 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         SettingsSectionHeader(t.settings.keyboardShortcuts),
-        ListTile(
+        SettingNavigationTile(
           focusNode: _focusTracker.get(_kVideoPlayerControls),
-          leading: const AppIcon(Symbols.keyboard_rounded, fill: 1),
-          title: Text(t.settings.videoPlayerControls),
-          subtitle: Text(t.settings.keyboardShortcutsDescription),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          icon: Symbols.keyboard_rounded,
+          title: t.settings.videoPlayerControls,
+          subtitle: t.settings.keyboardShortcutsDescription,
           onTap: () {
             Navigator.push(
               context,
@@ -412,16 +357,12 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
             );
           },
         ),
-        SwitchListTile(
+        SettingSwitchTile(
           focusNode: _focusTracker.get(_kVideoPlayerNavigation),
-          secondary: const AppIcon(Symbols.gamepad_rounded, fill: 1),
-          title: Text(t.settings.videoPlayerNavigation),
-          subtitle: Text(t.settings.videoPlayerNavigationDescription),
-          value: _videoPlayerNavigationEnabled,
-          onChanged: (value) async {
-            setState(() => _videoPlayerNavigationEnabled = value);
-            await _settingsService.write(settings.SettingsService.videoPlayerNavigationEnabled, value);
-          },
+          pref: settings.SettingsService.videoPlayerNavigationEnabled,
+          icon: Symbols.gamepad_rounded,
+          title: t.settings.videoPlayerNavigation,
+          subtitle: t.settings.videoPlayerNavigationDescription,
         ),
       ],
     );
@@ -440,37 +381,26 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
           trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
           onTap: () => _showRelayUrlDialog(),
         ),
-        SwitchListTile(
+        SettingSwitchTile(
           focusNode: _focusTracker.get(_kCrashReporting),
-          secondary: const AppIcon(Symbols.monitoring_rounded, fill: 1),
-          title: Text(t.settings.crashReporting),
-          subtitle: Text(t.settings.crashReportingDescription),
-          value: _crashReporting,
-          onChanged: (value) async {
-            setState(() => _crashReporting = value);
-            await _settingsService.write(settings.SettingsService.crashReporting, value);
-          },
+          pref: settings.SettingsService.crashReporting,
+          icon: Symbols.monitoring_rounded,
+          title: t.settings.crashReporting,
+          subtitle: t.settings.crashReportingDescription,
         ),
-        SwitchListTile(
+        SettingSwitchTile(
           focusNode: _focusTracker.get(_kDebugLogging),
-          secondary: const AppIcon(Symbols.bug_report_rounded, fill: 1),
-          title: Text(t.settings.debugLogging),
-          subtitle: Text(t.settings.debugLoggingDescription),
-          value: _enableDebugLogging,
-          onChanged: (value) async {
-            setState(() => _enableDebugLogging = value);
-            await _settingsService.write(settings.SettingsService.enableDebugLogging, value);
-          },
+          pref: settings.SettingsService.enableDebugLogging,
+          icon: Symbols.bug_report_rounded,
+          title: t.settings.debugLogging,
+          subtitle: t.settings.debugLoggingDescription,
         ),
-        ListTile(
+        SettingNavigationTile(
           focusNode: _focusTracker.get(_kViewLogs),
-          leading: const AppIcon(Symbols.article_rounded, fill: 1),
-          title: Text(t.settings.viewLogs),
-          subtitle: Text(t.settings.viewLogsDescription),
-          trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-          onTap: () {
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const LogsScreen()));
-          },
+          icon: Symbols.article_rounded,
+          title: t.settings.viewLogs,
+          subtitle: t.settings.viewLogsDescription,
+          destinationBuilder: (context) => const LogsScreen(),
         ),
         ListTile(
           focusNode: _focusTracker.get(_kClearCache),
@@ -539,19 +469,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     );
   }
 
-  Widget _buildAutoCheckUpdatesOnStartupTile() {
-    return SwitchListTile(
-      focusNode: _focusTracker.get(_kAutoCheckUpdatesOnStartup),
-      secondary: const AppIcon(Symbols.notifications_active_rounded, fill: 1),
-      title: Text(t.settings.autoCheckUpdatesOnStartup),
-      subtitle: Text(t.settings.autoCheckUpdatesOnStartupDescription),
-      value: _autoCheckUpdatesOnStartup,
-      onChanged: (value) async {
-        setState(() => _autoCheckUpdatesOnStartup = value);
-        await _settingsService.write(settings.SettingsService.autoCheckUpdatesOnStartup, value);
-      },
-    );
-  }
+  Widget _buildAutoCheckUpdatesOnStartupTile() => SettingSwitchTile(
+    focusNode: _focusTracker.get(_kAutoCheckUpdatesOnStartup),
+    pref: settings.SettingsService.autoCheckUpdatesOnStartup,
+    icon: Symbols.notifications_active_rounded,
+    title: t.settings.autoCheckUpdatesOnStartup,
+    subtitle: t.settings.autoCheckUpdatesOnStartupDescription,
+  );
 
   Widget _buildUpdateSection() {
     if (UpdateService.useNativeUpdater) {
@@ -718,7 +642,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
   }
 
   Future<void> _showRelayUrlDialog() async {
-    final controller = TextEditingController(text: _customRelayUrl ?? '');
+    final controller = TextEditingController(
+      text: _settingsService.read(settings.SettingsService.customRelayUrl) ?? '',
+    );
     final saveFocusNode = FocusNode();
     // try/finally guarantees disposal on every dismissal path (button,
     // back, tap-outside) without depending on `.then` chaining.
@@ -740,7 +666,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 onPressed: () async {
                   controller.clear();
                   await _settingsService.write(settings.SettingsService.customRelayUrl, null);
-                  if (mounted) setState(() => _customRelayUrl = null);
                   if (dialogContext.mounted) Navigator.pop(dialogContext);
                 },
                 label: t.settings.resetToDefault,
@@ -751,7 +676,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
                 onPressed: () async {
                   final url = controller.text.trim().isEmpty ? null : controller.text.trim();
                   await _settingsService.write(settings.SettingsService.customRelayUrl, url);
-                  if (mounted) setState(() => _customRelayUrl = url);
                   if (dialogContext.mounted) Navigator.pop(dialogContext);
                 },
                 label: t.common.save,
@@ -789,10 +713,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     if (!confirmed) return;
     await _settingsService.resetAllSettings();
     await _keyboardService?.resetToDefaults();
-    if (mounted) {
-      showSuccessSnackBar(context, t.settings.resetSettingsSuccess);
-      unawaited(_loadSettings());
-    }
+    if (mounted) showSuccessSnackBar(context, t.settings.resetSettingsSuccess);
   }
 
   Future<void> _handleExportSettings() async {
@@ -823,7 +744,6 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
     // Capture providers before any awaits so we don't reach through `context`
     // after the widget may have been unmounted.
     final themeProvider = context.read<ThemeProvider>();
-    final settingsProvider = context.read<SettingsProvider>();
     final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
     final librariesProvider = context.read<LibrariesProvider>();
 
@@ -832,17 +752,18 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab {
       if (!mounted) return;
       if (result == null) return; // user cancelled file picker
 
+      // Import wrote directly to SharedPreferences, bypassing `write`. Push
+      // fresh values into active listenables before providers re-read settings.
+      _settingsService.refreshListenables();
       unawaited(LocaleSettings.setLocale(_settingsService.read(settings.SettingsService.appLocale)));
       await Future.wait([
         themeProvider.reload(),
-        settingsProvider.reload(),
         hiddenLibrariesProvider.refresh(),
         if (_keyboardService != null) _keyboardService!.refreshFromStorage(),
       ]);
       unawaited(librariesProvider.refresh());
 
       if (!mounted) return;
-      unawaited(_loadSettings());
       showSuccessSnackBar(context, t.settings.importSettingsSuccess);
     } on NoUserSignedInException {
       if (mounted) showErrorSnackBar(context, t.settings.importSettingsNoUser);

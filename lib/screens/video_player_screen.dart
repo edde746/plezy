@@ -46,7 +46,6 @@ import '../services/playback_progress_tracker.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/display_mode_service.dart';
 import '../services/settings_service.dart';
-import '../providers/settings_provider.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/track_manager.dart';
 import '../services/ambient_lighting_service.dart';
@@ -152,7 +151,7 @@ class VideoPlayerScreen extends StatefulWidget {
   final bool isOffline;
 
   /// Quality preset override for this playback. When `null`, the screen uses
-  /// the user's default from [SettingsProvider].
+  /// the user's [SettingsService.defaultQualityPreset].
   final TranscodeQualityPreset? selectedQualityPreset;
 
   /// Audio stream ID to pass to the transcoder when [selectedQualityPreset]
@@ -580,12 +579,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // `availableVersions.length`, not transcoding capability.
         _serverSupportsTranscoding = genericClient.capabilities.videoTranscoding;
         if (widget.selectedQualityPreset == null) {
-          try {
-            final settingsProvider = context.read<SettingsProvider>();
-            _selectedQualityPreset = settingsProvider.defaultQualityPreset;
-          } catch (_) {
-            _selectedQualityPreset = TranscodeQualityPreset.original;
-          }
+          _selectedQualityPreset = settingsService.read(SettingsService.defaultQualityPreset);
         } else {
           _selectedQualityPreset = widget.selectedQualityPreset!;
         }

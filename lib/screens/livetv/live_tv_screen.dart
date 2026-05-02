@@ -12,7 +12,8 @@ import '../../models/livetv_dvr.dart';
 import '../../mixins/refreshable.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../providers/multi_server_provider.dart';
-import '../../providers/settings_provider.dart';
+import '../../services/settings_service.dart';
+import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
@@ -90,7 +91,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   void initState() {
     super.initState();
     suppressAutoFocus = true;
-    _showFavoritesOnly = context.read<SettingsProvider>().liveTvDefaultFavorites;
+    _showFavoritesOnly = context.settingsRead(SettingsService.liveTvDefaultFavorites);
     initTabNavigation();
     _loadChannels();
   }

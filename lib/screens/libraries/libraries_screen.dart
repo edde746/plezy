@@ -19,7 +19,8 @@ import '../../media/media_library.dart';
 import '../../media/media_server_client.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/libraries_provider.dart';
-import '../../providers/settings_provider.dart';
+import '../../services/settings_service.dart';
+import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/library_grouping.dart';
@@ -998,6 +999,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   @override
   Widget build(BuildContext context) {
+    return SettingValueBuilder<bool>(
+      pref: SettingsService.groupLibrariesByServer,
+      builder: (context, groupByServerSetting, _) => _buildContent(context, groupByServerSetting),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, bool groupByServerSetting) {
     // Watch libraries provider for updates
     final librariesProvider = context.watch<LibrariesProvider>();
     final allLibraries = librariesProvider.libraries;
@@ -1016,11 +1024,6 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         : null;
 
     final showMobileTabsRow = selectedLibrary != null && !PlatformDetector.shouldUseSideNavigation(context);
-
-    // Hoist Provider lookup out of any closures: NestedScrollView's
-    // headerSliverBuilder is invoked from a Builder downstream and Provider
-    // refuses context.select inside closures invoked from foreign builds.
-    final groupByServerSetting = context.select<SettingsProvider, bool>((p) => p.groupLibrariesByServer);
 
     Widget appBar({required bool floating}) => DesktopSliverAppBar(
       title: _buildAppBarTitle(visibleLibraries, selectedLibrary, groupByServer: groupByServerSetting),

@@ -3,14 +3,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:provider/provider.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../media/media_item.dart';
 import '../../media/media_item_types.dart';
 import '../../media/media_kind.dart';
-import '../../providers/settings_provider.dart';
-import '../../services/settings_service.dart' show EpisodePosterMode;
+import '../../services/settings_service.dart';
+import '../../widgets/settings_builder.dart';
 import '../../utils/formatters.dart';
 import '../../utils/provider_extensions.dart';
 import '../../widgets/media_progress_bar.dart';
@@ -140,9 +139,10 @@ class FolderTreeItem extends StatelessWidget {
 
   Widget _buildMediaRow(BuildContext context) {
     final indentation = depth * 24.0;
-    final episodePosterMode = context.select<SettingsProvider, EpisodePosterMode>((s) => s.episodePosterMode);
-    final hideSpoilers = context.select<SettingsProvider, bool>((s) => s.hideSpoilers);
-    final showUnwatchedCount = context.select<SettingsProvider, bool>((s) => s.showUnwatchedCount);
+    final svc = SettingsService.instanceOrNull!;
+    final episodePosterMode = svc.read(SettingsService.episodePosterMode);
+    final hideSpoilers = svc.read(SettingsService.hideSpoilers);
+    final showUnwatchedCount = svc.read(SettingsService.showUnwatchedCount);
 
     final isWide = item.usesWideAspectRatio(episodePosterMode);
     final thumbWidth = isWide ? 130.0 : 53.0;
@@ -336,7 +336,16 @@ class FolderTreeItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rowContent = isFolder ? _buildFolderRow(context) : _buildMediaRow(context);
+    final rowContent = isFolder
+        ? _buildFolderRow(context)
+        : SettingsBuilder(
+            prefs: const [
+              SettingsService.episodePosterMode,
+              SettingsService.hideSpoilers,
+              SettingsService.showUnwatchedCount,
+            ],
+            builder: _buildMediaRow,
+          );
 
     return Row(
       children: [

@@ -112,9 +112,21 @@ abstract class BaseSharedPreferencesService {
   /// when the value changes. Notifiers live for the app lifetime — do not
   /// dispose them.
   final Map<String, ValueNotifier<dynamic>> _listenables = {};
+  final Map<String, Pref<dynamic>> _listenablePrefs = {};
 
-  ValueNotifier<T> listenable<T>(Pref<T> pref) {
-    return (_listenables[pref.key] ??= ValueNotifier<T>(read(pref))) as ValueNotifier<T>;
+  ValueNotifier<T> listenable<T>(Pref<T> pref) => pref.bindListenable(this);
+
+  /// Type-erased [Listenable] accessor for combining multiple prefs into a
+  /// `Listenable.merge`. Dispatches through [Pref.bindListenable] so the
+  /// underlying notifier is created with the pref's concrete type.
+  Listenable listenableOf(Pref<Object?> pref) => pref.bindListenable(this);
+
+  /// Push current stored values into every active listenable. Used after bulk
+  /// operations that bypass [write] (reset/import/direct SharedPreferences writes).
+  void refreshActiveListenables() {
+    for (final pref in _listenablePrefs.values.toList(growable: false)) {
+      pref.refreshListenable(this);
+    }
   }
 
   /// Hook for subclass-specific initialization after SharedPreferences is ready.
@@ -138,6 +150,27 @@ abstract class Pref<T> {
 
   /// Implementation hook — call [BaseSharedPreferencesService.write] instead.
   Future<void> writeTo(BaseSharedPreferencesService svc, T value);
+
+  /// Get-or-create the [ValueNotifier] for this pref. Virtual-dispatched via
+  /// the runtime [Pref] subclass so the notifier carries the concrete `T`,
+  /// even when called through a `Pref<Object?>` reference (used by
+  /// [BaseSharedPreferencesService.listenableOf]).
+  ValueNotifier<T> bindListenable(BaseSharedPreferencesService svc) {
+    final existing = svc._listenables[key];
+    svc._listenablePrefs[key] = this;
+    if (existing != null) return existing as ValueNotifier<T>;
+    final notifier = ValueNotifier<T>(readFrom(svc));
+    svc._listenables[key] = notifier;
+    return notifier;
+  }
+
+  /// If a listenable exists for this key, push the current stored value into
+  /// it. Used after bulk operations (reset, import) that bypass [writeTo].
+  /// No-op when no listener has been registered.
+  void refreshListenable(BaseSharedPreferencesService svc) {
+    final n = svc._listenables[key];
+    if (n != null) (n as ValueNotifier<T>).value = readFrom(svc);
+  }
 }
 
 class BoolPref extends Pref<bool> {

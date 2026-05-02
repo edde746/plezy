@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -75,6 +76,37 @@ class _SettingsMenuItem extends StatelessWidget {
   }
 }
 
+class _SettingsToggleItem extends StatelessWidget {
+  final Pref<bool> pref;
+  final IconData icon;
+  final String title;
+  final FutureOr<void> Function(bool value)? onAfterWrite;
+
+  const _SettingsToggleItem({required this.pref, required this.icon, required this.title, this.onAfterWrite});
+
+  @override
+  Widget build(BuildContext context) {
+    final settings = SettingsService.instanceOrNull!;
+    return ValueListenableBuilder<bool>(
+      valueListenable: settings.listenable(pref),
+      builder: (context, value, _) {
+        Future<void> write(bool next) async {
+          await settings.write(pref, next);
+          final callback = onAfterWrite;
+          if (callback != null) await callback(next);
+        }
+
+        return FocusableListTile(
+          leading: AppIcon(icon, fill: 1, color: value ? Colors.amber : tokens(context).textMuted),
+          title: Text(title),
+          trailing: Switch(value: value, onChanged: write, activeThumbColor: Colors.amber),
+          onTap: () => write(!value),
+        );
+      },
+    );
+  }
+}
+
 /// Unified settings sheet for playback adjustments with in-sheet navigation
 class VideoSettingsSheet extends StatefulWidget {
   final Player player;
@@ -132,11 +164,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   _SettingsView _currentView = _SettingsView.menu;
   late int _audioSyncOffset;
   late int _subtitleSyncOffset;
-  bool _enableHDR = true;
-  bool _showPerformanceOverlay = false;
-  bool _autoPlayNextEpisode = true;
-  bool _audioPassthrough = false;
-  bool _audioNormalization = false;
   String _dvConversionMode = 'auto';
 
   @override
@@ -144,77 +171,16 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     super.initState();
     _audioSyncOffset = widget.audioSyncOffset;
     _subtitleSyncOffset = widget.subtitleSyncOffset;
-    _loadSettings();
+    _loadDebugDvConversionMode();
   }
 
-  Future<void> _loadSettings() async {
-    final settings = await SettingsService.getInstance();
-    final dvConversionMode = kDebugMode && Platform.isAndroid && widget.player.playerType == 'exoplayer'
-        ? await widget.player.getProperty('dv-conversion-mode')
-        : null;
+  Future<void> _loadDebugDvConversionMode() async {
+    if (!kDebugMode || !Platform.isAndroid || widget.player.playerType != 'exoplayer') return;
+    final dvConversionMode = await widget.player.getProperty('dv-conversion-mode');
     if (!mounted) return;
     setState(() {
-      _enableHDR = settings.read(SettingsService.enableHDR);
-      _showPerformanceOverlay = settings.read(SettingsService.showPerformanceOverlay);
-      _autoPlayNextEpisode = settings.read(SettingsService.autoPlayNextEpisode);
-      _audioPassthrough = settings.read(SettingsService.audioPassthrough);
-      _audioNormalization = settings.read(SettingsService.audioNormalization);
       _dvConversionMode = _normalizeDvConversionMode(dvConversionMode);
     });
-  }
-
-  Future<void> _toggleHDR() async {
-    final newValue = !_enableHDR;
-    final settings = await SettingsService.getInstance();
-    await settings.write(SettingsService.enableHDR, newValue);
-    if (!mounted) return;
-    setState(() {
-      _enableHDR = newValue;
-    });
-    // Apply to player immediately
-    await widget.player.setProperty('hdr-enabled', newValue ? 'yes' : 'no');
-  }
-
-  Future<void> _togglePerformanceOverlay() async {
-    final newValue = !_showPerformanceOverlay;
-    final settings = await SettingsService.getInstance();
-    await settings.write(SettingsService.showPerformanceOverlay, newValue);
-    if (!mounted) return;
-    setState(() {
-      _showPerformanceOverlay = newValue;
-    });
-  }
-
-  Future<void> _toggleAutoPlayNextEpisode() async {
-    final newValue = !_autoPlayNextEpisode;
-    final settings = await SettingsService.getInstance();
-    await settings.write(SettingsService.autoPlayNextEpisode, newValue);
-    if (!mounted) return;
-    setState(() {
-      _autoPlayNextEpisode = newValue;
-    });
-  }
-
-  Future<void> _toggleAudioPassthrough() async {
-    final newValue = !_audioPassthrough;
-    final settings = await SettingsService.getInstance();
-    await settings.write(SettingsService.audioPassthrough, newValue);
-    if (!mounted) return;
-    setState(() {
-      _audioPassthrough = newValue;
-    });
-    await widget.player.setAudioPassthrough(newValue);
-  }
-
-  Future<void> _toggleAudioNormalization() async {
-    final newValue = !_audioNormalization;
-    final settings = await SettingsService.getInstance();
-    await settings.write(SettingsService.audioNormalization, newValue);
-    if (!mounted) return;
-    setState(() {
-      _audioNormalization = newValue;
-    });
-    await widget.player.setProperty('af', newValue ? 'loudnorm=I=-14:TP=-3:LRA=4' : '');
   }
 
   Future<void> _setDebugDvConversionMode(String mode) async {
@@ -268,7 +234,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             initialOffset: initialOffset,
             sliderFocusNode: sliderFocusNode,
             onOffsetChanged: (offset) async {
-              final settings = await SettingsService.getInstance();
+              final settings = SettingsService.instanceOrNull!;
               if (isSubtitle) {
                 await settings.write(SettingsService.subtitleSyncOffset, offset);
               } else {
@@ -419,31 +385,18 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
         // HDR Toggle (iOS, macOS, and Windows)
         if (Platform.isIOS || Platform.isMacOS || Platform.isWindows)
-          FocusableListTile(
-            leading: AppIcon(
-              Symbols.hdr_strong_rounded,
-              fill: 1,
-              color: _enableHDR ? Colors.amber : tokens(context).textMuted,
-            ),
-            title: Text(t.videoSettings.hdr),
-            trailing: Switch(value: _enableHDR, onChanged: (_) => _toggleHDR(), activeThumbColor: Colors.amber),
-            onTap: _toggleHDR,
+          _SettingsToggleItem(
+            pref: SettingsService.enableHDR,
+            icon: Symbols.hdr_strong_rounded,
+            title: t.videoSettings.hdr,
+            onAfterWrite: (value) => widget.player.setProperty('hdr-enabled', value ? 'yes' : 'no'),
           ),
 
         // Auto-Play Next Episode Toggle
-        FocusableListTile(
-          leading: AppIcon(
-            Symbols.skip_next_rounded,
-            fill: 1,
-            color: _autoPlayNextEpisode ? Colors.amber : tokens(context).textMuted,
-          ),
-          title: Text(t.videoControls.autoPlayNext),
-          trailing: Switch(
-            value: _autoPlayNextEpisode,
-            onChanged: (_) => _toggleAutoPlayNextEpisode(),
-            activeThumbColor: Colors.amber,
-          ),
-          onTap: _toggleAutoPlayNextEpisode,
+        _SettingsToggleItem(
+          pref: SettingsService.autoPlayNextEpisode,
+          icon: Symbols.skip_next_rounded,
+          title: t.videoControls.autoPlayNext,
         ),
 
         // Audio Output Device (Desktop only)
@@ -467,36 +420,20 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
         // Audio Passthrough (Desktop only)
         if (isDesktop)
-          FocusableListTile(
-            leading: AppIcon(
-              Symbols.surround_sound_rounded,
-              fill: 1,
-              color: _audioPassthrough ? Colors.amber : tokens(context).textMuted,
-            ),
-            title: Text(t.videoSettings.audioPassthrough),
-            trailing: Switch(
-              value: _audioPassthrough,
-              onChanged: (_) => _toggleAudioPassthrough(),
-              activeThumbColor: Colors.amber,
-            ),
-            onTap: _toggleAudioPassthrough,
+          _SettingsToggleItem(
+            pref: SettingsService.audioPassthrough,
+            icon: Symbols.surround_sound_rounded,
+            title: t.videoSettings.audioPassthrough,
+            onAfterWrite: widget.player.setAudioPassthrough,
           ),
 
         // Audio Normalization (MPV only)
         if (widget.player.playerType == 'mpv')
-          FocusableListTile(
-            leading: AppIcon(
-              Symbols.graphic_eq_rounded,
-              fill: 1,
-              color: _audioNormalization ? Colors.amber : tokens(context).textMuted,
-            ),
-            title: Text(t.videoSettings.audioNormalization),
-            trailing: Switch(
-              value: _audioNormalization,
-              onChanged: (_) => _toggleAudioNormalization(),
-              activeThumbColor: Colors.amber,
-            ),
-            onTap: _toggleAudioNormalization,
+          _SettingsToggleItem(
+            pref: SettingsService.audioNormalization,
+            icon: Symbols.graphic_eq_rounded,
+            title: t.videoSettings.audioNormalization,
+            onAfterWrite: (value) => widget.player.setProperty('af', value ? 'loudnorm=I=-14:TP=-3:LRA=4' : ''),
           ),
 
         // Shader Preset (MPV only)
@@ -533,19 +470,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           ),
 
         // Performance Overlay Toggle
-        FocusableListTile(
-          leading: AppIcon(
-            Symbols.analytics_rounded,
-            fill: 1,
-            color: _showPerformanceOverlay ? Colors.amber : tokens(context).textMuted,
-          ),
-          title: Text(t.videoSettings.performanceOverlay),
-          trailing: Switch(
-            value: _showPerformanceOverlay,
-            onChanged: (_) => _togglePerformanceOverlay(),
-            activeThumbColor: Colors.amber,
-          ),
-          onTap: _togglePerformanceOverlay,
+        _SettingsToggleItem(
+          pref: SettingsService.showPerformanceOverlay,
+          icon: Symbols.analytics_rounded,
+          title: t.videoSettings.performanceOverlay,
         ),
 
         if (kDebugMode && Platform.isAndroid && widget.player.playerType == 'exoplayer')
@@ -628,8 +556,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               onTap: () async {
                 await widget.player.setRate(speed);
                 // Save as default playback speed
-                final settings = await SettingsService.getInstance();
-                await settings.write(SettingsService.defaultPlaybackSpeed, speed);
+                await SettingsService.instanceOrNull!.write(SettingsService.defaultPlaybackSpeed, speed);
                 if (context.mounted) {
                   OverlaySheetController.of(context).close(); // Close sheet after selection
                 }

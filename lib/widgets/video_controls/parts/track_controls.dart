@@ -1,41 +1,6 @@
 part of '../video_controls.dart';
 
 extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
-  Future<void> _loadSeekTimes() async {
-    final settingsService = await SettingsService.getInstance();
-    if (mounted) {
-      _setControlsState(() {
-        _seekTimeSmall = settingsService.read(SettingsService.seekTimeSmall);
-        _rewindOnResume = settingsService.read(SettingsService.rewindOnResume);
-        _audioSyncOffset = settingsService.read(SettingsService.audioSyncOffset);
-        _subtitleSyncOffset = settingsService.read(SettingsService.subtitleSyncOffset);
-        _isRotationLocked = settingsService.read(SettingsService.rotationLocked);
-        _autoSkipIntro = settingsService.read(SettingsService.autoSkipIntro);
-        _autoSkipCredits = settingsService.read(SettingsService.autoSkipCredits);
-        _autoSkipDelay = settingsService.read(SettingsService.autoSkipDelay);
-        _videoPlayerNavigationEnabled = settingsService.read(SettingsService.videoPlayerNavigationEnabled);
-        _showPerformanceOverlay = settingsService.read(SettingsService.showPerformanceOverlay);
-        _autoHidePerformanceOverlay = settingsService.read(SettingsService.autoHidePerformanceOverlay);
-        _clickVideoTogglesPlayback = settingsService.read(SettingsService.clickVideoTogglesPlayback);
-      });
-
-      // Focus play/pause if navigation is now enabled and controls are visible
-      // (handles case where initState focus attempt failed due to async settings load)
-      if (_videoPlayerNavigationEnabled && _showControls) {
-        _focusPlayPauseIfKeyboardMode();
-      }
-
-      // Apply rotation lock setting
-      if (_isRotationLocked) {
-        unawaited(
-          SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]),
-        );
-      } else {
-        unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
-      }
-    }
-  }
-
   void _toggleSubtitles() {
     final currentTrack = widget.player.state.track.subtitle;
     // No-op if no subtitle track is selected
@@ -155,22 +120,13 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       onAudioTrackChanged: widget.onAudioTrackChanged,
       onSubtitleTrackChanged: _onSubtitleTrackChanged,
       onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
-      onLoadSeekTimes: () async {
-        if (mounted) {
-          await _loadSeekTimes();
-        }
-      },
+      onLoadSeekTimes: null,
       onCancelAutoHide: () => _hideTimer?.cancel(),
       onStartAutoHide: _startHideTimer,
-      onSyncOffsetChanged: (propertyName, offset) {
-        _setControlsState(() {
-          if (propertyName == 'sub-delay') {
-            _subtitleSyncOffset = offset;
-          } else {
-            _audioSyncOffset = offset;
-          }
-        });
-      },
+      // Sync offsets are now driven by listenable rebuilds — the sheet writes
+      // to SettingsService and the parent re-reads via `_audioSyncOffset` /
+      // `_subtitleSyncOffset` getters. Callback kept for sheet API compat.
+      onSyncOffsetChanged: null,
       serverId: widget.metadata.serverId ?? '',
       shaderService: widget.shaderService,
       onShaderChanged: widget.onShaderChanged,

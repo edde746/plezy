@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../../providers/settings_provider.dart';
-import '../../services/settings_service.dart' show ViewMode;
+import '../../services/settings_service.dart';
+import '../../widgets/settings_builder.dart';
 import '../../utils/grid_size_calculator.dart';
 import '../../utils/layout_constants.dart';
 import '../main_screen.dart';
@@ -73,10 +72,11 @@ class AdaptiveMediaGrid<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<SettingsProvider, (ViewMode, int)>(
-      selector: (_, p) => (p.viewMode, p.libraryDensity),
-      builder: (context, slice, _) {
-        return _buildItemsView(context, slice.$1, slice.$2);
+    return SettingsBuilder(
+      prefs: const [SettingsService.viewMode, SettingsService.libraryDensity],
+      builder: (context) {
+        final svc = SettingsService.instanceOrNull!;
+        return _buildItemsView(context, svc.read(SettingsService.viewMode), svc.read(SettingsService.libraryDensity));
       },
     );
   }

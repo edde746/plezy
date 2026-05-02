@@ -21,6 +21,7 @@ import '../../services/macos_window_service.dart';
 import '../../services/pip_service.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../mixins/settings_effect_mixin.dart';
 import '../../mpv/mpv.dart';
 import '../overlay_sheet.dart';
 import '../../focus/dpad_navigator.dart';
@@ -336,7 +337,7 @@ class PlexVideoControls extends StatefulWidget {
   State<PlexVideoControls> createState() => _PlexVideoControlsState();
 }
 
-class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListener, WidgetsBindingObserver {
+class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListener, SettingsEffectMixin {
   bool _showControls = true;
   bool _forceShowControls = false;
   bool _isLoadingExtras = false;
@@ -347,15 +348,19 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   bool _isAlwaysOnTop = false;
   late final FocusNode _focusNode;
   KeyboardShortcutsService? _keyboardService;
-  int _seekTimeSmall = 10; // Default, loaded from settings
-  int _rewindOnResume = 0; // Default, loaded from settings
-  int _audioSyncOffset = 0; // Default, loaded from settings
-  int _subtitleSyncOffset = 0; // Default, loaded from settings
-  bool _isRotationLocked = true; // Default locked (landscape only)
+  // Live settings — read through the service so a change anywhere in the app
+  // reflects here without a manual reload. UI rebuilds are wired via
+  // [bindRebuild] in [initState]; side effects (rotation, sync) via [bindEffect].
+  SettingsService get _settings => SettingsService.instanceOrNull!;
+  int get _seekTimeSmall => _settings.read(SettingsService.seekTimeSmall);
+  int get _rewindOnResume => _settings.read(SettingsService.rewindOnResume);
+  int get _audioSyncOffset => _settings.read(SettingsService.audioSyncOffset);
+  int get _subtitleSyncOffset => _settings.read(SettingsService.subtitleSyncOffset);
+  bool get _isRotationLocked => _settings.read(SettingsService.rotationLocked);
   bool _isScreenLocked = false; // Touch lock during playback
   bool _showLockIcon = false; // Whether to show the lock overlay icon
   Timer? _lockIconTimer;
-  bool _clickVideoTogglesPlayback = false; // Default, loaded from settings
+  bool get _clickVideoTogglesPlayback => _settings.read(SettingsService.clickVideoTogglesPlayback);
   bool _isContentStripVisible = false; // Whether the swipe-up content strip is showing
 
   // GlobalKey to access DesktopVideoControls state for focus management
@@ -385,19 +390,19 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   // Position subscription for marker tracking
   StreamSubscription<Duration>? _positionSubscription;
   // Auto-skip state
-  bool _autoSkipIntro = false;
-  bool _autoSkipCredits = false;
-  int _autoSkipDelay = 5;
+  bool get _autoSkipIntro => _settings.read(SettingsService.autoSkipIntro);
+  bool get _autoSkipCredits => _settings.read(SettingsService.autoSkipCredits);
+  int get _autoSkipDelay => _settings.read(SettingsService.autoSkipDelay);
   Timer? _autoSkipTimer;
   double _autoSkipProgress = 0.0;
   // Skip button dismiss state
   bool _skipButtonDismissed = false;
   Timer? _skipButtonDismissTimer;
   // Video player navigation (use arrow keys to navigate controls)
-  bool _videoPlayerNavigationEnabled = false;
+  bool get _videoPlayerNavigationEnabled => _settings.read(SettingsService.videoPlayerNavigationEnabled);
   // Performance overlay
-  bool _showPerformanceOverlay = false;
-  bool _autoHidePerformanceOverlay = true;
+  bool get _showPerformanceOverlay => _settings.read(SettingsService.showPerformanceOverlay);
+  bool get _autoHidePerformanceOverlay => _settings.read(SettingsService.autoHidePerformanceOverlay);
   // Long-press 2x speed state
   bool _isLongPressing = false;
   // Subtitle visibility toggle state
@@ -429,15 +434,34 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       leading: true,
       trailing: true,
     );
-    _loadSeekTimes();
+    // Side effects: rotation lock + focus on nav-enable. Both fire immediately
+    // so init wiring (orientation, focus) lives in one place.
+    bindEffect<bool>(SettingsService.rotationLocked, _applyRotationLock);
+    bindEffect<bool>(SettingsService.videoPlayerNavigationEnabled, (enabled) {
+      if (enabled && _showControls) _focusPlayPauseIfKeyboardMode();
+    }, fireImmediately: false);
+    // Rebuild on any setting that affects build output (seek labels, skip
+    // logic, perf overlay visibility, click-toggles, etc.).
+    bindRebuild([
+      SettingsService.seekTimeSmall,
+      SettingsService.rewindOnResume,
+      SettingsService.audioSyncOffset,
+      SettingsService.subtitleSyncOffset,
+      SettingsService.rotationLocked,
+      SettingsService.autoSkipIntro,
+      SettingsService.autoSkipCredits,
+      SettingsService.autoSkipDelay,
+      SettingsService.videoPlayerNavigationEnabled,
+      SettingsService.showPerformanceOverlay,
+      SettingsService.autoHidePerformanceOverlay,
+      SettingsService.clickVideoTogglesPlayback,
+    ]);
     _startHideTimer();
     _initKeyboardService();
     _listenToPosition();
     _listenToPlayingState();
     _listenToCompleted();
     _checkPipSupport();
-    // Add lifecycle observer to reload settings when app resumes
-    WidgetsBinding.instance.addObserver(this);
     // Add window listener for tracking fullscreen state (for button icon)
     if (PlatformDetector.isDesktopOS()) {
       windowManager.addListener(this);
@@ -491,8 +515,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     if (_isLongPressing && _rateBeforeLongPress != null) {
       widget.player.setRate(_rateBeforeLongPress!);
     }
-    // Remove lifecycle observer
-    WidgetsBinding.instance.removeObserver(this);
     // Remove window listener and reset always-on-top if it was enabled
     if (PlatformDetector.isDesktopOS()) {
       windowManager.removeListener(this);
@@ -504,14 +526,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
       _pipService.isPipActive.removeListener(_onMacPipChanged);
     }
     super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // Reload seek times when app resumes (e.g., returning from settings)
-      _loadSeekTimes();
-    }
   }
 
   @override

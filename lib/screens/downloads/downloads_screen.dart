@@ -5,7 +5,8 @@ import '../../focus/focusable_action_bar.dart';
 import '../../media/media_item.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
-import '../../providers/settings_provider.dart';
+import '../../services/settings_service.dart';
+import '../../widgets/settings_builder.dart';
 import '../../utils/global_key_utils.dart';
 import '../../mixins/tab_navigation_mixin.dart';
 import '../../utils/grid_size_calculator.dart';
@@ -292,8 +293,8 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<DownloadProvider, SettingsProvider>(
-      builder: (context, downloadProvider, settingsProvider, _) {
+    return Consumer<DownloadProvider>(
+      builder: (context, downloadProvider, _) {
         final List<MediaItem> items = widget.type == DownloadType.tvShows
             ? downloadProvider.downloadedShows
             : downloadProvider.downloadedMovies;
@@ -304,33 +305,35 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
 
         // Extra top padding for focus decoration (scale + border extends beyond item bounds)
         const effectivePadding = EdgeInsets.only(left: 8, right: 8, top: 8);
-        final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
 
-        // Use LayoutBuilder to get actual available width (accounting for sidebar)
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            final availableWidth = constraints.maxWidth - effectivePadding.left - effectivePadding.right;
-            final columnCount = GridSizeCalculator.getColumnCount(availableWidth, maxCrossAxisExtent);
+        return SettingValueBuilder<int>(
+          pref: SettingsService.libraryDensity,
+          builder: (context, density, _) {
+            final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
+            // Use LayoutBuilder to get actual available width (accounting for sidebar)
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final availableWidth = constraints.maxWidth - effectivePadding.left - effectivePadding.right;
+                final columnCount = GridSizeCalculator.getColumnCount(availableWidth, maxCrossAxisExtent);
 
-            return GridView.builder(
-              padding: effectivePadding,
-              // Allow focus decoration to render outside scroll bounds
-              clipBehavior: Clip.none,
-              gridDelegate: MediaGridDelegate.createDelegate(
-                context: context,
-                density: settingsProvider.libraryDensity,
-              ),
-              itemCount: items.length,
-              itemBuilder: (context, index) {
-                final item = items[index];
-                final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
-                final isFirst = index == 0;
-                return FocusableMediaCard(
-                  item: item,
-                  focusNode: isFirst ? _firstItemFocusNode : null,
-                  onBack: widget.onBack,
-                  isOffline: true, // Downloaded content works without server
-                  onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
+                return GridView.builder(
+                  padding: effectivePadding,
+                  // Allow focus decoration to render outside scroll bounds
+                  clipBehavior: Clip.none,
+                  gridDelegate: MediaGridDelegate.createDelegate(context: context, density: density),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
+                    final isFirst = index == 0;
+                    return FocusableMediaCard(
+                      item: item,
+                      focusNode: isFirst ? _firstItemFocusNode : null,
+                      onBack: widget.onBack,
+                      isOffline: true, // Downloaded content works without server
+                      onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
+                    );
+                  },
                 );
               },
             );

@@ -1,9 +1,11 @@
+import 'package:flex_color_picker/flex_color_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
+import '../../widgets/tv_color_picker.dart';
 import '../../widgets/tv_number_spinner.dart';
 
 /// Model for option selection dialogs.
@@ -228,6 +230,106 @@ void _showNumericInputDialogStandard({
     controller.dispose();
     saveFocusNode.dispose();
   });
+}
+
+/// Convert `#RRGGBB` (or `#AARRGGBB`) hex to [Color]. Defaults to black on parse error.
+Color hexToColor(String hex) {
+  final buffer = StringBuffer();
+  if (hex.length == 7) buffer.write('ff');
+  buffer.write(hex.replaceFirst('#', ''));
+  return Color(int.tryParse(buffer.toString(), radix: 16) ?? 0xff000000);
+}
+
+/// Convert [Color] to `#RRGGBB` hex (uppercase). Drops alpha.
+String colorToHex(Color color) {
+  String two(num c) => ((c * 255.0).round() & 0xff).toRadixString(16).padLeft(2, '0');
+  return '#${two(color.r)}${two(color.g)}${two(color.b)}'.toUpperCase();
+}
+
+/// Shows a color picker dialog. Uses [TvColorPicker] in keyboard/D-pad mode,
+/// otherwise the standard FlexColorPicker. Calls [onSave] with `#RRGGBB`.
+void showColorInputDialog({
+  required BuildContext context,
+  required String title,
+  required String currentHex,
+  required Future<void> Function(String hex) onSave,
+}) {
+  if (InputModeTracker.isKeyboardMode(context)) {
+    _showColorInputDialogTV(context: context, title: title, currentHex: currentHex, onSave: onSave);
+  } else {
+    _showColorInputDialogStandard(context: context, title: title, currentHex: currentHex, onSave: onSave);
+  }
+}
+
+Future<void> _showColorInputDialogStandard({
+  required BuildContext context,
+  required String title,
+  required String currentHex,
+  required Future<void> Function(String hex) onSave,
+}) async {
+  final initial = hexToColor(currentHex);
+  final selected = await showColorPickerDialog(
+    context,
+    initial,
+    title: Text(title),
+    barrierColor: Colors.black54,
+    width: 40,
+    height: 40,
+    spacing: 0,
+    runSpacing: 0,
+    borderRadius: 4,
+    wheelDiameter: 165,
+    enableOpacity: false,
+    showColorCode: true,
+    colorCodeHasColor: true,
+    pickersEnabled: const <ColorPickerType, bool>{
+      ColorPickerType.both: false,
+      ColorPickerType.primary: true,
+      ColorPickerType.accent: false,
+      ColorPickerType.wheel: true,
+      ColorPickerType.custom: false,
+    },
+    actionButtons: const ColorPickerActionButtons(okButton: true, closeButton: true, dialogActionButtons: false),
+  );
+  if (selected != initial) await onSave(colorToHex(selected));
+}
+
+void _showColorInputDialogTV({
+  required BuildContext context,
+  required String title,
+  required String currentHex,
+  required Future<void> Function(String hex) onSave,
+}) {
+  Color picked = hexToColor(currentHex);
+  final saveFocusNode = FocusNode();
+  showDialog(
+    context: context,
+    builder: (dialogContext) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text(title),
+            content: TvColorPicker(
+              initialColor: picked,
+              onColorChanged: (c) => setDialogState(() => picked = c),
+              onConfirm: () => saveFocusNode.requestFocus(),
+            ),
+            actions: [
+              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+              DialogActionButton(
+                focusNode: saveFocusNode,
+                onPressed: () async {
+                  await onSave(colorToHex(picked));
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
+                },
+                label: t.common.save,
+              ),
+            ],
+          );
+        },
+      );
+    },
+  ).then((_) => saveFocusNode.dispose());
 }
 
 /// Shows a text input dialog with regex validation and reset-to-default support.

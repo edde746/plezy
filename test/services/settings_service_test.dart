@@ -1,7 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/trackers/tracker_constants.dart';
+
+import '../test_helpers/prefs.dart';
 
 void main() {
+  setUp(() {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
+  });
+
   group('SettingsService.parseMpvConfigText', () {
     test('parses plain key=value lines', () {
       final out = SettingsService.parseMpvConfigText('hwdec=auto\nvolume=100');
@@ -50,6 +58,41 @@ void main() {
 
     test('empty input yields empty map', () {
       expect(SettingsService.parseMpvConfigText(''), isEmpty);
+    });
+  });
+
+  group('SettingsService listenables', () {
+    test('refreshListenables updates active prefs outside the resettable surface', () async {
+      final settings = await SettingsService.getInstance();
+      final crashReporting = settings.listenable(SettingsService.crashReporting);
+
+      expect(crashReporting.value, isTrue);
+
+      await settings.prefs.setBool(SettingsService.crashReporting.key, false);
+      expect(crashReporting.value, isTrue);
+
+      settings.refreshListenables();
+
+      expect(crashReporting.value, isFalse);
+    });
+
+    test('resetAllSettings refreshes active dynamic tracker prefs', () async {
+      final settings = await SettingsService.getInstance();
+      final modePref = SettingsService.trackerFilterModePref(TrackerService.trakt);
+      final idsPref = SettingsService.trackerFilterIdsPref(TrackerService.trakt);
+
+      await settings.write(modePref, TrackerLibraryFilterMode.whitelist);
+      await settings.write(idsPref, ['library-1']);
+      final mode = settings.listenable(modePref);
+      final ids = settings.listenable(idsPref);
+
+      expect(mode.value, TrackerLibraryFilterMode.whitelist);
+      expect(ids.value, ['library-1']);
+
+      await settings.resetAllSettings();
+
+      expect(mode.value, TrackerLibraryFilterMode.blacklist);
+      expect(ids.value, isEmpty);
     });
   });
 }

@@ -3,13 +3,15 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:provider/provider.dart';
 import '../focus/focus_theme.dart';
 import '../focus/focusable_wrapper.dart';
 import '../mixins/context_menu_tap_mixin.dart';
 import '../models/download_models.dart';
 import '../providers/download_provider.dart';
-import '../providers/settings_provider.dart';
+import 'package:provider/provider.dart';
+
+import '../services/settings_service.dart';
+import 'settings_builder.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../widgets/collapsible_text.dart';
@@ -88,7 +90,13 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
 
   @override
   Widget build(BuildContext context) {
-    final hideSpoilers = context.watch<SettingsProvider>().hideSpoilers;
+    return SettingValueBuilder<bool>(
+      pref: SettingsService.hideSpoilers,
+      builder: (context, hideSpoilers, _) => _buildContent(context, hideSpoilers: hideSpoilers),
+    );
+  }
+
+  Widget _buildContent(BuildContext context, {required bool hideSpoilers}) {
     final shouldBlur = hideSpoilers && widget.episode.shouldHideSpoiler;
 
     // Hide progress when offline (not tracked)

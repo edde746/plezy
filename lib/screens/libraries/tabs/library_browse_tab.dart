@@ -14,7 +14,7 @@ import '../../../focus/dpad_navigator.dart';
 import '../../../focus/input_mode_tracker.dart';
 import '../../../media/media_filter.dart';
 import '../../../media/media_sort.dart';
-import '../../../providers/settings_provider.dart';
+import '../../../widgets/settings_builder.dart';
 import '../../../services/image_cache_service.dart';
 import '../../../services/library_query_translator.dart';
 import '../../../services/plex_constants.dart';
@@ -40,7 +40,7 @@ import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../state_messages.dart';
 import '../../../services/storage_service.dart';
-import '../../../services/settings_service.dart' show ViewMode, EpisodePosterMode;
+import '../../../services/settings_service.dart';
 import '../../../mixins/grid_focus_node_mixin.dart';
 import '../../../mixins/item_updatable.dart';
 import '../../../mixins/deletion_aware.dart';
@@ -1211,8 +1211,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   int _calculateInitialFetchSize() {
     try {
       final screenSize = MediaQuery.sizeOf(context);
-      final settingsProvider = context.read<SettingsProvider>();
-      final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
+      final density = context.settingsRead(SettingsService.libraryDensity);
+      final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
       final crossAxisSpacing = GridLayoutConstants.crossAxisSpacing;
       final columnCount = ((screenSize.width + crossAxisSpacing) / (maxExtent + crossAxisSpacing)).ceil().clamp(1, 100);
       final itemWidth = screenSize.width / columnCount;
@@ -1400,10 +1400,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     }
 
     return [
-      Consumer<SettingsProvider>(
-        builder: (context, settingsProvider, child) {
-          return _buildItemsSliver(context, settingsProvider);
-        },
+      SettingsBuilder(
+        prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.episodePosterMode],
+        builder: (context) => _buildItemsSliver(context),
       ),
     ];
   }
@@ -1418,14 +1417,18 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   static const double _alphaJumpBarWidth = 20.0;
 
   /// Builds either a sliver list or sliver grid based on the view mode
-  Widget _buildItemsSliver(BuildContext context, SettingsProvider settingsProvider) {
+  Widget _buildItemsSliver(BuildContext context) {
+    final svc = SettingsService.instanceOrNull!;
+    final viewMode = svc.read(SettingsService.viewMode);
+    final libraryDensity = svc.read(SettingsService.libraryDensity);
+    final episodePosterMode = svc.read(SettingsService.episodePosterMode);
     final itemCount = totalSize;
     final isPhone = _isPhone(context);
     final topPadding = isPhone ? _gridTopPaddingPhone : _gridTopPadding;
     _effectiveTopPadding = topPadding;
     final rightPadding = _shouldShowAlphaJumpBar && !isPhone ? _alphaJumpBarWidth : 8.0;
 
-    if (settingsProvider.viewMode == ViewMode.list) {
+    if (viewMode == ViewMode.list) {
       // In list view, all items are in a single column (first column)
       return SliverPadding(
         padding: EdgeInsets.fromLTRB(8, topPadding, rightPadding, 8),
@@ -1444,9 +1447,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     } else {
       // In grid view, calculate columns and pass to item builder
       // Use 16:9 aspect ratio when browsing episodes with episode thumbnail mode
-      final useWideRatio =
-          _selectedGrouping == 'episodes' && settingsProvider.episodePosterMode == EpisodePosterMode.episodeThumbnail;
-      final baseMaxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
+      final useWideRatio = _selectedGrouping == 'episodes' && episodePosterMode == EpisodePosterMode.episodeThumbnail;
+      final baseMaxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, libraryDensity);
       final effectiveMaxExtent = useWideRatio ? baseMaxExtent * 1.8 : baseMaxExtent;
       final hasAlphaBarReservation = rightPadding > 8.0;
       return SliverPadding(
@@ -1464,7 +1466,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             return SliverGrid.builder(
               gridDelegate: MediaGridDelegate.createDelegate(
                 context: context,
-                density: settingsProvider.libraryDensity,
+                density: libraryDensity,
                 useWideAspectRatio: useWideRatio,
                 maxCrossAxisExtentOverride: hasAlphaBarReservation ? constraints.crossAxisExtent / columnCount : null,
               ),

@@ -36,7 +36,8 @@ import '../profiles/profile_connection_registry.dart';
 import '../profiles/profile_registry.dart';
 import '../providers/user_profile_provider.dart';
 import '../services/storage_service.dart';
-import '../providers/settings_provider.dart';
+import '../services/settings_service.dart';
+import '../widgets/settings_builder.dart';
 import '../mixins/refreshable.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../i18n/strings.g.dart';
@@ -209,7 +210,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return keys;
   }
 
-  bool get _isHeroSectionVisible => _onDeck.isNotEmpty && context.read<SettingsProvider>().showHeroSection;
+  bool get _isHeroSectionVisible => _onDeck.isNotEmpty && context.settingsRead(SettingsService.showHeroSection);
 
   void _scrollToTop() {
     if (!_scrollController.hasClients) return;
@@ -505,13 +506,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       if (!mounted) return;
       _lastSeenHiddenKeys = Set.of(hiddenLibrariesProvider.hiddenLibraryKeys);
 
-      // Get settings for hub mode preference (ensure initialized before accessing)
-      final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-
       // Let aggregation service fetch libraries internally; the LibrariesProvider
       // stores neutral MediaLibrary objects.
-
-      await settingsProvider.ensureInitialized();
 
       // Start OnDeck and hubs fetch in parallel
       final onDeckFuture = multiServerProvider.aggregationService.getOnDeckFromAllServers(
@@ -520,7 +516,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       );
       final hubsFuture = multiServerProvider.aggregationService.getHubsFromAllServers(
         hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
-        useGlobalHubs: settingsProvider.useGlobalHubs,
+        useGlobalHubs: context.settingsRead(SettingsService.useGlobalHubs),
       );
 
       // Wait for OnDeck to complete and show it immediately
@@ -677,7 +673,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       await WatchNextService().syncFromOnDeck(
         onDeck,
         (serverId) => context.getMediaClientWithFallback(serverId),
-        hideSpoilers: context.read<SettingsProvider>().hideSpoilers,
+        hideSpoilers: context.settingsRead(SettingsService.hideSpoilers),
       );
     } catch (e) {
       appLogger.w('Failed to sync Watch Next', error: e);
@@ -1138,8 +1134,20 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   Widget build(BuildContext context) {
-    // Get settings for server name display
-    final showServerNameOnHubs = context.watch<SettingsProvider>().showServerNameOnHubs;
+    return SettingsBuilder(
+      prefs: const [
+        SettingsService.showServerNameOnHubs,
+        SettingsService.showHeroSection,
+        SettingsService.hideSpoilers,
+      ],
+      builder: (context) => _buildContent(context),
+    );
+  }
+
+  Widget _buildContent(BuildContext context) {
+    final svc = SettingsService.instanceOrNull!;
+    final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
+    final showHeroSection = svc.read(SettingsService.showHeroSection);
     final duplicateHubTitles = _getDuplicateHubTitles();
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
@@ -1152,9 +1160,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             controller: _scrollController,
             slivers: [
               // Hero Section (Continue Watching) - at top of screen
-              Consumer<SettingsProvider>(
-                builder: (context, settingsProvider, child) {
-                  if (_onDeck.isNotEmpty && settingsProvider.showHeroSection) {
+              Builder(
+                builder: (context) {
+                  if (_onDeck.isNotEmpty && showHeroSection) {
                     return _buildHeroSection();
                   }
                   // Add top padding when hero is not shown
@@ -1416,7 +1424,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
 
     // Spoiler protection
-    final hideSpoilers = context.watch<SettingsProvider>().hideSpoilers;
+    final hideSpoilers = SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers);
     final shouldHideSpoiler = hideSpoilers && heroItem.shouldHideSpoiler;
 
     // Build semantic label for hero item

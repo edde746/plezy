@@ -12,6 +12,7 @@ import '../models/external_player_models.dart';
 import 'base_shared_preferences_service.dart';
 export 'base_shared_preferences_service.dart'
     show Pref, BoolPref, IntPref, DoublePref, StringPref, NullableStringPref, StringListPref, EnumPref, JsonPref;
+import '../models/transcode_quality_preset.dart';
 import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
 
@@ -307,7 +308,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const enableSimklScrobble = BoolPref('enable_simkl_scrobble', defaultValue: true);
   static const matchContentFrameRate = BoolPref('match_content_frame_rate');
   static const tunneledPlayback = BoolPref('tunneled_playback', defaultValue: true);
-  static const defaultQualityPreset = StringPref('default_quality_preset', defaultValue: 'original');
+  static const defaultQualityPreset = EnumPref<TranscodeQualityPreset>(
+    'default_quality_preset',
+    values: TranscodeQualityPreset.values,
+    defaultValue: TranscodeQualityPreset.original,
+  );
   static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
   static const useExoPlayer = BoolPref('use_exoplayer', defaultValue: true);
   static const alwaysKeepSidebarOpen = BoolPref('always_keep_sidebar_open');
@@ -636,89 +641,99 @@ class SettingsService extends BaseSharedPreferencesService {
   /// reset surface — notably excludes user-customized data (intro/credits regex
   /// patterns) and opt-in toggles prior versions didn't reset, so behavior
   /// stays identical for users.
-  static List<String> _resettableKeys() => [
-    enableDebugLogging.key,
-    bufferSize.key,
-    enableHardwareDecoding.key,
-    enableHDR.key,
-    preferredVideoCodec.key,
-    preferredAudioCodec.key,
-    viewMode.key,
-    showHeroSection.key,
-    seekTimeSmall.key,
-    seekTimeLarge.key,
-    sleepTimerDuration.key,
-    audioSyncOffset.key,
-    subtitleSyncOffset.key,
-    volume.key,
-    maxVolume.key,
-    subtitleFontSize.key,
-    subtitleTextColor.key,
-    subtitleBorderSize.key,
-    subtitleBorderColor.key,
-    subtitleBackgroundColor.key,
-    subtitleBackgroundOpacity.key,
-    subtitlePosition.key,
-    rememberTrackSelections.key,
-    customDownloadPathType.key,
-    downloadOnWifiOnly.key,
-    autoCheckUpdatesOnStartup.key,
-    showPerformanceOverlay.key,
-    autoHidePerformanceOverlay.key,
-    enableDiscordRPC.key,
-    enableTraktScrobble.key,
-    enableTraktWatchedSync.key,
-    enableMalScrobble.key,
-    enableAnilistScrobble.key,
-    enableSimklScrobble.key,
-    matchContentFrameRate.key,
-    tunneledPlayback.key,
-    defaultPlaybackSpeed.key,
-    defaultBoxFitMode.key,
-    autoPlayNextEpisode.key,
-    useExoPlayer.key,
-    alwaysKeepSidebarOpen.key,
-    showUnwatchedCount.key,
-    showEpisodeNumberOnCards.key,
-    showSeasonPostersOnTabs.key,
-    hideSpoilers.key,
-    showNavBarLabels.key,
-    globalShaderPreset.key,
-    requireProfileSelectionOnOpen.key,
-    useExternalPlayer.key,
-    confirmExitOnBack.key,
-    forceTvMode.key,
-    ambientLighting.key,
-    audioPassthrough.key,
-    audioNormalization.key,
-    themeMode.key,
-    keyboardShortcuts.key,
-    keyboardHotkeys.key,
-    libraryDensity.key,
-    _legacyUseSeasonPosterKey,
-    episodePosterMode.key,
-    mediaVersionPreferences.key,
-    appLocale.key,
-    customDownloadPath.key,
-    videoPlayerNavigationEnabled.key,
-    _legacyMpvConfigEntriesKey,
-    mpvConfigText.key,
-    mpvPresets.key,
-    autoPip.key,
-    customShaderPresets.key,
-    selectedExternalPlayer.key,
-    customExternalPlayers.key,
-    _bufferSizeMigratedKey,
-    customRelayUrl.key,
+  static List<Pref<Object?>> _resettablePrefs() => [
+    enableDebugLogging,
+    bufferSize,
+    enableHardwareDecoding,
+    enableHDR,
+    preferredVideoCodec,
+    preferredAudioCodec,
+    viewMode,
+    showHeroSection,
+    seekTimeSmall,
+    seekTimeLarge,
+    sleepTimerDuration,
+    audioSyncOffset,
+    subtitleSyncOffset,
+    volume,
+    maxVolume,
+    subtitleFontSize,
+    subtitleTextColor,
+    subtitleBorderSize,
+    subtitleBorderColor,
+    subtitleBackgroundColor,
+    subtitleBackgroundOpacity,
+    subtitlePosition,
+    rememberTrackSelections,
+    customDownloadPathType,
+    downloadOnWifiOnly,
+    autoCheckUpdatesOnStartup,
+    showPerformanceOverlay,
+    autoHidePerformanceOverlay,
+    enableDiscordRPC,
+    enableTraktScrobble,
+    enableTraktWatchedSync,
+    enableMalScrobble,
+    enableAnilistScrobble,
+    enableSimklScrobble,
+    matchContentFrameRate,
+    tunneledPlayback,
+    defaultPlaybackSpeed,
+    defaultBoxFitMode,
+    autoPlayNextEpisode,
+    useExoPlayer,
+    alwaysKeepSidebarOpen,
+    showUnwatchedCount,
+    showEpisodeNumberOnCards,
+    showSeasonPostersOnTabs,
+    hideSpoilers,
+    showNavBarLabels,
+    globalShaderPreset,
+    requireProfileSelectionOnOpen,
+    useExternalPlayer,
+    confirmExitOnBack,
+    forceTvMode,
+    ambientLighting,
+    audioPassthrough,
+    audioNormalization,
+    themeMode,
+    keyboardShortcuts,
+    keyboardHotkeys,
+    libraryDensity,
+    episodePosterMode,
+    mediaVersionPreferences,
+    appLocale,
+    customDownloadPath,
+    videoPlayerNavigationEnabled,
+    mpvConfigText,
+    mpvPresets,
+    autoPip,
+    customShaderPresets,
+    selectedExternalPlayer,
+    customExternalPlayers,
+    customRelayUrl,
   ];
 
   Future<void> resetAllSettings() async {
+    final resettable = _resettablePrefs();
     await Future.wait([
-      ..._resettableKeys().map((k) => prefs.remove(k)),
+      ...resettable.map((p) => prefs.remove(p.key)),
+      // Legacy migration sentinels — removed alongside the keys they guarded.
+      prefs.remove(_legacyUseSeasonPosterKey),
+      prefs.remove(_legacyMpvConfigEntriesKey),
+      prefs.remove(_bufferSizeMigratedKey),
       ...TrackerService.values.expand(
         (s) => [prefs.remove(trackerFilterModePref(s).key), prefs.remove(trackerFilterIdsPref(s).key)],
       ),
     ]);
+    refreshListenables();
+  }
+
+  /// Push current stored values into every active listenable. Use after bulk
+  /// operations that bypass [write] (e.g. import-from-file rewrites the
+  /// underlying SharedPreferences directly).
+  void refreshListenables() {
+    refreshActiveListenables();
   }
 
   Future<void> clearCache() async {

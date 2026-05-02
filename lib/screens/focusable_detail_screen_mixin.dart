@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import '../media/media_item.dart';
 import '../media/media_playlist.dart';
 import '../mixins/grid_focus_node_mixin.dart';
-import '../providers/settings_provider.dart';
-import '../services/settings_service.dart' show ViewMode;
+import '../services/settings_service.dart';
+import '../widgets/settings_builder.dart';
 import '../utils/grid_size_calculator.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/media_grid_delegate.dart';
@@ -163,9 +162,12 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     String? collectionId,
     VoidCallback? onListRefresh,
   }) {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        final isListMode = settingsProvider.viewMode == ViewMode.list;
+    return SettingsBuilder(
+      prefs: const [SettingsService.viewMode, SettingsService.libraryDensity],
+      builder: (context) {
+        final svc = SettingsService.instanceOrNull!;
+        final isListMode = svc.read(SettingsService.viewMode) == ViewMode.list;
+        final libraryDensity = svc.read(SettingsService.libraryDensity);
 
         if (isListMode) {
           return SliverPadding(
@@ -193,17 +195,14 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
           );
         }
 
-        final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
+        final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, libraryDensity);
         return SliverPadding(
           padding: const EdgeInsets.all(8),
           sliver: SliverLayoutBuilder(
             builder: (context, constraints) {
               final columnCount = GridSizeCalculator.getColumnCount(constraints.crossAxisExtent, maxExtent);
               return SliverGrid.builder(
-                gridDelegate: MediaGridDelegate.createDelegate(
-                  context: context,
-                  density: settingsProvider.libraryDensity,
-                ),
+                gridDelegate: MediaGridDelegate.createDelegate(context: context, density: libraryDensity),
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   final item = items[index];
@@ -242,9 +241,12 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     String? collectionId,
     VoidCallback? onListRefresh,
   }) {
-    return Consumer<SettingsProvider>(
-      builder: (context, settingsProvider, child) {
-        final isListMode = settingsProvider.viewMode == ViewMode.list;
+    return SettingsBuilder(
+      prefs: const [SettingsService.viewMode, SettingsService.libraryDensity],
+      builder: (context) {
+        final svc = SettingsService.instanceOrNull!;
+        final isListMode = svc.read(SettingsService.viewMode) == ViewMode.list;
+        final libraryDensity = svc.read(SettingsService.libraryDensity);
 
         Widget buildTile(int index, {required bool inFirstRow, required bool disableScale}) {
           final item = itemAt(index);
@@ -277,17 +279,14 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
           );
         }
 
-        final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, settingsProvider.libraryDensity);
+        final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, libraryDensity);
         return SliverPadding(
           padding: const EdgeInsets.all(8),
           sliver: SliverLayoutBuilder(
             builder: (context, constraints) {
               final columnCount = GridSizeCalculator.getColumnCount(constraints.crossAxisExtent, maxExtent);
               return SliverGrid.builder(
-                gridDelegate: MediaGridDelegate.createDelegate(
-                  context: context,
-                  density: settingsProvider.libraryDensity,
-                ),
+                gridDelegate: MediaGridDelegate.createDelegate(context: context, density: libraryDensity),
                 itemCount: totalItems,
                 itemBuilder: (context, index) => buildTile(
                   index,

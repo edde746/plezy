@@ -13,24 +13,12 @@ class MergedLicenseEntry {
   MergedLicenseEntry({required this.packageName, required this.licenseEntries, required this.allPackageNames});
 }
 
-class LicensesScreen extends StatefulWidget {
+class LicensesScreen extends StatelessWidget {
   const LicensesScreen({super.key});
 
-  @override
-  State<LicensesScreen> createState() => _LicensesScreenState();
-}
+  static final Future<List<MergedLicenseEntry>> _licensesFuture = _loadLicenses();
 
-class _LicensesScreenState extends State<LicensesScreen> {
-  List<MergedLicenseEntry> _mergedLicenses = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadLicenses();
-  }
-
-  Future<void> _loadLicenses() async {
+  static Future<List<MergedLicenseEntry>> _loadLicenses() async {
     final licenseMap = <String, List<LicenseEntry>>{};
     final allPackageNames = <String, Set<String>>{};
 
@@ -54,56 +42,56 @@ class _LicensesScreenState extends State<LicensesScreen> {
     }).toList();
 
     mergedLicenses.sort((a, b) => a.packageName.compareTo(b.packageName));
-
-    if (mounted) {
-      setState(() {
-        _mergedLicenses = mergedLicenses;
-        _isLoading = false;
-      });
-    }
+    return mergedLicenses;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return FocusedScrollScaffold(
-        title: Text(t.screens.licenses),
-        slivers: const [SliverFillRemaining(child: Center(child: CircularProgressIndicator()))],
-      );
-    }
+    return FutureBuilder<List<MergedLicenseEntry>>(
+      future: _licensesFuture,
+      builder: (context, snapshot) {
+        final mergedLicenses = snapshot.data;
+        if (mergedLicenses == null) {
+          return FocusedScrollScaffold(
+            title: Text(t.screens.licenses),
+            slivers: const [SliverFillRemaining(child: Center(child: CircularProgressIndicator()))],
+          );
+        }
 
-    return FocusedScrollScaffold(
-      title: Text(t.screens.licenses),
-      slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.all(16),
-          sliver: SliverList(
-            delegate: SliverChildBuilderDelegate((context, index) {
-              final mergedLicense = _mergedLicenses[index];
-              final packageName = mergedLicense.packageName;
+        return FocusedScrollScaffold(
+          title: Text(t.screens.licenses),
+          slivers: [
+            SliverPadding(
+              padding: const EdgeInsets.all(16),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate((context, index) {
+                  final mergedLicense = mergedLicenses[index];
+                  final packageName = mergedLicense.packageName;
 
-              return Card(
-                margin: const EdgeInsets.only(bottom: 8),
-                child: ListTile(
-                  title: Text(
-                    packageName,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: mergedLicense.licenseEntries.length > 1
-                      ? Text(t.licenses.licensesCount(count: mergedLicense.licenseEntries.length))
-                      : null,
-                  trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
-                  onTap: () => _showLicenseDetail(mergedLicense),
-                ),
-              );
-            }, childCount: _mergedLicenses.length),
-          ),
-        ),
-      ],
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      title: Text(
+                        packageName,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: mergedLicense.licenseEntries.length > 1
+                          ? Text(t.licenses.licensesCount(count: mergedLicense.licenseEntries.length))
+                          : null,
+                      trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                      onTap: () => _showLicenseDetail(context, mergedLicense),
+                    ),
+                  );
+                }, childCount: mergedLicenses.length),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  void _showLicenseDetail(MergedLicenseEntry mergedLicense) {
+  void _showLicenseDetail(BuildContext context, MergedLicenseEntry mergedLicense) {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => _LicenseDetailScreen(mergedLicense: mergedLicense)),

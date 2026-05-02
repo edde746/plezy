@@ -13,7 +13,7 @@ import '../media/media_library.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
-import '../providers/settings_provider.dart';
+import '../services/settings_service.dart';
 import '../utils/platform_detector.dart';
 import '../utils/library_grouping.dart';
 import '../providers/multi_server_provider.dart';
@@ -432,21 +432,23 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     final isCollapsed = !_shouldExpand;
     final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
 
-    // Server grouping: only when multi-server AND the user-facing toggle is on.
-    final groupByServerSetting = context.select<SettingsProvider, bool>((p) => p.groupLibrariesByServer);
-    final showServerHeaders = serverIds.length > 1 && groupByServerSetting;
-
-    final focusOrder = _buildFocusOrder(
-      visibleLibraries,
-      hiddenLibraries,
-      hasLiveTv: hasLiveTv,
-      showServerHeaders: showServerHeaders,
-    );
-
-    // Listen to fullscreen changes for macOS
+    // Listen to fullscreen + groupLibrariesByServer setting so the rail
+    // rebuilds when the user toggles "Group libraries by server" in Appearance.
     return ListenableBuilder(
-      listenable: FullscreenStateManager(),
+      listenable: Listenable.merge([
+        FullscreenStateManager(),
+        SettingsService.instanceOrNull!.listenable(SettingsService.groupLibrariesByServer),
+      ]),
       builder: (context, _) {
+        // Server grouping: only when multi-server AND the user-facing toggle is on.
+        final groupByServerSetting = SettingsService.instanceOrNull!.read(SettingsService.groupLibrariesByServer);
+        final showServerHeaders = serverIds.length > 1 && groupByServerSetting;
+        final focusOrder = _buildFocusOrder(
+          visibleLibraries,
+          hiddenLibraries,
+          hasLiveTv: hasLiveTv,
+          showServerHeaders: showServerHeaders,
+        );
         return TapRegion(
           onTapOutside: (_) {
             if (_isTouchExpanded) {

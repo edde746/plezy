@@ -4,13 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:provider/provider.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
-import '../providers/settings_provider.dart';
-import '../services/settings_service.dart' show EpisodePosterMode;
+import '../services/settings_service.dart';
+import 'settings_builder.dart';
 import '../utils/grid_size_calculator.dart';
 import '../theme/mono_tokens.dart';
 import '../focus/locked_hub_controller.dart';
@@ -385,63 +384,105 @@ class HubSectionState extends State<HubSection> {
           Focus(
             focusNode: _hubFocusNode,
             onKeyEvent: _handleKeyEvent,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final settings = context.watch<SettingsProvider>();
-                final baseCardWidth = GridSizeCalculator.getCellWidth(
-                  constraints.maxWidth,
-                  context,
-                  settings.libraryDensity,
-                );
+            child: SettingsBuilder(
+              prefs: const [SettingsService.libraryDensity, SettingsService.episodePosterMode],
+              builder: (context) => LayoutBuilder(
+                builder: (context, constraints) {
+                  final svc = SettingsService.instanceOrNull!;
+                  final baseCardWidth = GridSizeCalculator.getCellWidth(
+                    constraints.maxWidth,
+                    context,
+                    svc.read(SettingsService.libraryDensity),
+                  );
 
-                // Get episode poster mode setting
-                final episodePosterMode = settings.episodePosterMode;
+                  // Get episode poster mode setting
+                  final episodePosterMode = svc.read(SettingsService.episodePosterMode);
 
-                // Determine hub content type for layout decisions
-                final hasEpisodes = widget.hub.items.any((item) => item.usesWideAspectRatio(episodePosterMode));
-                final hasNonEpisodes = widget.hub.items.any((item) => !item.usesWideAspectRatio(episodePosterMode));
+                  // Determine hub content type for layout decisions
+                  final hasEpisodes = widget.hub.items.any((item) => item.usesWideAspectRatio(episodePosterMode));
+                  final hasNonEpisodes = widget.hub.items.any((item) => !item.usesWideAspectRatio(episodePosterMode));
 
-                // Mixed hub = has both episodes AND non-episodes (like Continue Watching)
-                final isMixedHub = hasEpisodes && hasNonEpisodes;
+                  // Mixed hub = has both episodes AND non-episodes (like Continue Watching)
+                  final isMixedHub = hasEpisodes && hasNonEpisodes;
 
-                // Episode-only = all items are episodes with thumbnails
-                final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
+                  // Episode-only = all items are episodes with thumbnails
+                  final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
 
-                // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
-                final useWideLayout =
-                    episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
+                  // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
+                  final useWideLayout =
+                      episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
 
-                // Card dimensions based on hub type
-                const wideCardMultiplier = 1.5;
-                final cardWidth = useWideLayout ? baseCardWidth * wideCardMultiplier : baseCardWidth;
-                final posterWidth = cardWidth - 6; // 3px padding on each side
-                final posterHeight = useWideLayout
-                    ? posterWidth *
-                          (9 / 16) // 16:9 for wide layout
-                    : posterWidth * 1.5; // 2:3 for poster layout
+                  // Card dimensions based on hub type
+                  const wideCardMultiplier = 1.5;
+                  final cardWidth = useWideLayout ? baseCardWidth * wideCardMultiplier : baseCardWidth;
+                  final posterWidth = cardWidth - 6; // 3px padding on each side
+                  final posterHeight = useWideLayout
+                      ? posterWidth *
+                            (9 / 16) // 16:9 for wide layout
+                      : posterWidth * 1.5; // 2:3 for poster layout
 
-                final containerHeight = posterHeight + 33;
-                final focusBorderWidth = FocusTheme.focusBorderWidth;
-                final focusExtra = focusBorderWidth * 2; // border on both sides
-                _itemExtent = cardWidth + focusExtra + 4;
+                  final containerHeight = posterHeight + 33;
+                  final focusBorderWidth = FocusTheme.focusBorderWidth;
+                  final focusExtra = focusBorderWidth * 2; // border on both sides
+                  _itemExtent = cardWidth + focusExtra + 4;
 
-                return SizedBox(
-                  height: containerHeight + focusExtra + 4, // extra for scale + border top/bottom
-                  child: HorizontalScrollWithArrows(
-                    controller: _scrollController,
-                    builder: (scrollController) => ListView.builder(
-                      controller: scrollController,
-                      scrollDirection: Axis.horizontal,
-                      clipBehavior: Clip.none,
-                      padding: widget.inset
-                          ? const EdgeInsets.symmetric(vertical: 2)
-                          : const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      itemCount: isKeyboardMode ? _totalItemCount : widget.hub.items.length,
-                      itemBuilder: (context, index) {
-                        final isItemFocused = hasFocus && index == _focusedIndex;
+                  return SizedBox(
+                    height: containerHeight + focusExtra + 4, // extra for scale + border top/bottom
+                    child: HorizontalScrollWithArrows(
+                      controller: _scrollController,
+                      builder: (scrollController) => ListView.builder(
+                        controller: scrollController,
+                        scrollDirection: Axis.horizontal,
+                        clipBehavior: Clip.none,
+                        padding: widget.inset
+                            ? const EdgeInsets.symmetric(vertical: 2)
+                            : const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        itemCount: isKeyboardMode ? _totalItemCount : widget.hub.items.length,
+                        itemBuilder: (context, index) {
+                          final isItemFocused = hasFocus && index == _focusedIndex;
 
-                        // "View All" card at end
-                        if (index == widget.hub.items.length) {
+                          // "View All" card at end
+                          if (index == widget.hub.items.length) {
+                            return Padding(
+                              padding: widget.inset
+                                  ? const EdgeInsets.only(right: 4)
+                                  : const EdgeInsets.symmetric(horizontal: 2),
+                              child: FocusBuilders.buildLockedFocusWrapper(
+                                context: context,
+                                isFocused: isItemFocused,
+                                onTap: () {
+                                  _onItemTapped(index);
+                                  _navigateToHubDetail(context);
+                                },
+                                child: SizedBox(
+                                  width: 80,
+                                  height: containerHeight - 10,
+                                  child: Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Symbols.arrow_forward_rounded,
+                                          size: 32,
+                                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          t.common.viewAll,
+                                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+
+                          final item = widget.hub.items[index];
+
                           return Padding(
                             padding: widget.inset
                                 ? const EdgeInsets.only(right: 4)
@@ -449,66 +490,27 @@ class HubSectionState extends State<HubSection> {
                             child: FocusBuilders.buildLockedFocusWrapper(
                               context: context,
                               isFocused: isItemFocused,
-                              onTap: () {
-                                _onItemTapped(index);
-                                _navigateToHubDetail(context);
-                              },
-                              child: SizedBox(
-                                width: 80,
-                                height: containerHeight - 10,
-                                child: Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        Symbols.arrow_forward_rounded,
-                                        size: 32,
-                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        t.common.viewAll,
-                                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                              onTap: () => _onItemTapped(index),
+                              onLongPress: () => _mediaCardKeys[index]?.currentState?.showContextMenu(),
+                              child: MediaCard(
+                                key: _getMediaCardKey(index),
+                                item: item,
+                                width: cardWidth,
+                                height: posterHeight,
+                                onRefresh: widget.onRefresh,
+                                onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
+                                forceGridMode: true,
+                                isInContinueWatching: widget.isInContinueWatching,
+                                mixedHubContext: isMixedHub,
                               ),
                             ),
                           );
-                        }
-
-                        final item = widget.hub.items[index];
-
-                        return Padding(
-                          padding: widget.inset
-                              ? const EdgeInsets.only(right: 4)
-                              : const EdgeInsets.symmetric(horizontal: 2),
-                          child: FocusBuilders.buildLockedFocusWrapper(
-                            context: context,
-                            isFocused: isItemFocused,
-                            onTap: () => _onItemTapped(index),
-                            onLongPress: () => _mediaCardKeys[index]?.currentState?.showContextMenu(),
-                            child: MediaCard(
-                              key: _getMediaCardKey(index),
-                              item: item,
-                              width: cardWidth,
-                              height: posterHeight,
-                              onRefresh: widget.onRefresh,
-                              onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
-                              forceGridMode: true,
-                              isInContinueWatching: widget.isInContinueWatching,
-                              mixedHubContext: isMixedHub,
-                            ),
-                          ),
-                        );
-                      },
+                        },
+                      ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           )
         else

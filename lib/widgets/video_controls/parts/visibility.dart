@@ -201,22 +201,19 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     _cancelAutoSkipTimer();
   }
 
-  void _toggleRotationLock() async {
-    _setControlsState(() {
-      _isRotationLocked = !_isRotationLocked;
-    });
+  /// Apply preferred orientations for the given lock state. Wired to
+  /// [SettingsService.rotationLocked] via [bindEffect] so any change — from
+  /// this toggle or from the settings screen — fires the same SystemChrome call.
+  void _applyRotationLock(bool locked) {
+    unawaited(
+      SystemChrome.setPreferredOrientations(
+        locked ? const [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight] : DeviceOrientation.values,
+      ),
+    );
+  }
 
-    // Save to settings
-    final settingsService = await SettingsService.getInstance();
-    await settingsService.write(SettingsService.rotationLocked, _isRotationLocked);
-
-    if (_isRotationLocked) {
-      // Locked: Allow landscape orientations only
-      await SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
-    } else {
-      // Unlocked: Allow all orientations including portrait
-      await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
-    }
+  void _toggleRotationLock() {
+    unawaited(_settings.write(SettingsService.rotationLocked, !_isRotationLocked));
   }
 
   void _toggleScreenLock() {
