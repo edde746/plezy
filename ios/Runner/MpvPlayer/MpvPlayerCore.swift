@@ -50,36 +50,31 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   func switchToPipVO(layerPtr: UnsafeMutableRawPointer) -> Bool {
-    guard let mpv else { return false }
+    guard mpv != nil else { return false }
 
     print("[MpvPlayerCore] Switching to pip VO for PiP")
 
     metalLayer?.removeFromSuperlayer()
 
-    mpv_set_property_string(mpv, "vid", "no")
-
-    var pointer = Int64(Int(bitPattern: layerPtr))
-    mpv_set_property(mpv, "wid", MPV_FORMAT_INT64, &pointer)
-
-    mpv_set_property_string(mpv, "vo", "pip")
-    mpv_set_property_string(mpv, "vid", "auto")
+    setProperty("vid", value: "no")
+    setInt64PropertyAsync("wid", value: Int64(Int(bitPattern: layerPtr))) { _ in }
+    setProperty("vo", value: "pip")
+    setProperty("vid", value: "auto")
 
     print("[MpvPlayerCore] Switched to pip VO successfully")
     return true
   }
 
   func switchToGpuNextVO() -> Bool {
-    guard let mpv, let metalLayer else { return false }
+    guard mpv != nil, let metalLayer else { return false }
 
     print("[MpvPlayerCore] Switching back to gpu-next VO")
 
-    mpv_set_property_string(mpv, "vid", "no")
-
-    var layer = metalLayer
-    mpv_set_property(mpv, "wid", MPV_FORMAT_INT64, &layer)
-
+    setProperty("vid", value: "no")
+    setInt64PropertyAsync("wid", value: Int64(Int(bitPattern: Unmanaged.passUnretained(metalLayer).toOpaque()))) { _ in
+    }
     applyGpuNextOptions()
-    mpv_set_property_string(mpv, "vid", "auto")
+    setProperty("vid", value: "auto")
 
     if metalLayer.superlayer == nil, let containerView {
       containerView.layer.addSublayer(metalLayer)
@@ -179,9 +174,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
 
     print("[MpvPlayerCore] Entering background - disabling video")
-    if mpv != nil {
-      mpv_set_option_string(mpv, "vid", "no")
-    }
+    setProperty("vid", value: "no")
   }
 
   @objc private func enterForeground() {
@@ -191,8 +184,6 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
 
     print("[MpvPlayerCore] Entering foreground - enabling video")
-    if mpv != nil {
-      mpv_set_option_string(mpv, "vid", "auto")
-    }
+    setProperty("vid", value: "auto")
   }
 }

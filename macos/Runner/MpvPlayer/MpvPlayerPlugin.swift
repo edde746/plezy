@@ -184,10 +184,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
     // Get video dimensions for aspect ratio
     var aspectRatio = NSSize(width: 16, height: 9)  // default
-    if let w = playerCore.getProperty("width"), let h = playerCore.getProperty("height"),
-      let width = Double(w), let height = Double(h), width > 0 && height > 0
-    {
-      aspectRatio = NSSize(width: width, height: height)
+    if let videoSize = playerCore.videoSize {
+      aspectRatio = NSSize(width: videoSize.width, height: videoSize.height)
     }
 
     enteredPipViaAuto = !manual
@@ -296,15 +294,19 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       return
     }
 
-    playerCore?.setProperty(name, value: value)
-
-    if name == "pause" {
-      let isPlaying = value == "no"
-      pipController?.setPlaying(isPlaying)
-      playerCore?.setPaused(!isPlaying)
+    guard let core = playerCore else {
+      result(nil)
+      return
     }
 
-    result(nil)
+    core.setPropertyAsync(name, value: value) { [weak self] _ in
+      if name == "pause" {
+        let isPlaying = value == "no"
+        self?.pipController?.setPlaying(isPlaying)
+        core.setPaused(!isPlaying)
+      }
+      result(nil)
+    }
   }
 
   // MARK: - Helpers
@@ -366,8 +368,11 @@ extension MpvPlayerPlugin: MpvPipDelegate {
   }
 
   func pipSetPlaying(_ playing: Bool) {
-    playerCore?.setProperty("pause", value: playing ? "no" : "yes")
-    pipController?.setPlaying(playing)
+    guard let playerCore else { return }
+    playerCore.setPropertyAsync("pause", value: playing ? "no" : "yes") { [weak self] _ in
+      self?.pipController?.setPlaying(playing)
+      playerCore.setPaused(!playing)
+    }
   }
 
   var isPipPlaying: Bool { !(playerCore?.isPaused ?? true) }

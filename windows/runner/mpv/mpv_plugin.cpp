@@ -18,12 +18,17 @@ void MpvPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef regis
 
 namespace mpv {
 
+namespace {
+constexpr UINT kPlatformTaskMessage = WM_APP + 0x4D50;
+}
+
 void MpvPlayerPlugin::RegisterWithRegistrar(flutter::PluginRegistrarWindows* registrar) {
   auto plugin = std::make_unique<MpvPlayerPlugin>(registrar);
   registrar->AddPlugin(std::move(plugin));
 }
 
-MpvPlayerPlugin::MpvPlayerPlugin(flutter::PluginRegistrarWindows* registrar) : registrar_(registrar) {
+MpvPlayerPlugin::MpvPlayerPlugin(flutter::PluginRegistrarWindows* registrar)
+    : registrar_(registrar), platform_thread_id_(::GetCurrentThreadId()) {
   // Create method channel.
   method_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
       registrar->messenger(), "com.plezy/mpv_player", &flutter::StandardMethodCodec::GetInstance());
@@ -53,6 +58,8 @@ MpvPlayerPlugin::MpvPlayerPlugin(flutter::PluginRegistrarWindows* registrar) : r
 }
 
 MpvPlayerPlugin::~MpvPlayerPlugin() {
+  DrainPlatformTasks();
+
   // Unregister window proc delegate.
   if (proc_id_) {
     registrar_->UnregisterTopLevelWindowProcDelegate(proc_id_.value());
@@ -63,6 +70,35 @@ MpvPlayerPlugin::~MpvPlayerPlugin() {
 HWND MpvPlayerPlugin::GetChildWindow() { return registrar_->GetView()->GetNativeWindow(); }
 
 HWND MpvPlayerPlugin::GetWindow() { return ::GetAncestor(GetChildWindow(), GA_ROOT); }
+
+void MpvPlayerPlugin::PostToPlatformThread(std::function<void()> task) {
+  if (::GetCurrentThreadId() == platform_thread_id_) {
+    task();
+    return;
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(platform_tasks_mutex_);
+    platform_tasks_.push(std::move(task));
+  }
+
+  if (flutter_window_) {
+    ::PostMessage(flutter_window_, kPlatformTaskMessage, 0, 0);
+  }
+}
+
+void MpvPlayerPlugin::DrainPlatformTasks() {
+  std::queue<std::function<void()>> tasks;
+  {
+    std::lock_guard<std::mutex> lock(platform_tasks_mutex_);
+    tasks.swap(platform_tasks_);
+  }
+
+  while (!tasks.empty()) {
+    tasks.front()();
+    tasks.pop();
+  }
+}
 
 void MpvPlayerPlugin::HandleMethodCall(
     const flutter::MethodCall<flutter::EncodableValue>& method_call,
@@ -77,11 +113,17 @@ void MpvPlayerPlugin::HandleMethodCall(
     }
 
     HWND flutter_window = GetWindow();
+    flutter_window_ = flutter_window;
 
     MpvCore::SetInstance(std::make_unique<MpvCore>(flutter_window));
 
     proc_id_ =
-        registrar_->RegisterTopLevelWindowProcDelegate([](HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+        registrar_->RegisterTopLevelWindowProcDelegate([this](HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam) {
+          if (message == kPlatformTaskMessage) {
+            DrainPlatformTasks();
+            return std::optional<HRESULT>(0);
+          }
+
           auto* core = MpvCore::GetInstance();
           if (core) {
             return core->WindowProc(hwnd, message, wparam, lparam);
@@ -160,13 +202,15 @@ void MpvPlayerPlugin::HandleMethodCall(
     auto result_ptr =
         std::make_shared<std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>>(std::move(result));
     std::string cmd_name = command_args.empty() ? "unknown" : command_args[0];
-    player_->CommandAsync(command_args, [result_ptr, cmd_name](int error) {
-      if (error < 0) {
-        (*result_ptr)
-            ->Error("COMMAND_FAILED", "MPV command failed: " + cmd_name + " (error " + std::to_string(error) + ")");
-      } else {
-        (*result_ptr)->Success();
-      }
+    player_->CommandAsync(command_args, [this, result_ptr, cmd_name](int error) {
+      PostToPlatformThread([result_ptr, cmd_name, error]() {
+        if (error < 0) {
+          (*result_ptr)
+              ->Error("COMMAND_FAILED", "MPV command failed: " + cmd_name + " (error " + std::to_string(error) + ")");
+        } else {
+          (*result_ptr)->Success();
+        }
+      });
     });
     return;  // Response will be sent asynchronously
   } else if (method == "setProperty") {
@@ -194,8 +238,12 @@ void MpvPlayerPlugin::HandleMethodCall(
       return;
     }
 
-    player_->SetProperty(std::get<std::string>(name_it->second), std::get<std::string>(value_it->second));
-    result->Success();
+    auto result_ptr =
+        std::make_shared<std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>>(std::move(result));
+    player_->SetPropertyAsync(
+        std::get<std::string>(name_it->second), std::get<std::string>(value_it->second),
+        [this, result_ptr](int error) { PostToPlatformThread([result_ptr]() { (*result_ptr)->Success(); }); });
+    return;
   } else if (method == "setLogLevel") {
     if (!player_ || !player_->IsInitialized()) {
       result->Error("NOT_INITIALIZED", "Player not initialized");
@@ -238,12 +286,19 @@ void MpvPlayerPlugin::HandleMethodCall(
       return;
     }
 
-    std::string value = player_->GetProperty(std::get<std::string>(name_it->second));
-    if (value.empty()) {
-      result->Success();
-    } else {
-      result->Success(flutter::EncodableValue(value));
-    }
+    auto result_ptr =
+        std::make_shared<std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>>(std::move(result));
+    player_->GetPropertyAsync(
+        std::get<std::string>(name_it->second), [this, result_ptr](int error, const std::string& value) {
+          PostToPlatformThread([result_ptr, error, value]() {
+            if (error < 0 || value.empty()) {
+              (*result_ptr)->Success();
+            } else {
+              (*result_ptr)->Success(flutter::EncodableValue(value));
+            }
+          });
+        });
+    return;
   } else if (method == "observeProperty") {
     if (!player_ || !player_->IsInitialized()) {
       result->Error("NOT_INITIALIZED", "Player not initialized");

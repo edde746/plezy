@@ -34,21 +34,25 @@ class MpvPlayer {
   // Returns true if mpv is initialized.
   bool IsInitialized() const { return mpv_ != nullptr; }
 
-  // Executes an mpv command.
+  // Queues an mpv command without waiting for completion.
   void Command(const std::vector<std::string>& args);
 
-  // Callback type for async command completion.
-  using CommandCallback = std::function<void(int error)>;
+  // Callback types for async mpv requests.
+  using StatusCallback = std::function<void(int error)>;
+  using CommandCallback = StatusCallback;
+  using GetPropertyCallback = std::function<void(int error, const std::string& value)>;
 
   // Executes an mpv command asynchronously to prevent UI blocking.
-  // The callback is called on the main thread when the command completes.
   void CommandAsync(const std::vector<std::string>& args, CommandCallback callback);
 
-  // Sets an mpv property.
+  // Queues an mpv property update without waiting for completion.
   void SetProperty(const std::string& name, const std::string& value);
 
-  // Gets an mpv property.
-  std::string GetProperty(const std::string& name);
+  // Sets an mpv property asynchronously.
+  void SetPropertyAsync(const std::string& name, const std::string& value, StatusCallback callback);
+
+  // Gets an mpv property asynchronously.
+  void GetPropertyAsync(const std::string& name, GetPropertyCallback callback);
 
   // Observes an mpv property for changes.
   void ObserveProperty(const std::string& name, const std::string& format, int id);
@@ -75,6 +79,10 @@ class MpvPlayer {
   void HandleMpvEvent(mpv_event* event);
   void SendPropertyChange(const char* name, mpv_node* data);
   void SendEvent(const std::string& name, const flutter::EncodableMap& data = {});
+  uint64_t RegisterStatusRequest(StatusCallback callback);
+  StatusCallback TakeStatusRequest(uint64_t request_id);
+  uint64_t RegisterGetPropertyRequest(GetPropertyCallback callback);
+  GetPropertyCallback TakeGetPropertyRequest(uint64_t request_id);
 
   mpv_handle* mpv_ = nullptr;
   HWND hwnd_ = nullptr;
@@ -92,16 +100,17 @@ class MpvPlayer {
   std::map<std::string, uint64_t> observed_properties_;
   std::map<std::string, int> name_to_id_;
 
-  // Pending async commands: request_id -> callback
-  std::map<uint64_t, CommandCallback> pending_commands_;
-  std::mutex pending_commands_mutex_;
+  // Pending async requests: request_id -> callback
+  std::map<uint64_t, StatusCallback> pending_status_requests_;
+  std::map<uint64_t, GetPropertyCallback> pending_get_property_requests_;
+  std::mutex pending_requests_mutex_;
 
   // HDR state
   bool hdr_enabled_ = true;     // User preference
   double last_sig_peak_ = 0.0;  // Last known sig-peak for HDR content detection
 
   // HDR methods
-  void SetHDREnabled(bool enabled);
+  void SetHDREnabled(bool enabled, StatusCallback callback = nullptr);
   void UpdateHDRMode(double sigPeak);
 };
 

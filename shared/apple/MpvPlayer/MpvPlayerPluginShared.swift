@@ -27,7 +27,14 @@ extension MpvPluginShared {
       )
       return
     }
-    result(coreBase?.getProperty(name))
+    coreBase?.getPropertyAsync(name) { propertyResult in
+      switch propertyResult {
+      case .success(let value):
+        result(value)
+      case .failure:
+        result(nil)
+      }
+    } ?? result(nil)
   }
 
   func handleObserveProperty(call: FlutterMethodCall, result: @escaping FlutterResult) {

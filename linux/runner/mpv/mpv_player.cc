@@ -202,13 +202,25 @@ void MpvPlayer::Dispose() {
     event_callback_ = nullptr;
   }
 
-  // 4. Cancel pending async commands
+  // 4. Cancel pending async requests
+  std::vector<StatusCallback> status_callbacks;
+  std::vector<GetPropertyCallback> get_callbacks;
   {
-    std::lock_guard<std::mutex> cmd_lock(pending_commands_mutex_);
-    for (auto& pair : pending_commands_) {
-      if (pair.second) pair.second(-1);
+    std::lock_guard<std::mutex> request_lock(pending_requests_mutex_);
+    for (auto& pair : pending_status_requests_) {
+      if (pair.second) status_callbacks.push_back(std::move(pair.second));
     }
-    pending_commands_.clear();
+    for (auto& pair : pending_get_property_requests_) {
+      if (pair.second) get_callbacks.push_back(std::move(pair.second));
+    }
+    pending_status_requests_.clear();
+    pending_get_property_requests_.clear();
+  }
+  for (auto& callback : status_callbacks) {
+    callback(-1);
+  }
+  for (auto& callback : get_callbacks) {
+    callback(-1, "");
   }
 
   // 5. Remove pending idle callbacks
@@ -271,18 +283,7 @@ void MpvPlayer::Render(int width, int height, int fbo) {
   mpv_render_context_render(mpv_gl_, params);
 }
 
-void MpvPlayer::Command(const std::vector<std::string>& args) {
-  if (disposed_ || !mpv_) return;
-
-  std::vector<const char*> c_args;
-  c_args.reserve(args.size() + 1);
-  for (const auto& arg : args) {
-    c_args.push_back(arg.c_str());
-  }
-  c_args.push_back(nullptr);
-
-  mpv_command(mpv_, c_args.data());
-}
+void MpvPlayer::Command(const std::vector<std::string>& args) { CommandAsync(args, nullptr); }
 
 void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallback callback) {
   if (disposed_ || !mpv_) {
@@ -297,39 +298,80 @@ void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallba
   }
   c_args.push_back(nullptr);
 
-  uint64_t request_id;
-  {
-    std::lock_guard<std::mutex> lock(pending_commands_mutex_);
-    request_id = next_reply_userdata_++;
-    pending_commands_[request_id] = std::move(callback);
-  }
+  uint64_t request_id = callback ? RegisterStatusRequest(std::move(callback)) : 0;
 
   int result = mpv_command_async(mpv_, request_id, c_args.data());
   if (result < 0) {
-    std::lock_guard<std::mutex> lock(pending_commands_mutex_);
-    auto it = pending_commands_.find(request_id);
-    if (it != pending_commands_.end()) {
-      auto cb = std::move(it->second);
-      pending_commands_.erase(it);
-      if (cb) cb(result);
-    }
+    auto cb = TakeStatusRequest(request_id);
+    if (cb) cb(result);
   }
 }
 
 void MpvPlayer::SetProperty(const std::string& name, const std::string& value) {
-  if (disposed_ || !mpv_) return;
-  mpv_set_property_string(mpv_, name.c_str(), value.c_str());
+  SetPropertyAsync(name, value, nullptr);
 }
 
-std::string MpvPlayer::GetProperty(const std::string& name) {
-  if (disposed_ || !mpv_) return "";
+void MpvPlayer::SetPropertyAsync(const std::string& name, const std::string& value, StatusCallback callback) {
+  if (disposed_ || !mpv_) {
+    if (callback) callback(0);
+    return;
+  }
 
-  char* value = mpv_get_property_string(mpv_, name.c_str());
-  if (!value) return "";
+  uint64_t request_id = callback ? RegisterStatusRequest(std::move(callback)) : 0;
 
-  std::string result(value);
-  mpv_free(value);
-  return result;
+  char* property_value = const_cast<char*>(value.c_str());
+  int result = mpv_set_property_async(mpv_, request_id, name.c_str(), MPV_FORMAT_STRING, &property_value);
+  if (result < 0) {
+    auto cb = TakeStatusRequest(request_id);
+    if (cb) cb(result);
+  }
+}
+
+void MpvPlayer::GetPropertyAsync(const std::string& name, GetPropertyCallback callback) {
+  if (disposed_ || !mpv_) {
+    if (callback) callback(-1, "");
+    return;
+  }
+
+  uint64_t request_id = RegisterGetPropertyRequest(std::move(callback));
+
+  int result = mpv_get_property_async(mpv_, request_id, name.c_str(), MPV_FORMAT_STRING);
+  if (result < 0) {
+    auto cb = TakeGetPropertyRequest(request_id);
+    if (cb) cb(result, "");
+  }
+}
+
+uint64_t MpvPlayer::RegisterStatusRequest(StatusCallback callback) {
+  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
+  uint64_t request_id = next_reply_userdata_++;
+  pending_status_requests_[request_id] = std::move(callback);
+  return request_id;
+}
+
+MpvPlayer::StatusCallback MpvPlayer::TakeStatusRequest(uint64_t request_id) {
+  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
+  auto it = pending_status_requests_.find(request_id);
+  if (it == pending_status_requests_.end()) return nullptr;
+  auto callback = std::move(it->second);
+  pending_status_requests_.erase(it);
+  return callback;
+}
+
+uint64_t MpvPlayer::RegisterGetPropertyRequest(GetPropertyCallback callback) {
+  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
+  uint64_t request_id = next_reply_userdata_++;
+  pending_get_property_requests_[request_id] = std::move(callback);
+  return request_id;
+}
+
+MpvPlayer::GetPropertyCallback MpvPlayer::TakeGetPropertyRequest(uint64_t request_id) {
+  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
+  auto it = pending_get_property_requests_.find(request_id);
+  if (it == pending_get_property_requests_.end()) return nullptr;
+  auto callback = std::move(it->second);
+  pending_get_property_requests_.erase(it);
+  return callback;
 }
 
 void MpvPlayer::ObserveProperty(const std::string& name, const std::string& format, int id) {
@@ -446,17 +488,10 @@ bool MpvPlayer::ProcessEvents() {
 
 void MpvPlayer::HandleMpvEvent(mpv_event* event) {
   switch (event->event_id) {
-    case MPV_EVENT_COMMAND_REPLY: {
+    case MPV_EVENT_COMMAND_REPLY:
+    case MPV_EVENT_SET_PROPERTY_REPLY: {
       uint64_t request_id = event->reply_userdata;
-      CommandCallback callback;
-      {
-        std::lock_guard<std::mutex> lock(pending_commands_mutex_);
-        auto it = pending_commands_.find(request_id);
-        if (it != pending_commands_.end()) {
-          callback = std::move(it->second);
-          pending_commands_.erase(it);
-        }
-      }
+      StatusCallback callback = TakeStatusRequest(request_id);
       if (callback) {
         int error = event->error;
         g_idle_add(
@@ -467,6 +502,31 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
               return G_SOURCE_REMOVE;
             },
             new std::pair<CommandCallback, int>(std::move(callback), error));
+      }
+      break;
+    }
+    case MPV_EVENT_GET_PROPERTY_REPLY: {
+      uint64_t request_id = event->reply_userdata;
+      GetPropertyCallback callback = TakeGetPropertyRequest(request_id);
+      if (callback) {
+        int error = event->error;
+        std::string value;
+        if (error >= 0) {
+          auto* prop = static_cast<mpv_event_property*>(event->data);
+          if (prop && prop->format == MPV_FORMAT_STRING && prop->data) {
+            auto c_value = *static_cast<char**>(prop->data);
+            if (c_value) value = SanitizeUtf8(c_value);
+          }
+        }
+        g_idle_add(
+            [](gpointer data) -> gboolean {
+              auto* tuple = static_cast<std::tuple<GetPropertyCallback, int, std::string>*>(data);
+              const auto& callback = std::get<0>(*tuple);
+              if (callback) callback(std::get<1>(*tuple), std::get<2>(*tuple));
+              delete tuple;
+              return G_SOURCE_REMOVE;
+            },
+            new std::tuple<GetPropertyCallback, int, std::string>(std::move(callback), error, std::move(value)));
       }
       break;
     }

@@ -91,12 +91,33 @@ class MpvPlayerCoreBase: NSObject {
     "pause", "eof-reached", "paused-for-cache",
   ]
 
+  private static let internalSigPeakObserverId: UInt64 = UInt64.max - 1
+  private static let internalWidthObserverId: UInt64 = UInt64.max - 2
+  private static let internalHeightObserverId: UInt64 = UInt64.max - 3
+  private static let internalObserverIds: Set<UInt64> = [
+    internalSigPeakObserverId,
+    internalWidthObserverId,
+    internalHeightObserverId,
+  ]
+
   let queue = DispatchQueue(label: "mpv", qos: .userInitiated)
   private let queueKey = DispatchSpecificKey<Void>()
 
-  private var pendingCommands: [UInt64: (Result<Void, Error>) -> Void] = [:]
-  private let pendingCommandsLock = NSLock()
+  private enum PendingRequest {
+    case void((Result<Void, Error>) -> Void)
+    case getProperty((Result<String?, Error>) -> Void)
+  }
+
+  private var pendingRequests: [UInt64: PendingRequest] = [:]
+  private let pendingRequestsLock = NSLock()
   private var nextRequestId: UInt64 = 1
+
+  private let cacheLock = NSLock()
+  private var cachedPaused = true
+  private var cachedDuration = 0.0
+  private var cachedTimePos = 0.0
+  private var cachedWidth = 0.0
+  private var cachedHeight = 0.0
 
   override init() {
     super.init()
@@ -122,7 +143,7 @@ class MpvPlayerCoreBase: NSObject {
       checkError(mpv_request_log_messages(mpv, "warn"))
     #endif
 
-    var layer = metalLayer
+    var layer = Int64(Int(bitPattern: Unmanaged.passUnretained(metalLayer).toOpaque()))
     checkError(mpv_set_option(mpv, "wid", MPV_FORMAT_INT64, &layer))
     applySharedMpvOptions()
     configurePlatformMpvOptions()
@@ -145,7 +166,9 @@ class MpvPlayerCoreBase: NSObject {
       UnsafeMutableRawPointer(Unmanaged.passUnretained(self).toOpaque())
     )
 
-    mpv_observe_property(mpv, 0, "video-params/sig-peak", MPV_FORMAT_DOUBLE)
+    mpv_observe_property(mpv, Self.internalSigPeakObserverId, "video-params/sig-peak", MPV_FORMAT_DOUBLE)
+    mpv_observe_property(mpv, Self.internalWidthObserverId, "width", MPV_FORMAT_DOUBLE)
+    mpv_observe_property(mpv, Self.internalHeightObserverId, "height", MPV_FORMAT_DOUBLE)
     return true
   }
 
@@ -155,35 +178,75 @@ class MpvPlayerCoreBase: NSObject {
   }
 
   func setProperty(_ name: String, value: String) {
-    guard mpv != nil else { return }
+    setPropertyAsync(name, value: value) { _ in }
+  }
+
+  func setPropertyAsync(
+    _ name: String,
+    value: String,
+    completion: @escaping (Result<Void, Error>) -> Void
+  ) {
+    if name == "pause" {
+      setCachedPaused(value == "yes" || value == "true" || value == "1")
+    }
 
     if name == "hdr-enabled" {
       let enabled = value == "yes" || value == "true" || value == "1"
-      setHDREnabled(enabled)
+      setHDREnabled(enabled, completion: completion)
       return
     }
 
-    mpv_set_property_string(mpv, name, value)
+    setRawStringPropertyAsync(name, value: value, completion: completion)
   }
 
-  func setHDREnabled(_ enabled: Bool) {
+  func setInt64PropertyAsync(
+    _ name: String,
+    value: Int64,
+    completion: @escaping (Result<Void, Error>) -> Void
+  ) {
+    guard let mpv else {
+      completion(.success(()))
+      return
+    }
+
+    let requestId = registerRequest(.void(completion))
+    var propertyValue = value
+    let status = name.withCString { namePointer in
+      mpv_set_property_async(mpv, requestId, namePointer, MPV_FORMAT_INT64, &propertyValue)
+    }
+    completeRequestIfSubmissionFailed(requestId: requestId, status: status)
+  }
+
+  func setHDREnabled(_ enabled: Bool, completion: ((Result<Void, Error>) -> Void)? = nil) {
+    cacheLock.lock()
     hdrEnabled = enabled
+    let sigPeak = lastSigPeak
+    cacheLock.unlock()
+
     print("[MpvPlayerCore] HDR enabled: \(enabled)")
 
-    if mpv != nil {
-      mpv_set_property_string(mpv, "target-colorspace-hint", enabled ? "yes" : "no")
-    }
+    setRawStringPropertyAsync(
+      "target-colorspace-hint",
+      value: enabled ? "yes" : "no",
+      completion: completion ?? { _ in }
+    )
 
     DispatchQueue.main.async {
-      self.updateEDRMode(sigPeak: self.lastSigPeak)
+      self.updateEDRMode(sigPeak: sigPeak)
     }
   }
 
-  func getProperty(_ name: String) -> String? {
-    guard mpv != nil else { return nil }
-    let cstr = mpv_get_property_string(mpv, name)
-    defer { mpv_free(cstr) }
-    return cstr.map { safeString($0) }
+  func getPropertyAsync(_ name: String, completion: @escaping (Result<String?, Error>) -> Void) {
+    guard let mpv else {
+      completion(.success(nil))
+      return
+    }
+
+    let requestId = registerRequest(.getProperty(completion))
+    let status = name.withCString { namePointer in
+      mpv_get_property_async(mpv, requestId, namePointer, MPV_FORMAT_STRING)
+    }
+    completeRequestIfSubmissionFailed(requestId: requestId, status: status)
   }
 
   func observeProperty(_ name: String, format: String) {
@@ -207,8 +270,7 @@ class MpvPlayerCoreBase: NSObject {
   }
 
   func command(_ args: [String]) {
-    guard mpv != nil, !args.isEmpty else { return }
-    command(args[0], args: Array(args.dropFirst()))
+    commandAsync(args) { _ in }
   }
 
   func commandAsync(_ args: [String], completion: @escaping (Result<Void, Error>) -> Void) {
@@ -217,11 +279,7 @@ class MpvPlayerCoreBase: NSObject {
       return
     }
 
-    pendingCommandsLock.lock()
-    let requestId = nextRequestId
-    nextRequestId += 1
-    pendingCommands[requestId] = completion
-    pendingCommandsLock.unlock()
+    let requestId = registerRequest(.void(completion))
 
     var cargs: [UnsafeMutablePointer<CChar>?] = args.map { strdup($0) }
     cargs.append(nil)
@@ -229,21 +287,7 @@ class MpvPlayerCoreBase: NSObject {
     cargs.withUnsafeBufferPointer { buffer in
       var constPointers = buffer.map { UnsafePointer($0) }
       let result = mpv_command_async(mpv, requestId, &constPointers)
-      if result < 0 {
-        pendingCommandsLock.lock()
-        let pending = pendingCommands.removeValue(forKey: requestId)
-        pendingCommandsLock.unlock()
-
-        guard let pending else { return }
-        let error = NSError(
-          domain: "mpv",
-          code: Int(result),
-          userInfo: [NSLocalizedDescriptionKey: safeString(mpv_error_string(result))]
-        )
-        DispatchQueue.main.async {
-          pending(.failure(error))
-        }
-      }
+      completeRequestIfSubmissionFailed(requestId: requestId, status: result)
     }
 
     for pointer in cargs {
@@ -251,30 +295,54 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
+  private func setRawStringPropertyAsync(
+    _ name: String,
+    value: String,
+    completion: @escaping (Result<Void, Error>) -> Void
+  ) {
+    guard let mpv else {
+      completion(.success(()))
+      return
+    }
+
+    let requestId = registerRequest(.void(completion))
+    let status = name.withCString { namePointer in
+      value.withCString { valuePointer in
+        var propertyValue: UnsafePointer<CChar>? = valuePointer
+        return mpv_set_property_async(mpv, requestId, namePointer, MPV_FORMAT_STRING, &propertyValue)
+      }
+    }
+    completeRequestIfSubmissionFailed(requestId: requestId, status: status)
+  }
+
   var isPaused: Bool {
-    guard let mpv else { return true }
-    var flag: Int32 = 0
-    mpv_get_property(mpv, "pause", MPV_FORMAT_FLAG, &flag)
-    return flag != 0
+    cacheLock.lock()
+    defer { cacheLock.unlock() }
+    return cachedPaused
   }
 
   var duration: Double {
-    guard let mpv else { return 0 }
-    var value: Double = 0
-    mpv_get_property(mpv, "duration", MPV_FORMAT_DOUBLE, &value)
-    return value
+    cacheLock.lock()
+    defer { cacheLock.unlock() }
+    return cachedDuration
   }
 
   var timePos: Double {
-    guard let mpv else { return 0 }
-    var value: Double = 0
-    mpv_get_property(mpv, "time-pos", MPV_FORMAT_DOUBLE, &value)
-    return value
+    cacheLock.lock()
+    defer { cacheLock.unlock() }
+    return cachedTimePos
+  }
+
+  var videoSize: CGSize? {
+    cacheLock.lock()
+    defer { cacheLock.unlock() }
+    guard cachedWidth > 0, cachedHeight > 0 else { return nil }
+    return CGSize(width: cachedWidth, height: cachedHeight)
   }
 
   func disposeSharedState(destroySynchronously: Bool) {
     isDisposing = true
-    cancelPendingCommands()
+    cancelPendingRequests()
 
     let mpvHandle = mpv
     mpv = nil
@@ -299,9 +367,9 @@ class MpvPlayerCoreBase: NSObject {
 
   func applyGpuNextOptions() {
     guard mpv != nil else { return }
-    mpv_set_property_string(mpv, "gpu-api", "vulkan")
-    mpv_set_property_string(mpv, "gpu-context", "moltenvk")
-    mpv_set_property_string(mpv, "vo", "gpu-next")
+    setProperty("gpu-api", value: "vulkan")
+    setProperty("gpu-context", value: "moltenvk")
+    setProperty("vo", value: "gpu-next")
   }
 
   private func applySharedMpvOptions() {
@@ -313,38 +381,99 @@ class MpvPlayerCoreBase: NSObject {
     checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "yes"))
   }
 
-  private func cancelPendingCommands() {
-    pendingCommandsLock.lock()
-    let pending = pendingCommands
-    pendingCommands.removeAll()
-    pendingCommandsLock.unlock()
+  private func cancelPendingRequests() {
+    pendingRequestsLock.lock()
+    let pending = pendingRequests
+    pendingRequests.removeAll()
+    pendingRequestsLock.unlock()
 
     let error = NSError(
       domain: "mpv",
       code: -1,
       userInfo: [NSLocalizedDescriptionKey: "Player disposed"]
     )
-    for (_, completion) in pending {
+    for (_, request) in pending {
       DispatchQueue.main.async {
+        switch request {
+        case .void(let completion):
+          completion(.failure(error))
+        case .getProperty(let completion):
+          completion(.failure(error))
+        }
+      }
+    }
+  }
+
+  private func registerRequest(_ request: PendingRequest) -> UInt64 {
+    pendingRequestsLock.lock()
+    defer { pendingRequestsLock.unlock() }
+
+    let requestId = nextRequestId
+    nextRequestId += 1
+    pendingRequests[requestId] = request
+    return requestId
+  }
+
+  private func takeRequest(_ requestId: UInt64) -> PendingRequest? {
+    pendingRequestsLock.lock()
+    defer { pendingRequestsLock.unlock() }
+    return pendingRequests.removeValue(forKey: requestId)
+  }
+
+  private func mpvError(_ status: CInt) -> NSError {
+    NSError(
+      domain: "mpv",
+      code: Int(status),
+      userInfo: [NSLocalizedDescriptionKey: safeString(mpv_error_string(status))]
+    )
+  }
+
+  private func completeRequestIfSubmissionFailed(requestId: UInt64, status: CInt) {
+    guard status < 0, let request = takeRequest(requestId) else { return }
+    let error = mpvError(status)
+    DispatchQueue.main.async {
+      switch request {
+      case .void(let completion):
+        completion(.failure(error))
+      case .getProperty(let completion):
         completion(.failure(error))
       }
     }
   }
 
-  private func command(_ command: String, args: [String] = []) {
-    guard mpv != nil else { return }
+  private func completeVoidRequest(requestId: UInt64, error status: CInt) {
+    guard let request = takeRequest(requestId) else { return }
+    DispatchQueue.main.async {
+      switch request {
+      case .void(let completion):
+        if status < 0 {
+          completion(.failure(self.mpvError(status)))
+        } else {
+          completion(.success(()))
+        }
+      case .getProperty:
+        break
+      }
+    }
+  }
 
-    var cargs: [UnsafeMutablePointer<CChar>?] = ([command] + args).map { strdup($0) }
-    cargs.append(nil)
-    defer {
-      for pointer in cargs {
-        free(pointer)
+  private func completeGetPropertyRequest(_ event: mpv_event) {
+    guard let request = takeRequest(event.reply_userdata) else { return }
+    guard case .getProperty(let completion) = request else { return }
+
+    var value: String?
+    if event.error >= 0,
+      let propertyPointer = event.data?.assumingMemoryBound(to: mpv_event_property.self)
+    {
+      let property = propertyPointer.pointee
+      if property.format == MPV_FORMAT_STRING, let data = property.data {
+        let cstring = data.assumingMemoryBound(to: UnsafePointer<CChar>?.self).pointee
+        value = cstring.map { safeString($0) }
       }
     }
 
-    cargs.withUnsafeBufferPointer { buffer in
-      var constPointers = buffer.map { UnsafePointer($0) }
-      _ = mpv_command(mpv, &constPointers)
+    DispatchQueue.main.async {
+      completion(.success(value))
     }
   }
 
@@ -371,29 +500,16 @@ class MpvPlayerCoreBase: NSObject {
       guard let data = event.data else { break }
       let property = data.assumingMemoryBound(to: mpv_event_property.self).pointee
       let name = safeString(property.name)
-      handlePropertyChange(name: name, property: property)
+      handlePropertyChange(name: name, property: property, replyUserdata: event.reply_userdata)
 
     case MPV_EVENT_COMMAND_REPLY:
-      let requestId = event.reply_userdata
-      pendingCommandsLock.lock()
-      let completion = pendingCommands.removeValue(forKey: requestId)
-      pendingCommandsLock.unlock()
+      completeVoidRequest(requestId: event.reply_userdata, error: event.error)
 
-      guard let completion else { break }
-      if event.error < 0 {
-        let error = NSError(
-          domain: "mpv",
-          code: Int(event.error),
-          userInfo: [NSLocalizedDescriptionKey: safeString(mpv_error_string(event.error))]
-        )
-        DispatchQueue.main.async {
-          completion(.failure(error))
-        }
-      } else {
-        DispatchQueue.main.async {
-          completion(.success(()))
-        }
-      }
+    case MPV_EVENT_SET_PROPERTY_REPLY:
+      completeVoidRequest(requestId: event.reply_userdata, error: event.error)
+
+    case MPV_EVENT_GET_PROPERTY_REPLY:
+      completeGetPropertyRequest(event)
 
     case MPV_EVENT_FILE_LOADED:
       DispatchQueue.main.async {
@@ -446,9 +562,7 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
-  private func handlePropertyChange(name: String, property: mpv_event_property) {
-    if isBackgrounded && !Self.criticalProperties.contains(name) { return }
-
+  private func handlePropertyChange(name: String, property: mpv_event_property, replyUserdata: UInt64) {
     var value: Any?
 
     switch property.format {
@@ -478,16 +592,49 @@ class MpvPlayerCoreBase: NSObject {
       break
     }
 
+    updateCachedProperty(name: name, value: value)
+
     if name == "video-params/sig-peak", let sigPeak = value as? Double {
+      cacheLock.lock()
       lastSigPeak = sigPeak
+      cacheLock.unlock()
       DispatchQueue.main.async {
         self.updateEDRMode(sigPeak: sigPeak)
       }
     }
 
+    if Self.internalObserverIds.contains(replyUserdata) { return }
+    if isBackgrounded && !Self.criticalProperties.contains(name) { return }
+
     DispatchQueue.main.async {
       self.delegate?.onPropertyChange(name: name, value: value)
     }
+  }
+
+  private func updateCachedProperty(name: String, value: Any?) {
+    cacheLock.lock()
+    defer { cacheLock.unlock() }
+
+    switch name {
+    case "pause":
+      if let paused = value as? Bool { cachedPaused = paused }
+    case "duration":
+      if let duration = value as? Double { cachedDuration = duration }
+    case "time-pos":
+      if let timePos = value as? Double { cachedTimePos = timePos }
+    case "width":
+      if let width = value as? Double { cachedWidth = width }
+    case "height":
+      if let height = value as? Double { cachedHeight = height }
+    default:
+      break
+    }
+  }
+
+  private func setCachedPaused(_ paused: Bool) {
+    cacheLock.lock()
+    cachedPaused = paused
+    cacheLock.unlock()
   }
 
   private func convertNode(_ node: mpv_node) -> Any? {

@@ -82,13 +82,25 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
 void MpvPlayer::Dispose() {
   StopEventLoop();
 
-  // Cancel pending async commands
+  // Cancel pending async requests
+  std::vector<StatusCallback> status_callbacks;
+  std::vector<GetPropertyCallback> get_callbacks;
   {
-    std::lock_guard<std::mutex> lock(pending_commands_mutex_);
-    for (auto& pair : pending_commands_) {
-      if (pair.second) pair.second(-1);  // Call with error
+    std::lock_guard<std::mutex> lock(pending_requests_mutex_);
+    for (auto& pair : pending_status_requests_) {
+      if (pair.second) status_callbacks.push_back(std::move(pair.second));
     }
-    pending_commands_.clear();
+    for (auto& pair : pending_get_property_requests_) {
+      if (pair.second) get_callbacks.push_back(std::move(pair.second));
+    }
+    pending_status_requests_.clear();
+    pending_get_property_requests_.clear();
+  }
+  for (auto& callback : status_callbacks) {
+    callback(-1);
+  }
+  for (auto& callback : get_callbacks) {
+    callback(-1, "");
   }
 
   if (mpv_) {
@@ -104,18 +116,7 @@ void MpvPlayer::Dispose() {
   observed_properties_.clear();
 }
 
-void MpvPlayer::Command(const std::vector<std::string>& args) {
-  if (!mpv_) return;
-
-  std::vector<const char*> c_args;
-  c_args.reserve(args.size() + 1);
-  for (const auto& arg : args) {
-    c_args.push_back(arg.c_str());
-  }
-  c_args.push_back(nullptr);
-
-  mpv_command(mpv_, c_args.data());
-}
+void MpvPlayer::Command(const std::vector<std::string>& args) { CommandAsync(args, nullptr); }
 
 void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallback callback) {
   if (!mpv_) {
@@ -130,50 +131,88 @@ void MpvPlayer::CommandAsync(const std::vector<std::string>& args, CommandCallba
   }
   c_args.push_back(nullptr);
 
-  // Generate unique request ID and store callback
-  uint64_t request_id;
-  {
-    std::lock_guard<std::mutex> lock(pending_commands_mutex_);
-    request_id = next_reply_userdata_++;
-    pending_commands_[request_id] = std::move(callback);
-  }
+  uint64_t request_id = callback ? RegisterStatusRequest(std::move(callback)) : 0;
 
   // mpv_command_async returns immediately
   int result = mpv_command_async(mpv_, request_id, c_args.data());
   if (result < 0) {
-    // Submission failed, complete immediately with error
-    std::lock_guard<std::mutex> lock(pending_commands_mutex_);
-    auto it = pending_commands_.find(request_id);
-    if (it != pending_commands_.end()) {
-      auto cb = std::move(it->second);
-      pending_commands_.erase(it);
-      if (cb) cb(result);
-    }
+    auto cb = TakeStatusRequest(request_id);
+    if (cb) cb(result);
   }
 }
 
 void MpvPlayer::SetProperty(const std::string& name, const std::string& value) {
-  if (!mpv_) return;
+  SetPropertyAsync(name, value, nullptr);
+}
+
+void MpvPlayer::SetPropertyAsync(const std::string& name, const std::string& value, StatusCallback callback) {
+  if (!mpv_) {
+    if (callback) callback(0);
+    return;
+  }
 
   // Handle custom HDR toggle property (same pattern as iOS/macOS)
   if (name == "hdr-enabled") {
     bool enabled = (value == "yes" || value == "true" || value == "1");
-    SetHDREnabled(enabled);
+    SetHDREnabled(enabled, std::move(callback));
     return;
   }
 
-  mpv_set_property_string(mpv_, name.c_str(), value.c_str());
+  uint64_t request_id = callback ? RegisterStatusRequest(std::move(callback)) : 0;
+
+  char* property_value = const_cast<char*>(value.c_str());
+  int result = mpv_set_property_async(mpv_, request_id, name.c_str(), MPV_FORMAT_STRING, &property_value);
+  if (result < 0) {
+    auto cb = TakeStatusRequest(request_id);
+    if (cb) cb(result);
+  }
 }
 
-std::string MpvPlayer::GetProperty(const std::string& name) {
-  if (!mpv_) return "";
+void MpvPlayer::GetPropertyAsync(const std::string& name, GetPropertyCallback callback) {
+  if (!mpv_) {
+    if (callback) callback(-1, "");
+    return;
+  }
 
-  char* value = mpv_get_property_string(mpv_, name.c_str());
-  if (!value) return "";
+  uint64_t request_id = RegisterGetPropertyRequest(std::move(callback));
 
-  std::string result(value);
-  mpv_free(value);
-  return result;
+  int result = mpv_get_property_async(mpv_, request_id, name.c_str(), MPV_FORMAT_STRING);
+  if (result < 0) {
+    auto cb = TakeGetPropertyRequest(request_id);
+    if (cb) cb(result, "");
+  }
+}
+
+uint64_t MpvPlayer::RegisterStatusRequest(StatusCallback callback) {
+  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
+  uint64_t request_id = next_reply_userdata_++;
+  pending_status_requests_[request_id] = std::move(callback);
+  return request_id;
+}
+
+MpvPlayer::StatusCallback MpvPlayer::TakeStatusRequest(uint64_t request_id) {
+  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
+  auto it = pending_status_requests_.find(request_id);
+  if (it == pending_status_requests_.end()) return nullptr;
+  auto callback = std::move(it->second);
+  pending_status_requests_.erase(it);
+  return callback;
+}
+
+uint64_t MpvPlayer::RegisterGetPropertyRequest(GetPropertyCallback callback) {
+  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
+  uint64_t request_id = next_reply_userdata_++;
+  pending_get_property_requests_[request_id] = std::move(callback);
+  return request_id;
+}
+
+MpvPlayer::GetPropertyCallback MpvPlayer::TakeGetPropertyRequest(uint64_t request_id) {
+  std::lock_guard<std::mutex> lock(pending_requests_mutex_);
+  auto it = pending_get_property_requests_.find(request_id);
+  if (it == pending_get_property_requests_.end()) return nullptr;
+  auto callback = std::move(it->second);
+  pending_get_property_requests_.erase(it);
+  return callback;
 }
 
 void MpvPlayer::ObserveProperty(const std::string& name, const std::string& format, int id) {
@@ -287,20 +326,28 @@ void MpvPlayer::EventLoop() {
 
 void MpvPlayer::HandleMpvEvent(mpv_event* event) {
   switch (event->event_id) {
-    case MPV_EVENT_COMMAND_REPLY: {
-      // Handle async command completion
+    case MPV_EVENT_COMMAND_REPLY:
+    case MPV_EVENT_SET_PROPERTY_REPLY: {
       uint64_t request_id = event->reply_userdata;
-      CommandCallback callback;
-      {
-        std::lock_guard<std::mutex> lock(pending_commands_mutex_);
-        auto it = pending_commands_.find(request_id);
-        if (it != pending_commands_.end()) {
-          callback = std::move(it->second);
-          pending_commands_.erase(it);
-        }
-      }
+      StatusCallback callback = TakeStatusRequest(request_id);
       if (callback) {
         callback(event->error);
+      }
+      break;
+    }
+    case MPV_EVENT_GET_PROPERTY_REPLY: {
+      uint64_t request_id = event->reply_userdata;
+      GetPropertyCallback callback = TakeGetPropertyRequest(request_id);
+      if (callback) {
+        std::string value;
+        if (event->error >= 0) {
+          auto* prop = static_cast<mpv_event_property*>(event->data);
+          if (prop && prop->format == MPV_FORMAT_STRING && prop->data) {
+            auto c_value = *static_cast<char**>(prop->data);
+            if (c_value) value = SanitizeUtf8(c_value);
+          }
+        }
+        callback(event->error, value);
       }
       break;
     }
@@ -356,11 +403,14 @@ void MpvPlayer::HandleMpvEvent(mpv_event* event) {
       // to null output (e.g. after sleep/wake or device unplug), re-set
       // audio-device to switch back to the real output.
       // Mirrors mpv's TOOLS/lua/ao-null-reload.lua for embedded libmpv.
-      if (strcmp(prop->name, "audio-device-list") == 0 && GetProperty("current-ao") == "null") {
-        auto device = GetProperty("audio-device");
-        if (!device.empty()) {
-          mpv_set_property_string(mpv_, "audio-device", device.c_str());
-        }
+      if (strcmp(prop->name, "audio-device-list") == 0) {
+        GetPropertyAsync("current-ao", [this](int ao_error, const std::string& current_ao) {
+          if (ao_error < 0 || current_ao != "null") return;
+          GetPropertyAsync("audio-device", [this](int device_error, const std::string& device) {
+            if (device_error < 0 || device.empty()) return;
+            SetProperty("audio-device", device);
+          });
+        });
       }
 
       SendPropertyChange(prop->name, &node);
@@ -445,11 +495,13 @@ void MpvPlayer::SendEvent(const std::string& name, const flutter::EncodableMap& 
   }
 }
 
-void MpvPlayer::SetHDREnabled(bool enabled) {
+void MpvPlayer::SetHDREnabled(bool enabled, StatusCallback callback) {
   hdr_enabled_ = enabled;
 
   if (mpv_) {
-    mpv_set_property_string(mpv_, "target-colorspace-hint", enabled ? "yes" : "no");
+    SetPropertyAsync("target-colorspace-hint", enabled ? "yes" : "no", std::move(callback));
+  } else if (callback) {
+    callback(0);
   }
 
   UpdateHDRMode(last_sig_peak_);

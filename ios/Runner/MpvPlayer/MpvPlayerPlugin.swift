@@ -230,7 +230,12 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     stopPipTimebaseSync()
     pipController?.flushLayer()
     let restoredInlineVO = playerCore?.switchToGpuNextVO() ?? false
-    if pause { playerCore?.setProperty("pause", value: "yes") }
+    if pause {
+      playerCore?.setPropertyAsync("pause", value: "yes") { [weak self] _ in
+        self?.pipController?.invalidatePlaybackState()
+        self?.syncPipTimebase()
+      }
+    }
     pendingInlineRestoreAfterPip = restoredInlineVO
     if pendingInlineRestoreAfterPip {
       if isSceneActive {
@@ -340,14 +345,18 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       return
     }
 
-    playerCore?.setProperty(name, value: value)
-
-    if name == "pause" {
-      pipController?.invalidatePlaybackState()
-      if playerCore?.isPipActive == true { syncPipTimebase() }
+    guard let core = playerCore else {
+      result(nil)
+      return
     }
 
-    result(nil)
+    core.setPropertyAsync(name, value: value) { [weak self] _ in
+      if name == "pause" {
+        self?.pipController?.invalidatePlaybackState()
+        if core.isPipActive == true { self?.syncPipTimebase() }
+      }
+      result(nil)
+    }
   }
 
   // MARK: - Helpers
@@ -400,9 +409,10 @@ extension MpvPlayerPlugin: MpvPipDelegate {
   }
 
   func pipSetPlaying(_ playing: Bool) {
-    playerCore?.setProperty("pause", value: playing ? "no" : "yes")
-    pipController?.invalidatePlaybackState()
-    syncPipTimebase()
+    playerCore?.setPropertyAsync("pause", value: playing ? "no" : "yes") { [weak self] _ in
+      self?.pipController?.invalidatePlaybackState()
+      self?.syncPipTimebase()
+    }
   }
 
   func pipSkip(byInterval seconds: Double) {

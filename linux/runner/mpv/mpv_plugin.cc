@@ -203,8 +203,14 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
       } else if (value_value == nullptr || fl_value_get_type(value_value) != FL_VALUE_TYPE_STRING) {
         response = FL_METHOD_RESPONSE(fl_method_error_response_new("INVALID_ARGS", "Missing 'value'", nullptr));
       } else {
-        self->player->SetProperty(fl_value_get_string(name_value), fl_value_get_string(value_value));
-        response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+        g_object_ref(method_call);
+        self->player->SetPropertyAsync(
+            fl_value_get_string(name_value), fl_value_get_string(value_value), [method_call](int error) {
+              g_autoptr(FlMethodResponse) async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+              fl_method_call_respond(method_call, async_response, nullptr);
+              g_object_unref(method_call);
+            });
+        return;  // Response sent asynchronously
       }
     }
   } else if (strcmp(method, "setLogLevel") == 0) {
@@ -229,12 +235,19 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
       if (name_value == nullptr || fl_value_get_type(name_value) != FL_VALUE_TYPE_STRING) {
         response = FL_METHOD_RESPONSE(fl_method_error_response_new("INVALID_ARGS", "Missing 'name'", nullptr));
       } else {
-        std::string value = self->player->GetProperty(fl_value_get_string(name_value));
-        if (value.empty()) {
-          response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
-        } else {
-          response = FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_string(value.c_str())));
-        }
+        g_object_ref(method_call);
+        self->player->GetPropertyAsync(
+            fl_value_get_string(name_value), [method_call](int error, const std::string& value) {
+              g_autoptr(FlMethodResponse) async_response = nullptr;
+              if (error < 0 || value.empty()) {
+                async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(nullptr));
+              } else {
+                async_response = FL_METHOD_RESPONSE(fl_method_success_response_new(fl_value_new_string(value.c_str())));
+              }
+              fl_method_call_respond(method_call, async_response, nullptr);
+              g_object_unref(method_call);
+            });
+        return;  // Response sent asynchronously
       }
     }
   } else if (strcmp(method, "observeProperty") == 0) {

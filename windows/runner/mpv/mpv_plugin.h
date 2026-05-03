@@ -8,8 +8,11 @@
 #include <flutter/plugin_registrar_windows.h>
 #include <flutter/standard_method_codec.h>
 
+#include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
+#include <queue>
 
 #include "display_mode_manager.h"
 #include "mpv_core.h"
@@ -33,11 +36,15 @@ class MpvPlayerPlugin : public flutter::Plugin {
       std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>> result);
 
   void SendEvent(const flutter::EncodableValue& event);
+  void PostToPlatformThread(std::function<void()> task);
+  void DrainPlatformTasks();
 
   HWND GetWindow();
   HWND GetChildWindow();
 
   flutter::PluginRegistrarWindows* registrar_;
+  DWORD platform_thread_id_;
+  HWND flutter_window_ = nullptr;
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> method_channel_;
   std::unique_ptr<flutter::EventChannel<flutter::EncodableValue>> event_channel_;
   std::unique_ptr<flutter::EventSink<flutter::EncodableValue>> event_sink_;
@@ -45,6 +52,8 @@ class MpvPlayerPlugin : public flutter::Plugin {
   std::unique_ptr<MpvPlayer> player_;
   DisplayModeManager display_mode_manager_;
   std::optional<int32_t> proc_id_;
+  std::mutex platform_tasks_mutex_;
+  std::queue<std::function<void()>> platform_tasks_;
 };
 
 }  // namespace mpv
