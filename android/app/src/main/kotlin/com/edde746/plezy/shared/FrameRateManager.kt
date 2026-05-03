@@ -90,6 +90,17 @@ class FrameRateManager(
     }
   }
 
+  // Release pending callbacks/listener without restoring the display mode.
+  // Used by player-core dispose paths so a backend handoff (e.g. ExoPlayer→MPV
+  // audio fallback) doesn't clobber the just-applied refresh-rate switch —
+  // window-scoped preferredDisplayModeId persists across the SurfaceView swap,
+  // letting MPV inherit the rate without a second HDMI renegotiation.
+  fun releasePending() {
+    Log.d(TAG, "releasePending")
+    currentVideoFps = 0f
+    firePendingCompletion("release", switched = false)
+  }
+
   private fun cancelPendingCallbacks() {
     pendingSettleRunnable?.let { handler.removeCallbacks(it) }
     watchdogRunnable?.let { handler.removeCallbacks(it) }

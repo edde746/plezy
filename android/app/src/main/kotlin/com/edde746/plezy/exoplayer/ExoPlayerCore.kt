@@ -1905,7 +1905,12 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     cancelDecoderHangCheck()
     stopPositionUpdates()
     handler.removeCallbacksAndMessages(null)
-    frameRateManager?.clearVideoFrameRate()
+    // releasePending (not clearVideoFrameRate): on the ExoPlayer→MPV fallback
+    // path, dispose runs after the rate switch has been applied — clearing
+    // preferredDisplayModeId here would renegotiate HDMI back to default
+    // before MPV's surface comes up. Explicit user-leave still calls
+    // clearVideoFrameRate via Dart (video_player_screen.dart).
+    frameRateManager?.releasePending()
     frameRateManager = null
     audioFocusManager?.release()
     audioFocusManager = null

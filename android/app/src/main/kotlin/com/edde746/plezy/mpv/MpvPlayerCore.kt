@@ -767,8 +767,11 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
 
     handler.removeCallbacksAndMessages(null)
 
-    // Clean up frame rate and audio focus
-    frameRateManager?.clearVideoFrameRate()
+    // Clean up frame rate and audio focus.
+    // releasePending (not clearVideoFrameRate): symmetric with ExoPlayerCore —
+    // dispose only releases the listener/pending future. Restoring the
+    // display mode is the explicit Dart-side clearVideoFrameRate's job.
+    frameRateManager?.releasePending()
     frameRateManager = null
     audioFocusManager?.release()
     audioFocusManager = null
