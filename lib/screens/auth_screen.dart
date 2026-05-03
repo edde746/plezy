@@ -286,6 +286,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   Widget _buildInitialButtons(BuildContext context, VoidCallback startBrowser, VoidCallback startQr, bool busy) {
     final isTV = PlatformDetector.isTV();
+    final isAppleTV = PlatformDetector.isAppleTV();
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -300,15 +301,17 @@ class _AuthScreenState extends State<AuthScreen> {
               child: Text(t.auth.showQRCode),
             ),
           ),
-          const SizedBox(height: 12),
-          FocusableButton(
-            onPressed: busy ? null : startBrowser,
-            child: OutlinedButton(
+          if (!isAppleTV) ...[
+            const SizedBox(height: 12),
+            FocusableButton(
               onPressed: busy ? null : startBrowser,
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-              child: Text(t.auth.useBrowser),
+              child: OutlinedButton(
+                onPressed: busy ? null : startBrowser,
+                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                child: Text(t.auth.useBrowser),
+              ),
             ),
-          ),
+          ],
         ] else ...[
           ElevatedButton.icon(
             onPressed: busy ? null : startBrowser,
