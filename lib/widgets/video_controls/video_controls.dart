@@ -362,6 +362,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
   Timer? _lockIconTimer;
   bool get _clickVideoTogglesPlayback => _settings.read(SettingsService.clickVideoTogglesPlayback);
   bool _isContentStripVisible = false; // Whether the swipe-up content strip is showing
+  int _trafficLightVisibilityGeneration = 0;
 
   // GlobalKey to access DesktopVideoControls state for focus management
   final GlobalKey<DesktopVideoControlsState> _desktopControlsKey = GlobalKey<DesktopVideoControlsState>();
@@ -524,6 +525,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
     }
     if (Platform.isMacOS) {
       _pipService.isPipActive.removeListener(_onMacPipChanged);
+      _trafficLightVisibilityGeneration++;
+      unawaited(MacOSWindowService.setTrafficLightsVisible(true));
     }
     super.dispose();
   }
