@@ -79,6 +79,20 @@ void main() {
       expect(item.serverName, 'Home');
     });
 
+    test('does not treat Jellyfin PlayCount as watched when Played is false', () {
+      final json = {
+        'Id': 'started-only',
+        'Name': 'Started Only',
+        'Type': 'Movie',
+        'UserData': {'PlayCount': 1, 'Played': false},
+      };
+
+      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+
+      expect(item.viewCount, 0);
+      expect(item.isWatched, isFalse);
+    });
+
     test('episode preserves series/season hierarchy', () {
       final json = {
         'Id': 'ep1',

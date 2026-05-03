@@ -180,7 +180,7 @@ class JellyfinMappers {
       clearLogoPath: _selfImagePath(id, item, 'Logo') ?? _parentLogoImage(item),
       durationMs: jellyfinTicksToMs(item['RunTimeTicks']),
       viewOffsetMs: jellyfinTicksToMs(_userData(item)?['PlaybackPositionTicks']),
-      viewCount: _userData(item)?['PlayCount'] as int?,
+      viewCount: _viewCount(item),
       lastViewedAt: jellyfinIsoToEpochSeconds(_userData(item)?['LastPlayedDate'] as String?),
       // Plex semantics: `leafCount` = total leaf items (episodes for series).
       // Jellyfin's `ChildCount` is direct children (seasons for a series),
@@ -302,6 +302,14 @@ class JellyfinMappers {
   static Map<String, dynamic>? _userData(Map<String, dynamic> item) {
     final ud = item['UserData'];
     return ud is Map<String, dynamic> ? ud : null;
+  }
+
+  static int _viewCount(Map<String, dynamic> item) {
+    final ud = _userData(item);
+    if (ud?['Played'] != true) return 0;
+    final playCount = ud?['PlayCount'];
+    if (playCount is int && playCount > 0) return playCount;
+    return 1;
   }
 
   static int? _viewedLeafCount(Map<String, dynamic> item) {
