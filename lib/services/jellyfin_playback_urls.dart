@@ -31,29 +31,5 @@ String buildJellyfinTrickplayTileUrl({
   return '$baseUrl/Videos/$encodedItem/Trickplay/$width/$sheetIndex.jpg?${_encodeQuery(params)}';
 }
 
-String buildJellyfinHlsStreamUrl({
-  required String baseUrl,
-  required String accessToken,
-  required String deviceId,
-  required String itemId,
-  required String mediaSourceId,
-  int? videoBitrate,
-  int? audioStreamIndex,
-  int? subtitleStreamIndex,
-  String? playSessionId,
-}) {
-  final params = <String, String>{
-    'DeviceId': deviceId,
-    'MediaSourceId': mediaSourceId,
-    'api_key': accessToken,
-    'VideoBitrate': ?videoBitrate?.toString(),
-    'AudioStreamIndex': ?audioStreamIndex?.toString(),
-    'SubtitleStreamIndex': ?subtitleStreamIndex?.toString(),
-    'PlaySessionId': ?playSessionId,
-  };
-  final encodedItem = Uri.encodeComponent(itemId);
-  return '$baseUrl/Videos/$encodedItem/master.m3u8?${_encodeQuery(params)}';
-}
-
 String _encodeQuery(Map<String, String> params) =>
     params.entries.map((e) => '${e.key}=${Uri.encodeQueryComponent(e.value)}').join('&');

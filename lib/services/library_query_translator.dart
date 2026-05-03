@@ -2,6 +2,12 @@ import '../media/library_query.dart';
 import '../media/media_kind.dart';
 import 'plex_constants.dart';
 
+/// Limit browse payload image tags to the artwork types the UI maps.
+const jellyfinImageQueryParameters = <String, String>{
+  'EnableImageTypes': 'Primary,Backdrop,Thumb,Logo',
+  'ImageTypeLimit': '1',
+};
+
 /// Translates a backend-neutral [LibraryQuery] into the per-backend
 /// query-parameter map that the corresponding `/library/sections/{id}/all`
 /// (Plex) or `/Items` (Jellyfin) endpoint expects.
@@ -212,6 +218,7 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
       'Limit': query.limit.toString(),
       'IncludeItemTypes': _includeTypesFor(query.kind),
       'Fields': fields,
+      ...jellyfinImageQueryParameters,
     };
     if (!query.includeWatched) {
       params['Filters'] = 'IsUnplayed';

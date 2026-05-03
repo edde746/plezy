@@ -77,43 +77,6 @@ void main() {
       expect(Uri.parse(url).path, '/Videos/folder%2Fitem%20%231%3Fx/stream');
     });
 
-    test('buildHlsStreamUrl wires required + optional params', () {
-      final url = client.buildHlsStreamUrl(
-        'item-42',
-        mediaSourceId: 'src-1',
-        videoBitrate: 5000000,
-        audioStreamIndex: 1,
-        subtitleStreamIndex: 2,
-        playSessionId: 'sess-01',
-      );
-      final uri = Uri.parse(url);
-
-      expect(uri.path, '/Videos/item-42/master.m3u8');
-      expect(uri.queryParameters['MediaSourceId'], 'src-1');
-      expect(uri.queryParameters['VideoBitrate'], '5000000');
-      expect(uri.queryParameters['AudioStreamIndex'], '1');
-      expect(uri.queryParameters['SubtitleStreamIndex'], '2');
-      expect(uri.queryParameters['PlaySessionId'], 'sess-01');
-      expect(uri.queryParameters['DeviceId'], 'dev-xyz');
-      expect(uri.queryParameters['api_key'], 'tok-abc');
-    });
-
-    test('buildHlsStreamUrl omits null optional params', () {
-      final url = client.buildHlsStreamUrl('item-42', mediaSourceId: 'src-1');
-      final uri = Uri.parse(url);
-
-      expect(uri.queryParameters['MediaSourceId'], 'src-1');
-      expect(uri.queryParameters.containsKey('VideoBitrate'), isFalse);
-      expect(uri.queryParameters.containsKey('AudioStreamIndex'), isFalse);
-      expect(uri.queryParameters.containsKey('SubtitleStreamIndex'), isFalse);
-      expect(uri.queryParameters.containsKey('PlaySessionId'), isFalse);
-    });
-
-    test('buildHlsStreamUrl path-encodes reserved item id characters', () {
-      final url = client.buildHlsStreamUrl('folder/item #1?x', mediaSourceId: 'src-1');
-      expect(Uri.parse(url).path, '/Videos/folder%2Fitem%20%231%3Fx/master.m3u8');
-    });
-
     test('reportPlaybackProgress sends media source and stream indexes', () async {
       Uri? capturedUri;
       String? capturedBody;
@@ -323,6 +286,45 @@ void main() {
       await scoped.getPlaybackInfo('folder/item #1?x');
 
       expect(capturedUri.toString(), contains('/Items/folder%2Fitem%20%231%3Fx/PlaybackInfo'));
+    });
+
+    test('getPlaybackInfo keeps the known-good lean DeviceProfile', () async {
+      Uri? capturedUri;
+      String? capturedBody;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          capturedBody = request.body;
+          return http.Response(jsonEncode({'MediaSources': []}), 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.getPlaybackInfo(
+        'item-1',
+        maxStreamingBitrate: 5000000,
+        mediaSourceId: 'src-1',
+        audioStreamIndex: 1,
+        subtitleStreamIndex: 2,
+      );
+
+      expect(capturedUri!.queryParameters['MaxStreamingBitrate'], '5000000');
+      expect(capturedUri!.queryParameters.containsKey('IsPlayback'), isFalse);
+      expect(capturedUri!.queryParameters.containsKey('AutoOpenLiveStream'), isFalse);
+      expect(capturedUri!.queryParameters['MediaSourceId'], 'src-1');
+      expect(capturedUri!.queryParameters['AudioStreamIndex'], '1');
+      expect(capturedUri!.queryParameters['SubtitleStreamIndex'], '2');
+
+      final body = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      final profile = body['DeviceProfile'] as Map<String, dynamic>;
+      expect(profile['MaxStreamingBitrate'], 5000000);
+      expect(profile.containsKey('MaxStaticBitrate'), isFalse);
+      expect(profile.containsKey('MusicStreamingTranscodingBitrate'), isFalse);
+      expect(profile['DirectPlayProfiles'], isNotEmpty);
+      expect(profile['TranscodingProfiles'], isNotEmpty);
+      expect(profile['CodecProfiles'], isEmpty);
+      expect(profile.containsKey('SubtitleProfiles'), isFalse);
     });
 
     test('path-encodes reserved ids for browse and watch-state endpoints', () async {
@@ -710,6 +712,8 @@ void main() {
       expect(capturedNextUp, isNotNull);
       expect(capturedNextUp!.queryParameters['seriesId'], 'show-1');
       expect(capturedNextUp!.queryParameters['Limit'], '1');
+      expect(capturedNextUp!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(capturedNextUp!.queryParameters['ImageTypeLimit'], '1');
       expect(capturedNextUp!.queryParameters.containsKey('EnableResumable'), isFalse);
       expect(capturedNextUp!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
     });
@@ -830,11 +834,16 @@ void main() {
       expect(resume.queryParameters['userId'], 'user-1');
       expect(resume.queryParameters['Limit'], '3');
       expect(resume.queryParameters['MediaTypes'], 'Video');
+      expect(resume.queryParameters['Recursive'], 'true');
+      expect(resume.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(resume.queryParameters['ImageTypeLimit'], '1');
       final nextUp = requests.singleWhere((uri) => uri.path == '/Shows/NextUp');
       expect(nextUp.queryParameters['userId'], 'user-1');
       expect(nextUp.queryParameters['Limit'], '3');
       expect(nextUp.queryParameters['EnableResumable'], 'false');
       expect(nextUp.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(nextUp.queryParameters['ImageTypeLimit'], '1');
       expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
     });
 
@@ -892,6 +901,8 @@ void main() {
       expect(nextUp.queryParameters['Limit'], '12');
       expect(nextUp.queryParameters['EnableResumable'], 'false');
       expect(nextUp.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(nextUp.queryParameters['ImageTypeLimit'], '1');
       expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
     });
   });
@@ -920,6 +931,8 @@ void main() {
       expect(nextUp.queryParameters['Limit'], '12');
       expect(nextUp.queryParameters['EnableResumable'], 'false');
       expect(nextUp.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(nextUp.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(nextUp.queryParameters['ImageTypeLimit'], '1');
       expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
     });
   });
@@ -944,6 +957,8 @@ void main() {
       expect(captured!.path, '/Users/user-1/Items/Latest');
       expect(captured!.queryParameters['Limit'], '80');
       expect(captured!.queryParameters['IncludeItemTypes'], 'Movie,Series,Episode');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['ImageTypeLimit'], '1');
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
       client.close();
     });
@@ -957,6 +972,9 @@ void main() {
       expect(captured!.queryParameters['userId'], 'user-1');
       expect(captured!.queryParameters['Limit'], '50');
       expect(captured!.queryParameters['MediaTypes'], 'Video');
+      expect(captured!.queryParameters['Recursive'], 'true');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['ImageTypeLimit'], '1');
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
       client.close();
     });
@@ -972,6 +990,8 @@ void main() {
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
       expect(captured!.queryParameters['EnableResumable'], 'false');
       expect(captured!.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['ImageTypeLimit'], '1');
       expect(captured!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
       client.close();
     });
@@ -984,6 +1004,8 @@ void main() {
       expect(captured!.path, '/Users/user-1/Items/Latest');
       expect(captured!.queryParameters['ParentId'], 'lib-99');
       expect(captured!.queryParameters['Limit'], '30');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['ImageTypeLimit'], '1');
       // ParentId-scoped Latest should NOT also pin IncludeItemTypes (the
       // library already constrains the kinds returned).
       expect(captured!.queryParameters.containsKey('IncludeItemTypes'), isFalse);
@@ -998,6 +1020,9 @@ void main() {
       expect(captured!.path, '/UserItems/Resume');
       expect(captured!.queryParameters['ParentId'], 'lib-99');
       expect(captured!.queryParameters['userId'], 'user-1');
+      expect(captured!.queryParameters['Recursive'], 'true');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['ImageTypeLimit'], '1');
       client.close();
     });
 
@@ -1011,6 +1036,8 @@ void main() {
       expect(captured!.queryParameters['userId'], 'user-1');
       expect(captured!.queryParameters['EnableResumable'], 'false');
       expect(captured!.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
+      expect(captured!.queryParameters['ImageTypeLimit'], '1');
       expect(captured!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
       client.close();
     });

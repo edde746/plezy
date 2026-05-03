@@ -832,6 +832,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
       'userId': connection.userId,
       'Limit': '1',
       'Fields': _browseFields,
+      ...jellyfinImageQueryParameters,
     });
     final onDeckEpisode = nextUp.isEmpty ? null : _mapItem(nextUp.first);
     return (item: item, onDeckEpisode: onDeckEpisode);
@@ -909,7 +910,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     try {
       final seasons = await _http.get(
         '/Shows/${_segment(parentId)}/Seasons',
-        queryParameters: {'userId': connection.userId, 'Fields': _browseFields},
+        queryParameters: {'userId': connection.userId, 'Fields': _browseFields, ...jellyfinImageQueryParameters},
       );
       if (seasons.statusCode == 200) {
         final data = seasons.data;
@@ -926,7 +927,13 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     // collection → items, etc.
     final response = await _http.get(
       '/Items',
-      queryParameters: {'userId': connection.userId, 'ParentId': parentId, 'Fields': _browseFields, 'Limit': '500'},
+      queryParameters: {
+        'userId': connection.userId,
+        'ParentId': parentId,
+        'Fields': _browseFields,
+        'Limit': '500',
+        ...jellyfinImageQueryParameters,
+      },
     );
     throwIfHttpError(response);
     final data = response.data;
@@ -955,6 +962,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'Recursive': 'true',
         'IncludeItemTypes': 'Movie,Episode',
         'Fields': _browseFields,
+        ...jellyfinImageQueryParameters,
       },
     );
     throwIfHttpError(response);
@@ -982,6 +990,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
           'Fields': _queueFields,
           'StartIndex': '$startIndex',
           'Limit': '$_episodeQueuePageSize',
+          ...jellyfinImageQueryParameters,
         },
       );
       throwIfHttpError(response);
@@ -1010,6 +1019,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'Limit': limit.toString(),
         'IncludeItemTypes': 'Movie,Series,Episode',
         'Fields': _browseFields,
+        ...jellyfinImageQueryParameters,
       },
     );
     throwIfHttpError(response);
@@ -1021,7 +1031,12 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     // Matches userLibraryApi.getLatestMedia in the Jellyfin SDK.
     final response = await _http.get(
       '/Users/${_segment(connection.userId)}/Items/Latest',
-      queryParameters: {'Limit': limit.toString(), 'Fields': _browseFields, 'IncludeItemTypes': 'Movie,Series,Episode'},
+      queryParameters: {
+        'Limit': limit.toString(),
+        'Fields': _browseFields,
+        'IncludeItemTypes': 'Movie,Series,Episode',
+        ...jellyfinImageQueryParameters,
+      },
     );
     throwIfHttpError(response);
     final data = response.data;
@@ -1040,6 +1055,8 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'Limit': count.toString(),
         'Fields': _browseFields,
         'MediaTypes': 'Video',
+        'Recursive': 'true',
+        ...jellyfinImageQueryParameters,
       }),
       _safeFetchItemsArray('/Shows/NextUp', {
         'userId': connection.userId,
@@ -1047,6 +1064,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'Fields': _browseFields,
         'EnableResumable': 'false',
         'EnableTotalRecordCount': 'false',
+        ...jellyfinImageQueryParameters,
       }),
     ]);
 
@@ -1065,11 +1083,15 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'Limit': limit.toString(),
         'Fields': _browseFields,
         'IncludeItemTypes': 'Movie,Series,Episode',
+        ...jellyfinImageQueryParameters,
       }),
       _safeFetchItemsArray('/UserItems/Resume', {
         'userId': connection.userId,
         'Limit': limit.toString(),
         'Fields': _browseFields,
+        'MediaTypes': 'Video',
+        'Recursive': 'true',
+        ...jellyfinImageQueryParameters,
       }),
       _safeFetchItemsArray('/Shows/NextUp', {
         'userId': connection.userId,
@@ -1077,6 +1099,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'Fields': _browseFields,
         'EnableResumable': 'false',
         'EnableTotalRecordCount': 'false',
+        ...jellyfinImageQueryParameters,
       }),
     ]);
 
@@ -1125,6 +1148,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'Limit': limit.toString(),
         'ParentId': libraryId,
         'Fields': _browseFields,
+        ...jellyfinImageQueryParameters,
       }),
       _safeFetchItemsArray('/UserItems/Resume', {
         'userId': connection.userId,
@@ -1132,6 +1156,8 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'Limit': limit.toString(),
         'Fields': _browseFields,
         'MediaTypes': 'Video',
+        'Recursive': 'true',
+        ...jellyfinImageQueryParameters,
       }),
       _safeFetchItemsArray('/Shows/NextUp', {
         'userId': connection.userId,
@@ -1140,6 +1166,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'Fields': _browseFields,
         'EnableResumable': 'false',
         'EnableTotalRecordCount': 'false',
+        ...jellyfinImageQueryParameters,
       }),
     ]);
 
@@ -1196,6 +1223,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
           'Limit': effectiveLimit,
           'Fields': _browseFields,
           if (parentId != null) 'ParentId': parentId else 'IncludeItemTypes': 'Movie,Series,Episode',
+          ...jellyfinImageQueryParameters,
         });
         break;
       case 'continue':
@@ -1203,7 +1231,9 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
           'userId': connection.userId,
           'Limit': effectiveLimit,
           'Fields': _browseFields,
+          'Recursive': 'true',
           if (parentId != null) 'ParentId': parentId else 'MediaTypes': 'Video',
+          ...jellyfinImageQueryParameters,
         });
         break;
       case 'nextup':
@@ -1214,6 +1244,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
           'ParentId': ?parentId,
           'EnableResumable': 'false',
           'EnableTotalRecordCount': 'false',
+          ...jellyfinImageQueryParameters,
         });
         break;
       default:
@@ -1226,7 +1257,12 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
   Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10}) async {
     final response = await _http.get(
       '/Items/${_segment(id)}/Similar',
-      queryParameters: {'userId': connection.userId, 'Limit': count.toString(), 'Fields': _browseFields},
+      queryParameters: {
+        'userId': connection.userId,
+        'Limit': count.toString(),
+        'Fields': _browseFields,
+        ...jellyfinImageQueryParameters,
+      },
     );
     throwIfHttpError(response);
     return [
@@ -1299,6 +1335,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'IncludeItemTypes': 'Playlist',
         'Recursive': 'true',
         'Fields': 'Overview,DateCreated,DateLastSaved,ChildCount,Tags',
+        ...jellyfinImageQueryParameters,
       },
     );
     throwIfHttpError(response);
@@ -1340,6 +1377,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'StartIndex': offset.toString(),
         'Limit': limit.toString(),
         'Fields': _browseFields,
+        ...jellyfinImageQueryParameters,
       },
     );
     throwIfHttpError(response);
@@ -1443,6 +1481,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
         'IncludeItemTypes': 'BoxSet',
         'Recursive': 'true',
         'Fields': _browseFields,
+        ...jellyfinImageQueryParameters,
       },
     );
     throwIfHttpError(response);
@@ -1650,35 +1689,9 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     );
   }
 
-  /// HLS master playlist URL for transcoded playback. Use when the file
-  /// container/codecs don't match the player's capabilities. The exact
-  /// negotiation (which streams, what bitrate) is server-driven via the
-  /// `PlaybackInfo` POST that should precede this call when fidelity
-  /// matters; this method assumes the caller already knows what they want.
-  String buildHlsStreamUrl(
-    String itemId, {
-    required String mediaSourceId,
-    int? videoBitrate,
-    int? audioStreamIndex,
-    int? subtitleStreamIndex,
-    String? playSessionId,
-  }) {
-    return buildJellyfinHlsStreamUrl(
-      baseUrl: connection.baseUrl,
-      accessToken: connection.accessToken,
-      deviceId: connection.deviceId,
-      itemId: itemId,
-      mediaSourceId: mediaSourceId,
-      videoBitrate: videoBitrate,
-      audioStreamIndex: audioStreamIndex,
-      subtitleStreamIndex: subtitleStreamIndex,
-      playSessionId: playSessionId,
-    );
-  }
-
   /// Negotiate playback: returns the parsed `MediaSources[]` array and the
   /// server's recommended `PlaySessionId`. Caller decides which media source
-  /// to use and feeds the result into [buildHlsStreamUrl] / direct play.
+  /// to use and feeds the returned `TranscodingUrl` into the player.
   ///
   /// [maxStreamingBitrate] is forwarded as both the top-level field and inside
   /// the `DeviceProfile` so the server caps direct-stream and transcode bitrate
