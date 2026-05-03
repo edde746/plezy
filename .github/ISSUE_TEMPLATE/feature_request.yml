@@ -67,6 +67,7 @@ body:
       options:
         - Jellyfin
         - Plex
+        - Both
 
   - type: textarea
     id: additional
