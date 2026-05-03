@@ -89,7 +89,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
 
     // Pause and stop current playback
     unawaited(currentPlayer.pause());
-    await _progressTracker?.sendProgress('stopped');
+    await _sendStoppedProgressOnce();
     _progressTracker?.stopTracking();
 
     // Ensure the native player is fully disposed before creating the next one
@@ -136,7 +136,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     final playbackState = context.read<PlaybackStateProvider>();
     final database = context.read<AppDatabase>();
 
-    await _progressTracker?.sendProgress('stopped');
+    await _sendStoppedProgressOnce();
     _progressTracker?.stopTracking();
     _progressTracker?.dispose();
     _progressTracker = null;

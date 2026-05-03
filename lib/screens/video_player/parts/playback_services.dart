@@ -19,6 +19,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     MediaSourceInfo? mediaInfo,
   }) {
     if (player == null) return;
+    _stoppedProgressFuture = null;
 
     // Progress tracker — offline mode queues for later sync; online mode
     // dispatches to the right backend through the neutral client.

@@ -343,6 +343,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   int _rewindOnResume = 0;
   Future<void> _lifecycleTransition = Future<void>.value();
   String _playerBackendLabel = 'unknown';
+  Future<void>? _stoppedProgressFuture;
 
   /// Whether to skip lifecycle actions because PiP is active or about to start.
   /// Apple auto-PiP is system-initiated during the background transition, and
@@ -925,6 +926,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             final navigator = Navigator.of(context);
             if (navigator.canPop()) {
               _isExiting.value = true;
+              await _sendStoppedProgressOnce();
+              if (!mounted) return;
               navigator.pop(true);
             }
           }
@@ -937,6 +940,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final navigator = Navigator.of(context);
       if (navigator.canPop()) {
         _isExiting.value = true;
+        await _sendStoppedProgressOnce();
+        if (!mounted) return;
         navigator.pop(true);
       }
     } finally {
@@ -968,10 +973,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _controlsVisible.dispose();
     _toastController.dispose();
 
-    // Stop progress tracking and send final state.
-    // Fire-and-forget: dispose() is synchronous so we can't await, but the
-    // database write is app-level and will typically complete before teardown.
-    _progressTracker?.sendProgress('stopped');
+    // Stop progress tracking and send final state. Normal back navigation
+    // awaits this before popping; dispose keeps a fallback for externally
+    // removed routes where dispose() cannot await.
+    unawaited(_sendStoppedProgressOnce());
     _progressTracker?.stopTracking();
     _progressTracker?.dispose();
     _sendLiveTimeline('stopped');
@@ -1159,6 +1164,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   String get playbackSessionIdentifier => _playbackSessionIdentifier;
   String get playbackTranscodeSessionId => _playbackTranscodeSessionId;
 
+  Future<void> _sendStoppedProgressOnce() {
+    final existing = _stoppedProgressFuture;
+    if (existing != null) return existing;
+
+    final tracker = _progressTracker;
+    if (tracker == null) return Future<void>.value();
+
+    final future = tracker.sendProgress('stopped').catchError((Object e, StackTrace st) {
+      appLogger.d('Stopped progress flush failed', error: e, stackTrace: st);
+    });
+    _stoppedProgressFuture = future;
+    return future;
+  }
+
   /// Dispose the player before replacing the video to avoid race conditions
   Future<void> disposePlayerForNavigation() async {
     if (_isDisposingForNavigation) return;
@@ -1167,7 +1186,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     try {
       _detachFromWatchTogetherSession();
-      await _progressTracker?.sendProgress('stopped');
+      await _sendStoppedProgressOnce();
       _progressTracker?.stopTracking();
       // Clear frame rate matching before disposing (Android only)
       await _clearFrameRateMatching();

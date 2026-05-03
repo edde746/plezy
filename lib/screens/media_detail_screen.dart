@@ -102,6 +102,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _showEpisodesDirectly = false;
   MediaItem? _fullMetadata;
   MediaItem? _onDeckEpisode;
+  final Map<String, int> _localProgressById = {};
   bool _isLoadingMetadata = true;
   List<MediaItem>? _extras;
   List<MediaHub> _relatedHubs = [];
@@ -193,6 +194,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   void onWatchStateChanged(WatchStateEvent event) {
     final epIndex = _episodes.indexWhere((e) => e.id == event.itemId);
 
+    if (event.changeType == WatchStateChangeType.progressUpdate && event.viewOffset != null) {
+      _patchLocalProgress(event.itemId, event.viewOffset!, epIndex: epIndex);
+    } else {
+      _localProgressById.remove(event.itemId);
+    }
+
     if (widget.isOffline) {
       // Offline: skip network refetch — patch the affected episode (or
       // the show metadata) in-memory using the local watch flag the event
@@ -220,6 +227,33 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     } else {
       _refreshWatchState();
     }
+  }
+
+  void _patchLocalProgress(String itemId, int viewOffset, {int? epIndex}) {
+    _localProgressById[itemId] = viewOffset;
+    setStateIfMounted(() {
+      final base = _fullMetadata ?? widget.metadata;
+      if (base.id == itemId) {
+        _fullMetadata = base.copyWith(viewOffsetMs: viewOffset);
+      }
+
+      final onDeckEpisode = _onDeckEpisode;
+      if (onDeckEpisode != null && onDeckEpisode.id == itemId) {
+        _onDeckEpisode = onDeckEpisode.copyWith(viewOffsetMs: viewOffset);
+      }
+
+      final index = epIndex ?? _episodes.indexWhere((e) => e.id == itemId);
+      if (index != -1) {
+        final updated = _episodes[index].copyWith(viewOffsetMs: viewOffset);
+        _episodes[index] = updated;
+        _syncEpisodeToCache(index, updated);
+      }
+    });
+  }
+
+  MediaItem _applyLocalProgress(MediaItem item) {
+    if (!_localProgressById.containsKey(item.id)) return item;
+    return item.copyWith(viewOffsetMs: _localProgressById[item.id]);
   }
 
   @override
@@ -342,9 +376,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final onDeckEpisode = result.onDeckEpisode;
       if (metadata != null) {
         setStateIfMounted(() {
-          _fullMetadata = metadata.copyWith(serverId: serverId, serverName: serverName);
+          _fullMetadata = _applyLocalProgress(metadata.copyWith(serverId: serverId, serverName: serverName));
           if (onDeckEpisode != null) {
-            _onDeckEpisode = onDeckEpisode.copyWith(serverId: serverId, serverName: serverName);
+            _onDeckEpisode = _applyLocalProgress(onDeckEpisode.copyWith(serverId: serverId, serverName: serverName));
           }
         });
       }
@@ -382,8 +416,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         setStateIfMounted(() {
           final i = _episodes.indexWhere((e) => e.id == ratingKey);
           if (i != -1) {
-            _episodes[i] = refreshed;
-            _syncEpisodeToCache(i, refreshed);
+            final updated = _applyLocalProgress(refreshed);
+            _episodes[i] = updated;
+            _syncEpisodeToCache(i, updated);
           }
         });
       }
@@ -915,7 +950,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       );
       if (!mounted) return;
       setState(() {
-        _fullMetadata = cachedMetadata ?? _metadata;
+        _fullMetadata = _applyLocalProgress(cachedMetadata ?? _metadata);
         _isLoadingMetadata = false;
       });
 
@@ -941,7 +976,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         // Truly orphaned item (server gone) — fall back to widget metadata
         // and let downstream loaders no-op gracefully.
         setState(() {
-          _fullMetadata = _metadata;
+          _fullMetadata = _applyLocalProgress(_metadata);
           _isLoadingMetadata = false;
         });
         return;
@@ -956,8 +991,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // Preserve serverId from original metadata
       final serverId = _metadata.serverId;
       final serverName = _metadata.serverName;
-      final base = (metadata ?? _metadata).copyWith(serverId: serverId, serverName: serverName);
-      final onDeckWithServerId = onDeckEpisode?.copyWith(serverId: serverId, serverName: serverName);
+      final base = _applyLocalProgress((metadata ?? _metadata).copyWith(serverId: serverId, serverName: serverName));
+      final onDeckWithServerId = onDeckEpisode == null
+          ? null
+          : _applyLocalProgress(onDeckEpisode.copyWith(serverId: serverId, serverName: serverName));
 
       setState(() {
         _fullMetadata = base;
@@ -981,7 +1018,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // Fallback to passed metadata on error
       if (!mounted) return;
       setState(() {
-        _fullMetadata = _metadata;
+        _fullMetadata = _applyLocalProgress(_metadata);
         _isLoadingMetadata = false;
       });
 
@@ -1143,7 +1180,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
 
     setState(() {
-      _episodes = seasonEpisodes;
+      _episodes = seasonEpisodes.map(_applyLocalProgress).toList();
       _isLoadingEpisodes = false;
     });
   }
@@ -1186,7 +1223,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final cached = _episodeCache[season.id];
     if (cached != null) {
       setStateIfMounted(() {
-        _episodes = List.of(cached);
+        _episodes = cached.map(_applyLocalProgress).toList();
         _isLoadingSeasonEpisodes = false;
       });
       return;
@@ -1203,7 +1240,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           ..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
         _episodeCache[season.id] = seasonEpisodes;
         setStateIfMounted(() {
-          _episodes = List.of(seasonEpisodes);
+          _episodes = seasonEpisodes.map(_applyLocalProgress).toList();
           _isLoadingSeasonEpisodes = false;
         });
       } else {
@@ -1225,6 +1262,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 grandparentTitle: _metadata.title,
               ),
             )
+            .map(_applyLocalProgress)
             .toList();
         _episodeCache[season.id] = episodesWithServerId;
         setStateIfMounted(() {
@@ -1858,8 +1896,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                 final refreshed = await client?.fetchItem(episode.id);
                 if (refreshed != null) {
                   setStateIfMounted(() {
-                    _episodes[index] = refreshed;
-                    _syncEpisodeToCache(index, refreshed);
+                    final updated = _applyLocalProgress(refreshed);
+                    _episodes[index] = updated;
+                    _syncEpisodeToCache(index, updated);
                   });
                 }
               },
@@ -1873,8 +1912,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     setStateIfMounted(() {
                       final i = _episodes.indexWhere((e) => e.id == ratingKey);
                       if (i != -1) {
-                        _episodes[i] = refreshed;
-                        _syncEpisodeToCache(i, refreshed);
+                        final updated = _applyLocalProgress(refreshed);
+                        _episodes[i] = updated;
+                        _syncEpisodeToCache(i, updated);
                       }
                     });
                   }
@@ -1936,6 +1976,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               grandparentTitle: e.grandparentTitle ?? fallbackGrandparentTitle,
             ),
           )
+          .map(_applyLocalProgress)
           .toList();
       setStateIfMounted(() {
         _episodes = enriched;
@@ -1954,7 +1995,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     if (nextEpisode != null) {
       setStateIfMounted(() {
-        _onDeckEpisode = nextEpisode;
+        _onDeckEpisode = _applyLocalProgress(nextEpisode);
       });
       appLogger.d('Offline OnDeck: S${nextEpisode.parentIndex}E${nextEpisode.index} - ${nextEpisode.title}');
     }
