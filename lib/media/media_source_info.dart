@@ -1,5 +1,5 @@
 import '../utils/codec_utils.dart';
-import '../utils/track_label_builder.dart' show buildTrackLabel;
+import '../utils/track_label_builder.dart' show TrackLabelBuilder, buildTrackLabel;
 
 class MediaSourceInfo {
   final String videoUrl;
@@ -149,9 +149,13 @@ class MediaSubtitleTrack with _TrackLabelMixin {
   });
 
   String get label {
-    final additionalParts = <String>[];
-    if (forced) additionalParts.add('Forced');
-    return buildLabel(additionalParts);
+    return TrackLabelBuilder.buildSubtitleLabel(
+      title: displayTitle ?? title,
+      language: languageCode ?? language,
+      codec: codec,
+      forced: forced,
+      index: (index ?? id) - 1,
+    );
   }
 
   /// Returns true if this subtitle track is an external file (sidecar subtitle).

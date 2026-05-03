@@ -33,6 +33,7 @@ import '../utils/log_redaction_manager.dart';
 import '../utils/external_ids.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/resolution_label.dart';
+import '../utils/track_label_builder.dart';
 import '../utils/watch_state_notifier.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
@@ -610,29 +611,12 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     if (bundle == null) {
       throw PlaybackException('Item ${metadata.id} returned no MediaSources');
     }
-    final mediaInfo = jellyfinMediaSourceToMediaSourceInfo(
+    var mediaInfo = jellyfinMediaSourceToMediaSourceInfo(
       bundle.selectedSource,
       chapters: bundle.chapters,
       trickplay: bundle.trickplay,
     );
-
-    final externalSubtitles = <SubtitleTrack>[];
-    for (final track in mediaInfo.subtitleTracks) {
-      if (track.isExternal) {
-        final path = track.key ?? _jellyfinSubtitleFallbackPath(metadata.id, bundle.selectedSourceId, track);
-        if (path == null) continue;
-        // Jellyfin's subtitle URL is a path relative to baseUrl; build the
-        // absolute URL with the api_key query param.
-        final url = _withApiKey(path);
-        externalSubtitles.add(
-          SubtitleTrack.uri(
-            url,
-            title: track.displayTitle ?? track.title ?? track.language,
-            language: track.languageCode,
-          ),
-        );
-      }
-    }
+    var externalSubtitles = _buildExternalSubtitles(metadata.id, bundle.selectedSourceId, mediaInfo);
 
     // Only forward MediaSourceId when there's actually more than one source —
     // single-source items have `MediaSourceId == itemId` so the param is a
@@ -669,6 +653,19 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
             }
           }
           chosenSource ??= sources.first is Map<String, dynamic> ? sources.first as Map<String, dynamic> : null;
+        }
+        final chosenStreams = chosenSource?['MediaStreams'];
+        if (chosenSource != null && chosenStreams is List && chosenStreams.isNotEmpty) {
+          mediaInfo = jellyfinMediaSourceToMediaSourceInfo(
+            chosenSource,
+            chapters: bundle.chapters,
+            trickplay: bundle.trickplay,
+          );
+          externalSubtitles = _buildExternalSubtitles(
+            metadata.id,
+            chosenSource['Id'] as String? ?? bundle.selectedSourceId,
+            mediaInfo,
+          );
         }
         final transcodingUrl = chosenSource?['TranscodingUrl'];
         if (transcodingUrl is String && transcodingUrl.isNotEmpty) {
@@ -725,6 +722,28 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
       pathSegments: ['Videos', itemId, sourceId, 'Subtitles', streamIndex.toString(), 'Stream.$codec'],
     ).path;
     return path.startsWith('/') ? path : '/$path';
+  }
+
+  List<SubtitleTrack> _buildExternalSubtitles(String itemId, String? mediaSourceId, MediaSourceInfo mediaInfo) {
+    final externalSubtitles = <SubtitleTrack>[];
+    for (final track in mediaInfo.subtitleTracks) {
+      if (!track.isExternal) continue;
+      final path = track.key ?? _jellyfinSubtitleFallbackPath(itemId, mediaSourceId, track);
+      if (path == null) continue;
+      // Jellyfin's subtitle URL is a path relative to baseUrl; build the
+      // absolute URL with the api_key query param.
+      final url = _withApiKey(path);
+      externalSubtitles.add(
+        SubtitleTrack.uri(
+          url,
+          title:
+              cleanSubtitleTitle(track.displayTitle ?? track.title, codec: track.codec) ??
+              cleanTrackMetadataValue(track.language),
+          language: cleanTrackMetadataValue(track.languageCode),
+        ),
+      );
+    }
+    return externalSubtitles;
   }
 
   /// Internal accessor for [PlaybackInitializationService]. Returns the
@@ -1751,6 +1770,15 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
                 'AudioCodec': 'aac,mp3,ac3,eac3,flac,opus,vorbis,dts',
               },
             ],
+            'SubtitleProfiles': const <Map<String, Object?>>[
+              {'Format': 'srt', 'Method': 'External'},
+              {'Format': 'ass', 'Method': 'External'},
+              {'Format': 'ssa', 'Method': 'External'},
+              {'Format': 'vtt', 'Method': 'External'},
+              {'Format': 'pgssub', 'Method': 'External'},
+              {'Format': 'dvdsub', 'Method': 'External'},
+              {'Format': 'dvbsub', 'Method': 'External'},
+            ],
           },
         },
       );
@@ -2227,12 +2255,12 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
             for (final raw in streams) {
               if (raw is! Map<String, dynamic>) continue;
               if (raw['Type'] != 'Subtitle') continue;
-              final isExternal = raw['IsExternal'] == true;
-              if (!isExternal) continue;
+              final fields = parseJellyfinStreamFields(raw);
+              if (!fields.isExternal) continue;
               final index = raw['Index'];
               if (index is! int) continue;
-              final codec = (raw['Codec'] as String?)?.toLowerCase();
-              final delivery = raw['DeliveryUrl'] as String?;
+              final codec = fields.codec?.toLowerCase();
+              final delivery = fields.deliveryUrl;
               final url = _withApiKey(
                 delivery != null && delivery.isNotEmpty
                     ? delivery
@@ -2243,10 +2271,10 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
                   id: index,
                   url: url,
                   codec: codec,
-                  language: raw['Language'] as String?,
-                  languageCode: raw['Language'] as String?,
-                  forced: raw['IsForced'] == true,
-                  displayTitle: raw['DisplayTitle'] as String?,
+                  language: fields.language,
+                  languageCode: fields.languageCode,
+                  forced: fields.isForced,
+                  displayTitle: fields.displayTitle,
                 ),
               );
             }

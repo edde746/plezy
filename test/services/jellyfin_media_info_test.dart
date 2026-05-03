@@ -145,6 +145,24 @@ void main() {
       expect(info.subtitleTracks.single.isExternal, isFalse);
     });
 
+    test('DeliveryMethod External marks negotiated subtitles as external', () {
+      final info = jellyfinMediaSourceToMediaSourceInfo({
+        'MediaStreams': [
+          {
+            'Index': 2,
+            'Type': 'Subtitle',
+            'Codec': 'srt',
+            'DeliveryMethod': 'External',
+            'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/2/Stream.srt',
+          },
+        ],
+      });
+
+      final sub = info.subtitleTracks.single;
+      expect(sub.key, '/Videos/item-1/src-1/Subtitles/2/Stream.srt');
+      expect(sub.isExternal, isTrue);
+    });
+
     test('external subtitle without DeliveryUrl remains external for URL fallback', () {
       final info = jellyfinMediaSourceToMediaSourceInfo({
         'MediaStreams': [

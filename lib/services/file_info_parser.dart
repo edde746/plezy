@@ -30,6 +30,8 @@ typedef JellyfinStreamFields = ({
 });
 
 JellyfinStreamFields parseJellyfinStreamFields(Map<String, dynamic> s, {int fallbackIndex = 0}) {
+  final deliveryMethod = (s['DeliveryMethod'] as String?)?.toLowerCase();
+  final isExternal = deliveryMethod != null ? deliveryMethod == 'external' : s['IsExternal'] == true;
   return (
     type: (s['Type'] as String?)?.toLowerCase(),
     index: flexibleInt(s['Index']) ?? fallbackIndex,
@@ -40,7 +42,7 @@ JellyfinStreamFields parseJellyfinStreamFields(Map<String, dynamic> s, {int fall
     displayTitle: s['DisplayTitle'] as String?,
     isDefault: s['IsDefault'] as bool? ?? false,
     isForced: s['IsForced'] as bool? ?? false,
-    isExternal: s['IsExternal'] as bool? ?? false,
+    isExternal: isExternal,
     deliveryUrl: s['DeliveryUrl'] as String?,
     channels: flexibleInt(s['Channels']),
     frameRate: flexibleDouble(s['RealFrameRate']) ?? flexibleDouble(s['AverageFrameRate']),

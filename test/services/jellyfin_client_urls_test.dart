@@ -113,7 +113,7 @@ void main() {
       expect(body['IsPaused'], isTrue);
     });
 
-    test('resolveDownload pins direct stream URL to selected media source', () async {
+    test('resolveDownload pins direct stream URL and subtitles to selected media source', () async {
       final requests = <Uri>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
@@ -139,7 +139,21 @@ void main() {
               jsonEncode({
                 'MediaSources': [
                   {'Id': 'src-1', 'MediaStreams': []},
-                  {'Id': 'src-2', 'MediaStreams': []},
+                  {
+                    'Id': 'src-2',
+                    'MediaStreams': [
+                      {
+                        'Index': 3,
+                        'Type': 'Subtitle',
+                        'Codec': 'srt',
+                        'Language': 'eng',
+                        'DisplayLanguage': 'English',
+                        'DisplayTitle': 'English - SRT',
+                        'DeliveryMethod': 'External',
+                        'DeliveryUrl': '/Videos/item-1/src-2/Subtitles/3/Stream.srt',
+                      },
+                    ],
+                  },
                 ],
               }),
               200,
@@ -160,6 +174,14 @@ void main() {
       expect(uri.queryParameters['MediaSourceId'], 'src-2');
       expect(uri.queryParameters['Container'], 'mkv');
       expect(requests.map((u) => u.path), contains('/Items/item-1/PlaybackInfo'));
+      expect(resolution.externalSubtitles, hasLength(1));
+      final subtitle = resolution.externalSubtitles.single;
+      expect(subtitle.id, 3);
+      expect(subtitle.language, 'English');
+      expect(subtitle.languageCode, 'eng');
+      final subtitleUri = Uri.parse(subtitle.url);
+      expect(subtitleUri.path, '/Videos/item-1/src-2/Subtitles/3/Stream.srt');
+      expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
     });
 
     test('getPlaybackInitialization preserves PlaySessionId from TranscodingUrl', () async {
@@ -187,7 +209,18 @@ void main() {
                   {
                     'Id': 'src-1',
                     'TranscodingUrl': '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=play-session-1',
-                    'MediaStreams': [],
+                    'MediaStreams': [
+                      {'Index': 0, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng', 'DisplayTitle': 'English - AAC'},
+                      {
+                        'Index': 2,
+                        'Type': 'Subtitle',
+                        'Codec': 'srt',
+                        'Language': 'eng',
+                        'DisplayTitle': 'English - SRT',
+                        'DeliveryMethod': 'External',
+                        'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/2/Stream.srt',
+                      },
+                    ],
                   },
                 ],
               }),
@@ -214,6 +247,13 @@ void main() {
       final uri = Uri.parse(result.videoUrl!);
       expect(uri.queryParameters['PlaySessionId'], 'play-session-1');
       expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(result.mediaInfo!.subtitleTracks, hasLength(1));
+      expect(result.externalSubtitles, hasLength(1));
+      expect(result.externalSubtitles.single.title, 'English');
+      expect(result.externalSubtitles.single.language, 'eng');
+      final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
+      expect(subtitleUri.path, '/Videos/item-1/src-1/Subtitles/2/Stream.srt');
+      expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
     });
 
     test('getPlaybackInitialization uses negotiated DirectStreamUrl when transcode URL is absent', () async {
@@ -288,7 +328,7 @@ void main() {
       expect(capturedUri.toString(), contains('/Items/folder%2Fitem%20%231%3Fx/PlaybackInfo'));
     });
 
-    test('getPlaybackInfo keeps the known-good lean DeviceProfile', () async {
+    test('getPlaybackInfo advertises external subtitle support', () async {
       Uri? capturedUri;
       String? capturedBody;
       final scoped = JellyfinClient.forTesting(
@@ -324,7 +364,12 @@ void main() {
       expect(profile['DirectPlayProfiles'], isNotEmpty);
       expect(profile['TranscodingProfiles'], isNotEmpty);
       expect(profile['CodecProfiles'], isEmpty);
-      expect(profile.containsKey('SubtitleProfiles'), isFalse);
+      final subtitleProfiles = profile['SubtitleProfiles'] as List<dynamic>;
+      expect(
+        subtitleProfiles.map((profile) => (profile as Map<String, dynamic>)['Format']),
+        containsAll(['srt', 'ass', 'ssa', 'vtt', 'pgssub', 'dvdsub', 'dvbsub']),
+      );
+      expect(subtitleProfiles.every((profile) => (profile as Map<String, dynamic>)['Method'] == 'External'), isTrue);
     });
 
     test('path-encodes reserved ids for browse and watch-state endpoints', () async {

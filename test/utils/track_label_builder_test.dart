@@ -92,9 +92,37 @@ void main() {
       expect(TrackLabelBuilder.buildSubtitleLabel(language: 'en', codec: '', index: 0), 'EN');
     });
 
+    test('does not duplicate forced when the title already says forced', () {
+      expect(
+        TrackLabelBuilder.buildSubtitleLabel(title: 'Forced', language: 'en', codec: 'subrip', forced: true, index: 0),
+        'Forced · EN · SRT',
+      );
+    });
+
     test('falls back to "Track N" with default prefix', () {
       expect(TrackLabelBuilder.buildSubtitleLabel(index: 0), 'Track 1');
       expect(TrackLabelBuilder.buildSubtitleLabel(index: 7), 'Track 8');
+    });
+
+    test('cleans raw Jellyfin/ExoPlayer subtitle metadata prefixes', () {
+      expect(
+        TrackLabelBuilder.buildSubtitleLabel(
+          title: 'title=German - SUBRIP',
+          language: 'LANG=DEU',
+          codec: 'srt',
+          index: 0,
+        ),
+        'German · DEU · SRT',
+      );
+      expect(
+        TrackLabelBuilder.buildSubtitleLabel(
+          title: 'title=English - Default - SUBRIP',
+          language: 'LANG=ENG',
+          codec: 'subrip',
+          index: 1,
+        ),
+        'English - Default · ENG · SRT',
+      );
     });
   });
 }

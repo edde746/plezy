@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show protected;
 import 'package:flutter/services.dart';
 
 import '../../utils/app_logger.dart';
+import '../../utils/track_label_builder.dart';
 import '../font_loader.dart';
 import '../models.dart';
 import 'player.dart';
@@ -416,8 +417,8 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         audioTracks.add(
           AudioTrack(
             id: id,
-            title: track['title'] as String?,
-            language: track['lang'] as String?,
+            title: cleanTrackMetadataValue(track['title'] as String?),
+            language: cleanTrackMetadataValue(track['lang'] as String?),
             codec: track['codec'] as String?,
             channels: (track['demux-channel-count'] as num?)?.toInt(),
             sampleRate: (track['demux-samplerate'] as num?)?.toInt(),
@@ -426,12 +427,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
         );
       } else if (type == 'sub') {
         if (selected) selectedSubtitleId = id;
+        final codec = track['codec'] as String?;
         subtitleTracks.add(
           SubtitleTrack(
             id: id,
-            title: track['title'] as String?,
-            language: track['lang'] as String?,
-            codec: track['codec'] as String?,
+            title: cleanSubtitleTitle(track['title'] as String?, codec: codec),
+            language: cleanTrackMetadataValue(track['lang'] as String?),
+            codec: codec,
             isDefault: track['default'] as bool? ?? false,
             isForced: track['forced'] as bool? ?? false,
             isExternal: track['external'] as bool? ?? false,
