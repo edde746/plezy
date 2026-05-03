@@ -555,7 +555,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       exoPlayer!!.addListener(this)
       exoPlayer!!.addAnalyticsListener(decoderHangListener)
       exoPlayer!!.setVideoFrameMetadataListener { presentationTimeUs, releaseTimeNs, _, _ ->
-        assSubtitleSurfaceView?.requestRender(presentationTimeUs, releaseTimeNs)
+        // ASS bypasses Media3's text renderer, so apply sub-delay before libass renders.
+        assSubtitleSurfaceView?.requestRender(presentationTimeUs - subtitleDelayUs.get(), releaseTimeNs)
         val count = fpsTimestampCount
         if (count < FPS_SAMPLE_COUNT) {
           fpsTimestamps[count] = presentationTimeUs
