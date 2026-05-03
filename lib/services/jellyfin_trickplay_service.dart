@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/painting.dart' show ImageConfiguration, ImageProvider, ImageStreamListener;
 
 import '../media/media_source_info.dart';
@@ -36,7 +36,7 @@ class JellyfinTrickplayService implements ScrubPreviewSource {
 
   /// Provider cache by sheet index: scrubbing typically dwells on one sheet
   /// for many hover events, so we reuse the same wrapper rather than
-  /// reallocating each frame. cached_network_image's own cache is keyed by
+  /// reallocating each frame. The image cache itself is keyed by
   /// URL, but the wrapper object itself isn't free.
   final Map<int, ImageProvider> _providerCache = {};
 

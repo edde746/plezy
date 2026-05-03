@@ -40,7 +40,7 @@ TrickplayInfo _info({
 );
 
 /// Stub that returns a constant 1×1 transparent image for any URL — keeps
-/// tests off path_provider / cached_network_image's disk cache.
+/// tests off path_provider / the image disk cache.
 ImageProvider _fakeSheet(String _) => MemoryImage(Uint8List.fromList(const [0]));
 
 void main() {

@@ -13,8 +13,7 @@ dependencies:
   intl: ^0.20.2
   json_annotation: ^4.9.0
   shared_preferences: ^2.5.4
-  cached_network_image: ^3.4.1
-  flutter_cache_manager: ^3.4.1
+  cached_network_image_ce: 4.6.4
   http: ^1.2.0
   url_launcher: ^6.3.0
   uuid: ^4.4.0

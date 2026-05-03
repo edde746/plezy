@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -168,7 +168,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
                       height: 120,
                       fit: BoxFit.cover,
                       memCacheHeight: (120 * MediaQuery.devicePixelRatioOf(context)).round(),
-                      errorWidget: (_, _, _) => const SizedBox.shrink(),
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
                     ),
                   ),
                 ),

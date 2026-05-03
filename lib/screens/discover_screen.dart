@@ -10,7 +10,7 @@ import '../focus/focusable_action_bar.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import '../utils/global_key_utils.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image_ce/cached_network_image.dart';
 
 import '../services/image_cache_service.dart';
 import '../media/media_item.dart';
@@ -1498,7 +1498,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             memCacheHeight: memHeight,
                             placeholder: (context, url) =>
                                 ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-                            errorWidget: (context, url, error) =>
+                            errorBuilder: (context, error, stackTrace) =>
                                 ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
                           ),
                         );
@@ -1572,7 +1572,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 memCacheWidth: (400 * dpr).clamp(200, 800).round(),
                                 alignment: isLargeScreen ? Alignment.bottomLeft : Alignment.bottomCenter,
                                 placeholder: (context, url) => const SizedBox.shrink(),
-                                errorWidget: (context, url, error) {
+                                errorBuilder: (context, error, stackTrace) {
                                   // Fallback to text if logo fails to load
                                   final theme = Theme.of(context);
                                   final colorScheme = theme.colorScheme;

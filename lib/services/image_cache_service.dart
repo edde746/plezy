@@ -1,102 +1,41 @@
-import 'dart:io';
-
-import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+// CE's public conditional export hides the IO-only httpClientFactory parameter
+// behind a narrower unsupported-platform stub.
+// ignore: implementation_imports
+import 'package:cached_network_image_ce/src/cache/default_cache_manager.dart' as ce_cache;
 import 'package:http/http.dart' as http;
 
-import '../utils/platform_detector.dart';
 import '../utils/media_server_http_client.dart';
 
-/// Custom cache manager for media-server image transcoding with HTTP/2
-/// multiplexing. Used for both Plex and Jellyfin artwork (the class name
-/// predates Jellyfin support — it's backend-neutral).
+/// Shared cache manager for media-server image artwork. Used for both Plex and
+/// Jellyfin artwork (the class name predates Jellyfin support — it's
+/// backend-neutral).
 ///
 /// Uses the platform-native HTTP client so iOS/macOS (CupertinoClient) and
 /// Android (CronetClient) benefit from HTTP/2 connection multiplexing —
 /// many concurrent image downloads over a single connection instead of
 /// being limited to a handful of HTTP/1.1 connections.
-class PlexImageCacheManager extends CacheManager with ImageCacheManager {
-  static const _key = 'plexImageCache';
-
+class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
   static final PlexImageCacheManager instance = PlexImageCacheManager._();
 
-  PlexImageCacheManager._() : super(_buildConfig());
-
-  static Config _buildConfig() {
-    final fileService = _HttpFileService(httpClient.inner);
-    // tvOS has no sqflite plugin, so force the JSON cache-info repo there.
-    // On other platforms we let flutter_cache_manager pick its default repo.
-    if (PlatformDetector.isAppleTV()) {
-      return Config(
-        _key,
+  PlexImageCacheManager._()
+    : super(
         stalePeriod: const Duration(days: 14),
         maxNrOfCacheObjects: 3000,
-        fileService: fileService,
-        repo: JsonCacheInfoRepository(databaseName: _key),
+        httpClientFactory: () => _SharedHttpClient(httpClient.inner),
       );
-    }
-    return Config(_key, stalePeriod: const Duration(days: 14), maxNrOfCacheObjects: 3000, fileService: fileService);
-  }
 }
 
-class _HttpFileService extends FileService {
-  final http.Client _client;
+/// CE closes each factory-created client after a download. Wrap the app-wide
+/// shared client so image requests reuse its platform transport without
+/// transferring ownership of its lifecycle.
+class _SharedHttpClient extends http.BaseClient {
+  final http.Client _inner;
 
-  _HttpFileService(this._client);
-
-  @override
-  Future<FileServiceResponse> get(String url, {Map<String, String>? headers}) async {
-    final request = http.Request('GET', Uri.parse(url));
-    if (headers != null) request.headers.addAll(headers);
-    final response = await _client.send(request);
-    return _HttpGetResponse(response);
-  }
-}
-
-class _HttpGetResponse implements FileServiceResponse {
-  final http.StreamedResponse _response;
-  final DateTime _receivedTime = DateTime.now();
-
-  _HttpGetResponse(this._response);
+  _SharedHttpClient(this._inner);
 
   @override
-  Stream<List<int>> get content => _response.stream;
+  Future<http.StreamedResponse> send(http.BaseRequest request) => _inner.send(request);
 
   @override
-  int? get contentLength {
-    final value = _response.headers[HttpHeaders.contentLengthHeader];
-    return value != null ? int.tryParse(value) : null;
-  }
-
-  @override
-  int get statusCode => _response.statusCode;
-
-  @override
-  DateTime get validTill {
-    var ageDuration = const Duration(days: 7);
-    final controlHeader = _response.headers[HttpHeaders.cacheControlHeader];
-    if (controlHeader != null) {
-      for (final setting in controlHeader.split(',')) {
-        final s = setting.trim().toLowerCase();
-        if (s == 'no-cache') ageDuration = Duration.zero;
-        if (s.startsWith('max-age=')) {
-          final secs = int.tryParse(s.split('=')[1]) ?? 0;
-          if (secs > 0) ageDuration = Duration(seconds: secs);
-        }
-      }
-    }
-    return _receivedTime.add(ageDuration);
-  }
-
-  @override
-  String? get eTag => _response.headers[HttpHeaders.etagHeader];
-
-  @override
-  String get fileExtension {
-    final contentTypeHeader = _response.headers[HttpHeaders.contentTypeHeader];
-    if (contentTypeHeader != null) {
-      final ct = ContentType.parse(contentTypeHeader);
-      return '.${ct.subType}';
-    }
-    return '';
-  }
+  void close() {}
 }

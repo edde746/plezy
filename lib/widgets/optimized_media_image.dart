@@ -1,11 +1,15 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
+
+import 'package:cached_network_image_ce/cached_network_image.dart';
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import '../services/image_cache_service.dart';
+import 'package:plezy/widgets/app_icon.dart';
+
 import '../media/media_server_client.dart';
+import '../services/image_cache_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/obfuscation_utils.dart';
@@ -356,6 +360,6 @@ class OptimizedMediaImage extends StatelessWidget {
     // so the URL hash alone uniquely identifies the bytes on disk. Including
     // mem-cache dimensions here would re-introduce churn on every pixel of
     // window resize and defeat getMemCacheDimensions' bucketing.
-    return 'plex_optimized_${imageUrl.hashCode}';
+    return 'plex_optimized_${sha1.convert(utf8.encode(imageUrl))}';
   }
 }

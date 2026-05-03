@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../services/image_cache_service.dart';
@@ -822,7 +822,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       fit: BoxFit.cover,
       memCacheHeight: memCacheHeight,
       placeholder: (context, url) => const PlaceholderContainer(),
-      errorWidget: (context, url, error) => _buildHeroNetworkArtwork(
+      errorBuilder: (context, error, stackTrace) => _buildHeroNetworkArtwork(
         context,
         client: client,
         artworkPaths: artworkPaths,
@@ -1571,7 +1571,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   fit: BoxFit.cover,
                   memCacheWidth: memWidth,
                   placeholder: (context, url) => const PlaceholderContainer(),
-                  errorWidget: (context, url, error) => const PlaceholderContainer(),
+                  errorBuilder: (context, error, stackTrace) => const PlaceholderContainer(),
                 ),
               );
             }
@@ -2528,7 +2528,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                               alignment: Alignment.centerLeft,
                               memCacheWidth: (400 * dpr).clamp(200, 800).round(),
                               placeholder: (context, url) => const SizedBox.shrink(),
-                              errorWidget: (context, url, error) => _buildTitleText(context, metadata.displayTitle),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  _buildTitleText(context, metadata.displayTitle),
                             ),
                             sigma: 10,
                             clip: false,

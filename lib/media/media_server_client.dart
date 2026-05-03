@@ -332,7 +332,7 @@ abstract class MediaServerClient {
 
   // ── Images ───────────────────────────────────────────────────────
   /// Resolve a backend-relative thumbnail path to a fully-qualified URL ready
-  /// for `cached_network_image`. Returns an empty string for null/empty
+  /// for cached image providers. Returns an empty string for null/empty
   /// inputs.
   ///
   /// When [width]/[height] are provided, the implementation should request
