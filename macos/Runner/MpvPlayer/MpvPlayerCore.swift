@@ -7,6 +7,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private weak var window: NSWindow?
   private var playbackActivity: NSObjectProtocol?
   private var layerHiddenForOcclusion = false
+  private var isDisposed = false
 
   func initialize(in window: NSWindow) -> Bool {
     guard !isInitialized else {
@@ -170,6 +171,9 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   }
 
   func dispose() {
+    if isDisposed { return }
+    isDisposed = true
+
     endPlaybackActivity()
     NotificationCenter.default.removeObserver(self)
     disposeSharedState(destroySynchronously: false)
