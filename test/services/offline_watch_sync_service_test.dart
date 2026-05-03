@@ -828,7 +828,7 @@ void main() {
             pathsByUser[userId]!.add('${request.method} ${request.url.path}?${request.url.query}');
             if (request.method == 'GET' && request.url.path == '/Users/$userId/Items/item-1') {
               return http.Response(
-                '{"Id":"item-1","Type":"Movie","Name":"Movie $userId","UserData":{"PlayCount":1}}',
+                '{"Id":"item-1","Type":"Movie","Name":"Movie $userId","UserData":{"PlayCount":1,"Played":true}}',
                 200,
                 headers: {'content-type': 'application/json'},
               );
@@ -867,6 +867,53 @@ void main() {
       expect(events.single.cacheServerId, 'jf-machine/user-b');
     });
 
+    test('watch-state pull does not treat Jellyfin PlayCount alone as watched', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      final paths = <String>[];
+      final userB = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-b'),
+        httpClient: MockClient((request) async {
+          paths.add('${request.method} ${request.url.path}?${request.url.query}');
+          if (request.method == 'GET' && request.url.path == '/Users/user-b/Items/item-1') {
+            return http.Response(
+              '{"Id":"item-1","Type":"Movie","Name":"Started Movie","UserData":{"PlayCount":1,"Played":false}}',
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(userB.close);
+      final events = <WatchStateEvent>[];
+      final sub = WatchStateNotifier().stream.listen(events.add);
+      addTearDown(sub.cancel);
+
+      await db.insertDownload(
+        serverId: 'jf-machine',
+        clientScopeId: 'jf-machine/user-b',
+        ratingKey: 'item-1',
+        globalKey: 'jf-machine:item-1',
+        type: 'movie',
+        status: 3,
+      );
+      await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'jf-machine:item-1');
+      svc.setActiveProfileId('profile-b');
+
+      mgr.debugRegisterJellyfinClientForTesting(userB);
+      await svc.syncWatchStatesFromServer();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(paths.where((p) => p.startsWith('GET /Users/user-b/Items/item-1?')), isNotEmpty);
+      expect(events, isEmpty);
+    });
+
     test('watch-state pull uses active scope for shared episode season batches', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
       addTearDown(() async {
@@ -887,14 +934,14 @@ void main() {
             }
             if (request.method == 'GET' && request.url.path == '/Items') {
               return http.Response(
-                '{"Items":[{"Id":"ep-1","Type":"Episode","Name":"Episode $userId","UserData":{"PlayCount":1}}]}',
+                '{"Items":[{"Id":"ep-1","Type":"Episode","Name":"Episode $userId","UserData":{"PlayCount":1,"Played":true}}]}',
                 200,
                 headers: {'content-type': 'application/json'},
               );
             }
             if (request.method == 'GET' && request.url.path == '/Users/$userId/Items/ep-1') {
               return http.Response(
-                '{"Id":"ep-1","Type":"Episode","Name":"Episode $userId","UserData":{"PlayCount":1}}',
+                '{"Id":"ep-1","Type":"Episode","Name":"Episode $userId","UserData":{"PlayCount":1,"Played":true}}',
                 200,
                 headers: {'content-type': 'application/json'},
               );

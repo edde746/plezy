@@ -583,7 +583,7 @@ void main() {
         'Name': 'Active User Episode',
         'SeriesId': 'show-1',
         'SeasonId': 'season-1',
-        'UserData': {'PlayCount': 1},
+        'UserData': {'PlayCount': 1, 'Played': true},
       });
       await db.insertDownload(
         serverId: 'jf-machine',
