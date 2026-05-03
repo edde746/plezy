@@ -27,6 +27,7 @@ import androidx.media3.common.TrackGroup
 import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.common.Tracks
 import androidx.media3.common.VideoSize
+import androidx.media3.common.text.Cue
 import androidx.media3.common.text.CueGroup
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
@@ -665,10 +666,44 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   override fun onCues(cueGroup: CueGroup) {
     // With OVERLAY_CANVAS mode, ASS subtitles are rendered directly by AssSubtitleView
     // This callback is for non-ASS subtitles (SRT, VTT, etc.)
-    if (cueGroup.cues.isNotEmpty()) {
-      Log.d(TAG, "onCues: received ${cueGroup.cues.size} cues (non-ASS)")
+    val incoming = cueGroup.cues
+    val outgoing = stackUnpositionedCues(incoming)
+    if (incoming.isNotEmpty()) {
+      Log.d(
+        TAG,
+        "onCues: received ${incoming.size} cues (non-ASS)" +
+          if (outgoing !== incoming) " — stacked" else ""
+      )
     }
-    subtitleView?.setCues(cueGroup.cues)
+    subtitleView?.setCues(outgoing)
+  }
+
+  // SRT carries no per-cue positioning, so SubripParser emits cues with
+  // lineType = TYPE_UNSET. SubtitlePainter then renders every such cue at the
+  // same default bottom-anchored position, causing visible overlap when more
+  // than one is active. Reassign line numbers from the bottom up so concurrent
+  // unpositioned cues stack instead. Workaround for
+  // https://github.com/androidx/media/issues/2237; can be removed once
+  // https://github.com/androidx/media/pull/3151 lands and we upgrade Media3.
+  private fun stackUnpositionedCues(cues: List<Cue>): List<Cue> {
+    if (cues.size < 2) return cues
+    val toStack = cues.indices.filter {
+      cues[it].lineType == Cue.TYPE_UNSET && cues[it].text != null
+    }
+    if (toStack.size < 2) return cues
+    val rebuilt = cues.toMutableList()
+    var nextRow = -1
+    // Reverse so the last cue in the group lands on row -1 (bottom).
+    for (idx in toStack.reversed()) {
+      val cue = cues[idx]
+      rebuilt[idx] = cue.buildUpon()
+        .setLine(nextRow.toFloat(), Cue.LINE_TYPE_NUMBER)
+        .setLineAnchor(Cue.ANCHOR_TYPE_END)
+        .build()
+      val rowsConsumed = (cue.text?.toString()?.count { it == '\n' } ?: 0) + 1
+      nextRow -= rowsConsumed
+    }
+    return rebuilt
   }
 
   override fun onIsPlayingChanged(isPlaying: Boolean) {
