@@ -171,6 +171,7 @@ class _TranslationsCommonRu extends TranslationsCommonEn {
 	@override String get loading => 'Загрузка...';
 	@override String get fullscreen => 'Полноэкранный режим';
 	@override String get exitFullscreen => 'Выйти из полноэкранного режима';
+	@override String get pressBackAgainToExit => 'Нажмите ещё раз для выхода';
 }
 
 // Path: screens
@@ -1811,6 +1812,7 @@ extension on TranslationsRu {
 			'common.loading' => 'Загрузка...',
 			'common.fullscreen' => 'Полноэкранный режим',
 			'common.exitFullscreen' => 'Выйти из полноэкранного режима',
+			'common.pressBackAgainToExit' => 'Нажмите ещё раз для выхода',
 			'screens.licenses' => 'Лицензии',
 			'screens.switchProfile' => 'Сменить профиль',
 			'screens.subtitleStyling' => 'Стиль субтитров',
@@ -2261,9 +2263,9 @@ extension on TranslationsRu {
 			'profiles.noPinSetEditOnPlex' => 'PIN не установлен. Чтобы требовать его, отредактируйте пользователя Home на plex.tv.',
 			'profiles.setPin' => 'Установить PIN',
 			'profiles.connectionsLabel' => 'Соединения',
-			'profiles.add' => 'Добавить',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.add' => 'Добавить',
 			'profiles.deleteProfileButton' => 'Удалить профиль',
 			'profiles.noConnectionsHint' => 'Нет соединений — добавьте одно, чтобы использовать этот профиль.',
 			'profiles.plexHomeAccount' => 'Аккаунт Plex Home',
@@ -2775,9 +2777,9 @@ extension on TranslationsRu {
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Эфирный)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Эфирный)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Абсолютный)',
-			'metadataEdit.metadataLanguage' => 'Язык метаданных',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.metadataLanguage' => 'Язык метаданных',
 			'metadataEdit.useOriginalTitle' => 'Использовать оригинальное название',
 			'metadataEdit.preferredAudioLanguage' => 'Предпочитаемый язык аудио',
 			'metadataEdit.preferredSubtitleLanguage' => 'Предпочитаемый язык субтитров',

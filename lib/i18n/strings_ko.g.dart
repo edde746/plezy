@@ -171,6 +171,7 @@ class _TranslationsCommonKo extends TranslationsCommonEn {
 	@override String get loading => '로딩 중...';
 	@override String get fullscreen => '전체화면';
 	@override String get exitFullscreen => '전체화면 종료';
+	@override String get pressBackAgainToExit => '한 번 더 누르면 종료됩니다';
 }
 
 // Path: screens
@@ -1811,6 +1812,7 @@ extension on TranslationsKo {
 			'common.loading' => '로딩 중...',
 			'common.fullscreen' => '전체화면',
 			'common.exitFullscreen' => '전체화면 종료',
+			'common.pressBackAgainToExit' => '한 번 더 누르면 종료됩니다',
 			'screens.licenses' => '라이선스',
 			'screens.switchProfile' => '프로필 전환',
 			'screens.subtitleStyling' => '자막 스타일 설정',
@@ -2261,9 +2263,9 @@ extension on TranslationsKo {
 			'profiles.noPinSetEditOnPlex' => '설정된 PIN이 없습니다. 요구하려면 plex.tv에서 Home 사용자를 편집하세요.',
 			'profiles.setPin' => 'PIN 설정',
 			'profiles.connectionsLabel' => '연결',
-			'profiles.add' => '추가',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.add' => '추가',
 			'profiles.deleteProfileButton' => '프로필 삭제',
 			'profiles.noConnectionsHint' => '연결이 없습니다 — 이 프로필을 사용하려면 하나 추가하세요.',
 			'profiles.plexHomeAccount' => 'Plex Home 계정',
@@ -2775,9 +2777,9 @@ extension on TranslationsKo {
 			'metadataEdit.tmdbAiring' => 'The Movie Database (방영순)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (방영순)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (절대순)',
-			'metadataEdit.metadataLanguage' => '메타데이터 언어',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.metadataLanguage' => '메타데이터 언어',
 			'metadataEdit.useOriginalTitle' => '원제 사용',
 			'metadataEdit.preferredAudioLanguage' => '선호 오디오 언어',
 			'metadataEdit.preferredSubtitleLanguage' => '선호 자막 언어',

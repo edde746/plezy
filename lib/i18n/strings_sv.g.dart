@@ -171,6 +171,7 @@ class _TranslationsCommonSv extends TranslationsCommonEn {
 	@override String get loading => 'Laddar...';
 	@override String get fullscreen => 'Helskärm';
 	@override String get exitFullscreen => 'Avsluta helskärm';
+	@override String get pressBackAgainToExit => 'Tryck bakåt igen för att avsluta';
 }
 
 // Path: screens
@@ -1811,6 +1812,7 @@ extension on TranslationsSv {
 			'common.loading' => 'Laddar...',
 			'common.fullscreen' => 'Helskärm',
 			'common.exitFullscreen' => 'Avsluta helskärm',
+			'common.pressBackAgainToExit' => 'Tryck bakåt igen för att avsluta',
 			'screens.licenses' => 'Licenser',
 			'screens.switchProfile' => 'Byt profil',
 			'screens.subtitleStyling' => 'Undertext-styling',
@@ -2261,9 +2263,9 @@ extension on TranslationsSv {
 			'profiles.noPinSetEditOnPlex' => 'Ingen PIN angiven. För att kräva en, redigera Home-användaren på plex.tv.',
 			'profiles.setPin' => 'Ange PIN',
 			'profiles.connectionsLabel' => 'Anslutningar',
-			'profiles.add' => 'Lägg till',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.add' => 'Lägg till',
 			'profiles.deleteProfileButton' => 'Ta bort profil',
 			'profiles.noConnectionsHint' => 'Inga anslutningar — lägg till en för att använda den här profilen.',
 			'profiles.plexHomeAccount' => 'Plex Home-konto',
@@ -2775,9 +2777,9 @@ extension on TranslationsSv {
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Sändning)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Sändning)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolut)',
-			'metadataEdit.metadataLanguage' => 'Metadataspråk',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.metadataLanguage' => 'Metadataspråk',
 			'metadataEdit.useOriginalTitle' => 'Använd originaltitel',
 			'metadataEdit.preferredAudioLanguage' => 'Föredraget ljudspråk',
 			'metadataEdit.preferredSubtitleLanguage' => 'Föredraget undertextspråk',

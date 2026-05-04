@@ -171,6 +171,7 @@ class _TranslationsCommonZh extends TranslationsCommonEn {
 	@override String get loading => '加载中...';
 	@override String get fullscreen => '全屏';
 	@override String get exitFullscreen => '退出全屏';
+	@override String get pressBackAgainToExit => '再按一次返回退出';
 }
 
 // Path: screens
@@ -1811,6 +1812,7 @@ extension on TranslationsZh {
 			'common.loading' => '加载中...',
 			'common.fullscreen' => '全屏',
 			'common.exitFullscreen' => '退出全屏',
+			'common.pressBackAgainToExit' => '再按一次返回退出',
 			'screens.licenses' => '许可证',
 			'screens.switchProfile' => '切换用户',
 			'screens.subtitleStyling' => '字幕样式',
@@ -2261,9 +2263,9 @@ extension on TranslationsZh {
 			'profiles.noPinSetEditOnPlex' => '未设置 PIN。如需要求 PIN，请在 plex.tv 上编辑 Home 用户。',
 			'profiles.setPin' => '设置 PIN',
 			'profiles.connectionsLabel' => '连接',
-			'profiles.add' => '添加',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.add' => '添加',
 			'profiles.deleteProfileButton' => '删除配置文件',
 			'profiles.noConnectionsHint' => '没有连接 — 添加一个以使用此配置文件。',
 			'profiles.plexHomeAccount' => 'Plex Home 账户',
@@ -2775,9 +2777,9 @@ extension on TranslationsZh {
 			'metadataEdit.tmdbAiring' => 'The Movie Database（播出顺序）',
 			'metadataEdit.tvdbAiring' => 'TheTVDB（播出顺序）',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB（绝对顺序）',
-			'metadataEdit.metadataLanguage' => '元数据语言',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.metadataLanguage' => '元数据语言',
 			'metadataEdit.useOriginalTitle' => '使用原始标题',
 			'metadataEdit.preferredAudioLanguage' => '首选音频语言',
 			'metadataEdit.preferredSubtitleLanguage' => '首选字幕语言',

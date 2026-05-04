@@ -171,6 +171,7 @@ class _TranslationsCommonPl extends TranslationsCommonEn {
 	@override String get loading => 'Ładowanie...';
 	@override String get fullscreen => 'Pełny ekran';
 	@override String get exitFullscreen => 'Wyjdź z pełnego ekranu';
+	@override String get pressBackAgainToExit => 'Naciśnij wstecz ponownie, aby wyjść';
 }
 
 // Path: screens
@@ -1811,6 +1812,7 @@ extension on TranslationsPl {
 			'common.loading' => 'Ładowanie...',
 			'common.fullscreen' => 'Pełny ekran',
 			'common.exitFullscreen' => 'Wyjdź z pełnego ekranu',
+			'common.pressBackAgainToExit' => 'Naciśnij wstecz ponownie, aby wyjść',
 			'screens.licenses' => 'Licencje',
 			'screens.switchProfile' => 'Zmień profil',
 			'screens.subtitleStyling' => 'Styl napisów',
@@ -2261,9 +2263,9 @@ extension on TranslationsPl {
 			'profiles.noPinSetEditOnPlex' => 'Nie ustawiono PIN-u. Aby go wymagać, edytuj użytkownika Home na plex.tv.',
 			'profiles.setPin' => 'Ustaw PIN',
 			'profiles.connectionsLabel' => 'Połączenia',
-			'profiles.add' => 'Dodaj',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.add' => 'Dodaj',
 			'profiles.deleteProfileButton' => 'Usuń profil',
 			'profiles.noConnectionsHint' => 'Brak połączeń — dodaj jedno, aby używać tego profilu.',
 			'profiles.plexHomeAccount' => 'Konto Plex Home',
@@ -2775,9 +2777,9 @@ extension on TranslationsPl {
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Emisja)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Emisja)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolutna)',
-			'metadataEdit.metadataLanguage' => 'Język metadanych',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.metadataLanguage' => 'Język metadanych',
 			'metadataEdit.useOriginalTitle' => 'Użyj oryginalnego tytułu',
 			'metadataEdit.preferredAudioLanguage' => 'Preferowany język audio',
 			'metadataEdit.preferredSubtitleLanguage' => 'Preferowany język napisów',
