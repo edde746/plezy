@@ -449,8 +449,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // playback (continue-watching, direct episode tap with no queue
         // launcher) clear any stale queue so prev/next stays consistent.
         final meta = widget.metadata;
-        final inActiveQueue = playbackState.isQueueActive && playbackState.playQueueItemIdFor(meta) != null;
-        if (inActiveQueue) {
+        if (playbackState.isItemInActiveQueue(meta)) {
           playbackState.setCurrentItem(meta);
         } else {
           playbackState.clearShuffle();

@@ -34,20 +34,19 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
         return;
       }
 
-      // Check if there's already an active queue for THIS show.
-      // A leftover queue from a different show or — more importantly —
-      // from a different backend (Jellyfin's local queue is published
-      // here too) would otherwise mask the new show's navigation.
-      final existingContextKey = playbackState.shuffleContextKey;
-      final isQueueActive = playbackState.isQueueActive;
-
-      if (isQueueActive && existingContextKey == showRatingKey) {
+      // Preserve any queue this item belongs to — playlist, collection,
+      // or same-show queue. `isItemInActiveQueue` is the same gate
+      // VideoPlayerScreen.initState uses; a context-key check alone would
+      // wipe a playlist queue (its key is the playlist id, not the show).
+      // Only when the active queue is genuinely stale (item not in it)
+      // do we clobber and create a fresh show queue.
+      if (playbackState.isItemInActiveQueue(_currentMetadata)) {
         playbackState.setCurrentItem(_currentMetadata);
-        appLogger.d('Using existing play queue (context: $existingContextKey)');
+        appLogger.d('Using existing play queue (context: ${playbackState.shuffleContextKey})');
         return;
       }
-      if (isQueueActive) {
-        appLogger.d('Resetting stale play queue (was: $existingContextKey, now: $showRatingKey)');
+      if (playbackState.isQueueActive) {
+        appLogger.d('Resetting stale play queue (was: ${playbackState.shuffleContextKey}, now: $showRatingKey)');
         playbackState.clearShuffle();
       }
 

@@ -227,11 +227,11 @@ void main() {
     });
 
     test('playQueueItemIdFor returns synthetic ids for Jellyfin local queue items', () {
-      // Anchor: VideoPlayerScreen.initState gates clearShuffle on
-      // `playQueueItemIdFor(meta) != null` so a Jellyfin playlist queue
-      // survives entry into the player. If this returns null for queue
-      // members, the player wipes the launcher-set queue and prev/next
-      // walks the show instead of the playlist.
+      // Anchor: VideoPlayerScreen.initState and `_ensurePlayQueue` both gate
+      // on `isItemInActiveQueue(meta)` (which delegates to `playQueueItemIdFor`)
+      // so a Jellyfin playlist queue survives entry into the player. If this
+      // returns null for queue members, the player wipes the launcher-set
+      // queue and prev/next walks the show instead of the playlist.
       final p = PlaybackStateProvider();
       addTearDown(p.dispose);
 
@@ -247,6 +247,47 @@ void main() {
       expect(p.playQueueItemIdFor(ep1), 0);
       expect(p.playQueueItemIdFor(ep2), 1);
       expect(p.playQueueItemIdFor(outsider), isNull);
+      expect(p.isItemInActiveQueue(ep1), isTrue);
+      expect(p.isItemInActiveQueue(outsider), isFalse);
+    });
+
+    test('isItemInActiveQueue keeps Plex playlist/collection queues alive', () async {
+      // Anchor (Plex side): `_ensurePlayQueue` in episode_queue.dart gates
+      // its "preserve vs. clobber" decision on `isItemInActiveQueue`. A
+      // Plex playlist queue's contextKey is the playlist id (not the show),
+      // so a context-key-only check would wipe it. Membership via the
+      // server-stamped `playQueueItemId` is the right signal — see gh #978.
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+
+      final inQueue = _item('ep-in-playlist', 5001);
+      // A real-world non-queue item (e.g. tapped from media detail) carries
+      // no `playQueueItemId` — that's how the helper distinguishes it from
+      // a launcher-seeded queue member.
+      final outsider = PlexMediaItem(id: 'ep-different-show', kind: MediaKind.episode);
+
+      await p.setPlaybackFromPlayQueue(
+        _queue(
+          playQueueID: 77,
+          selectedItemID: 5001,
+          totalCount: 2,
+          items: [inQueue, _item('ep-other-in-playlist', 5002)],
+        ),
+        // contextKey is the playlist id, deliberately != grandparentId of any item
+        'playlist-Z',
+      );
+
+      expect(p.isItemInActiveQueue(inQueue), isTrue);
+      expect(p.isItemInActiveQueue(outsider), isFalse);
+    });
+
+    test('isItemInActiveQueue is false when no queue is active', () {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+
+      final ep = _item('ep1', 1);
+      expect(p.isQueueActive, isFalse);
+      expect(p.isItemInActiveQueue(ep), isFalse);
     });
   });
 }

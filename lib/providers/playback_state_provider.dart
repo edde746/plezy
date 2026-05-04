@@ -67,6 +67,15 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
   /// Whether any queue-based playback is active
   bool get isQueueActive => _playQueueId != null && _isQueueMode;
 
+  /// Whether [item] belongs to the currently active queue. True for Plex
+  /// items the server-side queue stamped with a `playQueueItemId`, and for
+  /// items present in a Jellyfin local queue (synthetic id). Gates the
+  /// player's "preserve vs. wipe launcher-set queue" decision in both
+  /// [VideoPlayerScreen.initState] and `_ensurePlayQueue`, so a playlist
+  /// or collection queue survives entry into the player instead of being
+  /// replaced with a show queue.
+  bool isItemInActiveQueue(MediaItem item) => isQueueActive && playQueueItemIdFor(item) != null;
+
   /// The context key (show/season/playlist ratingKey) for the current session
   String? get shuffleContextKey => _contextKey;
 
