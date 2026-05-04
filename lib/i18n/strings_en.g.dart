@@ -294,6 +294,9 @@ class TranslationsCommonEn {
 
 	/// en: 'Exit fullscreen'
 	String get exitFullscreen => 'Exit fullscreen';
+
+	/// en: 'Press back again to exit'
+	String get pressBackAgainToExit => 'Press back again to exit';
 }
 
 // Path: screens
@@ -4079,6 +4082,7 @@ extension on Translations {
 			'common.loading' => 'Loading...',
 			'common.fullscreen' => 'Fullscreen',
 			'common.exitFullscreen' => 'Exit fullscreen',
+			'common.pressBackAgainToExit' => 'Press back again to exit',
 			'screens.licenses' => 'Licenses',
 			'screens.switchProfile' => 'Switch Profile',
 			'screens.subtitleStyling' => 'Subtitle Styling',
@@ -4529,9 +4533,9 @@ extension on Translations {
 			'profiles.noPinSetEditOnPlex' => 'No PIN set. To require one, edit the home user on plex.tv.',
 			'profiles.setPin' => 'Set PIN',
 			'profiles.connectionsLabel' => 'Connections',
-			'profiles.add' => 'Add',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.add' => 'Add',
 			'profiles.deleteProfileButton' => 'Delete profile',
 			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			'profiles.plexHomeAccount' => 'Plex Home account',
@@ -5043,9 +5047,9 @@ extension on Translations {
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Aired)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Aired)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolute)',
-			'metadataEdit.metadataLanguage' => 'Metadata Language',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.metadataLanguage' => 'Metadata Language',
 			'metadataEdit.useOriginalTitle' => 'Use Original Title',
 			'metadataEdit.preferredAudioLanguage' => 'Preferred Audio Language',
 			'metadataEdit.preferredSubtitleLanguage' => 'Preferred Subtitle Language',

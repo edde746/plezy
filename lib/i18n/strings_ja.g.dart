@@ -171,6 +171,7 @@ class _TranslationsCommonJa extends TranslationsCommonEn {
 	@override String get loading => '読み込み中...';
 	@override String get fullscreen => 'フルスクリーン';
 	@override String get exitFullscreen => 'フルスクリーンを終了';
+	@override String get pressBackAgainToExit => 'もう一度押すと終了します';
 }
 
 // Path: screens
@@ -1811,6 +1812,7 @@ extension on TranslationsJa {
 			'common.loading' => '読み込み中...',
 			'common.fullscreen' => 'フルスクリーン',
 			'common.exitFullscreen' => 'フルスクリーンを終了',
+			'common.pressBackAgainToExit' => 'もう一度押すと終了します',
 			'screens.licenses' => 'ライセンス',
 			'screens.switchProfile' => 'プロフィール切替',
 			'screens.subtitleStyling' => '字幕スタイル',
@@ -2261,9 +2263,9 @@ extension on TranslationsJa {
 			'profiles.noPinSetEditOnPlex' => 'PINが設定されていません。要求するには、plex.tvでHomeユーザーを編集してください。',
 			'profiles.setPin' => 'PINを設定',
 			'profiles.connectionsLabel' => '接続',
-			'profiles.add' => '追加',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.add' => '追加',
 			'profiles.deleteProfileButton' => 'プロファイルを削除',
 			'profiles.noConnectionsHint' => '接続がありません — このプロファイルを使うには1つ追加してください。',
 			'profiles.plexHomeAccount' => 'Plex Homeアカウント',
@@ -2775,9 +2777,9 @@ extension on TranslationsJa {
 			'metadataEdit.tmdbAiring' => 'The Movie Database（放送順）',
 			'metadataEdit.tvdbAiring' => 'TheTVDB（放送順）',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB（絶対順）',
-			'metadataEdit.metadataLanguage' => 'メタデータの言語',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.metadataLanguage' => 'メタデータの言語',
 			'metadataEdit.useOriginalTitle' => '原題を使用',
 			'metadataEdit.preferredAudioLanguage' => '優先音声言語',
 			'metadataEdit.preferredSubtitleLanguage' => '優先字幕言語',

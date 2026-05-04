@@ -64,7 +64,8 @@
     "startingOfflineMode": "Startar offlineläge...",
     "loading": "Laddar...",
     "fullscreen": "Helskärm",
-    "exitFullscreen": "Avsluta helskärm"
+    "exitFullscreen": "Avsluta helskärm",
+    "pressBackAgainToExit": "Tryck bakåt igen för att avsluta"
   },
   "screens": {
     "licenses": "Licenser",

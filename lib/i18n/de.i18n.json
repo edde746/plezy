@@ -64,7 +64,8 @@
     "startingOfflineMode": "Offlinemodus wird gestartet...",
     "loading": "Laden...",
     "fullscreen": "Vollbild",
-    "exitFullscreen": "Vollbild verlassen"
+    "exitFullscreen": "Vollbild verlassen",
+    "pressBackAgainToExit": "Erneut Zurück drücken zum Beenden"
   },
   "screens": {
     "licenses": "Lizenzen",

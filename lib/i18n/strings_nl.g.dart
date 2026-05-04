@@ -171,6 +171,7 @@ class _TranslationsCommonNl extends TranslationsCommonEn {
 	@override String get loading => 'Laden...';
 	@override String get fullscreen => 'Volledig scherm';
 	@override String get exitFullscreen => 'Volledig scherm verlaten';
+	@override String get pressBackAgainToExit => 'Druk nogmaals op terug om af te sluiten';
 }
 
 // Path: screens
@@ -1811,6 +1812,7 @@ extension on TranslationsNl {
 			'common.loading' => 'Laden...',
 			'common.fullscreen' => 'Volledig scherm',
 			'common.exitFullscreen' => 'Volledig scherm verlaten',
+			'common.pressBackAgainToExit' => 'Druk nogmaals op terug om af te sluiten',
 			'screens.licenses' => 'Licenties',
 			'screens.switchProfile' => 'Wissel van profiel',
 			'screens.subtitleStyling' => 'Ondertitel opmaak',
@@ -2261,9 +2263,9 @@ extension on TranslationsNl {
 			'profiles.noPinSetEditOnPlex' => 'Geen PIN ingesteld. Bewerk de Home-gebruiker op plex.tv om er één te vereisen.',
 			'profiles.setPin' => 'PIN instellen',
 			'profiles.connectionsLabel' => 'Verbindingen',
-			'profiles.add' => 'Toevoegen',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.add' => 'Toevoegen',
 			'profiles.deleteProfileButton' => 'Profiel verwijderen',
 			'profiles.noConnectionsHint' => 'Geen verbindingen — voeg er één toe om dit profiel te gebruiken.',
 			'profiles.plexHomeAccount' => 'Plex Home-account',
@@ -2775,9 +2777,9 @@ extension on TranslationsNl {
 			'metadataEdit.tmdbAiring' => 'The Movie Database (Uitgezonden)',
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Uitgezonden)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absoluut)',
-			'metadataEdit.metadataLanguage' => 'Metadatataal',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.metadataLanguage' => 'Metadatataal',
 			'metadataEdit.useOriginalTitle' => 'Oorspronkelijke titel gebruiken',
 			'metadataEdit.preferredAudioLanguage' => 'Voorkeurstaal audio',
 			'metadataEdit.preferredSubtitleLanguage' => 'Voorkeurstaal ondertiteling',

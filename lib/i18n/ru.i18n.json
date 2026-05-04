@@ -64,7 +64,8 @@
     "startingOfflineMode": "Запуск автономного режима...",
     "loading": "Загрузка...",
     "fullscreen": "Полноэкранный режим",
-    "exitFullscreen": "Выйти из полноэкранного режима"
+    "exitFullscreen": "Выйти из полноэкранного режима",
+    "pressBackAgainToExit": "Нажмите ещё раз для выхода"
   },
   "screens": {
     "licenses": "Лицензии",

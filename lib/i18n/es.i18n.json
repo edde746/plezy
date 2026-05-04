@@ -64,7 +64,8 @@
     "startingOfflineMode": "Iniciando modo sin conexión...",
     "loading": "Cargando...",
     "fullscreen": "Pantalla completa",
-    "exitFullscreen": "Salir de pantalla completa"
+    "exitFullscreen": "Salir de pantalla completa",
+    "pressBackAgainToExit": "Presiona atrás otra vez para salir"
   },
   "screens": {
     "licenses": "Licencias",

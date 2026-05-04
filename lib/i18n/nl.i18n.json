@@ -64,7 +64,8 @@
     "startingOfflineMode": "Offlinemodus starten...",
     "loading": "Laden...",
     "fullscreen": "Volledig scherm",
-    "exitFullscreen": "Volledig scherm verlaten"
+    "exitFullscreen": "Volledig scherm verlaten",
+    "pressBackAgainToExit": "Druk nogmaals op terug om af te sluiten"
   },
   "screens": {
     "licenses": "Licenties",

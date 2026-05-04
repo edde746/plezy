@@ -64,7 +64,8 @@
     "startingOfflineMode": "Starter frakoblet modus...",
     "loading": "Laster...",
     "fullscreen": "Fullskjerm",
-    "exitFullscreen": "Avslutt fullskjerm"
+    "exitFullscreen": "Avslutt fullskjerm",
+    "pressBackAgainToExit": "Trykk tilbake igjen for å avslutte"
   },
   "screens": {
     "licenses": "Lisenser",
