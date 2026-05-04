@@ -25,9 +25,6 @@ PODS:
   - shared_preferences_foundation (0.0.1):
     - Flutter
     - FlutterMacOS
-  - sqflite_darwin (0.0.4):
-    - Flutter
-    - FlutterMacOS
   - sqlite3 (3.52.0):
     - sqlite3/common (= 3.52.0)
   - sqlite3/common (3.52.0)
@@ -72,7 +69,6 @@ DEPENDENCIES:
   - package_info_plus (from `.symlinks/plugins/package_info_plus/ios`)
   - sentry_flutter (from `.symlinks/plugins/sentry_flutter/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
-  - sqflite_darwin (from `.symlinks/plugins/sqflite_darwin/darwin`)
   - sqlite3_flutter_libs (from `.symlinks/plugins/sqlite3_flutter_libs/darwin`)
   - universal_gamepad (from `.symlinks/plugins/universal_gamepad/ios`)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
@@ -106,8 +102,6 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/sentry_flutter/ios"
   shared_preferences_foundation:
     :path: ".symlinks/plugins/shared_preferences_foundation/darwin"
-  sqflite_darwin:
-    :path: ".symlinks/plugins/sqflite_darwin/darwin"
   sqlite3_flutter_libs:
     :path: ".symlinks/plugins/sqlite3_flutter_libs/darwin"
   universal_gamepad:
@@ -130,12 +124,11 @@ SPEC CHECKSUMS:
   Sentry: d587a8fe91ca13503ecd69a1905f3e8a0fcf61be
   sentry_flutter: 31101687061fb85211ebab09ce6eb8db4e9ba74f
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
-  sqflite_darwin: 20b2a3a3b70e43edae938624ce550a3cbf66a3d0
   sqlite3: a51c07cf16e023d6c48abd5e5791a61a47354921
   sqlite3_flutter_libs: b3e120efe9a82017e5552a620f696589ed4f62ab
   universal_gamepad: 838bbb70d37d8c7c719038aa397214f2c4c4f866
   url_launcher_ios: 7a95fa5b60cc718a708b8f2966718e93db0cef1b
-  wakelock_plus: e29112ab3ef0b318e58cfa5c32326458be66b556
+  wakelock_plus: 5aaa6a7ccaf4749a96a7d8ff0721d68061ad62cf
 
 PODFILE CHECKSUM: 16bb7f67e16d8aaa2bfb97666803fbfb291b6559
 

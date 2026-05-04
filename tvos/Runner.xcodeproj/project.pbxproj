@@ -312,7 +312,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo no-op thin binary\n";
+			shellScript = "/bin/bash \"$SOURCE_ROOT/scripts/xcode_appletv.sh\" sync_version\n";
 		};
 		570D41C54A87D72AB27F6F15 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -365,7 +365,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "#/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build\n/bin/sh \"$SOURCE_ROOT/scripts/xcode_appletv.sh\" build\n";
+			shellScript = "#/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build\n/bin/bash \"$SOURCE_ROOT/scripts/xcode_appletv.sh\" build\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

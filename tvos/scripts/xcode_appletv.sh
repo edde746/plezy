@@ -20,6 +20,86 @@ else
   SIM_ARCH='x86_64'
 fi
 
+ReadPubspecVersion() {
+  local app_path="${FLUTTER_APPLICATION_PATH:-}"
+  if [[ -z "$app_path" ]]; then
+    if [[ -n "${PROJECT_DIR:-}" ]]; then
+      app_path="$(cd "$(dirname "$PROJECT_DIR")" && pwd)"
+    else
+      app_path="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+    fi
+  fi
+
+  local pubspec="$app_path/pubspec.yaml"
+  local pub_version=""
+  if [[ -f "$pubspec" ]]; then
+    local line
+    while IFS= read -r line; do
+      case "$line" in
+        version:*)
+          pub_version="${line#version:}"
+          pub_version="${pub_version%%#*}"
+          pub_version="${pub_version#"${pub_version%%[![:space:]]*}"}"
+          pub_version="${pub_version%"${pub_version##*[![:space:]]}"}"
+          pub_version="${pub_version%\"}"
+          pub_version="${pub_version#\"}"
+          pub_version="${pub_version%\'}"
+          pub_version="${pub_version#\'}"
+          break
+          ;;
+      esac
+    done < "$pubspec"
+  fi
+
+  if [[ -n "$pub_version" ]]; then
+    FLUTTER_BUILD_NAME="${pub_version%+*}"
+    if [[ "$pub_version" == *+* ]]; then
+      FLUTTER_BUILD_NUMBER="${pub_version#*+}"
+    else
+      FLUTTER_BUILD_NUMBER="1"
+    fi
+  else
+    FLUTTER_BUILD_NAME="${FLUTTER_BUILD_NAME:-1.0.0}"
+    FLUTTER_BUILD_NUMBER="${FLUTTER_BUILD_NUMBER:-1}"
+  fi
+
+  export FLUTTER_BUILD_NAME
+  export FLUTTER_BUILD_NUMBER
+}
+
+SetPlistString() {
+  local plist="$1"
+  local key="$2"
+  local value="$3"
+
+  if /usr/libexec/PlistBuddy -c "Print :$key" "$plist" >/dev/null 2>&1; then
+    /usr/libexec/PlistBuddy -c "Set :$key $value" "$plist"
+  else
+    /usr/libexec/PlistBuddy -c "Add :$key string $value" "$plist"
+  fi
+}
+
+SyncRunnerVersion() {
+  ReadPubspecVersion
+
+  local plist=""
+  if [[ -n "${TARGET_BUILD_DIR:-}" && -n "${INFOPLIST_PATH:-}" ]]; then
+    plist="$TARGET_BUILD_DIR/$INFOPLIST_PATH"
+  fi
+  if [[ -z "$plist" || ! -f "$plist" ]]; then
+    plist="$TARGET_BUILD_DIR/$WRAPPER_NAME/Info.plist"
+  fi
+
+  if [[ ! -f "$plist" ]]; then
+    echo " └─ERROR: Runner Info.plist not found for version sync"
+    return 1
+  fi
+
+  echo " └─Syncing Runner version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
+  SetPlistString "$plist" CFBundleShortVersionString "$FLUTTER_BUILD_NAME"
+  SetPlistString "$plist" CFBundleVersion "$FLUTTER_BUILD_NUMBER"
+}
+
 BuildAppDebug() {
   # Host tools (frontend_server, patched SDK, dartaotruntime) ship in
   # host_release for both debug and release consumers — the frontend_server
@@ -325,11 +405,13 @@ BuildAppRelease() {
 
 
 BuildApp() {
-  
+  ReadPubspecVersion
+
   local build_mode="$(echo "${FLUTTER_BUILD_MODE:-${CONFIGURATION}}" | tr "[:upper:]" "[:lower:]")"
-  
+
   echo "Compiling Flutter/App.Framework"
- 
+  echo " └─version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
+
   if [ -z "$FLUTTER_LOCAL_ENGINE" ]; then
     echo " └─ERROR: FLUTTER_LOCAL_ENGINE not set!" 
     return 1;
@@ -364,6 +446,8 @@ else
   case $1 in
     "build")
       BuildApp ;;
+    "sync_version")
+      SyncRunnerVersion ;;
 #   "embed_and_thin")
 #       "Not needed, used from flutter xcode_backend.sh script"
   esac
