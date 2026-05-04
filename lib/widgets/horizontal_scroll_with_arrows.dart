@@ -63,8 +63,9 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
     }
 
     final position = _scrollController.position;
-    final newLeft = position.pixels > 0;
-    final newRight = position.pixels < position.maxScrollExtent;
+    final isScrollable = position.maxScrollExtent > 0;
+    final newLeft = isScrollable && position.pixels > 0;
+    final newRight = isScrollable && position.pixels < position.maxScrollExtent;
     if (newLeft != _canScrollLeft || newRight != _canScrollRight) {
       setState(() {
         _canScrollLeft = newLeft;
@@ -122,22 +123,28 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
       onExit: (_) => setState(() => _isHovering = false),
-      child: Stack(
-        children: [
-          child,
-          _buildArrowButton(
-            position: 8,
-            icon: Symbols.chevron_left_rounded,
-            onPressed: _scrollLeft,
-            canScroll: _canScrollLeft,
-          ),
-          _buildArrowButton(
-            position: -8,
-            icon: Symbols.chevron_right_rounded,
-            onPressed: _scrollRight,
-            canScroll: _canScrollRight,
-          ),
-        ],
+      child: NotificationListener<ScrollMetricsNotification>(
+        onNotification: (_) {
+          _updateScrollState();
+          return false;
+        },
+        child: Stack(
+          children: [
+            child,
+            _buildArrowButton(
+              position: 8,
+              icon: Symbols.chevron_left_rounded,
+              onPressed: _scrollLeft,
+              canScroll: _canScrollLeft,
+            ),
+            _buildArrowButton(
+              position: -8,
+              icon: Symbols.chevron_right_rounded,
+              onPressed: _scrollRight,
+              canScroll: _canScrollRight,
+            ),
+          ],
+        ),
       ),
     );
   }
