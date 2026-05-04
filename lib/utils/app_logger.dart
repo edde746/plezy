@@ -35,17 +35,12 @@ class LogEntry {
   /// Estimate the memory size of this log entry in bytes
   int get estimatedSize {
     int size = 0;
-    // DateTime: ~8 bytes
     size += 8;
-    // Level enum: ~4 bytes
     size += 4;
-    // Message string: 2 bytes per character (UTF-16)
     size += message.length * 2;
-    // Error string: 2 bytes per character if present
     if (error != null) {
       size += error.toString().length * 2;
     }
-    // Stack trace string: 2 bytes per character if present
     if (stackTrace != null) {
       size += stackTrace.toString().length * 2;
     }
@@ -58,25 +53,21 @@ class LogEntry {
 /// Storage is handled by [MemoryAwareLogPrinter.log()] — this class only
 /// forwards formatted lines to the console via the default [ConsoleOutput].
 class MemoryLogOutput extends LogOutput {
-  static const int maxLogSizeBytes = 5 * 1024 * 1024; // 5 MB
+  static const int maxLogSizeBytes = 5 * 1024 * 1024;
   static final ListQueue<LogEntry> _logs = ListQueue<LogEntry>();
   static int _currentSize = 0;
 
   static final _consoleOutput = ConsoleOutput();
 
-  /// Get all stored logs (newest first)
   static List<LogEntry> getLogs() => _logs.toList().reversed.toList();
 
-  /// Clear all stored logs
   static void clearLogs() {
     _logs.clear();
     _currentSize = 0;
   }
 
-  /// Get current log buffer size in bytes
   static int getCurrentSize() => _currentSize;
 
-  /// Get current log buffer size in MB
   static double getCurrentSizeMB() => _currentSize / (1024 * 1024);
 
   @override
@@ -115,7 +106,6 @@ class MemoryAwareLogPrinter extends LogPrinter {
       MemoryLogOutput._currentSize -= removed.estimatedSize;
     }
 
-    // Delegate a redacted event to the wrapped printer for console output.
     return _wrappedPrinter.log(
       LogEvent(event.level, message, time: event.time, error: error, stackTrace: event.stackTrace),
     );
@@ -136,7 +126,6 @@ class ProductionFilter extends LogFilter {
   }
 }
 
-/// Global filter instance
 final _productionFilter = ProductionFilter();
 
 /// Centralized logger instance for the application.
@@ -161,13 +150,9 @@ Logger appLogger = Logger(
 void setLoggerLevel(bool debugEnabled) {
   final newLevel = debugEnabled ? Level.debug : Level.info;
 
-  // Update the filter level
   _productionFilter.setLevel(newLevel);
 
-  // Recreate the logger instance with the new level
-  // This ensures it works in release mode where Logger.level might be optimized away
   appLogger = Logger(printer: MemoryAwareLogPrinter(SimplePrinter()), filter: _productionFilter, level: newLevel);
 
-  // Also set the static level for consistency
   Logger.level = newLevel;
 }

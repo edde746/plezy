@@ -79,13 +79,9 @@ Set<String> _subtitleCodecAliases(String? codec) {
 
 String _metadataToken(String value) => value.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]+'), '_');
 
-/// Utility for building track labels for audio and subtitle tracks.
 class TrackLabelBuilder {
   TrackLabelBuilder._();
 
-  /// Build a label for an audio track.
-  ///
-  /// Combines title, language, codec, and channel count.
   static String buildAudioLabel({
     String? title,
     String? language,
@@ -109,9 +105,6 @@ class TrackLabelBuilder {
     );
   }
 
-  /// Build a label for a subtitle track.
-  ///
-  /// Combines title, language, and codec (with friendly codec names).
   static String buildSubtitleLabel({
     String? title,
     String? language,

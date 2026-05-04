@@ -16,7 +16,6 @@ class RatingInfo {
 RatingInfo? parseRatingImage(String? imageUri, double? value) {
   if (imageUri == null || value == null) return null;
 
-  // Rotten Tomatoes critic ratings
   if (imageUri.startsWith('rottentomatoes://image.rating.')) {
     final suffix = imageUri.substring('rottentomatoes://image.rating.'.length);
     final percent = '${(value * 10).toStringAsFixed(0)}%';
@@ -29,12 +28,10 @@ RatingInfo? parseRatingImage(String? imageUri, double? value) {
     };
   }
 
-  // IMDb
   if (imageUri.startsWith('imdb://')) {
     return RatingInfo('assets/rating_icons/imdb.svg', value.toStringAsFixed(1));
   }
 
-  // TMDB
   if (imageUri.startsWith('themoviedb://')) {
     return RatingInfo('assets/rating_icons/tmdb.svg', '${(value * 10).toStringAsFixed(0)}%');
   }

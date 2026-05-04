@@ -4,24 +4,17 @@
 class PlexCacheParser {
   PlexCacheParser._();
 
-  /// Extract the Metadata list from a cached response
-  ///
-  /// Returns null if MediaContainer or Metadata is not present
   static List<dynamic>? extractMetadataList(Map<String, dynamic>? cached) {
     if (cached == null) return null;
     return cached['MediaContainer']?['Metadata'] as List?;
   }
 
-  /// Extract the first metadata item from a cached response
-  ///
-  /// Returns null if no metadata exists
   static Map<String, dynamic>? extractFirstMetadata(Map<String, dynamic>? cached) {
     final list = extractMetadataList(cached);
     if (list == null || list.isEmpty) return null;
     return list.first as Map<String, dynamic>;
   }
 
-  /// Extract Chapter list from the first metadata item
   static List<dynamic>? extractChapters(Map<String, dynamic>? cached) {
     final metadata = extractFirstMetadata(cached);
     if (metadata == null) return null;

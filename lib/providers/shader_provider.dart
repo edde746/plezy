@@ -5,9 +5,6 @@ import '../models/shader_preset.dart';
 import '../services/settings_service.dart';
 import '../services/shader_asset_loader.dart';
 
-/// Provider for managing shader preset state.
-///
-/// Persists the selected shader preset so it is restored across sessions.
 class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   SettingsService? _settingsService;
   ValueNotifier<String>? _savedPresetListenable;
@@ -62,31 +59,18 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
     super.dispose();
   }
 
-  /// Whether the provider has finished initializing
   bool get initialized => _initialized;
-
-  /// The persisted shader preset
   ShaderPreset get savedPreset => _savedPreset;
-
-  /// The currently active shader preset
   ShaderPreset get currentPreset => _currentPreset;
-
-  /// All available shader presets (built-in + custom)
   List<ShaderPreset> get allPresets => [...ShaderPreset.allPresets, ..._customPresets];
-
-  /// Custom shader presets only
   List<ShaderPreset> get customPresets => _customPresets;
-
-  /// Whether any shader is currently enabled
   bool get isShaderEnabled => _currentPreset.type != ShaderPresetType.none;
 
-  /// Find a preset by its ID, searching both built-in and custom presets.
   ShaderPreset? findPresetById(String id) {
     return ShaderPreset.fromId(id) ??
         _customPresets.cast<ShaderPreset?>().firstWhere((p) => p!.id == id, orElse: () => null);
   }
 
-  /// Apply and persist a shader preset
   Future<void> setPreset(ShaderPreset preset) async {
     final service = _settingsService ?? await SettingsService.getInstance();
     await service.write(SettingsService.globalShaderPreset, preset.id);

@@ -38,7 +38,6 @@ class PlayQueueResponse {
     }
   }
 
-  /// Get the index of the selected item in the current window
   int? get selectedItemIndex {
     if (items == null || playQueueSelectedItemID == null) return null;
     return items!.indexWhere((item) => item is PlexMediaItem && item.playQueueItemId == playQueueSelectedItemID);

@@ -7,7 +7,6 @@ import '../utils/provider_extensions.dart';
 /// Mixin providing common functionality for library tab screens
 /// Provides server-specific client resolution for multi-server support
 mixin LibraryTabStateMixin<T extends StatefulWidget> on State<T> {
-  /// The library being displayed
   MediaLibrary get library;
 
   /// Get the [PlexClient] for this library's server. Throws if unavailable.

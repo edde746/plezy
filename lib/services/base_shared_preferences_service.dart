@@ -18,10 +18,8 @@ abstract class BaseSharedPreferencesService {
 
   late SharedPreferencesWithCache _cache;
 
-  /// Protected constructor for subclasses
   BaseSharedPreferencesService();
 
-  /// Access to the underlying preferences cache.
   SharedPreferencesWithCache get prefs => _cache;
 
   /// Initialize the preferences instance.
@@ -133,9 +131,7 @@ abstract class BaseSharedPreferencesService {
   ///
   /// Override this method to perform any setup that requires access to
   /// SharedPreferences (e.g., registering values with other services).
-  Future<void> onInit() async {
-    // Default implementation does nothing
-  }
+  Future<void> onInit() async {}
 }
 
 /// Typed preference declaration. Pair with [BaseSharedPreferencesService.read]

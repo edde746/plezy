@@ -11,7 +11,6 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     // Skip play queue for live TV (would interfere with tuner session)
     if (widget.isLive) return;
 
-    // Only create play queues for episodes
     if (!_currentMetadata.isEpisode) {
       return;
     }
@@ -26,7 +25,6 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
 
       final playbackState = context.read<PlaybackStateProvider>();
 
-      // Determine the show's rating key
       // For episodes, grandparentId points to the show
       final showRatingKey = _currentMetadata.grandparentId;
       if (showRatingKey == null) {
@@ -50,19 +48,15 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
         playbackState.clearShuffle();
       }
 
-      // Create a new sequential play queue for the show
       appLogger.d('Creating sequential play queue for show $showRatingKey');
       final playQueue = await client.createShowPlayQueue(
         showRatingKey: showRatingKey,
-        shuffle: 0, // Sequential order
+        shuffle: 0,
         startingEpisodeKey: _currentMetadata.id,
       );
 
       if (playQueue != null && playQueue.items != null && playQueue.items!.isNotEmpty) {
-        // Initialize playback state with the play queue
         await playbackState.setPlaybackFromPlayQueue(playQueue, showRatingKey);
-
-        // Set the client for loading more items
         playbackState.setPlayQueueWindowFetcher(client.getPlayQueue);
 
         appLogger.d('Sequential play queue created with ${playQueue.items!.length} items');
@@ -83,7 +77,6 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     }
 
     try {
-      // Load adjacent episodes using the service
       final adjacentEpisodes = await _episodeNavigation.loadAdjacentEpisodes(
         context: context,
         metadata: _currentMetadata,
@@ -129,7 +122,6 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
           return aDate.compareTo(bDate);
         });
 
-      // Find current episode in the sorted list
       final currentIdx = sorted.indexWhere((ep) => ep.id == _currentMetadata.id);
 
       if (currentIdx == -1) return;

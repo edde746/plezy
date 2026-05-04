@@ -178,7 +178,6 @@ class DesktopTopBar extends StatelessWidget {
       builder: (context, _) {
         final isFullscreen = FullscreenStateManager().isFullscreen;
 
-        // Determine the effective leading widget
         Widget? effectiveLeading = leading;
         if (effectiveLeading == null && automaticallyImplyLeading) {
           final parentRoute = ModalRoute.of(context);

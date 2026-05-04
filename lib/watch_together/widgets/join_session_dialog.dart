@@ -8,7 +8,6 @@ import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 
-/// Dialog for joining a watch together session
 class JoinSessionDialog extends StatefulWidget {
   const JoinSessionDialog({super.key});
 
@@ -35,7 +34,6 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Header
                 Row(
                   children: [
                     Icon(Symbols.group_add, color: theme.colorScheme.primary),
@@ -53,7 +51,6 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
 
                 const SizedBox(height: 24),
 
-                // Session ID input
                 FocusableTextFormField(
                   controller: _sessionIdController,
                   decoration: InputDecoration(
@@ -88,7 +85,6 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
 
                 const SizedBox(height: 16),
 
-                // Instructions
                 Text(
                   t.watchTogether.joinInstructions,
                   style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -96,7 +92,6 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
 
                 const SizedBox(height: 24),
 
-                // Join button
                 FocusableButton(
                   onPressed: _join,
                   child: FilledButton.icon(
@@ -133,7 +128,6 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
   }
 }
 
-/// Text formatter to convert input to uppercase
 class UpperCaseTextFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
@@ -141,9 +135,6 @@ class UpperCaseTextFormatter extends TextInputFormatter {
   }
 }
 
-/// Show the join session dialog
-///
-/// Returns the session ID if user confirms, null if cancelled
 Future<String?> showJoinSessionDialog(BuildContext context) {
   return showDialog<String>(context: context, builder: (context) => const JoinSessionDialog());
 }

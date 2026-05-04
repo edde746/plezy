@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 
-/// Utility class for common focus operations
 class FocusUtils {
   FocusUtils._();
 

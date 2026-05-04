@@ -172,7 +172,6 @@ class ContentStripState extends State<ContentStrip> {
 
     final key = event.logicalKey;
 
-    // LEFT/RIGHT - navigate between items
     if (key == LogicalKeyboardKey.arrowLeft) {
       final nodes = page == _StripTab.chapters ? _chapterFocusNodes : _queueFocusNodes;
       if (index > 0) {
@@ -193,7 +192,6 @@ class ContentStripState extends State<ContentStrip> {
       return KeyEventResult.handled;
     }
 
-    // UP - navigate to previous layer
     if (key == LogicalKeyboardKey.arrowUp) {
       if (page == _StripTab.queue && _hasChapters) {
         // Switch to chapters page and focus current chapter
@@ -213,7 +211,6 @@ class ContentStripState extends State<ContentStrip> {
       return KeyEventResult.handled;
     }
 
-    // DOWN - navigate to next layer
     if (key == LogicalKeyboardKey.arrowDown) {
       if (page == _StripTab.chapters && _hasQueue) {
         // Switch to queue page and focus current queue item
@@ -337,7 +334,6 @@ class ContentStripState extends State<ContentStrip> {
           });
         }
 
-        // Ensure focus nodes for focus navigation mode
         if (widget.useFocusNavigation) {
           _ensureFocusNodes(_chapterFocusNodes, widget.chapters.length, 'ChapterFocus');
         }
@@ -422,7 +418,6 @@ class ContentStripState extends State<ContentStrip> {
           });
         }
 
-        // Ensure focus nodes for focus navigation mode
         if (widget.useFocusNavigation) {
           _ensureFocusNodes(_queueFocusNodes, items.length, 'QueueFocus');
         }
@@ -523,7 +518,6 @@ class ContentStripState extends State<ContentStrip> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Thumbnail
             SizedBox(
               width: itemWidth,
               height: thumbHeight,
@@ -553,7 +547,6 @@ class ContentStripState extends State<ContentStrip> {
               ),
             ),
             const SizedBox(height: 4),
-            // Title
             Text(
               title,
               style: TextStyle(
@@ -564,7 +557,6 @@ class ContentStripState extends State<ContentStrip> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            // Subtitle
             Text(
               subtitle,
               style: TextStyle(

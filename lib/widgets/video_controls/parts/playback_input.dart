@@ -32,7 +32,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     final currentPositionMs = widget.player.state.position.inMilliseconds;
 
     if (forward) {
-      // Find next chapter
       for (final chapter in _chapters) {
         final chapterStart = chapter.startTimeOffset ?? 0;
         if (chapterStart > currentPositionMs) {
@@ -41,7 +40,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
         }
       }
     } else {
-      // Find previous/current chapter
       for (int i = _chapters.length - 1; i >= 0; i--) {
         final chapterStart = _chapters[i].startTimeOffset ?? 0;
         if (currentPositionMs > chapterStart + 3000) {
@@ -50,7 +48,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
           return;
         }
       }
-      // If at start of first chapter, go to beginning
       await _seekToPosition(Duration.zero);
     }
   }
@@ -129,7 +126,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
       return;
     }
 
-    // Check if this qualifies as a double-tap (within 250ms of last tap, same side)
     final isDoubleTap =
         _lastSkipTapTime != null &&
         now.difference(_lastSkipTapTime!).inMilliseconds < 250 &&
@@ -140,10 +136,8 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
       _lastSkipTapTime = null; // Reset to prevent triple-tap chaining
 
       if (_showDoubleTapFeedback && _lastDoubleTapWasForward == isForward) {
-        // Stacking skip - add to accumulated
         unawaited(_handleStackingSkip(isForward: isForward));
       } else {
-        // First double-tap - initiate skip
         unawaited(_handleDoubleTapSkip(isForward: isForward));
       }
     } else {
@@ -164,35 +158,27 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   Future<void> _handleStackingSkip({required bool isForward}) async {
     if (!widget.canControl) return;
 
-    // Add to accumulated skip
     _accumulatedSkipSeconds += _seekTimeSmall;
 
-    // Calculate and perform seek
     final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
     await _seekByOffset(delta);
 
     // Refresh feedback (extends timer, updates display)
     _showSkipFeedback(isForward: isForward);
 
-    // Record skip time for debounce
     _lastSkipActionTime = DateTime.now();
   }
 
-  /// Handle double-tap skip forward or backward
   Future<void> _handleDoubleTapSkip({required bool isForward}) async {
-    // Ignore if user cannot control playback
     if (!widget.canControl) return;
 
-    // Reset accumulated skip for new gesture
     _accumulatedSkipSeconds = _seekTimeSmall;
 
     final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
     await _seekByOffset(delta);
 
-    // Show visual feedback
     _showSkipFeedback(isForward: isForward);
 
-    // Record skip time for debounce
     _lastSkipActionTime = DateTime.now();
   }
 
@@ -242,13 +228,11 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
         _toggleControls();
       }
 
-      // Detect double-click
       final bool isDoubleClick = _lastSkipTapTime != null && now.difference(_lastSkipTapTime!).inMilliseconds < 250;
 
       if (isDoubleClick) {
         _lastSkipTapTime = null;
 
-        // Perform desktop double-click action: toggle fullscreen
         _toggleFullscreen();
 
         return;
@@ -296,7 +280,6 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     });
   }
 
-  /// Handle long-press cancel (same as end)
   void _handleLongPressCancel() => _handleLongPressEnd();
 
   /// Build the visual indicator for long-press 2x speed.

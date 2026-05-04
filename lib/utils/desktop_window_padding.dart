@@ -43,12 +43,10 @@ class DesktopAppBarHelper {
       rightPadding = DesktopWindowPadding.mobileRight;
     }
 
-    // If no platform-specific padding needed, return original actions
     if (rightPadding == null) {
       return actions;
     }
 
-    // Add padding to keep actions away from edge
     return actions != null ? [...actions, SizedBox(width: rightPadding)] : [SizedBox(width: rightPadding)];
   }
 
@@ -61,7 +59,6 @@ class DesktopAppBarHelper {
       return leading;
     }
 
-    // Skip left padding when side navigation scope is present in widget tree
     if (context != null && SideNavigationScope.isPresent(context)) {
       if (includeGestureDetector) {
         return GestureDetector(
@@ -120,7 +117,6 @@ class DesktopAppBarHelper {
       return null;
     }
 
-    // Skip extra width when side navigation scope is present in widget tree
     if (context != null && SideNavigationScope.isPresent(context)) {
       return null;
     }
@@ -165,8 +161,6 @@ class DesktopTitleBarPadding extends StatelessWidget {
       return child;
     }
 
-    // Skip left padding when side navigation scope is present in widget tree
-    // (side nav already handles the traffic lights area)
     if (SideNavigationScope.isPresent(context)) {
       final right = rightPadding ?? 0.0;
       if (right == 0.0) {

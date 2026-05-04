@@ -124,26 +124,21 @@ class LiveTvProgram {
     );
   }
 
-  /// Start time as DateTime
   DateTime? get startTime => beginsAt != null ? DateTime.fromMillisecondsSinceEpoch(beginsAt! * 1000) : null;
 
-  /// End time as DateTime
   DateTime? get endTime => endsAt != null ? DateTime.fromMillisecondsSinceEpoch(endsAt! * 1000) : null;
 
-  /// Duration in minutes
   int get durationMinutes {
     if (beginsAt == null || endsAt == null) return 0;
     return ((endsAt! - beginsAt!) / 60).round();
   }
 
-  /// Whether this program is currently airing
   bool get isCurrentlyAiring {
     if (beginsAt == null || endsAt == null) return false;
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
     return now >= beginsAt! && now < endsAt!;
   }
 
-  /// Progress through the program (0.0 to 1.0)
   double get progress {
     if (beginsAt == null || endsAt == null) return 0.0;
     final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;
@@ -152,7 +147,6 @@ class LiveTvProgram {
     return (now - beginsAt!) / (endsAt! - beginsAt!);
   }
 
-  /// Display title including series info for episodes
   String get displayTitle {
     if (grandparentTitle != null && index != null) {
       final seasonEpisode = parentIndex != null ? 'S${parentIndex}E$index' : 'E$index';

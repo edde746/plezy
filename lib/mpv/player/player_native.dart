@@ -87,8 +87,6 @@ class PlayerNative extends PlayerBase {
     }
   }
 
-  /// Opens a content:// URI via the platform channel and returns the raw FD number.
-  /// Returns null if the call fails.
   Future<int?> _openContentFd(String contentUri) async {
     try {
       return await invoke<int>('openContentFd', {'uri': contentUri});
@@ -108,26 +106,21 @@ class PlayerNative extends PlayerBase {
     await _ensureInitialized();
     setSeekable(false);
 
-    // Show the video layer
     await setVisible(true);
 
-    // Set HTTP headers for Plex authentication and profile
     if (media.headers != null && media.headers!.isNotEmpty) {
       final headerList = media.headers!.entries.map((e) => '${e.key}: ${e.value}').toList();
       await setProperty('http-header-fields', headerList.join(','));
     }
 
-    // Set start position if provided (must be set before loading file)
+    // 'start' must be set before loadfile.
     if (media.start != null && media.start!.inSeconds > 0) {
       await setProperty('start', media.start!.inSeconds.toString());
     } else {
-      // Reset start position if not resuming
       await setProperty('start', 'none');
     }
 
-    // Set pause BEFORE loadfile to prevent decoder from starting immediately.
-    // This is important for adding external subtitles before playback begins,
-    // avoiding a race condition that can freeze the video decoder on Android (issue #226).
+    // Prevents race condition that can freeze the video decoder on Android (issue #226).
     if (!play) {
       await setProperty('pause', 'yes');
     }

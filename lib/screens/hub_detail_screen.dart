@@ -75,16 +75,12 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   @override
   void initState() {
     super.initState();
-    // Start with items already loaded in the hub
     _items = widget.hub.items;
     _filteredItems = widget.hub.items;
-    // Load more items if available
     if (widget.hub.more) {
       _loadMoreItems();
     }
-    // Load sorts based on the library type
     _loadSorts();
-    // Auto-focus first grid item in keyboard mode after first frame
     autoFocusFirstItemAfterLoad();
   }
 
@@ -206,7 +202,6 @@ class _HubDetailScreenState extends State<HubDetailScreen>
         },
         onClear: () {
           setState(() {
-            // Reset to no sorting (original order)
             _selectedSort = null;
             _isSortDescending = false;
           });
@@ -261,11 +256,9 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   }
 
   void _handleItemRefresh(String ratingKey) {
-    // Refresh the specific item in the list
     setState(() {
       final index = _items.indexWhere((item) => item.id == ratingKey);
       if (index != -1) {
-        // The item will be refreshed by the MediaCard itself
         appLogger.d('Item refresh requested for: $ratingKey');
       }
     });

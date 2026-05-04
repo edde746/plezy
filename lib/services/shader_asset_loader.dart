@@ -64,7 +64,6 @@ class ShaderAssetLoader {
       final fileName = path.basename(assetPath);
       final subDir = path.dirname(assetPath);
 
-      // Create subdirectory if needed
       final targetDir = Directory(path.join(shaderDir, subDir));
       if (!await targetDir.exists()) {
         await targetDir.create(recursive: true);
@@ -114,7 +113,6 @@ class ShaderAssetLoader {
     final quality = config.quality;
     final mode = config.mode;
 
-    // Get quality-specific shader variants
     String restoreVariant;
     String upscaleVariant;
 
@@ -262,15 +260,12 @@ class ShaderAssetLoader {
   /// Call this at startup to avoid extraction delay during playback.
   static Future<void> preloadShaders() async {
     try {
-      // Extract NVScaler
       await _extractShader(_nvscalerShader);
 
-      // Extract all ArtCNN shaders
       for (final shaderPath in _artcnnShaders.values) {
         await _extractShader(shaderPath);
       }
 
-      // Extract all Anime4K shaders
       for (final shaderPath in _anime4kShaders.values) {
         await _extractShader(shaderPath);
       }

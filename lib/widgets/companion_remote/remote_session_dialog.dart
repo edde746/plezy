@@ -168,10 +168,8 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Server status card
                     _buildServerStatus(context, provider),
 
-                    // Connected device info
                     if (provider.connectedDevice != null) ...[
                       const SizedBox(height: 16),
                       _buildConnectedDevice(context, provider),

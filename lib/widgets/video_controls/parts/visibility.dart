@@ -45,11 +45,9 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   void _listenToCompleted() {
     _completedSubscription = widget.player.streams.completed.listen((completed) {
       if (completed && mounted) {
-        // Cancel long-press 2x speed if active
         if (_isLongPressing) {
           _handleLongPressCancel();
         }
-        // Show controls when video completes (for play next dialog etc.)
         _setControlsState(() {
           _showControls = true;
         });
@@ -114,7 +112,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
     if (_forceShowControls) return;
 
-    // Only auto-hide if playing
+    // Only auto-hide while playing; keep controls visible while paused.
     if (widget.player.state.playing) {
       _hideTimer = Timer(_hideDelay, () {
         // Also check hasFirstFrame in callback (in case it changed)
@@ -259,7 +257,6 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     await MacOSWindowService.setTrafficLightsVisible(visible);
   }
 
-  /// Check whether PiP is supported on this device
   Future<void> _checkPipSupport() async {
     if (!Platform.isAndroid && !Platform.isIOS && !Platform.isMacOS) {
       return;
@@ -340,7 +337,6 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     }
     _startHideTimer();
 
-    // Request focus on play/pause button after controls are shown
     if (requestFocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _desktopControlsKey.currentState?.requestPlayPauseFocus();
@@ -370,7 +366,6 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     }
     _startHideTimer();
 
-    // Request focus on timeline after controls are shown
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _desktopControlsKey.currentState?.requestTimelineFocus();
     });
@@ -379,13 +374,11 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   /// Hide controls when navigating up from timeline (keyboard mode)
   /// If skip marker button or Play Next dialog is visible, focus it instead of hiding controls
   void _hideControlsFromKeyboard() {
-    // If skip marker button is visible, focus it instead of hiding controls
     if (_currentMarker != null) {
       _skipMarkerFocusNode.requestFocus();
       return;
     }
 
-    // If Play Next dialog is visible (focus node provided), focus it instead of hiding controls
     if (widget.playNextFocusNode != null) {
       widget.playNextFocusNode!.requestFocus();
       return;

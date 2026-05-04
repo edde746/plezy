@@ -118,7 +118,6 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       iconColor: c.text,
       textColor: c.text,
     ),
-    // minimal bottom bar
     navigationBarTheme: NavigationBarThemeData(
       backgroundColor: c.bg,
       elevation: 0,

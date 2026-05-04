@@ -37,7 +37,6 @@ class AmbientLightingService {
     if (!isSupported) return;
 
     try {
-      // Write static shader (only needs to happen once)
       _shaderPath ??= await _writeShaderToTemp(_generateShader());
 
       appLogger.d('AmbientLightingService: Shader path: $_shaderPath');

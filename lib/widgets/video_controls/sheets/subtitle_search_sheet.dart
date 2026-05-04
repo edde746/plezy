@@ -222,7 +222,6 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Row(
               children: [
-                // Language chip
                 FocusableButton(
                   focusNode: _languageFocusNode,
                   onPressed: _showLanguagePickerView,
@@ -251,7 +250,6 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Title search field
                 Expanded(
                   child: FocusableTextField(
                     controller: _titleController,

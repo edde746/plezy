@@ -114,9 +114,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
     await _adoptLegacyWatchActionsForProfile(profileId, availableProfileCount: _availableProfileCount);
   }
 
-  /// Start monitoring for connectivity changes to auto-sync
   void startConnectivityMonitoring(OfflineModeSource source) {
-    // Remove previous listener if any
     if (_offlineModeSource != null && _offlineModeListener != null) {
       _offlineModeSource!.removeListener(_offlineModeListener!);
     }
@@ -241,19 +239,12 @@ class OfflineWatchSyncService extends ChangeNotifier {
     return clientScopeId;
   }
 
-  /// Queue a manual "mark as watched" action.
-  ///
-  /// Removes any conflicting actions for the same item.
   Future<String?> queueMarkWatched({required String serverId, required String itemId}) =>
       _queueWatchStatusAction(serverId: serverId, itemId: itemId, actionType: OfflineActionType.watched.id);
 
-  /// Queue a manual "mark as unwatched" action.
-  ///
-  /// Removes any conflicting actions for the same item.
   Future<String?> queueMarkUnwatched({required String serverId, required String itemId}) =>
       _queueWatchStatusAction(serverId: serverId, itemId: itemId, actionType: OfflineActionType.unwatched.id);
 
-  /// Internal helper to queue watch/unwatch actions.
   Future<String?> _queueWatchStatusAction({
     required String serverId,
     required String itemId,
@@ -379,7 +370,6 @@ class OfflineWatchSyncService extends ChangeNotifier {
     return null;
   }
 
-  /// Get count of pending sync items.
   Future<int> getPendingSyncCount() async {
     await _adoptLegacyWatchActionsForActiveProfile();
     final profileId = _activeProfileId;

@@ -4,11 +4,9 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   Future<void> _playNext() async {
     if (_nextEpisode == null || _isLoadingNext) return;
 
-    // Cancel auto-play timer if running
     _autoPlayTimer?.cancel();
     _dismissStillWatching();
 
-    // Notify Watch Together of episode change before navigating
     _notifyWatchTogetherMediaChange(metadata: _nextEpisode);
 
     _setPlayerState(() {
@@ -46,12 +44,10 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     // Set flag to skip orientation restoration in dispose()
     _isReplacingWithVideo = true;
 
-    // Clear Discord Rich Presence + Trakt scrobble before switching episodes
     unawaited(DiscordRPCService.instance.stopPlayback());
     unawaited(TraktScrobbleService.instance.stopPlayback());
     unawaited(TrackerCoordinator.instance.stopPlayback());
 
-    // If player isn't available, navigate without preserving settings
     if (player == null) {
       if (mounted) {
         unawaited(
@@ -69,7 +65,6 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     // Capture current state atomically to avoid race conditions
     final currentPlayer = player;
     if (currentPlayer == null) {
-      // Player already disposed, navigate without preserving settings
       if (mounted) {
         unawaited(
           navigateToVideoPlayer(
@@ -87,15 +82,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     final currentSubtitleTrack = currentPlayer.state.track.subtitle;
     final currentSecondarySubtitleTrack = currentPlayer.state.track.secondarySubtitle;
 
-    // Pause and stop current playback
     unawaited(currentPlayer.pause());
     await _sendStoppedProgressOnce();
     _progressTracker?.stopTracking();
 
-    // Ensure the native player is fully disposed before creating the next one
     await disposePlayerForNavigation();
 
-    // Navigate to the episode using pushReplacement to destroy current player
     if (mounted) {
       unawaited(
         navigateToVideoPlayer(
@@ -246,9 +238,8 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         _trackManager!.applyTrackSelectionWhenReady();
       }
 
-      // Wire progress tracker, media-controls metadata, and the
-      // Discord/Trakt/Tracker scrobblers — same helper as the initial
-      // start flow, so any future change lands in both paths together.
+      // Same helper as the initial start flow, so any future change lands in
+      // both paths together.
       _wirePerItemPlaybackServices(
         metadata: episodeMetadata,
         mediaClient: mediaClient,

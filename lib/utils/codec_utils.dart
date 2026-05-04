@@ -5,10 +5,6 @@
 class CodecUtils {
   CodecUtils._();
 
-  /// Maps Plex subtitle codec names to file extensions.
-  ///
-  /// Returns the appropriate file extension for a given subtitle codec.
-  /// Defaults to 'srt' for unknown or null codecs.
   static String getSubtitleExtension(String? codec) {
     if (codec == null) return 'srt';
 

@@ -95,7 +95,6 @@ class FocusableMediaCard extends StatefulWidget {
 }
 
 class _FocusableMediaCardState extends State<FocusableMediaCard> {
-  // Key for accessing MediaCard's state
   final GlobalKey<MediaCardState> _mediaCardKey = GlobalKey();
 
   @override

@@ -96,7 +96,6 @@ abstract class LiveTvSupport {
   /// locally.
   Future<void> setFavoriteChannels(List<FavoriteChannel> channels);
 
-  // ── DVR setup/lifecycle ─────────────────────────────────────────
   Future<LiveTvServerStatus> fetchLiveTvServerStatus();
   Future<LiveTvDvr?> fetchDvr(String dvrId);
   Future<LiveTvActivityResult<LiveTvDvr?>> createDvr({
@@ -115,7 +114,6 @@ abstract class LiveTvSupport {
   Future<LiveTvActivityResult<void>> reloadGuide(String dvrId);
   Future<void> cancelGuideReload(String dvrId);
 
-  // ── Grabber devices/tuners ──────────────────────────────────────
   Future<List<MediaGrabber>> fetchGrabbers({String? protocol});
   Future<List<MediaGrabberDevice>> fetchGrabberDevices();
   Future<LiveTvActivityResult<List<MediaGrabberDevice>>> discoverGrabberDevices();
@@ -136,7 +134,6 @@ abstract class LiveTvSupport {
   Future<void> updateGrabberDevicePrefs(String deviceId, Map<String, Object?> prefs);
   String buildGrabberDeviceThumbUrl(String deviceId, int version);
 
-  // ── EPG setup/lineups ───────────────────────────────────────────
   Future<List<LiveTvCountry>> fetchEpgCountries();
   Future<List<LiveTvLanguage>> fetchEpgLanguages();
   Future<List<LiveTvRegion>> fetchEpgRegions(String country, String epgId);
@@ -149,7 +146,6 @@ abstract class LiveTvSupport {
     required String lineupGroupUri,
   });
 
-  // ── Recording rules / scheduled grabs ───────────────────────────
   Future<List<SubscriptionTemplate>> getSubscriptionTemplate(String guid);
   Future<List<MediaSubscription>> fetchRecordingRules({bool includeGrabs = true, bool includeStorage = true});
   Future<MediaSubscription?> fetchRecordingRule(
@@ -170,7 +166,6 @@ abstract class LiveTvSupport {
     bool includeStorage = true,
   });
 
-  // ── Providers and sessions ──────────────────────────────────────
   Future<List<MediaProviderInfo>> fetchMediaProviders();
   Future<void> registerMediaProvider(String url);
   Future<void> refreshMediaProviders();

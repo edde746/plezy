@@ -132,7 +132,6 @@ class KeyboardShortcutsService extends ChangeNotifier {
     super.dispose();
   }
 
-  // Format HotKey for display
   String formatHotkey(HotKey? hotKey) {
     if (hotKey == null) return 'No shortcut set';
 
@@ -169,7 +168,6 @@ class KeyboardShortcutsService extends ChangeNotifier {
     return modifiers.isEmpty ? keyName : '${modifiers.join(' + ')} + $keyName';
   }
 
-  // Handle keyboard input for video player
   KeyEventResult handleVideoPlayerKeyEvent(
     KeyEvent event,
     Player player,
@@ -189,7 +187,6 @@ class KeyboardShortcutsService extends ChangeNotifier {
   }) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
-    // Handle back navigation keys (Escape)
     if (event.logicalKey == LogicalKeyboardKey.escape) {
       onBack?.call();
       return KeyEventResult.handled;
@@ -201,19 +198,15 @@ class KeyboardShortcutsService extends ChangeNotifier {
     final isAltPressed = HardwareKeyboard.instance.isAltPressed;
     final isMetaPressed = HardwareKeyboard.instance.isMetaPressed;
 
-    // Check each hotkey
     for (final entry in _hotkeys.entries) {
       final action = entry.key;
       final hotkey = entry.value;
 
-      // Check if the physical key matches
       if (physicalKey != hotkey.key) continue;
 
-      // Check if modifiers match
       final requiredModifiers = hotkey.modifiers ?? [];
       bool modifiersMatch = true;
 
-      // Check each required modifier
       for (final modifier in requiredModifiers) {
         switch (modifier) {
           case HotKeyModifier.shift:
@@ -384,7 +377,6 @@ class KeyboardShortcutsService extends ChangeNotifier {
     }
   }
 
-  // Get human-readable action names
   String getActionDisplayName(String action) {
     switch (action) {
       case 'play_pause':

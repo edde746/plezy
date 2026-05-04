@@ -17,7 +17,6 @@ class UpdateService {
   static const String _githubRepo = 'edde746/plezy';
   static const String _feedUrl = 'https://cdn.jsdelivr.net/gh/edde746/plezy@appcast/appcast.xml';
 
-  // SharedPreferences keys
   static const String _keySkippedVersion = 'update_skipped_version';
   static const String _keyLastCheckTime = 'update_last_check_time';
 
@@ -100,19 +99,16 @@ class UpdateService {
     }
   }
 
-  /// Skip a specific version
   static Future<void> skipVersion(String version) async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
     await prefs.setString(_keySkippedVersion, version);
   }
 
-  /// Get the skipped version
   static Future<String?> getSkippedVersion() async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
     return prefs.getString(_keySkippedVersion);
   }
 
-  /// Clear skipped version
   static Future<void> clearSkippedVersion() async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
     await prefs.remove(_keySkippedVersion);
@@ -132,7 +128,6 @@ class UpdateService {
     return timeSinceLastCheck >= _checkCooldown;
   }
 
-  /// Update the last check timestamp
   static Future<void> _updateLastCheckTime() async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
     await prefs.setString(_keyLastCheckTime, DateTime.now().toIso8601String());
@@ -246,7 +241,7 @@ class UpdateService {
         if (newPart < currentPart) return false;
       }
 
-      return false; // Versions are equal
+      return false;
     } catch (e) {
       _logger.e('Error comparing versions: $e');
       return false;

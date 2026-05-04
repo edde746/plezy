@@ -88,8 +88,6 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
-                // Drag handle (if reorderable)
-                // Wrapped in GestureDetector to consume long-press and prevent context menu
                 if (widget.canReorder)
                   GestureDetector(
                     // ignore: no-empty-block - consumes long-press to prevent context menu on drag

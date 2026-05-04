@@ -10,7 +10,6 @@ String padNumber(int number, int width) {
   return number.toString().padLeft(width, '0');
 }
 
-/// Utility class for formatting byte sizes and speeds
 class ByteFormatter {
   ByteFormatter._();
 
@@ -19,9 +18,6 @@ class ByteFormatter {
   static const int _gb = _mb * 1024;
 
   /// Format bytes to human-readable string (e.g., "1.5 GB", "256.3 MB")
-  ///
-  /// [bytes] The number of bytes to format
-  /// [decimals] Number of decimal places (default: 1 for KB/MB, 2 for GB)
   static String formatBytes(int bytes, {int? decimals}) {
     if (bytes < _kb) return '$bytes B';
     if (bytes < _mb) {
@@ -34,8 +30,6 @@ class ByteFormatter {
   }
 
   /// Format speed in bytes per second to human-readable string
-  ///
-  /// [bytesPerSecond] The speed in bytes per second
   static String formatSpeed(double bytesPerSecond) {
     if (bytesPerSecond < _kb) {
       return '${bytesPerSecond.toStringAsFixed(0)} B/s';
@@ -47,8 +41,6 @@ class ByteFormatter {
   }
 
   /// Format bitrate in kbps to human-readable string
-  ///
-  /// [kbps] The bitrate in kilobits per second
   static String formatBitrate(int kbps) {
     if (kbps < 1000) return '$kbps kbps';
     return '${(kbps / 1000).toStringAsFixed(1)} Mbps';
@@ -63,17 +55,13 @@ class ByteFormatter {
 String formatDurationTextual(int milliseconds, {bool abbreviated = true}) {
   final duration = Duration(milliseconds: milliseconds);
 
-  // Get the appropriate locale for the duration package
   final durationLocale = _getDurationLocale();
-
-  // Format with abbreviated or full units (h, m) but no seconds
   return prettyDuration(
     duration,
     abbreviated: abbreviated,
     locale: durationLocale,
     delimiter: abbreviated ? ' ' : ', ',
     spacer: '',
-    // Configure to show only hours and minutes
     tersity: DurationTersity.minute,
   );
 }
@@ -87,14 +75,12 @@ String formatDurationWithSeconds(Duration duration) {
   // Get the appropriate locale for the duration package
   final durationLocale = _getDurationLocale();
 
-  // Format with abbreviated units (h, m, s) including seconds
   return prettyDuration(
     duration,
     abbreviated: true,
     locale: durationLocale,
     delimiter: ' ',
     spacer: '',
-    // Show all non-zero units
     tersity: DurationTersity.second,
   );
 }
@@ -105,7 +91,6 @@ String formatDurationWithSeconds(Duration duration) {
 ///
 /// Used for: video controls, chapters, episode durations.
 String formatDurationTimestamp(Duration duration) {
-  // Handle negative durations
   final isNegative = duration.isNegative;
   final absoluteDuration = duration.abs();
 
@@ -130,13 +115,11 @@ String formatSyncOffset(double offsetMs) {
   final durationLocale = _getDurationLocale();
 
   if (absMs >= 10000) {
-    // For values >= 10s, show decimal seconds (e.g., "+15.1s")
     final seconds = (offsetMs.abs() / 1000).toStringAsFixed(1);
     final unit = durationLocale.second(1, true);
     return '$sign$seconds$unit';
   }
 
-  // For values < 10s, show milliseconds (e.g., "+7300ms")
   final unit = durationLocale.millisecond(1, true);
   return '$sign$absMs$unit';
 }
@@ -144,7 +127,6 @@ String formatSyncOffset(double offsetMs) {
 /// Gets the duration package locale based on the current app locale.
 /// Falls back to English if the locale is not supported by the duration package.
 DurationLocale _getDurationLocale() {
-  // Get the current locale from slang's LocaleSettings
   final appLocale = LocaleSettings.currentLocale;
   final languageCode = appLocale.languageCode;
 
@@ -154,7 +136,6 @@ DurationLocale _getDurationLocale() {
   try {
     return DurationLocale.fromLanguageCode(languageCode) ?? const EnglishDurationLocale();
   } catch (e) {
-    // Fallback to English if language code is not supported
     return const EnglishDurationLocale();
   }
 }
@@ -188,7 +169,6 @@ String formatFinishTime(Duration remaining, {double rate = 1.0, required bool is
   return formatClockTime(finishTime, is24Hour: is24Hour);
 }
 
-/// Takes a list of strings and returns one long string with each item in the list concatenated by a bullet
 String toBulletedString(List<String> parts) {
   return parts.join(' · ');
 }
@@ -207,10 +187,8 @@ String formatPlaybackRate(double rate, {bool normalAtOne = false}) {
 /// If there is any error, `dateString` is returned as is
 String formatFullDate(String dateString) {
   try {
-    // Parse the date
     final date = DateTime.parse(dateString);
 
-    // Create a DateFormat with the full date pattern for the current locale
     final formatter = DateFormat.yMMMMd(LocaleSettings.currentLocale.languageCode);
 
     return formatter.format(date);

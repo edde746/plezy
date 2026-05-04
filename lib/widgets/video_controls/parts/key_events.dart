@@ -5,7 +5,6 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     _keyboardService = await KeyboardShortcutsService.getInstance();
   }
 
-  /// Check if a key is a directional key (arrow keys)
   bool _isDirectionalKey(LogicalKeyboardKey key) {
     return key == LogicalKeyboardKey.arrowUp ||
         key == LogicalKeyboardKey.arrowDown ||
@@ -13,7 +12,6 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         key == LogicalKeyboardKey.arrowRight;
   }
 
-  /// Check if a key is a select/enter key
   bool _isSelectKey(LogicalKeyboardKey key) {
     return key == LogicalKeyboardKey.select ||
         key == LogicalKeyboardKey.enter ||
@@ -44,7 +42,6 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     return physicalKey == PhysicalKeyboardKey.space || physicalKey == PhysicalKeyboardKey.mediaPlayPause;
   }
 
-  /// Check if a key is a media seek key (Android TV remotes)
   bool _isMediaSeekKey(LogicalKeyboardKey key) {
     return key == LogicalKeyboardKey.mediaFastForward ||
         key == LogicalKeyboardKey.mediaRewind ||
@@ -52,7 +49,6 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         key == LogicalKeyboardKey.mediaSkipBackward;
   }
 
-  /// Check if a key is a media track key (Android TV remotes)
   bool _isMediaTrackKey(LogicalKeyboardKey key) {
     return key == LogicalKeyboardKey.mediaTrackNext || key == LogicalKeyboardKey.mediaTrackPrevious;
   }
@@ -201,7 +197,6 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         _showControlsWithFocus();
         return;
       }
-      // Controls visible - navigate back
       (widget.onBack ?? () => Navigator.of(context).pop(true))();
     });
     if (backResult != KeyEventResult.ignored) {

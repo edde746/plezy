@@ -112,7 +112,6 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Color preview
         Container(
           height: 64,
           width: double.infinity,
@@ -123,7 +122,6 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
           ),
         ),
         const SizedBox(height: 16),
-        // Hue row
         _ColorChannelRow(
           label: 'H',
           value: _hue,
@@ -139,7 +137,6 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
           },
         ),
         const SizedBox(height: 8),
-        // Saturation row
         _ColorChannelRow(
           label: 'S',
           value: _saturation,
@@ -154,7 +151,6 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
           },
         ),
         const SizedBox(height: 8),
-        // Value row
         _ColorChannelRow(
           label: 'V',
           value: _value,
@@ -169,7 +165,6 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
           },
         ),
         const SizedBox(height: 16),
-        // Hex input
         FocusableTextField(
           controller: _hexController,
           focusNode: _hexFocusNode,
@@ -314,27 +309,23 @@ class _ColorChannelRowState extends State<_ColorChannelRow> with KeyRepeatHelper
         ),
         child: Row(
           children: [
-            // Label
             SizedBox(
               width: 24,
               child: Text(widget.label, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             ),
             const SizedBox(width: 8),
-            // Decrement button
             _ChannelButton(
               icon: Symbols.remove_rounded,
               onPressed: canDecrement ? _decrement : null,
               semanticLabel: 'Decrease ${widget.label}',
             ),
             const SizedBox(width: 8),
-            // Value display
             Container(
               constraints: const BoxConstraints(minWidth: 56),
               alignment: Alignment.center,
               child: Text('${widget.value}${widget.suffix}', style: theme.textTheme.titleMedium),
             ),
             const SizedBox(width: 8),
-            // Increment button
             _ChannelButton(
               icon: Symbols.add_rounded,
               onPressed: canIncrement ? _increment : null,
@@ -347,7 +338,6 @@ class _ColorChannelRowState extends State<_ColorChannelRow> with KeyRepeatHelper
   }
 }
 
-/// Small +/- button for a channel row.
 class _ChannelButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onPressed;

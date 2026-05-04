@@ -575,7 +575,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
 
   @override
   Widget build(BuildContext context) {
-    // Use desktop controls for desktop platforms AND Android TV
     final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
 
     // Hide ALL controls when in PiP mode (except macOS where main window stays visible)
@@ -601,7 +600,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                   // Flutter animations from freezing when the frame clock goes idle
                   if (Platform.isLinux || Platform.isWindows)
                     const Positioned(top: 0, left: 0, child: LinuxKeepAlive()),
-                  // Invisible tap detector that always covers the full area.
                   // Also handles long-press for 2x speed.
                   Positioned.fill(
                     child: GestureDetector(
@@ -783,7 +781,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                         child: _buildSkipMarkerButton(),
                       ),
                     ),
-                  // Performance overlay (top-left)
                   if (_showPerformanceOverlay)
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 200),
@@ -796,7 +793,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls> with WindowListen
                         child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
                       ),
                     ),
-                  // Screen lock overlay - absorbs all touches when active
                   if (_isScreenLocked)
                     Positioned.fill(
                       child: GestureDetector(

@@ -1232,7 +1232,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Hub title skeleton
                             Container(
                               width: 200,
                               height: 24,
@@ -1242,7 +1241,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               ),
                             ),
                             const SizedBox(height: 16),
-                            // Hub items skeleton
                             SizedBox(
                               height: 200,
                               child: ListView.builder(
@@ -1349,9 +1347,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           semanticLabel: '${_isAutoScrollPaused ? t.common.play : t.common.pause} auto-scroll',
                         ),
                       ),
-                      // Spacer to separate indicators from button
                       const SizedBox(width: 8),
-                      // Page indicators (limited to 5 dots)
                       ...() {
                         final range = _getVisibleDotRange();
                         return List.generate(range.end - range.start + 1, (i) {

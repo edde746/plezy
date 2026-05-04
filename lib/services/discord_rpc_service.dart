@@ -60,7 +60,6 @@ class DiscordRPCService {
 
   DiscordRPCService._();
 
-  /// Check if Discord RPC is available on this platform
   static bool get isAvailable {
     if (!PlatformDetector.isDesktopOS()) {
       return false;
@@ -86,7 +85,6 @@ class DiscordRPCService {
     }
   }
 
-  /// Enable or disable Discord RPC
   Future<void> setEnabled(bool enabled) async {
     if (_isEnabled == enabled) return;
 
@@ -172,7 +170,6 @@ class DiscordRPCService {
     }
   }
 
-  /// Stop showing presence when playback ends
   Future<void> stopPlayback() async {
     _currentMetadata = null;
     _currentClient = null;
@@ -185,7 +182,6 @@ class DiscordRPCService {
     }
   }
 
-  /// Clear the presence
   Future<void> clearPresence() async {
     try {
       unawaited(_rpc?.clearPresence());
@@ -199,8 +195,6 @@ class DiscordRPCService {
     _reconnectTimer?.cancel();
     await _disconnect();
   }
-
-  // Private methods
 
   Future<void> _connect() async {
     if (_rpc != null) return;
@@ -311,7 +305,6 @@ class DiscordRPCService {
       final imageUrl = client.thumbnailUrl(thumbPath);
       if (imageUrl.isEmpty) return null;
 
-      // Fetch image data
       final imageBytes = await httpClient.getBytes(
         imageUrl,
         headers: client.streamHeaders,
@@ -319,7 +312,6 @@ class DiscordRPCService {
       );
       if (imageBytes.isEmpty) return null;
 
-      // Upload to Litterbox
       final uploadRequest = http.MultipartRequest('POST', Uri.parse(_litterboxUrl))
         ..fields['reqtype'] = 'fileupload'
         ..fields['time'] = '1h'

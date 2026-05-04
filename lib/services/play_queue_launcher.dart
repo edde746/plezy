@@ -112,7 +112,6 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
         final selectedKey = (!shuffle && startItem != null) ? '/library/metadata/${startItem.id}' : null;
 
         if (facts.isCollection) {
-          // Get machine identifier (fetch if not cached in config)
           final machineId = client.config.machineIdentifier ?? await client.getMachineIdentifier();
 
           if (machineId == null) {
@@ -278,22 +277,18 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
 
     if (!context.mounted) return const PlayQueueError('Context not mounted');
 
-    // Set up playback state
     final playbackState = context.read<PlaybackStateProvider>();
     playbackState.setPlayQueueWindowFetcher(client.getPlayQueue);
     await playbackState.setPlaybackFromPlayQueue(playQueue, ratingKey);
 
     if (!context.mounted) return const PlayQueueError('Context not mounted');
 
-    // Determine which item to navigate to
     var itemToPlay = selectedItem ?? playQueue.items!.first;
 
-    // Copy server info if needed
     if (copyServerInfo && serverId != null) {
       itemToPlay = itemToPlay.copyWith(serverId: serverId, serverName: serverName);
     }
 
-    // Navigate to video player
     await navigateToVideoPlayer(context, metadata: itemToPlay);
 
     return const PlayQueueSuccess();

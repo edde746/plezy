@@ -123,7 +123,6 @@ extension DownloadDatabaseOperations on AppDatabase {
   /// Get next item from queue (highest priority, oldest first)
   /// Only returns items that are not paused
   Future<DownloadQueueItem?> getNextQueueItem() async {
-    // Join with downloadedMedia to check status and filter out paused items
     final query = select(
       downloadQueue,
     ).join([innerJoin(downloadedMedia, downloadedMedia.globalKey.equalsExp(downloadQueue.mediaGlobalKey))]);

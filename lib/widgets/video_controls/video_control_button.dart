@@ -9,10 +9,8 @@ import '../../focus/focusable_wrapper.dart';
 /// buttons without changing their visual appearance. The larger tap area makes
 /// buttons easier to interact with, especially on mobile devices.
 class VideoControlButton extends StatelessWidget {
-  /// The icon to display in the button.
   final IconData icon;
 
-  /// Called when the button is tapped.
   final VoidCallback? onPressed;
 
   /// The color of the icon. Defaults to white, or amber if [isActive] is true.
@@ -36,10 +34,8 @@ class VideoControlButton extends StatelessWidget {
   /// Custom key event handler for focus navigation.
   final KeyEventResult Function(FocusNode, KeyEvent)? onKeyEvent;
 
-  /// Called when focus changes.
   final ValueChanged<bool>? onFocusChange;
 
-  /// Whether this button should autofocus when first built.
   final bool autofocus;
 
   const VideoControlButton({
@@ -72,7 +68,6 @@ class VideoControlButton extends StatelessWidget {
         ? Semantics(label: semanticLabel, button: true, excludeSemantics: true, child: button)
         : button;
 
-    // Wrap with FocusableWrapper when focusNode is provided
     if (focusNode != null) {
       result = FocusableWrapper(
         focusNode: focusNode,

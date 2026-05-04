@@ -1,4 +1,3 @@
-/// Builds a globalKey string from [serverId] and [ratingKey].
 String buildGlobalKey(String serverId, String ratingKey) => '$serverId:$ratingKey';
 
 /// Separator used by profile-owned rows whose public media identity is still

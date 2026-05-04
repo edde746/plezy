@@ -127,9 +127,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
       final results = await _loadFromServers();
       if (!mounted) return;
       _panelNotifier.value = _PanelData(fetchState: _FetchState.loaded, results: results);
-    } catch (_) {
-      // silently ignore poll errors
-    }
+    } catch (_) {}
   }
 
   Future<void> _cancelActivity(String serverId, String uuid) async {

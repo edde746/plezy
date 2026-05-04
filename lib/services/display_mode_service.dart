@@ -33,7 +33,6 @@ class DisplayModeService {
 
     bool anyChange = false;
 
-    // Refresh rate matching.
     if (_settings.read(SettingsService.matchRefreshRate) && fps != null && fps > 0) {
       try {
         final success = await _matchRefreshRate(fps);
@@ -43,7 +42,6 @@ class DisplayModeService {
       }
     }
 
-    // Dynamic range matching.
     if (_settings.read(SettingsService.matchDynamicRange) && sigPeak != null && sigPeak > 1.0) {
       try {
         final success = await _enableSystemHDR();
@@ -61,7 +59,6 @@ class DisplayModeService {
     return Duration.zero;
   }
 
-  /// Restore all display settings to their original state.
   Future<void> restoreAll() async {
     if (!Platform.isWindows) return;
 
@@ -94,7 +91,6 @@ class DisplayModeService {
     final currentHeight = currentMode['height'] as int;
     final currentRate = currentMode['refreshRate'] as int;
 
-    // Find best matching rate from available modes.
     final modes = await _channel.invokeListMethod<Map>('getDisplayModes');
     if (modes == null || modes.isEmpty) return false;
 
@@ -137,7 +133,6 @@ class DisplayModeService {
   static int _findBestRefreshRate(double videoFps, List<Map> modes, int currentWidth, int currentHeight) {
     if (videoFps <= 0) return 0;
 
-    // Collect unique refresh rates at current resolution.
     final rates = <int>{};
     for (final mode in modes) {
       final w = mode['width'] as int;

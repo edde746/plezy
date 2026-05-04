@@ -1,5 +1,4 @@
 enum RemoteCommandType {
-  // Navigation
   dpadUp,
   dpadDown,
   dpadLeft,
@@ -8,7 +7,6 @@ enum RemoteCommandType {
   back,
   contextMenu,
 
-  // Playback
   play,
   pause,
   playPause,
@@ -20,13 +18,11 @@ enum RemoteCommandType {
   skipIntro,
   skipCredits,
 
-  // Volume
   volumeUp,
   volumeDown,
   volumeMute,
   volumeSet,
 
-  // Tab Navigation
   tabNext,
   tabPrevious,
   tabDiscover,
@@ -35,7 +31,6 @@ enum RemoteCommandType {
   tabDownloads,
   tabSettings,
 
-  // Quick Actions
   home,
   search,
   subtitles,
@@ -43,7 +38,6 @@ enum RemoteCommandType {
   qualitySettings,
   fullscreen,
 
-  // Session Management
   ping,
   pong,
   deviceInfo,

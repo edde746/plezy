@@ -7,11 +7,6 @@ import '../utils/initials_palette.dart';
 import '../widgets/app_icon.dart';
 import 'profile.dart';
 
-/// Round avatar for a [Profile]. Plex Home users with an `avatarThumbUrl`
-/// render the network image; locals (and Plex Home users without a thumb)
-/// fall back to the first initial on a deterministic colour. A small lock
-/// badge overlays PIN-protected profiles. A neutral fill is used while the
-/// active profile is still loading at app start.
 class ProfileAvatar extends StatelessWidget {
   final Profile? profile;
   final double size;

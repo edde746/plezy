@@ -6,27 +6,13 @@ import 'package:flutter/services.dart';
 import 'dpad_navigator.dart';
 import 'key_event_utils.dart';
 
-/// Callbacks for chip key event handling.
 class ChipKeyCallbacks {
-  /// Called when SELECT key is pressed (short press when [onLongPress] is set).
   final VoidCallback? onSelect;
-
-  /// Called when SELECT key is held for 500ms.
   final VoidCallback? onLongPress;
-
-  /// Called when DOWN arrow is pressed.
   final VoidCallback? onNavigateDown;
-
-  /// Called when UP arrow is pressed.
   final VoidCallback? onNavigateUp;
-
-  /// Called when LEFT arrow is pressed.
   final VoidCallback? onNavigateLeft;
-
-  /// Called when RIGHT arrow is pressed.
   final VoidCallback? onNavigateRight;
-
-  /// Called when BACK key is pressed.
   final VoidCallback? onBack;
 
   const ChipKeyCallbacks({
@@ -168,7 +154,6 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
       return KeyEventResult.ignored;
     }
 
-    // LEFT arrow - call callback if provided, otherwise propagate to parent
     if (key.isLeftKey) {
       if (callbacks.onNavigateLeft != null) {
         callbacks.onNavigateLeft!();
@@ -178,7 +163,6 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
       return KeyEventResult.ignored;
     }
 
-    // RIGHT arrow - call callback if provided, otherwise consume to prevent escape
     if (key.isRightKey) {
       if (callbacks.onNavigateRight != null) {
         callbacks.onNavigateRight!();
@@ -187,13 +171,11 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
       return KeyEventResult.handled;
     }
 
-    // DOWN arrow
     if (key.isDownKey) {
       callbacks.onNavigateDown?.call();
       return KeyEventResult.handled;
     }
 
-    // UP arrow
     if (key.isUpKey && callbacks.onNavigateUp != null) {
       callbacks.onNavigateUp!();
       return KeyEventResult.handled;

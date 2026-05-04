@@ -4,23 +4,6 @@ import 'focus_theme.dart';
 import 'focusable_wrapper.dart';
 import 'input_mode_tracker.dart';
 
-/// A focusable button wrapper for D-pad navigation on TV.
-///
-/// Wraps any button widget with [FocusableWrapper] and adds a white overlay
-/// + contrasting border when focused. Tracks focus state internally so callers
-/// don't need manual state management.
-///
-/// ```dart
-/// FocusableButton(
-///   autofocus: true,
-///   onPressed: _doSomething,
-///   child: FilledButton.icon(
-///     onPressed: _doSomething,
-///     icon: Icon(Symbols.add_rounded),
-///     label: Text('Create'),
-///   ),
-/// )
-/// ```
 class FocusableButton extends StatefulWidget {
   final Widget child;
   final VoidCallback? onPressed;

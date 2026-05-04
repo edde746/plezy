@@ -5,13 +5,10 @@ import 'package:flutter/material.dart';
 ///
 /// Uses the theme's surfaceContainerHighest color by default.
 class PlaceholderContainer extends StatelessWidget {
-  /// Optional child widget to display inside the placeholder
   final Widget? child;
 
-  /// Optional custom color (defaults to theme's surfaceContainerHighest)
   final Color? color;
 
-  /// Optional border radius
   final BorderRadius? borderRadius;
 
   const PlaceholderContainer({super.key, this.child, this.color, this.borderRadius});

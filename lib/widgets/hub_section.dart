@@ -85,7 +85,6 @@ class HubSectionState extends State<HubSection> {
   /// Current visual focus index (not tied to Flutter's focus system)
   int _focusedIndex = 0;
 
-  /// Item extent for scroll calculations
   double _itemExtent = 0;
   double get _leadingPadding => widget.inset ? 0.0 : 12.0;
 
@@ -106,7 +105,6 @@ class HubSectionState extends State<HubSection> {
   @override
   void didUpdateWidget(HubSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Clamp focus index if item count changed
     if (widget.hub.items.length != oldWidget.hub.items.length) {
       final maxIndex = _totalItemCount == 0 ? 0 : _totalItemCount - 1;
       if (_focusedIndex > maxIndex) {
@@ -148,7 +146,6 @@ class HubSectionState extends State<HubSection> {
     // ignore: no-empty-block - setState triggers rebuild to update focus styling
     if (mounted) setState(() {});
 
-    // Scroll the hub into view in the parent scroll view
     _scrollHubIntoView();
   }
 
@@ -379,7 +376,6 @@ class HubSectionState extends State<HubSection> {
           ),
         ),
 
-        // Hub items with locked focus control
         if (widget.hub.items.isNotEmpty)
           Focus(
             focusNode: _hubFocusNode,
@@ -395,17 +391,13 @@ class HubSectionState extends State<HubSection> {
                     svc.read(SettingsService.libraryDensity),
                   );
 
-                  // Get episode poster mode setting
                   final episodePosterMode = svc.read(SettingsService.episodePosterMode);
 
-                  // Determine hub content type for layout decisions
                   final hasEpisodes = widget.hub.items.any((item) => item.usesWideAspectRatio(episodePosterMode));
                   final hasNonEpisodes = widget.hub.items.any((item) => !item.usesWideAspectRatio(episodePosterMode));
 
-                  // Mixed hub = has both episodes AND non-episodes (like Continue Watching)
                   final isMixedHub = hasEpisodes && hasNonEpisodes;
 
-                  // Episode-only = all items are episodes with thumbnails
                   final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
 
                   // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
@@ -441,7 +433,6 @@ class HubSectionState extends State<HubSection> {
                         itemBuilder: (context, index) {
                           final isItemFocused = hasFocus && index == _focusedIndex;
 
-                          // "View All" card at end
                           if (index == widget.hub.items.length) {
                             return Padding(
                               padding: widget.inset
@@ -527,7 +518,6 @@ class HubSectionState extends State<HubSection> {
     );
   }
 
-  /// Called when an item is tapped (mouse/touch)
   void _onItemTapped(int index) {
     setState(() {
       _focusedIndex = index;

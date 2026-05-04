@@ -3,7 +3,6 @@ import '../services/settings_service.dart' show LibraryDensity;
 import 'layout_constants.dart';
 import 'platform_detector.dart';
 
-/// Utility class for calculating consistent grid sizes across the app
 class GridSizeCalculator {
   static double _lerp(double min, double max, double t) => min + (max - min) * t;
 
@@ -68,12 +67,10 @@ class GridSizeCalculator {
     return availableWidth / columns;
   }
 
-  /// Check if the given index is in the first row of a grid with given column count.
   static bool isFirstRow(int index, int columnCount) {
     return index < columnCount;
   }
 
-  /// Check if the given index is in the first column of a grid with given column count.
   static bool isFirstColumn(int index, int columnCount) {
     return index % columnCount == 0;
   }

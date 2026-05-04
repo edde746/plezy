@@ -55,7 +55,6 @@ Future<bool?> navigateToVideoPlayer(
   bool usePushReplacement = false,
   bool isOffline = false,
 }) async {
-  // Extract context-dependent values before any async operations
   final navigator = Navigator.of(context);
   final downloadProvider = context.read<DownloadProvider>();
   // Use the manager-routed lookup so Jellyfin items don't trip the
@@ -63,7 +62,6 @@ Future<bool?> navigateToVideoPlayer(
   final manager = context.read<MultiServerProvider>().serverManager;
   final mediaClient = isOffline ? null : manager.getClient(metadata.serverId ?? '');
 
-  // Load saved media version preference if not explicitly provided
   int mediaIndex = selectedMediaIndex ?? 0;
   if (selectedMediaIndex == null) {
     try {
@@ -73,9 +71,7 @@ Future<bool?> navigateToVideoPlayer(
       if (savedPreference != null) {
         mediaIndex = savedPreference;
       }
-    } catch (e) {
-      // Ignore errors loading preference, use default
-    }
+    } catch (_) {}
   }
 
   // Check if external player is enabled
@@ -85,7 +81,6 @@ Future<bool?> navigateToVideoPlayer(
       bool launched = false;
 
       if (isOffline) {
-        // Offline mode: resolve local file path for the external player
         final globalKey = metadata.globalKey;
         final videoPath = await downloadProvider.getVideoFilePath(globalKey);
         if (videoPath != null && context.mounted) {
@@ -102,7 +97,6 @@ Future<bool?> navigateToVideoPlayer(
       }
 
       if (launched) return null;
-      // Fall through to built-in player on failure
     }
   } catch (e) {
     appLogger.w('External player launch failed, falling back to built-in player', error: e);
@@ -174,7 +168,6 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
 
   appLogger.d('Returned from playback, refreshing metadata');
 
-  // Refresh data when returning from video player (skip if offline)
   if (!isOffline && onRefresh != null) {
     onRefresh();
   }

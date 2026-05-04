@@ -3,12 +3,7 @@ import 'dart:async';
 import '../models.dart';
 import 'player_streams.dart';
 
-/// Mixin providing stream controllers for player state changes.
-///
-/// This mixin contains the 16 stream controllers used by both
-/// [PlayerAndroid] and [PlayerNative] implementations.
 mixin PlayerStreamControllersMixin {
-  // Stream controllers
   final playingController = StreamController<bool>.broadcast();
   final completedController = StreamController<bool>.broadcast();
   final bufferingController = StreamController<bool>.broadcast();
@@ -28,7 +23,6 @@ mixin PlayerStreamControllersMixin {
   final playbackRestartController = StreamController<void>.broadcast();
   final backendSwitchedController = StreamController<void>.broadcast();
 
-  /// Creates a [PlayerStreams] instance from the stream controllers.
   PlayerStreams createStreams() {
     return PlayerStreams(
       playing: playingController.stream,
@@ -52,7 +46,6 @@ mixin PlayerStreamControllersMixin {
     );
   }
 
-  /// Closes all stream controllers.
   Future<void> closeStreamControllers() async {
     await playingController.close();
     await completedController.close();

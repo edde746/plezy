@@ -61,7 +61,6 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     );
   }
 
-  /// Switch to a different media version
   void _onQueueItemSelected(MediaItem item) {
     final videoPlayerState = context.findAncestorStateOfType<VideoPlayerScreenState>();
     videoPlayerState?.navigateToQueueItem(item);
@@ -159,7 +158,6 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     }
 
     try {
-      // Save current playback position
       final currentPosition = widget.player.state.position;
 
       // Get state reference before async operations

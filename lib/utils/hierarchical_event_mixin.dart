@@ -9,10 +9,8 @@ mixin HierarchicalEventMixin {
   /// The id of the affected item (Plex ratingKey, Jellyfin GUID, …).
   String get itemId;
 
-  /// Composite key: serverId:itemId.
   String get globalKey;
 
-  /// Server this item belongs to.
   String get serverId;
 
   /// Parent chain for hierarchical matching.

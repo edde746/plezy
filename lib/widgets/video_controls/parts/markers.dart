@@ -145,7 +145,6 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     unawaited(_skipMarker(skipAutoPlayCountdown: skipAutoPlayCountdown));
   }
 
-  /// Check if auto-skip should be active for the current marker
   bool _shouldAutoSkipForMarker(MediaMarker marker) {
     return (marker.isCredits && _autoSkipCredits) || (!marker.isCredits && _autoSkipIntro);
   }

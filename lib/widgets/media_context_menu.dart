@@ -51,7 +51,6 @@ import '../widgets/overlay_sheet.dart';
 import '../widgets/rating_bottom_sheet.dart';
 import '../i18n/strings.g.dart';
 
-/// Helper class to store menu action data
 class _MenuAction {
   final String value;
   final IconData icon;
@@ -164,7 +163,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     if (_isContextMenuOpen) return;
     _isContextMenuOpen = true;
 
-    // Capture the currently focused node for restoration after menu closes
     final previousFocus = FocusManager.instance.primaryFocus;
     bool didNavigate = false;
 
@@ -189,7 +187,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         (mediaKind == MediaKind.movie || mediaKind == MediaKind.episode) &&
         mediaItem?.hasActiveProgress == true;
 
-    // Check if we should use bottom sheet (on iOS and Android)
     final useBottomSheet = Platform.isIOS || Platform.isAndroid;
 
     // Check if user has admin privileges. Backend-neutral: Plex uses the
@@ -211,15 +208,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final mediaClient = _itemServerId != null ? multiServerProvider.getClientForServer(_itemServerId!) : null;
     final canTranscode = mediaClient?.capabilities.videoTranscoding ?? false;
 
-    // Build menu actions
     final menuActions = <_MenuAction>[];
 
-    // Special actions for collections and playlists
     if (isCollection || isPlaylist) {
-      // Play
       menuActions.add(_MenuAction(value: 'play', icon: Symbols.play_arrow_rounded, label: t.common.play));
 
-      // Shuffle
       menuActions.add(_MenuAction(value: 'shuffle', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay));
 
       // Download + sync-rule management. Video playlists and any collection
@@ -245,28 +238,20 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         }
       }
 
-      // Delete
       menuActions.add(_MenuAction(value: 'delete', icon: Symbols.delete_rounded, label: t.common.delete));
-
-      // Skip other menu items for collections and playlists
     } else {
-      // Regular menu items for other types
-
-      // Play from Beginning (for movies and episodes with active progress)
       if (hasActiveProgress) {
         menuActions.add(
           _MenuAction(value: 'play_from_beginning', icon: Symbols.replay_rounded, label: t.mediaMenu.playFromBeginning),
         );
       }
 
-      // Mark as Watched
       if (!mediaItem!.isWatched || isPartiallyWatched || hasActiveProgress) {
         menuActions.add(
           _MenuAction(value: 'watch', icon: Symbols.check_circle_outline_rounded, label: t.mediaMenu.markAsWatched),
         );
       }
 
-      // Mark as Unwatched
       if (mediaItem.isWatched || isPartiallyWatched || hasActiveProgress) {
         menuActions.add(
           _MenuAction(
@@ -277,7 +262,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Remove from Continue Watching (only in continue watching section)
       if (widget.isInContinueWatching) {
         menuActions.add(
           _MenuAction(
@@ -288,7 +272,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Rate (for movies, shows, seasons, and episodes)
       if (mediaKind == MediaKind.movie ||
           mediaKind == MediaKind.show ||
           mediaKind == MediaKind.season ||
@@ -361,7 +344,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      // Shuffle Play (for shows and seasons)
       if (mediaKind == MediaKind.show || mediaKind == MediaKind.season) {
         menuActions.add(
           _MenuAction(value: 'shuffle_play', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay),
@@ -393,7 +375,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(_MenuAction(value: 'fileinfo', icon: Symbols.info_rounded, label: t.mediaMenu.fileInfo));
       }
 
-      // Play in External Player (for episodes and movies)
       if (mediaKind == MediaKind.episode || mediaKind == MediaKind.movie) {
         menuActions.add(
           _MenuAction(
@@ -417,7 +398,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         final hasAnyDownload = downloadProvider.getProgress(globalKey) != null;
 
         if (hasSyncRule) {
-          // Synced item: manage sync + delete options
           menuActions.add(
             _MenuAction(value: 'manage_sync', icon: Symbols.sync_rounded, label: t.downloads.manageSyncRule),
           );
@@ -430,12 +410,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             );
           }
         } else if (hasAnyDownload) {
-          // Show delete option for any download state (completed, partial, queued, downloading, failed)
           menuActions.add(
             _MenuAction(value: 'delete_download', icon: Symbols.delete_rounded, label: t.downloads.deleteDownload),
           );
         } else {
-          // Show download option
           menuActions.add(
             _MenuAction(value: 'download', icon: Symbols.download_rounded, label: t.downloads.downloadNow),
           );
@@ -472,7 +450,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           ),
         );
       }
-    } // End of regular menu items else block
+    }
 
     String? selected;
 
@@ -490,8 +468,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         ),
       );
     } else {
-      // Show custom focusable popup menu on larger screens
-      // Use stored tap position or fallback to widget position
       final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
 
       Offset position;
@@ -569,7 +545,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             await client.removeFromContinueWatching(mediaItem!);
             if (context.mounted) {
               showSuccessSnackBar(context, t.messages.removedFromContinueWatching);
-              // Use specific callback if provided, otherwise fallback to onRefresh
               if (widget.onRemoveFromContinueWatching != null) {
                 widget.onRemoveFromContinueWatching!();
               } else {
@@ -797,7 +772,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  /// Show file info bottom sheet
   Future<void> _showFileInfo(BuildContext context) async {
     final client = _getMediaClientForItem();
 
@@ -912,7 +886,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       ],
     );
 
-    // Handle the submenu selection
     if (selected == 'playlist' && context.mounted) {
       await _showAddToPlaylistDialog(context);
     } else if (selected == 'collection' && context.mounted) {
@@ -920,7 +893,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  /// Show dialog to select playlist and add item
   Future<void> _showAddToPlaylistDialog(BuildContext context) async {
     final client = _getMediaClientForItem();
 
@@ -931,7 +903,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
       if (!context.mounted) return;
 
-      // Show dialog to select playlist or create new
       final result = await showDialog<String>(
         context: context,
         builder: (context) => _PlaylistSelectionDialog(playlists: playlists),
@@ -940,7 +911,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (result == null || !context.mounted) return;
 
       if (result == '_create_new') {
-        // Create new playlist flow
         final playlistName = await showTextInputDialog(
           context,
           title: t.playlists.create,
@@ -952,7 +922,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           return;
         }
 
-        // Create playlist with the item(s)
         appLogger.d('Creating playlist "$playlistName" seeded with item ${item.id}');
         final newPlaylist = await client.createPlaylist(title: playlistName, items: [item]);
 
@@ -970,7 +939,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           }
         }
       } else {
-        // Add to existing playlist
         appLogger.d('Adding item ${item.id} to playlist $result');
         final success = await client.addToPlaylist(playlistId: result, items: [item]);
 
@@ -997,7 +965,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     }
   }
 
-  /// Show dialog to select collection and add item
   Future<void> _showAddToCollectionDialog(BuildContext context) async {
     final client = _getMediaClientForItem();
 
@@ -1038,12 +1005,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         return;
       }
 
-      // Load collections for this library section
       final collections = await client.fetchCollections(libraryId);
 
       if (!context.mounted) return;
 
-      // Show dialog to select collection or create new
       final result = await showDialog<String>(
         context: context,
         builder: (context) => _CollectionSelectionDialog(collections: collections),
@@ -1052,7 +1017,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (result == null || !context.mounted) return;
 
       if (result == '_create_new') {
-        // Create new collection flow
         final collectionName = await showTextInputDialog(
           context,
           title: t.common.createNew,
@@ -1087,7 +1051,6 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           }
         }
       } else {
-        // Add to existing collection
         appLogger.d('Adding item ${item.id} to collection $result');
         final success = await client.addToCollection(collectionId: result, items: [item]);
 

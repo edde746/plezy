@@ -8,7 +8,6 @@ class HubFocusMemory {
   static final Map<String, int> _perHubMemory = {};
   static int _lastColumnHint = 0;
 
-  /// Remember the focused index for a specific hub
   static void setForHub(String hubKey, int index) {
     _perHubMemory[hubKey] = index;
     _lastColumnHint = index;

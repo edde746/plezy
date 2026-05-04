@@ -1,59 +1,24 @@
 import '../models.dart';
 
 /// Immutable snapshot of the current player state.
-///
-/// This class provides synchronous access to the player's current state.
 /// For reactive updates, use [PlayerStreams].
 class PlayerState {
-  /// Whether playback is currently active.
   final bool playing;
-
-  /// Whether the media has completed playback.
   final bool completed;
-
-  /// Whether the player is currently buffering.
   final bool buffering;
-
-  /// Current playback position.
   final Duration position;
-
-  /// Total duration of the media.
   final Duration duration;
-
-  /// Whether the current media item can be seeked.
   final bool seekable;
-
-  /// Amount of media buffered ahead of current position.
   final Duration buffer;
-
-  /// Current volume level (0.0 to 100.0).
   final double volume;
-
-  /// Current playback rate (1.0 = normal speed).
   final double rate;
-
-  /// Available tracks in the media.
   final Tracks tracks;
-
-  /// Currently selected tracks.
   final TrackSelection track;
-
-  /// Audio delay/sync offset in seconds.
   final double audioDelay;
-
-  /// Subtitle delay/sync offset in seconds.
   final double subtitleDelay;
-
-  /// Whether audio passthrough is currently enabled.
   final bool audioPassthrough;
-
-  /// Current audio output device.
   final AudioDevice audioDevice;
-
-  /// Available audio output devices.
   final List<AudioDevice> audioDevices;
-
-  /// Seekable buffered ranges from the demuxer cache.
   final List<BufferRange> bufferRanges;
 
   const PlayerState({
@@ -76,7 +41,6 @@ class PlayerState {
     this.bufferRanges = const [],
   });
 
-  /// Creates a copy with the given fields replaced.
   PlayerState copyWith({
     bool? playing,
     bool? completed,

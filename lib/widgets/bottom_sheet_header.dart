@@ -80,7 +80,6 @@ class BottomSheetHeader extends StatelessWidget {
       resolvedLeading = AppIcon(icon!, fill: 1, color: iconColor);
     }
 
-    // Determine the title style
     final effectiveTitleStyle = titleStyle ?? TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: titleColor);
 
     return Container(

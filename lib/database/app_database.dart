@@ -38,7 +38,6 @@ enum OfflineActionType {
   };
 }
 
-// Simplified database with API cache for offline support
 @DriftDatabase(
   tables: [
     DownloadedMedia,
@@ -556,7 +555,6 @@ LazyDatabase _openConnection() {
 
     final file = File(p.join(dbFolder.path, 'plezy_downloads.db'));
 
-    // Ensure directory exists
     if (!await file.parent.exists()) {
       await file.parent.create(recursive: true);
     }

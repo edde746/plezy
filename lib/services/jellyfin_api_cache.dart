@@ -61,7 +61,6 @@ class JellyfinApiCache extends ApiCache {
     await Future.wait([pinByKeyPattern(_itemPattern(serverId, itemId)), pin(serverId, endpoint)]);
   }
 
-  /// Unpin a previously pinned item.
   Future<void> unpinForOffline(String serverId, String itemId) async {
     final endpoint = mediaSegmentsEndpoint(itemId);
     await Future.wait([unpinByKeyPattern(_itemPattern(serverId, itemId)), unpin(serverId, endpoint)]);
@@ -73,7 +72,6 @@ class JellyfinApiCache extends ApiCache {
   /// [ApiCache.isPinned]'s identical Dart signature.
   Future<bool> isPinnedItemId(String serverId, String itemId) => hasPinnedMatching(_itemPattern(serverId, itemId));
 
-  /// Get all pinned Jellyfin item ids for a server.
   Future<Set<String>> getPinnedItemIds(String serverId) => extractPinnedIds(serverId, _itemKeyPattern);
 
   /// Fetch and parse a [MediaItem] from cache.

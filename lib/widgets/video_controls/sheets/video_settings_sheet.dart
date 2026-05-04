@@ -33,7 +33,6 @@ import 'base_video_control_sheet.dart';
 
 enum _SettingsView { menu, speed, sleep, audioSync, subtitleSync, audioDevice, shader, dvConversion }
 
-/// Reusable menu item widget for settings sheet
 class _SettingsMenuItem extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -578,8 +577,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     );
   }
 
-  // Audio/subtitle sync views are now opened as compact top bars via _openSyncBar()
-
   /// Extract the audio backend name from a device name (e.g. "coreaudio" from "coreaudio/BuiltIn").
   static String _audioBackend(String name) {
     final slash = name.indexOf('/');
@@ -626,7 +623,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               return _buildFlatDeviceList(devices, currentDevice);
             }
 
-            // Group devices by backend, keeping "auto" at the top ungrouped.
             final ungrouped = <AudioDevice>[];
             final groups = <String, List<AudioDevice>>{};
             for (final d in devices) {
@@ -693,7 +689,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return ListView.builder(
           itemCount: presets.length + 1,
           itemBuilder: (context, index) {
-            // Import button at the end
             if (index == presets.length) {
               return FocusableListTile(
                 leading: AppIcon(Symbols.add_rounded, fill: 1, color: tokens(context).textMuted),
@@ -753,7 +748,6 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       final displayName = path.basenameWithoutExtension(filePath);
       final preset = await shaderProvider.importCustomShader(filePath, displayName);
 
-      // Apply the imported shader immediately
       if (widget.shaderService != null && mounted) {
         if (preset.type != ShaderPresetType.none && widget.isAmbientLightingEnabled) {
           widget.onToggleAmbientLighting?.call();

@@ -15,22 +15,17 @@ import 'package:material_symbols_icons/symbols.dart';
 /// Displays a value with decrement/increment buttons on either side.
 /// Supports keyboard repeat for faster value changes when holding arrows.
 class TvNumberSpinner extends StatefulWidget {
-  /// Current value.
   final int value;
 
-  /// Minimum allowed value.
   final int min;
 
-  /// Maximum allowed value.
   final int max;
 
-  /// Step size for each increment/decrement.
   final int step;
 
   /// Optional suffix text (e.g., "s" for seconds).
   final String? suffix;
 
-  /// Called when the value changes.
   final ValueChanged<int> onChanged;
 
   /// Called when the user presses SELECT to confirm.
@@ -41,7 +36,6 @@ class TvNumberSpinner extends StatefulWidget {
   /// Use this to close the dialog or cancel the operation.
   final VoidCallback? onCancel;
 
-  /// Whether the spinner should request focus when built.
   final bool autofocus;
 
   const TvNumberSpinner({
@@ -103,7 +97,6 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
     }
 
     if (event is KeyDownEvent) {
-      // Handle SELECT key to confirm/move to save button
       if (key.isSelectKey && widget.onConfirm != null) {
         widget.onConfirm!();
         return KeyEventResult.handled;
@@ -157,7 +150,6 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
           mainAxisSize: MainAxisSize.min,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Decrement button
             _SpinnerButton(
               icon: Symbols.remove_rounded,
               onPressed: canDecrement ? _decrement : null,
@@ -166,7 +158,6 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
               semanticLabel: 'Decrease',
             ),
             const SizedBox(width: 16),
-            // Value display
             Container(
               constraints: const BoxConstraints(minWidth: 60),
               alignment: Alignment.center,
@@ -176,7 +167,6 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
               ),
             ),
             const SizedBox(width: 16),
-            // Increment button
             _SpinnerButton(
               icon: Symbols.add_rounded,
               onPressed: canIncrement ? _increment : null,

@@ -31,7 +31,6 @@ String favoriteChannelKey(String source, String id) => '$source\u0000$id';
 String liveTvChannelScopeKey(LiveTvChannel channel) =>
     '${channel.serverId ?? ''}\u0000${channel.liveDvrKey ?? ''}\u0000${channel.key}';
 
-/// Represents a Live TV channel from the EPG
 @JsonSerializable(createToJson: false)
 class LiveTvChannel with MultiServerFields {
   @JsonKey(readValue: _readChannelKey)

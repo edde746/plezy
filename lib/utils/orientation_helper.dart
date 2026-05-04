@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'platform_detector.dart';
 
-/// Helper class for managing device orientation preferences across the app.
 class OrientationHelper {
   /// Restores default orientation preferences based on device type.
   ///
@@ -17,7 +16,6 @@ class OrientationHelper {
     if (isPhone) {
       SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
     } else {
-      // For tablets and desktop, allow all orientations
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,

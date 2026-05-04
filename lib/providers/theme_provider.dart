@@ -106,8 +106,6 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
     if (_themeModeListenable == null) _syncThemeMode(mode);
   }
 
-  /// Re-read the theme mode from SharedPreferences. Used after imports or
-  /// resets that change persisted settings outside this provider.
   Future<void> reload() async {
     await _initializeSettings();
     final service = _settingsService;

@@ -36,20 +36,16 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
     final hasAdvanced = info.optimizedForStreaming != null || info.has64bitOffsets != null;
     return Column(
       children: [
-        // Header
         BottomSheetHeader(title: t.fileInfo.title, icon: Symbols.info_rounded, closeFocusNode: _initialFocusNode),
-        // Content
         Expanded(
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              // Title
               if (widget.title.isNotEmpty) ...[
                 Text(widget.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
                 const SizedBox(height: 20),
               ],
 
-              // Video Section
               _buildSectionHeader(t.fileInfo.video),
               const SizedBox(height: 8),
               if (info.videoCodec != null) _buildInfoRow(t.fileInfo.codec, info.videoCodec!),
@@ -65,7 +61,6 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
               if (info.chromaSubsampling != null) _buildInfoRow(t.fileInfo.chromaSubsampling, info.chromaSubsampling!),
               const SizedBox(height: 20),
 
-              // Audio Section
               _buildSectionHeader(t.fileInfo.audio),
               const SizedBox(height: 8),
               if (info.audioTracks.isNotEmpty)
@@ -78,7 +73,6 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
               ],
               const SizedBox(height: 20),
 
-              // Subtitles Section
               if (info.subtitleTracks.isNotEmpty) ...[
                 _buildSectionHeader(t.fileInfo.subtitles),
                 const SizedBox(height: 8),
@@ -87,7 +81,6 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
                 const SizedBox(height: 20),
               ],
 
-              // File Section
               _buildSectionHeader(t.fileInfo.file),
               const SizedBox(height: 8),
               if (info.filePath != null) _buildInfoRow(t.fileInfo.path, info.filePath!, isMonospace: true),
@@ -98,7 +91,6 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
               if (hasAdvanced) ...[
                 const SizedBox(height: 20),
 
-                // Advanced Section
                 _buildSectionHeader(t.fileInfo.advanced),
                 const SizedBox(height: 8),
                 if (info.optimizedForStreaming != null)

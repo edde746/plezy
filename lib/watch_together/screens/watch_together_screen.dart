@@ -25,13 +25,6 @@ import '../services/watch_together_peer_service.dart';
 import '../widgets/join_session_dialog.dart';
 import '../../widgets/loading_indicator_box.dart';
 
-/// Main screen for Watch Together functionality
-///
-/// Allows users to:
-/// - Create a new watch session
-/// - Join an existing session
-/// - View active session info and participants
-/// - Leave/end session
 class WatchTogetherScreen extends StatelessWidget {
   const WatchTogetherScreen({super.key});
 
@@ -39,7 +32,6 @@ class WatchTogetherScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<WatchTogetherProvider>(
       builder: (context, watchTogether, child) {
-        // Non-hosts must use "Leave Session" button - disable back navigation and hide button
         final canGoBack = watchTogether.isHost || !watchTogether.isInSession;
         return PopScope(
           canPop: canGoBack,
@@ -417,7 +409,6 @@ class _RecentRoomTile extends StatelessWidget {
   }
 }
 
-/// Content shown when in an active session (without scroll wrapper)
 class _ActiveSessionContent extends StatelessWidget {
   final WatchTogetherProvider watchTogether;
 
@@ -431,7 +422,6 @@ class _ActiveSessionContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Session Info Card
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
@@ -487,7 +477,6 @@ class _ActiveSessionContent extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        // Participants Card
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),

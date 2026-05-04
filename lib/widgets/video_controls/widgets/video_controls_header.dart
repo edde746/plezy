@@ -63,7 +63,6 @@ class VideoControlsHeader extends StatelessWidget {
   }
 
   Widget _buildSingleLineTitle() {
-    // Build single-line title combining series and episode info
     final seriesName = metadata.grandparentTitle ?? metadata.title!;
     final hasEpisodeInfo = metadata.parentIndex != null && metadata.index != null;
 

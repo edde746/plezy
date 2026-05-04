@@ -10,8 +10,6 @@ import '../widgets/dialog_action_button.dart';
 import '../widgets/focusable_list_tile.dart';
 import 'focus_utils.dart';
 
-/// Utility functions for showing common dialogs
-
 const _buttonPadding = EdgeInsets.symmetric(horizontal: 18, vertical: 14);
 const _buttonShape = StadiumBorder();
 

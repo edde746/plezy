@@ -76,16 +76,11 @@ class TvDetectionService {
   static void setForceTVSync(bool value) => _instance?.setForceTv(value);
 }
 
-/// Utility class for platform detection
 class PlatformDetector {
-  /// Detects if running on a TV platform (Android TV or Apple TV).
-  /// Requires TvDetectionService to be initialized.
   static bool isTV() {
     return TvDetectionService.isTVSync();
   }
 
-  /// Detects if running specifically on Apple TV (tvOS).
-  /// Requires TvDetectionService to be initialized.
   static bool isAppleTV() {
     return TvDetectionService.isAppleTVSync();
   }
@@ -111,7 +106,6 @@ class PlatformDetector {
     return platform == TargetPlatform.iOS || platform == TargetPlatform.android;
   }
 
-  /// Detects if running on a handheld mobile device (phone or tablet, not TV).
   static bool isHandheld(BuildContext context) {
     return isMobile(context) && !isTV();
   }
@@ -138,11 +132,9 @@ class PlatformDetector {
     // Convert diagonal from logical pixels to inches (assuming 160 DPI as baseline)
     final diagonalInches = diagonal / (devicePixelRatio * 160 / 2.54);
 
-    // Consider devices with diagonal >= 7 inches as tablets
     return diagonalInches >= 7.0;
   }
 
-  /// Detects if the device is a phone (mobile but not tablet)
   static bool isPhone(BuildContext context) {
     return isHandheld(context) && !isTablet(context);
   }

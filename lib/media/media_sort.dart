@@ -15,19 +15,14 @@ class MediaSort {
 
   Map<String, dynamic> toJson() => _$MediaSortToJson(this);
 
-  /// Gets the full sort key with direction
-  /// If [descending] is true, returns the descKey or key:desc
-  /// Otherwise returns the key for ascending sort
   String getSortKey({bool descending = false}) {
     if (!descending) {
       return key;
     }
 
-    // Use descKey if available, otherwise append :desc to key
     return descKey ?? '$key:desc';
   }
 
-  /// Returns true if this sort's default direction is descending
   bool get isDefaultDescending {
     return defaultDirection?.toLowerCase() == 'desc';
   }

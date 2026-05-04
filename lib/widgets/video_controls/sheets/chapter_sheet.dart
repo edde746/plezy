@@ -89,7 +89,6 @@ class _ChapterSheetState extends State<ChapterSheet> {
               final chapter = widget.chapters[index];
               final isCurrentChapter = currentChapterIndex == index;
 
-              // Get local file path for offline chapter thumbnails
               final localThumbPath = widget.serverId != null && chapter.thumb != null
                   ? DownloadStorageService.instance.getArtworkPathSync(widget.serverId!, chapter.thumb!)
                   : null;

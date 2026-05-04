@@ -47,22 +47,16 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   int _nextPropId = 0;
   final Map<int, String> _propIdToName = {};
 
-  /// Whether the player has been initialized.
-  /// Subclasses should set this to true after initialization.
   @protected
   bool initialized = false;
 
-  /// Whether the player has been disposed.
   @override
   bool get disposed => _disposed;
 
-  /// The method channel for platform communication.
   MethodChannel get methodChannel;
 
-  /// The event channel for receiving platform events.
   EventChannel get eventChannel;
 
-  /// The log prefix for this player (e.g., 'MPV', 'ExoPlayer').
   String get logPrefix;
 
   PlayerBase() {
@@ -100,8 +94,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     );
   }
 
-  /// Observes a property on the native player and assigns it a compact propId
-  /// for efficient event channel communication.
   @protected
   Future<void> observeProperty(String name, String format) async {
     final propId = _nextPropId++;
@@ -125,8 +117,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
-  /// Handle a property change event from the platform.
-  /// Subclasses can override this to handle platform-specific properties.
   void handlePropertyChange(String name, dynamic value) {
     if (_disposed) return;
     switch (name) {
@@ -338,8 +328,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
-  /// Handle a player event from the platform.
-  /// Subclasses can override this to handle platform-specific events.
   void handlePlayerEvent(String name, Map? data) {
     if (_disposed) return;
     switch (name) {
@@ -384,7 +372,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     }
   }
 
-  /// Parse a log level string to [PlayerLogLevel].
   PlayerLogLevel parseLogLevel(String level) {
     return switch (level) {
       'fatal' => PlayerLogLevel.fatal,
@@ -398,7 +385,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     };
   }
 
-  /// Parse a track list from the platform into [Tracks] and selected track IDs.
   ({Tracks tracks, String? selectedAudioId, String? selectedSubtitleId}) parseTrackList(List trackList) {
     final audioTracks = <AudioTrack>[];
     final subtitleTracks = <SubtitleTrack>[];
@@ -450,7 +436,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     );
   }
 
-  /// Update the selected audio track.
   void updateSelectedAudioTrack(dynamic trackId) {
     final id = trackId?.toString();
     AudioTrack? selectedTrack;
@@ -463,7 +448,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     trackController.add(_state.track);
   }
 
-  /// Update the selected subtitle track.
   void updateSelectedSubtitleTrack(dynamic trackId) {
     final id = trackId?.toString();
     SubtitleTrack? selectedTrack;
@@ -476,7 +460,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     trackController.add(_state.track);
   }
 
-  /// Update the selected secondary subtitle track.
   void updateSelectedSecondarySubtitleTrack(dynamic trackId) {
     final id = trackId?.toString();
     SubtitleTrack? selectedTrack;
@@ -505,7 +488,6 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
     seekableController.add(seekable);
   }
 
-  /// Safe method channel invocation — no-ops if player is disposed.
   @protected
   Future<T?> invoke<T>(String method, [dynamic args]) async {
     if (_disposed) return null;

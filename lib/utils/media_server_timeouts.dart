@@ -3,18 +3,14 @@
 /// timeouts are kept here so the budgets per phase are visible at a
 /// glance.
 class MediaServerTimeouts {
-  // ── Per-server HTTP request budgets (apply to both backends) ───
-  /// HTTP connect timeout for individual HTTP requests to a media server.
   static const connect = Duration(seconds: 10);
 
-  /// HTTP receive timeout for streaming/large responses from a media server.
   static const receive = Duration(seconds: 120);
 
   /// Retry budget for home `/hubs` startup calls. These endpoints can be slow
   /// while Plex wakes idle disks, but should not block forever.
   static const homeHubAttemptTimeouts = [Duration(seconds: 10), Duration(seconds: 5), Duration(milliseconds: 2500)];
 
-  // ── Plex server discovery / endpoint racing ────────────────────
   /// Timeout for probing a cached/preferred endpoint before falling back to
   /// the full candidate race (used in [PlexServer.findBestWorkingConnection]).
   static const preferredEndpointProbe = Duration(milliseconds: 1500);
@@ -31,14 +27,10 @@ class MediaServerTimeouts {
   /// default 10s connect budget is too tight on Fire-TV cold starts.
   static const tune = Duration(seconds: 30);
 
-  // ── plex.tv (auth provider) ─────────────────────────────────────
-  /// HTTP connect timeout for plex.tv / clients.plex.tv API requests.
   static const plexTvConnect = Duration(seconds: 5);
 
-  /// HTTP receive timeout for plex.tv / clients.plex.tv API responses.
   static const plexTvReceive = Duration(seconds: 10);
 
-  // ── Jellyfin auth flow ──────────────────────────────────────────
   /// Probe + token-validate timeout — Jellyfin servers respond fast on
   /// `/System/Info/Public` and `/Users/Me`.
   static const jellyfinProbe = Duration(seconds: 8);

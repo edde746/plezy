@@ -1,4 +1,3 @@
-/// Represents a saved preset of MPV configurations
 class MpvPreset {
   final String name;
   final String text;

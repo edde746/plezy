@@ -74,7 +74,6 @@ class TrackSheet extends StatelessWidget {
         final showAudio = useSourceAudio || playerAudioTracks.length > 1;
         final showSubtitles = subtitleTracks.isNotEmpty;
 
-        // Determine title/icon based on what's shown
         final String title;
         final IconData icon;
         if (showAudio && showSubtitles) {
@@ -363,7 +362,6 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
             controller: _initialScroll.controller,
             itemCount: itemCount,
             itemBuilder: (context, index) {
-              // "Off" row
               if (index == 0) {
                 return TrackSelectionHelper.buildOffTile<SubtitleTrack>(
                   context: context,
@@ -404,7 +402,6 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
                 index: index - 1,
               );
 
-              // Determine badge
               Widget? badge;
               if (widget.supportsSecondary && hasSecondary) {
                 if (isPrimary) {

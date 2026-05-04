@@ -278,8 +278,6 @@ class JellyfinMappers {
     );
   }
 
-  // ── private helpers ──────────────────────────────────────────────
-
   static MediaKind _libraryKindFromCollectionType(String? collectionType, String? type) {
     final ct = collectionType?.toLowerCase();
     if (ct != null) {

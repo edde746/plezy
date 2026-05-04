@@ -19,7 +19,6 @@ void simulateKeyPress(LogicalKeyboardKey logicalKey) {
       timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
     );
 
-    // Walk up the focus tree dispatching the key event
     FocusNode? node = focusNode;
     KeyEventResult result = KeyEventResult.ignored;
 
@@ -30,7 +29,6 @@ void simulateKeyPress(LogicalKeyboardKey logicalKey) {
       node = node.parent;
     }
 
-    // Send key up event
     final keyUpEvent = KeyUpEvent(
       physicalKey: physicalKey,
       logicalKey: logicalKey,

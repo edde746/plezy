@@ -107,10 +107,8 @@ class _VolumeControlState extends State<VolumeControl> {
       // UP/DOWN exits adjust mode and lets navigation continue
       if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.arrowDown) {
         _exitAdjustMode();
-        // Pass through to normal navigation handler
         return widget.onKeyEvent?.call(node, event) ?? KeyEventResult.ignored;
       }
-      // Consume other keys in adjust mode
       return KeyEventResult.handled;
     }
 
@@ -118,7 +116,6 @@ class _VolumeControlState extends State<VolumeControl> {
       return KeyEventResult.ignored;
     }
 
-    // Not in adjust mode: use the provided key event handler for navigation
     return widget.onKeyEvent?.call(node, event) ?? KeyEventResult.ignored;
   }
 
@@ -215,7 +212,6 @@ class _VolumeControlState extends State<VolumeControl> {
         child: Stack(
           alignment: Alignment.centerLeft,
           children: [
-            // 100% marker (only shown if max > 100)
             if (showMarker)
               Positioned(
                 left: 100 * markerPosition - 1, // Adjust for marker width
@@ -228,7 +224,6 @@ class _VolumeControlState extends State<VolumeControl> {
                   ),
                 ),
               ),
-            // Volume slider
             SliderTheme(
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 8,

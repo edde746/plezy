@@ -1,31 +1,9 @@
-/// Session role - whether this device is the host or a guest
 enum SessionRole { host, guest }
 
-/// Control mode - who can control playback
-enum ControlMode {
-  /// Only the host can control playback
-  hostOnly,
+enum ControlMode { hostOnly, anyone }
 
-  /// Anyone in the session can control playback
-  anyone,
-}
+enum SessionState { disconnected, connecting, connected, error }
 
-/// Current state of the watch together session
-enum SessionState {
-  /// Not connected to any session
-  disconnected,
-
-  /// Attempting to connect/create session
-  connecting,
-
-  /// Successfully connected to session
-  connected,
-
-  /// Connection error occurred
-  error,
-}
-
-/// Represents a participant in a watch together session
 class Participant {
   final String peerId;
   final String displayName;
@@ -65,33 +43,15 @@ class Participant {
   int get hashCode => peerId.hashCode;
 }
 
-/// Represents a watch together session
 class WatchSession {
-  /// Unique identifier for this session (used for joining)
   final String sessionId;
-
-  /// This device's role in the session
   final SessionRole role;
-
-  /// Who can control playback
   final ControlMode controlMode;
-
-  /// Current connection state
   final SessionState state;
-
-  /// Error message if state is error
   final String? errorMessage;
-
-  /// Rating key of the media being watched (for validation)
   final String? mediaRatingKey;
-
-  /// Server ID of the media being watched (same-server requirement)
   final String? mediaServerId;
-
-  /// Title of the media being watched
   final String? mediaTitle;
-
-  /// The host's peer ID (used to identify host messages)
   final String? hostPeerId;
 
   const WatchSession({
@@ -106,10 +66,8 @@ class WatchSession {
     this.hostPeerId,
   });
 
-  /// Whether this device is the host
   bool get isHost => role == SessionRole.host;
 
-  /// Whether the session is currently connected
   bool get isConnected => state == SessionState.connected;
 
   WatchSession copyWith({

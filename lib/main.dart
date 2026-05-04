@@ -150,7 +150,6 @@ Future<void> _bootstrapApp() async {
 
   unawaited(LocaleSettings.setLocale(savedLocale));
 
-  // Needed for formatting dates in different locales
   await initializeDateFormatting(savedLocale.languageCode, null);
 
   // Configure image cache — keep budget modest to leave headroom for Skia decode buffers
@@ -176,7 +175,6 @@ Future<void> _bootstrapApp() async {
     PipService();
   }
 
-  // Configure macOS window with custom titlebar (depends on window manager)
   futures.add(MacOSWindowService.setupCustomTitlebar());
 
   // Hook Windows native fullscreen callback (no-op elsewhere).
@@ -216,15 +214,12 @@ Future<void> _bootstrapApp() async {
   // and intercepts input events, so we must listen to re-dispatch them)
   GamepadService.instance.start();
 
-  // Desktop-only services
   if (PlatformDetector.isDesktopOS()) {
     unawaited(DiscordRPCService.instance.initialize());
   }
 
-  // Trakt scrobble service (all platforms)
   await TraktScrobbleService.instance.initialize();
 
-  // Register bundled shader licenses
   _registerShaderLicenses();
 
   // In release mode, show a colored placeholder instead of a blank/white screen
@@ -380,7 +375,6 @@ void _registerShaderLicenses() {
   });
 }
 
-// Global RouteObserver for tracking navigation
 final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
 final rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -403,7 +397,6 @@ class MainApp extends StatefulWidget {
 }
 
 class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
-  // Initialize multi-server infrastructure
   late final MultiServerManager _serverManager;
   late final DataAggregationService _aggregationService;
   late final AppDatabase _appDatabase;
@@ -428,7 +421,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    // On desktop, periodically check RSS and evict image cache if too high
     if (PlatformDetector.isDesktopOS()) {
       _memoryCheckTimer = Timer.periodic(const Duration(seconds: 30), (_) {
         final rss = ProcessInfo.currentRss;
@@ -444,7 +436,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _aggregationService = DataAggregationService(_serverManager);
     _appDatabase = AppDatabase();
 
-    // Initialize API cache with database
     PlexApiCache.initialize(_appDatabase);
     JellyfinApiCache.initialize(_appDatabase);
 
@@ -691,7 +682,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           },
           dispose: (_, binder) => binder.dispose(),
         ),
-        // Offline mode provider - depends on MultiServerProvider
         ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
           create: (_) {
             final provider = OfflineModeProvider(_serverManager);
@@ -714,7 +704,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return provider;
           },
         ),
-        // Offline watch sync service
         ChangeNotifierProxyProvider<ActiveProfileProvider, OfflineWatchSyncService>(
           create: (context) {
             final offlineModeProvider = context.read<OfflineModeProvider>();
@@ -764,7 +753,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return provider;
           },
         ),
-        // Offline watch provider - depends on sync service and download provider
         ChangeNotifierProxyProvider2<OfflineWatchSyncService, DownloadProvider, OfflineWatchProvider>(
           create: (context) => OfflineWatchProvider(
             syncService: _offlineWatchSyncService,
@@ -1097,7 +1085,6 @@ class _SetupScreenState extends State<SetupScreen> {
       return;
     }
 
-    // Populate per-server status from the registry for the splash list.
     if (mounted) {
       setState(() {
         for (final conn in allConnections) {

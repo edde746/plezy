@@ -84,21 +84,18 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
         body: GestureDetector(
           behavior: HitTestBehavior.translucent, // Allow taps to pass through to controls
           onScaleStart: (details) {
-            // Initialize pinch gesture tracking (mobile only)
             if (!isMobile) return;
             if (_videoFilterManager != null) {
               _videoFilterManager!.isPinching = false;
             }
           },
           onScaleUpdate: (details) {
-            // Track if this is a pinch gesture (2+ fingers) on mobile
             if (!isMobile) return;
             if (details.pointerCount >= 2 && _videoFilterManager != null) {
               _videoFilterManager!.isPinching = true;
             }
           },
           onScaleEnd: (details) {
-            // Only toggle if we detected a pinch gesture on mobile
             if (!isMobile) return;
             if (_videoFilterManager != null && _videoFilterManager!.isPinching) {
               _toggleContainCover();
@@ -110,7 +107,6 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
               // macOS PiP placeholder — video is in PiP window, show background with icon
               // Placed before Video so controls render on top
               if (Platform.isMacOS) const VideoPlayerMacPipPlaceholder(),
-              // Video player
               Center(
                 child: LayoutBuilder(
                   builder: (context, constraints) {

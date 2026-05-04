@@ -7,55 +7,40 @@ import '../focus/focusable_tile_mixin.dart';
 /// Uses Flutter's native ListTile focus support - no custom styling wrapper.
 /// The focusNode allows programmatic focus control (e.g., auto-focus first item).
 class FocusableListTile extends StatefulWidget {
-  /// The primary content of the list tile.
   final Widget? title;
 
-  /// Additional content displayed below the title.
   final Widget? subtitle;
 
-  /// A widget to display before the title.
   final Widget? leading;
 
-  /// A widget to display after the title.
   final Widget? trailing;
 
-  /// Called when the user taps this list tile.
   final VoidCallback? onTap;
 
-  /// Called when the user long-presses this list tile.
   final VoidCallback? onLongPress;
 
-  /// Whether this list tile is part of a vertically dense list.
   final bool dense;
 
-  /// Whether this list tile is interactive.
   final bool enabled;
 
-  /// If true, the tile is rendered with a selected highlight.
   final bool selected;
 
   /// Optional FocusNode for keyboard/controller navigation.
   final FocusNode? focusNode;
 
-  /// Whether this tile should autofocus when first built.
   final bool autofocus;
 
-  /// The tile's internal padding.
   final EdgeInsetsGeometry? contentPadding;
 
   /// If true, consumes the first select key event to avoid accidental activation.
   final bool suppressInitialSelect;
 
-  /// An optional color to display behind the menu item when being hovered.
   final Color? hoverColor;
 
-  /// An optional color for the text of the list tile.
   final Color? textColor;
 
-  /// An optional color for the icon of the list tile.
   final Color? iconColor;
 
-  /// Visual density for the list tile.
   final VisualDensity? visualDensity;
 
   const FocusableListTile({

@@ -143,7 +143,6 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Episode thumbnail (16:9 aspect ratio, fixed width)
                   SizedBox(
                     width: 160,
                     child: Stack(
@@ -163,7 +162,6 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                           ),
                         ),
 
-                        // Play overlay
                         Positioned.fill(
                           child: Container(
                             decoration: BoxDecoration(
@@ -192,7 +190,6 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                           ),
                         ),
 
-                        // Progress bar at bottom
                         if (hasActiveProgress)
                           Positioned(
                             bottom: 0,
@@ -231,19 +228,16 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
 
                   const SizedBox(width: 12),
 
-                  // Episode info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Episode number and title with download status
                         Selector<DownloadProvider, _DownloadSlice>(
                           selector: (_, p) => _DownloadSlice.from(
                             p.getProgress(widget.episode.globalKey),
                             p.isQueueing(widget.episode.globalKey),
                           ),
                           builder: (context, slice, _) {
-                            // Build download status icon based on state
                             Widget? downloadStatusIcon;
 
                             // Only show download status in online mode
@@ -268,7 +262,6 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
 
                             return Row(
                               children: [
-                                // Episode number badge
                                 if (widget.episode.index != null)
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
@@ -285,10 +278,8 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                                       ),
                                     ),
                                   ),
-                                // Download status icon (if present)
                                 if (downloadStatusIcon != null) ...[const SizedBox(width: 6), downloadStatusIcon],
                                 const SizedBox(width: 8),
-                                // Episode title
                                 Expanded(
                                   child: Text(
                                     widget.episode.title!,
@@ -304,7 +295,6 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                           },
                         ),
 
-                        // Summary (hidden when spoiler protection is active)
                         if (!shouldBlur && widget.episode.summary != null && widget.episode.summary!.isNotEmpty) ...[
                           const SizedBox(height: 6),
                           if (PlatformDetector.isTV())
@@ -327,7 +317,6 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                             ),
                         ],
 
-                        // Metadata row (duration, watched status)
                         const SizedBox(height: 8),
                         _buildEpisodeMetaRow(context),
                       ],

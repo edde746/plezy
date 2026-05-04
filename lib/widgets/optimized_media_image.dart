@@ -274,7 +274,6 @@ class OptimizedMediaImage extends StatelessWidget {
   Widget _buildCachedImage(BuildContext context, double effectiveWidth, double effectiveHeight) {
     final devicePixelRatio = MediaImageHelper.effectiveDevicePixelRatio(context);
 
-    // Get optimized image URL
     final imageUrl = MediaImageHelper.getOptimizedImageUrl(
       client: client,
       thumbPath: imagePath,
@@ -289,7 +288,6 @@ class OptimizedMediaImage extends StatelessWidget {
       return _buildFallback(context);
     }
 
-    // Calculate memory cache dimensions
     final scaledWidth = effectiveWidth * devicePixelRatio;
     final scaledHeight = effectiveHeight * devicePixelRatio;
     final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
@@ -298,7 +296,6 @@ class OptimizedMediaImage extends StatelessWidget {
       imageType: imageType,
     );
 
-    // Generate cache key if not provided
     final effectiveCacheKey = cacheKey ?? _generateCacheKey(imageUrl);
 
     return Image(

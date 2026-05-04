@@ -3,8 +3,7 @@ import 'package:flutter/services.dart';
 import '../../models.dart';
 import '../player_base.dart';
 
-/// Android implementation of [Player] using ExoPlayer.
-/// Provides hardware-accelerated playback with ASS subtitle support via libass-android.
+/// Android implementation using ExoPlayer with ASS subtitle support via libass-android.
 class PlayerAndroid extends PlayerBase {
   static const _methodChannel = MethodChannel('com.plezy/exo_player');
   static const _eventChannel = EventChannel('com.plezy/exo_player/events');
@@ -12,7 +11,6 @@ class PlayerAndroid extends PlayerBase {
   int? _bufferSizeBytes;
   bool _tunnelingEnabled = true;
 
-  /// Stored subtitle track ID when subtitles are hidden via sub-visibility.
   String? _hiddenSubtitleTrackId;
 
   @override
@@ -32,7 +30,6 @@ class PlayerAndroid extends PlayerBase {
 
   @override
   void handlePlayerEvent(String name, Map? data) {
-    // Handle Android-specific events
     if (name == 'backend-switched') {
       // Native player switched from ExoPlayer to MPV due to unsupported format.
       // Clear stale ExoPlayer tracks so applyTrackSelectionWhenReady waits for
@@ -42,7 +39,6 @@ class PlayerAndroid extends PlayerBase {
       return;
     }
 
-    // Delegate to base class for common events
     super.handlePlayerEvent(name, data);
   }
 
@@ -170,7 +166,6 @@ class PlayerAndroid extends PlayerBase {
   @override
   Future<void> setProperty(String name, String value) async {
     if (disposed) return;
-    // ExoPlayer doesn't use MPV properties, but we handle common ones
     switch (name) {
       case 'pause':
         if (value == 'yes') {
@@ -196,14 +191,12 @@ class PlayerAndroid extends PlayerBase {
         break;
       case 'sub-visibility':
         if (value == 'no') {
-          // Store current subtitle track and disable
           final current = state.track.subtitle;
           if (current != null && current.id != 'no') {
             _hiddenSubtitleTrackId = current.id;
             await selectSubtitleTrack(SubtitleTrack.off);
           }
         } else {
-          // Restore previously hidden subtitle track
           final storedId = _hiddenSubtitleTrackId;
           if (storedId != null) {
             _hiddenSubtitleTrackId = null;
@@ -218,7 +211,6 @@ class PlayerAndroid extends PlayerBase {
         }
         break;
       default:
-        // Forward unknown properties to Kotlin for MPV fallback
         await invoke('setMpvProperty', {'name': name, 'value': value});
     }
   }
@@ -226,7 +218,6 @@ class PlayerAndroid extends PlayerBase {
   @override
   Future<String?> getProperty(String name) async {
     if (disposed) return null;
-    // Return state-based values for common properties
     switch (name) {
       case 'pause':
         return state.playing ? 'no' : 'yes';
@@ -244,12 +235,10 @@ class PlayerAndroid extends PlayerBase {
         final stats = await getStats();
         final mode = stats['dvConversionDebugMode'];
         return mode?.toString().toLowerCase();
-      // Video frame rate - query from ExoPlayer stats
       case 'container-fps':
         final fpsStats = await getStats();
         final fps = fpsStats['videoFps'];
         return fps?.toString();
-      // Video dimensions - query from ExoPlayer stats
       case 'width':
       case 'dwidth':
         final stats = await getStats();
@@ -265,8 +254,6 @@ class PlayerAndroid extends PlayerBase {
     }
   }
 
-  /// Get all playback stats from ExoPlayer.
-  /// Returns a map with video/audio codec info, buffer state, and performance metrics.
   Future<Map<String, dynamic>> getStats() async {
     if (disposed) return {};
     try {
@@ -277,8 +264,7 @@ class PlayerAndroid extends PlayerBase {
     }
   }
 
-  /// Get the device's large heap size in MB (Android only).
-  /// Returns 0 if unavailable.
+  /// Returns the device's large heap size in MB, or 0 if unavailable (Android only).
   static Future<int> getHeapSize() async {
     try {
       final result = await _methodChannel.invokeMethod<int>('getHeapSize');
@@ -288,7 +274,6 @@ class PlayerAndroid extends PlayerBase {
     }
   }
 
-  /// Get the current player type ('exoplayer' or 'mpv' if fallback is active).
   Future<String> getPlayerType() async {
     if (disposed) return 'unknown';
     try {
@@ -302,7 +287,6 @@ class PlayerAndroid extends PlayerBase {
   @override
   Future<void> command(List<String> args) async {
     if (disposed) return;
-    // Handle MPV commands by translating to ExoPlayer equivalents
     if (args.isEmpty) return;
 
     switch (args.first) {

@@ -7,10 +7,8 @@ mixin LibraryTabFocusMixin<T extends StatefulWidget> on State<T> {
   /// Focus node for the first item (for programmatic focus)
   late final FocusNode firstItemFocusNode;
 
-  /// Debug label for the focus node
   String get focusNodeDebugLabel;
 
-  /// Number of items in the list/grid
   int get itemCount;
 
   @override

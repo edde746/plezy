@@ -16,7 +16,6 @@ extension ProviderExtensions on BuildContext {
 
   HiddenLibrariesProvider get hiddenLibraries => Provider.of<HiddenLibrariesProvider>(this, listen: false);
 
-  // Direct profile settings access (nullable)
   MediaServerUserProfile? get profileSettings => userProfile.profileSettings;
 
   /// Internal: resolve a [PlexClient] from a serverId or fall back to the
@@ -50,22 +49,16 @@ extension ProviderExtensions on BuildContext {
     return client;
   }
 
-  /// Get PlexClient for a specific server ID. Throws if unavailable.
   PlexClient getPlexClientForServer(String serverId) => _requireClient(serverId, fallback: false);
 
-  /// Get PlexClient for a specific server ID, or null if unavailable.
   PlexClient? tryGetPlexClientForServer(String? serverId) {
     if (serverId == null) return null;
     final provider = Provider.of<MultiServerProvider>(this, listen: false);
     return provider.getPlexClientForServer(serverId);
   }
 
-  /// Get PlexClient for a library, falling back to the first online server
-  /// when the library has no serverId. Throws if no client is available.
   PlexClient getPlexClientForLibrary(MediaLibrary library) => _requireClient(library.serverId);
 
-  /// Get client for a serverId, falling back to the first online server.
-  /// Throws if no client is available.
   PlexClient getPlexClientWithFallback(String? serverId) => _requireClient(serverId);
 
   // ── Backend-neutral helpers ──────────────────────────────────────
@@ -80,7 +73,6 @@ extension ProviderExtensions on BuildContext {
     return _resolvePrioritized(serverId, provider.onlineServerIds, provider.getClientForServer);
   }
 
-  /// Get a [MediaServerClient] for the given serverId, or null.
   MediaServerClient? tryGetMediaClientForServer(String? serverId) {
     if (serverId == null) return null;
     final provider = Provider.of<MultiServerProvider>(this, listen: false);
@@ -96,8 +88,6 @@ extension ProviderExtensions on BuildContext {
     return c;
   }
 
-  /// Get a [MediaServerClient] for [library], falling back to the first
-  /// online server when the library has no serverId. Throws if none.
   MediaServerClient getMediaClientForLibrary(MediaLibrary library) {
     final c = _resolveMediaClient(library.serverId);
     if (c == null) throw Exception(t.errors.noClientAvailable);

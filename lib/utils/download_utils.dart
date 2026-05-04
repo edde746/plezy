@@ -102,7 +102,6 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
         maxCount = customCount;
     }
 
-    // For unwatched-based options on shows, offer sync vs one-time download
     if (filter == DownloadFilter.unwatched && kind == MediaKind.show && context.mounted) {
       final syncChoice = await showOptionPickerDialog<_SyncChoice>(
         context,

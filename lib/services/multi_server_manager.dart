@@ -24,13 +24,10 @@ import 'storage_service.dart';
 class MultiServerManager {
   FutureOr<void> Function(JellyfinConnection connection)? onJellyfinConnectionUpdated;
 
-  /// Map of serverId (clientIdentifier) to active client instances.
   final Map<String, MediaServerClient> _clients = {};
 
-  /// Map of serverId to server info
   final Map<String, PlexServer> _plexServers = {};
 
-  /// Map of serverId to online status
   final Map<String, bool> _serverStatus = {};
 
   /// Servers whose last health probe rejected the auth token (HTTP 401/403).
@@ -42,7 +39,6 @@ class MultiServerManager {
   /// Stream controller for server status changes
   final _statusController = StreamController<Map<String, bool>>.broadcast();
 
-  /// Stream of server status changes
   Stream<Map<String, bool>> get statusStream => _statusController.stream;
 
   /// Servers whose authentication has failed (token rejected). A re-auth flow
@@ -97,10 +93,8 @@ class MultiServerManager {
   /// Jellyfin-only profiles.
   List<String> get serverIds => _clients.keys.toList();
 
-  /// Get all online server IDs
   List<String> get onlineServerIds => _serverStatus.entries.where((e) => e.value).map((e) => e.key).toList();
 
-  /// Get all offline server IDs
   List<String> get offlineServerIds => _serverStatus.entries.where((e) => !e.value).map((e) => e.key).toList();
 
   /// Get client for specific server.

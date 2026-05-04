@@ -16,7 +16,6 @@ enum PeerErrorType {
   unknown,
 }
 
-/// Represents an error in a peer service.
 class PeerError {
   final PeerErrorType type;
   final String message;

@@ -84,37 +84,26 @@ class MediaImageHelper {
 
     switch (imageType) {
       case ImageType.art:
-        // For art/background images, preserve aspect ratio while covering container
-        // Calculate dimensions that ensure the image covers the container without stretching
-        // This mimics BoxFit.cover behavior for the transcoding request
-
-        // Use larger dimensions to ensure coverage while preserving aspect ratio
-        // This will request a slightly larger image that can be cropped by Flutter's BoxFit.cover
-        final coverWidth = targetWidth * 1.1; // 10% larger for better coverage
+        final coverWidth = targetWidth * 1.1;
         final coverHeight = targetHeight * 1.1;
 
         return roundDimensions(coverWidth, coverHeight);
 
       case ImageType.logo:
-        // For logos, use generous bounds to avoid forcing aspect ratio
-        // Prefer width-based scaling for most logos
         final logoWidth = targetWidth;
-        final logoHeight = targetHeight; // Allow full height flexibility
+        final logoHeight = targetHeight;
         return roundDimensions(logoWidth, logoHeight);
 
       case ImageType.thumb:
-        // For episode thumbs, optimize for 16:9 but allow flexibility
         final thumbHeight = targetHeight;
         final thumbWidth = min(targetWidth, thumbHeight * (16 / 9));
         return roundDimensions(thumbWidth, thumbHeight);
 
       case ImageType.avatar:
-        // For avatars, use square dimensions based on smaller constraint
         final size = min(targetWidth, targetHeight);
         return roundDimensions(size, size);
 
       case ImageType.poster:
-        // For posters, maintain 2:3 aspect ratio (width:height)
         final calculatedWidth = min(targetWidth, targetHeight * (2 / 3));
         final calculatedHeight = calculatedWidth * (3 / 2);
         return roundDimensions(calculatedWidth, calculatedHeight);
@@ -138,8 +127,6 @@ class MediaImageHelper {
     if (thumbPath == null || thumbPath.isEmpty) return '';
     final basePath = thumbPath;
 
-    // External absolute URLs (EPG provider images, Jellyfin self-absolutized
-    // image URLs).
     if (basePath.startsWith('http://') || basePath.startsWith('https://')) {
       // Self-contained Jellyfin URLs already carry their own auth
       // (`api_key=...`). Append `MaxWidth/MaxHeight` so we still get DPR
@@ -147,7 +134,6 @@ class MediaImageHelper {
       // honours those query params.
       if (basePath.contains('api_key=')) {
         if (!enableTranscoding) return basePath;
-        // If size params are already attached, leave them.
         if (basePath.contains('MaxWidth=') || basePath.contains('maxWidth=') || basePath.contains('Width=')) {
           return basePath;
         }
@@ -178,9 +164,8 @@ class MediaImageHelper {
     // size-hint params (`/photo/:/transcode` for Plex, `MaxWidth/MaxHeight`
     // for Jellyfin). The interface guarantees both honour width/height.
     if (client == null) {
-      // Offline mode and a relative path — the cached entry should already
-      // exist under whatever URL was originally fetched. Returning empty
-      // matches the pre-refactor behaviour.
+      // Offline + relative path: the cached entry already exists under the
+      // URL originally fetched, so returning '' matches pre-refactor behaviour.
       return '';
     }
 
@@ -240,7 +225,6 @@ class MediaImageHelper {
   static bool shouldTranscode(String? imagePath) {
     if (imagePath == null || imagePath.isEmpty) return false;
 
-    // Don't transcode already processed images or external URLs
     if (imagePath.contains('/photo/:/transcode') ||
         imagePath.startsWith('http://') ||
         imagePath.startsWith('https://')) {

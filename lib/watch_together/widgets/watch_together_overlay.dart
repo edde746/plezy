@@ -14,9 +14,6 @@ import '../../widgets/overlay_sheet.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
 
-/// Overlay shown on the video player when in a watch together session
-/// Session indicator badge for embedding in the video controls header.
-/// Shows participant count, host badge, and opens the session menu on tap.
 class WatchTogetherSessionIndicator extends StatelessWidget {
   final VoidCallback? onLeaveSession;
 
@@ -45,7 +42,6 @@ class WatchTogetherSessionIndicator extends StatelessWidget {
   }
 }
 
-/// Small indicator showing session status
 class _SessionIndicator extends StatelessWidget {
   final int participantCount;
   final bool isHost;
@@ -119,7 +115,6 @@ class _SessionIndicator extends StatelessWidget {
   }
 }
 
-/// Bottom sheet showing session details and actions
 class _SessionMenuSheet extends StatelessWidget {
   final WatchTogetherProvider provider;
   final VoidCallback? onLeaveSession;
@@ -282,7 +277,6 @@ class _SessionMenuSheet extends StatelessWidget {
   }
 }
 
-/// Auto-dismissing toast for participant join/leave events
 class ParticipantNotificationOverlay extends StatefulWidget {
   const ParticipantNotificationOverlay({super.key});
 
@@ -370,7 +364,6 @@ class _NotificationEntry {
   const _NotificationEntry({required this.id, required this.event});
 }
 
-/// Compact sync indicator for showing during drift correction
 class SyncingIndicator extends StatelessWidget {
   const SyncingIndicator({super.key});
 
@@ -386,7 +379,6 @@ class SyncingIndicator extends StatelessWidget {
   }
 }
 
-/// Indicator shown when playback is deferred waiting for participants to load
 class WaitingForParticipantsIndicator extends StatelessWidget {
   const WaitingForParticipantsIndicator({super.key});
 

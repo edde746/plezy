@@ -27,25 +27,9 @@ bool shouldUsePlexHomeTokenCache({required bool preVerified, required bool hasBo
   return preVerified || !hasBoundOnce;
 }
 
-/// Wires the active [Profile] into [MultiServerManager] + [MultiServerProvider].
-///
-/// Both kinds bind connections in two layers:
-///
-/// 1. **Parent (plex_home only)**: Plex Home profiles have an implicit
-///    parent [PlexAccountConnection] (referenced by `parentConnectionId`,
-///    not stored in the join table). The binder reuses the cached
-///    `/home/users/{uuid}/switch` token if available, otherwise mints one
-///    via [pinPrompt] when Plex's `protected` flag is set.
-/// 2. **Join rows**: every [ProfileConnection] row for the profile —
-///    borrowed Plex accounts (each with its own `userToken`) and Jellyfin
-///    servers. The same path runs for local Plezy profiles, which only
-///    have join rows.
-///
-/// After both layers, servers not in the bound set are removed from
-/// [MultiServerManager], and the bound id set is pushed into
-/// [MultiServerProvider]. An empty bound set is propagated as `{}` so a
-/// profile with no connections shows nothing — falling back to "all
-/// visible" would leak servers attached to other profiles.
+/// An empty bound set is propagated as `{}` so a profile with no connections
+/// shows nothing — falling back to "all visible" would leak servers attached
+/// to other profiles.
 class ActiveProfileBinder {
   ActiveProfileBinder({
     required this.activeProfile,

@@ -71,9 +71,6 @@ mixin _TrackLabelMixin {
   String? get displayTitle;
   String? get language;
 
-  /// Builds a label from the given parts
-  /// If displayTitle is present, returns it
-  /// Otherwise, combines language and additional parts
   String buildLabel(List<String> additionalParts) {
     if (displayTitle != null && displayTitle!.isNotEmpty) {
       return displayTitle!;

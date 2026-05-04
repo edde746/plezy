@@ -443,9 +443,6 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   @visibleForTesting
   List<String> get debugCryptoConnectionIds => _authContexts.map((context) => context.connectionId).toList();
 
-  // ── Host Server ──
-
-  /// Start the host server and begin LAN broadcasting. Idempotent.
   Future<void> startHostServer() async {
     if (_peerService?.isServerRunning == true) return;
     if (!isCryptoReady) {
@@ -505,9 +502,6 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     safeNotifyListeners();
   }
 
-  // ── Client: Discovery ──
-
-  /// Start listening for host beacons. Returns a stream of discovered hosts.
   Stream<List<DiscoveredHost>>? discoverHosts() {
     if (!isCryptoReady) {
       appLogger.w('CompanionRemote: Cannot discover — crypto not initialized');
@@ -606,8 +600,6 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     }
   }
 
-  // ── Peer service listeners ──
-
   void _setupPeerServiceListeners() {
     _commandSubscription = _peerService!.onCommandReceived.listen(
       (command) {
@@ -704,8 +696,6 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _statusSubscription = null;
   }
 
-  // ── Commands ──
-
   void sendCommand(RemoteCommandType type, {Map<String, dynamic>? data}) {
     if (_peerService == null || !isConnected) {
       appLogger.w('CompanionRemote: Cannot send command - not connected');
@@ -715,8 +705,6 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     appLogger.d('CompanionRemote: Sending command $type');
     _peerService!.sendCommand(RemoteCommand(type: type, data: data));
   }
-
-  // ── Reconnection ──
 
   void _scheduleReconnect() {
     if (_reconnectAttempts >= _maxReconnectAttempts) {

@@ -20,13 +20,8 @@ import 'player/video_rect_support.dart';
 /// )
 /// ```
 class Video extends StatefulWidget {
-  /// The player instance.
   final Player player;
-
-  /// Builder for custom video controls overlay.
   final Widget Function(BuildContext context)? controls;
-
-  /// Background color shown behind the video.
   final Color backgroundColor;
 
   const Video({super.key, required this.player, this.controls, this.backgroundColor = Colors.black});
@@ -74,15 +69,11 @@ class _VideoState extends State<Video> {
   }
 
   Widget _buildVideoSurface() {
-    // For players that use Flutter's texture pipeline (Linux FlTextureGL),
-    // render directly via the Texture widget.
     final textureId = widget.player.textureId;
     if (textureId != null) {
       return Texture(textureId: textureId);
     }
 
-    // For players that support video rect positioning (Windows),
-    // communicate layout changes to the native side.
     if (widget.player is VideoRectSupport) {
       return LayoutBuilder(
         builder: (context, constraints) {
@@ -106,7 +97,6 @@ class _VideoState extends State<Video> {
 
     final newRect = Rect.fromLTWH(position.dx, position.dy, size.width, size.height);
 
-    // Only update if the rect has changed significantly
     if (_lastRect != null &&
         (newRect.left - _lastRect!.left).abs() < 1 &&
         (newRect.top - _lastRect!.top).abs() < 1 &&
@@ -117,7 +107,6 @@ class _VideoState extends State<Video> {
 
     _lastRect = newRect;
 
-    // Update the native video rect
     (widget.player as VideoRectSupport).setVideoRect(
       left: (position.dx * dpr).toInt(),
       top: (position.dy * dpr).toInt(),

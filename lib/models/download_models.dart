@@ -41,7 +41,6 @@ class DownloadProgress {
   String get downloadedFormatted => ByteFormatter.formatBytes(downloadedBytes);
   String get totalFormatted => ByteFormatter.formatBytes(totalBytes);
 
-  /// Check if this progress update includes artwork paths
   bool get hasArtworkPaths => thumbPath != null;
 
   DownloadProgress copyWith({

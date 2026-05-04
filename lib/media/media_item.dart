@@ -28,7 +28,6 @@ sealed class MediaItem {
   /// for matching across servers and for Trakt-style external lookups.
   final String? guid;
 
-  // ── Display metadata ─────────────────────────────────────────────
   final String? title;
   final String? titleSort;
   final String? summary;
@@ -41,7 +40,6 @@ sealed class MediaItem {
   final String? originallyAvailableAt;
   final String? contentRating;
 
-  // ── Hierarchy (episodes/seasons) ─────────────────────────────────
   final String? parentId;
   final String? parentTitle;
   final String? parentThumbPath;
@@ -52,13 +50,11 @@ sealed class MediaItem {
   final String? grandparentThumbPath;
   final String? grandparentArtPath;
 
-  // ── Artwork ──────────────────────────────────────────────────────
   final String? thumbPath;
   final String? artPath;
   final String? clearLogoPath;
   final String? backgroundSquarePath;
 
-  // ── Time / watch state ──────────────────────────────────────────
   final int? durationMs;
 
   /// Resume position in ms.
@@ -78,11 +74,9 @@ sealed class MediaItem {
   final int? addedAt;
   final int? updatedAt;
 
-  // ── Rating ───────────────────────────────────────────────────────
   final double? rating;
   final double? userRating;
 
-  // ── Tags / people ────────────────────────────────────────────────
   final List<String>? genres;
   final List<String>? directors;
   final List<String>? writers;
@@ -94,15 +88,12 @@ sealed class MediaItem {
   final List<String>? moods;
   final List<MediaRole>? roles;
 
-  // ── Media files ──────────────────────────────────────────────────
   final List<MediaVersion>? mediaVersions;
 
-  // ── Library reference ────────────────────────────────────────────
   /// Backend-opaque library/section id this item belongs to.
   final String? libraryId;
   final String? libraryTitle;
 
-  // ── Per-item playback prefs ──────────────────────────────────────
   /// Preferred audio language for this item — used by track-selection
   /// fallback (Priority 3) on both backends. Plex persists changes via
   /// [PlexClient.setMetadataPreferences]; Jellyfin populates it from the
@@ -110,11 +101,9 @@ sealed class MediaItem {
   /// endpoint, so the value is read-only there.
   final String? audioLanguage;
 
-  // ── Multi-server ─────────────────────────────────────────────────
   final String? serverId;
   final String? serverName;
 
-  // ── Escape hatch ─────────────────────────────────────────────────
   /// Untyped fall-through for backend-specific fields not yet mapped onto a
   /// typed accessor. Use sparingly; promote to typed fields when stable.
   final Map<String, Object?>? raw;

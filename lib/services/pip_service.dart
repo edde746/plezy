@@ -10,7 +10,6 @@ class PipService {
   /// PiP is only implemented natively on Android, iOS, and macOS.
   static bool get _isAvailable => Platform.isAndroid || Platform.isIOS || Platform.isMacOS;
 
-  // Singleton instance
   static final PipService _instance = PipService._internal();
   factory PipService() => _instance;
 

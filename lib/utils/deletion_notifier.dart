@@ -60,10 +60,8 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
 
   DeletionNotifier._internal();
 
-  /// Filter for events affecting a specific server
   Stream<DeletionEvent> forServer(String serverId) => stream.where((e) => e.serverId == serverId);
 
-  /// Filter for events affecting a specific item or its children
   Stream<DeletionEvent> forItem(String itemId) => stream.where((e) => e.affectsItem(itemId));
 
   /// Emit a deletion event with logging
@@ -73,7 +71,6 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
     super.notify(event);
   }
 
-  /// Helper to emit a deletion event from a [MediaItem].
   void notifyDeletedItem({required MediaItem item, bool isDownloadOnly = false}) {
     notify(
       DeletionEvent(

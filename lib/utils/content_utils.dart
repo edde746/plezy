@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-/// Content type constants used throughout the app
 class ContentTypes {
   ContentTypes._();
 
@@ -21,17 +20,13 @@ class ContentTypes {
   static const Set<String> playableTypes = {movie, episode, clip, track};
 }
 
-/// Utility class for content type checking and filtering
 class ContentTypeHelper {
   ContentTypeHelper._();
 
-  /// Checks if the given type is music content (artist, album, or track)
   static bool isMusicContent(String type) => ContentTypes.musicTypes.contains(type.toLowerCase());
 
-  /// Checks if the given type is video content (movie, show, episode, or season)
   static bool isVideoContent(String type) => ContentTypes.videoTypes.contains(type.toLowerCase());
 
-  /// Checks if the given [MediaLibrary] is a music library.
   static bool isMusicLibrary(dynamic lib) {
     if (lib == null) return false;
     try {
@@ -43,7 +38,6 @@ class ContentTypeHelper {
     }
   }
 
-  /// Returns the appropriate icon for a given library type
   static IconData getLibraryIcon(String type) {
     switch (type.toLowerCase()) {
       case ContentTypes.movie:

@@ -495,8 +495,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     switch (state) {
       case AppLifecycleState.inactive:
         _recordLifecycleState('inactive');
-        // App is inactive (notification shade, split-screen, etc.)
-        // Don't pause - user may still be watching
         break;
       case AppLifecycleState.hidden:
         _recordLifecycleState('hidden');
@@ -507,10 +505,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           _recordLifecycleState('paused', action: 'skipped_for_pip');
           break;
         }
-        // Clear media controls when app truly goes to background
-        // (we don't support background playback)
+        // We don't support background playback
         _mediaControlsManager?.clear();
-        // Disable wakelock when app goes to background
         _setWakelock(false);
         _recordLifecycleState('paused', action: 'backgrounded');
         break;
@@ -520,7 +516,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         break;
       case AppLifecycleState.detached:
         _recordLifecycleState('detached');
-        // No action needed for this state
         break;
     }
   }

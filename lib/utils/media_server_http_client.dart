@@ -50,7 +50,6 @@ void throwIfHttpError(MediaServerResponse r) {
 class AbortController {
   final _completer = Completer<void>();
 
-  /// The future that triggers abort when completed.
   Future<void> get trigger => _completer.future;
 
   bool get isAborted => _completer.isCompleted;
@@ -201,7 +200,6 @@ class MediaServerHttpClient {
 
     final mergedHeaders = <String, String>{...defaultHeaders, ...?headers};
 
-    // Build the request — use AbortableRequest when abort is provided
     final http.Request request;
     if (abort != null) {
       request = http.AbortableRequest(method, uri, abortTrigger: abort.trigger);
@@ -213,12 +211,10 @@ class MediaServerHttpClient {
 
     final sw = Stopwatch()..start();
     try {
-      // Phase 1: send + receive headers (connect timeout)
       final streamed = await _client
           .send(request)
           .namedTimeout(timeout ?? connectTimeout, operation: '$method ${uri.path} connect');
 
-      // Phase 2: consume body (receive timeout)
       final bytes = await streamed.stream.toBytes().namedTimeout(
         timeout ?? receiveTimeout,
         operation: '$method ${uri.path} receive',
@@ -320,13 +316,10 @@ class MediaServerHttpClient {
       return;
     }
 
-    // Map or List → JSON encode
     request.body = jsonEncode(body);
-    // Only set content-type if the caller hasn't already. http.BaseRequest's
-    // headers map is case-sensitive, so we must check both common casings —
-    // Jellyfin returns 415 if a `Content-Type: application/json` from the
-    // default headers ends up coexisting with a lowercase `content-type:
-    // application/json; charset=utf-8` we'd append below.
+    // http.BaseRequest's headers map is case-sensitive; Jellyfin returns 415
+    // if both `Content-Type` (from defaults) and `content-type` (added below)
+    // end up coexisting, so check both casings before adding.
     final hasContentType = request.headers.keys.any((k) => k.toLowerCase() == 'content-type');
     if (!hasContentType) {
       request.headers['content-type'] = 'application/json';

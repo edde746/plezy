@@ -201,7 +201,6 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
   }
 }
 
-// Hub section — horizontal scrolling row of poster cards (always 2:3 aspect)
 // Uses locked focus pattern: single Focus node at hub level, visual index in state.
 
 class _LiveTvHubSection extends StatefulWidget {
@@ -435,7 +434,6 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Hub header
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
           child: Row(
@@ -545,7 +543,6 @@ class _LiveTvPosterCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Poster
               SizedBox(
                 width: double.infinity,
                 height: posterHeight,
@@ -561,14 +558,12 @@ class _LiveTvPosterCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 4),
-              // Title
               Text(
                 metadata.displayTitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.1),
               ),
-              // Subtitle
               if (metadata.displaySubtitle != null)
                 Text(
                   metadata.displaySubtitle!,

@@ -317,8 +317,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
 
     if (approved != true) return null;
 
-    // Exchange the approved secret for an access token. Response shape
-    // matches /Users/AuthenticateByName.
+    // Exchange the approved secret for an access token.
     final exchangeClient = _buildHttpClient(
       baseUrl: normalised,
       headers: {'Authorization': authHeader, 'Content-Type': 'application/json'},

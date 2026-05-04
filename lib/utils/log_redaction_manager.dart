@@ -103,16 +103,13 @@ class LogRedactionManager {
 
   /// Redact known sensitive values from the provided message.
   static String redact(String message) {
-    // Pass 1: IPv4 addresses (regex pattern)
     var redacted = message.replaceAllMapped(
       _ipv4Pattern,
       (match) => _maskIpv4(match.group(1)!, match.group(2)!, match.group(5)!),
     );
 
-    // Pass 2: Strip X-Plex-Token query parameters (pattern-based, no pre-registration needed)
     redacted = redacted.replaceAll(_plexTokenQueryParam, 'X-Plex-Token=[REDACTED]');
 
-    // Pass 2b: Strip Jellyfin api_key/Quick Connect query parameters and Emby/MediaBrowser headers.
     redacted = redacted.replaceAll(_jellyfinApiKeyQueryParam, 'api_key=[REDACTED]');
     redacted = redacted.replaceAll(_jellyfinQuickConnectSecretQueryParam, 'secret=[REDACTED]');
     redacted = redacted.replaceAllMapped(_embyTokenHeader, (m) {
@@ -122,7 +119,6 @@ class LogRedactionManager {
     });
     redacted = redacted.replaceAll(_mediaBrowserTokenHeader, 'Token="[REDACTED]"');
 
-    // Pass 3: All tracked values in single pass
     if (_combinedPattern != null) {
       redacted = redacted.replaceAllMapped(_combinedPattern!, (match) {
         final value = match.group(0)!;
@@ -155,9 +151,8 @@ class LogRedactionManager {
 
   /// Add value to set with FIFO eviction if limit exceeded.
   static void _addWithLimit(Set<String> set, String value, int maxSize) {
-    if (set.contains(value)) return; // Already tracked
+    if (set.contains(value)) return;
 
-    // Evict oldest entries if at capacity
     while (set.length >= maxSize) {
       set.remove(set.first);
     }

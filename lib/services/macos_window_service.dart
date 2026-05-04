@@ -38,8 +38,6 @@ class MacOSWindowService {
   static bool _delegateEnabled = false;
   static final List<MacOSWindowDelegate> _delegates = [];
 
-  // MARK: - Private Helpers
-
   static Future<void> _invoke(String method, [Map<String, dynamic>? args]) async {
     if (!Platform.isMacOS) return;
     await _channel.invokeMethod(method, args);
@@ -63,8 +61,6 @@ class MacOSWindowService {
         _notifyDelegates((d) => d.windowDidExitFullScreen());
     }
   }
-
-  // MARK: - Initialization
 
   /// Initialize the window service and set up the titlebar.
   ///
@@ -99,32 +95,22 @@ class MacOSWindowService {
     }
   }
 
-  /// Add a delegate to receive window events.
   static void addWindowDelegate(MacOSWindowDelegate delegate) {
     if (!_delegates.contains(delegate)) {
       _delegates.add(delegate);
     }
   }
 
-  /// Remove a previously added delegate.
   static void removeWindowDelegate(MacOSWindowDelegate delegate) {
     _delegates.remove(delegate);
   }
 
-  // MARK: - Traffic Light Buttons
-
-  /// Show or hide all traffic light buttons (close, miniaturize, zoom).
   static Future<void> setTrafficLightsVisible(bool visible) => _invoke('setTrafficLightsVisible', {'visible': visible});
 
-  // MARK: - Fullscreen
-
-  /// Enter fullscreen mode.
   static Future<void> enterFullscreen() => _invoke('enterFullscreen');
 
-  /// Exit fullscreen mode.
   static Future<void> exitFullscreen() => _invoke('exitFullscreen');
 
-  /// Check if the window is in fullscreen mode.
   static Future<bool> isFullscreen() async {
     if (!Platform.isMacOS) return false;
     return await _channel.invokeMethod<bool>('isFullscreen') ?? false;

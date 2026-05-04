@@ -40,7 +40,6 @@ class AppBarBackButton extends StatefulWidget {
     this.semanticLabel,
   });
 
-  /// The visual style of the back button
   final BackButtonStyle style;
 
   /// Callback when the button is pressed. Defaults to Navigator.of(context).pop()
@@ -49,7 +48,6 @@ class AppBarBackButton extends StatefulWidget {
   /// The color of the back arrow icon. If null, uses style-appropriate default.
   final Color? color;
 
-  /// Semantic label for screen readers
   final String? semanticLabel;
 
   @override

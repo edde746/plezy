@@ -38,7 +38,6 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
     _ownsController = widget.controller == null;
     _scrollController = widget.controller ?? ScrollController();
     _scrollController.addListener(_updateScrollState);
-    // Initial state update after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollState());
   }
 
@@ -116,7 +115,6 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
     final child = widget.builder(_scrollController);
 
     if (!PlatformDetector.isDesktop(context)) {
-      // On mobile, just return the child without arrows
       return child;
     }
 

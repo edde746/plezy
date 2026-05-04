@@ -76,7 +76,6 @@ mixin TabNavigationMixin<T extends StatefulWidget> on State<T>, TickerProviderSt
 
   FocusNode getTabChipFocusNode(int index) => tabChipFocusNodes[index];
 
-  /// Focus the currently selected tab chip.
   void focusTabBar() {
     setState(() {
       suppressAutoFocus = true;
@@ -84,7 +83,6 @@ mixin TabNavigationMixin<T extends StatefulWidget> on State<T>, TickerProviderSt
     getTabChipFocusNode(tabController.index).requestFocus();
   }
 
-  /// Navigate back from the tab bar to the sidebar.
   void onTabBarBack() {
     MainScreenFocusScope.of(context)?.focusSidebar();
   }

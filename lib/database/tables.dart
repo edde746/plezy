@@ -7,7 +7,6 @@ class ApiCache extends Table {
   /// for Plex, "abc123:/Users/.../Items/..." for Jellyfin)
   TextColumn get cacheKey => text()();
 
-  /// JSON response data
   TextColumn get data => text()();
 
   /// Whether this item is pinned for offline access

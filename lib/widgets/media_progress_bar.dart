@@ -22,7 +22,6 @@ class MediaProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Calculate progress value (0.0 to 1.0)
     final progress = duration > 0 ? viewOffset / duration : 0.0;
 
     return LinearProgressIndicator(

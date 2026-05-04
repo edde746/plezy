@@ -4,9 +4,6 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../mpv/mpv.dart';
 import '../../../widgets/focusable_list_tile.dart';
 
-/// Helper class for shared track selection logic
-///
-/// Provides common utilities for empty states, "Off" handling, and selection logic
 class TrackSelectionHelper {
   /// Get the appropriate empty message based on track type
   static String getEmptyMessage<T>() {
@@ -18,7 +15,6 @@ class TrackSelectionHelper {
     return 'No tracks available';
   }
 
-  /// Build a centered empty state widget
   static Widget buildEmptyState<T>() {
     return Center(child: Text(getEmptyMessage<T>()));
   }
@@ -28,7 +24,6 @@ class TrackSelectionHelper {
     return selectedTrack == null || (isOffTrack?.call(selectedTrack) ?? false);
   }
 
-  /// Get the track ID from a track object
   static String getTrackId<T>(T track) {
     if (track is AudioTrack) {
       return track.id;
@@ -38,7 +33,6 @@ class TrackSelectionHelper {
     return '';
   }
 
-  /// Build the "Off" list tile for track selection
   static Widget buildOffTile<T>({
     required BuildContext context,
     required bool isSelected,
@@ -62,7 +56,6 @@ class TrackSelectionHelper {
     );
   }
 
-  /// Build a track selection list tile
   static Widget buildTrackTile<T>({
     required BuildContext context,
     required String label,

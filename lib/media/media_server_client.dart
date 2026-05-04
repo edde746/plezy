@@ -62,13 +62,11 @@ import 'server_capabilities.dart';
 enum HealthStatus { online, offline, authError }
 
 abstract class MediaServerClient {
-  // ── Identity ─────────────────────────────────────────────────────
   String get serverId;
   String? get serverName;
   MediaBackend get backend;
   ServerCapabilities get capabilities;
 
-  // ── Lifecycle ────────────────────────────────────────────────────
   /// Release HTTP resources and any other long-lived state. Idempotent.
   void close();
 
@@ -96,7 +94,6 @@ abstract class MediaServerClient {
   /// appropriate cache instance.
   ApiCache get cache;
 
-  // ── Browse: libraries ────────────────────────────────────────────
   Future<List<MediaLibrary>> fetchLibraries();
 
   /// Page through items in [libraryId] using the neutral [query]. Backends
@@ -151,7 +148,6 @@ abstract class MediaServerClient {
   /// children).
   Future<void> refreshLibraryMetadata(String libraryId);
 
-  // ── Browse: items ────────────────────────────────────────────────
   /// Fetch a single item by its backend-opaque id. Returns `null` when the
   /// item no longer exists or the user can't see it.
   Future<MediaItem?> fetchItem(String id);
@@ -204,7 +200,6 @@ abstract class MediaServerClient {
   /// internally; the neutral name matches the Continue Watching UI surface.
   Future<List<MediaItem>> fetchContinueWatching({int count = 20});
 
-  // ── Browse: hubs ─────────────────────────────────────────────────
   /// Curated home-screen hubs across all libraries (Plex Discover; Jellyfin
   /// synthesizes `Latest` + `Resume` + `NextUp`).
   Future<List<MediaHub>> fetchGlobalHubs({int limit = 10});
@@ -223,7 +218,6 @@ abstract class MediaServerClient {
   /// (Latest / Resume / NextUp) without the preview limit.
   Future<List<MediaItem>> fetchMoreHubItems(String hubId, {int? limit});
 
-  // ── Watch state ──────────────────────────────────────────────────
   /// Mark [item] as watched. The full item is passed (not just an id) so
   /// implementations can fire a [WatchStateEvent] on [WatchStateNotifier]
   /// for UI invalidation — episode/season/show parent chain, library
@@ -242,7 +236,6 @@ abstract class MediaServerClient {
   /// awaited call in `try/catch` and surface a snackbar on the catch arm.
   Future<void> rate(MediaItem item, double rating);
 
-  // ── Playlists ────────────────────────────────────────────────────
   Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart});
 
   /// Metadata only — items are fetched via [fetchPlaylistItems].
@@ -282,7 +275,6 @@ abstract class MediaServerClient {
   /// the same caveats about backend tagging and the per-playlist id.
   Future<bool> removeFromPlaylist({required String playlistId, required MediaItem item});
 
-  // ── Collections ──────────────────────────────────────────────────
   /// Collections in [libraryId]. Plex hits `/library/sections/{id}/collections`;
   /// Jellyfin queries `/Items?ParentId={libraryId}&IncludeItemTypes=BoxSet`.
   /// Each result carries `kind == MediaKind.collection`.
@@ -322,7 +314,6 @@ abstract class MediaServerClient {
   /// read [MediaItem.libraryId] for backends that need it (Plex).
   Future<bool> deleteCollection(MediaItem collection);
 
-  // ── Item write ───────────────────────────────────────────────────
   /// Permanently delete [item] from the library.
   Future<bool> deleteMediaItem(MediaItem item);
 
@@ -332,7 +323,6 @@ abstract class MediaServerClient {
   /// the server has no info to show.
   Future<MediaFileInfo?> getFileInfo(MediaItem item);
 
-  // ── Images ───────────────────────────────────────────────────────
   /// Resolve a backend-relative thumbnail path to a fully-qualified URL ready
   /// for cached image providers. Returns an empty string for null/empty
   /// inputs.
@@ -355,14 +345,12 @@ abstract class MediaServerClient {
   /// engine alongside the URL.
   Map<String, String> get streamHeaders;
 
-  // ── External IDs ─────────────────────────────────────────────────
   /// External IDs (IMDb / TMDB / TVDB) for [itemId]. Plex hits
   /// `/library/metadata/{id}?includeGuids=1`; Jellyfin reads the inline
   /// `ProviderIds` map. Returns an empty [ExternalIds] when the server
   /// has no external mapping for the item.
   Future<ExternalIds> fetchExternalIds(String itemId);
 
-  // ── Hubs: extras ─────────────────────────────────────────────────
   /// Chapters and intro/credits markers for [itemId]. Plex returns both in one
   /// round trip; Jellyfin combines item-level chapters with best-effort native
   /// media segments. Implementations may cache.
@@ -401,7 +389,6 @@ abstract class MediaServerClient {
   /// `trickplayByWidth` map).
   Future<ScrubPreviewSource?> createScrubPreviewSource({required MediaItem item, required MediaSourceInfo mediaSource});
 
-  // ── Playback progress ────────────────────────────────────────────
   /// Watched threshold (0.0–1.0). An item is considered "watched" when
   /// `position / duration` crosses this value. Plex reads it from the
   /// server's `LibraryVideoPlayedThreshold` pref; Jellyfin doesn't expose
@@ -452,7 +439,6 @@ abstract class MediaServerClient {
     String? mediaSourceId,
   });
 
-  // ── Playback initialization ──────────────────────────────────────
   /// Resolve the video URL, media info, and external subtitle list for
   /// playback. Backends own the per-backend particulars: Plex runs the
   /// transcode-decision flow when [PlaybackInitializationOptions.qualityPreset]
@@ -465,13 +451,11 @@ abstract class MediaServerClient {
   /// metadata, even when the caller intends to play a downloaded copy.
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options);
 
-  // ── Live TV ──────────────────────────────────────────────────────
   /// Backend-neutral live-TV operations. Always returns a wrapper; consult
   /// [LiveTvSupport.isAvailable] to find out whether the server actually
   /// has live TV configured before calling other methods.
   LiveTvSupport get liveTv;
 
-  // ── Downloads ────────────────────────────────────────────────────
   /// Resolve the download URL for [item]'s primary video file along with
   /// any external subtitle tracks that should be saved alongside it.
   ///

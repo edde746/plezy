@@ -16,7 +16,6 @@ class SmartDeletionHandler {
     bool dialogShown = false;
     bool deletionComplete = false;
 
-    // Start a timer to show dialog after delay
     Future.delayed(Duration(milliseconds: delayMs), () {
       if (!deletionComplete && context.mounted) {
         dialogShown = true;
@@ -35,7 +34,6 @@ class SmartDeletionHandler {
     }
   }
 
-  /// Show progress dialog and listen to updates
   static void _showProgressDialog(BuildContext context, DownloadProvider _, String globalKey) {
     showDialog(
       context: context,
@@ -44,7 +42,6 @@ class SmartDeletionHandler {
         builder: (context, provider, child) {
           final progress = provider.getDeletionProgress(globalKey);
 
-          // If no progress, show simple fallback
           if (progress == null) {
             return AlertDialog(
               content: Row(

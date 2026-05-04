@@ -467,7 +467,6 @@ class DownloadManagerService {
             continue;
           }
 
-          // Check if background_downloader still has this task
           Task? bgTask;
           if (item.bgTaskId != null) {
             bgTask = await FileDownloader().taskForId(item.bgTaskId!);
@@ -480,7 +479,6 @@ class DownloadManagerService {
             await _database.updateBgTaskId(item.globalKey, null);
             await _database.addToQueue(mediaGlobalKey: item.globalKey);
           }
-          // If bgTask exists, background_downloader is still handling it
         }
       }
     } catch (e) {

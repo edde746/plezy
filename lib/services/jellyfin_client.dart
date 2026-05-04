@@ -183,8 +183,6 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items) =>
       items.map(_mapItem).whereType<MediaItem>().toList();
 
-  // ── Identity ─────────────────────────────────────────────────────
-
   @override
   String get serverId => connection.serverMachineId;
 
@@ -204,8 +202,6 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
   /// Plex's default of 90%.
   @override
   double get watchedThreshold => 0.9;
-
-  // ── Lifecycle ────────────────────────────────────────────────────
 
   @override
   void close() => _http.close();
@@ -839,8 +835,6 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
     throwIfHttpError(response);
   }
 
-  // ── Browse: items ────────────────────────────────────────────────
-
   /// Jellyfin has no single-round-trip equivalent of Plex's
   /// `?includeOnDeck=1`. We approximate it for shows by chaining a second
   /// request to `/Shows/NextUp` filtered by `seriesId`. NextUp's defaults
@@ -1096,8 +1090,6 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
 
     return _mergeContinueWatchingAndNextUp(resume: _mapItems(results[0]), nextUp: _mapItems(results[1]), limit: count);
   }
-
-  // ── Browse: hubs ─────────────────────────────────────────────────
 
   @override
   Future<List<MediaHub>> fetchGlobalHubs({int limit = 10}) async {

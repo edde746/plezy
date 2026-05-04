@@ -42,7 +42,6 @@ class MediaControlsManager {
   /// self-authenticated image URL).
   Future<void> updateMetadata({required MediaItem metadata, MediaServerClient? client, Duration? duration}) async {
     try {
-      // Build artwork URL if client is available
       String? artworkUrl;
       if (client != null && metadata.thumbPath != null) {
         try {
@@ -53,7 +52,6 @@ class MediaControlsManager {
         }
       }
 
-      // Update OS media controls
       await OsMediaControls.setMetadata(
         MediaMetadata(
           title: metadata.title ?? '',
@@ -86,12 +84,10 @@ class MediaControlsManager {
       _throttledUpdate.cancel();
       await _doUpdatePlaybackState(params);
     } else {
-      // Use throttled update
       _throttledUpdate([params]);
     }
   }
 
-  /// Internal method to actually perform the playback state update
   Future<void> _doUpdatePlaybackState(_PlaybackStateParams params) async {
     try {
       await OsMediaControls.setPlaybackState(
@@ -176,12 +172,10 @@ class MediaControlsManager {
     if (metadata.isEpisode) {
       final parts = <String>[];
 
-      // Add show name
       if (metadata.grandparentTitle != null) {
         parts.add(metadata.grandparentTitle!);
       }
 
-      // Add season/episode info
       if (metadata.parentIndex != null && metadata.index != null) {
         parts.add('S${metadata.parentIndex} E${metadata.index}');
       } else if (metadata.parentTitle != null) {
@@ -190,7 +184,6 @@ class MediaControlsManager {
 
       return parts.join(' • ');
     } else if (metadata.isMovie) {
-      // For movies, use director or studio
       if (metadata.year != null) {
         return metadata.year.toString();
       }

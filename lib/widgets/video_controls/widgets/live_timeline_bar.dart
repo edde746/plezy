@@ -190,7 +190,6 @@ class _LiveTimelinePainter extends CustomPainter {
     final trackRadius = Radius.circular(trackHeight / 2);
     final posX = positionFraction * w;
 
-    // Background track
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromCenter(center: Offset(w / 2, trackY), width: w, height: trackHeight),
@@ -199,7 +198,6 @@ class _LiveTimelinePainter extends CustomPainter {
       Paint()..color = Colors.white.withValues(alpha: 0.15),
     );
 
-    // Played region
     if (posX > 0) {
       canvas.drawRRect(
         RRect.fromRectAndRadius(

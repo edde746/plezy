@@ -44,7 +44,6 @@ class BufferRangePainter extends CustomPainter {
       if (right > left) segments.add((left, right));
     }
 
-    // Draw background segments
     for (final (left, right) in segments) {
       canvas.drawRRect(
         RRect.fromRectAndRadius(Rect.fromLTWH(left, y, right - left, trackHeight), Radius.circular(radius)),
@@ -54,7 +53,6 @@ class BufferRangePainter extends CustomPainter {
 
     if (durationMs <= 0) return;
 
-    // Draw buffer ranges clipped to segments
     final bufPaint = Paint()
       ..color = Colors.white.withValues(alpha: 0.5)
       ..style = PaintingStyle.fill;

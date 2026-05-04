@@ -66,7 +66,6 @@ abstract class ApiCache {
     return '$serverId:$endpoint';
   }
 
-  /// Get cached response for an endpoint.
   Future<Map<String, dynamic>?> get(String serverId, String endpoint) async {
     final key = _buildKey(serverId, endpoint);
     final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
@@ -76,7 +75,6 @@ abstract class ApiCache {
     return null;
   }
 
-  /// Cache a response for an endpoint.
   Future<void> put(String serverId, String endpoint, Map<String, dynamic> data) async {
     final key = _buildKey(serverId, endpoint);
     final encoded = await tryIsolateRun(() => jsonEncode(data));
@@ -87,7 +85,6 @@ abstract class ApiCache {
         );
   }
 
-  /// Delete all cached data for a server.
   Future<void> deleteForServer(String serverId) async {
     await (_db.delete(_db.apiCache)..where((t) => t.cacheKey.like('$serverId:%'))).go();
   }
@@ -100,7 +97,6 @@ abstract class ApiCache {
     )..where((t) => t.cacheKey.equals(key))).write(const ApiCacheCompanion(pinned: Value(true)));
   }
 
-  /// Unpin a previously pinned endpoint.
   Future<void> unpin(String serverId, String endpoint) async {
     final key = _buildKey(serverId, endpoint);
     await (_db.update(
@@ -108,7 +104,6 @@ abstract class ApiCache {
     )..where((t) => t.cacheKey.equals(key))).write(const ApiCacheCompanion(pinned: Value(false)));
   }
 
-  /// Whether the endpoint is pinned for offline.
   Future<bool> isPinned(String serverId, String endpoint) async {
     final key = _buildKey(serverId, endpoint);
     final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
@@ -135,14 +130,12 @@ abstract class ApiCache {
     )..where((t) => t.cacheKey.like(pattern))).write(const ApiCacheCompanion(pinned: Value(true)));
   }
 
-  /// Inverse of [pinByKeyPattern].
   Future<void> unpinByKeyPattern(String pattern) async {
     await (_db.update(
       _db.apiCache,
     )..where((t) => t.cacheKey.like(pattern))).write(const ApiCacheCompanion(pinned: Value(false)));
   }
 
-  /// True when at least one pinned row matches [pattern].
   Future<bool> hasPinnedMatching(String pattern) async {
     final rows = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.like(pattern) & t.pinned.equals(true))).get();
     return rows.isNotEmpty;
@@ -181,11 +174,6 @@ abstract class ApiCache {
     }
     return out;
   }
-
-  // ── Backend-shape operations ──────────────────────────────────────
-  // These are implemented by the per-backend subclasses so callers can
-  // dispatch via [forBackend(backend).getMetadata(...)] without an outer
-  // `switch (backend)` at every call site.
 
   /// Fetch and parse cached [MediaItem] for [itemId] on [serverId]. Returns
   /// `null` when the item isn't cached.

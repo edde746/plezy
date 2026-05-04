@@ -9,7 +9,6 @@ import '../../../utils/snackbar_helper.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../i18n/strings.g.dart';
 
-/// Widget displaying list of sleep timer durations for selection
 class SleepTimerDurationList extends StatelessWidget {
   final Player player;
   final SleepTimerService sleepTimer;

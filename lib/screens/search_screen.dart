@@ -42,7 +42,6 @@ class _SearchScreenState extends State<SearchScreen>
     super.initState();
     _searchDebounce = debounce(_performSearch, const Duration(milliseconds: 500));
     _searchController.addListener(_onSearchChanged);
-    // Focus the search input when the screen is shown
     FocusUtils.requestFocusAfterBuild(this, _searchFocusNode);
   }
 
@@ -98,7 +97,6 @@ class _SearchScreenState extends State<SearchScreen>
         throw Exception('No servers available');
       }
 
-      // Search across all connected servers
       final neutral = await multiServerProvider.aggregationService.searchAcrossServers(query);
       if (mounted) {
         setState(() {
@@ -119,7 +117,6 @@ class _SearchScreenState extends State<SearchScreen>
 
   @override
   void refresh() {
-    // Re-run the current search if there is one
     if (_searchController.text.isNotEmpty) {
       _performSearch(_searchController.text);
     }
@@ -227,7 +224,6 @@ class _SearchScreenState extends State<SearchScreen>
                             icon: const AppIcon(Symbols.clear_rounded, fill: 1),
                             onPressed: () {
                               _searchController.clear();
-                              // State update handled by listener
                             },
                           )
                         : null,

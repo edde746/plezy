@@ -92,7 +92,6 @@ class NavigationRailItem extends StatelessWidget {
           onTap();
           return KeyEventResult.handled;
         }
-        // RIGHT arrow navigates to content area
         if (event.logicalKey == LogicalKeyboardKey.arrowRight && onNavigateRight != null) {
           onNavigateRight!();
           return KeyEventResult.handled;
@@ -190,7 +189,6 @@ class SideNavigationRail extends StatefulWidget {
 class SideNavigationRailState extends State<SideNavigationRail> {
   bool _librariesExpanded = true;
 
-  // Collapsed/expanded state
   bool _isHovered = false;
   bool _isTouchExpanded = false;
   Timer? _collapseTimer;
@@ -198,7 +196,6 @@ class SideNavigationRailState extends State<SideNavigationRail> {
   static const double expandedWidth = 220.0;
   static const Duration _collapseDelay = Duration(milliseconds: 150);
 
-  // Focus keys for main nav items
   static const _kHome = 'home';
   static const _kLibraries = 'libraries';
   static const _kSearch = 'search';
@@ -580,24 +577,19 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                     onKeyEvent: (node, event) => _handleVerticalNavigation(node, event, focusOrder),
                     child: Column(
                       children: [
-                        // Safe area for status bar and macOS traffic lights
                         SizedBox(height: _getTopPadding(context)),
 
-                        // Navigation content
                         Expanded(
                           child: ListView(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             clipBehavior: Clip.hardEdge,
                             children: [
-                              // Reconnect button when offline
                               if (widget.isOfflineMode && widget.onReconnect != null) ...[
                                 _buildReconnectItem(isCollapsed: isCollapsed),
                                 const SizedBox(height: 8),
                               ],
 
-                              // In online mode, show full navigation
                               if (!widget.isOfflineMode) ...[
-                                // Home
                                 _buildNavItem(
                                   icon: Symbols.home_rounded,
                                   selectedIcon: Symbols.home_rounded,
@@ -611,7 +603,6 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
                                 const SizedBox(height: 8),
 
-                                // Libraries section
                                 _buildLibrariesSection(
                                   visibleRows,
                                   hiddenRows,
@@ -622,7 +613,6 @@ class SideNavigationRailState extends State<SideNavigationRail> {
 
                                 const SizedBox(height: 8),
 
-                                // Live TV (only if DVR available)
                                 if (context.watch<MultiServerProvider>().hasLiveTv) ...[
                                   _buildNavItem(
                                     icon: Symbols.live_tv_rounded,
@@ -638,7 +628,6 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                                   const SizedBox(height: 8),
                                 ],
 
-                                // Search
                                 _buildNavItem(
                                   icon: Symbols.search_rounded,
                                   selectedIcon: Symbols.search_rounded,
@@ -669,7 +658,6 @@ class SideNavigationRailState extends State<SideNavigationRail> {
                                 const SizedBox(height: 8),
                               ],
 
-                              // Settings
                               _buildNavItem(
                                 icon: Symbols.settings_rounded,
                                 selectedIcon: Symbols.settings_rounded,
@@ -799,7 +787,6 @@ class SideNavigationRailState extends State<SideNavigationRail> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Libraries header with expand/collapse
         Focus(
           focusNode: _focusTracker.get(_kLibraries),
           onKeyEvent: (node, event) {
@@ -890,7 +877,6 @@ class SideNavigationRailState extends State<SideNavigationRail> {
           ),
         ),
 
-        // Library items with animated height
         TweenAnimationBuilder<double>(
           tween: Tween(end: (_librariesExpanded && !isCollapsed) ? 1.0 : 0.0),
           duration: tokens(context).normal,

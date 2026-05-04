@@ -24,7 +24,6 @@ class SleepTimerService extends ChangeNotifier {
   /// Emits when the timer fires and wants to show a "still watching?" prompt
   Stream<void> get onPrompt => _promptController.stream;
 
-  /// Whether a timer is currently active
   bool get isActive => _timer != null && _timer!.isActive;
 
   /// The time when the timer will complete
@@ -43,11 +42,7 @@ class SleepTimerService extends ChangeNotifier {
     return remaining.isNegative ? Duration.zero : remaining;
   }
 
-  /// Start a sleep timer with the specified duration
-  /// [duration] - How long until the timer completes
-  /// [onComplete] - Callback to execute when timer completes
   void startTimer(Duration duration, VoidCallback onComplete) {
-    // Cancel any existing timer
     cancelTimer();
 
     _originalDuration = duration;
@@ -57,7 +52,6 @@ class SleepTimerService extends ChangeNotifier {
 
     appLogger.d('Sleep timer started: ${duration.inMinutes} minutes');
 
-    // Create a periodic timer to update remaining time
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       final remaining = remainingTime;
 
@@ -66,7 +60,6 @@ class SleepTimerService extends ChangeNotifier {
         _stopTimerOnly();
         _promptController.add(null);
       } else {
-        // Notify listeners to update UI
         notifyListeners();
       }
     });
@@ -88,7 +81,6 @@ class SleepTimerService extends ChangeNotifier {
     }
   }
 
-  /// Restart the timer with the original user-selected duration
   void restartTimer() {
     if (_originalDuration != null && _onTimerComplete != null) {
       final duration = _originalDuration!;

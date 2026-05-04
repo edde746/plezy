@@ -81,8 +81,6 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     safeNotifyListeners();
   }
 
-  // ───── Connect / disconnect ─────
-
   Future<bool> connectMal({required void Function(OAuthProxyStart) onCodeReady}) => _runConnect<MalSession>(
     service: TrackerService.mal,
     alreadyConnected: isMalConnected,
@@ -146,9 +144,6 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _rebindSimkl();
   });
 
-  // ───── Connect machinery ─────
-
-  /// Guard-if-busy, set in-flight flag, run the shared pipeline, clear flag.
   Future<bool> _runConnect<T>({
     required TrackerService service,
     required bool alreadyConnected,
@@ -222,8 +217,6 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return raw;
     }
   }
-
-  // ───── Tracker rebinding ─────
 
   void _rebindAll() {
     _rebindMal();

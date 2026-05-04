@@ -99,7 +99,6 @@ Future<MediaNavigationResult> navigateToMediaItem(
 
     case MediaKind.clip:
     case MediaKind.episode:
-      // For episodes and clips (trailers/extras), start playback directly
       final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
       if (result == true) {
         onRefresh?.call(mi.id);
@@ -108,7 +107,6 @@ Future<MediaNavigationResult> navigateToMediaItem(
 
     case MediaKind.movie:
       if (playDirectly) {
-        // For movies in continue watching, start playback directly
         final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
         if (result == true) {
           onRefresh?.call(mi.id);
@@ -118,7 +116,6 @@ Future<MediaNavigationResult> navigateToMediaItem(
       return _showDetail(context, mi, isOffline, onRefresh);
 
     case MediaKind.season:
-      // Navigate to the parent show with the season tab pre-selected
       if (mi.parentId != null) {
         final showStub = MediaItem(
           id: mi.parentId!,

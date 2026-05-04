@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
-/// Helper function to access MonoTokens from context
 MonoTokens tokens(BuildContext context) => Theme.of(context).extension<MonoTokens>()!;
 
 @immutable

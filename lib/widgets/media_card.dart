@@ -263,7 +263,6 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                           knownHeight: posterHeight,
                         ),
                       ),
-                      // Inlined _PosterOverlay
                       if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item),
                     ],
                   ),
@@ -314,7 +313,6 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
   }
 }
 
-/// List layout for media cards
 class _MediaCardList extends StatelessWidget {
   /// Either a [MediaItem] or a [MediaPlaylist].
   final Object item;
@@ -390,32 +388,26 @@ class _MediaCardList extends StatelessWidget {
 
     if (item is MediaPlaylist) {
       final playlist = item as MediaPlaylist;
-      // Add item count
       if (playlist.leafCount != null && playlist.leafCount! > 0) {
         parts.add(t.playlists.itemCount(count: playlist.leafCount!));
       }
 
-      // Add duration
       if (playlist.durationMs != null) {
         parts.add(formatDurationTextual(playlist.durationMs!));
       }
 
-      // Add smart playlist badge
       if (playlist.smart) {
         parts.add(t.playlists.smartPlaylist);
       }
     } else if (item is MediaItem) {
       final mi = item as MediaItem;
 
-      // For collections, show item count
       if (mi.kind == MediaKind.collection) {
         final count = mi.childCount ?? mi.leafCount;
         if (count != null && count > 0) {
           parts.add(t.playlists.itemCount(count: count));
         }
       } else {
-        // For other media types, show standard metadata
-        // Add content rating
         if (mi.contentRating != null && mi.contentRating!.isNotEmpty) {
           final rating = formatContentRating(mi.contentRating);
           if (rating.isNotEmpty) {
@@ -423,27 +415,22 @@ class _MediaCardList extends StatelessWidget {
           }
         }
 
-        // Add year
         if (mi.year != null) {
           parts.add('${mi.year}');
         }
 
-        // Add edition title (Plex-only field; null on other backends)
         if (mi.editionTitle case final editionTitle?) {
           parts.add(editionTitle);
         }
 
-        // Add duration
         if (mi.durationMs != null) {
           parts.add(formatDurationTextual(mi.durationMs!));
         }
 
-        // Add user rating
         if (mi.rating != null) {
           parts.add('${mi.rating!.toStringAsFixed(1)}★');
         }
 
-        // Add studio
         if (mi.studio != null && mi.studio!.isNotEmpty) {
           parts.add(mi.studio!);
         }
@@ -455,18 +442,15 @@ class _MediaCardList extends StatelessWidget {
 
   String? _buildSubtitleText(BuildContext context) {
     if (item is MediaPlaylist) {
-      // Playlists don't have subtitles
       return null;
     } else if (item is MediaItem) {
       final mi = item as MediaItem;
 
-      // For TV episodes, show S# (optionally with E#)
       if (mi.parentIndex != null && mi.index != null) {
         final showEp = SettingsService.instanceOrNull!.read(SettingsService.showEpisodeNumberOnCards);
         return showEp ? 'S${mi.parentIndex} E${mi.index}' : 'S${mi.parentIndex}';
       }
 
-      // Otherwise use existing subtitle logic
       if (mi.displaySubtitle != null) {
         return mi.displaySubtitle;
       } else if (mi.parentTitle != null) {
@@ -533,7 +517,6 @@ class _MediaCardList extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Poster (responsive size based on density)
             SizedBox(
               width: _posterWidth(context),
               height: _posterHeight(context),
@@ -548,13 +531,11 @@ class _MediaCardList extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            // Metadata
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  // Title
                   if (item is MediaItem && _hasClickableTitle(item as MediaItem))
                     _ClickableText(
                       text: (item as MediaItem).displayTitle,
@@ -569,7 +550,6 @@ class _MediaCardList extends StatelessWidget {
                       style: TextStyle(fontWeight: FontWeight.w600, fontSize: _titleFontSize, height: 1.2),
                     ),
                   const SizedBox(height: 4),
-                  // Metadata info line (rating, duration, score, studio)
                   if (metadataLine.isNotEmpty) ...[
                     Text(
                       metadataLine,
@@ -583,7 +563,6 @@ class _MediaCardList extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                   ],
-                  // Subtitle (S# · Episode Title, or year/parent title)
                   if (item is MediaItem &&
                       (item as MediaItem).isEpisode &&
                       (item as MediaItem).parentIndex != null &&
@@ -602,7 +581,6 @@ class _MediaCardList extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                   ],
-                  // Summary (hidden when spoiler protection is active)
                   if (!(item is MediaItem &&
                           SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers) &&
                           (item as MediaItem).shouldHideSpoiler) &&
@@ -618,7 +596,6 @@ class _MediaCardList extends StatelessWidget {
                       ),
                     ),
                   ],
-                  // Server name (multi-server mode)
                   if (showServerName && item is MediaItem && (item as MediaItem).serverName != null) ...[
                     const SizedBox(height: 4),
                     Row(
@@ -721,9 +698,7 @@ Widget _buildPosterImage(
   );
 }
 
-/// Helper methods for building media card metadata and subtitles
 class _MediaCardHelpers {
-  /// Builds playlist metadata (item count)
   static Widget buildPlaylistMeta(BuildContext context, MediaPlaylist playlist) {
     if (playlist.leafCount != null && playlist.leafCount! > 0) {
       return Text(
@@ -890,10 +865,8 @@ bool _hasClickableTitle(MediaItem mi) {
   return false;
 }
 
-/// Navigate to a show with the season tab pre-selected from episode metadata
 void _navigateToSeason(BuildContext context, MediaItem episode, {bool isOffline = false}) {
   if (episode.grandparentId != null) {
-    // Navigate to the show with the season pre-selected
     final showStub = MediaItem(
       id: episode.grandparentId!,
       backend: episode.backend,

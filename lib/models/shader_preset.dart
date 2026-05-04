@@ -1,4 +1,3 @@
-/// Shader preset types available in the app
 enum ShaderPresetType { none, nvscaler, artcnn, anime4k, custom }
 
 /// ArtCNN real-time model sizes.
@@ -52,7 +51,6 @@ enum Anime4KMode {
   modeCA,
 }
 
-/// Configuration for Anime4K preset
 class Anime4KConfig {
   final Anime4KQuality quality;
   final Anime4KMode mode;
@@ -78,7 +76,6 @@ class Anime4KConfig {
   }
 }
 
-/// Configuration for ArtCNN preset
 class ArtCNNConfig {
   final ArtCNNModel model;
   final ArtCNNVariant variant;
@@ -104,7 +101,6 @@ class ArtCNNConfig {
   }
 }
 
-/// Configuration for NVScaler preset
 class NVScalerConfig {
   /// Whether to automatically skip NVScaler on HDR content
   final bool autoHdrSkip;
@@ -127,7 +123,6 @@ class NVScalerConfig {
   }
 }
 
-/// Represents a shader preset configuration
 class ShaderPreset {
   final String id;
   final String name;
@@ -235,7 +230,6 @@ class ShaderPreset {
     }
   }
 
-  /// Get display name for the mode
   String get modeDisplayName {
     if (anime4kConfig != null) {
       return _getModeName(anime4kConfig!.mode);
@@ -243,7 +237,6 @@ class ShaderPreset {
     return '';
   }
 
-  /// Get display name for the ArtCNN model
   String get artcnnModelDisplayName {
     if (artcnnConfig != null) {
       return _getArtCNNModelName(artcnnConfig!.model);
@@ -251,26 +244,22 @@ class ShaderPreset {
     return '';
   }
 
-  /// Get all available preset options
   static List<ShaderPreset> get allPresets {
     return [
       none,
       nvscalerDefault,
-      // ArtCNN presets
       artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.neutral),
       artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.denoise),
       artcnnPreset(ArtCNNModel.c4f16, ArtCNNVariant.denoiseSharpen),
       artcnnPreset(ArtCNNModel.c4f32, ArtCNNVariant.neutral),
       artcnnPreset(ArtCNNModel.c4f32, ArtCNNVariant.denoise),
       artcnnPreset(ArtCNNModel.c4f32, ArtCNNVariant.denoiseSharpen),
-      // Anime4K Fast presets
       anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeA),
       anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeB),
       anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeC),
       anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeAA),
       anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeBB),
       anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeCA),
-      // Anime4K HQ presets
       anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeA),
       anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeB),
       anime4kPreset(Anime4KQuality.hq, Anime4KMode.modeC),
@@ -280,7 +269,6 @@ class ShaderPreset {
     ];
   }
 
-  /// Find a preset by its ID
   static ShaderPreset? fromId(String id) {
     try {
       return allPresets.firstWhere((p) => p.id == id);

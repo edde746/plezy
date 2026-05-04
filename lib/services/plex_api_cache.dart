@@ -47,13 +47,11 @@ class PlexApiCache extends ApiCache {
     )..where((t) => t.cacheKey.equals(metadataKey) | t.cacheKey.equals(childrenKey))).go();
   }
 
-  /// Mark an item as pinned for offline access.
   @override
   Future<void> pinForOffline(String serverId, String ratingKey) async {
     return pin(serverId, '/library/metadata/$ratingKey');
   }
 
-  /// Unpin an item.
   Future<void> unpinForOffline(String serverId, String ratingKey) async {
     return unpin(serverId, '/library/metadata/$ratingKey');
   }
@@ -69,7 +67,6 @@ class PlexApiCache extends ApiCache {
   // Rating keys can be alphanumeric, not just numeric.
   static final RegExp _metadataKeyPattern = RegExp(r'/library/metadata/([^/]+)$');
 
-  /// Get all pinned rating keys for a server.
   Future<Set<String>> getPinnedKeys(String serverId) => extractPinnedIds(serverId, _metadataKeyPattern);
 
   /// Fetch and parse a [MediaItem] from cache.
