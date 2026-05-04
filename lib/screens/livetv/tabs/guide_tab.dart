@@ -1089,6 +1089,7 @@ class GuideTabState extends State<GuideTab> {
       channel: channel,
       posterUrl: posterUrl,
       onTuneChannel: () => _tuneChannel(channel),
+      client: client,
     );
   }
 }

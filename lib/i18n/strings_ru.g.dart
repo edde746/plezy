@@ -965,6 +965,7 @@ class _TranslationsLiveTvRu extends TranslationsLiveTvEn {
 	@override String get reloadGuide => 'Перезагрузить программу';
 	@override String get now => 'Сейчас';
 	@override String get today => 'Сегодня';
+	@override String get tomorrow => 'Завтра';
 	@override String get midnight => 'Полночь';
 	@override String get overnight => 'Ночь';
 	@override String get morning => 'Утро';
@@ -979,6 +980,40 @@ class _TranslationsLiveTvRu extends TranslationsLiveTvEn {
 	@override String watchFromStart({required Object minutes}) => 'Смотреть сначала (${minutes} мин. назад)';
 	@override String get watchLive => 'Смотреть в прямом эфире';
 	@override String get goToLive => 'К прямому эфиру';
+	@override String get record => 'Запись';
+	@override String get recordEpisode => 'Записать эпизод';
+	@override String get recordSeries => 'Записать сериал';
+	@override String get recordOptions => 'Параметры записи';
+	@override String get recordings => 'Записи';
+	@override String get scheduledRecordings => 'Запланировано';
+	@override String get recordingRules => 'Правила записи';
+	@override String get noScheduledRecordings => 'Нет запланированных записей';
+	@override String get noRecordingRules => 'Правил записи пока нет';
+	@override String get manageRecording => 'Управление записью';
+	@override String get cancelRecording => 'Отменить запись';
+	@override String get cancelRecordingTitle => 'Отменить эту запись?';
+	@override String cancelRecordingMessage({required Object title}) => '${title} больше не будет записываться.';
+	@override String get deleteRule => 'Удалить правило';
+	@override String get deleteRuleTitle => 'Удалить правило записи?';
+	@override String deleteRuleMessage({required Object title}) => 'Будущие эпизоды ${title} не будут записаны.';
+	@override String get recordingScheduled => 'Запись запланирована';
+	@override String get alreadyScheduled => 'Эта передача уже запланирована';
+	@override String get dvrAdminRequired => 'Настройки DVR требуют учётной записи администратора';
+	@override String get recordingFailed => 'Не удалось запланировать запись';
+	@override String get recordingTargetMissing => 'Не удалось определить библиотеку записи';
+	@override String get recordNotAvailable => 'Запись недоступна для этой передачи';
+	@override String get recordingCancelled => 'Запись отменена';
+	@override String get recordingRuleDeleted => 'Правило записи удалено';
+	@override String get processRecordingRules => 'Пересчитать правила';
+	@override String get loadingRecordings => 'Загрузка записей...';
+	@override String get recordingInProgress => 'Идёт запись';
+	@override String recordingsCount({required Object count}) => 'Запланировано: ${count}';
+	@override String get editRule => 'Изменить правило';
+	@override String get editRuleAction => 'Изменить';
+	@override String get recordingRuleUpdated => 'Правило записи обновлено';
+	@override String get guideReloadRequested => 'Запрошено обновление гайда';
+	@override String get rulesProcessRequested => 'Запрошен пересчёт правил';
+	@override String get recordShow => 'Записать передачу';
 }
 
 // Path: collections
@@ -2372,6 +2407,7 @@ extension on TranslationsRu {
 			'liveTv.reloadGuide' => 'Перезагрузить программу',
 			'liveTv.now' => 'Сейчас',
 			'liveTv.today' => 'Сегодня',
+			'liveTv.tomorrow' => 'Завтра',
 			'liveTv.midnight' => 'Полночь',
 			'liveTv.overnight' => 'Ночь',
 			'liveTv.morning' => 'Утро',
@@ -2386,6 +2422,40 @@ extension on TranslationsRu {
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Смотреть сначала (${minutes} мин. назад)',
 			'liveTv.watchLive' => 'Смотреть в прямом эфире',
 			'liveTv.goToLive' => 'К прямому эфиру',
+			'liveTv.record' => 'Запись',
+			'liveTv.recordEpisode' => 'Записать эпизод',
+			'liveTv.recordSeries' => 'Записать сериал',
+			'liveTv.recordOptions' => 'Параметры записи',
+			'liveTv.recordings' => 'Записи',
+			'liveTv.scheduledRecordings' => 'Запланировано',
+			'liveTv.recordingRules' => 'Правила записи',
+			'liveTv.noScheduledRecordings' => 'Нет запланированных записей',
+			'liveTv.noRecordingRules' => 'Правил записи пока нет',
+			'liveTv.manageRecording' => 'Управление записью',
+			'liveTv.cancelRecording' => 'Отменить запись',
+			'liveTv.cancelRecordingTitle' => 'Отменить эту запись?',
+			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} больше не будет записываться.',
+			'liveTv.deleteRule' => 'Удалить правило',
+			'liveTv.deleteRuleTitle' => 'Удалить правило записи?',
+			'liveTv.deleteRuleMessage' => ({required Object title}) => 'Будущие эпизоды ${title} не будут записаны.',
+			'liveTv.recordingScheduled' => 'Запись запланирована',
+			'liveTv.alreadyScheduled' => 'Эта передача уже запланирована',
+			'liveTv.dvrAdminRequired' => 'Настройки DVR требуют учётной записи администратора',
+			'liveTv.recordingFailed' => 'Не удалось запланировать запись',
+			'liveTv.recordingTargetMissing' => 'Не удалось определить библиотеку записи',
+			'liveTv.recordNotAvailable' => 'Запись недоступна для этой передачи',
+			'liveTv.recordingCancelled' => 'Запись отменена',
+			'liveTv.recordingRuleDeleted' => 'Правило записи удалено',
+			'liveTv.processRecordingRules' => 'Пересчитать правила',
+			'liveTv.loadingRecordings' => 'Загрузка записей...',
+			'liveTv.recordingInProgress' => 'Идёт запись',
+			'liveTv.recordingsCount' => ({required Object count}) => 'Запланировано: ${count}',
+			'liveTv.editRule' => 'Изменить правило',
+			'liveTv.editRuleAction' => 'Изменить',
+			'liveTv.recordingRuleUpdated' => 'Правило записи обновлено',
+			'liveTv.guideReloadRequested' => 'Запрошено обновление гайда',
+			'liveTv.rulesProcessRequested' => 'Запрошен пересчёт правил',
+			'liveTv.recordShow' => 'Записать передачу',
 			'collections.title' => 'Коллекции',
 			'collections.collection' => 'Коллекция',
 			'collections.empty' => 'Коллекция пуста',
@@ -2703,6 +2773,8 @@ extension on TranslationsRu {
 			'metadataEdit.useOriginalTitle' => 'Использовать оригинальное название',
 			'metadataEdit.preferredAudioLanguage' => 'Предпочитаемый язык аудио',
 			'metadataEdit.preferredSubtitleLanguage' => 'Предпочитаемый язык субтитров',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => 'Автовыбор субтитров',
 			'metadataEdit.manuallySelected' => 'Выбор вручную',
 			'metadataEdit.shownWithForeignAudio' => 'Показывать при иноязычном аудио',
@@ -2738,8 +2810,6 @@ extension on TranslationsRu {
 			'trakt.connectedAs' => ({required Object username}) => 'Подключено как @${username}',
 			'trakt.disconnectConfirm' => 'Отключить аккаунт Trakt?',
 			'trakt.disconnectConfirmBody' => 'Plezy перестанет отправлять события воспроизведения в Trakt. Вы можете подключиться снова в любое время.',
-			_ => null,
-		} ?? switch (path) {
 			'trakt.scrobble' => 'Скробблинг в реальном времени',
 			'trakt.scrobbleDescription' => 'Отправлять события воспроизведения, паузы и остановки в Trakt во время просмотра.',
 			'trakt.watchedSync' => 'Синхронизация статуса просмотра',

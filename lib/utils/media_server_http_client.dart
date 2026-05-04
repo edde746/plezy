@@ -263,7 +263,7 @@ class MediaServerHttpClient {
   Uri _buildUri(String path, Map<String, dynamic>? queryParameters) {
     final base = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    final query = _encodeQuery(queryParameters);
+    final query = MediaServerHttpClient.encodeQueryParameters(queryParameters);
     final full = query.isEmpty ? '$base$cleanPath' : '$base$cleanPath?$query';
     return Uri.parse(full);
   }
@@ -271,7 +271,7 @@ class MediaServerHttpClient {
   /// Append query parameters to an already-parsed URI.
   Uri _appendQuery(Uri uri, Map<String, dynamic>? queryParameters) {
     if (queryParameters == null || queryParameters.isEmpty) return uri;
-    final query = _encodeQuery(queryParameters);
+    final query = MediaServerHttpClient.encodeQueryParameters(queryParameters);
     if (query.isEmpty) return uri;
     final existing = uri.query;
     final combined = existing.isEmpty ? query : '$existing&$query';
@@ -279,16 +279,27 @@ class MediaServerHttpClient {
   }
 
   /// Encode query params with `%20` for spaces (not `+`).
-  /// Null values are omitted (supports Dart's `?value` map entries).
-  static String _encodeQuery(Map<String, dynamic>? params) {
+  /// Null values are omitted and iterable values are emitted as repeated keys.
+  static String encodeQueryParameters(Map<String, Object?>? params) {
     if (params == null || params.isEmpty) return '';
     final parts = <String>[];
-    for (final entry in params.entries) {
-      if (entry.value == null) continue;
+
+    void add(String key, Object? value) {
+      if (value == null) return;
+      if (value is Iterable && value is! String) {
+        for (final item in value) {
+          add(key, item);
+        }
+        return;
+      }
       parts.add(
-        '${Uri.encodeComponent(entry.key)}='
-        '${Uri.encodeComponent(entry.value.toString())}',
+        '${Uri.encodeComponent(key)}='
+        '${Uri.encodeComponent(value.toString())}',
       );
+    }
+
+    for (final entry in params.entries) {
+      add(entry.key, entry.value);
     }
     return parts.join('&');
   }

@@ -965,6 +965,7 @@ class _TranslationsLiveTvNl extends TranslationsLiveTvEn {
 	@override String get reloadGuide => 'Gids herladen';
 	@override String get now => 'Nu';
 	@override String get today => 'Vandaag';
+	@override String get tomorrow => 'Morgen';
 	@override String get midnight => 'Middernacht';
 	@override String get overnight => 'Nacht';
 	@override String get morning => 'Ochtend';
@@ -979,6 +980,40 @@ class _TranslationsLiveTvNl extends TranslationsLiveTvEn {
 	@override String watchFromStart({required Object minutes}) => 'Kijk vanaf het begin (${minutes} min geleden)';
 	@override String get watchLive => 'Live kijken';
 	@override String get goToLive => 'Ga naar live';
+	@override String get record => 'Opnemen';
+	@override String get recordEpisode => 'Aflevering opnemen';
+	@override String get recordSeries => 'Serie opnemen';
+	@override String get recordOptions => 'Opnameopties';
+	@override String get recordings => 'Opnames';
+	@override String get scheduledRecordings => 'Gepland';
+	@override String get recordingRules => 'Opnameregels';
+	@override String get noScheduledRecordings => 'Geen geplande opnames';
+	@override String get noRecordingRules => 'Nog geen opnameregels';
+	@override String get manageRecording => 'Opname beheren';
+	@override String get cancelRecording => 'Opname annuleren';
+	@override String get cancelRecordingTitle => 'Deze opname annuleren?';
+	@override String cancelRecordingMessage({required Object title}) => '${title} wordt niet meer opgenomen.';
+	@override String get deleteRule => 'Regel verwijderen';
+	@override String get deleteRuleTitle => 'Opnameregel verwijderen?';
+	@override String deleteRuleMessage({required Object title}) => 'Toekomstige afleveringen van ${title} worden niet opgenomen.';
+	@override String get recordingScheduled => 'Opname gepland';
+	@override String get alreadyScheduled => 'Dit programma is al gepland';
+	@override String get dvrAdminRequired => 'DVR-instellingen vereisen een beheerdersaccount';
+	@override String get recordingFailed => 'Kon opname niet plannen';
+	@override String get recordingTargetMissing => 'Kon opnamebibliotheek niet bepalen';
+	@override String get recordNotAvailable => 'Opname niet beschikbaar voor dit programma';
+	@override String get recordingCancelled => 'Opname geannuleerd';
+	@override String get recordingRuleDeleted => 'Opnameregel verwijderd';
+	@override String get processRecordingRules => 'Regels opnieuw evalueren';
+	@override String get loadingRecordings => 'Opnames laden...';
+	@override String get recordingInProgress => 'Nu aan het opnemen';
+	@override String recordingsCount({required Object count}) => '${count} gepland';
+	@override String get editRule => 'Regel bewerken';
+	@override String get editRuleAction => 'Bewerken';
+	@override String get recordingRuleUpdated => 'Opnameregel bijgewerkt';
+	@override String get guideReloadRequested => 'Gids-vernieuwing aangevraagd';
+	@override String get rulesProcessRequested => 'Regel-herevaluatie aangevraagd';
+	@override String get recordShow => 'Programma opnemen';
 }
 
 // Path: collections
@@ -2372,6 +2407,7 @@ extension on TranslationsNl {
 			'liveTv.reloadGuide' => 'Gids herladen',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'Vandaag',
+			'liveTv.tomorrow' => 'Morgen',
 			'liveTv.midnight' => 'Middernacht',
 			'liveTv.overnight' => 'Nacht',
 			'liveTv.morning' => 'Ochtend',
@@ -2386,6 +2422,40 @@ extension on TranslationsNl {
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Kijk vanaf het begin (${minutes} min geleden)',
 			'liveTv.watchLive' => 'Live kijken',
 			'liveTv.goToLive' => 'Ga naar live',
+			'liveTv.record' => 'Opnemen',
+			'liveTv.recordEpisode' => 'Aflevering opnemen',
+			'liveTv.recordSeries' => 'Serie opnemen',
+			'liveTv.recordOptions' => 'Opnameopties',
+			'liveTv.recordings' => 'Opnames',
+			'liveTv.scheduledRecordings' => 'Gepland',
+			'liveTv.recordingRules' => 'Opnameregels',
+			'liveTv.noScheduledRecordings' => 'Geen geplande opnames',
+			'liveTv.noRecordingRules' => 'Nog geen opnameregels',
+			'liveTv.manageRecording' => 'Opname beheren',
+			'liveTv.cancelRecording' => 'Opname annuleren',
+			'liveTv.cancelRecordingTitle' => 'Deze opname annuleren?',
+			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} wordt niet meer opgenomen.',
+			'liveTv.deleteRule' => 'Regel verwijderen',
+			'liveTv.deleteRuleTitle' => 'Opnameregel verwijderen?',
+			'liveTv.deleteRuleMessage' => ({required Object title}) => 'Toekomstige afleveringen van ${title} worden niet opgenomen.',
+			'liveTv.recordingScheduled' => 'Opname gepland',
+			'liveTv.alreadyScheduled' => 'Dit programma is al gepland',
+			'liveTv.dvrAdminRequired' => 'DVR-instellingen vereisen een beheerdersaccount',
+			'liveTv.recordingFailed' => 'Kon opname niet plannen',
+			'liveTv.recordingTargetMissing' => 'Kon opnamebibliotheek niet bepalen',
+			'liveTv.recordNotAvailable' => 'Opname niet beschikbaar voor dit programma',
+			'liveTv.recordingCancelled' => 'Opname geannuleerd',
+			'liveTv.recordingRuleDeleted' => 'Opnameregel verwijderd',
+			'liveTv.processRecordingRules' => 'Regels opnieuw evalueren',
+			'liveTv.loadingRecordings' => 'Opnames laden...',
+			'liveTv.recordingInProgress' => 'Nu aan het opnemen',
+			'liveTv.recordingsCount' => ({required Object count}) => '${count} gepland',
+			'liveTv.editRule' => 'Regel bewerken',
+			'liveTv.editRuleAction' => 'Bewerken',
+			'liveTv.recordingRuleUpdated' => 'Opnameregel bijgewerkt',
+			'liveTv.guideReloadRequested' => 'Gids-vernieuwing aangevraagd',
+			'liveTv.rulesProcessRequested' => 'Regel-herevaluatie aangevraagd',
+			'liveTv.recordShow' => 'Programma opnemen',
 			'collections.title' => 'Collecties',
 			'collections.collection' => 'Collectie',
 			'collections.empty' => 'Collectie is leeg',
@@ -2703,6 +2773,8 @@ extension on TranslationsNl {
 			'metadataEdit.useOriginalTitle' => 'Oorspronkelijke titel gebruiken',
 			'metadataEdit.preferredAudioLanguage' => 'Voorkeurstaal audio',
 			'metadataEdit.preferredSubtitleLanguage' => 'Voorkeurstaal ondertiteling',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => 'Automatische ondertitelselectie',
 			'metadataEdit.manuallySelected' => 'Handmatig geselecteerd',
 			'metadataEdit.shownWithForeignAudio' => 'Weergeven bij anderstalig geluid',
@@ -2738,8 +2810,6 @@ extension on TranslationsNl {
 			'trakt.connectedAs' => ({required Object username}) => 'Verbonden als @${username}',
 			'trakt.disconnectConfirm' => 'Trakt-account loskoppelen?',
 			'trakt.disconnectConfirmBody' => 'Plezy stopt met het versturen van afspeelgebeurtenissen naar Trakt. Je kunt op elk moment opnieuw verbinden.',
-			_ => null,
-		} ?? switch (path) {
 			'trakt.scrobble' => 'Realtime scrobbling',
 			'trakt.scrobbleDescription' => 'Verstuur play-, pauze- en stopgebeurtenissen tijdens afspelen naar Trakt.',
 			'trakt.watchedSync' => 'Bekeken-status synchroniseren',

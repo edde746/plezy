@@ -965,6 +965,7 @@ class _TranslationsLiveTvKo extends TranslationsLiveTvEn {
 	@override String get reloadGuide => '편성표 새로고침';
 	@override String get now => '지금';
 	@override String get today => '오늘';
+	@override String get tomorrow => '내일';
 	@override String get midnight => '자정';
 	@override String get overnight => '심야';
 	@override String get morning => '아침';
@@ -979,6 +980,40 @@ class _TranslationsLiveTvKo extends TranslationsLiveTvEn {
 	@override String watchFromStart({required Object minutes}) => '처음부터 시청 (${minutes}분 전 시작)';
 	@override String get watchLive => '실시간 시청';
 	@override String get goToLive => '실시간으로 이동';
+	@override String get record => '녹화';
+	@override String get recordEpisode => '에피소드 녹화';
+	@override String get recordSeries => '시리즈 녹화';
+	@override String get recordOptions => '녹화 옵션';
+	@override String get recordings => '녹화';
+	@override String get scheduledRecordings => '예약됨';
+	@override String get recordingRules => '녹화 규칙';
+	@override String get noScheduledRecordings => '예약된 녹화 없음';
+	@override String get noRecordingRules => '녹화 규칙 없음';
+	@override String get manageRecording => '녹화 관리';
+	@override String get cancelRecording => '녹화 취소';
+	@override String get cancelRecordingTitle => '이 녹화를 취소할까요?';
+	@override String cancelRecordingMessage({required Object title}) => '${title}이(가) 더 이상 녹화되지 않습니다.';
+	@override String get deleteRule => '규칙 삭제';
+	@override String get deleteRuleTitle => '녹화 규칙을 삭제할까요?';
+	@override String deleteRuleMessage({required Object title}) => '${title}의 향후 에피소드는 녹화되지 않습니다.';
+	@override String get recordingScheduled => '녹화 예약됨';
+	@override String get alreadyScheduled => '이 프로그램은 이미 예약되어 있습니다';
+	@override String get dvrAdminRequired => 'DVR 설정은 관리자 계정이 필요합니다';
+	@override String get recordingFailed => '녹화를 예약할 수 없습니다';
+	@override String get recordingTargetMissing => '녹화 라이브러리를 확인할 수 없습니다';
+	@override String get recordNotAvailable => '이 프로그램은 녹화할 수 없습니다';
+	@override String get recordingCancelled => '녹화 취소됨';
+	@override String get recordingRuleDeleted => '녹화 규칙 삭제됨';
+	@override String get processRecordingRules => '규칙 재평가';
+	@override String get loadingRecordings => '녹화 불러오는 중...';
+	@override String get recordingInProgress => '녹화 중';
+	@override String recordingsCount({required Object count}) => '${count}개 예약됨';
+	@override String get editRule => '규칙 편집';
+	@override String get editRuleAction => '편집';
+	@override String get recordingRuleUpdated => '녹화 규칙 업데이트됨';
+	@override String get guideReloadRequested => '가이드 새로고침 요청됨';
+	@override String get rulesProcessRequested => '규칙 재평가 요청됨';
+	@override String get recordShow => '프로그램 녹화';
 }
 
 // Path: collections
@@ -2372,6 +2407,7 @@ extension on TranslationsKo {
 			'liveTv.reloadGuide' => '편성표 새로고침',
 			'liveTv.now' => '지금',
 			'liveTv.today' => '오늘',
+			'liveTv.tomorrow' => '내일',
 			'liveTv.midnight' => '자정',
 			'liveTv.overnight' => '심야',
 			'liveTv.morning' => '아침',
@@ -2386,6 +2422,40 @@ extension on TranslationsKo {
 			'liveTv.watchFromStart' => ({required Object minutes}) => '처음부터 시청 (${minutes}분 전 시작)',
 			'liveTv.watchLive' => '실시간 시청',
 			'liveTv.goToLive' => '실시간으로 이동',
+			'liveTv.record' => '녹화',
+			'liveTv.recordEpisode' => '에피소드 녹화',
+			'liveTv.recordSeries' => '시리즈 녹화',
+			'liveTv.recordOptions' => '녹화 옵션',
+			'liveTv.recordings' => '녹화',
+			'liveTv.scheduledRecordings' => '예약됨',
+			'liveTv.recordingRules' => '녹화 규칙',
+			'liveTv.noScheduledRecordings' => '예약된 녹화 없음',
+			'liveTv.noRecordingRules' => '녹화 규칙 없음',
+			'liveTv.manageRecording' => '녹화 관리',
+			'liveTv.cancelRecording' => '녹화 취소',
+			'liveTv.cancelRecordingTitle' => '이 녹화를 취소할까요?',
+			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title}이(가) 더 이상 녹화되지 않습니다.',
+			'liveTv.deleteRule' => '규칙 삭제',
+			'liveTv.deleteRuleTitle' => '녹화 규칙을 삭제할까요?',
+			'liveTv.deleteRuleMessage' => ({required Object title}) => '${title}의 향후 에피소드는 녹화되지 않습니다.',
+			'liveTv.recordingScheduled' => '녹화 예약됨',
+			'liveTv.alreadyScheduled' => '이 프로그램은 이미 예약되어 있습니다',
+			'liveTv.dvrAdminRequired' => 'DVR 설정은 관리자 계정이 필요합니다',
+			'liveTv.recordingFailed' => '녹화를 예약할 수 없습니다',
+			'liveTv.recordingTargetMissing' => '녹화 라이브러리를 확인할 수 없습니다',
+			'liveTv.recordNotAvailable' => '이 프로그램은 녹화할 수 없습니다',
+			'liveTv.recordingCancelled' => '녹화 취소됨',
+			'liveTv.recordingRuleDeleted' => '녹화 규칙 삭제됨',
+			'liveTv.processRecordingRules' => '규칙 재평가',
+			'liveTv.loadingRecordings' => '녹화 불러오는 중...',
+			'liveTv.recordingInProgress' => '녹화 중',
+			'liveTv.recordingsCount' => ({required Object count}) => '${count}개 예약됨',
+			'liveTv.editRule' => '규칙 편집',
+			'liveTv.editRuleAction' => '편집',
+			'liveTv.recordingRuleUpdated' => '녹화 규칙 업데이트됨',
+			'liveTv.guideReloadRequested' => '가이드 새로고침 요청됨',
+			'liveTv.rulesProcessRequested' => '규칙 재평가 요청됨',
+			'liveTv.recordShow' => '프로그램 녹화',
 			'collections.title' => '컬렉션',
 			'collections.collection' => '컬렉션',
 			'collections.empty' => '컬렉션이 비어 있습니다',
@@ -2703,6 +2773,8 @@ extension on TranslationsKo {
 			'metadataEdit.useOriginalTitle' => '원제 사용',
 			'metadataEdit.preferredAudioLanguage' => '선호 오디오 언어',
 			'metadataEdit.preferredSubtitleLanguage' => '선호 자막 언어',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => '자막 자동 선택 모드',
 			'metadataEdit.manuallySelected' => '수동 선택',
 			'metadataEdit.shownWithForeignAudio' => '외국어 오디오 시 표시',
@@ -2738,8 +2810,6 @@ extension on TranslationsKo {
 			'trakt.connectedAs' => ({required Object username}) => '@${username}(으)로 연결됨',
 			'trakt.disconnectConfirm' => 'Trakt 계정 연결을 끊으시겠습니까?',
 			'trakt.disconnectConfirmBody' => 'Plezy가 Trakt로 재생 이벤트를 보내지 않습니다. 언제든지 다시 연결할 수 있습니다.',
-			_ => null,
-		} ?? switch (path) {
 			'trakt.scrobble' => '실시간 스크로블',
 			'trakt.scrobbleDescription' => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.',
 			'trakt.watchedSync' => '시청 상태 동기화',

@@ -2182,6 +2182,9 @@ class TranslationsLiveTvEn {
 	/// en: 'Today'
 	String get today => 'Today';
 
+	/// en: 'Tomorrow'
+	String get tomorrow => 'Tomorrow';
+
 	/// en: 'Midnight'
 	String get midnight => 'Midnight';
 
@@ -2223,6 +2226,108 @@ class TranslationsLiveTvEn {
 
 	/// en: 'Go to Live'
 	String get goToLive => 'Go to Live';
+
+	/// en: 'Record'
+	String get record => 'Record';
+
+	/// en: 'Record Episode'
+	String get recordEpisode => 'Record Episode';
+
+	/// en: 'Record Series'
+	String get recordSeries => 'Record Series';
+
+	/// en: 'Record Options'
+	String get recordOptions => 'Record Options';
+
+	/// en: 'Recordings'
+	String get recordings => 'Recordings';
+
+	/// en: 'Scheduled'
+	String get scheduledRecordings => 'Scheduled';
+
+	/// en: 'Recording Rules'
+	String get recordingRules => 'Recording Rules';
+
+	/// en: 'Nothing scheduled to record'
+	String get noScheduledRecordings => 'Nothing scheduled to record';
+
+	/// en: 'No recording rules yet'
+	String get noRecordingRules => 'No recording rules yet';
+
+	/// en: 'Manage recording'
+	String get manageRecording => 'Manage recording';
+
+	/// en: 'Cancel recording'
+	String get cancelRecording => 'Cancel recording';
+
+	/// en: 'Cancel this recording?'
+	String get cancelRecordingTitle => 'Cancel this recording?';
+
+	/// en: '${title} will no longer be recorded.'
+	String cancelRecordingMessage({required Object title}) => '${title} will no longer be recorded.';
+
+	/// en: 'Delete rule'
+	String get deleteRule => 'Delete rule';
+
+	/// en: 'Delete recording rule?'
+	String get deleteRuleTitle => 'Delete recording rule?';
+
+	/// en: 'Future episodes of ${title} will not be recorded.'
+	String deleteRuleMessage({required Object title}) => 'Future episodes of ${title} will not be recorded.';
+
+	/// en: 'Recording scheduled'
+	String get recordingScheduled => 'Recording scheduled';
+
+	/// en: 'This program is already scheduled'
+	String get alreadyScheduled => 'This program is already scheduled';
+
+	/// en: 'DVR settings require an admin account'
+	String get dvrAdminRequired => 'DVR settings require an admin account';
+
+	/// en: 'Couldn't schedule recording'
+	String get recordingFailed => 'Couldn\'t schedule recording';
+
+	/// en: 'Couldn't determine recording library'
+	String get recordingTargetMissing => 'Couldn\'t determine recording library';
+
+	/// en: 'Recording not available for this program'
+	String get recordNotAvailable => 'Recording not available for this program';
+
+	/// en: 'Recording cancelled'
+	String get recordingCancelled => 'Recording cancelled';
+
+	/// en: 'Recording rule deleted'
+	String get recordingRuleDeleted => 'Recording rule deleted';
+
+	/// en: 'Re-evaluate rules'
+	String get processRecordingRules => 'Re-evaluate rules';
+
+	/// en: 'Loading recordings...'
+	String get loadingRecordings => 'Loading recordings...';
+
+	/// en: 'Recording now'
+	String get recordingInProgress => 'Recording now';
+
+	/// en: '${count} scheduled'
+	String recordingsCount({required Object count}) => '${count} scheduled';
+
+	/// en: 'Edit rule'
+	String get editRule => 'Edit rule';
+
+	/// en: 'Edit'
+	String get editRuleAction => 'Edit';
+
+	/// en: 'Recording rule updated'
+	String get recordingRuleUpdated => 'Recording rule updated';
+
+	/// en: 'Guide refresh requested'
+	String get guideReloadRequested => 'Guide refresh requested';
+
+	/// en: 'Rule re-evaluation requested'
+	String get rulesProcessRequested => 'Rule re-evaluation requested';
+
+	/// en: 'Record show'
+	String get recordShow => 'Record show';
 }
 
 // Path: collections
@@ -4564,6 +4669,7 @@ extension on Translations {
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.now' => 'Now',
 			'liveTv.today' => 'Today',
+			'liveTv.tomorrow' => 'Tomorrow',
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',
 			'liveTv.morning' => 'Morning',
@@ -4578,6 +4684,40 @@ extension on Translations {
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Watch from start (${minutes} min ago)',
 			'liveTv.watchLive' => 'Watch Live',
 			'liveTv.goToLive' => 'Go to Live',
+			'liveTv.record' => 'Record',
+			'liveTv.recordEpisode' => 'Record Episode',
+			'liveTv.recordSeries' => 'Record Series',
+			'liveTv.recordOptions' => 'Record Options',
+			'liveTv.recordings' => 'Recordings',
+			'liveTv.scheduledRecordings' => 'Scheduled',
+			'liveTv.recordingRules' => 'Recording Rules',
+			'liveTv.noScheduledRecordings' => 'Nothing scheduled to record',
+			'liveTv.noRecordingRules' => 'No recording rules yet',
+			'liveTv.manageRecording' => 'Manage recording',
+			'liveTv.cancelRecording' => 'Cancel recording',
+			'liveTv.cancelRecordingTitle' => 'Cancel this recording?',
+			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} will no longer be recorded.',
+			'liveTv.deleteRule' => 'Delete rule',
+			'liveTv.deleteRuleTitle' => 'Delete recording rule?',
+			'liveTv.deleteRuleMessage' => ({required Object title}) => 'Future episodes of ${title} will not be recorded.',
+			'liveTv.recordingScheduled' => 'Recording scheduled',
+			'liveTv.alreadyScheduled' => 'This program is already scheduled',
+			'liveTv.dvrAdminRequired' => 'DVR settings require an admin account',
+			'liveTv.recordingFailed' => 'Couldn\'t schedule recording',
+			'liveTv.recordingTargetMissing' => 'Couldn\'t determine recording library',
+			'liveTv.recordNotAvailable' => 'Recording not available for this program',
+			'liveTv.recordingCancelled' => 'Recording cancelled',
+			'liveTv.recordingRuleDeleted' => 'Recording rule deleted',
+			'liveTv.processRecordingRules' => 'Re-evaluate rules',
+			'liveTv.loadingRecordings' => 'Loading recordings...',
+			'liveTv.recordingInProgress' => 'Recording now',
+			'liveTv.recordingsCount' => ({required Object count}) => '${count} scheduled',
+			'liveTv.editRule' => 'Edit rule',
+			'liveTv.editRuleAction' => 'Edit',
+			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
+			'liveTv.guideReloadRequested' => 'Guide refresh requested',
+			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
+			'liveTv.recordShow' => 'Record show',
 			'collections.title' => 'Collections',
 			'collections.collection' => 'Collection',
 			'collections.empty' => 'Collection is empty',
@@ -4895,6 +5035,8 @@ extension on Translations {
 			'metadataEdit.useOriginalTitle' => 'Use Original Title',
 			'metadataEdit.preferredAudioLanguage' => 'Preferred Audio Language',
 			'metadataEdit.preferredSubtitleLanguage' => 'Preferred Subtitle Language',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => 'Auto-Select Subtitle Mode',
 			'metadataEdit.manuallySelected' => 'Manually selected',
 			'metadataEdit.shownWithForeignAudio' => 'Shown with foreign audio',
@@ -4930,8 +5072,6 @@ extension on Translations {
 			'trakt.connectedAs' => ({required Object username}) => 'Connected as @${username}',
 			'trakt.disconnectConfirm' => 'Disconnect Trakt account?',
 			'trakt.disconnectConfirmBody' => 'Plezy will stop sending playback events to Trakt. You can reconnect at any time.',
-			_ => null,
-		} ?? switch (path) {
 			'trakt.scrobble' => 'Real-time scrobbling',
 			'trakt.scrobbleDescription' => 'Send play, pause, and stop events to Trakt during playback.',
 			'trakt.watchedSync' => 'Sync watched status',

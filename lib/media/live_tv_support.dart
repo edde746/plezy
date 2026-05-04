@@ -1,6 +1,20 @@
 import '../models/livetv_channel.dart';
 import '../models/livetv_dvr.dart';
+import '../models/livetv_lineup.dart';
 import '../models/livetv_program.dart';
+import '../models/livetv_server_status.dart';
+import '../models/livetv_session.dart';
+import '../models/media_grab_operation.dart';
+import '../models/media_grabber_device.dart';
+import '../models/media_provider_info.dart';
+import '../models/media_subscription.dart';
+
+class LiveTvActivityResult<T> {
+  final T value;
+  final String? activityUuid;
+
+  const LiveTvActivityResult({required this.value, this.activityUuid});
+}
 
 enum FavoriteChannelPersistenceMode {
   /// A single write replaces the full backend account's favorite list.
@@ -81,4 +95,88 @@ abstract class LiveTvSupport {
   /// `/Users/{userId}/FavoriteItems/{channelId}` flag and saves the order
   /// locally.
   Future<void> setFavoriteChannels(List<FavoriteChannel> channels);
+
+  // ── DVR setup/lifecycle ─────────────────────────────────────────
+  Future<LiveTvServerStatus> fetchLiveTvServerStatus();
+  Future<LiveTvDvr?> fetchDvr(String dvrId);
+  Future<LiveTvActivityResult<LiveTvDvr?>> createDvr({
+    required List<String> devices,
+    required List<String> lineups,
+    String? language,
+    String? country,
+    String? postalCode,
+  });
+  Future<void> deleteDvr(String dvrId);
+  Future<void> updateDvrPrefs(String dvrId, Map<String, Object?> prefs);
+  Future<void> attachDeviceToDvr(String dvrId, String deviceId);
+  Future<void> detachDeviceFromDvr(String dvrId, String deviceId);
+  Future<void> addLineupToDvr(String dvrId, String lineupUri);
+  Future<void> removeLineupFromDvr(String dvrId, String lineupUri);
+  Future<LiveTvActivityResult<void>> reloadGuide(String dvrId);
+  Future<void> cancelGuideReload(String dvrId);
+
+  // ── Grabber devices/tuners ──────────────────────────────────────
+  Future<List<MediaGrabber>> fetchGrabbers({String? protocol});
+  Future<List<MediaGrabberDevice>> fetchGrabberDevices();
+  Future<LiveTvActivityResult<List<MediaGrabberDevice>>> discoverGrabberDevices();
+  Future<MediaGrabberDevice?> fetchGrabberDevice(String deviceId);
+  Future<MediaGrabberDevice?> addGrabberDevice(String uri, {String? grabberId});
+  Future<void> updateGrabberDevice(String deviceId, {bool? enabled, String? title});
+  Future<void> deleteGrabberDevice(String deviceId);
+  Future<List<MediaGrabberDeviceChannel>> fetchGrabberDeviceChannels(String deviceId);
+  Future<LiveTvActivityResult<MediaGrabberDevice?>> scanGrabberDevice(
+    String deviceId, {
+    String? source,
+    Map<String, Object?> prefs = const {},
+    String? network,
+    String? country,
+  });
+  Future<MediaGrabberDevice?> cancelGrabberDeviceScan(String deviceId);
+  Future<MediaGrabberDevice?> saveGrabberDeviceChannelMap(String deviceId, MediaGrabberChannelMapRequest request);
+  Future<void> updateGrabberDevicePrefs(String deviceId, Map<String, Object?> prefs);
+  String buildGrabberDeviceThumbUrl(String deviceId, int version);
+
+  // ── EPG setup/lineups ───────────────────────────────────────────
+  Future<List<LiveTvCountry>> fetchEpgCountries();
+  Future<List<LiveTvLanguage>> fetchEpgLanguages();
+  Future<List<LiveTvRegion>> fetchEpgRegions(String country, String epgId);
+  Future<LiveTvLineupResult> fetchEpgLineups(String country, String epgId, {String? postalCode, String? region});
+  Future<List<LiveTvChannel>> fetchEpgChannelsForLineup(String lineupUri);
+  Future<List<LiveTvLineup>> fetchEpgChannelsForLineups(List<String> lineupUris);
+  Future<List<ChannelMapping>> computeEpgChannelMap({required String deviceUri, required String lineupUri});
+  Future<LiveTvActivityResult<Map<String, dynamic>?>> findBestLineup({
+    required String deviceUri,
+    required String lineupGroupUri,
+  });
+
+  // ── Recording rules / scheduled grabs ───────────────────────────
+  Future<List<SubscriptionTemplate>> getSubscriptionTemplate(String guid);
+  Future<List<MediaSubscription>> fetchRecordingRules({bool includeGrabs = true, bool includeStorage = true});
+  Future<MediaSubscription?> fetchRecordingRule(
+    String subscriptionId, {
+    bool includeGrabs = true,
+    bool includeStorage = true,
+  });
+  Future<MediaSubscription?> createRecordingRule(MediaSubscriptionCreateRequest request);
+  Future<MediaSubscription?> updateRecordingRule(String subscriptionId, Map<String, Object?> prefs);
+  Future<void> deleteRecordingRule(String subscriptionId);
+  Future<MediaSubscription?> moveRecordingRule(String subscriptionId, {String? afterSubscriptionId});
+  Future<void> processRecordingRules();
+  Future<List<MediaGrabOperation>> fetchScheduledRecordings();
+  Future<void> cancelGrab(String operationId);
+  Future<List<MediaSubscription>> fetchSubscriptionMapping({
+    required String providerId,
+    required List<String> ratingKeys,
+    bool includeStorage = true,
+  });
+
+  // ── Providers and sessions ──────────────────────────────────────
+  Future<List<MediaProviderInfo>> fetchMediaProviders();
+  Future<void> registerMediaProvider(String url);
+  Future<void> refreshMediaProviders();
+  Future<void> unregisterMediaProvider(String providerId);
+  Future<List<LiveTvSession>> fetchLiveTvSessionsDetailed();
+  Future<LiveTvSession?> fetchLiveTvSession(String sessionId);
+  Uri buildNotificationWebSocketUri({List<String>? filters});
+  Uri buildNotificationEventSourceUri({List<String>? filters});
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_action_bar.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/livetv_channel.dart';
@@ -13,6 +14,7 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/overlay_sheet.dart';
 import 'live_tv_actions_mixin.dart';
+import 'livetv_recording_actions.dart';
 
 /// Shows all upcoming airings of a show, matching the Plex "upcoming episodes" view.
 class LiveTvShowScheduleScreen extends StatefulWidget {
@@ -80,11 +82,50 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
     }
   }
 
+  /// Resolve the owning client from the [MultiServerProvider]. The show
+  /// schedule screen is opened with a single [serverId], so no per-program
+  /// lookup is needed.
+  bool get _canRecord {
+    final client = context.read<MultiServerProvider>().getClientForServer(widget.serverId);
+    return client != null && client.capabilities.liveTvDvr;
+  }
+
+  Future<void> _onRecordShow() async {
+    final client = context.read<MultiServerProvider>().getClientForServer(widget.serverId);
+    if (client == null) return;
+    // Use the first program with a guid as the seed for `getSubscriptionTemplate`.
+    // The template returned by Plex includes both episode-level and series-level
+    // entries, so the user can still pick "Record Series" inside the options sheet.
+    LiveTvProgram? seed;
+    for (final p in _programs) {
+      if (p.guid != null && p.guid!.isNotEmpty) {
+        seed = p;
+        break;
+      }
+    }
+    if (seed == null) return;
+    await recordProgram(context, client, seed);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final showRecord = _canRecord && _programs.any((p) => p.guid != null && p.guid!.isNotEmpty);
     return OverlaySheetHost(
       child: FocusedScrollScaffold(
         title: Text(widget.showTitle),
+        actions: showRecord
+            ? [
+                FocusableActionBar(
+                  actions: [
+                    FocusableAction(
+                      icon: Symbols.fiber_manual_record_rounded,
+                      tooltip: t.liveTv.recordShow,
+                      onPressed: _onRecordShow,
+                    ),
+                  ],
+                ),
+              ]
+            : null,
         slivers: [
           if (_isLoading)
             const SliverFillRemaining(child: Center(child: CircularProgressIndicator()))
@@ -157,14 +198,7 @@ class _ScheduleListTile extends StatelessWidget {
 
   String _formatAbsoluteTime(DateTime start, DateTime now, {required bool is24Hour}) {
     final time = formatClockTime(start, is24Hour: is24Hour);
-    final today = DateTime(now.year, now.month, now.day);
-    final startDay = DateTime(start.year, start.month, start.day);
-    final diff = startDay.difference(today).inDays;
-
-    if (diff == 0) return 'Today at $time';
-    if (diff == 1) return 'Tomorrow at $time';
-    final weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][start.weekday - 1];
-    return '$weekday at $time';
+    return '${formatRelativeDayLabel(start, now: now)} at $time';
   }
 
   @override

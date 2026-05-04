@@ -65,6 +65,7 @@ mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
       channel: channel,
       posterUrl: posterUrl,
       onTuneChannel: channel != null ? () => tuneChannel(channel) : null,
+      client: client,
     );
   }
 }

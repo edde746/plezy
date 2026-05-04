@@ -965,6 +965,7 @@ class _TranslationsLiveTvDa extends TranslationsLiveTvEn {
 	@override String get reloadGuide => 'Genindlæs guide';
 	@override String get now => 'Nu';
 	@override String get today => 'I dag';
+	@override String get tomorrow => 'I morgen';
 	@override String get midnight => 'Midnat';
 	@override String get overnight => 'Nat';
 	@override String get morning => 'Morgen';
@@ -979,6 +980,40 @@ class _TranslationsLiveTvDa extends TranslationsLiveTvEn {
 	@override String watchFromStart({required Object minutes}) => 'Se fra start (${minutes} min siden)';
 	@override String get watchLive => 'Se live';
 	@override String get goToLive => 'Gå til live';
+	@override String get record => 'Optag';
+	@override String get recordEpisode => 'Optag episode';
+	@override String get recordSeries => 'Optag serie';
+	@override String get recordOptions => 'Optageindstillinger';
+	@override String get recordings => 'Optagelser';
+	@override String get scheduledRecordings => 'Planlagt';
+	@override String get recordingRules => 'Optagelsesregler';
+	@override String get noScheduledRecordings => 'Ingen optagelser planlagt';
+	@override String get noRecordingRules => 'Ingen optagelsesregler endnu';
+	@override String get manageRecording => 'Administrer optagelse';
+	@override String get cancelRecording => 'Annullér optagelse';
+	@override String get cancelRecordingTitle => 'Annullér denne optagelse?';
+	@override String cancelRecordingMessage({required Object title}) => '${title} bliver ikke længere optaget.';
+	@override String get deleteRule => 'Slet regel';
+	@override String get deleteRuleTitle => 'Slet optagelsesregel?';
+	@override String deleteRuleMessage({required Object title}) => 'Fremtidige episoder af ${title} bliver ikke optaget.';
+	@override String get recordingScheduled => 'Optagelse planlagt';
+	@override String get alreadyScheduled => 'Dette program er allerede planlagt';
+	@override String get dvrAdminRequired => 'DVR-indstillinger kræver en administratorkonto';
+	@override String get recordingFailed => 'Kunne ikke planlægge optagelse';
+	@override String get recordingTargetMissing => 'Kunne ikke bestemme optagelsesbibliotek';
+	@override String get recordNotAvailable => 'Optagelse er ikke tilgængelig for dette program';
+	@override String get recordingCancelled => 'Optagelse annulleret';
+	@override String get recordingRuleDeleted => 'Optagelsesregel slettet';
+	@override String get processRecordingRules => 'Genberegn regler';
+	@override String get loadingRecordings => 'Indlæser optagelser ...';
+	@override String get recordingInProgress => 'Optager nu';
+	@override String recordingsCount({required Object count}) => '${count} planlagt';
+	@override String get editRule => 'Rediger regel';
+	@override String get editRuleAction => 'Rediger';
+	@override String get recordingRuleUpdated => 'Optagelsesregel opdateret';
+	@override String get guideReloadRequested => 'Guide-opdatering anmodet';
+	@override String get rulesProcessRequested => 'Regelevaluering anmodet';
+	@override String get recordShow => 'Optag program';
 }
 
 // Path: collections
@@ -2372,6 +2407,7 @@ extension on TranslationsDa {
 			'liveTv.reloadGuide' => 'Genindlæs guide',
 			'liveTv.now' => 'Nu',
 			'liveTv.today' => 'I dag',
+			'liveTv.tomorrow' => 'I morgen',
 			'liveTv.midnight' => 'Midnat',
 			'liveTv.overnight' => 'Nat',
 			'liveTv.morning' => 'Morgen',
@@ -2386,6 +2422,40 @@ extension on TranslationsDa {
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Se fra start (${minutes} min siden)',
 			'liveTv.watchLive' => 'Se live',
 			'liveTv.goToLive' => 'Gå til live',
+			'liveTv.record' => 'Optag',
+			'liveTv.recordEpisode' => 'Optag episode',
+			'liveTv.recordSeries' => 'Optag serie',
+			'liveTv.recordOptions' => 'Optageindstillinger',
+			'liveTv.recordings' => 'Optagelser',
+			'liveTv.scheduledRecordings' => 'Planlagt',
+			'liveTv.recordingRules' => 'Optagelsesregler',
+			'liveTv.noScheduledRecordings' => 'Ingen optagelser planlagt',
+			'liveTv.noRecordingRules' => 'Ingen optagelsesregler endnu',
+			'liveTv.manageRecording' => 'Administrer optagelse',
+			'liveTv.cancelRecording' => 'Annullér optagelse',
+			'liveTv.cancelRecordingTitle' => 'Annullér denne optagelse?',
+			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} bliver ikke længere optaget.',
+			'liveTv.deleteRule' => 'Slet regel',
+			'liveTv.deleteRuleTitle' => 'Slet optagelsesregel?',
+			'liveTv.deleteRuleMessage' => ({required Object title}) => 'Fremtidige episoder af ${title} bliver ikke optaget.',
+			'liveTv.recordingScheduled' => 'Optagelse planlagt',
+			'liveTv.alreadyScheduled' => 'Dette program er allerede planlagt',
+			'liveTv.dvrAdminRequired' => 'DVR-indstillinger kræver en administratorkonto',
+			'liveTv.recordingFailed' => 'Kunne ikke planlægge optagelse',
+			'liveTv.recordingTargetMissing' => 'Kunne ikke bestemme optagelsesbibliotek',
+			'liveTv.recordNotAvailable' => 'Optagelse er ikke tilgængelig for dette program',
+			'liveTv.recordingCancelled' => 'Optagelse annulleret',
+			'liveTv.recordingRuleDeleted' => 'Optagelsesregel slettet',
+			'liveTv.processRecordingRules' => 'Genberegn regler',
+			'liveTv.loadingRecordings' => 'Indlæser optagelser ...',
+			'liveTv.recordingInProgress' => 'Optager nu',
+			'liveTv.recordingsCount' => ({required Object count}) => '${count} planlagt',
+			'liveTv.editRule' => 'Rediger regel',
+			'liveTv.editRuleAction' => 'Rediger',
+			'liveTv.recordingRuleUpdated' => 'Optagelsesregel opdateret',
+			'liveTv.guideReloadRequested' => 'Guide-opdatering anmodet',
+			'liveTv.rulesProcessRequested' => 'Regelevaluering anmodet',
+			'liveTv.recordShow' => 'Optag program',
 			'collections.title' => 'Samlinger',
 			'collections.collection' => 'Samling',
 			'collections.empty' => 'Samlingen er tom',
@@ -2703,6 +2773,8 @@ extension on TranslationsDa {
 			'metadataEdit.useOriginalTitle' => 'Brug originaltitel',
 			'metadataEdit.preferredAudioLanguage' => 'Foretrukket lydsprog',
 			'metadataEdit.preferredSubtitleLanguage' => 'Foretrukket undertekstsprog',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => 'Auto-vælg underteksttilstand',
 			'metadataEdit.manuallySelected' => 'Manuelt valgt',
 			'metadataEdit.shownWithForeignAudio' => 'Vist med fremmedsproget lyd',
@@ -2738,8 +2810,6 @@ extension on TranslationsDa {
 			'trakt.connectedAs' => ({required Object username}) => 'Forbundet som @${username}',
 			'trakt.disconnectConfirm' => 'Frakobl Trakt-konto?',
 			'trakt.disconnectConfirmBody' => 'Plezy stopper med at sende afspilningsbegivenheder til Trakt. Du kan genoprette forbindelse når som helst.',
-			_ => null,
-		} ?? switch (path) {
 			'trakt.scrobble' => 'Realtids-scrobbling',
 			'trakt.scrobbleDescription' => 'Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.',
 			'trakt.watchedSync' => 'Synkroniser sét-status',

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -7,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/live_tv_support.dart';
+import '../../media/media_server_client.dart';
 import '../../models/livetv_channel.dart';
 import '../../models/livetv_dvr.dart';
 import '../../mixins/refreshable.dart';
@@ -17,13 +19,15 @@ import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../utils/platform_detector.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/overlay_sheet.dart';
 import 'reorder_favorites_sheet.dart';
 import 'tabs/guide_tab.dart';
+import 'tabs/recordings_tab.dart';
 import 'tabs/whats_on_tab.dart';
 
-enum LiveTvTab { guide, whatsOn }
+enum LiveTvTab { guide, whatsOn, recordings }
 
 class LiveTvScreen extends StatefulWidget {
   const LiveTvScreen({super.key});
@@ -37,8 +41,14 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     implements FocusableTab {
   final _guideTabFocusNode = FocusNode(debugLabel: 'tab_chip_guide');
   final _whatsOnTabFocusNode = FocusNode(debugLabel: 'tab_chip_whats_on');
+  final _recordingsTabFocusNode = FocusNode(debugLabel: 'tab_chip_recordings');
   final _guideTabKey = GlobalKey<GuideTabState>();
   final _whatsOnTabKey = GlobalKey<WhatsOnTabState>();
+  final _recordingsTabKey = GlobalKey<RecordingsTabState>();
+
+  /// Visible tabs in the current session. Recordings tab is included only
+  /// when at least one Live TV server has `liveTvDvr` capability.
+  List<LiveTvTab> _visibleTabs = [LiveTvTab.guide, LiveTvTab.whatsOn];
 
   // App bar action bar
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
@@ -85,7 +95,13 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   }
 
   @override
-  List<FocusNode> get tabChipFocusNodes => [_guideTabFocusNode, _whatsOnTabFocusNode];
+  List<FocusNode> get tabChipFocusNodes => [for (final tab in _visibleTabs) _focusNodeForTab(tab)];
+
+  FocusNode _focusNodeForTab(LiveTvTab tab) => switch (tab) {
+    LiveTvTab.guide => _guideTabFocusNode,
+    LiveTvTab.whatsOn => _whatsOnTabFocusNode,
+    LiveTvTab.recordings => _recordingsTabFocusNode,
+  };
 
   @override
   void initState() {
@@ -100,6 +116,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   void dispose() {
     _guideTabFocusNode.dispose();
     _whatsOnTabFocusNode.dispose();
+    _recordingsTabFocusNode.dispose();
     disposeTabNavigation();
     super.dispose();
   }
@@ -109,14 +126,106 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     if (!tabController.indexIsChanging) {
       super.onTabChanged();
       // Pause/resume timers based on active tab
-      switch (LiveTvTab.values[tabController.index]) {
+      if (tabController.index >= _visibleTabs.length) return;
+      switch (_visibleTabs[tabController.index]) {
         case LiveTvTab.guide:
           _whatsOnTabKey.currentState?.pauseRefresh();
+          _recordingsTabKey.currentState?.pauseRefresh();
           _guideTabKey.currentState?.resumeRefresh();
         case LiveTvTab.whatsOn:
           _guideTabKey.currentState?.pauseRefresh();
+          _recordingsTabKey.currentState?.pauseRefresh();
           _whatsOnTabKey.currentState?.resumeRefresh();
+        case LiveTvTab.recordings:
+          _guideTabKey.currentState?.pauseRefresh();
+          _whatsOnTabKey.currentState?.pauseRefresh();
+          _recordingsTabKey.currentState?.resumeRefresh();
       }
+    }
+  }
+
+  LiveTvTab? get _currentTab {
+    if (tabController.index < 0 || tabController.index >= _visibleTabs.length) return null;
+    return _visibleTabs[tabController.index];
+  }
+
+  /// Tab-aware refresh handler bound to the AppBar refresh button.
+  /// - Guide / What's On: server-side `reloadGuide` per DVR-capable client +
+  ///   client-side channel re-fetch.
+  /// - Recordings: re-fetches scheduled recordings + rules.
+  Future<void> _onRefresh() async {
+    if (_currentTab == LiveTvTab.recordings) {
+      await _recordingsTabKey.currentState?.reload();
+      return;
+    }
+    await _serverReloadGuide();
+    await _loadChannels();
+  }
+
+  Future<void> _serverReloadGuide() async {
+    final multiServer = context.read<MultiServerProvider>();
+    final futures = <Future<void>>[];
+    for (final serverInfo in multiServer.liveTvServers) {
+      final client = multiServer.getClientForServer(serverInfo.serverId);
+      if (client == null || !client.capabilities.liveTvDvr) continue;
+      futures.add(_reloadGuideSafe(client, serverInfo.dvrKey));
+    }
+    if (futures.isEmpty) return;
+    await Future.wait(futures);
+    if (!mounted) return;
+    showSnackBar(context, t.liveTv.guideReloadRequested);
+  }
+
+  Future<void> _reloadGuideSafe(MediaServerClient client, String dvrId) async {
+    try {
+      await client.liveTv.reloadGuide(dvrId);
+    } catch (e) {
+      // 403 (admin only) and transient errors are non-fatal — caller still
+      // re-fetches client-side channels.
+      appLogger.d('Reload guide failed for DVR $dvrId: $e');
+    }
+  }
+
+  Future<void> _processRecordingRules() async {
+    final multiServer = context.read<MultiServerProvider>();
+    final futures = <Future<void>>[];
+    for (final serverInfo in multiServer.liveTvServers) {
+      final client = multiServer.getClientForServer(serverInfo.serverId);
+      if (client == null || !client.capabilities.liveTvDvr) continue;
+      futures.add(_processRulesSafe(client));
+    }
+    if (futures.isEmpty) return;
+    await Future.wait(futures);
+    if (!mounted) return;
+    showSnackBar(context, t.liveTv.rulesProcessRequested);
+    await _recordingsTabKey.currentState?.reload();
+  }
+
+  Future<void> _processRulesSafe(MediaServerClient client) async {
+    try {
+      await client.liveTv.processRecordingRules();
+    } catch (e) {
+      appLogger.d('processRecordingRules failed: $e');
+    }
+  }
+
+  /// Recompute visible tabs from the current MultiServerProvider state.
+  /// Re-inits the tab controller when the visible set changes (matches the
+  /// libraries-screen pattern at libraries_screen.dart:365).
+  void _refreshVisibleTabs(MultiServerProvider multiServer) {
+    final hasDvr = multiServer.liveTvServers.any((s) {
+      final c = multiServer.getClientForServer(s.serverId);
+      return c != null && c.capabilities.liveTvDvr;
+    });
+    final newTabs = [LiveTvTab.guide, LiveTvTab.whatsOn, if (hasDvr) LiveTvTab.recordings];
+    if (listEquals(_visibleTabs, newTabs)) return;
+    final currentTab = tabController.index < _visibleTabs.length ? _visibleTabs[tabController.index] : null;
+    disposeTabNavigation();
+    _visibleTabs = newTabs;
+    initTabNavigation();
+    if (currentTab != null) {
+      final newIndex = newTabs.indexOf(currentTab);
+      if (newIndex >= 0) tabController.index = newIndex;
     }
   }
 
@@ -237,6 +346,8 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         _channels = allChannels;
         _isLoading = false;
       });
+
+      _refreshVisibleTabs(multiServer);
 
       // Load favorites by backend store: Plex is cloud/account-scoped, Jellyfin per server.
       unawaited(_loadFavorites(multiServer));
@@ -374,11 +485,15 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   }
 
   void _focusCurrentTab() {
-    switch (LiveTvTab.values[tabController.index]) {
-      case LiveTvTab.guide:
-        _guideTabKey.currentState?.focusContent();
-      case LiveTvTab.whatsOn:
-        _whatsOnTabKey.currentState?.focusFirstHub();
+    if (tabController.index < _visibleTabs.length) {
+      switch (_visibleTabs[tabController.index]) {
+        case LiveTvTab.guide:
+          _guideTabKey.currentState?.focusContent();
+        case LiveTvTab.whatsOn:
+          _whatsOnTabKey.currentState?.focusFirstHub();
+        case LiveTvTab.recordings:
+          _recordingsTabKey.currentState?.focusContent();
+      }
     }
     setState(() {
       suppressAutoFocus = false;
@@ -392,15 +507,16 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     return switch (tab) {
       LiveTvTab.guide => t.liveTv.guide,
       LiveTvTab.whatsOn => t.liveTv.whatsOn,
+      LiveTvTab.recordings => t.liveTv.recordings,
     };
   }
 
   List<Widget> _buildTabChipItems() {
     return [
-      for (int i = 0; i < LiveTvTab.values.length; i++) ...[
+      for (int i = 0; i < _visibleTabs.length; i++) ...[
         if (i > 0) const SizedBox(width: 8),
         buildTabChip(
-          _getTabLabel(LiveTvTab.values[i]),
+          _getTabLabel(_visibleTabs[i]),
           i,
           onSelectWhenActive: _focusCurrentTab,
           onNavigateDown: _focusCurrentTab,
@@ -415,6 +531,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     final theme = Theme.of(context);
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
 
+    final isRecordings = _currentTab == LiveTvTab.recordings;
     return Scaffold(
       appBar: AppBar(
         title: useSideNav ? Row(children: _buildTabChipItems()) : Text(t.liveTv.title),
@@ -424,25 +541,56 @@ class _LiveTvScreenState extends State<LiveTvScreen>
             onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
             onNavigateDown: _focusCurrentTab,
             actions: [
-              FocusableAction(
-                icon: _showFavoritesOnly ? Symbols.star_rounded : Symbols.star_outline_rounded,
-                iconFill: _showFavoritesOnly ? 1.0 : 0.0,
-                tooltip: t.liveTv.favorites,
-                onPressed: _toggleFavoritesFilter,
-              ),
-              if (_showFavoritesOnly && _favoriteChannels.length > 1)
+              if (!isRecordings)
+                FocusableAction(
+                  icon: _showFavoritesOnly ? Symbols.star_rounded : Symbols.star_outline_rounded,
+                  iconFill: _showFavoritesOnly ? 1.0 : 0.0,
+                  tooltip: t.liveTv.favorites,
+                  onPressed: _toggleFavoritesFilter,
+                ),
+              if (!isRecordings && _showFavoritesOnly && _favoriteChannels.length > 1)
                 FocusableAction(
                   icon: Symbols.swap_vert_rounded,
                   tooltip: t.liveTv.reorderFavorites,
                   onPressed: _showReorderFavorites,
                 ),
-              FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.liveTv.reloadGuide, onPressed: _loadChannels),
+              if (isRecordings)
+                FocusableAction(
+                  icon: Symbols.bolt_rounded,
+                  tooltip: t.liveTv.processRecordingRules,
+                  onPressed: _processRecordingRules,
+                ),
+              FocusableAction(
+                icon: Symbols.refresh_rounded,
+                tooltip: isRecordings ? t.common.refresh : t.liveTv.reloadGuide,
+                onPressed: _onRefresh,
+              ),
             ],
           ),
         ]),
       ),
       body: _buildLiveTvBody(theme, useSideNav),
     );
+  }
+
+  Widget _buildTabContent(LiveTvTab tab, List<LiveTvChannel> guideChannels) {
+    return switch (tab) {
+      LiveTvTab.guide => GuideTab(
+        key: _guideTabKey,
+        channels: guideChannels,
+        isFavoriteChannel: _isFavoriteChannel,
+        onToggleFavorite: _toggleFavorite,
+        onNavigateUp: focusTabBar,
+        onBack: onTabBarBack,
+      ),
+      LiveTvTab.whatsOn => WhatsOnTab(
+        key: _whatsOnTabKey,
+        channels: _channels,
+        onNavigateUp: focusTabBar,
+        onBack: onTabBarBack,
+      ),
+      LiveTvTab.recordings => RecordingsTab(key: _recordingsTabKey, onNavigateUp: focusTabBar, onBack: onTabBarBack),
+    };
   }
 
   Widget _buildLiveTvBody(ThemeData theme, bool useSideNav) {
@@ -467,7 +615,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         ),
       );
     }
-    if (_channels.isEmpty) {
+    if (_channels.isEmpty && !_visibleTabs.contains(LiveTvTab.recordings)) {
       return Center(child: Text(t.liveTv.noChannels));
     }
 
@@ -487,17 +635,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         Expanded(
           child: TabBarView(
             controller: tabController,
-            children: [
-              GuideTab(
-                key: _guideTabKey,
-                channels: guideChannels,
-                isFavoriteChannel: _isFavoriteChannel,
-                onToggleFavorite: _toggleFavorite,
-                onNavigateUp: focusTabBar,
-                onBack: onTabBarBack,
-              ),
-              WhatsOnTab(key: _whatsOnTabKey, channels: _channels, onNavigateUp: focusTabBar, onBack: onTabBarBack),
-            ],
+            children: [for (final tab in _visibleTabs) _buildTabContent(tab, guideChannels)],
           ),
         ),
       ],

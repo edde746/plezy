@@ -965,6 +965,7 @@ class _TranslationsLiveTvJa extends TranslationsLiveTvEn {
 	@override String get reloadGuide => '番組表を再読込';
 	@override String get now => '現在';
 	@override String get today => '今日';
+	@override String get tomorrow => '明日';
 	@override String get midnight => '深夜';
 	@override String get overnight => '深夜';
 	@override String get morning => '朝';
@@ -979,6 +980,40 @@ class _TranslationsLiveTvJa extends TranslationsLiveTvEn {
 	@override String watchFromStart({required Object minutes}) => '最初から視聴（${minutes}分前に開始）';
 	@override String get watchLive => 'ライブで視聴';
 	@override String get goToLive => 'ライブに移動';
+	@override String get record => '録画';
+	@override String get recordEpisode => 'このエピソードを録画';
+	@override String get recordSeries => 'シリーズを録画';
+	@override String get recordOptions => '録画オプション';
+	@override String get recordings => '録画';
+	@override String get scheduledRecordings => '予約';
+	@override String get recordingRules => '録画ルール';
+	@override String get noScheduledRecordings => '予約された録画はありません';
+	@override String get noRecordingRules => '録画ルールはまだありません';
+	@override String get manageRecording => '録画を管理';
+	@override String get cancelRecording => '録画をキャンセル';
+	@override String get cancelRecordingTitle => 'この録画をキャンセルしますか？';
+	@override String cancelRecordingMessage({required Object title}) => '${title} は録画されなくなります。';
+	@override String get deleteRule => 'ルールを削除';
+	@override String get deleteRuleTitle => '録画ルールを削除しますか？';
+	@override String deleteRuleMessage({required Object title}) => '${title} の今後のエピソードは録画されません。';
+	@override String get recordingScheduled => '録画を予約しました';
+	@override String get alreadyScheduled => 'この番組はすでに予約されています';
+	@override String get dvrAdminRequired => 'DVR 設定には管理者アカウントが必要です';
+	@override String get recordingFailed => '録画を予約できませんでした';
+	@override String get recordingTargetMissing => '録画ライブラリを特定できませんでした';
+	@override String get recordNotAvailable => 'この番組は録画できません';
+	@override String get recordingCancelled => '録画をキャンセルしました';
+	@override String get recordingRuleDeleted => '録画ルールを削除しました';
+	@override String get processRecordingRules => 'ルールを再評価';
+	@override String get loadingRecordings => '録画を読み込み中...';
+	@override String get recordingInProgress => '録画中';
+	@override String recordingsCount({required Object count}) => '${count} 件予約済み';
+	@override String get editRule => 'ルールを編集';
+	@override String get editRuleAction => '編集';
+	@override String get recordingRuleUpdated => '録画ルールを更新しました';
+	@override String get guideReloadRequested => 'ガイドの更新を要求しました';
+	@override String get rulesProcessRequested => 'ルールの再評価を要求しました';
+	@override String get recordShow => '番組を録画';
 }
 
 // Path: collections
@@ -2372,6 +2407,7 @@ extension on TranslationsJa {
 			'liveTv.reloadGuide' => '番組表を再読込',
 			'liveTv.now' => '現在',
 			'liveTv.today' => '今日',
+			'liveTv.tomorrow' => '明日',
 			'liveTv.midnight' => '深夜',
 			'liveTv.overnight' => '深夜',
 			'liveTv.morning' => '朝',
@@ -2386,6 +2422,40 @@ extension on TranslationsJa {
 			'liveTv.watchFromStart' => ({required Object minutes}) => '最初から視聴（${minutes}分前に開始）',
 			'liveTv.watchLive' => 'ライブで視聴',
 			'liveTv.goToLive' => 'ライブに移動',
+			'liveTv.record' => '録画',
+			'liveTv.recordEpisode' => 'このエピソードを録画',
+			'liveTv.recordSeries' => 'シリーズを録画',
+			'liveTv.recordOptions' => '録画オプション',
+			'liveTv.recordings' => '録画',
+			'liveTv.scheduledRecordings' => '予約',
+			'liveTv.recordingRules' => '録画ルール',
+			'liveTv.noScheduledRecordings' => '予約された録画はありません',
+			'liveTv.noRecordingRules' => '録画ルールはまだありません',
+			'liveTv.manageRecording' => '録画を管理',
+			'liveTv.cancelRecording' => '録画をキャンセル',
+			'liveTv.cancelRecordingTitle' => 'この録画をキャンセルしますか？',
+			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} は録画されなくなります。',
+			'liveTv.deleteRule' => 'ルールを削除',
+			'liveTv.deleteRuleTitle' => '録画ルールを削除しますか？',
+			'liveTv.deleteRuleMessage' => ({required Object title}) => '${title} の今後のエピソードは録画されません。',
+			'liveTv.recordingScheduled' => '録画を予約しました',
+			'liveTv.alreadyScheduled' => 'この番組はすでに予約されています',
+			'liveTv.dvrAdminRequired' => 'DVR 設定には管理者アカウントが必要です',
+			'liveTv.recordingFailed' => '録画を予約できませんでした',
+			'liveTv.recordingTargetMissing' => '録画ライブラリを特定できませんでした',
+			'liveTv.recordNotAvailable' => 'この番組は録画できません',
+			'liveTv.recordingCancelled' => '録画をキャンセルしました',
+			'liveTv.recordingRuleDeleted' => '録画ルールを削除しました',
+			'liveTv.processRecordingRules' => 'ルールを再評価',
+			'liveTv.loadingRecordings' => '録画を読み込み中...',
+			'liveTv.recordingInProgress' => '録画中',
+			'liveTv.recordingsCount' => ({required Object count}) => '${count} 件予約済み',
+			'liveTv.editRule' => 'ルールを編集',
+			'liveTv.editRuleAction' => '編集',
+			'liveTv.recordingRuleUpdated' => '録画ルールを更新しました',
+			'liveTv.guideReloadRequested' => 'ガイドの更新を要求しました',
+			'liveTv.rulesProcessRequested' => 'ルールの再評価を要求しました',
+			'liveTv.recordShow' => '番組を録画',
 			'collections.title' => 'コレクション',
 			'collections.collection' => 'コレクション',
 			'collections.empty' => 'コレクションは空です',
@@ -2703,6 +2773,8 @@ extension on TranslationsJa {
 			'metadataEdit.useOriginalTitle' => '原題を使用',
 			'metadataEdit.preferredAudioLanguage' => '優先音声言語',
 			'metadataEdit.preferredSubtitleLanguage' => '優先字幕言語',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => '字幕自動選択モード',
 			'metadataEdit.manuallySelected' => '手動選択',
 			'metadataEdit.shownWithForeignAudio' => '外国語音声時に表示',
@@ -2738,8 +2810,6 @@ extension on TranslationsJa {
 			'trakt.connectedAs' => ({required Object username}) => '@${username} として接続済み',
 			'trakt.disconnectConfirm' => 'Trakt アカウントを切断しますか?',
 			'trakt.disconnectConfirmBody' => 'Plezy から Trakt への再生イベント送信が停止します。いつでも再接続できます。',
-			_ => null,
-		} ?? switch (path) {
 			'trakt.scrobble' => 'リアルタイムのスクロブル',
 			'trakt.scrobbleDescription' => '再生中に再生・一時停止・停止イベントを Trakt に送信します。',
 			'trakt.watchedSync' => '視聴済みステータスを同期',

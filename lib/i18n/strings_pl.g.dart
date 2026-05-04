@@ -965,6 +965,7 @@ class _TranslationsLiveTvPl extends TranslationsLiveTvEn {
 	@override String get reloadGuide => 'Odśwież przewodnik';
 	@override String get now => 'Teraz';
 	@override String get today => 'Dzisiaj';
+	@override String get tomorrow => 'Jutro';
 	@override String get midnight => 'Północ';
 	@override String get overnight => 'Nocą';
 	@override String get morning => 'Rano';
@@ -979,6 +980,40 @@ class _TranslationsLiveTvPl extends TranslationsLiveTvEn {
 	@override String watchFromStart({required Object minutes}) => 'Oglądaj od początku (${minutes} min temu)';
 	@override String get watchLive => 'Oglądaj na żywo';
 	@override String get goToLive => 'Przejdź do na żywo';
+	@override String get record => 'Nagraj';
+	@override String get recordEpisode => 'Nagraj odcinek';
+	@override String get recordSeries => 'Nagraj serial';
+	@override String get recordOptions => 'Opcje nagrywania';
+	@override String get recordings => 'Nagrania';
+	@override String get scheduledRecordings => 'Zaplanowane';
+	@override String get recordingRules => 'Reguły nagrywania';
+	@override String get noScheduledRecordings => 'Brak zaplanowanych nagrań';
+	@override String get noRecordingRules => 'Brak reguł nagrywania';
+	@override String get manageRecording => 'Zarządzaj nagraniem';
+	@override String get cancelRecording => 'Anuluj nagrywanie';
+	@override String get cancelRecordingTitle => 'Anulować to nagrywanie?';
+	@override String cancelRecordingMessage({required Object title}) => '${title} nie będzie już nagrywane.';
+	@override String get deleteRule => 'Usuń regułę';
+	@override String get deleteRuleTitle => 'Usunąć regułę nagrywania?';
+	@override String deleteRuleMessage({required Object title}) => 'Przyszłe odcinki ${title} nie będą nagrywane.';
+	@override String get recordingScheduled => 'Nagrywanie zaplanowane';
+	@override String get alreadyScheduled => 'Ten program jest już zaplanowany';
+	@override String get dvrAdminRequired => 'Ustawienia DVR wymagają konta administratora';
+	@override String get recordingFailed => 'Nie można zaplanować nagrywania';
+	@override String get recordingTargetMissing => 'Nie można określić biblioteki nagrań';
+	@override String get recordNotAvailable => 'Nagrywanie niedostępne dla tego programu';
+	@override String get recordingCancelled => 'Nagrywanie anulowane';
+	@override String get recordingRuleDeleted => 'Reguła nagrywania usunięta';
+	@override String get processRecordingRules => 'Ponów ocenę reguł';
+	@override String get loadingRecordings => 'Wczytywanie nagrań...';
+	@override String get recordingInProgress => 'Trwa nagrywanie';
+	@override String recordingsCount({required Object count}) => '${count} zaplanowanych';
+	@override String get editRule => 'Edytuj regułę';
+	@override String get editRuleAction => 'Edytuj';
+	@override String get recordingRuleUpdated => 'Reguła nagrywania zaktualizowana';
+	@override String get guideReloadRequested => 'Zażądano odświeżenia przewodnika';
+	@override String get rulesProcessRequested => 'Zażądano ponownej oceny reguł';
+	@override String get recordShow => 'Nagraj program';
 }
 
 // Path: collections
@@ -2372,6 +2407,7 @@ extension on TranslationsPl {
 			'liveTv.reloadGuide' => 'Odśwież przewodnik',
 			'liveTv.now' => 'Teraz',
 			'liveTv.today' => 'Dzisiaj',
+			'liveTv.tomorrow' => 'Jutro',
 			'liveTv.midnight' => 'Północ',
 			'liveTv.overnight' => 'Nocą',
 			'liveTv.morning' => 'Rano',
@@ -2386,6 +2422,40 @@ extension on TranslationsPl {
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Oglądaj od początku (${minutes} min temu)',
 			'liveTv.watchLive' => 'Oglądaj na żywo',
 			'liveTv.goToLive' => 'Przejdź do na żywo',
+			'liveTv.record' => 'Nagraj',
+			'liveTv.recordEpisode' => 'Nagraj odcinek',
+			'liveTv.recordSeries' => 'Nagraj serial',
+			'liveTv.recordOptions' => 'Opcje nagrywania',
+			'liveTv.recordings' => 'Nagrania',
+			'liveTv.scheduledRecordings' => 'Zaplanowane',
+			'liveTv.recordingRules' => 'Reguły nagrywania',
+			'liveTv.noScheduledRecordings' => 'Brak zaplanowanych nagrań',
+			'liveTv.noRecordingRules' => 'Brak reguł nagrywania',
+			'liveTv.manageRecording' => 'Zarządzaj nagraniem',
+			'liveTv.cancelRecording' => 'Anuluj nagrywanie',
+			'liveTv.cancelRecordingTitle' => 'Anulować to nagrywanie?',
+			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} nie będzie już nagrywane.',
+			'liveTv.deleteRule' => 'Usuń regułę',
+			'liveTv.deleteRuleTitle' => 'Usunąć regułę nagrywania?',
+			'liveTv.deleteRuleMessage' => ({required Object title}) => 'Przyszłe odcinki ${title} nie będą nagrywane.',
+			'liveTv.recordingScheduled' => 'Nagrywanie zaplanowane',
+			'liveTv.alreadyScheduled' => 'Ten program jest już zaplanowany',
+			'liveTv.dvrAdminRequired' => 'Ustawienia DVR wymagają konta administratora',
+			'liveTv.recordingFailed' => 'Nie można zaplanować nagrywania',
+			'liveTv.recordingTargetMissing' => 'Nie można określić biblioteki nagrań',
+			'liveTv.recordNotAvailable' => 'Nagrywanie niedostępne dla tego programu',
+			'liveTv.recordingCancelled' => 'Nagrywanie anulowane',
+			'liveTv.recordingRuleDeleted' => 'Reguła nagrywania usunięta',
+			'liveTv.processRecordingRules' => 'Ponów ocenę reguł',
+			'liveTv.loadingRecordings' => 'Wczytywanie nagrań...',
+			'liveTv.recordingInProgress' => 'Trwa nagrywanie',
+			'liveTv.recordingsCount' => ({required Object count}) => '${count} zaplanowanych',
+			'liveTv.editRule' => 'Edytuj regułę',
+			'liveTv.editRuleAction' => 'Edytuj',
+			'liveTv.recordingRuleUpdated' => 'Reguła nagrywania zaktualizowana',
+			'liveTv.guideReloadRequested' => 'Zażądano odświeżenia przewodnika',
+			'liveTv.rulesProcessRequested' => 'Zażądano ponownej oceny reguł',
+			'liveTv.recordShow' => 'Nagraj program',
 			'collections.title' => 'Kolekcje',
 			'collections.collection' => 'Kolekcja',
 			'collections.empty' => 'Kolekcja jest pusta',
@@ -2703,6 +2773,8 @@ extension on TranslationsPl {
 			'metadataEdit.useOriginalTitle' => 'Użyj oryginalnego tytułu',
 			'metadataEdit.preferredAudioLanguage' => 'Preferowany język audio',
 			'metadataEdit.preferredSubtitleLanguage' => 'Preferowany język napisów',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => 'Tryb automatycznego wyboru napisów',
 			'metadataEdit.manuallySelected' => 'Wybrany ręcznie',
 			'metadataEdit.shownWithForeignAudio' => 'Wyświetlane przy obcojęzycznym audio',
@@ -2738,8 +2810,6 @@ extension on TranslationsPl {
 			'trakt.connectedAs' => ({required Object username}) => 'Połączono jako @${username}',
 			'trakt.disconnectConfirm' => 'Rozłączyć konto Trakt?',
 			'trakt.disconnectConfirmBody' => 'Plezy przestanie wysyłać zdarzenia odtwarzania do Trakt. Możesz połączyć się ponownie w dowolnej chwili.',
-			_ => null,
-		} ?? switch (path) {
 			'trakt.scrobble' => 'Scrobbling w czasie rzeczywistym',
 			'trakt.scrobbleDescription' => 'Wysyłaj zdarzenia odtwarzania, pauzy i zatrzymania do Trakt podczas odtwarzania.',
 			'trakt.watchedSync' => 'Synchronizuj status obejrzane',

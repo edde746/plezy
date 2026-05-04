@@ -167,6 +167,19 @@ String formatClockTime(DateTime time, {required bool is24Hour}) {
   return formatter.format(time);
 }
 
+/// Formats a date as Today/Tomorrow or a localized abbreviated weekday.
+String formatRelativeDayLabel(DateTime date, {DateTime? now}) {
+  final reference = now ?? DateTime.now();
+  final today = DateTime(reference.year, reference.month, reference.day);
+  final targetDay = DateTime(date.year, date.month, date.day);
+  final diff = targetDay.difference(today).inDays;
+  return switch (diff) {
+    0 => t.liveTv.today,
+    1 => t.liveTv.tomorrow,
+    _ => DateFormat.E(LocaleSettings.currentLocale.languageCode).format(date),
+  };
+}
+
 /// Formats the clock time at which media will finish playing, given the remaining duration.
 /// Returns a localized time string like "6:12 PM" or "18:12" depending on system setting.
 String formatFinishTime(Duration remaining, {double rate = 1.0, required bool is24Hour}) {

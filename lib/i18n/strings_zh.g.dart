@@ -965,6 +965,7 @@ class _TranslationsLiveTvZh extends TranslationsLiveTvEn {
 	@override String get reloadGuide => '重新加载节目指南';
 	@override String get now => '现在';
 	@override String get today => '今天';
+	@override String get tomorrow => '明天';
 	@override String get midnight => '午夜';
 	@override String get overnight => '凌晨';
 	@override String get morning => '上午';
@@ -979,6 +980,40 @@ class _TranslationsLiveTvZh extends TranslationsLiveTvEn {
 	@override String watchFromStart({required Object minutes}) => '从头观看（${minutes}分钟前开始）';
 	@override String get watchLive => '观看直播';
 	@override String get goToLive => '跳至直播';
+	@override String get record => '录制';
+	@override String get recordEpisode => '录制单集';
+	@override String get recordSeries => '录制整部剧集';
+	@override String get recordOptions => '录制选项';
+	@override String get recordings => '录制内容';
+	@override String get scheduledRecordings => '已安排';
+	@override String get recordingRules => '录制规则';
+	@override String get noScheduledRecordings => '没有安排的录制';
+	@override String get noRecordingRules => '还没有录制规则';
+	@override String get manageRecording => '管理录制';
+	@override String get cancelRecording => '取消录制';
+	@override String get cancelRecordingTitle => '取消此次录制？';
+	@override String cancelRecordingMessage({required Object title}) => '将不再录制 ${title}。';
+	@override String get deleteRule => '删除规则';
+	@override String get deleteRuleTitle => '删除录制规则？';
+	@override String deleteRuleMessage({required Object title}) => '未来的 ${title} 剧集将不会被录制。';
+	@override String get recordingScheduled => '录制已安排';
+	@override String get alreadyScheduled => '此节目已安排录制';
+	@override String get dvrAdminRequired => 'DVR 设置需要管理员账户';
+	@override String get recordingFailed => '无法安排录制';
+	@override String get recordingTargetMissing => '无法确定录制库';
+	@override String get recordNotAvailable => '此节目无法录制';
+	@override String get recordingCancelled => '录制已取消';
+	@override String get recordingRuleDeleted => '录制规则已删除';
+	@override String get processRecordingRules => '重新评估规则';
+	@override String get loadingRecordings => '正在加载录制内容...';
+	@override String get recordingInProgress => '正在录制';
+	@override String recordingsCount({required Object count}) => '已安排 ${count} 个';
+	@override String get editRule => '编辑规则';
+	@override String get editRuleAction => '编辑';
+	@override String get recordingRuleUpdated => '录制规则已更新';
+	@override String get guideReloadRequested => '已请求更新节目指南';
+	@override String get rulesProcessRequested => '已请求重新评估规则';
+	@override String get recordShow => '录制节目';
 }
 
 // Path: collections
@@ -2372,6 +2407,7 @@ extension on TranslationsZh {
 			'liveTv.reloadGuide' => '重新加载节目指南',
 			'liveTv.now' => '现在',
 			'liveTv.today' => '今天',
+			'liveTv.tomorrow' => '明天',
 			'liveTv.midnight' => '午夜',
 			'liveTv.overnight' => '凌晨',
 			'liveTv.morning' => '上午',
@@ -2386,6 +2422,40 @@ extension on TranslationsZh {
 			'liveTv.watchFromStart' => ({required Object minutes}) => '从头观看（${minutes}分钟前开始）',
 			'liveTv.watchLive' => '观看直播',
 			'liveTv.goToLive' => '跳至直播',
+			'liveTv.record' => '录制',
+			'liveTv.recordEpisode' => '录制单集',
+			'liveTv.recordSeries' => '录制整部剧集',
+			'liveTv.recordOptions' => '录制选项',
+			'liveTv.recordings' => '录制内容',
+			'liveTv.scheduledRecordings' => '已安排',
+			'liveTv.recordingRules' => '录制规则',
+			'liveTv.noScheduledRecordings' => '没有安排的录制',
+			'liveTv.noRecordingRules' => '还没有录制规则',
+			'liveTv.manageRecording' => '管理录制',
+			'liveTv.cancelRecording' => '取消录制',
+			'liveTv.cancelRecordingTitle' => '取消此次录制？',
+			'liveTv.cancelRecordingMessage' => ({required Object title}) => '将不再录制 ${title}。',
+			'liveTv.deleteRule' => '删除规则',
+			'liveTv.deleteRuleTitle' => '删除录制规则？',
+			'liveTv.deleteRuleMessage' => ({required Object title}) => '未来的 ${title} 剧集将不会被录制。',
+			'liveTv.recordingScheduled' => '录制已安排',
+			'liveTv.alreadyScheduled' => '此节目已安排录制',
+			'liveTv.dvrAdminRequired' => 'DVR 设置需要管理员账户',
+			'liveTv.recordingFailed' => '无法安排录制',
+			'liveTv.recordingTargetMissing' => '无法确定录制库',
+			'liveTv.recordNotAvailable' => '此节目无法录制',
+			'liveTv.recordingCancelled' => '录制已取消',
+			'liveTv.recordingRuleDeleted' => '录制规则已删除',
+			'liveTv.processRecordingRules' => '重新评估规则',
+			'liveTv.loadingRecordings' => '正在加载录制内容...',
+			'liveTv.recordingInProgress' => '正在录制',
+			'liveTv.recordingsCount' => ({required Object count}) => '已安排 ${count} 个',
+			'liveTv.editRule' => '编辑规则',
+			'liveTv.editRuleAction' => '编辑',
+			'liveTv.recordingRuleUpdated' => '录制规则已更新',
+			'liveTv.guideReloadRequested' => '已请求更新节目指南',
+			'liveTv.rulesProcessRequested' => '已请求重新评估规则',
+			'liveTv.recordShow' => '录制节目',
 			'collections.title' => '合集',
 			'collections.collection' => '合集',
 			'collections.empty' => '合集为空',
@@ -2703,6 +2773,8 @@ extension on TranslationsZh {
 			'metadataEdit.useOriginalTitle' => '使用原始标题',
 			'metadataEdit.preferredAudioLanguage' => '首选音频语言',
 			'metadataEdit.preferredSubtitleLanguage' => '首选字幕语言',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => '自动选择字幕模式',
 			'metadataEdit.manuallySelected' => '手动选择',
 			'metadataEdit.shownWithForeignAudio' => '外语音频时显示',
@@ -2738,8 +2810,6 @@ extension on TranslationsZh {
 			'trakt.connectedAs' => ({required Object username}) => '已以 @${username} 身份连接',
 			'trakt.disconnectConfirm' => '断开 Trakt 账户？',
 			'trakt.disconnectConfirmBody' => 'Plezy 将停止向 Trakt 发送播放事件。您随时可以重新连接。',
-			_ => null,
-		} ?? switch (path) {
 			'trakt.scrobble' => '实时 Scrobble',
 			'trakt.scrobbleDescription' => '在播放时向 Trakt 发送播放、暂停和停止事件。',
 			'trakt.watchedSync' => '同步已观看状态',
