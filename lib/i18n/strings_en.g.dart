@@ -1814,11 +1814,20 @@ class TranslationsDiscoverEn {
 	/// en: 'Continue Watching'
 	String get continueWatching => 'Continue Watching';
 
+	/// en: 'Continue Watching in ${library}'
+	String continueWatchingIn({required Object library}) => 'Continue Watching in ${library}';
+
 	/// en: 'Next Up'
 	String get nextUp => 'Next Up';
 
+	/// en: 'Next Up in ${library}'
+	String nextUpIn({required Object library}) => 'Next Up in ${library}';
+
 	/// en: 'Recently Added'
 	String get recentlyAdded => 'Recently Added';
+
+	/// en: 'Recently Added in ${library}'
+	String recentlyAddedIn({required Object library}) => 'Recently Added in ${library}';
 
 	/// en: 'S${season}E${episode}'
 	String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
@@ -4551,8 +4560,11 @@ extension on Translations {
 			'discover.noContentAvailable' => 'No content available',
 			'discover.addMediaToLibraries' => 'Add some media to your libraries',
 			'discover.continueWatching' => 'Continue Watching',
+			'discover.continueWatchingIn' => ({required Object library}) => 'Continue Watching in ${library}',
 			'discover.nextUp' => 'Next Up',
+			'discover.nextUpIn' => ({required Object library}) => 'Next Up in ${library}',
 			'discover.recentlyAdded' => 'Recently Added',
+			'discover.recentlyAddedIn' => ({required Object library}) => 'Recently Added in ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overview',
 			'discover.cast' => 'Cast',
@@ -5032,11 +5044,11 @@ extension on Translations {
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Aired)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolute)',
 			'metadataEdit.metadataLanguage' => 'Metadata Language',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.useOriginalTitle' => 'Use Original Title',
 			'metadataEdit.preferredAudioLanguage' => 'Preferred Audio Language',
 			'metadataEdit.preferredSubtitleLanguage' => 'Preferred Subtitle Language',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => 'Auto-Select Subtitle Mode',
 			'metadataEdit.manuallySelected' => 'Manually selected',
 			'metadataEdit.shownWithForeignAudio' => 'Shown with foreign audio',

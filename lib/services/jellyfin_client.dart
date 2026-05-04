@@ -1161,7 +1161,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
   }
 
   @override
-  Future<List<MediaHub>> fetchLibraryHubs(String libraryId, {int limit = 10}) async {
+  Future<List<MediaHub>> fetchLibraryHubs(String libraryId, {required String libraryName, int limit = 10}) async {
     // Mirror the Jellyfin web client's per-library "Suggestions" tab:
     // Continue Watching + Next Up (TV libraries) + Recently Added.
     //
@@ -1200,7 +1200,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
       JellyfinMappers.syntheticHub(
         mapItem: _mapItem,
         identifier: 'library.$libraryId.continue',
-        title: t.discover.continueWatching,
+        title: t.discover.continueWatchingIn(library: libraryName),
         type: 'mixed',
         items: results[1],
         serverId: serverId,
@@ -1209,7 +1209,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
       JellyfinMappers.syntheticHub(
         mapItem: _mapItem,
         identifier: 'library.$libraryId.nextup',
-        title: t.discover.nextUp,
+        title: t.discover.nextUpIn(library: libraryName),
         type: 'episode',
         items: results[2],
         serverId: serverId,
@@ -1218,7 +1218,7 @@ class JellyfinClient with MediaServerCacheMixin implements MediaServerClient, Sc
       JellyfinMappers.syntheticHub(
         mapItem: _mapItem,
         identifier: 'library.$libraryId.recent',
-        title: t.discover.recentlyAdded,
+        title: t.discover.recentlyAddedIn(library: libraryName),
         type: 'mixed',
         items: results[0],
         serverId: serverId,

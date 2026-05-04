@@ -786,8 +786,11 @@ class _TranslationsDiscoverRu extends TranslationsDiscoverEn {
 	@override String get noContentAvailable => 'Контент недоступен';
 	@override String get addMediaToLibraries => 'Добавьте медиафайлы в ваши библиотеки';
 	@override String get continueWatching => 'Продолжить просмотр';
+	@override String continueWatchingIn({required Object library}) => 'Продолжить просмотр в ${library}';
 	@override String get nextUp => 'Далее';
+	@override String nextUpIn({required Object library}) => 'Далее в ${library}';
 	@override String get recentlyAdded => 'Недавно добавленное';
+	@override String recentlyAddedIn({required Object library}) => 'Недавно добавленное в ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Обзор';
 	@override String get cast => 'В ролях';
@@ -2289,8 +2292,11 @@ extension on TranslationsRu {
 			'discover.noContentAvailable' => 'Контент недоступен',
 			'discover.addMediaToLibraries' => 'Добавьте медиафайлы в ваши библиотеки',
 			'discover.continueWatching' => 'Продолжить просмотр',
+			'discover.continueWatchingIn' => ({required Object library}) => 'Продолжить просмотр в ${library}',
 			'discover.nextUp' => 'Далее',
+			'discover.nextUpIn' => ({required Object library}) => 'Далее в ${library}',
 			'discover.recentlyAdded' => 'Недавно добавленное',
+			'discover.recentlyAddedIn' => ({required Object library}) => 'Недавно добавленное в ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Обзор',
 			'discover.cast' => 'В ролях',
@@ -2770,11 +2776,11 @@ extension on TranslationsRu {
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Эфирный)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Абсолютный)',
 			'metadataEdit.metadataLanguage' => 'Язык метаданных',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.useOriginalTitle' => 'Использовать оригинальное название',
 			'metadataEdit.preferredAudioLanguage' => 'Предпочитаемый язык аудио',
 			'metadataEdit.preferredSubtitleLanguage' => 'Предпочитаемый язык субтитров',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => 'Автовыбор субтитров',
 			'metadataEdit.manuallySelected' => 'Выбор вручную',
 			'metadataEdit.shownWithForeignAudio' => 'Показывать при иноязычном аудио',

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../i18n/strings.g.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -148,7 +149,7 @@ class DataAggregationService {
       if (hiddenLibraryKeys != null && hiddenLibraryKeys.contains(l.globalKey)) return false;
       return true;
     });
-    final futures = visible.map((l) => client.fetchLibraryHubs(l.id, limit: limit));
+    final futures = visible.map((l) => client.fetchLibraryHubs(l.id, libraryName: l.title, limit: limit));
     final results = await Future.wait(futures);
     return [for (final list in results) ...list];
   }
@@ -262,7 +263,7 @@ class DataAggregationService {
       for (final entry in groups.entries) {
         final items = entry.value;
         final libraryName = _resolveLibraryName(items.first, libraries);
-        final title = libraryName != null ? 'Recently Added in $libraryName' : hub.title;
+        final title = libraryName != null ? t.discover.recentlyAddedIn(library: libraryName) : hub.title;
 
         result.add(
           hub.copyWith(

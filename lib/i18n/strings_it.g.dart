@@ -786,8 +786,11 @@ class _TranslationsDiscoverIt extends TranslationsDiscoverEn {
 	@override String get noContentAvailable => 'Nessun contenuto disponibile';
 	@override String get addMediaToLibraries => 'Aggiungi alcuni file multimediali alle tue librerie';
 	@override String get continueWatching => 'Continua a guardare';
+	@override String continueWatchingIn({required Object library}) => 'Continua a guardare in ${library}';
 	@override String get nextUp => 'Prossimi';
+	@override String nextUpIn({required Object library}) => 'Prossimi in ${library}';
 	@override String get recentlyAdded => 'Aggiunti di recente';
+	@override String recentlyAddedIn({required Object library}) => 'Aggiunti di recente in ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Panoramica';
 	@override String get cast => 'Attori';
@@ -2289,8 +2292,11 @@ extension on TranslationsIt {
 			'discover.noContentAvailable' => 'Nessun contenuto disponibile',
 			'discover.addMediaToLibraries' => 'Aggiungi alcuni file multimediali alle tue librerie',
 			'discover.continueWatching' => 'Continua a guardare',
+			'discover.continueWatchingIn' => ({required Object library}) => 'Continua a guardare in ${library}',
 			'discover.nextUp' => 'Prossimi',
+			'discover.nextUpIn' => ({required Object library}) => 'Prossimi in ${library}',
 			'discover.recentlyAdded' => 'Aggiunti di recente',
+			'discover.recentlyAddedIn' => ({required Object library}) => 'Aggiunti di recente in ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Panoramica',
 			'discover.cast' => 'Attori',
@@ -2770,11 +2776,11 @@ extension on TranslationsIt {
 			'metadataEdit.tvdbAiring' => 'TheTVDB (In onda)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Assoluto)',
 			'metadataEdit.metadataLanguage' => 'Lingua metadati',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.useOriginalTitle' => 'Usa titolo originale',
 			'metadataEdit.preferredAudioLanguage' => 'Lingua audio preferita',
 			'metadataEdit.preferredSubtitleLanguage' => 'Lingua sottotitoli preferita',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => 'Selezione automatica sottotitoli',
 			'metadataEdit.manuallySelected' => 'Selezionato manualmente',
 			'metadataEdit.shownWithForeignAudio' => 'Mostrati con audio straniero',

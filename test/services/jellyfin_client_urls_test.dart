@@ -968,7 +968,7 @@ void main() {
       final client = buildClient();
       addTearDown(client.close);
 
-      await client.fetchLibraryHubs('lib-99', limit: 12);
+      await client.fetchLibraryHubs('lib-99', libraryName: 'Movies', limit: 12);
 
       final nextUp = captured.singleWhere((uri) => uri.path == '/Shows/NextUp');
       expect(nextUp.queryParameters['ParentId'], 'lib-99');

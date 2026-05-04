@@ -786,8 +786,11 @@ class _TranslationsDiscoverNl extends TranslationsDiscoverEn {
 	@override String get noContentAvailable => 'Geen inhoud beschikbaar';
 	@override String get addMediaToLibraries => 'Voeg wat media toe aan je bibliotheken';
 	@override String get continueWatching => 'Verder kijken';
+	@override String continueWatchingIn({required Object library}) => 'Verder kijken in ${library}';
 	@override String get nextUp => 'Volgende';
+	@override String nextUpIn({required Object library}) => 'Volgende in ${library}';
 	@override String get recentlyAdded => 'Recent toegevoegd';
+	@override String recentlyAddedIn({required Object library}) => 'Recent toegevoegd in ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Overzicht';
 	@override String get cast => 'Acteurs';
@@ -2289,8 +2292,11 @@ extension on TranslationsNl {
 			'discover.noContentAvailable' => 'Geen inhoud beschikbaar',
 			'discover.addMediaToLibraries' => 'Voeg wat media toe aan je bibliotheken',
 			'discover.continueWatching' => 'Verder kijken',
+			'discover.continueWatchingIn' => ({required Object library}) => 'Verder kijken in ${library}',
 			'discover.nextUp' => 'Volgende',
+			'discover.nextUpIn' => ({required Object library}) => 'Volgende in ${library}',
 			'discover.recentlyAdded' => 'Recent toegevoegd',
+			'discover.recentlyAddedIn' => ({required Object library}) => 'Recent toegevoegd in ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overzicht',
 			'discover.cast' => 'Acteurs',
@@ -2770,11 +2776,11 @@ extension on TranslationsNl {
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Uitgezonden)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absoluut)',
 			'metadataEdit.metadataLanguage' => 'Metadatataal',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.useOriginalTitle' => 'Oorspronkelijke titel gebruiken',
 			'metadataEdit.preferredAudioLanguage' => 'Voorkeurstaal audio',
 			'metadataEdit.preferredSubtitleLanguage' => 'Voorkeurstaal ondertiteling',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => 'Automatische ondertitelselectie',
 			'metadataEdit.manuallySelected' => 'Handmatig geselecteerd',
 			'metadataEdit.shownWithForeignAudio' => 'Weergeven bij anderstalig geluid',

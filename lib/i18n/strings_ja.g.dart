@@ -786,8 +786,11 @@ class _TranslationsDiscoverJa extends TranslationsDiscoverEn {
 	@override String get noContentAvailable => 'コンテンツがありません';
 	@override String get addMediaToLibraries => 'ライブラリにメディアを追加してください';
 	@override String get continueWatching => '視聴を続ける';
+	@override String continueWatchingIn({required Object library}) => '${library}の視聴を続ける';
 	@override String get nextUp => '次のエピソード';
+	@override String nextUpIn({required Object library}) => '${library}の次のエピソード';
 	@override String get recentlyAdded => '最近追加';
+	@override String recentlyAddedIn({required Object library}) => '${library}に最近追加';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'あらすじ';
 	@override String get cast => 'キャスト';
@@ -2289,8 +2292,11 @@ extension on TranslationsJa {
 			'discover.noContentAvailable' => 'コンテンツがありません',
 			'discover.addMediaToLibraries' => 'ライブラリにメディアを追加してください',
 			'discover.continueWatching' => '視聴を続ける',
+			'discover.continueWatchingIn' => ({required Object library}) => '${library}の視聴を続ける',
 			'discover.nextUp' => '次のエピソード',
+			'discover.nextUpIn' => ({required Object library}) => '${library}の次のエピソード',
 			'discover.recentlyAdded' => '最近追加',
+			'discover.recentlyAddedIn' => ({required Object library}) => '${library}に最近追加',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'あらすじ',
 			'discover.cast' => 'キャスト',
@@ -2770,11 +2776,11 @@ extension on TranslationsJa {
 			'metadataEdit.tvdbAiring' => 'TheTVDB（放送順）',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB（絶対順）',
 			'metadataEdit.metadataLanguage' => 'メタデータの言語',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.useOriginalTitle' => '原題を使用',
 			'metadataEdit.preferredAudioLanguage' => '優先音声言語',
 			'metadataEdit.preferredSubtitleLanguage' => '優先字幕言語',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => '字幕自動選択モード',
 			'metadataEdit.manuallySelected' => '手動選択',
 			'metadataEdit.shownWithForeignAudio' => '外国語音声時に表示',

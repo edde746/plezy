@@ -72,7 +72,9 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     // Backend-aware fetch: Plex hits /hubs/sections, Jellyfin synthesises
     // Continue Watching + Next Up + Recently Added.
     final client = context.tryGetMediaClientForServer(widget.library.serverId);
-    final hubs = client == null ? <MediaHub>[] : List.of(await client.fetchLibraryHubs(widget.library.id, limit: 12));
+    final hubs = client == null
+        ? <MediaHub>[]
+        : List.of(await client.fetchLibraryHubs(widget.library.id, libraryName: widget.library.title, limit: 12));
 
     // Move Continue Watching hub to the front if present
     final cwIndex = hubs.indexWhere(_isContinueWatchingHub);

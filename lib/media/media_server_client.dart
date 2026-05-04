@@ -209,8 +209,10 @@ abstract class MediaServerClient {
   /// synthesizes `Latest` + `Resume` + `NextUp`).
   Future<List<MediaHub>> fetchGlobalHubs({int limit = 10});
 
-  /// Hubs scoped to a single library section.
-  Future<List<MediaHub>> fetchLibraryHubs(String libraryId, {int limit = 10});
+  /// Hubs scoped to a single library section. [libraryName] is baked into
+  /// the title of synthetic hubs (Jellyfin) so per-library "Recently Added"
+  /// / "Next Up" hubs aren't all identically named on the home screen.
+  Future<List<MediaHub>> fetchLibraryHubs(String libraryId, {required String libraryName, int limit = 10});
 
   /// "More like this" recommendations for [id].
   Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10});

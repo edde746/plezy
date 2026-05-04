@@ -786,8 +786,11 @@ class _TranslationsDiscoverNb extends TranslationsDiscoverEn {
 	@override String get noContentAvailable => 'Ingen innhold tilgjengelig';
 	@override String get addMediaToLibraries => 'Legg til medier i bibliotekene dine';
 	@override String get continueWatching => 'Fortsett å se';
+	@override String continueWatchingIn({required Object library}) => 'Fortsett å se i ${library}';
 	@override String get nextUp => 'Neste opp';
+	@override String nextUpIn({required Object library}) => 'Neste opp i ${library}';
 	@override String get recentlyAdded => 'Nylig lagt til';
+	@override String recentlyAddedIn({required Object library}) => 'Nylig lagt til i ${library}';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => 'Oversikt';
 	@override String get cast => 'Skuespillere';
@@ -2289,8 +2292,11 @@ extension on TranslationsNb {
 			'discover.noContentAvailable' => 'Ingen innhold tilgjengelig',
 			'discover.addMediaToLibraries' => 'Legg til medier i bibliotekene dine',
 			'discover.continueWatching' => 'Fortsett å se',
+			'discover.continueWatchingIn' => ({required Object library}) => 'Fortsett å se i ${library}',
 			'discover.nextUp' => 'Neste opp',
+			'discover.nextUpIn' => ({required Object library}) => 'Neste opp i ${library}',
 			'discover.recentlyAdded' => 'Nylig lagt til',
+			'discover.recentlyAddedIn' => ({required Object library}) => 'Nylig lagt til i ${library}',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Oversikt',
 			'discover.cast' => 'Skuespillere',
@@ -2770,11 +2776,11 @@ extension on TranslationsNb {
 			'metadataEdit.tvdbAiring' => 'TheTVDB (Sendt)',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB (Absolutt)',
 			'metadataEdit.metadataLanguage' => 'Metadataspråk',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.useOriginalTitle' => 'Bruk originaltittel',
 			'metadataEdit.preferredAudioLanguage' => 'Foretrukket lydspråk',
 			'metadataEdit.preferredSubtitleLanguage' => 'Foretrukket undertekstspråk',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => 'Automatisk valg av undertekstmodus',
 			'metadataEdit.manuallySelected' => 'Manuelt valgt',
 			'metadataEdit.shownWithForeignAudio' => 'Vist med fremmedspråklig lyd',

@@ -786,8 +786,11 @@ class _TranslationsDiscoverZh extends TranslationsDiscoverEn {
 	@override String get noContentAvailable => '没有可用内容';
 	@override String get addMediaToLibraries => '请向你的媒体库添加一些媒体';
 	@override String get continueWatching => '继续观看';
+	@override String continueWatchingIn({required Object library}) => '${library} 中继续观看';
 	@override String get nextUp => '接下来';
+	@override String nextUpIn({required Object library}) => '${library} 中接下来';
 	@override String get recentlyAdded => '最近添加';
+	@override String recentlyAddedIn({required Object library}) => '${library} 中最近添加';
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => '概述';
 	@override String get cast => '演员表';
@@ -2289,8 +2292,11 @@ extension on TranslationsZh {
 			'discover.noContentAvailable' => '没有可用内容',
 			'discover.addMediaToLibraries' => '请向你的媒体库添加一些媒体',
 			'discover.continueWatching' => '继续观看',
+			'discover.continueWatchingIn' => ({required Object library}) => '${library} 中继续观看',
 			'discover.nextUp' => '接下来',
+			'discover.nextUpIn' => ({required Object library}) => '${library} 中接下来',
 			'discover.recentlyAdded' => '最近添加',
+			'discover.recentlyAddedIn' => ({required Object library}) => '${library} 中最近添加',
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => '概述',
 			'discover.cast' => '演员表',
@@ -2770,11 +2776,11 @@ extension on TranslationsZh {
 			'metadataEdit.tvdbAiring' => 'TheTVDB（播出顺序）',
 			'metadataEdit.tvdbAbsolute' => 'TheTVDB（绝对顺序）',
 			'metadataEdit.metadataLanguage' => '元数据语言',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.useOriginalTitle' => '使用原始标题',
 			'metadataEdit.preferredAudioLanguage' => '首选音频语言',
 			'metadataEdit.preferredSubtitleLanguage' => '首选字幕语言',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.subtitleMode' => '自动选择字幕模式',
 			'metadataEdit.manuallySelected' => '手动选择',
 			'metadataEdit.shownWithForeignAudio' => '外语音频时显示',
