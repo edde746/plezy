@@ -213,6 +213,7 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
     Future<void> Function(String newBaseUrl)? onEndpointChanged,
     VoidCallback? onAllEndpointsExhausted,
     bool? seedTranscoderVideoSupport,
+    bool Function()? isCancelled,
   }) async {
     final client = PlexClient._(
       config,
@@ -226,10 +227,10 @@ class PlexClient with MediaServerCacheMixin, _PlexLiveTvClientMethods implements
       client._serverTranscoderCached = seedTranscoderVideoSupport;
     }
     await client._initMediaProviders();
-    // If the connection race didn't seed the capability, warm the cache in
-    // the background so the first playback doesn't pay the probe cost on its
-    // hot path.
-    if (seedTranscoderVideoSupport == null) {
+    // If the connection race didn't seed the capability, or if the caller
+    // already timed out, warm the cache in the background so the first playback
+    // doesn't pay the probe cost on its hot path
+    if (isCancelled?.call() != true && seedTranscoderVideoSupport == null) {
       unawaited(client.serverSupportsVideoTranscoding());
     }
     return client;

@@ -184,7 +184,7 @@ class MediaServerHttpClient {
   /// Send a streamed request (for image cache etc).
   Future<http.StreamedResponse> sendStreamed(http.BaseRequest request) => _client.send(request);
 
-  void close() => _client.close();
+  void close() => platform.closePlexClient(_client);
 
   Future<MediaServerResponse> _send(
     String method,
