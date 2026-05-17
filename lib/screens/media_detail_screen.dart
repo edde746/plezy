@@ -3315,39 +3315,43 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               alignment: Alignment.bottomLeft,
               child: SizedBox(
                 height: contentHeight.clamp(0.0, availableHeight).toDouble(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (showLogo) ...[
-                      _buildDetailLogoOrTitle(
-                        context,
-                        metadata,
-                        width: logoWidth,
-                        height: logoHeight,
-                        titleBuilder: (context, title) => _buildDetailTitle(
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (showLogo) ...[
+                        _buildDetailLogoOrTitle(
                           context,
-                          title,
-                          fontSize: titleFontSize,
-                          fontWeight: FontWeight.bold,
-                          shadowBlur: 8,
-                        ),
-                      ),
-                      if (effectiveLogoGap > 0) SizedBox(height: effectiveLogoGap),
-                    ],
-                    if (showChips)
-                      SizedBox(
-                        height: chipHeight,
-                        child: ClipRect(
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: Wrap(spacing: 8, runSpacing: 8, children: chips),
+                          metadata,
+                          width: logoWidth,
+                          height: logoHeight,
+                          titleBuilder: (context, title) => _buildDetailTitle(
+                            context,
+                            title,
+                            fontSize: titleFontSize,
+                            fontWeight: FontWeight.bold,
+                            shadowBlur: 8,
                           ),
                         ),
-                      ),
-                    if (chipActionGap > 0) SizedBox(height: chipActionGap),
-                    if (showActions) SizedBox(height: actionHeight, child: _buildActionButtons(metadata)),
-                  ],
+                        if (effectiveLogoGap > 0) SizedBox(height: effectiveLogoGap),
+                      ],
+                      if (showChips)
+                        ClipRect(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxHeight: chipHeight),
+                            child: Align(
+                              alignment: Alignment.bottomLeft,
+                              heightFactor: 1,
+                              child: Wrap(spacing: 8, runSpacing: 8, children: chips),
+                            ),
+                          ),
+                        ),
+                      if (chipActionGap > 0) SizedBox(height: chipActionGap),
+                      if (showActions) SizedBox(height: actionHeight, child: _buildActionButtons(metadata)),
+                    ],
+                  ),
                 ),
               ),
             ),
