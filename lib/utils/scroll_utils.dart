@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/widgets.dart';
 
 /// Scroll the nearest scrollable ancestor so [context] is centered.
@@ -9,15 +7,13 @@ import 'package:flutter/widgets.dart';
 void scrollContextToCenter(BuildContext? context) {
   if (context == null) return;
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    Timer.run(() {
-      if (!context.mounted) return;
-      Scrollable.ensureVisible(
-        context,
-        alignment: 0.5,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOut,
-      );
-    });
+    if (!context.mounted) return;
+    Scrollable.ensureVisible(
+      context,
+      alignment: 0.5,
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOut,
+    );
   });
 }
 
@@ -29,15 +25,13 @@ void scrollContextToCenter(BuildContext? context) {
 /// controller aren't ready yet.
 void scrollToCurrentItem(ScrollController controller, GlobalKey firstItemKey, int currentIndex) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
-    Timer.run(() {
-      if (!controller.hasClients) return;
-      final itemHeight = (firstItemKey.currentContext?.findRenderObject() as RenderBox?)?.size.height;
-      if (itemHeight == null) return;
-      final maxExtent = controller.position.maxScrollExtent;
-      if (!maxExtent.isFinite) return;
-      final target = (currentIndex * itemHeight).clamp(0.0, maxExtent);
-      controller.jumpTo(target);
-    });
+    if (!controller.hasClients) return;
+    final itemHeight = (firstItemKey.currentContext?.findRenderObject() as RenderBox?)?.size.height;
+    if (itemHeight == null) return;
+    final maxExtent = controller.position.maxScrollExtent;
+    if (!maxExtent.isFinite) return;
+    final target = (currentIndex * itemHeight).clamp(0.0, maxExtent);
+    controller.jumpTo(target);
   });
 }
 
