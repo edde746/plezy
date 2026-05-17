@@ -91,7 +91,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         GridFocusNodeMixin,
         WatchStateAware,
         DeletionAware,
-        PaginatedItemLoader<LibraryBrowseTab> {
+        PaginatedItemLoader<MediaItem, LibraryBrowseTab> {
   @override
   String? get itemServerId => widget.library.serverId;
 
@@ -598,9 +598,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     });
 
     try {
-      await loadInitialPage(_calculateInitialFetchSize());
+      final initialPage = await loadInitialPageWithStatus(_calculateInitialFetchSize());
 
-      if (generation != _contentRequestId || !mounted) return;
+      if (!initialPage.applied || generation != _contentRequestId || !mounted) return;
       setState(() {
         isLoading = false;
       });

@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import '../media/library_query.dart';
-import '../media/media_item.dart';
 import '../utils/media_server_http_client.dart';
 import '../exceptions/media_server_exceptions.dart';
 
@@ -20,9 +19,9 @@ import '../exceptions/media_server_exceptions.dart';
 /// 2. On scroll, subclass calls [ensureRangeLoaded] with the visible index
 ///    range. Eager prefetch ahead of the viewport via [prefetchAhead].
 /// 3. On dispose, subclass calls [disposePagination].
-mixin PaginatedItemLoader<W extends StatefulWidget> on State<W> {
+mixin PaginatedItemLoader<T, W extends StatefulWidget> on State<W> {
   /// Sparse map of loaded items, keyed by position.
-  final Map<int, MediaItem> loadedItems = {};
+  final Map<int, T> loadedItems = {};
 
   /// Total items on the server. 0 until the first page completes.
   int totalSize = 0;
@@ -43,12 +42,12 @@ mixin PaginatedItemLoader<W extends StatefulWidget> on State<W> {
   VoidCallback? _scheduledRetry;
 
   /// Fetch a page of items. Subclass implements this — typically delegating
-  /// to a paginated client method that returns a [LibraryPage] of [MediaItem].
-  Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort);
+  /// to a paginated client method that returns a [LibraryPage].
+  Future<LibraryPage<T>> fetchPage(int start, int size, AbortController? abort);
 
   /// Hook fired after each successful page merge. Default: no-op.
   /// Override for image prefetch, syncing a base-class `items` list, etc.
-  void onPageLoaded(int start, List<MediaItem> items) {}
+  void onPageLoaded(int _, List<T> __) {}
 
   /// Synchronously clear pagination state and bump the generation counter.
   /// Call from inside the subclass's `setState` before awaiting
@@ -69,17 +68,32 @@ mixin PaginatedItemLoader<W extends StatefulWidget> on State<W> {
 
   /// Fetch the first page. Await from outside `setState`. Mutates
   /// [loadedItems] and [totalSize] on success; throws on failure.
-  Future<LibraryPage<MediaItem>> loadInitialPage(int pageSize) async {
+  Future<LibraryPage<T>> loadInitialPage(int pageSize) async {
+    final result = await loadInitialPageWithStatus(pageSize);
+    return result.page;
+  }
+
+  /// Like [loadInitialPage], but reports whether the fetched page was still
+  /// current and actually merged into [loadedItems].
+  Future<({LibraryPage<T> page, bool applied})> loadInitialPageWithStatus(int pageSize) async {
     final generation = _requestId;
-    final result = await fetchPage(0, pageSize, _cancelToken);
-    if (generation != _requestId || !mounted) return result;
+    late final LibraryPage<T> result;
+    try {
+      result = await fetchPage(0, pageSize, _cancelToken);
+    } catch (_) {
+      if (generation != _requestId || !mounted) {
+        return (page: LibraryPage<T>(items: const [], totalCount: 0), applied: false);
+      }
+      rethrow;
+    }
+    if (generation != _requestId || !mounted) return (page: result, applied: false);
 
     for (var i = 0; i < result.items.length; i++) {
       loadedItems[i] = result.items[i];
     }
     totalSize = result.totalCount;
     onPageLoaded(0, result.items);
-    return result;
+    return (page: result, applied: true);
   }
 
   /// Fetch any unloaded items inside [firstIndex, firstIndex + visibleCount)
@@ -160,7 +174,7 @@ mixin PaginatedItemLoader<W extends StatefulWidget> on State<W> {
   /// [totalSize] even if [index] wasn't in the sparse map (evicted).
   void removeLoadedItemAndShift(int index) {
     loadedItems.remove(index);
-    final shifted = <int, MediaItem>{};
+    final shifted = <int, T>{};
     for (final entry in loadedItems.entries) {
       if (entry.key > index) {
         shifted[entry.key - 1] = entry.value;

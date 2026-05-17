@@ -167,6 +167,17 @@ abstract class MediaServerClient {
   /// show, tracks of an album, items of a collection.
   Future<List<MediaItem>> fetchChildren(String parentId);
 
+  /// Page through playable descendants of [parentId]. Used by large show /
+  /// season detail views so episodes can render before the full list has
+  /// loaded. [fetchPlayableDescendants] remains the complete-list helper for
+  /// playback/download/sync paths.
+  Future<LibraryPage<MediaItem>> fetchPlayableDescendantsPage(
+    String parentId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  });
+
   /// Playable descendants of [parentId] in one server-side query — for a
   /// show this returns every episode across every season; for a season the
   /// same episodes as [fetchChildren]; on Jellyfin a collection/playlist
@@ -228,11 +239,18 @@ abstract class MediaServerClient {
   /// Media featuring a specific person/actor.
   Future<List<MediaItem>> fetchPersonMedia(String personId);
 
+  /// Page through media featuring a specific person/actor.
+  Future<LibraryPage<MediaItem>> fetchPersonMediaPage(String personId, {int? start, int? size, AbortController? abort});
+
   /// Page through items in [hubId] when the hub previewed only the first N
   /// items (`MediaHub.more == true`). Plex hits `/hubs/{key}` (the same
   /// id used in [fetchGlobalHubs]); Jellyfin re-runs the synthesised query
   /// (Latest / Resume / NextUp) without the preview limit.
   Future<List<MediaItem>> fetchMoreHubItems(String hubId, {int? limit});
+
+  /// Page through expanded hub content where the backend exposes a paged
+  /// endpoint. Backends without true hub pagination may return a single page.
+  Future<LibraryPage<MediaItem>> fetchMoreHubItemsPage(String hubId, {int? start, int? size, AbortController? abort});
 
   /// Mark [item] as watched. The full item is passed (not just an id) so
   /// implementations can fire a [WatchStateEvent] on [WatchStateNotifier]
@@ -255,10 +273,25 @@ abstract class MediaServerClient {
 
   Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart});
 
+  /// Page through server playlists. Used by the library Playlists tab so large
+  /// servers can render incrementally; [fetchPlaylists] remains the complete
+  /// list helper for dialogs and bulk operations.
+  Future<LibraryPage<MediaPlaylist>> fetchPlaylistsPage({
+    String playlistType = 'video',
+    bool? smart,
+    int? start,
+    int? size,
+    AbortController? abort,
+  });
+
   /// Metadata only — items are fetched via [fetchPlaylistItems].
   Future<MediaPlaylist?> fetchPlaylistMetadata(String id);
 
   Future<List<MediaItem>> fetchPlaylistItems(String id, {int offset = 0, int limit = 100});
+
+  /// Page through items in [id]. Backends preserve playlist order and include
+  /// per-playlist item ids where the server exposes them.
+  Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort});
 
   /// Create a new playlist seeded with [items]. Returns the created
   /// playlist on success, `null` on failure. Plex builds a metadata URI
@@ -293,15 +326,26 @@ abstract class MediaServerClient {
   Future<bool> removeFromPlaylist({required String playlistId, required MediaItem item});
 
   /// Collections in [libraryId]. Plex hits `/library/sections/{id}/collections`;
-  /// Jellyfin resolves its top-level `boxsets` view and queries that root.
+  /// Jellyfin resolves its top-level `boxsets` view and walks that root in
+  /// bounded pages.
   /// Each result carries `kind == MediaKind.collection`.
   Future<List<MediaItem>> fetchCollections(String libraryId);
 
+  /// Page through collections in [libraryId]. Used by the library Collections
+  /// tab so large Jellyfin/Plex servers can render incrementally while the
+  /// user scrolls. [fetchCollections] remains the complete-list helper for
+  /// dialogs and bulk operations.
+  Future<LibraryPage<MediaItem>> fetchCollectionsPage(
+    String libraryId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  });
+
   /// Page through items in [collectionId]. Plex paginates server-side via
-  /// `/library/collections/{id}/children`; Jellyfin's API has no
-  /// pagination knob for collection children, so its impl fetches the full
-  /// list once (cached on the client) and slices locally. Callers can rely
-  /// on [LibraryPage.totalCount] either way.
+  /// `/library/collections/{id}/children`; Jellyfin uses `/Items` with
+  /// `ParentId`, `StartIndex`, and `Limit`. Callers can rely on
+  /// [LibraryPage.totalCount] either way.
   Future<LibraryPage<MediaItem>> fetchCollectionPage(
     String collectionId, {
     int? start,

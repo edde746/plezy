@@ -180,6 +180,394 @@ void main() {
     expect(page.items.single.libraryId, '7');
     expect(page.items.single.libraryTitle, 'Movies');
   });
+
+  test('library collections are fetched in pages', () async {
+    final requests = <Uri>[];
+    final client = makeClient((request) async {
+      if (request.url.path == '/library/sections/7/collections') {
+        requests.add(request.url);
+        final start = request.url.queryParameters['X-Plex-Container-Start'];
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'size': 1,
+              'totalSize': 2,
+              'Metadata': [
+                {'ratingKey': start == '0' ? '99' : '100', 'type': 'collection', 'title': 'Collection'},
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final collections = await client.fetchCollections('7');
+
+    expect(collections.map((item) => item.id).toList(), ['99', '100']);
+    expect(requests.map((u) => u.queryParameters['X-Plex-Container-Start']).toList(), ['0', '1']);
+    expect(requests.every((u) => u.queryParameters['X-Plex-Container-Size'] == '200'), isTrue);
+    expect(requests.every((u) => u.queryParameters['includeGuids'] == '1'), isTrue);
+  });
+
+  test('library collection page passes requested pagination params', () async {
+    Uri? requestUri;
+    final client = makeClient((request) async {
+      if (request.url.path == '/library/sections/7/collections') {
+        requestUri = request.url;
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'size': 1,
+              'totalSize': 50,
+              'Metadata': [
+                {'ratingKey': '120', 'type': 'collection', 'title': 'Collection'},
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final page = await client.fetchCollectionsPage('7', start: 20, size: 10);
+
+    expect(page.items.single.id, '120');
+    expect(page.totalCount, 50);
+    expect(page.offset, 20);
+    expect(requestUri, isNotNull);
+    expect(requestUri!.queryParameters['X-Plex-Container-Start'], '20');
+    expect(requestUri!.queryParameters['X-Plex-Container-Size'], '10');
+    expect(requestUri!.queryParameters['includeGuids'], '1');
+  });
+
+  test('playlist page passes requested pagination params', () async {
+    Uri? requestUri;
+    final client = makeClient((request) async {
+      if (request.url.path == '/playlists') {
+        requestUri = request.url;
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'size': 1,
+              'totalSize': 50,
+              'Metadata': [
+                {
+                  'ratingKey': '120',
+                  'key': '/playlists/120/items',
+                  'type': 'playlist',
+                  'playlistType': 'video',
+                  'title': 'Playlist',
+                  'smart': false,
+                },
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final page = await client.fetchPlaylistsPage(start: 20, size: 10);
+
+    expect(page.items.single.id, '120');
+    expect(page.totalCount, 50);
+    expect(page.offset, 20);
+    expect(requestUri, isNotNull);
+    expect(requestUri!.queryParameters['playlistType'], 'video');
+    expect(requestUri!.queryParameters['X-Plex-Container-Start'], '20');
+    expect(requestUri!.queryParameters['X-Plex-Container-Size'], '10');
+  });
+
+  test('playlist page fallback total only exposes one possible next item', () async {
+    final client = makeClient((request) async {
+      if (request.url.path == '/playlists') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'size': 10,
+              'Metadata': List.generate(
+                10,
+                (i) => {
+                  'ratingKey': '${120 + i}',
+                  'key': '/playlists/${120 + i}/items',
+                  'type': 'playlist',
+                  'playlistType': 'video',
+                  'title': 'Playlist',
+                  'smart': false,
+                },
+              ),
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final page = await client.fetchPlaylistsPage(start: 20, size: 10);
+
+    expect(page.items.length, 10);
+    expect(page.totalCount, 31);
+    expect(page.offset, 20);
+  });
+
+  test('playlist page uses X-Plex-Container-Total-Size header when body total is absent', () async {
+    final client = makeClient((request) async {
+      if (request.url.path == '/playlists') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'size': 1,
+              'Metadata': [
+                {
+                  'ratingKey': '120',
+                  'key': '/playlists/120/items',
+                  'type': 'playlist',
+                  'playlistType': 'video',
+                  'title': 'Playlist',
+                  'smart': false,
+                },
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json', 'X-Plex-Container-Total-Size': '50'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final page = await client.fetchPlaylistsPage(start: 20, size: 10);
+
+    expect(page.items.single.id, '120');
+    expect(page.totalCount, 50);
+    expect(page.offset, 20);
+  });
+
+  test('fetchPlaylists walks playlist pages', () async {
+    final requests = <Uri>[];
+    final client = makeClient((request) async {
+      if (request.url.path == '/playlists') {
+        requests.add(request.url);
+        final start = int.parse(request.url.queryParameters['X-Plex-Container-Start'] ?? '0');
+        final metadata = start == 0
+            ? [
+                {'ratingKey': '1', 'type': 'playlist', 'playlistType': 'video', 'title': 'One'},
+                {'ratingKey': '2', 'type': 'playlist', 'playlistType': 'video', 'title': 'Two'},
+              ]
+            : [
+                {'ratingKey': '3', 'type': 'playlist', 'playlistType': 'video', 'title': 'Three'},
+              ];
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {'size': metadata.length, 'totalSize': 3, 'Metadata': metadata},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final playlists = await client.fetchPlaylists();
+
+    expect(playlists.map((p) => p.id), ['1', '2', '3']);
+    expect(requests.map((u) => u.queryParameters['X-Plex-Container-Start']), ['0', '2']);
+    expect(requests.every((u) => u.queryParameters['X-Plex-Container-Size'] == '200'), isTrue);
+  });
+
+  test('fetchPlaylists returns empty on list failure', () async {
+    final client = makeClient((request) async {
+      if (request.url.path == '/playlists') {
+        return http.Response('server error', 500);
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final playlists = await client.fetchPlaylists();
+
+    expect(playlists, isEmpty);
+  });
+
+  test('playlist item page passes requested pagination params', () async {
+    Uri? requestUri;
+    final client = makeClient((request) async {
+      if (request.url.path == '/playlists/42/items') {
+        requestUri = request.url;
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'size': 1,
+              'totalSize': 30,
+              'Metadata': [
+                {'ratingKey': '99', 'type': 'movie', 'title': 'Movie'},
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final page = await client.fetchPlaylistPage('42', start: 20, size: 10);
+
+    expect(page.items.single.id, '99');
+    expect(page.totalCount, 30);
+    expect(page.offset, 20);
+    expect(requestUri, isNotNull);
+    expect(requestUri!.queryParameters['X-Plex-Container-Start'], '20');
+    expect(requestUri!.queryParameters['X-Plex-Container-Size'], '10');
+  });
+
+  test('playlist item page uses X-Plex-Container-Total-Size header when body total is absent', () async {
+    final client = makeClient((request) async {
+      if (request.url.path == '/playlists/42/items') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'size': 1,
+              'Metadata': [
+                {'ratingKey': '99', 'type': 'movie', 'title': 'Movie'},
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json', 'X-Plex-Container-Total-Size': '30'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final page = await client.fetchPlaylistPage('42', start: 20, size: 10);
+
+    expect(page.items.single.id, '99');
+    expect(page.totalCount, 30);
+    expect(page.offset, 20);
+  });
+
+  test('person media page passes requested pagination params', () async {
+    Uri? requestUri;
+    final client = makeClient((request) async {
+      if (request.url.path == '/library/people/person-1/media') {
+        requestUri = request.url;
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'size': 1,
+              'totalSize': 30,
+              'Metadata': [
+                {'ratingKey': '99', 'type': 'movie', 'title': 'Movie'},
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final page = await client.fetchPersonMediaPage('person-1', start: 20, size: 10);
+
+    expect(page.items.single.id, '99');
+    expect(page.totalCount, 30);
+    expect(page.offset, 20);
+    expect(requestUri, isNotNull);
+    expect(requestUri!.queryParameters['X-Plex-Container-Start'], '20');
+    expect(requestUri!.queryParameters['X-Plex-Container-Size'], '10');
+  });
+
+  test('playable descendants page passes requested pagination params', () async {
+    Uri? requestUri;
+    final client = makeClient((request) async {
+      if (request.url.path == '/library/metadata/show-1/grandchildren') {
+        requestUri = request.url;
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'size': 1,
+              'totalSize': 30,
+              'Metadata': [
+                {'ratingKey': 'ep-1', 'type': 'episode', 'title': 'Episode'},
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final page = await client.fetchPlayableDescendantsPage('show-1', start: 20, size: 10);
+
+    expect(page.items.single.id, 'ep-1');
+    expect(page.totalCount, 30);
+    expect(page.offset, 20);
+    expect(requestUri, isNotNull);
+    expect(requestUri!.queryParameters['X-Plex-Container-Start'], '20');
+    expect(requestUri!.queryParameters['X-Plex-Container-Size'], '10');
+  });
+
+  test('hub content pages by filtered video item offset', () async {
+    final requests = <Uri>[];
+    final client = makeClient((request) async {
+      if (request.url.path == '/hubs/sections/7/recent') {
+        requests.add(request.url);
+        final start = request.url.queryParameters['X-Plex-Container-Start'] ?? '0';
+        final metadata = start == '0'
+            ? [
+                {'ratingKey': 'collection-1', 'type': 'collection', 'title': 'Collection'},
+                {'ratingKey': 'movie-1', 'type': 'movie', 'title': 'Movie'},
+              ]
+            : [
+                {'ratingKey': 'episode-1', 'type': 'episode', 'title': 'Episode'},
+              ];
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {'size': metadata.length, 'totalSize': 3, 'Metadata': metadata},
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final firstPage = await client.fetchMoreHubItemsPage('/hubs/sections/7/recent', start: 0, size: 1);
+    final secondPage = await client.fetchMoreHubItemsPage('/hubs/sections/7/recent', start: 1, size: 1);
+
+    expect(firstPage.items.single.id, 'movie-1');
+    expect(firstPage.totalCount, 2);
+    expect(firstPage.offset, 0);
+    expect(secondPage.items.single.id, 'episode-1');
+    expect(secondPage.totalCount, 2);
+    expect(secondPage.offset, 1);
+    expect(requests.map((u) => u.queryParameters['X-Plex-Container-Start']).toList(), ['0', '0', '2']);
+    expect(requests.every((u) => u.queryParameters['X-Plex-Container-Size'] == '200'), isTrue);
+  });
 }
 
 Map<String, dynamic> _filtersPayload() => {

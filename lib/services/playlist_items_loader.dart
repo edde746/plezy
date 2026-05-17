@@ -6,11 +6,11 @@ Future<List<MediaItem>> fetchAllPlaylistItems(MediaServerClient client, String p
   final all = <MediaItem>[];
   var offset = 0;
   while (true) {
-    final page = await client.fetchPlaylistItems(playlistId, offset: offset, limit: pageSize);
-    if (page.isEmpty) break;
-    all.addAll(page);
-    if (page.length < pageSize) break;
-    offset += page.length;
+    final page = await client.fetchPlaylistPage(playlistId, start: offset, size: pageSize);
+    if (page.items.isEmpty) break;
+    all.addAll(page.items);
+    if (all.length >= page.totalCount) break;
+    offset += page.items.length;
   }
   return all;
 }

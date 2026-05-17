@@ -764,6 +764,47 @@ class PlexClient
     return [];
   }
 
+  int? _responseHeaderInt(MediaServerResponse response, String name) {
+    final lowerName = name.toLowerCase();
+    for (final entry in response.headers.entries) {
+      if (entry.key.toLowerCase() == lowerName) return flexibleInt(entry.value);
+    }
+    return null;
+  }
+
+  int _fallbackPageTotal({required int offset, required int itemCount, int? requestedSize}) {
+    final fullPage = requestedSize != null && requestedSize > 0 && itemCount >= requestedSize;
+    return offset + itemCount + (fullPage ? 1 : 0);
+  }
+
+  int _responseTotalSize(MediaServerResponse response, {required int itemCount, int? start, int? requestedSize}) {
+    final headerTotal = _responseHeaderInt(response, 'X-Plex-Container-Total-Size');
+    if (headerTotal != null) return headerTotal;
+
+    final container = _getMediaContainer(response);
+    final bodyTotal = flexibleInt(container?['totalSize']);
+    if (bodyTotal != null) return bodyTotal;
+
+    final offset = start ?? flexibleInt(container?['offset']) ?? 0;
+    if (start == null && requestedSize == null) {
+      return flexibleInt(container?['size']) ?? itemCount;
+    }
+
+    return _fallbackPageTotal(offset: offset, itemCount: itemCount, requestedSize: requestedSize);
+  }
+
+  ({List<PlexPlaylistDto> items, int totalSize}) _extractPlaylistListResult(
+    MediaServerResponse response, {
+    int? start,
+    int? size,
+  }) {
+    final items = _extractPlaylistList(response);
+    return (
+      items: items,
+      totalSize: _responseTotalSize(response, itemCount: items.length, start: start, requestedSize: size),
+    );
+  }
+
   Future<Map<String, dynamic>> getServerIdentity() async {
     final response = await _getWithFailover('/identity');
     return response.data;
@@ -839,7 +880,12 @@ class PlexClient
     if (filters != null) queryParams.addAll(filters);
     final endpoint = sectionId == 'shared' ? '/library/shared/all' : '/library/sections/$sectionId/all';
     final response = await _getWithFailover(endpoint, queryParameters: queryParams, abort: abort);
-    return _extractLibraryContentResult(response, librarySectionID: _librarySectionIdFromString(sectionId));
+    return _extractLibraryContentResult(
+      response,
+      librarySectionID: _librarySectionIdFromString(sectionId),
+      start: start,
+      requestedSize: size,
+    );
   }
 
   Map<String, dynamic> _buildPaginationParams(int? start, int? size) {
@@ -853,14 +899,15 @@ class PlexClient
     MediaServerResponse response, {
     int? librarySectionID,
     String? librarySectionTitle,
+    int? start,
+    int? requestedSize,
   }) {
     final items = _extractMetadataListWithLibrary(
       response,
       librarySectionID: librarySectionID,
       librarySectionTitle: librarySectionTitle,
     );
-    final container = _getMediaContainer(response);
-    final totalSize = container?['totalSize'] as int? ?? container?['size'] as int? ?? items.length;
+    final totalSize = _responseTotalSize(response, itemCount: items.length, start: start, requestedSize: requestedSize);
     return _LibraryContentResult(items: items, totalSize: totalSize);
   }
 
@@ -877,6 +924,8 @@ class PlexClient
       response,
       librarySectionID: librarySectionID,
       librarySectionTitle: librarySectionTitle,
+      start: start,
+      requestedSize: size,
     );
   }
 
@@ -1082,9 +1131,7 @@ class PlexClient
     }
   }
 
-  /// Page size for iterating all items via [_fetchAllPages]. Also the cap
-  /// for endpoints that send `X-Plex-Container-Size` but aren't truly paginated
-  /// (collections listing, playlists listing, search).
+  /// Default cap for list-style endpoints when a caller doesn't pass a size.
   static const int _defaultListContainerSize = 1000;
 
   /// Page size used when walking all pages of a paginated endpoint.
@@ -1322,27 +1369,15 @@ class PlexClient
         [];
   }
 
-  /// Get every episode beneath a show or season in one call — for a show
-  /// this returns episodes across every season (no per-season walk), for a
-  /// season the episodes directly. Mirrors [_getChildren]'s cache-fallback
-  /// behaviour.
-  ///
-  /// Uses `/grandchildren` rather than `/allLeaves` because the live server
-  /// returns 0 items for `/allLeaves` on a season — `/grandchildren` is the
-  /// only endpoint Plex serves that one-shots both levels (and is also the
-  /// recommended path for mini-series shows that set `skipChildren=true`,
-  /// per the API docs).
-  Future<List<PlexMetadataDto>> _getGrandchildren(String ratingKey) async {
-    final endpoint = '/library/metadata/$ratingKey/grandchildren';
-
-    return await fetchWithCacheFallback<List<PlexMetadataDto>>(
-          cacheKey: endpoint,
-          networkCall: () => _http.get(endpoint),
-          parseCache: (cachedData) => _parseMetadataListFromCachedResponse(cachedData),
-          parseResponse: (response) => _extractMetadataList(response),
-        ) ??
-        [];
-  }
+  /// Page through playable episodes beneath a show or season. Uses
+  /// `/grandchildren` rather than `/allLeaves` because the live server returns
+  /// 0 items for `/allLeaves` on a season.
+  Future<_LibraryContentResult> _getGrandchildrenPage(
+    String ratingKey, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) => _fetchPaginatedList('/library/metadata/$ratingKey/grandchildren', start: start, size: size, abort: abort);
 
   /// Get extras for a metadata item (trailers, behind-the-scenes, etc.)
   /// Uses cache when offline or as fallback on network error
@@ -1810,14 +1845,62 @@ class PlexClient
   /// Get full content from a hub using its hub key
   /// Returns the complete list of metadata items in the hub
   Future<List<PlexMetadataDto>> _getHubContent(String hubKey) async {
+    try {
+      final hubSectionID = _librarySectionIdFromString(hubKey);
+      final items = await _fetchAllPages(
+        (start, size, abort) =>
+            _fetchPaginatedList(hubKey, start: start, size: size, abort: abort, librarySectionID: hubSectionID),
+      );
+      return items.where(_isVideoMetadata).toList();
+    } catch (e, st) {
+      appLogger.e('Failed to get hub content', error: e, stackTrace: st);
+      return [];
+    }
+  }
+
+  bool _isVideoMetadata(PlexMetadataDto item) => ContentTypes.videoTypes.contains(item.type?.toLowerCase());
+
+  Future<_LibraryContentResult> _getHubContentPage(
+    String hubKey, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    final filteredOffset = start ?? 0;
+    final pageSize = size ?? _fetchAllPageSize;
+    final rawPageSize = pageSize > _fetchAllPageSize ? pageSize : _fetchAllPageSize;
     final hubSectionID = _librarySectionIdFromString(hubKey);
-    return _wrapListApiCall<PlexMetadataDto>(() => _http.get(hubKey), (response) {
-      final allItems = _extractMetadataListWithLibrary(response, librarySectionID: hubSectionID);
-      // Filter to only video content (movies, shows, seasons, episodes)
-      return allItems.where((item) {
-        return ContentTypes.videoTypes.contains(item.type?.toLowerCase());
-      }).toList();
-    }, 'Failed to get hub content');
+    final pageItems = <PlexMetadataDto>[];
+    var rawOffset = 0;
+    var filteredSeen = 0;
+    var rawTotal = 0;
+    var rawFinished = false;
+
+    while (pageItems.length < pageSize && !rawFinished) {
+      final result = await _fetchPaginatedList(
+        hubKey,
+        start: rawOffset,
+        size: rawPageSize,
+        abort: abort,
+        librarySectionID: hubSectionID,
+      );
+      rawTotal = result.totalSize;
+      final rawItems = result.items;
+      rawOffset += rawItems.length;
+
+      for (final item in rawItems) {
+        if (!_isVideoMetadata(item)) continue;
+        if (filteredSeen >= filteredOffset && pageItems.length < pageSize) {
+          pageItems.add(item);
+        }
+        filteredSeen++;
+      }
+
+      rawFinished = rawItems.isEmpty || rawOffset >= rawTotal;
+    }
+
+    final totalSize = rawFinished ? filteredSeen : filteredOffset + pageItems.length + 1;
+    return _LibraryContentResult(items: pageItems, totalSize: totalSize);
   }
 
   /// Get playlist content by playlist ID, paginated.
@@ -1829,23 +1912,50 @@ class PlexClient
   Future<List<PlexMetadataDto>> _fetchAllPlaylistItemsDto(String playlistId) =>
       _fetchAllPages((start, size, abort) => _getPlaylist(playlistId, start: start, size: size, abort: abort));
 
-  /// Get all playlists
-  /// Filters by playlistType=video by default
-  /// Set smart to true/false to filter smart playlists, or null for all
-  Future<List<PlexPlaylistDto>> _getPlaylists({String playlistType = 'video', bool? smart}) {
+  /// Get all playlists.
+  /// Filters by playlistType=video by default.
+  /// Set smart to true/false to filter smart playlists, or null for all.
+  Future<List<PlexPlaylistDto>> _getPlaylists({String playlistType = 'video', bool? smart}) async {
+    try {
+      final all = <PlexPlaylistDto>[];
+      var start = 0;
+      while (true) {
+        final page = await _getPlaylistsPage(
+          playlistType: playlistType,
+          smart: smart,
+          start: start,
+          size: _fetchAllPageSize,
+        );
+        if (page.items.isEmpty) break;
+        all.addAll(page.items);
+        start += page.items.length;
+        if (start >= page.totalSize) break;
+      }
+      return all;
+    } catch (e, st) {
+      appLogger.e('Failed to get playlists', error: e, stackTrace: st);
+      return [];
+    }
+  }
+
+  Future<({List<PlexPlaylistDto> items, int totalSize})> _getPlaylistsPage({
+    String playlistType = 'video',
+    bool? smart,
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    final pageSize = size ?? _defaultListContainerSize;
     final queryParams = <String, dynamic>{
-      'playlistType': playlistType,
-      'X-Plex-Container-Size': _defaultListContainerSize,
+      if (playlistType.isNotEmpty) 'playlistType': playlistType,
+      ..._buildPaginationParams(start, pageSize),
     };
     if (smart != null) {
       queryParams['smart'] = smart ? '1' : '0';
     }
 
-    return _wrapListApiCall<PlexPlaylistDto>(
-      () => _http.get('/playlists', queryParameters: queryParams),
-      _extractPlaylistList,
-      'Failed to get playlists',
-    );
+    final response = await _getWithFailover('/playlists', queryParameters: queryParams, abort: abort);
+    return _extractPlaylistListResult(response, start: start, size: pageSize);
   }
 
   /// Get playlist metadata by playlist ID
@@ -2143,26 +2253,38 @@ class PlexClient
     );
   }
 
-  /// Get all collections for a library section
-  /// Returns collections as PlexMetadataDto objects with type="collection"
-  Future<List<PlexMetadataDto>> _getLibraryCollections(String sectionId) async {
-    return _wrapListApiCall<PlexMetadataDto>(
-      () => _http.get(
-        '/library/sections/$sectionId/collections',
-        queryParameters: {'includeGuids': 1, 'X-Plex-Container-Size': _defaultListContainerSize},
-      ),
-      (response) {
-        final allItems = _extractMetadataListWithLibrary(
-          response,
-          librarySectionID: _librarySectionIdFromString(sectionId),
-        );
-        // Collections should have type="collection"
-        return allItems.where((item) {
-          return item.type?.toLowerCase() == ContentTypes.collection;
-        }).toList();
-      },
-      'Failed to get library collections',
+  /// Get one page of collections for a library section.
+  Future<_LibraryContentResult> _getLibraryCollectionsPage(
+    String sectionId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    final queryParameters = _buildPaginationParams(start, size)..['includeGuids'] = 1;
+    final response = await _getWithFailover(
+      '/library/sections/$sectionId/collections',
+      queryParameters: queryParameters,
+      abort: abort,
     );
+    final result = _extractLibraryContentResult(
+      response,
+      librarySectionID: _librarySectionIdFromString(sectionId),
+      start: start,
+      requestedSize: size,
+    );
+    return result;
+  }
+
+  /// Get all collections for a library section.
+  Future<List<PlexMetadataDto>> _getLibraryCollections(String sectionId) async {
+    try {
+      return _fetchAllPages((start, size, abort) {
+        return _getLibraryCollectionsPage(sectionId, start: start, size: size, abort: abort);
+      });
+    } catch (e, st) {
+      appLogger.e('Failed to get library collections', error: e, stackTrace: st);
+      return [];
+    }
   }
 
   /// Get items in a collection, paginated.
@@ -2996,8 +3118,25 @@ class PlexClient
 
   @override
   Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
-    final leaves = await _getGrandchildren(parentId);
+    final leaves = await _fetchAllPages(
+      (start, size, abort) => _getGrandchildrenPage(parentId, start: start, size: size, abort: abort),
+    );
     return leaves.map((m) => PlexMappers.mediaItem(m)).toList();
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchPlayableDescendantsPage(
+    String parentId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    final result = await _getGrandchildrenPage(parentId, start: start, size: size, abort: abort);
+    return LibraryPage<MediaItem>(
+      items: result.items.map((m) => PlexMappers.mediaItem(m)).toList(),
+      totalCount: result.totalSize,
+      offset: start ?? 0,
+    );
   }
 
   /// Plex maintains episode queues server-side via `/playQueues`, so the
@@ -3367,6 +3506,28 @@ class PlexClient
   }
 
   @override
+  Future<LibraryPage<MediaPlaylist>> fetchPlaylistsPage({
+    String playlistType = 'video',
+    bool? smart,
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    final result = await _getPlaylistsPage(
+      playlistType: playlistType,
+      smart: smart,
+      start: start,
+      size: size,
+      abort: abort,
+    );
+    return LibraryPage<MediaPlaylist>(
+      items: result.items.map((p) => PlexMappers.mediaPlaylist(p)).toList(),
+      totalCount: result.totalSize,
+      offset: start ?? 0,
+    );
+  }
+
+  @override
   Future<MediaPlaylist?> fetchPlaylistMetadata(String id) async {
     final p = await _getPlaylistMetadata(id);
     return p == null ? null : PlexMappers.mediaPlaylist(p);
@@ -3374,27 +3535,44 @@ class PlexClient
 
   @override
   Future<List<MediaItem>> fetchPlaylistItems(String id, {int offset = 0, int limit = 100}) async {
-    final result = await _getPlaylist(id, start: offset, size: limit);
-    return result.items.map((m) => PlexMappers.mediaItem(m)).toList();
+    final page = await fetchPlaylistPage(id, start: offset, size: limit);
+    return page.items;
   }
 
-  /// Plex-specific: paginated playlist content. Returns neutral [MediaItem]s.
-  /// The total size from the server is needed for paginated UI; tests in
-  /// `playlist_detail_screen.dart` rely on this.
-  Future<({List<MediaItem> items, int totalSize})> fetchPlaylistPage(
+  @override
+  Future<LibraryPage<MediaItem>> fetchPlaylistPage(
     String playlistId, {
     int? start,
     int? size,
     AbortController? abort,
   }) async {
     final result = await _getPlaylist(playlistId, start: start, size: size, abort: abort);
-    return (items: result.items.map((m) => PlexMappers.mediaItem(m)).toList(), totalSize: result.totalSize);
+    return LibraryPage<MediaItem>(
+      items: result.items.map((m) => PlexMappers.mediaItem(m)).toList(),
+      totalCount: result.totalSize,
+      offset: start ?? 0,
+    );
   }
 
   @override
   Future<List<MediaItem>> fetchCollections(String libraryId) async {
     final raw = await _getLibraryCollections(libraryId);
     return raw.map((m) => PlexMappers.mediaItem(m)).toList();
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchCollectionsPage(
+    String libraryId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    final result = await _getLibraryCollectionsPage(libraryId, start: start, size: size, abort: abort);
+    return LibraryPage<MediaItem>(
+      items: result.items.map((m) => PlexMappers.mediaItem(m)).toList(),
+      totalCount: result.totalSize,
+      offset: start ?? 0,
+    );
   }
 
   @override
@@ -3441,15 +3619,19 @@ class PlexClient
     return raw.map((m) => PlexMappers.mediaItem(m)).toList();
   }
 
-  /// Plex-specific: paginated person-media listing.
-  Future<({List<MediaItem> items, int totalSize})> fetchPersonMediaPage(
+  @override
+  Future<LibraryPage<MediaItem>> fetchPersonMediaPage(
     String personId, {
     int? start,
     int? size,
     AbortController? abort,
   }) async {
     final result = await _getPersonMedia(personId, start: start, size: size, abort: abort);
-    return (items: result.items.map((m) => PlexMappers.mediaItem(m)).toList(), totalSize: result.totalSize);
+    return LibraryPage<MediaItem>(
+      items: result.items.map((m) => PlexMappers.mediaItem(m)).toList(),
+      totalCount: result.totalSize,
+      offset: start ?? 0,
+    );
   }
 
   @override
@@ -3469,6 +3651,21 @@ class PlexClient
 
   @override
   Future<List<MediaItem>> fetchMoreHubItems(String hubId, {int? limit}) => fetchHubContent(hubId);
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchMoreHubItemsPage(
+    String hubId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    final result = await _getHubContentPage(hubId, start: start, size: size, abort: abort);
+    return LibraryPage<MediaItem>(
+      items: result.items.map((m) => PlexMappers.mediaItem(m)).toList(),
+      totalCount: result.totalSize,
+      offset: start ?? 0,
+    );
+  }
 
   /// Plex-specific: top-level folders in a library.
   Future<List<MediaItem>> fetchLibraryFolders(String sectionId) async {

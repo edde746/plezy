@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../media/library_query.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
+import '../mixins/paginated_item_loader.dart';
+import '../utils/app_logger.dart';
+import '../utils/media_server_http_client.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/optimized_media_image.dart';
@@ -41,9 +45,11 @@ class ActorMediaScreen extends StatefulWidget {
 
 class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
     with
-        StandardItemLoader<ActorMediaScreen>,
         GridFocusNodeMixin<ActorMediaScreen>,
-        FocusableDetailScreenMixin<ActorMediaScreen> {
+        FocusableDetailScreenMixin<ActorMediaScreen>,
+        PaginatedItemLoader<MediaItem, ActorMediaScreen> {
+  static const int _pageSize = 200;
+
   @override
   MediaItem get mediaItem => MediaItem(
     id: '',
@@ -63,10 +69,11 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
   String get emptyMessage => t.discover.noContentAvailable;
 
   @override
-  bool get hasItems => items.isNotEmpty;
+  bool get hasItems => totalSize > 0;
 
   @override
   void dispose() {
+    disposePagination();
     disposeFocusResources();
     super.dispose();
   }
@@ -74,12 +81,46 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
   MediaServerClient get _mediaClient => context.getMediaClientForServer(widget.serverId);
 
   @override
-  Future<List<MediaItem>> fetchItems() => _mediaClient.fetchPersonMedia(widget.personId);
+  Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) {
+    return _mediaClient.fetchPersonMediaPage(widget.personId, start: start, size: size, abort: abort);
+  }
+
+  @override
+  void updateItemInLists(String itemId, MediaItem updatedItem) {
+    for (final entry in loadedItems.entries) {
+      if (entry.value.id == itemId) {
+        loadedItems[entry.key] = updatedItem;
+        return;
+      }
+    }
+  }
 
   @override
   Future<void> loadItems() async {
-    await super.loadItems();
-    autoFocusFirstItemAfterLoad();
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+      items = [];
+      resetPaginationState();
+    });
+
+    try {
+      final initialPage = await loadInitialPageWithStatus(_pageSize);
+      if (!initialPage.applied || !mounted) return;
+      setState(() {
+        items = loadedItems.values.toList();
+        isLoading = false;
+      });
+      appLogger.d('Loaded ${loadedItems.length} of $totalSize items for actor: ${widget.actorName}');
+      autoFocusFirstItemAfterLoad();
+    } catch (e, st) {
+      appLogger.e('Failed to load actor media', error: e, stackTrace: st);
+      if (!mounted) return;
+      setState(() {
+        errorMessage = t.messages.errorLoading(error: e.toString());
+        isLoading = false;
+      });
+    }
   }
 
   @override
@@ -126,10 +167,10 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                  if (items.isNotEmpty) ...[
+                  if (totalSize > 0) ...[
                     const SizedBox(height: 4),
                     Text(
-                      '${items.length} ${items.length == 1 ? 'title' : 'titles'}',
+                      '$totalSize ${totalSize == 1 ? 'title' : 'titles'}',
                       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
                   ],
@@ -149,7 +190,13 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
         CustomAppBar(title: Text(widget.actorName), pinned: true, actions: buildFocusableAppBarActions()),
         _buildActorHeader(),
         ...buildStateSlivers(),
-        if (items.isNotEmpty) buildFocusableGrid(items: items, onRefresh: updateItem),
+        if (hasItems)
+          buildSparseFocusableGrid(
+            totalItems: totalSize,
+            itemAt: (index) => loadedItems[index],
+            onRefresh: updateItem,
+            onSkeletonVisible: (index) => ensureIndexLoaded(index, pageSize: _pageSize),
+          ),
       ],
     );
   }

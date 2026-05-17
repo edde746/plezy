@@ -821,7 +821,7 @@ void main() {
         libraryKind: MediaKind.show,
       );
 
-      expect(captured[0].queryParameters['IncludeItemTypes'], 'Series');
+      expect(captured.first.queryParameters['IncludeItemTypes'], 'Series');
       expect(captured[1].queryParameters['IncludeItemTypes'], 'Episode');
     });
 
@@ -1263,9 +1263,10 @@ void main() {
       expect(captured!.path, '/UserItems/Resume');
       expect(captured!.queryParameters['userId'], 'user-1');
       expect(captured!.queryParameters['Limit'], '50');
+      expect(captured!.queryParameters['StartIndex'], '0');
       expect(captured!.queryParameters['MediaTypes'], 'Video');
       expect(captured!.queryParameters['Recursive'], 'true');
-      expect(captured!.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '1');
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
@@ -1280,9 +1281,10 @@ void main() {
       expect(captured!.path, '/Shows/NextUp');
       expect(captured!.queryParameters['userId'], 'user-1');
       expect(captured!.queryParameters['Limit'], '25');
+      expect(captured!.queryParameters['StartIndex'], '0');
       expect(captured!.queryParameters.containsKey('ParentId'), isFalse);
       expect(captured!.queryParameters['EnableResumable'], 'false');
-      expect(captured!.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '1');
       expect(captured!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
@@ -1313,8 +1315,9 @@ void main() {
       expect(captured!.path, '/UserItems/Resume');
       expect(captured!.queryParameters['ParentId'], 'lib-99');
       expect(captured!.queryParameters['userId'], 'user-1');
+      expect(captured!.queryParameters['StartIndex'], '0');
       expect(captured!.queryParameters['Recursive'], 'true');
-      expect(captured!.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '1');
       client.close();
@@ -1328,8 +1331,9 @@ void main() {
       expect(captured!.path, '/Shows/NextUp');
       expect(captured!.queryParameters['ParentId'], 'lib-99');
       expect(captured!.queryParameters['userId'], 'user-1');
+      expect(captured!.queryParameters['StartIndex'], '0');
       expect(captured!.queryParameters['EnableResumable'], 'false');
-      expect(captured!.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '1');
       expect(captured!.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
@@ -1343,6 +1347,91 @@ void main() {
       expect(items, isEmpty);
       expect(captured, isNull);
       client.close();
+    });
+
+    test('paged Resume hub sends requested offset and parses total count', () async {
+      Uri? requestUri;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          requestUri = req.url;
+          return http.Response(
+            jsonEncode({
+              'TotalRecordCount': 30,
+              'Items': [
+                {'Id': 'resume-20', 'Name': 'Resume', 'Type': 'Movie'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.close);
+
+      final page = await client.fetchMoreHubItemsPage('home.continue', start: 20, size: 10);
+
+      expect(page.items.single.id, 'resume-20');
+      expect(page.totalCount, 30);
+      expect(page.offset, 20);
+      expect(requestUri, isNotNull);
+      expect(requestUri!.path, '/UserItems/Resume');
+      expect(requestUri!.queryParameters['StartIndex'], '20');
+      expect(requestUri!.queryParameters['Limit'], '10');
+      expect(requestUri!.queryParameters['EnableTotalRecordCount'], 'true');
+    });
+
+    test('Latest hub is treated as a single page when offset is requested', () async {
+      var requestCount = 0;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          requestCount++;
+          return http.Response('[]', 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(client.close);
+
+      final page = await client.fetchMoreHubItemsPage('home.recent', start: 20, size: 10);
+
+      expect(page.items, isEmpty);
+      expect(page.totalCount, 20);
+      expect(page.offset, 20);
+      expect(requestCount, 0);
+    });
+
+    test('paged hub first-page errors throw while list helper keeps empty fallback', () async {
+      var requestCount = 0;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          requestCount++;
+          return http.Response('server error', 500);
+        }),
+      );
+      addTearDown(client.close);
+
+      await expectLater(client.fetchMoreHubItemsPage('home.continue', start: 0, size: 10), throwsA(isA<Exception>()));
+
+      final items = await client.fetchMoreHubItems('home.continue');
+      expect(items, isEmpty);
+      expect(requestCount, 2);
+    });
+
+    test('paged hub later-page errors throw instead of truncating', () async {
+      var requestCount = 0;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          requestCount++;
+          return http.Response('server error', 500);
+        }),
+      );
+      addTearDown(client.close);
+
+      await expectLater(client.fetchMoreHubItemsPage('home.continue', start: 20, size: 10), throwsA(isA<Exception>()));
+
+      expect(requestCount, 1);
     });
   });
 
@@ -1366,6 +1455,7 @@ void main() {
         if (req.url.path == '/Items') {
           return http.Response(
             jsonEncode({
+              'TotalRecordCount': 1,
               'Items': [
                 {'Id': 'collection-1', 'Name': 'Collection 1', 'Type': 'BoxSet'},
               ],
@@ -1389,12 +1479,97 @@ void main() {
       expect(itemsRequest.queryParameters['ParentId'], isNot('lib-movies'));
       expect(itemsRequest.queryParameters['IncludeItemTypes'], 'BoxSet');
       expect(itemsRequest.queryParameters['Recursive'], 'true');
+      expect(itemsRequest.queryParameters['StartIndex'], '0');
+      expect(itemsRequest.queryParameters['Limit'], '200');
       expect(itemsRequest.queryParameters['SortBy'], 'SortName');
       expect(itemsRequest.queryParameters['SortOrder'], 'Ascending');
     });
 
-    test('falls back to global BoxSet query when boxsets view is missing', () async {
+    test('fetchCollectionsPage uses requested collection page bounds', () async {
       Uri? itemsRequest;
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Users/user-1/Views') {
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'lib-boxsets', 'Name': 'Collections', 'CollectionType': 'boxsets'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        if (req.url.path == '/Items') {
+          itemsRequest = req.url;
+          return http.Response(
+            jsonEncode({
+              'TotalRecordCount': 30,
+              'Items': [
+                {'Id': 'collection-20', 'Name': 'Collection 20', 'Type': 'BoxSet'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final page = await client.fetchCollectionsPage('lib-movies', start: 20, size: 10);
+
+      expect(page.totalCount, 30);
+      expect(page.offset, 20);
+      expect(page.items.single.id, 'collection-20');
+      expect(itemsRequest, isNotNull);
+      expect(itemsRequest!.queryParameters['ParentId'], 'lib-boxsets');
+      expect(itemsRequest!.queryParameters['StartIndex'], '20');
+      expect(itemsRequest!.queryParameters['Limit'], '10');
+    });
+
+    test('walks boxsets view in pages', () async {
+      final itemRequests = <Uri>[];
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Users/user-1/Views') {
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'lib-boxsets', 'Name': 'Collections', 'CollectionType': 'boxsets'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        if (req.url.path == '/Items') {
+          itemRequests.add(req.url);
+          final start = req.url.queryParameters['StartIndex'];
+          return http.Response(
+            jsonEncode({
+              'TotalRecordCount': 2,
+              'Items': [
+                {'Id': start == '0' ? 'collection-1' : 'collection-2', 'Name': 'Collection', 'Type': 'BoxSet'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final collections = await client.fetchCollections('lib-movies');
+
+      expect(collections.map((c) => c.id).toList(), ['collection-1', 'collection-2']);
+      expect(itemRequests.map((u) => u.queryParameters['StartIndex']).toList(), ['0', '1']);
+      expect(itemRequests.every((u) => u.queryParameters['Limit'] == '200'), isTrue);
+    });
+
+    test('returns empty when boxsets view is missing', () async {
+      var itemsRequested = false;
       final mock = MockClient((req) async {
         if (req.url.path == '/Users/user-1/Views') {
           return http.Response(
@@ -1408,7 +1583,7 @@ void main() {
           );
         }
         if (req.url.path == '/Items') {
-          itemsRequest = req.url;
+          itemsRequested = true;
           return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
         }
         return http.Response('not found', 404);
@@ -1416,12 +1591,43 @@ void main() {
       final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
       addTearDown(client.close);
 
-      await client.fetchCollections('lib-movies');
+      final collections = await client.fetchCollections('lib-movies');
 
+      expect(collections, isEmpty);
+      expect(itemsRequested, isFalse);
+    });
+
+    test('fetchCollectionPage uses Jellyfin item paging', () async {
+      Uri? itemsRequest;
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Items') {
+          itemsRequest = req.url;
+          return http.Response(
+            jsonEncode({
+              'TotalRecordCount': 25,
+              'Items': [
+                {'Id': 'movie-1', 'Name': 'Movie 1', 'Type': 'Movie'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final page = await client.fetchCollectionPage('collection-1', start: 20, size: 5);
+
+      expect(page.totalCount, 25);
+      expect(page.offset, 20);
+      expect(page.items.single.id, 'movie-1');
       expect(itemsRequest, isNotNull);
-      expect(itemsRequest!.queryParameters.containsKey('ParentId'), isFalse);
-      expect(itemsRequest!.queryParameters['IncludeItemTypes'], 'BoxSet');
-      expect(itemsRequest!.queryParameters['Recursive'], 'true');
+      expect(itemsRequest!.queryParameters['ParentId'], 'collection-1');
+      expect(itemsRequest!.queryParameters['StartIndex'], '20');
+      expect(itemsRequest!.queryParameters['Limit'], '5');
+      expect(itemsRequest!.queryParameters.containsKey('Recursive'), isFalse);
     });
   });
 
@@ -1460,18 +1666,124 @@ void main() {
     });
   });
 
+  group('JellyfinClient paged media lists', () {
+    test('fetchPersonMediaPage uses requested page bounds', () async {
+      Uri? requestUri;
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Items') {
+          requestUri = req.url;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'movie-1', 'Name': 'Movie', 'Type': 'Movie'},
+              ],
+              'TotalRecordCount': 40,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final page = await client.fetchPersonMediaPage('person-1', start: 20, size: 10);
+
+      expect(page.items.single.id, 'movie-1');
+      expect(page.totalCount, 40);
+      expect(page.offset, 20);
+      expect(requestUri, isNotNull);
+      expect(requestUri!.queryParameters['PersonIds'], 'person-1');
+      expect(requestUri!.queryParameters['StartIndex'], '20');
+      expect(requestUri!.queryParameters['Limit'], '10');
+    });
+
+    test('fetchPlayableDescendantsPage uses requested page bounds', () async {
+      Uri? requestUri;
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Items') {
+          requestUri = req.url;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'episode-1', 'Name': 'Episode', 'Type': 'Episode'},
+              ],
+              'TotalRecordCount': 40,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final page = await client.fetchPlayableDescendantsPage('show-1', start: 20, size: 10);
+
+      expect(page.items.single.id, 'episode-1');
+      expect(page.totalCount, 40);
+      expect(page.offset, 20);
+      expect(requestUri, isNotNull);
+      expect(requestUri!.queryParameters['ParentId'], 'show-1');
+      expect(requestUri!.queryParameters['Recursive'], 'true');
+      expect(requestUri!.queryParameters['IncludeItemTypes'], 'Movie,Episode');
+      expect(requestUri!.queryParameters['StartIndex'], '20');
+      expect(requestUri!.queryParameters['Limit'], '10');
+    });
+
+    test('fetchChildren walks generic children pages', () async {
+      final itemRequests = <Uri>[];
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Shows/season-1/Seasons') {
+          return http.Response(jsonEncode({'Items': []}), 200, headers: {'content-type': 'application/json'});
+        }
+        if (req.url.path == '/Items') {
+          itemRequests.add(req.url);
+          final start = int.parse(req.url.queryParameters['StartIndex'] ?? '0');
+          final count = start == 0 ? 500 : 1;
+          return http.Response(
+            jsonEncode({
+              'Items': List.generate(
+                count,
+                (i) => {'Id': 'episode-${start + i}', 'Name': 'Episode', 'Type': 'Episode'},
+              ),
+              'TotalRecordCount': 501,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final items = await client.fetchChildren('season-1');
+
+      expect(items.length, 501);
+      expect(itemRequests.map((u) => u.queryParameters['StartIndex']), ['0', '500']);
+      expect(itemRequests.every((u) => u.queryParameters['Limit'] == '500'), isTrue);
+    });
+  });
+
   group('JellyfinClient.fetchPlaylists filtering', () {
     JellyfinClient buildClient() {
       final mock = MockClient((req) async {
         if (req.url.path == '/Items') {
-          return http.Response(
-            jsonEncode({
-              'Items': [
+          final requestedMediaType = req.url.queryParameters['MediaTypes']?.toLowerCase();
+          final items =
+              [
                 {'Id': 'video-1', 'Name': 'Video Playlist', 'Type': 'Playlist', 'MediaType': 'Video'},
                 {'Id': 'audio-1', 'Name': 'Audio Playlist', 'Type': 'Playlist', 'MediaType': 'Audio'},
                 {'Id': 'photo-1', 'Name': 'Photo Playlist', 'Type': 'Playlist', 'MediaType': 'Photo'},
-              ],
-            }),
+              ].where((item) {
+                if (requestedMediaType == null) return true;
+                return (item['MediaType'] as String).toLowerCase() == requestedMediaType;
+              }).toList();
+          return http.Response(
+            jsonEncode({'Items': items, 'TotalRecordCount': items.length}),
             200,
             headers: {'content-type': 'application/json'},
           );
@@ -1488,6 +1800,125 @@ void main() {
 
       expect(playlists.map((p) => p.id), ['video-1']);
       client.close();
+    });
+
+    test('fetchPlaylistsPage uses filtered playlist offsets', () async {
+      final requests = <Uri>[];
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Items') {
+          requests.add(req.url);
+          final start = int.parse(req.url.queryParameters['StartIndex'] ?? '0');
+          return http.Response(
+            jsonEncode({
+              'Items': List.generate(
+                10,
+                (i) => {'Id': 'video-${start + i}', 'Name': 'Video Playlist', 'Type': 'Playlist', 'MediaType': 'Video'},
+              ),
+              'TotalRecordCount': 50,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final page = await client.fetchPlaylistsPage(playlistType: 'video', start: 20, size: 10);
+
+      expect(page.items.map((item) => item.id), List.generate(10, (i) => 'video-${20 + i}'));
+      expect(page.totalCount, 31);
+      expect(page.offset, 20);
+      expect(requests.map((uri) => uri.queryParameters['StartIndex']), ['0', '10', '20']);
+      expect(requests.every((uri) => uri.queryParameters['IncludeItemTypes'] == 'Playlist'), isTrue);
+      expect(requests.every((uri) => uri.queryParameters.containsKey('MediaTypes')), isFalse);
+      expect(requests.every((uri) => uri.queryParameters['Limit'] == '10'), isTrue);
+    });
+
+    test('fetchPlaylistsPage filters playlist type client-side', () async {
+      final requests = <Uri>[];
+      final allItems = [
+        {'Id': 'audio-1', 'Name': 'Audio Playlist', 'Type': 'Playlist', 'MediaType': 'Audio'},
+        {'Id': 'video-1', 'Name': 'Video Playlist', 'Type': 'Playlist', 'MediaType': 'Video'},
+        {'Id': 'audio-2', 'Name': 'Audio Playlist', 'Type': 'Playlist', 'MediaType': 'Audio'},
+        {'Id': 'video-2', 'Name': 'Video Playlist', 'Type': 'Playlist', 'MediaType': 'Video'},
+      ];
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Items') {
+          requests.add(req.url);
+          final start = int.parse(req.url.queryParameters['StartIndex'] ?? '0');
+          final limit = int.parse(req.url.queryParameters['Limit'] ?? '2');
+          return http.Response(
+            jsonEncode({'Items': allItems.skip(start).take(limit).toList(), 'TotalRecordCount': allItems.length}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final page = await client.fetchPlaylistsPage(playlistType: 'video', start: 0, size: 2);
+
+      expect(page.items.map((item) => item.id), ['video-1', 'video-2']);
+      expect(page.totalCount, 2);
+      expect(requests.map((uri) => uri.queryParameters['StartIndex']), ['0', '2']);
+    });
+
+    test('fetchPlaylistPage uses requested item page bounds', () async {
+      Uri? requestUri;
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Playlists/pl-1/Items') {
+          requestUri = req.url;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'movie-1', 'Name': 'Movie', 'Type': 'Movie'},
+              ],
+              'TotalRecordCount': 40,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final page = await client.fetchPlaylistPage('pl-1', start: 20, size: 10);
+
+      expect(page.items.single.id, 'movie-1');
+      expect(page.totalCount, 40);
+      expect(page.offset, 20);
+      expect(requestUri, isNotNull);
+      expect(requestUri!.queryParameters['StartIndex'], '20');
+      expect(requestUri!.queryParameters['Limit'], '10');
+    });
+
+    test('fetchPlaylistPage uses minimal fallback total when total count is missing', () async {
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Playlists/pl-1/Items') {
+          return http.Response(
+            jsonEncode({
+              'Items': List.generate(10, (i) => {'Id': 'movie-$i', 'Name': 'Movie', 'Type': 'Movie'}),
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final page = await client.fetchPlaylistPage('pl-1', start: 20, size: 10);
+
+      expect(page.items.length, 10);
+      expect(page.totalCount, 31);
+      expect(page.offset, 20);
     });
 
     test('absolutizes playlist thumbnail artwork with reverse-proxy subpath', () async {

@@ -110,6 +110,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   Completer<void>? _seasonsCompleter;
   List<MediaItem> _episodes = [];
   bool _isLoadingEpisodes = false;
+  bool _isLoadingAllEpisodes = false;
+  int _episodesLoadGeneration = 0;
   bool _showEpisodesDirectly = false;
   MediaItem? _fullMetadata;
   MediaItem? _onDeckEpisode;
@@ -149,6 +151,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   final ScrollController _seasonTabsScrollController = ScrollController();
   final FocusNode _firstEpisodeFocusNode = FocusNode(debugLabel: 'first_episode');
   final FocusNode _lastEpisodeFocusNode = FocusNode(debugLabel: 'last_episode');
+  static const int _episodesPageSize = 200;
 
   late final FocusNode _playButtonFocusNode;
   late final FocusNode _ratingChipFocusNode;
@@ -2246,8 +2249,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.zero,
-      itemCount: _episodes.length,
+      itemCount: _episodes.length + (_isLoadingAllEpisodes ? 1 : 0),
       itemBuilder: (context, index) {
+        if (index == _episodes.length) {
+          return const Padding(
+            padding: EdgeInsets.all(24),
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
         final episode = _episodes[index];
         String? localPosterPath;
         if (widget.isOffline && episode.serverId != null) {
@@ -2326,9 +2335,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Future<void> _fetchAllEpisodes() async {
+    final generation = ++_episodesLoadGeneration;
     if (_seasons.isEmpty) {
       setStateIfMounted(() {
         _isLoadingEpisodes = false;
+        _isLoadingAllEpisodes = false;
         _hasLoadedEpisodes = true;
       });
       return;
@@ -2337,6 +2348,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (serverId == null) {
       setStateIfMounted(() {
         _isLoadingEpisodes = false;
+        _isLoadingAllEpisodes = false;
         _hasLoadedEpisodes = true;
       });
       return;
@@ -2345,51 +2357,92 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (client == null) {
       setStateIfMounted(() {
         _isLoadingEpisodes = false;
+        _isLoadingAllEpisodes = false;
         _hasLoadedEpisodes = true;
       });
       return;
     }
     setStateIfMounted(() {
       _isLoadingEpisodes = true;
+      _isLoadingAllEpisodes = false;
       _hasLoadedEpisodes = false;
     });
     try {
-      // One-shot recursive expansion — Plex `/grandchildren`, Jellyfin
-      // Recursive=true. Replaces the previous per-season fan-out so a
-      // many-season show flatten doesn't fan out N parallel HTTP calls.
-      // Enrich each episode with serverId/serverName/grandparent fields —
-      // Jellyfin's recursive query doesn't always populate them, and the
-      // copy is a no-op for Plex where the mapper already does.
-      final episodes = await client.fetchPlayableDescendants(_metadata.id);
-      final fallbackGrandparentId = _metadata.isSeason ? (_metadata.grandparentId ?? _metadata.parentId) : _metadata.id;
-      final fallbackGrandparentTitle = _metadata.isSeason
-          ? (_metadata.grandparentTitle ?? _metadata.parentTitle)
-          : _metadata.title;
-      final enriched = episodes
-          .map(
-            (e) => _withFallbackLibrary(
-              e.copyWith(
-                serverId: serverId,
-                serverName: _metadata.serverName ?? e.serverName,
-                grandparentId: e.grandparentId ?? fallbackGrandparentId,
-                grandparentTitle: e.grandparentTitle ?? fallbackGrandparentTitle,
-              ),
-              _metadata,
-            ),
-          )
-          .map(_applyLocalProgress)
-          .toList();
+      final firstPage = await client.fetchPlayableDescendantsPage(_metadata.id, start: 0, size: _episodesPageSize);
+      if (!mounted || generation != _episodesLoadGeneration) return;
+      final enriched = _enrichPlayableEpisodes(firstPage.items, serverId);
       setStateIfMounted(() {
         _episodes = enriched;
         _isLoadingEpisodes = false;
+        _isLoadingAllEpisodes = firstPage.items.length < firstPage.totalCount;
         _hasLoadedEpisodes = true;
       });
+      if (firstPage.items.length < firstPage.totalCount) {
+        unawaited(_fetchRemainingEpisodes(client, serverId, generation, firstPage.items.length, firstPage.totalCount));
+      }
     } catch (e, st) {
       appLogger.w('Failed to load episodes for all seasons', error: e, stackTrace: st);
       setStateIfMounted(() {
         _isLoadingEpisodes = false;
+        _isLoadingAllEpisodes = false;
         _hasLoadedEpisodes = true;
       });
+    }
+  }
+
+  List<MediaItem> _enrichPlayableEpisodes(List<MediaItem> episodes, String serverId) {
+    // Enrich each episode with serverId/serverName/grandparent fields —
+    // Jellyfin's recursive query doesn't always populate them, and the copy is
+    // a no-op for Plex where the mapper already does.
+    final fallbackGrandparentId = _metadata.isSeason ? (_metadata.grandparentId ?? _metadata.parentId) : _metadata.id;
+    final fallbackGrandparentTitle = _metadata.isSeason
+        ? (_metadata.grandparentTitle ?? _metadata.parentTitle)
+        : _metadata.title;
+    return episodes
+        .map(
+          (e) => _withFallbackLibrary(
+            e.copyWith(
+              serverId: serverId,
+              serverName: _metadata.serverName ?? e.serverName,
+              grandparentId: e.grandparentId ?? fallbackGrandparentId,
+              grandparentTitle: e.grandparentTitle ?? fallbackGrandparentTitle,
+            ),
+            _metadata,
+          ),
+        )
+        .map(_applyLocalProgress)
+        .toList();
+  }
+
+  Future<void> _fetchRemainingEpisodes(
+    MediaServerClient client,
+    String serverId,
+    int generation,
+    int startOffset,
+    int totalCount,
+  ) async {
+    var offset = startOffset;
+    var total = totalCount;
+    try {
+      while (offset < total) {
+        final page = await client.fetchPlayableDescendantsPage(_metadata.id, start: offset, size: _episodesPageSize);
+        if (!mounted || generation != _episodesLoadGeneration) return;
+        if (page.items.isEmpty) break;
+        final enriched = _enrichPlayableEpisodes(page.items, serverId);
+        setStateIfMounted(() {
+          _episodes.addAll(enriched);
+        });
+        offset += page.items.length;
+        total = page.totalCount;
+      }
+    } catch (e, st) {
+      appLogger.w('Failed to finish loading all episodes', error: e, stackTrace: st);
+    } finally {
+      if (mounted && generation == _episodesLoadGeneration) {
+        setStateIfMounted(() {
+          _isLoadingAllEpisodes = false;
+        });
+      }
     }
   }
 

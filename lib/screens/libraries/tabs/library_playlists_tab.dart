@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../../media/library_query.dart';
 import '../../../media/media_playlist.dart';
+import '../../../mixins/library_tab_focus_mixin.dart';
+import '../../../mixins/paginated_item_loader.dart';
+import '../../../services/settings_service.dart';
+import '../../../utils/app_logger.dart';
+import '../../../utils/grid_size_calculator.dart';
+import '../../../utils/layout_constants.dart';
 import '../../../utils/library_refresh_notifier.dart';
+import '../../../utils/media_server_http_client.dart';
 import '../../../widgets/focusable_media_card.dart';
+import '../../../widgets/media_grid_delegate.dart';
+import '../../../widgets/settings_builder.dart';
+import '../../../widgets/skeleton_media_card.dart';
 import '../../../i18n/strings.g.dart';
-import '../adaptive_media_grid.dart';
+import '../../main_screen.dart';
 import 'base_library_tab.dart';
-import 'library_grid_tab_state.dart';
 
 /// Playlists tab for library screen
 /// Shows playlists that contain items from the current library
@@ -26,9 +36,15 @@ class LibraryPlaylistsTab extends BaseLibraryTab<MediaPlaylist> {
   State<LibraryPlaylistsTab> createState() => _LibraryPlaylistsTabState();
 }
 
-class _LibraryPlaylistsTabState extends LibraryGridTabState<MediaPlaylist, LibraryPlaylistsTab> {
+class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, LibraryPlaylistsTab>
+    with LibraryTabFocusMixin<LibraryPlaylistsTab>, PaginatedItemLoader<MediaPlaylist, LibraryPlaylistsTab> {
+  static const int _pageSize = 200;
+
   @override
   String get focusNodeDebugLabel => 'playlists_first_item';
+
+  @override
+  int get itemCount => totalSize;
 
   @override
   IconData get emptyIcon => Symbols.playlist_play_rounded;
@@ -43,23 +59,131 @@ class _LibraryPlaylistsTabState extends LibraryGridTabState<MediaPlaylist, Libra
   Stream<void>? getRefreshStream() => LibraryRefreshNotifier().playlistsStream;
 
   @override
-  Future<List<MediaPlaylist>> loadData() async {
+  Future<List<MediaPlaylist>> loadData() async => const [];
+
+  @override
+  Future<LibraryPage<MediaPlaylist>> fetchPage(int start, int size, AbortController? abort) {
     // Both backends return playlists scoped to the server (not the library) —
     // neither Plex nor Jellyfin's API filters playlists by section.
     final client = getMediaClientForLibrary();
-    return client.fetchPlaylists(playlistType: 'video');
+    return client.fetchPlaylistsPage(playlistType: 'video', start: start, size: size, abort: abort);
   }
 
   @override
-  Widget buildGridItem(BuildContext context, MediaPlaylist playlist, int index, [GridItemContext? gridContext]) {
+  Future<void> loadItems() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+      items = [];
+      resetPaginationState();
+    });
+
+    try {
+      final initialPage = await loadInitialPageWithStatus(_pageSize);
+      if (!initialPage.applied || !mounted) return;
+
+      setState(() {
+        items = loadedItems.values.toList();
+        isLoading = false;
+      });
+
+      hasLoadedData = true;
+      tryFocus();
+
+      if (widget.onDataLoaded != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) widget.onDataLoaded!();
+        });
+      }
+    } catch (e, st) {
+      appLogger.e('Error loading $errorContext', error: e, stackTrace: st);
+      if (!mounted) return;
+      setState(() {
+        errorMessage = 'Failed to load $errorContext: ${e.toString()}';
+        isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget buildContent(List<MediaPlaylist> items) {
+    return SettingsBuilder(
+      prefs: const [SettingsService.viewMode, SettingsService.libraryDensity],
+      builder: (context) {
+        final settings = SettingsService.instanceOrNull!;
+        final viewMode = settings.read(SettingsService.viewMode);
+        final density = settings.read(SettingsService.libraryDensity);
+        return CustomScrollView(
+          clipBehavior: Clip.none,
+          slivers: [
+            SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+            if (viewMode == ViewMode.list) _buildListSliver(density) else _buildGridSliver(density),
+          ],
+        );
+      },
+    );
+  }
+
+  static const double _focusDecorationPadding = 3.0;
+
+  EdgeInsets get _effectivePadding {
+    final base = GridLayoutConstants.gridPadding;
+    return base.copyWith(top: base.top + _focusDecorationPadding);
+  }
+
+  Widget _buildListSliver(int density) {
+    return SliverPadding(
+      padding: _effectivePadding,
+      sliver: SliverList.builder(
+        itemCount: totalSize,
+        itemBuilder: (context, index) => _buildPlaylistCard(index, isFirstColumn: true, disableScale: true),
+      ),
+    );
+  }
+
+  Widget _buildGridSliver(int density) {
+    return SliverPadding(
+      padding: _effectivePadding,
+      sliver: SliverLayoutBuilder(
+        builder: (context, constraints) {
+          final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
+          final columnCount = GridSizeCalculator.getColumnCount(constraints.crossAxisExtent, maxCrossAxisExtent);
+          return SliverGrid.builder(
+            gridDelegate: MediaGridDelegate.createDelegate(context: context, density: density),
+            itemCount: totalSize,
+            itemBuilder: (context, index) =>
+                _buildPlaylistCard(index, isFirstColumn: GridSizeCalculator.isFirstColumn(index, columnCount)),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildPlaylistCard(int index, {required bool isFirstColumn, bool disableScale = false}) {
+    final playlist = loadedItems[index];
+    if (playlist == null) {
+      ensureIndexLoaded(index, pageSize: _pageSize);
+      return const SkeletonMediaCard();
+    }
+
     return FocusableMediaCard(
       key: Key(playlist.id),
       item: playlist,
       focusNode: index == 0 ? firstItemFocusNode : null,
-      disableScale: gridContext?.isListMode ?? false,
+      disableScale: disableScale,
       onListRefresh: loadItems,
       onBack: widget.onBack,
-      onNavigateLeft: gridContext?.isFirstColumn == true ? gridContext?.navigateToSidebar : null,
+      onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
     );
+  }
+
+  void _navigateToSidebar() {
+    MainScreenFocusScope.of(context)?.focusSidebar();
+  }
+
+  @override
+  void dispose() {
+    disposePagination();
+    super.dispose();
   }
 }

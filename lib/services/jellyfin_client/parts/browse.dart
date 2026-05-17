@@ -40,6 +40,16 @@ const _queueFields = 'UserData';
 /// bounded while still returning the full series queue.
 const _episodeQueuePageSize = 200;
 
+const _childrenPageSize = 500;
+const _pagedListPageSize = 200;
+
+int _fallbackPageTotal({required int offset, required int itemCount, int? requestedSize}) {
+  if (requestedSize == null || requestedSize <= 0 || itemCount < requestedSize) {
+    return offset + itemCount;
+  }
+  return offset + itemCount + 1;
+}
+
 /// `/Items/Filters` is a legacy unpaged endpoint; keep failures isolated from
 /// the paged Browse tab so very large libraries can still open.
 const _filtersTimeout = Duration(seconds: 8);
@@ -447,23 +457,40 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       // Not a series — fall through to the generic ParentId query.
     }
     // Generic direct-children query: works for season → episodes,
-    // collection → items, etc.
-    final response = await _http.get(
-      '/Items',
-      queryParameters: {
-        'userId': connection.userId,
-        'ParentId': parentId,
-        'Fields': _browseFields,
-        'Limit': '500',
-        ...jellyfinImageQueryParameters,
-      },
-    );
-    throwIfHttpError(response);
-    final data = response.data;
-    if (data is Map<String, dynamic>) {
-      await cache.put(cacheServerId, childrenKey, data);
+    // collection → items, etc. Page it so large seasons/folders don't truncate
+    // at Jellyfin's per-request limit.
+    final allRaw = <Map<String, dynamic>>[];
+    var startIndex = 0;
+    int? totalRecordCount;
+    while (totalRecordCount == null || startIndex < totalRecordCount) {
+      final response = await _http.get(
+        '/Items',
+        queryParameters: {
+          'userId': connection.userId,
+          'ParentId': parentId,
+          'Fields': _browseFields,
+          'StartIndex': '$startIndex',
+          'Limit': '$_childrenPageSize',
+          ...jellyfinImageQueryParameters,
+        },
+      );
+      throwIfHttpError(response);
+      final data = response.data;
+      final page = _itemsArray(data);
+      allRaw.addAll(page);
+      if (data is Map<String, dynamic>) {
+        final rawTotal = data['TotalRecordCount'];
+        if (rawTotal is int) totalRecordCount = rawTotal;
+      }
+      if (page.isEmpty || page.length < _childrenPageSize) break;
+      startIndex += page.length;
     }
-    return _mapItems(_itemsArray(data));
+    try {
+      await cache.put(cacheServerId, childrenKey, {'Items': allRaw, 'TotalRecordCount': allRaw.length});
+    } catch (e, st) {
+      appLogger.w('JellyfinClient.fetchChildren cache write failed', error: e, stackTrace: st);
+    }
+    return _mapItems(allRaw);
   }
 
   /// All directly-playable descendants of [parentId] (Movies + Episodes),
@@ -473,10 +500,29 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// Direct browsing keeps using [fetchChildren] / [fetchPlaylistItems]
   /// since those preserve the container shape (Series rows, PlaylistItemId).
   ///
-  /// No `Limit` — Jellyfin returns the entire list for this endpoint by
-  /// default, same precedent as [fetchClientSideEpisodeQueue].
   @override
   Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
+    final all = <MediaItem>[];
+    var start = 0;
+    while (true) {
+      final page = await fetchPlayableDescendantsPage(parentId, start: start, size: _pagedListPageSize);
+      if (page.items.isEmpty) break;
+      all.addAll(page.items);
+      start += page.items.length;
+      if (start >= page.totalCount) break;
+    }
+    return all;
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchPlayableDescendantsPage(
+    String parentId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    final offset = start ?? 0;
+    final pageSize = size ?? _pagedListPageSize;
     final response = await _http.get(
       '/Items',
       queryParameters: {
@@ -484,12 +530,15 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'ParentId': parentId,
         'Recursive': 'true',
         'IncludeItemTypes': 'Movie,Episode',
+        'StartIndex': offset.toString(),
+        'Limit': pageSize.toString(),
         'Fields': _browseFields,
         ...jellyfinImageQueryParameters,
       },
+      abort: abort,
     );
     throwIfHttpError(response);
-    return _mapItems(_itemsArray(response.data));
+    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
   }
 
   /// All episodes of a series in air order, optimised for queue-building.
@@ -551,6 +600,27 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
 
   @override
   Future<List<MediaItem>> fetchPersonMedia(String personId) async {
+    final all = <MediaItem>[];
+    var start = 0;
+    while (true) {
+      final page = await fetchPersonMediaPage(personId, start: start, size: _pagedListPageSize);
+      if (page.items.isEmpty) break;
+      all.addAll(page.items);
+      start += page.items.length;
+      if (start >= page.totalCount) break;
+    }
+    return all;
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchPersonMediaPage(
+    String personId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    final offset = start ?? 0;
+    final pageSize = size ?? _pagedListPageSize;
     final response = await _http.get(
       '/Items',
       queryParameters: {
@@ -558,15 +628,18 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'PersonIds': personId,
         'IncludeItemTypes': 'Movie,Series',
         'Recursive': 'true',
+        'StartIndex': offset.toString(),
+        'Limit': pageSize.toString(),
         'Fields': _browseFields,
         'SortBy': 'PremiereDate,ProductionYear,SortName',
         'SortOrder': 'Descending,Descending,Ascending',
         'CollapseBoxSetItems': 'false',
         ...jellyfinImageQueryParameters,
       },
+      abort: abort,
     );
     throwIfHttpError(response);
-    return _mapItems(_itemsArray(response.data));
+    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
   }
 
   @override
@@ -794,7 +867,25 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// `*.nextup` → NextUp. Unknown ids return an empty list.
   @override
   Future<List<MediaItem>> fetchMoreHubItems(String hubId, {int? limit}) async {
-    final effectiveLimit = (limit ?? 50).toString();
+    try {
+      final page = await fetchMoreHubItemsPage(hubId, start: 0, size: limit ?? 50);
+      return page.items;
+    } catch (e, st) {
+      appLogger.w('JellyfinClient: failed to fetch hub items for $hubId (treating as empty)', error: e, stackTrace: st);
+      return const [];
+    }
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchMoreHubItemsPage(
+    String hubId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    final offset = start ?? 0;
+    final pageSize = size ?? 50;
+    final effectiveLimit = pageSize.toString();
     String? parentId;
     if (hubId.startsWith('library.')) {
       final rest = hubId.substring('library.'.length);
@@ -802,42 +893,100 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       if (dot > 0) parentId = rest.substring(0, dot);
     }
     final tail = hubId.split('.').last;
-    final List<Map<String, dynamic>> items;
     switch (tail) {
       case 'recent':
-        items = await _safeFetchItemsArray('/Users/${_segment(connection.userId)}/Items/Latest', {
-          'Limit': effectiveLimit,
-          'Fields': _browseFields,
-          if (parentId != null) 'ParentId': parentId else 'IncludeItemTypes': 'Movie,Series,Episode',
-          ...jellyfinImageQueryParameters,
-        });
-        break;
+        // Jellyfin's Latest endpoint has a Limit but no StartIndex. Expose it
+        // as one bounded page so callers don't infer endless fake pages.
+        if (offset > 0) return LibraryPage<MediaItem>(items: const [], totalCount: offset, offset: offset);
+        return _safeFetchMediaPage(
+          '/Users/${_segment(connection.userId)}/Items/Latest',
+          {
+            'Limit': effectiveLimit,
+            'Fields': _browseFields,
+            if (parentId != null) 'ParentId': parentId else 'IncludeItemTypes': 'Movie,Series,Episode',
+            ...jellyfinImageQueryParameters,
+          },
+          offset: offset,
+          requestedSize: pageSize,
+          singlePage: true,
+          abort: abort,
+        );
       case 'continue':
-        items = await _safeFetchItemsArray('/UserItems/Resume', {
-          'userId': connection.userId,
-          'Limit': effectiveLimit,
-          'Fields': _browseFields,
-          'Recursive': 'true',
-          'EnableTotalRecordCount': 'false',
-          if (parentId != null) 'ParentId': parentId else 'MediaTypes': 'Video',
-          ...jellyfinImageQueryParameters,
-        });
-        break;
+        return _safeFetchMediaPage(
+          '/UserItems/Resume',
+          {
+            'userId': connection.userId,
+            'StartIndex': offset.toString(),
+            'Limit': effectiveLimit,
+            'Fields': _browseFields,
+            'Recursive': 'true',
+            'EnableTotalRecordCount': 'true',
+            if (parentId != null) 'ParentId': parentId else 'MediaTypes': 'Video',
+            ...jellyfinImageQueryParameters,
+          },
+          offset: offset,
+          requestedSize: pageSize,
+          abort: abort,
+        );
       case 'nextup':
-        items = await _safeFetchItemsArray('/Shows/NextUp', {
-          'userId': connection.userId,
-          'Limit': effectiveLimit,
-          'Fields': _browseFields,
-          'ParentId': ?parentId,
-          'EnableResumable': 'false',
-          'EnableTotalRecordCount': 'false',
-          ...jellyfinImageQueryParameters,
-        });
-        break;
+        return _safeFetchMediaPage(
+          '/Shows/NextUp',
+          {
+            'userId': connection.userId,
+            'StartIndex': offset.toString(),
+            'Limit': effectiveLimit,
+            'Fields': _browseFields,
+            'ParentId': ?parentId,
+            'EnableResumable': 'false',
+            'EnableTotalRecordCount': 'true',
+            ...jellyfinImageQueryParameters,
+          },
+          offset: offset,
+          requestedSize: pageSize,
+          abort: abort,
+        );
       default:
-        return const [];
+        return LibraryPage<MediaItem>(items: const [], totalCount: 0, offset: offset);
     }
-    return _mapItems(items);
+  }
+
+  Future<LibraryPage<MediaItem>> _safeFetchMediaPage(
+    String path,
+    Map<String, dynamic> queryParameters, {
+    required int offset,
+    required int requestedSize,
+    bool singlePage = false,
+    AbortController? abort,
+  }) async {
+    try {
+      final response = await _http.get(path, queryParameters: queryParameters, abort: abort);
+      throwIfHttpError(response);
+      final data = response.data;
+      final rawItems = data is List ? data.whereType<Map<String, dynamic>>().toList() : _itemsArray(data);
+      final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
+      final fallbackTotal = singlePage
+          ? offset + rawItems.length
+          : _fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
+      return LibraryPage<MediaItem>(
+        items: _mapItems(rawItems),
+        totalCount: rawTotal is int ? rawTotal : fallbackTotal,
+        offset: offset,
+      );
+    } catch (e, st) {
+      appLogger.w('JellyfinClient: $path failed', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
+
+  LibraryPage<MediaItem> _pagedMediaItems(Object? data, {required int offset, required int requestedSize}) {
+    final rawItems = _itemsArray(data);
+    final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
+    final fallbackTotal = _fallbackPageTotal(offset: offset, itemCount: rawItems.length, requestedSize: requestedSize);
+    return LibraryPage<MediaItem>(
+      items: _mapItems(rawItems),
+      totalCount: rawTotal is int ? rawTotal : fallbackTotal,
+      offset: offset,
+    );
   }
 
   @override

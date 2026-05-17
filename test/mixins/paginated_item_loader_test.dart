@@ -26,7 +26,7 @@ class _PaginatedProbe extends StatefulWidget {
   State<_PaginatedProbe> createState() => _PaginatedProbeState();
 }
 
-class _PaginatedProbeState extends State<_PaginatedProbe> with PaginatedItemLoader {
+class _PaginatedProbeState extends State<_PaginatedProbe> with PaginatedItemLoader<MediaItem, _PaginatedProbe> {
   int fetchCalls = 0;
   final List<({int start, int size})> fetchArgs = [];
 
@@ -515,7 +515,7 @@ void main() {
 
       // Kick off the initial load — its future is `staleFetch` and won't
       // resolve until we say so.
-      final firstLoad = state.loadInitialPage(10);
+      final firstLoad = state.loadInitialPageWithStatus(10);
 
       // Reset state mid-flight; the next loadInitialPage should be authoritative.
       // ignore: invalid_use_of_protected_member
@@ -524,15 +524,53 @@ void main() {
       // Resolve the *stale* future — the generation has been bumped, so this
       // result must be discarded.
       staleFetch!.complete(_result(start: 0, size: 10, totalSize: 50));
-      await firstLoad;
+      final staleResult = await firstLoad;
       await tester.pump();
 
+      expect(staleResult.applied, isFalse);
       expect(state.totalSize, 0); // stale result was dropped
       expect(state.loadedItems, isEmpty);
 
       // Now run a fresh load that resolves with totalSize=99.
-      await state.loadInitialPage(10);
+      final freshResult = await state.loadInitialPageWithStatus(10);
       await tester.pump();
+      expect(freshResult.applied, isTrue);
+      expect(state.totalSize, 99);
+    });
+
+    testWidgets('a stale in-flight failure from before resetPaginationState is dropped', (tester) async {
+      late _PaginatedProbeState state;
+      Completer<LibraryPage<MediaItem>>? staleFetch;
+
+      await tester.pumpWidget(
+        _PaginatedProbe(
+          onState: (s) => state = s,
+          fetcher: (start, size, abort) {
+            if (staleFetch == null) {
+              staleFetch = Completer<LibraryPage<MediaItem>>();
+              return staleFetch!.future;
+            }
+            return Future.value(_result(start: start, size: size, totalSize: 99));
+          },
+        ),
+      );
+
+      final firstLoad = state.loadInitialPageWithStatus(10);
+
+      // ignore: invalid_use_of_protected_member
+      state.setState(() => state.resetPaginationState());
+
+      staleFetch!.completeError(MediaServerHttpException(type: MediaServerHttpErrorType.cancelled, message: 'aborted'));
+      final staleResult = await firstLoad;
+      await tester.pump();
+
+      expect(staleResult.applied, isFalse);
+      expect(state.totalSize, 0);
+      expect(state.loadedItems, isEmpty);
+
+      final freshResult = await state.loadInitialPageWithStatus(10);
+      await tester.pump();
+      expect(freshResult.applied, isTrue);
       expect(state.totalSize, 99);
     });
   });

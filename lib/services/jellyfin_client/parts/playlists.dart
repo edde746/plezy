@@ -6,25 +6,85 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
   String? _absolutizeImagePath(String? path);
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
 
+  static const int _playlistsPageSize = 200;
+
   @override
   Future<List<MediaPlaylist>> fetchPlaylists({String playlistType = 'video', bool? smart}) async {
-    final response = await _http.get(
-      '/Items',
-      queryParameters: {
-        'userId': connection.userId,
-        'IncludeItemTypes': 'Playlist',
-        'Recursive': 'true',
-        'Fields': 'Overview,DateCreated,DateLastSaved,ChildCount,Tags',
-        ...jellyfinImageQueryParameters,
-      },
-    );
-    throwIfHttpError(response);
+    final all = <MediaPlaylist>[];
+    var start = 0;
+    while (true) {
+      final page = await fetchPlaylistsPage(
+        playlistType: playlistType,
+        smart: smart,
+        start: start,
+        size: _playlistsPageSize,
+      );
+      if (page.items.isEmpty) break;
+      all.addAll(page.items);
+      start += page.items.length;
+      if (start >= page.totalCount) break;
+    }
+    return all;
+  }
+
+  @override
+  Future<LibraryPage<MediaPlaylist>> fetchPlaylistsPage({
+    String playlistType = 'video',
+    bool? smart,
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    if (smart == true) {
+      return LibraryPage<MediaPlaylist>(items: const [], totalCount: 0, offset: start ?? 0);
+    }
+
+    final offset = start ?? 0;
+    final pageSize = size ?? _playlistsPageSize;
     final requestedType = playlistType.toLowerCase();
-    return _itemsArray(response.data).map(_playlistFromJson).where((playlist) {
-      if (requestedType.isNotEmpty && playlist.playlistType.toLowerCase() != requestedType) return false;
-      if (smart != null && playlist.smart != smart) return false;
-      return true;
-    }).toList();
+    final items = <MediaPlaylist>[];
+    var rawOffset = 0;
+    var filteredSeen = 0;
+    int? rawTotal;
+    var rawFinished = false;
+
+    while (items.length < pageSize && !rawFinished) {
+      final response = await _http.get(
+        '/Items',
+        queryParameters: {
+          'userId': connection.userId,
+          'IncludeItemTypes': 'Playlist',
+          'Recursive': 'true',
+          'StartIndex': rawOffset.toString(),
+          'Limit': pageSize.toString(),
+          'Fields': 'Overview,DateCreated,DateLastSaved,ChildCount,Tags',
+          ...jellyfinImageQueryParameters,
+        },
+        abort: abort,
+      );
+      throwIfHttpError(response);
+      final rawItems = _itemsArray(response.data);
+      final rawTotalValue = response.data is Map<String, dynamic>
+          ? (response.data as Map<String, dynamic>)['TotalRecordCount']
+          : null;
+      if (rawTotalValue is int) rawTotal = rawTotalValue;
+
+      for (final item in rawItems.map(_playlistFromJson)) {
+        if (!_matchesPlaylistFilters(item, requestedType: requestedType, smart: smart)) continue;
+        if (filteredSeen >= offset && items.length < pageSize) {
+          items.add(item);
+        }
+        filteredSeen++;
+      }
+
+      rawOffset += rawItems.length;
+      rawFinished = rawItems.isEmpty || rawItems.length < pageSize || (rawTotal != null && rawOffset >= rawTotal);
+    }
+
+    final fallbackTotal = rawFinished
+        ? filteredSeen
+        : _fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
+    return LibraryPage<MediaPlaylist>(items: items, totalCount: fallbackTotal, offset: offset);
   }
 
   @override
@@ -50,18 +110,36 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
 
   @override
   Future<List<MediaItem>> fetchPlaylistItems(String id, {int offset = 0, int limit = 100}) async {
+    final page = await fetchPlaylistPage(id, start: offset, size: limit);
+    return page.items;
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchPlaylistPage(String id, {int? start, int? size, AbortController? abort}) async {
+    final offset = start ?? 0;
+    final pageSize = size ?? 100;
     final response = await _http.get(
       '/Playlists/${_segment(id)}/Items',
       queryParameters: {
         'userId': connection.userId,
         'StartIndex': offset.toString(),
-        'Limit': limit.toString(),
+        'Limit': pageSize.toString(),
         'Fields': _browseFields,
         ...jellyfinImageQueryParameters,
       },
+      abort: abort,
     );
     throwIfHttpError(response);
-    return _mapItems(_itemsArray(response.data));
+    final items = _itemsArray(response.data);
+    final rawTotal = response.data is Map<String, dynamic>
+        ? (response.data as Map<String, dynamic>)['TotalRecordCount']
+        : null;
+    final fallbackTotal = _fallbackPageTotal(offset: offset, itemCount: items.length, requestedSize: pageSize);
+    return LibraryPage<MediaItem>(
+      items: _mapItems(items),
+      totalCount: rawTotal is int ? rawTotal : fallbackTotal,
+      offset: offset,
+    );
   }
 
   @override
@@ -169,6 +247,12 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     if (item.kind == MediaKind.track || item.kind == MediaKind.album) return 'audio';
     if (item.kind == MediaKind.photo) return 'photo';
     return 'video';
+  }
+
+  bool _matchesPlaylistFilters(MediaPlaylist playlist, {required String requestedType, required bool? smart}) {
+    if (requestedType.isNotEmpty && playlist.playlistType.toLowerCase() != requestedType) return false;
+    if (smart != null && playlist.smart != smart) return false;
+    return true;
   }
 
   int? _epochSecondsFromJson(String? iso) {

@@ -33,7 +33,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
     with
         GridFocusNodeMixin<CollectionDetailScreen>,
         FocusableDetailScreenMixin<CollectionDetailScreen>,
-        PaginatedItemLoader<CollectionDetailScreen> {
+        PaginatedItemLoader<MediaItem, CollectionDetailScreen> {
   static const int _pageSize = 200;
 
   @override
@@ -92,8 +92,8 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
       resetPaginationState();
     });
     try {
-      await loadInitialPage(_pageSize);
-      if (!mounted) return;
+      final initialPage = await loadInitialPageWithStatus(_pageSize);
+      if (!initialPage.applied || !mounted) return;
       // Mirror loadedItems into base-class [items] once so state-sliver checks
       // (items.isEmpty vs items.isEmpty && isLoading) pick the right branch.
       // Further pages only update loadedItems; items.isEmpty stays false.
