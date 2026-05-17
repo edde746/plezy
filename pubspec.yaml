@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex and Jellyfin client for Flutter"
 publish_to: "none"
-version: 2.1.0+96
+version: 2.1.1+97
 
 environment:
   sdk: ">=3.10.7 <4.0.0"
