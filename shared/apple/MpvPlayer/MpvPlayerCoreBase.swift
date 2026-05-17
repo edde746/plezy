@@ -588,7 +588,7 @@ class MpvPlayerCoreBase: NSObject {
         checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
         checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
       #else
-        checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "yes"))
+        checkError(mpv_set_option_string(mpv, "avfoundation-composite-osd", "no"))
         checkError(mpv_set_option_string(mpv, "hwdec", "videotoolbox"))
       #endif
     #endif
