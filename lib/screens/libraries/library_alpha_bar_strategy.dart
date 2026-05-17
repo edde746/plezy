@@ -32,6 +32,7 @@ abstract class LibraryAlphaBarStrategy {
   Future<({List<LibraryFirstCharacter> chars, AlphaJumpHelper helper})> loadCharacters({
     required Map<String, String> filters,
     required int? typeId,
+    required bool descending,
   });
 
   /// Letter to highlight given the current scroll-derived index. Plex maps
@@ -100,6 +101,7 @@ class PlexAlphaBarStrategy implements LibraryAlphaBarStrategy {
   Future<({List<LibraryFirstCharacter> chars, AlphaJumpHelper helper})> loadCharacters({
     required Map<String, String> filters,
     required int? typeId,
+    required bool descending,
   }) async {
     if (isShared) {
       // Shared libraries don't support first-characters.
@@ -109,7 +111,7 @@ class PlexAlphaBarStrategy implements LibraryAlphaBarStrategy {
     final params = Map<String, String>.from(filters);
     params['includeCollections'] = '1';
     final chars = await client.getFirstCharacters(libraryKey, type: typeId, filters: params.isNotEmpty ? params : null);
-    return (chars: chars, helper: AlphaJumpHelper(chars));
+    return (chars: chars, helper: AlphaJumpHelper(chars, descending: descending));
   }
 
   @override
@@ -184,9 +186,10 @@ class JellyfinAlphaBarStrategy implements LibraryAlphaBarStrategy {
   Future<({List<LibraryFirstCharacter> chars, AlphaJumpHelper helper})> loadCharacters({
     required Map<String, String> filters,
     required int? typeId,
+    required bool descending,
   }) async {
     final synthetic = [for (final l in _letters) LibraryFirstCharacter(key: l, title: l, size: 1)];
-    return (chars: synthetic, helper: AlphaJumpHelper(synthetic));
+    return (chars: synthetic, helper: AlphaJumpHelper(synthetic, descending: descending));
   }
 
   @override

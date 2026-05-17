@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -54,16 +56,18 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      if (!InputModeTracker.isKeyboardMode(context)) return;
-      final ctx = _initialFocusNode.context;
-      if (ctx != null) {
-        Scrollable.ensureVisible(ctx, alignment: 0.5);
-      }
-      // Schedule after overlay's _autoFocus second callback so we override it.
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      Timer.run(() {
         if (!mounted) return;
-        _initialFocusNode.requestFocus();
+        if (!InputModeTracker.isKeyboardMode(context)) return;
+        final ctx = _initialFocusNode.context;
+        if (ctx != null) {
+          Scrollable.ensureVisible(ctx, alignment: 0.5);
+        }
+        // Schedule after overlay's _autoFocus second callback so we override it.
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          _initialFocusNode.requestFocus();
+        });
       });
     });
   }
@@ -85,18 +89,11 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
   }
 
   void _handleDirectionChange(MediaSort sort, bool descending) {
-    setState(() {
-      _currentDescending = descending;
-    });
     widget.onSortChanged(sort, descending);
     OverlaySheetController.of(context).close();
   }
 
   void _handleClear() {
-    setState(() {
-      _currentSort = null;
-      _currentDescending = false;
-    });
     widget.onClear?.call();
     OverlaySheetController.of(context).close();
   }
@@ -154,25 +151,25 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                         : null,
                     title: Text(sort.title),
                     value: sort,
-                    secondary: isSelected
-                        ? SegmentedButton<bool>(
-                            showSelectedIcon: false,
-                            segments: const [
-                              ButtonSegment(
-                                value: false,
-                                icon: AppIcon(Symbols.arrow_upward_rounded, fill: 1, size: 16),
-                              ),
-                              ButtonSegment(
-                                value: true,
-                                icon: AppIcon(Symbols.arrow_downward_rounded, fill: 1, size: 16),
-                              ),
-                            ],
-                            selected: {_currentDescending},
-                            onSelectionChanged: (Set<bool> newSelection) {
-                              _handleDirectionChange(sort, newSelection.first);
-                            },
-                          )
-                        : null,
+                    secondary: Visibility(
+                      visible: isSelected,
+                      maintainAnimation: true,
+                      maintainSize: true,
+                      maintainState: true,
+                      child: SegmentedButton<bool>(
+                        showSelectedIcon: false,
+                        segments: const [
+                          ButtonSegment(value: false, icon: AppIcon(Symbols.arrow_upward_rounded, fill: 1, size: 16)),
+                          ButtonSegment(value: true, icon: AppIcon(Symbols.arrow_downward_rounded, fill: 1, size: 16)),
+                        ],
+                        selected: {_currentDescending},
+                        onSelectionChanged: isSelected
+                            ? (Set<bool> newSelection) {
+                                _handleDirectionChange(sort, newSelection.first);
+                              }
+                            : null,
+                      ),
+                    ),
                   ),
                 );
               },

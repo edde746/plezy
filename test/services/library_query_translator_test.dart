@@ -79,6 +79,7 @@ void main() {
       expect(params['Recursive'], 'true');
       expect(params['Fields'], 'UserData');
       expect(params['IncludeItemTypes'], isNotEmpty);
+      expect(params['EnableTotalRecordCount'], 'true');
       expect(params['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(params['ImageTypeLimit'], '1');
     });

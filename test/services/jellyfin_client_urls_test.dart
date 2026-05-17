@@ -789,10 +789,39 @@ void main() {
       expect(captured!.queryParameters['ParentId'], 'lib-1');
       expect(captured!.queryParameters['StartIndex'], '50');
       expect(captured!.queryParameters['Limit'], '25');
+      expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
       expect(captured!.queryParameters['IncludeItemTypes'], 'Movie');
       expect(captured!.queryParameters['Fields'], isNot(contains('MediaSources')));
       expect(captured!.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(captured!.queryParameters['ImageTypeLimit'], '1');
+    });
+
+    test('fetchLibraryContent uses sentinel total fallback when server omits total', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          final start = int.parse(req.url.queryParameters['StartIndex'] ?? '0');
+          final limit = int.parse(req.url.queryParameters['Limit'] ?? '25');
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                for (var i = start; i < start + limit; i++) {'Id': 'movie-$i', 'Type': 'Movie', 'Name': 'Movie $i'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final page = await scoped.fetchLibraryContent(
+        'lib-1',
+        const LibraryQuery(kind: MediaKind.movie, offset: 50, limit: 25),
+      );
+
+      expect(page.items.length, 25);
+      expect(page.totalCount, 76);
     });
 
     test('fetchLibraryPagedContent uses library kind only when query kind is absent', () async {

@@ -28,7 +28,7 @@ class AlphaJumpHelper {
 
   AlphaJumpHelper._(this.letters, this.letterToIndex, this.letterSizes, this.totalItemCount);
 
-  factory AlphaJumpHelper(List<LibraryFirstCharacter> firstCharacters) {
+  factory AlphaJumpHelper(List<LibraryFirstCharacter> firstCharacters, {bool descending = false}) {
     // Collect characters with their sizes.
     final entries = <({String letter, int size})>[];
     final letterSizes = <String, int>{};
@@ -43,6 +43,9 @@ class AlphaJumpHelper {
 
     // Re-sort by DUCET collation to match the content endpoint's ICU sort order.
     entries.sort((a, b) => ducetCompare(a.letter, b.letter));
+    if (descending) {
+      entries.setAll(0, entries.reversed.toList());
+    }
 
     // Build cumulative index map in the corrected order.
     final letters = <String>[];

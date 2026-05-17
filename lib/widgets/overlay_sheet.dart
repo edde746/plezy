@@ -531,7 +531,10 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         BoxConstraints(maxWidth: isDesktop ? 700 : double.infinity, maxHeight: isDesktop ? 400 : size.height * 0.75);
 
     // Slide direction depends on alignment: bottom sheets slide up, top sheets slide down.
-    final slideBegin = isTop ? const Offset(0, -1) : const Offset(0, 1);
+    // Use a pixel transform instead of FractionalTranslation so mouse-tracker
+    // hit testing never depends on the sheet child's just-invalidated layout.
+    final slideDirection = isTop ? -1.0 : 1.0;
+    final slideDistance = size.height;
     final borderRadius = isTop
         ? const BorderRadius.vertical(bottom: Radius.circular(16))
         : const BorderRadius.vertical(top: Radius.circular(16));
@@ -617,8 +620,8 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
           child: AnimatedBuilder(
             animation: _slideCurve,
             builder: (context, child) {
-              final slideOffset = Offset.lerp(slideBegin, Offset.zero, _slideCurve.value)!;
-              return FractionalTranslation(translation: slideOffset, child: child);
+              final dy = slideDirection * slideDistance * (1 - _slideCurve.value);
+              return Transform.translate(offset: Offset(0, dy), child: child);
             },
             child: Transform.translate(
               offset: Offset(0, _dragOffset.clamp(0, double.infinity)),

@@ -216,6 +216,7 @@ class JellyfinLibraryQueryTranslator implements LibraryQueryTranslator {
       'Recursive': 'true',
       'StartIndex': query.offset.toString(),
       'Limit': query.limit.toString(),
+      'EnableTotalRecordCount': 'true',
       'IncludeItemTypes': _includeTypesFor(query.kind),
       'Fields': fields,
       ...jellyfinImageQueryParameters,

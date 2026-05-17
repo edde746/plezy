@@ -17,6 +17,7 @@ import 'alpha_jump_helper.dart';
 class AlphaJumpBar extends StatefulWidget {
   final List<LibraryFirstCharacter> firstCharacters;
   final void Function(int targetIndex) onJump;
+  final bool descending;
 
   /// The letter currently visible at the top of the grid, derived from the
   /// actual item's sort title by the parent widget.
@@ -30,6 +31,7 @@ class AlphaJumpBar extends StatefulWidget {
     required this.firstCharacters,
     required this.onJump,
     required this.currentLetter,
+    this.descending = false,
     this.focusNode,
     this.onNavigateLeft,
     this.onBack,
@@ -63,15 +65,15 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
   @override
   void initState() {
     super.initState();
-    _helper = AlphaJumpHelper(widget.firstCharacters);
+    _helper = AlphaJumpHelper(widget.firstCharacters, descending: widget.descending);
     _displayed = _helper.letters;
   }
 
   @override
   void didUpdateWidget(AlphaJumpBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.firstCharacters != widget.firstCharacters) {
-      _helper = AlphaJumpHelper(widget.firstCharacters);
+    if (oldWidget.firstCharacters != widget.firstCharacters || oldWidget.descending != widget.descending) {
+      _helper = AlphaJumpHelper(widget.firstCharacters, descending: widget.descending);
       _lastMaxLetters = -1; // force recompute in next layout
       _displayed = _helper.letters;
       _clampHighlight();

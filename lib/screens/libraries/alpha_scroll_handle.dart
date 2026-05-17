@@ -13,6 +13,7 @@ import 'alpha_jump_helper.dart';
 class AlphaScrollHandle extends StatefulWidget {
   final List<LibraryFirstCharacter> firstCharacters;
   final void Function(int targetIndex) onJump;
+  final bool descending;
 
   /// The letter currently visible at the top of the grid, derived from the
   /// actual item's sort title by the parent widget.
@@ -26,6 +27,7 @@ class AlphaScrollHandle extends StatefulWidget {
     required this.firstCharacters,
     required this.onJump,
     required this.currentLetter,
+    this.descending = false,
     required this.isScrolling,
   });
 
@@ -65,7 +67,7 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _helper = AlphaJumpHelper(widget.firstCharacters);
+    _helper = AlphaJumpHelper(widget.firstCharacters, descending: widget.descending);
     _opacityController = AnimationController(vsync: this, duration: _showDuration, reverseDuration: _hideDuration);
   }
 
@@ -73,8 +75,8 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
   void didUpdateWidget(AlphaScrollHandle oldWidget) {
     super.didUpdateWidget(oldWidget);
 
-    if (oldWidget.firstCharacters != widget.firstCharacters) {
-      _helper = AlphaJumpHelper(widget.firstCharacters);
+    if (oldWidget.firstCharacters != widget.firstCharacters || oldWidget.descending != widget.descending) {
+      _helper = AlphaJumpHelper(widget.firstCharacters, descending: widget.descending);
     }
 
     if (widget.isScrolling && !oldWidget.isScrolling) {

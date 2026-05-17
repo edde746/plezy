@@ -217,17 +217,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   // Alpha jump bar state
   List<LibraryFirstCharacter> _firstCharacters = [];
   AlphaJumpHelper _alphaHelper = AlphaJumpHelper(const []);
-  late final LibraryAlphaBarStrategy _alphaStrategy = LibraryAlphaBarStrategy.forBackend(
-    widget.library.backend,
-    // Resolved on demand and only invoked by [PlexAlphaBarStrategy], which is
-    // only constructed when the library's backend is Plex — the bang is safe.
-    plexClientProvider: () {
-      final manager = context.read<MultiServerProvider>().serverManager;
-      return manager.getPlexClient(widget.library.serverId ?? '')!;
-    },
-    libraryKey: widget.library.id,
-    isShared: widget.library.isShared,
-  );
+  late LibraryAlphaBarStrategy _alphaStrategy = _createAlphaStrategy();
 
   /// On Jellyfin libraries the alpha bar acts as a filter (matches the
   /// JF web client's UX). Holds the active letter (`#`, `A`–`Z`) or null
@@ -273,6 +263,35 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   Timer? _scrollIdleTimer;
   bool _rangeLoadScheduled = false;
   bool _topScrollResetScheduled = false;
+
+  LibraryAlphaBarStrategy _createAlphaStrategy() {
+    final library = widget.library;
+    return LibraryAlphaBarStrategy.forBackend(
+      library.backend,
+      // Resolved on demand and only invoked by [PlexAlphaBarStrategy], which is
+      // only constructed when the library's backend is Plex — the bang is safe.
+      plexClientProvider: () {
+        final manager = context.read<MultiServerProvider>().serverManager;
+        return manager.getPlexClient(library.serverId ?? '')!;
+      },
+      libraryKey: library.id,
+      isShared: library.isShared,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant LibraryBrowseTab oldWidget) {
+    // BaseLibraryTabState reloads during super.didUpdateWidget; refresh this
+    // first so first-character requests target the new backend/library.
+    if (oldWidget.library.globalKey != widget.library.globalKey ||
+        oldWidget.library.id != widget.library.id ||
+        oldWidget.library.backend != widget.library.backend ||
+        oldWidget.library.serverId != widget.library.serverId ||
+        oldWidget.library.isShared != widget.library.isShared) {
+      _alphaStrategy = _createAlphaStrategy();
+    }
+    super.didUpdateWidget(oldWidget);
+  }
 
   bool get _isJellyfinLibrary => widget.library.backend == MediaBackend.jellyfin;
   int get _activeFetchSize => _isJellyfinLibrary ? _jellyfinFetchSize : _fetchSize;
@@ -821,25 +840,28 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         )
         .then((_) {
           if (!mounted) return;
-          if (pendingCleared) {
-            setState(() {
-              _selectedSort = null;
-              _isSortDescending = false;
-            });
-            _loadItems();
-            _loadFirstCharacters();
-          } else if (pendingSort != null &&
-              (pendingSort!.key != _selectedSort?.key || pendingDescending != _isSortDescending)) {
-            setState(() {
-              _selectedSort = pendingSort;
-              _isSortDescending = pendingDescending;
-            });
-            StorageService.getInstance().then((storage) {
-              storage.saveLibrarySort(widget.library.globalKey, pendingSort!.key, descending: pendingDescending);
-            });
-            _loadItems();
-            _loadFirstCharacters();
-          }
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            if (pendingCleared) {
+              setState(() {
+                _selectedSort = null;
+                _isSortDescending = false;
+              });
+              _loadItems();
+              _loadFirstCharacters();
+            } else if (pendingSort != null &&
+                (pendingSort!.key != _selectedSort?.key || pendingDescending != _isSortDescending)) {
+              setState(() {
+                _selectedSort = pendingSort;
+                _isSortDescending = pendingDescending;
+              });
+              StorageService.getInstance().then((storage) {
+                storage.saveLibrarySort(widget.library.globalKey, pendingSort!.key, descending: pendingDescending);
+              });
+              _loadItems();
+              _loadFirstCharacters();
+            }
+          });
         });
   }
 
@@ -951,6 +973,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   /// Whether the alpha jump bar should be shown.
   /// Only shown when sorting by title (titleSort) and not in folders mode.
+  bool get _isTitleSortDescending {
+    if (!_isSortDescending) return false;
+    final key = _selectedSort?.key.toLowerCase();
+    if (key == null || key.isEmpty) return false;
+    return key == 'title' || key == 'name' || key == 'sortname' || key.startsWith('titlesort');
+  }
+
   bool get _shouldShowAlphaJumpBar => _alphaStrategy.shouldShow(
     totalItemCount: totalSize,
     loadedCharacterCount: _firstCharacters.length,
@@ -970,6 +999,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       final result = await _alphaStrategy.loadCharacters(
         filters: filterParams,
         typeId: typeId.isNotEmpty ? int.tryParse(typeId) : null,
+        descending: _isTitleSortDescending,
       );
       if (!mounted || currentRequestId != _firstCharactersRequestId) return;
       setState(() {
@@ -1176,6 +1206,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
                         firstCharacters: _firstCharacters,
                         onJump: _jumpToIndex,
                         currentLetter: _alphaLetterFor(visibleIndex),
+                        descending: _isTitleSortDescending,
                         isScrolling: scrolling,
                       ),
                     ),
@@ -1186,6 +1217,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
                       firstCharacters: _firstCharacters,
                       onJump: _jumpToIndex,
                       currentLetter: _alphaLetterFor(visibleIndex),
+                      descending: _isTitleSortDescending,
                       focusNode: _alphaJumpBarFocusNode,
                       onNavigateLeft: _navigateToGridNearScroll,
                       onBack: _navigateToGridNearScroll,

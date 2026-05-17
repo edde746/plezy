@@ -119,7 +119,10 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     throwIfHttpError(response);
     final data = response.data;
     final items = _itemsArray(data);
-    final total = (data is Map<String, dynamic> ? data['TotalRecordCount'] as int? : null) ?? items.length;
+    final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
+    final total = rawTotal is int
+        ? rawTotal
+        : _fallbackPageTotal(offset: query.offset, itemCount: items.length, requestedSize: query.limit);
     return LibraryPage<MediaItem>(items: _mapItems(items), totalCount: total, offset: query.offset);
   }
 

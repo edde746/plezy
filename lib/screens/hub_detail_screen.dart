@@ -210,27 +210,43 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
   void _showSortBottomSheet() {
     final overlayContext = _overlayChildKey.currentContext ?? context;
-    OverlaySheetController.of(overlayContext).show(
-      builder: (context) => SortBottomSheet(
-        sortOptions: _sortOptions,
-        selectedSort: _selectedSort,
-        isSortDescending: _isSortDescending,
-        onSortChanged: (sort, descending) {
-          setState(() {
-            _selectedSort = sort;
-            _isSortDescending = descending;
+    MediaSort? pendingSort = _selectedSort;
+    bool pendingDescending = _isSortDescending;
+    bool pendingCleared = false;
+    OverlaySheetController.of(overlayContext)
+        .show(
+          builder: (context) => SortBottomSheet(
+            sortOptions: _sortOptions,
+            selectedSort: _selectedSort,
+            isSortDescending: _isSortDescending,
+            onSortChanged: (sort, descending) {
+              pendingSort = sort;
+              pendingDescending = descending;
+              pendingCleared = false;
+            },
+            onClear: () {
+              pendingSort = null;
+              pendingDescending = false;
+              pendingCleared = true;
+            },
+          ),
+        )
+        .then((_) {
+          if (!mounted) return;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            if (pendingCleared) {
+              _selectedSort = null;
+              _isSortDescending = false;
+              _applySort();
+            } else if (pendingSort != null &&
+                (pendingSort!.key != _selectedSort?.key || pendingDescending != _isSortDescending)) {
+              _selectedSort = pendingSort;
+              _isSortDescending = pendingDescending;
+              _applySort();
+            }
           });
-          _applySort();
-        },
-        onClear: () {
-          setState(() {
-            _selectedSort = null;
-            _isSortDescending = false;
-          });
-          _applySort();
-        },
-      ),
-    );
+        });
   }
 
   Future<void> _loadMoreItems() async {
