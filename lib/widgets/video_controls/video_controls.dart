@@ -809,7 +809,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInOut,
-                      top: _showControls && isMobile ? 80.0 : 16.0,
+                      top: _showControls ? (isMobile ? 100.0 : 60.0) : 16.0,
                       left: 16,
                       child: AnimatedOpacity(
                         opacity: (!_autoHidePerformanceOverlay || _showControls || _forceShowControls) ? 1.0 : 0.0,
