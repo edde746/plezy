@@ -5,6 +5,14 @@
 
 A modern client for Plex and Jellyfin on desktop, mobile, and TV. Built with Flutter for native performance and a clean interface.
 
+<p>
+  <a href="https://plezy.app">Website</a> ·
+  <a href="https://plezy.app/#screenshots">Screenshots</a> ·
+  <a href="#download">Download</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="LICENSE">License</a>
+</p>
+
 <p align="center">
   <img src="assets/readme-showcase.webp" alt="Plezy mobile screenshots" width="900" />
 </p>
@@ -17,9 +25,15 @@ A modern client for Plex and Jellyfin on desktop, mobile, and TV. Built with Flu
 <a href='https://play.google.com/store/apps/details?id=com.edde746.plezy'><img height='60' alt='Get it on Google Play' src='./assets/play-store-badge.png'/></a>
 <a href='https://www.amazon.com/gp/product/B0GK65CVS1'><img height='60' alt='Available at the Amazon App Store' src='./assets/amazon-badge.png'/></a>
 
-- [Windows (x64, arm64)](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-installer.exe)
-- [macOS (x64, arm64)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.dmg)
-- [Linux (x64, arm64)](https://github.com/edde746/plezy/releases/latest) - .deb, .rpm, .pkg.tar.zst, and portable tar.gz available
+| Platform | Download |
+| --- | --- |
+| Windows | [Installer (x64, arm64)](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-installer.exe) · [Portable x64](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-x64-portable.7z) · [Portable arm64](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-arm64-portable.7z) |
+| macOS | [DMG (x64, arm64)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.dmg) |
+| Linux x64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.pkg.tar.zst) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.tar.gz) |
+| Linux arm64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.pkg.tar.zst) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.tar.gz) |
+
+Package managers:
+
 - [Nix](https://search.nixos.org/packages?channel=unstable&query=plezy) - Community package by [@mio-19](https://github.com/mio-19) and [@MiniHarinn](https://github.com/MiniHarinn)
 - **Homebrew** (macOS):
   ```bash
@@ -32,7 +46,7 @@ A modern client for Plex and Jellyfin on desktop, mobile, and TV. Built with Flu
   ```
 - **WinGet** (Windows):
   ```bash
-  winget install edde746.plezy
+  winget install edde746.Plezy
   ```
 
 ## Features
@@ -107,20 +121,46 @@ A modern client for Plex and Jellyfin on desktop, mobile, and TV. Built with Flu
 git clone https://github.com/edde746/plezy.git
 cd plezy
 flutter pub get
-dart run build_runner build
+scripts/codegen.sh
 flutter run
 ```
 
 ### Code Generation
 
-After modifying model classes:
+After modifying model classes or other generated sources:
 
 ```bash
-dart run build_runner build --delete-conflicting-outputs
+scripts/codegen.sh
 ```
+
+After modifying translations:
+
+```bash
+dart run slang
+```
+
+### Local Checks
+
+```bash
+scripts/ci_checks.sh
+```
+
+To install the same pre-commit checks locally:
+
+```bash
+scripts/setup_hooks.sh
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow, formatting, tests, and translation guidelines.
+
+## License
+
+Plezy is licensed under [GPL-3.0](LICENSE).
 
 ## Acknowledgments
 
 - Built with [Flutter](https://flutter.dev)
 - Supports [Plex Media Server](https://www.plex.tv) and [Jellyfin](https://jellyfin.org)
-- Playback powered by [mpv](https://mpv.io) via [MPVKit](https://github.com/mpvkit/MPVKit) and [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android)
+- Playback powered by [mpv](https://mpv.io), [MPVKit](https://github.com/mpvkit/MPVKit), Android [ExoPlayer](https://developer.android.com/media/media3/exoplayer), [libass-android](https://github.com/peerless2012/libass-android), and [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android)
