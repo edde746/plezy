@@ -1509,9 +1509,13 @@ void main() {
       expect(itemsRequest.queryParameters['IncludeItemTypes'], 'BoxSet');
       expect(itemsRequest.queryParameters['Recursive'], 'true');
       expect(itemsRequest.queryParameters['StartIndex'], '0');
-      expect(itemsRequest.queryParameters['Limit'], '200');
+      expect(itemsRequest.queryParameters['Limit'], '36');
       expect(itemsRequest.queryParameters['SortBy'], 'SortName');
       expect(itemsRequest.queryParameters['SortOrder'], 'Ascending');
+      expect(itemsRequest.queryParameters['Fields'], 'ChildCount,SortName,Overview');
+      expect(itemsRequest.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(itemsRequest.queryParameters['EnableImageTypes'], 'Primary');
+      expect(itemsRequest.queryParameters['ImageTypeLimit'], '1');
     });
 
     test('fetchCollectionsPage uses requested collection page bounds', () async {
@@ -1555,6 +1559,43 @@ void main() {
       expect(itemsRequest!.queryParameters['ParentId'], 'lib-boxsets');
       expect(itemsRequest!.queryParameters['StartIndex'], '20');
       expect(itemsRequest!.queryParameters['Limit'], '10');
+      expect(itemsRequest!.queryParameters['EnableTotalRecordCount'], 'false');
+    });
+
+    test('fetchCollectionsPage uses sentinel total when total count is missing', () async {
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Users/user-1/Views') {
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'lib-boxsets', 'Name': 'Collections', 'CollectionType': 'boxsets'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        if (req.url.path == '/Items') {
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'collection-1', 'Name': 'Collection 1', 'Type': 'BoxSet'},
+                {'Id': 'collection-2', 'Name': 'Collection 2', 'Type': 'BoxSet'},
+              ],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final page = await client.fetchCollectionsPage('lib-movies', size: 2);
+
+      expect(page.items.map((c) => c.id).toList(), ['collection-1', 'collection-2']);
+      expect(page.totalCount, 3);
     });
 
     test('walks boxsets view in pages', () async {
@@ -1594,7 +1635,7 @@ void main() {
 
       expect(collections.map((c) => c.id).toList(), ['collection-1', 'collection-2']);
       expect(itemRequests.map((u) => u.queryParameters['StartIndex']).toList(), ['0', '1']);
-      expect(itemRequests.every((u) => u.queryParameters['Limit'] == '200'), isTrue);
+      expect(itemRequests.every((u) => u.queryParameters['Limit'] == '36'), isTrue);
     });
 
     test('returns empty when boxsets view is missing', () async {

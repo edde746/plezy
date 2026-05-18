@@ -38,7 +38,7 @@ class LibraryCollectionsTab extends BaseLibraryTab<MediaItem> {
 
 class _LibraryCollectionsTabState extends BaseLibraryTabState<MediaItem, LibraryCollectionsTab>
     with LibraryTabFocusMixin<LibraryCollectionsTab>, PaginatedItemLoader<MediaItem, LibraryCollectionsTab> {
-  static const int _pageSize = 200;
+  static const int _pageSize = 36;
 
   @override
   String get focusNodeDebugLabel => 'collections_first_item';
