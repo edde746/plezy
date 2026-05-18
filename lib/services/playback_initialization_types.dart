@@ -61,8 +61,7 @@ class PlaybackInitializationResult {
   /// Non-null when a non-original preset was requested but fallback kicked in.
   final TranscodeFallbackReason? fallbackReason;
 
-  /// The Plex audio stream ID actually passed to the transcoder (`null` when
-  /// not transcoding or when no audio stream was selectable).
+  /// Source audio stream ID selected by the backend (`null` when unknown).
   final int? activeAudioStreamId;
 
   /// Server playback session ID that must be echoed in progress/stop reports.

@@ -122,14 +122,10 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
 
   /// Jellyfin playback URL resolution.
   ///
-  /// Two paths:
-  ///   * `qualityPreset.isOriginal` → direct stream
-  ///     (`/Videos/{id}/stream?Static=true&api_key=...`).
-  ///   * non-original preset → POST `/Items/{id}/PlaybackInfo` with the
-  ///     preset's bitrate and use the server-computed `TranscodingUrl`
-  ///     from the returned `MediaSources` entry. Falls back to direct stream
-  ///     when the server didn't provide a transcode URL (e.g. direct play
-  ///     fits the cap) or the negotiation request failed.
+  /// Always POSTs `/Items/{id}/PlaybackInfo` so Jellyfin can resolve external
+  /// audio/subtitle streams server-side. Uses the returned `TranscodingUrl` or
+  /// `DirectStreamUrl` when present, otherwise falls back to a static direct
+  /// stream URL (`/Videos/{id}/stream?Static=true&api_key=...`).
   ///
   /// The returned `MediaSourceInfo` is what the player uses for track-picker
   /// labels and auto-track selection by language.
@@ -148,14 +144,9 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       chapters: bundle.chapters,
       trickplay: bundle.trickplay,
     );
-    var externalSubtitles = _buildExternalSubtitles(metadata.id, bundle.selectedSourceId, mediaInfo);
-
-    // Only forward MediaSourceId when there's actually more than one source —
-    // single-source items have `MediaSourceId == itemId` so the param is a
-    // no-op there but adds clutter to logs.
-    final pinnedSourceId = bundle.selectedSourceId != null && bundle.selectedSourceId != metadata.id
-        ? bundle.selectedSourceId
-        : null;
+    var effectiveSourceId = bundle.selectedSourceId;
+    var effectiveContainer = bundle.container;
+    var externalSubtitles = _buildExternalSubtitles(metadata.id, effectiveSourceId, mediaInfo);
 
     String? videoUrl;
     String? playSessionId;
@@ -164,72 +155,76 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     TranscodeFallbackReason? fallbackReason;
 
     final preset = options.qualityPreset;
-    if (!preset.isOriginal && preset.videoBitrateKbps != null) {
-      final maxBps = preset.videoBitrateKbps! * 1000;
-      final negotiation = await getPlaybackInfo(
-        metadata.id,
-        maxStreamingBitrate: maxBps,
-        mediaSourceId: bundle.selectedSourceId,
-        audioStreamIndex: options.selectedAudioStreamId,
-      );
-      if (negotiation == null) {
+    final requestedAudioStreamId = _validJellyfinAudioStreamId(options.selectedAudioStreamId, mediaInfo);
+    final int? maxStreamingBitrate = preset.isOriginal ? null : (preset.videoBitrateKbps ?? 100000) * 1000;
+    final negotiation = await getPlaybackInfo(
+      metadata.id,
+      maxStreamingBitrate: maxStreamingBitrate,
+      mediaSourceId: bundle.selectedSourceId,
+      audioStreamIndex: requestedAudioStreamId,
+    );
+    if (negotiation == null) {
+      if (!preset.isOriginal) {
         fallbackReason = TranscodeFallbackReason.decisionFailed;
-      } else {
-        final sources = negotiation['MediaSources'];
-        Map<String, dynamic>? chosenSource;
-        if (sources is List && sources.isNotEmpty) {
-          for (final src in sources) {
-            if (src is Map<String, dynamic> && src['Id'] == bundle.selectedSourceId) {
-              chosenSource = src;
-              break;
-            }
-          }
-          chosenSource ??= sources.first is Map<String, dynamic> ? sources.first as Map<String, dynamic> : null;
-        }
-        final chosenStreams = chosenSource?['MediaStreams'];
-        if (chosenSource != null && chosenStreams is List && chosenStreams.isNotEmpty) {
+      }
+    } else {
+      final chosenSource = _selectNegotiatedMediaSource(negotiation['MediaSources'], bundle.selectedSourceId);
+      if (chosenSource != null) {
+        effectiveSourceId = chosenSource['Id'] as String? ?? effectiveSourceId;
+        effectiveContainer = chosenSource['Container'] as String? ?? effectiveContainer;
+        if (chosenSource['MediaStreams'] is List) {
           mediaInfo = jellyfinMediaSourceToMediaSourceInfo(
             chosenSource,
             chapters: bundle.chapters,
             trickplay: bundle.trickplay,
           );
-          externalSubtitles = _buildExternalSubtitles(
-            metadata.id,
-            chosenSource['Id'] as String? ?? bundle.selectedSourceId,
-            mediaInfo,
-          );
+          externalSubtitles = _buildExternalSubtitles(metadata.id, effectiveSourceId, mediaInfo);
         }
-        final transcodingUrl = chosenSource?['TranscodingUrl'];
+
+        final negotiatedPlaySessionId = negotiation['PlaySessionId'];
+        void capturePlaySessionId(String urlOrPath) {
+          playSessionId = Uri.tryParse(urlOrPath)?.queryParameters['PlaySessionId'];
+          if ((playSessionId == null || playSessionId!.isEmpty) && negotiatedPlaySessionId is String) {
+            playSessionId = negotiatedPlaySessionId;
+          }
+        }
+
+        final transcodingUrl = chosenSource['TranscodingUrl'];
         if (transcodingUrl is String && transcodingUrl.isNotEmpty) {
           // TranscodingUrl is server-relative and already encodes container,
           // codecs, MediaSourceId, and PlaySessionId; we just append the
           // api_key for auth.
-          playSessionId = Uri.tryParse(transcodingUrl)?.queryParameters['PlaySessionId'];
-          final negotiatedPlaySessionId = negotiation['PlaySessionId'];
-          if ((playSessionId == null || playSessionId.isEmpty) && negotiatedPlaySessionId is String) {
-            playSessionId = negotiatedPlaySessionId;
-          }
+          capturePlaySessionId(transcodingUrl);
           videoUrl = _withApiKey(transcodingUrl);
           playMethod = 'Transcode';
           isTranscoding = true;
         } else {
-          final directStreamUrl = chosenSource?['DirectStreamUrl'];
+          final directStreamUrl = chosenSource['DirectStreamUrl'];
           if (directStreamUrl is String && directStreamUrl.isNotEmpty) {
-            playSessionId = Uri.tryParse(directStreamUrl)?.queryParameters['PlaySessionId'];
-            final negotiatedPlaySessionId = negotiation['PlaySessionId'];
-            if ((playSessionId == null || playSessionId.isEmpty) && negotiatedPlaySessionId is String) {
-              playSessionId = negotiatedPlaySessionId;
-            }
+            capturePlaySessionId(directStreamUrl);
             videoUrl = _withApiKey(directStreamUrl);
             playMethod = 'DirectStream';
-          } else {
+          } else if (!preset.isOriginal) {
             fallbackReason = TranscodeFallbackReason.directPlayOnly;
           }
         }
+      } else if (!preset.isOriginal) {
+        fallbackReason = TranscodeFallbackReason.directPlayOnly;
       }
     }
 
-    videoUrl ??= buildDirectStreamUrl(metadata.id, container: bundle.container, mediaSourceId: pinnedSourceId);
+    final effectiveAudioStreamId = _resolveJellyfinAudioStreamId(requestedAudioStreamId, mediaInfo);
+    mediaInfo = _withSelectedJellyfinAudioStream(mediaInfo, effectiveAudioStreamId);
+    // Only forward MediaSourceId when there's actually more than one source —
+    // single-source items have `MediaSourceId == itemId` so the param is a
+    // no-op there but adds clutter to logs.
+    final pinnedSourceId = effectiveSourceId != null && effectiveSourceId != metadata.id ? effectiveSourceId : null;
+    videoUrl ??= buildDirectStreamUrl(
+      metadata.id,
+      container: effectiveContainer,
+      mediaSourceId: pinnedSourceId,
+      audioStreamIndex: requestedAudioStreamId,
+    );
 
     return PlaybackInitializationResult(
       availableVersions: bundle.availableVersions,
@@ -239,9 +234,68 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       isOffline: false,
       isTranscoding: isTranscoding,
       fallbackReason: fallbackReason,
-      activeAudioStreamId: isTranscoding ? options.selectedAudioStreamId : null,
+      activeAudioStreamId: requestedAudioStreamId,
       playSessionId: playSessionId,
       playMethod: playMethod,
+    );
+  }
+
+  int? _validJellyfinAudioStreamId(int? explicit, MediaSourceInfo mediaInfo) {
+    if (explicit == null) return null;
+    return mediaInfo.audioTracks.any((track) => track.id == explicit) ? explicit : null;
+  }
+
+  Map<String, dynamic>? _selectNegotiatedMediaSource(Object? sources, String? selectedSourceId) {
+    if (sources is! List || sources.isEmpty) return null;
+    for (final source in sources) {
+      if (source is Map<String, dynamic> && source['Id'] == selectedSourceId) {
+        return source;
+      }
+    }
+    final first = sources.first;
+    return first is Map<String, dynamic> ? first : null;
+  }
+
+  int? _resolveJellyfinAudioStreamId(int? explicit, MediaSourceInfo mediaInfo) {
+    final validExplicit = _validJellyfinAudioStreamId(explicit, mediaInfo);
+    if (validExplicit != null) return validExplicit;
+    final defaultStreamIndex = mediaInfo.defaultAudioStreamIndex;
+    if (defaultStreamIndex != null) return defaultStreamIndex;
+    for (final track in mediaInfo.audioTracks) {
+      if (track.selected) return track.id;
+    }
+    return null;
+  }
+
+  MediaSourceInfo _withSelectedJellyfinAudioStream(MediaSourceInfo mediaInfo, int? selectedStreamId) {
+    if (selectedStreamId == null || !mediaInfo.audioTracks.any((track) => track.id == selectedStreamId)) {
+      return mediaInfo;
+    }
+    return MediaSourceInfo(
+      videoUrl: mediaInfo.videoUrl,
+      audioTracks: [
+        for (final track in mediaInfo.audioTracks)
+          MediaAudioTrack(
+            id: track.id,
+            index: track.index,
+            codec: track.codec,
+            language: track.language,
+            languageCode: track.languageCode,
+            title: track.title,
+            displayTitle: track.displayTitle,
+            channels: track.channels,
+            selected: track.id == selectedStreamId,
+            external: track.external,
+          ),
+      ],
+      subtitleTracks: mediaInfo.subtitleTracks,
+      chapters: mediaInfo.chapters,
+      partId: mediaInfo.partId,
+      displayCriteria: mediaInfo.displayCriteria,
+      mediaSourceId: mediaInfo.mediaSourceId,
+      defaultAudioStreamIndex: mediaInfo.defaultAudioStreamIndex,
+      defaultSubtitleStreamIndex: mediaInfo.defaultSubtitleStreamIndex,
+      trickplayByWidth: mediaInfo.trickplayByWidth,
     );
   }
 
@@ -322,6 +376,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     String? mediaSourceId,
     String? playSessionId,
     String? liveStreamId,
+    int? audioStreamIndex,
   }) {
     return buildJellyfinDirectStreamUrl(
       baseUrl: connection.baseUrl,
@@ -332,6 +387,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       mediaSourceId: mediaSourceId,
       playSessionId: playSessionId,
       liveStreamId: liveStreamId,
+      audioStreamIndex: audioStreamIndex,
     );
   }
 
@@ -356,16 +412,17 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   /// server's recommended `PlaySessionId`. Caller decides which media source
   /// to use and feeds the returned `TranscodingUrl` into the player.
   ///
-  /// [maxStreamingBitrate] is forwarded as both the top-level field and inside
-  /// the `DeviceProfile` so the server caps direct-stream and transcode bitrate
-  /// against the same ceiling. [mediaSourceId] pins the negotiation to a
-  /// specific version when the item has multiple sources. [audioStreamIndex]
-  /// / [subtitleStreamIndex] tell the server which streams to pick for the
-  /// transcode profile (Jellyfin's negotiation factors them in when picking
-  /// codec compatibility).
+  /// When non-null, [maxStreamingBitrate] is forwarded as both the top-level
+  /// field and inside the `DeviceProfile` so the server caps direct-stream and
+  /// transcode bitrate against the same ceiling. Original playback passes null
+  /// to avoid capping high-bitrate files. [mediaSourceId] pins the negotiation
+  /// to a specific version when the item has multiple sources.
+  /// [audioStreamIndex] / [subtitleStreamIndex] tell the server which streams
+  /// to pick for the transcode profile (Jellyfin's negotiation factors them in
+  /// when picking codec compatibility).
   Future<Map<String, dynamic>?> getPlaybackInfo(
     String itemId, {
-    int maxStreamingBitrate = 100000000,
+    int? maxStreamingBitrate = 100000000,
     String? mediaSourceId,
     String? liveStreamId,
     int? audioStreamIndex,
@@ -380,7 +437,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     try {
       final query = <String, String>{
         'userId': connection.userId,
-        'MaxStreamingBitrate': maxStreamingBitrate.toString(),
+        'MaxStreamingBitrate': ?maxStreamingBitrate?.toString(),
         'MediaSourceId': ?mediaSourceId,
         'LiveStreamId': ?liveStreamId,
         'AudioStreamIndex': ?audioStreamIndex?.toString(),
@@ -397,7 +454,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
         queryParameters: query,
         body: {
           'UserId': connection.userId,
-          'MaxStreamingBitrate': maxStreamingBitrate,
+          'MaxStreamingBitrate': ?maxStreamingBitrate,
           'MediaSourceId': ?mediaSourceId,
           'LiveStreamId': ?liveStreamId,
           'AudioStreamIndex': ?audioStreamIndex,
@@ -410,7 +467,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
           'AllowAudioStreamCopy': ?allowAudioStreamCopy,
           'DeviceProfile': <String, Object?>{
             'Name': 'Plezy',
-            'MaxStreamingBitrate': maxStreamingBitrate,
+            'MaxStreamingBitrate': ?maxStreamingBitrate,
             'CodecProfiles': const <Map<String, Object?>>[],
             // Comma-separated codec lists are order-sensitive — first entry
             // wins when the server picks an output codec. HEVC is listed

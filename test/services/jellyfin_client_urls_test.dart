@@ -68,6 +68,11 @@ void main() {
       expect(Uri.parse(url).queryParameters['MediaSourceId'], 'src-2');
     });
 
+    test('buildDirectStreamUrl appends AudioStreamIndex when provided', () {
+      final url = client.buildDirectStreamUrl('item-99', audioStreamIndex: 4);
+      expect(Uri.parse(url).queryParameters['AudioStreamIndex'], '4');
+    });
+
     test('buildDirectStreamUrl omits MediaSourceId by default', () {
       final url = client.buildDirectStreamUrl('item-99');
       expect(Uri.parse(url).queryParameters.containsKey('MediaSourceId'), isFalse);
@@ -331,6 +336,225 @@ void main() {
       expect(uri.path, '/Videos/item-1/stream');
       expect(uri.queryParameters['PlaySessionId'], 'play-session-direct');
       expect(uri.queryParameters['api_key'], 'tok-abc');
+    });
+
+    test('getPlaybackInitialization negotiates original playback and uses returned source media streams', () async {
+      final requests = <Uri>[];
+      String? playbackInfoBody;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          requests.add(request.url);
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return http.Response(
+              jsonEncode({
+                'Id': 'item-1',
+                'Type': 'Movie',
+                'Name': 'Movie',
+                'MediaSources': [
+                  {
+                    'Id': 'src-1',
+                    'Container': 'mp4',
+                    'MediaStreams': [
+                      {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng'},
+                    ],
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            playbackInfoBody = request.body;
+            return http.Response(
+              jsonEncode({
+                'PlaySessionId': 'play-session-direct',
+                'MediaSources': [
+                  {
+                    'Id': 'src-1',
+                    'Container': 'mp4',
+                    'DefaultAudioStreamIndex': 1,
+                    'DirectStreamUrl': '/Videos/item-1/stream?MediaSourceId=src-1&PlaySessionId=play-session-direct',
+                    'MediaStreams': [
+                      {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng', 'DisplayTitle': 'English - AAC'},
+                      {
+                        'Index': 3,
+                        'Type': 'Subtitle',
+                        'Codec': 'srt',
+                        'Language': 'eng',
+                        'DisplayTitle': 'English - SRT',
+                        'DeliveryMethod': 'External',
+                        'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/3/Stream.srt',
+                      },
+                    ],
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          selectedMediaIndex: 0,
+        ),
+      );
+
+      final playbackInfoRequest = requests.firstWhere((uri) => uri.path == '/Items/item-1/PlaybackInfo');
+      expect(playbackInfoRequest.queryParameters.containsKey('MaxStreamingBitrate'), isFalse);
+      expect(playbackInfoRequest.queryParameters['MediaSourceId'], 'src-1');
+      final body = jsonDecode(playbackInfoBody!) as Map<String, dynamic>;
+      expect(body.containsKey('MaxStreamingBitrate'), isFalse);
+      final profile = body['DeviceProfile'] as Map<String, dynamic>;
+      expect(profile.containsKey('MaxStreamingBitrate'), isFalse);
+
+      expect(result.isTranscoding, isFalse);
+      expect(result.playMethod, 'DirectStream');
+      expect(result.playSessionId, 'play-session-direct');
+      expect(result.activeAudioStreamId, isNull);
+      expect(result.mediaInfo!.audioTracks.single.selected, isTrue);
+      final uri = Uri.parse(result.videoUrl!);
+      expect(uri.path, '/Videos/item-1/stream');
+      expect(uri.queryParameters['PlaySessionId'], 'play-session-direct');
+      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(result.mediaInfo!.subtitleTracks, hasLength(1));
+      expect(result.externalSubtitles, hasLength(1));
+      expect(result.externalSubtitles.single.title, 'English');
+      final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
+      expect(subtitleUri.path, '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
+      expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
+    });
+
+    test('selected external audio is sent to PlaybackInfo and fallback direct URL', () async {
+      Uri? playbackInfoUri;
+      String? playbackInfoBody;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return http.Response(
+              jsonEncode({
+                'Id': 'item-1',
+                'Type': 'Movie',
+                'Name': 'Movie',
+                'MediaSources': [
+                  {
+                    'Id': 'src-1',
+                    'Container': 'mkv',
+                    'MediaStreams': [
+                      {'Index': 0, 'Type': 'Video'},
+                      {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng', 'IsDefault': true},
+                      {'Index': 4, 'Type': 'Audio', 'Codec': 'flac', 'Language': 'jpn', 'DeliveryMethod': 'External'},
+                    ],
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            playbackInfoUri = request.url;
+            playbackInfoBody = request.body;
+            return http.Response('server unavailable', 500);
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          selectedMediaIndex: 0,
+          selectedAudioStreamId: 4,
+        ),
+      );
+
+      expect(playbackInfoUri!.queryParameters['AudioStreamIndex'], '4');
+      final body = jsonDecode(playbackInfoBody!) as Map<String, dynamic>;
+      expect(body['AudioStreamIndex'], 4);
+
+      expect(result.playMethod, 'DirectPlay');
+      expect(result.activeAudioStreamId, 4);
+      final selected = result.mediaInfo!.audioTracks.singleWhere((track) => track.id == 4);
+      expect(selected.isExternal, isTrue);
+      expect(selected.selected, isTrue);
+      final uri = Uri.parse(result.videoUrl!);
+      expect(uri.queryParameters['AudioStreamIndex'], '4');
+      expect(uri.queryParameters['MediaSourceId'], 'src-1');
+      expect(uri.queryParameters['Container'], 'mkv');
+    });
+
+    test('stale selected audio stream is not sent for a source without that stream', () async {
+      Uri? playbackInfoUri;
+      String? playbackInfoBody;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return http.Response(
+              jsonEncode({
+                'Id': 'item-1',
+                'Type': 'Movie',
+                'Name': 'Movie',
+                'MediaSources': [
+                  {
+                    'Id': 'src-1',
+                    'Container': 'mkv',
+                    'MediaStreams': [
+                      {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng'},
+                      {'Index': 4, 'Type': 'Audio', 'Codec': 'flac', 'Language': 'jpn'},
+                    ],
+                  },
+                  {
+                    'Id': 'src-2',
+                    'Container': 'mp4',
+                    'DefaultAudioStreamIndex': 8,
+                    'MediaStreams': [
+                      {'Index': 8, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng'},
+                    ],
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            playbackInfoUri = request.url;
+            playbackInfoBody = request.body;
+            return http.Response('server unavailable', 500);
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          selectedMediaIndex: 1,
+          selectedAudioStreamId: 4,
+        ),
+      );
+
+      expect(playbackInfoUri!.queryParameters.containsKey('AudioStreamIndex'), isFalse);
+      final body = jsonDecode(playbackInfoBody!) as Map<String, dynamic>;
+      expect(body.containsKey('AudioStreamIndex'), isFalse);
+
+      expect(result.activeAudioStreamId, isNull);
+      expect(result.mediaInfo!.audioTracks.single.selected, isTrue);
+      final uri = Uri.parse(result.videoUrl!);
+      expect(uri.queryParameters.containsKey('AudioStreamIndex'), isFalse);
+      expect(uri.queryParameters['MediaSourceId'], 'src-2');
     });
 
     test('getPlaybackInfo path-encodes reserved item id characters', () async {

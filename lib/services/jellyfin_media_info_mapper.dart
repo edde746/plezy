@@ -149,6 +149,7 @@ List<MediaAudioTrack> _withDefaultAudioSelection(List<MediaAudioTrack> tracks, i
         displayTitle: track.displayTitle,
         channels: track.channels,
         selected: track.index == defaultStreamIndex,
+        external: track.external,
       ),
   ];
 }

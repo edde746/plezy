@@ -216,6 +216,28 @@ void main() {
       expect(sub.isExternal, isTrue);
     });
 
+    test('preserves external Jellyfin audio streams', () {
+      final info = jellyfinMediaSourceToMediaSourceInfo({
+        'MediaStreams': [
+          {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng'},
+          {
+            'Index': 2,
+            'Type': 'Audio',
+            'Codec': 'flac',
+            'Language': 'jpn',
+            'DeliveryMethod': 'External',
+            'DeliveryUrl': '/Videos/item-1/src-1/Audio/2/Stream.flac',
+          },
+          {'Index': 3, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'spa', 'IsExternal': true},
+        ],
+      });
+
+      expect(info.audioTracks.map((track) => track.isExternal), [false, true, true]);
+      expect(info.audioTracks[1].id, 2);
+      expect(info.audioTracks[1].codec, 'flac');
+      expect(info.audioTracks[2].id, 3);
+    });
+
     test('external subtitle without DeliveryUrl remains external for URL fallback', () {
       final info = jellyfinMediaSourceToMediaSourceInfo({
         'MediaStreams': [

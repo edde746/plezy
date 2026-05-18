@@ -213,6 +213,7 @@ class JellyfinFileInfoStreamReader implements FileInfoStreamReader {
       displayTitle: f.displayTitle,
       channels: f.channels,
       selected: f.isDefault,
+      external: f.isExternal,
     );
   }
 

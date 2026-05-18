@@ -94,6 +94,7 @@ class MediaAudioTrack with _TrackLabelMixin {
   final String? displayTitle;
   final int? channels;
   final bool selected;
+  final bool external;
 
   MediaAudioTrack({
     required this.id,
@@ -105,7 +106,10 @@ class MediaAudioTrack with _TrackLabelMixin {
     this.displayTitle,
     this.channels,
     required this.selected,
+    this.external = false,
   });
+
+  bool get isExternal => external;
 
   String get label {
     final additionalParts = <String>[];

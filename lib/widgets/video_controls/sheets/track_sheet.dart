@@ -26,10 +26,9 @@ class TrackSheet extends StatelessWidget {
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
 
-  /// When true, the audio column renders the Plex [sourceAudioTracks] list
-  /// and taps are routed to [onSwitchAudioStreamId] instead of using the
-  /// player's in-stream audio selection (the transcoded stream only has one
-  /// audio track).
+  /// When true, or when a Jellyfin source has external audio, the audio column
+  /// renders [sourceAudioTracks] and taps are routed to [onSwitchAudioStreamId]
+  /// instead of using the player's in-stream audio selection.
   final bool isTranscoding;
   final List<MediaAudioTrack> sourceAudioTracks;
   final int? selectedAudioStreamId;
@@ -70,7 +69,9 @@ class TrackSheet extends StatelessWidget {
           (t) => t?.subtitle ?? [],
         );
 
-        final useSourceAudio = isTranscoding && sourceAudioTracks.length > 1 && onSwitchAudioStreamId != null;
+        final hasExternalSourceAudio = sourceAudioTracks.any((track) => track.isExternal);
+        final useSourceAudio =
+            (isTranscoding || hasExternalSourceAudio) && sourceAudioTracks.length > 1 && onSwitchAudioStreamId != null;
         final showAudio = useSourceAudio || playerAudioTracks.length > 1;
         final showSubtitles = subtitleTracks.isNotEmpty;
 
@@ -198,7 +199,7 @@ class _SourceAudioColumnState extends State<_SourceAudioColumn> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedId = widget.selectedStreamId;
+    final selectedId = _effectiveSelectedStreamId();
     final selectedIndex = selectedId == null ? null : widget.tracks.indexWhere((t) => t.id == selectedId);
     _initialScroll.maybeScrollTo(selectedIndex);
 
@@ -227,6 +228,15 @@ class _SourceAudioColumnState extends State<_SourceAudioColumn> {
         ),
       ],
     );
+  }
+
+  int? _effectiveSelectedStreamId() {
+    final explicit = widget.selectedStreamId;
+    if (explicit != null && widget.tracks.any((track) => track.id == explicit)) return explicit;
+    for (final track in widget.tracks) {
+      if (track.selected) return track.id;
+    }
+    return null;
   }
 }
 

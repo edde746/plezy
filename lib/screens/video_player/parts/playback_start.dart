@@ -163,9 +163,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         _effectiveIsOffline = result.isOffline;
         _playbackPlaySessionId = result.playSessionId;
         _playbackPlayMethod = result.playMethod;
-        if (result.activeAudioStreamId != null) {
-          _selectedAudioStreamId = result.activeAudioStreamId;
-        }
+        _selectedAudioStreamId = result.activeAudioStreamId;
 
         if (result.fallbackReason != null && !_selectedQualityPreset.isOriginal) {
           if (mounted) {

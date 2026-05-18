@@ -9,10 +9,11 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
     String? mediaSourceId,
     String? playSessionId,
     String? liveStreamId,
+    int? audioStreamIndex,
   });
   Future<Map<String, dynamic>?> getPlaybackInfo(
     String itemId, {
-    int maxStreamingBitrate = 100000000,
+    int? maxStreamingBitrate = 100000000,
     String? mediaSourceId,
     String? liveStreamId,
     int? audioStreamIndex,

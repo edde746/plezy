@@ -515,6 +515,49 @@ void main() {
       expect(progressSelection.subtitleStreamIndex, -1);
     });
 
+    test('Jellyfin progress reports selected source audio when player exposes a single output track', () async {
+      final client = _FakePlexClient();
+      const outputAudio = AudioTrack(id: 'audio_0', language: 'jpn');
+      const subtitlesOff = SubtitleTrack(id: 'no');
+      final player = _FakePlayer(
+        position: const Duration(seconds: 5),
+        duration: const Duration(seconds: 100),
+        tracks: const Tracks(
+          audio: [outputAudio],
+          subtitle: [SubtitleTrack(id: 'text_0', language: 'eng')],
+        ),
+        track: const TrackSelection(audio: outputAudio, subtitle: subtitlesOff),
+      );
+      final mediaInfo = MediaSourceInfo(
+        videoUrl: '',
+        audioTracks: [
+          MediaAudioTrack(id: 1, languageCode: 'eng', selected: false),
+          MediaAudioTrack(id: 4, languageCode: 'jpn', selected: true, external: true),
+        ],
+        subtitleTracks: [MediaSubtitleTrack(id: 3, languageCode: 'eng', selected: false, forced: false)],
+        chapters: const [],
+        mediaSourceId: 'source-1',
+      );
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: MediaItem(id: '42', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
+        player: player,
+        isOffline: false,
+        mediaInfo: mediaInfo,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+      await tracker.sendProgress('playing');
+      await Future<void>.delayed(Duration.zero);
+
+      final progressSelection = client.playbackStreamSelections[1];
+      expect(progressSelection.mediaSourceId, 'source-1');
+      expect(progressSelection.audioStreamIndex, 4);
+      expect(progressSelection.subtitleStreamIndex, -1);
+    });
+
     test('stopped reports only resolve media source and do not include selected streams', () async {
       final client = _FakePlexClient();
       const selectedAudio = AudioTrack(id: 'audio_1', language: 'jpn');

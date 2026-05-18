@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../mpv/mpv.dart';
 
+import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../media/media_source_info.dart';
@@ -322,10 +323,17 @@ class PlaybackProgressTracker {
   }
 
   int? _currentAudioStreamIndex(MediaSourceInfo info) {
+    final playerAudioTracks = player.state.tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').toList();
+    if (metadata.backend == MediaBackend.jellyfin &&
+        (info.audioTracks.any((track) => track.isExternal) || playerAudioTracks.length <= 1)) {
+      final selectedSourceTrack = _selectedSourceAudioTrack(info);
+      if (selectedSourceTrack != null) return selectedSourceTrack.id;
+    }
+
     final track = player.state.track.audio;
     if (track == null) return null;
 
-    final ordinal = player.state.tracks.audio.where((t) => t.id != 'auto' && t.id != 'no').toList().indexOf(track);
+    final ordinal = playerAudioTracks.indexOf(track);
     if (ordinal >= 0 && ordinal < info.audioTracks.length) return info.audioTracks[ordinal].id;
 
     final matched = findPlexTrackForMpvAudio(track, info.audioTracks, allMpvTracks: player.state.tracks.audio);
@@ -334,6 +342,18 @@ class PlaybackProgressTracker {
     final parsedId = int.tryParse(track.id);
     if (parsedId != null && info.audioTracks.any((t) => t.id == parsedId)) return parsedId;
 
+    return null;
+  }
+
+  MediaAudioTrack? _selectedSourceAudioTrack(MediaSourceInfo info) {
+    for (final track in info.audioTracks) {
+      if (track.selected) return track;
+    }
+    final defaultIndex = info.defaultAudioStreamIndex;
+    if (defaultIndex == null) return null;
+    for (final track in info.audioTracks) {
+      if (track.id == defaultIndex) return track;
+    }
     return null;
   }
 
