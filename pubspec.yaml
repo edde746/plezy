@@ -27,7 +27,11 @@ dependencies:
   slang: ^4.14.0
   slang_flutter: ^4.14.0
   duration: ^4.0.3
-  connectivity_plus: ^7.0.0
+  connectivity_plus:
+    git:
+      url: https://github.com/edde746/plus_plugins
+      ref: 2b614414ce95d920880765d07cbb9759699a4563
+      path: packages/connectivity_plus/connectivity_plus
   os_media_controls:
     git:
       url: https://github.com/edde746/os-media-controls
