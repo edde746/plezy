@@ -376,6 +376,12 @@ class _TranslationsSettingsPt extends TranslationsSettingsEn {
 	@override String get displaySwitchDelay => 'Atraso na Troca de Tela';
 	@override String get tunneledPlayback => 'Reprodução Tunelizada';
 	@override String get tunneledPlaybackDescription => 'Usar tunelamento de vídeo. Desative se HDR mostrar vídeo preto.';
+	@override String get dvConversionMode => 'Conversão Dolby Vision';
+	@override String get dvConversionModeDescription => 'Escolha como o ExoPlayer lida com arquivos Dolby Vision Profile 7.';
+	@override String get dvConversionAuto => 'Automático';
+	@override String get dvConversionNative => 'Nativo / desativado';
+	@override String get dvConversionDv81 => 'P7 → P8.1';
+	@override String get dvConversionHevcStrip => 'P7 → HEVC';
 	@override String get requireProfileSelectionOnOpen => 'Pedir perfil ao abrir o app';
 	@override String get requireProfileSelectionOnOpenDescription => 'Mostrar seleção de perfil toda vez que o app for aberto';
 	@override String get forceTvMode => 'Forçar modo TV';
@@ -2033,6 +2039,12 @@ extension on TranslationsPt {
 			'settings.displaySwitchDelay' => 'Atraso na Troca de Tela',
 			'settings.tunneledPlayback' => 'Reprodução Tunelizada',
 			'settings.tunneledPlaybackDescription' => 'Usar tunelamento de vídeo. Desative se HDR mostrar vídeo preto.',
+			'settings.dvConversionMode' => 'Conversão Dolby Vision',
+			'settings.dvConversionModeDescription' => 'Escolha como o ExoPlayer lida com arquivos Dolby Vision Profile 7.',
+			'settings.dvConversionAuto' => 'Automático',
+			'settings.dvConversionNative' => 'Nativo / desativado',
+			'settings.dvConversionDv81' => 'P7 → P8.1',
+			'settings.dvConversionHevcStrip' => 'P7 → HEVC',
 			'settings.requireProfileSelectionOnOpen' => 'Pedir perfil ao abrir o app',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Mostrar seleção de perfil toda vez que o app for aberto',
 			'settings.forceTvMode' => 'Forçar modo TV',
@@ -2301,14 +2313,14 @@ extension on TranslationsPt {
 			'profiles.signOut' => 'Sair',
 			'profiles.signOutPlexTitle' => 'Sair do Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remover ${displayName} e todos os usuários Plex Home? Você pode entrar novamente quando quiser.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.signedOutPlex' => 'Saiu do Plex.',
 			'profiles.signOutFailed' => 'Falha ao sair.',
 			'profiles.sectionTitle' => 'Perfis',
 			'profiles.summarySingle' => 'Adicione perfis para mesclar usuários gerenciados e identidades locais',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} perfis · ativo: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} perfis',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removeConnectionTitle' => 'Remover conexão?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Remover acesso de ${displayName} a ${connectionLabel}. Outros perfis mantêm o acesso.',
 			'profiles.deleteProfileTitle' => 'Excluir perfil?',
@@ -2815,14 +2827,14 @@ extension on TranslationsPt {
 			'metadataEdit.summary' => 'Sinopse',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Plano de Fundo',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Imagem Quadrada',
 			'metadataEdit.selectPoster' => 'Selecionar Poster',
 			'metadataEdit.selectBackground' => 'Selecionar Plano de Fundo',
 			'metadataEdit.selectLogo' => 'Selecionar Logo',
 			'metadataEdit.selectSquareArt' => 'Selecionar Imagem Quadrada',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.fromUrl' => 'Da URL',
 			'metadataEdit.uploadFile' => 'Enviar Arquivo',
 			'metadataEdit.enterImageUrl' => 'Insira a URL da imagem',

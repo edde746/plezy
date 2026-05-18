@@ -35,6 +35,17 @@ enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
 
 enum SubAssOverride { no, yes, scale, force, strip }
 
+enum DvConversionModePreference { auto, disabled, dv81, hevcStrip }
+
+extension DvConversionModePreferenceNativeValue on DvConversionModePreference {
+  String get nativeValue => switch (this) {
+    DvConversionModePreference.auto => 'auto',
+    DvConversionModePreference.disabled => 'disabled',
+    DvConversionModePreference.dv81 => 'dv81',
+    DvConversionModePreference.hevcStrip => 'hevc_strip',
+  };
+}
+
 const String _bufferSizeMigratedKey = 'buffer_size_migrated_to_auto';
 const String _legacyUseSeasonPosterKey = 'use_season_poster';
 const String _legacyMpvConfigEntriesKey = 'mpv_config_entries';
@@ -313,6 +324,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const enableSimklScrobble = BoolPref('enable_simkl_scrobble', defaultValue: true);
   static const matchContentFrameRate = BoolPref('match_content_frame_rate');
   static const tunneledPlayback = BoolPref('tunneled_playback', defaultValue: true);
+  static const dvConversionMode = EnumPref<DvConversionModePreference>(
+    'dv_conversion_mode',
+    values: DvConversionModePreference.values,
+    defaultValue: DvConversionModePreference.auto,
+  );
   static const defaultQualityPreset = EnumPref<TranscodeQualityPreset>(
     'default_quality_preset',
     values: TranscodeQualityPreset.values,
@@ -686,6 +702,7 @@ class SettingsService extends BaseSharedPreferencesService {
     enableSimklScrobble,
     matchContentFrameRate,
     tunneledPlayback,
+    dvConversionMode,
     defaultPlaybackSpeed,
     defaultBoxFitMode,
     autoPlayNextEpisode,

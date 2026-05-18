@@ -376,6 +376,12 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get displaySwitchDelay => 'Forsinkelse ved skjermbytte';
 	@override String get tunneledPlayback => 'Tunnelert avspilling';
 	@override String get tunneledPlaybackDescription => 'Bruk videotunneling. Slå av hvis HDR-avspilling viser svart video.';
+	@override String get dvConversionMode => 'Dolby Vision-konvertering';
+	@override String get dvConversionModeDescription => 'Velg hvordan ExoPlayer håndterer Dolby Vision Profile 7-filer.';
+	@override String get dvConversionAuto => 'Auto';
+	@override String get dvConversionNative => 'Innebygd / deaktivert';
+	@override String get dvConversionDv81 => 'P7 → P8.1';
+	@override String get dvConversionHevcStrip => 'P7 → HEVC';
 	@override String get requireProfileSelectionOnOpen => 'Spør om profil ved appåpning';
 	@override String get requireProfileSelectionOnOpenDescription => 'Vis profilvalg hver gang appen åpnes';
 	@override String get forceTvMode => 'Tving TV-modus';
@@ -2033,6 +2039,12 @@ extension on TranslationsNb {
 			'settings.displaySwitchDelay' => 'Forsinkelse ved skjermbytte',
 			'settings.tunneledPlayback' => 'Tunnelert avspilling',
 			'settings.tunneledPlaybackDescription' => 'Bruk videotunneling. Slå av hvis HDR-avspilling viser svart video.',
+			'settings.dvConversionMode' => 'Dolby Vision-konvertering',
+			'settings.dvConversionModeDescription' => 'Velg hvordan ExoPlayer håndterer Dolby Vision Profile 7-filer.',
+			'settings.dvConversionAuto' => 'Auto',
+			'settings.dvConversionNative' => 'Innebygd / deaktivert',
+			'settings.dvConversionDv81' => 'P7 → P8.1',
+			'settings.dvConversionHevcStrip' => 'P7 → HEVC',
 			'settings.requireProfileSelectionOnOpen' => 'Spør om profil ved appåpning',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Vis profilvalg hver gang appen åpnes',
 			'settings.forceTvMode' => 'Tving TV-modus',
@@ -2301,14 +2313,14 @@ extension on TranslationsNb {
 			'profiles.signOut' => 'Logg ut',
 			'profiles.signOutPlexTitle' => 'Logge ut av Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Fjerne ${displayName} og alle Plex Home-brukere? Du kan logge inn igjen når som helst.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.signedOutPlex' => 'Logget ut av Plex.',
 			'profiles.signOutFailed' => 'Utlogging mislyktes.',
 			'profiles.sectionTitle' => 'Profiler',
 			'profiles.summarySingle' => 'Legg til profiler for å blande administrerte brukere og lokale identiteter',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiler · aktiv: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiler',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removeConnectionTitle' => 'Fjerne tilkobling?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Fjern ${displayName}s tilgang til ${connectionLabel}. Andre profiler beholder den.',
 			'profiles.deleteProfileTitle' => 'Slette profil?',
@@ -2815,14 +2827,14 @@ extension on TranslationsNb {
 			'metadataEdit.summary' => 'Sammendrag',
 			'metadataEdit.poster' => 'Plakat',
 			'metadataEdit.background' => 'Bakgrunn',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Kvadratisk bilde',
 			'metadataEdit.selectPoster' => 'Velg plakat',
 			'metadataEdit.selectBackground' => 'Velg bakgrunn',
 			'metadataEdit.selectLogo' => 'Velg logo',
 			'metadataEdit.selectSquareArt' => 'Velg kvadratisk bilde',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.fromUrl' => 'Fra URL',
 			'metadataEdit.uploadFile' => 'Last opp fil',
 			'metadataEdit.enterImageUrl' => 'Skriv inn bilde-URL',

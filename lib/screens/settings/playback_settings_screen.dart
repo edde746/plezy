@@ -59,6 +59,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         if (Platform.isWindows) _matchDynamicRangeTile(),
         _displaySwitchDelayTile(),
         _tunneledPlaybackTile(),
+        _dvConversionModeTile(),
         _bufferSizeTile(),
         _defaultQualityTile(),
 
@@ -310,6 +311,31 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       );
     },
   );
+
+  Widget _dvConversionModeTile() => SettingValueBuilder<bool>(
+    pref: SettingsService.useExoPlayer,
+    builder: (_, useExo, _) {
+      if (!Platform.isAndroid || !useExo) return const SizedBox.shrink();
+      return SettingSelectionTile<DvConversionModePreference, DvConversionModePreference>(
+        pref: SettingsService.dvConversionMode,
+        icon: Symbols.hdr_strong_rounded,
+        title: t.settings.dvConversionMode,
+        subtitleBuilder: (mode) => '${_dvConversionModeLabel(mode)} · ${t.settings.dvConversionModeDescription}',
+        options: DvConversionModePreference.values
+            .map((m) => DialogOption(value: m, title: _dvConversionModeLabel(m)))
+            .toList(),
+        decode: (m) => m,
+        encode: (m) => m,
+      );
+    },
+  );
+
+  String _dvConversionModeLabel(DvConversionModePreference mode) => switch (mode) {
+    DvConversionModePreference.auto => t.settings.dvConversionAuto,
+    DvConversionModePreference.disabled => t.settings.dvConversionNative,
+    DvConversionModePreference.dv81 => t.settings.dvConversionDv81,
+    DvConversionModePreference.hevcStrip => t.settings.dvConversionHevcStrip,
+  };
 
   Widget _bufferSizeTile() {
     final bufferOptions = const [0, 64, 128, 256, 512, 1024];

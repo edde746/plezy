@@ -11,6 +11,7 @@ class PlayerAndroid extends PlayerBase {
 
   int? _bufferSizeBytes;
   bool _tunnelingEnabled = true;
+  String _dvConversionMode = 'auto';
 
   String? _hiddenSubtitleTrackId;
 
@@ -60,6 +61,7 @@ class PlayerAndroid extends PlayerBase {
       final result = await invoke<bool>('initialize', {
         'bufferSizeBytes': _bufferSizeBytes,
         'tunnelingEnabled': _tunnelingEnabled,
+        'dvConversionMode': _dvConversionMode,
       });
       if (result != true) {
         throw Exception('Failed to initialize ExoPlayer');
@@ -192,7 +194,8 @@ class PlayerAndroid extends PlayerBase {
         _tunnelingEnabled = value != 'no';
         break;
       case 'dv-conversion-mode':
-        await invoke('setDvConversionMode', {'mode': value});
+        _dvConversionMode = value;
+        if (initialized) await invoke('setDvConversionMode', {'mode': value});
         break;
       case 'sub-visibility':
         if (value == 'no') {

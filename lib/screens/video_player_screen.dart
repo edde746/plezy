@@ -627,6 +627,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (Platform.isAndroid && useExoPlayer) {
         final tunneledPlayback = settingsService.read(SettingsService.tunneledPlayback);
         await currentPlayer.setProperty('tunneled-playback', tunneledPlayback ? 'yes' : 'no');
+        final dvConversionMode = settingsService.read(SettingsService.dvConversionMode);
+        await currentPlayer.setProperty('dv-conversion-mode', dvConversionMode.nativeValue);
       }
       if (bufferSizeMB > 0) {
         final bufferSizeBytes = bufferSizeMB * 1024 * 1024;

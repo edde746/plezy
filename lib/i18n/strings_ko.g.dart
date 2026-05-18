@@ -376,6 +376,12 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get displaySwitchDelay => '디스플레이 전환 지연';
 	@override String get tunneledPlayback => '터널 재생';
 	@override String get tunneledPlaybackDescription => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이면 비활성화하세요.';
+	@override String get dvConversionMode => 'Dolby Vision 변환';
+	@override String get dvConversionModeDescription => 'ExoPlayer가 Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.';
+	@override String get dvConversionAuto => '자동';
+	@override String get dvConversionNative => '네이티브 / 비활성화';
+	@override String get dvConversionDv81 => 'P7 → P8.1';
+	@override String get dvConversionHevcStrip => 'P7 → HEVC';
 	@override String get requireProfileSelectionOnOpen => '앱 실행 시 프로필 선택';
 	@override String get requireProfileSelectionOnOpenDescription => '앱을 열 때마다 프로필 선택 화면을 표시합니다';
 	@override String get forceTvMode => 'TV 모드 강제 사용';
@@ -2033,6 +2039,12 @@ extension on TranslationsKo {
 			'settings.displaySwitchDelay' => '디스플레이 전환 지연',
 			'settings.tunneledPlayback' => '터널 재생',
 			'settings.tunneledPlaybackDescription' => '비디오 터널링을 사용합니다. HDR 재생 시 검은 화면이 보이면 비활성화하세요.',
+			'settings.dvConversionMode' => 'Dolby Vision 변환',
+			'settings.dvConversionModeDescription' => 'ExoPlayer가 Dolby Vision Profile 7 파일을 처리하는 방식을 선택합니다.',
+			'settings.dvConversionAuto' => '자동',
+			'settings.dvConversionNative' => '네이티브 / 비활성화',
+			'settings.dvConversionDv81' => 'P7 → P8.1',
+			'settings.dvConversionHevcStrip' => 'P7 → HEVC',
 			'settings.requireProfileSelectionOnOpen' => '앱 실행 시 프로필 선택',
 			'settings.requireProfileSelectionOnOpenDescription' => '앱을 열 때마다 프로필 선택 화면을 표시합니다',
 			'settings.forceTvMode' => 'TV 모드 강제 사용',
@@ -2301,14 +2313,14 @@ extension on TranslationsKo {
 			'profiles.signOut' => '로그아웃',
 			'profiles.signOutPlexTitle' => 'Plex에서 로그아웃하시겠습니까?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} 및 모든 Plex Home 사용자를 제거할까요? 언제든 다시 로그인할 수 있습니다.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.signedOutPlex' => 'Plex에서 로그아웃되었습니다.',
 			'profiles.signOutFailed' => '로그아웃에 실패했습니다.',
 			'profiles.sectionTitle' => '프로필',
 			'profiles.summarySingle' => '관리되는 사용자와 로컬 ID를 혼합하려면 프로필을 추가하세요',
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count}개 프로필 · 활성: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count}개 프로필',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removeConnectionTitle' => '연결을 제거하시겠습니까?',
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName}의 ${connectionLabel} 접근 권한을 제거합니다. 다른 프로필에는 유지됩니다.',
 			'profiles.deleteProfileTitle' => '프로필을 삭제하시겠습니까?',
@@ -2815,14 +2827,14 @@ extension on TranslationsKo {
 			'metadataEdit.summary' => '줄거리',
 			'metadataEdit.poster' => '포스터',
 			'metadataEdit.background' => '배경',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.logo' => '로고',
 			'metadataEdit.squareArt' => '정사각형 아트',
 			'metadataEdit.selectPoster' => '포스터 선택',
 			'metadataEdit.selectBackground' => '배경 선택',
 			'metadataEdit.selectLogo' => '로고 선택',
 			'metadataEdit.selectSquareArt' => '정사각형 아트 선택',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.fromUrl' => 'URL에서',
 			'metadataEdit.uploadFile' => '파일 업로드',
 			'metadataEdit.enterImageUrl' => '이미지 URL 입력',

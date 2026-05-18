@@ -180,6 +180,7 @@ class ExoPlayerPlugin :
 
     val bufferSizeBytes = call.argument<Int>("bufferSizeBytes")
     val tunnelingEnabled = call.argument<Boolean>("tunnelingEnabled") ?: true
+    val dvConversionMode = call.argument<String>("dvConversionMode") ?: "auto"
     configuredBufferSizeBytes = bufferSizeBytes
 
     currentActivity.runOnUiThread {
@@ -201,6 +202,9 @@ class ExoPlayerPlugin :
           bufferSizeBytes = bufferSizeBytes,
           tunnelingEnabled = tunnelingEnabled
         ) ?: false
+        if (success && playerCore?.setDebugDvConversionMode(dvConversionMode) != true) {
+          Log.w(TAG, "Invalid DV conversion mode during initialize: $dvConversionMode")
+        }
 
         // Start hidden
         playerCore?.setVisible(false)
