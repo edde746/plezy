@@ -5,3 +5,4 @@
 // trigger). Swift autolink doesn't reliably emit -framework AVKit for
 // ObjC category access, so link it explicitly.
 OTHER_LDFLAGS = $(inherited) -framework AVKit
+EXCLUDED_ARCHS[sdk=appletvsimulator*] = x86_64
