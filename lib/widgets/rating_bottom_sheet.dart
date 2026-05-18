@@ -27,6 +27,7 @@ import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
 import 'backend_badge.dart';
 import 'bottom_sheet_header.dart';
+import 'clickable_cursor.dart';
 
 class RatingBottomSheet extends StatefulWidget {
   final MediaItem item;
@@ -825,32 +826,39 @@ class _StarRatingControlState extends State<_StarRatingControl> {
       builder: (context, constraints) {
         final starWidth = (constraints.maxWidth / 5).clamp(0.0, 27.0).toDouble();
         final iconSize = (starWidth * 0.9).clamp(0.0, 24.0).toDouble();
-        return GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onTapDown: widget.enabled ? (details) => _setFromDx(details.localPosition.dx, constraints.maxWidth) : null,
-          onTapUp: widget.enabled ? (_) => widget.onSubmitValue(_pointerValue ?? widget.value) : null,
-          onPanUpdate: widget.enabled ? (details) => _setFromDx(details.localPosition.dx, constraints.maxWidth) : null,
-          onPanEnd: widget.enabled ? (_) => widget.onSubmitValue(_pointerValue ?? widget.value) : null,
-          child: SizedBox(
-            height: 34,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: List.generate(5, (i) {
-                final threshold = (i + 1) * 2;
-                final filled = widget.value >= threshold;
-                final half = widget.value == threshold - 1;
-                return SizedBox(
-                  width: starWidth,
-                  child: Center(
-                    child: AppIcon(
-                      half ? Symbols.star_half_rounded : Symbols.star_rounded,
-                      fill: filled || half ? 1 : 0,
-                      color: filled || half ? Colors.amber : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.34),
-                      size: iconSize,
+        return ClickableCursor(
+          enabled: widget.enabled,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapDown: widget.enabled ? (details) => _setFromDx(details.localPosition.dx, constraints.maxWidth) : null,
+            onTapUp: widget.enabled ? (_) => widget.onSubmitValue(_pointerValue ?? widget.value) : null,
+            onPanUpdate: widget.enabled
+                ? (details) => _setFromDx(details.localPosition.dx, constraints.maxWidth)
+                : null,
+            onPanEnd: widget.enabled ? (_) => widget.onSubmitValue(_pointerValue ?? widget.value) : null,
+            child: SizedBox(
+              height: 34,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: List.generate(5, (i) {
+                  final threshold = (i + 1) * 2;
+                  final filled = widget.value >= threshold;
+                  final half = widget.value == threshold - 1;
+                  return SizedBox(
+                    width: starWidth,
+                    child: Center(
+                      child: AppIcon(
+                        half ? Symbols.star_half_rounded : Symbols.star_rounded,
+                        fill: filled || half ? 1 : 0,
+                        color: filled || half
+                            ? Colors.amber
+                            : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.34),
+                        size: iconSize,
+                      ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                }),
+              ),
             ),
           ),
         );
@@ -925,15 +933,18 @@ class _StepperPill extends StatelessWidget {
         children: [
           _arrow(context, Symbols.chevron_left_rounded, onDecrease),
           Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: enabled ? onSubmit : null,
-              child: Center(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+            child: ClickableCursor(
+              enabled: enabled,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: enabled ? onSubmit : null,
+                child: Center(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
                 ),
               ),
             ),
@@ -946,18 +957,21 @@ class _StepperPill extends StatelessWidget {
 
   Widget _arrow(BuildContext context, IconData icon, VoidCallback action) {
     final theme = Theme.of(context);
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: enabled ? action : null,
-      child: SizedBox(
-        width: 30,
-        height: 32,
-        child: Center(
-          child: AppIcon(
-            icon,
-            fill: 1,
-            color: enabled ? theme.colorScheme.onSurfaceVariant : theme.disabledColor,
-            size: 20,
+    return ClickableCursor(
+      enabled: enabled,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: enabled ? action : null,
+        child: SizedBox(
+          width: 30,
+          height: 32,
+          child: Center(
+            child: AppIcon(
+              icon,
+              fill: 1,
+              color: enabled ? theme.colorScheme.onSurfaceVariant : theme.disabledColor,
+              size: 20,
+            ),
           ),
         ),
       ),

@@ -8,6 +8,7 @@ import '../media/media_item_types.dart';
 import '../models/download_models.dart';
 import '../utils/dialogs.dart';
 import '../utils/global_key_utils.dart';
+import 'clickable_cursor.dart';
 import 'download_status_icon.dart';
 
 /// Represents a node in the download tree
@@ -907,9 +908,11 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     if (buttonIndex >= _buttonFocusNodes.length) {
       return Tooltip(
         message: tooltip,
-        child: GestureDetector(
-          onTap: onPressed,
-          child: Padding(padding: const EdgeInsets.all(8.0), child: AppIcon(icon, fill: 1, size: 20)),
+        child: ClickableCursor(
+          child: GestureDetector(
+            onTap: onPressed,
+            child: Padding(padding: const EdgeInsets.all(8.0), child: AppIcon(icon, fill: 1, size: 20)),
+          ),
         ),
       );
     }

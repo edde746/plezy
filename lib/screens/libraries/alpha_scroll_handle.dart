@@ -176,23 +176,26 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
                 Positioned(
                   right: 0,
                   top: handleTop - _touchTargetVerticalPadding,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onVerticalDragStart: _onDragStart,
-                    onVerticalDragUpdate: _onDragUpdate,
-                    onVerticalDragEnd: _onDragEnd,
-                    child: SizedBox(
-                      width: _touchTargetWidth,
-                      height: _handleHeight + _touchTargetVerticalPadding * 2,
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 2),
-                          width: _handleWidth,
-                          height: _handleHeight,
-                          decoration: BoxDecoration(
-                            color: colorScheme.onSurface.withValues(alpha: 0.5),
-                            borderRadius: const BorderRadius.all(Radius.circular(_handleRadius)),
+                  child: MouseRegion(
+                    cursor: SystemMouseCursors.resizeUpDown,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onVerticalDragStart: _onDragStart,
+                      onVerticalDragUpdate: _onDragUpdate,
+                      onVerticalDragEnd: _onDragEnd,
+                      child: SizedBox(
+                        width: _touchTargetWidth,
+                        height: _handleHeight + _touchTargetVerticalPadding * 2,
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 2),
+                            width: _handleWidth,
+                            height: _handleHeight,
+                            decoration: BoxDecoration(
+                              color: colorScheme.onSurface.withValues(alpha: 0.5),
+                              borderRadius: const BorderRadius.all(Radius.circular(_handleRadius)),
+                            ),
                           ),
                         ),
                       ),

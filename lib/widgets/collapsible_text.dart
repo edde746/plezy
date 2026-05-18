@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'clickable_cursor.dart';
+
 class CollapsibleText extends StatefulWidget {
   final String text;
   final int maxLines;
@@ -42,19 +44,21 @@ class _CollapsibleTextState extends State<CollapsibleText> {
         }
         textPainter.dispose();
 
-        return GestureDetector(
-          onTap: () => setState(() => _expanded = !_expanded),
-          child: Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(text: displayText, style: style),
-                if (!_expanded)
-                  WidgetSpan(
-                    alignment: widget.small ? PlaceholderAlignment.baseline : PlaceholderAlignment.middle,
-                    baseline: widget.small ? TextBaseline.alphabetic : null,
-                    child: _buildBadge(context),
-                  ),
-              ],
+        return ClickableCursor(
+          child: GestureDetector(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(text: displayText, style: style),
+                  if (!_expanded)
+                    WidgetSpan(
+                      alignment: widget.small ? PlaceholderAlignment.baseline : PlaceholderAlignment.middle,
+                      baseline: widget.small ? TextBaseline.alphabetic : null,
+                      child: _buildBadge(context),
+                    ),
+                ],
+              ),
             ),
           ),
         );

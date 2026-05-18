@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/focusable_tile_mixin.dart';
+import 'clickable_cursor.dart';
 
 /// A ListTile that accepts a FocusNode for keyboard/controller navigation.
 ///
@@ -102,6 +103,9 @@ class _FocusableListTileState extends State<FocusableListTile> with FocusableTil
     final iconColor = needsContrastSwap ? Theme.of(context).colorScheme.onError : widget.iconColor;
 
     final Widget tile = MouseRegion(
+      cursor: widget.enabled && (widget.onTap != null || widget.onLongPress != null)
+          ? SystemMouseCursors.click
+          : MouseCursor.defer,
       onEnter: widget.hoverColor != null ? (_) => setState(() => _isHoveredOrFocused = true) : null,
       onExit: widget.hoverColor != null ? (_) => setState(() => _isHoveredOrFocused = false) : null,
       child: ListTile(
@@ -220,17 +224,20 @@ class _FocusableRadioListTileState<T> extends State<FocusableRadioListTile<T>>
 
   @override
   Widget build(BuildContext context) {
-    return RadioListTile<T>(
-      title: widget.title,
-      subtitle: widget.subtitle,
-      secondary: widget.secondary,
-      value: widget.value,
-      // groupValue and onChanged provided by RadioGroup ancestor
-      dense: widget.dense,
-      visualDensity: widget.visualDensity,
-      focusNode: effectiveFocusNode,
-      autofocus: widget.autofocus,
-      enabled: widget.enabled,
+    return ClickableCursor(
+      enabled: widget.enabled ?? true,
+      child: RadioListTile<T>(
+        title: widget.title,
+        subtitle: widget.subtitle,
+        secondary: widget.secondary,
+        value: widget.value,
+        // groupValue and onChanged provided by RadioGroup ancestor
+        dense: widget.dense,
+        visualDensity: widget.visualDensity,
+        focusNode: effectiveFocusNode,
+        autofocus: widget.autofocus,
+        enabled: widget.enabled,
+      ),
     );
   }
 }
@@ -308,16 +315,19 @@ class _FocusableSwitchListTileState extends State<FocusableSwitchListTile>
 
   @override
   Widget build(BuildContext context) {
-    return SwitchListTile(
-      title: widget.title,
-      subtitle: widget.subtitle,
-      secondary: widget.secondary,
-      value: widget.value,
-      onChanged: widget.onChanged,
-      dense: widget.dense,
-      visualDensity: widget.visualDensity,
-      focusNode: effectiveFocusNode,
-      autofocus: widget.autofocus,
+    return ClickableCursor(
+      enabled: widget.onChanged != null,
+      child: SwitchListTile(
+        title: widget.title,
+        subtitle: widget.subtitle,
+        secondary: widget.secondary,
+        value: widget.value,
+        onChanged: widget.onChanged,
+        dense: widget.dense,
+        visualDensity: widget.visualDensity,
+        focusNode: effectiveFocusNode,
+        autofocus: widget.autofocus,
+      ),
     );
   }
 }

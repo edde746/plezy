@@ -391,6 +391,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
                 : EdgeInsets.fromLTRB(leadingPadding - 4, isTv ? 6 : 2, 8, isTv ? 8 : 2),
             child: ExcludeFocus(
               child: InkWell(
+                mouseCursor: widget.hub.more ? SystemMouseCursors.click : MouseCursor.defer,
                 onTap: widget.hub.more ? () => _navigateToHubDetail(context) : null,
                 borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                 child: Padding(

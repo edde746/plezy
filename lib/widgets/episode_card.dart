@@ -137,6 +137,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
           onTap: widget.onTap,
           child: InkWell(
             key: Key(episode.id),
+            mouseCursor: SystemMouseCursors.click,
             borderRadius: BorderRadius.circular(FocusTheme.defaultBorderRadius),
             onTap: widget.onTap,
             canRequestFocus: false,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
+import 'clickable_cursor.dart';
 
 /// Shared builders for focusable widgets to reduce code duplication.
 ///
@@ -36,14 +37,16 @@ class FocusBuilders {
     return Focus(
       focusNode: focusNode,
       onKeyEvent: onKeyEvent,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: duration,
-          curve: Curves.easeOutCubic,
-          padding: padding,
-          decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(borderRadius)),
-          child: child,
+      child: ClickableCursor(
+        child: GestureDetector(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            padding: padding,
+            decoration: BoxDecoration(color: backgroundColor, borderRadius: BorderRadius.circular(borderRadius)),
+            child: child,
+          ),
         ),
       ),
     );
@@ -78,7 +81,9 @@ class FocusBuilders {
     // entirely. This saves ~2 element levels per card on ARM32 Android phones.
     if (!isKeyboardMode) {
       final gestureWidget = (onTap != null || onLongPress != null)
-          ? GestureDetector(onTap: onTap, onLongPress: onLongPress, child: child)
+          ? ClickableCursor(
+              child: GestureDetector(onTap: onTap, onLongPress: onLongPress, child: child),
+            )
           : child;
       if (focusNode != null && onKeyEvent != null) {
         return Focus(focusNode: focusNode, onKeyEvent: onKeyEvent, child: gestureWidget);
@@ -103,7 +108,9 @@ class FocusBuilders {
 
     // Wrap in GestureDetector if tap/long press handlers provided
     final gestureWidget = (onTap != null || onLongPress != null)
-        ? GestureDetector(onTap: onTap, onLongPress: onLongPress, child: focusedWidget)
+        ? ClickableCursor(
+            child: GestureDetector(onTap: onTap, onLongPress: onLongPress, child: focusedWidget),
+          )
         : focusedWidget;
 
     // Wrap in Focus if focus node and key event handler provided

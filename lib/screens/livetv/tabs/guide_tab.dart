@@ -23,6 +23,7 @@ import '../../../utils/live_tv_matching.dart';
 import '../../../utils/media_image_helper.dart';
 import '../../../utils/live_tv_player_navigation.dart';
 import '../../../widgets/app_icon.dart';
+import '../../../widgets/clickable_cursor.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../widgets/optimized_media_image.dart';
 import '../program_details_sheet.dart';
@@ -990,18 +991,20 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
                 _timeNavFocusWrap(
                   index: 1,
                   theme: theme,
-                  child: GestureDetector(
-                    key: _dayPickerKey,
-                    onTap: _showDayPicker,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(dayLabel, style: theme.textTheme.labelLarge),
-                          const SizedBox(width: 2),
-                          AppIcon(Symbols.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurface),
-                        ],
+                  child: ClickableCursor(
+                    child: GestureDetector(
+                      key: _dayPickerKey,
+                      onTap: _showDayPicker,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(dayLabel, style: theme.textTheme.labelLarge),
+                            const SizedBox(width: 2),
+                            AppIcon(Symbols.arrow_drop_down_rounded, size: 18, color: theme.colorScheme.onSurface),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -1276,6 +1279,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
           side: isFocused ? BorderSide(color: theme.colorScheme.primary, width: 2) : BorderSide.none,
         ),
         child: InkWell(
+          mouseCursor: SystemMouseCursors.click,
           canRequestFocus: false,
           onTap: () => _showProgramDetails(channel, program),
           child: Container(
@@ -1432,6 +1436,7 @@ class _ChannelCellState extends State<_ChannelCell> {
     final showAction = _hovered || widget.isFocused;
 
     return MouseRegion(
+      cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(

@@ -320,6 +320,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
 
     return Builder(
       builder: (context) => MouseRegion(
+        cursor: widget.enabled ? SystemMouseCursors.click : MouseCursor.defer,
         onHover: (event) {
           final trackWidth = _sliderWidthOf(context) - 2 * _sliderPadding;
           _updateHoverPosition(event.localPosition.dx, trackWidth, durationMs);

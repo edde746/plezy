@@ -18,6 +18,7 @@ import '../../../utils/formatters.dart';
 import '../../../utils/player_utils.dart';
 import '../../../utils/provider_extensions.dart';
 import '../../app_icon.dart';
+import '../../clickable_cursor.dart';
 import '../../optimized_media_image.dart';
 import 'media_selector_thumbnail.dart';
 
@@ -296,22 +297,24 @@ class ContentStripState extends State<ContentStrip> {
 
   Widget _buildTabLabel(String label, _StripTab tab) {
     final isActive = _activeTab == tab;
-    return GestureDetector(
-      onTap: () => setState(() => _activeTab = tab),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: isActive ? Colors.white : Colors.white54,
-              fontSize: 13,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+    return ClickableCursor(
+      child: GestureDetector(
+        onTap: () => setState(() => _activeTab = tab),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? Colors.white : Colors.white54,
+                fontSize: 13,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+              ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Container(height: 2, width: 40, color: isActive ? Colors.white : Colors.transparent),
-        ],
+            const SizedBox(height: 4),
+            Container(height: 2, width: 40, color: isActive ? Colors.white : Colors.transparent),
+          ],
+        ),
       ),
     );
   }
@@ -510,45 +513,47 @@ class ContentStripState extends State<ContentStrip> {
     final subtitleFontSize = isTablet ? 12.0 : 10.0;
 
     final verticalMargin = widget.useFocusNavigation ? 4.0 : 0.0;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: itemWidth,
-        margin: EdgeInsets.symmetric(horizontal: 6, vertical: verticalMargin),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            MediaSelectorThumbnail(
-              width: itemWidth,
-              height: thumbHeight,
-              thumbnail: thumbnail,
-              isCurrent: isCurrent,
-              borderColor: Colors.white,
-              radius: 6,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: titleFontSize,
-                fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
+    return ClickableCursor(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: itemWidth,
+          margin: EdgeInsets.symmetric(horizontal: 6, vertical: verticalMargin),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              MediaSelectorThumbnail(
+                width: itemWidth,
+                height: thumbHeight,
+                thumbnail: thumbnail,
+                isCurrent: isCurrent,
+                borderColor: Colors.white,
+                radius: 6,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: isCurrent ? Colors.white70 : Colors.white60,
-                fontSize: subtitleFontSize,
-                fontWeight: isCurrent ? FontWeight.w500 : FontWeight.normal,
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: titleFontSize,
+                  fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+              Text(
+                subtitle,
+                style: TextStyle(
+                  color: isCurrent ? Colors.white70 : Colors.white60,
+                  fontSize: subtitleFontSize,
+                  fontWeight: isCurrent ? FontWeight.w500 : FontWeight.normal,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ),
     );

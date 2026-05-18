@@ -93,6 +93,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
         color: cardColor,
         shape: cardShape,
         child: InkWell(
+          mouseCursor: SystemMouseCursors.click,
           onTap: widget.onTap,
           onTapDown: storeTapPosition,
           onLongPress: showContextMenuFromTap,

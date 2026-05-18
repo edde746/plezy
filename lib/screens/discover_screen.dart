@@ -25,6 +25,7 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../widgets/hub_section.dart';
+import '../widgets/clickable_cursor.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/profile_switching_overlay.dart';
 import 'profile/profile_switch_screen.dart';
@@ -1600,20 +1601,22 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Pause/Play button
-                      GestureDetector(
-                        onTap: () {
-                          if (_isAutoScrollPaused) {
-                            _resumeAutoScroll();
-                          } else {
-                            _pauseAutoScroll();
-                          }
-                        },
-                        child: AppIcon(
-                          _isAutoScrollPaused ? Symbols.play_arrow_rounded : Symbols.pause_rounded,
-                          fill: 1,
-                          color: Theme.of(context).colorScheme.onSurface,
-                          size: 18,
-                          semanticLabel: '${_isAutoScrollPaused ? t.common.play : t.common.pause} auto-scroll',
+                      ClickableCursor(
+                        child: GestureDetector(
+                          onTap: () {
+                            if (_isAutoScrollPaused) {
+                              _resumeAutoScroll();
+                            } else {
+                              _pauseAutoScroll();
+                            }
+                          },
+                          child: AppIcon(
+                            _isAutoScrollPaused ? Symbols.play_arrow_rounded : Symbols.pause_rounded,
+                            fill: 1,
+                            color: Theme.of(context).colorScheme.onSurface,
+                            size: 18,
+                            semanticLabel: '${_isAutoScrollPaused ? t.common.play : t.common.pause} auto-scroll',
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -1703,237 +1706,275 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       label: heroLabel,
       button: true,
       hint: t.accessibility.tapToPlay,
-      child: GestureDetector(
-        onTap: () {
-          appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
-          navigateToVideoPlayer(context, metadata: heroItem);
-        },
-        child: Stack(
-          fit: StackFit.expand,
-          clipBehavior: Clip.none,
-          children: [
-            // Background Image with fade/zoom animation and parallax
-            if (heroItem.artPath != null ||
-                heroItem.backgroundSquarePath != null ||
-                heroItem.grandparentArtPath != null)
-              ClipRect(
-                child: AnimatedBuilder(
-                  animation: _scrollController,
-                  builder: (context, child) {
-                    final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
-                    return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
-                  },
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 800),
-                    curve: Curves.easeOut,
-                    builder: (context, value, child) {
-                      return Transform.scale(
-                        scale: 1.0 + (0.1 * (1 - value)),
-                        child: Opacity(opacity: value, child: child),
-                      );
+      child: ClickableCursor(
+        child: GestureDetector(
+          onTap: () {
+            appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
+            navigateToVideoPlayer(context, metadata: heroItem);
+          },
+          child: Stack(
+            fit: StackFit.expand,
+            clipBehavior: Clip.none,
+            children: [
+              // Background Image with fade/zoom animation and parallax
+              if (heroItem.artPath != null ||
+                  heroItem.backgroundSquarePath != null ||
+                  heroItem.grandparentArtPath != null)
+                ClipRect(
+                  child: AnimatedBuilder(
+                    animation: _scrollController,
+                    builder: (context, child) {
+                      final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+                      return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
                     },
-                    child: Builder(
-                      builder: (context) {
-                        // heroClient resolves to the actual server's client
-                        // (Plex or Jellyfin) so each backend's transcoder
-                        // builds sized URLs.
-                        final size = MediaQuery.sizeOf(context);
-                        final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-                        final containerAspect = screenWidth / heroHeight;
-                        final imageUrl = MediaImageHelper.getOptimizedImageUrl(
-                          client: heroClient,
-                          thumbPath:
-                              heroItem.heroArt(containerAspectRatio: containerAspect) ?? heroItem.grandparentArtPath,
-                          maxWidth: size.width,
-                          maxHeight: size.height * 0.7,
-                          devicePixelRatio: dpr,
-                          imageType: ImageType.art,
-                        );
-
-                        final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
-                          displayWidth: (screenWidth * dpr).round(),
-                          displayHeight: (heroHeight * dpr).round(),
-                          imageType: ImageType.art,
-                        );
-
-                        return blurArtwork(
-                          CachedNetworkImage(
-                            imageUrl: imageUrl,
-                            cacheManager: PlexImageCacheManager.instance,
-                            fit: BoxFit.cover,
-                            memCacheHeight: memHeight,
-                            placeholder: (context, url) =>
-                                ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-                            errorBuilder: (context, error, stackTrace) =>
-                                ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
-                          ),
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      duration: const Duration(milliseconds: 800),
+                      curve: Curves.easeOut,
+                      builder: (context, value, child) {
+                        return Transform.scale(
+                          scale: 1.0 + (0.1 * (1 - value)),
+                          child: Opacity(opacity: value, child: child),
                         );
                       },
+                      child: Builder(
+                        builder: (context) {
+                          // heroClient resolves to the actual server's client
+                          // (Plex or Jellyfin) so each backend's transcoder
+                          // builds sized URLs.
+                          final size = MediaQuery.sizeOf(context);
+                          final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+                          final containerAspect = screenWidth / heroHeight;
+                          final imageUrl = MediaImageHelper.getOptimizedImageUrl(
+                            client: heroClient,
+                            thumbPath:
+                                heroItem.heroArt(containerAspectRatio: containerAspect) ?? heroItem.grandparentArtPath,
+                            maxWidth: size.width,
+                            maxHeight: size.height * 0.7,
+                            devicePixelRatio: dpr,
+                            imageType: ImageType.art,
+                          );
+
+                          final (_, memHeight) = MediaImageHelper.getMemCacheDimensions(
+                            displayWidth: (screenWidth * dpr).round(),
+                            displayHeight: (heroHeight * dpr).round(),
+                            imageType: ImageType.art,
+                          );
+
+                          return blurArtwork(
+                            CachedNetworkImage(
+                              imageUrl: imageUrl,
+                              cacheManager: PlexImageCacheManager.instance,
+                              fit: BoxFit.cover,
+                              memCacheHeight: memHeight,
+                              placeholder: (context, url) =>
+                                  ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                              errorBuilder: (context, error, stackTrace) =>
+                                  ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
-              )
-            else
-              ColoredBox(color: colorScheme.surfaceContainerHighest),
+                )
+              else
+                ColoredBox(color: colorScheme.surfaceContainerHighest),
 
-            // Gradient Overlay - blends into scaffold background
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: -4, // Extend past stack bounds to ensure coverage
-              child: IgnorePointer(
-                child: Builder(
-                  builder: (context) {
-                    final bgColor = Theme.of(context).scaffoldBackgroundColor;
-                    return Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
-                          stops: isTv ? const [0.25, 0.78, 1.0] : const [0.5, 0.85, 1.0],
+              // Gradient Overlay - blends into scaffold background
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: -4, // Extend past stack bounds to ensure coverage
+                child: IgnorePointer(
+                  child: Builder(
+                    builder: (context) {
+                      final bgColor = Theme.of(context).scaffoldBackgroundColor;
+                      return Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, bgColor.withValues(alpha: 0.9), bgColor],
+                            stops: isTv ? const [0.25, 0.78, 1.0] : const [0.5, 0.85, 1.0],
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
 
-            // Content with responsive alignment
-            Positioned(
-              bottom: isTv
-                  ? 88
-                  : isLargeScreen
-                  ? 80
-                  : 50,
-              left: 0,
-              right: isTv
-                  ? screenWidth * 0.36
-                  : isLargeScreen
-                  ? 200
-                  : 0,
-              child: Padding(
-                padding: EdgeInsets.symmetric(
-                  horizontal: isTv
-                      ? TvLayoutConstants.horizontalInset
-                      : isLargeScreen
-                      ? 40
-                      : 24,
-                ),
-                child: Align(
-                  alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: isTv ? TvLayoutConstants.heroContentMaxWidth : double.infinity,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Show logo or name/title
-                        if (heroItem.clearLogoPath != null)
-                          SizedBox(
-                            height: isTv ? TvLayoutConstants.heroLogoHeight : 120,
-                            width: isTv ? TvLayoutConstants.heroLogoWidth : 400,
-                            child: Builder(
-                              builder: (context) {
-                                final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-                                final logoUrl = MediaImageHelper.getOptimizedImageUrl(
-                                  client: heroClient,
-                                  thumbPath: heroItem.clearLogoPath,
-                                  maxWidth: isTv ? TvLayoutConstants.heroLogoWidth : 400,
-                                  maxHeight: isTv ? TvLayoutConstants.heroLogoHeight : 120,
-                                  devicePixelRatio: dpr,
-                                  imageType: ImageType.logo,
-                                );
+              // Content with responsive alignment
+              Positioned(
+                bottom: isTv
+                    ? 88
+                    : isLargeScreen
+                    ? 80
+                    : 50,
+                left: 0,
+                right: isTv
+                    ? screenWidth * 0.36
+                    : isLargeScreen
+                    ? 200
+                    : 0,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: isTv
+                        ? TvLayoutConstants.horizontalInset
+                        : isLargeScreen
+                        ? 40
+                        : 24,
+                  ),
+                  child: Align(
+                    alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: isTv ? TvLayoutConstants.heroContentMaxWidth : double.infinity,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Show logo or name/title
+                          if (heroItem.clearLogoPath != null)
+                            SizedBox(
+                              height: isTv ? TvLayoutConstants.heroLogoHeight : 120,
+                              width: isTv ? TvLayoutConstants.heroLogoWidth : 400,
+                              child: Builder(
+                                builder: (context) {
+                                  final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+                                  final logoUrl = MediaImageHelper.getOptimizedImageUrl(
+                                    client: heroClient,
+                                    thumbPath: heroItem.clearLogoPath,
+                                    maxWidth: isTv ? TvLayoutConstants.heroLogoWidth : 400,
+                                    maxHeight: isTv ? TvLayoutConstants.heroLogoHeight : 120,
+                                    devicePixelRatio: dpr,
+                                    imageType: ImageType.logo,
+                                  );
 
-                                return blurArtwork(
-                                  CachedNetworkImage(
-                                    imageUrl: logoUrl,
-                                    cacheManager: PlexImageCacheManager.instance,
-                                    filterQuality: FilterQuality.medium,
-                                    fit: BoxFit.contain,
-                                    memCacheWidth: ((isTv ? TvLayoutConstants.heroLogoWidth : 400) * dpr)
-                                        .clamp(200, isTv ? 1000 : 800)
-                                        .round(),
-                                    alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
-                                    placeholder: (context, url) => const SizedBox.shrink(),
-                                    errorBuilder: (context, error, stackTrace) {
-                                      // Fallback to text if logo fails to load
-                                      final theme = Theme.of(context);
-                                      final colorScheme = theme.colorScheme;
-                                      return Align(
-                                        alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                                        child: Text(
-                                          showName,
-                                          style: theme.textTheme.displaySmall?.copyWith(
-                                            color: colorScheme.onSurface,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: isTv ? 52 : null,
-                                            shadows: [
-                                              Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8),
-                                            ],
+                                  return blurArtwork(
+                                    CachedNetworkImage(
+                                      imageUrl: logoUrl,
+                                      cacheManager: PlexImageCacheManager.instance,
+                                      filterQuality: FilterQuality.medium,
+                                      fit: BoxFit.contain,
+                                      memCacheWidth: ((isTv ? TvLayoutConstants.heroLogoWidth : 400) * dpr)
+                                          .clamp(200, isTv ? 1000 : 800)
+                                          .round(),
+                                      alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
+                                      placeholder: (context, url) => const SizedBox.shrink(),
+                                      errorBuilder: (context, error, stackTrace) {
+                                        // Fallback to text if logo fails to load
+                                        final theme = Theme.of(context);
+                                        final colorScheme = theme.colorScheme;
+                                        return Align(
+                                          alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
+                                          child: Text(
+                                            showName,
+                                            style: theme.textTheme.displaySmall?.copyWith(
+                                              color: colorScheme.onSurface,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: isTv ? 52 : null,
+                                              shadows: [
+                                                Shadow(
+                                                  color: colorScheme.surface.withValues(alpha: 0.8),
+                                                  blurRadius: 8,
+                                                ),
+                                              ],
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                            textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                                           ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                                        ),
-                                      );
-                                    },
+                                        );
+                                      },
+                                    ),
+                                    sigma: 10,
+                                    clip: false,
+                                  );
+                                },
+                              ),
+                            )
+                          else
+                            Text(
+                              showName,
+                              style: theme.textTheme.displaySmall?.copyWith(
+                                color: colorScheme.onSurface,
+                                fontWeight: FontWeight.bold,
+                                fontSize: isTv ? 52 : null,
+                                shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                            ),
+
+                          // Metadata as dot-separated text with content type
+                          if (heroItem.year != null || heroItem.contentRating != null || heroItem.rating != null) ...[
+                            const SizedBox(height: 16),
+                            Text(
+                              [
+                                contentTypeLabel,
+                                if (heroItem.rating != null) '★ ${formatRating(heroItem.rating!)}',
+                                if (heroItem.contentRating != null) formatContentRating(heroItem.contentRating!),
+                                if (heroItem.year != null) heroItem.year.toString(),
+                              ].join(' • '),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: isTv ? 18 : 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                            ),
+                          ],
+
+                          // On small screens: show button before summary
+                          if (!alignLeft) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
+
+                          // Summary with episode info (Apple TV style)
+                          if (heroItem.summary != null && !shouldHideSpoiler) ...[
+                            const SizedBox(height: 12),
+                            RichText(
+                              maxLines: isTv ? 3 : 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                              text: TextSpan(
+                                style: TextStyle(
+                                  color: alignLeft
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : colorScheme.onSurface.withValues(alpha: 0.7),
+                                  fontSize: isTv ? 18 : 14,
+                                  height: isTv ? 1.45 : 1.4,
+                                ),
+                                children: [
+                                  if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
+                                    TextSpan(
+                                      text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: alignLeft ? Colors.white : colorScheme.onSurface,
+                                      ),
+                                    ),
+                                  TextSpan(
+                                    text: heroItem.summary?.isNotEmpty == true
+                                        ? heroItem.summary!
+                                        : t.messages.noDescriptionAvailable,
                                   ),
-                                  sigma: 10,
-                                  clip: false,
-                                );
-                              },
+                                ],
+                              ),
                             ),
-                          )
-                        else
-                          Text(
-                            showName,
-                            style: theme.textTheme.displaySmall?.copyWith(
-                              color: colorScheme.onSurface,
-                              fontWeight: FontWeight.bold,
-                              fontSize: isTv ? 52 : null,
-                              shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                          ),
-
-                        // Metadata as dot-separated text with content type
-                        if (heroItem.year != null || heroItem.contentRating != null || heroItem.rating != null) ...[
-                          const SizedBox(height: 16),
-                          Text(
-                            [
-                              contentTypeLabel,
-                              if (heroItem.rating != null) '★ ${formatRating(heroItem.rating!)}',
-                              if (heroItem.contentRating != null) formatContentRating(heroItem.contentRating!),
-                              if (heroItem.year != null) heroItem.year.toString(),
-                            ].join(' • '),
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: isTv ? 18 : 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                          ),
-                        ],
-
-                        // On small screens: show button before summary
-                        if (!alignLeft) ...[const SizedBox(height: 20), _buildSmartPlayButton(heroItem)],
-
-                        // Summary with episode info (Apple TV style)
-                        if (heroItem.summary != null && !shouldHideSpoiler) ...[
-                          const SizedBox(height: 12),
-                          RichText(
-                            maxLines: isTv ? 3 : 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                            text: TextSpan(
+                          ] else if (shouldHideSpoiler &&
+                              isEpisode &&
+                              heroItem.parentIndex != null &&
+                              heroItem.index != null) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                               style: TextStyle(
                                 color: alignLeft
                                     ? Colors.white.withValues(alpha: 0.7)
@@ -1941,52 +1982,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 fontSize: isTv ? 18 : 14,
                                 height: isTv ? 1.45 : 1.4,
                               ),
-                              children: [
-                                if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
-                                  TextSpan(
-                                    text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: alignLeft ? Colors.white : colorScheme.onSurface,
-                                    ),
-                                  ),
-                                TextSpan(
-                                  text: heroItem.summary?.isNotEmpty == true
-                                      ? heroItem.summary!
-                                      : t.messages.noDescriptionAvailable,
-                                ),
-                              ],
                             ),
-                          ),
-                        ] else if (shouldHideSpoiler &&
-                            isEpisode &&
-                            heroItem.parentIndex != null &&
-                            heroItem.index != null) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                            style: TextStyle(
-                              color: alignLeft
-                                  ? Colors.white.withValues(alpha: 0.7)
-                                  : colorScheme.onSurface.withValues(alpha: 0.7),
-                              fontSize: isTv ? 18 : 14,
-                              height: isTv ? 1.45 : 1.4,
-                            ),
-                          ),
-                        ],
+                          ],
 
-                        // On large screens: show button after summary
-                        if (alignLeft) ...[SizedBox(height: isTv ? 28 : 20), _buildSmartPlayButton(heroItem)],
-                      ],
+                          // On large screens: show button after summary
+                          if (alignLeft) ...[SizedBox(height: isTv ? 28 : 20), _buildSmartPlayButton(heroItem)],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

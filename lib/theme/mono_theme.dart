@@ -32,8 +32,12 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
   }
 
   final isDark = dark || oled;
+  final clickableCursor = WidgetStateProperty.resolveWith<MouseCursor>(
+    (states) => states.contains(WidgetState.disabled) ? MouseCursor.defer : SystemMouseCursors.click,
+  );
 
   final buttonStyle = ButtonStyle(
+    mouseCursor: clickableCursor,
     padding: const WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 18, vertical: 14)),
     elevation: const WidgetStatePropertyAll(0),
     backgroundColor: WidgetStatePropertyAll(c.text),
@@ -101,6 +105,9 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
     inputDecorationTheme: _inputDecorationTheme(c.text, c.textMuted),
     elevatedButtonTheme: ElevatedButtonThemeData(style: buttonStyle),
     filledButtonTheme: FilledButtonThemeData(style: buttonStyle),
+    textButtonTheme: TextButtonThemeData(style: ButtonStyle(mouseCursor: clickableCursor)),
+    outlinedButtonTheme: OutlinedButtonThemeData(style: ButtonStyle(mouseCursor: clickableCursor)),
+    iconButtonTheme: IconButtonThemeData(style: ButtonStyle(mouseCursor: clickableCursor)),
     sliderTheme: SliderThemeData(
       trackHeight: 16,
       trackGap: 6,

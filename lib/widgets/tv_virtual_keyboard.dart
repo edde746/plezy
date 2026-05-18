@@ -6,6 +6,7 @@ import '../focus/dpad_navigator.dart';
 import '../i18n/strings.g.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../utils/platform_detector.dart';
+import 'clickable_cursor.dart';
 
 Future<void> showTvVirtualKeyboard({
   required BuildContext context,
@@ -536,23 +537,25 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
         ? colorScheme.onSecondaryContainer
         : colorScheme.onSurface;
 
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          _row = row;
-          _column = column;
-        });
-        _activate(key);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        width: _keySize,
-        height: _keySize,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: _buildKeyContent(context, key, foreground),
+    return ClickableCursor(
+      child: GestureDetector(
+        onTap: () {
+          setState(() {
+            _row = row;
+            _column = column;
+          });
+          _activate(key);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          width: _keySize,
+          height: _keySize,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(16)),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            child: _buildKeyContent(context, key, foreground),
+          ),
         ),
       ),
     );

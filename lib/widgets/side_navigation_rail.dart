@@ -559,6 +559,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             }
           },
           child: MouseRegion(
+            cursor: isCollapsed ? SystemMouseCursors.click : MouseCursor.defer,
             onEnter: (_) => _onHoverEnter(),
             onExit: (_) => _onHoverExit(),
             child: GestureDetector(

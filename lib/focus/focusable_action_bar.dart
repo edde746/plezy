@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/app_icon.dart';
+import '../widgets/clickable_cursor.dart';
 import 'focus_theme.dart';
 import 'input_mode_tracker.dart';
 import 'key_event_utils.dart';
@@ -141,18 +142,21 @@ class FocusableActionBarState extends State<FocusableActionBar> {
           onUp: widget.onNavigateUp,
         )(node, event);
       },
-      child: AnimatedOpacity(
-        opacity: showFocus ? 1.0 : opacity,
-        duration: duration,
-        child: Container(
-          decoration: FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: 20),
-          child:
-              action.child ??
-              IconButton(
-                icon: AppIcon(action.icon, fill: action.iconFill, color: action.iconColor),
-                tooltip: action.tooltip,
-                onPressed: action.onPressed,
-              ),
+      child: ClickableCursor(
+        enabled: action.onPressed != null || action.child != null,
+        child: AnimatedOpacity(
+          opacity: showFocus ? 1.0 : opacity,
+          duration: duration,
+          child: Container(
+            decoration: FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: 20),
+            child:
+                action.child ??
+                IconButton(
+                  icon: AppIcon(action.icon, fill: action.iconFill, color: action.iconColor),
+                  tooltip: action.tooltip,
+                  onPressed: action.onPressed,
+                ),
+          ),
         ),
       ),
     );

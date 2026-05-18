@@ -268,6 +268,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     return SizedBox(
       width: widget.width,
       child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
         canRequestFocus: false,
         onTap: () => _handleTap(context, item),
         onTapDown: storeTapPosition,
@@ -525,6 +526,7 @@ class _MediaCardList extends StatelessWidget {
     final subtitle = _buildSubtitleText(context);
 
     return InkWell(
+      mouseCursor: SystemMouseCursors.click,
       canRequestFocus: false, // Keyboard handled by FocusableMediaCard
       onTap: onTap,
       onTapDown: onTapDown,

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../../focus/key_event_utils.dart';
 import '../../media/library_first_character.dart';
+import '../../widgets/clickable_cursor.dart';
 import 'alpha_jump_helper.dart';
 
 /// Vertical strip of letters for jumping through sorted library items.
@@ -209,72 +210,74 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
 
           final currentLetter = _nearestDisplayed(widget.currentLetter);
 
-          return GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTapDown: (details) {
-              final idx = _letterIndexFromDy(details.localPosition.dy, constraints.maxHeight);
-              setState(() => _highlightedIndex = idx);
-              _jumpToLetter(_displayed[idx]);
-            },
-            onVerticalDragUpdate: (details) {
-              final idx = _letterIndexFromDy(details.localPosition.dy, constraints.maxHeight);
-              if (idx != _highlightedIndex) {
+          return ClickableCursor(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (details) {
+                final idx = _letterIndexFromDy(details.localPosition.dy, constraints.maxHeight);
                 setState(() => _highlightedIndex = idx);
                 _jumpToLetter(_displayed[idx]);
-              }
-            },
-            child: Container(
-              width: 28,
-              decoration: BoxDecoration(
-                color: colorScheme.surface.withValues(alpha: 0.7),
-                borderRadius: const BorderRadius.all(Radius.circular(14)),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(_displayed.length, (i) {
-                  final letter = _displayed[i];
-                  final isCurrent = letter == currentLetter && !_hasFocus;
-                  final isHighlighted = _hasFocus && i == _highlightedIndex;
+              },
+              onVerticalDragUpdate: (details) {
+                final idx = _letterIndexFromDy(details.localPosition.dy, constraints.maxHeight);
+                if (idx != _highlightedIndex) {
+                  setState(() => _highlightedIndex = idx);
+                  _jumpToLetter(_displayed[idx]);
+                }
+              },
+              child: Container(
+                width: 28,
+                decoration: BoxDecoration(
+                  color: colorScheme.surface.withValues(alpha: 0.7),
+                  borderRadius: const BorderRadius.all(Radius.circular(14)),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(_displayed.length, (i) {
+                    final letter = _displayed[i];
+                    final isCurrent = letter == currentLetter && !_hasFocus;
+                    final isHighlighted = _hasFocus && i == _highlightedIndex;
 
-                  BoxDecoration? decoration;
-                  if (isHighlighted) {
-                    decoration = BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle);
-                  } else if (isCurrent) {
-                    decoration = BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.3),
-                      shape: BoxShape.circle,
-                    );
-                  }
+                    BoxDecoration? decoration;
+                    if (isHighlighted) {
+                      decoration = BoxDecoration(color: colorScheme.primary, shape: BoxShape.circle);
+                    } else if (isCurrent) {
+                      decoration = BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.3),
+                        shape: BoxShape.circle,
+                      );
+                    }
 
-                  Color letterColor;
-                  if (isHighlighted) {
-                    letterColor = colorScheme.onPrimary;
-                  } else if (isCurrent) {
-                    letterColor = colorScheme.primary;
-                  } else {
-                    letterColor = colorScheme.onSurface;
-                  }
+                    Color letterColor;
+                    if (isHighlighted) {
+                      letterColor = colorScheme.onPrimary;
+                    } else if (isCurrent) {
+                      letterColor = colorScheme.primary;
+                    } else {
+                      letterColor = colorScheme.onSurface;
+                    }
 
-                  return SizedBox(
-                    height: constraints.maxHeight / _displayed.length,
-                    child: Center(
-                      child: Container(
-                        width: 22,
-                        height: 22,
-                        decoration: decoration,
-                        alignment: Alignment.center,
-                        child: Text(
-                          letter,
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: (isCurrent || isHighlighted) ? FontWeight.bold : FontWeight.normal,
-                            color: letterColor,
+                    return SizedBox(
+                      height: constraints.maxHeight / _displayed.length,
+                      child: Center(
+                        child: Container(
+                          width: 22,
+                          height: 22,
+                          decoration: decoration,
+                          alignment: Alignment.center,
+                          child: Text(
+                            letter,
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: (isCurrent || isHighlighted) ? FontWeight.bold : FontWeight.normal,
+                              color: letterColor,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  );
-                }),
+                    );
+                  }),
+                ),
               ),
             ),
           );
