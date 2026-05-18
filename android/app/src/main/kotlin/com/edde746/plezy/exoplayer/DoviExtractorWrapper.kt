@@ -16,12 +16,13 @@ import androidx.media3.extractor.TrackOutput
 class DoviExtractorOutputWrapper(
   private val delegate: ExtractorOutput,
   private val dvMode: DvConversionMode,
+  private val emitLog: ((String, String, String) -> Unit)?,
   private val onVideoTrackWrapped: (DoviConvertingTrackOutput) -> Unit
 ) : ExtractorOutput {
   override fun track(id: Int, type: Int): TrackOutput {
     val original = delegate.track(id, type)
     if (type == C.TRACK_TYPE_VIDEO) {
-      val wrapper = DoviConvertingTrackOutput(original, dvMode)
+      val wrapper = DoviConvertingTrackOutput(original, dvMode, emitLog)
       onVideoTrackWrapped(wrapper)
       return wrapper
     }
@@ -39,7 +40,8 @@ class DoviExtractorOutputWrapper(
  */
 class DoviExtractorWrapper(
   private val delegate: Extractor,
-  private val dvMode: DvConversionMode = DvConversionMode.HEVC_STRIP
+  private val dvMode: DvConversionMode = DvConversionMode.HEVC_STRIP,
+  private val emitLog: ((String, String, String) -> Unit)? = null
 ) : Extractor {
 
   @Volatile var doviTrackOutput: DoviConvertingTrackOutput? = null
@@ -48,7 +50,7 @@ class DoviExtractorWrapper(
   override fun sniff(input: ExtractorInput): Boolean = delegate.sniff(input)
 
   override fun init(output: ExtractorOutput) {
-    delegate.init(DoviExtractorOutputWrapper(output, dvMode) { doviTrackOutput = it })
+    delegate.init(DoviExtractorOutputWrapper(output, dvMode, emitLog) { doviTrackOutput = it })
   }
 
   override fun read(input: ExtractorInput, seekPosition: PositionHolder): Int = delegate.read(input, seekPosition)

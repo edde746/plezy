@@ -438,7 +438,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             extractor is MatroskaExtractor -> {
               val assExtractor = ZlibMatroskaExtractor(assParserFactory, handler)
               val inner = if (doviEnabled) {
-                DoviExtractorWrapper(assExtractor, currentDvMode).also {
+                DoviExtractorWrapper(assExtractor, currentDvMode) { level, prefix, message ->
+                  emitLog(level, prefix, message)
+                }.also {
                   activeDoviMkvWrapper = it
                 }
               } else {
@@ -448,7 +450,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
               CuelessSeekExtractorWrapper(inner)
             }
             doviEnabled && (extractor is Mp4Extractor || extractor is FragmentedMp4Extractor) -> {
-              DoviExtractorWrapper(extractor, currentDvMode).also {
+              DoviExtractorWrapper(extractor, currentDvMode) { level, prefix, message ->
+                emitLog(level, prefix, message)
+              }.also {
                 activeDoviMp4Wrapper = it
               }
             }
@@ -1909,6 +1913,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
           "dvConversionActive" to (dovi?.conversionActive == true),
           "dvConversionMode" to dvMode.name,
           "dvConversionDebugMode" to (debugDvModeOverride?.name ?: "AUTO"),
+          "dvStrippedInitNals" to (dovi?.strippedInitNalCount ?: 0L),
           "dvStrippedNals" to (dovi?.strippedNalCount ?: 0L),
           "dvConvertedRpus" to (dovi?.convertedRpuCount ?: 0L),
           "dvRpuConversionFailures" to (dovi?.rpuConversionFailureCount ?: 0L),

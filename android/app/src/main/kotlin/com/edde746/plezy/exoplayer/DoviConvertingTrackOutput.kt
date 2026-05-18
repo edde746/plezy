@@ -28,7 +28,8 @@ import androidx.media3.extractor.TrackOutput
  */
 class DoviConvertingTrackOutput(
   private val delegate: TrackOutput,
-  private val dvMode: DvConversionMode = DvConversionMode.HEVC_STRIP
+  private val dvMode: DvConversionMode = DvConversionMode.HEVC_STRIP,
+  private val emitLog: ((String, String, String) -> Unit)? = null
 ) : TrackOutput {
 
   companion object {
@@ -44,6 +45,8 @@ class DoviConvertingTrackOutput(
   var conversionActive = false
     private set
   var strippedNalCount = 0L
+    private set
+  var strippedInitNalCount = 0L
     private set
   var convertedRpuCount = 0L
     private set
@@ -75,13 +78,13 @@ class DoviConvertingTrackOutput(
       val codecs = format.codecs
       if (codecs != null && codecs.startsWith("dvhe.07")) {
         conversionActive = true
-        Log.i(TAG, "DV Profile 7 detected ($codecs), mode=$dvMode")
-        Log.i(
-          TAG,
+        logInfo("DV Profile 7 detected ($codecs), mode=$dvMode")
+        logInfo(
           "Original format: mime=${format.sampleMimeType}, codecs=$codecs, " +
             "initData=${format.initializationData.size} entries " +
             "(${format.initializationData.mapIndexed { i, d -> "$i:${d.size}B" }.joinToString()})"
         )
+        val strippedInitializationData = stripInitializationData(format.initializationData)
 
         val newFormat = when (dvMode) {
           DvConversionMode.DV81 -> {
@@ -89,39 +92,26 @@ class DoviConvertingTrackOutput(
             val level = codecs.split('.').getOrNull(2)?.toIntOrNull() ?: 6
             val newCodecs = "dvhe.08.%02d".format(level)
             val dvConfigRecord = buildDv81ConfigRecord(level)
-            Log.i(TAG, "DV81: rewriting to $newCodecs, config=${dvConfigRecord.size}B")
+            logInfo("DV81: rewriting to $newCodecs, config=${dvConfigRecord.size}B")
 
             format.buildUpon()
               .setSampleMimeType(MimeTypes.VIDEO_DOLBY_VISION)
               .setCodecs(newCodecs)
-              .setInitializationData(
-                if (format.initializationData.isNotEmpty()) {
-                  listOf(format.initializationData[0], dvConfigRecord)
-                } else {
-                  listOf(ByteArray(0), dvConfigRecord)
-                }
-              )
+              .setInitializationData(strippedInitializationData + dvConfigRecord)
               .build()
           }
           else -> {
             // HEVC_STRIP: present as plain HEVC
-            Log.i(TAG, "HEVC_STRIP: rewriting to video/hevc")
+            logInfo("HEVC_STRIP: rewriting to video/hevc")
             format.buildUpon()
               .setSampleMimeType(MimeTypes.VIDEO_H265)
               .setCodecs(null)
-              .setInitializationData(
-                if (format.initializationData.isNotEmpty()) {
-                  listOf(format.initializationData[0])
-                } else {
-                  emptyList()
-                }
-              )
+              .setInitializationData(strippedInitializationData)
               .build()
           }
         }
 
-        Log.i(
-          TAG,
+        logInfo(
           "Rewritten format: mime=${newFormat.sampleMimeType}, " +
             "codecs=${newFormat.codecs}, initData=${newFormat.initializationData.size} entries"
         )
@@ -186,7 +176,7 @@ class DoviConvertingTrackOutput(
       processNalUnits(srcLen)
       true
     } catch (e: Exception) {
-      Log.e(TAG, "NAL processing failed, passing raw sample", e)
+      logError("NAL processing failed, passing raw sample", e)
       false
     }
     if (success) {
@@ -240,8 +230,7 @@ class DoviConvertingTrackOutput(
         )
 
     if (sampleCount == 0L) {
-      Log.d(
-        TAG,
+      logDebug(
         "NAL format detected: ${if (isAnnexB) "Annex B" else "length-prefixed"}, " +
           "first bytes: ${sampleBuf.take(8).joinToString(" ") { "%02X".format(it) }}"
       )
@@ -340,8 +329,7 @@ class DoviConvertingTrackOutput(
 
     sampleCount++
     if (sampleCount <= 3 || (sampleCount % 500 == 0L)) {
-      Log.d(
-        TAG,
+      logDebug(
         "Sample #$sampleCount (AnnexB): ${dataLen}B -> ${outputLen}B, " +
           "kept=$kept stripped=$stripped NALs"
       )
@@ -363,7 +351,7 @@ class DoviConvertingTrackOutput(
 
       if (nalLen <= 0 || pos + 4 + nalLen > dataLen) {
         if (sampleCount < 5) {
-          Log.w(TAG, "Bad NAL length $nalLen at pos $pos (data.size=$dataLen)")
+          logWarn("Bad NAL length $nalLen at pos $pos (data.size=$dataLen)")
         }
         break
       }
@@ -401,8 +389,7 @@ class DoviConvertingTrackOutput(
 
     sampleCount++
     if (sampleCount <= 3 || (sampleCount % 500 == 0L)) {
-      Log.d(
-        TAG,
+      logDebug(
         "Sample #$sampleCount (LenPrefix): ${dataLen}B -> ${outputLen}B, " +
           "kept=$kept stripped=$stripped NALs"
       )
@@ -449,8 +436,7 @@ class DoviConvertingTrackOutput(
   private fun recordSampleProcessing(elapsedUs: Long) {
     totalSampleProcessingTimeUs += elapsedUs
     if (sampleCount <= 3 || (sampleCount > 0 && sampleCount % 500 == 0L)) {
-      Log.d(
-        TAG,
+      logDebug(
         "Perf: avgSample=${averageSampleProcessingTimeUs}us, " +
           "avgRpu=${averageRpuConversionTimeUs}us, converted=$convertedRpuCount, " +
           "rpuFailures=$rpuConversionFailureCount, rpuTooSmall=$rpuOutputTooSmallCount"
@@ -458,14 +444,121 @@ class DoviConvertingTrackOutput(
     }
   }
 
+  private fun stripInitializationData(initializationData: List<ByteArray>): List<ByteArray> {
+    if (initializationData.isEmpty()) return emptyList()
+
+    val stripped = ArrayList<ByteArray>(initializationData.size)
+    var beforeBytes = 0
+    var afterBytes = 0
+    var droppedBuffers = 0
+
+    for (data in initializationData) {
+      beforeBytes += data.size
+      val processed = stripInitializationAnnexB(data)
+      if (processed == null) {
+        // Media3's HEVC init data is normally Annex B. Non-AnnexB entries in
+        // Dolby Vision formats are typically dvcC/dvvC records, which must not
+        // be forwarded when advertising plain HEVC.
+        droppedBuffers++
+        continue
+      }
+      if (processed.isEmpty()) {
+        droppedBuffers++
+        continue
+      }
+      afterBytes += processed.size
+      stripped.add(processed)
+    }
+
+    logInfo(
+      "Init data stripped: ${initializationData.size} entries/${beforeBytes}B -> " +
+        "${stripped.size} entries/${afterBytes}B, strippedNals=$strippedInitNalCount, " +
+        "droppedBuffers=$droppedBuffers"
+    )
+
+    return stripped
+  }
+
+  private fun stripInitializationAnnexB(data: ByteArray): ByteArray? {
+    if (data.isEmpty()) return data
+
+    val firstStartCodeEnd = findStartCodeEnd(data, 0) ?: return null
+    ensureOutputCapacity(data.size)
+    outputLen = 0
+
+    var kept = 0
+    var stripped = 0
+    var nalStart = firstStartCodeEnd
+
+    while (nalStart < data.size) {
+      val nalEnd = findNextStartCodeOffset(data, nalStart) ?: data.size
+      val nalLen = nalEnd - nalStart
+      if (nalLen > 0) {
+        when (classifyNal(data, nalStart, nalLen, convertRpu = false)) {
+          NalAction.KEEP -> {
+            ensureOutputCapacity(outputLen + 4 + nalLen)
+            System.arraycopy(ANNEX_B_START_CODE, 0, outputBuf, outputLen, 4)
+            outputLen += 4
+            System.arraycopy(data, nalStart, outputBuf, outputLen, nalLen)
+            normalizeLayerId(outputBuf, outputLen)
+            outputLen += nalLen
+            kept++
+          }
+          else -> {
+            strippedInitNalCount++
+            stripped++
+          }
+        }
+      }
+
+      if (nalEnd >= data.size) break
+      nalStart = findStartCodeEnd(data, nalEnd) ?: break
+    }
+
+    logDebug("Init data sample: ${data.size}B -> ${outputLen}B, kept=$kept stripped=$stripped NALs")
+    return outputBuf.copyOf(outputLen)
+  }
+
+  private fun findStartCodeEnd(data: ByteArray, from: Int): Int? {
+    var i = from
+    while (i < data.size - 2) {
+      if (data[i] == 0.toByte() && data[i + 1] == 0.toByte()) {
+        if (i + 3 < data.size && data[i + 2] == 0.toByte() && data[i + 3] == 1.toByte()) {
+          return i + 4
+        } else if (data[i + 2] == 1.toByte()) {
+          return i + 3
+        }
+      }
+      i++
+    }
+    return null
+  }
+
+  private fun findNextStartCodeOffset(data: ByteArray, from: Int): Int? {
+    var i = from
+    while (i < data.size - 2) {
+      if (data[i] == 0.toByte() && data[i + 1] == 0.toByte()) {
+        if (i + 3 < data.size && data[i + 2] == 0.toByte() && data[i + 3] == 1.toByte()) {
+          return i
+        } else if (data[i + 2] == 1.toByte()) {
+          return i
+        }
+      }
+      i++
+    }
+    return null
+  }
+
   /** Classify a NAL at sampleBuf[offset..offset+len) without copying. */
-  private fun processNalInline(offset: Int, len: Int): NalAction {
+  private fun processNalInline(offset: Int, len: Int): NalAction = classifyNal(sampleBuf, offset, len, convertRpu = dvMode == DvConversionMode.DV81)
+
+  private fun classifyNal(data: ByteArray, offset: Int, len: Int, convertRpu: Boolean): NalAction {
     if (len < 2) return NalAction.KEEP
-    val nalType = (sampleBuf[offset].toInt() ushr 1) and 0x3F
-    val nuhLayerId = ((sampleBuf[offset].toInt() and 1) shl 5) or
-      ((sampleBuf[offset + 1].toInt() ushr 3) and 0x1F)
+    val nalType = (data[offset].toInt() ushr 1) and 0x3F
+    val nuhLayerId = ((data[offset].toInt() and 1) shl 5) or
+      ((data[offset + 1].toInt() ushr 3) and 0x1F)
     return when {
-      nalType == NAL_TYPE_UNSPEC62 && dvMode == DvConversionMode.DV81 -> NalAction.CONVERT
+      nalType == NAL_TYPE_UNSPEC62 && convertRpu -> NalAction.CONVERT
       nalType == NAL_TYPE_UNSPEC62 || nalType == NAL_TYPE_UNSPEC63 || nuhLayerId > 0 -> NalAction.STRIP
       else -> NalAction.KEEP
     }
@@ -495,6 +588,26 @@ class DoviConvertingTrackOutput(
     if (outputBuf.size < needed) {
       outputBuf = outputBuf.copyOf(maxOf(needed, outputBuf.size * 2))
     }
+  }
+
+  private fun logDebug(message: String) {
+    Log.d(TAG, message)
+    emitLog?.invoke("debug", "dv-convert", message)
+  }
+
+  private fun logInfo(message: String) {
+    Log.i(TAG, message)
+    emitLog?.invoke("info", "dv-convert", message)
+  }
+
+  private fun logWarn(message: String) {
+    Log.w(TAG, message)
+    emitLog?.invoke("warn", "dv-convert", message)
+  }
+
+  private fun logError(message: String, throwable: Throwable) {
+    Log.e(TAG, message, throwable)
+    emitLog?.invoke("error", "dv-convert", "$message: ${throwable.message}")
   }
 
   /**
