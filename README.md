@@ -6,10 +6,10 @@
 A modern client for Plex and Jellyfin on desktop, mobile, and TV. Built with Flutter for native performance and a clean interface.
 
 <p align="center">
-  <img src="assets/screenshots/macos-home.png" alt="Plezy macOS Home Screen" width="800" />
+  <img src="assets/readme-showcase.webp" alt="Plezy mobile screenshots" width="900" />
 </p>
 
-*More screenshots in the [screenshots folder](assets/screenshots/#readme)*
+*More screenshots: https://plezy.app/#screenshots*
 
 ## Download
 
