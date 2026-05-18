@@ -228,34 +228,37 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
           borderRadius: 12,
           onSelect: () => _onTap(context),
           onNavigateRight: () => _switchFocusNode.requestFocus(),
-          child: ListTile(
-            dense: true,
-            visualDensity: const VisualDensity(vertical: -3),
-            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-            leading: Icon(_leadingIcon(), color: rule.enabled ? Colors.teal : null, size: 20),
-            title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(_subtitle(), maxLines: 1, overflow: TextOverflow.ellipsis),
-                Text(serverLine, maxLines: 1, overflow: TextOverflow.ellipsis),
-              ],
-            ),
-            trailing: FocusableWrapper(
-              focusNode: _switchFocusNode,
-              disableScale: true,
-              useBackgroundFocus: true,
-              descendantsAreFocusable: false,
-              borderRadius: 20,
-              onSelect: () => downloadProvider.setSyncRuleEnabled(rule.globalKey, !rule.enabled),
-              onNavigateLeft: () => _rowFocusNode.requestFocus(),
-              child: Switch(
-                value: rule.enabled,
-                onChanged: (value) => downloadProvider.setSyncRuleEnabled(rule.globalKey, value),
+          child: Material(
+            type: MaterialType.transparency,
+            child: ListTile(
+              dense: true,
+              visualDensity: const VisualDensity(vertical: -3),
+              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+              leading: Icon(_leadingIcon(), color: rule.enabled ? Colors.teal : null, size: 20),
+              title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(_subtitle(), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(serverLine, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ],
               ),
+              trailing: FocusableWrapper(
+                focusNode: _switchFocusNode,
+                disableScale: true,
+                useBackgroundFocus: true,
+                descendantsAreFocusable: false,
+                borderRadius: 20,
+                onSelect: () => downloadProvider.setSyncRuleEnabled(rule.globalKey, !rule.enabled),
+                onNavigateLeft: () => _rowFocusNode.requestFocus(),
+                child: Switch(
+                  value: rule.enabled,
+                  onChanged: (value) => downloadProvider.setSyncRuleEnabled(rule.globalKey, value),
+                ),
+              ),
+              onTap: () => _onTap(context),
             ),
-            onTap: () => _onTap(context),
           ),
         ),
       ),

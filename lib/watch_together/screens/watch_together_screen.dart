@@ -386,18 +386,21 @@ class _RecentRoomTile extends StatelessWidget {
         borderRadius: 12,
         onSelect: isBusy ? null : onTap,
         onLongPress: () => _showActions(context),
-        child: ListTile(
-          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-          leading: isEntering ? const LoadingIndicatorBox(size: 24) : const Icon(Symbols.meeting_room_rounded),
-          title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
-          subtitle: room.name != null
-              ? Text(
-                  room.code,
-                  style: TextStyle(fontFamily: 'monospace', color: theme.colorScheme.onSurfaceVariant),
-                )
-              : null,
-          trailing: IconButton(icon: const Icon(Symbols.more_vert_rounded), onPressed: () => _showActions(context)),
-          onTap: isBusy ? null : onTap,
+        child: Material(
+          type: MaterialType.transparency,
+          child: ListTile(
+            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+            leading: isEntering ? const LoadingIndicatorBox(size: 24) : const Icon(Symbols.meeting_room_rounded),
+            title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+            subtitle: room.name != null
+                ? Text(
+                    room.code,
+                    style: TextStyle(fontFamily: 'monospace', color: theme.colorScheme.onSurfaceVariant),
+                  )
+                : null,
+            trailing: IconButton(icon: const Icon(Symbols.more_vert_rounded), onPressed: () => _showActions(context)),
+            onTap: isBusy ? null : onTap,
+          ),
         ),
       ),
     );

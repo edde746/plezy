@@ -194,9 +194,6 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
 
   void _onReorder(int oldIndex, int newIndex) {
     setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
       final item = _tempFavorites.removeAt(oldIndex);
       _tempFavorites.insert(newIndex, item);
     });
@@ -233,7 +230,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
             onKeyEvent: _handleKeyEvent,
             child: ReorderableListView.builder(
               scrollController: _scrollController,
-              onReorder: _onReorder,
+              onReorderItem: _onReorder,
               itemCount: _tempFavorites.length,
               padding: const EdgeInsets.symmetric(vertical: 8),
               buildDefaultDragHandles: false,
@@ -284,53 +281,51 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
     final displayName = channel?.displayName ?? fav.title ?? fav.id;
     final channelNumber = channel?.number ?? fav.vcn;
 
-    return Container(
+    return ListTile(
       key: key,
-      decoration: BoxDecoration(color: tileColor),
-      child: ListTile(
-        leading: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ReorderableDragStartListener(
-              index: index,
-              child: AppIcon(
-                isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
-                fill: 1,
-                color: isMoving ? colorScheme.primary : IconTheme.of(context).color?.withValues(alpha: 0.5),
-              ),
+      tileColor: tileColor,
+      leading: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ReorderableDragStartListener(
+            index: index,
+            child: AppIcon(
+              isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
+              fill: 1,
+              color: isMoving ? colorScheme.primary : IconTheme.of(context).color?.withValues(alpha: 0.5),
             ),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 40,
-              height: 40,
-              child: channel?.thumb != null && client != null
-                  ? OptimizedMediaImage.thumb(
-                      client: client,
-                      imagePath: channel!.thumb,
-                      width: 40,
-                      height: 40,
-                      fit: BoxFit.contain,
-                    )
-                  : Center(child: AppIcon(Symbols.live_tv_rounded, fill: 1, color: colorScheme.onSurfaceVariant)),
-            ),
-          ],
-        ),
-        title: Text(displayName, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: channelNumber != null
-            ? Text(
-                channelNumber,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                ),
-              )
-            : null,
-        trailing: Container(
-          decoration: FocusTheme.focusBackgroundDecoration(isFocused: isRemoveButtonFocused, borderRadius: 20),
-          child: IconButton(
-            icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
-            onPressed: () => _removeItem(index),
           ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 40,
+            height: 40,
+            child: channel?.thumb != null && client != null
+                ? OptimizedMediaImage.thumb(
+                    client: client,
+                    imagePath: channel!.thumb,
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.contain,
+                  )
+                : Center(child: AppIcon(Symbols.live_tv_rounded, fill: 1, color: colorScheme.onSurfaceVariant)),
+          ),
+        ],
+      ),
+      title: Text(displayName, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: channelNumber != null
+          ? Text(
+              channelNumber,
+              style: TextStyle(
+                fontSize: 11,
+                color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+              ),
+            )
+          : null,
+      trailing: Container(
+        decoration: FocusTheme.focusBackgroundDecoration(isFocused: isRemoveButtonFocused, borderRadius: 20),
+        child: IconButton(
+          icon: const AppIcon(Symbols.close_rounded, fill: 1, size: 20),
+          onPressed: () => _removeItem(index),
         ),
       ),
     );

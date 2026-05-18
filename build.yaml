@@ -13,3 +13,5 @@ targets:
           copy_with: true
           equal: true
           to_string: true
+      slang_build_runner:
+        enabled: false

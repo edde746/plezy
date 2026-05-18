@@ -373,11 +373,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   Future<void> _onReorder(int oldIndex, int newIndex) async {
     if (!_canEditPlaylist) return;
 
-    // Adjust newIndex if moving down in the list
-    if (newIndex > oldIndex) {
-      newIndex--;
-    }
-
     // Can't reorder if indices are the same
     if (oldIndex == newIndex) return;
 
@@ -780,7 +775,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   /// Build a reorderable list for regular playlists with focus support
   Widget _buildReorderableList(bool _) {
     return SliverReorderableList(
-      onReorder: _onReorder,
+      onReorderItem: _onReorder,
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];

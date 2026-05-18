@@ -1416,9 +1416,6 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
 
   void _reorderLibraries(int oldIndex, int newIndex) {
     setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
       final library = _tempLibraries.removeAt(oldIndex);
       _tempLibraries.insert(newIndex, library);
     });
@@ -1560,7 +1557,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
 
     return ReorderableListView.builder(
       scrollController: _dialogScrollController,
-      onReorder: _reorderLibraries,
+      onReorderItem: _reorderLibraries,
       itemCount: _tempLibraries.length,
       padding: const EdgeInsets.symmetric(vertical: 8),
       buildDefaultDragHandles: false,
@@ -1590,7 +1587,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
 
     return ReorderableListView.builder(
       scrollController: scrollController,
-      onReorder: _reorderLibraries,
+      onReorderItem: _reorderLibraries,
       itemCount: _tempLibraries.length,
       padding: const EdgeInsets.symmetric(vertical: 8),
       buildDefaultDragHandles: false,
@@ -1641,58 +1638,53 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     return Opacity(
       key: ValueKey(library.globalKey),
       opacity: isHidden ? 0.5 : 1.0,
-      child: Container(
-        decoration: BoxDecoration(color: tileColor),
-        child: ListTile(
-          leading: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ReorderableDragStartListener(
-                index: index,
-                child: AppIcon(
-                  isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
-                  fill: 1,
-                  color: isMoving ? colorScheme.primary : IconTheme.of(context).color?.withValues(alpha: 0.5),
-                ),
+      child: ListTile(
+        tileColor: tileColor,
+        leading: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ReorderableDragStartListener(
+              index: index,
+              child: AppIcon(
+                isMoving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
+                fill: 1,
+                color: isMoving ? colorScheme.primary : IconTheme.of(context).color?.withValues(alpha: 0.5),
               ),
-              const SizedBox(width: 8),
-              AppIcon(ContentTypeHelper.getLibraryIcon(library.kind.id), fill: 1),
-            ],
-          ),
-          title: Text(library.title),
-          subtitle: showServerName
-              ? Text(
-                  library.serverName!,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                  ),
-                )
-              : null,
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                decoration: FocusTheme.focusBackgroundDecoration(
-                  isFocused: isVisibilityButtonFocused,
-                  borderRadius: 20,
+            ),
+            const SizedBox(width: 8),
+            AppIcon(ContentTypeHelper.getLibraryIcon(library.kind.id), fill: 1),
+          ],
+        ),
+        title: Text(library.title),
+        subtitle: showServerName
+            ? Text(
+                library.serverName!,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                 ),
-                child: IconButton(
-                  icon: AppIcon(isHidden ? Symbols.visibility_off_rounded : Symbols.visibility_rounded, fill: 1),
-                  tooltip: isHidden ? t.libraries.showLibrary : t.libraries.hideLibrary,
-                  onPressed: () => widget.onToggleVisibility(library),
-                ),
+              )
+            : null,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              decoration: FocusTheme.focusBackgroundDecoration(isFocused: isVisibilityButtonFocused, borderRadius: 20),
+              child: IconButton(
+                icon: AppIcon(isHidden ? Symbols.visibility_off_rounded : Symbols.visibility_rounded, fill: 1),
+                tooltip: isHidden ? t.libraries.showLibrary : t.libraries.hideLibrary,
+                onPressed: () => widget.onToggleVisibility(library),
               ),
-              Container(
-                decoration: FocusTheme.focusBackgroundDecoration(isFocused: isOptionsButtonFocused, borderRadius: 20),
-                child: IconButton(
-                  icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
-                  tooltip: t.libraries.libraryOptions,
-                  onPressed: () => _showLibraryMenuBottomSheet(context, library),
-                ),
+            ),
+            Container(
+              decoration: FocusTheme.focusBackgroundDecoration(isFocused: isOptionsButtonFocused, borderRadius: 20),
+              child: IconButton(
+                icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
+                tooltip: t.libraries.libraryOptions,
+                onPressed: () => _showLibraryMenuBottomSheet(context, library),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
