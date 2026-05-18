@@ -1736,9 +1736,12 @@ void main() {
       expect(itemsRequest.queryParameters['Limit'], '36');
       expect(itemsRequest.queryParameters['SortBy'], 'SortName');
       expect(itemsRequest.queryParameters['SortOrder'], 'Ascending');
-      expect(itemsRequest.queryParameters['Fields'], 'ChildCount,SortName,Overview');
-      expect(itemsRequest.queryParameters['EnableTotalRecordCount'], 'false');
-      expect(itemsRequest.queryParameters['EnableImageTypes'], 'Primary');
+      expect(
+        itemsRequest.queryParameters['Fields'],
+        'RecursiveItemCount,ChildCount,UserData,PremiereDate,OriginalTitle,SortName,Overview',
+      );
+      expect(itemsRequest.queryParameters.containsKey('EnableTotalRecordCount'), isFalse);
+      expect(itemsRequest.queryParameters['EnableImageTypes'], 'Primary,Backdrop,Thumb,Logo');
       expect(itemsRequest.queryParameters['ImageTypeLimit'], '1');
     });
 
@@ -1783,7 +1786,7 @@ void main() {
       expect(itemsRequest!.queryParameters['ParentId'], 'lib-boxsets');
       expect(itemsRequest!.queryParameters['StartIndex'], '20');
       expect(itemsRequest!.queryParameters['Limit'], '10');
-      expect(itemsRequest!.queryParameters['EnableTotalRecordCount'], 'false');
+      expect(itemsRequest!.queryParameters.containsKey('EnableTotalRecordCount'), isFalse);
     });
 
     test('fetchCollectionsPage uses sentinel total when total count is missing', () async {

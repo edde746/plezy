@@ -6,11 +6,6 @@ mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
 
   static const int _collectionsPageSize = 36;
-  static const String _collectionBrowseFields = 'ChildCount,SortName,Overview';
-  static const Map<String, String> _collectionImageQueryParameters = {
-    'EnableImageTypes': 'Primary',
-    'ImageTypeLimit': '1',
-  };
 
   String? _boxSetsViewId;
 
@@ -53,9 +48,8 @@ mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
         'Limit': pageSize.toString(),
         'SortBy': 'SortName',
         'SortOrder': 'Ascending',
-        'Fields': _collectionBrowseFields,
-        'EnableTotalRecordCount': 'false',
-        ..._collectionImageQueryParameters,
+        'Fields': _browseFields,
+        ...jellyfinImageQueryParameters,
       },
       abort: abort,
     );
