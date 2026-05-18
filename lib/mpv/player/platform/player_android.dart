@@ -195,7 +195,15 @@ class PlayerAndroid extends PlayerBase {
         break;
       case 'dv-conversion-mode':
         _dvConversionMode = value;
-        if (initialized) await invoke('setDvConversionMode', {'mode': value});
+        final initFuture = _initFuture;
+        if (initialized) {
+          await invoke('setDvConversionMode', {'mode': value});
+        } else if (initFuture != null) {
+          await initFuture;
+          if (!disposed && initialized && _dvConversionMode == value) {
+            await invoke('setDvConversionMode', {'mode': value});
+          }
+        }
         break;
       case 'sub-visibility':
         if (value == 'no') {

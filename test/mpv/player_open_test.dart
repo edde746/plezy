@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/mpv/mpv.dart';
@@ -26,6 +28,53 @@ void main() {
             expect(player.state.track.audio, isNull);
             expect(player.state.track.subtitle, isNull);
           } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('ExoPlayer applies DV conversion mode changed during in-flight initialization', () async {
+      final initialize = Completer<bool>();
+      final calls = <MethodCall>[];
+
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              return initialize.future;
+            case 'requestAudioFocus':
+              return Future.value(true);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            final focusFuture = player.requestAudioFocus();
+            await Future<void>.delayed(Duration.zero);
+
+            final modeFuture = player.setProperty('dv-conversion-mode', 'hevc_strip');
+            await Future<void>.delayed(Duration.zero);
+
+            final initCall = calls.singleWhere((call) => call.method == 'initialize');
+            final initArgs = Map<Object?, Object?>.from(initCall.arguments as Map);
+            expect(initArgs['dvConversionMode'], 'auto');
+            expect(calls.where((call) => call.method == 'setDvConversionMode'), isEmpty);
+
+            initialize.complete(true);
+            await modeFuture;
+            await focusFuture;
+
+            final dvCall = calls.singleWhere((call) => call.method == 'setDvConversionMode');
+            final dvArgs = Map<Object?, Object?>.from(dvCall.arguments as Map);
+            expect(dvArgs['mode'], 'hevc_strip');
+          } finally {
+            if (!initialize.isCompleted) initialize.complete(true);
             await player.dispose();
           }
         },
@@ -61,27 +110,32 @@ void main() {
 Future<void> _withMockChannels({
   required String methodChannelName,
   required String eventChannelName,
+  Future<Object?> Function(MethodCall call)? methodHandler,
   required Future<void> Function() testBody,
 }) async {
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   final methodChannel = MethodChannel(methodChannelName);
   final eventChannel = MethodChannel(eventChannelName);
 
-  messenger.setMockMethodCallHandler(methodChannel, (call) async {
-    switch (call.method) {
-      case 'initialize':
-        return true;
-      case 'observeProperty':
-      case 'setVisible':
-      case 'setProperty':
-      case 'command':
-      case 'open':
-      case 'dispose':
-        return null;
-      default:
-        return null;
-    }
-  });
+  messenger.setMockMethodCallHandler(
+    methodChannel,
+    methodHandler ??
+        (call) async {
+          switch (call.method) {
+            case 'initialize':
+              return true;
+            case 'observeProperty':
+            case 'setVisible':
+            case 'setProperty':
+            case 'command':
+            case 'open':
+            case 'dispose':
+              return null;
+            default:
+              return null;
+          }
+        },
+  );
   messenger.setMockMethodCallHandler(eventChannel, (call) async => null);
 
   try {

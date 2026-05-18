@@ -566,13 +566,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       player = currentPlayer;
       _playerBackendLabel = currentPlayer.playerType;
 
-      // Kick off audio-focus negotiation in parallel with MPV config + prefetch.
-      // On Android this is a round-trip to AudioManager (~90ms cold).
-      if (Platform.isAndroid && !widget.isLive) {
-        _audioFocusFuture = currentPlayer.requestAudioFocus();
-        _audioFocusFuture!.ignore();
-      }
-
       // Kick off getPlaybackData() in parallel with the rest of MPV setup.
       // The network/DB work has no dependency on the player — it just needs
       // the context (providers), which is still safe to touch here because
@@ -669,6 +662,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             await currentPlayer.setProperty('demuxer-max-back-bytes', maxBackBytes.toString());
           }
         }
+      }
+      // requestAudioFocus initializes Android players, so start it only after
+      // init-time ExoPlayer options above have been cached.
+      if (Platform.isAndroid && !widget.isLive) {
+        _audioFocusFuture = currentPlayer.requestAudioFocus();
+        _audioFocusFuture!.ignore();
       }
       await currentPlayer.setProperty('msg-level', debugLoggingEnabled ? 'all=debug' : 'all=error');
       await currentPlayer.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
