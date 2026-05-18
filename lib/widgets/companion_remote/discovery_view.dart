@@ -16,6 +16,7 @@ import '../../profiles/active_profile_provider.dart';
 import '../../profiles/plex_home_service.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../providers/companion_remote_provider.dart';
+import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
 import '../loading_indicator_box.dart';
 
@@ -48,7 +49,18 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
   void initState() {
     super.initState();
     _provider = context.read<CompanionRemoteProvider>();
+    unawaited(_loadSavedManualHostAddress());
     _initCryptoAndDiscover();
+  }
+
+  Future<void> _loadSavedManualHostAddress() async {
+    final settings = SettingsService.instanceOrNull ?? await SettingsService.getInstance();
+    final hostAddress = settings.read(SettingsService.companionRemoteLastHostAddress);
+    if (!mounted || hostAddress == null || _hostAddressController.text.isNotEmpty) return;
+    setState(() {
+      _hostAddressController.text = hostAddress;
+      _showManualEntry = true;
+    });
   }
 
   Future<void> _initCryptoAndDiscover() async {
@@ -138,6 +150,26 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
     } finally {
       setStateIfMounted(() => _isConnecting = false);
     }
+  }
+
+  Future<void> _saveManualHostAddress(String hostAddress) async {
+    try {
+      final settings = SettingsService.instanceOrNull ?? await SettingsService.getInstance();
+      await settings.write(SettingsService.companionRemoteLastHostAddress, hostAddress);
+    } catch (e) {
+      appLogger.w('Failed to save companion remote host address', error: e);
+    }
+  }
+
+  void _submitManualHost() {
+    if (!_formKey.currentState!.validate()) return;
+    final hostAddress = _hostAddressController.text.trim();
+    unawaited(
+      _connect(() async {
+        await _provider.connectToManualHost(hostAddress);
+        await _saveManualHostAddress(hostAddress);
+      }),
+    );
   }
 
   String _parseErrorMessage(String error) {
@@ -340,10 +372,11 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
                     prefixIcon: const Icon(Icons.computer),
                   ),
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    final hostAddress = value?.trim() ?? '';
+                    if (hostAddress.isEmpty) {
                       return t.companionRemote.pairing.validationHostRequired;
                     }
-                    if (value.split(':').length != 2) {
+                    if (hostAddress.split(':').length != 2) {
                       return t.companionRemote.pairing.validationHostFormat;
                     }
                     return null;
@@ -356,19 +389,9 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
                 FocusableButton(
                   focusNode: _connectFocusNode,
                   onNavigateUp: _hostAddressFocusNode.requestFocus,
-                  onPressed: _isConnecting
-                      ? null
-                      : () {
-                          if (!_formKey.currentState!.validate()) return;
-                          _connect(() => _provider.connectToManualHost(_hostAddressController.text.trim()));
-                        },
+                  onPressed: _isConnecting ? null : _submitManualHost,
                   child: FilledButton.icon(
-                    onPressed: _isConnecting
-                        ? null
-                        : () {
-                            if (!_formKey.currentState!.validate()) return;
-                            _connect(() => _provider.connectToManualHost(_hostAddressController.text.trim()));
-                          },
+                    onPressed: _isConnecting ? null : _submitManualHost,
                     icon: _isConnecting ? const LoadingIndicatorBox(size: 16) : const Icon(Icons.link),
                     label: Text(_isConnecting ? t.companionRemote.pairing.connecting : t.common.connect),
                   ),

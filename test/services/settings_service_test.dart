@@ -74,6 +74,29 @@ void main() {
     });
   });
 
+  group('SettingsService companion remote prefs', () {
+    test('last manual host address trims whitespace and drops blanks', () async {
+      final settings = await SettingsService.getInstance();
+
+      await settings.write(SettingsService.companionRemoteLastHostAddress, '  192.168.1.10:48632  ');
+      expect(settings.read(SettingsService.companionRemoteLastHostAddress), '192.168.1.10:48632');
+
+      await settings.write(SettingsService.companionRemoteLastHostAddress, '   ');
+      expect(settings.read(SettingsService.companionRemoteLastHostAddress), isNull);
+    });
+
+    test('resetAllSettings clears the last manual host address', () async {
+      final settings = await SettingsService.getInstance();
+
+      await settings.write(SettingsService.companionRemoteLastHostAddress, '192.168.1.10:48632');
+      expect(settings.read(SettingsService.companionRemoteLastHostAddress), isNotNull);
+
+      await settings.resetAllSettings();
+
+      expect(settings.read(SettingsService.companionRemoteLastHostAddress), isNull);
+    });
+  });
+
   group('SettingsService listenables', () {
     test('refreshListenables updates active prefs outside the resettable surface', () async {
       final settings = await SettingsService.getInstance();

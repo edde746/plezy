@@ -357,6 +357,10 @@ class SettingsService extends BaseSharedPreferencesService {
   static const customDownloadPath = NullableStringPref('custom_download_path');
   static final customRelayUrl = NullableStringPref('custom_relay_url', transform: _trimEmptyAsNull);
   static const recentRooms = NullableStringPref('watch_together_recent_rooms');
+  static final companionRemoteLastHostAddress = NullableStringPref(
+    'companion_remote_last_host_address',
+    transform: _trimEmptyAsNull,
+  );
 
   static final maxVolume = IntPref('max_volume', defaultValue: 100, transform: (v) => v.clamp(100, 300));
   static final subtitlePosition = IntPref('subtitle_position', defaultValue: 100, transform: (v) => v.clamp(0, 100));
@@ -736,6 +740,7 @@ class SettingsService extends BaseSharedPreferencesService {
     selectedExternalPlayer,
     customExternalPlayers,
     customRelayUrl,
+    companionRemoteLastHostAddress,
   ];
 
   Future<void> resetAllSettings() async {
