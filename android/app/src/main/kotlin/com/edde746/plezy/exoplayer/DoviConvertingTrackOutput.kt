@@ -1,6 +1,7 @@
 package com.edde746.plezy.exoplayer
 
 import android.util.Log
+import androidx.media3.common.C
 import androidx.media3.common.DataReader
 import androidx.media3.common.Format
 import androidx.media3.common.MimeTypes
@@ -72,6 +73,8 @@ class DoviConvertingTrackOutput(
   private var rpuConversionCallCount = 0L
   private var totalRpuConversionTimeUs = 0L
   private var totalSampleProcessingTimeUs = 0L
+  private var loggedSupplementalWrapper = false
+  private var loggedEncryptedSupplementalPassthrough = false
 
   override fun format(format: Format) {
     if (!conversionActive) {
@@ -169,23 +172,24 @@ class DoviConvertingTrackOutput(
     val srcLen = sampleLen
     sampleLen = 0
 
-    val outLen: Int
-    val outBuf: ByteArray
     val processStartNs = System.nanoTime()
-    val success = try {
-      processNalUnits(srcLen)
-      true
-    } catch (e: Exception) {
-      logError("NAL processing failed, passing raw sample", e)
+    val success = if ((flags and C.BUFFER_FLAG_ENCRYPTED) != 0) {
+      if (!loggedEncryptedSupplementalPassthrough && (flags and C.BUFFER_FLAG_HAS_SUPPLEMENTAL_DATA) != 0) {
+        loggedEncryptedSupplementalPassthrough = true
+        logWarn("Encrypted supplemental sample encountered, passing raw sample")
+      }
       false
-    }
-    if (success) {
-      outLen = outputLen
-      outBuf = outputBuf
     } else {
-      outLen = srcLen
-      outBuf = sampleBuf
+      try {
+        processSampleData(flags, srcLen)
+        true
+      } catch (e: Exception) {
+        logError("NAL processing failed, passing raw sample", e)
+        false
+      }
     }
+    val outLen = if (success) outputLen else srcLen
+    val outBuf = if (success) outputBuf else sampleBuf
     if (success) {
       recordSampleProcessing((System.nanoTime() - processStartNs) / 1_000L)
     }
@@ -199,17 +203,76 @@ class DoviConvertingTrackOutput(
   }
 
   /**
-   * Process NAL units in sampleBuf[0..dataLen). Auto-detects format:
+   * Process a sample, unwrapping Media3 supplemental-data framing when present.
+   *
+   * Samples with C.BUFFER_FLAG_HAS_SUPPLEMENTAL_DATA are stored as:
+   * [4-byte big-endian main sample size][main sample][supplemental data].
+   * Only the main sample contains video NALs and should be rewritten.
+   */
+  private fun processSampleData(flags: Int, dataLen: Int) {
+    if ((flags and C.BUFFER_FLAG_HAS_SUPPLEMENTAL_DATA) == 0) {
+      processNalUnits(0, dataLen)
+      return
+    }
+
+    if (dataLen < 4) {
+      logWarn("Bad supplemental sample: ${dataLen}B is too small")
+      copyRawSample(dataLen)
+      return
+    }
+
+    val mainSampleLen = readInt32BE(sampleBuf, 0)
+    if (mainSampleLen < 0 || mainSampleLen > dataLen - 4) {
+      logWarn("Bad supplemental sample: mainLen=$mainSampleLen total=$dataLen")
+      copyRawSample(dataLen)
+      return
+    }
+
+    val supplementalLen = dataLen - 4 - mainSampleLen
+    if (!loggedSupplementalWrapper) {
+      loggedSupplementalWrapper = true
+      logDebug(
+        "Supplemental wrapper detected: total=${dataLen}B, main=${mainSampleLen}B, " +
+          "supplemental=${supplementalLen}B, innerFirstBytes=${formatBytes(sampleBuf, 4, 8)}"
+      )
+    }
+
+    processNalUnits(4, mainSampleLen)
+
+    val processedMainLen = outputLen
+    if (processedMainLen == 0) {
+      outputLen = 0
+      return
+    }
+
+    ensureOutputCapacity(4 + processedMainLen + supplementalLen)
+    System.arraycopy(outputBuf, 0, outputBuf, 4, processedMainLen)
+    writeInt32BE(outputBuf, 0, processedMainLen)
+    if (supplementalLen > 0) {
+      System.arraycopy(sampleBuf, 4 + mainSampleLen, outputBuf, 4 + processedMainLen, supplementalLen)
+    }
+    outputLen = 4 + processedMainLen + supplementalLen
+
+    if (sampleCount <= 3 || (sampleCount % 500 == 0L)) {
+      logDebug(
+        "Sample #$sampleCount (Supplemental): main=${mainSampleLen}B -> ${processedMainLen}B, " +
+          "supplemental=${supplementalLen}B, total=${dataLen}B -> ${outputLen}B"
+      )
+    }
+  }
+
+  /**
+   * Process NAL units in sampleBuf[dataOffset..dataOffset+dataLen). Auto-detects format:
    * - Annex B (00 00 00 01 / 00 00 01 start codes) — used by MatroskaExtractor
    * - Length-prefixed (4-byte big-endian length) — used by Mp4Extractor
    *
    * Result is written to outputBuf[0..outputLen).
    */
-  private fun processNalUnits(dataLen: Int) {
+  private fun processNalUnits(dataOffset: Int, dataLen: Int) {
     outputLen = 0
     if (dataLen < 4) {
       ensureOutputCapacity(dataLen)
-      System.arraycopy(sampleBuf, 0, outputBuf, 0, dataLen)
+      System.arraycopy(sampleBuf, dataOffset, outputBuf, 0, dataLen)
       outputLen = dataLen
       return
     }
@@ -217,40 +280,41 @@ class DoviConvertingTrackOutput(
     // Auto-detect: Annex B starts with 00 00 00 01 or 00 00 01
     val isAnnexB = (
       dataLen >= 4 &&
-        sampleBuf[0] == 0.toByte() &&
-        sampleBuf[1] == 0.toByte() &&
-        sampleBuf[2] == 0.toByte() &&
-        sampleBuf[3] == 1.toByte()
+        sampleBuf[dataOffset] == 0.toByte() &&
+        sampleBuf[dataOffset + 1] == 0.toByte() &&
+        sampleBuf[dataOffset + 2] == 0.toByte() &&
+        sampleBuf[dataOffset + 3] == 1.toByte()
       ) ||
       (
         dataLen >= 3 &&
-          sampleBuf[0] == 0.toByte() &&
-          sampleBuf[1] == 0.toByte() &&
-          sampleBuf[2] == 1.toByte()
+          sampleBuf[dataOffset] == 0.toByte() &&
+          sampleBuf[dataOffset + 1] == 0.toByte() &&
+          sampleBuf[dataOffset + 2] == 1.toByte()
         )
 
     if (sampleCount == 0L) {
       logDebug(
         "NAL format detected: ${if (isAnnexB) "Annex B" else "length-prefixed"}, " +
-          "first bytes: ${sampleBuf.take(8).joinToString(" ") { "%02X".format(it) }}"
+          "first bytes: ${formatBytes(sampleBuf, dataOffset, 8)}"
       )
     }
 
-    if (isAnnexB) processAnnexBNals(dataLen) else processLengthPrefixedNals(dataLen)
+    if (isAnnexB) processAnnexBNals(dataOffset, dataLen) else processLengthPrefixedNals(dataOffset, dataLen)
   }
 
   /** Process Annex B formatted NAL units (MKV path). Scans inline, no list allocation. */
-  private fun processAnnexBNals(dataLen: Int) {
+  private fun processAnnexBNals(dataOffset: Int, dataLen: Int) {
     ensureOutputCapacity(dataLen)
+    val dataEnd = dataOffset + dataLen
     var kept = 0
     var stripped = 0
 
     // Find first start code
     var scEnd = -1
-    var i = 0
-    while (i < dataLen - 2) {
+    var i = dataOffset
+    while (i < dataEnd - 2) {
       if (sampleBuf[i] == 0.toByte() && sampleBuf[i + 1] == 0.toByte()) {
-        if (i + 3 < dataLen && sampleBuf[i + 2] == 0.toByte() && sampleBuf[i + 3] == 1.toByte()) {
+        if (i + 3 < dataEnd && sampleBuf[i + 2] == 0.toByte() && sampleBuf[i + 3] == 1.toByte()) {
           scEnd = i + 4
           break
         } else if (sampleBuf[i + 2] == 1.toByte()) {
@@ -263,7 +327,7 @@ class DoviConvertingTrackOutput(
 
     if (scEnd < 0) {
       // No start codes found — pass through
-      System.arraycopy(sampleBuf, 0, outputBuf, 0, dataLen)
+      System.arraycopy(sampleBuf, dataOffset, outputBuf, 0, dataLen)
       outputLen = dataLen
       sampleCount++
       return
@@ -271,13 +335,13 @@ class DoviConvertingTrackOutput(
 
     var nalStart = scEnd
 
-    while (nalStart < dataLen) {
+    while (nalStart < dataEnd) {
       // Find next start code to determine end of current NAL
-      var nalEnd = dataLen
+      var nalEnd = dataEnd
       i = nalStart
-      while (i < dataLen - 2) {
+      while (i < dataEnd - 2) {
         if (sampleBuf[i] == 0.toByte() && sampleBuf[i + 1] == 0.toByte()) {
-          if (i + 3 < dataLen && sampleBuf[i + 2] == 0.toByte() && sampleBuf[i + 3] == 1.toByte()) {
+          if (i + 3 < dataEnd && sampleBuf[i + 2] == 0.toByte() && sampleBuf[i + 3] == 1.toByte()) {
             nalEnd = i
             break
           } else if (sampleBuf[i + 2] == 1.toByte()) {
@@ -319,8 +383,8 @@ class DoviConvertingTrackOutput(
       }
 
       // Advance past the next start code
-      if (nalEnd >= dataLen) break
-      nalStart = if (nalEnd + 3 < dataLen && sampleBuf[nalEnd + 2] == 0.toByte() && sampleBuf[nalEnd + 3] == 1.toByte()) {
+      if (nalEnd >= dataEnd) break
+      nalStart = if (nalEnd + 3 < dataEnd && sampleBuf[nalEnd + 2] == 0.toByte() && sampleBuf[nalEnd + 3] == 1.toByte()) {
         nalEnd + 4
       } else {
         nalEnd + 3
@@ -337,21 +401,22 @@ class DoviConvertingTrackOutput(
   }
 
   /** Process length-prefixed NAL units (MP4 path). */
-  private fun processLengthPrefixedNals(dataLen: Int) {
+  private fun processLengthPrefixedNals(dataOffset: Int, dataLen: Int) {
     ensureOutputCapacity(dataLen)
-    var pos = 0
+    val dataEnd = dataOffset + dataLen
+    var pos = dataOffset
     var kept = 0
     var stripped = 0
 
-    while (pos + 4 <= dataLen) {
+    while (pos + 4 <= dataEnd) {
       val nalLen = ((sampleBuf[pos].toInt() and 0xFF) shl 24) or
         ((sampleBuf[pos + 1].toInt() and 0xFF) shl 16) or
         ((sampleBuf[pos + 2].toInt() and 0xFF) shl 8) or
         (sampleBuf[pos + 3].toInt() and 0xFF)
 
-      if (nalLen <= 0 || pos + 4 + nalLen > dataLen) {
+      if (nalLen <= 0 || pos + 4 + nalLen > dataEnd) {
         if (sampleCount < 5) {
-          logWarn("Bad NAL length $nalLen at pos $pos (data.size=$dataLen)")
+          logWarn("Bad NAL length $nalLen at pos ${pos - dataOffset} (data.size=$dataLen)")
         }
         break
       }
@@ -576,6 +641,23 @@ class DoviConvertingTrackOutput(
     buf[offset + 1] = ((value ushr 16) and 0xFF).toByte()
     buf[offset + 2] = ((value ushr 8) and 0xFF).toByte()
     buf[offset + 3] = (value and 0xFF).toByte()
+  }
+
+  private fun readInt32BE(buf: ByteArray, offset: Int): Int = ((buf[offset].toInt() and 0xFF) shl 24) or
+    ((buf[offset + 1].toInt() and 0xFF) shl 16) or
+    ((buf[offset + 2].toInt() and 0xFF) shl 8) or
+    (buf[offset + 3].toInt() and 0xFF)
+
+  private fun copyRawSample(dataLen: Int) {
+    ensureOutputCapacity(dataLen)
+    System.arraycopy(sampleBuf, 0, outputBuf, 0, dataLen)
+    outputLen = dataLen
+  }
+
+  private fun formatBytes(data: ByteArray, offset: Int, length: Int): String {
+    val end = minOf(data.size, offset + length)
+    if (offset >= end) return ""
+    return (offset until end).joinToString(" ") { "%02X".format(data[it]) }
   }
 
   private fun ensureSampleCapacity(needed: Int) {
