@@ -98,6 +98,9 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
     return Focus(
       skipTraversal: true,
+      onFocusChange: (hasFocus) {
+        if (isTv) _setTvDetailActionRowFocus(hasFocus);
+      },
       onKeyEvent: _handlePlayButtonKeyEvent,
       child: Row(
         children: [

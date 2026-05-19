@@ -59,6 +59,7 @@ class MediaCard extends StatefulWidget {
   final bool isOffline; // True for downloaded content without server access
   final bool mixedHubContext; // True when in a hub with mixed content (movies + episodes)
   final bool showServerName; // Show server name in list view (multi-server)
+  final EpisodePosterMode? episodePosterModeOverride;
 
   const MediaCard({
     super.key,
@@ -75,6 +76,7 @@ class MediaCard extends StatefulWidget {
     this.isOffline = false,
     this.mixedHubContext = false,
     this.showServerName = false,
+    this.episodePosterModeOverride,
   });
 
   @override
@@ -241,6 +243,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             isOffline: widget.isOffline,
             localPosterPath: localPosterPath,
             showServerName: widget.showServerName,
+            episodePosterModeOverride: widget.episodePosterModeOverride,
           );
 
     // MediaContextMenu as a non-widget helper — only wrap with its key for
@@ -297,6 +300,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                           isOffline: widget.isOffline,
                           localPosterPath: localPosterPath,
                           mixedHubContext: widget.mixedHubContext,
+                          episodePosterModeOverride: widget.episodePosterModeOverride,
                           knownWidth: posterWidth,
                           knownHeight: posterHeight,
                         ),
@@ -317,6 +321,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                           isOffline: widget.isOffline,
                           localPosterPath: localPosterPath,
                           mixedHubContext: widget.mixedHubContext,
+                          episodePosterModeOverride: widget.episodePosterModeOverride,
                         ),
                       ),
                       if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item),
@@ -364,6 +369,7 @@ class _MediaCardList extends StatelessWidget {
   final bool isOffline;
   final String? localPosterPath;
   final bool showServerName;
+  final EpisodePosterMode? episodePosterModeOverride;
 
   const _MediaCardList({
     required this.item,
@@ -377,11 +383,13 @@ class _MediaCardList extends StatelessWidget {
     this.isOffline = false,
     this.localPosterPath,
     this.showServerName = false,
+    this.episodePosterModeOverride,
   });
 
   bool _usesWideAspectRatio() {
     if (item is! MediaItem) return false;
-    final mode = SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
+    final EpisodePosterMode mode =
+        episodePosterModeOverride ?? SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
     return (item as MediaItem).usesWideAspectRatio(mode);
   }
 
@@ -546,7 +554,13 @@ class _MediaCardList extends StatelessWidget {
                 children: [
                   ClipRRect(
                     borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                    child: _buildPosterImage(context, item, isOffline: isOffline, localPosterPath: localPosterPath),
+                    child: _buildPosterImage(
+                      context,
+                      item,
+                      isOffline: isOffline,
+                      localPosterPath: localPosterPath,
+                      episodePosterModeOverride: episodePosterModeOverride,
+                    ),
                   ),
                   if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item as MediaItem),
                 ],
@@ -667,6 +681,7 @@ Widget _buildPosterImage(
   bool isOffline = false,
   String? localPosterPath,
   bool mixedHubContext = false,
+  EpisodePosterMode? episodePosterModeOverride,
   double? knownWidth,
   double? knownHeight,
 }) {
@@ -685,7 +700,8 @@ Widget _buildPosterImage(
       localFilePath: localPosterPath,
     );
   } else if (item is MediaItem) {
-    final episodePosterMode = SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
+    final EpisodePosterMode episodePosterMode =
+        episodePosterModeOverride ?? SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
     final hideSpoilers = SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers);
     final shouldBlur =
         hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
