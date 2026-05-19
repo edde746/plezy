@@ -191,7 +191,7 @@ class TvSpotlightBackground extends StatelessWidget {
         ],
         if (showPrimaryAction || actions != null) ...[
           SizedBox(height: (compact ? 18 : 26) * scale),
-          actions ?? _buildPrimaryAction(context, colorScheme, media),
+          actions ?? _buildPrimaryAction(context, media),
         ],
       ],
     );
@@ -285,7 +285,7 @@ class TvSpotlightBackground extends StatelessWidget {
 
   double _summaryFontSize(double scale) => (compact ? 18 : 20) * scale;
 
-  Widget _buildPrimaryAction(BuildContext context, ColorScheme colorScheme, MediaItem media) {
+  Widget _buildPrimaryAction(BuildContext context, MediaItem media) {
     final scale = _scale(context);
     final hasProgress = media.hasActiveProgress;
     final minutesLeft = hasProgress && media.durationMs != null && media.viewOffsetMs != null

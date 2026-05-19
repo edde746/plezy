@@ -169,7 +169,7 @@ class ContentStripState extends State<ContentStrip> {
     });
   }
 
-  KeyEventResult _handleFocusItemKeyEvent(FocusNode node, KeyEvent event, int index, int totalItems, _StripTab page) {
+  KeyEventResult _handleFocusItemKeyEvent(KeyEvent event, int index, int totalItems, _StripTab page) {
     if (!event.isActionable) return KeyEventResult.ignored;
 
     final key = event.logicalKey;
@@ -359,7 +359,6 @@ class ContentStripState extends State<ContentStrip> {
             void onTap() => unawaited(_handleChapterTap(chapter.startTime));
 
             final item = _buildStripItem(
-              context: context,
               isCurrent: isCurrent,
               isTablet: isTablet,
               thumbnail: chapter.thumb != null
@@ -385,8 +384,8 @@ class ContentStripState extends State<ContentStrip> {
                 child: FocusableWrapper(
                   focusNode: _chapterFocusNodes[index],
                   onSelect: onTap,
-                  onKeyEvent: (node, event) =>
-                      _handleFocusItemKeyEvent(node, event, index, widget.chapters.length, _StripTab.chapters),
+                  onKeyEvent: (_, event) =>
+                      _handleFocusItemKeyEvent(event, index, widget.chapters.length, _StripTab.chapters),
                   onFocusChange: (hasFocus) {
                     if (hasFocus) widget.onFocusActivity?.call();
                   },
@@ -441,7 +440,6 @@ class ContentStripState extends State<ContentStrip> {
             void onTap() => widget.onQueueItemSelected?.call(item);
 
             final stripItem = _buildStripItem(
-              context: context,
               isCurrent: isCurrent,
               isTablet: isTablet,
               thumbnail: item.thumbPath != null
@@ -466,8 +464,7 @@ class ContentStripState extends State<ContentStrip> {
                 child: FocusableWrapper(
                   focusNode: _queueFocusNodes[index],
                   onSelect: onTap,
-                  onKeyEvent: (node, event) =>
-                      _handleFocusItemKeyEvent(node, event, index, items.length, _StripTab.queue),
+                  onKeyEvent: (_, event) => _handleFocusItemKeyEvent(event, index, items.length, _StripTab.queue),
                   onFocusChange: (hasFocus) {
                     if (hasFocus) widget.onFocusActivity?.call();
                   },
@@ -499,7 +496,6 @@ class ContentStripState extends State<ContentStrip> {
   }
 
   Widget _buildStripItem({
-    required BuildContext context,
     required bool isCurrent,
     required Widget? thumbnail,
     required String title,

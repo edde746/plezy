@@ -228,7 +228,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     final localPosterPath = _getLocalPosterPath(context, item);
 
     final cardWidget = viewMode == ViewMode.grid
-        ? _buildGridCard(context, item, semanticLabel, localPosterPath)
+        ? _buildGridCard(context, item, localPosterPath)
         : _MediaCardList(
             item: item,
             semanticLabel: semanticLabel,
@@ -260,7 +260,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
   /// Grid layout — inlined from former _MediaCardGrid, _PosterOverlay, and
   /// flattened Column. Semantics removed (InkWell provides button semantics).
-  Widget _buildGridCard(BuildContext context, Object item, String semanticLabel, String? localPosterPath) {
+  Widget _buildGridCard(BuildContext context, Object item, String? localPosterPath) {
     // Compute actual poster dimensions from card dimensions
     final posterWidth = widget.width != null ? widget.width! - 6 : null; // 3px padding each side
     final posterHeight = widget.height;
@@ -385,10 +385,10 @@ class _MediaCardList extends StatelessWidget {
     return (item as MediaItem).usesWideAspectRatio(mode);
   }
 
-  double _posterWidth(BuildContext context) =>
+  double _posterWidth() =>
       MediaCardListLayout.posterWidth(density: density, usesWideAspectRatio: _usesWideAspectRatio());
 
-  double _posterHeight(BuildContext context) =>
+  double _posterHeight() =>
       MediaCardListLayout.posterHeight(density: density, usesWideAspectRatio: _usesWideAspectRatio());
 
   double get _titleFontSize => 13 + LibraryDensity.factor(density) * 3; // 13–16
@@ -461,7 +461,7 @@ class _MediaCardList extends StatelessWidget {
     return parts.join(' • ');
   }
 
-  String? _buildSubtitleText(BuildContext context) {
+  String? _buildSubtitleText() {
     if (item is MediaPlaylist) {
       return null;
     } else if (item is MediaItem) {
@@ -523,7 +523,7 @@ class _MediaCardList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final metadataLine = _buildMetadataLine();
-    final subtitle = _buildSubtitleText(context);
+    final subtitle = _buildSubtitleText();
 
     return InkWell(
       mouseCursor: SystemMouseCursors.click,
@@ -540,8 +540,8 @@ class _MediaCardList extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              width: _posterWidth(context),
-              height: _posterHeight(context),
+              width: _posterWidth(),
+              height: _posterHeight(),
               child: Stack(
                 children: [
                   ClipRRect(

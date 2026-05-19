@@ -10,7 +10,6 @@ import '../../../mpv/mpv.dart';
 import '../../../services/settings_service.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../focus/focusable_wrapper.dart';
-import '../../../focus/input_mode_tracker.dart';
 
 /// A volume control widget that displays a mute/unmute button and volume slider.
 ///
@@ -138,8 +137,6 @@ class _VolumeControlState extends State<VolumeControl> {
           builder: (context, snapshot) {
             final volume = snapshot.data ?? 100.0;
             final isMuted = volume == 0;
-            final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
-
             final muteButton = Semantics(
               label: isMuted ? t.videoControls.unmuteButton : t.videoControls.muteButton,
               button: true,
@@ -180,7 +177,7 @@ class _VolumeControlState extends State<VolumeControl> {
                 else
                   muteButton,
                 const SizedBox(width: 8),
-                _buildVolumeSlider(volume, isKeyboardMode, maxVolume),
+                _buildVolumeSlider(volume, maxVolume),
               ],
             );
           },
@@ -189,7 +186,7 @@ class _VolumeControlState extends State<VolumeControl> {
     );
   }
 
-  Widget _buildVolumeSlider(double volume, bool isKeyboardMode, int maxVolume) {
+  Widget _buildVolumeSlider(double volume, int maxVolume) {
     final maxVolumeDouble = maxVolume.toDouble();
 
     // Calculate 100% marker position as fraction of slider width

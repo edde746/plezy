@@ -112,7 +112,6 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
                   children: [
                     if (widget.serverClient != null)
                       _buildServerRow(
-                        context,
                         widget.serverClient!,
                         _serverFocusNode,
                         autofocus: focusIndex == 0,
@@ -121,7 +120,6 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
                       ),
                     for (final source in trackerSources)
                       _buildTrackerRow(
-                        context,
                         source,
                         _trackerFocusNode(source.service),
                         autofocus: focusIndex == 0,
@@ -149,7 +147,6 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
   }
 
   Widget _buildServerRow(
-    BuildContext context,
     MediaServerClient client,
     FocusNode focusNode, {
     required bool autofocus,
@@ -215,7 +212,6 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
   }
 
   Widget _buildTrackerRow(
-    BuildContext context,
     _TrackerRatingSource source,
     FocusNode focusNode, {
     required bool autofocus,

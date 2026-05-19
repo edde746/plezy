@@ -80,7 +80,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
 
     _panelNotifier.value = _PanelData.loading;
     _overlayEntry = OverlayEntry(
-      builder: (ctx) => _buildOverlay(ctx, right: right, top: top),
+      builder: (_) => _buildOverlay(right: right, top: top),
     );
     Overlay.of(context).insert(_overlayEntry!);
     _fetchActivities();
@@ -146,7 +146,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
     unawaited(_fetchActivities());
   }
 
-  Widget _buildOverlay(BuildContext overlayContext, {required double right, required double top}) {
+  Widget _buildOverlay({required double right, required double top}) {
     return Stack(
       children: [
         Positioned.fill(

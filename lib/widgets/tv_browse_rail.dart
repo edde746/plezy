@@ -606,16 +606,16 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            SizedBox(width: _selectorWidth(context), child: _buildShelfSelector(context, hub)),
+            SizedBox(width: _selectorWidth(context), child: _buildShelfSelector(context)),
             SizedBox(width: selectorGap),
-            Expanded(child: _buildActiveRail(context, hub, hasFocus)),
+            Expanded(child: _buildActiveRail(hub, hasFocus)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildShelfSelector(BuildContext context, MediaHub activeHub) {
+  Widget _buildShelfSelector(BuildContext context) {
     final scale = _scale(context);
     final visibleIndices = _visibleShelfIndices();
     final isScrollable = widget.hubs.length > visibleIndices.length;
@@ -803,7 +803,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     );
   }
 
-  Widget _buildActiveRail(BuildContext context, MediaHub hub, bool hasFocus) {
+  Widget _buildActiveRail(MediaHub hub, bool hasFocus) {
     return SettingsBuilder(
       prefs: const [SettingsService.libraryDensity, SettingsService.episodePosterMode],
       builder: (context) => LayoutBuilder(
