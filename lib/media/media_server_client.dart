@@ -522,8 +522,7 @@ abstract class MediaServerClient {
   /// Resolve the download URL for [item]'s primary video file along with
   /// any external subtitle tracks that should be saved alongside it.
   ///
-  /// [mediaIndex] selects among multiple media versions when an item has
-  /// them (Plex only — Jellyfin returns the same file regardless).
+  /// [mediaIndex] selects among multiple media versions when an item has them.
   Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0});
 
   /// The artwork files the download pipeline should persist for [item] so
@@ -537,7 +536,7 @@ abstract class MediaServerClient {
   /// media version's part path; Jellyfin returns its `/Videos/{id}/stream`
   /// endpoint with `Static=true` so transcoding is bypassed. Returns null
   /// when the backend can't resolve a playable URL for the item.
-  Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0});
+  Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
 }
 
 /// Optional interface for backends whose public server id is not specific

@@ -135,7 +135,11 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   @override
   Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
     final metadata = options.metadata;
-    final bundle = await fetchPlaybackBundle(metadata.id, sourceIndex: options.selectedMediaIndex);
+    final bundle = await fetchPlaybackBundle(
+      metadata.id,
+      sourceIndex: options.selectedMediaIndex,
+      sourceId: options.selectedMediaSourceId,
+    );
     if (bundle == null) {
       throw PlaybackException('Item ${metadata.id} returned no MediaSources');
     }
@@ -338,9 +342,10 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   /// extraction at the call site.
   ///
   /// Returns `null` when the item doesn't exist or has no `MediaSources`.
-  /// [sourceIndex] is clamped to the valid range — out-of-bounds requests
-  /// fall back to source 0 to mirror Plex's `parseVideoPlaybackDataFromJson`.
-  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(String itemId, {int sourceIndex = 0}) async {
+  /// [sourceId] wins when present because Jellyfin plugins may reorder merged
+  /// `MediaSources` between requests. [sourceIndex] is clamped to the valid
+  /// range as a fallback to mirror Plex's `parseVideoPlaybackDataFromJson`.
+  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(String itemId, {int sourceIndex = 0, String? sourceId}) async {
     final item = await fetchItem(itemId);
     final raw = item?.raw;
     if (raw is! Map<String, dynamic>) return null;
@@ -348,6 +353,11 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     if (sources is! List || sources.isEmpty) return null;
     final availableVersions = jellyfinSourcesToVersions(sources);
     var index = sourceIndex;
+    final requestedSourceId = sourceId?.trim();
+    if (requestedSourceId != null && requestedSourceId.isNotEmpty) {
+      final byId = sources.indexWhere((source) => source is Map<String, dynamic> && source['Id'] == requestedSourceId);
+      if (byId >= 0) index = byId;
+    }
     if (index < 0 || index >= sources.length) index = 0;
     final source = sources[index];
     if (source is! Map<String, dynamic>) return null;

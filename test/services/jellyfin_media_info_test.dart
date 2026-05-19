@@ -359,6 +359,7 @@ void main() {
         },
       ]);
       expect(versions, hasLength(1));
+      expect(versions.single.id, 'src-1');
       expect(versions.single.parts.single.streamPath, 'src-1');
       expect(versions.single.videoResolution, '4k');
       expect(versions.single.videoCodec, 'hevc');
@@ -394,6 +395,8 @@ void main() {
       expect(versions, hasLength(2));
       expect(versions[0].name, 'Theatrical Cut');
       expect(versions[1].name, "Director's Cut");
+      expect(versions[0].id, 'src-theatrical');
+      expect(versions[1].id, 'src-directors');
       expect(versions[0].parts.single.streamPath, 'src-theatrical');
       expect(versions[1].parts.single.streamPath, 'src-directors');
       // displayLabel prefixes the name for disambiguation.
@@ -423,6 +426,28 @@ void main() {
       expect(versions[0].name, isNull);
       expect(versions[1].name, isNull);
       expect(versions[0].videoResolution, '720');
+      expect(versions[1].videoResolution, '1080');
+    });
+
+    test('uses width for scope-cropped 4k and 1080p labels', () {
+      final versions = jellyfinSourcesToVersions([
+        {
+          'Id': 'scope-4k',
+          'Container': 'mkv',
+          'MediaStreams': [
+            {'Type': 'Video', 'Codec': 'hevc', 'Height': 1608, 'Width': 3840},
+          ],
+        },
+        {
+          'Id': 'scope-1080',
+          'Container': 'mkv',
+          'MediaStreams': [
+            {'Type': 'Video', 'Codec': 'h264', 'Height': 804, 'Width': 1920},
+          ],
+        },
+      ]);
+
+      expect(versions[0].videoResolution, '4k');
       expect(versions[1].videoResolution, '1080');
     });
 

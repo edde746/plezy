@@ -142,6 +142,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         result = await offlineService.getPlaybackData(
           metadata: _currentMetadata,
           selectedMediaIndex: widget.selectedMediaIndex,
+          selectedMediaSourceId: widget.selectedMediaSourceId,
           preferOffline: true,
         );
         if (result.videoUrl == null) {

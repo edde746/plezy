@@ -84,6 +84,7 @@ Widget plexVideoControlsBuilder(
   VoidCallback? onPrevious,
   List<MediaVersion>? availableVersions,
   int? selectedMediaIndex,
+  String? selectedMediaSourceId,
   TranscodeQualityPreset selectedQualityPreset = TranscodeQualityPreset.original,
   bool serverSupportsTranscoding = false,
   bool isTranscoding = false,
@@ -128,6 +129,7 @@ Widget plexVideoControlsBuilder(
     onPrevious: onPrevious,
     availableVersions: availableVersions ?? [],
     selectedMediaIndex: selectedMediaIndex ?? 0,
+    selectedMediaSourceId: selectedMediaSourceId,
     selectedQualityPreset: selectedQualityPreset,
     serverSupportsTranscoding: serverSupportsTranscoding,
     isTranscoding: isTranscoding,
@@ -209,6 +211,7 @@ class PlexVideoControls extends StatefulWidget {
   final VoidCallback? onPrevious;
   final List<MediaVersion> availableVersions;
   final int selectedMediaIndex;
+  final String? selectedMediaSourceId;
   final TranscodeQualityPreset selectedQualityPreset;
   final bool serverSupportsTranscoding;
   final bool isTranscoding;
@@ -298,6 +301,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onPrevious,
     this.availableVersions = const [],
     this.selectedMediaIndex = 0,
+    this.selectedMediaSourceId,
     this.selectedQualityPreset = TranscodeQualityPreset.original,
     this.serverSupportsTranscoding = false,
     this.isTranscoding = false,

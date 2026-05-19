@@ -13,6 +13,10 @@ class PlaybackInitializationOptions {
   /// Picks among multiple `MediaSources[]` versions when an item has them.
   final int selectedMediaIndex;
 
+  /// Stable backend source id for the selected media version. Jellyfin merged
+  /// versions can reorder between item fetches, so this wins over index there.
+  final String? selectedMediaSourceId;
+
   /// Transcode preset. `original` means direct-play; anything else asks the
   /// server to transcode when supported.
   final TranscodeQualityPreset qualityPreset;
@@ -31,6 +35,7 @@ class PlaybackInitializationOptions {
   const PlaybackInitializationOptions({
     required this.metadata,
     required this.selectedMediaIndex,
+    this.selectedMediaSourceId,
     this.qualityPreset = TranscodeQualityPreset.original,
     this.selectedAudioStreamId,
     this.sessionIdentifier,

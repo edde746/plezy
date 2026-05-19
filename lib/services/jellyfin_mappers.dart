@@ -49,7 +49,7 @@ MediaVersion jellyfinMediaSourceToVersion(
     id: versionId,
     width: exposeDimensions ? width : null,
     height: exposeDimensions ? height : null,
-    videoResolution: resolutionLabelFromHeight(height),
+    videoResolution: resolutionLabelFromDimensions(width, height),
     videoCodec: hasParsedVideo ? parsedVideo.codec : rawVideo?['Codec'] as String?,
     bitrate: bitrateKbpsFromBps(flexibleInt(source['Bitrate'])),
     container: source['Container'] as String?,

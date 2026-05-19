@@ -24,6 +24,7 @@ class ExternalPlayerService {
     MediaItem? metadata,
     MediaServerClient? client,
     int mediaIndex = 0,
+    String? mediaSourceId,
     String? videoUrl,
   }) async {
     try {
@@ -32,7 +33,11 @@ class ExternalPlayerService {
       if (videoUrl != null) {
         resolvedUrl = videoUrl;
       } else if (client != null && metadata != null) {
-        final url = await client.resolveExternalPlaybackUrl(metadata, mediaIndex: mediaIndex);
+        final url = await client.resolveExternalPlaybackUrl(
+          metadata,
+          mediaIndex: mediaIndex,
+          mediaSourceId: mediaSourceId,
+        );
         if (url == null || url.isEmpty) {
           if (context.mounted) {
             showErrorSnackBar(context, t.messages.fileInfoNotAvailable);

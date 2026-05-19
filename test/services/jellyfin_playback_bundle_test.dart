@@ -137,6 +137,37 @@ void main() {
       client.close();
     });
 
+    test('selects sourceId before sourceIndex when both are provided', () async {
+      final body = jsonEncode({
+        'Id': 'item-4',
+        'Type': 'Movie',
+        'MediaSources': [
+          {
+            'Id': 'src-4k',
+            'Container': 'mkv',
+            'MediaStreams': [
+              {'Type': 'Video', 'Codec': 'hevc', 'Height': 1608, 'Width': 3840},
+            ],
+          },
+          {
+            'Id': 'src-1080',
+            'Container': 'mp4',
+            'MediaStreams': [
+              {'Type': 'Video', 'Codec': 'h264', 'Height': 804, 'Width': 1920},
+            ],
+          },
+        ],
+      });
+      final client = buildClient(body);
+
+      final bundle = await client.fetchPlaybackBundle('item-4', sourceIndex: 0, sourceId: 'src-1080');
+
+      expect(bundle!.selectedSourceId, 'src-1080');
+      expect(bundle.container, 'mp4');
+      expect(bundle.availableVersions.map((version) => version.id), ['src-4k', 'src-1080']);
+      client.close();
+    });
+
     test('chapters defaults to empty list when item has no Chapters field', () async {
       final body = jsonEncode({
         'Id': 'item-3',

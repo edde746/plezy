@@ -875,9 +875,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       selectedVersionIndex = picked;
     }
 
+    final selectedVersion = selectedVersionIndex < versions.length ? versions[selectedVersionIndex] : null;
     TranscodeQualityPreset selectedQuality = TranscodeQualityPreset.original;
     if (canTranscode) {
-      final selectedVersion = selectedVersionIndex < versions.length ? versions[selectedVersionIndex] : null;
       final picked = await showQualityPickerDialog(
         context,
         sourceBitrateKbps: selectedVersion?.bitrate,
@@ -892,6 +892,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       context,
       metadata: item,
       selectedMediaIndex: selectedVersionIndex,
+      selectedMediaSourceId: selectedVersion?.id,
       selectedQualityPreset: selectedQuality,
     );
     return true;

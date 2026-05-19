@@ -38,6 +38,7 @@ class WatchTogetherPlaybackNavigationException implements Exception {
 /// - [preferredSubtitleTrack]: Optional subtitle track to select on playback start
 /// - [selectedMediaIndex]: Optional media version index to use; if not provided,
 ///   loads the saved preference for the series/movie. Defaults to 0 if no preference exists.
+/// - [selectedMediaSourceId]: Optional stable backend source id for the chosen version.
 /// - [usePushReplacement]: If true, replaces current route instead of pushing;
 ///   useful for episode-to-episode navigation. Defaults to false.
 /// - [isOffline]: If true, plays from downloaded content without requiring server connection.
@@ -51,6 +52,7 @@ Future<bool?> navigateToVideoPlayer(
   SubtitleTrack? preferredSubtitleTrack,
   SubtitleTrack? preferredSecondarySubtitleTrack,
   int? selectedMediaIndex,
+  String? selectedMediaSourceId,
   TranscodeQualityPreset? selectedQualityPreset,
   bool usePushReplacement = false,
   bool isOffline = false,
@@ -93,6 +95,7 @@ Future<bool?> navigateToVideoPlayer(
           metadata: metadata,
           client: mediaClient,
           mediaIndex: mediaIndex,
+          mediaSourceId: selectedMediaSourceId,
         );
       }
 
@@ -120,6 +123,7 @@ Future<bool?> navigateToVideoPlayer(
       preferredSubtitleTrack: preferredSubtitleTrack,
       preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
       selectedMediaIndex: mediaIndex,
+      selectedMediaSourceId: selectedMediaSourceId,
       selectedQualityPreset: selectedQualityPreset,
       isOffline: isOffline,
     ),
@@ -153,6 +157,7 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   SubtitleTrack? preferredSubtitleTrack,
   SubtitleTrack? preferredSecondarySubtitleTrack,
   int? selectedMediaIndex,
+  String? selectedMediaSourceId,
   bool usePushReplacement = false,
 }) async {
   final result = await navigateToVideoPlayer(
@@ -163,6 +168,7 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
     preferredSubtitleTrack: preferredSubtitleTrack,
     preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
     selectedMediaIndex: selectedMediaIndex,
+    selectedMediaSourceId: selectedMediaSourceId,
     usePushReplacement: usePushReplacement,
   );
 

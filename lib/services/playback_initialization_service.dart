@@ -110,6 +110,7 @@ class PlaybackInitializationService {
   Future<PlaybackInitializationResult> getPlaybackData({
     required MediaItem metadata,
     required int selectedMediaIndex,
+    String? selectedMediaSourceId,
     bool preferOffline = false,
     TranscodeQualityPreset qualityPreset = TranscodeQualityPreset.original,
     int? selectedAudioStreamId,
@@ -142,6 +143,7 @@ class PlaybackInitializationService {
         PlaybackInitializationOptions(
           metadata: metadata,
           selectedMediaIndex: selectedMediaIndex,
+          selectedMediaSourceId: selectedMediaSourceId,
           qualityPreset: qualityPreset,
           selectedAudioStreamId: selectedAudioStreamId,
           sessionIdentifier: sessionIdentifier,

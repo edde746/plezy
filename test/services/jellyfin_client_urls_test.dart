@@ -557,6 +557,66 @@ void main() {
       expect(uri.queryParameters['MediaSourceId'], 'src-2');
     });
 
+    test('playback initialization pins selected media source id over index', () async {
+      Uri? playbackInfoUri;
+      String? playbackInfoBody;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return http.Response(
+              jsonEncode({
+                'Id': 'item-1',
+                'Type': 'Movie',
+                'Name': 'Movie',
+                'MediaSources': [
+                  {
+                    'Id': 'src-4k',
+                    'Container': 'mkv',
+                    'MediaStreams': [
+                      {'Index': 0, 'Type': 'Video', 'Codec': 'hevc', 'Height': 1608, 'Width': 3840},
+                    ],
+                  },
+                  {
+                    'Id': 'src-1080',
+                    'Container': 'mp4',
+                    'MediaStreams': [
+                      {'Index': 0, 'Type': 'Video', 'Codec': 'h264', 'Height': 804, 'Width': 1920},
+                    ],
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            playbackInfoUri = request.url;
+            playbackInfoBody = request.body;
+            return http.Response('server unavailable', 500);
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          selectedMediaIndex: 0,
+          selectedMediaSourceId: 'src-1080',
+        ),
+      );
+
+      expect(playbackInfoUri!.queryParameters['MediaSourceId'], 'src-1080');
+      final body = jsonDecode(playbackInfoBody!) as Map<String, dynamic>;
+      expect(body['MediaSourceId'], 'src-1080');
+      expect(result.availableVersions.map((version) => version.id), ['src-4k', 'src-1080']);
+      final uri = Uri.parse(result.videoUrl!);
+      expect(uri.queryParameters['MediaSourceId'], 'src-1080');
+      expect(uri.queryParameters['Container'], 'mp4');
+    });
+
     test('getPlaybackInfo path-encodes reserved item id characters', () async {
       Uri? capturedUri;
       final scoped = JellyfinClient.forTesting(

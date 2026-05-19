@@ -2,7 +2,7 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(String itemId, {int sourceIndex = 0});
+  Future<JellyfinPlaybackBundle?> fetchPlaybackBundle(String itemId, {int sourceIndex = 0, String? sourceId});
   String buildDirectStreamUrl(
     String itemId, {
     String? container,
@@ -48,8 +48,8 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
   String externalImageUrl(String url, {int? width, int? height}) => url;
 
   @override
-  Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0}) async {
-    final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex);
+  Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {
+    final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
     if (bundle == null) return buildDirectStreamUrl(item.id);
     final pinnedSourceId = bundle.selectedSourceId != null && bundle.selectedSourceId != item.id
         ? bundle.selectedSourceId

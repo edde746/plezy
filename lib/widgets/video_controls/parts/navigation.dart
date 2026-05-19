@@ -150,6 +150,9 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     final effectiveMediaIndex = newMediaIndex ?? widget.selectedMediaIndex;
     final effectivePreset = newPreset ?? widget.selectedQualityPreset;
     final effectiveAudioStreamId = newAudioStreamId ?? widget.selectedAudioStreamId;
+    final effectiveMediaSourceId = effectiveMediaIndex >= 0 && effectiveMediaIndex < widget.availableVersions.length
+        ? widget.availableVersions[effectiveMediaIndex].id
+        : widget.selectedMediaSourceId;
 
     final isVersionChange = effectiveMediaIndex != widget.selectedMediaIndex;
     final isPresetChange = effectivePreset != widget.selectedQualityPreset;
@@ -193,6 +196,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
               pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
                 metadata: widget.metadata.copyWith(viewOffsetMs: currentPosition.inMilliseconds),
                 selectedMediaIndex: effectiveMediaIndex,
+                selectedMediaSourceId: effectiveMediaSourceId,
                 selectedQualityPreset: effectivePreset,
                 selectedAudioStreamId: effectiveAudioStreamId,
                 reusedSessionIdentifier: sessionId,

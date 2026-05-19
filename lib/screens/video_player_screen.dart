@@ -152,6 +152,7 @@ class VideoPlayerScreen extends StatefulWidget {
   final SubtitleTrack? preferredSubtitleTrack;
   final SubtitleTrack? preferredSecondarySubtitleTrack;
   final int selectedMediaIndex;
+  final String? selectedMediaSourceId;
   final bool isOffline;
 
   /// Quality preset override for this playback. When `null`, the screen uses
@@ -194,6 +195,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.preferredSubtitleTrack,
     this.preferredSecondarySubtitleTrack,
     this.selectedMediaIndex = 0,
+    this.selectedMediaSourceId,
     this.isOffline = false,
     this.selectedQualityPreset,
     this.selectedAudioStreamId,
@@ -601,6 +603,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         _playbackDataFuture = playbackService.getPlaybackData(
           metadata: _currentMetadata,
           selectedMediaIndex: widget.selectedMediaIndex,
+          selectedMediaSourceId: widget.selectedMediaSourceId,
           preferOffline: _selectedQualityPreset.isOriginal,
           qualityPreset: _selectedQualityPreset,
           selectedAudioStreamId: _selectedAudioStreamId,
