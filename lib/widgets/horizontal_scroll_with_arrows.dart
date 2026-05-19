@@ -26,8 +26,8 @@ class HorizontalScrollWithArrows extends StatefulWidget {
 }
 
 class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows> {
-  late final ScrollController _scrollController;
-  late final bool _ownsController;
+  late ScrollController _scrollController;
+  late bool _ownsController;
   bool _isHovering = false;
   bool _canScrollLeft = false;
   bool _canScrollRight = false;
@@ -35,6 +35,21 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
   @override
   void initState() {
     super.initState();
+    _ownsController = widget.controller == null;
+    _scrollController = widget.controller ?? ScrollController();
+    _scrollController.addListener(_updateScrollState);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateScrollState());
+  }
+
+  @override
+  void didUpdateWidget(covariant HorizontalScrollWithArrows oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller == widget.controller) return;
+
+    _scrollController.removeListener(_updateScrollState);
+    if (_ownsController) {
+      _scrollController.dispose();
+    }
     _ownsController = widget.controller == null;
     _scrollController = widget.controller ?? ScrollController();
     _scrollController.addListener(_updateScrollState);

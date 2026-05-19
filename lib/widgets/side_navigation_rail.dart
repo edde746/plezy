@@ -194,8 +194,21 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   bool _isTouchExpanded = false;
   Timer? _collapseTimer;
   static const double collapsedWidth = 80.0;
+  static const double tvCollapsedWidth = 64.0;
   static const double expandedWidth = 220.0;
+  static const double _horizontalPadding = 12.0;
+  static const double _itemHorizontalPadding = 17.0;
+  static const double _defaultIconSize = 22.0;
   static const Duration _collapseDelay = Duration(milliseconds: 150);
+
+  static double collapsedWidthForContext(BuildContext context) =>
+      PlatformDetector.isTV() ? tvCollapsedWidth : collapsedWidth;
+
+  static double horizontalPaddingForContext(BuildContext context, {required bool isCollapsed}) {
+    if (!isCollapsed) return _horizontalPadding;
+    final centeredPadding = ((collapsedWidthForContext(context) - _defaultIconSize) / 2) - _itemHorizontalPadding;
+    return centeredPadding.clamp(0.0, _horizontalPadding).toDouble();
+  }
 
   static const _kHome = 'home';
   static const _kLibraries = 'libraries';
@@ -511,6 +524,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     }
 
     final isCollapsed = !_shouldExpand;
+    final effectiveCollapsedWidth = collapsedWidthForContext(context);
+    final horizontalPadding = horizontalPaddingForContext(context, isCollapsed: isCollapsed);
     final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
 
     // Listen to fullscreen + groupLibrariesByServer setting so the rail
@@ -568,7 +583,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
               child: AnimatedContainer(
                 duration: t.normal,
                 curve: Curves.easeOutCubic,
-                width: isCollapsed ? collapsedWidth : expandedWidth,
+                width: isCollapsed ? effectiveCollapsedWidth : expandedWidth,
                 clipBehavior: Clip.hardEdge,
                 decoration: BoxDecoration(color: t.surface),
                 child: IgnorePointer(
@@ -583,7 +598,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
 
                         Expanded(
                           child: ListView(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
                             clipBehavior: Clip.hardEdge,
                             children: [
                               if (widget.isOfflineMode && widget.onReconnect != null) ...[
@@ -676,7 +691,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
 
                         if (_showFullscreenToggle)
                           Padding(
-                            padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                            padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 12),
                             child: _buildFullscreenItem(isCollapsed: isCollapsed),
                           ),
                       ],

@@ -133,6 +133,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _hasLoadedEpisodes = false;
   double? _tvDetailPendingRailHeight;
   double? _tvDetailStableRailHeight;
+  MediaItem? _tvDetailFocusedEpisode;
+  bool _tvDetailActionRowHasFocus = false;
 
   // Inline season tabs
   int _selectedSeasonIndex = 0;
@@ -2862,15 +2864,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               key: _tvDetailRailKey,
               hubs: detailHubs,
               iconForHub: _getTvDetailHubIcon,
-              onFocusedItemChanged: (_) {},
+              onFocusedHubItemChanged: _handleTvDetailFocusedRailItemChanged,
               onRefresh: (itemId) => unawaited(_refreshItemInPlace(itemId)),
               onActiveHubChanged: _handleTvDetailHubChanged,
               onActivateItem: _handleTvDetailRailItemActivated,
-              onNavigateUp: () => _playButtonFocusNode.requestFocus(),
+              onNavigateUp: _focusTvDetailActionRow,
               onBack: _popMediaDetailIfBackNotSuppressed,
               tallPosterScale: _tvDetailTallPosterScale,
               initialHubId: _tvDetailInitialHubId(metadata),
               initialItemId: _tvDetailInitialItemId(metadata),
+              episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
             ),
           ),
       ],
@@ -2907,12 +2910,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     required double scale,
   }) {
     final theme = Theme.of(context);
-    final shouldHideSpoiler = hideSpoilers && metadata.shouldHideSpoiler;
-    final summary = shouldHideSpoiler ? null : metadata.summary;
-    final spoilerText = shouldHideSpoiler && metadata.isEpisode
-        ? (_tvDetailEpisodePrefix(metadata) ?? metadata.title ?? '')
-        : null;
-    final description = summary != null && summary.isNotEmpty ? _tvDetailSummaryText(metadata, summary) : spoilerText;
+    final description = _tvDetailDescription(metadata, hideSpoilers: hideSpoilers);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -3099,6 +3097,51 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return '$prefix: $summary';
   }
 
+  String? _tvDetailDescription(MediaItem metadata, {required bool hideSpoilers}) {
+    final focusedEpisode = _tvDetailFocusedEpisode;
+    if (focusedEpisode == null) return _tvDetailItemDescription(metadata, hideSpoilers: hideSpoilers);
+
+    final episodeDescription = _tvDetailItemDescription(
+      focusedEpisode,
+      hideSpoilers: hideSpoilers,
+      showSpoilerFallback: false,
+    );
+    if (episodeDescription != null) return episodeDescription;
+
+    final season = _tvDetailSeasonForEpisode(focusedEpisode, metadata);
+    final seasonDescription = season == null ? null : _tvDetailItemDescription(season, hideSpoilers: hideSpoilers);
+    if (seasonDescription != null) return seasonDescription;
+
+    final showDescription = _tvDetailItemDescription(metadata, hideSpoilers: hideSpoilers);
+    if (showDescription != null) return showDescription;
+
+    if (hideSpoilers && focusedEpisode.shouldHideSpoiler) {
+      return _tvDetailEpisodePrefix(focusedEpisode) ?? focusedEpisode.title;
+    }
+    return null;
+  }
+
+  String? _tvDetailItemDescription(MediaItem item, {required bool hideSpoilers, bool showSpoilerFallback = true}) {
+    final shouldHideSpoiler = hideSpoilers && item.shouldHideSpoiler;
+    final summary = shouldHideSpoiler ? null : item.summary;
+    if (summary != null && summary.isNotEmpty) return _tvDetailSummaryText(item, summary);
+    if (showSpoilerFallback && shouldHideSpoiler && item.isEpisode) return _tvDetailEpisodePrefix(item) ?? item.title;
+    return null;
+  }
+
+  MediaItem? _tvDetailSeasonForEpisode(MediaItem episode, MediaItem metadata) {
+    for (final season in _seasons) {
+      if (episode.parentId != null && season.id == episode.parentId) return season;
+      if (episode.parentIndex != null && season.index == episode.parentIndex) return season;
+    }
+    if (metadata.isSeason &&
+        ((episode.parentId != null && metadata.id == episode.parentId) ||
+            (episode.parentIndex != null && metadata.index == episode.parentIndex))) {
+      return metadata;
+    }
+    return null;
+  }
+
   String? _tvDetailEpisodePrefix(MediaItem metadata) {
     if (!metadata.isEpisode || metadata.parentIndex == null || metadata.index == null) return null;
     return 'S${metadata.parentIndex}, E${metadata.index}';
@@ -3111,8 +3154,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       hubs: hubs,
       density: svc.read(SettingsService.libraryDensity),
       episodePosterMode: svc.read(SettingsService.episodePosterMode),
+      episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
       tallPosterScale: _tvDetailTallPosterScale,
     );
+  }
+
+  bool _isTvDetailEpisodeHub(MediaHub hub) {
+    return hub.id.startsWith(_tvDetailSeasonHubIdPrefix) || hub.id == 'detail_episodes';
+  }
+
+  EpisodePosterMode _tvDetailEpisodePosterModeForHub(MediaHub hub) {
+    if (_isTvDetailEpisodeHub(hub)) return EpisodePosterMode.episodeThumbnail;
+    return SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
   }
 
   List<MediaHub> _tvDetailHubs(MediaItem metadata) {
@@ -3203,7 +3256,45 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return true;
   }
 
+  void _clearTvDetailFocusedEpisode() {
+    if (_tvDetailFocusedEpisode == null) return;
+    setStateIfMounted(() {
+      _tvDetailFocusedEpisode = null;
+    });
+  }
+
+  void _setTvDetailActionRowFocus(bool hasFocus) {
+    _tvDetailActionRowHasFocus = hasFocus;
+    if (hasFocus) _clearTvDetailFocusedEpisode();
+  }
+
+  void _focusTvDetailActionRow() {
+    _tvDetailActionRowHasFocus = true;
+    _clearTvDetailFocusedEpisode();
+    _playButtonFocusNode.requestFocus();
+  }
+
+  void _handleTvDetailFocusedRailItemChanged(MediaHub hub, MediaItem item) {
+    if (_tvDetailActionRowHasFocus) {
+      _clearTvDetailFocusedEpisode();
+      return;
+    }
+    if (!_isTvDetailEpisodeHub(hub) || !item.isEpisode) {
+      _clearTvDetailFocusedEpisode();
+      return;
+    }
+    if (_tvDetailFocusedEpisode?.id == item.id) return;
+    setStateIfMounted(() {
+      _tvDetailFocusedEpisode = item;
+    });
+  }
+
   void _handleTvDetailHubChanged(MediaHub hub, int index) {
+    if (!_isTvDetailEpisodeHub(hub)) {
+      _clearTvDetailFocusedEpisode();
+      return;
+    }
+    if (hub.items.isEmpty) _clearTvDetailFocusedEpisode();
     if (!hub.id.startsWith(_tvDetailSeasonHubIdPrefix)) return;
     final seasonIndex = int.tryParse(hub.id.substring(_tvDetailSeasonHubIdPrefix.length));
     if (seasonIndex == null || seasonIndex < 0 || seasonIndex >= _seasons.length) return;

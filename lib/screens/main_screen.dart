@@ -1212,7 +1212,7 @@ class _MainScreenState extends State<MainScreen>
         builder: (context, alwaysExpanded, _) {
           final contentLeftPadding = alwaysExpanded
               ? SideNavigationRailState.expandedWidth
-              : SideNavigationRailState.collapsedWidth;
+              : SideNavigationRailState.collapsedWidthForContext(context);
 
           return OverlaySheetHost(
             child: PopScope(

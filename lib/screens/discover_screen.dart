@@ -1193,12 +1193,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
             children: [
-              Text(
-                t.discover.title,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
-              ),
+              if (!PlatformDetector.isTV())
+                Text(
+                  t.discover.title,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                ),
               const Spacer(),
               Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
                 builder: (context, watchTogether, companionRemote, _) {
@@ -1328,6 +1329,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         SettingsService.showServerNameOnHubs,
         SettingsService.showHeroSection,
         SettingsService.hideSpoilers,
+        SettingsService.libraryDensity,
+        SettingsService.episodePosterMode,
       ],
       builder: (context) => _buildContent(context),
     );
@@ -1483,11 +1486,28 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final size = MediaQuery.sizeOf(context);
     final theme = Theme.of(context);
     final spotlight = _effectiveSpotlightItem;
-    final hideSpoilers = SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers);
+    final svc = SettingsService.instanceOrNull!;
+    final hideSpoilers = svc.read(SettingsService.hideSpoilers);
     final browseHubs = _tvBrowseHubs;
-    final spotlightTop = (size.height * 0.1).clamp(96.0, 150.0).toDouble();
-    final spotlightBottom = (size.height * 0.53).clamp(180.0, 900.0).toDouble();
-    final spotlightLeft = (24 * TvLayoutConstants.scaleForSize(size)).clamp(18.0, 40.0).toDouble();
+    final scale = TvLayoutConstants.scaleForSize(size);
+    final railHeight = browseHubs.isEmpty
+        ? 0.0
+        : TvBrowseRailLayout.estimateHeight(
+            size: size,
+            hubs: browseHubs,
+            density: svc.read(SettingsService.libraryDensity),
+            episodePosterMode: svc.read(SettingsService.episodePosterMode),
+            tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+          );
+    final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
+    final minimumSpotlightBottom = railHeight + (16 * scale);
+    final baseSpotlightBottom = (size.height * 0.53).clamp(180.0, 900.0).toDouble();
+    final desiredSpotlightBottom = minimumSpotlightBottom > baseSpotlightBottom
+        ? minimumSpotlightBottom
+        : baseSpotlightBottom;
+    final maxSpotlightBottom = (size.height - spotlightTop - (96 * scale)).clamp(0.0, double.infinity).toDouble();
+    final spotlightBottom = desiredSpotlightBottom > maxSpotlightBottom ? maxSpotlightBottom : desiredSpotlightBottom;
+    final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
 
     return Material(
       color: theme.scaffoldBackgroundColor,
@@ -1548,6 +1568,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     hub.id == 'continue_watching' ? _loadAllContinueWatchingItems() : Future.value(hub.items),
                 onNavigateUp: _focusTopActions,
                 onNavigateToSidebar: _navigateToSidebar,
+                tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
               ),
             ),
           Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: _buildOverlaidAppBar())),

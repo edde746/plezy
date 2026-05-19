@@ -1022,7 +1022,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         ? allLibraries.where((lib) => lib.globalKey == _selectedLibraryGlobalKey).firstOrNull
         : null;
 
-    final showMobileTabsRow = selectedLibrary != null && !PlatformDetector.shouldUseSideNavigation(context);
+    final useSideNavigation = PlatformDetector.shouldUseSideNavigation(context);
+    final showMobileTabsRow = selectedLibrary != null && !useSideNavigation;
     final currentTabIndex = _visibleTabs.isEmpty ? 0 : tabController.index.clamp(0, _visibleTabs.length - 1).toInt();
     final currentTabType = _visibleTabs.isEmpty ? null : _visibleTabs[currentTabIndex];
     final useTvRecommendedBackdrop = PlatformDetector.isTV() && currentTabType == LibraryTabType.recommended;
@@ -1133,36 +1134,46 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               ),
       );
     } else if (selectedLibrary != null) {
-      Widget buildTabs() {
+      Widget buildTab(int index) {
+        return ClipRect(
+          child: _buildTabContent(
+            _visibleTabs[index],
+            library: selectedLibrary,
+            isActive: tabController.index == index,
+            tabIndex: index,
+          ),
+        );
+      }
+
+      Widget buildTabs({bool activeOnly = false}) {
+        if (activeOnly) return buildTab(currentTabIndex);
+
+        final children = [for (int i = 0; i < _visibleTabs.length; i++) buildTab(i)];
+
         return TabBarView(
           key: ValueKey(_selectedLibraryGlobalKey),
           controller: tabController,
-          // Disable swipe on desktop - trackpad scrolling triggers accidental tab switches
+          // Disable swipe on desktop/TV - trackpad and d-pad scroll actions can trigger accidental tab switches.
           // See: https://github.com/flutter/flutter/issues/11132
-          physics: PlatformDetector.isDesktop(context) ? const NeverScrollableScrollPhysics() : null,
+          physics: useSideNavigation ? const NeverScrollableScrollPhysics() : null,
           // Wrap each tab in ClipRect so horizontal overflow (e.g. hub rows
           // with Clip.none) doesn't bleed into adjacent tabs during swipe transitions.
-          children: [
-            for (int i = 0; i < _visibleTabs.length; i++)
-              ClipRect(
-                child: _buildTabContent(
-                  _visibleTabs[i],
-                  library: selectedLibrary,
-                  isActive: tabController.index == i,
-                  tabIndex: i,
-                ),
-              ),
-          ],
+          children: children,
         );
       }
 
       if (useTvRecommendedBackdrop) {
-        body = Stack(
-          fit: StackFit.expand,
-          children: [
-            buildTabs(),
-            Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: buildTransparentTvTopBar())),
-          ],
+        body = Focus(
+          canRequestFocus: false,
+          skipTraversal: true,
+          onKeyEvent: (_, event) => event.logicalKey.isDpadDirection ? KeyEventResult.handled : KeyEventResult.ignored,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              buildTabs(activeOnly: true),
+              Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: buildTransparentTvTopBar())),
+            ],
+          ),
         );
       } else {
         body = NestedScrollView(

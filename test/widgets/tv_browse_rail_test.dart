@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/locked_hub_controller.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
@@ -17,9 +19,144 @@ import '../test_helpers/prefs.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  group('TvBrowseRailLayout', () {
+    test('density changes card width', () {
+      final item = MediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
+      final hub = MediaHub(id: 'hub_1', title: 'Movies', type: 'movie', items: [item], size: 1);
+
+      final compact = TvBrowseRailLayout.metricsForHub(
+        hub: hub,
+        availableWidth: 1040,
+        density: LibraryDensity.min,
+        episodePosterMode: EpisodePosterMode.seriesPoster,
+        scale: 0.85,
+      );
+      final comfortable = TvBrowseRailLayout.metricsForHub(
+        hub: hub,
+        availableWidth: 1040,
+        density: LibraryDensity.max,
+        episodePosterMode: EpisodePosterMode.seriesPoster,
+        scale: 0.85,
+      );
+
+      expect(comfortable.cardWidth, greaterThan(compact.cardWidth));
+      expect(comfortable.posterWidth, greaterThan(compact.posterWidth));
+    });
+
+    test('detail episode hubs can force episode thumbnails', () {
+      final episode = MediaItem(
+        id: 'episode_1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Episode 1',
+        thumbPath: '/episode-thumb',
+        grandparentThumbPath: '/show-poster',
+      );
+      final hub = MediaHub(id: 'detail_season_0', title: 'Season 1', type: 'episode', items: [episode], size: 1);
+
+      final defaultLayout = TvBrowseRailLayout.metricsForHub(
+        hub: hub,
+        availableWidth: 1040,
+        density: LibraryDensity.defaultValue,
+        episodePosterMode: EpisodePosterMode.seriesPoster,
+        scale: 0.85,
+      );
+      final forcedLayout = TvBrowseRailLayout.metricsForHub(
+        hub: hub,
+        availableWidth: 1040,
+        density: LibraryDensity.defaultValue,
+        episodePosterMode: EpisodePosterMode.episodeThumbnail,
+        scale: 0.85,
+      );
+
+      expect(defaultLayout.useWideLayout, isFalse);
+      expect(forcedLayout.useWideLayout, isTrue);
+      expect(forcedLayout.posterHeight, lessThan(defaultLayout.posterHeight));
+    });
+
+    test('estimated rail height is stable across mixed hub heights', () {
+      final movie = MediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
+      final episode = MediaItem(
+        id: 'episode_1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Episode 1',
+        thumbPath: '/episode-thumb',
+      );
+      final posterHub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: [movie], size: 1);
+      final wideHub = MediaHub(id: 'episodes', title: 'Episodes', type: 'episode', items: [episode], size: 1);
+
+      const size = Size(1280, 720);
+      final scale = TvBrowseRailLayout.scaleForSize(size);
+      final availableWidth = size.width - TvBrowseRailLayout.horizontalInsetForScale(scale);
+      final posterMetrics = TvBrowseRailLayout.metricsForHub(
+        hub: posterHub,
+        availableWidth: availableWidth,
+        density: LibraryDensity.max,
+        episodePosterMode: EpisodePosterMode.episodeThumbnail,
+        scale: scale,
+      );
+      final wideMetrics = TvBrowseRailLayout.metricsForHub(
+        hub: wideHub,
+        availableWidth: availableWidth,
+        density: LibraryDensity.max,
+        episodePosterMode: EpisodePosterMode.episodeThumbnail,
+        scale: scale,
+      );
+
+      final maxHeight = TvBrowseRailLayout.maxActiveRailHeight(
+        hubs: [wideHub, posterHub],
+        availableWidth: availableWidth,
+        density: LibraryDensity.max,
+        episodePosterMode: EpisodePosterMode.episodeThumbnail,
+        scale: scale,
+      );
+
+      expect(posterMetrics.height, greaterThan(wideMetrics.height));
+      expect(maxHeight, posterMetrics.height);
+      expect(
+        TvBrowseRailLayout.estimateHeight(
+          size: size,
+          hubs: [wideHub, posterHub],
+          density: LibraryDensity.max,
+          episodePosterMode: EpisodePosterMode.episodeThumbnail,
+        ),
+        TvBrowseRailLayout.estimateHeight(
+          size: size,
+          hubs: [posterHub, wideHub],
+          density: LibraryDensity.max,
+          episodePosterMode: EpisodePosterMode.episodeThumbnail,
+        ),
+      );
+    });
+
+    test('compact tall poster scale reduces browse rail height', () {
+      final movie = MediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
+      final hub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: [movie], size: 1);
+
+      const size = Size(1280, 720);
+      final defaultHeight = TvBrowseRailLayout.estimateHeight(
+        size: size,
+        hubs: [hub],
+        density: LibraryDensity.max,
+        episodePosterMode: EpisodePosterMode.seriesPoster,
+      );
+      final compactHeight = TvBrowseRailLayout.estimateHeight(
+        size: size,
+        hubs: [hub],
+        density: LibraryDensity.max,
+        episodePosterMode: EpisodePosterMode.seriesPoster,
+        tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+      );
+
+      expect(compactHeight, lessThan(defaultHeight));
+    });
+  });
+
   setUp(() async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
+    HubFocusMemory.clear();
     await SettingsService.getInstance();
   });
 
@@ -120,6 +257,72 @@ void main() {
     expect(focusedItemIds.last, episode2.id);
   });
 
+  testWidgets('scrolls remembered item after switching hubs', (tester) async {
+    List<MediaItem> movieItems() => List.generate(
+      12,
+      (index) =>
+          MediaItem(id: 'movie_$index', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie $index'),
+    );
+    List<MediaItem> episodeItems() => List.generate(
+      12,
+      (index) => MediaItem(
+        id: 'episode_$index',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Episode $index',
+        thumbPath: '/episode_$index',
+      ),
+    );
+
+    final movieHub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: movieItems(), size: 12);
+    final episodeHub = MediaHub(id: 'episodes', title: 'Episodes', type: 'episode', items: episodeItems(), size: 12);
+    final serverManager = MultiServerManager();
+    HubFocusMemory.setForHub(episodeHub.id, 5);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 700,
+              height: 720,
+              child: TvBrowseRail(
+                hubs: [movieHub, episodeHub],
+                autofocus: true,
+                iconForHub: (_, _) => Icons.tv_rounded,
+                episodePosterModeForHub: (_) => EpisodePosterMode.episodeThumbnail,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+
+    final position = _activeRailPosition(tester);
+    final scale = TvBrowseRailLayout.scaleForSize(tester.view.physicalSize / tester.view.devicePixelRatio);
+    final metrics = TvBrowseRailLayout.metricsForHub(
+      hub: episodeHub,
+      availableWidth: position.viewportDimension,
+      density: LibraryDensity.defaultValue,
+      episodePosterMode: EpisodePosterMode.episodeThumbnail,
+      scale: scale,
+    );
+    final itemExtent = metrics.cardWidth + metrics.itemGap;
+    final targetCenter = metrics.railEdgePadding + (5 * itemExtent) + (itemExtent / 2);
+    final expectedOffset = (targetCenter - (position.viewportDimension / 2)).clamp(0.0, position.maxScrollExtent);
+
+    expect(position.pixels, closeTo(expectedOffset, 0.1));
+  });
+
   testWidgets('does not autofocus unless requested', (tester) async {
     FocusManager.instance.primaryFocus?.unfocus();
 
@@ -150,4 +353,12 @@ void main() {
     await tester.pump();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
   });
+}
+
+ScrollPosition _activeRailPosition(WidgetTester tester) {
+  return tester
+      .stateList<ScrollableState>(find.byType(Scrollable))
+      .map((state) => state.position)
+      .where((position) => position.maxScrollExtent > 0)
+      .reduce((a, b) => a.maxScrollExtent > b.maxScrollExtent ? a : b);
 }
