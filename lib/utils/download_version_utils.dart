@@ -6,6 +6,7 @@ import '../media/media_server_client.dart';
 import '../media/media_version.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
+import '../utils/media_version_resolver.dart';
 import '../i18n/strings.g.dart';
 
 /// Configuration for download version selection, threaded through the queue pipeline.
@@ -42,8 +43,9 @@ Future<DownloadVersionConfig?> resolveDownloadVersion(
   final kind = metadata.kind;
 
   if (kind == MediaKind.movie || kind == MediaKind.episode) {
-    final versions = metadata.mediaVersions ?? fallbackVersions;
-    if (versions != null && versions.length > 1) {
+    final versions = await resolveMediaVersions(metadata, client, fallbackVersions: fallbackVersions);
+    if (!context.mounted) return null;
+    if (versions.length > 1) {
       final selectedIndex = await showVersionPickerDialog(context, versions, t.downloads.selectVersion);
       if (selectedIndex == null || !context.mounted) return null;
       return DownloadVersionConfig(mediaIndex: selectedIndex);

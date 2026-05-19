@@ -20,6 +20,7 @@ import '../models/transcode_quality_preset.dart';
 import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
 import '../utils/quality_preset_labels.dart';
+import '../utils/media_version_resolver.dart';
 import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
@@ -860,13 +861,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   Future<bool> _handlePlayVersion(BuildContext context) async {
     final item = _mediaItem!;
+    final client = context.tryGetMediaClientForServer(_itemServerId);
     // Same flag the in-player Version & Quality sheet reads — keeps both
     // surfaces honest about what the active backend can actually do.
-    final canTranscode = _itemServerId == null
-        ? false
-        : (context.read<MultiServerProvider>().getClientForServer(_itemServerId!)?.capabilities.videoTranscoding ??
-              false);
-    final versions = item.mediaVersions ?? const [];
+    final canTranscode = client?.capabilities.videoTranscoding ?? false;
+    final versions = client == null ? item.mediaVersions ?? const [] : await resolveMediaVersions(item, client);
+    if (!context.mounted) return false;
 
     int selectedVersionIndex = 0;
     if (versions.length > 1) {
