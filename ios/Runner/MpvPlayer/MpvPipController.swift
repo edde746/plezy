@@ -13,7 +13,7 @@ import UIKit
     func pipDidStop(restored: Bool)
     func pipDidFailToStart(error: Error?)
     func pipSetPlaying(_ playing: Bool)
-    func pipSkip(byInterval seconds: Double)
+    func pipSkip(byInterval seconds: Double, completion: @escaping () -> Void)
     var isPipPlaying: Bool { get }
     var pipDuration: Double { get }
   }
@@ -48,7 +48,7 @@ import UIKit
     /// Forward play/pause commands from PiP overlay to mpv
     func pipSetPlaying(_ playing: Bool)
     /// Forward skip forward/backward commands from PiP overlay to mpv
-    func pipSkip(byInterval seconds: Double)
+    func pipSkip(byInterval seconds: Double, completion: @escaping () -> Void)
     /// Query whether mpv is currently playing
     var isPipPlaying: Bool { get }
     /// Get total duration in seconds
@@ -99,9 +99,7 @@ import UIKit
       self.delegateHelper = helper
       pipController = AVPictureInPictureController(contentSource: contentSource)
       pipController?.delegate = helper
-      if #available(iOS 14.2, *) {
-        pipController?.canStartPictureInPictureAutomaticallyFromInline = false
-      }
+      pipController?.canStartPictureInPictureAutomaticallyFromInline = false
     }
 
     /// Enable/disable system auto-PiP (starts PiP automatically on background transition)
@@ -110,30 +108,15 @@ import UIKit
       pipController?.canStartPictureInPictureAutomaticallyFromInline = enabled
     }
 
-    /// Sync the layer's controlTimebase with the actual playback position.
-    /// This makes the PiP progress bar show the correct time.
+    /// MPVKit owns the sample-buffer layer timebase. PiP only reads it.
     func syncTimebase(currentTime: Double, isPlaying: Bool) {
-      guard let timebase = sampleBufferLayer?.controlTimebase else { return }
-      let cmTime = CMTime(seconds: currentTime, preferredTimescale: 1000)
-      CMTimebaseSetTime(timebase, time: cmTime)
-      CMTimebaseSetRate(timebase, rate: isPlaying ? 1.0 : 0.0)
     }
 
-    /// Ensure the layer has a timebase so the PiP progress UI can follow mpv.
+    /// Ensure the layer has MPVKit's renderer-owned timebase before PiP starts.
     func warmLayer(currentTime: Double, isPlaying: Bool) {
-      guard let sampleBufferLayer else { return }
-      if sampleBufferLayer.controlTimebase == nil {
-        var timebase: CMTimebase?
-        CMTimebaseCreateWithSourceClock(
-          allocator: kCFAllocatorDefault,
-          sourceClock: CMClockGetHostTimeClock(),
-          timebaseOut: &timebase
-        )
-        if let tb = timebase {
-          sampleBufferLayer.controlTimebase = tb
-        }
+      if sampleBufferLayer?.controlTimebase == nil {
+        print("[MpvPipController] Waiting for MPVKit renderer timebase before PiP")
       }
-      syncTimebase(currentTime: currentTime, isPlaying: isPlaying)
     }
 
     // MARK: - Public API
@@ -188,6 +171,7 @@ import UIKit
 
     /// Invalidate the playback state so PiP updates its UI (play/pause button)
     func invalidatePlaybackState() {
+      guard #available(iOS 15.0, *) else { return }
       pipController?.invalidatePlaybackState()
     }
 
@@ -310,8 +294,11 @@ import UIKit
     ) {
       let seconds = CMTimeGetSeconds(skipInterval)
       print("[MpvPipController] PiP skip by \(seconds)s")
-      controller?.delegate?.pipSkip(byInterval: seconds)
-      completionHandler()
+      guard let delegate = controller?.delegate else {
+        completionHandler()
+        return
+      }
+      delegate.pipSkip(byInterval: seconds, completion: completionHandler)
     }
   }
 

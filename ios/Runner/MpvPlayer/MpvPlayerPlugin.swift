@@ -504,13 +504,17 @@ extension MpvPlayerPlugin: MpvPipDelegate {
     }
   }
 
-  func pipSkip(byInterval seconds: Double) {
-    guard let playerCore = playerCore else { return }
+  func pipSkip(byInterval seconds: Double, completion: @escaping () -> Void) {
+    guard let playerCore = playerCore else {
+      completion()
+      return
+    }
     let newTime = max(0, playerCore.timePos + seconds)
-    playerCore.command(["seek", String(newTime), "absolute"])
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-      self?.syncPipTimebase()
-      self?.pipController?.invalidatePlaybackState()
+    playerCore.commandAsync(["seek", String(newTime), "absolute"]) { [weak self] _ in
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        self?.pipController?.invalidatePlaybackState()
+        completion()
+      }
     }
   }
 
