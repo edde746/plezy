@@ -84,8 +84,9 @@ void simulateKeyUp(LogicalKeyboardKey logicalKey) {
 void _dispatchKeyEvent(FocusNode focusNode, KeyEvent event) {
   FocusNode? node = focusNode;
   while (node != null) {
-    if (node.onKeyEvent != null && node.onKeyEvent!(node, event) == KeyEventResult.handled) {
-      break;
+    if (node.onKeyEvent != null) {
+      final result = node.onKeyEvent!(node, event);
+      if (result != KeyEventResult.ignored) break;
     }
     node = node.parent;
   }

@@ -18,6 +18,7 @@ import android.util.Rational
 import android.view.KeyEvent
 import android.view.TextureView
 import android.view.ViewGroup
+import android.view.WindowInsets
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.core.content.FileProvider
@@ -46,9 +47,11 @@ class MainActivity : FlutterActivity() {
   private val EXTERNAL_PLAYER_CHANNEL = "com.plezy/external_player"
   private val THEME_CHANNEL = "com.plezy/theme"
   private val DEVICE_CHANNEL = "com.plezy/device"
+  private val TEXT_INPUT_CHANNEL = "com.plezy/text_input"
   private val APP_EXIT_CHANNEL = "com.plezy/app_exit"
   private val APP_FOREGROUND_CHANNEL = "com.plezy/app_foreground"
   private var watchNextPlugin: WatchNextPlugin? = null
+  private var nativeTextInputFocused = false
 
   // Auto PiP state
   private var autoPipReady = false
@@ -56,6 +59,16 @@ class MainActivity : FlutterActivity() {
   private var autoPipHeight: Int = 9
 
   private fun isAndroidTvDevice(): Boolean = getAndroidTvDetection()["isTv"] as Boolean
+
+  private fun isImeVisible(): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return false
+    return window.decorView.rootWindowInsets?.isVisible(WindowInsets.Type.ime()) == true
+  }
+
+  private fun shouldForwardDpadBeforeIme(): Boolean {
+    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    return !nativeTextInputFocused && !isImeVisible() && !imm.isAcceptingText
+  }
 
   private fun getAndroidTvDetection(): Map<String, Any> {
     val pm = packageManager
@@ -124,8 +137,7 @@ class MainActivity : FlutterActivity() {
           KeyEvent.KEYCODE_DPAD_LEFT,
           KeyEvent.KEYCODE_DPAD_RIGHT,
           KeyEvent.KEYCODE_DPAD_CENTER -> {
-            val imm = context.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-            if (!imm.isAcceptingText) {
+            if (shouldForwardDpadBeforeIme()) {
               super.dispatchKeyEvent(event)
               return true
             }
@@ -246,6 +258,16 @@ class MainActivity : FlutterActivity() {
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "getTvDetection" -> result.success(getAndroidTvDetection())
+        else -> result.notImplemented()
+      }
+    }
+
+    MethodChannel(flutterEngine.dartExecutor.binaryMessenger, TEXT_INPUT_CHANNEL).setMethodCallHandler { call, result ->
+      when (call.method) {
+        "setNativeTextInputFocused" -> {
+          nativeTextInputFocused = call.arguments as? Boolean ?: false
+          result.success(null)
+        }
         else -> result.notImplemented()
       }
     }

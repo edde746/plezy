@@ -72,7 +72,7 @@ class FocusableWrapper extends StatefulWidget {
   /// Whether the wrapper can receive focus.
   final bool canRequestFocus;
 
-  /// Custom key event handler. Return KeyEventResult.handled to consume the event.
+  /// Custom key event handler. Return any non-ignored result to stop default handling.
   /// This is called before the default key handling.
   final KeyEventResult Function(FocusNode node, KeyEvent event)? onKeyEvent;
 
@@ -325,7 +325,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     // Call custom key handler first
     if (widget.onKeyEvent != null) {
       final result = widget.onKeyEvent!(node, event);
-      if (result == KeyEventResult.handled) {
+      if (result != KeyEventResult.ignored) {
         return result;
       }
     }

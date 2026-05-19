@@ -451,7 +451,8 @@ class GamepadService with WindowListener {
     FocusNode? node = FocusManager.instance.primaryFocus;
     while (node != null) {
       if (node.onKeyEvent != null) {
-        if (node.onKeyEvent!(node, event) == KeyEventResult.handled) break;
+        final result = node.onKeyEvent!(node, event);
+        if (result != KeyEventResult.ignored) break;
       }
       node = node.parent;
     }

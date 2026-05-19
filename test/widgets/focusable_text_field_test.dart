@@ -337,6 +337,55 @@ void main() {
     expect(find.byType(Dialog), findsNothing);
   });
 
+  testWidgets('Android TV native text input focus is reported to platform', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(null);
+    await TvDetectionService.getInstance(forceTv: true);
+    TvDetectionService.setForceTVSync(true);
+    const channel = MethodChannel('com.plezy/text_input');
+    final calls = <MethodCall>[];
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
+      calls.add(call);
+      return null;
+    });
+    addTearDown(
+      () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, null),
+    );
+
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'server_url_field');
+    final otherFocusNode = FocusNode(debugLabel: 'other');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+    addTearDown(otherFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              FocusableTextFormField(controller: controller, focusNode: fieldFocusNode),
+              Focus(focusNode: otherFocusNode, child: const SizedBox.shrink()),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pump();
+    await tester.pump();
+
+    expect(calls.last.method, 'setNativeTextInputFocused');
+    expect(calls.last.arguments, isTrue);
+
+    otherFocusNode.requestFocus();
+    await tester.pump();
+    await tester.pump();
+
+    expect(calls.last.method, 'setNativeTextInputFocused');
+    expect(calls.last.arguments, isFalse);
+  });
+
   testWidgets('Android TV physical keyboard still uses field navigation', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(null);
     await TvDetectionService.getInstance(forceTv: true);

@@ -31,6 +31,45 @@ void main() {
     expect(events[1], isA<KeyUpEvent>());
     expect(events.map((event) => event.deviceType), everyElement(ui.KeyEventDeviceType.directionalPad));
   });
+
+  testWidgets('simulateKeyPress stops at skipRemainingHandlers', (tester) async {
+    final childEvents = <KeyEvent>[];
+    final parentEvents = <KeyEvent>[];
+    late BuildContext childContext;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Focus(
+          onKeyEvent: (_, event) {
+            parentEvents.add(event);
+            return KeyEventResult.handled;
+          },
+          child: Focus(
+            autofocus: true,
+            onKeyEvent: (_, event) {
+              childEvents.add(event);
+              return KeyEventResult.skipRemainingHandlers;
+            },
+            child: Builder(
+              builder: (context) {
+                childContext = context;
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    Focus.of(childContext).requestFocus();
+    await tester.pump();
+
+    simulateKeyPress(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.pump();
+
+    expect(childEvents, hasLength(2));
+    expect(parentEvents, isEmpty);
+  });
 }
 
 Future<List<KeyEvent>> _pumpKeyEventRecorder(WidgetTester tester) async {

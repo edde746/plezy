@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -8,6 +10,40 @@ import 'dpad_navigator.dart';
 bool _usesTvKeyboard(bool enableTvKeyboard) => enableTvKeyboard && PlatformDetector.isAppleTV();
 
 String? _keyboardHint(InputDecoration? decoration) => decoration?.hintText ?? decoration?.labelText;
+
+class _NativeTvTextInputFocusBridge {
+  static const _channel = MethodChannel('com.plezy/text_input');
+  static final Set<Object> _focusedTokens = <Object>{};
+  static bool _lastSentFocused = false;
+
+  static void setFocused(Object token, bool focused) {
+    if (focused) {
+      _focusedTokens.add(token);
+    } else {
+      _focusedTokens.remove(token);
+    }
+
+    if (!PlatformDetector.isTV() || PlatformDetector.isAppleTV()) {
+      _lastSentFocused = false;
+      return;
+    }
+
+    final anyFocused = _focusedTokens.isNotEmpty;
+    if (_lastSentFocused == anyFocused) return;
+    _lastSentFocused = anyFocused;
+    unawaited(_sendFocused(anyFocused));
+  }
+
+  static Future<void> _sendFocused(bool focused) async {
+    try {
+      await _channel.invokeMethod<void>('setNativeTextInputFocused', focused);
+    } on MissingPluginException {
+      // Tests and non-Android embedders do not register this channel.
+    } on PlatformException {
+      // Focus reporting is a best-effort native routing hint.
+    }
+  }
+}
 
 KeyEventResult _handleInputKey({
   required TextEditingController controller,
@@ -528,6 +564,9 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
   FocusNode? _installedFocusNode;
   FocusOnKeyEventCallback? _previousOnKeyEvent;
   late final FocusOnKeyEventCallback _keyHandler = _handleKey;
+  late final VoidCallback _focusListener = _syncNativeTextInputFocus;
+  final Object _nativeFocusToken = Object();
+  bool _reportedNativeTextInputFocused = false;
 
   FocusNode get _effectiveFocusNode =>
       widget.input.focusNode ?? (_ownedFocusNode ??= FocusNode(debugLabel: 'FocusableTextInput'));
@@ -538,6 +577,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     if (oldWidget.input.focusNode != widget.input.focusNode) {
       _restoreInstalledHandler();
     }
+    _syncNativeTextInputFocus();
   }
 
   @override
@@ -545,6 +585,17 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     _restoreInstalledHandler();
     _ownedFocusNode?.dispose();
     super.dispose();
+  }
+
+  void _syncNativeTextInputFocus() {
+    final focused = _installedFocusNode?.hasFocus == true && widget.input.enabled && widget.input._usesNativeTvKeyboard;
+    _setNativeTextInputFocused(focused);
+  }
+
+  void _setNativeTextInputFocused(bool focused) {
+    if (_reportedNativeTextInputFocused == focused) return;
+    _reportedNativeTextInputFocused = focused;
+    _NativeTvTextInputFocusBridge.setFocused(_nativeFocusToken, focused);
   }
 
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
@@ -570,12 +621,17 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     _installedFocusNode = node;
     _previousOnKeyEvent = node.onKeyEvent;
     node.onKeyEvent = _keyHandler;
+    node.addListener(_focusListener);
   }
 
   void _restoreInstalledHandler() {
+    _setNativeTextInputFocused(false);
     final node = _installedFocusNode;
-    if (node != null && identical(node.onKeyEvent, _keyHandler)) {
-      node.onKeyEvent = _previousOnKeyEvent;
+    if (node != null) {
+      node.removeListener(_focusListener);
+      if (identical(node.onKeyEvent, _keyHandler)) {
+        node.onKeyEvent = _previousOnKeyEvent;
+      }
     }
     _installedFocusNode = null;
     _previousOnKeyEvent = null;
@@ -585,6 +641,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
   Widget build(BuildContext context) {
     final focusNode = _effectiveFocusNode;
     _installKeyHandler(focusNode);
+    _syncNativeTextInputFocus();
     return widget.builder(widget.input._hasTvKeyboard, focusNode);
   }
 }
