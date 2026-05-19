@@ -378,7 +378,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
         onSkipMarker?.call();
         break;
       case 'screenshot':
-        unawaited(player.command(['screenshot', 'window']).then((_) => onScreenshot?.call()));
+        unawaited(player.command(['screenshot', 'subtitles']).then((_) => onScreenshot?.call()));
         break;
     }
   }

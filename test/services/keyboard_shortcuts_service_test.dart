@@ -40,7 +40,7 @@ void main() {
 
     expect(result, KeyEventResult.handled);
     expect(player.commands, [
-      ['screenshot', 'window'],
+      ['screenshot', 'subtitles'],
     ]);
     expect(feedbackCount, 1);
   });
