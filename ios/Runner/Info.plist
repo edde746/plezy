@@ -35,6 +35,10 @@
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app needs to connect to your media servers on your local network.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Plezy uses location access when iOS requires it to detect your local network and connect to your media servers.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Plezy needs photo library access so you can choose images to upload as media artwork.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Camera is used to scan QR codes for Companion Remote pairing.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
