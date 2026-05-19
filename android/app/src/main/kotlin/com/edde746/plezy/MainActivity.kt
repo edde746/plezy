@@ -15,6 +15,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.util.Rational
+import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.TextureView
 import android.view.ViewGroup
@@ -65,9 +66,60 @@ class MainActivity : FlutterActivity() {
     return window.decorView.rootWindowInsets?.isVisible(WindowInsets.Type.ime()) == true
   }
 
+  private fun keyActionName(action: Int): String = when (action) {
+    KeyEvent.ACTION_DOWN -> "down"
+    KeyEvent.ACTION_UP -> "up"
+    KeyEvent.ACTION_MULTIPLE -> "multiple"
+    else -> "unknown($action)"
+  }
+
+  private fun sourceNames(source: Int): String {
+    val names = mutableListOf<String>()
+    if ((source and InputDevice.SOURCE_KEYBOARD) == InputDevice.SOURCE_KEYBOARD) names.add("keyboard")
+    if ((source and InputDevice.SOURCE_DPAD) == InputDevice.SOURCE_DPAD) names.add("dpad")
+    if ((source and InputDevice.SOURCE_GAMEPAD) == InputDevice.SOURCE_GAMEPAD) names.add("gamepad")
+    if ((source and InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK) names.add("joystick")
+    if ((source and InputDevice.SOURCE_TOUCHSCREEN) == InputDevice.SOURCE_TOUCHSCREEN) names.add("touchscreen")
+    if ((source and InputDevice.SOURCE_MOUSE) == InputDevice.SOURCE_MOUSE) names.add("mouse")
+    return names.ifEmpty { listOf("unknown") }.joinToString("+")
+  }
+
+  private fun isDpadKeyCode(keyCode: Int): Boolean = when (keyCode) {
+    KeyEvent.KEYCODE_DPAD_UP,
+    KeyEvent.KEYCODE_DPAD_DOWN,
+    KeyEvent.KEYCODE_DPAD_LEFT,
+    KeyEvent.KEYCODE_DPAD_RIGHT,
+    KeyEvent.KEYCODE_DPAD_CENTER,
+    KeyEvent.KEYCODE_BACK,
+    KeyEvent.KEYCODE_ENTER,
+    KeyEvent.KEYCODE_NUMPAD_ENTER -> true
+    else -> false
+  }
+
+  private fun describeDevice(event: KeyEvent): String {
+    val device = event.device ?: return "device=null deviceId=${event.deviceId}"
+    return "deviceId=${event.deviceId} name=${device.name} vendor=${device.vendorId} product=${device.productId} " +
+      "keyboardType=${device.keyboardType} sources=0x${Integer.toHexString(device.sources)}[${sourceNames(device.sources)}]"
+  }
+
+  private fun describeKeyEvent(event: KeyEvent): String = "action=${keyActionName(event.action)} key=${KeyEvent.keyCodeToString(event.keyCode)}(${event.keyCode}) " +
+    "scan=${event.scanCode} repeat=${event.repeatCount} source=0x${Integer.toHexString(event.source)}[${sourceNames(event.source)}] " +
+    "flags=0x${Integer.toHexString(event.flags)} meta=0x${Integer.toHexString(event.metaState)} ${describeDevice(event)}"
+
+  private fun describeImeState(): String {
+    val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+    val focus = currentFocus
+    return "nativeTextInputFocused=$nativeTextInputFocused imeVisible=${isImeVisible()} " +
+      "acceptingText=${imm.isAcceptingText} activeDecor=${imm.isActive(window.decorView)} " +
+      "decorHasFocus=${window.decorView.hasFocus()} currentFocus=${focus?.javaClass?.name} " +
+      "currentFocusHasFocus=${focus?.hasFocus()} currentFocusFocused=${focus?.isFocused}"
+  }
+
   private fun shouldForwardDpadBeforeIme(): Boolean {
     val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-    return !nativeTextInputFocused && !isImeVisible() && !imm.isAcceptingText
+    val forward = !nativeTextInputFocused && !isImeVisible() && !imm.isAcceptingText
+    Log.i(TAG, "TextInputDiag shouldForwardDpadBeforeIme=$forward ${describeImeState()}")
+    return forward
   }
 
   private fun getAndroidTvDetection(): Map<String, Any> {
@@ -131,6 +183,9 @@ class MainActivity : FlutterActivity() {
     val content = findViewById<ViewGroup>(android.R.id.content)
     val wrapper = object : FrameLayout(this) {
       override fun dispatchKeyEventPreIme(event: KeyEvent): Boolean {
+        if (isDpadKeyCode(event.keyCode)) {
+          Log.i(TAG, "TextInputDiag preIme received ${describeKeyEvent(event)} ${describeImeState()}")
+        }
         when (event.keyCode) {
           KeyEvent.KEYCODE_DPAD_UP,
           KeyEvent.KEYCODE_DPAD_DOWN,
@@ -138,12 +193,18 @@ class MainActivity : FlutterActivity() {
           KeyEvent.KEYCODE_DPAD_RIGHT,
           KeyEvent.KEYCODE_DPAD_CENTER -> {
             if (shouldForwardDpadBeforeIme()) {
+              Log.i(TAG, "TextInputDiag preIme forwarding-to-Flutter-and-consuming ${describeKeyEvent(event)}")
               super.dispatchKeyEvent(event)
               return true
             }
+            Log.i(TAG, "TextInputDiag preIme letting-IME-handle ${describeKeyEvent(event)}")
           }
         }
-        return super.dispatchKeyEventPreIme(event)
+        val handled = super.dispatchKeyEventPreIme(event)
+        if (isDpadKeyCode(event.keyCode)) {
+          Log.i(TAG, "TextInputDiag preIme superResult=$handled ${describeKeyEvent(event)} ${describeImeState()}")
+        }
+        return handled
       }
     }
     while (content.childCount > 0) {
@@ -167,6 +228,17 @@ class MainActivity : FlutterActivity() {
     super.onNewIntent(intent)
     // Handle Watch Next deep link when app is already running
     handleWatchNextIntent(intent)
+  }
+
+  override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+    if (isDpadKeyCode(event.keyCode)) {
+      Log.i(TAG, "TextInputDiag activity.dispatchKeyEvent before ${describeKeyEvent(event)} ${describeImeState()}")
+    }
+    val handled = super.dispatchKeyEvent(event)
+    if (isDpadKeyCode(event.keyCode)) {
+      Log.i(TAG, "TextInputDiag activity.dispatchKeyEvent after handled=$handled ${describeKeyEvent(event)} ${describeImeState()}")
+    }
+    return handled
   }
 
   private fun handleWatchNextIntent(intent: Intent?) {
@@ -265,7 +337,12 @@ class MainActivity : FlutterActivity() {
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, TEXT_INPUT_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "setNativeTextInputFocused" -> {
+          val oldValue = nativeTextInputFocused
           nativeTextInputFocused = call.arguments as? Boolean ?: false
+          Log.i(
+            TAG,
+            "TextInputDiag methodChannel setNativeTextInputFocused old=$oldValue new=$nativeTextInputFocused ${describeImeState()}"
+          )
           result.success(null)
         }
         else -> result.notImplemented()
