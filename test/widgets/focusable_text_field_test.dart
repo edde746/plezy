@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/focusable_text_field.dart';
+import 'package:plezy/services/gamepad_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
 void main() {
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
     TvDetectionService.setForceTVSync(false);
+    GamepadService.debugNativeTextInputFocusHandler = null;
   });
 
   testWidgets('tab traversal focuses the text form field', (tester) async {
@@ -343,6 +345,10 @@ void main() {
     TvDetectionService.setForceTVSync(true);
     const channel = MethodChannel('com.plezy/text_input');
     final calls = <MethodCall>[];
+    final gamepadFocusStates = <bool>[];
+    GamepadService.debugNativeTextInputFocusHandler = (focused) async {
+      gamepadFocusStates.add(focused);
+    };
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(channel, (call) async {
       calls.add(call);
       return null;
@@ -377,6 +383,7 @@ void main() {
 
     expect(calls.last.method, 'setNativeTextInputFocused');
     expect(calls.last.arguments, isTrue);
+    expect(gamepadFocusStates, [true]);
 
     otherFocusNode.requestFocus();
     await tester.pump();
@@ -384,6 +391,7 @@ void main() {
 
     expect(calls.last.method, 'setNativeTextInputFocused');
     expect(calls.last.arguments, isFalse);
+    expect(gamepadFocusStates, [true, false]);
   });
 
   testWidgets('Android TV physical keyboard still uses field navigation', (tester) async {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -150,6 +151,10 @@ class GamepadService with WindowListener {
   // Whether the app window is currently focused — ignore gamepad input when false
   bool _windowFocused = true;
   bool _nativeKeyHandlerRegistered = false;
+  bool _nativeTextInputFocused = false;
+
+  @visibleForTesting
+  static Future<void> Function(bool focused)? debugNativeTextInputFocusHandler;
 
   GamepadService._({GamepadDuplicateInputGuard? duplicateInputGuard})
     : _duplicateInputGuard = duplicateInputGuard ?? GamepadDuplicateInputGuard(enabled: () => Platform.isWindows);
@@ -157,6 +162,10 @@ class GamepadService with WindowListener {
   static GamepadService get instance {
     _instance ??= GamepadService._();
     return _instance!;
+  }
+
+  static Future<void> setNativeTextInputFocused(bool focused) {
+    return instance._setNativeTextInputFocused(focused);
   }
 
   /// Start listening to gamepad events.
@@ -253,6 +262,34 @@ class GamepadService with WindowListener {
 
   bool _handleNativeKeyEvent(KeyEvent event) {
     return _duplicateInputGuard.handleNativeKeyEvent(event);
+  }
+
+  Future<void> _setNativeTextInputFocused(bool focused) async {
+    if (_nativeTextInputFocused == focused) return;
+    _nativeTextInputFocused = focused;
+
+    if (focused) {
+      _stopDirectionRepeat();
+      _pressedButtons.clear();
+      _suppressedButtons.clear();
+      _duplicateInputGuard.clear();
+    }
+
+    final debugHandler = debugNativeTextInputFocusHandler;
+    if (debugHandler != null) {
+      await debugHandler(focused);
+      return;
+    }
+
+    try {
+      if (focused) {
+        await Gamepad.instance.pause();
+      } else {
+        await Gamepad.instance.resume();
+      }
+    } catch (e) {
+      appLogger.e('GamepadService: Failed to ${focused ? "pause" : "resume"} for native text input', error: e);
+    }
   }
 
   void _handleGamepadEvent(GamepadEvent event) {

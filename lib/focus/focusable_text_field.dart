@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../services/gamepad_service.dart';
 import '../utils/platform_detector.dart';
 import '../widgets/tv_virtual_keyboard.dart';
 import 'dpad_navigator.dart';
@@ -24,6 +25,7 @@ class _NativeTvTextInputFocusBridge {
     }
 
     if (!PlatformDetector.isTV() || PlatformDetector.isAppleTV()) {
+      _focusedTokens.clear();
       _lastSentFocused = false;
       return;
     }
@@ -31,6 +33,7 @@ class _NativeTvTextInputFocusBridge {
     final anyFocused = _focusedTokens.isNotEmpty;
     if (_lastSentFocused == anyFocused) return;
     _lastSentFocused = anyFocused;
+    unawaited(GamepadService.setNativeTextInputFocused(anyFocused));
     unawaited(_sendFocused(anyFocused));
   }
 
