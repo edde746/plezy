@@ -309,19 +309,34 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     try {
       final grabs = await client.liveTv.fetchScheduledRecordings();
       for (final grab in grabs) {
-        if (!_isActiveScheduledGrab(grab)) continue;
-        final program = grab.program;
-        if (program == null) continue;
-        keys.addAll(_recordingKeysForProgram(program, fallbackServerId: serverId));
+        _addRecordingKeysForGrab(grab, serverId: serverId, keys: keys);
       }
     } catch (e) {
       appLogger.d('Failed to load scheduled recordings for $serverId', error: e);
     }
+
+    try {
+      final rules = await client.liveTv.fetchRecordingRules(includeGrabs: true, includeStorage: false);
+      for (final rule in rules) {
+        for (final grab in rule.grabOperations) {
+          _addRecordingKeysForGrab(grab, serverId: serverId, keys: keys);
+        }
+      }
+    } catch (e) {
+      appLogger.d('Failed to load active recording grabs for $serverId', error: e);
+    }
+  }
+
+  void _addRecordingKeysForGrab(MediaGrabOperation grab, {required String serverId, required Set<String> keys}) {
+    if (!_isActiveScheduledGrab(grab)) return;
+    final program = grab.program;
+    if (program == null) return;
+    keys.addAll(_recordingKeysForProgram(program, fallbackServerId: serverId));
   }
 
   bool _isActiveScheduledGrab(MediaGrabOperation grab) {
-    final status = grab.status?.toLowerCase();
-    return status == null || status.isEmpty || status == 'scheduled' || status == 'grabbing';
+    final status = grab.status?.trim().toLowerCase();
+    return status == null || status.isEmpty || status == 'scheduled' || status == 'grabbing' || status == 'recording';
   }
 
   bool _isRecordingScheduled(LiveTvProgram program) {

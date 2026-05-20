@@ -237,6 +237,50 @@ void main() {
     expect(updated?.key, '18');
   });
 
+  test('recording rules parse active grab operation metadata', () async {
+    late http.Request captured;
+    final client = makeClient((request) async {
+      captured = request;
+      return jsonResponse({
+        'MediaContainer': {
+          'MediaSubscription': [
+            {
+              'key': '18',
+              'type': 4,
+              'title': 'Episode',
+              'MediaGrabOperation': [
+                {
+                  'id': 'grab-active',
+                  'status': 'grabbing',
+                  'Metadata': {
+                    'title': 'Live Episode',
+                    'ratingKey': 'episode-1',
+                    'guid': 'plex://episode/1',
+                    'Media': [
+                      {'beginsAt': '1466060400', 'endsAt': '1466062200', 'channelIdentifier': '004'},
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      });
+    });
+    addTearDown(client.close);
+
+    final rules = await client.liveTv.fetchRecordingRules(includeGrabs: true, includeStorage: false);
+
+    expect(captured.url.path, '/media/subscriptions');
+    expect(captured.url.queryParameters['includeGrabs'], '1');
+    expect(captured.url.queryParameters['includeStorage'], '0');
+    final grab = rules.single.grabOperations.single;
+    expect(grab.status, 'grabbing');
+    expect(grab.program?.ratingKey, 'episode-1');
+    expect(grab.program?.guid, 'plex://episode/1');
+    expect(grab.program?.channelIdentifier, '004');
+  });
+
   test('cancelGrab deletes the operation key path', () async {
     late http.Request captured;
     final client = makeClient((request) async {
