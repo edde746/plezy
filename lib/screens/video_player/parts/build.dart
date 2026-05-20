@@ -225,9 +225,9 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
 
                     return Video(
                       player: player!,
-                      controls: (context) => plexVideoControlsBuilder(
-                        player!,
-                        _currentMetadata,
+                      controls: (context) => PlexVideoControls(
+                        player: player!,
+                        metadata: _currentMetadata,
                         onNext: onNext,
                         onPrevious: onPrevious,
                         availableVersions: _availableVersions,

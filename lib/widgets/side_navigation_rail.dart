@@ -201,8 +201,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   static const double _defaultIconSize = 22.0;
   static const Duration _collapseDelay = Duration(milliseconds: 150);
 
-  static double collapsedWidthForContext(BuildContext context) =>
-      PlatformDetector.isTV() ? tvCollapsedWidth : collapsedWidth;
+  static double collapsedWidthForContext(BuildContext _) => PlatformDetector.isTV() ? tvCollapsedWidth : collapsedWidth;
 
   static double horizontalPaddingForContext(BuildContext context, {required bool isCollapsed}) {
     if (!isCollapsed) return _horizontalPadding;
