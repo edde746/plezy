@@ -9,9 +9,7 @@ class FocusMemoryTracker {
   final String _debugLabelPrefix;
   String? _lastFocusedKey;
 
-  FocusMemoryTracker({VoidCallback? onFocusChanged, String debugLabelPrefix = 'focus'})
-    : _onFocusChanged = onFocusChanged,
-      _debugLabelPrefix = debugLabelPrefix;
+  FocusMemoryTracker({this._onFocusChanged, this._debugLabelPrefix = 'focus'});
 
   /// Get or create a focus node for the given key
   FocusNode get(String key, {String? debugLabel}) {

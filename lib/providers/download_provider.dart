@@ -87,10 +87,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   OfflineModeSource? _offlineSource;
 
-  DownloadProvider({required DownloadManagerService downloadManager, required AppDatabase database})
-    : _downloadManager = downloadManager,
-      _database = database,
-      _syncRuleExecutor = SyncRuleExecutor(database: database) {
+  DownloadProvider({required this._downloadManager, required this._database})
+    : _syncRuleExecutor = SyncRuleExecutor(database: _database) {
     // Listen to progress updates from the download manager
     _progressSubscription = _downloadManager.progressStream.listen(_onProgressUpdate);
 
@@ -112,13 +110,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// or path_provider.
   @visibleForTesting
   DownloadProvider.forTesting({
-    required DownloadManagerService downloadManager,
-    required AppDatabase database,
-    String? activeProfileId = 'test-profile',
-  }) : _downloadManager = downloadManager,
-       _database = database,
-       _syncRuleExecutor = SyncRuleExecutor(database: database),
-       _activeProfileId = activeProfileId {
+    required this._downloadManager,
+    required this._database,
+    this._activeProfileId = 'test-profile',
+  }) : _syncRuleExecutor = SyncRuleExecutor(database: _database) {
     _progressSubscription = _downloadManager.progressStream.listen(_onProgressUpdate);
     _deletionProgressSubscription = _downloadManager.deletionProgressStream.listen(_onDeletionProgressUpdate);
     _watchStateSubscription = WatchStateNotifier().stream.listen(_onWatchStateChanged);

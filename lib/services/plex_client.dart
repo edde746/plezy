@@ -304,14 +304,12 @@ class PlexClient
     required this.serverId,
     this.serverName,
     List<String>? prioritizedEndpoints,
-    Future<void> Function(String newBaseUrl)? onEndpointChanged,
-    VoidCallback? onAllEndpointsExhausted,
+    this._onEndpointChanged,
+    this._onAllEndpointsExhausted,
     http.Client? httpClient,
   }) : _endpointManager = (prioritizedEndpoints != null && prioritizedEndpoints.isNotEmpty)
            ? EndpointFailoverManager(prioritizedEndpoints)
-           : null,
-       _onEndpointChanged = onEndpointChanged,
-       _onAllEndpointsExhausted = onAllEndpointsExhausted {
+           : null {
     LogRedactionManager.registerServer(config.baseUrl, config.token);
 
     _http = MediaServerHttpClient(

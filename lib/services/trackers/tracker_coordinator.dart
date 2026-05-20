@@ -432,7 +432,7 @@ class _ManualAnimeProgress {
   int _count = 0;
   int? _maxMappedProgress;
 
-  _ManualAnimeProgress(this._base, {required bool fallbackToCount}) : _fallbackToCount = fallbackToCount;
+  _ManualAnimeProgress(this._base, {required this._fallbackToCount});
 
   void add(TrackerContext ctx) {
     _count++;

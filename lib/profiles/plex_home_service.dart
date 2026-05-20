@@ -21,16 +21,12 @@ import 'profile_connection_registry.dart';
 /// background refreshes happen on connection add and via the periodic ticker.
 class PlexHomeService {
   PlexHomeService({
-    required ConnectionRegistry connections,
-    required ProfileConnectionRegistry profileConnections,
-    StorageService? storage,
+    required this._connections,
+    required this._profileConnections,
+    this._storage,
     Future<List<PlexHomeUser>> Function(String accountToken)? plexHomeUserFetcher,
-    Duration refreshInterval = const Duration(hours: 1),
-  }) : _connections = connections,
-       _profileConnections = profileConnections,
-       _storage = storage,
-       _fetchHomeUsers = plexHomeUserFetcher ?? _defaultHomeUserFetcher,
-       _refreshInterval = refreshInterval;
+    this._refreshInterval = const Duration(hours: 1),
+  }) : _fetchHomeUsers = plexHomeUserFetcher ?? _defaultHomeUserFetcher;
 
   final ConnectionRegistry _connections;
   final ProfileConnectionRegistry _profileConnections;

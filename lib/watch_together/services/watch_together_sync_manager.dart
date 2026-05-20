@@ -87,12 +87,7 @@ class WatchTogetherSyncManager {
   SyncStateCallback? onSyncStateChanged;
   DeferredPlayCallback? onDeferredPlayChanged;
 
-  WatchTogetherSyncManager({
-    required WatchTogetherPeerService peerService,
-    required WatchSession session,
-    required this.displayName,
-  }) : _peerService = peerService,
-       _session = session;
+  WatchTogetherSyncManager({required this._peerService, required this._session, required this.displayName});
 
   /// Update the session (e.g., when control mode changes)
   void updateSession(WatchSession session) {

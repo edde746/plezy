@@ -143,14 +143,11 @@ class DownloadManagerService {
   late final Future<void> recoveryFuture;
 
   DownloadManagerService({
-    required AppDatabase database,
-    required DownloadStorageService storageService,
+    required this._database,
+    required this._storageService,
     MediaServerHttpClient? http,
-    @visibleForTesting bool? downloadsSupportedOverride,
-  }) : _database = database,
-       _storageService = storageService,
-       _downloadsSupportedOverride = downloadsSupportedOverride,
-       _http = http ?? httpClient;
+    @visibleForTesting this._downloadsSupportedOverride,
+  }) : _http = http ?? httpClient;
 
   bool get downloadsSupported => _downloadsSupportedOverride ?? platformDownloadsSupported;
 

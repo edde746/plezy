@@ -22,15 +22,7 @@ import 'profile_registry.dart';
 /// local profiles first, then live home users; if neither matches we fall
 /// back to the first profile in the merged list.
 class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  ActiveProfileProvider({
-    required ProfileRegistry registry,
-    required PlexHomeService plexHome,
-    required ConnectionRegistry connections,
-    StorageService? storage,
-  }) : _registry = registry,
-       _plexHome = plexHome,
-       _connections = connections,
-       _storage = storage;
+  ActiveProfileProvider({required this._registry, required this._plexHome, required this._connections, this._storage});
 
   final ProfileRegistry _registry;
   final PlexHomeService _plexHome;

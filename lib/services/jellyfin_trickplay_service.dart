@@ -41,16 +41,12 @@ class JellyfinTrickplayService implements ScrubPreviewSource {
   final Map<int, ImageProvider> _providerCache = {};
 
   JellyfinTrickplayService._({
-    required JellyfinClient client,
-    required String itemId,
-    required String? mediaSourceId,
-    required TrickplayInfo info,
-    required TrickplaySheetImageBuilder sheetImageBuilder,
-  }) : _client = client,
-       _itemId = itemId,
-       _mediaSourceId = mediaSourceId,
-       _info = info,
-       _sheetImageBuilder = sheetImageBuilder;
+    required this._client,
+    required this._itemId,
+    required this._mediaSourceId,
+    required this._info,
+    required this._sheetImageBuilder,
+  });
 
   /// Picks the best width from [manifest] (smallest >= [targetTooltipWidth],
   /// largest available otherwise). Returns `null` when [manifest] is empty.
