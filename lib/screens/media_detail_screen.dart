@@ -1910,6 +1910,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Widget _buildSeasonTabsContent(BuildContext context, bool showPosters) {
+    final showSeasonPosters = showPosters && !PlatformDetector.isTV();
+
     return HorizontalScrollWithArrows(
       controller: _seasonTabsScrollController,
       builder: (scrollController) => SingleChildScrollView(
@@ -1922,7 +1924,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             Offset? tapPosition;
             final posterPath = season.thumbPath;
             Widget? topImage;
-            if (showPosters && posterPath != null && posterPath.isNotEmpty) {
+            if (showSeasonPosters && posterPath != null && posterPath.isNotEmpty) {
               const posterWidth = 72.0;
               const posterHeight = 108.0;
               final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
