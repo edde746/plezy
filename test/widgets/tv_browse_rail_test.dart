@@ -201,6 +201,48 @@ void main() {
     expect(activeHubIds.last, 'detail_season_1');
   });
 
+  testWidgets('selects preferred hub after an earlier update could not find it', (tester) async {
+    final activeHubIds = <String>[];
+
+    Widget buildRail(List<MediaHub> hubs, {String? initialHubId}) {
+      final serverManager = MultiServerManager();
+      return ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                key: const ValueKey('rail'),
+                hubs: hubs,
+                initialHubId: initialHubId,
+                iconForHub: (_, _) => Icons.tv_rounded,
+                onActiveHubChanged: (hub, _) => activeHubIds.add(hub.id),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    const castHub = MediaHub(id: 'detail_actors', title: 'Cast', type: 'person', items: <MediaItem>[]);
+    const episodesHub = MediaHub(id: 'detail_episodes', title: 'Episodes', type: 'episode', items: <MediaItem>[]);
+
+    await tester.pumpWidget(buildRail(const [castHub]));
+    await tester.pump();
+
+    await tester.pumpWidget(buildRail(const [castHub], initialHubId: episodesHub.id));
+    await tester.pump();
+
+    await tester.pumpWidget(buildRail(const [episodesHub, castHub], initialHubId: episodesHub.id));
+    await tester.pump();
+
+    expect(activeHubIds, containsAllInOrder(['detail_actors', 'detail_episodes']));
+    expect(activeHubIds.last, 'detail_episodes');
+  });
+
   testWidgets('selects preferred item when active hub items are populated asynchronously', (tester) async {
     final focusedItemIds = <String>[];
 

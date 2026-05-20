@@ -3211,8 +3211,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   String? _tvDetailInitialHubId(MediaItem metadata) {
-    if (!metadata.isShow || _showEpisodesDirectly || _seasons.isEmpty) return null;
-    return '$_tvDetailSeasonHubIdPrefix$_selectedSeasonIndex';
+    if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty) {
+      return '$_tvDetailSeasonHubIdPrefix$_selectedSeasonIndex';
+    }
+    if ((metadata.isShow && _showEpisodesDirectly) || metadata.isSeason) {
+      return 'detail_episodes';
+    }
+    return null;
   }
 
   String? _tvDetailInitialItemId(MediaItem metadata) {
