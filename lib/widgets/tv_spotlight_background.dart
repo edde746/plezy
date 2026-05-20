@@ -47,7 +47,6 @@ class TvSpotlightBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final media = item;
-    final colorScheme = Theme.of(context).colorScheme;
     final bgColor = Theme.of(context).scaffoldBackgroundColor;
 
     return AnimatedSwitcher(
@@ -89,7 +88,7 @@ class TvSpotlightBackground extends StatelessWidget {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     if (!constraints.hasBoundedHeight || constraints.maxHeight <= 0 || constraints.maxWidth <= 0) {
-                      return Align(alignment: Alignment.bottomLeft, child: _buildInfo(context, media, colorScheme));
+                      return Align(alignment: Alignment.bottomLeft, child: _buildInfo(context, media));
                     }
 
                     return Align(
@@ -97,7 +96,7 @@ class TvSpotlightBackground extends StatelessWidget {
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
                         alignment: Alignment.bottomLeft,
-                        child: SizedBox(width: constraints.maxWidth, child: _buildInfo(context, media, colorScheme)),
+                        child: SizedBox(width: constraints.maxWidth, child: _buildInfo(context, media)),
                       ),
                     );
                   },
@@ -151,7 +150,7 @@ class TvSpotlightBackground extends StatelessWidget {
     );
   }
 
-  Widget _buildInfo(BuildContext context, MediaItem media, ColorScheme colorScheme) {
+  Widget _buildInfo(BuildContext context, MediaItem media) {
     final scale = _scale(context);
     final shouldHideSpoiler = hideSpoilers && media.shouldHideSpoiler;
     final summary = shouldHideSpoiler ? null : media.summary;

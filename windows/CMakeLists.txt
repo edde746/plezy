@@ -116,6 +116,14 @@ add_subdirectory("runner")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+if(TARGET os_media_controls_plugin)
+  # MSVC 14.51 makes C++/WinRT's experimental coroutine include a hard error.
+  target_compile_definitions(
+    os_media_controls_plugin
+    PRIVATE _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS
+  )
+endif()
+
 
 # === Installation ===
 # Support files are copied into place next to the executable, so that it can
