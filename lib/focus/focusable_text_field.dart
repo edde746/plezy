@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../services/gamepad_service.dart';
-import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
+import '../utils/text_input_diagnostics.dart';
 import '../widgets/tv_virtual_keyboard.dart';
 import 'dpad_navigator.dart';
 
@@ -19,8 +19,7 @@ String _describeTextInputKey(KeyEvent event) {
 }
 
 void _logTvTextInput(String message) {
-  if (!PlatformDetector.isTV()) return;
-  appLogger.i('TextInputDiag FlutterTextField: $message');
+  TextInputDiagnostics.log('FlutterTextField', message);
 }
 
 class _NativeTvTextInputFocusBridge {
