@@ -188,6 +188,35 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var selectedSubtitleTrackId: String? = null
   private val audioTrackGroupMap = mutableMapOf<String, TrackGroup>()
   private val subtitleTrackGroupMap = mutableMapOf<String, TrackGroup>()
+  private var pendingDvTrackRestore: PendingTrackRestore? = null
+
+  private data class PendingTrackRestore(
+    val audio: TrackRestoreIdentity?,
+    val subtitle: TrackRestoreIdentity?,
+    val subtitleDisabled: Boolean
+  )
+
+  private data class TrackRestoreIdentity(
+    val type: Int,
+    val groupIndex: Int,
+    val trackIndex: Int,
+    val formatId: String?,
+    val label: String?,
+    val language: String?,
+    val sampleMimeType: String?,
+    val codecs: String?,
+    val channelCount: Int,
+    val sampleRate: Int,
+    val selectionFlags: Int
+  )
+
+  private data class TrackRestoreMatch(
+    val group: Tracks.Group,
+    val trackGroup: TrackGroup,
+    val trackIndex: Int,
+    val format: Format,
+    val score: Int
+  )
 
   private fun emitLog(level: String, prefix: String, message: String) {
     when (level) {
@@ -787,6 +816,24 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
   override fun onTracksChanged(tracks: Tracks) {
     Log.d(TAG, "onTracksChanged")
+    // Detect video track present but deselected (unsupported codec — plays audio only)
+    val hasAnyVideoGroup = tracks.groups.any { it.type == C.TRACK_TYPE_VIDEO }
+    val hasSelectedVideo = tracks.groups.any { it.type == C.TRACK_TYPE_VIDEO && it.isSelected }
+    if (hasAnyVideoGroup && !hasSelectedVideo && currentMediaUri != null) {
+      // Try DV conversion before falling to MPV
+      if (retryWithDvConversion("video track not selected")) return
+      emitLog("warn", "fallback", "Video track present but not selected (unsupported codec)")
+      delegate?.onFormatUnsupported(
+        uri = currentMediaUri!!,
+        headers = currentHeaders,
+        positionMs = effectivePosition,
+        errorMessage = "Video track present but no decoder available"
+      )
+      return
+    }
+
+    if (restorePendingDvTrackSelection(tracks)) return
+
     // Log selected video and audio track details
     val videoGroup = tracks.groups.firstOrNull { it.type == C.TRACK_TYPE_VIDEO && it.isSelected }
     val audioGroup = tracks.groups.firstOrNull { it.type == C.TRACK_TYPE_AUDIO && it.isSelected }
@@ -804,21 +851,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       if (af.sampleMimeType == MimeTypes.AUDIO_TRUEHD) {
         updateAudioDecoderPolicy("tracks changed", af)
       }
-    }
-    // Detect video track present but deselected (unsupported codec — plays audio only)
-    val hasAnyVideoGroup = tracks.groups.any { it.type == C.TRACK_TYPE_VIDEO }
-    val hasSelectedVideo = tracks.groups.any { it.type == C.TRACK_TYPE_VIDEO && it.isSelected }
-    if (hasAnyVideoGroup && !hasSelectedVideo && currentMediaUri != null) {
-      // Try DV conversion before falling to MPV
-      if (retryWithDvConversion("video track not selected")) return
-      emitLog("warn", "fallback", "Video track present but not selected (unsupported codec)")
-      delegate?.onFormatUnsupported(
-        uri = currentMediaUri!!,
-        headers = currentHeaders,
-        positionMs = effectivePosition,
-        errorMessage = "Video track present but no decoder available"
-      )
-      return
     }
 
     evaluateAudioCodecForTunneling()
@@ -895,7 +927,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (debugDvModeOverride == DvConversionMode.DISABLED) return false
     if (dvMode != DvConversionMode.DISABLED) return false
     if (!DoviBridge.isAvailable()) return false
-    val uri = currentMediaUri ?: return false
+    if (currentMediaUri == null) return false
 
     dv7RetryAttempted = true
     val newMode = DoviBridge.getDv7FallbackMode()
@@ -903,13 +935,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     Log.i(TAG, "Native DV7 playback failed ($reason), retrying with $newMode")
     emitLog("info", "dv-fallback", "DV7 native failed ($reason), retrying as $newMode")
 
-    open(
-      uri = uri,
-      headers = currentHeaders,
-      startPositionMs = lastPosition,
-      autoPlay = true
-    )
-    return true
+    return reloadCurrentMediaForDvMode()
   }
 
   override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -1100,6 +1126,207 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     delegate?.onPropertyChange("track-list", trackList)
   }
+
+  private fun captureDvTrackRestore(): PendingTrackRestore? {
+    val tracks = exoPlayer?.currentTracks ?: return null
+    val audio = captureSelectedTrackIdentity(tracks, C.TRACK_TYPE_AUDIO)
+      ?: captureMappedTrackIdentity(selectedAudioTrackId, audioTrackGroupMap, C.TRACK_TYPE_AUDIO)
+    val subtitle = captureSelectedTrackIdentity(tracks, C.TRACK_TYPE_TEXT)
+      ?: captureMappedTrackIdentity(selectedSubtitleTrackId, subtitleTrackGroupMap, C.TRACK_TYPE_TEXT)
+    val subtitleDisabled = subtitle == null && selectedSubtitleTrackId == "no"
+
+    if (audio == null && subtitle == null && !subtitleDisabled) return null
+    return PendingTrackRestore(audio, subtitle, subtitleDisabled)
+  }
+
+  private fun captureSelectedTrackIdentity(tracks: Tracks, type: Int): TrackRestoreIdentity? {
+    var typeGroupIndex = 0
+    for (group in tracks.groups) {
+      if (group.type != type) continue
+      val trackIndex = selectedTrackIndex(group)
+      if (trackIndex != null) {
+        return buildTrackRestoreIdentity(type, typeGroupIndex, trackIndex, group.mediaTrackGroup.getFormat(trackIndex))
+      }
+      typeGroupIndex++
+    }
+    return null
+  }
+
+  private fun captureMappedTrackIdentity(
+    trackId: String?,
+    trackMap: Map<String, TrackGroup>,
+    type: Int
+  ): TrackRestoreIdentity? {
+    if (trackId == null || trackId == "no") return null
+    val trackGroup = trackMap[trackId] ?: return null
+    if (trackGroup.length == 0) return null
+    val groupIndex = trackId.substringAfter('_', "").toIntOrNull() ?: -1
+    return buildTrackRestoreIdentity(type, groupIndex, 0, trackGroup.getFormat(0))
+  }
+
+  private fun selectedTrackIndex(group: Tracks.Group): Int? {
+    if (!group.isSelected) return null
+    for (trackIndex in 0 until group.mediaTrackGroup.length) {
+      if (group.isTrackSelected(trackIndex)) return trackIndex
+    }
+    return if (group.mediaTrackGroup.length > 0) 0 else null
+  }
+
+  private fun buildTrackRestoreIdentity(
+    type: Int,
+    groupIndex: Int,
+    trackIndex: Int,
+    format: Format
+  ): TrackRestoreIdentity = TrackRestoreIdentity(
+    type = type,
+    groupIndex = groupIndex,
+    trackIndex = trackIndex,
+    formatId = normalizedText(format.id),
+    label = normalizedText(format.label),
+    language = normalizedLanguage(format.language),
+    sampleMimeType = normalizedText(format.sampleMimeType),
+    codecs = normalizedText(format.codecs),
+    channelCount = format.channelCount,
+    sampleRate = format.sampleRate,
+    selectionFlags = format.selectionFlags
+  )
+
+  private fun restorePendingDvTrackSelection(tracks: Tracks): Boolean {
+    val pending = pendingDvTrackRestore ?: return false
+    val selector = trackSelector ?: return false
+    if (shouldWaitForDvRestoreTracks(pending, tracks)) return true
+    pendingDvTrackRestore = null
+
+    val audioMatch = pending.audio?.let { findTrackRestoreMatch(tracks, it) }
+    val subtitleMatch = pending.subtitle?.let { findTrackRestoreMatch(tracks, it) }
+    val hasSelectedText = tracks.groups.any { it.type == C.TRACK_TYPE_TEXT && it.isSelected }
+    var selectionWillChange = false
+    var appliedRestore = false
+
+    val builder = selector.buildUponParameters()
+    if (pending.audio != null) {
+      if (audioMatch != null) {
+        builder
+          .setOverrideForType(TrackSelectionOverride(audioMatch.trackGroup, audioMatch.trackIndex))
+          .setTrackTypeDisabled(C.TRACK_TYPE_AUDIO, false)
+        selectionWillChange = selectionWillChange || !audioMatch.isSelected()
+        appliedRestore = true
+        emitLog("info", "track-restore", "Restoring audio after DV reload: ${pending.audio.describe()} -> ${audioMatch.format.describeTrackFormat()} score=${audioMatch.score}")
+      } else {
+        emitLog("warn", "track-restore", "Could not restore audio after DV reload: ${pending.audio.describe()}")
+      }
+    }
+
+    if (pending.subtitleDisabled) {
+      builder
+        .clearOverridesOfType(C.TRACK_TYPE_TEXT)
+        .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, true)
+      selectionWillChange = selectionWillChange || hasSelectedText
+      appliedRestore = true
+      emitLog("info", "track-restore", "Restoring subtitles off after DV reload")
+    } else if (pending.subtitle != null) {
+      if (subtitleMatch != null) {
+        builder
+          .setOverrideForType(TrackSelectionOverride(subtitleMatch.trackGroup, subtitleMatch.trackIndex))
+          .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
+        selectionWillChange = selectionWillChange || !subtitleMatch.isSelected()
+        appliedRestore = true
+        emitLog("info", "track-restore", "Restoring subtitle after DV reload: ${pending.subtitle.describe()} -> ${subtitleMatch.format.describeTrackFormat()} score=${subtitleMatch.score}")
+      } else {
+        emitLog("warn", "track-restore", "Could not restore subtitle after DV reload: ${pending.subtitle.describe()}")
+      }
+    }
+
+    if (appliedRestore) {
+      selector.parameters = builder.build()
+    }
+    return selectionWillChange
+  }
+
+  private fun shouldWaitForDvRestoreTracks(pending: PendingTrackRestore, tracks: Tracks): Boolean {
+    val hasAudioGroups = tracks.groups.any { it.type == C.TRACK_TYPE_AUDIO }
+    val hasTextGroups = tracks.groups.any { it.type == C.TRACK_TYPE_TEXT }
+    return (pending.audio != null && !hasAudioGroups) ||
+      (pending.subtitle != null && !hasTextGroups)
+  }
+
+  private fun findTrackRestoreMatch(tracks: Tracks, identity: TrackRestoreIdentity): TrackRestoreMatch? {
+    var bestMatch: TrackRestoreMatch? = null
+    var typeGroupIndex = 0
+    for (group in tracks.groups) {
+      if (group.type != identity.type) continue
+      val trackGroup = group.mediaTrackGroup
+      for (trackIndex in 0 until trackGroup.length) {
+        val format = trackGroup.getFormat(trackIndex)
+        val score = scoreTrackRestoreMatch(identity, format, typeGroupIndex, trackIndex)
+        if (bestMatch == null || score > bestMatch.score) {
+          bestMatch = TrackRestoreMatch(group, trackGroup, trackIndex, format, score)
+        }
+      }
+      typeGroupIndex++
+    }
+
+    val minimumScore = if (identity.type == C.TRACK_TYPE_AUDIO) 35 else 30
+    return bestMatch?.takeIf { it.score >= minimumScore }
+  }
+
+  private fun scoreTrackRestoreMatch(
+    identity: TrackRestoreIdentity,
+    format: Format,
+    groupIndex: Int,
+    trackIndex: Int
+  ): Int {
+    var score = 0
+    val candidateId = normalizedText(format.id)
+    if (identity.formatId != null && candidateId != null) {
+      score += if (identity.formatId == candidateId) 100 else -15
+    }
+    val candidateLabel = normalizedText(format.label)
+    if (identity.label != null && candidateLabel != null && identity.label == candidateLabel) score += 40
+    val candidateLanguage = normalizedLanguage(format.language)
+    if (identity.language != null && candidateLanguage != null && identity.language == candidateLanguage) score += 30
+    val candidateMime = normalizedText(format.sampleMimeType)
+    if (identity.sampleMimeType != null && candidateMime != null && identity.sampleMimeType == candidateMime) score += 12
+    val candidateCodecs = normalizedText(format.codecs)
+    if (identity.codecs != null && candidateCodecs != null && identity.codecs == candidateCodecs) score += 8
+    if (identity.channelCount != Format.NO_VALUE && identity.channelCount == format.channelCount) score += 6
+    if (identity.sampleRate != Format.NO_VALUE && identity.sampleRate == format.sampleRate) score += 4
+    if (identity.selectionFlags == format.selectionFlags) score += 3
+    if (identity.groupIndex == groupIndex) score += 20
+    if (identity.trackIndex == trackIndex) score += 5
+    return score
+  }
+
+  private fun TrackRestoreMatch.isSelected(): Boolean = group.isSelected && group.isTrackSelected(trackIndex)
+
+  private fun TrackRestoreIdentity.describe(): String {
+    val parts = mutableListOf<String>()
+    language?.let { parts.add("lang=$it") }
+    label?.let { parts.add("label=$it") }
+    sampleMimeType?.let { parts.add("mime=$it") }
+    codecs?.let { parts.add("codecs=$it") }
+    if (channelCount != Format.NO_VALUE) parts.add("channels=$channelCount")
+    if (sampleRate != Format.NO_VALUE) parts.add("rate=$sampleRate")
+    formatId?.let { parts.add("id=$it") }
+    parts.add("group=$groupIndex")
+    return parts.joinToString(",")
+  }
+
+  private fun Format.describeTrackFormat(): String {
+    val parts = mutableListOf<String>()
+    normalizedLanguage(language)?.let { parts.add("lang=$it") }
+    normalizedText(label)?.let { parts.add("label=$it") }
+    normalizedText(sampleMimeType)?.let { parts.add("mime=$it") }
+    normalizedText(codecs)?.let { parts.add("codecs=$it") }
+    if (channelCount != Format.NO_VALUE) parts.add("channels=$channelCount")
+    if (sampleRate != Format.NO_VALUE) parts.add("rate=$sampleRate")
+    normalizedText(id)?.let { parts.add("id=$it") }
+    return parts.joinToString(",")
+  }
+
+  private fun normalizedText(value: String?): String? = value?.trim()?.takeIf { it.isNotEmpty() }
+
+  private fun normalizedLanguage(value: String?): String? = normalizedText(value)?.lowercase()?.takeUnless { it == "und" }
 
   // Tunneling control — disabled when audio codec has no hardware decoder (requires FFmpeg)
 
@@ -1714,6 +1941,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     subtitleTrackGroupMap.clear()
     selectedAudioTrackId = null
     selectedSubtitleTrackId = null
+    pendingDvTrackRestore = null
 
     // Build external subtitle configurations (attached to MediaItem before prepare)
     externalSubtitleList?.forEachIndexed { index, sub ->
@@ -1802,18 +2030,30 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     return true
   }
 
-  private fun reloadCurrentMediaForDvMode() {
-    val player = exoPlayer ?: return
-    val uri = currentMediaUri ?: return
-    if (currentMediaIsLive) return
+  private fun reloadCurrentMediaForDvMode(): Boolean {
+    val player = exoPlayer ?: return false
+    val uri = currentMediaUri ?: return false
+    if (currentMediaIsLive) return false
 
     val savedPosition = maxOf(player.currentPosition, lastPosition, pendingStartPositionMs)
     val savedPlayWhenReady = player.playWhenReady
+    pendingDvTrackRestore = captureDvTrackRestore()?.also { restore ->
+      emitLog(
+        "info",
+        "track-restore",
+        "Saved selection before DV reload: audio=${restore.audio?.describe() ?: "none"}, " +
+          "subtitle=${restore.subtitle?.describe() ?: if (restore.subtitleDisabled) "off" else "none"}"
+      )
+    }
     pendingStartPositionMs = savedPosition
     pendingPlayWhenReady = savedPlayWhenReady
     decoderInitName = null
     audioDecoderInitName = null
+    detectedFrameRate = -1f
+    fpsTimestampCount = 0
     firstFrameRendered = false
+    activeDoviMkvWrapper = null
+    activeDoviMp4Wrapper = null
     stopFrameWatchdog()
     cancelDecoderHangCheck()
 
@@ -1830,6 +2070,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     player.prepare()
     player.playWhenReady = savedPlayWhenReady
     emitLog("info", "dv-debug", "Reloaded media for DV mode $dvMode at ${savedPosition}ms")
+    return true
   }
 
   fun play() {
@@ -2293,6 +2534,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     emitSeekable(false, force = true)
     selectedAudioTrackId = null
     selectedSubtitleTrackId = null
+    pendingDvTrackRestore = null
     audioTrackGroupMap.clear()
     subtitleTrackGroupMap.clear()
     exoPlayer?.clearVideoSurface()
