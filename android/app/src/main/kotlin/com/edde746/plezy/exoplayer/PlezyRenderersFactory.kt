@@ -29,7 +29,7 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
   /** Audio delay in microseconds. Shared with PositionFixAudioSink for live updates. */
   val audioDelayUs = AtomicLong(0L)
 
-  /** Returns whether direct TrueHD output should be hidden so FFmpeg PCM decode can be selected. */
+  /** Returns whether direct TrueHD output should be hidden so decoded PCM output can be selected. */
   var shouldBlockDirectTrueHd: ((Format) -> Boolean)? = null
 
   /** Called before Media3 reacts to an audio route/capability change. */
@@ -137,7 +137,7 @@ private class PositionFixAudioSink(
       log?.invoke(
         "info",
         "audio",
-        "Blocking direct TrueHD output; route does not report TrueHD bitstream support, FFmpeg PCM decode will be preferred"
+        "Blocking direct TrueHD output; route does not report TrueHD bitstream support, decoded PCM output will be preferred"
       )
     }
     return true
