@@ -4,6 +4,8 @@ import android.content.Context
 import android.media.AudioDeviceInfo
 import android.os.Build
 import androidx.annotation.OptIn
+import androidx.media3.common.Format
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.util.Clock
 import androidx.media3.common.util.UnstableApi
@@ -26,6 +28,14 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
 
   /** Audio delay in microseconds. Shared with PositionFixAudioSink for live updates. */
   val audioDelayUs = AtomicLong(0L)
+
+  /** Returns whether direct TrueHD output should be hidden so FFmpeg PCM decode can be selected. */
+  var shouldBlockDirectTrueHd: ((Format) -> Boolean)? = null
+
+  /** Called before Media3 reacts to an audio route/capability change. */
+  var onAudioCapabilitiesChanged: (() -> Unit)? = null
+
+  var audioDiagnosticsLogger: ((String, String, String) -> Unit)? = null
 
   override fun buildAudioSink(
     context: Context,
@@ -51,10 +61,17 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
     val defaultSink = DefaultAudioSink.Builder(context)
       .setEnableFloatOutput(enableFloatOutput)
       .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
-      .setAudioOutputProvider(RawPositionOutputProvider(realProvider, rawPositionUs))
+      .setAudioOutputProvider(RawPositionOutputProvider(realProvider, rawPositionUs, audioDiagnosticsLogger))
       .build()
 
-    return PositionFixAudioSink(defaultSink, rawPositionUs, audioDelayUs)
+    return PositionFixAudioSink(
+      defaultSink,
+      rawPositionUs,
+      audioDelayUs,
+      shouldBlockDirectTrueHd,
+      onAudioCapabilitiesChanged,
+      audioDiagnosticsLogger
+    )
   }
 }
 
@@ -83,7 +100,10 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
 private class PositionFixAudioSink(
   sink: AudioSink,
   private val rawPositionUs: AtomicLong,
-  private val audioDelayUs: AtomicLong
+  private val audioDelayUs: AtomicLong,
+  private val shouldBlockDirectTrueHd: ((Format) -> Boolean)?,
+  private val onAudioCapabilitiesChanged: (() -> Unit)?,
+  private val log: ((String, String, String) -> Unit)?
 ) : ForwardingAudioSink(sink) {
 
   private var startMediaTimeUs = Long.MIN_VALUE
@@ -97,12 +117,45 @@ private class PositionFixAudioSink(
   // Transient counter-offset: after seek/flush, ramp offset from 0 to full
   // over recoveryDurationUs to prevent video frame drops.
   private var recoveryDurationUs = 0L
+  private var loggedTrueHdDirectBlock = false
+  private var loggedFirstBuffer = false
+
+  override fun supportsFormat(format: Format): Boolean {
+    if (blocksDirectTrueHd(format)) return false
+    return super.supportsFormat(format)
+  }
+
+  override fun getFormatSupport(format: Format): Int {
+    if (blocksDirectTrueHd(format)) return AudioSink.SINK_FORMAT_UNSUPPORTED
+    return super.getFormatSupport(format)
+  }
+
+  private fun blocksDirectTrueHd(format: Format): Boolean {
+    if (format.sampleMimeType != MimeTypes.AUDIO_TRUEHD || shouldBlockDirectTrueHd?.invoke(format) != true) return false
+    if (!loggedTrueHdDirectBlock) {
+      loggedTrueHdDirectBlock = true
+      log?.invoke(
+        "info",
+        "audio",
+        "Blocking direct TrueHD output; route does not report TrueHD bitstream support, FFmpeg PCM decode will be preferred"
+      )
+    }
+    return true
+  }
 
   override fun handleBuffer(
     buffer: ByteBuffer,
     presentationTimeUs: Long,
     encodedAccessUnitCount: Int
   ): Boolean {
+    if (!loggedFirstBuffer && buffer.hasRemaining()) {
+      loggedFirstBuffer = true
+      log?.invoke(
+        "debug",
+        "audio-sink",
+        "First buffer: size=${buffer.remaining()}B, pts=${presentationTimeUs}us, accessUnits=$encodedAccessUnitCount"
+      )
+    }
     if (startMediaTimeUs == Long.MIN_VALUE) {
       startMediaTimeUs = presentationTimeUs
       refMediaTimeUs = presentationTimeUs
@@ -163,7 +216,10 @@ private class PositionFixAudioSink(
         override fun onSkipSilenceEnabledChanged(skipSilenceEnabled: Boolean) = listener.onSkipSilenceEnabledChanged(skipSilenceEnabled)
         override fun onOffloadBufferEmptying() = listener.onOffloadBufferEmptying()
         override fun onOffloadBufferFull() = listener.onOffloadBufferFull()
-        override fun onAudioCapabilitiesChanged() = listener.onAudioCapabilitiesChanged()
+        override fun onAudioCapabilitiesChanged() {
+          onAudioCapabilitiesChanged?.invoke()
+          listener.onAudioCapabilitiesChanged()
+        }
         override fun onAudioTrackInitialized(audioTrackConfig: AudioSink.AudioTrackConfig) = listener.onAudioTrackInitialized(audioTrackConfig)
         override fun onAudioTrackReleased(audioTrackConfig: AudioSink.AudioTrackConfig) = listener.onAudioTrackReleased(audioTrackConfig)
         override fun onSilenceSkipped() = listener.onSilenceSkipped()
@@ -235,7 +291,8 @@ internal class SubtitleDelayRenderer(
 @OptIn(UnstableApi::class)
 private class RawPositionOutputProvider(
   private val delegate: AudioOutputProvider,
-  private val rawPositionUs: AtomicLong
+  private val rawPositionUs: AtomicLong,
+  private val log: ((String, String, String) -> Unit)?
 ) : AudioOutputProvider {
 
   private var cachedOutput: RawPositionAudioOutput? = null
@@ -256,7 +313,7 @@ private class RawPositionOutputProvider(
 
     val realOutput = delegate.getAudioOutput(config)
     cachedConfig = config
-    return RawPositionAudioOutput(realOutput, rawPositionUs, this)
+    return RawPositionAudioOutput(realOutput, rawPositionUs, this, log)
   }
 
   fun returnToCache(output: RawPositionAudioOutput) {
@@ -285,8 +342,13 @@ private class RawPositionOutputProvider(
 private class RawPositionAudioOutput(
   private val delegate: AudioOutput,
   private val rawPositionUs: AtomicLong,
-  private val provider: RawPositionOutputProvider
+  private val provider: RawPositionOutputProvider,
+  private val log: ((String, String, String) -> Unit)?
 ) : AudioOutput {
+
+  private var loggedFirstWrite = false
+  private var writeCount = 0L
+  private var writtenBytes = 0L
 
   override fun getPositionUs(): Long {
     val pos = delegate.getPositionUs()
@@ -298,10 +360,30 @@ private class RawPositionAudioOutput(
   override fun pause() = delegate.pause()
 
   @Throws(AudioOutput.WriteException::class)
-  override fun write(buffer: ByteBuffer, size: Int, presentationTimeUs: Long) = delegate.write(buffer, size, presentationTimeUs)
+  override fun write(buffer: ByteBuffer, size: Int, presentationTimeUs: Long): Boolean {
+    val before = buffer.position()
+    val handled = delegate.write(buffer, size, presentationTimeUs)
+    val written = buffer.position() - before
+    if (written > 0) {
+      writeCount++
+      writtenBytes += written.toLong()
+      if (!loggedFirstWrite) {
+        loggedFirstWrite = true
+        log?.invoke(
+          "debug",
+          "audio-output",
+          "First write: wrote=${written}B, handled=$handled, pts=${presentationTimeUs}us, writes=$writeCount, total=${writtenBytes}B"
+        )
+      }
+    }
+    return handled
+  }
 
   override fun flush() {
     rawPositionUs.set(Long.MIN_VALUE)
+    loggedFirstWrite = false
+    writeCount = 0
+    writtenBytes = 0
     delegate.flush()
   }
 
