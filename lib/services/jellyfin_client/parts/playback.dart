@@ -219,10 +219,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
 
     final effectiveAudioStreamId = _resolveJellyfinAudioStreamId(requestedAudioStreamId, mediaInfo);
     mediaInfo = _withSelectedJellyfinAudioStream(mediaInfo, effectiveAudioStreamId);
-    // Only forward MediaSourceId when there's actually more than one source —
-    // single-source items have `MediaSourceId == itemId` so the param is a
-    // no-op there but adds clutter to logs.
-    final pinnedSourceId = effectiveSourceId != null && effectiveSourceId != metadata.id ? effectiveSourceId : null;
+    final pinnedSourceId = bundle.pinnedSourceIdForItem(metadata.id);
     videoUrl ??= buildDirectStreamUrl(
       metadata.id,
       container: effectiveContainer,
@@ -251,10 +248,15 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
 
   Map<String, dynamic>? _selectNegotiatedMediaSource(Object? sources, String? selectedSourceId) {
     if (sources is! List || sources.isEmpty) return null;
-    for (final source in sources) {
-      if (source is Map<String, dynamic> && source['Id'] == selectedSourceId) {
-        return source;
+    final requestedSourceId = selectedSourceId?.trim();
+    if (requestedSourceId != null && requestedSourceId.isNotEmpty) {
+      for (final source in sources) {
+        if (source is Map<String, dynamic> &&
+            (source['Id'] as String?)?.toLowerCase() == requestedSourceId.toLowerCase()) {
+          return source;
+        }
       }
+      return null;
     }
     final first = sources.first;
     return first is Map<String, dynamic> ? first : null;

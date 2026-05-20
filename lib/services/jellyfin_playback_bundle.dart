@@ -25,9 +25,9 @@ class JellyfinPlaybackBundle {
   /// `buildDirectStreamUrl` so the player gets the right extension hint.
   final String? container;
 
-  /// `Id` of the selected source. Forwarded as `MediaSourceId=` only when
-  /// there's more than one source on the item; single-source items have
-  /// `Id == itemId` so the param adds noise without changing behaviour.
+  /// `Id` of the selected source. Multi-source items must forward this as
+  /// `MediaSourceId=` even when it equals the item id; otherwise Jellyfin
+  /// falls back to its first sorted source instead of the selected version.
   final String? selectedSourceId;
 
   /// Item-level `Trickplay` manifest (raw JSON object). `null` when the
@@ -42,4 +42,13 @@ class JellyfinPlaybackBundle {
     this.selectedSourceId,
     this.trickplay,
   });
+
+  /// Source id to pin in playback/download URLs. Preserve the old single-source
+  /// behavior when Jellyfin's source id differs from the item id, and also pin
+  /// multi-source primary items where the selected source id equals [itemId].
+  String? pinnedSourceIdForItem(String itemId) {
+    final id = selectedSourceId?.trim();
+    if (id == null || id.isEmpty) return null;
+    return availableVersions.length > 1 || id != itemId ? id : null;
+  }
 }

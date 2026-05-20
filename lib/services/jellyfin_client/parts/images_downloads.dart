@@ -51,32 +51,36 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
   Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0, String? mediaSourceId}) async {
     final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex, sourceId: mediaSourceId);
     if (bundle == null) return buildDirectStreamUrl(item.id);
-    final pinnedSourceId = bundle.selectedSourceId != null && bundle.selectedSourceId != item.id
-        ? bundle.selectedSourceId
-        : null;
-    return buildDirectStreamUrl(item.id, container: bundle.container, mediaSourceId: pinnedSourceId);
+    return buildDirectStreamUrl(
+      item.id,
+      container: bundle.container,
+      mediaSourceId: bundle.pinnedSourceIdForItem(item.id),
+    );
   }
 
   @override
   Future<DownloadResolution> resolveDownload(MediaItem item, {int mediaIndex = 0}) async {
     final bundle = await fetchPlaybackBundle(item.id, sourceIndex: mediaIndex);
     final selectedSourceId = bundle?.selectedSourceId;
-    final pinnedSourceId = selectedSourceId != null && selectedSourceId != item.id ? selectedSourceId : null;
     // Direct-stream the selected original file. Jellyfin's `Static=true`
     // skips the transcoder so the byte-for-byte source lands on disk.
-    final videoUrl = buildDirectStreamUrl(item.id, container: bundle?.container, mediaSourceId: pinnedSourceId);
+    final videoUrl = buildDirectStreamUrl(
+      item.id,
+      container: bundle?.container,
+      mediaSourceId: bundle?.pinnedSourceIdForItem(item.id),
+    );
 
     // External subtitle sidecars are listed in the per-source MediaStreams.
     // PlaybackInfo gives us the canonical view including DeliveryUrl when
     // the server has pre-computed one; fall back to the documented stream
     // URL pattern otherwise.
     final subtitles = <DownloadSubtitleSpec>[];
-    final pbInfo = await getPlaybackInfo(item.id);
+    final pbInfo = await getPlaybackInfo(item.id, mediaSourceId: selectedSourceId);
     if (pbInfo != null) {
       final sources = pbInfo['MediaSources'];
-      if (sources is List && sources.length > mediaIndex) {
-        final source = sources[mediaIndex];
-        if (source is Map<String, dynamic>) {
+      if (sources is List && sources.isNotEmpty) {
+        final source = _selectDownloadMediaSource(sources, selectedSourceId, mediaIndex);
+        if (source != null) {
           final mediaSourceId = (source['Id'] as String?) ?? item.id;
           final streams = source['MediaStreams'];
           if (streams is List) {
@@ -112,6 +116,21 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
     }
 
     return DownloadResolution(videoUrl: videoUrl, externalSubtitles: subtitles);
+  }
+
+  Map<String, dynamic>? _selectDownloadMediaSource(List<dynamic> sources, String? selectedSourceId, int mediaIndex) {
+    final requestedSourceId = selectedSourceId?.trim();
+    if (requestedSourceId != null && requestedSourceId.isNotEmpty) {
+      for (final source in sources) {
+        if (source is Map<String, dynamic> &&
+            (source['Id'] as String?)?.toLowerCase() == requestedSourceId.toLowerCase()) {
+          return source;
+        }
+      }
+      return null;
+    }
+    final source = mediaIndex >= 0 && mediaIndex < sources.length ? sources[mediaIndex] : sources.first;
+    return source is Map<String, dynamic> ? source : null;
   }
 
   @override
