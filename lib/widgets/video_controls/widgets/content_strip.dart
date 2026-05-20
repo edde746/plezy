@@ -30,6 +30,7 @@ class ContentStrip extends StatefulWidget {
   final String? serverId;
   final bool showQueueTab;
   final Function(MediaItem)? onQueueItemSelected;
+  final Future<void> Function(Duration position)? onSeekRequested;
   final Function(Duration position)? onSeekCompleted;
 
   /// Whether to use dpad/focus-based navigation (TV mode).
@@ -50,6 +51,7 @@ class ContentStrip extends StatefulWidget {
     this.serverId,
     this.showQueueTab = false,
     this.onQueueItemSelected,
+    this.onSeekRequested,
     this.onSeekCompleted,
     this.useFocusNavigation = false,
     this.onNavigateUp,
@@ -128,7 +130,7 @@ class ContentStripState extends State<ContentStrip> {
 
   Future<void> _handleChapterTap(Duration position) async {
     final clamped = clampSeekPosition(widget.player, position);
-    await widget.player.seek(clamped);
+    await (widget.onSeekRequested ?? widget.player.seek)(clamped);
     if (mounted) {
       widget.onSeekCompleted?.call(clamped);
     }

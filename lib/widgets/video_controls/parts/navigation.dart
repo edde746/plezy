@@ -28,6 +28,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         onSeekForward: () => unawaited(_seekByTime(forward: true)),
         onSeek: _throttledSeek,
         onSeekEnd: _finalizeSeek,
+        onSeekRequested: widget.onSeekRequested,
         getReplayIcon: getReplayIcon,
         getForwardIcon: getForwardIcon,
         onFocusActivity: _restartHideTimerIfPlaying,
@@ -146,10 +147,12 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     int? newMediaIndex,
     TranscodeQualityPreset? newPreset,
     int? newAudioStreamId,
+    int? newSubtitleStreamId,
   }) async {
     final effectiveMediaIndex = newMediaIndex ?? widget.selectedMediaIndex;
     final effectivePreset = newPreset ?? widget.selectedQualityPreset;
     final effectiveAudioStreamId = newAudioStreamId ?? widget.selectedAudioStreamId;
+    final effectiveSubtitleStreamId = newSubtitleStreamId ?? widget.selectedSubtitleStreamId;
     final effectiveMediaSourceId = effectiveMediaIndex >= 0 && effectiveMediaIndex < widget.availableVersions.length
         ? widget.availableVersions[effectiveMediaIndex].id
         : widget.selectedMediaSourceId;
@@ -157,7 +160,9 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     final isVersionChange = effectiveMediaIndex != widget.selectedMediaIndex;
     final isPresetChange = effectivePreset != widget.selectedQualityPreset;
     final isAudioChange = effectiveAudioStreamId != widget.selectedAudioStreamId;
-    if (!isVersionChange && !isPresetChange && !isAudioChange) {
+    final isSubtitleChange =
+        newSubtitleStreamId != null && effectiveSubtitleStreamId != widget.selectedSubtitleStreamId;
+    if (!isVersionChange && !isPresetChange && !isAudioChange && !isSubtitleChange) {
       return;
     }
 
@@ -174,6 +179,19 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
           ...settingsService.read(SettingsService.mediaVersionPreferences),
           seriesKey: effectiveMediaIndex,
         });
+      }
+
+      if (isSubtitleChange) {
+        final serverId = widget.metadata.serverId;
+        final partId = widget.sourcePartId;
+        if (serverId == null || partId == null || effectiveSubtitleStreamId == null) {
+          throw StateError('No Plex part available for subtitle stream selection');
+        }
+        final client = context.getPlexClientForServer(serverId);
+        final saved = await client.selectStreams(partId, subtitleStreamID: effectiveSubtitleStreamId, allParts: true);
+        if (!saved) {
+          throw StateError('Failed to select subtitle stream');
+        }
       }
 
       // Preserve session identifiers across the reload so Plex reuses the

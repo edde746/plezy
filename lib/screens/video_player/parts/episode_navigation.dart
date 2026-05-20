@@ -48,7 +48,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     });
 
     final target = clampSeekPosition(currentPlayer, Duration.zero);
-    await currentPlayer.seek(target);
+    await _seekPlayback(target);
     if (!mounted || currentPlayer != player) return;
 
     _notifyWatchTogetherSeek(target);
@@ -216,10 +216,17 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       await currentPlayer.setDisplayCriteria(
         !result.isTranscoding && displayCriteria?.canPrimeNativeDisplayCriteria == true ? displayCriteria : null,
       );
+      final transcodeTimelineOffset = result.isTranscoding ? resumePosition ?? Duration.zero : Duration.zero;
+      final transcodeTimelineDuration = result.isTranscoding && episodeMetadata.durationMs != null
+          ? Duration(milliseconds: episodeMetadata.durationMs!)
+          : null;
+      await currentPlayer.setProperty('force-seekable', result.isTranscoding ? 'yes' : 'no');
       await currentPlayer.open(
-        Media(result.videoUrl!, start: resumePosition, headers: streamHeaders),
+        Media(result.videoUrl!, start: result.isTranscoding ? null : resumePosition, headers: streamHeaders),
         play: isExoPlayer || !hasExternalSubs,
         externalSubtitles: isExoPlayer && hasExternalSubs ? result.externalSubtitles : null,
+        timelineOffset: transcodeTimelineOffset,
+        timelineDuration: transcodeTimelineDuration,
       );
 
       _completionTriggered = false;

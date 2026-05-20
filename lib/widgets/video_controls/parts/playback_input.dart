@@ -54,7 +54,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
   Future<void> _seekToPosition(Duration position, {bool notifyCompletion = true}) async {
     final clamped = clampSeekPosition(widget.player, position);
-    await widget.player.seek(clamped);
+    await (widget.onSeekRequested ?? widget.player.seek)(clamped);
     if (notifyCompletion && mounted) {
       widget.onSeekCompleted?.call(clamped);
     }
@@ -68,7 +68,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     }
     final target = widget.player.state.position + delta;
     final clamped = clampSeekPosition(widget.player, target);
-    await widget.player.seek(clamped);
+    await (widget.onSeekRequested ?? widget.player.seek)(clamped);
     if (notifyCompletion && mounted) {
       widget.onSeekCompleted?.call(clamped);
     }
@@ -78,13 +78,16 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     if (!widget.player.state.playing && _rewindOnResume > 0) {
       final target = widget.player.state.position - Duration(seconds: _rewindOnResume);
       final clamped = clampSeekPosition(widget.player, target);
-      await widget.player.seek(clamped);
+      await (widget.onSeekRequested ?? widget.player.seek)(clamped);
     }
     await widget.player.playOrPause();
   }
 
   /// Throttled seek for timeline slider - executes immediately then throttles to 200ms
-  void _throttledSeek(Duration position) => _seekThrottle([position]);
+  void _throttledSeek(Duration position) {
+    if (widget.isTranscoding) return;
+    _seekThrottle([position]);
+  }
 
   /// Finalizes the seek when user stops scrubbing the timeline
   void _finalizeSeek(Duration position) {

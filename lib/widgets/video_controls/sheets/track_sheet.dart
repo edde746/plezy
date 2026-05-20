@@ -33,6 +33,9 @@ class TrackSheet extends StatelessWidget {
   final List<MediaAudioTrack> sourceAudioTracks;
   final int? selectedAudioStreamId;
   final ValueChanged<int>? onSwitchAudioStreamId;
+  final List<MediaSubtitleTrack> sourceSubtitleTracks;
+  final int? selectedSubtitleStreamId;
+  final ValueChanged<int>? onSwitchSubtitleStreamId;
 
   /// Whether OpenSubtitles search is supported by the active server. Plex
   /// proxies the OpenSubtitles plugin; Jellyfin doesn't expose an
@@ -53,6 +56,9 @@ class TrackSheet extends StatelessWidget {
     this.sourceAudioTracks = const [],
     this.selectedAudioStreamId,
     this.onSwitchAudioStreamId,
+    this.sourceSubtitleTracks = const [],
+    this.selectedSubtitleStreamId,
+    this.onSwitchSubtitleStreamId,
     this.subtitleSearchSupported = true,
   });
 
@@ -72,8 +78,9 @@ class TrackSheet extends StatelessWidget {
         final hasExternalSourceAudio = sourceAudioTracks.any((track) => track.isExternal);
         final useSourceAudio =
             (isTranscoding || hasExternalSourceAudio) && sourceAudioTracks.length > 1 && onSwitchAudioStreamId != null;
+        final useSourceSubtitles = isTranscoding && sourceSubtitleTracks.isNotEmpty && onSwitchSubtitleStreamId != null;
         final showAudio = useSourceAudio || playerAudioTracks.length > 1;
-        final showSubtitles = subtitleTracks.isNotEmpty;
+        final showSubtitles = useSourceSubtitles || subtitleTracks.isNotEmpty;
 
         final String title;
         final IconData icon;
@@ -117,30 +124,43 @@ class TrackSheet extends StatelessWidget {
                 );
               }
 
+              Widget subtitleColumnFor(TrackSelection sel, bool showHeader) {
+                if (useSourceSubtitles) {
+                  return _SourceSubtitleColumn(
+                    tracks: sourceSubtitleTracks,
+                    selectedStreamId: selectedSubtitleStreamId,
+                    onSelected: onSwitchSubtitleStreamId!,
+                    ratingKey: ratingKey,
+                    serverId: serverId,
+                    mediaTitle: mediaTitle,
+                    onSubtitleDownloaded: onSubtitleDownloaded,
+                    showHeader: showHeader,
+                    subtitleSearchSupported: subtitleSearchSupported,
+                  );
+                }
+                return _SubtitleColumn(
+                  tracks: subtitleTracks,
+                  selection: sel,
+                  player: player,
+                  ratingKey: ratingKey,
+                  serverId: serverId,
+                  mediaTitle: mediaTitle,
+                  onSubtitleDownloaded: onSubtitleDownloaded,
+                  onTrackChanged: onSubtitleTrackChanged,
+                  onSecondaryTrackChanged: onSecondarySubtitleTrackChanged,
+                  supportsSecondary: supportsSecondary,
+                  showHeader: showHeader,
+                  subtitleSearchSupported: subtitleSearchSupported,
+                );
+              }
+
               if (showAudio && showSubtitles) {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(child: FocusTraversalGroup(child: audioColumnFor(selection, true))),
                     VerticalDivider(width: 1, color: Theme.of(context).dividerColor),
-                    Expanded(
-                      child: FocusTraversalGroup(
-                        child: _SubtitleColumn(
-                          tracks: subtitleTracks,
-                          selection: selection,
-                          player: player,
-                          ratingKey: ratingKey,
-                          serverId: serverId,
-                          mediaTitle: mediaTitle,
-                          onSubtitleDownloaded: onSubtitleDownloaded,
-                          onTrackChanged: onSubtitleTrackChanged,
-                          onSecondaryTrackChanged: onSecondarySubtitleTrackChanged,
-                          supportsSecondary: supportsSecondary,
-                          showHeader: true,
-                          subtitleSearchSupported: subtitleSearchSupported,
-                        ),
-                      ),
-                    ),
+                    Expanded(child: FocusTraversalGroup(child: subtitleColumnFor(selection, true))),
                   ],
                 );
               }
@@ -149,20 +169,7 @@ class TrackSheet extends StatelessWidget {
                 return audioColumnFor(selection, false);
               }
 
-              return _SubtitleColumn(
-                tracks: subtitleTracks,
-                selection: selection,
-                player: player,
-                ratingKey: ratingKey,
-                serverId: serverId,
-                mediaTitle: mediaTitle,
-                onSubtitleDownloaded: onSubtitleDownloaded,
-                onTrackChanged: onSubtitleTrackChanged,
-                onSecondaryTrackChanged: onSecondarySubtitleTrackChanged,
-                supportsSecondary: supportsSecondary,
-                showHeader: false,
-                subtitleSearchSupported: subtitleSearchSupported,
-              );
+              return subtitleColumnFor(selection, false);
             },
           ),
         );
@@ -237,6 +244,112 @@ class _SourceAudioColumnState extends State<_SourceAudioColumn> {
       if (track.selected) return track.id;
     }
     return null;
+  }
+}
+
+class _SourceSubtitleColumn extends StatefulWidget {
+  final List<MediaSubtitleTrack> tracks;
+  final int? selectedStreamId;
+  final ValueChanged<int> onSelected;
+  final String ratingKey;
+  final String serverId;
+  final String? mediaTitle;
+  final Future<void> Function()? onSubtitleDownloaded;
+  final bool showHeader;
+  final bool subtitleSearchSupported;
+
+  const _SourceSubtitleColumn({
+    required this.tracks,
+    required this.selectedStreamId,
+    required this.onSelected,
+    this.ratingKey = '',
+    this.serverId = '',
+    this.mediaTitle,
+    this.onSubtitleDownloaded,
+    required this.showHeader,
+    this.subtitleSearchSupported = true,
+  });
+
+  @override
+  State<_SourceSubtitleColumn> createState() => _SourceSubtitleColumnState();
+}
+
+class _SourceSubtitleColumnState extends State<_SourceSubtitleColumn> {
+  final _initialScroll = InitialItemScrollController();
+
+  @override
+  void dispose() {
+    _initialScroll.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selectedId = _effectiveSelectedStreamId();
+    final selectedIndex = selectedId == 0 ? 0 : widget.tracks.indexWhere((t) => t.id == selectedId) + 1;
+    _initialScroll.maybeScrollTo(selectedIndex);
+
+    return Column(
+      children: [
+        if (widget.showHeader) SheetColumnHeader(label: t.videoControls.subtitlesLabel),
+        Expanded(
+          child: ListView.builder(
+            controller: _initialScroll.controller,
+            itemCount: widget.tracks.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return TrackSelectionHelper.buildOffTile<SubtitleTrack>(
+                  context: context,
+                  key: _initialScroll.firstItemKey,
+                  isSelected: selectedId == 0,
+                  onTap: () {
+                    OverlaySheetController.of(context).close();
+                    widget.onSelected(0);
+                  },
+                );
+              }
+
+              final track = widget.tracks[index - 1];
+              return TrackSelectionHelper.buildTrackTile<SubtitleTrack>(
+                context: context,
+                label: track.labelForIndex(index - 1),
+                isSelected: track.id == selectedId,
+                onTap: () {
+                  OverlaySheetController.of(context).close();
+                  widget.onSelected(track.id);
+                },
+              );
+            },
+          ),
+        ),
+        if (widget.ratingKey.isNotEmpty && widget.subtitleSearchSupported) ...[
+          Divider(height: 1, color: Theme.of(context).dividerColor),
+          FocusableListTile(
+            leading: const AppIcon(Symbols.search_rounded),
+            title: Text(t.videoControls.searchSubtitles),
+            onTap: () {
+              OverlaySheetController.of(context).push(
+                builder: (_) => SubtitleSearchSheet(
+                  ratingKey: widget.ratingKey,
+                  serverId: widget.serverId,
+                  mediaTitle: widget.mediaTitle,
+                  onSubtitleDownloaded: widget.onSubtitleDownloaded,
+                ),
+              );
+            },
+          ),
+        ],
+      ],
+    );
+  }
+
+  int _effectiveSelectedStreamId() {
+    final explicit = widget.selectedStreamId;
+    if (explicit != null && (explicit == 0 || widget.tracks.any((track) => track.id == explicit))) return explicit;
+    for (final track in widget.tracks) {
+      if (track.selected) return track.id;
+    }
+    return 0;
   }
 }
 

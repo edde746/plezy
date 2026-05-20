@@ -91,6 +91,9 @@ Widget plexVideoControlsBuilder(
   bool isOfflinePlayback = false,
   List<MediaAudioTrack> sourceAudioTracks = const [],
   int? selectedAudioStreamId,
+  List<MediaSubtitleTrack> sourceSubtitleTracks = const [],
+  int? selectedSubtitleStreamId,
+  int? sourcePartId,
   VoidCallback? onTogglePIPMode,
   int boxFitMode = 0,
   VoidCallback? onCycleBoxFitMode,
@@ -99,6 +102,7 @@ Widget plexVideoControlsBuilder(
   Function(AudioTrack)? onAudioTrackChanged,
   Function(SubtitleTrack)? onSubtitleTrackChanged,
   Function(SubtitleTrack)? onSecondarySubtitleTrackChanged,
+  Future<void> Function(Duration position)? onSeekRequested,
   Function(Duration position)? onSeekCompleted,
   VoidCallback? onBack,
   void Function({required bool skipAutoPlayCountdown})? onReachedEnd,
@@ -136,6 +140,9 @@ Widget plexVideoControlsBuilder(
     isOfflinePlayback: isOfflinePlayback,
     sourceAudioTracks: sourceAudioTracks,
     selectedAudioStreamId: selectedAudioStreamId,
+    sourceSubtitleTracks: sourceSubtitleTracks,
+    selectedSubtitleStreamId: selectedSubtitleStreamId,
+    sourcePartId: sourcePartId,
     boxFitMode: boxFitMode,
     onTogglePIPMode: onTogglePIPMode,
     onCycleBoxFitMode: onCycleBoxFitMode,
@@ -144,6 +151,7 @@ Widget plexVideoControlsBuilder(
     onAudioTrackChanged: onAudioTrackChanged,
     onSubtitleTrackChanged: onSubtitleTrackChanged,
     onSecondarySubtitleTrackChanged: onSecondarySubtitleTrackChanged,
+    onSeekRequested: onSeekRequested,
     onSeekCompleted: onSeekCompleted,
     onBack: onBack,
     onReachedEnd: onReachedEnd,
@@ -174,6 +182,8 @@ Widget plexVideoControlsBuilder(
   bool isTranscoding,
   List<MediaAudioTrack> sourceAudioTracks,
   int? selectedAudioStreamId,
+  List<MediaSubtitleTrack> sourceSubtitleTracks,
+  int? selectedSubtitleStreamId,
   bool canSwitch,
 })
 effectiveVersionQualityControls({
@@ -183,6 +193,8 @@ effectiveVersionQualityControls({
   required bool isTranscoding,
   required List<MediaAudioTrack> sourceAudioTracks,
   required int? selectedAudioStreamId,
+  required List<MediaSubtitleTrack> sourceSubtitleTracks,
+  required int? selectedSubtitleStreamId,
 }) {
   if (isOfflinePlayback) {
     return (
@@ -191,6 +203,8 @@ effectiveVersionQualityControls({
       isTranscoding: false,
       sourceAudioTracks: const <MediaAudioTrack>[],
       selectedAudioStreamId: null,
+      sourceSubtitleTracks: const <MediaSubtitleTrack>[],
+      selectedSubtitleStreamId: null,
       canSwitch: false,
     );
   }
@@ -200,6 +214,8 @@ effectiveVersionQualityControls({
     isTranscoding: isTranscoding,
     sourceAudioTracks: sourceAudioTracks,
     selectedAudioStreamId: selectedAudioStreamId,
+    sourceSubtitleTracks: sourceSubtitleTracks,
+    selectedSubtitleStreamId: selectedSubtitleStreamId,
     canSwitch: true,
   );
 }
@@ -218,6 +234,9 @@ class PlexVideoControls extends StatefulWidget {
   final bool isOfflinePlayback;
   final List<MediaAudioTrack> sourceAudioTracks;
   final int? selectedAudioStreamId;
+  final List<MediaSubtitleTrack> sourceSubtitleTracks;
+  final int? selectedSubtitleStreamId;
+  final int? sourcePartId;
   final int boxFitMode;
   final VoidCallback? onTogglePIPMode;
   final VoidCallback? onCycleBoxFitMode;
@@ -226,6 +245,10 @@ class PlexVideoControls extends StatefulWidget {
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
+
+  /// Called for app-level seek requests. Plex transcodes use this to restart
+  /// the server-side transcode session at the requested absolute timestamp.
+  final Future<void> Function(Duration position)? onSeekRequested;
 
   /// Called when a seek operation completes (for Watch Together sync)
   final Function(Duration position)? onSeekCompleted;
@@ -308,6 +331,9 @@ class PlexVideoControls extends StatefulWidget {
     this.isOfflinePlayback = false,
     this.sourceAudioTracks = const [],
     this.selectedAudioStreamId,
+    this.sourceSubtitleTracks = const [],
+    this.selectedSubtitleStreamId,
+    this.sourcePartId,
     this.boxFitMode = 0,
     this.onTogglePIPMode,
     this.onCycleBoxFitMode,
@@ -316,6 +342,7 @@ class PlexVideoControls extends StatefulWidget {
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,
+    this.onSeekRequested,
     this.onSeekCompleted,
     this.onBack,
     this.onReachedEnd,
@@ -710,6 +737,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                 ),
                                                 onSeek: _throttledSeek,
                                                 onSeekEnd: _finalizeSeek,
+                                                onSeekRequested: widget.onSeekRequested,
                                                 onSeekCompleted: widget.onSeekCompleted,
                                                 // ignore: no-empty-block - play/pause handled by parent VideoControlsState
                                                 onPlayPause: () {},

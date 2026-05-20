@@ -97,10 +97,13 @@ class PlayerAndroid extends PlayerBase {
     bool play = true,
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
+    Duration timelineOffset = Duration.zero,
+    Duration? timelineDuration,
   }) async {
     if (disposed) return;
     await _ensureInitialized();
     final startPosition = media.start ?? Duration.zero;
+    configureTimeline(offset: timelineOffset, duration: timelineDuration);
     clearTracks();
     resetPlaybackProgress(startPosition);
     setSeekable(false);
@@ -141,7 +144,8 @@ class PlayerAndroid extends PlayerBase {
 
   @override
   Future<void> seek(Duration position) async {
-    await runSeek(position, () => invoke('seek', {'positionMs': position.inMilliseconds}));
+    final sourcePosition = sourceSeekPosition(position);
+    await runSeek(position, () => invoke('seek', {'positionMs': sourcePosition.inMilliseconds}));
   }
 
   @override

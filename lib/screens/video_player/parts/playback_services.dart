@@ -131,7 +131,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         _updateMediaControlsPlaybackState();
       } else if (event is SeekEvent) {
         appLogger.d('Media control: Seek event received to ${event.position}');
-        unawaited(activePlayer!.seek(clampSeekPosition(activePlayer, event.position)));
+        unawaited(_seekPlayback(clampSeekPosition(activePlayer!, event.position)));
       } else if (event is NextTrackEvent) {
         appLogger.d('Media control: Next track event received');
         if (_nextEpisode != null) _playNext();
@@ -246,6 +246,6 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     if (_completionTriggered && !_showPlayNextDialog && _autoPlayTimer?.isActive != true) {
       _completionTriggered = false;
     }
-    p.seek(pos);
+    unawaited(_seekPlayback(pos));
   }
 }

@@ -104,6 +104,49 @@ void main() {
         },
       );
     });
+
+    test('MPV maps server-offset streams to absolute timeline positions', () async {
+      final calls = <MethodCall>[];
+
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            await player.open(
+              Media('https://example.test/transcode.mkv'),
+              timelineOffset: const Duration(seconds: 10),
+              timelineDuration: const Duration(seconds: 100),
+            );
+
+            expect(player.state.position, const Duration(seconds: 10));
+            expect(player.state.duration, const Duration(seconds: 100));
+
+            player.handlePropertyChange('duration', 90.0);
+            expect(player.state.duration, const Duration(seconds: 100));
+
+            await player.seek(const Duration(seconds: 25));
+
+            final seekCall = calls.lastWhere((call) => call.method == 'command');
+            final args = Map<Object?, Object?>.from(seekCall.arguments as Map)['args'] as List;
+            expect(args, ['seek', '15.0', 'absolute']);
+            expect(player.state.position, const Duration(seconds: 25));
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
   });
 }
 

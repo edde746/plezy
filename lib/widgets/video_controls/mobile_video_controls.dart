@@ -36,6 +36,7 @@ class MobileVideoControls extends StatefulWidget {
   final Widget trackChapterControls;
   final Function(Duration) onSeek;
   final Function(Duration) onSeekEnd;
+  final Future<void> Function(Duration position)? onSeekRequested;
   final Function(Duration)? onSeekCompleted;
   final VoidCallback onPlayPause;
   final VoidCallback? onCancelAutoHide;
@@ -92,6 +93,7 @@ class MobileVideoControls extends StatefulWidget {
     required this.onSeek,
     required this.onSeekEnd,
     required this.onPlayPause,
+    this.onSeekRequested,
     this.onSeekCompleted,
     this.onCancelAutoHide,
     this.onStartAutoHide,
@@ -281,6 +283,8 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
                                     serverId: widget.serverId,
                                     showQueueTab: widget.showQueueTab,
                                     onQueueItemSelected: widget.onQueueItemSelected,
+                                    onSeekRequested: widget.onSeekRequested,
+                                    onSeekCompleted: widget.onSeekCompleted,
                                   ),
                                 ],
                               ),

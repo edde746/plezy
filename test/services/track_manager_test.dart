@@ -225,6 +225,20 @@ void main() {
       expect(player.addSubtitleCalls.single.uri, 'https://example/c.srt');
     });
 
+    test('selects subtitle sidecars marked as default', () async {
+      final player = _FakePlayer();
+      final mgr = _make(player: player);
+      addTearDown(mgr.dispose);
+
+      const subs = [
+        SubtitleTrack(id: 'selected', uri: 'https://example/selected.srt', isExternal: true, isDefault: true),
+      ];
+      await mgr.addExternalSubtitles(subs);
+
+      expect(player.addSubtitleCalls, hasLength(1));
+      expect(player.addSubtitleCalls.single.select, isTrue);
+    });
+
     test('a player error on one entry does not prevent others from succeeding', () async {
       final player = _FakePlayer()..failAddSubtitleTimes = 1;
       final mgr = _make(player: player);

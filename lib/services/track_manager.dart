@@ -66,6 +66,7 @@ class TrackManager {
   List<SubtitleTrack> _lastExternalSubtitles = const [];
   StreamSubscription<Tracks>? _trackLoadingSubscription;
   Timer? _subtitleFallbackTimer;
+  Timer? _trackSelectionFallbackTimer;
 
   /// Cached external subtitles for re-use after backend fallback.
   List<SubtitleTrack> get lastExternalSubtitles => _lastExternalSubtitles;
@@ -109,7 +110,7 @@ class TrackManager {
             uri: subtitleTrack.uri!,
             title: subtitleTrack.title,
             language: subtitleTrack.language,
-            select: false,
+            select: subtitleTrack.isDefault,
           );
           appLogger.d('Added external subtitle: ${subtitleTrack.title ?? subtitleTrack.uri}');
         } catch (e) {
@@ -156,18 +157,39 @@ class TrackManager {
   /// If tracks are not yet loaded, subscribes to the stream.
   void applyTrackSelectionWhenReady() {
     final currentTracks = player.state.tracks;
-    if (currentTracks.audio.isNotEmpty || currentTracks.subtitle.isNotEmpty) {
+    if (_tracksReadyForSelection(currentTracks)) {
       applyTrackSelection();
     } else {
       _trackLoadingSubscription?.cancel();
       _trackLoadingSubscription = player.streams.tracks.listen((tracks) {
-        if (tracks.audio.isEmpty && tracks.subtitle.isEmpty) return;
+        if (!_tracksReadyForSelection(tracks)) return;
 
+        _trackLoadingSubscription?.cancel();
+        _trackLoadingSubscription = null;
+        _trackSelectionFallbackTimer?.cancel();
+        _trackSelectionFallbackTimer = null;
+        applyTrackSelection();
+      });
+
+      _trackSelectionFallbackTimer?.cancel();
+      _trackSelectionFallbackTimer = Timer(const Duration(seconds: 5), () {
+        if (!isActive()) return;
         _trackLoadingSubscription?.cancel();
         _trackLoadingSubscription = null;
         applyTrackSelection();
       });
     }
+  }
+
+  bool _tracksReadyForSelection(Tracks tracks) {
+    final hasAnyTracks = tracks.audio.isNotEmpty || tracks.subtitle.isNotEmpty;
+    if (!hasAnyTracks) return false;
+
+    final info = mediaInfo;
+    if (info == null || tracks.subtitle.isNotEmpty) return true;
+
+    final expectsSelectedSubtitle = info.subtitleTracks.any((track) => track.selected);
+    return !expectsSelectedSubtitle;
   }
 
   /// Core track selection: delegates to [TrackSelectionService].
@@ -460,5 +482,7 @@ class TrackManager {
     _trackLoadingSubscription = null;
     _subtitleFallbackTimer?.cancel();
     _subtitleFallbackTimer = null;
+    _trackSelectionFallbackTimer?.cancel();
+    _trackSelectionFallbackTimer = null;
   }
 }

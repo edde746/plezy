@@ -31,6 +31,14 @@ class CodecUtils {
     }
   }
 
+  static bool isTextSubtitleCodec(String? codec) {
+    if (codec == null) return false;
+    return switch (codec.toLowerCase()) {
+      'srt' || 'subrip' || 'ass' || 'ssa' || 'webvtt' || 'vtt' || 'mov_text' => true,
+      _ => false,
+    };
+  }
+
   /// Formats a subtitle codec name to a user-friendly display format.
   ///
   /// Converts internal codec names like 'SUBRIP' to friendly names like 'SRT'.

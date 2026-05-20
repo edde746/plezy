@@ -79,7 +79,7 @@ extension _VideoPlayerMediaControlsMethods on VideoPlayerScreenState {
 
     final playbackState = context.read<PlaybackStateProvider>();
     final canNavigateEpisodes = _currentMetadata.isEpisode || playbackState.isPlaylistActive;
-    final canSeek = !widget.isLive && currentPlayer.state.seekable;
+    final canSeek = !widget.isLive && (currentPlayer.state.seekable || _shouldRestartPlexTranscodeForSeek);
 
     if (!mounted || currentPlayer != player || manager != _mediaControlsManager) return;
 
@@ -93,7 +93,7 @@ extension _VideoPlayerMediaControlsMethods on VideoPlayerScreenState {
   Future<void> _seekBackForRewind(Player p) async {
     if (_rewindOnResume <= 0) return;
     final target = p.state.position - Duration(seconds: _rewindOnResume);
-    await p.seek(clampSeekPosition(p, target));
+    await _seekPlayback(clampSeekPosition(p, target));
   }
 
   Future<void> _restoreMediaControlsAfterResume() async {

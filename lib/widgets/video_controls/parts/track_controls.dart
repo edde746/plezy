@@ -93,7 +93,11 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       isTranscoding: widget.isTranscoding,
       sourceAudioTracks: widget.sourceAudioTracks,
       selectedAudioStreamId: widget.selectedAudioStreamId,
+      sourceSubtitleTracks: widget.sourceSubtitleTracks,
+      selectedSubtitleStreamId: widget.selectedSubtitleStreamId,
     );
+    final canSwitchSourceSubtitles =
+        versionQuality.canSwitch && versionQuality.isTranscoding && widget.metadata.backend == MediaBackend.plex;
     return TrackControlsState(
       availableVersions: versionQuality.availableVersions,
       selectedMediaIndex: widget.selectedMediaIndex,
@@ -102,6 +106,11 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       isTranscoding: versionQuality.isTranscoding,
       sourceAudioTracks: versionQuality.sourceAudioTracks,
       selectedAudioStreamId: versionQuality.selectedAudioStreamId,
+      sourceSubtitleTracks: canSwitchSourceSubtitles
+          ? versionQuality.sourceSubtitleTracks
+          : const <MediaSubtitleTrack>[],
+      selectedSubtitleStreamId: canSwitchSourceSubtitles ? versionQuality.selectedSubtitleStreamId : null,
+      sourcePartId: canSwitchSourceSubtitles ? widget.sourcePartId : null,
       sourceDurationMs: widget.metadata.durationMs,
       boxFitMode: widget.boxFitMode,
       audioSyncOffset: _audioSyncOffset,
@@ -119,6 +128,9 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       onSwitchVersion: versionQuality.canSwitch ? (i) => _switchVersionAndQuality(newMediaIndex: i) : null,
       onSwitchQualityPreset: versionQuality.canSwitch ? (p) => _switchVersionAndQuality(newPreset: p) : null,
       onSwitchAudioStreamId: versionQuality.canSwitch ? (id) => _switchVersionAndQuality(newAudioStreamId: id) : null,
+      onSwitchSubtitleStreamId: canSwitchSourceSubtitles
+          ? (id) => _switchVersionAndQuality(newSubtitleStreamId: id)
+          : null,
       onAudioTrackChanged: widget.onAudioTrackChanged,
       onSubtitleTrackChanged: _onSubtitleTrackChanged,
       onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
@@ -177,6 +189,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       chapters: _chapters,
       chaptersLoaded: _chaptersLoaded,
       trackControlsState: trackControlsState,
+      onSeekRequested: widget.onSeekRequested,
       onSeekCompleted: widget.onSeekCompleted,
       hideChaptersAndQueue: hideChaptersAndQueue,
     );

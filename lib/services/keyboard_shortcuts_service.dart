@@ -185,6 +185,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onScreenshot,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
+    Future<void> Function(Duration position)? onSeekRequested,
   }) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
 
@@ -262,6 +263,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
           onScreenshot: onScreenshot,
           currentPositionEpoch: currentPositionEpoch,
           onLiveSeek: onLiveSeek,
+          onSeekRequested: onSeekRequested,
         );
         return KeyEventResult.handled;
       }
@@ -286,13 +288,14 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onScreenshot,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
+    Future<void> Function(Duration position)? onSeekRequested,
   }) {
     void performSeek(int offsetSeconds) {
       if (onLiveSeek != null && currentPositionEpoch != null) {
         onLiveSeek(currentPositionEpoch + offsetSeconds);
       } else {
         final target = clampSeekPosition(player, player.state.position + Duration(seconds: offsetSeconds));
-        unawaited(player.seek(target));
+        unawaited((onSeekRequested ?? player.seek)(target));
       }
     }
 

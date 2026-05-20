@@ -13,6 +13,7 @@ void main() {
     test('clears switchable version and quality state during offline playback', () {
       final version = MediaVersion(id: 'v1', videoResolution: '1080');
       final audio = MediaAudioTrack(id: 1, languageCode: 'eng', selected: false);
+      final subtitle = MediaSubtitleTrack(id: 2, languageCode: 'eng', selected: false, forced: false);
 
       final result = effectiveVersionQualityControls(
         isOfflinePlayback: true,
@@ -21,6 +22,8 @@ void main() {
         isTranscoding: true,
         sourceAudioTracks: [audio],
         selectedAudioStreamId: 1,
+        sourceSubtitleTracks: [subtitle],
+        selectedSubtitleStreamId: 2,
       );
 
       expect(result.canSwitch, isFalse);
@@ -29,11 +32,14 @@ void main() {
       expect(result.isTranscoding, isFalse);
       expect(result.sourceAudioTracks, isEmpty);
       expect(result.selectedAudioStreamId, isNull);
+      expect(result.sourceSubtitleTracks, isEmpty);
+      expect(result.selectedSubtitleStreamId, isNull);
     });
 
     test('keeps switchable state during online playback', () {
       final version = MediaVersion(id: 'v1', videoResolution: '1080');
       final audio = MediaAudioTrack(id: 1, languageCode: 'eng', selected: false);
+      final subtitle = MediaSubtitleTrack(id: 2, languageCode: 'eng', selected: false, forced: false);
 
       final result = effectiveVersionQualityControls(
         isOfflinePlayback: false,
@@ -42,6 +48,8 @@ void main() {
         isTranscoding: true,
         sourceAudioTracks: [audio],
         selectedAudioStreamId: 1,
+        sourceSubtitleTracks: [subtitle],
+        selectedSubtitleStreamId: 2,
       );
 
       expect(result.canSwitch, isTrue);
@@ -50,6 +58,8 @@ void main() {
       expect(result.isTranscoding, isTrue);
       expect(result.sourceAudioTracks, [audio]);
       expect(result.selectedAudioStreamId, 1);
+      expect(result.sourceSubtitleTracks, [subtitle]);
+      expect(result.selectedSubtitleStreamId, 2);
     });
   });
 

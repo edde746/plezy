@@ -16,6 +16,9 @@ class TrackControlsState {
   final bool isTranscoding;
   final List<MediaAudioTrack> sourceAudioTracks;
   final int? selectedAudioStreamId;
+  final List<MediaSubtitleTrack> sourceSubtitleTracks;
+  final int? selectedSubtitleStreamId;
+  final int? sourcePartId;
 
   /// Total media duration in milliseconds. Used by the version/quality sheet
   /// to show estimated file sizes per preset (bitrate × duration).
@@ -36,6 +39,7 @@ class TrackControlsState {
   final Function(int)? onSwitchVersion;
   final ValueChanged<TranscodeQualityPreset>? onSwitchQualityPreset;
   final ValueChanged<int>? onSwitchAudioStreamId;
+  final ValueChanged<int>? onSwitchSubtitleStreamId;
   final Function(AudioTrack)? onAudioTrackChanged;
   final Function(SubtitleTrack)? onSubtitleTrackChanged;
   final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
@@ -71,6 +75,9 @@ class TrackControlsState {
     this.isTranscoding = false,
     this.sourceAudioTracks = const [],
     this.selectedAudioStreamId,
+    this.sourceSubtitleTracks = const [],
+    this.selectedSubtitleStreamId,
+    this.sourcePartId,
     this.sourceDurationMs,
     this.boxFitMode = 0,
     this.audioSyncOffset = 0,
@@ -88,6 +95,7 @@ class TrackControlsState {
     this.onSwitchVersion,
     this.onSwitchQualityPreset,
     this.onSwitchAudioStreamId,
+    this.onSwitchSubtitleStreamId,
     this.onAudioTrackChanged,
     this.onSubtitleTrackChanged,
     this.onSecondarySubtitleTrackChanged,

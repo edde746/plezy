@@ -102,10 +102,13 @@ class PlayerNative extends PlayerBase {
     bool play = true,
     bool isLive = false,
     List<SubtitleTrack>? externalSubtitles,
+    Duration timelineOffset = Duration.zero,
+    Duration? timelineDuration,
   }) async {
     if (disposed) return;
     await _ensureInitialized();
     final startPosition = media.start ?? Duration.zero;
+    configureTimeline(offset: timelineOffset, duration: timelineDuration);
     clearTracks();
     resetPlaybackProgress(startPosition);
     setSeekable(false);
@@ -160,7 +163,8 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> seek(Duration position) async {
-    await runSeek(position, () => command(['seek', (position.inMilliseconds / 1000.0).toString(), 'absolute']));
+    final sourcePosition = sourceSeekPosition(position);
+    await runSeek(position, () => command(['seek', (sourcePosition.inMilliseconds / 1000.0).toString(), 'absolute']));
   }
 
   @override

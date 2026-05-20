@@ -59,6 +59,7 @@ import '../services/shader_service.dart';
 import '../providers/shader_provider.dart';
 import '../providers/user_profile_provider.dart';
 import '../utils/app_logger.dart';
+import '../utils/codec_utils.dart';
 import '../utils/dialogs.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/live_tv_player_navigation.dart';
@@ -92,6 +93,7 @@ part 'video_player/parts/shader.dart';
 part 'video_player/parts/playback_prompts.dart';
 part 'video_player/parts/playback_services.dart';
 part 'video_player/parts/playback_start.dart';
+part 'video_player/parts/seeking.dart';
 part 'video_player/parts/build.dart';
 part 'video_player/parts/watch_together.dart';
 
@@ -262,7 +264,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // during otherwise-idle setup time.
   Future<void>? _audioFocusFuture;
   late final String _playbackSessionIdentifier;
-  late final String _playbackTranscodeSessionId;
+  late String _playbackTranscodeSessionId;
   String? _playbackPlaySessionId;
   String? _playbackPlayMethod;
   StreamSubscription<PlayerError>? _errorSubscription;
@@ -273,6 +275,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<void>? _playbackRestartSubscription;
   StreamSubscription<void>? _backendSwitchedSubscription;
+  bool _isRestartingTranscodeSeek = false;
   TrackManager? _trackManager;
   StreamSubscription<PlayerLog>? _logSubscription;
   StreamSubscription<void>? _sleepTimerSubscription;

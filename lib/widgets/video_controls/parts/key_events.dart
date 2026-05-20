@@ -306,6 +306,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       onScreenshot: _showScreenshotToast,
       currentPositionEpoch: widget.currentPositionEpoch,
       onLiveSeek: widget.onLiveSeek,
+      onSeekRequested: widget.onSeekRequested,
     );
     // Let non-navigation keys (volume, etc.) pass through to the OS.
     if (!event.logicalKey.isNavigationKey) return KeyEventResult.ignored;

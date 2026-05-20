@@ -151,13 +151,28 @@ class MediaSubtitleTrack with _TrackLabelMixin {
   });
 
   String get label {
+    return labelForIndex(_fallbackLabelIndex);
+  }
+
+  String labelForIndex(int visibleIndex) {
     return TrackLabelBuilder.buildSubtitleLabel(
-      title: displayTitle ?? title,
+      title: _labelTitle,
       language: languageCode ?? language,
       codec: codec,
       forced: forced,
-      index: (index ?? id) - 1,
+      index: visibleIndex,
     );
+  }
+
+  String? get _labelTitle {
+    final explicitTitle = title;
+    if (explicitTitle != null && explicitTitle.trim().isNotEmpty) return explicitTitle;
+    return displayTitle;
+  }
+
+  int get _fallbackLabelIndex {
+    final streamIndex = index ?? id;
+    return streamIndex > 0 ? streamIndex - 1 : 0;
   }
 
   /// Returns true if this subtitle track is an external file (sidecar subtitle).

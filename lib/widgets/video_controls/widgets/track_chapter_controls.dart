@@ -27,6 +27,7 @@ class TrackChapterControls extends StatelessWidget {
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
   final TrackControlsState trackControlsState;
+  final Future<void> Function(Duration position)? onSeekRequested;
   final Function(Duration position)? onSeekCompleted;
 
   /// List of FocusNodes for the buttons (passed from parent for navigation)
@@ -53,6 +54,7 @@ class TrackChapterControls extends StatelessWidget {
     required this.chapters,
     required this.chaptersLoaded,
     required this.trackControlsState,
+    this.onSeekRequested,
     this.onSeekCompleted,
     this.focusNodes,
     this.onFocusChange,
@@ -243,7 +245,9 @@ class TrackChapterControls extends StatelessWidget {
         // Combined audio & subtitles button
         {
           final currentIndex = buttonIndex;
-          final hasSubs = _hasSubtitles(tracks);
+          final hasSourceSubs =
+              trackControlsState.sourceSubtitleTracks.isNotEmpty && trackControlsState.onSwitchSubtitleStreamId != null;
+          final hasSubs = _hasSubtitles(tracks) || hasSourceSubs;
           final selectedSub = player.state.track.subtitle;
           final hasActiveSubtitle = selectedSub != null && selectedSub.id != 'no';
           final isHidden = hasSubs && hasActiveSubtitle && !subtitlesVisible;
@@ -275,6 +279,9 @@ class TrackChapterControls extends StatelessWidget {
                         sourceAudioTracks: trackControlsState.sourceAudioTracks,
                         selectedAudioStreamId: trackControlsState.selectedAudioStreamId,
                         onSwitchAudioStreamId: trackControlsState.onSwitchAudioStreamId,
+                        sourceSubtitleTracks: trackControlsState.sourceSubtitleTracks,
+                        selectedSubtitleStreamId: trackControlsState.selectedSubtitleStreamId,
+                        onSwitchSubtitleStreamId: trackControlsState.onSwitchSubtitleStreamId,
                         subtitleSearchSupported: trackControlsState.subtitleSearchSupported,
                       ),
                     )
@@ -305,6 +312,7 @@ class TrackChapterControls extends StatelessWidget {
                         chapters: chapters,
                         chaptersLoaded: chaptersLoaded,
                         serverId: serverId,
+                        onSeekRequested: onSeekRequested,
                         onSeekCompleted: onSeekCompleted,
                       ),
                     )

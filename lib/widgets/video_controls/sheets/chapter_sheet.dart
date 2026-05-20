@@ -26,6 +26,7 @@ class ChapterSheet extends StatefulWidget {
   final List<MediaChapter> chapters;
   final bool chaptersLoaded;
   final String? serverId; // Server ID for the metadata these chapters belong to
+  final Future<void> Function(Duration position)? onSeekRequested;
   final Function(Duration position)? onSeekCompleted;
 
   const ChapterSheet({
@@ -34,6 +35,7 @@ class ChapterSheet extends StatefulWidget {
     required this.chapters,
     required this.chaptersLoaded,
     this.serverId,
+    this.onSeekRequested,
     this.onSeekCompleted,
   });
 
@@ -52,7 +54,7 @@ class _ChapterSheetState extends State<ChapterSheet> {
 
   Future<void> _handleChapterTap(Duration position) async {
     final clamped = clampSeekPosition(widget.player, position);
-    await widget.player.seek(clamped);
+    await (widget.onSeekRequested ?? widget.player.seek)(clamped);
     if (mounted) {
       widget.onSeekCompleted?.call(clamped);
       OverlaySheetController.of(context).close();
