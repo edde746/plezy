@@ -128,6 +128,51 @@ Future<bool> _launchCommand(String command, String url) async {
   }
 }
 
+Future<bool> _launchCommandCandidates(Iterable<String> commands, String url) async {
+  final commandList = commands.toList(growable: false);
+  Object? lastError;
+  for (final command in commandList) {
+    try {
+      final result = await Process.start(command, [url], mode: ProcessStartMode.detached);
+      appLogger.d('Launched $command with PID: ${result.pid}');
+      return true;
+    } catch (e) {
+      lastError = e;
+      appLogger.d('Failed to launch $command', error: e);
+    }
+  }
+
+  appLogger.w('Failed to launch any of: ${commandList.join(', ')}', error: lastError);
+  return false;
+}
+
+List<String> _windowsVlcCommandCandidates(Map<String, String> environment) {
+  final candidates = <String>['vlc'];
+
+  void addInstallPath(String? programFilesDir) {
+    final trimmed = programFilesDir?.trim();
+    if (trimmed == null || trimmed.isEmpty) return;
+    final root = trimmed.replaceFirst(RegExp(r'[\\/]+$'), '');
+    candidates.add('$root\\VideoLAN\\VLC\\vlc.exe');
+  }
+
+  addInstallPath(environment['ProgramW6432']);
+  addInstallPath(environment['ProgramFiles']);
+  addInstallPath(environment['ProgramFiles(x86)']);
+  addInstallPath(r'C:\Program Files');
+  addInstallPath(r'C:\Program Files (x86)');
+
+  final seen = <String>{};
+  return [
+    for (final candidate in candidates)
+      if (seen.add(candidate.toLowerCase())) candidate,
+  ];
+}
+
+Future<bool> _launchWindowsVlc(String url) {
+  return _launchCommandCandidates(_windowsVlcCommandCandidates(Platform.environment), url);
+}
+
 Future<bool> _launchCustom(String value, String url, CustomPlayerType type) async {
   if (type == CustomPlayerType.urlScheme) {
     return _launchUrlScheme(value, url);
@@ -158,6 +203,7 @@ class KnownPlayers {
         if (Platform.isAndroid) return _launchAndroidIntent(url, package: 'org.videolan.vlc');
         if (Platform.isIOS) return _launchUrlScheme('vlc://', url);
         if (Platform.isMacOS) return _launchMacApp('VLC', url);
+        if (Platform.isWindows) return _launchWindowsVlc(url);
         return _launchCommand('vlc', url);
       },
     ),
