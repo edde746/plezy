@@ -1,8 +1,8 @@
 {
-  "originHash" : "2b7fd3ae3738d9c4c6b77f3f8b6488dc3350c95bd3d7ae81c787443f2955e8d5",
+  "originHash" : "e499b2215a68ae4acc51d7472142787e82a07e34a4a8e04a5fdd0aef8a9ab0e2",
   "pins" : [
     {
-      "identity" : "mpvkit",
+      "identity" : "mpvkitam",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/MazeDev7/MPVKitAM",
       "state" : {
@@ -14,7 +14,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/MazeDev7/vlckit-spm",
       "state" : {
-        "revision" : "e932bbd488872fdb74f6654d28c2f291eae03daf",
+        "revision" : "1ecaebe1fee883b6c53232da68de7215f4cb3d70",
         "version" : "3.6.0"
       }
     }

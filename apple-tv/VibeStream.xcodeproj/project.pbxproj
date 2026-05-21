@@ -461,7 +461,7 @@
 				80061E04EA26FBC9711D2FB1 /* MpvPlayerCoreBase.swift */,
 			);
 			name = MpvPlayer;
-			path = ../shared/apple/MpvPlayer;
+			path = Shared/apple/MpvPlayer;
 			sourceTree = "<group>";
 		};
 		92611D3702905DC1DF7435CB /* Library */ = {
@@ -766,7 +766,7 @@
 			mainGroup = FF044109D9C6961DF055DDF4;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				629B7A6E007F7A141EF77749 /* XCRemoteSwiftPackageReference "MPVKit" */,
+				DDF0868DF0AFEC88735040E8 /* XCRemoteSwiftPackageReference "MPVKitAM" */,
 				DABAE77E025E17695D7A397C /* XCRemoteSwiftPackageReference "vlckit-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -1287,14 +1287,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		629B7A6E007F7A141EF77749 /* XCRemoteSwiftPackageReference "MPVKit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/MazeDev7/MPVKitAM";
-			requirement = {
-				kind = revision;
-				revision = 0d0931fbbb25a3483a7edb46babd3f2f55abeefc;
-			};
-		};
 		DABAE77E025E17695D7A397C /* XCRemoteSwiftPackageReference "vlckit-spm" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/MazeDev7/vlckit-spm";
@@ -1303,12 +1295,20 @@
 				minimumVersion = 3.5.1;
 			};
 		};
+		DDF0868DF0AFEC88735040E8 /* XCRemoteSwiftPackageReference "MPVKitAM" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/MazeDev7/MPVKitAM";
+			requirement = {
+				kind = revision;
+				revision = 42dcc3123000361d0be54fbaec981043b77e1e05;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		92708E81D8AC8891344BC221 /* MPVKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 629B7A6E007F7A141EF77749 /* XCRemoteSwiftPackageReference "MPVKit" */;
+			package = DDF0868DF0AFEC88735040E8 /* XCRemoteSwiftPackageReference "MPVKitAM" */;
 			productName = MPVKit;
 		};
 		F861589503373DEF962B5E4F /* VLCKitSPM */ = {
