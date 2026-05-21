@@ -3,9 +3,9 @@
     {
       "identity" : "mpvkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/MazeDev7/MPVKit",
+      "location" : "https://github.com/MazeDev7/MPVKitAM",
       "state" : {
-        "revision" : "0d0931fbbb25a3483a7edb46babd3f2f55abeefc"
+        "revision" : "42dcc3123000361d0be54fbaec981043b77e1e05"
       }
     }
   ],

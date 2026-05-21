@@ -786,7 +786,7 @@
 /* Begin XCRemoteSwiftPackageReference section */
 		6A8A461F2EDB320D0057B88C /* XCRemoteSwiftPackageReference "MPVKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/edde746/MPVKit";
+			repositoryURL = "https://github.com/MazeDev7/MPVKitAM";
 			requirement = {
 				kind = revision;
 				revision = 42dcc3123000361d0be54fbaec981043b77e1e05;

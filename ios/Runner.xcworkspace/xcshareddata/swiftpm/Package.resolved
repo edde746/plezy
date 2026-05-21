@@ -38,7 +38,7 @@
     {
       "identity" : "mpvkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/edde746/MPVKit",
+      "location" : "https://github.com/MazeDev7/MPVKitAM",
       "state" : {
         "revision" : "42dcc3123000361d0be54fbaec981043b77e1e05"
       }

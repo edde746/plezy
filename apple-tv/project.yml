@@ -16,8 +16,8 @@ settings:
 
 packages:
   MPVKit:
-    url: https://github.com/MazeDev7/MPVKit
-    revision: 0d0931fbbb25a3483a7edb46babd3f2f55abeefc
+    url: https://github.com/MazeDev7/MPVKitAM
+    revision: 42dcc3123000361d0be54fbaec981043b77e1e05
   VLCKitSPM:
     url: https://github.com/MazeDev7/vlckit-spm
     from: 3.5.1
