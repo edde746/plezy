@@ -21,7 +21,7 @@ platform :ios do
 
     # Upload to App Store
     upload_to_app_store(
-      ipa: "../build/ios/ipa/Plezy.ipa",
+      ipa: "../build/ios/ipa/Runner.ipa",
       force: true,
       submit_for_review: false,
       skip_screenshots: true, # https://github.com/fastlane/fastlane/issues/29735

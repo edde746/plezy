@@ -1,0 +1,86 @@
+name: Build apple-tv (native Swift)
+
+# NOTE:
+# The upstream vibeStream repository's tvOS CI uses Xcode Cloud
+# (see apple-tv/ci_scripts/ci_post_clone.sh) rather than a GitHub
+# Actions workflow. There was no native Swift tvOS build job in
+# vibeStream/.github/workflows/ to port over. This workflow is a
+# minimal, build-only scaffold for the apple-tv target so that
+# apple-tv/** changes get exercised in PRs.
+#
+# Code signing, provisioning profiles, App Store Connect upload,
+# and TestFlight delivery are intentionally NOT configured here.
+# Add a separate signed-release job (or hand off to Xcode Cloud)
+# once the user supplies the necessary secrets and certificates.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apple-tv/**'
+      - '.github/workflows/build-apple-tv.yml'
+  pull_request:
+    paths:
+      - 'apple-tv/**'
+      - '.github/workflows/build-apple-tv.yml'
+  workflow_dispatch:
+
+jobs:
+  build-apple-tv:
+    name: Build apple-tv (tvOS, unsigned)
+    runs-on: macos-14
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ./apple-tv
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: Show Xcode and Swift versions
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: bash generate-xcode-project.sh
+
+      - name: Cache SwiftPM artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Caches/org.swift.swiftpm
+            ~/Library/Developer/Xcode/DerivedData/**/SourcePackages
+          key: ${{ runner.os }}-spm-apple-tv-${{ hashFiles('apple-tv/Package.resolved', 'apple-tv/project.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-apple-tv-
+
+      - name: Resolve Swift packages
+        run: |
+          # Mirrors apple-tv/ci_scripts/ci_post_clone.sh — purge
+          # SwiftPM caches that occasionally collide on CI runners,
+          # then resolve dependencies for the VibeStream scheme.
+          swift package purge-cache 2>/dev/null || true
+          rm -rf ~/Library/Caches/org.swift.swiftpm/artifacts 2>/dev/null || true
+          xcodebuild -resolvePackageDependencies \
+            -workspace VibeStream.xcodeproj/project.xcworkspace \
+            -scheme VibeStream
+
+      - name: Build apple-tv (Release, no codesign)
+        run: |
+          xcodebuild \
+            -workspace VibeStream.xcodeproj/project.xcworkspace \
+            -scheme VibeStream \
+            -configuration Release \
+            -destination 'generic/platform=tvOS' \
+            -derivedDataPath build \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build

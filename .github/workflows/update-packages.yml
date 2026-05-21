@@ -20,23 +20,23 @@ jobs:
         id: release
         run: |
           VERSION="${{ github.event.release.tag_name || github.ref_name }}"
-          curl -L -o plezy-macos.dmg \
-            "https://github.com/edde746/plezy/releases/download/$VERSION/plezy-macos.dmg"
-          SHA256=$(shasum -a 256 plezy-macos.dmg | cut -d' ' -f1)
+          curl -L -o vibe_stream-macos.dmg \
+            "https://github.com/${{ github.repository }}/releases/download/$VERSION/vibe_stream-macos.dmg"
+          SHA256=$(shasum -a 256 vibe_stream-macos.dmg | cut -d' ' -f1)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
 
       - name: Update cask
         run: |
-          sed -i '' "s/version \".*\"/version \"${{ steps.release.outputs.version }}\"/" Casks/plezy.rb
-          sed -i '' "s/sha256 \".*\"/sha256 \"${{ steps.release.outputs.sha256 }}\"/" Casks/plezy.rb
+          sed -i '' "s/version \".*\"/version \"${{ steps.release.outputs.version }}\"/" Casks/vibe_stream.rb
+          sed -i '' "s/sha256 \".*\"/sha256 \"${{ steps.release.outputs.sha256 }}\"/" Casks/vibe_stream.rb
 
       - name: Commit
         run: |
           BRANCH="${{ github.event.repository.default_branch }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Casks/plezy.rb
+          git add Casks/vibe_stream.rb
           if ! git diff --staged --quiet; then
             git commit -m "chore: update cask to ${{ steps.release.outputs.version }}"
             git push origin "HEAD:$BRANCH"
@@ -44,14 +44,20 @@ jobs:
             echo "No cask changes to commit."
           fi
 
-  update-winget:
-    runs-on: windows-latest
-    steps:
-      - uses: vedantmgoyal9/winget-releaser@v2
-        with:
-          identifier: edde746.Plezy
-          installers-regex: 'plezy-windows-installer\.exe$'
-          token: ${{ secrets.WINGET_TOKEN }}
+  # TODO: WinGet publishing is disabled pending a Vibe WinGet listing.
+  # The upstream entry `edde746.Plezy` belongs to Plezy and must not be
+  # used. To re-enable, submit a new manifest under (for example)
+  # `MazeDev7.Vibe` to microsoft/winget-pkgs, set up a fork + PAT
+  # (WINGET_TOKEN), then uncomment this job and update `identifier`.
+  #
+  # update-winget:
+  #   runs-on: windows-latest
+  #   steps:
+  #     - uses: vedantmgoyal9/winget-releaser@v2
+  #       with:
+  #         identifier: MazeDev7.Vibe
+  #         installers-regex: 'vibe_stream-windows-installer\.exe$'
+  #         token: ${{ secrets.WINGET_TOKEN }}
 
   update-appcast-branch:
     runs-on: ubuntu-latest
