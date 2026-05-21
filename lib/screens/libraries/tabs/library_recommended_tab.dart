@@ -302,6 +302,10 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     final svc = SettingsService.instanceOrNull!;
     final client = context.tryGetMediaClientForServer(spotlight?.serverId ?? widget.library.serverId);
     final scale = TvLayoutConstants.scaleForSize(size);
+    final sidebarBleed = MainScreenFocusScope.sideNavigationBleedOf(
+      context,
+      alwaysKeepSidebarOpen: svc.read(SettingsService.alwaysKeepSidebarOpen),
+    );
     final railHeight = tvHubs.isEmpty
         ? 0.0
         : TvBrowseRailLayout.estimateHeight(
@@ -320,10 +324,6 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     final maxSpotlightBottom = (size.height - spotlightTop - (96 * scale)).clamp(0.0, double.infinity).toDouble();
     final spotlightBottom = desiredSpotlightBottom > maxSpotlightBottom ? maxSpotlightBottom : desiredSpotlightBottom;
     final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
-    final sidebarBleed = MainScreenFocusScope.sideNavigationBleedOf(
-      context,
-      alwaysKeepSidebarOpen: svc.read(SettingsService.alwaysKeepSidebarOpen),
-    );
 
     return Material(
       color: theme.scaffoldBackgroundColor,
@@ -336,7 +336,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
               top: 0,
               bottom: 0,
               left: -sidebarBleed,
-              right: 0,
+              width: size.width,
               child: TvSpotlightBackground(
                 item: spotlight,
                 client: client,
@@ -366,6 +366,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
                   onBack: widget.onBack,
                   tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
                   backgroundBleedLeft: sidebarBleed,
+                  visibleRightInset: sidebarBleed,
                 ),
               ),
           ],

@@ -59,6 +59,7 @@ void scrollListToIndex(
   int index, {
   required double itemExtent,
   double leadingPadding = 12.0,
+  double visibleTrailingInset = 0.0,
   bool animate = true,
 }) {
   if (controller.positions.length != 1 || itemExtent <= 0) return;
@@ -67,7 +68,8 @@ void scrollListToIndex(
   final maxExtent = controller.position.maxScrollExtent;
   if (!viewport.isFinite || !maxExtent.isFinite) return;
   final targetCenter = leadingPadding + (index * itemExtent) + (itemExtent / 2);
-  final desiredOffset = (targetCenter - (viewport / 2)).clamp(0.0, maxExtent);
+  final visibleViewport = (viewport - visibleTrailingInset).clamp(1.0, double.infinity).toDouble();
+  final desiredOffset = (targetCenter - (visibleViewport / 2)).clamp(0.0, maxExtent);
 
   if (animate) {
     controller.animateTo(desiredOffset, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);

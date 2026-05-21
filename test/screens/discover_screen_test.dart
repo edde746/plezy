@@ -13,6 +13,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/media/server_capabilities.dart';
 import 'package:plezy/mixins/refreshable.dart';
+import 'package:plezy/mixins/tab_visibility_aware.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile.dart';
@@ -55,7 +56,14 @@ void main() {
   });
 
   testWidgets('TV tab focus returns to discover browse rail instead of reload action', (tester) async {
-    await SettingsService.getInstance();
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.libraryDensity, LibraryDensity.max);
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(() {
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+    });
 
     final item = MediaItem(
       id: 'movie_1',
@@ -92,6 +100,7 @@ void main() {
       storage: storage,
     );
     final discoverKey = GlobalKey<State<DiscoverScreen>>();
+    const sidebarOffset = SideNavigationRailState.expandedWidth;
 
     addTearDown(() async {
       activeProfileProvider.dispose();
@@ -121,7 +130,7 @@ void main() {
               focusSidebar: () {},
               focusContent: () {},
               isSidebarFocused: false,
-              sideNavigationWidth: SideNavigationRailState.expandedWidth,
+              sideNavigationWidth: sidebarOffset,
               child: SizedBox(width: 1280, height: 720, child: DiscoverScreen(key: discoverKey)),
             ),
           ),
@@ -135,21 +144,50 @@ void main() {
     final scale = TvLayoutConstants.scaleForSize(const Size(1280, 720));
     final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
     final spotlightBackground = tester.widget<TvSpotlightBackground>(find.byType(TvSpotlightBackground));
-    expect(spotlightBackground.contentLeft, closeTo(spotlightLeft + SideNavigationRailState.expandedWidth, 0.001));
-    expect(
-      tester.widget<TvBrowseRail>(find.byType(TvBrowseRail)).backgroundBleedLeft,
-      SideNavigationRailState.expandedWidth,
+    expect(spotlightBackground.contentLeft, closeTo(spotlightLeft + sidebarOffset, 0.001));
+
+    final railHeight = TvBrowseRailLayout.estimateHeight(
+      size: const Size(1280, 720),
+      hubs: [hub],
+      density: LibraryDensity.max,
+      episodePosterMode: settings.read(SettingsService.episodePosterMode),
+      tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
     );
+    final minimumSpotlightBottom = railHeight + (8 * scale);
+    final baseSpotlightBottom = (720 * 0.48).clamp(160.0, 820.0).toDouble();
+    final desiredSpotlightBottom = minimumSpotlightBottom > baseSpotlightBottom
+        ? minimumSpotlightBottom
+        : baseSpotlightBottom;
+    final maxSpotlightBottom = (720 - ((720 * 0.075).clamp(64.0 * scale, 120.0 * scale)) - (96 * scale))
+        .clamp(0.0, double.infinity)
+        .toDouble();
+    final expectedSpotlightBottom = desiredSpotlightBottom > maxSpotlightBottom
+        ? maxSpotlightBottom
+        : desiredSpotlightBottom;
+    expect(spotlightBackground.contentBottom, closeTo(expectedSpotlightBottom, 0.001));
+
+    final browseRail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+    expect(browseRail.backgroundBleedLeft, sidebarOffset);
+    expect(browseRail.visibleRightInset, sidebarOffset);
 
     final backgroundPosition = tester.widget<Positioned>(
       find.ancestor(of: find.byType(TvSpotlightBackground), matching: find.byType(Positioned)).first,
     );
-    expect(backgroundPosition.left, -SideNavigationRailState.expandedWidth);
+    expect(backgroundPosition.left, -sidebarOffset);
+    expect(backgroundPosition.width, 1280);
 
     tester.state<FocusableActionBarState>(find.byType(FocusableActionBar)).requestFocusOnFirst();
     await tester.pump();
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
 
+    (discoverKey.currentState! as FocusableTab).focusActiveTabIfReady();
+    (discoverKey.currentState! as TabVisibilityAware).onTabHidden();
+    await tester.pump();
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+
+    (discoverKey.currentState! as TabVisibilityAware).onTabShown();
     (discoverKey.currentState! as FocusableTab).focusActiveTabIfReady();
     await tester.pump();
     await tester.pump();

@@ -239,6 +239,64 @@ void main() {
     expect(reports.last, isFalse);
   });
 
+  testWidgets('Apple TV D-pad focus skips hidden downloads item', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    await SettingsService.getInstance();
+
+    final librariesProvider = LibrariesProvider();
+    addTearDown(librariesProvider.dispose);
+
+    final hiddenLibrariesProvider = HiddenLibrariesProvider();
+    await hiddenLibrariesProvider.ensureInitialized();
+    addTearDown(hiddenLibrariesProvider.dispose);
+
+    final manager = MultiServerManager();
+    final aggregation = DataAggregationService(manager);
+    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    addTearDown(multiServerProvider.dispose);
+
+    final sideNavKey = GlobalKey<SideNavigationRailState>();
+    NavigationTabId? selectedTab;
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
+            ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+          ],
+          child: MaterialApp(
+            theme: ThemeData(extensions: const [_testTokens]),
+            home: Scaffold(
+              body: SideNavigationRail(
+                key: sideNavKey,
+                selectedTab: NavigationTabId.discover,
+                isSidebarFocused: true,
+                alwaysExpanded: true,
+                onDestinationSelected: (tab) => selectedTab = tab,
+                onLibrarySelected: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    sideNavKey.currentState!.focusActiveItem();
+    await tester.pumpAndSettle();
+
+    // Home -> Libraries -> Search -> Settings. Downloads is hidden on Apple TV.
+    await _press(tester, LogicalKeyboardKey.arrowDown);
+    await _press(tester, LogicalKeyboardKey.arrowDown);
+    await _press(tester, LogicalKeyboardKey.arrowDown);
+    await _press(tester, LogicalKeyboardKey.enter);
+
+    expect(selectedTab, NavigationTabId.settings);
+  });
+
   testWidgets('D-pad down from a hidden server header focuses that hidden server library', (tester) async {
     await SettingsService.getInstance();
 

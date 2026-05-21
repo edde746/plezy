@@ -1642,6 +1642,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   Future<void> _fetchTvSeasonEpisodeCaches(int selectedSeasonIndex) async {
     if (widget.isOffline || _showEpisodesDirectly || _seasons.isEmpty) return;
+    final generation = ++_episodesLoadGeneration;
 
     setStateIfMounted(() {
       _isLoadingSeasonEpisodes = true;
@@ -1650,7 +1651,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final serverId = _metadata.serverId;
     final client = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
     if (serverId == null || client == null) {
-      _completeTvSeasonEpisodeCaches(selectedSeasonIndex, const <String, List<MediaItem>>{});
+      _completeTvSeasonEpisodeCaches(selectedSeasonIndex, const <String, List<MediaItem>>{}, generation);
       return;
     }
 
@@ -1666,7 +1667,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       var total = 0;
       do {
         final page = await client.fetchPlayableDescendantsPage(_metadata.id, start: offset, size: _episodesPageSize);
-        if (!mounted) return;
+        if (!mounted || generation != _episodesLoadGeneration) return;
         if (page.items.isEmpty) break;
 
         final enriched = _enrichPlayableEpisodes(page.items, serverId);
@@ -1680,11 +1681,50 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         total = page.totalCount;
       } while (offset < total && total > 0);
 
-      _completeTvSeasonEpisodeCaches(selectedSeasonIndex, episodesBySeasonId);
+      _completeTvSeasonEpisodeCaches(selectedSeasonIndex, episodesBySeasonId, generation);
     } catch (e, st) {
       appLogger.w('Failed to load TV season episode caches', error: e, stackTrace: st);
-      _completeTvSeasonEpisodeCaches(selectedSeasonIndex, const <String, List<MediaItem>>{});
+      await _fetchTvSeasonEpisodeCachesBySeason(selectedSeasonIndex, client, serverId, generation);
     }
+  }
+
+  Future<void> _fetchTvSeasonEpisodeCachesBySeason(
+    int selectedSeasonIndex,
+    MediaServerClient client,
+    String serverId,
+    int generation,
+  ) async {
+    final seasons = List<MediaItem>.of(_seasons);
+    final episodesBySeasonId = <String, List<MediaItem>>{};
+
+    for (final season in seasons) {
+      if (!mounted || generation != _episodesLoadGeneration) return;
+      try {
+        final episodes = await client.fetchChildren(season.id);
+        if (!mounted || generation != _episodesLoadGeneration) return;
+        episodesBySeasonId[season.id] = episodes
+            .map(
+              (episode) => _withFallbackLibrary(
+                episode.copyWith(
+                  serverId: serverId,
+                  serverName: _metadata.serverName ?? episode.serverName,
+                  grandparentId: _metadata.id,
+                  grandparentTitle: _metadata.title ?? episode.grandparentTitle,
+                  parentId: season.id,
+                  parentIndex: season.index ?? episode.parentIndex,
+                ),
+                season.libraryId != null ? season : _metadata,
+              ),
+            )
+            .map(_applyLocalProgress)
+            .toList();
+      } catch (e, st) {
+        appLogger.w('Failed to load TV season episodes for ${season.id}', error: e, stackTrace: st);
+        episodesBySeasonId[season.id] = const <MediaItem>[];
+      }
+    }
+
+    _completeTvSeasonEpisodeCaches(selectedSeasonIndex, episodesBySeasonId, generation);
   }
 
   String? _seasonIdForEpisode(
@@ -1701,7 +1741,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return null;
   }
 
-  void _completeTvSeasonEpisodeCaches(int selectedSeasonIndex, Map<String, List<MediaItem>> episodesBySeasonId) {
+  void _completeTvSeasonEpisodeCaches(
+    int selectedSeasonIndex,
+    Map<String, List<MediaItem>> episodesBySeasonId,
+    int generation,
+  ) {
+    if (!mounted || generation != _episodesLoadGeneration) return;
     setStateIfMounted(() {
       for (final season in _seasons) {
         _episodeCache[season.id] = List.of(episodesBySeasonId[season.id] ?? const <MediaItem>[]);

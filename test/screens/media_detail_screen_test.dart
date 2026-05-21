@@ -130,17 +130,109 @@ void main() {
     expect(find.text('Season 1'), findsOneWidget);
     expect(find.text('Season 2'), findsOneWidget);
   });
+
+  testWidgets('TV detail falls back to per-season episodes when descendant cache fails', (tester) async {
+    await SettingsService.getInstance();
+
+    final show = MediaItem(
+      id: 'show_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.show,
+      title: 'The Show',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final season1 = MediaItem(
+      id: 'season_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.season,
+      title: 'Season 1',
+      index: 1,
+      parentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final season2 = MediaItem(
+      id: 'season_2',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.season,
+      title: 'Season 2',
+      index: 2,
+      parentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final episode1 = MediaItem(
+      id: 'episode_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: 'Episode 1',
+      index: 1,
+      parentId: season1.id,
+      parentIndex: season1.index,
+      grandparentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final episode2 = MediaItem(
+      id: 'episode_2',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: 'Episode 2',
+      index: 1,
+      parentId: season2.id,
+      parentIndex: season2.index,
+      grandparentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+
+    final client = _FakeMediaServerClient(
+      show: show,
+      childrenByParent: {
+        show.id: [season1, season2],
+        season1.id: [episode1],
+        season2.id: [episode2],
+      },
+      playableDescendantsError: Exception('descendant cache failed'),
+    );
+    final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    addTearDown(provider.dispose);
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: ChangeNotifierProvider<MultiServerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Season 1'), findsOneWidget);
+    expect(find.text('Season 2'), findsOneWidget);
+  });
 }
 
 class _FakeMediaServerClient implements MediaServerClient {
   final MediaItem show;
   final Map<String, List<MediaItem>> childrenByParent;
-  final Future<List<MediaItem>> pendingPlayableDescendants;
+  final Future<List<MediaItem>>? pendingPlayableDescendants;
+  final Object? playableDescendantsError;
 
   _FakeMediaServerClient({
     required this.show,
     required this.childrenByParent,
-    required this.pendingPlayableDescendants,
+    this.pendingPlayableDescendants,
+    this.playableDescendantsError,
   });
 
   @override
@@ -169,7 +261,9 @@ class _FakeMediaServerClient implements MediaServerClient {
     int? size,
     AbortController? abort,
   }) async {
-    final items = await pendingPlayableDescendants;
+    final error = playableDescendantsError;
+    if (error != null) throw error;
+    final items = await pendingPlayableDescendants!;
     return LibraryPage(items: items, totalCount: items.length, offset: start ?? 0);
   }
 

@@ -248,6 +248,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
 
   bool get _interactionExpanded => _isHovered || _isTouchExpanded;
 
+  bool get _showDownloads => !PlatformDetector.isAppleTV();
+
   /// macOS has the system green button; mobile/TV have no OS fullscreen toggle.
   bool get _showFullscreenToggle => Platform.isWindows || Platform.isLinux;
 
@@ -366,7 +368,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       _kHome,
       _kLibraries,
       _kSearch,
-      _kDownloads,
+      if (_showDownloads) _kDownloads,
       _kSettings,
       _kReconnect,
       if (hasHiddenLibraries) _kHiddenLibraries,
@@ -453,7 +455,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         if (hasLiveTv) 'liveTv',
         _kSearch,
       ],
-      _kDownloads,
+      if (_showDownloads) _kDownloads,
       _kSettings,
       if (_showFullscreenToggle) _kFullscreen,
     ];
@@ -711,7 +713,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                   ],
                                   // Downloads (hidden on Apple TV — no user
                                   // file storage)
-                                  if (!PlatformDetector.isAppleTV()) ...[
+                                  if (_showDownloads) ...[
                                     _buildNavItem(
                                       icon: Symbols.download_rounded,
                                       selectedIcon: Symbols.download_rounded,

@@ -333,11 +333,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _focusTvBrowseRailWhenReady() {
     if (!PlatformDetector.isTV()) return;
-    if (!(ModalRoute.of(context)?.isCurrent ?? false)) return;
+    if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
+      _pendingTvBrowseRailFocus = false;
+      return;
+    }
 
     _pendingTvBrowseRailFocus = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return;
+      if (!mounted) return;
+      if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
+        _pendingTvBrowseRailFocus = false;
+        return;
+      }
       if (_tvBrowseHubs.isEmpty) return;
       final rail = _tvBrowseRailKey.currentState;
       if (rail == null) return;
@@ -606,6 +613,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void onTabHidden() {
     _isTabVisible = false;
+    _pendingTvBrowseRailFocus = false;
     _autoScrollTimer?.cancel();
     _stopIndicatorProgress();
   }
@@ -746,14 +754,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // On initial load, focus the hero so the user starts on content (not the toolbar)
       if (!_initialLoadComplete && onDeck.isNotEmpty) {
         _initialLoadComplete = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return;
-          if (PlatformDetector.isTV()) {
-            _tvBrowseRailKey.currentState?.requestFocus();
-          } else if (_heroFocusNode.canRequestFocus) {
-            _heroFocusNode.requestFocus();
-          }
-        });
+        if (PlatformDetector.isTV()) {
+          _focusTvBrowseRailWhenReady();
+        } else {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return;
+            if (_heroFocusNode.canRequestFocus) {
+              _heroFocusNode.requestFocus();
+            }
+          });
+        }
       }
 
       // Wait for global hubs
@@ -787,11 +797,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
       if (PlatformDetector.isTV() && !_initialLoadComplete && filteredHubs.isNotEmpty) {
         _initialLoadComplete = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
-            _tvBrowseRailKey.currentState?.requestFocus();
-          }
-        });
+        _focusTvBrowseRailWhenReady();
       }
 
       appLogger.d('Discover content loaded successfully');
@@ -1516,6 +1522,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
     final browseHubs = _tvBrowseHubs;
     final scale = TvLayoutConstants.scaleForSize(size);
+    final sidebarBleed = MainScreenFocusScope.sideNavigationBleedOf(
+      context,
+      alwaysKeepSidebarOpen: svc.read(SettingsService.alwaysKeepSidebarOpen),
+    );
     final railHeight = browseHubs.isEmpty
         ? 0.0
         : TvBrowseRailLayout.estimateHeight(
@@ -1534,10 +1544,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final maxSpotlightBottom = (size.height - spotlightTop - (96 * scale)).clamp(0.0, double.infinity).toDouble();
     final spotlightBottom = desiredSpotlightBottom > maxSpotlightBottom ? maxSpotlightBottom : desiredSpotlightBottom;
     final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
-    final sidebarBleed = MainScreenFocusScope.sideNavigationBleedOf(
-      context,
-      alwaysKeepSidebarOpen: svc.read(SettingsService.alwaysKeepSidebarOpen),
-    );
 
     return Material(
       color: theme.scaffoldBackgroundColor,
@@ -1548,7 +1554,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             top: 0,
             bottom: 0,
             left: -sidebarBleed,
-            right: 0,
+            width: size.width,
             child: TvSpotlightBackground(
               item: spotlight,
               client: _getMediaClientForItem(spotlight),
@@ -1607,12 +1613,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onNavigateToSidebar: _navigateToSidebar,
                 tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
                 backgroundBleedLeft: sidebarBleed,
+                visibleRightInset: sidebarBleed,
               ),
             ),
           Positioned(
             top: 0,
             left: -sidebarBleed,
-            right: 0,
+            width: size.width,
             child: ExcludeFocusTraversal(child: _buildOverlaidAppBar()),
           ),
           if (_switchingProfile) const ProfileSwitchingOverlay(),

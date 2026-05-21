@@ -19,6 +19,7 @@ import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../screens/hub_detail_screen.dart';
+import '../screens/main_screen.dart';
 import '../utils/media_navigation_helper.dart';
 import 'focus_builders.dart';
 import 'media_card.dart';
@@ -106,6 +107,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
       ? TvLayoutConstants.shelfHorizontalInset
       : 12.0;
   double get _leadingPadding => _leadingPaddingFor(PlatformDetector.isTV());
+  double get _visibleRightInset => MainScreenFocusScope.clippedContentRightInsetOf(context);
 
   Timer? _longPressTimer;
   bool _isSelectKeyDown = false;
@@ -209,6 +211,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
       index,
       itemExtent: _itemExtent,
       leadingPadding: _leadingPadding,
+      visibleTrailingInset: _visibleRightInset,
       animate: animate,
     );
   }
@@ -484,8 +487,13 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
                           scrollDirection: Axis.horizontal,
                           clipBehavior: Clip.none,
                           padding: widget.inset
-                              ? EdgeInsets.symmetric(vertical: isTv ? 6 : 2)
-                              : EdgeInsets.symmetric(horizontal: isTv ? leadingPadding : 8, vertical: isTv ? 6 : 2),
+                              ? EdgeInsets.fromLTRB(0, isTv ? 6 : 2, _visibleRightInset + 4, isTv ? 6 : 2)
+                              : EdgeInsets.fromLTRB(
+                                  isTv ? leadingPadding : 8,
+                                  isTv ? 6 : 2,
+                                  (isTv ? leadingPadding : 8) + _visibleRightInset,
+                                  isTv ? 6 : 2,
+                                ),
                           itemCount: isKeyboardMode ? _totalItemCount : widget.hub.items.length,
                           itemBuilder: (context, index) {
                             final isItemFocused = hasFocus && index == _focusedIndex;

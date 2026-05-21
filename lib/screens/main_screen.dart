@@ -80,7 +80,11 @@ class MainScreenFocusScope extends InheritedWidget {
   static double sideNavigationBleedOf(BuildContext context, {required bool alwaysKeepSidebarOpen}) {
     final width = of(context)?.sideNavigationWidth;
     if (width != null) return width;
-    return alwaysKeepSidebarOpen ? 0.0 : SideNavigationRailState.collapsedWidthForContext(context);
+    return 0.0;
+  }
+
+  static double clippedContentRightInsetOf(BuildContext context) {
+    return of(context)?.sideNavigationWidth ?? 0.0;
   }
 
   @override
@@ -1232,7 +1236,7 @@ class _MainScreenState extends State<MainScreen>
       return SettingValueBuilder<bool>(
         pref: SettingsService.alwaysKeepSidebarOpen,
         builder: (context, alwaysExpanded, _) {
-          final targetContentLeftPadding = _sideNavigationWidth(context, alwaysExpanded: alwaysExpanded);
+          final targetContentOffset = _sideNavigationWidth(context, alwaysExpanded: alwaysExpanded);
 
           return OverlaySheetHost(
             child: PopScope(
@@ -1250,7 +1254,7 @@ class _MainScreenState extends State<MainScreen>
                 child: TweenAnimationBuilder<double>(
                   duration: const Duration(milliseconds: 200),
                   curve: Curves.easeOutCubic,
-                  tween: Tween<double>(end: targetContentLeftPadding),
+                  tween: Tween<double>(end: targetContentOffset),
                   child: FocusScope(
                     node: _contentFocusScope,
                     // No autofocus - we control focus programmatically to prevent
@@ -1265,43 +1269,50 @@ class _MainScreenState extends State<MainScreen>
                       sideNavigationWidth: contentLeftPadding,
                       selectLibrary: _selectLibrary,
                       child: SideNavigationScope(
-                        child: Stack(
-                          children: [
-                            Positioned.fill(
-                              child: Padding(
-                                padding: EdgeInsets.only(left: contentLeftPadding),
-                                child: contentChild!,
-                              ),
-                            ),
-                            Positioned(
-                              top: 0,
-                              bottom: 0,
-                              left: 0,
-                              child: FocusScope(
-                                node: _sidebarFocusScope,
-                                child: SideNavigationRail(
-                                  key: _sideNavKey,
-                                  selectedTab: _currentTab,
-                                  selectedLibraryKey: _selectedLibraryGlobalKey,
-                                  isOfflineMode: _isOffline,
-                                  isSidebarFocused: _isSidebarFocused,
-                                  alwaysExpanded: alwaysExpanded,
-                                  isReconnecting: _isReconnecting,
-                                  onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
-                                  onDestinationSelected: (tab) {
-                                    _selectTab(tab);
-                                    _focusContent();
-                                  },
-                                  onLibrarySelected: (key) {
-                                    _selectLibrary(key);
-                                    _focusContent();
-                                  },
-                                  onNavigateToContent: _focusContent,
-                                  onReconnect: _triggerReconnect,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final contentWidth = constraints.maxWidth;
+                            return Stack(
+                              clipBehavior: Clip.hardEdge,
+                              children: [
+                                Positioned(
+                                  top: 0,
+                                  bottom: 0,
+                                  left: contentLeftPadding,
+                                  width: contentWidth,
+                                  child: contentChild!,
                                 ),
-                              ),
-                            ),
-                          ],
+                                Positioned(
+                                  top: 0,
+                                  bottom: 0,
+                                  left: 0,
+                                  child: FocusScope(
+                                    node: _sidebarFocusScope,
+                                    child: SideNavigationRail(
+                                      key: _sideNavKey,
+                                      selectedTab: _currentTab,
+                                      selectedLibraryKey: _selectedLibraryGlobalKey,
+                                      isOfflineMode: _isOffline,
+                                      isSidebarFocused: _isSidebarFocused,
+                                      alwaysExpanded: alwaysExpanded,
+                                      isReconnecting: _isReconnecting,
+                                      onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
+                                      onDestinationSelected: (tab) {
+                                        _selectTab(tab);
+                                        _focusContent();
+                                      },
+                                      onLibrarySelected: (key) {
+                                        _selectLibrary(key);
+                                        _focusContent();
+                                      },
+                                      onNavigateToContent: _focusContent,
+                                      onReconnect: _triggerReconnect,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                     );

@@ -136,6 +136,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   @override
   Widget build(BuildContext context) {
+    final rightInset = MainScreenFocusScope.clippedContentRightInsetOf(context);
     return Scaffold(
       body: Focus(
         onKeyEvent: _handleKeyEvent,
@@ -143,39 +144,42 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           primary: false,
           slivers: [
             ExcludeFocus(child: CustomAppBar(title: Text(t.settings.title), pinned: true)),
-            SliverList(
-              delegate: SliverChildListDelegate([
-                if (DonationService.isEnabled) _buildDonateTile(),
+            SliverPadding(
+              padding: EdgeInsets.only(right: rightInset),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  if (DonationService.isEnabled) _buildDonateTile(),
 
-                _buildAppearanceTile(),
+                  _buildAppearanceTile(),
 
-                _buildPlaybackTile(),
+                  _buildPlaybackTile(),
 
-                _buildTrackersTile(),
+                  _buildTrackersTile(),
 
-                _buildConnectionsSection(),
+                  _buildConnectionsSection(),
 
-                _buildProfilesSection(),
+                  _buildProfilesSection(),
 
-                if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
+                  if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
 
-                if (_keyboardShortcutsSupported) ...[_buildKeyboardShortcutsSection()],
+                  if (_keyboardShortcutsSupported) ...[_buildKeyboardShortcutsSection()],
 
-                _buildAdvancedSection(),
+                  _buildAdvancedSection(),
 
-                if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection()],
+                  if (UpdateService.isUpdateCheckEnabled) ...[_buildUpdateSection()],
 
-                if (!PlatformDetector.isTV()) _buildBackupSection(),
+                  if (!PlatformDetector.isTV()) _buildBackupSection(),
 
-                SettingNavigationTile(
-                  focusNode: _focusTracker.get(_kAbout),
-                  icon: Symbols.info_rounded,
-                  title: t.settings.about,
-                  subtitle: t.settings.aboutDescription,
-                  destinationBuilder: (context) => const AboutScreen(),
-                ),
-                const SizedBox(height: 24),
-              ]),
+                  SettingNavigationTile(
+                    focusNode: _focusTracker.get(_kAbout),
+                    icon: Symbols.info_rounded,
+                    title: t.settings.about,
+                    subtitle: t.settings.aboutDescription,
+                    destinationBuilder: (context) => const AboutScreen(),
+                  ),
+                  const SizedBox(height: 24),
+                ]),
+              ),
             ),
           ],
         ),
