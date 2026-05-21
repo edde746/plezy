@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/utils/codec_utils.dart';
+import 'package:vibe_stream/utils/codec_utils.dart';
 
 void main() {
   group('CodecUtils.getSubtitleExtension', () {

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/services/sleep_timer_service.dart';
+import 'package:vibe_stream/services/sleep_timer_service.dart';
 
 // IMPORTANT: [SleepTimerService] uses raw `DateTime.now()` (not
 // `clock.now()` from package:clock), so `fake_async` cannot virtualize the

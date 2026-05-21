@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
-import 'package:plezy/media/media_item_types.dart';
-import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/utils/content_utils.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_item.dart';
+import 'package:vibe_stream/media/media_item_types.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/utils/content_utils.dart';
 
 MediaItem _episode({int? viewOffsetMs, int? durationMs, int? viewCount, int? leafCount, int? viewedLeafCount}) {
   return MediaItem(

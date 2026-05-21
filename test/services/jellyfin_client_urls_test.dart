@@ -3,14 +3,14 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:plezy/connection/connection.dart';
-import 'package:plezy/media/library_query.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
-import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/models/transcode_quality_preset.dart';
-import 'package:plezy/services/jellyfin_client.dart';
-import 'package:plezy/services/playback_initialization_types.dart';
+import 'package:vibe_stream/connection/connection.dart';
+import 'package:vibe_stream/media/library_query.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_item.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/models/transcode_quality_preset.dart';
+import 'package:vibe_stream/services/jellyfin_client.dart';
+import 'package:vibe_stream/services/playback_initialization_types.dart';
 
 JellyfinConnection _conn({String accessToken = 'tok-abc', String baseUrl = 'https://jf.example.com'}) =>
     JellyfinConnection(

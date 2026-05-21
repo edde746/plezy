@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/companion_remote/remote_command.dart';
-import 'package:plezy/models/mpv_config_models.dart';
-import 'package:plezy/models/trakt/trakt_ids.dart';
-import 'package:plezy/watch_together/models/watch_session.dart';
-import 'package:plezy/watch_together/services/recent_rooms_service.dart';
+import 'package:vibe_stream/models/companion_remote/remote_command.dart';
+import 'package:vibe_stream/models/mpv_config_models.dart';
+import 'package:vibe_stream/models/trakt/trakt_ids.dart';
+import 'package:vibe_stream/watch_together/models/watch_session.dart';
+import 'package:vibe_stream/watch_together/services/recent_rooms_service.dart';
 
 void main() {
   group('JSON model round trips', () {

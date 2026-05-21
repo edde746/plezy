@@ -1,8 +1,8 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/database/app_database.dart';
-import 'package:plezy/profiles/profile.dart';
-import 'package:plezy/profiles/profile_registry.dart';
+import 'package:vibe_stream/database/app_database.dart';
+import 'package:vibe_stream/profiles/profile.dart';
+import 'package:vibe_stream/profiles/profile_registry.dart';
 
 void main() {
   late AppDatabase db;

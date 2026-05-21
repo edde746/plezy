@@ -1,10 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
-import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/media/media_part.dart';
-import 'package:plezy/media/media_role.dart';
-import 'package:plezy/media/media_version.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_item.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/media/media_part.dart';
+import 'package:vibe_stream/media/media_role.dart';
+import 'package:vibe_stream/media/media_version.dart';
 
 /// Backend-agnostic [MediaItem] tests. Existing coverage is split between
 /// `plex_mappers_test` and `jellyfin_mappers_test` — those exercise the

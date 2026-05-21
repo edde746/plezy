@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
-import 'package:plezy/utils/abortable_http_request.dart';
-import 'package:plezy/utils/managed_http_client.dart';
+import 'package:vibe_stream/utils/abortable_http_request.dart';
+import 'package:vibe_stream/utils/managed_http_client.dart';
 
 void main() {
   group('ManagedHttpClient', () {

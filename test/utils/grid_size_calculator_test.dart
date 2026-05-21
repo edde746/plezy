@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/services/settings_service.dart' show LibraryDensity;
-import 'package:plezy/utils/grid_size_calculator.dart';
-import 'package:plezy/utils/layout_constants.dart';
+import 'package:vibe_stream/services/settings_service.dart' show LibraryDensity;
+import 'package:vibe_stream/utils/grid_size_calculator.dart';
+import 'package:vibe_stream/utils/layout_constants.dart';
 
 void main() {
   group('GridSizeCalculator.getColumnCount', () {

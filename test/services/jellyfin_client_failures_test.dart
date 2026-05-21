@@ -2,11 +2,11 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:plezy/connection/connection.dart';
-import 'package:plezy/database/app_database.dart';
-import 'package:plezy/exceptions/media_server_exceptions.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
-import 'package:plezy/services/jellyfin_client.dart';
+import 'package:vibe_stream/connection/connection.dart';
+import 'package:vibe_stream/database/app_database.dart';
+import 'package:vibe_stream/exceptions/media_server_exceptions.dart';
+import 'package:vibe_stream/services/jellyfin_api_cache.dart';
+import 'package:vibe_stream/services/jellyfin_client.dart';
 
 JellyfinConnection _conn() => JellyfinConnection(
   id: 'srv-1/user-1',

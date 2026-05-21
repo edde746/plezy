@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/widgets/video_controls/sheets/subtitle_search_sheet.dart';
+import 'package:vibe_stream/widgets/video_controls/sheets/subtitle_search_sheet.dart';
 
 void main() {
   group('resolveSubtitleSearchLanguageCode', () {

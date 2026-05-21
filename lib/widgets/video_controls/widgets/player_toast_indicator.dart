@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
+import 'package:vibe_stream/widgets/app_icon.dart';
 
 /// VLC-style dark pill shown at top-center of the video player.
 /// Used for rate changes and other transient in-player notifications.

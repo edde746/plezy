@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
-import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/services/play_queue_launcher.dart';
-import 'package:plezy/services/plex_client.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_item.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/services/play_queue_launcher.dart';
+import 'package:vibe_stream/services/plex_client.dart';
 
 // NOTE on coverage scope:
 // `PlayQueueLauncher` is almost entirely network/UI glue:

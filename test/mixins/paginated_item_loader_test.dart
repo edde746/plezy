@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/library_query.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
-import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/mixins/paginated_item_loader.dart';
-import 'package:plezy/utils/media_server_http_client.dart';
-import 'package:plezy/exceptions/media_server_exceptions.dart';
+import 'package:vibe_stream/media/library_query.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_item.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/mixins/paginated_item_loader.dart';
+import 'package:vibe_stream/utils/media_server_http_client.dart';
+import 'package:vibe_stream/exceptions/media_server_exceptions.dart';
 
 /// Test probe wired with a controllable `fetchPage` so individual tests can
 /// stage successes, failures, and slow responses.

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/screens/libraries/library_alpha_scroll_metrics.dart';
+import 'package:vibe_stream/screens/libraries/library_alpha_scroll_metrics.dart';
 
 void main() {
   test('maps scroll offsets to item indices by row and column count', () {

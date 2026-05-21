@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/livetv_channel.dart';
+import 'package:vibe_stream/models/livetv_channel.dart';
 
 void main() {
   test('favoriteChannelKey includes source and id', () {

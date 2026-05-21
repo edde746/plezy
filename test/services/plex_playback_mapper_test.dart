@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/services/plex_playback_mapper.dart';
+import 'package:vibe_stream/services/plex_playback_mapper.dart';
 
 void main() {
   group('parsePlexVideoPlaybackDataFromJson', () {

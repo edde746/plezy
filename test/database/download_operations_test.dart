@@ -1,9 +1,9 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/database/app_database.dart';
-import 'package:plezy/database/download_operations.dart';
-import 'package:plezy/models/download_models.dart';
+import 'package:vibe_stream/database/app_database.dart';
+import 'package:vibe_stream/database/download_operations.dart';
+import 'package:vibe_stream/models/download_models.dart';
 
 void main() {
   late AppDatabase db;

@@ -3,9 +3,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/focus/focusable_text_field.dart';
-import 'package:plezy/services/gamepad_service.dart';
-import 'package:plezy/utils/platform_detector.dart';
+import 'package:vibe_stream/focus/focusable_text_field.dart';
+import 'package:vibe_stream/services/gamepad_service.dart';
+import 'package:vibe_stream/utils/platform_detector.dart';
 
 void main() {
   tearDown(() {

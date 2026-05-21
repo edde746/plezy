@@ -3,15 +3,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:plezy/connection/connection.dart';
-import 'package:plezy/database/app_database.dart';
-import 'package:plezy/database/download_operations.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
-import 'package:plezy/services/jellyfin_client.dart';
-import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/offline_mode_source.dart';
-import 'package:plezy/services/offline_watch_sync_service.dart';
-import 'package:plezy/utils/watch_state_notifier.dart';
+import 'package:vibe_stream/connection/connection.dart';
+import 'package:vibe_stream/database/app_database.dart';
+import 'package:vibe_stream/database/download_operations.dart';
+import 'package:vibe_stream/services/jellyfin_api_cache.dart';
+import 'package:vibe_stream/services/jellyfin_client.dart';
+import 'package:vibe_stream/services/multi_server_manager.dart';
+import 'package:vibe_stream/services/offline_mode_source.dart';
+import 'package:vibe_stream/services/offline_watch_sync_service.dart';
+import 'package:vibe_stream/utils/watch_state_notifier.dart';
 
 import '../test_helpers/prefs.dart';
 

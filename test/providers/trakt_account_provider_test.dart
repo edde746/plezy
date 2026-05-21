@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/providers/trakt_account_provider.dart';
-import 'package:plezy/services/base_shared_preferences_service.dart';
-import 'package:plezy/services/trakt/trakt_account_store.dart';
-import 'package:plezy/services/trakt/trakt_session.dart';
+import 'package:vibe_stream/providers/trakt_account_provider.dart';
+import 'package:vibe_stream/services/base_shared_preferences_service.dart';
+import 'package:vibe_stream/services/trakt/trakt_account_store.dart';
+import 'package:vibe_stream/services/trakt/trakt_session.dart';
 
 import '../test_helpers/prefs.dart';
 

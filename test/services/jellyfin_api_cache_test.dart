@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/database/app_database.dart';
-import 'package:plezy/services/credential_vault.dart';
-import 'package:plezy/services/jellyfin_api_cache.dart';
+import 'package:vibe_stream/database/app_database.dart';
+import 'package:vibe_stream/services/credential_vault.dart';
+import 'package:vibe_stream/services/jellyfin_api_cache.dart';
 
 import '../test_helpers/prefs.dart';
 

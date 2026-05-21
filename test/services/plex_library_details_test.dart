@@ -4,11 +4,11 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:plezy/database/app_database.dart';
-import 'package:plezy/media/library_query.dart';
-import 'package:plezy/models/plex/plex_config.dart';
-import 'package:plezy/services/plex_api_cache.dart';
-import 'package:plezy/services/plex_client.dart';
+import 'package:vibe_stream/database/app_database.dart';
+import 'package:vibe_stream/media/library_query.dart';
+import 'package:vibe_stream/models/plex/plex_config.dart';
+import 'package:vibe_stream/services/plex_api_cache.dart';
+import 'package:vibe_stream/services/plex_client.dart';
 
 void main() {
   late AppDatabase db;

@@ -3,11 +3,11 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/i18n/strings.g.dart';
-import 'package:plezy/providers/companion_remote_provider.dart';
-import 'package:plezy/services/settings_service.dart';
-import 'package:plezy/utils/platform_detector.dart';
-import 'package:plezy/widgets/companion_remote/remote_session_dialog.dart';
+import 'package:vibe_stream/i18n/strings.g.dart';
+import 'package:vibe_stream/providers/companion_remote_provider.dart';
+import 'package:vibe_stream/services/settings_service.dart';
+import 'package:vibe_stream/utils/platform_detector.dart';
+import 'package:vibe_stream/widgets/companion_remote/remote_session_dialog.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';

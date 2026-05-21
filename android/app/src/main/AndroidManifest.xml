@@ -76,7 +76,7 @@
         <!-- FileProvider for sharing downloaded files with external players -->
         <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="com.edde746.plezy.fileprovider"
+            android:authorities="com.amaze.vibestream.fileprovider"
             android:exported="false"
             android:grantUriPermissions="true">
             <meta-data

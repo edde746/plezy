@@ -1,4 +1,4 @@
-package com.edde746.plezy
+package com.amaze.vibestream
 
 import android.app.ActivityManager
 import android.app.AppOpsManager
@@ -23,11 +23,11 @@ import android.view.WindowInsets
 import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.core.content.FileProvider
-import com.edde746.plezy.exoplayer.ExoPlayerPlugin
-import com.edde746.plezy.mpv.MpvPlayerPlugin
-import com.edde746.plezy.shared.DeviceQuirks
-import com.edde746.plezy.shared.ThemeHelper
-import com.edde746.plezy.watchnext.WatchNextPlugin
+import com.amaze.vibestream.exoplayer.ExoPlayerPlugin
+import com.amaze.vibestream.mpv.MpvPlayerPlugin
+import com.amaze.vibestream.shared.DeviceQuirks
+import com.amaze.vibestream.shared.ThemeHelper
+import com.amaze.vibestream.watchnext.WatchNextPlugin
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.android.FlutterTextureView
 import io.flutter.embedding.android.RenderMode
@@ -392,7 +392,7 @@ class MainActivity : FlutterActivity() {
               grantRead = true
             } else {
               val path = if (filePath.startsWith("file://")) filePath.removePrefix("file://") else filePath
-              uri = FileProvider.getUriForFile(this, "com.edde746.plezy.fileprovider", File(path))
+              uri = FileProvider.getUriForFile(this, "com.amaze.vibestream.fileprovider", File(path))
               grantRead = true
             }
 

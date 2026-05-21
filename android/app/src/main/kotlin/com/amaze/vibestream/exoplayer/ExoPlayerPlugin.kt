@@ -1,4 +1,4 @@
-package com.edde746.plezy.exoplayer
+package com.amaze.vibestream.exoplayer
 
 import android.app.Activity
 import android.app.ActivityManager
@@ -8,7 +8,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import com.edde746.plezy.mpv.MpvPlayerCore
+import com.amaze.vibestream.mpv.MpvPlayerCore
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding

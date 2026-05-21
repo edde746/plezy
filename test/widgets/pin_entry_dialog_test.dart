@@ -3,8 +3,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/screens/profile/pin_entry_dialog.dart';
-import 'package:plezy/utils/platform_detector.dart';
+import 'package:vibe_stream/screens/profile/pin_entry_dialog.dart';
+import 'package:vibe_stream/utils/platform_detector.dart';
 
 void main() {
   tearDown(() {

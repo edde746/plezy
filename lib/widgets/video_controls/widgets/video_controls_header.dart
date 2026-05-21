@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:plezy/utils/formatters.dart';
+import 'package:vibe_stream/utils/formatters.dart';
 
 import '../../../media/media_item.dart';
 import '../../../i18n/strings.g.dart';

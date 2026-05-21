@@ -3,7 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/utils/key_event_simulator.dart';
+import 'package:vibe_stream/utils/key_event_simulator.dart';
 
 void main() {
   testWidgets('simulateKeyPress dispatches directional pad key events', (tester) async {

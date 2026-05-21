@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/mixins/mounted_set_state_mixin.dart';
+import 'package:vibe_stream/mixins/mounted_set_state_mixin.dart';
 
 class _Probe extends StatefulWidget {
   const _Probe({this.onState});

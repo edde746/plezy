@@ -1,9 +1,9 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_sort.dart';
-import 'package:plezy/screens/libraries/sort_bottom_sheet.dart';
-import 'package:plezy/widgets/overlay_sheet.dart';
+import 'package:vibe_stream/media/media_sort.dart';
+import 'package:vibe_stream/screens/libraries/sort_bottom_sheet.dart';
+import 'package:vibe_stream/widgets/overlay_sheet.dart';
 
 void main() {
   testWidgets('tapping sort row and direction in overlay does not throw', (tester) async {

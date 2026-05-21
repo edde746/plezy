@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/transcode_quality_preset.dart';
-import 'package:plezy/utils/quality_preset_labels.dart';
+import 'package:vibe_stream/models/transcode_quality_preset.dart';
+import 'package:vibe_stream/utils/quality_preset_labels.dart';
 
 void main() {
   group('qualityPresetLabel', () {

@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/mixins/context_menu_tap_mixin.dart';
+import 'package:vibe_stream/mixins/context_menu_tap_mixin.dart';
 
 // NOTE on coverage scope:
 // `ContextMenuTapMixin` is a thin glue layer:

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/main.dart';
-import 'package:plezy/screens/main_screen.dart';
+import 'package:vibe_stream/main.dart';
+import 'package:vibe_stream/screens/main_screen.dart';
 
 void main() {
   group('startup bind recovery', () {

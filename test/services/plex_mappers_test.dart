@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/services/plex_mappers.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/services/plex_mappers.dart';
 
 const _serverId = 'plex-machine-1';
 const _serverName = 'Home';

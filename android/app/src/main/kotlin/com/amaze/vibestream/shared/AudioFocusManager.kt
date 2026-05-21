@@ -1,4 +1,4 @@
-package com.edde746.plezy.shared
+package com.amaze.vibestream.shared
 
 import android.content.Context
 import android.media.AudioAttributes

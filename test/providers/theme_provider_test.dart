@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart' as material;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:plezy/providers/theme_provider.dart';
-import 'package:plezy/services/base_shared_preferences_service.dart';
-import 'package:plezy/services/settings_service.dart' as settings;
+import 'package:vibe_stream/providers/theme_provider.dart';
+import 'package:vibe_stream/services/base_shared_preferences_service.dart';
+import 'package:vibe_stream/services/settings_service.dart' as settings;
 
 import '../test_helpers/prefs.dart';
 

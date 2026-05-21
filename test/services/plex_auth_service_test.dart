@@ -3,9 +3,9 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:plezy/exceptions/media_server_exceptions.dart';
-import 'package:plezy/services/plex_auth_service.dart';
-import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:vibe_stream/exceptions/media_server_exceptions.dart';
+import 'package:vibe_stream/services/plex_auth_service.dart';
+import 'package:vibe_stream/utils/media_server_http_client.dart';
 
 void main() {
   group('PlexAuthService', () {

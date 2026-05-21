@@ -1,4 +1,4 @@
-package com.edde746.plezy.mpv
+package com.amaze.vibestream.mpv
 
 import android.app.Activity
 import android.graphics.Color
@@ -13,10 +13,10 @@ import android.view.SurfaceView
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
-import com.edde746.plezy.shared.AudioFocusManager
-import com.edde746.plezy.shared.FlutterOverlayHelper
-import com.edde746.plezy.shared.FrameRateManager
-import com.edde746.plezy.shared.PlayerDelegate
+import com.amaze.vibestream.shared.AudioFocusManager
+import com.amaze.vibestream.shared.FlutterOverlayHelper
+import com.amaze.vibestream.shared.FrameRateManager
+import com.amaze.vibestream.shared.PlayerDelegate
 import dev.jdtech.mpv.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex

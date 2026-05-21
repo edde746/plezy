@@ -1,4 +1,4 @@
-package com.edde746.plezy.shared
+package com.amaze.vibestream.shared
 
 import android.graphics.PixelFormat
 import android.os.Build

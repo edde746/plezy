@@ -1,4 +1,4 @@
-package com.edde746.plezy.mpv
+package com.amaze.vibestream.mpv
 
 import android.app.Activity
 import android.net.Uri
@@ -15,7 +15,7 @@ class MpvPlayerPlugin :
   MethodChannel.MethodCallHandler,
   EventChannel.StreamHandler,
   ActivityAware,
-  com.edde746.plezy.shared.PlayerDelegate {
+  com.amaze.vibestream.shared.PlayerDelegate {
 
   companion object {
     private const val TAG = "MpvPlayerPlugin"

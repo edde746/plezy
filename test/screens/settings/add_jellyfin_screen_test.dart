@@ -3,10 +3,10 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/focus/input_mode_tracker.dart';
-import 'package:plezy/profiles/profile.dart';
-import 'package:plezy/screens/settings/add_jellyfin_screen.dart';
-import 'package:plezy/utils/platform_detector.dart';
+import 'package:vibe_stream/focus/input_mode_tracker.dart';
+import 'package:vibe_stream/profiles/profile.dart';
+import 'package:vibe_stream/screens/settings/add_jellyfin_screen.dart';
+import 'package:vibe_stream/utils/platform_detector.dart';
 
 Profile _profile(String id) =>
     Profile.local(id: id, displayName: id, sortOrder: 0, createdAt: DateTime.fromMillisecondsSinceEpoch(0));

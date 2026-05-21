@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/services/bif_thumbnail_service.dart';
-import 'package:plezy/services/plex_client.dart';
+import 'package:vibe_stream/services/bif_thumbnail_service.dart';
+import 'package:vibe_stream/services/plex_client.dart';
 
 // BIF (Roku Base Index Format) is a binary container for video timeline
 // thumbnails. The service exposes [BifThumbnailService] which downloads + parses

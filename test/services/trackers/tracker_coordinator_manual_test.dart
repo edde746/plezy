@@ -3,22 +3,22 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
-import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/media/media_server_client.dart';
-import 'package:plezy/models/trackers/anime_lists_mapping.dart';
-import 'package:plezy/models/trackers/fribb_mapping_row.dart';
-import 'package:plezy/services/trackers/anime_lists_mapping_store.dart';
-import 'package:plezy/services/trackers/anilist/anilist_session.dart';
-import 'package:plezy/services/trackers/anilist/anilist_tracker.dart';
-import 'package:plezy/services/trackers/fribb_mapping_store.dart';
-import 'package:plezy/services/trackers/mal/mal_session.dart';
-import 'package:plezy/services/trackers/mal/mal_tracker.dart';
-import 'package:plezy/services/trackers/simkl/simkl_session.dart';
-import 'package:plezy/services/trackers/simkl/simkl_tracker.dart';
-import 'package:plezy/services/trackers/tracker_coordinator.dart';
-import 'package:plezy/utils/external_ids.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_item.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/media/media_server_client.dart';
+import 'package:vibe_stream/models/trackers/anime_lists_mapping.dart';
+import 'package:vibe_stream/models/trackers/fribb_mapping_row.dart';
+import 'package:vibe_stream/services/trackers/anime_lists_mapping_store.dart';
+import 'package:vibe_stream/services/trackers/anilist/anilist_session.dart';
+import 'package:vibe_stream/services/trackers/anilist/anilist_tracker.dart';
+import 'package:vibe_stream/services/trackers/fribb_mapping_store.dart';
+import 'package:vibe_stream/services/trackers/mal/mal_session.dart';
+import 'package:vibe_stream/services/trackers/mal/mal_tracker.dart';
+import 'package:vibe_stream/services/trackers/simkl/simkl_session.dart';
+import 'package:vibe_stream/services/trackers/simkl/simkl_tracker.dart';
+import 'package:vibe_stream/services/trackers/tracker_coordinator.dart';
+import 'package:vibe_stream/utils/external_ids.dart';
 
 class _FakeMediaServerClient implements MediaServerClient {
   @override

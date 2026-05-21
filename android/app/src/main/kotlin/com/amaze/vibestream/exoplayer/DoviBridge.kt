@@ -1,4 +1,4 @@
-package com.edde746.plezy.exoplayer
+package com.amaze.vibestream.exoplayer
 
 import android.media.MediaCodecInfo
 import android.media.MediaCodecList

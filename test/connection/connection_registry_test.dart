@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/connection/connection.dart';
-import 'package:plezy/connection/connection_registry.dart';
-import 'package:plezy/database/app_database.dart';
-import 'package:plezy/services/credential_vault.dart';
-import 'package:plezy/services/plex_auth_service.dart';
+import 'package:vibe_stream/connection/connection.dart';
+import 'package:vibe_stream/connection/connection_registry.dart';
+import 'package:vibe_stream/database/app_database.dart';
+import 'package:vibe_stream/services/credential_vault.dart';
+import 'package:vibe_stream/services/plex_auth_service.dart';
 
 import '../test_helpers/prefs.dart';
 

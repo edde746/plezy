@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_playlist.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_playlist.dart';
 
 /// Backend-agnostic [MediaPlaylist] tests. Mappers (`plex_mappers_test` /
 /// `jellyfin_mappers_test`) cover JSON → model translation; this file pins

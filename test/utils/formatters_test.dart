@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/utils/formatters.dart';
+import 'package:vibe_stream/utils/formatters.dart';
 
 void main() {
   group('padNumber', () {

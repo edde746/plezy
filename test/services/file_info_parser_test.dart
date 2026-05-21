@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/services/file_info_parser.dart';
+import 'package:vibe_stream/services/file_info_parser.dart';
 
 /// Unit tests for the backend-agnostic stream walker. Each backend is
 /// represented by its own [FileInfoStreamReader] implementation, so the

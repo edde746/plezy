@@ -3,11 +3,11 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:plezy/models/trackers/anime_ids.dart';
-import 'package:plezy/models/trackers/tracker_context.dart';
-import 'package:plezy/services/trackers/mal/mal_session.dart';
-import 'package:plezy/services/trackers/mal/mal_tracker.dart';
-import 'package:plezy/utils/external_ids.dart';
+import 'package:vibe_stream/models/trackers/anime_ids.dart';
+import 'package:vibe_stream/models/trackers/tracker_context.dart';
+import 'package:vibe_stream/services/trackers/mal/mal_session.dart';
+import 'package:vibe_stream/services/trackers/mal/mal_tracker.dart';
+import 'package:vibe_stream/utils/external_ids.dart';
 
 MalSession _session() {
   final now = DateTime.now().millisecondsSinceEpoch ~/ 1000;

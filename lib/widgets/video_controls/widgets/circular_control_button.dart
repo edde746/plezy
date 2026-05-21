@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:plezy/widgets/app_icon.dart';
+import 'package:vibe_stream/widgets/app_icon.dart';
 
 /// A circular semi-transparent button used in the mobile video controls.
 ///

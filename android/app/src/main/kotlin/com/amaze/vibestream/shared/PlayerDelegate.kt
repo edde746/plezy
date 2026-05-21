@@ -1,4 +1,4 @@
-package com.edde746.plezy.shared
+package com.amaze.vibestream.shared
 
 interface PlayerDelegate {
   fun onPropertyChange(name: String, value: Any?)

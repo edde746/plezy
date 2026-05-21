@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/media/media_library.dart';
-import 'package:plezy/mixins/library_tab_state.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/media/media_library.dart';
+import 'package:vibe_stream/mixins/library_tab_state.dart';
 import 'package:provider/provider.dart';
-import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
-import 'package:plezy/services/multi_server_manager.dart';
+import 'package:vibe_stream/providers/multi_server_provider.dart';
+import 'package:vibe_stream/services/data_aggregation_service.dart';
+import 'package:vibe_stream/services/multi_server_manager.dart';
 
 // NOTE on coverage scope:
 // `LibraryTabStateMixin` is a 14-line forwarding mixin:

@@ -1,4 +1,4 @@
-package com.edde746.plezy.exoplayer
+package com.amaze.vibestream.exoplayer
 
 import androidx.media3.common.C
 import androidx.media3.extractor.Extractor

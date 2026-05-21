@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/services/trackers/future_coalescer.dart';
+import 'package:vibe_stream/services/trackers/future_coalescer.dart';
 
 void main() {
   test('FutureCoalescer shares one in-flight future', () async {

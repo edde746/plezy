@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
-import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/media/media_server_user_profile.dart';
-import 'package:plezy/media/media_source_info.dart';
-import 'package:plezy/models/jellyfin/jellyfin_user_profile.dart';
-import 'package:plezy/models/plex/plex_user_profile.dart';
-import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/services/track_selection_service.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_item.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/media/media_server_user_profile.dart';
+import 'package:vibe_stream/media/media_source_info.dart';
+import 'package:vibe_stream/models/jellyfin/jellyfin_user_profile.dart';
+import 'package:vibe_stream/models/plex/plex_user_profile.dart';
+import 'package:vibe_stream/mpv/mpv.dart';
+import 'package:vibe_stream/services/track_selection_service.dart';
 
 // NOTE on coverage scope:
 // `TrackSelectionService` is a large pure logic surface with one async

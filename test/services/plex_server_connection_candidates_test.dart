@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/services/plex_auth_service.dart';
+import 'package:vibe_stream/services/plex_auth_service.dart';
 
 Map<String, dynamic> _serverJson(Map<String, dynamic> connection) => _serverJsonWithConnections([connection]);
 

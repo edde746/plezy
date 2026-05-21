@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:plezy/widgets/app_icon.dart';
+import 'package:vibe_stream/widgets/app_icon.dart';
 
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';

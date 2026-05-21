@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/library_first_character.dart';
-import 'package:plezy/screens/libraries/alpha_jump_helper.dart';
+import 'package:vibe_stream/media/library_first_character.dart';
+import 'package:vibe_stream/screens/libraries/alpha_jump_helper.dart';
 
 void main() {
   const characters = [

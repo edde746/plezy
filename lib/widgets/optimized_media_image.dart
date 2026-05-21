@@ -6,7 +6,7 @@ import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:plezy/widgets/app_icon.dart';
+import 'package:vibe_stream/widgets/app_icon.dart';
 
 import '../media/media_server_client.dart';
 import '../services/image_cache_service.dart';

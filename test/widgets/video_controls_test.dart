@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_source_info.dart';
-import 'package:plezy/media/media_version.dart';
-import 'package:plezy/widgets/video_controls/video_controls.dart';
-import 'package:plezy/widgets/video_controls/painters/buffer_range_painter.dart';
-import 'package:plezy/widgets/video_controls/widgets/mobile_skip_zones.dart';
-import 'package:plezy/widgets/video_controls/widgets/timeline_slider.dart';
+import 'package:vibe_stream/media/media_source_info.dart';
+import 'package:vibe_stream/media/media_version.dart';
+import 'package:vibe_stream/widgets/video_controls/video_controls.dart';
+import 'package:vibe_stream/widgets/video_controls/painters/buffer_range_painter.dart';
+import 'package:vibe_stream/widgets/video_controls/widgets/mobile_skip_zones.dart';
+import 'package:vibe_stream/widgets/video_controls/widgets/timeline_slider.dart';
 
 void main() {
   group('effectiveVersionQualityControls', () {

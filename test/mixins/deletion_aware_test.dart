@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/mixins/deletion_aware.dart';
-import 'package:plezy/utils/deletion_notifier.dart';
+import 'package:vibe_stream/mixins/deletion_aware.dart';
+import 'package:vibe_stream/utils/deletion_notifier.dart';
 
 class _Probe extends StatefulWidget {
   const _Probe({this.onState, this.serverIdOverride, this.globalKeysOverride, required this.itemIdsOverride});

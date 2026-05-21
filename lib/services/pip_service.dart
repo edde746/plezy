@@ -2,7 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:plezy/i18n/strings.g.dart';
+import 'package:vibe_stream/i18n/strings.g.dart';
 
 class PipService {
   static const MethodChannel _channel = MethodChannel('com.plezy/pip');

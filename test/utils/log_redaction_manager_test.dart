@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/utils/log_redaction_manager.dart';
+import 'package:vibe_stream/utils/log_redaction_manager.dart';
 
 void main() {
   // The manager holds static state; clear between tests so they don't bleed.

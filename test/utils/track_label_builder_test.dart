@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/utils/track_label_builder.dart';
+import 'package:vibe_stream/utils/track_label_builder.dart';
 
 void main() {
   group('buildTrackLabel', () {

@@ -3,9 +3,9 @@ import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/focus/dpad_navigator.dart';
-import 'package:plezy/focus/key_event_utils.dart';
-import 'package:plezy/utils/platform_detector.dart';
+import 'package:vibe_stream/focus/dpad_navigator.dart';
+import 'package:vibe_stream/focus/key_event_utils.dart';
+import 'package:vibe_stream/utils/platform_detector.dart';
 
 void main() {
   tearDown(() {

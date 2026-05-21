@@ -1,11 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/watch_together/models/sync_message.dart';
-import 'package:plezy/watch_together/models/watch_session.dart';
-import 'package:plezy/watch_together/services/watch_together_peer_service.dart';
-import 'package:plezy/watch_together/services/watch_together_sync_manager.dart';
+import 'package:vibe_stream/mpv/mpv.dart';
+import 'package:vibe_stream/watch_together/models/sync_message.dart';
+import 'package:vibe_stream/watch_together/models/watch_session.dart';
+import 'package:vibe_stream/watch_together/services/watch_together_peer_service.dart';
+import 'package:vibe_stream/watch_together/services/watch_together_sync_manager.dart';
 
 void main() {
   group('WatchTogetherSyncManager deferred play', () {

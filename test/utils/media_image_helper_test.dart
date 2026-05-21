@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/utils/media_image_helper.dart';
+import 'package:vibe_stream/utils/media_image_helper.dart';
 
 void main() {
   group('MediaImageHelper.getOptimizedImageUrl', () {

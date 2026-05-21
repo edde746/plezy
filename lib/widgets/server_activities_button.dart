@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 import '../focus/key_event_utils.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_tokens.dart';
-import 'package:plezy/widgets/app_icon.dart';
+import 'package:vibe_stream/widgets/app_icon.dart';
 import '../models/plex/plex_activity.dart';
 import '../providers/multi_server_provider.dart';
 

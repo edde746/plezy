@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/services/apple_tv_remote_touch_service.dart';
+import 'package:vibe_stream/services/apple_tv_remote_touch_service.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

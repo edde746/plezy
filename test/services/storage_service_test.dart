@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/services/base_shared_preferences_service.dart';
-import 'package:plezy/services/storage_service.dart';
+import 'package:vibe_stream/services/base_shared_preferences_service.dart';
+import 'package:vibe_stream/services/storage_service.dart';
 
 import '../test_helpers/prefs.dart';
 

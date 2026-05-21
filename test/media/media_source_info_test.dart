@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_source_info.dart';
+import 'package:vibe_stream/media/media_source_info.dart';
 
 void main() {
   group('MediaSubtitleTrack label', () {

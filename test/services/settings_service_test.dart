@@ -1,8 +1,8 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/hotkey_model.dart';
-import 'package:plezy/services/settings_service.dart';
-import 'package:plezy/services/trackers/tracker_constants.dart';
+import 'package:vibe_stream/models/hotkey_model.dart';
+import 'package:vibe_stream/services/settings_service.dart';
+import 'package:vibe_stream/services/trackers/tracker_constants.dart';
 
 import '../test_helpers/prefs.dart';
 

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/utils/plex_url_helper.dart';
+import 'package:vibe_stream/utils/plex_url_helper.dart';
 
 void main() {
   group('withPlexToken', () {

@@ -1,9 +1,9 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/services/keyboard_shortcuts_service.dart';
-import 'package:plezy/services/settings_service.dart';
+import 'package:vibe_stream/mpv/mpv.dart';
+import 'package:vibe_stream/services/keyboard_shortcuts_service.dart';
+import 'package:vibe_stream/services/settings_service.dart';
 
 import '../test_helpers/prefs.dart';
 

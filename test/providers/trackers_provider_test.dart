@@ -1,13 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/providers/trackers_provider.dart';
-import 'package:plezy/services/base_shared_preferences_service.dart';
-import 'package:plezy/services/trackers/anilist/anilist_account_store.dart';
-import 'package:plezy/services/trackers/anilist/anilist_session.dart';
-import 'package:plezy/services/trackers/mal/mal_account_store.dart';
-import 'package:plezy/services/trackers/mal/mal_session.dart';
-import 'package:plezy/services/trackers/simkl/simkl_account_store.dart';
-import 'package:plezy/services/trackers/simkl/simkl_session.dart';
-import 'package:plezy/services/trackers/tracker_constants.dart';
+import 'package:vibe_stream/providers/trackers_provider.dart';
+import 'package:vibe_stream/services/base_shared_preferences_service.dart';
+import 'package:vibe_stream/services/trackers/anilist/anilist_account_store.dart';
+import 'package:vibe_stream/services/trackers/anilist/anilist_session.dart';
+import 'package:vibe_stream/services/trackers/mal/mal_account_store.dart';
+import 'package:vibe_stream/services/trackers/mal/mal_session.dart';
+import 'package:vibe_stream/services/trackers/simkl/simkl_account_store.dart';
+import 'package:vibe_stream/services/trackers/simkl/simkl_session.dart';
+import 'package:vibe_stream/services/trackers/tracker_constants.dart';
 
 import '../test_helpers/prefs.dart';
 

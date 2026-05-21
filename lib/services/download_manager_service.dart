@@ -5,7 +5,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:path/path.dart' as path;
-import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:vibe_stream/utils/media_server_http_client.dart';
 import '../database/app_database.dart';
 import '../database/download_operations.dart';
 import '../media/download_resolution.dart';

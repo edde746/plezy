@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/services/trackers/anilist/anilist_session.dart';
-import 'package:plezy/services/trackers/mal/mal_session.dart';
-import 'package:plezy/services/trackers/simkl/simkl_session.dart';
-import 'package:plezy/services/trackers/tracker_session_utils.dart';
-import 'package:plezy/services/trakt/trakt_session.dart';
+import 'package:vibe_stream/services/trackers/anilist/anilist_session.dart';
+import 'package:vibe_stream/services/trackers/mal/mal_session.dart';
+import 'package:vibe_stream/services/trackers/simkl/simkl_session.dart';
+import 'package:vibe_stream/services/trackers/tracker_session_utils.dart';
+import 'package:vibe_stream/services/trakt/trakt_session.dart';
 
 void main() {
   group('tracker token expiry helpers', () {

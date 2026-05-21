@@ -1,4 +1,4 @@
-name: plezy
+name: vibe_stream
 description: "A beautiful Plex and Jellyfin client for Flutter"
 publish_to: "none"
 version: 2.1.2+99

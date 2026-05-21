@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/livetv_channel.dart';
-import 'package:plezy/utils/live_tv_grouping.dart';
+import 'package:vibe_stream/models/livetv_channel.dart';
+import 'package:vibe_stream/utils/live_tv_grouping.dart';
 
 LiveTvChannel _channel({
   required String key,

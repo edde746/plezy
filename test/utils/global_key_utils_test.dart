@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/utils/global_key_utils.dart';
+import 'package:vibe_stream/utils/global_key_utils.dart';
 
 void main() {
   group('buildGlobalKey', () {

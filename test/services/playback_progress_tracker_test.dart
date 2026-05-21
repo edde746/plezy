@@ -2,17 +2,17 @@ import 'dart:async';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/database/app_database.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
-import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/media/media_source_info.dart';
-import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/services/multi_server_manager.dart';
-import 'package:plezy/services/offline_watch_sync_service.dart';
-import 'package:plezy/services/playback_progress_tracker.dart';
-import 'package:plezy/services/plex_client.dart';
-import 'package:plezy/utils/watch_state_notifier.dart';
+import 'package:vibe_stream/database/app_database.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_item.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/media/media_source_info.dart';
+import 'package:vibe_stream/mpv/mpv.dart';
+import 'package:vibe_stream/services/multi_server_manager.dart';
+import 'package:vibe_stream/services/offline_watch_sync_service.dart';
+import 'package:vibe_stream/services/playback_progress_tracker.dart';
+import 'package:vibe_stream/services/plex_client.dart';
+import 'package:vibe_stream/utils/watch_state_notifier.dart';
 
 import '../test_helpers/prefs.dart';
 

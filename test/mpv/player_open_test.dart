@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/mpv/mpv.dart';
-import 'package:plezy/mpv/player/platform/player_android.dart';
-import 'package:plezy/mpv/player/player_native.dart';
+import 'package:vibe_stream/mpv/mpv.dart';
+import 'package:vibe_stream/mpv/player/platform/player_android.dart';
+import 'package:vibe_stream/mpv/player/player_native.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

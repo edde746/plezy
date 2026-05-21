@@ -1,4 +1,4 @@
-package com.edde746.plezy.exoplayer
+package com.amaze.vibestream.exoplayer
 
 import android.app.Activity
 import android.app.ActivityManager
@@ -59,10 +59,10 @@ import androidx.media3.extractor.mp4.Mp4Extractor
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
-import com.edde746.plezy.shared.AudioFocusManager
-import com.edde746.plezy.shared.DeviceQuirks
-import com.edde746.plezy.shared.FlutterOverlayHelper
-import com.edde746.plezy.shared.FrameRateManager
+import com.amaze.vibestream.shared.AudioFocusManager
+import com.amaze.vibestream.shared.DeviceQuirks
+import com.amaze.vibestream.shared.FlutterOverlayHelper
+import com.amaze.vibestream.shared.FrameRateManager
 import io.github.peerless2012.ass.media.AssHandler
 import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
 import io.github.peerless2012.ass.media.type.AssRenderType
@@ -71,7 +71,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
 import org.chromium.net.CronetEngine
 
-interface ExoPlayerDelegate : com.edde746.plezy.shared.PlayerDelegate {
+interface ExoPlayerDelegate : com.amaze.vibestream.shared.PlayerDelegate {
 
   /**
    * Called when ExoPlayer encounters a format it cannot play.

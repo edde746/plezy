@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
-import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/providers/watch_state_overlay_provider.dart';
-import 'package:plezy/utils/watch_state_notifier.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_item.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/providers/watch_state_overlay_provider.dart';
+import 'package:vibe_stream/utils/watch_state_notifier.dart';
 
 MediaItem _item({String id = '1', int? viewOffsetMs, int? viewCount = 0}) {
   return MediaItem(

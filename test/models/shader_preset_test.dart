@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/models/shader_preset.dart';
+import 'package:vibe_stream/models/shader_preset.dart';
 
 void main() {
   group('ShaderPreset ArtCNN presets', () {

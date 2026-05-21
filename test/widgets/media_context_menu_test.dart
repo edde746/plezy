@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/models/plex/plex_home_user.dart';
-import 'package:plezy/profiles/profile.dart';
-import 'package:plezy/widgets/media_context_menu.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/models/plex/plex_home_user.dart';
+import 'package:vibe_stream/profiles/profile.dart';
+import 'package:vibe_stream/widgets/media_context_menu.dart';
 
 void main() {
   group('isAdminActionAllowedForMediaItem', () {

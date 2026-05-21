@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/utils/json_utils.dart';
+import 'package:vibe_stream/utils/json_utils.dart';
 
 void main() {
   group('flexibleInt', () {

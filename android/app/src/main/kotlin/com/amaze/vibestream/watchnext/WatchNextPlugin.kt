@@ -1,4 +1,4 @@
-package com.edde746.plezy.watchnext
+package com.amaze.vibestream.watchnext
 
 import android.content.Context
 import android.content.Intent

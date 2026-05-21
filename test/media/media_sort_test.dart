@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_sort.dart';
+import 'package:vibe_stream/media/media_sort.dart';
 
 void main() {
   group('MediaSort.getSortKey', () {

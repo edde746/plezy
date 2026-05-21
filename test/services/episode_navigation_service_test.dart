@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
-import 'package:plezy/media/media_kind.dart';
-import 'package:plezy/media/media_server_client.dart';
-import 'package:plezy/media/play_queue.dart';
-import 'package:plezy/providers/multi_server_provider.dart';
-import 'package:plezy/providers/playback_state_provider.dart';
-import 'package:plezy/services/data_aggregation_service.dart';
-import 'package:plezy/services/episode_navigation_service.dart';
-import 'package:plezy/services/multi_server_manager.dart';
+import 'package:vibe_stream/media/media_backend.dart';
+import 'package:vibe_stream/media/media_item.dart';
+import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/media/media_server_client.dart';
+import 'package:vibe_stream/media/play_queue.dart';
+import 'package:vibe_stream/providers/multi_server_provider.dart';
+import 'package:vibe_stream/providers/playback_state_provider.dart';
+import 'package:vibe_stream/services/data_aggregation_service.dart';
+import 'package:vibe_stream/services/episode_navigation_service.dart';
+import 'package:vibe_stream/services/multi_server_manager.dart';
 import 'package:provider/provider.dart';
 
 // NOTE on coverage scope:
