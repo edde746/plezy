@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Vibe"
   },
   "auth": {
     "signIn": "登录",
@@ -82,7 +82,7 @@
   },
   "settings": {
     "title": "设置",
-    "supportDeveloper": "支持 Plezy",
+    "supportDeveloper": "支持 Vibe",
     "supportDeveloperDescription": "通过 Liberapay 捐赠支持开发",
     "language": "语言",
     "theme": "主题",
@@ -182,7 +182,7 @@
     "importSettingsConfirm": "这将替换您当前的设置。继续吗？",
     "importSettingsSuccess": "设置已导入",
     "importSettingsFailed": "无法导入设置",
-    "importSettingsInvalidFile": "此文件不是有效的 Plezy 设置导出",
+    "importSettingsInvalidFile": "此文件不是有效的 Vibe 设置导出",
     "importSettingsNoUser": "导入设置前请先登录",
     "shortcutsReset": "快捷键已重置为默认值",
     "about": "关于",
@@ -259,7 +259,7 @@
     "forceTvMode": "强制 TV 模式",
     "forceTvModeDescription": "强制 TV 布局。适用于无法自动检测的设备。需要重启。",
     "startInFullscreen": "以全屏模式启动",
-    "startInFullscreenDescription": "启动时以全屏模式打开 Plezy",
+    "startInFullscreenDescription": "启动时以全屏模式打开 Vibe",
     "autoHidePerformanceOverlay": "自动隐藏性能叠加层",
     "autoHidePerformanceOverlayDescription": "性能叠加层随播放控件一起淡入淡出",
     "showNavBarLabels": "显示导航栏标签",
@@ -544,7 +544,7 @@
     "confirmAction": "确认操作"
   },
   "profiles": {
-    "addPlezyProfile": "添加 Plezy 配置文件",
+    "addPlezyProfile": "添加 Vibe 配置文件",
     "switchingProfile": "切换配置文件中…",
     "deleteThisProfileTitle": "删除此配置文件？",
     "deleteThisProfileMessage": "移除 ${displayName}。连接不会受影响。",
@@ -1029,19 +1029,19 @@
       "minimize": "最小化"
     },
     "pairing": {
-      "discoveryDescription": "使用同一 Plex 账号的 Plezy 设备会显示在这里",
+      "discoveryDescription": "使用同一 Plex 账号的 Vibe 设备会显示在这里",
       "hostAddressHint": "192.168.1.100:48632",
       "connecting": "正在连接...",
       "searchingForDevices": "正在搜索设备...",
       "noDevicesFound": "未在网络上找到设备",
-      "noDevicesHint": "在桌面端打开 Plezy 并使用同一 WiFi",
+      "noDevicesHint": "在桌面端打开 Vibe 并使用同一 WiFi",
       "availableDevices": "可用设备",
       "manualConnection": "手动连接",
       "cryptoInitFailed": "无法启动安全连接。请先登录 Plex。",
       "validationHostRequired": "请输入主机地址",
       "validationHostFormat": "格式必须为IP:端口（例如 192.168.1.100:48632）",
       "connectionTimedOut": "连接超时。请在两台设备上使用同一网络。",
-      "sessionNotFound": "未找到设备。请确认 Plezy 正在主机上运行。",
+      "sessionNotFound": "未找到设备。请确认 Vibe 正在主机上运行。",
       "authFailed": "认证失败。两台设备需要使用同一 Plex 账号。",
       "failedToConnect": "连接失败：${error}"
     },
@@ -1204,11 +1204,11 @@
     "connected": "已连接",
     "connectedAs": "已以 @${username} 身份连接",
     "disconnectConfirm": "断开 Trakt 账户？",
-    "disconnectConfirmBody": "Plezy 将停止向 Trakt 发送事件。你可随时重新连接。",
+    "disconnectConfirmBody": "Vibe 将停止向 Trakt 发送事件。你可随时重新连接。",
     "scrobble": "实时 Scrobble",
     "scrobbleDescription": "在播放时向 Trakt 发送播放、暂停和停止事件。",
     "watchedSync": "同步已观看状态",
-    "watchedSyncDescription": "在 Plezy 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。"
+    "watchedSyncDescription": "在 Vibe 中将内容标记为已观看时，也会在 Trakt 上标记为已观看。"
   },
   "trackers": {
     "title": "追踪器",
@@ -1218,7 +1218,7 @@
     "scrobble": "自动记录进度",
     "scrobbleDescription": "观看完一集或一部电影后更新你的列表。",
     "disconnectConfirm": "断开 ${service} 连接？",
-    "disconnectConfirmBody": "Plezy 将停止更新 ${service}。可随时重新连接。",
+    "disconnectConfirmBody": "Vibe 将停止更新 ${service}。可随时重新连接。",
     "connectFailed": "无法连接到 ${service}。请重试。",
     "services": {
       "mal": "MyAnimeList",
@@ -1226,7 +1226,7 @@
       "simkl": "Simkl"
     },
     "deviceCode": {
-      "title": "在 ${service} 上激活 Plezy",
+      "title": "在 ${service} 上激活 Vibe",
       "body": "访问 ${url} 并输入此代码：",
       "openToActivate": "打开 ${service} 以激活",
       "waitingForAuthorization": "等待授权…",

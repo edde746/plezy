@@ -93,7 +93,7 @@ class _TranslationsAppEs extends TranslationsAppEn {
 	final TranslationsEs _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy';
+	@override String get title => 'Vibe';
 }
 
 // Path: auth
@@ -210,7 +210,7 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => 'Configuración';
-	@override String get supportDeveloper => 'Apoya Plezy';
+	@override String get supportDeveloper => 'Apoya Vibe';
 	@override String get supportDeveloperDescription => 'Dona vía Liberapay para financiar el desarrollo';
 	@override String get language => 'Idioma';
 	@override String get theme => 'Tema';
@@ -310,7 +310,7 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get importSettingsConfirm => 'Esto reemplazará tu configuración actual. ¿Continuar?';
 	@override String get importSettingsSuccess => 'Configuración importada';
 	@override String get importSettingsFailed => 'No se pudo importar la configuración';
-	@override String get importSettingsInvalidFile => 'Este archivo no es una exportación válida de Plezy';
+	@override String get importSettingsInvalidFile => 'Este archivo no es una exportación válida de Vibe';
 	@override String get importSettingsNoUser => 'Inicia sesión antes de importar la configuración';
 	@override String get shortcutsReset => 'Atajos restablecidos a los valores predeterminados';
 	@override String get about => 'Acerca de';
@@ -387,7 +387,7 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get forceTvMode => 'Forzar modo TV';
 	@override String get forceTvModeDescription => 'Forzar diseño TV. Para dispositivos que no lo detectan. Requiere reinicio.';
 	@override String get startInFullscreen => 'Iniciar en pantalla completa';
-	@override String get startInFullscreenDescription => 'Abrir Plezy en modo pantalla completa al iniciar';
+	@override String get startInFullscreenDescription => 'Abrir Vibe en modo pantalla completa al iniciar';
 	@override String get autoHidePerformanceOverlay => 'Ocultar superposición de rendimiento automáticamente';
 	@override String get autoHidePerformanceOverlayDescription => 'Desvanecer la superposición de rendimiento con los controles de reproducción';
 	@override String get showNavBarLabels => 'Mostrar etiquetas de la barra de navegación';
@@ -739,7 +739,7 @@ class _TranslationsProfilesEs extends TranslationsProfilesEn {
 	final TranslationsEs _root; // ignore: unused_field
 
 	// Translations
-	@override String get addPlezyProfile => 'Añadir perfil de Plezy';
+	@override String get addPlezyProfile => 'Añadir perfil de Vibe';
 	@override String get switchingProfile => 'Cambiando de perfil…';
 	@override String get deleteThisProfileTitle => '¿Eliminar este perfil?';
 	@override String deleteThisProfileMessage({required Object displayName}) => 'Eliminar ${displayName}. Las conexiones no se verán afectadas.';
@@ -1465,11 +1465,11 @@ class _TranslationsTraktEs extends TranslationsTraktEn {
 	@override String get connected => 'Conectado';
 	@override String connectedAs({required Object username}) => 'Conectado como @${username}';
 	@override String get disconnectConfirm => '¿Desconectar cuenta de Trakt?';
-	@override String get disconnectConfirmBody => 'Plezy dejará de enviar eventos a Trakt. Puedes reconectar cuando quieras.';
+	@override String get disconnectConfirmBody => 'Vibe dejará de enviar eventos a Trakt. Puedes reconectar cuando quieras.';
 	@override String get scrobble => 'Scrobbling en tiempo real';
 	@override String get scrobbleDescription => 'Enviar eventos de reproducción, pausa y parada a Trakt durante la reproducción.';
 	@override String get watchedSync => 'Sincronizar estado de visto';
-	@override String get watchedSyncDescription => 'Cuando marques elementos como vistos en Plezy, también se marcarán en Trakt.';
+	@override String get watchedSyncDescription => 'Cuando marques elementos como vistos en Vibe, también se marcarán en Trakt.';
 }
 
 // Path: trackers
@@ -1486,7 +1486,7 @@ class _TranslationsTrackersEs extends TranslationsTrackersEn {
 	@override String get scrobble => 'Registrar progreso automáticamente';
 	@override String get scrobbleDescription => 'Actualiza tu lista cuando termines un episodio o película.';
 	@override String disconnectConfirm({required Object service}) => '¿Desconectar ${service}?';
-	@override String disconnectConfirmBody({required Object service}) => 'Plezy dejará de actualizar ${service}. Reconecta cuando quieras.';
+	@override String disconnectConfirmBody({required Object service}) => 'Vibe dejará de actualizar ${service}. Reconecta cuando quieras.';
 	@override String connectFailed({required Object service}) => 'No se pudo conectar a ${service}. Inténtalo de nuevo.';
 	@override late final _TranslationsTrackersServicesEs services = _TranslationsTrackersServicesEs._(_root);
 	@override late final _TranslationsTrackersDeviceCodeEs deviceCode = _TranslationsTrackersDeviceCodeEs._(_root);
@@ -1680,19 +1680,19 @@ class _TranslationsCompanionRemotePairingEs extends TranslationsCompanionRemoteP
 	final TranslationsEs _root; // ignore: unused_field
 
 	// Translations
-	@override String get discoveryDescription => 'Los dispositivos Plezy con la misma cuenta Plex aparecen aquí';
+	@override String get discoveryDescription => 'Los dispositivos Vibe con la misma cuenta Plex aparecen aquí';
 	@override String get hostAddressHint => '192.168.1.100:48632';
 	@override String get connecting => 'Conectando...';
 	@override String get searchingForDevices => 'Buscando dispositivos...';
 	@override String get noDevicesFound => 'No se encontraron dispositivos en tu red';
-	@override String get noDevicesHint => 'Abre Plezy en escritorio y usa el mismo WiFi';
+	@override String get noDevicesHint => 'Abre Vibe en escritorio y usa el mismo WiFi';
 	@override String get availableDevices => 'Dispositivos disponibles';
 	@override String get manualConnection => 'Conexión manual';
 	@override String get cryptoInitFailed => 'No se pudo iniciar la conexión segura. Inicia sesión en Plex primero.';
 	@override String get validationHostRequired => 'Ingresa la dirección del host';
 	@override String get validationHostFormat => 'El formato debe ser IP:puerto (ej. 192.168.1.100:48632)';
 	@override String get connectionTimedOut => 'Tiempo de conexión agotado. Usa la misma red en ambos dispositivos.';
-	@override String get sessionNotFound => 'Dispositivo no encontrado. Asegúrate de que Plezy esté en ejecución en el host.';
+	@override String get sessionNotFound => 'Dispositivo no encontrado. Asegúrate de que Vibe esté en ejecución en el host.';
 	@override String get authFailed => 'Autenticación fallida. Ambos dispositivos necesitan la misma cuenta Plex.';
 	@override String failedToConnect({required Object error}) => 'Error al conectar: ${error}';
 }
@@ -1752,7 +1752,7 @@ class _TranslationsTrackersDeviceCodeEs extends TranslationsTrackersDeviceCodeEn
 	final TranslationsEs _root; // ignore: unused_field
 
 	// Translations
-	@override String title({required Object service}) => 'Activar Plezy en ${service}';
+	@override String title({required Object service}) => 'Activar Vibe en ${service}';
 	@override String body({required Object url}) => 'Visita ${url} e introduce este código:';
 	@override String openToActivate({required Object service}) => 'Abrir ${service} para activar';
 	@override String get waitingForAuthorization => 'Esperando autorización…';
@@ -1801,7 +1801,7 @@ class _TranslationsTrackersLibraryFilterEs extends TranslationsTrackersLibraryFi
 extension on TranslationsEs {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
-			'app.title' => 'Plezy',
+			'app.title' => 'Vibe',
 			'auth.signIn' => 'Iniciar sesión',
 			'auth.signInWithPlex' => 'Inicia sesión con Plex',
 			'auth.showQRCode' => 'Mostrar código QR',
@@ -1873,7 +1873,7 @@ extension on TranslationsEs {
 			'update.latestVersion' => 'Ya estás en la última versión',
 			'update.checkFailed' => 'Error al buscar actualizaciones',
 			'settings.title' => 'Configuración',
-			'settings.supportDeveloper' => 'Apoya Plezy',
+			'settings.supportDeveloper' => 'Apoya Vibe',
 			'settings.supportDeveloperDescription' => 'Dona vía Liberapay para financiar el desarrollo',
 			'settings.language' => 'Idioma',
 			'settings.theme' => 'Tema',
@@ -1973,7 +1973,7 @@ extension on TranslationsEs {
 			'settings.importSettingsConfirm' => 'Esto reemplazará tu configuración actual. ¿Continuar?',
 			'settings.importSettingsSuccess' => 'Configuración importada',
 			'settings.importSettingsFailed' => 'No se pudo importar la configuración',
-			'settings.importSettingsInvalidFile' => 'Este archivo no es una exportación válida de Plezy',
+			'settings.importSettingsInvalidFile' => 'Este archivo no es una exportación válida de Vibe',
 			'settings.importSettingsNoUser' => 'Inicia sesión antes de importar la configuración',
 			'settings.shortcutsReset' => 'Atajos restablecidos a los valores predeterminados',
 			'settings.about' => 'Acerca de',
@@ -2050,7 +2050,7 @@ extension on TranslationsEs {
 			'settings.forceTvMode' => 'Forzar modo TV',
 			'settings.forceTvModeDescription' => 'Forzar diseño TV. Para dispositivos que no lo detectan. Requiere reinicio.',
 			'settings.startInFullscreen' => 'Iniciar en pantalla completa',
-			'settings.startInFullscreenDescription' => 'Abrir Plezy en modo pantalla completa al iniciar',
+			'settings.startInFullscreenDescription' => 'Abrir Vibe en modo pantalla completa al iniciar',
 			'settings.autoHidePerformanceOverlay' => 'Ocultar superposición de rendimiento automáticamente',
 			'settings.autoHidePerformanceOverlayDescription' => 'Desvanecer la superposición de rendimiento con los controles de reproducción',
 			'settings.showNavBarLabels' => 'Mostrar etiquetas de la barra de navegación',
@@ -2303,7 +2303,7 @@ extension on TranslationsEs {
 			'mpvConfig.confirmDeletePreset' => '¿Estás seguro de que quieres eliminar este ajuste?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirmar Acción',
-			'profiles.addPlezyProfile' => 'Añadir perfil de Plezy',
+			'profiles.addPlezyProfile' => 'Añadir perfil de Vibe',
 			'profiles.switchingProfile' => 'Cambiando de perfil…',
 			'profiles.deleteThisProfileTitle' => '¿Eliminar este perfil?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Eliminar ${displayName}. Las conexiones no se verán afectadas.',
@@ -2745,19 +2745,19 @@ extension on TranslationsEs {
 			'companionRemote.session.startServer' => 'Iniciar servidor',
 			'companionRemote.session.stopServer' => 'Detener servidor',
 			'companionRemote.session.minimize' => 'Minimizar',
-			'companionRemote.pairing.discoveryDescription' => 'Los dispositivos Plezy con la misma cuenta Plex aparecen aquí',
+			'companionRemote.pairing.discoveryDescription' => 'Los dispositivos Vibe con la misma cuenta Plex aparecen aquí',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Conectando...',
 			'companionRemote.pairing.searchingForDevices' => 'Buscando dispositivos...',
 			'companionRemote.pairing.noDevicesFound' => 'No se encontraron dispositivos en tu red',
-			'companionRemote.pairing.noDevicesHint' => 'Abre Plezy en escritorio y usa el mismo WiFi',
+			'companionRemote.pairing.noDevicesHint' => 'Abre Vibe en escritorio y usa el mismo WiFi',
 			'companionRemote.pairing.availableDevices' => 'Dispositivos disponibles',
 			'companionRemote.pairing.manualConnection' => 'Conexión manual',
 			'companionRemote.pairing.cryptoInitFailed' => 'No se pudo iniciar la conexión segura. Inicia sesión en Plex primero.',
 			'companionRemote.pairing.validationHostRequired' => 'Ingresa la dirección del host',
 			'companionRemote.pairing.validationHostFormat' => 'El formato debe ser IP:puerto (ej. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Tiempo de conexión agotado. Usa la misma red en ambos dispositivos.',
-			'companionRemote.pairing.sessionNotFound' => 'Dispositivo no encontrado. Asegúrate de que Plezy esté en ejecución en el host.',
+			'companionRemote.pairing.sessionNotFound' => 'Dispositivo no encontrado. Asegúrate de que Vibe esté en ejecución en el host.',
 			'companionRemote.pairing.authFailed' => 'Autenticación fallida. Ambos dispositivos necesitan la misma cuenta Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Error al conectar: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '¿Quieres desconectarte de la sesión remota?',
@@ -2907,11 +2907,11 @@ extension on TranslationsEs {
 			'trakt.connected' => 'Conectado',
 			'trakt.connectedAs' => ({required Object username}) => 'Conectado como @${username}',
 			'trakt.disconnectConfirm' => '¿Desconectar cuenta de Trakt?',
-			'trakt.disconnectConfirmBody' => 'Plezy dejará de enviar eventos a Trakt. Puedes reconectar cuando quieras.',
+			'trakt.disconnectConfirmBody' => 'Vibe dejará de enviar eventos a Trakt. Puedes reconectar cuando quieras.',
 			'trakt.scrobble' => 'Scrobbling en tiempo real',
 			'trakt.scrobbleDescription' => 'Enviar eventos de reproducción, pausa y parada a Trakt durante la reproducción.',
 			'trakt.watchedSync' => 'Sincronizar estado de visto',
-			'trakt.watchedSyncDescription' => 'Cuando marques elementos como vistos en Plezy, también se marcarán en Trakt.',
+			'trakt.watchedSyncDescription' => 'Cuando marques elementos como vistos en Vibe, también se marcarán en Trakt.',
 			'trackers.title' => 'Rastreadores',
 			'trackers.hubSubtitle' => 'Sincroniza el progreso de visualización con Trakt y otros servicios.',
 			'trackers.notConnected' => 'No conectado',
@@ -2919,12 +2919,12 @@ extension on TranslationsEs {
 			'trackers.scrobble' => 'Registrar progreso automáticamente',
 			'trackers.scrobbleDescription' => 'Actualiza tu lista cuando termines un episodio o película.',
 			'trackers.disconnectConfirm' => ({required Object service}) => '¿Desconectar ${service}?',
-			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy dejará de actualizar ${service}. Reconecta cuando quieras.',
+			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Vibe dejará de actualizar ${service}. Reconecta cuando quieras.',
 			'trackers.connectFailed' => ({required Object service}) => 'No se pudo conectar a ${service}. Inténtalo de nuevo.',
 			'trackers.services.mal' => 'MyAnimeList',
 			'trackers.services.anilist' => 'AniList',
 			'trackers.services.simkl' => 'Simkl',
-			'trackers.deviceCode.title' => ({required Object service}) => 'Activar Plezy en ${service}',
+			'trackers.deviceCode.title' => ({required Object service}) => 'Activar Vibe en ${service}',
 			'trackers.deviceCode.body' => ({required Object url}) => 'Visita ${url} e introduce este código:',
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Abrir ${service} para activar',
 			'trackers.deviceCode.waitingForAuthorization' => 'Esperando autorización…',

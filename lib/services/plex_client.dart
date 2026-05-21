@@ -581,8 +581,8 @@ class PlexClient
       final headers = <String, String>{'X-Plex-Token': token};
       if (clientIdentifier != null) {
         headers['X-Plex-Client-Identifier'] = clientIdentifier;
-        headers['X-Plex-Product'] = 'Plezy';
-        headers['X-Plex-Device-Name'] = 'Plezy';
+        headers['X-Plex-Product'] = 'Vibe';
+        headers['X-Plex-Device-Name'] = 'Vibe';
       }
 
       final response = await client.get('/', headers: headers);

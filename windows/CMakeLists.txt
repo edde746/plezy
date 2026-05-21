@@ -1,6 +1,6 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
-project(plezy LANGUAGES CXX)
+project(vibe_stream LANGUAGES CXX)
 
 # Download and extract mpv-dev (architecture-dependent)
 set(MPV_VERSION "20251228")
@@ -63,7 +63,7 @@ FetchContent_MakeAvailable(simdutf)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "plezy")
+set(BINARY_NAME "vibe_stream")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

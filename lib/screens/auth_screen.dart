@@ -221,7 +221,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Image.asset('assets/plezy.png', width: 120, height: 120),
+                            Image.asset('assets/vibe_stream.png', width: 120, height: 120),
                             const SizedBox(height: 24),
                             Text(
                               t.app.title,
@@ -250,7 +250,7 @@ class _AuthScreenState extends State<AuthScreen> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Image.asset('assets/plezy.png', width: 120, height: 120),
+                        Image.asset('assets/vibe_stream.png', width: 120, height: 120),
                         const SizedBox(height: 24),
                         Text(
                           t.app.title,

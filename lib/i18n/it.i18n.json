@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Vibe"
   },
   "auth": {
     "signIn": "Accedi",
@@ -82,7 +82,7 @@
   },
   "settings": {
     "title": "Impostazioni",
-    "supportDeveloper": "Supporta Plezy",
+    "supportDeveloper": "Supporta Vibe",
     "supportDeveloperDescription": "Dona tramite Liberapay per finanziare lo sviluppo",
     "language": "Lingua",
     "theme": "Tema",
@@ -182,7 +182,7 @@
     "importSettingsConfirm": "Questa azione sostituirà le impostazioni attuali. Continuare?",
     "importSettingsSuccess": "Impostazioni importate",
     "importSettingsFailed": "Impossibile importare le impostazioni",
-    "importSettingsInvalidFile": "Questo file non è un'esportazione Plezy valida",
+    "importSettingsInvalidFile": "Questo file non è un'esportazione Vibe valida",
     "importSettingsNoUser": "Accedi prima di importare le impostazioni",
     "shortcutsReset": "Scorciatoie ripristinate alle impostazioni predefinite",
     "about": "Informazioni",
@@ -259,7 +259,7 @@
     "forceTvMode": "Forza modalità TV",
     "forceTvModeDescription": "Forza layout TV. Per dispositivi non rilevati automaticamente. Richiede riavvio.",
     "startInFullscreen": "Avvia a schermo intero",
-    "startInFullscreenDescription": "Apri Plezy a schermo intero all'avvio",
+    "startInFullscreenDescription": "Apri Vibe a schermo intero all'avvio",
     "autoHidePerformanceOverlay": "Nascondi automaticamente overlay prestazioni",
     "autoHidePerformanceOverlayDescription": "Dissolvi l'overlay prestazioni con i controlli di riproduzione",
     "showNavBarLabels": "Mostra etichette barra di navigazione",
@@ -544,7 +544,7 @@
     "confirmAction": "Conferma azione"
   },
   "profiles": {
-    "addPlezyProfile": "Aggiungi profilo Plezy",
+    "addPlezyProfile": "Aggiungi profilo Vibe",
     "switchingProfile": "Cambio profilo…",
     "deleteThisProfileTitle": "Eliminare questo profilo?",
     "deleteThisProfileMessage": "Rimuovi ${displayName}. Le connessioni non sono interessate.",
@@ -1029,19 +1029,19 @@
       "minimize": "Riduci"
     },
     "pairing": {
-      "discoveryDescription": "I dispositivi Plezy con lo stesso account Plex appaiono qui",
+      "discoveryDescription": "I dispositivi Vibe con lo stesso account Plex appaiono qui",
       "hostAddressHint": "192.168.1.100:48632",
       "connecting": "Connessione...",
       "searchingForDevices": "Ricerca dispositivi...",
       "noDevicesFound": "Nessun dispositivo trovato nella tua rete",
-      "noDevicesHint": "Apri Plezy su desktop e usa lo stesso WiFi",
+      "noDevicesHint": "Apri Vibe su desktop e usa lo stesso WiFi",
       "availableDevices": "Dispositivi disponibili",
       "manualConnection": "Connessione manuale",
       "cryptoInitFailed": "Impossibile avviare la connessione sicura. Accedi prima a Plex.",
       "validationHostRequired": "Inserisci l'indirizzo host",
       "validationHostFormat": "Il formato deve essere IP:porta (es. 192.168.1.100:48632)",
       "connectionTimedOut": "Connessione scaduta. Usa la stessa rete su entrambi i dispositivi.",
-      "sessionNotFound": "Dispositivo non trovato. Assicurati che Plezy sia in esecuzione sull'host.",
+      "sessionNotFound": "Dispositivo non trovato. Assicurati che Vibe sia in esecuzione sull'host.",
       "authFailed": "Autenticazione non riuscita. Entrambi i dispositivi devono usare lo stesso account Plex.",
       "failedToConnect": "Connessione fallita: ${error}"
     },
@@ -1204,11 +1204,11 @@
     "connected": "Connesso",
     "connectedAs": "Connesso come @${username}",
     "disconnectConfirm": "Disconnettere l'account Trakt?",
-    "disconnectConfirmBody": "Plezy smetterà di inviare eventi a Trakt. Puoi riconnetterti quando vuoi.",
+    "disconnectConfirmBody": "Vibe smetterà di inviare eventi a Trakt. Puoi riconnetterti quando vuoi.",
     "scrobble": "Scrobbling in tempo reale",
     "scrobbleDescription": "Invia eventi di riproduzione, pausa e arresto a Trakt durante la riproduzione.",
     "watchedSync": "Sincronizza stato visualizzato",
-    "watchedSyncDescription": "Quando segni elementi come visti in Plezy, vengono segnati anche su Trakt."
+    "watchedSyncDescription": "Quando segni elementi come visti in Vibe, vengono segnati anche su Trakt."
   },
   "trackers": {
     "title": "Tracker",
@@ -1218,7 +1218,7 @@
     "scrobble": "Traccia i progressi automaticamente",
     "scrobbleDescription": "Aggiorna la tua lista quando finisci un episodio o un film.",
     "disconnectConfirm": "Disconnettere ${service}?",
-    "disconnectConfirmBody": "Plezy smetterà di aggiornare ${service}. Riconnetti quando vuoi.",
+    "disconnectConfirmBody": "Vibe smetterà di aggiornare ${service}. Riconnetti quando vuoi.",
     "connectFailed": "Impossibile connettersi a ${service}. Riprova.",
     "services": {
       "mal": "MyAnimeList",
@@ -1226,7 +1226,7 @@
       "simkl": "Simkl"
     },
     "deviceCode": {
-      "title": "Attiva Plezy su ${service}",
+      "title": "Attiva Vibe su ${service}",
       "body": "Visita ${url} e inserisci questo codice:",
       "openToActivate": "Apri ${service} per attivare",
       "waitingForAuthorization": "In attesa di autorizzazione…",

@@ -63,7 +63,7 @@ if (-not (Get-Command 7z -ErrorAction SilentlyContinue)) {
 # Create Portable Archives
 if ($HasX64) {
     Write-Host "`nCreating x64 portable archive..." -ForegroundColor Cyan
-    $X64Portable = Join-Path $ResolvedOutput "plezy-windows-x64-portable.7z"
+    $X64Portable = Join-Path $ResolvedOutput "vibe_stream-windows-x64-portable.7z"
     Push-Location $X64BuildDir
     try {
         if (Test-Path $X64Portable) { Remove-Item $X64Portable -Force }
@@ -76,7 +76,7 @@ if ($HasX64) {
 
 if ($HasArm64) {
     Write-Host "`nCreating arm64 portable archive..." -ForegroundColor Cyan
-    $Arm64Portable = Join-Path $ResolvedOutput "plezy-windows-arm64-portable.7z"
+    $Arm64Portable = Join-Path $ResolvedOutput "vibe_stream-windows-arm64-portable.7z"
     Push-Location $Arm64BuildDir
     try {
         if (Test-Path $Arm64Portable) { Remove-Item $Arm64Portable -Force }
@@ -111,10 +111,10 @@ $DualArch = $HasX64 -and $HasArm64
 if ($DualArch) {
     # Dual-arch unified installer with architecture detection
     $IssContent = @"
-#define Name "Plezy"
+#define Name "Vibe"
 #define Version "$Version"
 #define Publisher "edde746"
-#define ExeName "plezy.exe"
+#define ExeName "vibe_stream.exe"
 
 [Setup]
 AppId={{4213385e-f7be-4f2b-95f9-54082a28bb8f}
@@ -125,7 +125,7 @@ DefaultDirName={autopf}\{#Name}
 DefaultGroupName={#Name}
 AllowNoIcons=yes
 OutputDir=.
-OutputBaseFilename=plezy-windows-installer
+OutputBaseFilename=vibe_stream-windows-installer
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -187,10 +187,10 @@ end;
     }
 
     $IssContent = @"
-#define Name "Plezy"
+#define Name "Vibe"
 #define Version "$Version"
 #define Publisher "edde746"
-#define ExeName "plezy.exe"
+#define ExeName "vibe_stream.exe"
 
 [Setup]
 AppId={{4213385e-f7be-4f2b-95f9-54082a28bb8f}
@@ -201,7 +201,7 @@ DefaultDirName={autopf}\{#Name}
 DefaultGroupName={#Name}
 AllowNoIcons=yes
 OutputDir=.
-OutputBaseFilename=plezy-windows-installer
+OutputBaseFilename=vibe_stream-windows-installer
 Compression=lzma
 SolidCompression=yes
 WizardStyle=modern
@@ -287,4 +287,4 @@ Remove-Item $StagingDir -Recurse -Force -ErrorAction SilentlyContinue
 Write-Host "`nBuild complete!" -ForegroundColor Green
 if ($HasX64)   { Write-Host "Portable (x64):   $X64Portable" -ForegroundColor White }
 if ($HasArm64) { Write-Host "Portable (arm64): $Arm64Portable" -ForegroundColor White }
-Write-Host "Installer:        $(Join-Path $ResolvedOutput 'plezy-windows-installer.exe')" -ForegroundColor White
+Write-Host "Installer:        $(Join-Path $ResolvedOutput 'vibe_stream-windows-installer.exe')" -ForegroundColor White

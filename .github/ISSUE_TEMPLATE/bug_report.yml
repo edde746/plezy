@@ -50,7 +50,7 @@ body:
   - type: input
     id: plezy-version
     attributes:
-      label: Plezy Version
+      label: Vibe Version
       description: Check the app settings for the version number and paste it here
       placeholder: e.g., 1.7.0
     validations:

@@ -26,6 +26,7 @@ class _CachedUrl {
 /// Desktop only (Windows, macOS, Linux). Shows "Watching" activity
 /// when video is playing. Gracefully handles Discord not running.
 class DiscordRPCService {
+  // TODO(vibe): register a Discord application for Vibe and replace this ID
   static const String _applicationId = '1453773470306402439';
   static const String _posterUploadUrl = 'https://ice.plezy.app/posters';
   static const Duration _posterCacheTtl = Duration(hours: 3);

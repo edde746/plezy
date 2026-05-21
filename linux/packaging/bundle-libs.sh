@@ -13,7 +13,7 @@ set -euo pipefail
 
 BUNDLE_DIR="$(realpath "$1")"
 LIB_DIR="$BUNDLE_DIR/lib"
-BINARY="$BUNDLE_DIR/plezy"
+BINARY="$BUNDLE_DIR/vibe_stream"
 
 if [[ ! -f "$BINARY" ]]; then
     echo "Error: binary not found at $BINARY" >&2

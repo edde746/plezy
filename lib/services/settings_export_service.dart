@@ -307,7 +307,7 @@ class SettingsExportService {
 
     try {
       final savedPath = await FilePickerService.instance.saveFile(
-        dialogTitle: 'Export Plezy settings',
+        dialogTitle: 'Export Vibe settings',
         fileName: fileName,
         bytes: bytes,
         type: FileType.custom,

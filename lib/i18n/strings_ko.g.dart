@@ -93,7 +93,7 @@ class _TranslationsAppKo extends TranslationsAppEn {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy';
+	@override String get title => 'Vibe';
 }
 
 // Path: auth
@@ -210,7 +210,7 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => '설정';
-	@override String get supportDeveloper => 'Plezy 후원하기';
+	@override String get supportDeveloper => 'Vibe 후원하기';
 	@override String get supportDeveloperDescription => 'Liberapay로 후원하여 개발 지원';
 	@override String get language => '언어';
 	@override String get theme => '테마';
@@ -310,7 +310,7 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get importSettingsConfirm => '현재 설정을 대체합니다. 계속하시겠습니까?';
 	@override String get importSettingsSuccess => '설정 가져오기 완료';
 	@override String get importSettingsFailed => '설정을 가져올 수 없습니다';
-	@override String get importSettingsInvalidFile => '유효한 Plezy 설정 내보내기 파일이 아닙니다';
+	@override String get importSettingsInvalidFile => '유효한 Vibe 설정 내보내기 파일이 아닙니다';
 	@override String get importSettingsNoUser => '설정을 가져오기 전에 로그인하세요';
 	@override String get shortcutsReset => '단축키가 기본값으로 재설정되었습니다';
 	@override String get about => '정보';
@@ -387,7 +387,7 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get forceTvMode => 'TV 모드 강제 사용';
 	@override String get forceTvModeDescription => 'TV 레이아웃을 강제합니다. 자동 감지되지 않는 기기용입니다. 재시작이 필요합니다.';
 	@override String get startInFullscreen => '전체화면으로 시작';
-	@override String get startInFullscreenDescription => '실행 시 Plezy를 전체화면 모드로 엽니다';
+	@override String get startInFullscreenDescription => '실행 시 Vibe를 전체화면 모드로 엽니다';
 	@override String get autoHidePerformanceOverlay => '성능 오버레이 자동 숨기기';
 	@override String get autoHidePerformanceOverlayDescription => '재생 컨트롤과 함께 성능 오버레이를 페이드 처리';
 	@override String get showNavBarLabels => '내비게이션 바 라벨 표시';
@@ -739,7 +739,7 @@ class _TranslationsProfilesKo extends TranslationsProfilesEn {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get addPlezyProfile => 'Plezy 프로필 추가';
+	@override String get addPlezyProfile => 'Vibe 프로필 추가';
 	@override String get switchingProfile => '프로필 전환 중…';
 	@override String get deleteThisProfileTitle => '이 프로필을 삭제하시겠습니까?';
 	@override String deleteThisProfileMessage({required Object displayName}) => '${displayName}을(를) 제거합니다. 연결에는 영향이 없습니다.';
@@ -1465,11 +1465,11 @@ class _TranslationsTraktKo extends TranslationsTraktEn {
 	@override String get connected => '연결됨';
 	@override String connectedAs({required Object username}) => '@${username}(으)로 연결됨';
 	@override String get disconnectConfirm => 'Trakt 계정 연결을 끊으시겠습니까?';
-	@override String get disconnectConfirmBody => 'Plezy가 Trakt로 이벤트 전송을 중지합니다. 언제든 다시 연결할 수 있습니다.';
+	@override String get disconnectConfirmBody => 'Vibe가 Trakt로 이벤트 전송을 중지합니다. 언제든 다시 연결할 수 있습니다.';
 	@override String get scrobble => '실시간 스크로블';
 	@override String get scrobbleDescription => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.';
 	@override String get watchedSync => '시청 상태 동기화';
-	@override String get watchedSyncDescription => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.';
+	@override String get watchedSyncDescription => 'Vibe에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.';
 }
 
 // Path: trackers
@@ -1486,7 +1486,7 @@ class _TranslationsTrackersKo extends TranslationsTrackersEn {
 	@override String get scrobble => '진행률 자동 추적';
 	@override String get scrobbleDescription => '에피소드나 영화를 시청하면 목록을 업데이트합니다.';
 	@override String disconnectConfirm({required Object service}) => '${service} 연결을 해제하시겠습니까?';
-	@override String disconnectConfirmBody({required Object service}) => 'Plezy가 ${service} 업데이트를 중지합니다. 언제든 다시 연결할 수 있습니다.';
+	@override String disconnectConfirmBody({required Object service}) => 'Vibe가 ${service} 업데이트를 중지합니다. 언제든 다시 연결할 수 있습니다.';
 	@override String connectFailed({required Object service}) => '${service}에 연결할 수 없습니다. 다시 시도하세요.';
 	@override late final _TranslationsTrackersServicesKo services = _TranslationsTrackersServicesKo._(_root);
 	@override late final _TranslationsTrackersDeviceCodeKo deviceCode = _TranslationsTrackersDeviceCodeKo._(_root);
@@ -1680,19 +1680,19 @@ class _TranslationsCompanionRemotePairingKo extends TranslationsCompanionRemoteP
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get discoveryDescription => '같은 Plex 계정의 Plezy 기기가 여기에 표시됩니다';
+	@override String get discoveryDescription => '같은 Plex 계정의 Vibe 기기가 여기에 표시됩니다';
 	@override String get hostAddressHint => '192.168.1.100:48632';
 	@override String get connecting => '연결 중...';
 	@override String get searchingForDevices => '기기 검색 중...';
 	@override String get noDevicesFound => '네트워크에서 기기를 찾을 수 없습니다';
-	@override String get noDevicesHint => '데스크톱에서 Plezy를 열고 같은 WiFi를 사용하세요';
+	@override String get noDevicesHint => '데스크톱에서 Vibe를 열고 같은 WiFi를 사용하세요';
 	@override String get availableDevices => '사용 가능한 기기';
 	@override String get manualConnection => '수동 연결';
 	@override String get cryptoInitFailed => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.';
 	@override String get validationHostRequired => '호스트 주소를 입력하세요';
 	@override String get validationHostFormat => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)';
 	@override String get connectionTimedOut => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.';
-	@override String get sessionNotFound => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.';
+	@override String get sessionNotFound => '기기를 찾을 수 없습니다. 호스트에서 Vibe가 실행 중인지 확인하세요.';
 	@override String get authFailed => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.';
 	@override String failedToConnect({required Object error}) => '연결 실패: ${error}';
 }
@@ -1752,7 +1752,7 @@ class _TranslationsTrackersDeviceCodeKo extends TranslationsTrackersDeviceCodeEn
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String title({required Object service}) => '${service}에서 Plezy 활성화';
+	@override String title({required Object service}) => '${service}에서 Vibe 활성화';
 	@override String body({required Object url}) => '${url}을 방문하여 이 코드를 입력하세요:';
 	@override String openToActivate({required Object service}) => '활성화하려면 ${service} 열기';
 	@override String get waitingForAuthorization => '인증을 기다리는 중…';
@@ -1801,7 +1801,7 @@ class _TranslationsTrackersLibraryFilterKo extends TranslationsTrackersLibraryFi
 extension on TranslationsKo {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
-			'app.title' => 'Plezy',
+			'app.title' => 'Vibe',
 			'auth.signIn' => '로그인',
 			'auth.signInWithPlex' => 'Plex 계정으로 로그인',
 			'auth.showQRCode' => 'QR 코드',
@@ -1873,7 +1873,7 @@ extension on TranslationsKo {
 			'update.latestVersion' => '최신 버전을 사용 중입니다',
 			'update.checkFailed' => '업데이트 확인 실패',
 			'settings.title' => '설정',
-			'settings.supportDeveloper' => 'Plezy 후원하기',
+			'settings.supportDeveloper' => 'Vibe 후원하기',
 			'settings.supportDeveloperDescription' => 'Liberapay로 후원하여 개발 지원',
 			'settings.language' => '언어',
 			'settings.theme' => '테마',
@@ -1973,7 +1973,7 @@ extension on TranslationsKo {
 			'settings.importSettingsConfirm' => '현재 설정을 대체합니다. 계속하시겠습니까?',
 			'settings.importSettingsSuccess' => '설정 가져오기 완료',
 			'settings.importSettingsFailed' => '설정을 가져올 수 없습니다',
-			'settings.importSettingsInvalidFile' => '유효한 Plezy 설정 내보내기 파일이 아닙니다',
+			'settings.importSettingsInvalidFile' => '유효한 Vibe 설정 내보내기 파일이 아닙니다',
 			'settings.importSettingsNoUser' => '설정을 가져오기 전에 로그인하세요',
 			'settings.shortcutsReset' => '단축키가 기본값으로 재설정되었습니다',
 			'settings.about' => '정보',
@@ -2050,7 +2050,7 @@ extension on TranslationsKo {
 			'settings.forceTvMode' => 'TV 모드 강제 사용',
 			'settings.forceTvModeDescription' => 'TV 레이아웃을 강제합니다. 자동 감지되지 않는 기기용입니다. 재시작이 필요합니다.',
 			'settings.startInFullscreen' => '전체화면으로 시작',
-			'settings.startInFullscreenDescription' => '실행 시 Plezy를 전체화면 모드로 엽니다',
+			'settings.startInFullscreenDescription' => '실행 시 Vibe를 전체화면 모드로 엽니다',
 			'settings.autoHidePerformanceOverlay' => '성능 오버레이 자동 숨기기',
 			'settings.autoHidePerformanceOverlayDescription' => '재생 컨트롤과 함께 성능 오버레이를 페이드 처리',
 			'settings.showNavBarLabels' => '내비게이션 바 라벨 표시',
@@ -2303,7 +2303,7 @@ extension on TranslationsKo {
 			'mpvConfig.confirmDeletePreset' => '이 프리셋을 삭제 하시겠습니까?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '확인',
-			'profiles.addPlezyProfile' => 'Plezy 프로필 추가',
+			'profiles.addPlezyProfile' => 'Vibe 프로필 추가',
 			'profiles.switchingProfile' => '프로필 전환 중…',
 			'profiles.deleteThisProfileTitle' => '이 프로필을 삭제하시겠습니까?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName}을(를) 제거합니다. 연결에는 영향이 없습니다.',
@@ -2745,19 +2745,19 @@ extension on TranslationsKo {
 			'companionRemote.session.startServer' => '서버 시작',
 			'companionRemote.session.stopServer' => '서버 중지',
 			'companionRemote.session.minimize' => '최소화',
-			'companionRemote.pairing.discoveryDescription' => '같은 Plex 계정의 Plezy 기기가 여기에 표시됩니다',
+			'companionRemote.pairing.discoveryDescription' => '같은 Plex 계정의 Vibe 기기가 여기에 표시됩니다',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => '연결 중...',
 			'companionRemote.pairing.searchingForDevices' => '기기 검색 중...',
 			'companionRemote.pairing.noDevicesFound' => '네트워크에서 기기를 찾을 수 없습니다',
-			'companionRemote.pairing.noDevicesHint' => '데스크톱에서 Plezy를 열고 같은 WiFi를 사용하세요',
+			'companionRemote.pairing.noDevicesHint' => '데스크톱에서 Vibe를 열고 같은 WiFi를 사용하세요',
 			'companionRemote.pairing.availableDevices' => '사용 가능한 기기',
 			'companionRemote.pairing.manualConnection' => '수동 연결',
 			'companionRemote.pairing.cryptoInitFailed' => '보안 연결을 시작할 수 없습니다. 먼저 Plex에 로그인하세요.',
 			'companionRemote.pairing.validationHostRequired' => '호스트 주소를 입력하세요',
 			'companionRemote.pairing.validationHostFormat' => '형식은 IP:포트여야 합니다 (예: 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => '연결 시간이 초과되었습니다. 두 기기에서 같은 네트워크를 사용하세요.',
-			'companionRemote.pairing.sessionNotFound' => '기기를 찾을 수 없습니다. 호스트에서 Plezy가 실행 중인지 확인하세요.',
+			'companionRemote.pairing.sessionNotFound' => '기기를 찾을 수 없습니다. 호스트에서 Vibe가 실행 중인지 확인하세요.',
 			'companionRemote.pairing.authFailed' => '인증에 실패했습니다. 두 기기 모두 같은 Plex 계정이 필요합니다.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => '연결 실패: ${error}',
 			'companionRemote.remote.disconnectConfirm' => '원격 세션 연결을 해제하시겠습니까?',
@@ -2907,11 +2907,11 @@ extension on TranslationsKo {
 			'trakt.connected' => '연결됨',
 			'trakt.connectedAs' => ({required Object username}) => '@${username}(으)로 연결됨',
 			'trakt.disconnectConfirm' => 'Trakt 계정 연결을 끊으시겠습니까?',
-			'trakt.disconnectConfirmBody' => 'Plezy가 Trakt로 이벤트 전송을 중지합니다. 언제든 다시 연결할 수 있습니다.',
+			'trakt.disconnectConfirmBody' => 'Vibe가 Trakt로 이벤트 전송을 중지합니다. 언제든 다시 연결할 수 있습니다.',
 			'trakt.scrobble' => '실시간 스크로블',
 			'trakt.scrobbleDescription' => '재생 중 재생, 일시정지, 정지 이벤트를 Trakt로 전송합니다.',
 			'trakt.watchedSync' => '시청 상태 동기화',
-			'trakt.watchedSyncDescription' => 'Plezy에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.',
+			'trakt.watchedSyncDescription' => 'Vibe에서 시청 완료로 표시한 항목이 Trakt에도 시청 완료로 표시됩니다.',
 			'trackers.title' => '트래커',
 			'trackers.hubSubtitle' => '시청 진행률을 Trakt 및 다른 서비스와 동기화합니다.',
 			'trackers.notConnected' => '연결되지 않음',
@@ -2919,12 +2919,12 @@ extension on TranslationsKo {
 			'trackers.scrobble' => '진행률 자동 추적',
 			'trackers.scrobbleDescription' => '에피소드나 영화를 시청하면 목록을 업데이트합니다.',
 			'trackers.disconnectConfirm' => ({required Object service}) => '${service} 연결을 해제하시겠습니까?',
-			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy가 ${service} 업데이트를 중지합니다. 언제든 다시 연결할 수 있습니다.',
+			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Vibe가 ${service} 업데이트를 중지합니다. 언제든 다시 연결할 수 있습니다.',
 			'trackers.connectFailed' => ({required Object service}) => '${service}에 연결할 수 없습니다. 다시 시도하세요.',
 			'trackers.services.mal' => 'MyAnimeList',
 			'trackers.services.anilist' => 'AniList',
 			'trackers.services.simkl' => 'Simkl',
-			'trackers.deviceCode.title' => ({required Object service}) => '${service}에서 Plezy 활성화',
+			'trackers.deviceCode.title' => ({required Object service}) => '${service}에서 Vibe 활성화',
 			'trackers.deviceCode.body' => ({required Object url}) => '${url}을 방문하여 이 코드를 입력하세요:',
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => '활성화하려면 ${service} 열기',
 			'trackers.deviceCode.waitingForAuthorization' => '인증을 기다리는 중…',

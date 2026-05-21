@@ -92,12 +92,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.edde746" "\0"
-            VALUE "FileDescription", "Plezy" "\0"
+            VALUE "FileDescription", "Vibe" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "Plezy" "\0"
+            VALUE "InternalName", "Vibe" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2025 edde746. All rights reserved." "\0"
-            VALUE "OriginalFilename", "Plezy.exe" "\0"
-            VALUE "ProductName", "Plezy" "\0"
+            VALUE "OriginalFilename", "vibe_stream.exe" "\0"
+            VALUE "ProductName", "Vibe" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

@@ -7,7 +7,7 @@
 
 namespace mpv {
 
-static const wchar_t* kRegistryPath = L"Software\\Plezy\\DisplayModeOverride";
+static const wchar_t* kRegistryPath = L"Software\\Vibe\\DisplayModeOverride";
 static const wchar_t* kRegDeviceName = L"DeviceName";
 static const wchar_t* kRegOriginalRefreshRate = L"OriginalRefreshRate";
 static const wchar_t* kRegOriginalWidth = L"OriginalWidth";

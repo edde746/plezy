@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Vibe"
   },
   "auth": {
     "signIn": "Logg på",
@@ -82,7 +82,7 @@
   },
   "settings": {
     "title": "Innstillinger",
-    "supportDeveloper": "Støtt Plezy",
+    "supportDeveloper": "Støtt Vibe",
     "supportDeveloperDescription": "Doner via Liberapay for å finansiere utviklingen",
     "language": "Språk",
     "theme": "Tema",
@@ -182,7 +182,7 @@
     "importSettingsConfirm": "Dette vil erstatte nåværende innstillinger. Fortsette?",
     "importSettingsSuccess": "Innstillinger importert",
     "importSettingsFailed": "Kunne ikke importere innstillinger",
-    "importSettingsInvalidFile": "Denne filen er ikke en gyldig Plezy-innstillingseksport",
+    "importSettingsInvalidFile": "Denne filen er ikke en gyldig Vibe-innstillingseksport",
     "importSettingsNoUser": "Logg inn før import av innstillinger",
     "shortcutsReset": "Snarveier tilbakestilt til standard",
     "about": "Om",
@@ -259,7 +259,7 @@
     "forceTvMode": "Tving TV-modus",
     "forceTvModeDescription": "Tving TV-oppsett. For enheter som ikke oppdages automatisk. Krever omstart.",
     "startInFullscreen": "Start i fullskjerm",
-    "startInFullscreenDescription": "Åpne Plezy i fullskjermmodus ved oppstart",
+    "startInFullscreenDescription": "Åpne Vibe i fullskjermmodus ved oppstart",
     "autoHidePerformanceOverlay": "Skjul ytelsesoverlegg automatisk",
     "autoHidePerformanceOverlayDescription": "Fade ytelsesoverlegget med avspillingskontrollene",
     "showNavBarLabels": "Vis navigasjonsfeltlabeler",
@@ -544,7 +544,7 @@
     "confirmAction": "Bekreft handling"
   },
   "profiles": {
-    "addPlezyProfile": "Legg til Plezy-profil",
+    "addPlezyProfile": "Legg til Vibe-profil",
     "switchingProfile": "Bytter profil…",
     "deleteThisProfileTitle": "Slett denne profilen?",
     "deleteThisProfileMessage": "Fjern ${displayName}. Tilkoblinger påvirkes ikke.",
@@ -1029,19 +1029,19 @@
       "minimize": "Minimer"
     },
     "pairing": {
-      "discoveryDescription": "Plezy-enheter med samme Plex-konto vises her",
+      "discoveryDescription": "Vibe-enheter med samme Plex-konto vises her",
       "hostAddressHint": "192.168.1.100:48632",
       "connecting": "Kobler til...",
       "searchingForDevices": "Søker etter enheter...",
       "noDevicesFound": "Ingen enheter funnet på nettverket ditt",
-      "noDevicesHint": "Åpne Plezy på desktop og bruk samme WiFi",
+      "noDevicesHint": "Åpne Vibe på desktop og bruk samme WiFi",
       "availableDevices": "Tilgjengelige enheter",
       "manualConnection": "Manuell tilkobling",
       "cryptoInitFailed": "Kunne ikke starte sikker tilkobling. Logg inn på Plex først.",
       "validationHostRequired": "Vennligst oppgi vertsadresse",
       "validationHostFormat": "Format må være IP:port (f.eks. 192.168.1.100:48632)",
       "connectionTimedOut": "Tilkoblingen fikk tidsavbrudd. Bruk samme nettverk på begge enheter.",
-      "sessionNotFound": "Enhet ikke funnet. Sørg for at Plezy kjører på verten.",
+      "sessionNotFound": "Enhet ikke funnet. Sørg for at Vibe kjører på verten.",
       "authFailed": "Autentisering mislyktes. Begge enheter må bruke samme Plex-konto.",
       "failedToConnect": "Kunne ikke koble til: ${error}"
     },
@@ -1204,11 +1204,11 @@
     "connected": "Tilkoblet",
     "connectedAs": "Tilkoblet som @${username}",
     "disconnectConfirm": "Koble fra Trakt-konto?",
-    "disconnectConfirmBody": "Plezy slutter å sende hendelser til Trakt. Du kan koble til igjen når som helst.",
+    "disconnectConfirmBody": "Vibe slutter å sende hendelser til Trakt. Du kan koble til igjen når som helst.",
     "scrobble": "Sanntids-scrobbling",
     "scrobbleDescription": "Send avspillings-, pause- og stopphendelser til Trakt under avspilling.",
     "watchedSync": "Synkroniser sett-status",
-    "watchedSyncDescription": "Når du markerer noe som sett i Plezy, markeres det også på Trakt."
+    "watchedSyncDescription": "Når du markerer noe som sett i Vibe, markeres det også på Trakt."
   },
   "trackers": {
     "title": "Trackere",
@@ -1218,7 +1218,7 @@
     "scrobble": "Registrer fremdrift automatisk",
     "scrobbleDescription": "Oppdater listen din når du er ferdig med en episode eller film.",
     "disconnectConfirm": "Koble fra ${service}?",
-    "disconnectConfirmBody": "Plezy slutter å oppdatere ${service}. Koble til igjen når som helst.",
+    "disconnectConfirmBody": "Vibe slutter å oppdatere ${service}. Koble til igjen når som helst.",
     "connectFailed": "Kunne ikke koble til ${service}. Prøv igjen.",
     "services": {
       "mal": "MyAnimeList",
@@ -1226,7 +1226,7 @@
       "simkl": "Simkl"
     },
     "deviceCode": {
-      "title": "Aktiver Plezy på ${service}",
+      "title": "Aktiver Vibe på ${service}",
       "body": "Besøk ${url} og skriv inn denne koden:",
       "openToActivate": "Åpne ${service} for å aktivere",
       "waitingForAuthorization": "Venter på godkjenning…",

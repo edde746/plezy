@@ -305,7 +305,7 @@ class OptimizedMediaImage extends StatelessWidget {
         imageUrl,
         cacheKey: effectiveCacheKey,
         cacheManager: PlexImageCacheManager.instance,
-        headers: const {'User-Agent': 'Plezy'},
+        headers: const {'User-Agent': 'Vibe'},
         maxHeight: memHeight,
       ),
       width: width,

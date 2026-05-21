@@ -93,7 +93,7 @@ class _TranslationsAppDa extends TranslationsAppEn {
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy';
+	@override String get title => 'Vibe';
 }
 
 // Path: auth
@@ -210,7 +210,7 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 
 	// Translations
 	@override String get title => 'Indstillinger';
-	@override String get supportDeveloper => 'Støt Plezy';
+	@override String get supportDeveloper => 'Støt Vibe';
 	@override String get supportDeveloperDescription => 'Doner via Liberapay for at finansiere udviklingen';
 	@override String get language => 'Sprog';
 	@override String get theme => 'Tema';
@@ -310,7 +310,7 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get importSettingsConfirm => 'Dette vil erstatte dine nuværende indstillinger. Fortsæt?';
 	@override String get importSettingsSuccess => 'Indstillinger importeret';
 	@override String get importSettingsFailed => 'Kunne ikke importere indstillinger';
-	@override String get importSettingsInvalidFile => 'Denne fil er ikke en gyldig Plezy-indstillingseksport';
+	@override String get importSettingsInvalidFile => 'Denne fil er ikke en gyldig Vibe-indstillingseksport';
 	@override String get importSettingsNoUser => 'Log ind før import af indstillinger';
 	@override String get shortcutsReset => 'Genveje nulstillet til standard';
 	@override String get about => 'Om';
@@ -387,7 +387,7 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get forceTvMode => 'Gennemtving TV-tilstand';
 	@override String get forceTvModeDescription => 'Tving TV-layout. Til enheder, der ikke registreres automatisk. Kræver genstart.';
 	@override String get startInFullscreen => 'Start i fuldskærm';
-	@override String get startInFullscreenDescription => 'Åbn Plezy i fuldskærmstilstand ved opstart';
+	@override String get startInFullscreenDescription => 'Åbn Vibe i fuldskærmstilstand ved opstart';
 	@override String get autoHidePerformanceOverlay => 'Skjul ydelses-overlay automatisk';
 	@override String get autoHidePerformanceOverlayDescription => 'Fade ydelses-overlayet med afspilningskontrollerne';
 	@override String get showNavBarLabels => 'Vis navigationsbarlabels';
@@ -739,7 +739,7 @@ class _TranslationsProfilesDa extends TranslationsProfilesEn {
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get addPlezyProfile => 'Tilføj Plezy-profil';
+	@override String get addPlezyProfile => 'Tilføj Vibe-profil';
 	@override String get switchingProfile => 'Skifter profil…';
 	@override String get deleteThisProfileTitle => 'Slet denne profil?';
 	@override String deleteThisProfileMessage({required Object displayName}) => 'Fjern ${displayName}. Forbindelser påvirkes ikke.';
@@ -1465,11 +1465,11 @@ class _TranslationsTraktDa extends TranslationsTraktEn {
 	@override String get connected => 'Forbundet';
 	@override String connectedAs({required Object username}) => 'Forbundet som @${username}';
 	@override String get disconnectConfirm => 'Frakobl Trakt-konto?';
-	@override String get disconnectConfirmBody => 'Plezy stopper med at sende hændelser til Trakt. Du kan tilslutte igen når som helst.';
+	@override String get disconnectConfirmBody => 'Vibe stopper med at sende hændelser til Trakt. Du kan tilslutte igen når som helst.';
 	@override String get scrobble => 'Realtids-scrobbling';
 	@override String get scrobbleDescription => 'Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.';
 	@override String get watchedSync => 'Synkroniser sét-status';
-	@override String get watchedSyncDescription => 'Når du markerer ting som sét i Plezy, markeres de også på Trakt.';
+	@override String get watchedSyncDescription => 'Når du markerer ting som sét i Vibe, markeres de også på Trakt.';
 }
 
 // Path: trackers
@@ -1486,7 +1486,7 @@ class _TranslationsTrackersDa extends TranslationsTrackersEn {
 	@override String get scrobble => 'Registrer fremgang automatisk';
 	@override String get scrobbleDescription => 'Opdater din liste når du er færdig med et afsnit eller en film.';
 	@override String disconnectConfirm({required Object service}) => 'Afbryd ${service}?';
-	@override String disconnectConfirmBody({required Object service}) => 'Plezy stopper med at opdatere ${service}. Tilslut igen når som helst.';
+	@override String disconnectConfirmBody({required Object service}) => 'Vibe stopper med at opdatere ${service}. Tilslut igen når som helst.';
 	@override String connectFailed({required Object service}) => 'Kunne ikke forbinde til ${service}. Prøv igen.';
 	@override late final _TranslationsTrackersServicesDa services = _TranslationsTrackersServicesDa._(_root);
 	@override late final _TranslationsTrackersDeviceCodeDa deviceCode = _TranslationsTrackersDeviceCodeDa._(_root);
@@ -1680,19 +1680,19 @@ class _TranslationsCompanionRemotePairingDa extends TranslationsCompanionRemoteP
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get discoveryDescription => 'Plezy-enheder med samme Plex-konto vises her';
+	@override String get discoveryDescription => 'Vibe-enheder med samme Plex-konto vises her';
 	@override String get hostAddressHint => '192.168.1.100:48632';
 	@override String get connecting => 'Opretter forbindelse...';
 	@override String get searchingForDevices => 'Søger efter enheder...';
 	@override String get noDevicesFound => 'Ingen enheder fundet på dit netværk';
-	@override String get noDevicesHint => 'Åbn Plezy på desktop, og brug samme WiFi';
+	@override String get noDevicesHint => 'Åbn Vibe på desktop, og brug samme WiFi';
 	@override String get availableDevices => 'Tilgængelige enheder';
 	@override String get manualConnection => 'Manuel forbindelse';
 	@override String get cryptoInitFailed => 'Kunne ikke starte sikker forbindelse. Log ind på Plex først.';
 	@override String get validationHostRequired => 'Angiv venligst værtsadresse';
 	@override String get validationHostFormat => 'Format skal være IP:port (f.eks. 192.168.1.100:48632)';
 	@override String get connectionTimedOut => 'Forbindelsen fik timeout. Brug samme netværk på begge enheder.';
-	@override String get sessionNotFound => 'Enhed ikke fundet. Sørg for, at Plezy kører på værten.';
+	@override String get sessionNotFound => 'Enhed ikke fundet. Sørg for, at Vibe kører på værten.';
 	@override String get authFailed => 'Godkendelse mislykkedes. Begge enheder skal bruge samme Plex-konto.';
 	@override String failedToConnect({required Object error}) => 'Kunne ikke oprette forbindelse: ${error}';
 }
@@ -1752,7 +1752,7 @@ class _TranslationsTrackersDeviceCodeDa extends TranslationsTrackersDeviceCodeEn
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String title({required Object service}) => 'Aktiver Plezy på ${service}';
+	@override String title({required Object service}) => 'Aktiver Vibe på ${service}';
 	@override String body({required Object url}) => 'Besøg ${url} og indtast denne kode:';
 	@override String openToActivate({required Object service}) => 'Åbn ${service} for at aktivere';
 	@override String get waitingForAuthorization => 'Venter på godkendelse…';
@@ -1801,7 +1801,7 @@ class _TranslationsTrackersLibraryFilterDa extends TranslationsTrackersLibraryFi
 extension on TranslationsDa {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
-			'app.title' => 'Plezy',
+			'app.title' => 'Vibe',
 			'auth.signIn' => 'Log ind',
 			'auth.signInWithPlex' => 'Log ind med Plex',
 			'auth.showQRCode' => 'Vis QR-kode',
@@ -1873,7 +1873,7 @@ extension on TranslationsDa {
 			'update.latestVersion' => 'Du har den nyeste version',
 			'update.checkFailed' => 'Kunne ikke søge efter opdateringer',
 			'settings.title' => 'Indstillinger',
-			'settings.supportDeveloper' => 'Støt Plezy',
+			'settings.supportDeveloper' => 'Støt Vibe',
 			'settings.supportDeveloperDescription' => 'Doner via Liberapay for at finansiere udviklingen',
 			'settings.language' => 'Sprog',
 			'settings.theme' => 'Tema',
@@ -1973,7 +1973,7 @@ extension on TranslationsDa {
 			'settings.importSettingsConfirm' => 'Dette vil erstatte dine nuværende indstillinger. Fortsæt?',
 			'settings.importSettingsSuccess' => 'Indstillinger importeret',
 			'settings.importSettingsFailed' => 'Kunne ikke importere indstillinger',
-			'settings.importSettingsInvalidFile' => 'Denne fil er ikke en gyldig Plezy-indstillingseksport',
+			'settings.importSettingsInvalidFile' => 'Denne fil er ikke en gyldig Vibe-indstillingseksport',
 			'settings.importSettingsNoUser' => 'Log ind før import af indstillinger',
 			'settings.shortcutsReset' => 'Genveje nulstillet til standard',
 			'settings.about' => 'Om',
@@ -2050,7 +2050,7 @@ extension on TranslationsDa {
 			'settings.forceTvMode' => 'Gennemtving TV-tilstand',
 			'settings.forceTvModeDescription' => 'Tving TV-layout. Til enheder, der ikke registreres automatisk. Kræver genstart.',
 			'settings.startInFullscreen' => 'Start i fuldskærm',
-			'settings.startInFullscreenDescription' => 'Åbn Plezy i fuldskærmstilstand ved opstart',
+			'settings.startInFullscreenDescription' => 'Åbn Vibe i fuldskærmstilstand ved opstart',
 			'settings.autoHidePerformanceOverlay' => 'Skjul ydelses-overlay automatisk',
 			'settings.autoHidePerformanceOverlayDescription' => 'Fade ydelses-overlayet med afspilningskontrollerne',
 			'settings.showNavBarLabels' => 'Vis navigationsbarlabels',
@@ -2303,7 +2303,7 @@ extension on TranslationsDa {
 			'mpvConfig.confirmDeletePreset' => 'Er du sikker på, at du vil slette denne forudindstilling?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Bekræft handling',
-			'profiles.addPlezyProfile' => 'Tilføj Plezy-profil',
+			'profiles.addPlezyProfile' => 'Tilføj Vibe-profil',
 			'profiles.switchingProfile' => 'Skifter profil…',
 			'profiles.deleteThisProfileTitle' => 'Slet denne profil?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Fjern ${displayName}. Forbindelser påvirkes ikke.',
@@ -2745,19 +2745,19 @@ extension on TranslationsDa {
 			'companionRemote.session.startServer' => 'Start server',
 			'companionRemote.session.stopServer' => 'Stop server',
 			'companionRemote.session.minimize' => 'Minimér',
-			'companionRemote.pairing.discoveryDescription' => 'Plezy-enheder med samme Plex-konto vises her',
+			'companionRemote.pairing.discoveryDescription' => 'Vibe-enheder med samme Plex-konto vises her',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Opretter forbindelse...',
 			'companionRemote.pairing.searchingForDevices' => 'Søger efter enheder...',
 			'companionRemote.pairing.noDevicesFound' => 'Ingen enheder fundet på dit netværk',
-			'companionRemote.pairing.noDevicesHint' => 'Åbn Plezy på desktop, og brug samme WiFi',
+			'companionRemote.pairing.noDevicesHint' => 'Åbn Vibe på desktop, og brug samme WiFi',
 			'companionRemote.pairing.availableDevices' => 'Tilgængelige enheder',
 			'companionRemote.pairing.manualConnection' => 'Manuel forbindelse',
 			'companionRemote.pairing.cryptoInitFailed' => 'Kunne ikke starte sikker forbindelse. Log ind på Plex først.',
 			'companionRemote.pairing.validationHostRequired' => 'Angiv venligst værtsadresse',
 			'companionRemote.pairing.validationHostFormat' => 'Format skal være IP:port (f.eks. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Forbindelsen fik timeout. Brug samme netværk på begge enheder.',
-			'companionRemote.pairing.sessionNotFound' => 'Enhed ikke fundet. Sørg for, at Plezy kører på værten.',
+			'companionRemote.pairing.sessionNotFound' => 'Enhed ikke fundet. Sørg for, at Vibe kører på værten.',
 			'companionRemote.pairing.authFailed' => 'Godkendelse mislykkedes. Begge enheder skal bruge samme Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke oprette forbindelse: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du afbryde fra fjernsessionen?',
@@ -2907,11 +2907,11 @@ extension on TranslationsDa {
 			'trakt.connected' => 'Forbundet',
 			'trakt.connectedAs' => ({required Object username}) => 'Forbundet som @${username}',
 			'trakt.disconnectConfirm' => 'Frakobl Trakt-konto?',
-			'trakt.disconnectConfirmBody' => 'Plezy stopper med at sende hændelser til Trakt. Du kan tilslutte igen når som helst.',
+			'trakt.disconnectConfirmBody' => 'Vibe stopper med at sende hændelser til Trakt. Du kan tilslutte igen når som helst.',
 			'trakt.scrobble' => 'Realtids-scrobbling',
 			'trakt.scrobbleDescription' => 'Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.',
 			'trakt.watchedSync' => 'Synkroniser sét-status',
-			'trakt.watchedSyncDescription' => 'Når du markerer ting som sét i Plezy, markeres de også på Trakt.',
+			'trakt.watchedSyncDescription' => 'Når du markerer ting som sét i Vibe, markeres de også på Trakt.',
 			'trackers.title' => 'Trackere',
 			'trackers.hubSubtitle' => 'Synkroniser afspilningsfremskridt med Trakt og andre tjenester.',
 			'trackers.notConnected' => 'Ikke forbundet',
@@ -2919,12 +2919,12 @@ extension on TranslationsDa {
 			'trackers.scrobble' => 'Registrer fremgang automatisk',
 			'trackers.scrobbleDescription' => 'Opdater din liste når du er færdig med et afsnit eller en film.',
 			'trackers.disconnectConfirm' => ({required Object service}) => 'Afbryd ${service}?',
-			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Plezy stopper med at opdatere ${service}. Tilslut igen når som helst.',
+			'trackers.disconnectConfirmBody' => ({required Object service}) => 'Vibe stopper med at opdatere ${service}. Tilslut igen når som helst.',
 			'trackers.connectFailed' => ({required Object service}) => 'Kunne ikke forbinde til ${service}. Prøv igen.',
 			'trackers.services.mal' => 'MyAnimeList',
 			'trackers.services.anilist' => 'AniList',
 			'trackers.services.simkl' => 'Simkl',
-			'trackers.deviceCode.title' => ({required Object service}) => 'Aktiver Plezy på ${service}',
+			'trackers.deviceCode.title' => ({required Object service}) => 'Aktiver Vibe på ${service}',
 			'trackers.deviceCode.body' => ({required Object url}) => 'Besøg ${url} og indtast denne kode:',
 			'trackers.deviceCode.openToActivate' => ({required Object service}) => 'Åbn ${service} for at aktivere',
 			'trackers.deviceCode.waitingForAuthorization' => 'Venter på godkendelse…',

@@ -221,7 +221,7 @@ Future<void> _bootstrapApp() async {
   if (Platform.isAndroid) {
     renderer = ' [${await const MethodChannel('com.plezy/theme').invokeMethod<String>('getRenderer')}]';
   }
-  appLogger.i('Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer');
+  appLogger.i('Vibe v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer');
 
   await DownloadStorageService.instance.initialize(settings);
 
@@ -1359,7 +1359,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Stack(
         children: [
-          Center(child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', width: 288, height: 288)),
+          Center(child: SvgPicture.asset('assets/vibe_stream_adaptive_foreground.svg', width: 288, height: 288)),
           Positioned(
             left: 0,
             right: 0,

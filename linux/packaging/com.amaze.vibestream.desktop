@@ -1,10 +1,10 @@
 [Desktop Entry]
 Type=Application
-Name=Plezy
+Name=Vibe
 Comment=A modern Plex and Jellyfin client for desktop and mobile
-Exec=plezy
-Icon=plezy
+Exec=vibe_stream
+Icon=vibe_stream
 Terminal=false
 Categories=AudioVideo;Video;Player;
 Keywords=plex;jellyfin;media;streaming;video;
-StartupWMClass=plezy
+StartupWMClass=vibe_stream

@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Vibe"
   },
   "auth": {
     "signIn": "サインイン",
@@ -82,7 +82,7 @@
   },
   "settings": {
     "title": "設定",
-    "supportDeveloper": "Plezy を支援",
+    "supportDeveloper": "Vibe を支援",
     "supportDeveloperDescription": "Liberapay で寄付して開発を支援",
     "language": "言語",
     "theme": "テーマ",
@@ -182,7 +182,7 @@
     "importSettingsConfirm": "現在の設定を置き換えます。続行しますか？",
     "importSettingsSuccess": "設定をインポートしました",
     "importSettingsFailed": "設定をインポートできませんでした",
-    "importSettingsInvalidFile": "このファイルは有効なPlezyの設定エクスポートではありません",
+    "importSettingsInvalidFile": "このファイルは有効なVibeの設定エクスポートではありません",
     "importSettingsNoUser": "設定をインポートする前にサインインしてください",
     "shortcutsReset": "ショートカットをデフォルトにリセットしました",
     "about": "アプリについて",
@@ -259,7 +259,7 @@
     "forceTvMode": "TVモードを強制",
     "forceTvModeDescription": "TVレイアウトを強制します。自動検出しないデバイス向けです。再起動が必要です。",
     "startInFullscreen": "全画面表示で起動",
-    "startInFullscreenDescription": "起動時にPlezyを全画面モードで開きます",
+    "startInFullscreenDescription": "起動時にVibeを全画面モードで開きます",
     "autoHidePerformanceOverlay": "パフォーマンスオーバーレイを自動非表示",
     "autoHidePerformanceOverlayDescription": "再生コントロールと一緒にパフォーマンスオーバーレイをフェードする",
     "showNavBarLabels": "ナビゲーションバーラベルを表示",
@@ -544,7 +544,7 @@
     "confirmAction": "操作の確認"
   },
   "profiles": {
-    "addPlezyProfile": "Plezyプロファイルを追加",
+    "addPlezyProfile": "Vibeプロファイルを追加",
     "switchingProfile": "プロファイルを切り替え中…",
     "deleteThisProfileTitle": "このプロファイルを削除しますか？",
     "deleteThisProfileMessage": "${displayName}を削除します。接続には影響しません。",
@@ -1029,19 +1029,19 @@
       "minimize": "最小化"
     },
     "pairing": {
-      "discoveryDescription": "同じPlexアカウントのPlezyデバイスがここに表示されます",
+      "discoveryDescription": "同じPlexアカウントのVibeデバイスがここに表示されます",
       "hostAddressHint": "192.168.1.100:48632",
       "connecting": "接続中...",
       "searchingForDevices": "デバイスを検索中...",
       "noDevicesFound": "ネットワーク上にデバイスが見つかりません",
-      "noDevicesHint": "デスクトップでPlezyを開き、同じWiFiを使用してください",
+      "noDevicesHint": "デスクトップでVibeを開き、同じWiFiを使用してください",
       "availableDevices": "利用可能なデバイス",
       "manualConnection": "手動接続",
       "cryptoInitFailed": "安全な接続を開始できませんでした。先にPlexにサインインしてください。",
       "validationHostRequired": "ホストアドレスを入力してください",
       "validationHostFormat": "形式はIP:ポートである必要があります（例: 192.168.1.100:48632）",
       "connectionTimedOut": "接続がタイムアウトしました。両方のデバイスで同じネットワークを使用してください。",
-      "sessionNotFound": "デバイスが見つかりません。ホストでPlezyが実行中か確認してください。",
+      "sessionNotFound": "デバイスが見つかりません。ホストでVibeが実行中か確認してください。",
       "authFailed": "認証に失敗しました。両方のデバイスで同じPlexアカウントが必要です。",
       "failedToConnect": "接続に失敗しました: ${error}"
     },
@@ -1204,11 +1204,11 @@
     "connected": "接続済み",
     "connectedAs": "@${username} として接続済み",
     "disconnectConfirm": "Trakt アカウントを切断しますか?",
-    "disconnectConfirmBody": "PlezyはTraktへのイベント送信を停止します。いつでも再接続できます。",
+    "disconnectConfirmBody": "VibeはTraktへのイベント送信を停止します。いつでも再接続できます。",
     "scrobble": "リアルタイムのスクロブル",
     "scrobbleDescription": "再生中に再生・一時停止・停止イベントを Trakt に送信します。",
     "watchedSync": "視聴済みステータスを同期",
-    "watchedSyncDescription": "Plezy で項目を視聴済みにすると、Trakt でも視聴済みになります。"
+    "watchedSyncDescription": "Vibe で項目を視聴済みにすると、Trakt でも視聴済みになります。"
   },
   "trackers": {
     "title": "トラッカー",
@@ -1218,7 +1218,7 @@
     "scrobble": "進捗を自動で記録",
     "scrobbleDescription": "エピソードや映画を見終えたときにリストを更新します。",
     "disconnectConfirm": "${service} の接続を解除しますか？",
-    "disconnectConfirmBody": "Plezyは${service}の更新を停止します。いつでも再接続できます。",
+    "disconnectConfirmBody": "Vibeは${service}の更新を停止します。いつでも再接続できます。",
     "connectFailed": "${service} に接続できませんでした。もう一度お試しください。",
     "services": {
       "mal": "MyAnimeList",
@@ -1226,7 +1226,7 @@
       "simkl": "Simkl"
     },
     "deviceCode": {
-      "title": "${service} で Plezy を有効化",
+      "title": "${service} で Vibe を有効化",
       "body": "${url} にアクセスしてこのコードを入力:",
       "openToActivate": "${service} を開いて有効化",
       "waitingForAuthorization": "認証を待っています…",

@@ -28,7 +28,7 @@ void main() {
         baseUrl: 'https://plex.example.com',
         token: 'token',
         clientIdentifier: 'client-id',
-        product: 'Plezy',
+        product: 'Vibe',
         version: '1',
       ),
       serverId: 'server-id',

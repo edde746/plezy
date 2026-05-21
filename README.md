@@ -1,52 +1,40 @@
 <h1>
-  <img src="assets/plezy.png" alt="Plezy Logo" height="24" style="vertical-align: middle;" />
-  Plezy
+  <img src="assets/vibe_stream.png" alt="Vibe Logo" height="24" style="vertical-align: middle;" />
+  Vibe
 </h1>
 
 A modern client for Plex and Jellyfin on desktop, mobile, and TV. Built with Flutter for native performance and a clean interface.
 
 <p>
-  <a href="https://plezy.app">Website</a> ·
-  <a href="https://plezy.app/#screenshots">Screenshots</a> ·
+  <a href="https://github.com/MazeDev7/alflix">GitHub</a> ·
   <a href="#download">Download</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
   <a href="LICENSE">License</a>
 </p>
 
 <p align="center">
-  <img src="assets/readme-showcase.webp" alt="Plezy mobile screenshots" width="900" />
+  <img src="assets/readme-showcase.webp" alt="Vibe mobile screenshots" width="900" />
 </p>
-
-*More screenshots: https://plezy.app/#screenshots*
 
 ## Download
 
 <a href='https://apps.apple.com/us/app/id6754315964'><img height='60' alt='Download on the App Store' src='./assets/app-store-badge.png'/></a>
-<a href='https://play.google.com/store/apps/details?id=com.edde746.plezy'><img height='60' alt='Get it on Google Play' src='./assets/play-store-badge.png'/></a>
+<a href='https://play.google.com/store/apps/details?id=com.amaze.vibestream'><img height='60' alt='Get it on Google Play' src='./assets/play-store-badge.png'/></a>
 <a href='https://www.amazon.com/gp/product/B0GK65CVS1'><img height='60' alt='Available at the Amazon App Store' src='./assets/amazon-badge.png'/></a>
 
 | Platform | Download |
 | --- | --- |
-| Windows | [Installer (x64, arm64)](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-installer.exe) · [Portable x64](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-x64-portable.7z) · [Portable arm64](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-arm64-portable.7z) |
-| macOS | [DMG (x64, arm64)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.dmg) |
-| Linux x64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.pkg.tar.zst) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.tar.gz) |
-| Linux arm64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.pkg.tar.zst) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.tar.gz) |
+| Windows | [Installer (x64, arm64)](https://github.com/MazeDev7/alflix/releases/latest/download/vibe_stream-windows-installer.exe) · [Portable x64](https://github.com/MazeDev7/alflix/releases/latest/download/vibe_stream-windows-x64-portable.7z) · [Portable arm64](https://github.com/MazeDev7/alflix/releases/latest/download/vibe_stream-windows-arm64-portable.7z) |
+| macOS | [DMG (x64, arm64)](https://github.com/MazeDev7/alflix/releases/latest/download/vibe_stream-macos.dmg) |
+| Linux x64 | [.deb](https://github.com/MazeDev7/alflix/releases/latest/download/vibe_stream-linux-x64.deb) · [.rpm](https://github.com/MazeDev7/alflix/releases/latest/download/vibe_stream-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/MazeDev7/alflix/releases/latest/download/vibe_stream-linux-x64.pkg.tar.zst) · [portable tar.gz](https://github.com/MazeDev7/alflix/releases/latest/download/vibe_stream-linux-x64.tar.gz) |
+| Linux arm64 | [.deb](https://github.com/MazeDev7/alflix/releases/latest/download/vibe_stream-linux-arm64.deb) · [.rpm](https://github.com/MazeDev7/alflix/releases/latest/download/vibe_stream-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/MazeDev7/alflix/releases/latest/download/vibe_stream-linux-arm64.pkg.tar.zst) · [portable tar.gz](https://github.com/MazeDev7/alflix/releases/latest/download/vibe_stream-linux-arm64.tar.gz) |
 
 Package managers:
 
-- [Nix](https://search.nixos.org/packages?channel=unstable&query=plezy) - Community package by [@mio-19](https://github.com/mio-19) and [@MiniHarinn](https://github.com/MiniHarinn)
 - **Homebrew** (macOS):
   ```bash
-  brew tap edde746/plezy https://github.com/edde746/plezy
-  brew install --cask plezy
-  ```
-- [AUR](https://aur.archlinux.org/packages/plezy-bin) (Arch Linux) - Community maintained by [@jianglai](https://github.com/jianglai):
-  ```bash
-  yay -S plezy-bin
-  ```
-- **WinGet** (Windows):
-  ```bash
-  winget install edde746.Plezy
+  brew tap MazeDev7/alflix https://github.com/MazeDev7/alflix
+  brew install --cask vibe_stream
   ```
 
 ## Features
@@ -91,7 +79,7 @@ Package managers:
 ### <img src="assets/readme_icons/integrations.svg" height="20" alt="" align="center" /> Integrations
 - Discord Rich Presence[^7]
 - Trakt, MyAnimeList, AniList, and Simkl tracking & rating
-- Plezy Remote — control desktop and TV from mobile
+- Companion Remote — control desktop and TV from mobile
 - Watch Next row[^6]
 
 ### <img src="assets/readme_icons/customization.svg" height="20" alt="" align="center" /> Platform & Customization
@@ -118,8 +106,8 @@ Package managers:
 ### Setup
 
 ```bash
-git clone https://github.com/edde746/plezy.git
-cd plezy
+git clone https://github.com/MazeDev7/alflix.git
+cd alflix
 flutter pub get
 scripts/codegen.sh
 flutter run
@@ -157,10 +145,11 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow, formatting, tes
 
 ## License
 
-Plezy is licensed under [GPL-3.0](LICENSE).
+Vibe is licensed under [GPL-3.0](LICENSE).
 
 ## Acknowledgments
 
+- Forked from the upstream [Plezy](https://github.com/edde746/plezy) Flutter codebase by [@edde746](https://github.com/edde746)
 - Built with [Flutter](https://flutter.dev)
 - Supports [Plex Media Server](https://www.plex.tv) and [Jellyfin](https://jellyfin.org)
 - Playback powered by [mpv](https://mpv.io), [MPVKit](https://github.com/mpvkit/MPVKit), Android [ExoPlayer](https://developer.android.com/media/media3/exoplayer), [libass-android](https://github.com/peerless2012/libass-android), and [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android)

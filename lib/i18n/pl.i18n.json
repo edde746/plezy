@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "Vibe"
   },
   "auth": {
     "signIn": "Zaloguj się",
@@ -82,7 +82,7 @@
   },
   "settings": {
     "title": "Ustawienia",
-    "supportDeveloper": "Wesprzyj Plezy",
+    "supportDeveloper": "Wesprzyj Vibe",
     "supportDeveloperDescription": "Wspomóż rozwój darowizną na Liberapay",
     "language": "Język",
     "theme": "Motyw",
@@ -182,7 +182,7 @@
     "importSettingsConfirm": "Bieżące ustawienia zostaną zastąpione. Kontynuować?",
     "importSettingsSuccess": "Ustawienia zaimportowane",
     "importSettingsFailed": "Nie można zaimportować ustawień",
-    "importSettingsInvalidFile": "Ten plik nie jest prawidłowym eksportem Plezy",
+    "importSettingsInvalidFile": "Ten plik nie jest prawidłowym eksportem Vibe",
     "importSettingsNoUser": "Zaloguj się przed importem ustawień",
     "shortcutsReset": "Skróty przywrócone do domyślnych",
     "about": "O aplikacji",
@@ -259,7 +259,7 @@
     "forceTvMode": "Wymuś tryb TV",
     "forceTvModeDescription": "Wymuś układ TV. Dla urządzeń bez autodetekcji. Wymaga restartu.",
     "startInFullscreen": "Uruchom na pełnym ekranie",
-    "startInFullscreenDescription": "Otwiera Plezy w trybie pełnoekranowym przy uruchomieniu",
+    "startInFullscreenDescription": "Otwiera Vibe w trybie pełnoekranowym przy uruchomieniu",
     "autoHidePerformanceOverlay": "Automatycznie ukrywaj nakładkę wydajności",
     "autoHidePerformanceOverlayDescription": "Wygaszaj nakładkę wydajności wraz z kontrolkami odtwarzania",
     "showNavBarLabels": "Pokaż etykiety paska nawigacji",
@@ -544,7 +544,7 @@
     "confirmAction": "Potwierdź działanie"
   },
   "profiles": {
-    "addPlezyProfile": "Dodaj profil Plezy",
+    "addPlezyProfile": "Dodaj profil Vibe",
     "switchingProfile": "Przełączanie profilu…",
     "deleteThisProfileTitle": "Usunąć ten profil?",
     "deleteThisProfileMessage": "Usuń ${displayName}. Połączenia nie zostaną zmienione.",
@@ -1029,19 +1029,19 @@
       "minimize": "Minimalizuj"
     },
     "pairing": {
-      "discoveryDescription": "Urządzenia Plezy z tym samym kontem Plex pojawią się tutaj",
+      "discoveryDescription": "Urządzenia Vibe z tym samym kontem Plex pojawią się tutaj",
       "hostAddressHint": "192.168.1.100:48632",
       "connecting": "Łączenie...",
       "searchingForDevices": "Szukanie urządzeń...",
       "noDevicesFound": "Nie znaleziono urządzeń w sieci",
-      "noDevicesHint": "Otwórz Plezy na komputerze i użyj tego samego WiFi",
+      "noDevicesHint": "Otwórz Vibe na komputerze i użyj tego samego WiFi",
       "availableDevices": "Dostępne urządzenia",
       "manualConnection": "Połączenie ręczne",
       "cryptoInitFailed": "Nie udało się uruchomić bezpiecznego połączenia. Najpierw zaloguj się do Plex.",
       "validationHostRequired": "Wprowadź adres hosta",
       "validationHostFormat": "Format musi być IP:port (np. 192.168.1.100:48632)",
       "connectionTimedOut": "Limit czasu połączenia. Użyj tej samej sieci na obu urządzeniach.",
-      "sessionNotFound": "Nie znaleziono urządzenia. Upewnij się, że Plezy działa na hoście.",
+      "sessionNotFound": "Nie znaleziono urządzenia. Upewnij się, że Vibe działa na hoście.",
       "authFailed": "Uwierzytelnianie nie powiodło się. Oba urządzenia muszą używać tego samego konta Plex.",
       "failedToConnect": "Nie udało się połączyć: ${error}"
     },
@@ -1204,11 +1204,11 @@
     "connected": "Połączono",
     "connectedAs": "Połączono jako @${username}",
     "disconnectConfirm": "Rozłączyć konto Trakt?",
-    "disconnectConfirmBody": "Plezy przestanie wysyłać zdarzenia do Trakt. Możesz połączyć ponownie w dowolnym momencie.",
+    "disconnectConfirmBody": "Vibe przestanie wysyłać zdarzenia do Trakt. Możesz połączyć ponownie w dowolnym momencie.",
     "scrobble": "Scrobbling w czasie rzeczywistym",
     "scrobbleDescription": "Wysyłaj zdarzenia odtwarzania, pauzy i zatrzymania do Trakt podczas odtwarzania.",
     "watchedSync": "Synchronizuj status obejrzane",
-    "watchedSyncDescription": "Gdy oznaczysz pozycje jako obejrzane w Plezy, zostaną też oznaczone w Trakt."
+    "watchedSyncDescription": "Gdy oznaczysz pozycje jako obejrzane w Vibe, zostaną też oznaczone w Trakt."
   },
   "trackers": {
     "title": "Trackery",
@@ -1218,7 +1218,7 @@
     "scrobble": "Automatycznie śledź postęp",
     "scrobbleDescription": "Aktualizuj swoją listę po ukończeniu odcinka lub filmu.",
     "disconnectConfirm": "Odłączyć ${service}?",
-    "disconnectConfirmBody": "Plezy przestanie aktualizować ${service}. Połącz ponownie w dowolnym momencie.",
+    "disconnectConfirmBody": "Vibe przestanie aktualizować ${service}. Połącz ponownie w dowolnym momencie.",
     "connectFailed": "Nie udało się połączyć z ${service}. Spróbuj ponownie.",
     "services": {
       "mal": "MyAnimeList",
@@ -1226,7 +1226,7 @@
       "simkl": "Simkl"
     },
     "deviceCode": {
-      "title": "Aktywuj Plezy w ${service}",
+      "title": "Aktywuj Vibe w ${service}",
       "body": "Odwiedź ${url} i wpisz ten kod:",
       "openToActivate": "Otwórz ${service}, aby aktywować",
       "waitingForAuthorization": "Oczekiwanie na autoryzację…",
