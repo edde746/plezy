@@ -256,6 +256,7 @@ class TvBrowseRail extends StatefulWidget {
   final bool autofocus;
   final EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub;
   final double Function(MediaHub hub)? widePosterScaleForHub;
+  final double backgroundBleedLeft;
 
   const TvBrowseRail({
     super.key,
@@ -279,6 +280,7 @@ class TvBrowseRail extends StatefulWidget {
     this.autofocus = false,
     this.episodePosterModeForHub,
     this.widePosterScaleForHub,
+    this.backgroundBleedLeft = 0,
   });
 
   @override
@@ -781,43 +783,56 @@ class TvBrowseRailState extends State<TvBrowseRail> {
               heightFactor: 1,
               child: SizedBox(
                 height: totalHeight,
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(
-                    horizontalInset,
-                    TvBrowseRailLayout.railTopPaddingForScale(scale),
-                    0,
-                    TvBrowseRailLayout.railBottomPaddingForScale(scale),
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [Colors.transparent, theme.scaffoldBackgroundColor.withValues(alpha: 0.7)],
-                    ),
-                  ),
-                  child: AnimatedOpacity(
-                    opacity: hasFocus ? 1 : 0.6,
-                    duration: FocusTheme.getAnimationDuration(context),
-                    curve: Curves.easeOutCubic,
-                    child: ClipRect(
-                      clipper: _RailClipper(leftOverflow: horizontalInset, rightOverflow: 0, verticalOverflow: 0),
-                      child: SizedBox(
-                        height: viewportHeight,
-                        child: _buildHubSectionList(
-                          context,
-                          hasFocus: hasFocus,
-                          modes: modes,
-                          metricsByHub: metricsByHub,
-                          sectionHeights: sectionHeights,
-                          scale: scale,
-                          leftOverflow: horizontalInset,
-                          interactionExpansion: interactionExpansion,
-                          railViewportWidth: railViewportWidth,
-                          bottomPadding: bottomPadding,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned(
+                      top: 0,
+                      bottom: 0,
+                      left: -widget.backgroundBleedLeft,
+                      right: 0,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, theme.scaffoldBackgroundColor.withValues(alpha: 0.7)],
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        horizontalInset,
+                        TvBrowseRailLayout.railTopPaddingForScale(scale),
+                        0,
+                        TvBrowseRailLayout.railBottomPaddingForScale(scale),
+                      ),
+                      child: AnimatedOpacity(
+                        opacity: hasFocus ? 1 : 0.6,
+                        duration: FocusTheme.getAnimationDuration(context),
+                        curve: Curves.easeOutCubic,
+                        child: ClipRect(
+                          clipper: _RailClipper(leftOverflow: horizontalInset, rightOverflow: 0, verticalOverflow: 0),
+                          child: SizedBox(
+                            height: viewportHeight,
+                            child: _buildHubSectionList(
+                              context,
+                              hasFocus: hasFocus,
+                              modes: modes,
+                              metricsByHub: metricsByHub,
+                              sectionHeights: sectionHeights,
+                              scale: scale,
+                              leftOverflow: horizontalInset,
+                              interactionExpansion: interactionExpansion,
+                              railViewportWidth: railViewportWidth,
+                              bottomPadding: bottomPadding,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

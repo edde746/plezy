@@ -744,6 +744,7 @@ class _MainScreenState extends State<MainScreen>
         Expanded(
           child: IndexedStack(
             index: _currentIndex,
+            clipBehavior: Clip.none,
             children: [
               for (var i = 0; i < _screens.length; i++) TickerMode(enabled: i == _currentIndex, child: _screens[i]),
             ],

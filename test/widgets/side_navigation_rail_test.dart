@@ -13,6 +13,8 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_tokens.dart';
+import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
 import 'package:provider/provider.dart';
 
@@ -60,7 +62,64 @@ void main() {
   setUp(() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
+    TvDetectionService.debugSetAppleTVOverride(null);
+    TvDetectionService.setForceTVSync(false);
     LocaleSettings.setLocaleSync(AppLocale.en);
+  });
+
+  testWidgets('closed TV rail is slim and keeps primary icons centered', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    await SettingsService.getInstance();
+
+    final librariesProvider = LibrariesProvider();
+    addTearDown(librariesProvider.dispose);
+
+    final hiddenLibrariesProvider = HiddenLibrariesProvider();
+    await hiddenLibrariesProvider.ensureInitialized();
+    addTearDown(hiddenLibrariesProvider.dispose);
+
+    final manager = MultiServerManager();
+    final aggregation = DataAggregationService(manager);
+    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    addTearDown(multiServerProvider.dispose);
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
+            ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+          ],
+          child: MaterialApp(
+            theme: ThemeData(extensions: const [_testTokens]),
+            home: Scaffold(
+              body: SideNavigationRail(
+                selectedTab: NavigationTabId.discover,
+                isSidebarFocused: false,
+                alwaysExpanded: false,
+                onDestinationSelected: (_) {},
+                onLibrarySelected: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
+    expect(tester.getSize(rail).width, SideNavigationRailState.tvCollapsedWidth);
+
+    final firstIconCenter = tester.getCenter(find.byType(AppIcon).first).dx;
+    expect(firstIconCenter - tester.getTopLeft(rail).dx, closeTo(SideNavigationRailState.tvCollapsedWidth / 2, 0.1));
+
+    final selectedItem = find.byType(NavigationRailItem).first;
+    final selectedItemContainer = tester.widget<Container>(
+      find.descendant(of: selectedItem, matching: find.byType(Container)).first,
+    );
+    expect((selectedItemContainer.decoration as BoxDecoration?)?.color, isNull);
   });
 
   testWidgets('D-pad down from a hidden server header focuses that hidden server library', (tester) async {

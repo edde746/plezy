@@ -59,16 +59,7 @@ class TvSpotlightBackground extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             if (media != null) _buildArtwork(context, media) else ColoredBox(color: bgColor),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [bgColor.withValues(alpha: 0.86), bgColor.withValues(alpha: 0.32), Colors.transparent],
-                  stops: const [0.0, 0.56, 1.0],
-                ),
-              ),
-            ),
+            _buildHorizontalScrim(context, bgColor),
             DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -146,6 +137,19 @@ class TvSpotlightBackground extends StatelessWidget {
         placeholder: (context, url) => ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
         errorBuilder: (context, error, stackTrace) =>
             ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+      ),
+    );
+  }
+
+  Widget _buildHorizontalScrim(BuildContext context, Color bgColor) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [bgColor.withValues(alpha: 0.86), bgColor.withValues(alpha: 0.32), Colors.transparent],
+          stops: const [0.0, 0.56, 1.0],
+        ),
       ),
     );
   }

@@ -59,6 +59,7 @@ class NavigationRailItem extends StatelessWidget {
   final bool autofocus;
   final BorderRadius borderRadius;
   final double iconSize;
+  final double horizontalPadding;
 
   /// Called when RIGHT arrow is pressed to navigate to content area.
   final VoidCallback? onNavigateRight;
@@ -77,6 +78,7 @@ class NavigationRailItem extends StatelessWidget {
     this.autofocus = false,
     this.borderRadius = const BorderRadius.all(Radius.circular(12)),
     this.iconSize = 22,
+    this.horizontalPadding = 17,
     this.onNavigateRight,
   });
 
@@ -108,6 +110,7 @@ class NavigationRailItem extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               color: () {
+                if (isCollapsed) return isFocused ? t.text.withValues(alpha: 0.12) : null;
                 if (isSelected && isFocused) return t.text.withValues(alpha: 0.15);
                 if (isSelected) return t.text.withValues(alpha: 0.1);
                 if (isFocused) return t.text.withValues(alpha: 0.12);
@@ -123,7 +126,7 @@ class NavigationRailItem extends StatelessWidget {
               child: SizedBox(
                 width: SideNavigationRailState.expandedWidth - 24,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 17),
+                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: horizontalPadding),
                   child: Row(
                     children: [
                       AppIcon(
@@ -194,7 +197,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   bool _isTouchExpanded = false;
   Timer? _collapseTimer;
   static const double collapsedWidth = 80.0;
-  static const double tvCollapsedWidth = 64.0;
+  static const double tvCollapsedWidth = 48.0;
   static const double expandedWidth = 220.0;
   static const double _horizontalPadding = 12.0;
   static const double _itemHorizontalPadding = 17.0;
@@ -203,9 +206,18 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
 
   static double collapsedWidthForContext(BuildContext _) => PlatformDetector.isTV() ? tvCollapsedWidth : collapsedWidth;
 
+  static double itemHorizontalPaddingForContext(BuildContext context, {required bool isCollapsed}) {
+    if (isCollapsed && PlatformDetector.isTV()) {
+      return ((tvCollapsedWidth - _defaultIconSize) / 2).clamp(0.0, _itemHorizontalPadding).toDouble();
+    }
+    return _itemHorizontalPadding;
+  }
+
   static double horizontalPaddingForContext(BuildContext context, {required bool isCollapsed}) {
     if (!isCollapsed) return _horizontalPadding;
-    final centeredPadding = ((collapsedWidthForContext(context) - _defaultIconSize) / 2) - _itemHorizontalPadding;
+    final centeredPadding =
+        ((collapsedWidthForContext(context) - _defaultIconSize) / 2) -
+        itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
     return centeredPadding.clamp(0.0, _horizontalPadding).toDouble();
   }
 
@@ -525,7 +537,9 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final isCollapsed = !_shouldExpand;
     final effectiveCollapsedWidth = collapsedWidthForContext(context);
     final horizontalPadding = horizontalPaddingForContext(context, isCollapsed: isCollapsed);
+    final itemHorizontalPadding = itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
     final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
+    final surfaceOpacity = isCollapsed && PlatformDetector.isTV() ? 0.0 : 1.0;
 
     // Listen to fullscreen + groupLibrariesByServer setting so the rail
     // rebuilds when the user toggles "Group libraries by server" in Appearance.
@@ -584,118 +598,119 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                 curve: Curves.easeOutCubic,
                 width: isCollapsed ? effectiveCollapsedWidth : expandedWidth,
                 clipBehavior: Clip.hardEdge,
-                decoration: BoxDecoration(color: t.surface),
-                child: IgnorePointer(
-                  ignoring: isCollapsed,
-                  child: Focus(
-                    canRequestFocus: false,
-                    skipTraversal: true,
-                    onKeyEvent: (node, event) => _handleVerticalNavigation(node, event, focusOrder),
-                    child: Column(
-                      children: [
-                        SizedBox(height: _getTopPadding(context)),
-
-                        Expanded(
-                          child: ListView(
-                            padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
-                            clipBehavior: Clip.hardEdge,
-                            children: [
-                              if (widget.isOfflineMode && widget.onReconnect != null) ...[
-                                _buildReconnectItem(isCollapsed: isCollapsed),
-                                const SizedBox(height: 8),
-                              ],
-
-                              if (!widget.isOfflineMode) ...[
-                                _buildNavItem(
-                                  icon: Symbols.home_rounded,
-                                  selectedIcon: Symbols.home_rounded,
-                                  label: Translations.of(context).common.home,
-                                  isSelected: widget.selectedTab == NavigationTabId.discover,
-                                  isFocused: _focusTracker.isFocused(_kHome),
-                                  onTap: () => widget.onDestinationSelected(NavigationTabId.discover),
-                                  focusNode: _focusTracker.get(_kHome),
-                                  isCollapsed: isCollapsed,
-                                ),
-
-                                const SizedBox(height: 8),
-
-                                _buildLibrariesSection(
-                                  visibleRows,
-                                  hiddenRows,
-                                  hiddenLibraries.length,
-                                  t,
-                                  isCollapsed: isCollapsed,
-                                ),
-
-                                const SizedBox(height: 8),
-
-                                if (context.watch<MultiServerProvider>().hasLiveTv) ...[
+                decoration: const BoxDecoration(),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: AnimatedOpacity(
+                        opacity: surfaceOpacity,
+                        duration: t.normal,
+                        curve: Curves.easeOutCubic,
+                        child: ColoredBox(color: t.surface),
+                      ),
+                    ),
+                    IgnorePointer(
+                      ignoring: isCollapsed,
+                      child: Focus(
+                        canRequestFocus: false,
+                        skipTraversal: true,
+                        onKeyEvent: (node, event) => _handleVerticalNavigation(node, event, focusOrder),
+                        child: Column(
+                          children: [
+                            SizedBox(height: _getTopPadding(context)),
+                            Expanded(
+                              child: ListView(
+                                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                                clipBehavior: Clip.hardEdge,
+                                children: [
+                                  if (widget.isOfflineMode && widget.onReconnect != null) ...[
+                                    _buildReconnectItem(isCollapsed: isCollapsed),
+                                    const SizedBox(height: 8),
+                                  ],
+                                  if (!widget.isOfflineMode) ...[
+                                    _buildNavItem(
+                                      icon: Symbols.home_rounded,
+                                      selectedIcon: Symbols.home_rounded,
+                                      label: Translations.of(context).common.home,
+                                      isSelected: widget.selectedTab == NavigationTabId.discover,
+                                      isFocused: _focusTracker.isFocused(_kHome),
+                                      onTap: () => widget.onDestinationSelected(NavigationTabId.discover),
+                                      focusNode: _focusTracker.get(_kHome),
+                                      isCollapsed: isCollapsed,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _buildLibrariesSection(
+                                      visibleRows,
+                                      hiddenRows,
+                                      hiddenLibraries.length,
+                                      t,
+                                      isCollapsed: isCollapsed,
+                                      itemHorizontalPadding: itemHorizontalPadding,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    if (context.watch<MultiServerProvider>().hasLiveTv) ...[
+                                      _buildNavItem(
+                                        icon: Symbols.live_tv_rounded,
+                                        selectedIcon: Symbols.live_tv_rounded,
+                                        label: Translations.of(context).navigation.liveTv,
+                                        isSelected: widget.selectedTab == NavigationTabId.liveTv,
+                                        isFocused: _focusTracker.isFocused('liveTv'),
+                                        onTap: () => widget.onDestinationSelected(NavigationTabId.liveTv),
+                                        focusNode: _focusTracker.get('liveTv'),
+                                        isCollapsed: isCollapsed,
+                                      ),
+                                      const SizedBox(height: 8),
+                                    ],
+                                    _buildNavItem(
+                                      icon: Symbols.search_rounded,
+                                      selectedIcon: Symbols.search_rounded,
+                                      label: Translations.of(context).common.search,
+                                      isSelected: widget.selectedTab == NavigationTabId.search,
+                                      isFocused: _focusTracker.isFocused(_kSearch),
+                                      onTap: () => widget.onDestinationSelected(NavigationTabId.search),
+                                      focusNode: _focusTracker.get(_kSearch),
+                                      isCollapsed: isCollapsed,
+                                    ),
+                                    const SizedBox(height: 8),
+                                  ],
+                                  // Downloads (hidden on Apple TV — no user
+                                  // file storage)
+                                  if (!PlatformDetector.isAppleTV()) ...[
+                                    _buildNavItem(
+                                      icon: Symbols.download_rounded,
+                                      selectedIcon: Symbols.download_rounded,
+                                      label: Translations.of(context).navigation.downloads,
+                                      isSelected: widget.selectedTab == NavigationTabId.downloads,
+                                      isFocused: _focusTracker.isFocused(_kDownloads),
+                                      onTap: () => widget.onDestinationSelected(NavigationTabId.downloads),
+                                      focusNode: _focusTracker.get(_kDownloads),
+                                      isCollapsed: isCollapsed,
+                                    ),
+                                    const SizedBox(height: 8),
+                                  ],
                                   _buildNavItem(
-                                    icon: Symbols.live_tv_rounded,
-                                    selectedIcon: Symbols.live_tv_rounded,
-                                    label: Translations.of(context).navigation.liveTv,
-                                    isSelected: widget.selectedTab == NavigationTabId.liveTv,
-                                    isFocused: _focusTracker.isFocused('liveTv'),
-                                    onTap: () => widget.onDestinationSelected(NavigationTabId.liveTv),
-                                    focusNode: _focusTracker.get('liveTv'),
+                                    icon: Symbols.settings_rounded,
+                                    selectedIcon: Symbols.settings_rounded,
+                                    label: Translations.of(context).common.settings,
+                                    isSelected: widget.selectedTab == NavigationTabId.settings,
+                                    isFocused: _focusTracker.isFocused(_kSettings),
+                                    onTap: () => widget.onDestinationSelected(NavigationTabId.settings),
+                                    focusNode: _focusTracker.get(_kSettings),
                                     isCollapsed: isCollapsed,
                                   ),
-
-                                  const SizedBox(height: 8),
                                 ],
-
-                                _buildNavItem(
-                                  icon: Symbols.search_rounded,
-                                  selectedIcon: Symbols.search_rounded,
-                                  label: Translations.of(context).common.search,
-                                  isSelected: widget.selectedTab == NavigationTabId.search,
-                                  isFocused: _focusTracker.isFocused(_kSearch),
-                                  onTap: () => widget.onDestinationSelected(NavigationTabId.search),
-                                  focusNode: _focusTracker.get(_kSearch),
-                                  isCollapsed: isCollapsed,
-                                ),
-
-                                const SizedBox(height: 8),
-                              ],
-
-                              // Downloads (hidden on Apple TV — no user
-                              // file storage)
-                              if (!PlatformDetector.isAppleTV()) ...[
-                                _buildNavItem(
-                                  icon: Symbols.download_rounded,
-                                  selectedIcon: Symbols.download_rounded,
-                                  label: Translations.of(context).navigation.downloads,
-                                  isSelected: widget.selectedTab == NavigationTabId.downloads,
-                                  isFocused: _focusTracker.isFocused(_kDownloads),
-                                  onTap: () => widget.onDestinationSelected(NavigationTabId.downloads),
-                                  focusNode: _focusTracker.get(_kDownloads),
-                                  isCollapsed: isCollapsed,
-                                ),
-                                const SizedBox(height: 8),
-                              ],
-
-                              _buildNavItem(
-                                icon: Symbols.settings_rounded,
-                                selectedIcon: Symbols.settings_rounded,
-                                label: Translations.of(context).common.settings,
-                                isSelected: widget.selectedTab == NavigationTabId.settings,
-                                isFocused: _focusTracker.isFocused(_kSettings),
-                                onTap: () => widget.onDestinationSelected(NavigationTabId.settings),
-                                focusNode: _focusTracker.get(_kSettings),
-                                isCollapsed: isCollapsed,
                               ),
-                            ],
-                          ),
+                            ),
+                            if (_showFullscreenToggle)
+                              Padding(
+                                padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 12),
+                                child: _buildFullscreenItem(isCollapsed: isCollapsed),
+                              ),
+                          ],
                         ),
-
-                        if (_showFullscreenToggle)
-                          Padding(
-                            padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 12),
-                            child: _buildFullscreenItem(isCollapsed: isCollapsed),
-                          ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -717,6 +732,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     bool autofocus = false,
   }) {
     final t = tokens(context);
+    final itemHorizontalPadding = itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
 
     return NavigationRailItem(
       icon: icon,
@@ -737,6 +753,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       onTap: onTap,
       focusNode: focusNode,
       autofocus: autofocus,
+      horizontalPadding: itemHorizontalPadding,
       onNavigateRight: widget.onNavigateToContent,
     );
   }
@@ -744,6 +761,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   Widget _buildReconnectItem({required bool isCollapsed}) {
     final t = tokens(context);
     final isFocused = _focusTracker.isFocused(_kReconnect);
+    final itemHorizontalPadding = itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
 
     return NavigationRailItem(
       icon: widget.isReconnecting ? Symbols.sync_rounded : Symbols.wifi_rounded,
@@ -761,6 +779,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       // ignore: no-empty-block - no-op tap handler while reconnecting
       onTap: widget.isReconnecting ? () {} : () => widget.onReconnect?.call(),
       focusNode: _focusTracker.get(_kReconnect),
+      horizontalPadding: itemHorizontalPadding,
       onNavigateRight: widget.onNavigateToContent,
     );
   }
@@ -769,6 +788,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final t = tokens(context);
     final isFullscreen = FullscreenStateManager().isFullscreen;
     final isFocused = _focusTracker.isFocused(_kFullscreen);
+    final itemHorizontalPadding = itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
 
     return NavigationRailItem(
       icon: isFullscreen ? Symbols.fullscreen_exit_rounded : Symbols.fullscreen_rounded,
@@ -783,6 +803,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       isCollapsed: isCollapsed,
       onTap: () => unawaited(FullscreenStateManager().toggleFullscreen()),
       focusNode: _focusTracker.get(_kFullscreen),
+      horizontalPadding: itemHorizontalPadding,
       onNavigateRight: widget.onNavigateToContent,
     );
   }
@@ -793,6 +814,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     int hiddenLibraryCount,
     dynamic t, {
     bool isCollapsed = false,
+    required double itemHorizontalPadding,
   }) {
     final librariesProvider = context.watch<LibrariesProvider>();
     final isLoading = librariesProvider.isLoading;
@@ -833,6 +855,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
               child: Container(
                 decoration: BoxDecoration(
                   color: () {
+                    if (isCollapsed) return isLibrariesFocused ? t.text.withValues(alpha: 0.08) : null;
                     if (isLibrariesSelected) return t.text.withValues(alpha: 0.1);
                     if (isLibrariesFocused) return t.text.withValues(alpha: 0.08);
                     return null;
@@ -847,7 +870,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                   child: SizedBox(
                     width: expandedWidth - 24,
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 17),
+                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: itemHorizontalPadding),
                       child: Row(
                         children: [
                           AppIcon(

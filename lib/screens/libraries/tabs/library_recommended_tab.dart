@@ -16,6 +16,7 @@ import '../../../utils/provider_extensions.dart';
 import '../../../utils/watch_state_notifier.dart';
 import '../../../widgets/hub_section.dart';
 import '../../../widgets/settings_builder.dart';
+import '../../../widgets/side_navigation_rail.dart';
 import '../../../widgets/tv_browse_rail.dart';
 import '../../../widgets/tv_spotlight_background.dart';
 import '../../main_screen.dart';
@@ -320,22 +321,32 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     final maxSpotlightBottom = (size.height - spotlightTop - (96 * scale)).clamp(0.0, double.infinity).toDouble();
     final spotlightBottom = desiredSpotlightBottom > maxSpotlightBottom ? maxSpotlightBottom : desiredSpotlightBottom;
     final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
+    final sidebarBleed = svc.read(SettingsService.alwaysKeepSidebarOpen)
+        ? 0.0
+        : SideNavigationRailState.collapsedWidthForContext(context);
 
     return Material(
       color: theme.scaffoldBackgroundColor,
       child: SizedBox.expand(
         child: Stack(
           fit: StackFit.expand,
+          clipBehavior: Clip.none,
           children: [
-            TvSpotlightBackground(
-              item: spotlight,
-              client: client,
-              hideSpoilers: svc.read(SettingsService.hideSpoilers),
-              contentTop: spotlightTop,
-              contentBottom: spotlightBottom,
-              contentLeft: spotlightLeft,
-              compact: true,
-              showPrimaryAction: false,
+            Positioned(
+              top: 0,
+              bottom: 0,
+              left: -sidebarBleed,
+              right: 0,
+              child: TvSpotlightBackground(
+                item: spotlight,
+                client: client,
+                hideSpoilers: svc.read(SettingsService.hideSpoilers),
+                contentTop: spotlightTop,
+                contentBottom: spotlightBottom,
+                contentLeft: spotlightLeft + sidebarBleed,
+                compact: true,
+                showPrimaryAction: false,
+              ),
             ),
             if (tvHubs.isNotEmpty)
               Positioned(
@@ -354,6 +365,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
                   onNavigateToSidebar: _navigateToSidebar,
                   onBack: widget.onBack,
                   tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+                  backgroundBleedLeft: sidebarBleed,
                 ),
               ),
           ],
