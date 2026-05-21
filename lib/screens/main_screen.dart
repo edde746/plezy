@@ -60,6 +60,7 @@ class MainScreenFocusScope extends InheritedWidget {
   final VoidCallback focusSidebar;
   final VoidCallback focusContent;
   final bool isSidebarFocused;
+  final double sideNavigationWidth;
   final void Function(String libraryGlobalKey)? selectLibrary;
 
   const MainScreenFocusScope({
@@ -67,6 +68,7 @@ class MainScreenFocusScope extends InheritedWidget {
     required this.focusSidebar,
     required this.focusContent,
     required this.isSidebarFocused,
+    required this.sideNavigationWidth,
     this.selectLibrary,
     required super.child,
   });
@@ -75,9 +77,15 @@ class MainScreenFocusScope extends InheritedWidget {
     return context.dependOnInheritedWidgetOfExactType<MainScreenFocusScope>();
   }
 
+  static double sideNavigationBleedOf(BuildContext context, {required bool alwaysKeepSidebarOpen}) {
+    final width = of(context)?.sideNavigationWidth;
+    if (width != null) return width;
+    return alwaysKeepSidebarOpen ? 0.0 : SideNavigationRailState.collapsedWidthForContext(context);
+  }
+
   @override
   bool updateShouldNotify(MainScreenFocusScope oldWidget) {
-    return isSidebarFocused != oldWidget.isSidebarFocused;
+    return isSidebarFocused != oldWidget.isSidebarFocused || sideNavigationWidth != oldWidget.sideNavigationWidth;
   }
 }
 
@@ -150,6 +158,7 @@ class _MainScreenState extends State<MainScreen>
   final FocusScopeNode _sidebarFocusScope = FocusScopeNode(debugLabel: 'Sidebar');
   final FocusScopeNode _contentFocusScope = FocusScopeNode(debugLabel: 'Content');
   bool _isSidebarFocused = false;
+  bool _isSidebarInteractionExpanded = false;
 
   /// The binder is now owned by a top-level [Provider] (see main.dart) so
   /// the splash can await its first settle before navigating here. We just
@@ -893,6 +902,18 @@ class _MainScreenState extends State<MainScreen>
     });
   }
 
+  void _handleSidebarInteractionExpandedChanged(bool expanded) {
+    if (_isSidebarInteractionExpanded == expanded) return;
+    setState(() => _isSidebarInteractionExpanded = expanded);
+  }
+
+  double _sideNavigationWidth(BuildContext context, {required bool alwaysExpanded}) {
+    final isExpanded = alwaysExpanded || _isSidebarFocused || _isSidebarInteractionExpanded;
+    return isExpanded
+        ? SideNavigationRailState.expandedWidth
+        : SideNavigationRailState.collapsedWidthForContext(context);
+  }
+
   /// Suppress stray back events after a child route pops.
   /// On Android TV the platform popRoute can arrive before the key events,
   /// so BackKeySuppressorObserver misses them and they leak into _handleBackKey.
@@ -1211,9 +1232,7 @@ class _MainScreenState extends State<MainScreen>
       return SettingValueBuilder<bool>(
         pref: SettingsService.alwaysKeepSidebarOpen,
         builder: (context, alwaysExpanded, _) {
-          final contentLeftPadding = alwaysExpanded
-              ? SideNavigationRailState.expandedWidth
-              : SideNavigationRailState.collapsedWidthForContext(context);
+          final targetContentLeftPadding = _sideNavigationWidth(context, alwaysExpanded: alwaysExpanded);
 
           return OverlaySheetHost(
             child: PopScope(
@@ -1228,59 +1247,65 @@ class _MainScreenState extends State<MainScreen>
                   if (searchResult == KeyEventResult.handled) return searchResult;
                   return _handleBackKey(event);
                 },
-                child: MainScreenFocusScope(
-                  focusSidebar: _focusSidebar,
-                  focusContent: _focusContent,
-                  isSidebarFocused: _isSidebarFocused,
-                  selectLibrary: _selectLibrary,
-                  child: SideNavigationScope(
-                    child: Stack(
-                      children: [
-                        // Content with animated left padding based on sidebar state
-                        Positioned.fill(
-                          child: AnimatedPadding(
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeOutCubic,
-                            padding: EdgeInsets.only(left: contentLeftPadding),
-                            child: FocusScope(
-                              node: _contentFocusScope,
-                              // No autofocus - we control focus programmatically to prevent
-                              // autofocus from stealing focus back after setState() rebuilds
-                              child: _buildTickerAwareStack(),
-                            ),
-                          ),
-                        ),
-                        // Sidebar overlays content when expanded (unless always expanded)
-                        Positioned(
-                          top: 0,
-                          bottom: 0,
-                          left: 0,
-                          child: FocusScope(
-                            node: _sidebarFocusScope,
-                            child: SideNavigationRail(
-                              key: _sideNavKey,
-                              selectedTab: _currentTab,
-                              selectedLibraryKey: _selectedLibraryGlobalKey,
-                              isOfflineMode: _isOffline,
-                              isSidebarFocused: _isSidebarFocused,
-                              alwaysExpanded: alwaysExpanded,
-                              isReconnecting: _isReconnecting,
-                              onDestinationSelected: (tab) {
-                                _selectTab(tab);
-                                _focusContent();
-                              },
-                              onLibrarySelected: (key) {
-                                _selectLibrary(key);
-                                _focusContent();
-                              },
-                              onNavigateToContent: _focusContent,
-                              onReconnect: _triggerReconnect,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                child: TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOutCubic,
+                  tween: Tween<double>(end: targetContentLeftPadding),
+                  child: FocusScope(
+                    node: _contentFocusScope,
+                    // No autofocus - we control focus programmatically to prevent
+                    // autofocus from stealing focus back after setState() rebuilds
+                    child: _buildTickerAwareStack(),
                   ),
+                  builder: (context, contentLeftPadding, contentChild) {
+                    return MainScreenFocusScope(
+                      focusSidebar: _focusSidebar,
+                      focusContent: _focusContent,
+                      isSidebarFocused: _isSidebarFocused,
+                      sideNavigationWidth: contentLeftPadding,
+                      selectLibrary: _selectLibrary,
+                      child: SideNavigationScope(
+                        child: Stack(
+                          children: [
+                            Positioned.fill(
+                              child: Padding(
+                                padding: EdgeInsets.only(left: contentLeftPadding),
+                                child: contentChild!,
+                              ),
+                            ),
+                            Positioned(
+                              top: 0,
+                              bottom: 0,
+                              left: 0,
+                              child: FocusScope(
+                                node: _sidebarFocusScope,
+                                child: SideNavigationRail(
+                                  key: _sideNavKey,
+                                  selectedTab: _currentTab,
+                                  selectedLibraryKey: _selectedLibraryGlobalKey,
+                                  isOfflineMode: _isOffline,
+                                  isSidebarFocused: _isSidebarFocused,
+                                  alwaysExpanded: alwaysExpanded,
+                                  isReconnecting: _isReconnecting,
+                                  onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
+                                  onDestinationSelected: (tab) {
+                                    _selectTab(tab);
+                                    _focusContent();
+                                  },
+                                  onLibrarySelected: (key) {
+                                    _selectLibrary(key);
+                                    _focusContent();
+                                  },
+                                  onNavigateToContent: _focusContent,
+                                  onReconnect: _triggerReconnect,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

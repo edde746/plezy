@@ -24,14 +24,18 @@ import 'package:plezy/providers/hidden_libraries_provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/discover_screen.dart';
+import 'package:plezy/screens/main_screen.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/watch_together/watch_together.dart';
+import 'package:plezy/widgets/side_navigation_rail.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
+import 'package:plezy/widgets/tv_spotlight_background.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
@@ -113,7 +117,13 @@ void main() {
           ],
           child: MaterialApp(
             theme: monoTheme(dark: true),
-            home: SizedBox(width: 1280, height: 720, child: DiscoverScreen(key: discoverKey)),
+            home: MainScreenFocusScope(
+              focusSidebar: () {},
+              focusContent: () {},
+              isSidebarFocused: false,
+              sideNavigationWidth: SideNavigationRailState.expandedWidth,
+              child: SizedBox(width: 1280, height: 720, child: DiscoverScreen(key: discoverKey)),
+            ),
           ),
         ),
       ),
@@ -121,6 +131,20 @@ void main() {
 
     await tester.pumpAndSettle();
     expect(find.byType(TvBrowseRail), findsOneWidget);
+
+    final scale = TvLayoutConstants.scaleForSize(const Size(1280, 720));
+    final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
+    final spotlightBackground = tester.widget<TvSpotlightBackground>(find.byType(TvSpotlightBackground));
+    expect(spotlightBackground.contentLeft, closeTo(spotlightLeft + SideNavigationRailState.expandedWidth, 0.001));
+    expect(
+      tester.widget<TvBrowseRail>(find.byType(TvBrowseRail)).backgroundBleedLeft,
+      SideNavigationRailState.expandedWidth,
+    );
+
+    final backgroundPosition = tester.widget<Positioned>(
+      find.ancestor(of: find.byType(TvSpotlightBackground), matching: find.byType(Positioned)).first,
+    );
+    expect(backgroundPosition.left, -SideNavigationRailState.expandedWidth);
 
     tester.state<FocusableActionBarState>(find.byType(FocusableActionBar)).requestFocusOnFirst();
     await tester.pump();

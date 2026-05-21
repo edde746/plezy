@@ -16,7 +16,6 @@ import '../../../utils/provider_extensions.dart';
 import '../../../utils/watch_state_notifier.dart';
 import '../../../widgets/hub_section.dart';
 import '../../../widgets/settings_builder.dart';
-import '../../../widgets/side_navigation_rail.dart';
 import '../../../widgets/tv_browse_rail.dart';
 import '../../../widgets/tv_spotlight_background.dart';
 import '../../main_screen.dart';
@@ -321,9 +320,10 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     final maxSpotlightBottom = (size.height - spotlightTop - (96 * scale)).clamp(0.0, double.infinity).toDouble();
     final spotlightBottom = desiredSpotlightBottom > maxSpotlightBottom ? maxSpotlightBottom : desiredSpotlightBottom;
     final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
-    final sidebarBleed = svc.read(SettingsService.alwaysKeepSidebarOpen)
-        ? 0.0
-        : SideNavigationRailState.collapsedWidthForContext(context);
+    final sidebarBleed = MainScreenFocusScope.sideNavigationBleedOf(
+      context,
+      alwaysKeepSidebarOpen: svc.read(SettingsService.alwaysKeepSidebarOpen),
+    );
 
     return Material(
       color: theme.scaffoldBackgroundColor,

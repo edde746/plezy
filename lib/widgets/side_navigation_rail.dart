@@ -169,6 +169,9 @@ class SideNavigationRail extends StatefulWidget {
   /// Called when RIGHT arrow is pressed to navigate to content without selecting.
   final VoidCallback? onNavigateToContent;
 
+  /// Called when hover/touch expansion changes, so the shell can reserve width.
+  final ValueChanged<bool>? onInteractionExpandedChanged;
+
   /// Called when the user taps the reconnect button in offline mode.
   final VoidCallback? onReconnect;
 
@@ -183,6 +186,7 @@ class SideNavigationRail extends StatefulWidget {
     required this.onDestinationSelected,
     required this.onLibrarySelected,
     this.onNavigateToContent,
+    this.onInteractionExpandedChanged,
     this.onReconnect,
   });
 
@@ -195,6 +199,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
 
   bool _isHovered = false;
   bool _isTouchExpanded = false;
+  bool _lastReportedInteractionExpanded = false;
   Timer? _collapseTimer;
   static const double collapsedWidth = 80.0;
   static const double tvCollapsedWidth = 48.0;
@@ -241,6 +246,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   /// Whether the sidebar should be expanded (always, hover, or focus)
   bool get _shouldExpand => widget.alwaysExpanded || _isHovered || _isTouchExpanded || widget.isSidebarFocused;
 
+  bool get _interactionExpanded => _isHovered || _isTouchExpanded;
+
   /// macOS has the system green button; mobile/TV have no OS fullscreen toggle.
   bool get _showFullscreenToggle => Platform.isWindows || Platform.isLinux;
 
@@ -268,16 +275,36 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     super.didUpdateWidget(oldWidget);
     // Auto-collapse after navigation (selection changed)
     if (oldWidget.selectedTab != widget.selectedTab || oldWidget.selectedLibraryKey != widget.selectedLibraryKey) {
+      final wasInteractionExpanded = _interactionExpanded;
       _isTouchExpanded = false;
+      if (wasInteractionExpanded != _interactionExpanded) {
+        _scheduleInteractionExpandedNotification();
+      }
     }
+  }
+
+  void _scheduleInteractionExpandedNotification() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _notifyInteractionExpandedIfNeeded();
+    });
+  }
+
+  void _notifyInteractionExpandedIfNeeded() {
+    final expanded = _interactionExpanded;
+    if (_lastReportedInteractionExpanded == expanded) return;
+    _lastReportedInteractionExpanded = expanded;
+    widget.onInteractionExpandedChanged?.call(expanded);
   }
 
   void _onHoverEnter() {
     _collapseTimer?.cancel();
-    _isTouchExpanded = false; // Mouse takes over
-    if (!_isHovered) {
-      setState(() => _isHovered = true);
-    }
+    if (_isHovered && !_isTouchExpanded) return;
+    setState(() {
+      _isTouchExpanded = false; // Mouse takes over
+      _isHovered = true;
+    });
+    _notifyInteractionExpandedIfNeeded();
   }
 
   void _onHoverExit() {
@@ -285,8 +312,15 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     _collapseTimer = Timer(_collapseDelay, () {
       if (mounted && _isHovered) {
         setState(() => _isHovered = false);
+        _notifyInteractionExpandedIfNeeded();
       }
     });
+  }
+
+  void _expandForTouch() {
+    if (_isTouchExpanded) return;
+    setState(() => _isTouchExpanded = true);
+    _notifyInteractionExpandedIfNeeded();
   }
 
   /// The key of the last focused sidebar item (for pre-capture before focus shifts).
@@ -472,6 +506,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   void collapse() {
     if (_isTouchExpanded) {
       setState(() => _isTouchExpanded = false);
+      _notifyInteractionExpandedIfNeeded();
     }
   }
 
@@ -539,7 +574,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final horizontalPadding = horizontalPaddingForContext(context, isCollapsed: isCollapsed);
     final itemHorizontalPadding = itemHorizontalPaddingForContext(context, isCollapsed: isCollapsed);
     final hasLiveTv = context.watch<MultiServerProvider>().hasLiveTv;
-    final surfaceOpacity = isCollapsed && PlatformDetector.isTV() ? 0.0 : 1.0;
+    final surfaceOpacity = PlatformDetector.isTV() ? 0.0 : 1.0;
 
     // Listen to fullscreen + groupLibrariesByServer setting so the rail
     // rebuilds when the user toggles "Group libraries by server" in Appearance.
@@ -584,6 +619,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           onTapOutside: (_) {
             if (_isTouchExpanded) {
               setState(() => _isTouchExpanded = false);
+              _notifyInteractionExpandedIfNeeded();
             }
           },
           child: MouseRegion(
@@ -592,7 +628,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             onExit: (_) => _onHoverExit(),
             child: GestureDetector(
               behavior: HitTestBehavior.opaque,
-              onTap: isCollapsed ? () => setState(() => _isTouchExpanded = true) : null,
+              onTap: isCollapsed ? _expandForTouch : null,
               child: AnimatedContainer(
                 duration: t.normal,
                 curve: Curves.easeOutCubic,

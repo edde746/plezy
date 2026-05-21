@@ -1,3 +1,5 @@
+import 'dart:ui' show PointerDeviceKind;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -120,6 +122,121 @@ void main() {
       find.descendant(of: selectedItem, matching: find.byType(Container)).first,
     );
     expect((selectedItemContainer.decoration as BoxDecoration?)?.color, isNull);
+  });
+
+  testWidgets('expanded TV rail keeps its surface transparent', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    await SettingsService.getInstance();
+
+    final librariesProvider = LibrariesProvider();
+    addTearDown(librariesProvider.dispose);
+
+    final hiddenLibrariesProvider = HiddenLibrariesProvider();
+    await hiddenLibrariesProvider.ensureInitialized();
+    addTearDown(hiddenLibrariesProvider.dispose);
+
+    final manager = MultiServerManager();
+    final aggregation = DataAggregationService(manager);
+    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    addTearDown(multiServerProvider.dispose);
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
+            ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+          ],
+          child: MaterialApp(
+            theme: ThemeData(extensions: const [_testTokens]),
+            home: Scaffold(
+              body: SideNavigationRail(
+                selectedTab: NavigationTabId.discover,
+                isSidebarFocused: true,
+                alwaysExpanded: false,
+                onDestinationSelected: (_) {},
+                onLibrarySelected: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
+    expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
+
+    final surfaceOpacity = tester
+        .widgetList<AnimatedOpacity>(
+          find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedOpacity)),
+        )
+        .singleWhere((widget) => widget.child is ColoredBox);
+    expect(surfaceOpacity.opacity, 0.0);
+  });
+
+  testWidgets('reports interaction expansion for shell content push', (tester) async {
+    await SettingsService.getInstance();
+
+    final librariesProvider = LibrariesProvider();
+    addTearDown(librariesProvider.dispose);
+
+    final hiddenLibrariesProvider = HiddenLibrariesProvider();
+    await hiddenLibrariesProvider.ensureInitialized();
+    addTearDown(hiddenLibrariesProvider.dispose);
+
+    final manager = MultiServerManager();
+    final aggregation = DataAggregationService(manager);
+    final multiServerProvider = MultiServerProvider(manager, aggregation);
+    addTearDown(multiServerProvider.dispose);
+
+    final reports = <bool>[];
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<LibrariesProvider>.value(value: librariesProvider),
+            ChangeNotifierProvider<HiddenLibrariesProvider>.value(value: hiddenLibrariesProvider),
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+          ],
+          child: MaterialApp(
+            theme: ThemeData(extensions: const [_testTokens]),
+            home: Scaffold(
+              body: SideNavigationRail(
+                selectedTab: NavigationTabId.discover,
+                isSidebarFocused: false,
+                alwaysExpanded: false,
+                onInteractionExpandedChanged: reports.add,
+                onDestinationSelected: (_) {},
+                onLibrarySelected: (_) {},
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final rail = find.descendant(of: find.byType(SideNavigationRail), matching: find.byType(AnimatedContainer)).first;
+    expect(tester.getSize(rail).width, SideNavigationRailState.collapsedWidth);
+
+    final gesture = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    addTearDown(gesture.removePointer);
+    await gesture.addPointer(location: const Offset(799, 599));
+    await tester.pump();
+    await gesture.moveTo(tester.getCenter(rail));
+    await tester.pumpAndSettle();
+
+    expect(reports.last, isTrue);
+    expect(tester.getSize(rail).width, SideNavigationRailState.expandedWidth);
+
+    await gesture.moveTo(tester.getBottomRight(rail) + const Offset(100, -10));
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(reports.last, isFalse);
   });
 
   testWidgets('D-pad down from a hidden server header focuses that hidden server library', (tester) async {
