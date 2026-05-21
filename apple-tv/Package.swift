@@ -14,8 +14,8 @@ let package = Package(
     ],
     dependencies: [
         .package(
-            url: "https://github.com/MazeDev7/MPVKitAM",
-            revision: "42dcc3123000361d0be54fbaec981043b77e1e05"
+            url: "https://github.com/MazeDev7/MPVKit",
+            revision: "0d0931fbbb25a3483a7edb46babd3f2f55abeefc"
         ),
     ],
     targets: [

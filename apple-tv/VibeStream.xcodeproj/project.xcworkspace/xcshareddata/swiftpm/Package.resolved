@@ -2,11 +2,11 @@
   "originHash" : "e499b2215a68ae4acc51d7472142787e82a07e34a4a8e04a5fdd0aef8a9ab0e2",
   "pins" : [
     {
-      "identity" : "mpvkitam",
+      "identity" : "mpvkit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/MazeDev7/MPVKitAM",
+      "location" : "https://github.com/MazeDev7/MPVKit",
       "state" : {
-        "revision" : "42dcc3123000361d0be54fbaec981043b77e1e05"
+        "revision" : "0d0931fbbb25a3483a7edb46babd3f2f55abeefc"
       }
     },
     {

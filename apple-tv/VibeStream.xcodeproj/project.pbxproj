@@ -766,7 +766,7 @@
 			mainGroup = FF044109D9C6961DF055DDF4;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				DDF0868DF0AFEC88735040E8 /* XCRemoteSwiftPackageReference "MPVKitAM" */,
+				DDF0868DF0AFEC88735040E8 /* XCRemoteSwiftPackageReference "MPVKit" */,
 				DABAE77E025E17695D7A397C /* XCRemoteSwiftPackageReference "vlckit-spm" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -1295,12 +1295,12 @@
 				minimumVersion = 3.5.1;
 			};
 		};
-		DDF0868DF0AFEC88735040E8 /* XCRemoteSwiftPackageReference "MPVKitAM" */ = {
+		DDF0868DF0AFEC88735040E8 /* XCRemoteSwiftPackageReference "MPVKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/MazeDev7/MPVKitAM";
+			repositoryURL = "https://github.com/MazeDev7/MPVKit";
 			requirement = {
 				kind = revision;
-				revision = 42dcc3123000361d0be54fbaec981043b77e1e05;
+				revision = 0d0931fbbb25a3483a7edb46babd3f2f55abeefc;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -1308,7 +1308,7 @@
 /* Begin XCSwiftPackageProductDependency section */
 		92708E81D8AC8891344BC221 /* MPVKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = DDF0868DF0AFEC88735040E8 /* XCRemoteSwiftPackageReference "MPVKitAM" */;
+			package = DDF0868DF0AFEC88735040E8 /* XCRemoteSwiftPackageReference "MPVKit" */;
 			productName = MPVKit;
 		};
 		F861589503373DEF962B5E4F /* VLCKitSPM */ = {
