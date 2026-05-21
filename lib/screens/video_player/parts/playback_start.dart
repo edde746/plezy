@@ -292,13 +292,13 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
         final shouldAutoPlay = !shouldHoldPlaybackStart && (isExoPlayer || !hasExternalSubs);
         if (needsAndroidMpvStartupRefresh) {
-          appLogger.d('Frame rate matching: opening Android MPV paused for startup buffer flush');
+          appLogger.d('Frame rate matching: opening Android MPV paused for startup decoder refresh');
           androidMpvStartupReady = currentPlayer.streams.playbackRestart.first
               .then((_) => true)
               .timeout(
                 const Duration(seconds: 15),
                 onTimeout: () {
-                  appLogger.w('Timed out waiting for Android MPV startup frame before buffer flush');
+                  appLogger.w('Timed out waiting for Android MPV startup frame before decoder refresh');
                   return false;
                 },
               );
@@ -503,15 +503,15 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             ),
           );
         } else if (needsAndroidMpvStartupRefresh && mounted && player == currentPlayer) {
-          appLogger.d('Frame rate matching: waiting for Android MPV startup frame before buffer flush');
+          appLogger.d('Frame rate matching: waiting for Android MPV startup frame before decoder refresh');
           final startupReady = androidMpvStartupReady == null ? false : await androidMpvStartupReady;
           if (mounted && player == currentPlayer) {
             if (startupReady) {
               await Future<void>.delayed(const Duration(milliseconds: 100));
               await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'pre-load frame rate startup');
-              await resumeAfterStartupGate('startup buffer flush');
+              await resumeAfterStartupGate('startup decoder refresh');
             } else {
-              appLogger.w('Frame rate matching: skipping Android MPV buffer flush because startup frame timed out');
+              appLogger.w('Frame rate matching: skipping Android MPV decoder refresh because startup frame timed out');
               await resumeAfterStartupGate('startup frame timeout');
             }
           }
@@ -519,7 +519,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           unawaited(
             Sentry.addBreadcrumb(
               Breadcrumb(
-                message: 'Android MPV startup buffer flush after pre-load frame-rate switch',
+                message: 'Android MPV startup decoder refresh after pre-load frame-rate switch',
                 category: 'player',
               ),
             ),

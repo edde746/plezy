@@ -142,7 +142,7 @@ class FrameRateManager(
     cb(switched)
   }
 
-  private fun registerDisplayListener(extraDelayMs: Long, onComplete: (switched: Boolean) -> Unit) {
+  private fun registerDisplayListener(fps: Float, extraDelayMs: Long, onComplete: (switched: Boolean) -> Unit) {
     // Resolve any previous pending op before starting a new one.
     firePendingCompletion("superseded", switched = false)
     pendingCompletion = onComplete
@@ -157,7 +157,7 @@ class FrameRateManager(
         getDisplayManager().unregisterDisplayListener(this)
         displayListener = null
 
-        val settle = Runnable { firePendingCompletion("display settled", switched = true) }
+        val settle = Runnable { firePendingCompletion("display settled", switched = currentRateMatch(fps) != null) }
         pendingSettleRunnable = settle
         handler.postDelayed(settle, DISPLAY_SETTLE_MS + extraDelayMs)
       }
@@ -167,7 +167,7 @@ class FrameRateManager(
     // Watchdog: if the TV never signals a display change (silently ignoring
     // the mode request), still complete after a bounded wait so the caller
     // doesn't hang.
-    val watchdog = Runnable { firePendingCompletion("watchdog", switched = true) }
+    val watchdog = Runnable { firePendingCompletion("watchdog", switched = currentRateMatch(fps) != null) }
     watchdogRunnable = watchdog
     handler.postDelayed(watchdog, DISPLAY_SETTLE_MS + extraDelayMs + WATCHDOG_MARGIN_MS)
   }
@@ -295,7 +295,7 @@ class FrameRateManager(
         Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
         Surface.CHANGE_FRAME_RATE_ALWAYS
       )
-      registerDisplayListener(extraDelayMs, onComplete)
+      registerDisplayListener(fps, extraDelayMs, onComplete)
     } else {
       val userPreference = getDisplayManager().matchContentFrameRateUserPreference
       if (userPreference == DisplayManager.MATCH_CONTENT_FRAMERATE_ALWAYS) {
@@ -305,7 +305,7 @@ class FrameRateManager(
           Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
           Surface.CHANGE_FRAME_RATE_ALWAYS
         )
-        registerDisplayListener(extraDelayMs, onComplete)
+        registerDisplayListener(fps, extraDelayMs, onComplete)
       } else {
         log("non-seamless switch not allowed (preference=$userPreference), using seamless-only")
         surface.setFrameRate(
@@ -361,6 +361,6 @@ class FrameRateManager(
       attrs.preferredDisplayModeId = modeToUse.modeId
       activity.window?.attributes = attrs
     }
-    registerDisplayListener(extraDelayMs, onComplete)
+    registerDisplayListener(fps, extraDelayMs, onComplete)
   }
 }

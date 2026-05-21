@@ -147,6 +147,46 @@ void main() {
         },
       );
     });
+
+    test('MPV refresh seek preserves timeline offset position', () async {
+      final calls = <MethodCall>[];
+
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            const timelineStart = Duration(milliseconds: 143894);
+            await player.open(
+              Media('https://example.test/transcode.mkv'),
+              timelineOffset: timelineStart,
+              timelineDuration: const Duration(seconds: 1502),
+            );
+
+            expect(player.state.position, timelineStart);
+
+            await player.seek(timelineStart);
+
+            final seekCall = calls.lastWhere((call) => call.method == 'command');
+            final args = Map<Object?, Object?>.from(seekCall.arguments as Map)['args'] as List;
+            expect(args, ['seek', '0.0', 'absolute']);
+            expect(player.state.position, timelineStart);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
   });
 }
 
