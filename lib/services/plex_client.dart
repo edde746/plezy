@@ -2945,6 +2945,10 @@ class PlexClient
       '&protocol=http&container=mkv&videoCodec=h264%2Chevc%2C*'
       '&audioCodec=opus%2Cvorbis%2Cflac%2C*&subtitleCodec=ass%2Cpgs%2Cvobsub%2C*)',
     );
+    profileExtraClauses.add(
+      'add-transcode-target-settings(type=videoProfile&context=streaming'
+      '&protocol=http&CopyMatroskaAttachments=true)',
+    );
     final clientProfileExtra = profileExtraClauses.join('+');
 
     // HTTP/MKV matches Plex Desktop and lets MPV see embedded subtitle streams.
