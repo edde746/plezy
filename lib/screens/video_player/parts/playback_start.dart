@@ -193,7 +193,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       final needsAndroidMpvFrameRateStartup = willAutoSwitch && isAndroidMpv && result.videoUrl != null;
       var didPreLoadFrameRateSwitch = false;
       var needsPostOpenFrameRateSwitch = willAutoSwitch && !needsAndroidMpvFrameRateStartup;
-      var needsAndroidMpvStartupRefresh = needsAndroidMpvFrameRateStartup;
+      var needsAndroidMpvStartupRefresh = false;
       final hasExternalSubs = result.externalSubtitles.isNotEmpty;
       Future<bool>? androidMpvStartupReady;
 
@@ -220,6 +220,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           if (!mounted || player != currentPlayer) return;
           if (didPreLoadFrameRateSwitch) {
             _frameRateMatchingApplied = true;
+            needsAndroidMpvStartupRefresh = true;
           }
           appLogger.d(
             'Frame rate matching: pre-load MPV switch complete '
