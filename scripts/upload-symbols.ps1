@@ -68,7 +68,7 @@ if ([string]::IsNullOrEmpty($env:SENTRY_URL)) {
 }
 
 if ([string]::IsNullOrEmpty($env:SENTRY_RELEASE)) {
-    $env:SENTRY_RELEASE = "plezy@$(git rev-parse --short HEAD)"
+    $env:SENTRY_RELEASE = "vibe@$(git rev-parse --short HEAD)"
 }
 
 if ([string]::IsNullOrEmpty($env:SENTRY_LOG_LEVEL)) {

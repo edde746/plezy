@@ -48,7 +48,7 @@ body:
       required: true
 
   - type: input
-    id: plezy-version
+    id: vibe-version
     attributes:
       label: Vibe Version
       description: Check the app settings for the version number and paste it here

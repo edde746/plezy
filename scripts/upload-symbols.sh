@@ -79,7 +79,7 @@ if ! found_symbol_file; then
 fi
 
 export SENTRY_URL="${SENTRY_URL:-${BUGS_URL:-https://bugs.plezy.app}}"
-export SENTRY_RELEASE="${SENTRY_RELEASE:-plezy@$(git rev-parse --short HEAD)}"
+export SENTRY_RELEASE="${SENTRY_RELEASE:-vibe@$(git rev-parse --short HEAD)}"
 export SENTRY_LOG_LEVEL="${SENTRY_LOG_LEVEL:-info}"
 
 if [ -z "${SENTRY_AUTH_TOKEN:-}" ] && [ -n "${BUGS_ADMIN_TOKEN:-}" ]; then
