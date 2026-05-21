@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "edition-unrated-edition.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

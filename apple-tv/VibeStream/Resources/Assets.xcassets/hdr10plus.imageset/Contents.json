@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "hdr10plus.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

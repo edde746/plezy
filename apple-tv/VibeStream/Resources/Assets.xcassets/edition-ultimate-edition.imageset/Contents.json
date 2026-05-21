@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "edition-ultimate-edition.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

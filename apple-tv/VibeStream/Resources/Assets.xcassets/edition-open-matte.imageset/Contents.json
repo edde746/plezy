@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "edition-open-matte.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

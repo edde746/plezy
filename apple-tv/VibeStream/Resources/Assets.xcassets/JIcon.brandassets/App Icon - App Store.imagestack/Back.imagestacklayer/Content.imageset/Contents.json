@@ -1,0 +1,17 @@
+{
+  "images" : [
+    {
+      "filename" : "j_appstore_back.png",
+      "idiom" : "tv",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "tv",
+      "scale" : "2x"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
