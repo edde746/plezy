@@ -114,6 +114,18 @@ void main() {
     });
   });
 
+  group('formatSeasonEpisodeLabel', () {
+    test('formats season and episode numbers', () {
+      expect(formatSeasonEpisodeLabel(1, 2), 'S1 E2');
+      expect(formatSeasonEpisodeLabel(0, 10), 'S0 E10');
+    });
+
+    test('requires both season and episode numbers', () {
+      expect(formatSeasonEpisodeLabel(null, 2), isNull);
+      expect(formatSeasonEpisodeLabel(1, null), isNull);
+    });
+  });
+
   group('formatPlaybackRate', () {
     test('1x formats as "1x" without normalAtOne', () {
       expect(formatPlaybackRate(1.0), '1x');

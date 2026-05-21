@@ -166,8 +166,8 @@ class TvSpotlightBackground extends StatelessWidget {
         if (summary != null && summary.isNotEmpty) ...[
           SizedBox(height: _sectionGap(scale)),
           Text(
-            _summaryText(media, summary),
-            maxLines: compact ? 2 : 4,
+            summary,
+            maxLines: compact ? 3 : 4,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: Colors.white.withValues(alpha: 0.78),
@@ -178,7 +178,7 @@ class TvSpotlightBackground extends StatelessWidget {
         ] else if (shouldHideSpoiler && media.isEpisode) ...[
           SizedBox(height: _sectionGap(scale)),
           Text(
-            _episodePrefix(media) ?? media.title ?? '',
+            media.title ?? '',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -250,12 +250,17 @@ class TvSpotlightBackground extends StatelessWidget {
 
   Widget _buildMetadataLine(BuildContext context, MediaItem media) {
     final scale = _scale(context);
+    final episodeLabel = formatSeasonEpisodeLabel(media.parentIndex, media.index);
     final parts = [
+      if (media.isEpisode && episodeLabel != null) episodeLabel,
       if (media.isMovie) t.discover.movie else if (media.isShow) t.discover.tvShow,
       if (media.rating != null) '★ ${formatRating(media.rating!)}',
       if (media.contentRating != null) formatContentRating(media.contentRating!),
       if (media.durationMs != null) formatDurationTextual(media.durationMs!),
-      if (media.year != null) media.year.toString(),
+      if (media.isEpisode && media.originallyAvailableAt != null)
+        formatFullDate(media.originallyAvailableAt!)
+      else if (media.year != null)
+        media.year.toString(),
     ];
     return Text(
       parts.join('  •  '),
@@ -309,16 +314,5 @@ class TvSpotlightBackground extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _summaryText(MediaItem media, String summary) {
-    final prefix = _episodePrefix(media);
-    if (prefix == null) return summary;
-    return '$prefix: $summary';
-  }
-
-  String? _episodePrefix(MediaItem media) {
-    if (!media.isEpisode || media.parentIndex == null || media.index == null) return null;
-    return 'S${media.parentIndex}, E${media.index}';
   }
 }

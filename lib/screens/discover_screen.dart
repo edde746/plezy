@@ -1500,8 +1500,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
           );
     final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
-    final minimumSpotlightBottom = railHeight + (16 * scale);
-    final baseSpotlightBottom = (size.height * 0.53).clamp(180.0, 900.0).toDouble();
+    final minimumSpotlightBottom = railHeight + (8 * scale);
+    final baseSpotlightBottom = (size.height * 0.48).clamp(160.0, 820.0).toDouble();
     final desiredSpotlightBottom = minimumSpotlightBottom > baseSpotlightBottom
         ? minimumSpotlightBottom
         : baseSpotlightBottom;

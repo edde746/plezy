@@ -173,6 +173,11 @@ String toBulletedString(List<String> parts) {
   return parts.join(' · ');
 }
 
+String? formatSeasonEpisodeLabel(int? season, int? episode) {
+  if (season == null || episode == null) return null;
+  return 'S$season E$episode';
+}
+
 String formatRating(double value) =>
     value == value.truncateToDouble() ? value.toInt().toString() : value.toStringAsFixed(1);
 

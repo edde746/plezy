@@ -77,9 +77,10 @@ import '../widgets/tv_spotlight_background.dart';
 
 part 'media_detail/action_buttons.dart';
 
-const double _tvDetailTallPosterScale = 0.84;
+const double _tvDetailTallPosterScale = TvBrowseRailLayout.compactTallPosterScale;
+const double _tvDetailEpisodeThumbnailScale = TvBrowseRailLayout.compactEpisodeThumbnailScale;
 const double _tvDetailActionSize = 46;
-const double _tvDetailActionRailGap = 8;
+const double _tvDetailActionRailGap = 4;
 const String _tvDetailSeasonHubIdPrefix = 'detail_season_';
 const String _tvDetailActorsHubId = 'detail_actors';
 const String _tvDetailActorPersonIdRawKey = 'tvDetailActorPersonId';
@@ -667,6 +668,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _scrollController = ScrollController();
     _scrollController.addListener(_onScroll);
     _extrasFocusNode = FocusNode(debugLabel: 'extras_row');
+    _extrasFocusNode.addListener(_handleExtrasFocusChange);
     _playButtonFocusNode = FocusNode(debugLabel: 'play_button');
     _ratingChipFocusNode = FocusNode(debugLabel: 'rating_chip');
     _overviewFocusNode = FocusNode(debugLabel: 'overview');
@@ -791,6 +793,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _scrollController.dispose();
     _scrollOffset.dispose();
     _extrasScrollController.dispose();
+    _extrasFocusNode.removeListener(_handleExtrasFocusChange);
     _extrasFocusNode.dispose();
     _playButtonFocusNode.dispose();
     _ratingChipFocusNode.dispose();
@@ -2111,6 +2114,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return KeyEventResult.ignored;
   }
 
+  void _handleExtrasFocusChange() {
+    if (!_extrasFocusNode.hasFocus) _resetExtrasLongPressState();
+  }
+
+  void _resetExtrasLongPressState() {
+    _selectKeyTimer?.cancel();
+    _isSelectKeyDown = false;
+    _longPressTriggered = false;
+  }
+
   /// Handle key events for the cast row (locked focus pattern)
   KeyEventResult _handleCastKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
@@ -2873,6 +2886,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               onNavigateUp: _focusTvDetailActionRow,
               onBack: _popMediaDetailIfBackNotSuppressed,
               tallPosterScale: _tvDetailTallPosterScale,
+              widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
               initialHubId: _tvDetailInitialHubId(metadata),
               initialItemId: _tvDetailInitialItemId(metadata),
               episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
@@ -3077,12 +3091,18 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Widget _buildTvDetailMetadataLine(BuildContext context, MediaItem metadata, double scale) {
+    final lineMetadata = _tvDetailFocusedEpisode ?? metadata;
+    final episodeLabel = formatSeasonEpisodeLabel(lineMetadata.parentIndex, lineMetadata.index);
     final parts = [
-      if (metadata.isMovie) t.discover.movie else if (metadata.isShow) t.discover.tvShow,
-      if (metadata.rating != null) '★ ${formatRating(metadata.rating!)}',
-      if (metadata.contentRating != null) formatContentRating(metadata.contentRating!),
-      if (metadata.durationMs != null) formatDurationTextual(metadata.durationMs!),
-      if (metadata.year != null) metadata.year.toString(),
+      if (lineMetadata.isEpisode && episodeLabel != null) episodeLabel,
+      if (lineMetadata.isMovie) t.discover.movie else if (lineMetadata.isShow) t.discover.tvShow,
+      if (lineMetadata.rating != null) '★ ${formatRating(lineMetadata.rating!)}',
+      if (lineMetadata.contentRating != null) formatContentRating(lineMetadata.contentRating!),
+      if (lineMetadata.durationMs != null) formatDurationTextual(lineMetadata.durationMs!),
+      if (lineMetadata.isEpisode && lineMetadata.originallyAvailableAt != null)
+        formatFullDate(lineMetadata.originallyAvailableAt!)
+      else if (lineMetadata.year != null)
+        lineMetadata.year.toString(),
     ];
 
     return Text(
@@ -3091,12 +3111,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       overflow: TextOverflow.ellipsis,
       style: TextStyle(color: Colors.white, fontSize: 18 * scale, fontWeight: FontWeight.w700, letterSpacing: 0.1),
     );
-  }
-
-  String _tvDetailSummaryText(MediaItem metadata, String summary) {
-    final prefix = _tvDetailEpisodePrefix(metadata);
-    if (prefix == null) return summary;
-    return '$prefix: $summary';
   }
 
   String? _tvDetailDescription(MediaItem metadata, {required bool hideSpoilers}) {
@@ -3117,17 +3131,15 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final showDescription = _tvDetailItemDescription(metadata, hideSpoilers: hideSpoilers);
     if (showDescription != null) return showDescription;
 
-    if (hideSpoilers && focusedEpisode.shouldHideSpoiler) {
-      return _tvDetailEpisodePrefix(focusedEpisode) ?? focusedEpisode.title;
-    }
+    if (hideSpoilers && focusedEpisode.shouldHideSpoiler) return focusedEpisode.title;
     return null;
   }
 
   String? _tvDetailItemDescription(MediaItem item, {required bool hideSpoilers, bool showSpoilerFallback = true}) {
     final shouldHideSpoiler = hideSpoilers && item.shouldHideSpoiler;
     final summary = shouldHideSpoiler ? null : item.summary;
-    if (summary != null && summary.isNotEmpty) return _tvDetailSummaryText(item, summary);
-    if (showSpoilerFallback && shouldHideSpoiler && item.isEpisode) return _tvDetailEpisodePrefix(item) ?? item.title;
+    if (summary != null && summary.isNotEmpty) return summary;
+    if (showSpoilerFallback && shouldHideSpoiler && item.isEpisode) return item.title;
     return null;
   }
 
@@ -3144,11 +3156,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return null;
   }
 
-  String? _tvDetailEpisodePrefix(MediaItem metadata) {
-    if (!metadata.isEpisode || metadata.parentIndex == null || metadata.index == null) return null;
-    return 'S${metadata.parentIndex}, E${metadata.index}';
-  }
-
   double _estimateTvBrowseRailHeight(Size size, List<MediaHub> hubs) {
     final svc = SettingsService.instanceOrNull!;
     return TvBrowseRailLayout.estimateHeight(
@@ -3157,6 +3164,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       density: svc.read(SettingsService.libraryDensity),
       episodePosterMode: svc.read(SettingsService.episodePosterMode),
       episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
+      widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
       tallPosterScale: _tvDetailTallPosterScale,
     );
   }
@@ -3168,6 +3176,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   EpisodePosterMode _tvDetailEpisodePosterModeForHub(MediaHub hub) {
     if (_isTvDetailEpisodeHub(hub)) return EpisodePosterMode.episodeThumbnail;
     return SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
+  }
+
+  double _tvDetailWidePosterScaleForHub(MediaHub hub) {
+    return _isTvDetailEpisodeHub(hub) ? _tvDetailEpisodeThumbnailScale : 1.0;
   }
 
   List<MediaHub> _tvDetailHubs(MediaItem metadata) {
