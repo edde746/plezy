@@ -61,6 +61,9 @@ class MainScreenFocusScope extends InheritedWidget {
   final VoidCallback focusContent;
   final bool isSidebarFocused;
   final double sideNavigationWidth;
+  final double? reservedSideNavigationWidth;
+  final double? foregroundWidth;
+  final double? viewportWidth;
   final void Function(String libraryGlobalKey)? selectLibrary;
 
   const MainScreenFocusScope({
@@ -69,6 +72,9 @@ class MainScreenFocusScope extends InheritedWidget {
     required this.focusContent,
     required this.isSidebarFocused,
     required this.sideNavigationWidth,
+    this.reservedSideNavigationWidth,
+    this.foregroundWidth,
+    this.viewportWidth,
     this.selectLibrary,
     required super.child,
   });
@@ -83,14 +89,43 @@ class MainScreenFocusScope extends InheritedWidget {
     return 0.0;
   }
 
-  static double clippedContentRightInsetOf(BuildContext context) {
-    return of(context)?.sideNavigationWidth ?? 0.0;
+  static double foregroundWidthOf(BuildContext context) {
+    final width = of(context)?.foregroundWidth;
+    if (width != null && width > 0) return width;
+    return MediaQuery.sizeOf(context).width;
+  }
+
+  static Size foregroundSizeOf(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    return Size(foregroundWidthOf(context), size.height);
+  }
+
+  static double fullBleedWidthOf(BuildContext context) {
+    final width = of(context)?.viewportWidth;
+    if (width != null && width > 0) return width;
+    return MediaQuery.sizeOf(context).width;
   }
 
   @override
   bool updateShouldNotify(MainScreenFocusScope oldWidget) {
-    return isSidebarFocused != oldWidget.isSidebarFocused || sideNavigationWidth != oldWidget.sideNavigationWidth;
+    return isSidebarFocused != oldWidget.isSidebarFocused ||
+        sideNavigationWidth != oldWidget.sideNavigationWidth ||
+        reservedSideNavigationWidth != oldWidget.reservedSideNavigationWidth ||
+        foregroundWidth != oldWidget.foregroundWidth ||
+        viewportWidth != oldWidget.viewportWidth;
   }
+}
+
+@visibleForTesting
+({double left, double width}) mainScreenSideNavigationContentLayout({
+  required double viewportWidth,
+  required double currentSideNavigationWidth,
+  required double reservedSideNavigationWidth,
+}) {
+  return (
+    left: currentSideNavigationWidth,
+    width: (viewportWidth - reservedSideNavigationWidth).clamp(0.0, double.infinity).toDouble(),
+  );
 }
 
 @visibleForTesting
@@ -1237,6 +1272,9 @@ class _MainScreenState extends State<MainScreen>
         pref: SettingsService.alwaysKeepSidebarOpen,
         builder: (context, alwaysExpanded, _) {
           final targetContentOffset = _sideNavigationWidth(context, alwaysExpanded: alwaysExpanded);
+          final reservedContentOffset = alwaysExpanded
+              ? SideNavigationRailState.expandedWidth
+              : SideNavigationRailState.collapsedWidthForContext(context);
 
           return OverlaySheetHost(
             child: PopScope(
@@ -1262,24 +1300,32 @@ class _MainScreenState extends State<MainScreen>
                     child: _buildTickerAwareStack(),
                   ),
                   builder: (context, contentLeftPadding, contentChild) {
-                    return MainScreenFocusScope(
-                      focusSidebar: _focusSidebar,
-                      focusContent: _focusContent,
-                      isSidebarFocused: _isSidebarFocused,
-                      sideNavigationWidth: contentLeftPadding,
-                      selectLibrary: _selectLibrary,
-                      child: SideNavigationScope(
-                        child: LayoutBuilder(
-                          builder: (context, constraints) {
-                            final contentWidth = constraints.maxWidth;
-                            return Stack(
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        final viewportWidth = constraints.maxWidth;
+                        final contentLayout = mainScreenSideNavigationContentLayout(
+                          viewportWidth: viewportWidth,
+                          currentSideNavigationWidth: contentLeftPadding,
+                          reservedSideNavigationWidth: reservedContentOffset,
+                        );
+                        return MainScreenFocusScope(
+                          focusSidebar: _focusSidebar,
+                          focusContent: _focusContent,
+                          isSidebarFocused: _isSidebarFocused,
+                          sideNavigationWidth: contentLeftPadding,
+                          reservedSideNavigationWidth: reservedContentOffset,
+                          foregroundWidth: contentLayout.width,
+                          viewportWidth: viewportWidth,
+                          selectLibrary: _selectLibrary,
+                          child: SideNavigationScope(
+                            child: Stack(
                               clipBehavior: Clip.hardEdge,
                               children: [
                                 Positioned(
                                   top: 0,
                                   bottom: 0,
-                                  left: contentLeftPadding,
-                                  width: contentWidth,
+                                  left: contentLayout.left,
+                                  width: contentLayout.width,
                                   child: contentChild!,
                                 ),
                                 Positioned(
@@ -1311,10 +1357,10 @@ class _MainScreenState extends State<MainScreen>
                                   ),
                                 ),
                               ],
-                            );
-                          },
-                        ),
-                      ),
+                            ),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../screens/main_screen.dart';
 import 'focused_scroll_scaffold.dart';
 
 /// Standard scaffold for settings pages made of ordinary list rows.
@@ -39,23 +38,13 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pageSlivers = slivers ?? [_buildListSliver()];
-    final rightInset = MainScreenFocusScope.clippedContentRightInsetOf(context);
-    final insetSlivers = rightInset == 0
-        ? pageSlivers
-        : [
-            for (final sliver in pageSlivers)
-              SliverPadding(
-                padding: EdgeInsets.only(right: rightInset),
-                sliver: sliver,
-              ),
-          ];
     return FocusedScrollScaffold(
       title: title,
       actions: actions,
       pinned: pinned,
       automaticallyImplyLeading: automaticallyImplyLeading,
       onBackPressed: onBackPressed,
-      slivers: insetSlivers,
+      slivers: pageSlivers,
     );
   }
 

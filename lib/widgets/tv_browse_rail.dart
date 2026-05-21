@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -181,11 +182,10 @@ class TvBrowseRailLayout {
     required TvBrowseRailLayoutMetrics metrics,
     required double viewportWidth,
     required double scale,
-    double visibleTrailingInset = 0.0,
   }) {
     final itemContentWidth = hub.items.length * (metrics.cardWidth + metrics.itemGap);
     final moreContentWidth = hub.more ? (132 * scale) + metrics.itemGap : 0.0;
-    final contentWidth = (metrics.railEdgePadding * 2) + itemContentWidth + moreContentWidth + visibleTrailingInset;
+    final contentWidth = (metrics.railEdgePadding * 2) + itemContentWidth + moreContentWidth;
     return (contentWidth - viewportWidth).clamp(0.0, double.infinity).toDouble();
   }
 
@@ -194,12 +194,10 @@ class TvBrowseRailLayout {
     required TvBrowseRailLayoutMetrics metrics,
     required double viewportWidth,
     required double maxScrollExtent,
-    double visibleTrailingInset = 0.0,
   }) {
     final itemExtent = metrics.cardWidth + metrics.itemGap;
     final targetCenter = metrics.railEdgePadding + (index * itemExtent) + (itemExtent / 2);
-    final visibleViewport = (viewportWidth - visibleTrailingInset).clamp(1.0, double.infinity).toDouble();
-    return (targetCenter - (visibleViewport / 2)).clamp(0.0, maxScrollExtent).toDouble();
+    return (targetCenter - (viewportWidth / 2)).clamp(0.0, maxScrollExtent).toDouble();
   }
 
   static double estimateHeight({
@@ -260,7 +258,6 @@ class TvBrowseRail extends StatefulWidget {
   final EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub;
   final double Function(MediaHub hub)? widePosterScaleForHub;
   final double backgroundBleedLeft;
-  final double visibleRightInset;
 
   const TvBrowseRail({
     super.key,
@@ -285,7 +282,6 @@ class TvBrowseRail extends StatefulWidget {
     this.episodePosterModeForHub,
     this.widePosterScaleForHub,
     this.backgroundBleedLeft = 0,
-    this.visibleRightInset = 0,
   });
 
   @override
@@ -630,7 +626,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       _itemIndex,
       itemExtent: _itemExtent,
       leadingPadding: _railLeadingPadding,
-      visibleTrailingInset: widget.visibleRightInset,
       animate: animate,
     );
   }
@@ -655,14 +650,12 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         metrics: metrics,
         viewportWidth: viewportWidth,
         scale: scale,
-        visibleTrailingInset: widget.visibleRightInset,
       );
       final initialScrollOffset = TvBrowseRailLayout.scrollOffsetForIndex(
         index: initialItemIndex,
         metrics: metrics,
         viewportWidth: viewportWidth,
         maxScrollExtent: maxScrollExtent,
-        visibleTrailingInset: widget.visibleRightInset,
       );
       return ScrollController(initialScrollOffset: initialScrollOffset);
     });
@@ -733,6 +726,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
             scale,
           ).clamp(0.0, horizontalInset).toDouble();
           final width = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.sizeOf(context).width;
+          final backgroundWidth = math.max(width + widget.backgroundBleedLeft, MediaQuery.sizeOf(context).width);
           final availableWidth = (width - horizontalInset).clamp(1.0, double.infinity).toDouble();
           final railViewportWidth = (availableWidth + interactionExpansion).clamp(1.0, double.infinity).toDouble();
           final density = svc.read(SettingsService.libraryDensity);
@@ -798,7 +792,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                       top: 0,
                       bottom: 0,
                       left: -widget.backgroundBleedLeft,
-                      width: width,
+                      width: backgroundWidth,
                       child: DecoratedBox(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -987,12 +981,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
               controller: scrollController,
               scrollDirection: Axis.horizontal,
               clipBehavior: Clip.none,
-              padding: EdgeInsets.fromLTRB(
-                metrics.railEdgePadding,
-                2 * scale,
-                metrics.railEdgePadding + widget.visibleRightInset,
-                6 * scale,
-              ),
+              padding: EdgeInsets.fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 6 * scale),
               itemCount: totalCount,
               itemBuilder: (context, itemIndex) {
                 final isFocused = hasFocus && isActiveHub && itemIndex == _itemIndex;

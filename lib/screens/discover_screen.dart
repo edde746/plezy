@@ -1526,10 +1526,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       context,
       alwaysKeepSidebarOpen: svc.read(SettingsService.alwaysKeepSidebarOpen),
     );
+    final railSize = MainScreenFocusScope.foregroundSizeOf(context);
+    final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
     final railHeight = browseHubs.isEmpty
         ? 0.0
         : TvBrowseRailLayout.estimateHeight(
-            size: size,
+            size: railSize,
             hubs: browseHubs,
             density: svc.read(SettingsService.libraryDensity),
             episodePosterMode: svc.read(SettingsService.episodePosterMode),
@@ -1554,7 +1556,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             top: 0,
             bottom: 0,
             left: -sidebarBleed,
-            width: size.width,
+            width: fullBleedWidth,
             child: TvSpotlightBackground(
               item: spotlight,
               client: _getMediaClientForItem(spotlight),
@@ -1613,13 +1615,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onNavigateToSidebar: _navigateToSidebar,
                 tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
                 backgroundBleedLeft: sidebarBleed,
-                visibleRightInset: sidebarBleed,
               ),
             ),
           Positioned(
             top: 0,
             left: -sidebarBleed,
-            width: size.width,
+            width: fullBleedWidth,
             child: ExcludeFocusTraversal(child: _buildOverlaidAppBar()),
           ),
           if (_switchingProfile) const ProfileSwitchingOverlay(),

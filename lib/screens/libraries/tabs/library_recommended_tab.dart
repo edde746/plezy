@@ -306,10 +306,12 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
       context,
       alwaysKeepSidebarOpen: svc.read(SettingsService.alwaysKeepSidebarOpen),
     );
+    final railSize = MainScreenFocusScope.foregroundSizeOf(context);
+    final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
     final railHeight = tvHubs.isEmpty
         ? 0.0
         : TvBrowseRailLayout.estimateHeight(
-            size: size,
+            size: railSize,
             hubs: tvHubs,
             density: svc.read(SettingsService.libraryDensity),
             episodePosterMode: svc.read(SettingsService.episodePosterMode),
@@ -336,7 +338,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
               top: 0,
               bottom: 0,
               left: -sidebarBleed,
-              width: size.width,
+              width: fullBleedWidth,
               child: TvSpotlightBackground(
                 item: spotlight,
                 client: client,
@@ -366,7 +368,6 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
                   onBack: widget.onBack,
                   tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
                   backgroundBleedLeft: sidebarBleed,
-                  visibleRightInset: sidebarBleed,
                 ),
               ),
           ],

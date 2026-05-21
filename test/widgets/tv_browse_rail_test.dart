@@ -12,6 +12,7 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/widgets/side_navigation_rail.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:provider/provider.dart';
 
@@ -647,6 +648,53 @@ void main() {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('background gradient stays full bleed beside pushed foreground', (tester) async {
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(() {
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+    });
+
+    final serverManager = MultiServerManager();
+    final item = MediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
+    final hub = MediaHub(id: 'hub_1', title: 'Hub', type: 'movie', items: [item], size: 1);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1060,
+              height: 720,
+              child: TvBrowseRail(
+                hubs: [hub],
+                iconForHub: (_, _) => Icons.movie_rounded,
+                backgroundBleedLeft: SideNavigationRailState.expandedWidth,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final gradient = find.byWidgetPredicate(
+      (widget) =>
+          widget is DecoratedBox &&
+          widget.decoration is BoxDecoration &&
+          (widget.decoration as BoxDecoration).gradient is LinearGradient,
+    );
+    final backgroundPosition = tester.widget<Positioned>(
+      find.ancestor(of: gradient.first, matching: find.byType(Positioned)).first,
+    );
+
+    expect(backgroundPosition.left, -SideNavigationRailState.expandedWidth);
+    expect(backgroundPosition.width, 1280);
   });
 }
 

@@ -131,7 +131,17 @@ void main() {
               focusContent: () {},
               isSidebarFocused: false,
               sideNavigationWidth: sidebarOffset,
-              child: SizedBox(width: 1280, height: 720, child: DiscoverScreen(key: discoverKey)),
+              reservedSideNavigationWidth: sidebarOffset,
+              foregroundWidth: 1280 - sidebarOffset,
+              viewportWidth: 1280,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: SizedBox(
+                  width: 1280 - sidebarOffset,
+                  height: 720,
+                  child: DiscoverScreen(key: discoverKey),
+                ),
+              ),
             ),
           ),
         ),
@@ -147,7 +157,7 @@ void main() {
     expect(spotlightBackground.contentLeft, closeTo(spotlightLeft + sidebarOffset, 0.001));
 
     final railHeight = TvBrowseRailLayout.estimateHeight(
-      size: const Size(1280, 720),
+      size: const Size(1280 - sidebarOffset, 720),
       hubs: [hub],
       density: LibraryDensity.max,
       episodePosterMode: settings.read(SettingsService.episodePosterMode),
@@ -168,7 +178,6 @@ void main() {
 
     final browseRail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
     expect(browseRail.backgroundBleedLeft, sidebarOffset);
-    expect(browseRail.visibleRightInset, sidebarOffset);
 
     final backgroundPosition = tester.widget<Positioned>(
       find.ancestor(of: find.byType(TvSpotlightBackground), matching: find.byType(Positioned)).first,
