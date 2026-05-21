@@ -417,7 +417,7 @@ class MpvPlayerCoreBase: NSObject {
 
     setRawStringPropertyAsync(
       "target-colorspace-hint",
-      value: enabled ? "yes" : "no",
+      value: enabled ? "auto" : "no",
       completion: completion ?? { _ in }
     )
 
@@ -596,7 +596,7 @@ class MpvPlayerCoreBase: NSObject {
     #endif
     checkError(mpv_set_option_string(mpv, "hwdec-codecs", "all"))
     checkError(mpv_set_option_string(mpv, "hwdec-software-fallback", "yes"))
-    checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "yes"))
+    checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "auto"))
   }
 
   #if os(macOS)
