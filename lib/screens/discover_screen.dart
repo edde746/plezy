@@ -196,6 +196,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   // Track initial load so we can focus hero when content first appears
   bool _initialLoadComplete = false;
+  bool _pendingTvBrowseRailFocus = false;
 
   // Hub navigation keys
   GlobalKey<HubSectionState>? _continueWatchingHubKey;
@@ -316,7 +317,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _focusContentFromAppBar() {
     if (PlatformDetector.isTV()) {
-      _tvBrowseRailKey.currentState?.requestFocus();
+      _focusTvBrowseRailWhenReady();
       return;
     }
 
@@ -329,6 +330,25 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (keys.isNotEmpty) {
       keys.first.currentState?.requestFocusFromMemory();
     }
+  }
+
+  void _focusTvBrowseRailWhenReady() {
+    if (!PlatformDetector.isTV()) return;
+    if (!(ModalRoute.of(context)?.isCurrent ?? false)) return;
+
+    _pendingTvBrowseRailFocus = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return;
+      if (_tvBrowseHubs.isEmpty) return;
+      final rail = _tvBrowseRailKey.currentState;
+      if (rail == null) return;
+      _pendingTvBrowseRailFocus = false;
+      rail.requestFocus();
+    });
+  }
+
+  void _applyPendingTvBrowseRailFocus() {
+    if (_pendingTvBrowseRailFocus) _focusTvBrowseRailWhenReady();
   }
 
   /// Handle vertical navigation between hubs
@@ -601,6 +621,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   void focusActiveTabIfReady() {
+    if (PlatformDetector.isTV()) {
+      _focusTvBrowseRailWhenReady();
+      return;
+    }
     _focusTopBoundary();
   }
 
@@ -703,6 +727,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
         }
       });
+      _applyPendingTvBrowseRailFocus();
 
       // Focus hero section now that it's visible, but only if no modal route is on top
       if (!PlatformDetector.isTV() && onDeck.isNotEmpty && (ModalRoute.of(context)?.isCurrent ?? false)) {
@@ -759,6 +784,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         _areHubsLoading = false;
         _updateHubKeys();
       });
+      _applyPendingTvBrowseRailFocus();
 
       if (PlatformDetector.isTV() && !_initialLoadComplete && filteredHubs.isNotEmpty) {
         _initialLoadComplete = true;

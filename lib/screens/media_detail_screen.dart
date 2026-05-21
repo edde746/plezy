@@ -140,6 +140,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   // Inline season tabs
   int _selectedSeasonIndex = 0;
   final Map<String, List<MediaItem>> _episodeCache = {};
+  final Set<String> _seasonEpisodeLoadsInFlight = {};
   bool _isLoadingSeasonEpisodes = false;
   List<FocusNode> _seasonTabFocusNodes = [];
 
@@ -728,8 +729,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (_showEpisodesDirectly) return _hasLoadedEpisodes && !_isLoadingEpisodes;
       if (_seasons.isEmpty) return true;
       if (_selectedSeasonIndex < 0 || _selectedSeasonIndex >= _seasons.length) return false;
-      final selectedSeason = _seasons[_selectedSeasonIndex];
-      return !_isLoadingSeasonEpisodes && _episodeCache.containsKey(selectedSeason.id);
+      return !_isLoadingSeasonEpisodes && _seasons.every((season) => _episodeCache.containsKey(season.id));
     }
 
     if (metadata.isSeason) {
@@ -1434,8 +1434,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (shouldShowEpisodesDirectly) {
         await _fetchAllEpisodes();
       } else if (seasonsWithServerId.isNotEmpty) {
-        // Fetch episodes for the auto-selected season
-        unawaited(_fetchSeasonEpisodes(onDeckSeasonIndex));
+        if (PlatformDetector.isTV()) {
+          await _fetchTvSeasonEpisodeCaches(onDeckSeasonIndex);
+        } else {
+          // Fetch episodes for the auto-selected season
+          unawaited(_fetchSeasonEpisodes(onDeckSeasonIndex));
+        }
       }
     } catch (e, st) {
       appLogger.w('Seasons load failed', error: e, stackTrace: st);
@@ -1573,6 +1577,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return;
     }
 
+    if (!_seasonEpisodeLoadsInFlight.add(seasonId)) {
+      setStateIfMounted(() {
+        if (_isSelectedSeason(seasonIndex, seasonId)) _isLoadingSeasonEpisodes = true;
+      });
+      return;
+    }
+
     setStateIfMounted(() {
       if (_isSelectedSeason(seasonIndex, seasonId)) _isLoadingSeasonEpisodes = true;
     });
@@ -1617,6 +1628,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       }
     } catch (e) {
       _completeSeasonEpisodesLoad(seasonIndex: seasonIndex, seasonId: seasonId, episodes: const <MediaItem>[]);
+    } finally {
+      _seasonEpisodeLoadsInFlight.remove(seasonId);
     }
   }
 
@@ -1625,6 +1638,80 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         seasonIndex >= 0 &&
         seasonIndex < _seasons.length &&
         _seasons[seasonIndex].id == seasonId;
+  }
+
+  Future<void> _fetchTvSeasonEpisodeCaches(int selectedSeasonIndex) async {
+    if (widget.isOffline || _showEpisodesDirectly || _seasons.isEmpty) return;
+
+    setStateIfMounted(() {
+      _isLoadingSeasonEpisodes = true;
+    });
+
+    final serverId = _metadata.serverId;
+    final client = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
+    if (serverId == null || client == null) {
+      _completeTvSeasonEpisodeCaches(selectedSeasonIndex, const <String, List<MediaItem>>{});
+      return;
+    }
+
+    final seasonsById = {for (final season in _seasons) season.id: season};
+    final seasonsByIndex = <int, MediaItem>{
+      for (final season in _seasons)
+        if (season.index != null) season.index!: season,
+    };
+    final episodesBySeasonId = {for (final season in _seasons) season.id: <MediaItem>[]};
+
+    try {
+      var offset = 0;
+      var total = 0;
+      do {
+        final page = await client.fetchPlayableDescendantsPage(_metadata.id, start: offset, size: _episodesPageSize);
+        if (!mounted) return;
+        if (page.items.isEmpty) break;
+
+        final enriched = _enrichPlayableEpisodes(page.items, serverId);
+        for (final episode in enriched) {
+          final seasonId = _seasonIdForEpisode(episode, seasonsById: seasonsById, seasonsByIndex: seasonsByIndex);
+          if (seasonId == null) continue;
+          episodesBySeasonId[seasonId]?.add(episode);
+        }
+
+        offset += page.items.length;
+        total = page.totalCount;
+      } while (offset < total && total > 0);
+
+      _completeTvSeasonEpisodeCaches(selectedSeasonIndex, episodesBySeasonId);
+    } catch (e, st) {
+      appLogger.w('Failed to load TV season episode caches', error: e, stackTrace: st);
+      _completeTvSeasonEpisodeCaches(selectedSeasonIndex, const <String, List<MediaItem>>{});
+    }
+  }
+
+  String? _seasonIdForEpisode(
+    MediaItem episode, {
+    required Map<String, MediaItem> seasonsById,
+    required Map<int, MediaItem> seasonsByIndex,
+  }) {
+    final parentId = episode.parentId;
+    if (parentId != null && seasonsById.containsKey(parentId)) return parentId;
+
+    final parentIndex = episode.parentIndex;
+    if (parentIndex != null) return seasonsByIndex[parentIndex]?.id;
+
+    return null;
+  }
+
+  void _completeTvSeasonEpisodeCaches(int selectedSeasonIndex, Map<String, List<MediaItem>> episodesBySeasonId) {
+    setStateIfMounted(() {
+      for (final season in _seasons) {
+        _episodeCache[season.id] = List.of(episodesBySeasonId[season.id] ?? const <MediaItem>[]);
+      }
+
+      if (selectedSeasonIndex >= 0 && selectedSeasonIndex < _seasons.length) {
+        _episodes = List.of(_episodeCache[_seasons[selectedSeasonIndex].id] ?? const <MediaItem>[]);
+      }
+      _isLoadingSeasonEpisodes = false;
+    });
   }
 
   void _completeSeasonEpisodesLoad({
@@ -3187,7 +3274,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty) {
       for (var i = 0; i < _seasons.length; i++) {
         final season = _seasons[i];
-        final episodes = i == _selectedSeasonIndex ? _episodes : (_episodeCache[season.id] ?? const <MediaItem>[]);
+        final cachedEpisodes = _episodeCache[season.id];
+        if (cachedEpisodes == null) continue;
+        final episodes = i == _selectedSeasonIndex ? _episodes : cachedEpisodes;
         hubs.add(
           MediaHub(
             id: '$_tvDetailSeasonHubIdPrefix$i',
