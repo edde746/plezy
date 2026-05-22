@@ -122,6 +122,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   List<MediaItem>? _extras;
   List<MediaHub> _relatedHubs = [];
   List<GlobalKey<HubSectionState>> _relatedHubKeys = [];
+  bool _hasLoadedExtras = false;
+  bool _hasLoadedRelatedHubs = false;
   final _tvDetailRailKey = GlobalKey<TvBrowseRailState>();
   PageRoute<dynamic>? _route;
   late final ScrollController _scrollController;
@@ -724,6 +726,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   bool _isTvDetailReadyToReveal(MediaItem metadata) {
     if (_isLoadingMetadata) return false;
+    if (!_hasLoadedTvDetailSupplementalSections(metadata)) return false;
 
     if (metadata.isShow) {
       if (_isLoadingSeasons || (!_hasLoadedSeasons && _seasons.isEmpty)) return false;
@@ -738,6 +741,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     return true;
+  }
+
+  bool _hasLoadedTvDetailSupplementalSections(MediaItem metadata) {
+    if (widget.isOffline || (!metadata.isMovie && !metadata.isShow)) return true;
+    return _hasLoadedExtras && _hasLoadedRelatedHubs;
   }
 
   void _scheduleTvDetailReveal(double railHeight, {required bool focusPrimaryAction}) {
@@ -1253,6 +1261,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   Future<void> _loadFullMetadata() async {
     setState(() {
       _isLoadingMetadata = true;
+      _hasLoadedExtras = false;
+      _hasLoadedRelatedHubs = false;
     });
 
     // Offline mode: try to load full metadata from cache (has clearLogo, summary, etc.)
@@ -1265,6 +1275,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       setState(() {
         _fullMetadata = _applyLocalProgress(cachedMetadata ?? _metadata);
         _isLoadingMetadata = false;
+        _hasLoadedExtras = true;
+        _hasLoadedRelatedHubs = true;
       });
 
       if (_metadata.isShow) {
@@ -1293,6 +1305,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           _isLoadingMetadata = false;
           _hasLoadedSeasons = true;
           _hasLoadedEpisodes = true;
+          _hasLoadedExtras = true;
+          _hasLoadedRelatedHubs = true;
         });
         return;
       }
@@ -1349,6 +1363,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       setState(() {
         _fullMetadata = _applyLocalProgress(_metadata);
         _isLoadingMetadata = false;
+        _hasLoadedExtras = true;
+        _hasLoadedRelatedHubs = true;
       });
 
       if (_metadata.isShow) {
@@ -1778,21 +1794,33 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Load extras (trailers, behind-the-scenes, etc.). Plex-only — Jellyfin
   /// has no equivalent of `fetchExtras`.
   Future<void> _loadExtras() async {
+    void markLoaded() {
+      setStateIfMounted(() {
+        _hasLoadedExtras = true;
+      });
+    }
+
     // Only load extras for movies and shows
     if (!_metadata.isMovie && !_metadata.isShow) {
+      markLoaded();
       return;
     }
 
     // Skip in offline mode (no server available)
     if (widget.isOffline) {
+      markLoaded();
       return;
     }
 
-    if (_metadata.backend != MediaBackend.plex) return;
+    if (_metadata.backend != MediaBackend.plex) {
+      markLoaded();
+      return;
+    }
 
     try {
       final client = getServerBoundPlexClient(context);
       if (client == null) {
+        markLoaded();
         return;
       }
 
@@ -1810,9 +1838,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
       setStateIfMounted(() {
         _extras = extrasWithServerId;
+        _hasLoadedExtras = true;
       });
     } catch (e) {
       // Silently fail - extras section won't appear if fetch fails
+      markLoaded();
     }
   }
 
@@ -1820,17 +1850,28 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Backend-neutral — both Plex and Jellyfin implement
   /// [MediaServerClient.fetchRelatedHubs].
   Future<void> _loadRelatedHubs() async {
+    void markLoaded() {
+      setStateIfMounted(() {
+        _hasLoadedRelatedHubs = true;
+      });
+    }
+
     if (!_metadata.isMovie && !_metadata.isShow) {
+      markLoaded();
       return;
     }
 
     if (widget.isOffline) {
+      markLoaded();
       return;
     }
 
     final serverId = _metadata.serverId;
     final client = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
-    if (client == null) return;
+    if (client == null) {
+      markLoaded();
+      return;
+    }
 
     try {
       final relatedHubs = await client.fetchRelatedHubs(_metadata.id);
@@ -1838,9 +1879,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       setStateIfMounted(() {
         _relatedHubs = relatedHubs;
         _relatedHubKeys = List.generate(relatedHubs.length, (_) => GlobalKey<HubSectionState>());
+        _hasLoadedRelatedHubs = true;
       });
     } catch (e) {
       // Silently fail - related sections won't appear if fetch fails
+      markLoaded();
     }
   }
 
@@ -2973,7 +3016,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final hideSpoilers = SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers);
     final detailScale = TvLayoutConstants.scaleForSize(size);
     final spotlightTop = (size.height * 0.08).clamp(44.0 * detailScale, 110.0 * detailScale).toDouble();
-    final rawRailHeight = _estimateTvBrowseRailHeight(size, detailHubs);
+    final rawRailHeight = _estimateTvDetailRailHeight(size, detailHubs);
     if (!_tvDetailRevealed && _isTvDetailReadyToReveal(metadata)) {
       _scheduleTvDetailReveal(rawRailHeight, focusPrimaryAction: metadata.isMovie);
     }
@@ -3301,6 +3344,38 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
       tallPosterScale: _tvDetailTallPosterScale,
     );
+  }
+
+  double _estimateTvDetailRailHeight(Size size, List<MediaHub> hubs) {
+    final hubRailHeight = _estimateTvBrowseRailHeight(size, hubs);
+    if (hubRailHeight > 0) return hubRailHeight;
+    return _estimateTvDetailEmptyRailReserveHeight(size);
+  }
+
+  double _estimateTvDetailEmptyRailReserveHeight(Size size) {
+    final svc = SettingsService.instanceOrNull!;
+    final scale = TvBrowseRailLayout.scaleForSize(size);
+    final availableWidth = size.width - TvBrowseRailLayout.horizontalInsetForScale(scale);
+    if (availableWidth <= 0) return 0;
+
+    final metrics = TvBrowseRailLayout.metricsForHub(
+      hub: MediaHub(
+        id: 'detail_empty_rail_reserve',
+        title: '',
+        type: 'movie',
+        items: [MediaItem(id: 'detail_empty_rail_reserve_item', backend: _metadata.backend, kind: MediaKind.movie)],
+      ),
+      availableWidth: availableWidth,
+      density: svc.read(SettingsService.libraryDensity),
+      episodePosterMode: svc.read(SettingsService.episodePosterMode),
+      scale: scale,
+      tallPosterScale: _tvDetailTallPosterScale,
+      widePosterScale: 1.0,
+    );
+    final sectionHeight = TvBrowseRailLayout.hubSectionHeightFor(scale: scale, activeRailHeight: metrics.height);
+    return TvBrowseRailLayout.railTopPaddingForScale(scale) +
+        TvBrowseRailLayout.viewportHeightFor(hubCount: 1, scale: scale, sectionHeight: sectionHeight) +
+        TvBrowseRailLayout.railBottomPaddingForScale(scale);
   }
 
   bool _isTvDetailEpisodeHub(MediaHub hub) {
