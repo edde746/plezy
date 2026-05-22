@@ -12,8 +12,10 @@ import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
 import '../utils/app_logger.dart';
 import '../utils/grid_size_calculator.dart';
+import '../utils/platform_detector.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/focusable_media_card.dart';
+import '../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../widgets/media_grid_delegate.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/loading_indicator_box.dart';
@@ -475,7 +477,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: PlatformDetector.isHandheldIOS(context),
       onPopInvokedWithResult: (didPop, _) {
         if (BackKeyCoordinator.consumeIfHandled()) return;
         if (didPop) return;
@@ -484,127 +486,135 @@ class _HubDetailScreenState extends State<HubDetailScreen>
           Navigator.pop(context);
         }
       },
-      child: OverlaySheetHost(
-        child: Scaffold(
-          key: _overlayChildKey,
-          body: CustomScrollView(
-            controller: scrollController,
-            clipBehavior: Clip.none,
-            slivers: [
-              CustomAppBar(title: Text(widget.hub.title), pinned: true, actions: buildFocusableAppBarActions()),
-              if (_errorMessage != null)
-                SliverErrorState(message: _errorMessage!, onRetry: _loadMoreItems)
-              else if (_filteredItems.isEmpty && _isLoading)
-                LoadingIndicatorBox.sliver
-              else if (_filteredItems.isEmpty)
-                SliverFillRemaining(child: Center(child: Text(t.hubDetail.noItemsFound)))
-              else
-                SettingsBuilder(
-                  prefs: const [
-                    SettingsService.viewMode,
-                    SettingsService.episodePosterMode,
-                    SettingsService.libraryDensity,
-                  ],
-                  builder: (context) {
-                    final svc = SettingsService.instanceOrNull!;
-                    final isListMode = svc.read(SettingsService.viewMode) == ViewMode.list;
-                    final episodePosterMode = svc.read(SettingsService.episodePosterMode);
-                    final libraryDensity = svc.read(SettingsService.libraryDensity);
+      child: PrimaryScrollController(
+        controller: scrollController,
+        child: IosStatusBarTapScrollToTop(
+          controller: scrollController,
+          child: OverlaySheetHost(
+            child: Scaffold(
+              key: _overlayChildKey,
+              body: CustomScrollView(
+                primary: true,
+                clipBehavior: Clip.none,
+                slivers: [
+                  CustomAppBar(title: Text(widget.hub.title), pinned: true, actions: buildFocusableAppBarActions()),
+                  if (_errorMessage != null)
+                    SliverErrorState(message: _errorMessage!, onRetry: _loadMoreItems)
+                  else if (_filteredItems.isEmpty && _isLoading)
+                    LoadingIndicatorBox.sliver
+                  else if (_filteredItems.isEmpty)
+                    SliverFillRemaining(child: Center(child: Text(t.hubDetail.noItemsFound)))
+                  else
+                    SettingsBuilder(
+                      prefs: const [
+                        SettingsService.viewMode,
+                        SettingsService.episodePosterMode,
+                        SettingsService.libraryDensity,
+                      ],
+                      builder: (context) {
+                        final svc = SettingsService.instanceOrNull!;
+                        final isListMode = svc.read(SettingsService.viewMode) == ViewMode.list;
+                        final episodePosterMode = svc.read(SettingsService.episodePosterMode);
+                        final libraryDensity = svc.read(SettingsService.libraryDensity);
 
-                    // Determine hub content type for layout decisions
-                    final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
-                    final hasNonEpisodes = _filteredItems.any((item) => !item.usesWideAspectRatio(episodePosterMode));
+                        // Determine hub content type for layout decisions
+                        final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
+                        final hasNonEpisodes = _filteredItems.any(
+                          (item) => !item.usesWideAspectRatio(episodePosterMode),
+                        );
 
-                    // Mixed hub = has both episodes AND non-episodes
-                    final isMixedHub = hasEpisodes && hasNonEpisodes;
+                        // Mixed hub = has both episodes AND non-episodes
+                        final isMixedHub = hasEpisodes && hasNonEpisodes;
 
-                    // Episode-only = all items are episodes with thumbnails
-                    final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
+                        // Episode-only = all items are episodes with thumbnails
+                        final isEpisodeOnlyHub = hasEpisodes && !hasNonEpisodes;
 
-                    // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
-                    final useWideLayout =
-                        episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
+                        // Use 16:9 for episode-only hubs OR mixed hubs (with episode thumbnail mode)
+                        final useWideLayout =
+                            episodePosterMode == EpisodePosterMode.episodeThumbnail && (isEpisodeOnlyHub || isMixedHub);
 
-                    if (isListMode) {
-                      return SliverPadding(
-                        padding: const EdgeInsets.all(8),
-                        sliver: SliverList.builder(
-                          itemCount: _filteredItems.length,
-                          itemBuilder: (context, index) {
-                            final item = _filteredItems[index];
-                            final focusNode = _focusNodeForIndex(index);
+                        if (isListMode) {
+                          return SliverPadding(
+                            padding: const EdgeInsets.all(8),
+                            sliver: SliverList.builder(
+                              itemCount: _filteredItems.length,
+                              itemBuilder: (context, index) {
+                                final item = _filteredItems[index];
+                                final focusNode = _focusNodeForIndex(index);
 
-                            return FocusableMediaCard(
-                              focusNode: focusNode,
-                              item: item,
-                              disableScale: true,
-                              onRefresh: _handleItemRefresh,
-                              onRemoveFromContinueWatching: widget.isInContinueWatching
-                                  ? _handleRemoveFromContinueWatching
-                                  : null,
-                              isInContinueWatching: widget.isInContinueWatching,
-                              onNavigateUp: index == 0 ? navigateToAppBar : null,
-                              onBack: handleBackFromContent,
-                              onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
-                              mixedHubContext: isMixedHub,
-                            );
-                          },
-                        ),
-                      );
-                    }
-
-                    return SliverPadding(
-                      padding: const EdgeInsets.all(8),
-                      sliver: SliverLayoutBuilder(
-                        builder: (context, constraints) {
-                          final maxExtent = GridSizeCalculator.getMaxCrossAxisExtentWithPadding(
-                            context,
-                            libraryDensity,
-                            16,
-                          );
-                          final columnCount = GridSizeCalculator.getColumnCount(
-                            constraints.crossAxisExtent,
-                            useWideLayout ? maxExtent * 1.8 : maxExtent,
-                          );
-
-                          return SliverGrid(
-                            gridDelegate: MediaGridDelegate.createDelegate(
-                              context: context,
-                              density: libraryDensity,
-                              usePaddingAware: true,
-                              horizontalPadding: 16,
-                              useWideAspectRatio: useWideLayout,
+                                return FocusableMediaCard(
+                                  focusNode: focusNode,
+                                  item: item,
+                                  disableScale: true,
+                                  onRefresh: _handleItemRefresh,
+                                  onRemoveFromContinueWatching: widget.isInContinueWatching
+                                      ? _handleRemoveFromContinueWatching
+                                      : null,
+                                  isInContinueWatching: widget.isInContinueWatching,
+                                  onNavigateUp: index == 0 ? navigateToAppBar : null,
+                                  onBack: handleBackFromContent,
+                                  onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+                                  mixedHubContext: isMixedHub,
+                                );
+                              },
                             ),
-                            delegate: SliverChildBuilderDelegate((context, index) {
-                              final item = _filteredItems[index];
-                              final focusNode = _focusNodeForIndex(index);
-                              final isFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
-                              final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
-
-                              return FocusableMediaCard(
-                                focusNode: focusNode,
-                                item: item,
-                                onRefresh: _handleItemRefresh,
-                                onRemoveFromContinueWatching: widget.isInContinueWatching
-                                    ? _handleRemoveFromContinueWatching
-                                    : null,
-                                isInContinueWatching: widget.isInContinueWatching,
-                                onNavigateUp: isFirstRow ? navigateToAppBar : null,
-                                onNavigateLeft: isFirstColumn ? () {} : null,
-                                onBack: handleBackFromContent,
-                                onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
-                                mixedHubContext: isMixedHub,
-                              );
-                            }, childCount: _filteredItems.length),
                           );
-                        },
-                      ),
-                    );
-                  },
-                ),
-              if (_filteredItems.isNotEmpty && (_isLoadingMore || _continuationErrorMessage != null))
-                _buildContinuationStatusSliver(),
-            ],
+                        }
+
+                        return SliverPadding(
+                          padding: const EdgeInsets.all(8),
+                          sliver: SliverLayoutBuilder(
+                            builder: (context, constraints) {
+                              final maxExtent = GridSizeCalculator.getMaxCrossAxisExtentWithPadding(
+                                context,
+                                libraryDensity,
+                                16,
+                              );
+                              final columnCount = GridSizeCalculator.getColumnCount(
+                                constraints.crossAxisExtent,
+                                useWideLayout ? maxExtent * 1.8 : maxExtent,
+                              );
+
+                              return SliverGrid(
+                                gridDelegate: MediaGridDelegate.createDelegate(
+                                  context: context,
+                                  density: libraryDensity,
+                                  usePaddingAware: true,
+                                  horizontalPadding: 16,
+                                  useWideAspectRatio: useWideLayout,
+                                ),
+                                delegate: SliverChildBuilderDelegate((context, index) {
+                                  final item = _filteredItems[index];
+                                  final focusNode = _focusNodeForIndex(index);
+                                  final isFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
+                                  final isFirstColumn = GridSizeCalculator.isFirstColumn(index, columnCount);
+
+                                  return FocusableMediaCard(
+                                    focusNode: focusNode,
+                                    item: item,
+                                    onRefresh: _handleItemRefresh,
+                                    onRemoveFromContinueWatching: widget.isInContinueWatching
+                                        ? _handleRemoveFromContinueWatching
+                                        : null,
+                                    isInContinueWatching: widget.isInContinueWatching,
+                                    onNavigateUp: isFirstRow ? navigateToAppBar : null,
+                                    onNavigateLeft: isFirstColumn ? () {} : null,
+                                    onBack: handleBackFromContent,
+                                    onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
+                                    mixedHubContext: isMixedHub,
+                                  );
+                                }, childCount: _filteredItems.length),
+                              );
+                            },
+                          ),
+                        );
+                      },
+                    ),
+                  if (_filteredItems.isNotEmpty && (_isLoadingMore || _continuationErrorMessage != null))
+                    _buildContinuationStatusSliver(),
+                ],
+              ),
+            ),
           ),
         ),
       ),

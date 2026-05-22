@@ -37,17 +37,6 @@ void main() {
   });
 
   testWidgets('loads playlist continuation pages from an unmodifiable first page', (tester) async {
-    await SettingsService.getInstance();
-
-    final db = AppDatabase.forTesting(NativeDatabase.memory());
-    PlexApiCache.initialize(db);
-    JellyfinApiCache.initialize(db);
-
-    final downloadManager = DownloadManagerService(database: db, storageService: DownloadStorageService.instance);
-    downloadManager.recoveryFuture = Future<void>.value();
-    final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
-    await downloadProvider.ensureInitialized();
-
     final items = List.generate(
       playlistItemsPageSize + 5,
       (index) => MediaItem(
@@ -59,52 +48,19 @@ void main() {
         serverName: 'Server',
       ),
     );
-    final client = _PagedPlaylistClient(items);
-    final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
-
-    addTearDown(() async {
-      downloadProvider.dispose();
-      downloadManager.dispose();
-      multiServerProvider.dispose();
-      await db.close();
-    });
+    final harness = await _createHarness(items);
 
     await tester.pumpWidget(
-      TranslationProvider(
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
-            ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
-          ],
-          child: MaterialApp(
-            theme: monoTheme(dark: true),
-            home: SizedBox(
-              width: 1280,
-              height: 720,
-              child: PlaylistDetailScreen(
-                playlist: const MediaPlaylist(
-                  id: 'playlist_1',
-                  backend: MediaBackend.plex,
-                  title: 'Long Playlist',
-                  playlistType: 'video',
-                  serverId: 'server_1',
-                  serverName: 'Server',
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+      harness.wrap(const SizedBox(width: 1280, height: 720, child: PlaylistDetailScreen(playlist: _playlist))),
     );
 
-    for (var i = 0; i < 10 && client.requestedStarts.length < 2; i++) {
+    for (var i = 0; i < 10 && harness.client.requestedStarts.length < 2; i++) {
       await tester.pump(const Duration(milliseconds: 10));
     }
     await tester.pumpAndSettle();
 
-    expect(client.requestedStarts, [0, playlistItemsPageSize]);
-    expect(client.requestedSizes, [playlistItemsPageSize, playlistItemsPageSize]);
+    expect(harness.client.requestedStarts, [0, playlistItemsPageSize]);
+    expect(harness.client.requestedSizes, [playlistItemsPageSize, playlistItemsPageSize]);
     expect(tester.takeException(), isNull);
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -30000));
@@ -114,6 +70,134 @@ void main() {
     expect(find.textContaining('Unsupported operation'), findsNothing);
     expect(find.text(t.common.retry), findsNothing);
   });
+
+  testWidgets('iOS top safe-area tap scrolls long playlists to top', (tester) async {
+    final items = _mediaItems(playlistItemsPageSize + 5);
+    final harness = await _createHarness(items);
+
+    await tester.pumpWidget(
+      harness.wrap(
+        const MediaQuery(
+          data: MediaQueryData(padding: EdgeInsets.only(top: 25)),
+          child: SizedBox(width: 390, height: 844, child: PlaylistDetailScreen(playlist: _playlist)),
+        ),
+        platform: TargetPlatform.iOS,
+      ),
+    );
+
+    for (var i = 0; i < 10 && harness.client.requestedStarts.length < 2; i++) {
+      await tester.pump(const Duration(milliseconds: 10));
+    }
+    await tester.pumpAndSettle();
+
+    final scrollable = tester.state<ScrollableState>(find.byType(Scrollable));
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, -3000));
+    await tester.pumpAndSettle();
+    expect(scrollable.position.pixels, greaterThan(0));
+
+    await tester.tapAt(const Offset(20, 10));
+    await tester.pumpAndSettle();
+
+    expect(scrollable.position.pixels, 0);
+  });
+
+  testWidgets('pushed iOS playlist route allows native pop gesture', (tester) async {
+    final harness = await _createHarness(_mediaItems(1));
+    MaterialPageRoute<void>? playlistRoute;
+
+    await tester.pumpWidget(
+      harness.wrap(
+        Builder(
+          builder: (context) => TextButton(
+            onPressed: () {
+              playlistRoute = MaterialPageRoute<void>(builder: (_) => const PlaylistDetailScreen(playlist: _playlist));
+              Navigator.of(context).push(playlistRoute!);
+            },
+            child: const Text('Open playlist'),
+          ),
+        ),
+        platform: TargetPlatform.iOS,
+      ),
+    );
+
+    await tester.tap(find.text('Open playlist'));
+    await tester.pumpAndSettle();
+
+    expect(playlistRoute, isNotNull);
+    expect(playlistRoute!.popGestureEnabled, isTrue);
+  });
+}
+
+const _playlist = MediaPlaylist(
+  id: 'playlist_1',
+  backend: MediaBackend.plex,
+  title: 'Long Playlist',
+  playlistType: 'video',
+  serverId: 'server_1',
+  serverName: 'Server',
+);
+
+List<MediaItem> _mediaItems(int count) {
+  return List.generate(
+    count,
+    (index) => MediaItem(
+      id: 'item_$index',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      title: 'Item $index',
+      serverId: 'server_1',
+      serverName: 'Server',
+    ),
+  );
+}
+
+Future<_PlaylistHarness> _createHarness(List<MediaItem> items) async {
+  await SettingsService.getInstance();
+
+  final db = AppDatabase.forTesting(NativeDatabase.memory());
+  PlexApiCache.initialize(db);
+  JellyfinApiCache.initialize(db);
+
+  final downloadManager = DownloadManagerService(database: db, storageService: DownloadStorageService.instance);
+  downloadManager.recoveryFuture = Future<void>.value();
+  final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+  await downloadProvider.ensureInitialized();
+
+  final client = _PagedPlaylistClient(items);
+  final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+  final multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+
+  addTearDown(() async {
+    downloadProvider.dispose();
+    downloadManager.dispose();
+    multiServerProvider.dispose();
+    await db.close();
+  });
+
+  return _PlaylistHarness(client: client, multiServerProvider: multiServerProvider, downloadProvider: downloadProvider);
+}
+
+class _PlaylistHarness {
+  final _PagedPlaylistClient client;
+  final MultiServerProvider multiServerProvider;
+  final DownloadProvider downloadProvider;
+
+  const _PlaylistHarness({required this.client, required this.multiServerProvider, required this.downloadProvider});
+
+  Widget wrap(Widget child, {TargetPlatform platform = TargetPlatform.android}) {
+    return TranslationProvider(
+      child: MultiProvider(
+        providers: [
+          ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+          ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
+        ],
+        child: MaterialApp(
+          theme: monoTheme(dark: true).copyWith(platform: platform),
+          home: child,
+        ),
+      ),
+    );
+  }
 }
 
 class _PagedPlaylistClient implements MediaServerClient {

@@ -72,6 +72,7 @@ import '../widgets/fitting_title_text.dart';
 import 'actor_media_screen.dart';
 import '../widgets/focusable_tab_chip.dart';
 import '../widgets/hub_section.dart';
+import '../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_background.dart';
@@ -108,8 +109,8 @@ PageRoute<bool> mediaDetailRoute({required MediaItem metadata, bool isOffline = 
 
   return PageRouteBuilder<bool>(
     opaque: false,
-    pageBuilder: (_, __, ___) => page,
-    transitionsBuilder: (_, animation, __, child) {
+    pageBuilder: (_, _, _) => page,
+    transitionsBuilder: (_, animation, _, child) {
       return FadeTransition(
         opacity: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic),
         child: child,
@@ -399,7 +400,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _patchLoadedDescendantsOf(String parentId, bool isWatched, {required bool clearWatchedProgress}) {
-    final isDescendant = (MediaItem item) => item.parentChain.contains(parentId);
+    bool isDescendant(MediaItem item) => item.parentChain.contains(parentId);
     _patchWatchedInListWhere(_seasons, isDescendant, isWatched, clearWatchedProgress: clearWatchedProgress);
     _patchWatchedInListWhere(_episodes, isDescendant, isWatched, clearWatchedProgress: clearWatchedProgress);
     for (final entry in _episodeCache.entries) {
@@ -985,7 +986,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return ListenableBuilder(
       listenable: _ratingChipFocusNode,
       builder: (context, _) {
-        final activate = () => _showRatingDialog(context, metadata);
+        void activate() => _showRatingDialog(context, metadata);
         final colorScheme = Theme.of(context).colorScheme;
         final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
         final showFocus = _ratingChipFocusNode.hasFocus && isKeyboardMode;
@@ -2803,204 +2804,214 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return _buildTvDetailScreen(context, metadata, _handleMediaDetailBackKey);
     }
 
-    final content = OverlaySheetHost(
-      child: Focus(
-        onKeyEvent: _handleMediaDetailBackKey,
-        child: Scaffold(
-          body: Stack(
-            children: [
-              CustomScrollView(
-                controller: _scrollController,
-                slivers: [
-                  // Hero header with background art
-                  SliverToBoxAdapter(child: _buildHeroHeader(context, metadata, size, headerHeight)),
+    final content = PrimaryScrollController(
+      controller: _scrollController,
+      child: IosStatusBarTapScrollToTop(
+        controller: _scrollController,
+        child: OverlaySheetHost(
+          child: Focus(
+            onKeyEvent: _handleMediaDetailBackKey,
+            child: Scaffold(
+              body: Stack(
+                children: [
+                  CustomScrollView(
+                    primary: true,
+                    slivers: [
+                      // Hero header with background art
+                      SliverToBoxAdapter(child: _buildHeroHeader(context, metadata, size, headerHeight)),
 
-                  // Main content
-                  SliverToBoxAdapter(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isTv ? TvLayoutConstants.horizontalInset : 16,
-                        vertical: isTv ? 8 : 16,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Summary
-                          if (!isTv && metadata.summary != null && metadata.summary!.isNotEmpty) ...[
-                            Text(key: _overviewSectionKey, t.discover.overview, style: sectionTitleStyle),
-                            const SizedBox(height: 12),
-                            Focus(
-                              focusNode: _overviewFocusNode,
-                              onKeyEvent: _handleOverviewKeyEvent,
-                              child: ListenableBuilder(
-                                listenable: _overviewFocusNode,
-                                builder: (context, _) {
-                                  final showFocus =
-                                      _overviewFocusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
-                                  return AnimatedContainer(
-                                    duration: const Duration(milliseconds: 150),
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      borderRadius: const BorderRadius.all(Radius.circular(8)),
-                                      border: Border.all(
-                                        color: showFocus
-                                            ? theme.colorScheme.primary.withValues(alpha: 0.5)
-                                            : Colors.transparent,
-                                        width: 2,
-                                      ),
-                                    ),
-                                    child: () {
-                                      final summaryStyle = theme.textTheme.bodyLarge?.copyWith(height: 1.6);
-                                      if (isTv) {
-                                        return Text(metadata.summary!, style: summaryStyle);
-                                      }
-                                      return CollapsibleText(
-                                        text: metadata.summary!,
-                                        maxLines: isMobile ? 6 : 4,
-                                        style: summaryStyle,
+                      // Main content
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: isTv ? TvLayoutConstants.horizontalInset : 16,
+                            vertical: isTv ? 8 : 16,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Summary
+                              if (!isTv && metadata.summary != null && metadata.summary!.isNotEmpty) ...[
+                                Text(key: _overviewSectionKey, t.discover.overview, style: sectionTitleStyle),
+                                const SizedBox(height: 12),
+                                Focus(
+                                  focusNode: _overviewFocusNode,
+                                  onKeyEvent: _handleOverviewKeyEvent,
+                                  child: ListenableBuilder(
+                                    listenable: _overviewFocusNode,
+                                    builder: (context, _) {
+                                      final showFocus =
+                                          _overviewFocusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
+                                      return AnimatedContainer(
+                                        duration: const Duration(milliseconds: 150),
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          borderRadius: const BorderRadius.all(Radius.circular(8)),
+                                          border: Border.all(
+                                            color: showFocus
+                                                ? theme.colorScheme.primary.withValues(alpha: 0.5)
+                                                : Colors.transparent,
+                                            width: 2,
+                                          ),
+                                        ),
+                                        child: () {
+                                          final summaryStyle = theme.textTheme.bodyLarge?.copyWith(height: 1.6);
+                                          if (isTv) {
+                                            return Text(metadata.summary!, style: summaryStyle);
+                                          }
+                                          return CollapsibleText(
+                                            text: metadata.summary!,
+                                            maxLines: isMobile ? 6 : 4,
+                                            style: summaryStyle,
+                                          );
+                                        }(),
                                       );
-                                    }(),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                          ],
+                                    },
+                                  ),
+                                ),
+                                const SizedBox(height: 24),
+                              ],
 
-                          // Seasons / Episodes (for TV shows and seasons)
-                          if (isShow && !_showEpisodesDirectly) ...[
-                            // Season tabs + inline episodes
-                            if (_isLoadingSeasons)
-                              _sectionLoading
-                            else if (_seasons.isEmpty)
-                              _sectionEmpty(context, t.messages.noSeasonsFound)
-                            else ...[
-                              Text(key: _seasonsSectionKey, t.libraries.groupings.episodes, style: sectionTitleStyle),
-                              const SizedBox(height: 12),
-                              _buildSeasonTabs(),
-                              const SizedBox(height: 16),
-                              if (_isLoadingSeasonEpisodes)
-                                _sectionLoading
-                              else if (_episodes.isNotEmpty)
-                                _buildEpisodesList()
-                              else
-                                _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
-                            ],
-                            const SizedBox(height: 24),
-                          ] else if ((isShow && _showEpisodesDirectly) || metadata.isSeason) ...[
-                            // Server says flatten — existing behavior unchanged
-                            Text(key: _seasonsSectionKey, t.libraries.groupings.episodes, style: sectionTitleStyle),
-                            const SizedBox(height: 12),
-                            if (_isLoadingSeasons || _isLoadingEpisodes)
-                              _sectionLoading
-                            else if (_episodes.isNotEmpty)
-                              _buildEpisodesList()
-                            else
-                              _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
-                            const SizedBox(height: 24),
-                          ],
-
-                          // Cast
-                          if (metadata.roles != null && metadata.roles!.isNotEmpty) ...[
-                            Text(key: _castSectionKey, t.discover.cast, style: sectionTitleStyle),
-                            const SizedBox(height: 12),
-                            _buildCastSection(metadata),
-                            const SizedBox(height: 24),
-                          ],
-
-                          // Trailers & Extras Section
-                          if (!widget.isOffline && _extras != null && _extras!.isNotEmpty) ...[
-                            Text(key: _extrasSectionKey, t.discover.extras, style: sectionTitleStyle),
-                            const SizedBox(height: 12),
-                            _buildExtrasSection(),
-                            const SizedBox(height: 24),
-                          ],
-
-                          // Related Hubs (Collections, Similar, More From...)
-                          for (int i = 0; i < _relatedHubs.length; i++) ...[
-                            HubSection(
-                              key: _relatedHubKeys[i],
-                              hub: _relatedHubs[i],
-                              icon: _getRelatedHubIcon(_relatedHubs[i]),
-                              inset: true,
-                              onVerticalNavigation: (isUp) => _handleRelatedHubNavigation(i, isUp),
-                            ),
-                            SizedBox(height: isTv ? 28 : 8),
-                          ],
-
-                          // Additional info — wrapped in Focus so DPAD DOWN from the
-                          // last focusable section lands here and scrolls it into view.
-                          if (_hasInfoRows)
-                            Focus(
-                              focusNode: _infoRowsFocusNode,
-                              onKeyEvent: _handleInfoRowsKeyEvent,
-                              child: Column(
-                                key: _infoRowsSectionKey,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (metadata.studio != null) ...[
-                                    _buildInfoRow(t.discover.studio, metadata.studio!),
-                                    const SizedBox(height: 12),
-                                  ],
-                                  if (metadata.contentRating != null) ...[
-                                    _buildInfoRow(t.discover.rating, formatContentRating(metadata.contentRating!)),
-                                    const SizedBox(height: 12),
-                                  ],
+                              // Seasons / Episodes (for TV shows and seasons)
+                              if (isShow && !_showEpisodesDirectly) ...[
+                                // Season tabs + inline episodes
+                                if (_isLoadingSeasons)
+                                  _sectionLoading
+                                else if (_seasons.isEmpty)
+                                  _sectionEmpty(context, t.messages.noSeasonsFound)
+                                else ...[
+                                  Text(
+                                    key: _seasonsSectionKey,
+                                    t.libraries.groupings.episodes,
+                                    style: sectionTitleStyle,
+                                  ),
+                                  const SizedBox(height: 12),
+                                  _buildSeasonTabs(),
+                                  const SizedBox(height: 16),
+                                  if (_isLoadingSeasonEpisodes)
+                                    _sectionLoading
+                                  else if (_episodes.isNotEmpty)
+                                    _buildEpisodesList()
+                                  else
+                                    _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
                                 ],
-                              ),
-                            ),
-                        ],
+                                const SizedBox(height: 24),
+                              ] else if ((isShow && _showEpisodesDirectly) || metadata.isSeason) ...[
+                                // Server says flatten — existing behavior unchanged
+                                Text(key: _seasonsSectionKey, t.libraries.groupings.episodes, style: sectionTitleStyle),
+                                const SizedBox(height: 12),
+                                if (_isLoadingSeasons || _isLoadingEpisodes)
+                                  _sectionLoading
+                                else if (_episodes.isNotEmpty)
+                                  _buildEpisodesList()
+                                else
+                                  _sectionEmpty(context, t.messages.noEpisodesFoundGeneral),
+                                const SizedBox(height: 24),
+                              ],
+
+                              // Cast
+                              if (metadata.roles != null && metadata.roles!.isNotEmpty) ...[
+                                Text(key: _castSectionKey, t.discover.cast, style: sectionTitleStyle),
+                                const SizedBox(height: 12),
+                                _buildCastSection(metadata),
+                                const SizedBox(height: 24),
+                              ],
+
+                              // Trailers & Extras Section
+                              if (!widget.isOffline && _extras != null && _extras!.isNotEmpty) ...[
+                                Text(key: _extrasSectionKey, t.discover.extras, style: sectionTitleStyle),
+                                const SizedBox(height: 12),
+                                _buildExtrasSection(),
+                                const SizedBox(height: 24),
+                              ],
+
+                              // Related Hubs (Collections, Similar, More From...)
+                              for (int i = 0; i < _relatedHubs.length; i++) ...[
+                                HubSection(
+                                  key: _relatedHubKeys[i],
+                                  hub: _relatedHubs[i],
+                                  icon: _getRelatedHubIcon(_relatedHubs[i]),
+                                  inset: true,
+                                  onVerticalNavigation: (isUp) => _handleRelatedHubNavigation(i, isUp),
+                                ),
+                                SizedBox(height: isTv ? 28 : 8),
+                              ],
+
+                              // Additional info — wrapped in Focus so DPAD DOWN from the
+                              // last focusable section lands here and scrolls it into view.
+                              if (_hasInfoRows)
+                                Focus(
+                                  focusNode: _infoRowsFocusNode,
+                                  onKeyEvent: _handleInfoRowsKeyEvent,
+                                  child: Column(
+                                    key: _infoRowsSectionKey,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      if (metadata.studio != null) ...[
+                                        _buildInfoRow(t.discover.studio, metadata.studio!),
+                                        const SizedBox(height: 12),
+                                      ],
+                                      if (metadata.contentRating != null) ...[
+                                        _buildInfoRow(t.discover.rating, formatContentRating(metadata.contentRating!)),
+                                        const SizedBox(height: 12),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SliverPadding(padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom)),
+                    ],
+                  ),
+                  // Sticky top bar with fading background
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: ValueListenableBuilder<double>(
+                      valueListenable: _scrollOffset,
+                      builder: (context, offset, child) => IgnorePointer(
+                        ignoring: offset < 50,
+                        child: AnimatedOpacity(
+                          opacity: (offset / 100).clamp(0.0, 1.0),
+                          duration: const Duration(milliseconds: 150),
+                          child: child!,
+                        ),
+                      ),
+                      child: Container(
+                        height: MediaQuery.paddingOf(context).top + 58,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              theme.scaffoldBackgroundColor.withValues(alpha: 0.8),
+                              theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
+                              theme.scaffoldBackgroundColor.withValues(alpha: 0),
+                            ],
+                            stops: const [0.0, 0.3, 1.0],
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                  SliverPadding(padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom)),
+                  // Back button (always visible)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    child: DesktopAppBarHelper.buildAdjustedLeading(
+                      AppBarBackButton(
+                        style: BackButtonStyle.circular,
+                        onPressed: () => Navigator.pop(context, _watchStateChanged),
+                      ),
+                      context: context,
+                    )!,
+                  ),
                 ],
               ),
-              // Sticky top bar with fading background
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: ValueListenableBuilder<double>(
-                  valueListenable: _scrollOffset,
-                  builder: (context, offset, child) => IgnorePointer(
-                    ignoring: offset < 50,
-                    child: AnimatedOpacity(
-                      opacity: (offset / 100).clamp(0.0, 1.0),
-                      duration: const Duration(milliseconds: 150),
-                      child: child!,
-                    ),
-                  ),
-                  child: Container(
-                    height: MediaQuery.paddingOf(context).top + 58,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          theme.scaffoldBackgroundColor.withValues(alpha: 0.8),
-                          theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
-                          theme.scaffoldBackgroundColor.withValues(alpha: 0),
-                        ],
-                        stops: const [0.0, 0.3, 1.0],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              // Back button (always visible)
-              Positioned(
-                top: 0,
-                left: 0,
-                child: DesktopAppBarHelper.buildAdjustedLeading(
-                  AppBarBackButton(
-                    style: BackButtonStyle.circular,
-                    onPressed: () => Navigator.pop(context, _watchStateChanged),
-                  ),
-                  context: context,
-                )!,
-              ),
-            ],
+            ),
           ),
         ),
       ),

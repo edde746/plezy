@@ -173,6 +173,12 @@ class PlatformDetector {
     return isMobile(context) && !isTV();
   }
 
+  /// True for iPhone/iPad-style iOS navigation. Excludes tvOS and forced-TV
+  /// modes, where route back gestures conflict with D-pad navigation.
+  static bool isHandheldIOS(BuildContext context) {
+    return !isTV() && Theme.of(context).platform == TargetPlatform.iOS;
+  }
+
   /// Detects if running on a desktop platform (Windows, macOS, or Linux)
   static bool isDesktop(BuildContext context) {
     return !isMobile(context);
