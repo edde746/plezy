@@ -60,6 +60,7 @@ class NavigationRailItem extends StatelessWidget {
   final BorderRadius borderRadius;
   final double iconSize;
   final double horizontalPadding;
+  final bool suppressSelectedBackground;
 
   /// Called when RIGHT arrow is pressed to navigate to content area.
   final VoidCallback? onNavigateRight;
@@ -79,12 +80,14 @@ class NavigationRailItem extends StatelessWidget {
     this.borderRadius = const BorderRadius.all(Radius.circular(12)),
     this.iconSize = 22,
     this.horizontalPadding = 17,
+    this.suppressSelectedBackground = false,
     this.onNavigateRight,
   });
 
   @override
   Widget build(BuildContext context) {
     final t = tokens(context);
+    final showSelectedBackground = isSelected && !suppressSelectedBackground;
 
     return Focus(
       focusNode: focusNode,
@@ -111,9 +114,8 @@ class NavigationRailItem extends StatelessWidget {
             decoration: BoxDecoration(
               color: () {
                 if (isCollapsed) return isFocused ? t.text.withValues(alpha: 0.12) : null;
-                if (isSelected && isFocused) return t.text.withValues(alpha: 0.15);
-                if (isSelected) return t.text.withValues(alpha: 0.1);
-                if (isFocused) return t.text.withValues(alpha: 0.12);
+                if (isFocused) return t.text.withValues(alpha: showSelectedBackground ? 0.15 : 0.12);
+                if (showSelectedBackground) return t.text.withValues(alpha: 0.1);
                 return null;
               }(),
               borderRadius: borderRadius,
@@ -792,6 +794,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       focusNode: focusNode,
       autofocus: autofocus,
       horizontalPadding: itemHorizontalPadding,
+      suppressSelectedBackground: widget.isSidebarFocused,
       onNavigateRight: widget.onNavigateToContent,
     );
   }
@@ -858,6 +861,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final isLoading = librariesProvider.isLoading;
     final isLibrariesSelected = widget.selectedTab == NavigationTabId.libraries && widget.selectedLibraryKey == null;
     final isLibrariesFocused = _focusTracker.isFocused(_kLibraries);
+    final showLibrariesSelectedBackground = isLibrariesSelected && !widget.isSidebarFocused;
     final allEmpty = visibleRows.isEmpty && hiddenLibraryCount == 0;
 
     return Column(
@@ -894,7 +898,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                 decoration: BoxDecoration(
                   color: () {
                     if (isCollapsed) return isLibrariesFocused ? t.text.withValues(alpha: 0.08) : null;
-                    if (isLibrariesSelected) return t.text.withValues(alpha: 0.1);
+                    if (showLibrariesSelectedBackground) return t.text.withValues(alpha: 0.1);
                     if (isLibrariesFocused) return t.text.withValues(alpha: 0.08);
                     return null;
                   }(),
@@ -1190,6 +1194,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         focusNode: focusNode,
         borderRadius: BorderRadius.circular(tokens(context).radiusSm),
         iconSize: 18,
+        suppressSelectedBackground: widget.isSidebarFocused,
         onNavigateRight: widget.onNavigateToContent,
       ),
     );
