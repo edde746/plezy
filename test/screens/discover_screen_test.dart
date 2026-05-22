@@ -101,7 +101,9 @@ void main() {
       storage: storage,
     );
     final discoverKey = GlobalKey<State<DiscoverScreen>>();
-    const sidebarOffset = SideNavigationRailState.expandedWidth;
+    const targetSidebarOffset = SideNavigationRailState.expandedWidth;
+    const currentForegroundLeft = 120.0;
+    const foregroundWidth = 1280 - SideNavigationRailState.tvCollapsedWidth;
 
     addTearDown(() async {
       activeProfileProvider.dispose();
@@ -131,14 +133,15 @@ void main() {
               focusSidebar: () {},
               focusContent: () {},
               isSidebarFocused: false,
-              sideNavigationWidth: sidebarOffset,
-              reservedSideNavigationWidth: sidebarOffset,
-              foregroundWidth: 1280 - sidebarOffset,
+              sideNavigationWidth: targetSidebarOffset,
+              reservedSideNavigationWidth: SideNavigationRailState.tvCollapsedWidth,
+              foregroundLeft: currentForegroundLeft,
+              foregroundWidth: foregroundWidth,
               viewportWidth: 1280,
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: SizedBox(
-                  width: 1280 - sidebarOffset,
+                  width: foregroundWidth,
                   height: 720,
                   child: DiscoverScreen(key: discoverKey),
                 ),
@@ -155,10 +158,10 @@ void main() {
     final scale = TvLayoutConstants.scaleForSize(const Size(1280, 720));
     final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
     final spotlightBackground = tester.widget<TvSpotlightBackground>(find.byType(TvSpotlightBackground));
-    expect(spotlightBackground.contentLeft, closeTo(spotlightLeft + sidebarOffset, 0.001));
+    expect(spotlightBackground.contentLeft, closeTo(spotlightLeft + currentForegroundLeft, 0.001));
 
     final railHeight = TvBrowseRailLayout.estimateHeight(
-      size: const Size(1280 - sidebarOffset, 720),
+      size: const Size(foregroundWidth, 720),
       hubs: [hub],
       density: LibraryDensity.max,
       episodePosterMode: settings.read(SettingsService.episodePosterMode),
@@ -178,12 +181,12 @@ void main() {
     expect(spotlightBackground.contentBottom, closeTo(expectedSpotlightBottom, 0.001));
 
     final browseRail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
-    expect(browseRail.backgroundBleedLeft, sidebarOffset);
+    expect(browseRail.backgroundBleedLeft, targetSidebarOffset);
 
     final backgroundPosition = tester.widget<Positioned>(
       find.ancestor(of: find.byType(TvSpotlightBackground), matching: find.byType(Positioned)).first,
     );
-    expect(backgroundPosition.left, -sidebarOffset);
+    expect(backgroundPosition.left, -currentForegroundLeft);
     expect(backgroundPosition.width, 1280);
 
     tester.state<FocusableActionBarState>(find.byType(FocusableActionBar)).requestFocusOnFirst();

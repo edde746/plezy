@@ -1538,6 +1538,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
     final railSize = MainScreenFocusScope.foregroundSizeOf(context);
     final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
+    final foregroundLeft = MainScreenFocusScope.foregroundLeftOf(context);
     final railHeight = browseHubs.isEmpty
         ? 0.0
         : TvBrowseRailLayout.estimateHeight(
@@ -1562,23 +1563,20 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          SideNavigationBleedBuilder(
-            targetBleed: sidebarBleed,
-            builder: (context, animatedBleed, _) => Positioned(
-              top: 0,
-              bottom: 0,
-              left: -animatedBleed,
-              width: fullBleedWidth,
-              child: TvSpotlightBackground(
-                item: spotlight,
-                client: _getMediaClientForItem(spotlight),
-                hideSpoilers: hideSpoilers,
-                contentTop: spotlightTop,
-                contentBottom: spotlightBottom,
-                contentLeft: spotlightLeft + animatedBleed,
-                compact: true,
-                showPrimaryAction: false,
-              ),
+          Positioned(
+            top: 0,
+            bottom: 0,
+            left: -foregroundLeft,
+            width: fullBleedWidth,
+            child: TvSpotlightBackground(
+              item: spotlight,
+              client: _getMediaClientForItem(spotlight),
+              hideSpoilers: hideSpoilers,
+              contentTop: spotlightTop,
+              contentBottom: spotlightBottom,
+              contentLeft: spotlightLeft + foregroundLeft,
+              compact: true,
+              showPrimaryAction: false,
             ),
           ),
           if (_isLoading || (_areHubsLoading && browseHubs.isEmpty)) const Center(child: CircularProgressIndicator()),

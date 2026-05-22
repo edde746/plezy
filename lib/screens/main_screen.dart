@@ -62,6 +62,7 @@ class MainScreenFocusScope extends InheritedWidget {
   final bool isSidebarFocused;
   final double sideNavigationWidth;
   final double? reservedSideNavigationWidth;
+  final double? foregroundLeft;
   final double? foregroundWidth;
   final double? viewportWidth;
   final void Function(String libraryGlobalKey)? selectLibrary;
@@ -73,6 +74,7 @@ class MainScreenFocusScope extends InheritedWidget {
     required this.isSidebarFocused,
     required this.sideNavigationWidth,
     this.reservedSideNavigationWidth,
+    this.foregroundLeft,
     this.foregroundWidth,
     this.viewportWidth,
     this.selectLibrary,
@@ -96,6 +98,12 @@ class MainScreenFocusScope extends InheritedWidget {
     return MediaQuery.sizeOf(context).width;
   }
 
+  static double foregroundLeftOf(BuildContext context) {
+    final left = of(context)?.foregroundLeft;
+    if (left != null) return left;
+    return 0.0;
+  }
+
   static Size foregroundSizeOf(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     return Size(foregroundWidthOf(context), size.height);
@@ -112,6 +120,7 @@ class MainScreenFocusScope extends InheritedWidget {
     return isSidebarFocused != oldWidget.isSidebarFocused ||
         sideNavigationWidth != oldWidget.sideNavigationWidth ||
         reservedSideNavigationWidth != oldWidget.reservedSideNavigationWidth ||
+        foregroundLeft != oldWidget.foregroundLeft ||
         foregroundWidth != oldWidget.foregroundWidth ||
         viewportWidth != oldWidget.viewportWidth;
   }
@@ -1334,6 +1343,7 @@ class _MainScreenState extends State<MainScreen>
                           isSidebarFocused: _isSidebarFocused,
                           sideNavigationWidth: targetContentOffset,
                           reservedSideNavigationWidth: reservedContentOffset,
+                          foregroundLeft: contentLayout.left,
                           foregroundWidth: contentLayout.width,
                           viewportWidth: viewportWidth,
                           selectLibrary: _selectLibrary,
