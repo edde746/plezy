@@ -214,7 +214,12 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
       animate: animate,
     );
     if (index >= 0 && index < _totalItemCount) {
-      scrollKeyedChildToHorizontalCenter(_scrollController, _itemKeyFor(index), animate: animate);
+      scrollKeyedChildToHorizontalCenter(
+        _scrollController,
+        _itemKeyFor(index),
+        animate: animate,
+        isCurrent: () => _focusedIndex == index && index < _totalItemCount,
+      );
     }
   }
 

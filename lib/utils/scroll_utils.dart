@@ -86,9 +86,12 @@ void scrollKeyedChildToHorizontalCenter(
   GlobalKey key, {
   bool animate = true,
   int maxAttempts = 2,
+  bool Function()? isCurrent,
 }) {
   void schedule(int attempt) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isCurrent?.call() == false) return;
+
       final context = key.currentContext;
       if (context == null) {
         if (attempt < maxAttempts) schedule(attempt + 1);

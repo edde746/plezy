@@ -437,9 +437,14 @@ void main() {
       episodePosterMode: EpisodePosterMode.episodeThumbnail,
       scale: scale,
     );
-    final itemExtent = metrics.cardWidth + metrics.itemGap;
-    final targetCenter = metrics.railEdgePadding + (5 * itemExtent) + (itemExtent / 2);
-    final expectedOffset = (targetCenter - (position.viewportDimension / 2)).clamp(0.0, position.maxScrollExtent);
+    final expectedOffset = TvBrowseRailLayout.scrollOffsetForIndex(
+      hub: episodeHub,
+      index: 5,
+      metrics: metrics,
+      viewportWidth: position.viewportDimension,
+      maxScrollExtent: position.maxScrollExtent,
+      scale: scale,
+    );
 
     expect(activeHubIds.last, episodeHub.id);
     expect(parentRebuilds, greaterThan(0));
@@ -582,6 +587,119 @@ void main() {
     final targetRect = tester.getRect(targetTitle);
     expect(targetRect.left, greaterThanOrEqualTo(railRect.left - 0.5));
     expect(targetRect.right, lessThanOrEqualTo(railRect.right + 0.5));
+
+    final position = _activeRailPosition(tester);
+    final size = tester.view.physicalSize / tester.view.devicePixelRatio;
+    final scale = TvBrowseRailLayout.scaleForSize(size);
+    final metrics = TvBrowseRailLayout.metricsForHub(
+      hub: hub,
+      availableWidth: size.width - TvBrowseRailLayout.horizontalInsetForScale(scale),
+      density: LibraryDensity.defaultValue,
+      episodePosterMode: EpisodePosterMode.episodeThumbnail,
+      scale: scale,
+    );
+    final expectedOffset = TvBrowseRailLayout.scrollOffsetForIndex(
+      hub: hub,
+      index: 117,
+      metrics: metrics,
+      viewportWidth: position.viewportDimension,
+      maxScrollExtent: position.maxScrollExtent,
+      scale: scale,
+    );
+    expect(position.pixels, closeTo(expectedOffset, 0.1));
+  });
+
+  testWidgets('keeps late episode thumbnails visible during rapid key repeat', (tester) async {
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(() {
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+    });
+
+    final focusedItemIds = <String>[];
+    const episodeCount = 500;
+    const targetIndex = 419;
+    final episodes = List.generate(
+      episodeCount,
+      (index) => MediaItem(
+        id: 'episode_${index + 1}',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Episode ${index + 1}',
+        parentIndex: 11,
+        index: index + 1,
+        thumbPath: '/episode_${index + 1}',
+      ),
+    );
+    final hub = MediaHub(
+      id: 'detail_season_11',
+      title: 'Season 11',
+      type: 'episode',
+      items: episodes,
+      size: episodeCount,
+    );
+    final serverManager = MultiServerManager();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                hubs: [hub],
+                autofocus: true,
+                iconForHub: (_, _) => Icons.tv_rounded,
+                onFocusedItemChanged: (item) => focusedItemIds.add(item.id),
+                episodePosterModeForHub: (_) => EpisodePosterMode.episodeThumbnail,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+    for (var i = 0; i < targetIndex - 1; i++) {
+      await tester.sendKeyRepeatEvent(LogicalKeyboardKey.arrowRight);
+    }
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pumpAndSettle();
+
+    expect(focusedItemIds.last, 'episode_${targetIndex + 1}');
+    final targetTitle = find.text('Episode ${targetIndex + 1}');
+    expect(targetTitle, findsOneWidget);
+    final railRect = tester.getRect(find.byType(TvBrowseRail));
+    final targetRect = tester.getRect(targetTitle);
+    expect(targetRect.left, greaterThanOrEqualTo(railRect.left - 0.5));
+    expect(targetRect.right, lessThanOrEqualTo(railRect.right + 0.5));
+
+    final position = _activeRailPosition(tester);
+    final size = tester.view.physicalSize / tester.view.devicePixelRatio;
+    final scale = TvBrowseRailLayout.scaleForSize(size);
+    final metrics = TvBrowseRailLayout.metricsForHub(
+      hub: hub,
+      availableWidth: size.width - TvBrowseRailLayout.horizontalInsetForScale(scale),
+      density: LibraryDensity.defaultValue,
+      episodePosterMode: EpisodePosterMode.episodeThumbnail,
+      scale: scale,
+    );
+    final expectedOffset = TvBrowseRailLayout.scrollOffsetForIndex(
+      hub: hub,
+      index: targetIndex,
+      metrics: metrics,
+      viewportWidth: position.viewportDimension,
+      maxScrollExtent: position.maxScrollExtent,
+      scale: scale,
+    );
+    expect(position.pixels, closeTo(expectedOffset, 0.1));
   });
 
   testWidgets('resets long-press state when context menu focus receives select key up', (tester) async {

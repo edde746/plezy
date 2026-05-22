@@ -19,7 +19,6 @@ import '../utils/media_image_helper.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/layout_constants.dart';
-import '../utils/scroll_utils.dart';
 import 'app_icon.dart';
 import 'focus_builders.dart';
 import 'horizontal_scroll_with_arrows.dart';
@@ -189,14 +188,33 @@ class TvBrowseRailLayout {
     return (contentWidth - viewportWidth).clamp(0.0, double.infinity).toDouble();
   }
 
+  static double itemExtentForIndex({
+    required MediaHub hub,
+    required int index,
+    required TvBrowseRailLayoutMetrics metrics,
+    required double scale,
+  }) {
+    if (index == hub.items.length && hub.more) return (132 * scale) + metrics.itemGap;
+    return metrics.cardWidth + metrics.itemGap;
+  }
+
   static double scrollOffsetForIndex({
+    required MediaHub hub,
     required int index,
     required TvBrowseRailLayoutMetrics metrics,
     required double viewportWidth,
     required double maxScrollExtent,
+    required double scale,
   }) {
-    final itemExtent = metrics.cardWidth + metrics.itemGap;
-    final targetCenter = metrics.railEdgePadding + (index * itemExtent) + (itemExtent / 2);
+    final totalCount = hub.items.length + (hub.more ? 1 : 0);
+    if (totalCount == 0) return 0;
+
+    final clampedIndex = index.clamp(0, totalCount - 1).toInt();
+    final normalItemExtent = metrics.cardWidth + metrics.itemGap;
+    final normalItemsBefore = clampedIndex < hub.items.length ? clampedIndex : hub.items.length;
+    final leadingOffset = metrics.railEdgePadding + (normalItemsBefore * normalItemExtent);
+    final targetExtent = itemExtentForIndex(hub: hub, index: clampedIndex, metrics: metrics, scale: scale);
+    final targetCenter = leadingOffset + (targetExtent / 2);
     return (targetCenter - (viewportWidth / 2)).clamp(0.0, maxScrollExtent).toDouble();
   }
 
@@ -290,18 +308,20 @@ class TvBrowseRail extends StatefulWidget {
 
 class TvBrowseRailState extends State<TvBrowseRail> {
   static const _longPressDuration = Duration(milliseconds: 500);
+  static const _navigationScrollDuration = Duration(milliseconds: 130);
+  static const _repeatNavigationScrollDuration = Duration(milliseconds: 65);
+  static const _scrollCatchUpViewportDistance = 2.5;
 
   final FocusNode _focusNode = FocusNode(debugLabel: 'tv_browse_rail');
   final Map<String, ScrollController> _scrollControllers = {};
   final ScrollController _verticalController = ScrollController();
   final Map<int, GlobalKey> _hubSectionKeys = {};
-  final Map<String, GlobalKey> _itemKeys = {};
   final Map<String, GlobalKey<MediaCardState>> _mediaCardKeys = {};
+  final Map<String, TvBrowseRailLayoutMetrics> _metricsByHub = {};
+  final Map<String, double> _scaleByHub = {};
 
   int _hubIndex = 0;
   int _itemIndex = 0;
-  double _itemExtent = 260;
-  double _railLeadingPadding = 0;
   List<double> _sectionOffsets = const [];
   double _sectionMaxScrollExtent = 0;
   Timer? _longPressTimer;
@@ -514,7 +534,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         });
         _rememberFocus(hub);
         _notifyFocusedItem();
-        _scrollToItem();
+        _scrollToItem(duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
       } else {
         widget.onNavigateToSidebar?.call();
       }
@@ -529,7 +549,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         });
         _rememberFocus(hub);
         _notifyFocusedItem();
-        _scrollToItem();
+        _scrollToItem(duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
       }
       return KeyEventResult.handled;
     }
@@ -644,21 +664,34 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     HubFocusMemory.setForHub(hub.id, _itemIndex);
   }
 
-  void _scrollToItem({bool animate = true}) {
+  void _scrollToItem({bool animate = true, Duration duration = _navigationScrollDuration}) {
     final hub = _activeHub;
     if (hub == null) return;
     final controller = _scrollControllers[hub.id];
     if (controller == null) return;
-
-    scrollListToIndex(
-      controller,
-      _itemIndex,
-      itemExtent: _itemExtent,
-      leadingPadding: _railLeadingPadding,
-      animate: animate,
+    if (controller.positions.length != 1) return;
+    final metrics = _metricsByHub[hub.id];
+    if (metrics == null) return;
+    final scale = _scaleByHub[hub.id] ?? 1.0;
+    final position = controller.position;
+    final viewportWidth = position.viewportDimension;
+    final maxScrollExtent = position.maxScrollExtent;
+    if (!viewportWidth.isFinite || !maxScrollExtent.isFinite) return;
+    final target = TvBrowseRailLayout.scrollOffsetForIndex(
+      hub: hub,
+      index: _itemIndex,
+      metrics: metrics,
+      viewportWidth: viewportWidth,
+      maxScrollExtent: maxScrollExtent,
+      scale: scale,
     );
-    if (_itemIndex >= 0 && _itemIndex < _totalItemCount(hub)) {
-      scrollKeyedChildToHorizontalCenter(controller, _itemKeyFor(hub, _itemIndex), animate: animate);
+
+    final distance = (position.pixels - target).abs();
+    if (distance < 0.5) return;
+    if (!animate || duration == Duration.zero || distance > viewportWidth * _scrollCatchUpViewportDistance) {
+      position.jumpTo(target);
+    } else {
+      unawaited(position.animateTo(target, duration: duration, curve: Curves.easeOutCubic));
     }
   }
 
@@ -684,10 +717,12 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         scale: scale,
       );
       final initialScrollOffset = TvBrowseRailLayout.scrollOffsetForIndex(
+        hub: hub,
         index: initialItemIndex,
         metrics: metrics,
         viewportWidth: viewportWidth,
         maxScrollExtent: maxScrollExtent,
+        scale: scale,
       );
       return ScrollController(initialScrollOffset: initialScrollOffset);
     });
@@ -695,10 +730,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
   GlobalKey<MediaCardState> _cardKeyFor(MediaHub hub, int itemIndex) {
     return _mediaCardKeys.putIfAbsent('${hub.id}:$itemIndex', () => GlobalKey<MediaCardState>());
-  }
-
-  GlobalKey _itemKeyFor(MediaHub hub, int itemIndex) {
-    return _itemKeys.putIfAbsent('${hub.id}:$itemIndex', () => GlobalKey());
   }
 
   void _showContextMenuForCurrentItem() {
@@ -980,10 +1011,8 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     final inactiveIndex = HubFocusMemory.getForHubOnly(hub.id, totalCount);
     final focusedIndex = isActiveHub ? _itemIndex : inactiveIndex;
     final scrollController = _scrollControllerForHub(hub, metrics, railViewportWidth, scale, focusedIndex);
-    if (isActiveHub) {
-      _railLeadingPadding = metrics.railEdgePadding;
-      _itemExtent = metrics.cardWidth + metrics.itemGap;
-    }
+    _metricsByHub[hub.id] = metrics;
+    _scaleByHub[hub.id] = scale;
 
     return Transform.translate(
       offset: Offset(-interactionExpansion, 0),
@@ -1003,12 +1032,13 @@ class TvBrowseRailState extends State<TvBrowseRail> {
               scrollDirection: Axis.horizontal,
               clipBehavior: Clip.none,
               padding: EdgeInsets.fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 6 * scale),
+              itemExtentBuilder: (itemIndex, _) =>
+                  TvBrowseRailLayout.itemExtentForIndex(hub: hub, index: itemIndex, metrics: metrics, scale: scale),
               itemCount: totalCount,
               itemBuilder: (context, itemIndex) {
                 final isFocused = hasFocus && isActiveHub && itemIndex == _itemIndex;
                 if (itemIndex == hub.items.length) {
                   return Padding(
-                    key: _itemKeyFor(hub, itemIndex),
                     padding: EdgeInsets.only(right: metrics.itemGap),
                     child: FocusBuilders.buildLockedFocusWrapper(
                       context: context,
@@ -1038,7 +1068,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
                 final item = hub.items[itemIndex];
                 return Padding(
-                  key: _itemKeyFor(hub, itemIndex),
                   padding: EdgeInsets.only(right: metrics.itemGap),
                   child: MouseRegion(
                     onEnter: (_) => _setHoveredItem(hub, itemIndex),
