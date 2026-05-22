@@ -15,6 +15,7 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/layout_constants.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:provider/provider.dart';
@@ -33,6 +34,40 @@ void main() {
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
+  });
+
+  testWidgets('TV detail scales fallback title to fit logo bounds', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(800, 480);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const title = 'The Surprisingly Long Movie Title That Needs Two Whole Lines';
+    final movie = MediaItem(
+      id: 'movie_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: title,
+      summary: 'A compact viewport should make the fallback title shrink before it can overlap the detail text.',
+    );
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: MediaDetailScreen(metadata: movie),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+
+    final titleText = tester.widget<Text>(find.text(title));
+    final baseFontSize = 56 * TvLayoutConstants.scaleForSize(const Size(800, 480));
+    expect(titleText.style?.fontSize, isNotNull);
+    expect(titleText.style!.fontSize!, lessThan(baseFontSize));
   });
 
   testWidgets('TV detail reveals selected season before remaining episode caches load', (tester) async {

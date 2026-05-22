@@ -68,6 +68,7 @@ import '../mixins/server_bound_media_mixin.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/deletion_notifier.dart';
 import '../widgets/episode_card.dart';
+import '../widgets/fitting_title_text.dart';
 import 'actor_media_screen.dart';
 import '../widgets/focusable_tab_chip.dart';
 import '../widgets/hub_section.dart';
@@ -846,20 +847,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     FontWeight fontWeight = FontWeight.bold,
     double shadowBlur = 8,
   }) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Text(
-        title,
-        style: Theme.of(context).textTheme.displaySmall?.copyWith(
-          color: Colors.white,
-          fontWeight: fontWeight,
-          fontSize: fontSize,
-          shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: shadowBlur)],
-        ),
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
+    final baseStyle = (Theme.of(context).textTheme.displaySmall ?? const TextStyle()).copyWith(
+      color: Colors.white,
+      fontWeight: fontWeight,
+      fontSize: fontSize,
+      shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: shadowBlur)],
     );
+
+    return FittingTitleText(title, style: baseStyle);
   }
 
   /// Build radial progress indicator for download button

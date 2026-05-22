@@ -41,6 +41,7 @@ import '../providers/user_profile_provider.dart';
 import '../services/storage_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
+import '../widgets/fitting_title_text.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_background.dart';
 import '../mixins/refreshable.dart';
@@ -1775,6 +1776,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final alignLeft = isTv || isLargeScreen;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final heroLogoWidth = isTv ? TvLayoutConstants.heroLogoWidth : 400.0;
+    final heroLogoHeight = isTv ? TvLayoutConstants.heroLogoHeight : 120.0;
+    final heroTitleStyle = theme.textTheme.displaySmall?.copyWith(
+      color: colorScheme.onSurface,
+      fontWeight: FontWeight.bold,
+      fontSize: isTv ? 52 : null,
+      shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
+    );
 
     // Determine content type label for chip
     final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
@@ -1924,16 +1933,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           // Show logo or name/title
                           if (heroItem.clearLogoPath != null)
                             SizedBox(
-                              height: isTv ? TvLayoutConstants.heroLogoHeight : 120,
-                              width: isTv ? TvLayoutConstants.heroLogoWidth : 400,
+                              height: heroLogoHeight,
+                              width: heroLogoWidth,
                               child: Builder(
                                 builder: (context) {
                                   final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
                                   final logoUrl = MediaImageHelper.getOptimizedImageUrl(
                                     client: heroClient,
                                     thumbPath: heroItem.clearLogoPath,
-                                    maxWidth: isTv ? TvLayoutConstants.heroLogoWidth : 400,
-                                    maxHeight: isTv ? TvLayoutConstants.heroLogoHeight : 120,
+                                    maxWidth: heroLogoWidth,
+                                    maxHeight: heroLogoHeight,
                                     devicePixelRatio: dpr,
                                     imageType: ImageType.logo,
                                   );
@@ -1944,34 +1953,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                       cacheManager: PlexImageCacheManager.instance,
                                       filterQuality: FilterQuality.medium,
                                       fit: BoxFit.contain,
-                                      memCacheWidth: ((isTv ? TvLayoutConstants.heroLogoWidth : 400) * dpr)
-                                          .clamp(200, isTv ? 1000 : 800)
-                                          .round(),
+                                      memCacheWidth: (heroLogoWidth * dpr).clamp(200, isTv ? 1000 : 800).round(),
                                       alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
                                       placeholder: (context, url) => const SizedBox.shrink(),
                                       errorBuilder: (context, error, stackTrace) {
                                         // Fallback to text if logo fails to load
-                                        final theme = Theme.of(context);
-                                        final colorScheme = theme.colorScheme;
-                                        return Align(
+                                        return FittingTitleText(
+                                          showName,
+                                          style: heroTitleStyle,
+                                          textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                                           alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                                          child: Text(
-                                            showName,
-                                            style: theme.textTheme.displaySmall?.copyWith(
-                                              color: colorScheme.onSurface,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: isTv ? 52 : null,
-                                              shadows: [
-                                                Shadow(
-                                                  color: colorScheme.surface.withValues(alpha: 0.8),
-                                                  blurRadius: 8,
-                                                ),
-                                              ],
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                                          ),
                                         );
                                       },
                                     ),
@@ -1982,17 +1973,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               ),
                             )
                           else
-                            Text(
-                              showName,
-                              style: theme.textTheme.displaySmall?.copyWith(
-                                color: colorScheme.onSurface,
-                                fontWeight: FontWeight.bold,
-                                fontSize: isTv ? 52 : null,
-                                shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
+                            SizedBox(
+                              height: heroLogoHeight,
+                              width: heroLogoWidth,
+                              child: FittingTitleText(
+                                showName,
+                                style: heroTitleStyle,
+                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                             ),
 
                           // Metadata as dot-separated text with content type

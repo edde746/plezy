@@ -12,6 +12,7 @@ import '../utils/formatters.dart';
 import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
 import 'app_icon.dart';
+import 'fitting_title_text.dart';
 import 'optimized_media_image.dart' show blurArtwork;
 
 class TvSpotlightBackground extends StatelessWidget {
@@ -203,11 +204,13 @@ class TvSpotlightBackground extends StatelessWidget {
   Widget _buildLogoOrTitle(BuildContext context, MediaItem media, String title) {
     final scale = _scale(context);
     final logoPath = media.clearLogoPath;
-    if (logoPath == null || logoPath.isEmpty) return _buildTitle(context, title);
-
-    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
     final logoWidth = _logoWidth(scale);
     final logoHeight = _logoHeight(scale);
+    if (logoPath == null || logoPath.isEmpty) {
+      return SizedBox(width: logoWidth, height: logoHeight, child: _buildTitle(context, title));
+    }
+
+    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
     final imageUrl = MediaImageHelper.getOptimizedImageUrl(
       client: client,
       thumbPath: logoPath,
@@ -239,10 +242,8 @@ class TvSpotlightBackground extends StatelessWidget {
 
   Widget _buildTitle(BuildContext context, String title) {
     final scale = _scale(context);
-    return Text(
+    return FittingTitleText(
       title,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
       style: Theme.of(context).textTheme.displaySmall?.copyWith(
         color: Colors.white,
         fontSize: _titleFontSize(scale),
