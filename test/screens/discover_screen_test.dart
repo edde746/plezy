@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
@@ -184,6 +185,15 @@ void main() {
     );
     expect(backgroundPosition.left, -sidebarOffset);
     expect(backgroundPosition.width, 1280);
+
+    tester.state<FocusableActionBarState>(find.byType(FocusableActionBar)).requestFocusOnFirst();
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowDown);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
 
     tester.state<FocusableActionBarState>(find.byType(FocusableActionBar)).requestFocusOnFirst();
     await tester.pump();

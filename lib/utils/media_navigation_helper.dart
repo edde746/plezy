@@ -73,7 +73,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
     final sectionKey = mi.librarySectionKey;
     if (sectionKey != null && mi.serverId != null) {
       final libraryGlobalKey = buildGlobalKey(mi.serverId!, sectionKey);
-      MainScreenFocusScope.of(context)?.selectLibrary?.call(libraryGlobalKey);
+      MainScreenFocusScope.of(context, listen: false)?.selectLibrary?.call(libraryGlobalKey);
       return MediaNavigationResult.librarySelected;
     }
     return MediaNavigationResult.unsupported;

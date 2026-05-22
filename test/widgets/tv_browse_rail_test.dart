@@ -696,6 +696,51 @@ void main() {
     expect(backgroundPosition.left, -SideNavigationRailState.expandedWidth);
     expect(backgroundPosition.width, 1280);
   });
+
+  testWidgets('background bleed updates do not renotify rail focus', (tester) async {
+    final serverManager = MultiServerManager();
+    final multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    addTearDown(multiServerProvider.dispose);
+
+    final focusedItemIds = <String>[];
+    final activeHubIds = <String>[];
+    final item = MediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
+    final hub = MediaHub(id: 'hub_1', title: 'Hub', type: 'movie', items: [item], size: 1);
+
+    Widget buildRail(double backgroundBleedLeft) {
+      return ChangeNotifierProvider<MultiServerProvider>.value(
+        value: multiServerProvider,
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                key: const ValueKey('rail'),
+                hubs: [hub],
+                iconForHub: (_, _) => Icons.movie_rounded,
+                backgroundBleedLeft: backgroundBleedLeft,
+                onFocusedItemChanged: (focused) => focusedItemIds.add(focused.id),
+                onActiveHubChanged: (active, _) => activeHubIds.add(active.id),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    await tester.pumpWidget(buildRail(0));
+    await tester.pump();
+    focusedItemIds.clear();
+    activeHubIds.clear();
+
+    await tester.pumpWidget(buildRail(SideNavigationRailState.expandedWidth));
+    await tester.pump();
+
+    expect(focusedItemIds, isEmpty);
+    expect(activeHubIds, isEmpty);
+  });
 }
 
 ScrollPosition _activeRailPosition(WidgetTester tester) {

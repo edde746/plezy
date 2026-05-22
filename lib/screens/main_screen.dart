@@ -79,8 +79,9 @@ class MainScreenFocusScope extends InheritedWidget {
     required super.child,
   });
 
-  static MainScreenFocusScope? of(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<MainScreenFocusScope>();
+  static MainScreenFocusScope? of(BuildContext context, {bool listen = true}) {
+    if (listen) return context.dependOnInheritedWidgetOfExactType<MainScreenFocusScope>();
+    return context.getElementForInheritedWidgetOfExactType<MainScreenFocusScope>()?.widget as MainScreenFocusScope?;
   }
 
   static double sideNavigationBleedOf(BuildContext context, {required bool alwaysKeepSidebarOpen}) {
@@ -113,6 +114,25 @@ class MainScreenFocusScope extends InheritedWidget {
         reservedSideNavigationWidth != oldWidget.reservedSideNavigationWidth ||
         foregroundWidth != oldWidget.foregroundWidth ||
         viewportWidth != oldWidget.viewportWidth;
+  }
+}
+
+class SideNavigationBleedBuilder extends StatelessWidget {
+  final double targetBleed;
+  final Widget? child;
+  final Widget Function(BuildContext context, double bleed, Widget? child) builder;
+
+  const SideNavigationBleedBuilder({super.key, required this.targetBleed, this.child, required this.builder});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(end: targetBleed),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+      child: child,
+      builder: builder,
+    );
   }
 }
 
@@ -1312,7 +1332,7 @@ class _MainScreenState extends State<MainScreen>
                           focusSidebar: _focusSidebar,
                           focusContent: _focusContent,
                           isSidebarFocused: _isSidebarFocused,
-                          sideNavigationWidth: contentLeftPadding,
+                          sideNavigationWidth: targetContentOffset,
                           reservedSideNavigationWidth: reservedContentOffset,
                           foregroundWidth: contentLayout.width,
                           viewportWidth: viewportWidth,

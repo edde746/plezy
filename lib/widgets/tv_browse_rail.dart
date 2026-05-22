@@ -335,6 +335,19 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   @override
   void didUpdateWidget(covariant TvBrowseRail oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final hubStateChanged = !_hasSameHubState(oldWidget.hubs, widget.hubs);
+    final initialSelectionChanged =
+        oldWidget.initialHubId != widget.initialHubId || oldWidget.initialItemId != widget.initialItemId;
+
+    if (!hubStateChanged && !initialSelectionChanged) {
+      if (!oldWidget.autofocus && widget.autofocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _focusNode.requestFocus();
+        });
+      }
+      return;
+    }
+
     final oldActiveHubId = oldWidget.hubs.isEmpty
         ? null
         : oldWidget.hubs[_hubIndex.clamp(0, oldWidget.hubs.length - 1)].id;
@@ -371,6 +384,21 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       if (activeHubChanged) _notifyActiveHubChanged();
       _notifyFocusedItem();
     });
+  }
+
+  bool _hasSameHubState(List<MediaHub> oldHubs, List<MediaHub> newHubs) {
+    if (oldHubs.length != newHubs.length) return false;
+    for (var i = 0; i < oldHubs.length; i++) {
+      final oldHub = oldHubs[i];
+      final newHub = newHubs[i];
+      if (oldHub.id != newHub.id || oldHub.more != newHub.more || oldHub.items.length != newHub.items.length) {
+        return false;
+      }
+      for (var j = 0; j < oldHub.items.length; j++) {
+        if (oldHub.items[j].globalKey != newHub.items[j].globalKey) return false;
+      }
+    }
+    return true;
   }
 
   @override
@@ -726,7 +754,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
             scale,
           ).clamp(0.0, horizontalInset).toDouble();
           final width = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.sizeOf(context).width;
-          final backgroundWidth = math.max(width + widget.backgroundBleedLeft, MediaQuery.sizeOf(context).width);
           final availableWidth = (width - horizontalInset).clamp(1.0, double.infinity).toDouble();
           final railViewportWidth = (availableWidth + interactionExpansion).clamp(1.0, double.infinity).toDouble();
           final density = svc.read(SettingsService.libraryDensity);
@@ -788,20 +815,10 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    Positioned(
-                      top: 0,
-                      bottom: 0,
-                      left: -widget.backgroundBleedLeft,
-                      width: backgroundWidth,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Colors.transparent, theme.scaffoldBackgroundColor.withValues(alpha: 0.7)],
-                          ),
-                        ),
-                      ),
+                    _RailBackgroundBleed(
+                      width: width,
+                      targetBleedLeft: widget.backgroundBleedLeft,
+                      backgroundColor: theme.scaffoldBackgroundColor,
                     ),
                     Padding(
                       padding: EdgeInsets.fromLTRB(
@@ -1121,6 +1138,36 @@ class TvBrowseRailState extends State<TvBrowseRail> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _RailBackgroundBleed extends StatelessWidget {
+  final double width;
+  final double targetBleedLeft;
+  final Color backgroundColor;
+
+  const _RailBackgroundBleed({required this.width, required this.targetBleedLeft, required this.backgroundColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(end: targetBleedLeft),
+      duration: FocusTheme.getAnimationDuration(context),
+      curve: Curves.easeOutCubic,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.transparent, backgroundColor.withValues(alpha: 0.7)],
+          ),
+        ),
+      ),
+      builder: (context, bleedLeft, child) {
+        final backgroundWidth = math.max(width + bleedLeft, MediaQuery.sizeOf(context).width);
+        return Positioned(top: 0, bottom: 0, left: -bleedLeft, width: backgroundWidth, child: child!);
+      },
     );
   }
 }

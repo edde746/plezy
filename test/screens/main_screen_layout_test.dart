@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/screens/main_screen.dart';
 import 'package:plezy/widgets/side_navigation_rail.dart';
@@ -38,5 +39,43 @@ void main() {
     expect(expanded.left, SideNavigationRailState.expandedWidth);
     expect(expanded.width, viewportWidth - SideNavigationRailState.expandedWidth);
     expect(expanded.left + expanded.width, viewportWidth);
+  });
+
+  testWidgets('side navigation bleed animates from the previous value', (tester) async {
+    Widget build(double targetBleed) {
+      return Directionality(
+        textDirection: TextDirection.ltr,
+        child: Stack(
+          children: [
+            SideNavigationBleedBuilder(
+              targetBleed: targetBleed,
+              builder: (context, bleed, _) => Positioned(
+                key: const ValueKey('bleed-position'),
+                top: 0,
+                left: -bleed,
+                width: 1280,
+                height: 10,
+                child: const SizedBox.shrink(),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    double left() => tester.widget<Positioned>(find.byKey(const ValueKey('bleed-position'))).left!;
+
+    await tester.pumpWidget(build(SideNavigationRailState.tvCollapsedWidth));
+    expect(left(), -SideNavigationRailState.tvCollapsedWidth);
+
+    await tester.pumpWidget(build(SideNavigationRailState.expandedWidth));
+    expect(left(), closeTo(-SideNavigationRailState.tvCollapsedWidth, 0.001));
+
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(left(), lessThan(-SideNavigationRailState.tvCollapsedWidth));
+    expect(left(), greaterThan(-SideNavigationRailState.expandedWidth));
+
+    await tester.pumpAndSettle();
+    expect(left(), closeTo(-SideNavigationRailState.expandedWidth, 0.001));
   });
 }

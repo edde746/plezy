@@ -35,7 +35,7 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(null);
   });
 
-  testWidgets('TV detail reveals season hubs together after all episode caches load', (tester) async {
+  testWidgets('TV detail reveals selected season before remaining episode caches load', (tester) async {
     await SettingsService.getInstance();
 
     final show = MediaItem(
@@ -120,7 +120,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.text('Season 1'), findsNothing);
+    expect(find.text('Season 1'), findsOneWidget);
     expect(find.text('Season 2'), findsNothing);
 
     descendantsCompleter.complete([episode1, episode2]);

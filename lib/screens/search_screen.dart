@@ -163,7 +163,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context)?.focusSidebar();
+    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
   }
 
   Widget _buildResultsList(BuildContext context) {

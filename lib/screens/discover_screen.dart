@@ -316,7 +316,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _focusContentFromAppBar() {
     if (PlatformDetector.isTV()) {
-      _focusTvBrowseRailWhenReady();
+      _focusTvBrowseRailWhenReady(immediate: true);
       return;
     }
 
@@ -331,7 +331,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
   }
 
-  void _focusTvBrowseRailWhenReady() {
+  void _focusTvBrowseRailWhenReady({bool immediate = false}) {
     if (!PlatformDetector.isTV()) return;
     if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
       _pendingTvBrowseRailFocus = false;
@@ -339,6 +339,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
 
     _pendingTvBrowseRailFocus = true;
+    if (immediate && _tvBrowseHubs.isNotEmpty) {
+      final rail = _tvBrowseRailKey.currentState;
+      if (rail != null) {
+        _pendingTvBrowseRailFocus = false;
+        rail.requestFocus();
+        return;
+      }
+    }
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
@@ -393,7 +402,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context)?.focusSidebar();
+    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
   }
 
   @override
@@ -1552,20 +1561,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned(
-            top: 0,
-            bottom: 0,
-            left: -sidebarBleed,
-            width: fullBleedWidth,
-            child: TvSpotlightBackground(
-              item: spotlight,
-              client: _getMediaClientForItem(spotlight),
-              hideSpoilers: hideSpoilers,
-              contentTop: spotlightTop,
-              contentBottom: spotlightBottom,
-              contentLeft: spotlightLeft + sidebarBleed,
-              compact: true,
-              showPrimaryAction: false,
+          SideNavigationBleedBuilder(
+            targetBleed: sidebarBleed,
+            builder: (context, animatedBleed, _) => Positioned(
+              top: 0,
+              bottom: 0,
+              left: -animatedBleed,
+              width: fullBleedWidth,
+              child: TvSpotlightBackground(
+                item: spotlight,
+                client: _getMediaClientForItem(spotlight),
+                hideSpoilers: hideSpoilers,
+                contentTop: spotlightTop,
+                contentBottom: spotlightBottom,
+                contentLeft: spotlightLeft + animatedBleed,
+                compact: true,
+                showPrimaryAction: false,
+              ),
             ),
           ),
           if (_isLoading || (_areHubsLoading && browseHubs.isEmpty)) const Center(child: CircularProgressIndicator()),
@@ -1617,11 +1629,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 backgroundBleedLeft: sidebarBleed,
               ),
             ),
-          Positioned(
-            top: 0,
-            left: -sidebarBleed,
-            width: fullBleedWidth,
+          SideNavigationBleedBuilder(
+            targetBleed: sidebarBleed,
             child: ExcludeFocusTraversal(child: _buildOverlaidAppBar()),
+            builder: (context, animatedBleed, child) =>
+                Positioned(top: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
           ),
           if (_switchingProfile) const ProfileSwitchingOverlay(),
         ],
