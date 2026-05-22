@@ -295,6 +295,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   final Map<String, ScrollController> _scrollControllers = {};
   final ScrollController _verticalController = ScrollController();
   final Map<int, GlobalKey> _hubSectionKeys = {};
+  final Map<String, GlobalKey> _itemKeys = {};
   final Map<String, GlobalKey<MediaCardState>> _mediaCardKeys = {};
 
   int _hubIndex = 0;
@@ -656,6 +657,9 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       leadingPadding: _railLeadingPadding,
       animate: animate,
     );
+    if (_itemIndex >= 0 && _itemIndex < _totalItemCount(hub)) {
+      scrollKeyedChildToHorizontalCenter(controller, _itemKeyFor(hub, _itemIndex), animate: animate);
+    }
   }
 
   void _scrollToItemAfterLayout({bool animate = true}) {
@@ -691,6 +695,10 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
   GlobalKey<MediaCardState> _cardKeyFor(MediaHub hub, int itemIndex) {
     return _mediaCardKeys.putIfAbsent('${hub.id}:$itemIndex', () => GlobalKey<MediaCardState>());
+  }
+
+  GlobalKey _itemKeyFor(MediaHub hub, int itemIndex) {
+    return _itemKeys.putIfAbsent('${hub.id}:$itemIndex', () => GlobalKey());
   }
 
   void _showContextMenuForCurrentItem() {
@@ -1000,6 +1008,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                 final isFocused = hasFocus && isActiveHub && itemIndex == _itemIndex;
                 if (itemIndex == hub.items.length) {
                   return Padding(
+                    key: _itemKeyFor(hub, itemIndex),
                     padding: EdgeInsets.only(right: metrics.itemGap),
                     child: FocusBuilders.buildLockedFocusWrapper(
                       context: context,
@@ -1029,6 +1038,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
                 final item = hub.items[itemIndex];
                 return Padding(
+                  key: _itemKeyFor(hub, itemIndex),
                   padding: EdgeInsets.only(right: metrics.itemGap),
                   child: MouseRegion(
                     onEnter: (_) => _setHoveredItem(hub, itemIndex),

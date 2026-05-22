@@ -517,6 +517,73 @@ void main() {
     expect(focused.last, 'movies:movie_5');
   });
 
+  testWidgets('keeps late episode thumbnails visible in long TV rows', (tester) async {
+    tester.view.devicePixelRatio = 1.0;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(() {
+      tester.view.resetDevicePixelRatio();
+      tester.view.resetPhysicalSize();
+    });
+
+    Future<void> pressRight() async {
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.arrowRight);
+      await tester.pump(const Duration(milliseconds: 16));
+    }
+
+    final episodes = List.generate(
+      153,
+      (index) => MediaItem(
+        id: 'episode_${index + 1}',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Episode ${index + 1}',
+        parentIndex: 11,
+        index: index + 1,
+        thumbPath: '/episode_${index + 1}',
+      ),
+    );
+    final hub = MediaHub(id: 'detail_season_11', title: 'Season 11', type: 'episode', items: episodes, size: 153);
+    final serverManager = MultiServerManager();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                hubs: [hub],
+                autofocus: true,
+                iconForHub: (_, _) => Icons.tv_rounded,
+                episodePosterModeForHub: (_) => EpisodePosterMode.episodeThumbnail,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+    await tester.pump();
+
+    for (var i = 0; i < 117; i++) {
+      await pressRight();
+    }
+    await tester.pumpAndSettle();
+
+    final targetTitle = find.text('Episode 118');
+    expect(targetTitle, findsOneWidget);
+    final railRect = tester.getRect(find.byType(TvBrowseRail));
+    final targetRect = tester.getRect(targetTitle);
+    expect(targetRect.left, greaterThanOrEqualTo(railRect.left - 0.5));
+    expect(targetRect.right, lessThanOrEqualTo(railRect.right + 0.5));
+  });
+
   testWidgets('resets long-press state when context menu focus receives select key up', (tester) async {
     final menuFocusNode = FocusNode(debugLabel: 'context_menu_probe');
     addTearDown(menuFocusNode.dispose);

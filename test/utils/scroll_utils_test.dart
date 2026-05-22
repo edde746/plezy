@@ -270,4 +270,42 @@ void main() {
       controller.dispose();
     });
   });
+
+  group('scrollKeyedChildToHorizontalCenter', () {
+    testWidgets('centers a keyed child using measured layout bounds', (tester) async {
+      final controller = ScrollController();
+      final itemKey = GlobalKey();
+      const viewportWidth = 300.0;
+      const widths = [90.0, 120.0, 70.0, 180.0, 110.0, 160.0, 100.0];
+      const targetIndex = 4;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SizedBox(
+            width: viewportWidth,
+            height: 80,
+            child: SingleChildScrollView(
+              controller: controller,
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (var i = 0; i < widths.length; i++)
+                    SizedBox(key: i == targetIndex ? itemKey : null, width: widths[i], height: 80, child: Text('$i')),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      scrollKeyedChildToHorizontalCenter(controller, itemKey, animate: false);
+      await tester.pump();
+
+      final leadingWidth = widths.take(targetIndex).fold<double>(0, (sum, width) => sum + width);
+      final targetCenter = leadingWidth + (widths[targetIndex] / 2);
+      final expected = (targetCenter - (viewportWidth / 2)).clamp(0.0, controller.position.maxScrollExtent);
+      expect(controller.offset, closeTo(expected, 0.001));
+      controller.dispose();
+    });
+  });
 }

@@ -125,12 +125,14 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
   void didUpdateWidget(HubSection oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.hub.id != oldWidget.hub.id) {
+      _itemKeys.clear();
       _mediaCardKeys.clear();
-    } else if (widget.hub.items.length != oldWidget.hub.items.length) {
+    } else if (widget.hub.items.length != oldWidget.hub.items.length || widget.hub.more != oldWidget.hub.more) {
+      _itemKeys.removeWhere((index, _) => index >= _totalItemCount);
       _mediaCardKeys.removeWhere((index, _) => index >= widget.hub.items.length);
     }
 
-    if (widget.hub.items.length != oldWidget.hub.items.length) {
+    if (widget.hub.items.length != oldWidget.hub.items.length || widget.hub.more != oldWidget.hub.more) {
       final maxIndex = _totalItemCount == 0 ? 0 : _totalItemCount - 1;
       if (_focusedIndex > maxIndex) {
         _focusedIndex = maxIndex;
@@ -211,6 +213,9 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
       leadingPadding: _leadingPadding,
       animate: animate,
     );
+    if (index >= 0 && index < _totalItemCount) {
+      scrollKeyedChildToHorizontalCenter(_scrollController, _itemKeyFor(index), animate: animate);
+    }
   }
 
   /// Handle ALL key events at the hub level
@@ -316,7 +321,12 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
   }
 
   /// GlobalKeys for MediaCards to access their state (for context menu)
+  final Map<int, GlobalKey> _itemKeys = {};
   final Map<int, GlobalKey<MediaCardState>> _mediaCardKeys = {};
+
+  GlobalKey _itemKeyFor(int index) {
+    return _itemKeys.putIfAbsent(index, () => GlobalKey());
+  }
 
   GlobalKey<MediaCardState> _getMediaCardKey(int index) {
     return _mediaCardKeys.putIfAbsent(index, () => GlobalKey<MediaCardState>());
@@ -492,6 +502,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
 
                             if (index == widget.hub.items.length) {
                               return Padding(
+                                key: _itemKeyFor(index),
                                 padding: widget.inset
                                     ? const EdgeInsets.only(right: 4)
                                     : const EdgeInsets.symmetric(horizontal: 2),
@@ -533,6 +544,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
                             final item = widget.hub.items[index];
 
                             return Padding(
+                              key: _itemKeyFor(index),
                               padding: widget.inset
                                   ? const EdgeInsets.only(right: 4)
                                   : const EdgeInsets.symmetric(horizontal: 2),

@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:flutter/rendering.dart';
 import 'package:flutter/widgets.dart';
 
 /// Scroll the nearest scrollable ancestor so [context] is centered.
@@ -70,8 +73,59 @@ void scrollListToIndex(
   final desiredOffset = (targetCenter - (viewport / 2)).clamp(0.0, maxExtent);
 
   if (animate) {
-    controller.animateTo(desiredOffset, duration: const Duration(milliseconds: 150), curve: Curves.easeOut);
+    unawaited(controller.animateTo(desiredOffset, duration: const Duration(milliseconds: 150), curve: Curves.easeOut));
   } else {
     controller.jumpTo(desiredOffset);
   }
+}
+
+/// Scroll a horizontal list so the keyed child is centered using its real layout
+/// bounds. This corrects small per-item extent drift in long carousels.
+void scrollKeyedChildToHorizontalCenter(
+  ScrollController controller,
+  GlobalKey key, {
+  bool animate = true,
+  int maxAttempts = 2,
+}) {
+  void schedule(int attempt) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = key.currentContext;
+      if (context == null) {
+        if (attempt < maxAttempts) schedule(attempt + 1);
+        return;
+      }
+
+      final didResolve = _scrollContextToHorizontalCenterNow(controller, context, animate: animate);
+      if (!didResolve && attempt < maxAttempts) schedule(attempt + 1);
+    });
+  }
+
+  schedule(0);
+}
+
+bool _scrollContextToHorizontalCenterNow(ScrollController controller, BuildContext context, {required bool animate}) {
+  if (!context.mounted || controller.positions.length != 1) return true;
+
+  final position = controller.position;
+  if (position.axis != Axis.horizontal) return true;
+
+  final renderObject = context.findRenderObject();
+  if (renderObject == null || !renderObject.attached) return false;
+
+  final viewport = RenderAbstractViewport.maybeOf(renderObject);
+  if (viewport == null) return false;
+
+  final target = viewport
+      .getOffsetToReveal(renderObject, 0.5)
+      .offset
+      .clamp(position.minScrollExtent, position.maxScrollExtent)
+      .toDouble();
+  if ((target - position.pixels).abs() < 0.5) return true;
+
+  if (animate) {
+    unawaited(controller.animateTo(target, duration: const Duration(milliseconds: 150), curve: Curves.easeOut));
+  } else {
+    controller.jumpTo(target);
+  }
+  return true;
 }
