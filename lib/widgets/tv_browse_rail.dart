@@ -71,7 +71,7 @@ class TvBrowseRailLayout {
 
   static double hubStripHeightForScale(double scale) => 36 * scale;
 
-  static double hubStripGapForScale(double scale) => 0;
+  static double hubStripGapForScale(double _) => 0;
 
   static double nextHubPeekHeightForScale(double scale) => 30 * scale;
 
@@ -836,7 +836,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                           child: SizedBox(
                             height: viewportHeight,
                             child: _buildHubSectionList(
-                              context,
                               hasFocus: hasFocus,
                               modes: modes,
                               metricsByHub: metricsByHub,
@@ -861,8 +860,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     );
   }
 
-  Widget _buildHubSectionList(
-    BuildContext context, {
+  Widget _buildHubSectionList({
     required bool hasFocus,
     required List<EpisodePosterMode> modes,
     required List<TvBrowseRailLayoutMetrics> metricsByHub,
@@ -896,7 +894,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
               _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
               SizedBox(height: TvBrowseRailLayout.hubStripGapForScale(scale)),
               _buildHubRail(
-                context,
                 hub: hub,
                 hubIndex: hubIndex,
                 hasFocus: hasFocus,
@@ -959,8 +956,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     );
   }
 
-  Widget _buildHubRail(
-    BuildContext context, {
+  Widget _buildHubRail({
     required MediaHub hub,
     required int hubIndex,
     required bool hasFocus,

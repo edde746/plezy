@@ -60,7 +60,7 @@ class TvSpotlightBackground extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             if (media != null) _buildArtwork(context, media) else ColoredBox(color: bgColor),
-            _buildHorizontalScrim(context, bgColor),
+            _buildHorizontalScrim(bgColor),
             DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -142,7 +142,7 @@ class TvSpotlightBackground extends StatelessWidget {
     );
   }
 
-  Widget _buildHorizontalScrim(BuildContext context, Color bgColor) {
+  Widget _buildHorizontalScrim(Color bgColor) {
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
