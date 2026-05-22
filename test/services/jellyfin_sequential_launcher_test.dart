@@ -9,6 +9,7 @@ import 'package:plezy/providers/playback_state_provider.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/jellyfin_sequential_launcher.dart';
 import 'package:plezy/services/media_list_playback_launcher.dart';
+import 'package:plezy/services/playlist_items_loader.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
 /// Recording fake that satisfies [JellyfinClient] via `implements` +
@@ -205,9 +206,9 @@ void main() {
 
     testWidgets('playlist path pages through every item', (tester) async {
       final ctx = await pumpContext(tester);
-      // 150 items across 2 pages of 100 — the loop must keep paging until
+      // Enough items to span 2 default playlist pages — the loop must keep paging until
       // the server returns a short page.
-      final fetched = List.generate(150, (i) => _ep('p$i'));
+      final fetched = List.generate(playlistItemsPageSize + 50, (i) => _ep('p$i'));
       final fakeClient = _RecordingJellyfinClient(playlistItemsResponse: fetched);
       final playback = PlaybackStateProvider();
 
@@ -233,10 +234,10 @@ void main() {
       );
 
       expect(result, isA<PlayQueueSuccess>());
-      expect(playback.loadedItems.length, 150);
+      expect(playback.loadedItems.length, playlistItemsPageSize + 50);
       expect(fakeClient.fetchPlaylistItemsCalls, hasLength(2));
       expect(fakeClient.fetchPlaylistItemsCalls.first.offset, 0);
-      expect(fakeClient.fetchPlaylistItemsCalls[1].offset, 100);
+      expect(fakeClient.fetchPlaylistItemsCalls[1].offset, playlistItemsPageSize);
     });
 
     testWidgets('collection containing a Series entry only seeds playable descendants', (tester) async {

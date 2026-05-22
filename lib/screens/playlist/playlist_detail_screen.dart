@@ -42,7 +42,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         StandardItemLoader<PlaylistDetailScreen>,
         GridFocusNodeMixin<PlaylistDetailScreen>,
         FocusableDetailScreenMixin<PlaylistDetailScreen> {
-  static const int _pageSize = 100;
+  static const int _pageSize = playlistItemsPageSize;
 
   @override
   Object get mediaItem => widget.playlist;
@@ -193,7 +193,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       if (!mounted || generation != _playlistLoadGeneration) return;
 
       setState(() {
-        items = firstPage.items;
+        items = List.of(firstPage.items);
         _playlistTotalSize = firstPage.totalCount;
         isLoading = false;
         _isLoadingFullPlaylist = firstPage.items.length < firstPage.totalCount;
@@ -233,7 +233,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         if (!mounted || generation != _playlistLoadGeneration) return;
         if (page.items.isEmpty) break;
         setState(() {
-          items.addAll(page.items);
+          items = List.of(items)..addAll(page.items);
           total = page.totalCount;
           _playlistTotalSize = page.totalCount;
         });
