@@ -414,7 +414,7 @@
     "nextChapterButton": "Nächstes Kapitel",
     "muteButton": "Stumm schalten",
     "unmuteButton": "Stummschaltung aufheben",
-    "settingsButton": "Videoeinstellungen",
+    "settingsButton": "Wiedergabeeinstellungen",
     "tracksButton": "Audio und Untertitel",
     "chaptersButton": "Kapitel",
     "versionsButton": "Videoversionen",
@@ -1076,7 +1076,6 @@
     }
   },
   "videoSettings": {
-    "playbackSettings": "Wiedergabeeinstellungen",
     "playbackSpeed": "Wiedergabegeschwindigkeit",
     "sleepTimer": "Schlaftimer",
     "audioSync": "Audio-Synchronisation",

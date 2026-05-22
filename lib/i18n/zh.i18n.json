@@ -414,7 +414,7 @@
     "nextChapterButton": "下一章节",
     "muteButton": "静音",
     "unmuteButton": "取消静音",
-    "settingsButton": "视频设置",
+    "settingsButton": "播放设置",
     "tracksButton": "音频和字幕",
     "chaptersButton": "章节",
     "versionsButton": "视频版本",
@@ -1076,7 +1076,6 @@
     }
   },
   "videoSettings": {
-    "playbackSettings": "播放设置",
     "playbackSpeed": "播放速度",
     "sleepTimer": "睡眠定时器",
     "audioSync": "音频同步",

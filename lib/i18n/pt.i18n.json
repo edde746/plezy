@@ -414,7 +414,7 @@
     "nextChapterButton": "Próximo capítulo",
     "muteButton": "Silenciar",
     "unmuteButton": "Ativar som",
-    "settingsButton": "Configurações de vídeo",
+    "settingsButton": "Configurações de Reprodução",
     "tracksButton": "Áudio e Legendas",
     "chaptersButton": "Capítulos",
     "versionsButton": "Versões do vídeo",
@@ -1076,7 +1076,6 @@
     }
   },
   "videoSettings": {
-    "playbackSettings": "Configurações de Reprodução",
     "playbackSpeed": "Velocidade de Reprodução",
     "sleepTimer": "Timer de Sono",
     "audioSync": "Sincronia de Áudio",

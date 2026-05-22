@@ -414,7 +414,7 @@
     "nextChapterButton": "次のチャプター",
     "muteButton": "ミュート",
     "unmuteButton": "ミュート解除",
-    "settingsButton": "動画設定",
+    "settingsButton": "再生設定",
     "tracksButton": "音声と字幕",
     "chaptersButton": "チャプター",
     "versionsButton": "動画バージョン",
@@ -1076,7 +1076,6 @@
     }
   },
   "videoSettings": {
-    "playbackSettings": "再生設定",
     "playbackSpeed": "再生速度",
     "sleepTimer": "スリープタイマー",
     "audioSync": "音声同期",

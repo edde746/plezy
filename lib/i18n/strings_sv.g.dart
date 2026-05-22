@@ -575,7 +575,7 @@ class _TranslationsVideoControlsSv extends TranslationsVideoControlsEn {
 	@override String get nextChapterButton => 'Nästa kapitel';
 	@override String get muteButton => 'Tysta';
 	@override String get unmuteButton => 'Slå på ljud';
-	@override String get settingsButton => 'Videoinställningar';
+	@override String get settingsButton => 'Uppspelningsinställningar';
 	@override String get tracksButton => 'Ljud och undertexter';
 	@override String get chaptersButton => 'Kapitel';
 	@override String get versionsButton => 'Videoversioner';
@@ -1302,7 +1302,6 @@ class _TranslationsVideoSettingsSv extends TranslationsVideoSettingsEn {
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get playbackSettings => 'Uppspelningsinställningar';
 	@override String get playbackSpeed => 'Uppspelningshastighet';
 	@override String get sleepTimer => 'Sovtimer';
 	@override String get audioSync => 'Ljudsynkronisering';
@@ -2187,7 +2186,7 @@ extension on TranslationsSv {
 			'videoControls.nextChapterButton' => 'Nästa kapitel',
 			'videoControls.muteButton' => 'Tysta',
 			'videoControls.unmuteButton' => 'Slå på ljud',
-			'videoControls.settingsButton' => 'Videoinställningar',
+			'videoControls.settingsButton' => 'Uppspelningsinställningar',
 			'videoControls.tracksButton' => 'Ljud och undertexter',
 			'videoControls.chaptersButton' => 'Kapitel',
 			'videoControls.versionsButton' => 'Videoversioner',
@@ -2787,7 +2786,6 @@ extension on TranslationsSv {
 			'companionRemote.remote.subtitles' => 'Undertexter',
 			'companionRemote.remote.audio' => 'Ljud',
 			'companionRemote.remote.searchHint' => 'Sök på datorn...',
-			'videoSettings.playbackSettings' => 'Uppspelningsinställningar',
 			'videoSettings.playbackSpeed' => 'Uppspelningshastighet',
 			'videoSettings.sleepTimer' => 'Sovtimer',
 			'videoSettings.audioSync' => 'Ljudsynkronisering',
@@ -2827,9 +2825,9 @@ extension on TranslationsSv {
 			'metadataEdit.summary' => 'Sammanfattning',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Bakgrund',
+			'metadataEdit.logo' => 'Logotyp',
 			_ => null,
 		} ?? switch (path) {
-			'metadataEdit.logo' => 'Logotyp',
 			'metadataEdit.squareArt' => 'Kvadratisk bild',
 			'metadataEdit.selectPoster' => 'Välj poster',
 			'metadataEdit.selectBackground' => 'Välj bakgrund',

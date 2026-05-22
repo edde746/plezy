@@ -283,7 +283,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   String _getTitle() {
     switch (_currentView) {
       case _SettingsView.menu:
-        return t.videoSettings.playbackSettings;
+        return t.videoControls.settingsButton;
       case _SettingsView.speed:
         return t.videoSettings.playbackSpeed;
       case _SettingsView.versionQuality:

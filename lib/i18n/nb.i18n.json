@@ -414,7 +414,7 @@
     "nextChapterButton": "Neste kapittel",
     "muteButton": "Demp",
     "unmuteButton": "Opphev demping",
-    "settingsButton": "Videoinnstillinger",
+    "settingsButton": "Avspillingsinnstillinger",
     "tracksButton": "Lyd og undertekster",
     "chaptersButton": "Kapitler",
     "versionsButton": "Videoversjoner",
@@ -1076,7 +1076,6 @@
     }
   },
   "videoSettings": {
-    "playbackSettings": "Avspillingsinnstillinger",
     "playbackSpeed": "Avspillingshastighet",
     "sleepTimer": "Søvntimer",
     "audioSync": "Lydsynkronisering",

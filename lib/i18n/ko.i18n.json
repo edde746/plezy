@@ -414,7 +414,7 @@
     "nextChapterButton": "다음 챕터",
     "muteButton": "음소거",
     "unmuteButton": "음소거 해제",
-    "settingsButton": "동영상 설정",
+    "settingsButton": "재생 설정",
     "tracksButton": "오디오 및 자막",
     "chaptersButton": "챕터",
     "versionsButton": "동영상 버전",
@@ -1076,7 +1076,6 @@
     }
   },
   "videoSettings": {
-    "playbackSettings": "재생 설정",
     "playbackSpeed": "재생 속도",
     "sleepTimer": "취침 타이머",
     "audioSync": "오디오 동기화",

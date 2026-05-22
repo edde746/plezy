@@ -414,7 +414,7 @@
     "nextChapterButton": "Next chapter",
     "muteButton": "Mute",
     "unmuteButton": "Unmute",
-    "settingsButton": "Video settings",
+    "settingsButton": "Playback Settings",
     "tracksButton": "Audio & Subtitles",
     "chaptersButton": "Chapters",
     "versionsButton": "Video versions",
@@ -1076,7 +1076,6 @@
     }
   },
   "videoSettings": {
-    "playbackSettings": "Playback Settings",
     "playbackSpeed": "Playback Speed",
     "sleepTimer": "Sleep Timer",
     "audioSync": "Audio Sync",

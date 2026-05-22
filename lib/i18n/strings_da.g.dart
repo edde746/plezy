@@ -575,7 +575,7 @@ class _TranslationsVideoControlsDa extends TranslationsVideoControlsEn {
 	@override String get nextChapterButton => 'Næste kapitel';
 	@override String get muteButton => 'Lydløs';
 	@override String get unmuteButton => 'Slå lyd til';
-	@override String get settingsButton => 'Videoindstillinger';
+	@override String get settingsButton => 'Afspilningsindstillinger';
 	@override String get tracksButton => 'Lyd og undertekster';
 	@override String get chaptersButton => 'Kapitler';
 	@override String get versionsButton => 'Videoversioner';
@@ -1302,7 +1302,6 @@ class _TranslationsVideoSettingsDa extends TranslationsVideoSettingsEn {
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get playbackSettings => 'Afspilningsindstillinger';
 	@override String get playbackSpeed => 'Afspilningshastighed';
 	@override String get sleepTimer => 'Sove-timer';
 	@override String get audioSync => 'Lydsynkronisering';
@@ -2187,7 +2186,7 @@ extension on TranslationsDa {
 			'videoControls.nextChapterButton' => 'Næste kapitel',
 			'videoControls.muteButton' => 'Lydløs',
 			'videoControls.unmuteButton' => 'Slå lyd til',
-			'videoControls.settingsButton' => 'Videoindstillinger',
+			'videoControls.settingsButton' => 'Afspilningsindstillinger',
 			'videoControls.tracksButton' => 'Lyd og undertekster',
 			'videoControls.chaptersButton' => 'Kapitler',
 			'videoControls.versionsButton' => 'Videoversioner',
@@ -2787,7 +2786,6 @@ extension on TranslationsDa {
 			'companionRemote.remote.subtitles' => 'Undertekster',
 			'companionRemote.remote.audio' => 'Lyd',
 			'companionRemote.remote.searchHint' => 'Søg på desktop...',
-			'videoSettings.playbackSettings' => 'Afspilningsindstillinger',
 			'videoSettings.playbackSpeed' => 'Afspilningshastighed',
 			'videoSettings.sleepTimer' => 'Sove-timer',
 			'videoSettings.audioSync' => 'Lydsynkronisering',
@@ -2827,9 +2825,9 @@ extension on TranslationsDa {
 			'metadataEdit.summary' => 'Resumé',
 			'metadataEdit.poster' => 'Plakat',
 			'metadataEdit.background' => 'Baggrund',
+			'metadataEdit.logo' => 'Logo',
 			_ => null,
 		} ?? switch (path) {
-			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Kvadratisk billede',
 			'metadataEdit.selectPoster' => 'Vælg plakat',
 			'metadataEdit.selectBackground' => 'Vælg baggrund',

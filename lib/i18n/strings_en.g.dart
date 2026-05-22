@@ -1306,8 +1306,8 @@ class TranslationsVideoControlsEn {
 	/// en: 'Unmute'
 	String get unmuteButton => 'Unmute';
 
-	/// en: 'Video settings'
-	String get settingsButton => 'Video settings';
+	/// en: 'Playback Settings'
+	String get settingsButton => 'Playback Settings';
 
 	/// en: 'Audio & Subtitles'
 	String get tracksButton => 'Audio & Subtitles';
@@ -3042,9 +3042,6 @@ class TranslationsVideoSettingsEn {
 
 	// Translations
 
-	/// en: 'Playback Settings'
-	String get playbackSettings => 'Playback Settings';
-
 	/// en: 'Playback Speed'
 	String get playbackSpeed => 'Playback Speed';
 
@@ -4537,7 +4534,7 @@ extension on Translations {
 			'videoControls.nextChapterButton' => 'Next chapter',
 			'videoControls.muteButton' => 'Mute',
 			'videoControls.unmuteButton' => 'Unmute',
-			'videoControls.settingsButton' => 'Video settings',
+			'videoControls.settingsButton' => 'Playback Settings',
 			'videoControls.tracksButton' => 'Audio & Subtitles',
 			'videoControls.chaptersButton' => 'Chapters',
 			'videoControls.versionsButton' => 'Video versions',
@@ -5137,7 +5134,6 @@ extension on Translations {
 			'companionRemote.remote.subtitles' => 'Subtitles',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Search on desktop...',
-			'videoSettings.playbackSettings' => 'Playback Settings',
 			'videoSettings.playbackSpeed' => 'Playback Speed',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',
@@ -5177,9 +5173,9 @@ extension on Translations {
 			'metadataEdit.summary' => 'Summary',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Background',
+			'metadataEdit.logo' => 'Logo',
 			_ => null,
 		} ?? switch (path) {
-			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Square Art',
 			'metadataEdit.selectPoster' => 'Select Poster',
 			'metadataEdit.selectBackground' => 'Select Background',

@@ -575,7 +575,7 @@ class _TranslationsVideoControlsJa extends TranslationsVideoControlsEn {
 	@override String get nextChapterButton => '次のチャプター';
 	@override String get muteButton => 'ミュート';
 	@override String get unmuteButton => 'ミュート解除';
-	@override String get settingsButton => '動画設定';
+	@override String get settingsButton => '再生設定';
 	@override String get tracksButton => '音声と字幕';
 	@override String get chaptersButton => 'チャプター';
 	@override String get versionsButton => '動画バージョン';
@@ -1302,7 +1302,6 @@ class _TranslationsVideoSettingsJa extends TranslationsVideoSettingsEn {
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String get playbackSettings => '再生設定';
 	@override String get playbackSpeed => '再生速度';
 	@override String get sleepTimer => 'スリープタイマー';
 	@override String get audioSync => '音声同期';
@@ -2187,7 +2186,7 @@ extension on TranslationsJa {
 			'videoControls.nextChapterButton' => '次のチャプター',
 			'videoControls.muteButton' => 'ミュート',
 			'videoControls.unmuteButton' => 'ミュート解除',
-			'videoControls.settingsButton' => '動画設定',
+			'videoControls.settingsButton' => '再生設定',
 			'videoControls.tracksButton' => '音声と字幕',
 			'videoControls.chaptersButton' => 'チャプター',
 			'videoControls.versionsButton' => '動画バージョン',
@@ -2787,7 +2786,6 @@ extension on TranslationsJa {
 			'companionRemote.remote.subtitles' => '字幕',
 			'companionRemote.remote.audio' => '音声',
 			'companionRemote.remote.searchHint' => 'デスクトップで検索...',
-			'videoSettings.playbackSettings' => '再生設定',
 			'videoSettings.playbackSpeed' => '再生速度',
 			'videoSettings.sleepTimer' => 'スリープタイマー',
 			'videoSettings.audioSync' => '音声同期',
@@ -2827,9 +2825,9 @@ extension on TranslationsJa {
 			'metadataEdit.summary' => 'あらすじ',
 			'metadataEdit.poster' => 'ポスター',
 			'metadataEdit.background' => '背景',
+			'metadataEdit.logo' => 'ロゴ',
 			_ => null,
 		} ?? switch (path) {
-			'metadataEdit.logo' => 'ロゴ',
 			'metadataEdit.squareArt' => '正方形アート',
 			'metadataEdit.selectPoster' => 'ポスターを選択',
 			'metadataEdit.selectBackground' => '背景を選択',

@@ -575,7 +575,7 @@ class _TranslationsVideoControlsRu extends TranslationsVideoControlsEn {
 	@override String get nextChapterButton => 'Следующая глава';
 	@override String get muteButton => 'Без звука';
 	@override String get unmuteButton => 'Включить звук';
-	@override String get settingsButton => 'Настройки видео';
+	@override String get settingsButton => 'Настройки воспроизведения';
 	@override String get tracksButton => 'Аудио и субтитры';
 	@override String get chaptersButton => 'Главы';
 	@override String get versionsButton => 'Версии видео';
@@ -1302,7 +1302,6 @@ class _TranslationsVideoSettingsRu extends TranslationsVideoSettingsEn {
 	final TranslationsRu _root; // ignore: unused_field
 
 	// Translations
-	@override String get playbackSettings => 'Настройки воспроизведения';
 	@override String get playbackSpeed => 'Скорость воспроизведения';
 	@override String get sleepTimer => 'Таймер сна';
 	@override String get audioSync => 'Синхронизация аудио';
@@ -2187,7 +2186,7 @@ extension on TranslationsRu {
 			'videoControls.nextChapterButton' => 'Следующая глава',
 			'videoControls.muteButton' => 'Без звука',
 			'videoControls.unmuteButton' => 'Включить звук',
-			'videoControls.settingsButton' => 'Настройки видео',
+			'videoControls.settingsButton' => 'Настройки воспроизведения',
 			'videoControls.tracksButton' => 'Аудио и субтитры',
 			'videoControls.chaptersButton' => 'Главы',
 			'videoControls.versionsButton' => 'Версии видео',
@@ -2787,7 +2786,6 @@ extension on TranslationsRu {
 			'companionRemote.remote.subtitles' => 'Субтитры',
 			'companionRemote.remote.audio' => 'Аудио',
 			'companionRemote.remote.searchHint' => 'Поиск на десктопе...',
-			'videoSettings.playbackSettings' => 'Настройки воспроизведения',
 			'videoSettings.playbackSpeed' => 'Скорость воспроизведения',
 			'videoSettings.sleepTimer' => 'Таймер сна',
 			'videoSettings.audioSync' => 'Синхронизация аудио',
@@ -2827,9 +2825,9 @@ extension on TranslationsRu {
 			'metadataEdit.summary' => 'Описание',
 			'metadataEdit.poster' => 'Постер',
 			'metadataEdit.background' => 'Фон',
+			'metadataEdit.logo' => 'Логотип',
 			_ => null,
 		} ?? switch (path) {
-			'metadataEdit.logo' => 'Логотип',
 			'metadataEdit.squareArt' => 'Квадратное изображение',
 			'metadataEdit.selectPoster' => 'Выбрать постер',
 			'metadataEdit.selectBackground' => 'Выбрать фон',

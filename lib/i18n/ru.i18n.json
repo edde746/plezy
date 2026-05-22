@@ -414,7 +414,7 @@
     "nextChapterButton": "Следующая глава",
     "muteButton": "Без звука",
     "unmuteButton": "Включить звук",
-    "settingsButton": "Настройки видео",
+    "settingsButton": "Настройки воспроизведения",
     "tracksButton": "Аудио и субтитры",
     "chaptersButton": "Главы",
     "versionsButton": "Версии видео",
@@ -1076,7 +1076,6 @@
     }
   },
   "videoSettings": {
-    "playbackSettings": "Настройки воспроизведения",
     "playbackSpeed": "Скорость воспроизведения",
     "sleepTimer": "Таймер сна",
     "audioSync": "Синхронизация аудио",

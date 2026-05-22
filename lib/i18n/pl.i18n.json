@@ -414,7 +414,7 @@
     "nextChapterButton": "Następny rozdział",
     "muteButton": "Wycisz",
     "unmuteButton": "Wyłącz wyciszenie",
-    "settingsButton": "Ustawienia wideo",
+    "settingsButton": "Ustawienia odtwarzania",
     "tracksButton": "Audio i napisy",
     "chaptersButton": "Rozdziały",
     "versionsButton": "Wersje wideo",
@@ -1076,7 +1076,6 @@
     }
   },
   "videoSettings": {
-    "playbackSettings": "Ustawienia odtwarzania",
     "playbackSpeed": "Prędkość odtwarzania",
     "sleepTimer": "Wyłącznik czasowy",
     "audioSync": "Synchronizacja audio",

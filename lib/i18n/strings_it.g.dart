@@ -575,7 +575,7 @@ class _TranslationsVideoControlsIt extends TranslationsVideoControlsEn {
 	@override String get nextChapterButton => 'Capitolo successivo';
 	@override String get muteButton => 'Silenzia';
 	@override String get unmuteButton => 'Riattiva audio';
-	@override String get settingsButton => 'Impostazioni video';
+	@override String get settingsButton => 'Impostazioni di riproduzione';
 	@override String get tracksButton => 'Audio e sottotitoli';
 	@override String get chaptersButton => 'Capitoli';
 	@override String get versionsButton => 'Versioni video';
@@ -1302,7 +1302,6 @@ class _TranslationsVideoSettingsIt extends TranslationsVideoSettingsEn {
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String get playbackSettings => 'Impostazioni di riproduzione';
 	@override String get playbackSpeed => 'Velocità di riproduzione';
 	@override String get sleepTimer => 'Timer di spegnimento';
 	@override String get audioSync => 'Sincronizzazione audio';
@@ -2187,7 +2186,7 @@ extension on TranslationsIt {
 			'videoControls.nextChapterButton' => 'Capitolo successivo',
 			'videoControls.muteButton' => 'Silenzia',
 			'videoControls.unmuteButton' => 'Riattiva audio',
-			'videoControls.settingsButton' => 'Impostazioni video',
+			'videoControls.settingsButton' => 'Impostazioni di riproduzione',
 			'videoControls.tracksButton' => 'Audio e sottotitoli',
 			'videoControls.chaptersButton' => 'Capitoli',
 			'videoControls.versionsButton' => 'Versioni video',
@@ -2787,7 +2786,6 @@ extension on TranslationsIt {
 			'companionRemote.remote.subtitles' => 'Sottotitoli',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Cerca sul desktop...',
-			'videoSettings.playbackSettings' => 'Impostazioni di riproduzione',
 			'videoSettings.playbackSpeed' => 'Velocità di riproduzione',
 			'videoSettings.sleepTimer' => 'Timer di spegnimento',
 			'videoSettings.audioSync' => 'Sincronizzazione audio',
@@ -2827,9 +2825,9 @@ extension on TranslationsIt {
 			'metadataEdit.summary' => 'Trama',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Sfondo',
+			'metadataEdit.logo' => 'Logo',
 			_ => null,
 		} ?? switch (path) {
-			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Immagine quadrata',
 			'metadataEdit.selectPoster' => 'Seleziona poster',
 			'metadataEdit.selectBackground' => 'Seleziona sfondo',
