@@ -654,7 +654,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await _navigateToRelated(
             context,
             mediaItem!.kind == MediaKind.season ? mediaItem.parentId : mediaItem.grandparentId,
-            (item) => MediaDetailScreen(metadata: item),
+            (item) => mediaDetailRoute(metadata: item),
             t.messages.errorLoadingSeries,
           );
           break;
@@ -667,7 +667,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await _navigateToRelated(
             context,
             seasonParentKey,
-            (show) => MediaDetailScreen(metadata: show, initialSeasonIndex: seasonIndex),
+            (show) => mediaDetailRoute(metadata: show, initialSeasonIndex: seasonIndex),
             t.messages.errorLoadingSeason,
           );
           break;
@@ -800,7 +800,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   Future<void> _navigateToRelated(
     BuildContext context,
     String? id,
-    Widget Function(MediaItem) screenBuilder,
+    Route<Object?> Function(MediaItem) routeBuilder,
     String errorPrefix,
   ) async {
     if (id == null) return;
@@ -810,7 +810,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     try {
       final metadata = await client.fetchItem(id);
       if (metadata != null && context.mounted) {
-        await Navigator.push(context, MaterialPageRoute(builder: (context) => screenBuilder(metadata)));
+        await Navigator.push(context, routeBuilder(metadata));
         widget.onRefresh?.call(_itemId());
       }
     } catch (e) {

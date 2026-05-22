@@ -131,10 +131,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
         );
         final result = await Navigator.push<bool>(
           context,
-          MaterialPageRoute(
-            builder: (context) =>
-                MediaDetailScreen(metadata: showStub, isOffline: isOffline, initialSeasonIndex: mi.index),
-          ),
+          mediaDetailRoute(metadata: showStub, isOffline: isOffline, initialSeasonIndex: mi.index),
         );
         if (result == true) {
           onRefresh?.call(mi.id);
@@ -154,12 +151,7 @@ Future<MediaNavigationResult> _showDetail(
   bool isOffline,
   void Function(String)? onRefresh,
 ) async {
-  final result = await Navigator.push<bool>(
-    context,
-    MaterialPageRoute(
-      builder: (context) => MediaDetailScreen(metadata: mi, isOffline: isOffline),
-    ),
-  );
+  final result = await Navigator.push<bool>(context, mediaDetailRoute(metadata: mi, isOffline: isOffline));
   if (result == true) {
     onRefresh?.call(mi.id);
   }

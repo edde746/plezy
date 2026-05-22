@@ -101,6 +101,24 @@ class MediaDetailScreen extends StatefulWidget {
   State<MediaDetailScreen> createState() => _MediaDetailScreenState();
 }
 
+PageRoute<bool> mediaDetailRoute({required MediaItem metadata, bool isOffline = false, int? initialSeasonIndex}) {
+  final page = MediaDetailScreen(metadata: metadata, isOffline: isOffline, initialSeasonIndex: initialSeasonIndex);
+  if (!PlatformDetector.isTV()) return MaterialPageRoute<bool>(builder: (_) => page);
+
+  return PageRouteBuilder<bool>(
+    opaque: false,
+    pageBuilder: (_, __, ___) => page,
+    transitionsBuilder: (_, animation, __, child) {
+      return FadeTransition(
+        opacity: CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic),
+        child: child,
+      );
+    },
+    transitionDuration: AppDurations.animMedium,
+    reverseTransitionDuration: AppDurations.animMedium,
+  );
+}
+
 class _MediaDetailScreenState extends State<MediaDetailScreen>
     with WatchStateAware, DeletionAware, MountedSetStateMixin, ServerBoundMediaMixin, RouteAware {
   /// Public input alias — used as the live source of truth until the detail
