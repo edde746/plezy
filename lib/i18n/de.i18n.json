@@ -399,6 +399,8 @@
     "unlockRotation": "Rotation entsperren",
     "timerActive": "Schlaftimer aktiv",
     "playbackWillPauseIn": "Wiedergabe wird in ${duration} pausiert",
+    "sleepTimerEndOfVideo": "Ende des aktuellen Videos",
+    "playbackWillPauseAtEnd": "Wiedergabe wird am Ende dieses Videos pausiert",
     "stillWatching": "Schaust du noch?",
     "pausingIn": "Pause in ${seconds}s",
     "continueWatching": "Weiter",

@@ -25,10 +25,32 @@ class SleepTimerDurationList extends StatelessWidget {
       durations.sort();
     }
 
+    // Item count = 1 sentinel ("end of current video") + duration entries.
     return ListView.builder(
-      itemCount: durations.length,
+      itemCount: durations.length + 1,
       itemBuilder: (context, index) {
-        final minutes = durations[index];
+        if (index == 0) {
+          final label = t.videoControls.sleepTimerEndOfVideo;
+          return ListTile(
+            leading: AppIcon(
+              Symbols.hourglass_bottom_rounded,
+              fill: 1,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            title: Text(label),
+            onTap: () {
+              sleepTimer.armEndOfVideo(() {
+                // Pause playback when the current video ends
+                player.pause();
+              });
+              OverlaySheetController.closeAdaptive(context);
+
+              showSuccessSnackBar(context, t.messages.sleepTimerSet(label: label));
+            },
+          );
+        }
+
+        final minutes = durations[index - 1];
         final label = formatDurationTextual(
           minutes * 60 * 1000, // Convert minutes to milliseconds
           abbreviated: false, // Use full format for better readability

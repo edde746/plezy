@@ -27,9 +27,13 @@ class SleepTimerContent extends StatelessWidget {
       builder: (context, _) {
         final remainingTime = sleepTimer.remainingTime;
 
+        // Active status renders either with a countdown (duration timer) or
+        // without (end-of-video mode). Both share the same widget.
+        final showActiveStatus = sleepTimer.isActive && (remainingTime != null || sleepTimer.isEndOfVideoMode);
+
         return Column(
           children: [
-            if (sleepTimer.isActive && remainingTime != null) ...[
+            if (showActiveStatus) ...[
               SleepTimerActiveStatus(sleepTimer: sleepTimer, remainingTime: remainingTime, onCancel: onCancel),
               Divider(color: Theme.of(context).dividerColor, height: 1),
             ],

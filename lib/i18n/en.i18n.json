@@ -399,6 +399,8 @@
     "unlockRotation": "Unlock rotation",
     "timerActive": "Timer Active",
     "playbackWillPauseIn": "Playback will pause in ${duration}",
+    "sleepTimerEndOfVideo": "End of current video",
+    "playbackWillPauseAtEnd": "Playback will pause at the end of this video",
     "stillWatching": "Still watching?",
     "pausingIn": "Pausing in ${seconds}s",
     "continueWatching": "Continue",

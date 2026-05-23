@@ -20,6 +20,15 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       unawaited(_videoPIPManager?.updateAutoPipState(isPlaying: false));
     }
 
+    // End-of-video sleep timer takes precedence over autoplay / next-episode
+    // dialogs: the user explicitly asked to stop after this item.
+    final sleepTimerService = SleepTimerService();
+    if (sleepTimerService.isEndOfVideoMode && !_completionTriggered) {
+      _completionTriggered = true;
+      sleepTimerService.notifyVideoCompleted();
+      return;
+    }
+
     if (_nextEpisode != null && !_showPlayNextDialog && !_showStillWatchingPrompt && !_completionTriggered) {
       _completionTriggered = true;
 
