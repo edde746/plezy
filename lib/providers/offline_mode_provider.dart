@@ -2,18 +2,21 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
+import 'multi_server_provider.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_mode_source.dart';
 
 /// Tracks offline mode status based on network connectivity and server reachability.
 class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMixin implements OfflineModeSource {
   final MultiServerManager _serverManager;
+  MultiServerProvider? _multiServerProvider;
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   StreamSubscription<Map<String, bool>>? _serverStatusSubscription;
 
   bool _hasNetworkConnection = true;
   late bool _hasServerConnection;
+  bool _lastOfflineState = false;
   bool _isInitialized = false;
 
   /// True once [MultiServerManager] has emitted its first server-status
@@ -24,11 +27,15 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// trust the real flag.
   bool _hasReceivedServerStatus = false;
 
-  OfflineModeProvider(this._serverManager) : _hasServerConnection = _serverManager.onlineServerIds.isNotEmpty {
+  OfflineModeProvider(this._serverManager, {MultiServerProvider? multiServerProvider})
+    : _multiServerProvider = multiServerProvider,
+      _hasServerConnection = (multiServerProvider?.hasConnectedServers ?? _serverManager.onlineServerIds.isNotEmpty) {
     // Pre-seed the "received status" flag if there are already online
     // servers (e.g. provider rebuilt mid-session) — otherwise we'd
     // incorrectly say "online" after the manager already emitted.
     if (_hasServerConnection) _hasReceivedServerStatus = true;
+    _lastOfflineState = isOffline;
+    _multiServerProvider?.addListener(_handleMultiServerProviderChanged);
   }
 
   /// Whether the app is currently in offline mode
@@ -37,6 +44,8 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
   bool get isOffline {
     if (!_hasNetworkConnection) return true;
     if (!_hasReceivedServerStatus) return false;
+    if (!_hasKnownVisibleServers) return false;
+    if (_hasOnlyAuthErrorServers) return false;
     return !_hasServerConnection;
   }
 
@@ -45,6 +54,29 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
   /// Whether at least one media server (Plex or Jellyfin) is reachable
   bool get hasServerConnection => _hasServerConnection;
+
+  bool get _hasKnownVisibleServers =>
+      (_multiServerProvider?.expectedServerIds.length ?? _serverManager.serverIds.length) > 0;
+
+  bool get _hasOnlyAuthErrorServers {
+    final provider = _multiServerProvider;
+    if (provider == null) return false;
+    final serverCount = provider.expectedServerIds.length;
+    return serverCount > 0 && provider.authErrorServerIds.length == serverCount;
+  }
+
+  /// Attach the profile-visible server provider. Offline state is evaluated
+  /// against visible servers, not global manager state, so another profile's
+  /// online server does not keep the active profile out of offline mode.
+  void updateMultiServerProvider(MultiServerProvider provider) {
+    if (identical(_multiServerProvider, provider)) return;
+    _multiServerProvider?.removeListener(_handleMultiServerProviderChanged);
+    _multiServerProvider = provider;
+    _multiServerProvider?.addListener(_handleMultiServerProviderChanged);
+    _hasServerConnection = provider.hasConnectedServers;
+    if (_hasServerConnection) _hasReceivedServerStatus = true;
+    _notifyIfOfflineChanged();
+  }
 
   /// Updates network and server connection flags
   Future<void> _updateConnectionFlags() async {
@@ -58,7 +90,20 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
       // connectivity_plus can throw PlatformException on Windows (NetworkManager::StartListen)
       _hasNetworkConnection = true;
     }
-    _hasServerConnection = _serverManager.onlineServerIds.isNotEmpty;
+    _hasServerConnection = _multiServerProvider?.hasConnectedServers ?? _serverManager.onlineServerIds.isNotEmpty;
+  }
+
+  void _handleMultiServerProviderChanged() {
+    _hasServerConnection = _multiServerProvider?.hasConnectedServers ?? _serverManager.onlineServerIds.isNotEmpty;
+    if (_hasServerConnection) _hasReceivedServerStatus = true;
+    _notifyIfOfflineChanged();
+  }
+
+  void _notifyIfOfflineChanged() {
+    final offline = isOffline;
+    if (_lastOfflineState == offline) return;
+    _lastOfflineState = offline;
+    safeNotifyListeners();
   }
 
   /// Initialize the provider and start monitoring
@@ -75,12 +120,8 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
       () {
         _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
           (results) {
-            final wasOffline = isOffline;
             _hasNetworkConnection = !results.contains(ConnectivityResult.none);
-
-            if (wasOffline != isOffline) {
-              safeNotifyListeners();
-            }
+            _notifyIfOfflineChanged();
           },
           onError: (e) {
             _hasNetworkConnection = true;
@@ -95,26 +136,25 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
     // Monitor server status from MultiServerManager
     _serverStatusSubscription = _serverManager.statusStream.listen((statusMap) {
-      final wasOffline = isOffline;
-      _hasServerConnection = statusMap.values.any((isOnline) => isOnline);
+      _hasServerConnection = _multiServerProvider?.hasConnectedServers ?? statusMap.values.any((isOnline) => isOnline);
       _hasReceivedServerStatus = true;
-
-      if (wasOffline != isOffline) {
-        safeNotifyListeners();
-      }
+      _notifyIfOfflineChanged();
     });
 
+    _lastOfflineState = isOffline;
     safeNotifyListeners();
   }
 
   /// Force a refresh of connectivity status
   Future<void> refresh() async {
     await _updateConnectionFlags();
+    _lastOfflineState = isOffline;
     safeNotifyListeners();
   }
 
   @override
   void dispose() {
+    _multiServerProvider?.removeListener(_handleMultiServerProviderChanged);
     _connectivitySubscription?.cancel();
     _serverStatusSubscription?.cancel();
     super.dispose();

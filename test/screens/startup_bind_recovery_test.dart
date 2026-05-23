@@ -57,5 +57,32 @@ void main() {
         isFalse,
       );
     });
+
+    test('explicit offline startup stays offline until a visible server connects', () {
+      expect(
+        shouldRenderMainScreenOffline(
+          providerOffline: false,
+          startupOfflineUntilConnected: true,
+          hasVisibleConnectedServers: false,
+        ),
+        isTrue,
+      );
+      expect(
+        shouldRenderMainScreenOffline(
+          providerOffline: false,
+          startupOfflineUntilConnected: true,
+          hasVisibleConnectedServers: true,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldRenderMainScreenOffline(
+          providerOffline: true,
+          startupOfflineUntilConnected: false,
+          hasVisibleConnectedServers: true,
+        ),
+        isTrue,
+      );
+    });
   });
 }
