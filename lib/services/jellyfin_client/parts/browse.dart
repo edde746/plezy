@@ -133,7 +133,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// `MediaFilter.key` is prefixed `jellyfin:` so FiltersBottomSheet can
   /// recognise it as cached and skip the per-category value fetch.
   @override
-  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId) async {
+  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {String? libraryType}) async {
     final data = await _safeFetchFilterPayload(libraryId);
     if (data == null) return LibraryFilterResult.empty;
     List<String> stringList(Object? raw) {
@@ -173,15 +173,17 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       }
       values[key] = sorted.map((v) => MediaFilterValue(key: v, title: v)).toList();
     }
-    filters.add(
-      MediaFilter(
-        filter: 'unwatched',
-        filterType: 'boolean',
-        key: 'jellyfin:unwatched',
-        title: t.libraries.filterCategories.unwatched,
-        type: 'filter',
-      ),
-    );
+    if (libraryType == 'movie' || libraryType == 'show') {
+      filters.add(
+        MediaFilter(
+          filter: 'unwatched',
+          filterType: 'boolean',
+          key: 'jellyfin:unwatched',
+          title: t.libraries.filterCategories.unwatched,
+          type: 'filter',
+        ),
+      );
+    }
     return LibraryFilterResult(filters: filters, cachedValues: values);
   }
 
