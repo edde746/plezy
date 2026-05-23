@@ -173,6 +173,15 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       }
       values[key] = sorted.map((v) => MediaFilterValue(key: v, title: v)).toList();
     }
+    filters.add(
+      MediaFilter(
+        filter: 'unwatched',
+        filterType: 'boolean',
+        key: 'jellyfin:unwatched',
+        title: t.libraries.filterCategories.unwatched,
+        type: 'filter',
+      ),
+    );
     return LibraryFilterResult(filters: filters, cachedValues: values);
   }
 
