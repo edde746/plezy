@@ -1264,6 +1264,12 @@ class TranslationsVideoControlsEn {
 	/// en: 'End of current video'
 	String get sleepTimerEndOfVideo => 'End of current video';
 
+	/// en: 'Stop at'
+	String get sleepTimerStopAtHeader => 'Stop at';
+
+	/// en: 'Timer'
+	String get sleepTimerDurationHeader => 'Timer';
+
 	/// en: 'Playback will pause at the end of this video'
 	String get playbackWillPauseAtEnd => 'Playback will pause at the end of this video';
 
@@ -4526,6 +4532,8 @@ extension on Translations {
 			'videoControls.timerActive' => 'Timer Active',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Playback will pause in ${duration}',
 			'videoControls.sleepTimerEndOfVideo' => 'End of current video',
+			'videoControls.sleepTimerStopAtHeader' => 'Stop at',
+			'videoControls.sleepTimerDurationHeader' => 'Timer',
 			'videoControls.playbackWillPauseAtEnd' => 'Playback will pause at the end of this video',
 			'videoControls.stillWatching' => 'Still watching?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausing in ${seconds}s',
@@ -4664,10 +4672,10 @@ extension on Translations {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
 			'profiles.manage' => 'Manage',
-			'profiles.delete' => 'Delete',
-			'profiles.signOut' => 'Sign out',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.delete' => 'Delete',
+			'profiles.signOut' => 'Sign out',
 			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.',
 			'profiles.signedOutPlex' => 'Signed out of Plex.',
@@ -5178,10 +5186,10 @@ extension on Translations {
 			'metadataEdit.contentRating' => 'Content Rating',
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Tagline',
-			'metadataEdit.summary' => 'Summary',
-			'metadataEdit.poster' => 'Poster',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.summary' => 'Summary',
+			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Background',
 			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Square Art',

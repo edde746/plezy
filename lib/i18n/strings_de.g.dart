@@ -561,6 +561,8 @@ class _TranslationsVideoControlsDe extends TranslationsVideoControlsEn {
 	@override String get timerActive => 'Schlaftimer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Wiedergabe wird in ${duration} pausiert';
 	@override String get sleepTimerEndOfVideo => 'Ende des aktuellen Videos';
+	@override String get sleepTimerStopAtHeader => 'Beenden bei';
+	@override String get sleepTimerDurationHeader => 'Timer';
 	@override String get playbackWillPauseAtEnd => 'Wiedergabe wird am Ende dieses Videos pausiert';
 	@override String get stillWatching => 'Schaust du noch?';
 	@override String pausingIn({required Object seconds}) => 'Pause in ${seconds}s';
@@ -2174,6 +2176,8 @@ extension on TranslationsDe {
 			'videoControls.timerActive' => 'Schlaftimer aktiv',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Wiedergabe wird in ${duration} pausiert',
 			'videoControls.sleepTimerEndOfVideo' => 'Ende des aktuellen Videos',
+			'videoControls.sleepTimerStopAtHeader' => 'Beenden bei',
+			'videoControls.sleepTimerDurationHeader' => 'Timer',
 			'videoControls.playbackWillPauseAtEnd' => 'Wiedergabe wird am Ende dieses Videos pausiert',
 			'videoControls.stillWatching' => 'Schaust du noch?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pause in ${seconds}s',
@@ -2312,10 +2316,10 @@ extension on TranslationsDe {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName} entfernen. Verbindungen bleiben unberührt.',
 			'profiles.active' => 'Aktiv',
 			'profiles.manage' => 'Verwalten',
-			'profiles.delete' => 'Löschen',
-			'profiles.signOut' => 'Abmelden',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.delete' => 'Löschen',
+			'profiles.signOut' => 'Abmelden',
 			'profiles.signOutPlexTitle' => 'Von Plex abmelden?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} und alle Plex Home-Benutzer entfernen? Du kannst dich jederzeit wieder anmelden.',
 			'profiles.signedOutPlex' => 'Von Plex abgemeldet.',
@@ -2826,10 +2830,10 @@ extension on TranslationsDe {
 			'metadataEdit.contentRating' => 'Altersfreigabe',
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Tagline',
-			'metadataEdit.summary' => 'Zusammenfassung',
-			'metadataEdit.poster' => 'Poster',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.summary' => 'Zusammenfassung',
+			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Hintergrund',
 			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Quadratisches Bild',
