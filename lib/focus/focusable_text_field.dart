@@ -185,13 +185,9 @@ bool _shouldPassNativeTvKeyToPlatform({required bool usesTvKeyboard, required bo
 
   // Android TV provides its own IME. Remote keys must reach the platform so
   // users can move around that keyboard instead of escaping the app field.
+  // Some remotes (Chromecast) are reported by Flutter as keyboard events, so
+  // native TV navigation cannot rely on deviceType.
   final key = event.logicalKey;
-  final isEngineSynthesizedTvSelect = key == LogicalKeyboardKey.select || key == LogicalKeyboardKey.gameButtonA;
-  if (event.isPhysicalKeyboardEvent && !isEngineSynthesizedTvSelect) {
-    _logTvTextInput('native-pass=false reason=physical-keyboard key=(${_describeTextInputKey(event)})');
-    return false;
-  }
-
   final shouldPass = key.isDpadDirection || key.isBackKey || event.isTvSelectEvent;
   _logTvTextInput(
     'native-pass=$shouldPass reason=${shouldPass ? "remote-navigation-key" : "not-navigation-key"} '

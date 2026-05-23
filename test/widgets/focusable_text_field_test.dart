@@ -317,6 +317,7 @@ void main() {
     final downResult = handler(fieldFocusNode, _remoteKey(LogicalKeyboardKey.arrowDown));
     final selectResult = handler(fieldFocusNode, _remoteKey(LogicalKeyboardKey.select));
     final backResult = handler(fieldFocusNode, _remoteKey(LogicalKeyboardKey.goBack));
+    final keyboardDownResult = handler(fieldFocusNode, _keyboardDpadKey(LogicalKeyboardKey.arrowDown));
     final synthesizedSelectResult = handler(
       fieldFocusNode,
       const KeyDownEvent(
@@ -326,12 +327,15 @@ void main() {
         deviceType: ui.KeyEventDeviceType.keyboard,
       ),
     );
+    final keyboardBackResult = handler(fieldFocusNode, _keyboardDpadKey(LogicalKeyboardKey.goBack));
     await tester.pump();
 
     expect(downResult, KeyEventResult.skipRemainingHandlers);
     expect(selectResult, KeyEventResult.skipRemainingHandlers);
     expect(backResult, KeyEventResult.skipRemainingHandlers);
+    expect(keyboardDownResult, KeyEventResult.skipRemainingHandlers);
     expect(synthesizedSelectResult, KeyEventResult.skipRemainingHandlers);
+    expect(keyboardBackResult, KeyEventResult.skipRemainingHandlers);
     expect(fieldFocusNode.hasPrimaryFocus, isTrue);
     expect(nextFocusNode.hasFocus, isFalse);
     expect(selects, 0);
@@ -394,30 +398,19 @@ void main() {
     expect(gamepadFocusStates, [true, false]);
   });
 
-  testWidgets('Android TV physical keyboard still uses field navigation', (tester) async {
+  testWidgets('Android TV physical keyboard text keys fall through to the field', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(null);
     await TvDetectionService.getInstance(forceTv: true);
     TvDetectionService.setForceTVSync(true);
     final controller = TextEditingController();
     final fieldFocusNode = FocusNode(debugLabel: 'name_field');
-    final nextFocusNode = FocusNode(debugLabel: 'next_button');
     addTearDown(controller.dispose);
     addTearDown(fieldFocusNode.dispose);
-    addTearDown(nextFocusNode.dispose);
 
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: Column(
-            children: [
-              FocusableTextField(
-                controller: controller,
-                focusNode: fieldFocusNode,
-                onNavigateDown: nextFocusNode.requestFocus,
-              ),
-              FilledButton(focusNode: nextFocusNode, onPressed: () {}, child: const Text('Next')),
-            ],
-          ),
+          body: FocusableTextField(controller: controller, focusNode: fieldFocusNode),
         ),
       ),
     );
@@ -427,16 +420,17 @@ void main() {
     final result = fieldFocusNode.onKeyEvent!(
       fieldFocusNode,
       const KeyDownEvent(
-        physicalKey: PhysicalKeyboardKey.arrowDown,
-        logicalKey: LogicalKeyboardKey.arrowDown,
+        physicalKey: PhysicalKeyboardKey.keyA,
+        logicalKey: LogicalKeyboardKey.keyA,
+        character: 'a',
         timeStamp: Duration.zero,
         deviceType: ui.KeyEventDeviceType.keyboard,
       ),
     );
     await tester.pump();
 
-    expect(result, KeyEventResult.handled);
-    expect(nextFocusNode.hasPrimaryFocus, isTrue);
+    expect(result, KeyEventResult.ignored);
+    expect(fieldFocusNode.hasPrimaryFocus, isTrue);
   });
 
   testWidgets('tvOS engine-synthesized select opens the virtual keyboard', (tester) async {
@@ -576,6 +570,15 @@ KeyDownEvent _remoteKey(LogicalKeyboardKey key) {
     logicalKey: key,
     timeStamp: Duration.zero,
     deviceType: ui.KeyEventDeviceType.directionalPad,
+  );
+}
+
+KeyDownEvent _keyboardDpadKey(LogicalKeyboardKey key) {
+  return KeyDownEvent(
+    physicalKey: _physicalKeyFor(key),
+    logicalKey: key,
+    timeStamp: Duration.zero,
+    deviceType: ui.KeyEventDeviceType.keyboard,
   );
 }
 
