@@ -220,12 +220,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     final effectiveAudioStreamId = _resolveJellyfinAudioStreamId(requestedAudioStreamId, mediaInfo);
     mediaInfo = _withSelectedJellyfinAudioStream(mediaInfo, effectiveAudioStreamId);
     final pinnedSourceId = bundle.pinnedSourceIdForItem(metadata.id);
-    videoUrl ??= buildDirectStreamUrl(
-      metadata.id,
-      container: effectiveContainer,
-      mediaSourceId: pinnedSourceId,
-      audioStreamIndex: requestedAudioStreamId,
-    );
+    videoUrl ??= buildDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId);
 
     return PlaybackInitializationResult(
       availableVersions: bundle.availableVersions,

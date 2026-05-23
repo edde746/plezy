@@ -473,7 +473,7 @@ void main() {
       expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
     });
 
-    test('selected external audio is sent to PlaybackInfo and fallback direct URL', () async {
+    test('selected external audio is sent to PlaybackInfo but omitted from static fallback URL', () async {
       Uri? playbackInfoUri;
       String? playbackInfoBody;
       final scoped = JellyfinClient.forTesting(
@@ -529,7 +529,7 @@ void main() {
       expect(selected.isExternal, isTrue);
       expect(selected.selected, isTrue);
       final uri = Uri.parse(result.videoUrl!);
-      expect(uri.queryParameters['AudioStreamIndex'], '4');
+      expect(uri.queryParameters.containsKey('AudioStreamIndex'), isFalse);
       expect(uri.queryParameters['MediaSourceId'], 'src-1');
       expect(uri.queryParameters['Container'], 'mkv');
     });
