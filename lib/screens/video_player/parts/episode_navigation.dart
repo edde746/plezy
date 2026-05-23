@@ -216,17 +216,19 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       await currentPlayer.setDisplayCriteria(
         !result.isTranscoding && displayCriteria?.canPrimeNativeDisplayCriteria == true ? displayCriteria : null,
       );
-      final transcodeTimelineOffset = result.isTranscoding ? resumePosition ?? Duration.zero : Duration.zero;
-      final transcodeTimelineDuration = result.isTranscoding && episodeMetadata.durationMs != null
-          ? Duration(milliseconds: episodeMetadata.durationMs!)
-          : null;
+      final openTiming = _playbackOpenTiming(
+        backend: episodeMetadata.backend,
+        isTranscoding: result.isTranscoding,
+        resumePosition: resumePosition,
+        durationMs: episodeMetadata.durationMs,
+      );
       await currentPlayer.setProperty('force-seekable', result.isTranscoding ? 'yes' : 'no');
       await currentPlayer.open(
-        Media(result.videoUrl!, start: result.isTranscoding ? null : resumePosition, headers: streamHeaders),
+        Media(result.videoUrl!, start: openTiming.mediaStart, headers: streamHeaders),
         play: isExoPlayer || !hasExternalSubs,
         externalSubtitles: isExoPlayer && hasExternalSubs ? result.externalSubtitles : null,
-        timelineOffset: transcodeTimelineOffset,
-        timelineDuration: transcodeTimelineDuration,
+        timelineOffset: openTiming.timelineOffset,
+        timelineDuration: openTiming.timelineDuration,
       );
 
       _completionTriggered = false;

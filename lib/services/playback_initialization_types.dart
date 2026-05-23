@@ -60,7 +60,7 @@ class PlaybackInitializationResult {
   final List<SubtitleTrack> externalSubtitles;
   final bool isOffline;
 
-  /// `true` when [videoUrl] is a Plex transcode start URL.
+  /// `true` when [videoUrl] points at a backend transcoding stream.
   final bool isTranscoding;
 
   /// Non-null when a non-original preset was requested but fallback kicked in.

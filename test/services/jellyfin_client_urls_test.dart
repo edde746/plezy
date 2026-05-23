@@ -251,7 +251,9 @@ void main() {
       expect(uri.queryParameters['Container'], 'mp4');
     });
 
-    test('getPlaybackInitialization preserves PlaySessionId from TranscodingUrl', () async {
+    test('getPlaybackInitialization sends resume ticks without rewriting TranscodingUrl', () async {
+      final playbackInfoUris = <Uri>[];
+      final playbackInfoBodies = <String>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
@@ -270,6 +272,8 @@ void main() {
             );
           }
           if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            playbackInfoUris.add(request.url);
+            playbackInfoBodies.add(request.body);
             return http.Response(
               jsonEncode({
                 'MediaSources': [
@@ -302,7 +306,13 @@ void main() {
 
       final result = await scoped.getPlaybackInitialization(
         PlaybackInitializationOptions(
-          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          metadata: MediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+            viewOffsetMs: 143894,
+          ),
           selectedMediaIndex: 0,
           qualityPreset: TranscodeQualityPreset.p720_2mbps,
         ),
@@ -311,9 +321,16 @@ void main() {
       expect(result.isTranscoding, isTrue);
       expect(result.playMethod, 'Transcode');
       expect(result.playSessionId, 'play-session-1');
+      expect(playbackInfoUris, hasLength(1));
+      expect(playbackInfoUris.single.queryParameters['StartTimeTicks'], '1438940000');
+      final body = jsonDecode(playbackInfoBodies.single) as Map<String, dynamic>;
+      expect(body['StartTimeTicks'], 1438940000);
       final uri = Uri.parse(result.videoUrl!);
+      expect(uri.path, '/Videos/item-1/master.m3u8');
+      expect(uri.queryParameters['MediaSourceId'], 'src-1');
       expect(uri.queryParameters['PlaySessionId'], 'play-session-1');
       expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters.containsKey('StartTimeTicks'), isFalse);
       expect(result.mediaInfo!.subtitleTracks, hasLength(1));
       expect(result.externalSubtitles, hasLength(1));
       expect(result.externalSubtitles.single.title, 'English');
@@ -379,7 +396,7 @@ void main() {
       expect(uri.queryParameters['api_key'], 'tok-abc');
     });
 
-    test('getPlaybackInitialization negotiates original playback and uses returned source media streams', () async {
+    test('getPlaybackInitialization prefers DirectStreamUrl over TranscodingUrl for original playback', () async {
       final requests = <Uri>[];
       String? playbackInfoBody;
       final scoped = JellyfinClient.forTesting(
@@ -417,6 +434,8 @@ void main() {
                     'Container': 'mp4',
                     'DefaultAudioStreamIndex': 1,
                     'DirectStreamUrl': '/Videos/item-1/stream?MediaSourceId=src-1&PlaySessionId=play-session-direct',
+                    'TranscodingUrl':
+                        '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=play-session-transcode',
                     'MediaStreams': [
                       {'Index': 1, 'Type': 'Audio', 'Codec': 'aac', 'Language': 'eng', 'DisplayTitle': 'English - AAC'},
                       {
@@ -450,9 +469,11 @@ void main() {
 
       final playbackInfoRequest = requests.firstWhere((uri) => uri.path == '/Items/item-1/PlaybackInfo');
       expect(playbackInfoRequest.queryParameters.containsKey('MaxStreamingBitrate'), isFalse);
+      expect(playbackInfoRequest.queryParameters.containsKey('StartTimeTicks'), isFalse);
       expect(playbackInfoRequest.queryParameters['MediaSourceId'], 'src-1');
       final body = jsonDecode(playbackInfoBody!) as Map<String, dynamic>;
       expect(body.containsKey('MaxStreamingBitrate'), isFalse);
+      expect(body.containsKey('StartTimeTicks'), isFalse);
       final profile = body['DeviceProfile'] as Map<String, dynamic>;
       expect(profile.containsKey('MaxStreamingBitrate'), isFalse);
 
@@ -464,6 +485,7 @@ void main() {
       final uri = Uri.parse(result.videoUrl!);
       expect(uri.path, '/Videos/item-1/stream');
       expect(uri.queryParameters['PlaySessionId'], 'play-session-direct');
+      expect(uri.queryParameters['PlaySessionId'], isNot('play-session-transcode'));
       expect(uri.queryParameters['api_key'], 'tok-abc');
       expect(result.mediaInfo!.subtitleTracks, hasLength(1));
       expect(result.externalSubtitles, hasLength(1));
@@ -471,6 +493,78 @@ void main() {
       final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
       expect(subtitleUri.path, '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
       expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
+    });
+
+    test('getPlaybackInitialization ignores TranscodingUrl for original playback static fallback', () async {
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          requests.add(request.url);
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return http.Response(
+              jsonEncode({
+                'Id': 'item-1',
+                'Type': 'Movie',
+                'Name': 'Movie',
+                'MediaSources': [
+                  {
+                    'Id': 'src-1',
+                    'Container': 'mkv',
+                    'MediaStreams': [
+                      {'Index': 0, 'Type': 'Video'},
+                    ],
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            return http.Response(
+              jsonEncode({
+                'MediaSources': [
+                  {
+                    'Id': 'src-1',
+                    'TranscodingUrl':
+                        '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=play-session-transcode',
+                    'MediaStreams': [
+                      {'Index': 0, 'Type': 'Video'},
+                    ],
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          selectedMediaIndex: 0,
+        ),
+      );
+
+      final playbackInfoRequest = requests.firstWhere((uri) => uri.path == '/Items/item-1/PlaybackInfo');
+      expect(playbackInfoRequest.queryParameters.containsKey('MaxStreamingBitrate'), isFalse);
+      expect(playbackInfoRequest.queryParameters.containsKey('StartTimeTicks'), isFalse);
+      expect(result.isTranscoding, isFalse);
+      expect(result.playMethod, 'DirectPlay');
+      expect(result.playSessionId, isNull);
+      final uri = Uri.parse(result.videoUrl!);
+      expect(uri.path, '/Videos/item-1/stream');
+      expect(uri.queryParameters['Static'], 'true');
+      expect(uri.queryParameters['MediaSourceId'], 'src-1');
+      expect(uri.queryParameters['Container'], 'mkv');
+      expect(uri.queryParameters['api_key'], 'tok-abc');
+      expect(uri.queryParameters.containsKey('PlaySessionId'), isFalse);
+      expect(uri.queryParameters.containsKey('StartTimeTicks'), isFalse);
     });
 
     test('selected external audio is sent to PlaybackInfo but omitted from static fallback URL', () async {
