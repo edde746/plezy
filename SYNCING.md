@@ -1,9 +1,8 @@
 # Syncing from upstream Plezy
 
-This repo (`MazeDev7/alflix`) is a fork of `edde746/plezy` with two key additions:
+This repo (`MazeDev7/alflix`) is a fork of `edde746/plezy` with one key change: a **Vibe rebrand** of all user-visible names, with bundle IDs preserved at `com.amaze.vibestream` for App Store / Play Store / Amazon update continuity.
 
-1. **`apple-tv/`** — a native Swift tvOS app (separate from Plezy's Flutter-based `tvos/`).
-2. **A Vibe rebrand** of all user-visible names, with bundle IDs preserved at `com.amaze.vibestream` for App Store / Play Store / Amazon update continuity.
+The tvOS counterpart lives at [`MazeDev7/vibe-tvos`](https://github.com/MazeDev7/vibe-tvos) — a separate, standalone native Swift repo that shares only the `com.amaze.vibestream` bundle ID prefix with this Flutter codebase (no shared source).
 
 When upstream Plezy releases a new version, sync into this fork using the cycle below.
 
@@ -62,7 +61,6 @@ These are the files where this fork diverges from upstream. Conflicts here are n
 | `README.md`, `CONTRIBUTING.md` | branding text, install URLs | Keep Vibe wording, MazeDev7/alflix URLs. Take Plezy's new sections (new feature docs etc.). |
 | `Casks/vibe_stream.rb` | renamed file | Keep. If Plezy updates `Casks/plezy.rb` (e.g. for cask format changes), port the structural changes into `vibe_stream.rb`. |
 | `.github/workflows/*` | display names, artifact names, repo gates | Keep `Vibe` display names, `vibe_stream-*` artifact names. The repo-gate `github.repository == 'edde746/plezy'` guards in `build.yml` disable Sentry uploads when run from this fork — leave alone. |
-| `.github/workflows/build-apple-tv.yml` | new file added by this fork | Plezy will never touch this file. Zero conflict expected. |
 | `.github/ISSUE_TEMPLATE/*` | discussion link, form field IDs | Keep `MazeDev7/alflix/discussions` link and `vibe-version` ID. |
 | `scripts/upload-symbols.{sh,ps1}` | `SENTRY_RELEASE=vibe@SHA` | Keep `vibe@`. |
 | `ios/fastlane/Fastfile` | ipa filename `Runner.ipa` | Keep. |
@@ -70,7 +68,6 @@ These are the files where this fork diverges from upstream. Conflicts here are n
 
 ## Untouched by syncs (zero conflicts expected)
 
-- `apple-tv/**` — Plezy never touches this path; their tvOS lives at `tvos/`.
 - `tvos/**` (Plezy's Flutter tvOS) — left as-is in this fork. Syncs flow through cleanly.
 - `website/**` — Plezy's marketing site, not deployed by this fork. Syncs flow through cleanly.
 
@@ -78,9 +75,8 @@ These are the files where this fork diverges from upstream. Conflicts here are n
 
 Before pushing to `main`:
 
-- `git diff main..sync-upstream-<plezy-version> -- apple-tv/` must be empty. If it is not, the native tvOS was collateral damage from a merge and needs to be reverted before push.
-- Build `apple-tv` at least once after each sync to confirm the vendored `Shared/` still compiles against the chosen MPV pin.
 - Run `flutter pub get` and `flutter build ios --no-codesign` (on macOS) to catch Dart import / iOS pbxproj regressions.
+- Spot-check that none of the "keep" values in the conflict zone table reverted to Plezy values.
 
 ## MPVKitAM sync responsibility
 
@@ -91,13 +87,6 @@ Before pushing to `main`:
 3. In `alflix` sync branch: update the four iOS/macOS `Package.resolved` files to that SHA.
 
 Skipping step 1 means `Package.resolved` will pin to a MPVKitAM SHA that does not include Plezy's new MPV features, producing build or runtime mismatches between the Flutter code and MPVKitAM.
-
-## Two MPV forks coexist
-
-- **`MazeDev7/MPVKitAM`** — used by Flutter (iOS, macOS). Mirrors `edde746/MPVKit` upstream.
-- **`MazeDev7/MPVKit`** — used by `apple-tv/` only. Custom fork that includes tvOS device + simulator slices in its binary `.xcframework`s, which upstream Plezy's MPVKit does not ship.
-
-When a future Plezy MPVKit bump requires a corresponding tvOS bump, also bump `MazeDev7/MPVKit` (rebuild xcframeworks with tvOS slices, push a new release, update `apple-tv/Package.swift` + `apple-tv/project.yml` + the apple-tv `Package.resolved` files to the new SHA).
 
 ## Known caveats inherited from upstream Plezy
 
