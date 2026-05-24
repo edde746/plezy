@@ -1,19 +1,31 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:path/path.dart' as p;
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/database/download_operations.dart';
+import 'package:plezy/media/download_resolution.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/services/download_artwork_helpers.dart';
+import 'package:plezy/services/download_artwork_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/media_server_http_client.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
+import '../test_helpers/prefs.dart';
 
 void main() {
   group('downloadExtensionFromUrl', () {
@@ -158,6 +170,97 @@ void main() {
       expect(await JellyfinApiCache.instance.get('jf-machine/user-a', '/Users/user-a/Items/item-1'), isNull);
       expect(await JellyfinApiCache.instance.get('jf-machine/user-a', '/MediaSegments/item-1'), isNull);
     });
+
+    test('artwork repair fetches full parent metadata and backfills thumb path', () async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      DownloadStorageService.resetForTesting();
+      final tmpRoot = await Directory.systemTemp.createTemp('download_manager_artwork_repair_test_');
+      PathProviderPlatform.instance = _FakePathProvider(tmpRoot);
+      addTearDown(() async {
+        DownloadStorageService.resetForTesting();
+        SettingsService.resetForTesting();
+        if (await tmpRoot.exists()) await tmpRoot.delete(recursive: true);
+      });
+
+      final settings = await SettingsService.getInstance();
+      final storage = DownloadStorageService.instance;
+      await storage.initialize(settings);
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      JellyfinApiCache.initialize(db);
+      addTearDown(db.close);
+
+      await db
+          .into(db.downloadedMedia)
+          .insert(
+            DownloadedMediaCompanion.insert(
+              serverId: 'srv',
+              ratingKey: 'ep-1',
+              globalKey: 'srv:ep-1',
+              type: 'episode',
+              parentRatingKey: const Value('season-1'),
+              grandparentRatingKey: const Value('show-1'),
+              status: DownloadStatus.completed.index,
+            ),
+          );
+      await PlexApiCache.instance.put('srv', '/library/metadata/ep-1', {
+        'MediaContainer': {
+          'Metadata': [
+            {
+              'ratingKey': 'ep-1',
+              'type': 'episode',
+              'title': 'Episode',
+              'thumb': '/ep-thumb',
+              'parentRatingKey': 'season-1',
+              'parentTitle': 'Season 1',
+              'parentIndex': 1,
+              'grandparentRatingKey': 'show-1',
+              'grandparentTitle': 'Show',
+            },
+          ],
+        },
+      });
+      await PlexApiCache.instance.put('srv', '/library/metadata/show-1', {
+        'MediaContainer': {
+          'Metadata': [
+            {'ratingKey': 'show-1', 'type': 'show', 'title': 'Show', 'thumb': '/show-thumb'},
+          ],
+        },
+      });
+
+      final client = _ArtworkRepairClient(
+        serverId: 'srv',
+        items: {
+          'show-1': MediaItem(
+            id: 'show-1',
+            backend: MediaBackend.plex,
+            kind: MediaKind.show,
+            serverId: 'srv',
+            title: 'Show',
+            thumbPath: '/show-thumb',
+            clearLogoPath: '/show-logo',
+            artPath: '/show-art',
+            backgroundSquarePath: '/show-square',
+          ),
+        },
+      );
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: storage,
+        http: MediaServerHttpClient(client: _FakeHttpClient(200, utf8.encode('image bytes'))),
+      )..setClientResolver((serverId, {clientScopeId}) => client);
+
+      await manager.repairMissingArtworkForDownloads();
+
+      expect(client.fetchCounts['show-1'], isNotNull);
+      expect(client.fetchCounts['show-1']!, greaterThan(0));
+      final logoPath = DownloadArtworkService.localPathSync(storage, 'srv', '/show-logo');
+      expect(logoPath, isNotNull);
+      expect(File(logoPath!).existsSync(), isTrue);
+      final row = await db.getDownloadedMedia('srv:ep-1');
+      expect(row?.thumbPath, artworkStorageKey('/ep-thumb'));
+    });
   });
 }
 
@@ -182,6 +285,72 @@ class _ScopedJellyfinClient implements MediaServerClient, ScopedMediaServerClien
 
   @override
   MediaBackend get backend => MediaBackend.jellyfin;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakePathProvider extends PathProviderPlatform with MockPlatformInterfaceMixin {
+  _FakePathProvider(this.root);
+
+  final Directory root;
+
+  @override
+  Future<String?> getApplicationDocumentsPath() async => _ensure('documents');
+
+  @override
+  Future<String?> getApplicationSupportPath() async => _ensure('support');
+
+  @override
+  Future<String?> getApplicationCachePath() async => _ensure('cache');
+
+  @override
+  Future<String?> getTemporaryPath() async => _ensure('temp');
+
+  String _ensure(String name) {
+    final path = p.join(root.path, name);
+    Directory(path).createSync(recursive: true);
+    return path;
+  }
+}
+
+class _FakeHttpClient extends http.BaseClient {
+  _FakeHttpClient(this.statusCode, this.body);
+
+  final int statusCode;
+  final List<int> body;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    return http.StreamedResponse(Stream<List<int>>.value(body), statusCode, request: request);
+  }
+}
+
+class _ArtworkRepairClient implements MediaServerClient {
+  _ArtworkRepairClient({required this.serverId, required this.items});
+
+  @override
+  final String serverId;
+
+  final Map<String, MediaItem> items;
+  final fetchCounts = <String, int>{};
+
+  @override
+  String? get serverName => 'Server';
+
+  @override
+  MediaBackend get backend => MediaBackend.plex;
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async {
+    fetchCounts[id] = (fetchCounts[id] ?? 0) + 1;
+    return items[id];
+  }
+
+  @override
+  List<DownloadArtworkSpec> resolveDownloadArtwork(MediaItem item) {
+    return buildArtworkSpecs(item, (path) => 'https://example.test$path');
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

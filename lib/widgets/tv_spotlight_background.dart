@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -27,6 +29,7 @@ class TvSpotlightBackground extends StatelessWidget {
   final bool compact;
   final bool showPrimaryAction;
   final bool showInfo;
+  final String? Function(String? artworkPath)? localArtworkPathResolver;
 
   const TvSpotlightBackground({
     super.key,
@@ -41,6 +44,7 @@ class TvSpotlightBackground extends StatelessWidget {
     this.compact = false,
     this.showPrimaryAction = true,
     this.showInfo = true,
+    this.localArtworkPathResolver,
   });
 
   double _scale(BuildContext context) => TvLayoutConstants.scaleOf(context);
@@ -104,12 +108,33 @@ class TvSpotlightBackground extends StatelessWidget {
     final size = MediaQuery.sizeOf(context);
     final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
     final containerAspect = size.width / size.height;
-    final artPath =
-        media.heroArt(containerAspectRatio: containerAspect) ??
-        media.grandparentArtPath ??
-        media.artPath ??
-        media.backgroundSquarePath ??
-        media.thumbPath;
+    final artCandidates = <String?>[
+      media.heroArt(containerAspectRatio: containerAspect) ??
+          media.grandparentArtPath ??
+          media.artPath ??
+          media.backgroundSquarePath ??
+          media.thumbPath,
+      media.grandparentArtPath,
+      media.artPath,
+      media.backgroundSquarePath,
+      media.thumbPath,
+    ];
+    for (final candidate in artCandidates) {
+      final localPath = localArtworkPathResolver?.call(candidate);
+      if (localPath != null && File(localPath).existsSync()) {
+        return blurArtwork(
+          Image.file(
+            File(localPath),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+                ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+          ),
+        );
+      }
+    }
+
+    final artPath = artCandidates.firstWhere((path) => path != null && path.isNotEmpty, orElse: () => null);
+
     final imageUrl = MediaImageHelper.getOptimizedImageUrl(
       client: client,
       thumbPath: artPath,
@@ -208,6 +233,24 @@ class TvSpotlightBackground extends StatelessWidget {
     final logoHeight = _logoHeight(scale);
     if (logoPath == null || logoPath.isEmpty) {
       return SizedBox(width: logoWidth, height: logoHeight, child: _buildTitle(context, title));
+    }
+
+    final localLogoPath = localArtworkPathResolver?.call(logoPath);
+    if (localLogoPath != null && File(localLogoPath).existsSync()) {
+      return SizedBox(
+        width: logoWidth,
+        height: logoHeight,
+        child: blurArtwork(
+          Image.file(
+            File(localLogoPath),
+            fit: BoxFit.contain,
+            alignment: Alignment.centerLeft,
+            errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),
+          ),
+          sigma: 10,
+          clip: false,
+        ),
+      );
     }
 
     final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);

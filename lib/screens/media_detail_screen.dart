@@ -67,6 +67,7 @@ import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/server_bound_media_mixin.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/deletion_notifier.dart';
+import '../utils/global_key_utils.dart';
 import '../widgets/episode_card.dart';
 import '../widgets/fitting_title_text.dart';
 import 'actor_media_screen.dart';
@@ -1104,10 +1105,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }) {
     if (!widget.isOffline || _metadata.serverId == null) return null;
 
-    final downloadProvider = context.read<DownloadProvider>();
     for (final artworkPath in artworkPaths) {
-      final localPath = downloadProvider.getArtworkLocalPath(_metadata.serverId!, artworkPath);
-      if (localPath == null || !File(localPath).existsSync()) continue;
+      final localPath = _offlineArtworkLocalPath(context, artworkPath);
+      if (localPath == null) continue;
 
       return OptimizedMediaImage(
         client: null,
@@ -1121,6 +1121,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     return null;
+  }
+
+  String? _offlineArtworkLocalPath(BuildContext context, String? artworkPath) {
+    if (!widget.isOffline || _metadata.serverId == null) return null;
+    final localPath = context.read<DownloadProvider>().getArtworkLocalPath(_metadata.serverId!, artworkPath);
+    if (localPath == null || !File(localPath).existsSync()) return null;
+    return localPath;
   }
 
   Widget _buildHeroNetworkArtwork(
@@ -1506,8 +1513,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // Create synthetic season MediaItems from the grouped episodes.
     final seasons = seasonMap.entries.map((entry) {
       final firstEp = entry.value.first;
+      final seasonId = firstEp.parentId ?? '';
+      final seasonGlobalKey = _metadata.serverId == null || seasonId.isEmpty
+          ? null
+          : buildGlobalKey(_metadata.serverId!, seasonId);
+      final storedSeason = seasonGlobalKey == null ? null : downloadProvider.getMetadata(seasonGlobalKey);
+      if (storedSeason != null && storedSeason.isSeason) {
+        return _withFallbackLibrary(
+          storedSeason.copyWith(
+            serverId: _metadata.serverId,
+            serverName: _metadata.serverName ?? storedSeason.serverName,
+            leafCount: storedSeason.leafCount ?? entry.value.length,
+          ),
+          _metadata,
+        );
+      }
       return MediaItem(
-        id: firstEp.parentId ?? '',
+        id: seasonId,
         backend: _metadata.backend,
         kind: MediaKind.season,
         title: firstEp.parentTitle ?? 'Season ${entry.key}',
@@ -2121,32 +2143,47 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             if (showSeasonPosters && posterPath != null && posterPath.isNotEmpty) {
               const posterWidth = 72.0;
               const posterHeight = 108.0;
-              final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-              final client = _getMediaClientForMetadata(context);
-              final imageUrl = MediaImageHelper.getOptimizedImageUrl(
-                client: client,
-                thumbPath: posterPath,
-                maxWidth: posterWidth,
-                maxHeight: posterHeight,
-                devicePixelRatio: dpr,
+              final localArtwork = _buildOfflineArtworkIfAvailable(
+                context,
+                artworkPaths: [posterPath],
+                fit: BoxFit.cover,
                 imageType: ImageType.poster,
-              );
-              final (memWidth, _) = MediaImageHelper.getMemCacheDimensions(
-                displayWidth: (posterWidth * dpr).round(),
-                displayHeight: (posterHeight * dpr).round(),
-                imageType: ImageType.poster,
+                errorWidget: (context, url, error) => const PlaceholderContainer(),
               );
               topImage = SizedBox(
                 width: posterWidth,
                 height: posterHeight,
-                child: CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  cacheManager: PlexImageCacheManager.instance,
-                  fit: BoxFit.cover,
-                  memCacheWidth: memWidth,
-                  placeholder: (context, url) => const PlaceholderContainer(),
-                  errorBuilder: (context, error, stackTrace) => const PlaceholderContainer(),
-                ),
+                child:
+                    localArtwork ??
+                    (widget.isOffline
+                        ? const PlaceholderContainer()
+                        : Builder(
+                            builder: (context) {
+                              final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+                              final client = _getMediaClientForMetadata(context);
+                              final imageUrl = MediaImageHelper.getOptimizedImageUrl(
+                                client: client,
+                                thumbPath: posterPath,
+                                maxWidth: posterWidth,
+                                maxHeight: posterHeight,
+                                devicePixelRatio: dpr,
+                                imageType: ImageType.poster,
+                              );
+                              final (memWidth, _) = MediaImageHelper.getMemCacheDimensions(
+                                displayWidth: (posterWidth * dpr).round(),
+                                displayHeight: (posterHeight * dpr).round(),
+                                imageType: ImageType.poster,
+                              );
+                              return CachedNetworkImage(
+                                imageUrl: imageUrl,
+                                cacheManager: PlexImageCacheManager.instance,
+                                fit: BoxFit.cover,
+                                memCacheWidth: memWidth,
+                                placeholder: (context, url) => const PlaceholderContainer(),
+                                errorBuilder: (context, error, stackTrace) => const PlaceholderContainer(),
+                              );
+                            },
+                          )),
               );
             }
             return Padding(
@@ -3102,7 +3139,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         child: Scaffold(
           body: Stack(
             children: [
-              TvSpotlightBackground(item: metadata, client: _getArtworkMediaClient(context), showInfo: false),
+              TvSpotlightBackground(
+                item: metadata,
+                client: _getArtworkMediaClient(context),
+                showInfo: false,
+                localArtworkPathResolver: widget.isOffline ? (path) => _offlineArtworkLocalPath(context, path) : null,
+              ),
               _buildTvDetailRevealGate(revealContent, handleBack),
             ],
           ),
