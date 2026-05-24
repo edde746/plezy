@@ -102,7 +102,7 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
   void _cycleAudioTrack() => _trackManager?.cycleAudioTrack();
 
   Future<void> _toggleFullscreen() async {
-    if (PlatformDetector.isMobile(context)) return;
+    if (!PlatformDetector.isDesktopOS()) return;
     await FullscreenStateManager().toggleFullscreen();
   }
 }
