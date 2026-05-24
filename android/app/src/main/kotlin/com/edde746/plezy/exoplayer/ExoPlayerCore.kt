@@ -2480,7 +2480,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       onComplete(false)
       return
     }
-    mgr.setVideoFrameRate(fps, videoDurationMs, surfaceView?.holder?.surface, extraDelayMs, onComplete)
+    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, onComplete)
   }
 
   fun clearVideoFrameRate() {
