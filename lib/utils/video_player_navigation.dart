@@ -174,7 +174,7 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
 
   appLogger.d('Returned from playback, refreshing metadata');
 
-  if (!isOffline && onRefresh != null) {
+  if (!isOffline && onRefresh != null && context.mounted) {
     onRefresh();
   }
 

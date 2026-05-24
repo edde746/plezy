@@ -21,6 +21,8 @@ mixin ItemUpdatable<T extends StatefulWidget> on State<T> {
   /// If the fetch fails, the error is silently caught and the item will
   /// be updated on the next full refresh.
   Future<void> updateItem(String itemId) async {
+    if (!mounted) return;
+
     try {
       final serverId = itemServerId;
       if (serverId == null) return;
