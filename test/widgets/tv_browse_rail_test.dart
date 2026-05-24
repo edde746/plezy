@@ -176,6 +176,46 @@ void main() {
       expect(compactHeight, lessThan(defaultHeight));
     });
 
+    test('compact wide poster scale makes clips match compact episode thumbnails', () {
+      final episode = MediaItem(
+        id: 'episode_1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Episode 1',
+        thumbPath: '/episode-thumb',
+      );
+      final clip = MediaItem(
+        id: 'clip_1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.clip,
+        title: 'Trailer',
+        thumbPath: '/trailer-thumb',
+      );
+      final episodeHub = MediaHub(id: 'detail_season_0', title: 'Season 1', type: 'episode', items: [episode], size: 1);
+      final clipHub = MediaHub(id: 'detail_extras', title: 'Extras', type: 'clip', items: [clip], size: 1);
+
+      final episodeMetrics = TvBrowseRailLayout.metricsForHub(
+        hub: episodeHub,
+        availableWidth: 1040,
+        density: LibraryDensity.defaultValue,
+        episodePosterMode: EpisodePosterMode.episodeThumbnail,
+        scale: 0.85,
+        widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
+      );
+      final clipMetrics = TvBrowseRailLayout.metricsForHub(
+        hub: clipHub,
+        availableWidth: 1040,
+        density: LibraryDensity.defaultValue,
+        episodePosterMode: EpisodePosterMode.seriesPoster,
+        scale: 0.85,
+        widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
+      );
+
+      expect(clipMetrics.useWideLayout, isTrue);
+      expect(clipMetrics.cardWidth, closeTo(episodeMetrics.cardWidth, 0.001));
+      expect(clipMetrics.posterHeight, closeTo(episodeMetrics.posterHeight, 0.001));
+    });
+
     test('multi-hub estimate reserves next hub peek height', () {
       final movie = MediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie');
       final movieHub = MediaHub(id: 'movies', title: 'Movies', type: 'movie', items: [movie], size: 1);
@@ -205,6 +245,63 @@ void main() {
     SettingsService.resetForTesting();
     HubFocusMemory.clear();
     await SettingsService.getInstance();
+  });
+
+  testWidgets('active hub header uses theme foreground in light mode', (tester) async {
+    final serverManager = MultiServerManager();
+    final theme = monoTheme(dark: false);
+    final episode = MediaItem(id: 'episode_1', backend: MediaBackend.plex, kind: MediaKind.episode, title: 'Episode 1');
+    final hub = MediaHub(id: 'season_1', title: 'Season 1', type: 'episode', items: [episode], size: 1);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: theme,
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(hubs: [hub], iconForHub: (_, _) => Icons.tv_rounded),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    final headerText = tester.widget<Text>(find.text('Season 1'));
+    expect(headerText.style?.color, theme.colorScheme.onSurface);
+  });
+
+  testWidgets('inactive hub contents render at reduced opacity', (tester) async {
+    final serverManager = MultiServerManager();
+    final firstItem = MediaItem(id: 'movie_1', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie 1');
+    final secondItem = MediaItem(id: 'movie_2', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie 2');
+    final firstHub = MediaHub(id: 'hub_1', title: 'First Hub', type: 'movie', items: [firstItem], size: 1);
+    final secondHub = MediaHub(id: 'hub_2', title: 'Second Hub', type: 'movie', items: [secondItem], size: 1);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(hubs: [firstHub, secondHub], iconForHub: (_, _) => Icons.movie_rounded),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+
+    final opacities = tester.widgetList<AnimatedOpacity>(find.byType(AnimatedOpacity)).map((widget) => widget.opacity);
+    expect(opacities, contains(0.7));
   });
 
   testWidgets('selects preferred hub when hubs are inserted asynchronously', (tester) async {

@@ -85,6 +85,7 @@ const double _tvDetailEpisodeThumbnailScale = TvBrowseRailLayout.compactEpisodeT
 const double _tvDetailActionSize = 46;
 const double _tvDetailActionRailGap = 4;
 const String _tvDetailSeasonHubIdPrefix = 'detail_season_';
+const String _tvDetailExtrasHubId = 'detail_extras';
 const String _tvDetailActorsHubId = 'detail_actors';
 const String _tvDetailActorPersonIdRawKey = 'tvDetailActorPersonId';
 
@@ -848,12 +849,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     double? fontSize,
     FontWeight fontWeight = FontWeight.bold,
     double shadowBlur = 8,
+    Color? color,
+    Color? shadowColor,
   }) {
     final baseStyle = (Theme.of(context).textTheme.displaySmall ?? const TextStyle()).copyWith(
-      color: Colors.white,
+      color: color ?? Colors.white,
       fontWeight: fontWeight,
       fontSize: fontSize,
-      shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: shadowBlur)],
+      shadows: [Shadow(color: shadowColor ?? Colors.black.withValues(alpha: 0.5), blurRadius: shadowBlur)],
     );
 
     return FittingTitleText(title, style: baseStyle);
@@ -1595,7 +1598,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
-  /// Find the season index matching the initial selection or on-deck episode, or fall back to 0
+  /// Find the season index matching the initial selection or on-deck episode,
+  /// then fall back to the same season the Play button would use.
   int _findOnDeckSeasonIndex(List<MediaItem> seasons) {
     // Prefer explicit initial season (from navigation)
     if (widget.initialSeasonIndex != null && seasons.isNotEmpty) {
@@ -1603,14 +1607,32 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (idx != -1) return idx;
     }
     // Fall back to on-deck episode's season
-    if (_onDeckEpisode != null && seasons.isNotEmpty) {
-      final onDeckParentIndex = _onDeckEpisode!.parentIndex;
+    final onDeckEpisode = _onDeckEpisode;
+    if (onDeckEpisode != null && seasons.isNotEmpty) {
+      final onDeckParentId = onDeckEpisode.parentId;
+      if (onDeckParentId != null) {
+        final idx = seasons.indexWhere((s) => s.id == onDeckParentId);
+        if (idx != -1) return idx;
+      }
+
+      final onDeckParentIndex = onDeckEpisode.parentIndex;
       if (onDeckParentIndex != null) {
         final idx = seasons.indexWhere((s) => s.index == onDeckParentIndex);
         if (idx != -1) return idx;
       }
     }
-    return 0;
+    return _defaultPlaybackSeasonIndex(seasons);
+  }
+
+  int _defaultPlaybackSeasonIndex(List<MediaItem> seasons) {
+    if (seasons.isEmpty) return 0;
+    final regularSeasonIndex = seasons.indexWhere((season) => (season.index ?? 0) > 0);
+    return regularSeasonIndex == -1 ? 0 : regularSeasonIndex;
+  }
+
+  MediaItem? _defaultPlaybackSeason(List<MediaItem> seasons) {
+    if (seasons.isEmpty) return null;
+    return seasons[_defaultPlaybackSeasonIndex(seasons)];
   }
 
   /// Fetch episodes for a specific season by index, using cache when available
@@ -2730,8 +2752,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         return;
       }
 
-      // Skip Season 0 (Specials) — prefer the first regular season
-      final firstSeason = _seasons.firstWhere((s) => (s.index ?? 0) > 0, orElse: () => _seasons.first);
+      final firstSeason = _defaultPlaybackSeason(_seasons)!;
 
       // Get episodes of the first season
       List<MediaItem> episodes;
@@ -3170,6 +3191,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }) {
     final theme = Theme.of(context);
     final description = _tvDetailDescription(metadata, hideSpoilers: hideSpoilers);
+    final foregroundColor = _tvDetailForegroundColor(context);
+    final mutedForegroundColor = foregroundColor.withValues(alpha: 0.78);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -3234,6 +3257,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           fontSize: 56 * scale,
                           fontWeight: FontWeight.w800,
                           shadowBlur: 12,
+                          color: foregroundColor,
+                          shadowColor: _tvDetailTitleShadowColor(context),
                         ),
                       ),
                       SizedBox(height: logoMetadataGap),
@@ -3254,7 +3279,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           maxLines: summaryMaxLines,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.78),
+                            color: mutedForegroundColor,
                             fontSize: summaryFontSize,
                             height: 1.35,
                           ),
@@ -3271,6 +3296,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         );
       },
     );
+  }
+
+  Color _tvDetailForegroundColor(BuildContext context) => Theme.of(context).colorScheme.onSurface;
+
+  Color _tvDetailTitleShadowColor(BuildContext context) {
+    final brightness = Theme.of(context).colorScheme.brightness;
+    return brightness == Brightness.dark ? Colors.black.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.55);
   }
 
   Widget _buildDetailLogoOrTitle(
@@ -3352,7 +3384,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       parts.join('  •  '),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: TextStyle(color: Colors.white, fontSize: 18 * scale, fontWeight: FontWeight.w700, letterSpacing: 0.1),
+      style: TextStyle(
+        color: _tvDetailForegroundColor(context),
+        fontSize: 18 * scale,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.1,
+      ),
     );
   }
 
@@ -3454,7 +3491,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   double _tvDetailWidePosterScaleForHub(MediaHub hub) {
-    return _isTvDetailEpisodeHub(hub) ? _tvDetailEpisodeThumbnailScale : 1.0;
+    return _isTvDetailEpisodeHub(hub) || hub.id == _tvDetailExtrasHubId ? _tvDetailEpisodeThumbnailScale : 1.0;
   }
 
   List<MediaHub> _tvDetailHubs(MediaItem metadata) {
@@ -3494,7 +3531,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
     if (_extras != null && _extras!.isNotEmpty) {
       hubs.add(
-        MediaHub(id: 'detail_extras', title: t.discover.extras, type: 'clip', items: _extras!, size: _extras!.length),
+        MediaHub(
+          id: _tvDetailExtrasHubId,
+          title: t.discover.extras,
+          type: 'clip',
+          items: _extras!,
+          size: _extras!.length,
+        ),
       );
     }
     hubs.addAll(_relatedHubs.where((hub) => hub.items.isNotEmpty));
@@ -3620,7 +3663,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   IconData _getTvDetailHubIcon(MediaHub hub, int index) {
     if (hub.id.startsWith(_tvDetailSeasonHubIdPrefix)) return Symbols.tv_rounded;
     if (hub.id == 'detail_episodes') return Symbols.tv_rounded;
-    if (hub.id == 'detail_extras') return Symbols.theaters_rounded;
+    if (hub.id == _tvDetailExtrasHubId) return Symbols.theaters_rounded;
     if (hub.id == _tvDetailActorsHubId) return Symbols.group_rounded;
     return _getRelatedHubIcon(hub);
   }
@@ -4023,8 +4066,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         // (icon will indicate the difference)
         return t.discover.playEpisode(season: seasonNum.toString(), episode: episodeNum.toString());
       } else {
-        // No on deck episode, will play first episode
-        return t.discover.playEpisode(season: '1', episode: '1');
+        final seasonNum = _defaultPlaybackSeason(_seasons)?.index ?? 1;
+        return t.discover.playEpisode(season: seasonNum.toString(), episode: '1');
       }
     }
 

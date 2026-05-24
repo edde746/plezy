@@ -311,6 +311,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   static const _navigationScrollDuration = Duration(milliseconds: 130);
   static const _repeatNavigationScrollDuration = Duration(milliseconds: 65);
   static const _scrollCatchUpViewportDistance = 2.5;
+  static const _inactiveHubContentOpacity = 0.7;
 
   final FocusNode _focusNode = FocusNode(debugLabel: 'tv_browse_rail');
   final Map<String, ScrollController> _scrollControllers = {};
@@ -932,16 +933,21 @@ class TvBrowseRailState extends State<TvBrowseRail> {
             children: [
               _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
               SizedBox(height: TvBrowseRailLayout.hubStripGapForScale(scale)),
-              _buildHubRail(
-                hub: hub,
-                hubIndex: hubIndex,
-                hasFocus: hasFocus,
-                episodePosterMode: modes[hubIndex],
-                metrics: metrics,
-                scale: scale,
-                leftOverflow: leftOverflow,
-                interactionExpansion: interactionExpansion,
-                railViewportWidth: railViewportWidth,
+              AnimatedOpacity(
+                opacity: isActive ? 1 : _inactiveHubContentOpacity,
+                duration: FocusTheme.getAnimationDuration(context),
+                curve: Curves.easeOutCubic,
+                child: _buildHubRail(
+                  hub: hub,
+                  hubIndex: hubIndex,
+                  hasFocus: hasFocus,
+                  episodePosterMode: modes[hubIndex],
+                  metrics: metrics,
+                  scale: scale,
+                  leftOverflow: leftOverflow,
+                  interactionExpansion: interactionExpansion,
+                  railViewportWidth: railViewportWidth,
+                ),
               ),
             ],
           ),
@@ -958,8 +964,8 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     required double scale,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
-    final titleColor = isActive ? Colors.white : colorScheme.onSurface.withValues(alpha: 0.54);
-    final iconColor = isActive ? Colors.white : colorScheme.onSurface.withValues(alpha: 0.42);
+    final titleColor = isActive ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.54);
+    final iconColor = isActive ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.42);
 
     return SizedBox(
       height: TvBrowseRailLayout.hubStripHeightForScale(scale),

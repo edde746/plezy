@@ -70,6 +70,132 @@ void main() {
     expect(titleText.style!.fontSize!, lessThan(baseFontSize));
   });
 
+  testWidgets('TV detail defaults to first regular season when specials precede it', (tester) async {
+    await SettingsService.getInstance();
+
+    final show = MediaItem(
+      id: 'show_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.show,
+      title: 'The Show',
+      serverId: 'server_1',
+      serverName: 'Server',
+    );
+    final specials = MediaItem(
+      id: 'season_0',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.season,
+      title: 'Specials',
+      index: 0,
+      parentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final season1 = MediaItem(
+      id: 'season_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.season,
+      title: 'Season 1',
+      index: 1,
+      parentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final specialEpisode = MediaItem(
+      id: 'episode_special_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: 'Special 1',
+      index: 1,
+      parentId: specials.id,
+      parentIndex: specials.index,
+      grandparentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+    final episode1 = MediaItem(
+      id: 'episode_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.episode,
+      title: 'Episode 1',
+      index: 1,
+      parentId: season1.id,
+      parentIndex: season1.index,
+      grandparentId: show.id,
+      serverId: show.serverId,
+      serverName: show.serverName,
+    );
+
+    final descendantsCompleter = Completer<List<MediaItem>>();
+    final client = _FakeMediaServerClient(
+      show: show,
+      childrenByParent: {
+        show.id: [specials, season1],
+        specials.id: [specialEpisode],
+        season1.id: [episode1],
+      },
+      pendingPlayableDescendants: descendantsCompleter.future,
+    );
+    final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+    final provider = MultiServerProvider(manager, DataAggregationService(manager));
+    addTearDown(provider.dispose);
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: ChangeNotifierProvider<MultiServerProvider>.value(
+          value: provider,
+          child: MaterialApp(
+            theme: monoTheme(dark: true),
+            home: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(find.text('Season 1'), findsOneWidget);
+    expect(find.text('Specials'), findsNothing);
+    expect(find.text('S1E1'), findsOneWidget);
+  });
+
+  testWidgets('TV detail summary uses light theme foreground color', (tester) async {
+    await SettingsService.getInstance();
+    tester.view.physicalSize = const Size(1280, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    const summary = 'Light theme detail text should stay readable.';
+    final movie = MediaItem(
+      id: 'movie_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: 'Readable Movie',
+      summary: summary,
+    );
+    final theme = monoTheme(dark: false);
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MaterialApp(
+          theme: theme,
+          home: MediaDetailScreen(metadata: movie),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    final summaryText = tester.widget<Text>(find.text(summary));
+    expect(summaryText.style?.color, theme.colorScheme.onSurface.withValues(alpha: 0.78));
+  });
+
   testWidgets('TV detail reveals selected season before remaining episode caches load', (tester) async {
     await SettingsService.getInstance();
 
