@@ -95,14 +95,18 @@ void main() {
         var notified = 0;
         p.addListener(() => notified++);
 
+        expect(p.hasExplicitVisibleServerFilter, isFalse);
+
         // Empty set is a real value (different from null) — switching from
         // null → {} should notify so consumers know the active profile has
         // no servers, not "all servers".
         p.setVisibleServerIds(<String>{});
         expect(notified, 1);
+        expect(p.hasExplicitVisibleServerFilter, isTrue);
 
         p.setVisibleServerIds({'a', 'b'});
         expect(notified, 2);
+        expect(p.hasExplicitVisibleServerFilter, isTrue);
 
         // Idempotent: same membership is a no-op.
         p.setVisibleServerIds({'b', 'a'});
@@ -111,6 +115,7 @@ void main() {
         // Clearing back to null after a real filter is a state change.
         p.setVisibleServerIds(null);
         expect(notified, 3);
+        expect(p.hasExplicitVisibleServerFilter, isFalse);
 
         p.dispose();
       });

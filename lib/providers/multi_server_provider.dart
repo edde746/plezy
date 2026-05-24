@@ -45,6 +45,10 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// ids in the set surface through [serverIds] / [onlineServerIds].
   Set<String>? _visibleServerIds;
 
+  /// True once the active profile has explicitly resolved visibility. An empty
+  /// set is meaningful: the profile has servers, but none are currently visible.
+  bool get hasExplicitVisibleServerFilter => _visibleServerIds != null;
+
   /// Server ids the active profile is expected to have access to, including
   /// unreachable servers that do not have a live client in [MultiServerManager].
   /// This is intentionally separate from [_visibleServerIds]: visible ids drive

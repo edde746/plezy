@@ -166,6 +166,33 @@ void main() {
       manager.dispose();
     });
 
+    test('expected but unreachable profile servers enter offline once visibility settles', () async {
+      final manager = MultiServerManager();
+      final multi = MultiServerProvider(manager, DataAggregationService(manager));
+      final p = OfflineModeProvider(manager, multiServerProvider: multi);
+
+      expect(p.isOffline, isFalse);
+
+      var notifications = 0;
+      p.addListener(() => notifications++);
+
+      multi.setExpectedVisibleServerIds({'jf-machine'});
+      await Future<void>.delayed(Duration.zero);
+
+      expect(p.isOffline, isFalse);
+      expect(notifications, 0);
+
+      multi.setVisibleServerIds(<String>{});
+      await Future<void>.delayed(Duration.zero);
+
+      expect(p.isOffline, isTrue);
+      expect(notifications, 1);
+
+      p.dispose();
+      multi.dispose();
+      manager.dispose();
+    });
+
     test('Plex auth errors without live clients stay out of generic offline', () async {
       final manager = MultiServerManager();
       final multi = MultiServerProvider(manager, DataAggregationService(manager));

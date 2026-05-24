@@ -31,9 +31,9 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
     : _multiServerProvider = multiServerProvider,
       _hasServerConnection = (multiServerProvider?.hasConnectedServers ?? _serverManager.onlineServerIds.isNotEmpty) {
     // Pre-seed the "received status" flag if there are already online
-    // servers (e.g. provider rebuilt mid-session) — otherwise we'd
-    // incorrectly say "online" after the manager already emitted.
-    if (_hasServerConnection) _hasReceivedServerStatus = true;
+    // servers (e.g. provider rebuilt mid-session) or the active profile's
+    // visibility filter has already settled.
+    _markServerStatusKnownIfSettled();
     _lastOfflineState = isOffline;
     _multiServerProvider?.addListener(_handleMultiServerProviderChanged);
   }
@@ -74,7 +74,7 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
     _multiServerProvider = provider;
     _multiServerProvider?.addListener(_handleMultiServerProviderChanged);
     _hasServerConnection = provider.hasConnectedServers;
-    if (_hasServerConnection) _hasReceivedServerStatus = true;
+    _markServerStatusKnownIfSettled();
     _notifyIfOfflineChanged();
   }
 
@@ -95,8 +95,14 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
   void _handleMultiServerProviderChanged() {
     _hasServerConnection = _multiServerProvider?.hasConnectedServers ?? _serverManager.onlineServerIds.isNotEmpty;
-    if (_hasServerConnection) _hasReceivedServerStatus = true;
+    _markServerStatusKnownIfSettled();
     _notifyIfOfflineChanged();
+  }
+
+  void _markServerStatusKnownIfSettled() {
+    if (_hasServerConnection || (_multiServerProvider?.hasExplicitVisibleServerFilter ?? false)) {
+      _hasReceivedServerStatus = true;
+    }
   }
 
   void _notifyIfOfflineChanged() {

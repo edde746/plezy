@@ -429,8 +429,10 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   /// transcode bitrate against the same ceiling. Original playback passes null
   /// to avoid capping high-bitrate files. [mediaSourceId] pins the negotiation
   /// to a specific version when the item has multiple sources.
-  /// [startTimeTicks] asks Jellyfin to start transcoding at the requested
-  /// source offset so server-generated streams line up with the app timeline.
+  /// [startTimeTicks] is forwarded to Jellyfin's playback negotiation for
+  /// resume-aware stream metadata. Our video transcode profile is HLS, and
+  /// Jellyfin omits `StartTimeTicks` from the returned HLS URL, so the player
+  /// still performs the initial seek.
   /// [audioStreamIndex] / [subtitleStreamIndex] tell the server which streams
   /// to pick for the transcode profile (Jellyfin's negotiation factors them in
   /// when picking codec compatibility).
