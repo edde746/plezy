@@ -196,22 +196,13 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     guard !isPipActive else { return }
 
     refreshExternalDisplayAttachment()
-    recoverDisplayLayerIfNeeded()
+    // Pre-emptively flush the display layer. The set_property reply for
+    // vid=auto can fire before mpv has tried to submit a frame, so a
+    // conditional check on requiresFlushToResumeDecoding / .failed may miss
+    // the post-background state the layer is about to enter.
+    videoLayer?.flush()
     updateEDRMode(sigPeak: lastSigPeak)
     if isPaused { forceDraw() }
-  }
-
-  private func recoverDisplayLayerIfNeeded() {
-    guard let videoLayer else { return }
-
-    var requiresFlush = false
-    if #available(iOS 14.0, tvOS 14.0, *) {
-      requiresFlush = videoLayer.requiresFlushToResumeDecoding
-    }
-    let status = videoLayer.status
-    guard requiresFlush || status == .failed else { return }
-
-    videoLayer.flush()
   }
 
   override func updateEDRMode(sigPeak: Double) {
@@ -622,8 +613,15 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         return
       }
 
-      setProperty("vid", value: "auto")
-      restoreVideoPresentation()
+      // Restore after the async vid=auto command is acknowledged by MPV so that
+      // the layer flush and forceDraw run with video actually enabled.
+      setPropertyAsync("vid", value: "auto") { [weak self] result in
+        if case .failure(let error) = result {
+          print("[MpvPlayerCore] Re-enabling video track failed: \(error)")
+        }
+        guard let self, !self.isBackgrounded else { return }
+        self.restoreVideoPresentation()
+      }
     }
   #endif
 }
