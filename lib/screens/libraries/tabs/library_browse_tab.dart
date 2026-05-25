@@ -689,10 +689,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   List<String> _getGroupingOptions() {
     final type = widget.library.kind.id.toLowerCase();
-    // Folder browsing relies on a section folder API
-    // (Plex `/library/sections/{id}/folders`); gated by capability so any
-    // future backend that exposes the same can opt in without touching
-    // this method.
+    // Folder browsing is gated by backend capability: Plex uses its section
+    // folder API, while Jellyfin uses direct non-recursive Items queries.
     final canFolder = context.tryGetMediaClientForServer(widget.library.serverId)?.capabilities.folderGrouping ?? false;
     if (type == 'show') {
       return ['shows', 'seasons', 'episodes', if (canFolder) 'folders'];
@@ -1491,6 +1489,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           key: _folderTreeKey,
           libraryKey: widget.library.id,
           serverId: widget.library.serverId,
+          libraryKind: widget.library.kind,
           onRefresh: updateItem,
           firstItemFocusNode: firstItemFocusNode,
           onNavigateUp: _navigateToChips,

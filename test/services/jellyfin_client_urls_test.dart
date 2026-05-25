@@ -1529,6 +1529,75 @@ void main() {
       expect(captured[1].queryParameters['IncludeItemTypes'], 'Episode');
     });
 
+    test('fetchLibraryFolders uses direct non-recursive Items query and orders folders first', () async {
+      Uri? captured;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          captured = req.url;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'track-z', 'Type': 'Audio', 'Name': 'Z Track', 'IsFolder': false},
+                {'Id': 'series-a', 'Type': 'Series', 'Name': 'A Show', 'IsFolder': true},
+                {'Id': 'folder-z', 'Type': 'Folder', 'Name': 'Z Folder', 'IsFolder': true},
+                {'Id': 'movie-m', 'Type': 'Movie', 'Name': 'Movie', 'IsFolder': false},
+              ],
+              'TotalRecordCount': 4,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchLibraryFolders('lib-1');
+
+      expect(captured, isNotNull);
+      expect(captured!.path, '/Items');
+      expect(captured!.queryParameters['ParentId'], 'lib-1');
+      expect(captured!.queryParameters['Recursive'], 'false');
+      expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
+      expect(captured!.queryParameters['SortBy'], 'IsFolder,SortName');
+      expect(captured!.queryParameters['SortOrder'], 'Ascending');
+      expect(captured!.queryParameters['Fields'], isNot(contains('MediaSources')));
+      expect(items.map((item) => item.id), ['folder-z', 'series-a', 'movie-m', 'track-z']);
+      expect(items.first.kind, MediaKind.unknown);
+      expect(items.first.raw?['IsFolder'], isTrue);
+      expect(items[1].kind, MediaKind.show);
+    });
+
+    test('fetchFolderChildren pages direct folder contents', () async {
+      final starts = <String?>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          starts.add(req.url.queryParameters['StartIndex']);
+          final start = int.parse(req.url.queryParameters['StartIndex'] ?? '0');
+          const total = 501;
+          final end = start == 0 ? 500 : total;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                for (var i = start; i < end; i++)
+                  {'Id': 'child-$i', 'Type': 'Movie', 'Name': 'Child $i', 'IsFolder': false},
+              ],
+              'TotalRecordCount': total,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchFolderChildren('folder-1');
+
+      expect(starts, ['0', '500']);
+      expect(items, hasLength(501));
+    });
+
     test('fetchClientSideEpisodeQueue pages past the first 200 episodes', () async {
       final starts = <String?>[];
       final pagedClient = JellyfinClient.forTesting(
@@ -2479,6 +2548,37 @@ void main() {
       expect(requestUri!.queryParameters['IncludeItemTypes'], 'Movie,Episode');
       expect(requestUri!.queryParameters['StartIndex'], '20');
       expect(requestUri!.queryParameters['Limit'], '10');
+    });
+
+    test('fetchPlayableFolderDescendants includes generic video but excludes audio', () async {
+      Uri? requestUri;
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Items') {
+          requestUri = req.url;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'video-1', 'Name': 'Home Video', 'Type': 'Video'},
+              ],
+              'TotalRecordCount': 1,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final items = await client.fetchPlayableFolderDescendants('folder-1');
+
+      expect(items.single.kind, MediaKind.clip);
+      expect(requestUri, isNotNull);
+      expect(requestUri!.queryParameters['ParentId'], 'folder-1');
+      expect(requestUri!.queryParameters['Recursive'], 'true');
+      expect(requestUri!.queryParameters['IncludeItemTypes'], 'Movie,Episode,Video,MusicVideo');
+      expect(requestUri!.queryParameters['IncludeItemTypes'], isNot(contains('Audio')));
     });
 
     test('fetchChildren walks generic children pages', () async {

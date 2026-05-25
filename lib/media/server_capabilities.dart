@@ -102,9 +102,9 @@ class ServerCapabilities {
   /// gates whether the player attempts the load at all.
   final bool scrubThumbnails;
 
-  /// Library section exposes a folder hierarchy (Plex
-  /// `/library/sections/{id}/folders`). Jellyfin has no equivalent endpoint,
-  /// so the "Folders" grouping option is hidden when this is false.
+  /// Library section exposes a folder hierarchy. Plex uses
+  /// `/library/sections/{id}/folders`; Jellyfin uses direct-child
+  /// `/Items?ParentId=...&Recursive=false` queries.
   final bool folderGrouping;
 
   const ServerCapabilities({
@@ -179,6 +179,7 @@ class ServerCapabilities {
     richMetadataEdit: false,
     alphaBar: AlphaBarMode.nameStartsWithFilter,
     scrubThumbnails: true,
+    folderGrouping: true,
   );
 
   ServerCapabilities copyWith({

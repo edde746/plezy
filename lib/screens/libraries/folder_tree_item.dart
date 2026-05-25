@@ -65,6 +65,18 @@ class FolderTreeItem extends StatelessWidget {
     };
   }
 
+  String _rowTitle() {
+    final title = item.title?.trim();
+    if (title != null && title.isNotEmpty) return title;
+    return item.displayTitle;
+  }
+
+  String? _dedupeSubtitle(String? subtitle) {
+    final value = subtitle?.trim();
+    if (value == null || value.isEmpty || value == _rowTitle()) return null;
+    return value;
+  }
+
   void _handleTap() {
     if (isFolder) {
       onExpand?.call();
@@ -79,15 +91,12 @@ class FolderTreeItem extends StatelessWidget {
       if (item.parentIndex != null && item.index != null) {
         parts.add('S${item.parentIndex} E${item.index}');
       }
-      if (item.title != null && item.title!.isNotEmpty) {
-        parts.add(item.title!);
-      }
-      return parts.isNotEmpty ? parts.join(' · ') : null;
+      return parts.isNotEmpty ? parts.join(' · ') : _dedupeSubtitle(item.displaySubtitle);
     }
     if (item.isSeason) {
-      return item.displaySubtitle;
+      return _dedupeSubtitle(item.displaySubtitle);
     }
-    return item.displaySubtitle;
+    return _dedupeSubtitle(item.displaySubtitle);
   }
 
   String _buildMetadataLine() {
@@ -126,7 +135,7 @@ class FolderTreeItem extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              item.displayTitle,
+              _rowTitle(),
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -181,7 +190,7 @@ class FolderTreeItem extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  item.displayTitle,
+                  _rowTitle(),
                   style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, height: 1.2),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -336,6 +345,8 @@ class FolderTreeItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final playAll = onPlayAll;
+    final shuffle = onShuffle;
     final rowContent = isFolder
         ? _buildFolderRow(context)
         : SettingsBuilder(
@@ -362,13 +373,13 @@ class FolderTreeItem extends StatelessWidget {
           ),
         ),
 
-        // Play/Shuffle buttons for folders
-        if (isFolder) ...[
+        // Play/Shuffle buttons for folders when the backend supports them.
+        if (isFolder && playAll != null) ...[
           FocusableButton(
             useBackgroundFocus: true,
-            onPressed: onPlayAll,
+            onPressed: playAll,
             child: IconButton(
-              onPressed: onPlayAll,
+              onPressed: playAll,
               icon: AppIcon(
                 Symbols.play_arrow_rounded,
                 fill: 1,
@@ -382,11 +393,13 @@ class FolderTreeItem extends StatelessWidget {
               visualDensity: VisualDensity.compact,
             ),
           ),
+        ],
+        if (isFolder && shuffle != null) ...[
           FocusableButton(
             useBackgroundFocus: true,
-            onPressed: onShuffle,
+            onPressed: shuffle,
             child: IconButton(
-              onPressed: onShuffle,
+              onPressed: shuffle,
               icon: AppIcon(
                 Symbols.shuffle_rounded,
                 fill: 1,
