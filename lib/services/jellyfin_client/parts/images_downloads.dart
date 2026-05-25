@@ -89,7 +89,7 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
               if (raw is! Map<String, dynamic>) continue;
               if (raw['Type'] != 'Subtitle') continue;
               final fields = parseJellyfinStreamFields(raw);
-              if (!fields.isExternal) continue;
+              if (!fields.isExternalFile) continue;
               final index = raw['Index'];
               if (index is! int) continue;
               final codec = fields.codec?.toLowerCase();

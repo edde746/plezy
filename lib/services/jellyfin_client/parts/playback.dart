@@ -150,7 +150,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     );
     var effectiveSourceId = bundle.selectedSourceId;
     var effectiveContainer = bundle.container;
-    var externalSubtitles = _buildExternalSubtitles(metadata.id, effectiveSourceId, mediaInfo);
+    var includeExternalSubtitleDelivery = false;
 
     String? videoUrl;
     String? playSessionId;
@@ -187,7 +187,6 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
             chapters: bundle.chapters,
             trickplay: bundle.trickplay,
           );
-          externalSubtitles = _buildExternalSubtitles(metadata.id, effectiveSourceId, mediaInfo);
         }
 
         final negotiatedPlaySessionId = negotiation['PlaySessionId'];
@@ -208,6 +207,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
           videoUrl = _withApiKey(transcodingUrl);
           playMethod = 'Transcode';
           isTranscoding = true;
+          includeExternalSubtitleDelivery = true;
         } else if (directStreamUrl is String && directStreamUrl.isNotEmpty) {
           capturePlaySessionId(directStreamUrl);
           videoUrl = _withApiKey(directStreamUrl);
@@ -224,6 +224,12 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
 
     final effectiveAudioStreamId = _resolveJellyfinAudioStreamId(requestedAudioStreamId, mediaInfo);
     mediaInfo = _withSelectedJellyfinAudioStream(mediaInfo, effectiveAudioStreamId);
+    final externalSubtitles = _buildExternalSubtitles(
+      metadata.id,
+      effectiveSourceId,
+      mediaInfo,
+      includeExternalDelivery: includeExternalSubtitleDelivery,
+    );
     final pinnedSourceId = bundle.pinnedSourceIdForItem(metadata.id);
     videoUrl ??= buildDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId);
 
@@ -316,10 +322,15 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     return path.startsWith('/') ? path : '/$path';
   }
 
-  List<SubtitleTrack> _buildExternalSubtitles(String itemId, String? mediaSourceId, MediaSourceInfo mediaInfo) {
+  List<SubtitleTrack> _buildExternalSubtitles(
+    String itemId,
+    String? mediaSourceId,
+    MediaSourceInfo mediaInfo, {
+    bool includeExternalDelivery = false,
+  }) {
     final externalSubtitles = <SubtitleTrack>[];
     for (final track in mediaInfo.subtitleTracks) {
-      if (!track.isExternal) continue;
+      if (!track.isExternalFile && !(includeExternalDelivery && track.usesExternalDelivery)) continue;
       final path = track.key ?? _jellyfinSubtitleFallbackPath(itemId, mediaSourceId, track);
       if (path == null) continue;
       // Jellyfin's subtitle URL is a path relative to baseUrl; build the

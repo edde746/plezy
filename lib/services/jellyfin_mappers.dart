@@ -424,7 +424,7 @@ class JellyfinMappers {
           channels: f.channels,
           frameRate: f.frameRate,
           forced: f.isForced,
-          sidecarPath: f.isExternal ? f.deliveryUrl : null,
+          sidecarPath: f.isExternalFile ? f.deliveryUrl : null,
         ),
       );
     }

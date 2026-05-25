@@ -22,6 +22,8 @@ typedef JellyfinStreamFields = ({
   String? displayTitle,
   bool isDefault,
   bool isForced,
+  bool isExternalFile,
+  bool usesExternalDelivery,
   bool isExternal,
   String? deliveryUrl,
   int? channels,
@@ -30,7 +32,8 @@ typedef JellyfinStreamFields = ({
 
 JellyfinStreamFields parseJellyfinStreamFields(Map<String, dynamic> s, {int fallbackIndex = 0}) {
   final deliveryMethod = (s['DeliveryMethod'] as String?)?.toLowerCase();
-  final isExternal = deliveryMethod != null ? deliveryMethod == 'external' : s['IsExternal'] == true;
+  final isExternalFile = s['IsExternal'] == true;
+  final usesExternalDelivery = deliveryMethod == 'external';
   return (
     type: (s['Type'] as String?)?.toLowerCase(),
     index: flexibleInt(s['Index']) ?? fallbackIndex,
@@ -41,7 +44,9 @@ JellyfinStreamFields parseJellyfinStreamFields(Map<String, dynamic> s, {int fall
     displayTitle: s['DisplayTitle'] as String?,
     isDefault: s['IsDefault'] as bool? ?? false,
     isForced: s['IsForced'] as bool? ?? false,
-    isExternal: isExternal,
+    isExternalFile: isExternalFile,
+    usesExternalDelivery: usesExternalDelivery,
+    isExternal: isExternalFile || usesExternalDelivery,
     deliveryUrl: s['DeliveryUrl'] as String?,
     channels: flexibleInt(s['Channels']),
     frameRate: flexibleDouble(s['RealFrameRate']) ?? flexibleDouble(s['AverageFrameRate']),
@@ -231,7 +236,8 @@ class JellyfinFileInfoStreamReader implements FileInfoStreamReader {
       selected: f.isDefault,
       forced: f.isForced,
       key: f.isExternal ? f.deliveryUrl : null,
-      external: f.isExternal,
+      external: f.isExternalFile,
+      usesExternalDelivery: f.usesExternalDelivery,
     );
   }
 }

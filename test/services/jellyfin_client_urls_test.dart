@@ -177,8 +177,19 @@ void main() {
                         'Language': 'eng',
                         'DisplayLanguage': 'English',
                         'DisplayTitle': 'English - SRT',
+                        'IsExternal': true,
                         'DeliveryMethod': 'External',
                         'DeliveryUrl': '/Videos/item-1/src-2/Subtitles/3/Stream.srt',
+                      },
+                      {
+                        'Index': 4,
+                        'Type': 'Subtitle',
+                        'Codec': 'srt',
+                        'Language': 'fra',
+                        'DisplayLanguage': 'French',
+                        'DisplayTitle': 'French - SRT',
+                        'DeliveryMethod': 'External',
+                        'DeliveryUrl': '/Videos/item-1/src-2/Subtitles/4/Stream.srt',
                       },
                     ],
                   },
@@ -332,6 +343,8 @@ void main() {
       expect(uri.queryParameters['api_key'], 'tok-abc');
       expect(uri.queryParameters.containsKey('StartTimeTicks'), isFalse);
       expect(result.mediaInfo!.subtitleTracks, hasLength(1));
+      expect(result.mediaInfo!.subtitleTracks.single.isExternalFile, isFalse);
+      expect(result.mediaInfo!.subtitleTracks.single.usesExternalDelivery, isTrue);
       expect(result.externalSubtitles, hasLength(1));
       expect(result.externalSubtitles.single.title, 'English');
       expect(result.externalSubtitles.single.language, 'eng');
@@ -444,6 +457,7 @@ void main() {
                         'Codec': 'srt',
                         'Language': 'eng',
                         'DisplayTitle': 'English - SRT',
+                        'IsExternal': true,
                         'DeliveryMethod': 'External',
                         'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/3/Stream.srt',
                       },
@@ -493,6 +507,85 @@ void main() {
       final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
       expect(subtitleUri.path, '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
       expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
+    });
+
+    test('getPlaybackInitialization skips negotiated subtitle delivery for original playback', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return http.Response(
+              jsonEncode({
+                'Id': 'item-1',
+                'Type': 'Movie',
+                'Name': 'Movie',
+                'MediaSources': [
+                  {
+                    'Id': 'src-1',
+                    'Container': 'mkv',
+                    'MediaStreams': [
+                      {'Index': 0, 'Type': 'Video'},
+                    ],
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            return http.Response(
+              jsonEncode({
+                'PlaySessionId': 'play-session-direct',
+                'MediaSources': [
+                  {
+                    'Id': 'src-1',
+                    'Container': 'mkv',
+                    'DirectStreamUrl': '/Videos/item-1/stream?MediaSourceId=src-1&PlaySessionId=play-session-direct',
+                    'MediaStreams': [
+                      {'Index': 0, 'Type': 'Video'},
+                      {
+                        'Index': 3,
+                        'Type': 'Subtitle',
+                        'Codec': 'srt',
+                        'Language': 'eng',
+                        'DisplayTitle': 'English - SRT',
+                        'DeliveryMethod': 'External',
+                        'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/3/Stream.srt',
+                      },
+                      {
+                        'Index': 4,
+                        'Type': 'Subtitle',
+                        'Codec': 'srt',
+                        'Language': 'fra',
+                        'DisplayTitle': 'French - SRT',
+                        'DeliveryMethod': 'External',
+                        'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/4/Stream.srt',
+                      },
+                    ],
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          selectedMediaIndex: 0,
+        ),
+      );
+
+      expect(result.playMethod, 'DirectStream');
+      expect(result.mediaInfo!.subtitleTracks, hasLength(2));
+      expect(result.mediaInfo!.subtitleTracks.every((track) => track.usesExternalDelivery), isTrue);
+      expect(result.externalSubtitles, isEmpty);
     });
 
     test('getPlaybackInitialization ignores TranscodingUrl for original playback static fallback', () async {
