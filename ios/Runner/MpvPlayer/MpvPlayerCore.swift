@@ -622,8 +622,11 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         return
       }
 
-      setProperty("vid", value: "auto")
-      restoreVideoPresentation()
+      // Restore after the async vid=auto command is acknowledged by MPV so that
+      // recoverDisplayLayerIfNeeded and forceDraw run with video actually enabled.
+      setPropertyAsync("vid", value: "auto") { [weak self] _ in
+        self?.restoreVideoPresentation()
+      }
     }
   #endif
 }
