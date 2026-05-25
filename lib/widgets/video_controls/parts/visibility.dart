@@ -72,7 +72,9 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     if (!mounted || !_showControls || _forceShowControls) return;
     // On TV, keep the skip button visible after controls hide so center still skips.
     // On other platforms, dismiss with controls (auto-skip off → also covered by the 7 s timer).
-    final keepSkipButton = _currentMarker != null && PlatformDetector.isTV();
+    // Skip the keepSkipButton path if the button is already dismissed (the 7 s timer
+    // fired earlier with controls hidden) — otherwise we'd hand focus to an unmounted node.
+    final keepSkipButton = _currentMarker != null && !_skipButtonDismissed && PlatformDetector.isTV();
     _setControlsState(() {
       _showControls = false;
       _isContentStripVisible = false;
