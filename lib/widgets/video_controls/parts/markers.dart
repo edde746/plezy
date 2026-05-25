@@ -31,6 +31,12 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     if (foundMarker == null) {
       _cancelAutoSkipTimer();
       _cancelSkipButtonDismissTimer();
+      // On TV the skip button may have held primary focus while controls were
+      // hidden (see _hideControls). Hand focus back to _focusNode so its
+      // onKeyEvent stays live for the next d-pad press.
+      if (PlatformDetector.isTV() && _skipMarkerFocusNode.hasPrimaryFocus && !_showControls) {
+        _focusNode.requestFocus();
+      }
       return;
     }
 
@@ -131,6 +137,12 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
         _skipButtonDismissed = true;
       });
       _cancelAutoSkipTimer();
+      // Mirror _updateCurrentMarker(null): the skip button may have held primary
+      // focus on TV while controls were hidden. Hand focus back to _focusNode so
+      // its onKeyEvent stays live for the next d-pad press.
+      if (PlatformDetector.isTV() && _skipMarkerFocusNode.hasPrimaryFocus && !_showControls) {
+        _focusNode.requestFocus();
+      }
     });
   }
 
