@@ -127,15 +127,26 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }
 
   /// Jellyfin's `/Items/Filters` returns Genres / OfficialRatings / Tags /
-  /// Categories + values from `/Items/Filters` in a single call. Keys are
-  /// translated to Plex's filter naming so the existing filter-param map
-  /// round-trips through `_buildFilterParams` unchanged; the synthesised
-  /// `MediaFilter.key` is prefixed `jellyfin:` so FiltersBottomSheet can
-  /// recognise it as cached and skip the per-category value fetch.
+  /// Categories + values from `/Items/Filters` in a single call. The unwatched
+  /// boolean is synthetic because Jellyfin exposes it as an `/Items` query
+  /// filter, not a filter-listing category. Keys are translated to Plex's
+  /// filter naming so the existing filter-param map round-trips through
+  /// `_buildFilterParams` unchanged; the synthesised `MediaFilter.key` is
+  /// prefixed `jellyfin:` so FiltersBottomSheet can recognise it as cached and
+  /// skip the per-category value fetch.
   @override
   Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId) async {
+    final filters = <MediaFilter>[
+      MediaFilter(
+        filter: 'unwatched',
+        filterType: 'boolean',
+        key: 'jellyfin:unwatched',
+        title: t.libraries.filterCategories.unwatched,
+        type: 'filter',
+      ),
+    ];
     final data = await _safeFetchFilterPayload(libraryId);
-    if (data == null) return LibraryFilterResult.empty;
+    if (data == null) return LibraryFilterResult(filters: filters, cachedValues: const {});
     List<String> stringList(Object? raw) {
       if (raw is! List) return const [];
       return raw.whereType<String>().where((s) => s.isNotEmpty).toList();
@@ -157,7 +168,6 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       'contentRating': t.libraries.filterCategories.contentRating,
       'tag': t.libraries.filterCategories.tag,
     };
-    final filters = <MediaFilter>[];
     final values = <String, List<MediaFilterValue>>{};
     for (final key in order) {
       final entries = raw[key];

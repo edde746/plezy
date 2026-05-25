@@ -1621,6 +1621,7 @@ class _TranslationsLibrariesFilterCategoriesFr extends TranslationsLibrariesFilt
 	@override String get year => 'Année';
 	@override String get contentRating => 'Classification';
 	@override String get tag => 'Tag';
+	@override String get unwatched => 'Non vus';
 }
 
 // Path: libraries.sortLabels
@@ -2453,6 +2454,7 @@ extension on TranslationsFr {
 			'libraries.filterCategories.year' => 'Année',
 			'libraries.filterCategories.contentRating' => 'Classification',
 			'libraries.filterCategories.tag' => 'Tag',
+			'libraries.filterCategories.unwatched' => 'Non vus',
 			'libraries.sortLabels.title' => 'Titre',
 			'libraries.sortLabels.dateAdded' => 'Date d\'ajout',
 			'libraries.sortLabels.releaseDate' => 'Date de sortie',
@@ -2825,9 +2827,9 @@ extension on TranslationsFr {
 			'metadataEdit.summary' => 'Résumé',
 			'metadataEdit.poster' => 'Affiche',
 			'metadataEdit.background' => 'Arrière-plan',
-			'metadataEdit.logo' => 'Logo',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Image carrée',
 			'metadataEdit.selectPoster' => 'Sélectionner l\'affiche',
 			'metadataEdit.selectBackground' => 'Sélectionner l\'arrière-plan',

@@ -1621,6 +1621,7 @@ class _TranslationsLibrariesFilterCategoriesKo extends TranslationsLibrariesFilt
 	@override String get year => '연도';
 	@override String get contentRating => '시청 등급';
 	@override String get tag => '태그';
+	@override String get unwatched => '미시청';
 }
 
 // Path: libraries.sortLabels
@@ -2453,6 +2454,7 @@ extension on TranslationsKo {
 			'libraries.filterCategories.year' => '연도',
 			'libraries.filterCategories.contentRating' => '시청 등급',
 			'libraries.filterCategories.tag' => '태그',
+			'libraries.filterCategories.unwatched' => '미시청',
 			'libraries.sortLabels.title' => '제목',
 			'libraries.sortLabels.dateAdded' => '추가된 날짜',
 			'libraries.sortLabels.releaseDate' => '출시일',
@@ -2825,9 +2827,9 @@ extension on TranslationsKo {
 			'metadataEdit.summary' => '줄거리',
 			'metadataEdit.poster' => '포스터',
 			'metadataEdit.background' => '배경',
-			'metadataEdit.logo' => '로고',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.logo' => '로고',
 			'metadataEdit.squareArt' => '정사각형 아트',
 			'metadataEdit.selectPoster' => '포스터 선택',
 			'metadataEdit.selectBackground' => '배경 선택',

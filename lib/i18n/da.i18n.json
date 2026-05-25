@@ -705,7 +705,8 @@
       "genre": "Genre",
       "year": "År",
       "contentRating": "Aldersvurdering",
-      "tag": "Tag"
+      "tag": "Tag",
+      "unwatched": "Usete"
     },
     "sortLabels": {
       "title": "Titel",

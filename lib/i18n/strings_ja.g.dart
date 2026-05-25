@@ -1621,6 +1621,7 @@ class _TranslationsLibrariesFilterCategoriesJa extends TranslationsLibrariesFilt
 	@override String get year => '年';
 	@override String get contentRating => '視聴年齢区分';
 	@override String get tag => 'タグ';
+	@override String get unwatched => '未視聴';
 }
 
 // Path: libraries.sortLabels
@@ -2453,6 +2454,7 @@ extension on TranslationsJa {
 			'libraries.filterCategories.year' => '年',
 			'libraries.filterCategories.contentRating' => '視聴年齢区分',
 			'libraries.filterCategories.tag' => 'タグ',
+			'libraries.filterCategories.unwatched' => '未視聴',
 			'libraries.sortLabels.title' => 'タイトル',
 			'libraries.sortLabels.dateAdded' => '追加日',
 			'libraries.sortLabels.releaseDate' => 'リリース日',
@@ -2825,9 +2827,9 @@ extension on TranslationsJa {
 			'metadataEdit.summary' => 'あらすじ',
 			'metadataEdit.poster' => 'ポスター',
 			'metadataEdit.background' => '背景',
-			'metadataEdit.logo' => 'ロゴ',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.logo' => 'ロゴ',
 			'metadataEdit.squareArt' => '正方形アート',
 			'metadataEdit.selectPoster' => 'ポスターを選択',
 			'metadataEdit.selectBackground' => '背景を選択',

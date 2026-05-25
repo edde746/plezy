@@ -1343,6 +1343,41 @@ void main() {
       expect(captured!.queryParameters['ImageTypeLimit'], '1');
     });
 
+    test('fetchLibraryFiltersWithValues adds unwatched boolean filter', () async {
+      Uri? captured;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          captured = req.url;
+          return http.Response(
+            jsonEncode({
+              'Genres': ['Drama', 'Action'],
+              'OfficialRatings': ['PG-13'],
+              'Tags': ['Holiday'],
+              'Years': [2024, 1999],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.fetchLibraryFiltersWithValues('lib-1');
+
+      expect(captured, isNotNull);
+      expect(captured!.path, '/Items/Filters');
+      expect(captured!.queryParameters['ParentId'], 'lib-1');
+      expect(captured!.queryParameters['userId'], 'user-1');
+      expect(result.filters.map((filter) => filter.filter), ['unwatched', 'genre', 'year', 'contentRating', 'tag']);
+      expect(result.filters.first.filterType, 'boolean');
+      expect(result.filters.first.key, 'jellyfin:unwatched');
+      expect(result.filters.first.title, 'Unwatched');
+      expect(result.cachedValues.containsKey('unwatched'), isFalse);
+      expect(result.cachedValues['genre']!.map((value) => value.key), ['Action', 'Drama']);
+      expect(result.cachedValues['year']!.map((value) => value.key), ['2024', '1999']);
+    });
+
     test('fetchLibraryContent uses sentinel total fallback when server omits total', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),

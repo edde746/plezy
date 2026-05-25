@@ -705,7 +705,8 @@
       "genre": "类型",
       "year": "年份",
       "contentRating": "内容分级",
-      "tag": "标签"
+      "tag": "标签",
+      "unwatched": "未观看"
     },
     "sortLabels": {
       "title": "标题",

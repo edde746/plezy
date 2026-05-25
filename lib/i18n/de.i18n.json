@@ -705,7 +705,8 @@
       "genre": "Genre",
       "year": "Jahr",
       "contentRating": "Altersfreigabe",
-      "tag": "Tag"
+      "tag": "Tag",
+      "unwatched": "Ungesehene"
     },
     "sortLabels": {
       "title": "Titel",

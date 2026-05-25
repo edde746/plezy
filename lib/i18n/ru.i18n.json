@@ -705,7 +705,8 @@
       "genre": "Жанр",
       "year": "Год",
       "contentRating": "Возрастной рейтинг",
-      "tag": "Тег"
+      "tag": "Тег",
+      "unwatched": "Непросмотренные"
     },
     "sortLabels": {
       "title": "Название",

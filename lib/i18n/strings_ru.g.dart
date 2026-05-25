@@ -1621,6 +1621,7 @@ class _TranslationsLibrariesFilterCategoriesRu extends TranslationsLibrariesFilt
 	@override String get year => 'Год';
 	@override String get contentRating => 'Возрастной рейтинг';
 	@override String get tag => 'Тег';
+	@override String get unwatched => 'Непросмотренные';
 }
 
 // Path: libraries.sortLabels
@@ -2453,6 +2454,7 @@ extension on TranslationsRu {
 			'libraries.filterCategories.year' => 'Год',
 			'libraries.filterCategories.contentRating' => 'Возрастной рейтинг',
 			'libraries.filterCategories.tag' => 'Тег',
+			'libraries.filterCategories.unwatched' => 'Непросмотренные',
 			'libraries.sortLabels.title' => 'Название',
 			'libraries.sortLabels.dateAdded' => 'Дата добавления',
 			'libraries.sortLabels.releaseDate' => 'Дата выхода',
@@ -2825,9 +2827,9 @@ extension on TranslationsRu {
 			'metadataEdit.summary' => 'Описание',
 			'metadataEdit.poster' => 'Постер',
 			'metadataEdit.background' => 'Фон',
-			'metadataEdit.logo' => 'Логотип',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.logo' => 'Логотип',
 			'metadataEdit.squareArt' => 'Квадратное изображение',
 			'metadataEdit.selectPoster' => 'Выбрать постер',
 			'metadataEdit.selectBackground' => 'Выбрать фон',

@@ -1621,6 +1621,7 @@ class _TranslationsLibrariesFilterCategoriesPt extends TranslationsLibrariesFilt
 	@override String get year => 'Ano';
 	@override String get contentRating => 'Classificação';
 	@override String get tag => 'Tag';
+	@override String get unwatched => 'Não assistidos';
 }
 
 // Path: libraries.sortLabels
@@ -2453,6 +2454,7 @@ extension on TranslationsPt {
 			'libraries.filterCategories.year' => 'Ano',
 			'libraries.filterCategories.contentRating' => 'Classificação',
 			'libraries.filterCategories.tag' => 'Tag',
+			'libraries.filterCategories.unwatched' => 'Não assistidos',
 			'libraries.sortLabels.title' => 'Título',
 			'libraries.sortLabels.dateAdded' => 'Data de adição',
 			'libraries.sortLabels.releaseDate' => 'Data de lançamento',
@@ -2825,9 +2827,9 @@ extension on TranslationsPt {
 			'metadataEdit.summary' => 'Sinopse',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Plano de Fundo',
-			'metadataEdit.logo' => 'Logo',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Imagem Quadrada',
 			'metadataEdit.selectPoster' => 'Selecionar Poster',
 			'metadataEdit.selectBackground' => 'Selecionar Plano de Fundo',

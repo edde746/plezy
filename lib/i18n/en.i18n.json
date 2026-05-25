@@ -705,7 +705,8 @@
       "genre": "Genre",
       "year": "Year",
       "contentRating": "Content Rating",
-      "tag": "Tag"
+      "tag": "Tag",
+      "unwatched": "Unwatched"
     },
     "sortLabels": {
       "title": "Title",

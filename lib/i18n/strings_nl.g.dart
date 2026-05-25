@@ -1621,6 +1621,7 @@ class _TranslationsLibrariesFilterCategoriesNl extends TranslationsLibrariesFilt
 	@override String get year => 'Jaar';
 	@override String get contentRating => 'Leeftijdsclassificatie';
 	@override String get tag => 'Tag';
+	@override String get unwatched => 'Onbekeken';
 }
 
 // Path: libraries.sortLabels
@@ -2453,6 +2454,7 @@ extension on TranslationsNl {
 			'libraries.filterCategories.year' => 'Jaar',
 			'libraries.filterCategories.contentRating' => 'Leeftijdsclassificatie',
 			'libraries.filterCategories.tag' => 'Tag',
+			'libraries.filterCategories.unwatched' => 'Onbekeken',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Toegevoegd op',
 			'libraries.sortLabels.releaseDate' => 'Uitgavedatum',
@@ -2825,9 +2827,9 @@ extension on TranslationsNl {
 			'metadataEdit.summary' => 'Samenvatting',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Achtergrond',
-			'metadataEdit.logo' => 'Logo',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Vierkante afbeelding',
 			'metadataEdit.selectPoster' => 'Poster selecteren',
 			'metadataEdit.selectBackground' => 'Achtergrond selecteren',

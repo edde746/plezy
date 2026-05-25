@@ -1621,6 +1621,7 @@ class _TranslationsLibrariesFilterCategoriesPl extends TranslationsLibrariesFilt
 	@override String get year => 'Rok';
 	@override String get contentRating => 'Klasyfikacja wiekowa';
 	@override String get tag => 'Tag';
+	@override String get unwatched => 'Nieobejrzane';
 }
 
 // Path: libraries.sortLabels
@@ -2453,6 +2454,7 @@ extension on TranslationsPl {
 			'libraries.filterCategories.year' => 'Rok',
 			'libraries.filterCategories.contentRating' => 'Klasyfikacja wiekowa',
 			'libraries.filterCategories.tag' => 'Tag',
+			'libraries.filterCategories.unwatched' => 'Nieobejrzane',
 			'libraries.sortLabels.title' => 'Tytuł',
 			'libraries.sortLabels.dateAdded' => 'Data dodania',
 			'libraries.sortLabels.releaseDate' => 'Data premiery',
@@ -2825,9 +2827,9 @@ extension on TranslationsPl {
 			'metadataEdit.summary' => 'Opis',
 			'metadataEdit.poster' => 'Plakat',
 			'metadataEdit.background' => 'Tło',
-			'metadataEdit.logo' => 'Logo',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Kwadratowy obraz',
 			'metadataEdit.selectPoster' => 'Wybierz plakat',
 			'metadataEdit.selectBackground' => 'Wybierz tło',
