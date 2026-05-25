@@ -3426,7 +3426,7 @@ class PlexClient
   /// when the user opens a filter. The result has empty [LibraryFilterResult.cachedValues];
   /// the FiltersBottomSheet hits the per-category endpoint on demand.
   @override
-  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId) async {
+  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {String? libraryType}) async {
     final filters = await getLibraryFilters(libraryId);
     return LibraryFilterResult(filters: filters, cachedValues: const {});
   }

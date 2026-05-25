@@ -127,7 +127,9 @@ abstract class MediaServerClient {
   /// fetches values lazily per category); Jellyfin returns both in a single
   /// `/Items/Filters` call and pre-populates [LibraryFilterResult.cachedValues].
   /// Backends that have no filter listing return [LibraryFilterResult.empty].
-  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId);
+  /// [libraryType] lets backends gate kind-specific filters (e.g. Jellyfin's
+  /// `unwatched` toggle only makes sense for movie/show libraries).
+  Future<LibraryFilterResult> fetchLibraryFiltersWithValues(String libraryId, {String? libraryType});
 
   /// Backend-aware sort options for [libraryId]. Plex hits
   /// `/library/sections/{id}/sorts`; Jellyfin returns a hardcoded list

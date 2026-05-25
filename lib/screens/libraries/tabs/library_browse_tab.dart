@@ -536,7 +536,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final client = context.getMediaClientForLibrary(widget.library);
     unawaited(
       client
-          .fetchLibraryFiltersWithValues(widget.library.id)
+          .fetchLibraryFiltersWithValues(widget.library.id, libraryType: widget.library.kind.id)
           .then((result) {
             if (generation != _contentRequestId || !mounted) return;
             setState(() {

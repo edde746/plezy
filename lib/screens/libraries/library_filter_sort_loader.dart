@@ -33,7 +33,7 @@ class LibraryFilterSortLoader {
   Future<LoadedFiltersAndSorts> load(MediaLibrary library) async {
     final client = clientFor(library);
     final results = await Future.wait([
-      client.fetchLibraryFiltersWithValues(library.id),
+      client.fetchLibraryFiltersWithValues(library.id, libraryType: library.kind.id),
       client.fetchSortOptions(library.id, libraryType: library.kind.id),
     ]);
     final filterResult = results[0] as LibraryFilterResult;
