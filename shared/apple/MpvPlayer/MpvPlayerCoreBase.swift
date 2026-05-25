@@ -426,6 +426,22 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
+  /// PiP presents the AVSampleBufferDisplayLayer directly, so subtitles must
+  /// be composited into the video samples instead of the inline OSD layer.
+  func setPipSubtitleCompositing(_ enabled: Bool) {
+    #if os(iOS)
+      let value = enabled ? "yes" : "no"
+      setRawStringPropertyAsync("avfoundation-pip-composite-osd", value: value) { result in
+        if case .failure(let error) = result {
+          print(
+            "[MpvPlayerCore] Failed to set PiP subtitle compositing "
+              + "to \(value): \(error.localizedDescription)"
+          )
+        }
+      }
+    #endif
+  }
+
   func getPropertyAsync(_ name: String, completion: @escaping (Result<String?, Error>) -> Void) {
     guard let mpv else {
       completion(.success(nil))
@@ -611,7 +627,7 @@ class MpvPlayerCoreBase: NSObject {
 
   private func isManagedRendererProperty(_ name: String) -> Bool {
     name == "vo" || name == "wid" || name == "gpu-api" || name == "gpu-context"
-      || name == "avfoundation-composite-osd"
+      || name == "avfoundation-composite-osd" || name == "avfoundation-pip-composite-osd"
   }
 
   private func updateVideoGravityIfNeeded(name: String, value: String) {

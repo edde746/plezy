@@ -188,6 +188,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     guard let playerCore = playerCore else { return nil }
     guard let pip = ensurePipController() else { return nil }
     pendingInlineRestoreAfterPip = false
+    playerCore.setPipSubtitleCompositing(true)
     playerCore.isPipStarting = true
     pip.syncTimebase(currentTime: playerCore.timePos, isPlaying: !playerCore.isPaused)
     pip.invalidatePlaybackState()
@@ -232,6 +233,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
 
   /// Unified cleanup for all PiP exit paths
   private func cleanupPip(notify: Bool, pause: Bool = false) {
+    playerCore?.setPipSubtitleCompositing(false)
     playerCore?.isPipStarting = false
     playerCore?.isPipActive = false
     isManualPipRequest = false
