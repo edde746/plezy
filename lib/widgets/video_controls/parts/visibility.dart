@@ -293,14 +293,14 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   }
 
   Future<void> _toggleFullscreen() async {
-    if (!PlatformDetector.isMobile(context)) {
-      await FullscreenStateManager().toggleFullscreen();
-    }
+    if (!PlatformDetector.isDesktopOS()) return;
+    await FullscreenStateManager().toggleFullscreen();
   }
 
   /// Exit fullscreen if the window is actually fullscreen (async check).
   /// Used by ESC handler on Windows/Linux to avoid relying on _isFullscreen flag.
   Future<void> _exitFullscreenIfNeeded() async {
+    if (!Platform.isWindows && !Platform.isLinux) return;
     if (await windowManager.isFullScreen()) {
       await FullscreenStateManager().exitFullscreen();
     }
@@ -318,14 +318,14 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
   /// Toggle always-on-top window mode (desktop only)
   Future<void> _toggleAlwaysOnTop() async {
-    if (!PlatformDetector.isMobile(context)) {
-      final newValue = !_isAlwaysOnTop;
-      await windowManager.setAlwaysOnTop(newValue);
-      if (!mounted) return;
-      _setControlsState(() {
-        _isAlwaysOnTop = newValue;
-      });
-    }
+    if (!PlatformDetector.isDesktopOS()) return;
+
+    final newValue = !_isAlwaysOnTop;
+    await windowManager.setAlwaysOnTop(newValue);
+    if (!mounted) return;
+    _setControlsState(() {
+      _isAlwaysOnTop = newValue;
+    });
   }
 
   /// Show controls and optionally focus play/pause on keyboard input (desktop only)

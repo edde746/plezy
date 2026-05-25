@@ -114,6 +114,28 @@ Future<void> _setWakelock(bool enabled) async {
   }
 }
 
+class _PlaybackOpenTiming {
+  final Duration? mediaStart;
+  final Duration timelineOffset;
+  final Duration? timelineDuration;
+
+  const _PlaybackOpenTiming({this.mediaStart, required this.timelineOffset, this.timelineDuration});
+}
+
+_PlaybackOpenTiming _playbackOpenTiming({
+  required MediaBackend backend,
+  required bool isTranscoding,
+  required Duration? resumePosition,
+  required int? durationMs,
+}) {
+  final usesSourceOffsetTranscode = isTranscoding && backend == MediaBackend.plex;
+  return _PlaybackOpenTiming(
+    mediaStart: usesSourceOffsetTranscode ? null : resumePosition,
+    timelineOffset: usesSourceOffsetTranscode ? resumePosition ?? Duration.zero : Duration.zero,
+    timelineDuration: isTranscoding && durationMs != null ? Duration(milliseconds: durationMs) : null,
+  );
+}
+
 /// Builds a [TrackPreferencePersister] that fans the language-preference +
 /// stream-selection writes out to a [PlexClient] resolved lazily on each
 /// call. Returns a no-op-on-null persister so the [TrackManager] doesn't
@@ -587,15 +609,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           throw StateError('No client registered for ${_currentMetadata.serverId}');
         }
         _streamHeaders = genericClient.streamHeaders;
-        // Single source of truth — `capabilities.videoTranscoding` reflects
-        // the per-Plex-server probe (false on Plex installs without a working
-        // transcoder) and is hard-false on Jellyfin. The long-press context
-        // menu's quality picker reads the same flag. Alternate-version
-        // selection still works regardless because it's gated on
-        // `availableVersions.length`, not transcoding capability.
+        // Single source of truth for showing quality controls. Plex uses a
+        // per-server probe; Jellyfin supports explicit quality selection but
+        // should not inherit the global Plex-style default on ordinary play.
         _serverSupportsTranscoding = genericClient.capabilities.videoTranscoding;
         if (widget.selectedQualityPreset == null) {
-          _selectedQualityPreset = settingsService.read(SettingsService.defaultQualityPreset);
+          _selectedQualityPreset = genericClient.backend == MediaBackend.plex && _serverSupportsTranscoding
+              ? settingsService.read(SettingsService.defaultQualityPreset)
+              : TranscodeQualityPreset.original;
         } else {
           _selectedQualityPreset = widget.selectedQualityPreset!;
         }

@@ -705,7 +705,8 @@
       "genre": "Sjanger",
       "year": "År",
       "contentRating": "Aldersgrense",
-      "tag": "Tag"
+      "tag": "Tag",
+      "unwatched": "Usette"
     },
     "sortLabels": {
       "title": "Tittel",

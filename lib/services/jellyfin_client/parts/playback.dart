@@ -150,7 +150,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     );
     var effectiveSourceId = bundle.selectedSourceId;
     var effectiveContainer = bundle.container;
-    var externalSubtitles = _buildExternalSubtitles(metadata.id, effectiveSourceId, mediaInfo);
+    var includeExternalSubtitleDelivery = false;
 
     String? videoUrl;
     String? playSessionId;
@@ -161,10 +161,15 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     final preset = options.qualityPreset;
     final requestedAudioStreamId = _validJellyfinAudioStreamId(options.selectedAudioStreamId, mediaInfo);
     final int? maxStreamingBitrate = preset.isOriginal ? null : (preset.videoBitrateKbps ?? 100000) * 1000;
+    final resumeOffsetMs = metadata.viewOffsetMs;
+    final int? transcodeStartTimeTicks = !preset.isOriginal && resumeOffsetMs != null && resumeOffsetMs > 0
+        ? msToJellyfinTicks(resumeOffsetMs)
+        : null;
     final negotiation = await getPlaybackInfo(
       metadata.id,
       maxStreamingBitrate: maxStreamingBitrate,
       mediaSourceId: bundle.selectedSourceId,
+      startTimeTicks: transcodeStartTimeTicks,
       audioStreamIndex: requestedAudioStreamId,
     );
     if (negotiation == null) {
@@ -182,7 +187,6 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
             chapters: bundle.chapters,
             trickplay: bundle.trickplay,
           );
-          externalSubtitles = _buildExternalSubtitles(metadata.id, effectiveSourceId, mediaInfo);
         }
 
         final negotiatedPlaySessionId = negotiation['PlaySessionId'];
@@ -194,7 +198,8 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
         }
 
         final transcodingUrl = chosenSource['TranscodingUrl'];
-        if (transcodingUrl is String && transcodingUrl.isNotEmpty) {
+        final directStreamUrl = chosenSource['DirectStreamUrl'];
+        if (!preset.isOriginal && transcodingUrl is String && transcodingUrl.isNotEmpty) {
           // TranscodingUrl is server-relative and already encodes container,
           // codecs, MediaSourceId, and PlaySessionId; we just append the
           // api_key for auth.
@@ -202,13 +207,13 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
           videoUrl = _withApiKey(transcodingUrl);
           playMethod = 'Transcode';
           isTranscoding = true;
+          includeExternalSubtitleDelivery = true;
+        } else if (directStreamUrl is String && directStreamUrl.isNotEmpty) {
+          capturePlaySessionId(directStreamUrl);
+          videoUrl = _withApiKey(directStreamUrl);
+          playMethod = 'DirectStream';
         } else {
-          final directStreamUrl = chosenSource['DirectStreamUrl'];
-          if (directStreamUrl is String && directStreamUrl.isNotEmpty) {
-            capturePlaySessionId(directStreamUrl);
-            videoUrl = _withApiKey(directStreamUrl);
-            playMethod = 'DirectStream';
-          } else if (!preset.isOriginal) {
+          if (!preset.isOriginal) {
             fallbackReason = TranscodeFallbackReason.directPlayOnly;
           }
         }
@@ -219,13 +224,14 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
 
     final effectiveAudioStreamId = _resolveJellyfinAudioStreamId(requestedAudioStreamId, mediaInfo);
     mediaInfo = _withSelectedJellyfinAudioStream(mediaInfo, effectiveAudioStreamId);
-    final pinnedSourceId = bundle.pinnedSourceIdForItem(metadata.id);
-    videoUrl ??= buildDirectStreamUrl(
+    final externalSubtitles = _buildExternalSubtitles(
       metadata.id,
-      container: effectiveContainer,
-      mediaSourceId: pinnedSourceId,
-      audioStreamIndex: requestedAudioStreamId,
+      effectiveSourceId,
+      mediaInfo,
+      includeExternalDelivery: includeExternalSubtitleDelivery,
     );
+    final pinnedSourceId = bundle.pinnedSourceIdForItem(metadata.id);
+    videoUrl ??= buildDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId);
 
     return PlaybackInitializationResult(
       availableVersions: bundle.availableVersions,
@@ -316,10 +322,15 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     return path.startsWith('/') ? path : '/$path';
   }
 
-  List<SubtitleTrack> _buildExternalSubtitles(String itemId, String? mediaSourceId, MediaSourceInfo mediaInfo) {
+  List<SubtitleTrack> _buildExternalSubtitles(
+    String itemId,
+    String? mediaSourceId,
+    MediaSourceInfo mediaInfo, {
+    bool includeExternalDelivery = false,
+  }) {
     final externalSubtitles = <SubtitleTrack>[];
     for (final track in mediaInfo.subtitleTracks) {
-      if (!track.isExternal) continue;
+      if (!track.isExternalFile && !(includeExternalDelivery && track.usesExternalDelivery)) continue;
       final path = track.key ?? _jellyfinSubtitleFallbackPath(itemId, mediaSourceId, track);
       if (path == null) continue;
       // Jellyfin's subtitle URL is a path relative to baseUrl; build the
@@ -429,6 +440,10 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   /// transcode bitrate against the same ceiling. Original playback passes null
   /// to avoid capping high-bitrate files. [mediaSourceId] pins the negotiation
   /// to a specific version when the item has multiple sources.
+  /// [startTimeTicks] is forwarded to Jellyfin's playback negotiation for
+  /// resume-aware stream metadata. Our video transcode profile is HLS, and
+  /// Jellyfin omits `StartTimeTicks` from the returned HLS URL, so the player
+  /// still performs the initial seek.
   /// [audioStreamIndex] / [subtitleStreamIndex] tell the server which streams
   /// to pick for the transcode profile (Jellyfin's negotiation factors them in
   /// when picking codec compatibility).
@@ -437,6 +452,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     int? maxStreamingBitrate = 100000000,
     String? mediaSourceId,
     String? liveStreamId,
+    int? startTimeTicks,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
     bool? autoOpenLiveStream,
@@ -452,6 +468,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
         'MaxStreamingBitrate': ?maxStreamingBitrate?.toString(),
         'MediaSourceId': ?mediaSourceId,
         'LiveStreamId': ?liveStreamId,
+        'StartTimeTicks': ?startTimeTicks?.toString(),
         'AudioStreamIndex': ?audioStreamIndex?.toString(),
         'SubtitleStreamIndex': ?subtitleStreamIndex?.toString(),
         'AutoOpenLiveStream': ?autoOpenLiveStream?.toString(),
@@ -469,6 +486,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
           'MaxStreamingBitrate': ?maxStreamingBitrate,
           'MediaSourceId': ?mediaSourceId,
           'LiveStreamId': ?liveStreamId,
+          'StartTimeTicks': ?startTimeTicks,
           'AudioStreamIndex': ?audioStreamIndex,
           'SubtitleStreamIndex': ?subtitleStreamIndex,
           'AutoOpenLiveStream': ?autoOpenLiveStream,

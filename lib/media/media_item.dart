@@ -465,7 +465,12 @@ sealed class MediaItem with _$MediaItem {
 
   /// Returns hero art candidates in display-preference order.
   List<String> heroArtCandidates({required double containerAspectRatio}) {
-    final preferred = containerAspectRatio < 1.39 ? [backgroundSquarePath, artPath] : [artPath, backgroundSquarePath];
+    final preferred = switch (kind) {
+      MediaKind.episode when containerAspectRatio < 1.39 => [backgroundSquarePath, grandparentArtPath, artPath],
+      MediaKind.episode => [grandparentArtPath, artPath, backgroundSquarePath],
+      _ when containerAspectRatio < 1.39 => [backgroundSquarePath, artPath],
+      _ => [artPath, backgroundSquarePath],
+    };
 
     final candidates = <String>[];
     for (final path in preferred) {

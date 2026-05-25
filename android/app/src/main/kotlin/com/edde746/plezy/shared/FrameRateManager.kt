@@ -7,7 +7,6 @@ import android.os.Build
 import android.os.Handler
 import android.util.Log
 import android.view.Display
-import android.view.Surface
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
 import kotlin.math.abs
@@ -20,7 +19,6 @@ class FrameRateManager(
 ) {
   companion object {
     private const val TAG = "FrameRateManager"
-    private const val SHORT_VIDEO_LENGTH_MS = 300000L // 5 minutes
     private const val DISPLAY_SETTLE_MS = 2000L
     private const val WATCHDOG_MARGIN_MS = 3000L
     private const val RATE_TOLERANCE = 0.1f
@@ -30,11 +28,6 @@ class FrameRateManager(
     val reason: String,
     val priority: Int,
     val error: Float
-  )
-
-  private data class RefreshRateCandidate(
-    val refreshRate: Float,
-    val match: RefreshRateMatch
   )
 
   @RequiresApi(Build.VERSION_CODES.M)
@@ -53,18 +46,16 @@ class FrameRateManager(
 
   // Request a display frame-rate switch. Invokes [onComplete] once, either:
   // - immediately with `switched=false` when no switch is needed (invalid fps,
-  //   no matching mode, seamless fallback); or
+  //   no matching mode, or already matching); or
   // - after the real DisplayListener event + [DISPLAY_SETTLE_MS] + the caller's
   //   [extraDelayMs], with `switched=true`; or
-  // - via a watchdog with `switched=true` if the real event never arrives, so
-  //   the caller doesn't hang.
+  // - via a watchdog if the real event never arrives, so the caller doesn't hang.
   //
   // The caller is responsible for pausing playback before calling and resuming
   // it after [onComplete] fires.
   fun setVideoFrameRate(
     fps: Float,
     videoDurationMs: Long,
-    surface: Surface?,
     extraDelayMs: Long,
     onComplete: (switched: Boolean) -> Unit
   ) {
@@ -80,20 +71,10 @@ class FrameRateManager(
         "API=${Build.VERSION.SDK_INT}, currentMode=${currentModeDescription()}"
     )
 
-    when {
-      Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-        if (surface == null) {
-          Log.d(TAG, "setVideoFrameRate: Surface not available")
-          onComplete(false)
-          return
-        }
-        setFrameRateS(fps, surface, videoDurationMs, extraDelayMs, onComplete)
-      }
-      // API R's Surface.setFrameRate() only supports seamless switching (no
-      // CHANGE_FRAME_RATE_ALWAYS), so 60→24Hz won't switch. Fall through to
-      // preferredDisplayModeId which directly sets the display mode.
-      Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> setFrameRateM(fps, extraDelayMs, onComplete)
-      else -> onComplete(false)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      setDisplayMode(fps, extraDelayMs, onComplete)
+    } else {
+      onComplete(false)
     }
   }
 
@@ -191,14 +172,6 @@ class FrameRateManager(
     return null
   }
 
-  private fun bestRefreshRateCandidate(fps: Float, refreshRates: FloatArray): RefreshRateCandidate? = refreshRates.asSequence()
-    .mapNotNull { rate -> matchRefreshRate(rate, fps)?.let { RefreshRateCandidate(rate, it) } }
-    .minWithOrNull(
-      compareBy<RefreshRateCandidate> { it.match.priority }
-        .thenBy { it.match.error }
-        .thenBy { it.refreshRate }
-    )
-
   private fun currentRateMatch(fps: Float): RefreshRateMatch? {
     val current = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       currentDisplayMode()?.refreshRate
@@ -215,12 +188,15 @@ class FrameRateManager(
   }
 
   @RequiresApi(Build.VERSION_CODES.M)
-  private fun currentDisplayMode(): Display.Mode? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-    activity.display?.mode
+  private fun currentDisplay(): Display? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+    activity.display
   } else {
     @Suppress("DEPRECATION")
-    (activity.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay?.mode
+    (activity.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
   }
+
+  @RequiresApi(Build.VERSION_CODES.M)
+  private fun currentDisplayMode(): Display.Mode? = currentDisplay()?.mode
 
   @RequiresApi(Build.VERSION_CODES.M)
   private fun describeMode(mode: Display.Mode?): String {
@@ -244,88 +220,12 @@ class FrameRateManager(
         .thenBy { abs(it.mode.refreshRate - currentMode.refreshRate) }
     )
 
-  @RequiresApi(Build.VERSION_CODES.S)
-  private fun setFrameRateS(
-    fps: Float,
-    surface: Surface,
-    videoDurationMs: Long,
-    extraDelayMs: Long,
-    onComplete: (switched: Boolean) -> Unit
-  ) {
-    log("setFrameRateS fps=$fps, duration=${videoDurationMs}ms, currentMode=${currentModeDescription()}")
-
-    // If the current display rate already satisfies the video fps, issue
-    // the hint for book-keeping but skip the listener — otherwise we'd
-    // wait for an onDisplayChanged event that never fires and end up
-    // burning the watchdog timeout for no reason.
-    val currentMatch = currentRateMatch(fps)
-    if (currentMatch != null) {
-      log("current display rate already matches ${fps}fps (${currentMatch.reason}), no switch needed")
-      surface.setFrameRate(
-        fps,
-        Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-        Surface.CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS
-      )
-      onComplete(false)
-      return
-    }
-
-    if (videoDurationMs < SHORT_VIDEO_LENGTH_MS) {
-      log("short video (${videoDurationMs}ms), using seamless-only switching")
-      surface.setFrameRate(
-        fps,
-        Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-        Surface.CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS
-      )
-      onComplete(false)
-      return
-    }
-
-    val alternativeRates = activity.display?.mode?.alternativeRefreshRates ?: floatArrayOf()
-    val seamlessMatch = bestRefreshRateCandidate(fps, alternativeRates)
-    log("alternative refresh rates=${alternativeRates.joinToString(prefix = "[", postfix = "]")}")
-
-    if (seamlessMatch != null) {
-      log(
-        "seamless switch available for ${fps}fps: " +
-          "${seamlessMatch.refreshRate}Hz (${seamlessMatch.match.reason}, error=${seamlessMatch.match.error})"
-      )
-      surface.setFrameRate(
-        fps,
-        Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-        Surface.CHANGE_FRAME_RATE_ALWAYS
-      )
-      registerDisplayListener(fps, extraDelayMs, onComplete)
-    } else {
-      val userPreference = getDisplayManager().matchContentFrameRateUserPreference
-      if (userPreference == DisplayManager.MATCH_CONTENT_FRAMERATE_ALWAYS) {
-        log("user preference allows non-seamless switch, requesting CHANGE_FRAME_RATE_ALWAYS")
-        surface.setFrameRate(
-          fps,
-          Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-          Surface.CHANGE_FRAME_RATE_ALWAYS
-        )
-        registerDisplayListener(fps, extraDelayMs, onComplete)
-      } else {
-        log("non-seamless switch not allowed (preference=$userPreference), using seamless-only")
-        surface.setFrameRate(
-          fps,
-          Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-          Surface.CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS
-        )
-        onComplete(false)
-      }
-    }
-  }
-
   @RequiresApi(Build.VERSION_CODES.M)
-  private fun setFrameRateM(fps: Float, extraDelayMs: Long, onComplete: (switched: Boolean) -> Unit) {
-    log("setFrameRateM fps=$fps")
-    val wm = activity.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-
-    @Suppress("DEPRECATION")
-    val display = wm.defaultDisplay
+  private fun setDisplayMode(fps: Float, extraDelayMs: Long, onComplete: (switched: Boolean) -> Unit) {
+    log("setDisplayMode fps=$fps")
+    val display = currentDisplay()
     if (display == null) {
+      log("display unavailable")
       onComplete(false)
       return
     }
@@ -357,10 +257,13 @@ class FrameRateManager(
       "switching to ${describeMode(modeToUse)} for ${fps}fps " +
         "(${modeMatch.match.reason}, error=${modeMatch.match.error})"
     )
-    activity.window?.attributes?.let { attrs ->
-      attrs.preferredDisplayModeId = modeToUse.modeId
-      activity.window?.attributes = attrs
+    val window = activity.window
+    if (window == null) {
+      log("window unavailable")
+      onComplete(false)
+      return
     }
     registerDisplayListener(fps, extraDelayMs, onComplete)
+    window.attributes = window.attributes.apply { preferredDisplayModeId = modeToUse.modeId }
   }
 }

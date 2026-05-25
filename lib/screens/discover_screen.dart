@@ -94,6 +94,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// mixin's single-server [itemServerId] hook.
   @override
   Future<void> updateItem(String itemId) async {
+    if (!mounted) return;
+
     try {
       final serverId = _serverIdForItem(itemId);
       if (serverId == null) return;

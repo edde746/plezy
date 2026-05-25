@@ -705,7 +705,8 @@
       "genre": "Genre",
       "year": "År",
       "contentRating": "Åldersgräns",
-      "tag": "Tagg"
+      "tag": "Tagg",
+      "unwatched": "Osedda"
     },
     "sortLabels": {
       "title": "Titel",

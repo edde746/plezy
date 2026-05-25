@@ -307,21 +307,22 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // ExoPlayer: attach external subs at open time so it discovers
         // them in a single prepare() — no media reload needed for selection.
         // MPV (all platforms including Android): external subs added after open via sub-add.
-        final transcodeTimelineOffset = result.isTranscoding ? resumePosition ?? Duration.zero : Duration.zero;
-        final transcodeTimelineDuration = result.isTranscoding && _currentMetadata.durationMs != null
-            ? Duration(milliseconds: _currentMetadata.durationMs!)
-            : null;
-        // Plex's chunked HTTP/MKV transcode can be seekable even when MPV
-        // cannot prove it from response headers. Force only for that path and
-        // reset everywhere else so live/direct/offline streams keep native
-        // seekability detection.
+        final openTiming = _playbackOpenTiming(
+          backend: _currentMetadata.backend,
+          isTranscoding: result.isTranscoding,
+          resumePosition: resumePosition,
+          durationMs: _currentMetadata.durationMs,
+        );
+        // Transcode streams can be seekable even when MPV cannot prove it
+        // from response headers. Reset non-transcodes so live/direct/offline
+        // streams keep native seekability detection.
         await currentPlayer.setProperty('force-seekable', result.isTranscoding ? 'yes' : 'no');
         await currentPlayer.open(
-          Media(result.videoUrl!, start: result.isTranscoding ? null : resumePosition, headers: streamHeaders),
+          Media(result.videoUrl!, start: openTiming.mediaStart, headers: streamHeaders),
           play: shouldAutoPlay,
           externalSubtitles: isExoPlayer && hasExternalSubs ? result.externalSubtitles : null,
-          timelineOffset: transcodeTimelineOffset,
-          timelineDuration: transcodeTimelineDuration,
+          timelineOffset: openTiming.timelineOffset,
+          timelineDuration: openTiming.timelineDuration,
         );
         if (!mounted || player != currentPlayer) return;
 

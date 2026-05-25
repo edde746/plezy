@@ -188,6 +188,17 @@ class ConnectionTestResult {
   ConnectionTestResult({required this.success, required this.latencyMs, this.error, this.transcoderVideo});
 }
 
+bool? _parsePlexTranscoderVideoCapability(Object? value) {
+  return switch (value) {
+    final bool b => b,
+    final int n when n == 1 => true,
+    final int n when n == 0 => false,
+    final String s when s.trim().toLowerCase() == 'true' || s.trim() == '1' => true,
+    final String s when s.trim().toLowerCase() == 'false' || s.trim() == '0' => false,
+    _ => null,
+  };
+}
+
 class PlexClient
     with MediaServerCacheMixin, _PlexLiveTvClientMethods
     implements MediaServerClient, GracefullyCloseable {
@@ -592,7 +603,9 @@ class PlexClient
 
       bool? transcoderVideo;
       if (success && response.data is Map && response.data['MediaContainer'] is Map) {
-        transcoderVideo = flexibleBool((response.data['MediaContainer'] as Map)['transcoderVideo']);
+        transcoderVideo = _parsePlexTranscoderVideoCapability(
+          (response.data['MediaContainer'] as Map)['transcoderVideo'],
+        );
       }
 
       return ConnectionTestResult(
@@ -2815,7 +2828,7 @@ class PlexClient
       final response = await _http.get('/', timeout: const Duration(seconds: 5));
       final container = _getMediaContainer(response);
       final value = container?['transcoderVideo'];
-      final supported = flexibleBool(value);
+      final supported = _parsePlexTranscoderVideoCapability(value) ?? true;
       _serverTranscoderCached = supported;
       return supported;
     } catch (e) {

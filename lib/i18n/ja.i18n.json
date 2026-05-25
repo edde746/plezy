@@ -705,7 +705,8 @@
       "genre": "ジャンル",
       "year": "年",
       "contentRating": "視聴年齢区分",
-      "tag": "タグ"
+      "tag": "タグ",
+      "unwatched": "未視聴"
     },
     "sortLabels": {
       "title": "タイトル",

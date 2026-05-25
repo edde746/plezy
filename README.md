@@ -17,8 +17,6 @@ A modern client for Plex and Jellyfin on desktop, mobile, and TV. Built with Flu
   <img src="assets/readme-showcase.webp" alt="Plezy mobile screenshots" width="900" />
 </p>
 
-*More screenshots: https://plezy.app/#screenshots*
-
 ## Download
 
 <a href='https://apps.apple.com/us/app/id6754315964'><img height='60' alt='Download on the App Store' src='./assets/app-store-badge.png'/></a>

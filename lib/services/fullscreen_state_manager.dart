@@ -28,6 +28,8 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
 
   /// Toggle fullscreen state, handling maximized-to-fullscreen transition on Windows/Linux
   Future<void> toggleFullscreen() async {
+    if (!PlatformDetector.isDesktopOS()) return;
+
     if (Platform.isMacOS) {
       final isCurrentlyFullscreen = await MacOSWindowService.isFullscreen();
       if (isCurrentlyFullscreen) {
@@ -62,6 +64,8 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
 
   /// Enter fullscreen, preserving maximized state on Windows/Linux for restoration on exit.
   Future<void> enterFullscreen() async {
+    if (!PlatformDetector.isDesktopOS()) return;
+
     if (Platform.isMacOS) {
       await MacOSWindowService.enterFullscreen();
     } else if (Platform.isWindows) {
@@ -77,6 +81,8 @@ class FullscreenStateManager extends ChangeNotifier with WindowListener {
 
   /// Exit fullscreen, restoring maximized state if needed
   Future<void> exitFullscreen() async {
+    if (!PlatformDetector.isDesktopOS()) return;
+
     if (Platform.isMacOS) {
       await MacOSWindowService.exitFullscreen();
     } else if (Platform.isWindows) {

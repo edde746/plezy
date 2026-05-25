@@ -705,7 +705,8 @@
       "genre": "Gênero",
       "year": "Ano",
       "contentRating": "Classificação",
-      "tag": "Tag"
+      "tag": "Tag",
+      "unwatched": "Não assistidos"
     },
     "sortLabels": {
       "title": "Título",

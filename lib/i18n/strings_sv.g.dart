@@ -1621,6 +1621,7 @@ class _TranslationsLibrariesFilterCategoriesSv extends TranslationsLibrariesFilt
 	@override String get year => 'År';
 	@override String get contentRating => 'Åldersgräns';
 	@override String get tag => 'Tagg';
+	@override String get unwatched => 'Osedda';
 }
 
 // Path: libraries.sortLabels
@@ -2453,6 +2454,7 @@ extension on TranslationsSv {
 			'libraries.filterCategories.year' => 'År',
 			'libraries.filterCategories.contentRating' => 'Åldersgräns',
 			'libraries.filterCategories.tag' => 'Tagg',
+			'libraries.filterCategories.unwatched' => 'Osedda',
 			'libraries.sortLabels.title' => 'Titel',
 			'libraries.sortLabels.dateAdded' => 'Tillagd',
 			'libraries.sortLabels.releaseDate' => 'Releasedatum',
@@ -2825,9 +2827,9 @@ extension on TranslationsSv {
 			'metadataEdit.summary' => 'Sammanfattning',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Bakgrund',
-			'metadataEdit.logo' => 'Logotyp',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.logo' => 'Logotyp',
 			'metadataEdit.squareArt' => 'Kvadratisk bild',
 			'metadataEdit.selectPoster' => 'Välj poster',
 			'metadataEdit.selectBackground' => 'Välj bakgrund',

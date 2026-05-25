@@ -134,11 +134,28 @@ class MultiServerManager {
     _statusController.add(Map.from(_serverStatus));
   }
 
+  /// Mark every cached Plex server on [connection] as auth-rejected without
+  /// requiring a live client. Startup auth failures happen before a client can
+  /// exist, but the UI still needs a server id/name for the re-auth banner.
+  void markPlexConnectionAuthError(PlexAccountConnection connection) {
+    for (final server in connection.servers) {
+      final id = server.clientIdentifier;
+      _clientIdByServer[id] = connection.clientIdentifier;
+      _plexServers[id] = server;
+      _serverStatus[id] = false;
+      _authErrorServers.add(id);
+    }
+    _statusController.add(Map.from(_serverStatus));
+  }
+
   /// Plex-specific server config (name, machineId, connection candidates,
   /// `owned` flag). Returns `null` for Jellyfin server ids — Jellyfin has no
   /// `PlexServer` analogue. For "is this server registered?" use
   /// [getClient] (works for both backends).
   PlexServer? getPlexServer(String serverId) => _plexServers[serverId];
+
+  String serverDisplayName(String serverId) =>
+      _clients[serverId]?.serverName ?? _plexServers[serverId]?.name ?? serverId;
 
   /// Backend-neutral "is this user an owner/admin on [serverId]?" probe used
   /// by UI gates that hide destructive admin entries (delete, edit metadata,

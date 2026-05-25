@@ -12,8 +12,8 @@ import 'alpha_jump_helper.dart';
 ///
 /// Pre-computes a cumulative index map from [firstCharacters] data so that
 /// tapping a letter triggers [onJump] with the item index where that letter
-/// begins. When more letters exist than fit vertically, the bar keeps the
-/// highest-count letters (by item size) and drops the rest.
+/// begins. Alphabet-sized lists stay complete and compact vertically when
+/// needed; larger character sets are thinned to the highest-count letters.
 /// Supports both touch (tap/drag) and D-pad (up/down/select) input.
 class AlphaJumpBar extends StatefulWidget {
   final List<LibraryFirstCharacter> firstCharacters;
@@ -63,6 +63,10 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
   /// Minimum vertical space per letter slot.
   static const double _minLetterHeight = 20.0;
 
+  /// Keep canonical alphabet bars complete instead of hiding trailing letters
+  /// on shorter TV viewports.
+  static const int _maxCompactLetterCount = 27;
+
   @override
   void initState() {
     super.initState();
@@ -100,7 +104,9 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
     final maxLetters = (availableHeight / _minLetterHeight).floor();
     if (maxLetters == _lastMaxLetters) return;
     _lastMaxLetters = maxLetters;
-    _displayed = _helper.displayLetters(maxLetters);
+    _displayed = _helper.letters.length <= _maxCompactLetterCount
+        ? _helper.letters
+        : _helper.displayLetters(maxLetters);
     _clampHighlight();
   }
 
@@ -209,6 +215,9 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
           if (_displayed.isEmpty) return const SizedBox.shrink();
 
           final currentLetter = _nearestDisplayed(widget.currentLetter);
+          final letterSlotHeight = constraints.maxHeight / _displayed.length;
+          final markerSize = (letterSlotHeight - 2).clamp(10.0, 18.0).toDouble();
+          final fontSize = (letterSlotHeight * 0.58).clamp(7.0, 10.0).toDouble();
 
           return ClickableCursor(
             child: GestureDetector(
@@ -226,10 +235,10 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
                 }
               },
               child: Container(
-                width: 28,
+                width: 20,
                 decoration: BoxDecoration(
                   color: colorScheme.surface.withValues(alpha: 0.7),
-                  borderRadius: const BorderRadius.all(Radius.circular(14)),
+                  borderRadius: const BorderRadius.all(Radius.circular(10)),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -258,17 +267,17 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
                     }
 
                     return SizedBox(
-                      height: constraints.maxHeight / _displayed.length,
+                      height: letterSlotHeight,
                       child: Center(
                         child: Container(
-                          width: 22,
-                          height: 22,
+                          width: markerSize,
+                          height: markerSize,
                           decoration: decoration,
                           alignment: Alignment.center,
                           child: Text(
                             letter,
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: fontSize,
                               fontWeight: (isCurrent || isHighlighted) ? FontWeight.bold : FontWeight.normal,
                               color: letterColor,
                             ),

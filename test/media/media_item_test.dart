@@ -100,6 +100,24 @@ void main() {
       expect(movie.heroArtCandidates(containerAspectRatio: 16 / 9), ['/art', '/square']);
       expect(movie.heroArt(containerAspectRatio: 16 / 9), '/art');
     });
+
+    test('episodes prefer show art before episode art for wide hero containers', () {
+      final episode = MediaItem(
+        id: 'e1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.episode,
+        title: 'Episode',
+        grandparentTitle: 'Show',
+        grandparentArtPath: '/show-art',
+        artPath: '/episode-art',
+        backgroundSquarePath: '/square',
+        serverId: 's1',
+      );
+
+      expect(episode.heroArtCandidates(containerAspectRatio: 16 / 9), ['/show-art', '/episode-art', '/square']);
+      expect(episode.heroArt(containerAspectRatio: 16 / 9), '/show-art');
+      expect(episode.heroArtCandidates(containerAspectRatio: 1.0), ['/square', '/show-art', '/episode-art']);
+    });
   });
 
   group('MediaItem.isPartiallyWatched', () {

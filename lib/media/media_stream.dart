@@ -23,10 +23,9 @@ class MediaStream {
   // Subtitle
   final bool forced;
 
-  /// Backend-resolved location for sidecar subtitle download. For Plex this
-  /// is the Plex-specific `/library/streams/{id}` path; for Jellyfin this is
-  /// the `DeliveryUrl` returned by `/Items/{id}/PlaybackInfo`. Null for
-  /// embedded streams.
+  /// Backend-resolved location for true sidecar subtitle download. Null for
+  /// embedded streams, even when Jellyfin can expose them through temporary
+  /// external delivery URLs during playback negotiation.
   final String? sidecarPath;
 
   const MediaStream({

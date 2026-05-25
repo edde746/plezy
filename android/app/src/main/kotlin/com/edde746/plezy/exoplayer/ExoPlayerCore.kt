@@ -1342,6 +1342,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
   private data class TrueHdDirectOutputDecision(
     val blockDirectOutput: Boolean,
+    val decisionSource: String,
     val platformProbe: String,
     val media3Probe: String,
     val routeSummary: String
@@ -1408,15 +1409,19 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       "media3Passthrough=error(${e.javaClass.simpleName}: ${e.message})"
     }
 
-    val blockDirectOutput = when {
-      Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && platformSupported != null -> !platformSupported
-      media3Supported != null -> !media3Supported
-      platformSupported != null -> !platformSupported
-      else -> false
+    // Match the Media3 sink selection path first; Android's direct bitstream flag can
+    // disagree on TV routes and incorrectly force TrueHD/Atmos to decoded PCM.
+    val (blockDirectOutput, decisionSource) = when {
+      media3Supported == true -> false to "media3-passthrough"
+      media3Supported == false -> true to "media3-passthrough"
+      platformSupported == true -> false to "platform-direct"
+      platformSupported == false -> true to "platform-direct"
+      else -> false to "unknown-allow"
     }
 
     return TrueHdDirectOutputDecision(
       blockDirectOutput = blockDirectOutput,
+      decisionSource = decisionSource,
       platformProbe = platformProbe,
       media3Probe = media3Probe,
       routeSummary = summarizeAudioOutputRoutes(audioAttributes)
@@ -1426,6 +1431,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private fun logTrueHdDirectOutputDecision(reason: String, format: Format?, decision: TrueHdDirectOutputDecision) {
     val key = listOf(
       decision.blockDirectOutput,
+      decision.decisionSource,
       decision.platformProbe,
       decision.media3Probe,
       decision.routeSummary,
@@ -1440,7 +1446,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       "info",
       "audio",
       "TrueHD direct output ${if (decision.blockDirectOutput) "disabled (decoded PCM fallback)" else "allowed"} " +
-        "(reason=$reason, format=${formatAudioSummary(trueHdProbeFormat(format))}, " +
+        "(reason=$reason, decision=${decision.decisionSource}, format=${formatAudioSummary(trueHdProbeFormat(format))}, " +
         "${decision.platformProbe}, ${decision.media3Probe}, route=${decision.routeSummary})"
     )
   }
@@ -2474,7 +2480,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       onComplete(false)
       return
     }
-    mgr.setVideoFrameRate(fps, videoDurationMs, surfaceView?.holder?.surface, extraDelayMs, onComplete)
+    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs, onComplete)
   }
 
   fun clearVideoFrameRate() {

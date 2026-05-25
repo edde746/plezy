@@ -1621,6 +1621,7 @@ class _TranslationsLibrariesFilterCategoriesNb extends TranslationsLibrariesFilt
 	@override String get year => 'År';
 	@override String get contentRating => 'Aldersgrense';
 	@override String get tag => 'Tag';
+	@override String get unwatched => 'Usette';
 }
 
 // Path: libraries.sortLabels
@@ -2453,6 +2454,7 @@ extension on TranslationsNb {
 			'libraries.filterCategories.year' => 'År',
 			'libraries.filterCategories.contentRating' => 'Aldersgrense',
 			'libraries.filterCategories.tag' => 'Tag',
+			'libraries.filterCategories.unwatched' => 'Usette',
 			'libraries.sortLabels.title' => 'Tittel',
 			'libraries.sortLabels.dateAdded' => 'Lagt til-dato',
 			'libraries.sortLabels.releaseDate' => 'Utgivelsesdato',
@@ -2825,9 +2827,9 @@ extension on TranslationsNb {
 			'metadataEdit.summary' => 'Sammendrag',
 			'metadataEdit.poster' => 'Plakat',
 			'metadataEdit.background' => 'Bakgrunn',
-			'metadataEdit.logo' => 'Logo',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Kvadratisk bilde',
 			'metadataEdit.selectPoster' => 'Velg plakat',
 			'metadataEdit.selectBackground' => 'Velg bakgrunn',

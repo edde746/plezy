@@ -705,7 +705,8 @@
       "genre": "장르",
       "year": "연도",
       "contentRating": "시청 등급",
-      "tag": "태그"
+      "tag": "태그",
+      "unwatched": "미시청"
     },
     "sortLabels": {
       "title": "제목",

@@ -1621,6 +1621,7 @@ class _TranslationsLibrariesFilterCategoriesZh extends TranslationsLibrariesFilt
 	@override String get year => '年份';
 	@override String get contentRating => '内容分级';
 	@override String get tag => '标签';
+	@override String get unwatched => '未观看';
 }
 
 // Path: libraries.sortLabels
@@ -2453,6 +2454,7 @@ extension on TranslationsZh {
 			'libraries.filterCategories.year' => '年份',
 			'libraries.filterCategories.contentRating' => '内容分级',
 			'libraries.filterCategories.tag' => '标签',
+			'libraries.filterCategories.unwatched' => '未观看',
 			'libraries.sortLabels.title' => '标题',
 			'libraries.sortLabels.dateAdded' => '添加日期',
 			'libraries.sortLabels.releaseDate' => '发行日期',
@@ -2825,9 +2827,9 @@ extension on TranslationsZh {
 			'metadataEdit.summary' => '简介',
 			'metadataEdit.poster' => '海报',
 			'metadataEdit.background' => '背景',
-			'metadataEdit.logo' => '标志',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.logo' => '标志',
 			'metadataEdit.squareArt' => '方形图片',
 			'metadataEdit.selectPoster' => '选择海报',
 			'metadataEdit.selectBackground' => '选择背景',

@@ -135,6 +135,7 @@ class MediaSubtitleTrack with _TrackLabelMixin {
   final bool forced;
   final String? key;
   final bool external;
+  final bool usesExternalDelivery;
 
   MediaSubtitleTrack({
     required this.id,
@@ -148,6 +149,7 @@ class MediaSubtitleTrack with _TrackLabelMixin {
     required this.forced,
     this.key,
     this.external = false,
+    this.usesExternalDelivery = false,
   });
 
   String get label {
@@ -178,7 +180,9 @@ class MediaSubtitleTrack with _TrackLabelMixin {
   /// Returns true if this subtitle track is an external file (sidecar subtitle).
   /// Some backends provide a direct key/URL, others require constructing one
   /// from stream metadata.
-  bool get isExternal => external || (key != null && key!.isNotEmpty);
+  bool get isExternalFile => external;
+
+  bool get isExternal => external || usesExternalDelivery || (key != null && key!.isNotEmpty);
 }
 
 class MediaChapter {

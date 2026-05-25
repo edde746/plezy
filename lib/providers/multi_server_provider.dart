@@ -45,6 +45,16 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// ids in the set surface through [serverIds] / [onlineServerIds].
   Set<String>? _visibleServerIds;
 
+  /// True once the active profile has explicitly resolved visibility. An empty
+  /// set is meaningful: the profile has servers, but none are currently visible.
+  bool get hasExplicitVisibleServerFilter => _visibleServerIds != null;
+
+  /// Server ids the active profile is expected to have access to, including
+  /// unreachable servers that do not have a live client in [MultiServerManager].
+  /// This is intentionally separate from [_visibleServerIds]: visible ids drive
+  /// UI/API surfaces, expected ids drive offline/auth decisions.
+  Set<String>? _expectedVisibleServerIds;
+
   /// Replace the active visibility filter and notify listeners. Pass `null`
   /// to clear the filter (all servers visible). Idempotent — does nothing
   /// when [ids] equals the current filter.
@@ -62,6 +72,20 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     _refreshLiveTvAvailabilitySoon();
   }
 
+  /// Replace the expected active-profile server ids. Pass `null` to fall back
+  /// to the live visible ids when no profile-scoped expectation is known.
+  void setExpectedVisibleServerIds(Set<String>? ids) {
+    if (_expectedVisibleServerIds == null && ids == null) return;
+    if (_expectedVisibleServerIds != null &&
+        ids != null &&
+        _expectedVisibleServerIds!.length == ids.length &&
+        _expectedVisibleServerIds!.containsAll(ids)) {
+      return;
+    }
+    _expectedVisibleServerIds = ids;
+    safeNotifyListeners();
+  }
+
   /// Add [serverId] to the active visibility filter. Used after adding a
   /// connection inline (without a profile switch), so the new server
   /// becomes visible without the binder having to re-run. Initializes the
@@ -70,12 +94,14 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     final current = _visibleServerIds;
     if (current == null) {
       _visibleServerIds = {serverId};
+      _expectedVisibleServerIds = {...?_expectedVisibleServerIds, serverId};
       safeNotifyListeners();
       _refreshLiveTvAvailabilitySoon();
       return;
     }
     if (current.contains(serverId)) return;
     _visibleServerIds = {...current, serverId};
+    _expectedVisibleServerIds = {...?_expectedVisibleServerIds, serverId};
     safeNotifyListeners();
     _refreshLiveTvAvailabilitySoon();
   }
@@ -151,6 +177,14 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     return all.where(filter.contains).toList();
   }
 
+  /// Server ids the active profile is expected to have, including unreachable
+  /// Plex servers that have no live client yet.
+  List<String> get expectedServerIds {
+    final expected = _expectedVisibleServerIds;
+    if (expected != null) return expected.toList(growable: false);
+    return serverIds;
+  }
+
   /// Check if a server is online (and visible under the active profile).
   bool isServerOnline(String serverId) {
     final filter = _visibleServerIds;
@@ -177,7 +211,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// "Sign in again" banner distinct from generic "Server offline".
   List<String> get authErrorServerIds {
     final all = _serverManager.authErrorServerIds;
-    final filter = _visibleServerIds;
+    final filter = _expectedVisibleServerIds ?? _visibleServerIds;
     if (filter == null) return all.toList();
     return all.where(filter.contains).toList();
   }
@@ -188,14 +222,14 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// Display names for the visible auth-errored servers, in stable order.
   /// Falls back to the server id when the client doesn't expose a name.
   List<({String serverId, String displayName})> get authErrorServers {
-    return authErrorServerIds
-        .map((id) => (serverId: id, displayName: _serverManager.getClient(id)?.serverName ?? id))
-        .toList();
+    return authErrorServerIds.map((id) => (serverId: id, displayName: _serverManager.serverDisplayName(id))).toList();
   }
 
   /// Clear all server connections
   void clearAllConnections() {
     _serverManager.disconnectAll();
+    _visibleServerIds = null;
+    _expectedVisibleServerIds = null;
     appLogger.d('MultiServerProvider: All connections cleared');
     safeNotifyListeners();
   }

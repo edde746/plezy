@@ -169,6 +169,7 @@ List<MediaSubtitleTrack> _withDefaultSubtitleSelection(List<MediaSubtitleTrack> 
         forced: track.forced,
         key: track.key,
         external: track.external,
+        usesExternalDelivery: track.usesExternalDelivery,
       ),
   ];
 }

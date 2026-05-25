@@ -67,6 +67,7 @@ import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/server_bound_media_mixin.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/deletion_notifier.dart';
+import '../utils/global_key_utils.dart';
 import '../widgets/episode_card.dart';
 import '../widgets/fitting_title_text.dart';
 import 'actor_media_screen.dart';
@@ -84,6 +85,7 @@ const double _tvDetailEpisodeThumbnailScale = TvBrowseRailLayout.compactEpisodeT
 const double _tvDetailActionSize = 46;
 const double _tvDetailActionRailGap = 4;
 const String _tvDetailSeasonHubIdPrefix = 'detail_season_';
+const String _tvDetailExtrasHubId = 'detail_extras';
 const String _tvDetailActorsHubId = 'detail_actors';
 const String _tvDetailActorPersonIdRawKey = 'tvDetailActorPersonId';
 
@@ -847,12 +849,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     double? fontSize,
     FontWeight fontWeight = FontWeight.bold,
     double shadowBlur = 8,
+    Color? color,
+    Color? shadowColor,
   }) {
     final baseStyle = (Theme.of(context).textTheme.displaySmall ?? const TextStyle()).copyWith(
-      color: Colors.white,
+      color: color ?? Colors.white,
       fontWeight: fontWeight,
       fontSize: fontSize,
-      shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: shadowBlur)],
+      shadows: [Shadow(color: shadowColor ?? Colors.black.withValues(alpha: 0.5), blurRadius: shadowBlur)],
     );
 
     return FittingTitleText(title, style: baseStyle);
@@ -1104,10 +1108,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }) {
     if (!widget.isOffline || _metadata.serverId == null) return null;
 
-    final downloadProvider = context.read<DownloadProvider>();
     for (final artworkPath in artworkPaths) {
-      final localPath = downloadProvider.getArtworkLocalPath(_metadata.serverId!, artworkPath);
-      if (localPath == null || !File(localPath).existsSync()) continue;
+      final localPath = _offlineArtworkLocalPath(context, artworkPath);
+      if (localPath == null) continue;
 
       return OptimizedMediaImage(
         client: null,
@@ -1121,6 +1124,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     return null;
+  }
+
+  String? _offlineArtworkLocalPath(BuildContext context, String? artworkPath) {
+    if (!widget.isOffline || _metadata.serverId == null) return null;
+    final localPath = context.read<DownloadProvider>().getArtworkLocalPath(_metadata.serverId!, artworkPath);
+    if (localPath == null || !File(localPath).existsSync()) return null;
+    return localPath;
   }
 
   Widget _buildHeroNetworkArtwork(
@@ -1506,8 +1516,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // Create synthetic season MediaItems from the grouped episodes.
     final seasons = seasonMap.entries.map((entry) {
       final firstEp = entry.value.first;
+      final seasonId = firstEp.parentId ?? '';
+      final seasonGlobalKey = _metadata.serverId == null || seasonId.isEmpty
+          ? null
+          : buildGlobalKey(_metadata.serverId!, seasonId);
+      final storedSeason = seasonGlobalKey == null ? null : downloadProvider.getMetadata(seasonGlobalKey);
+      if (storedSeason != null && storedSeason.isSeason) {
+        return _withFallbackLibrary(
+          storedSeason.copyWith(
+            serverId: _metadata.serverId,
+            serverName: _metadata.serverName ?? storedSeason.serverName,
+            leafCount: storedSeason.leafCount ?? entry.value.length,
+          ),
+          _metadata,
+        );
+      }
       return MediaItem(
-        id: firstEp.parentId ?? '',
+        id: seasonId,
         backend: _metadata.backend,
         kind: MediaKind.season,
         title: firstEp.parentTitle ?? 'Season ${entry.key}',
@@ -1573,7 +1598,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
-  /// Find the season index matching the initial selection or on-deck episode, or fall back to 0
+  /// Find the season index matching the initial selection or on-deck episode,
+  /// then fall back to the same season the Play button would use.
   int _findOnDeckSeasonIndex(List<MediaItem> seasons) {
     // Prefer explicit initial season (from navigation)
     if (widget.initialSeasonIndex != null && seasons.isNotEmpty) {
@@ -1581,14 +1607,32 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (idx != -1) return idx;
     }
     // Fall back to on-deck episode's season
-    if (_onDeckEpisode != null && seasons.isNotEmpty) {
-      final onDeckParentIndex = _onDeckEpisode!.parentIndex;
+    final onDeckEpisode = _onDeckEpisode;
+    if (onDeckEpisode != null && seasons.isNotEmpty) {
+      final onDeckParentId = onDeckEpisode.parentId;
+      if (onDeckParentId != null) {
+        final idx = seasons.indexWhere((s) => s.id == onDeckParentId);
+        if (idx != -1) return idx;
+      }
+
+      final onDeckParentIndex = onDeckEpisode.parentIndex;
       if (onDeckParentIndex != null) {
         final idx = seasons.indexWhere((s) => s.index == onDeckParentIndex);
         if (idx != -1) return idx;
       }
     }
-    return 0;
+    return _defaultPlaybackSeasonIndex(seasons);
+  }
+
+  int _defaultPlaybackSeasonIndex(List<MediaItem> seasons) {
+    if (seasons.isEmpty) return 0;
+    final regularSeasonIndex = seasons.indexWhere((season) => (season.index ?? 0) > 0);
+    return regularSeasonIndex == -1 ? 0 : regularSeasonIndex;
+  }
+
+  MediaItem? _defaultPlaybackSeason(List<MediaItem> seasons) {
+    if (seasons.isEmpty) return null;
+    return seasons[_defaultPlaybackSeasonIndex(seasons)];
   }
 
   /// Fetch episodes for a specific season by index, using cache when available
@@ -2121,32 +2165,47 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             if (showSeasonPosters && posterPath != null && posterPath.isNotEmpty) {
               const posterWidth = 72.0;
               const posterHeight = 108.0;
-              final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
-              final client = _getMediaClientForMetadata(context);
-              final imageUrl = MediaImageHelper.getOptimizedImageUrl(
-                client: client,
-                thumbPath: posterPath,
-                maxWidth: posterWidth,
-                maxHeight: posterHeight,
-                devicePixelRatio: dpr,
+              final localArtwork = _buildOfflineArtworkIfAvailable(
+                context,
+                artworkPaths: [posterPath],
+                fit: BoxFit.cover,
                 imageType: ImageType.poster,
-              );
-              final (memWidth, _) = MediaImageHelper.getMemCacheDimensions(
-                displayWidth: (posterWidth * dpr).round(),
-                displayHeight: (posterHeight * dpr).round(),
-                imageType: ImageType.poster,
+                errorWidget: (context, url, error) => const PlaceholderContainer(),
               );
               topImage = SizedBox(
                 width: posterWidth,
                 height: posterHeight,
-                child: CachedNetworkImage(
-                  imageUrl: imageUrl,
-                  cacheManager: PlexImageCacheManager.instance,
-                  fit: BoxFit.cover,
-                  memCacheWidth: memWidth,
-                  placeholder: (context, url) => const PlaceholderContainer(),
-                  errorBuilder: (context, error, stackTrace) => const PlaceholderContainer(),
-                ),
+                child:
+                    localArtwork ??
+                    (widget.isOffline
+                        ? const PlaceholderContainer()
+                        : Builder(
+                            builder: (context) {
+                              final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
+                              final client = _getMediaClientForMetadata(context);
+                              final imageUrl = MediaImageHelper.getOptimizedImageUrl(
+                                client: client,
+                                thumbPath: posterPath,
+                                maxWidth: posterWidth,
+                                maxHeight: posterHeight,
+                                devicePixelRatio: dpr,
+                                imageType: ImageType.poster,
+                              );
+                              final (memWidth, _) = MediaImageHelper.getMemCacheDimensions(
+                                displayWidth: (posterWidth * dpr).round(),
+                                displayHeight: (posterHeight * dpr).round(),
+                                imageType: ImageType.poster,
+                              );
+                              return CachedNetworkImage(
+                                imageUrl: imageUrl,
+                                cacheManager: PlexImageCacheManager.instance,
+                                fit: BoxFit.cover,
+                                memCacheWidth: memWidth,
+                                placeholder: (context, url) => const PlaceholderContainer(),
+                                errorBuilder: (context, error, stackTrace) => const PlaceholderContainer(),
+                              );
+                            },
+                          )),
               );
             }
             return Padding(
@@ -2693,8 +2752,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         return;
       }
 
-      // Skip Season 0 (Specials) — prefer the first regular season
-      final firstSeason = _seasons.firstWhere((s) => (s.index ?? 0) > 0, orElse: () => _seasons.first);
+      final firstSeason = _defaultPlaybackSeason(_seasons)!;
 
       // Get episodes of the first season
       List<MediaItem> episodes;
@@ -3102,7 +3160,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         child: Scaffold(
           body: Stack(
             children: [
-              TvSpotlightBackground(item: metadata, client: _getArtworkMediaClient(context), showInfo: false),
+              TvSpotlightBackground(
+                item: metadata,
+                client: _getArtworkMediaClient(context),
+                showInfo: false,
+                localArtworkPathResolver: widget.isOffline ? (path) => _offlineArtworkLocalPath(context, path) : null,
+              ),
               _buildTvDetailRevealGate(revealContent, handleBack),
             ],
           ),
@@ -3128,6 +3191,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }) {
     final theme = Theme.of(context);
     final description = _tvDetailDescription(metadata, hideSpoilers: hideSpoilers);
+    final foregroundColor = _tvDetailForegroundColor(context);
+    final mutedForegroundColor = foregroundColor.withValues(alpha: 0.78);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -3192,6 +3257,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           fontSize: 56 * scale,
                           fontWeight: FontWeight.w800,
                           shadowBlur: 12,
+                          color: foregroundColor,
+                          shadowColor: _tvDetailTitleShadowColor(context),
                         ),
                       ),
                       SizedBox(height: logoMetadataGap),
@@ -3212,7 +3279,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           maxLines: summaryMaxLines,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodyLarge?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.78),
+                            color: mutedForegroundColor,
                             fontSize: summaryFontSize,
                             height: 1.35,
                           ),
@@ -3229,6 +3296,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         );
       },
     );
+  }
+
+  Color _tvDetailForegroundColor(BuildContext context) => Theme.of(context).colorScheme.onSurface;
+
+  Color _tvDetailTitleShadowColor(BuildContext context) {
+    final brightness = Theme.of(context).colorScheme.brightness;
+    return brightness == Brightness.dark ? Colors.black.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.55);
   }
 
   Widget _buildDetailLogoOrTitle(
@@ -3310,7 +3384,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       parts.join('  •  '),
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: TextStyle(color: Colors.white, fontSize: 18 * scale, fontWeight: FontWeight.w700, letterSpacing: 0.1),
+      style: TextStyle(
+        color: _tvDetailForegroundColor(context),
+        fontSize: 18 * scale,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.1,
+      ),
     );
   }
 
@@ -3412,7 +3491,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   double _tvDetailWidePosterScaleForHub(MediaHub hub) {
-    return _isTvDetailEpisodeHub(hub) ? _tvDetailEpisodeThumbnailScale : 1.0;
+    return _isTvDetailEpisodeHub(hub) || hub.id == _tvDetailExtrasHubId ? _tvDetailEpisodeThumbnailScale : 1.0;
   }
 
   List<MediaHub> _tvDetailHubs(MediaItem metadata) {
@@ -3452,7 +3531,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
     if (_extras != null && _extras!.isNotEmpty) {
       hubs.add(
-        MediaHub(id: 'detail_extras', title: t.discover.extras, type: 'clip', items: _extras!, size: _extras!.length),
+        MediaHub(
+          id: _tvDetailExtrasHubId,
+          title: t.discover.extras,
+          type: 'clip',
+          items: _extras!,
+          size: _extras!.length,
+        ),
       );
     }
     hubs.addAll(_relatedHubs.where((hub) => hub.items.isNotEmpty));
@@ -3578,7 +3663,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   IconData _getTvDetailHubIcon(MediaHub hub, int index) {
     if (hub.id.startsWith(_tvDetailSeasonHubIdPrefix)) return Symbols.tv_rounded;
     if (hub.id == 'detail_episodes') return Symbols.tv_rounded;
-    if (hub.id == 'detail_extras') return Symbols.theaters_rounded;
+    if (hub.id == _tvDetailExtrasHubId) return Symbols.theaters_rounded;
     if (hub.id == _tvDetailActorsHubId) return Symbols.group_rounded;
     return _getRelatedHubIcon(hub);
   }
@@ -3981,8 +4066,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         // (icon will indicate the difference)
         return t.discover.playEpisode(season: seasonNum.toString(), episode: episodeNum.toString());
       } else {
-        // No on deck episode, will play first episode
-        return t.discover.playEpisode(season: '1', episode: '1');
+        final seasonNum = _defaultPlaybackSeason(_seasons)?.index ?? 1;
+        return t.discover.playEpisode(season: seasonNum.toString(), episode: '1');
       }
     }
 
