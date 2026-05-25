@@ -575,7 +575,7 @@ class _TranslationsVideoControlsZh extends TranslationsVideoControlsEn {
 	@override String get nextChapterButton => '下一章节';
 	@override String get muteButton => '静音';
 	@override String get unmuteButton => '取消静音';
-	@override String get settingsButton => '视频设置';
+	@override String get settingsButton => '播放设置';
 	@override String get tracksButton => '音频和字幕';
 	@override String get chaptersButton => '章节';
 	@override String get versionsButton => '视频版本';
@@ -1302,7 +1302,6 @@ class _TranslationsVideoSettingsZh extends TranslationsVideoSettingsEn {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get playbackSettings => '播放设置';
 	@override String get playbackSpeed => '播放速度';
 	@override String get sleepTimer => '睡眠定时器';
 	@override String get audioSync => '音频同步';
@@ -2187,7 +2186,7 @@ extension on TranslationsZh {
 			'videoControls.nextChapterButton' => '下一章节',
 			'videoControls.muteButton' => '静音',
 			'videoControls.unmuteButton' => '取消静音',
-			'videoControls.settingsButton' => '视频设置',
+			'videoControls.settingsButton' => '播放设置',
 			'videoControls.tracksButton' => '音频和字幕',
 			'videoControls.chaptersButton' => '章节',
 			'videoControls.versionsButton' => '视频版本',
@@ -2787,7 +2786,6 @@ extension on TranslationsZh {
 			'companionRemote.remote.subtitles' => '字幕',
 			'companionRemote.remote.audio' => '音频',
 			'companionRemote.remote.searchHint' => '在桌面上搜索...',
-			'videoSettings.playbackSettings' => '播放设置',
 			'videoSettings.playbackSpeed' => '播放速度',
 			'videoSettings.sleepTimer' => '睡眠定时器',
 			'videoSettings.audioSync' => '音频同步',
@@ -2827,9 +2825,9 @@ extension on TranslationsZh {
 			'metadataEdit.summary' => '简介',
 			'metadataEdit.poster' => '海报',
 			'metadataEdit.background' => '背景',
+			'metadataEdit.logo' => '标志',
 			_ => null,
 		} ?? switch (path) {
-			'metadataEdit.logo' => '标志',
 			'metadataEdit.squareArt' => '方形图片',
 			'metadataEdit.selectPoster' => '选择海报',
 			'metadataEdit.selectBackground' => '选择背景',

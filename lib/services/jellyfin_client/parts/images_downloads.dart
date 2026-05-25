@@ -16,6 +16,7 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
     int? maxStreamingBitrate = 100000000,
     String? mediaSourceId,
     String? liveStreamId,
+    int? startTimeTicks,
     int? audioStreamIndex,
     int? subtitleStreamIndex,
     bool? autoOpenLiveStream,

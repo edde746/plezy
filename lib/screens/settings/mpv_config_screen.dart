@@ -9,6 +9,7 @@ import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/mpv_config_models.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../mixins/settings_effect_mixin.dart';
 import '../../services/settings_service.dart';
@@ -89,34 +90,39 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        if (BackKeyCoordinator.consumeIfHandled()) return;
-        BackKeyUpSuppressor.suppressBackUntilKeyUp();
-        if (_textFieldFocusNode.hasFocus && _savePresetFocusNode.canRequestFocus) {
-          _savePresetFocusNode.requestFocus();
-        } else {
-          Navigator.pop(context);
-        }
-      },
-      child: FocusedScrollScaffold(
-        title: Text(t.screens.mpvConfig),
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.all(16),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _buildConfigEditor(),
-                const SizedBox(height: 16),
-                _buildPresetsCard(),
-                const SizedBox(height: 24),
-              ]),
-            ),
+    return ListenableBuilder(
+      listenable: _textFieldFocusNode,
+      builder: (context, _) {
+        return PopScope(
+          canPop: PlatformDetector.isHandheldIOS(context) && !_textFieldFocusNode.hasFocus,
+          onPopInvokedWithResult: (didPop, _) {
+            if (didPop) return;
+            if (BackKeyCoordinator.consumeIfHandled()) return;
+            BackKeyUpSuppressor.suppressBackUntilKeyUp();
+            if (_textFieldFocusNode.hasFocus && _savePresetFocusNode.canRequestFocus) {
+              _savePresetFocusNode.requestFocus();
+            } else {
+              Navigator.pop(context);
+            }
+          },
+          child: FocusedScrollScaffold(
+            title: Text(t.screens.mpvConfig),
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.all(16),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _buildConfigEditor(),
+                    const SizedBox(height: 16),
+                    _buildPresetsCard(),
+                    const SizedBox(height: 24),
+                  ]),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

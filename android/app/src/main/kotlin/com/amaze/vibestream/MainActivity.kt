@@ -41,6 +41,7 @@ class MainActivity : FlutterActivity() {
 
   companion object {
     private const val TAG = "MainActivity"
+    private const val TEXT_INPUT_DIAGNOSTICS_ENABLED = false
     var usingSkia = false
   }
 
@@ -53,6 +54,12 @@ class MainActivity : FlutterActivity() {
   private val APP_FOREGROUND_CHANNEL = "com.plezy/app_foreground"
   private var watchNextPlugin: WatchNextPlugin? = null
   private var nativeTextInputFocused = false
+
+  private inline fun logTextInputDiag(message: () -> String) {
+    if (TEXT_INPUT_DIAGNOSTICS_ENABLED) {
+      Log.i(TAG, "TextInputDiag ${message()}")
+    }
+  }
 
   // Auto PiP state
   private var autoPipReady = false
@@ -118,7 +125,7 @@ class MainActivity : FlutterActivity() {
   private fun shouldForwardDpadBeforeIme(): Boolean {
     val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
     val forward = !nativeTextInputFocused && !isImeVisible() && !imm.isAcceptingText
-    Log.i(TAG, "TextInputDiag shouldForwardDpadBeforeIme=$forward ${describeImeState()}")
+    logTextInputDiag { "shouldForwardDpadBeforeIme=$forward ${describeImeState()}" }
     return forward
   }
 
@@ -184,7 +191,7 @@ class MainActivity : FlutterActivity() {
     val wrapper = object : FrameLayout(this) {
       override fun dispatchKeyEventPreIme(event: KeyEvent): Boolean {
         if (isDpadKeyCode(event.keyCode)) {
-          Log.i(TAG, "TextInputDiag preIme received ${describeKeyEvent(event)} ${describeImeState()}")
+          logTextInputDiag { "preIme received ${describeKeyEvent(event)} ${describeImeState()}" }
         }
         when (event.keyCode) {
           KeyEvent.KEYCODE_DPAD_UP,
@@ -193,16 +200,16 @@ class MainActivity : FlutterActivity() {
           KeyEvent.KEYCODE_DPAD_RIGHT,
           KeyEvent.KEYCODE_DPAD_CENTER -> {
             if (shouldForwardDpadBeforeIme()) {
-              Log.i(TAG, "TextInputDiag preIme forwarding-to-Flutter-and-consuming ${describeKeyEvent(event)}")
+              logTextInputDiag { "preIme forwarding-to-Flutter-and-consuming ${describeKeyEvent(event)}" }
               super.dispatchKeyEvent(event)
               return true
             }
-            Log.i(TAG, "TextInputDiag preIme letting-IME-handle ${describeKeyEvent(event)}")
+            logTextInputDiag { "preIme letting-IME-handle ${describeKeyEvent(event)}" }
           }
         }
         val handled = super.dispatchKeyEventPreIme(event)
         if (isDpadKeyCode(event.keyCode)) {
-          Log.i(TAG, "TextInputDiag preIme superResult=$handled ${describeKeyEvent(event)} ${describeImeState()}")
+          logTextInputDiag { "preIme superResult=$handled ${describeKeyEvent(event)} ${describeImeState()}" }
         }
         return handled
       }
@@ -232,11 +239,13 @@ class MainActivity : FlutterActivity() {
 
   override fun dispatchKeyEvent(event: KeyEvent): Boolean {
     if (isDpadKeyCode(event.keyCode)) {
-      Log.i(TAG, "TextInputDiag activity.dispatchKeyEvent before ${describeKeyEvent(event)} ${describeImeState()}")
+      logTextInputDiag { "activity.dispatchKeyEvent before ${describeKeyEvent(event)} ${describeImeState()}" }
     }
     val handled = super.dispatchKeyEvent(event)
     if (isDpadKeyCode(event.keyCode)) {
-      Log.i(TAG, "TextInputDiag activity.dispatchKeyEvent after handled=$handled ${describeKeyEvent(event)} ${describeImeState()}")
+      logTextInputDiag {
+        "activity.dispatchKeyEvent after handled=$handled ${describeKeyEvent(event)} ${describeImeState()}"
+      }
     }
     return handled
   }
@@ -339,10 +348,9 @@ class MainActivity : FlutterActivity() {
         "setNativeTextInputFocused" -> {
           val oldValue = nativeTextInputFocused
           nativeTextInputFocused = call.arguments as? Boolean ?: false
-          Log.i(
-            TAG,
-            "TextInputDiag methodChannel setNativeTextInputFocused old=$oldValue new=$nativeTextInputFocused ${describeImeState()}"
-          )
+          logTextInputDiag {
+            "methodChannel setNativeTextInputFocused old=$oldValue new=$nativeTextInputFocused ${describeImeState()}"
+          }
           result.success(null)
         }
         else -> result.notImplemented()

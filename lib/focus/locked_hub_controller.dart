@@ -26,6 +26,13 @@ class HubFocusMemory {
     return _lastColumnHint.clamp(0, itemCount - 1);
   }
 
+  /// Get only this hub's remembered index, without falling back to the global column hint.
+  static int getForHubOnly(String hubKey, int itemCount, {int fallback = 0}) {
+    if (itemCount <= 0) return 0;
+    final remembered = _perHubMemory[hubKey];
+    return (remembered ?? fallback).clamp(0, itemCount - 1);
+  }
+
   /// Clear all memory (e.g., when leaving a screen)
   static void clear() {
     _perHubMemory.clear();

@@ -414,7 +414,7 @@
     "nextChapterButton": "Nästa kapitel",
     "muteButton": "Tysta",
     "unmuteButton": "Slå på ljud",
-    "settingsButton": "Videoinställningar",
+    "settingsButton": "Uppspelningsinställningar",
     "tracksButton": "Ljud och undertexter",
     "chaptersButton": "Kapitel",
     "versionsButton": "Videoversioner",
@@ -1076,7 +1076,6 @@
     }
   },
   "videoSettings": {
-    "playbackSettings": "Uppspelningsinställningar",
     "playbackSpeed": "Uppspelningshastighet",
     "sleepTimer": "Sovtimer",
     "audioSync": "Ljudsynkronisering",

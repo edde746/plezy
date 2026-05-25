@@ -417,13 +417,29 @@ class MpvPlayerCoreBase: NSObject {
 
     setRawStringPropertyAsync(
       "target-colorspace-hint",
-      value: enabled ? "yes" : "no",
+      value: enabled ? "auto" : "no",
       completion: completion ?? { _ in }
     )
 
     DispatchQueue.main.async {
       self.updateEDRMode(sigPeak: sigPeak)
     }
+  }
+
+  /// PiP presents the AVSampleBufferDisplayLayer directly, so subtitles must
+  /// be composited into the video samples instead of the inline OSD layer.
+  func setPipSubtitleCompositing(_ enabled: Bool) {
+    #if os(iOS)
+      let value = enabled ? "yes" : "no"
+      setRawStringPropertyAsync("avfoundation-pip-composite-osd", value: value) { result in
+        if case .failure(let error) = result {
+          print(
+            "[MpvPlayerCore] Failed to set PiP subtitle compositing "
+              + "to \(value): \(error.localizedDescription)"
+          )
+        }
+      }
+    #endif
   }
 
   func getPropertyAsync(_ name: String, completion: @escaping (Result<String?, Error>) -> Void) {
@@ -596,7 +612,7 @@ class MpvPlayerCoreBase: NSObject {
     #endif
     checkError(mpv_set_option_string(mpv, "hwdec-codecs", "all"))
     checkError(mpv_set_option_string(mpv, "hwdec-software-fallback", "yes"))
-    checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "yes"))
+    checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "auto"))
   }
 
   #if os(macOS)
@@ -611,7 +627,7 @@ class MpvPlayerCoreBase: NSObject {
 
   private func isManagedRendererProperty(_ name: String) -> Bool {
     name == "vo" || name == "wid" || name == "gpu-api" || name == "gpu-context"
-      || name == "avfoundation-composite-osd"
+      || name == "avfoundation-composite-osd" || name == "avfoundation-pip-composite-osd"
   }
 
   private func updateVideoGravityIfNeeded(name: String, value: String) {

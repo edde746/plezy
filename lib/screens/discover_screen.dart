@@ -41,6 +41,7 @@ import '../providers/user_profile_provider.dart';
 import '../services/storage_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
+import '../widgets/fitting_title_text.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_background.dart';
 import '../mixins/refreshable.dart';
@@ -93,6 +94,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// mixin's single-server [itemServerId] hook.
   @override
   Future<void> updateItem(String itemId) async {
+    if (!mounted) return;
+
     try {
       final serverId = _serverIdForItem(itemId);
       if (serverId == null) return;
@@ -195,6 +198,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   // Track initial load so we can focus hero when content first appears
   bool _initialLoadComplete = false;
+  bool _pendingTvBrowseRailFocus = false;
 
   // Hub navigation keys
   GlobalKey<HubSectionState>? _continueWatchingHubKey;
@@ -315,7 +319,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _focusContentFromAppBar() {
     if (PlatformDetector.isTV()) {
-      _tvBrowseRailKey.currentState?.requestFocus();
+      _focusTvBrowseRailWhenReady(immediate: true);
       return;
     }
 
@@ -328,6 +332,41 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (keys.isNotEmpty) {
       keys.first.currentState?.requestFocusFromMemory();
     }
+  }
+
+  void _focusTvBrowseRailWhenReady({bool immediate = false}) {
+    if (!PlatformDetector.isTV()) return;
+    if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
+      _pendingTvBrowseRailFocus = false;
+      return;
+    }
+
+    _pendingTvBrowseRailFocus = true;
+    if (immediate && _tvBrowseHubs.isNotEmpty) {
+      final rail = _tvBrowseRailKey.currentState;
+      if (rail != null) {
+        _pendingTvBrowseRailFocus = false;
+        rail.requestFocus();
+        return;
+      }
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
+        _pendingTvBrowseRailFocus = false;
+        return;
+      }
+      if (_tvBrowseHubs.isEmpty) return;
+      final rail = _tvBrowseRailKey.currentState;
+      if (rail == null) return;
+      _pendingTvBrowseRailFocus = false;
+      rail.requestFocus();
+    });
+  }
+
+  void _applyPendingTvBrowseRailFocus() {
+    if (_pendingTvBrowseRailFocus) _focusTvBrowseRailWhenReady();
   }
 
   /// Handle vertical navigation between hubs
@@ -366,7 +405,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context)?.focusSidebar();
+    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
   }
 
   @override
@@ -586,6 +625,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void onTabHidden() {
     _isTabVisible = false;
+    _pendingTvBrowseRailFocus = false;
     _autoScrollTimer?.cancel();
     _stopIndicatorProgress();
   }
@@ -600,6 +640,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   @override
   void focusActiveTabIfReady() {
+    if (PlatformDetector.isTV()) {
+      _focusTvBrowseRailWhenReady();
+      return;
+    }
     _focusTopBoundary();
   }
 
@@ -702,6 +746,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
         }
       });
+      _applyPendingTvBrowseRailFocus();
 
       // Focus hero section now that it's visible, but only if no modal route is on top
       if (!PlatformDetector.isTV() && onDeck.isNotEmpty && (ModalRoute.of(context)?.isCurrent ?? false)) {
@@ -721,14 +766,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       // On initial load, focus the hero so the user starts on content (not the toolbar)
       if (!_initialLoadComplete && onDeck.isNotEmpty) {
         _initialLoadComplete = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return;
-          if (PlatformDetector.isTV()) {
-            _tvBrowseRailKey.currentState?.requestFocus();
-          } else if (_heroFocusNode.canRequestFocus) {
-            _heroFocusNode.requestFocus();
-          }
-        });
+        if (PlatformDetector.isTV()) {
+          _focusTvBrowseRailWhenReady();
+        } else {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return;
+            if (_heroFocusNode.canRequestFocus) {
+              _heroFocusNode.requestFocus();
+            }
+          });
+        }
       }
 
       // Wait for global hubs
@@ -758,14 +805,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         _areHubsLoading = false;
         _updateHubKeys();
       });
+      _applyPendingTvBrowseRailFocus();
 
       if (PlatformDetector.isTV() && !_initialLoadComplete && filteredHubs.isNotEmpty) {
         _initialLoadComplete = true;
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) {
-            _tvBrowseRailKey.currentState?.requestFocus();
-          }
-        });
+        _focusTvBrowseRailWhenReady();
       }
 
       appLogger.d('Discover content loaded successfully');
@@ -1490,18 +1534,25 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
     final browseHubs = _tvBrowseHubs;
     final scale = TvLayoutConstants.scaleForSize(size);
+    final sidebarBleed = MainScreenFocusScope.sideNavigationBleedOf(
+      context,
+      alwaysKeepSidebarOpen: svc.read(SettingsService.alwaysKeepSidebarOpen),
+    );
+    final railSize = MainScreenFocusScope.foregroundSizeOf(context);
+    final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
+    final foregroundLeft = MainScreenFocusScope.foregroundLeftOf(context);
     final railHeight = browseHubs.isEmpty
         ? 0.0
         : TvBrowseRailLayout.estimateHeight(
-            size: size,
+            size: railSize,
             hubs: browseHubs,
             density: svc.read(SettingsService.libraryDensity),
             episodePosterMode: svc.read(SettingsService.episodePosterMode),
             tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
           );
     final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
-    final minimumSpotlightBottom = railHeight + (16 * scale);
-    final baseSpotlightBottom = (size.height * 0.53).clamp(180.0, 900.0).toDouble();
+    final minimumSpotlightBottom = railHeight + (8 * scale);
+    final baseSpotlightBottom = (size.height * 0.48).clamp(160.0, 820.0).toDouble();
     final desiredSpotlightBottom = minimumSpotlightBottom > baseSpotlightBottom
         ? minimumSpotlightBottom
         : baseSpotlightBottom;
@@ -1512,16 +1563,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return Material(
       color: theme.scaffoldBackgroundColor,
       child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          TvSpotlightBackground(
-            item: spotlight,
-            client: _getMediaClientForItem(spotlight),
-            hideSpoilers: hideSpoilers,
-            contentTop: spotlightTop,
-            contentBottom: spotlightBottom,
-            contentLeft: spotlightLeft,
-            compact: true,
-            showPrimaryAction: false,
+          Positioned(
+            top: 0,
+            bottom: 0,
+            left: -foregroundLeft,
+            width: fullBleedWidth,
+            child: TvSpotlightBackground(
+              item: spotlight,
+              client: _getMediaClientForItem(spotlight),
+              hideSpoilers: hideSpoilers,
+              contentTop: spotlightTop,
+              contentBottom: spotlightBottom,
+              contentLeft: spotlightLeft + foregroundLeft,
+              compact: true,
+              showPrimaryAction: false,
+            ),
           ),
           if (_isLoading || (_areHubsLoading && browseHubs.isEmpty)) const Center(child: CircularProgressIndicator()),
           if (_errorMessage != null)
@@ -1569,9 +1627,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onNavigateUp: _focusTopActions,
                 onNavigateToSidebar: _navigateToSidebar,
                 tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+                backgroundBleedLeft: sidebarBleed,
               ),
             ),
-          Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: _buildOverlaidAppBar())),
+          SideNavigationBleedBuilder(
+            targetBleed: sidebarBleed,
+            child: ExcludeFocusTraversal(child: _buildOverlaidAppBar()),
+            builder: (context, animatedBleed, child) =>
+                Positioned(top: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
+          ),
           if (_switchingProfile) const ProfileSwitchingOverlay(),
         ],
       ),
@@ -1712,6 +1776,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final alignLeft = isTv || isLargeScreen;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final heroLogoWidth = isTv ? TvLayoutConstants.heroLogoWidth : 400.0;
+    final heroLogoHeight = isTv ? TvLayoutConstants.heroLogoHeight : 120.0;
+    final heroTitleStyle = theme.textTheme.displaySmall?.copyWith(
+      color: colorScheme.onSurface,
+      fontWeight: FontWeight.bold,
+      fontSize: isTv ? 52 : null,
+      shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
+    );
 
     // Determine content type label for chip
     final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
@@ -1861,16 +1933,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           // Show logo or name/title
                           if (heroItem.clearLogoPath != null)
                             SizedBox(
-                              height: isTv ? TvLayoutConstants.heroLogoHeight : 120,
-                              width: isTv ? TvLayoutConstants.heroLogoWidth : 400,
+                              height: heroLogoHeight,
+                              width: heroLogoWidth,
                               child: Builder(
                                 builder: (context) {
                                   final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
                                   final logoUrl = MediaImageHelper.getOptimizedImageUrl(
                                     client: heroClient,
                                     thumbPath: heroItem.clearLogoPath,
-                                    maxWidth: isTv ? TvLayoutConstants.heroLogoWidth : 400,
-                                    maxHeight: isTv ? TvLayoutConstants.heroLogoHeight : 120,
+                                    maxWidth: heroLogoWidth,
+                                    maxHeight: heroLogoHeight,
                                     devicePixelRatio: dpr,
                                     imageType: ImageType.logo,
                                   );
@@ -1881,34 +1953,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                       cacheManager: PlexImageCacheManager.instance,
                                       filterQuality: FilterQuality.medium,
                                       fit: BoxFit.contain,
-                                      memCacheWidth: ((isTv ? TvLayoutConstants.heroLogoWidth : 400) * dpr)
-                                          .clamp(200, isTv ? 1000 : 800)
-                                          .round(),
+                                      memCacheWidth: (heroLogoWidth * dpr).clamp(200, isTv ? 1000 : 800).round(),
                                       alignment: alignLeft ? Alignment.bottomLeft : Alignment.bottomCenter,
                                       placeholder: (context, url) => const SizedBox.shrink(),
                                       errorBuilder: (context, error, stackTrace) {
                                         // Fallback to text if logo fails to load
-                                        final theme = Theme.of(context);
-                                        final colorScheme = theme.colorScheme;
-                                        return Align(
+                                        return FittingTitleText(
+                                          showName,
+                                          style: heroTitleStyle,
+                                          textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                                           alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
-                                          child: Text(
-                                            showName,
-                                            style: theme.textTheme.displaySmall?.copyWith(
-                                              color: colorScheme.onSurface,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: isTv ? 52 : null,
-                                              shadows: [
-                                                Shadow(
-                                                  color: colorScheme.surface.withValues(alpha: 0.8),
-                                                  blurRadius: 8,
-                                                ),
-                                              ],
-                                            ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            textAlign: alignLeft ? TextAlign.left : TextAlign.center,
-                                          ),
                                         );
                                       },
                                     ),
@@ -1919,17 +1973,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               ),
                             )
                           else
-                            Text(
-                              showName,
-                              style: theme.textTheme.displaySmall?.copyWith(
-                                color: colorScheme.onSurface,
-                                fontWeight: FontWeight.bold,
-                                fontSize: isTv ? 52 : null,
-                                shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
+                            SizedBox(
+                              height: heroLogoHeight,
+                              width: heroLogoWidth,
+                              child: FittingTitleText(
+                                showName,
+                                style: heroTitleStyle,
+                                textAlign: alignLeft ? TextAlign.left : TextAlign.center,
+                                alignment: alignLeft ? Alignment.centerLeft : Alignment.center,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                             ),
 
                           // Metadata as dot-separated text with content type

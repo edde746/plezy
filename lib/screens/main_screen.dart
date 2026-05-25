@@ -60,6 +60,11 @@ class MainScreenFocusScope extends InheritedWidget {
   final VoidCallback focusSidebar;
   final VoidCallback focusContent;
   final bool isSidebarFocused;
+  final double sideNavigationWidth;
+  final double? reservedSideNavigationWidth;
+  final double? foregroundLeft;
+  final double? foregroundWidth;
+  final double? viewportWidth;
   final void Function(String libraryGlobalKey)? selectLibrary;
 
   const MainScreenFocusScope({
@@ -67,18 +72,89 @@ class MainScreenFocusScope extends InheritedWidget {
     required this.focusSidebar,
     required this.focusContent,
     required this.isSidebarFocused,
+    required this.sideNavigationWidth,
+    this.reservedSideNavigationWidth,
+    this.foregroundLeft,
+    this.foregroundWidth,
+    this.viewportWidth,
     this.selectLibrary,
     required super.child,
   });
 
-  static MainScreenFocusScope? of(BuildContext context) {
-    return context.dependOnInheritedWidgetOfExactType<MainScreenFocusScope>();
+  static MainScreenFocusScope? of(BuildContext context, {bool listen = true}) {
+    if (listen) return context.dependOnInheritedWidgetOfExactType<MainScreenFocusScope>();
+    return context.getElementForInheritedWidgetOfExactType<MainScreenFocusScope>()?.widget as MainScreenFocusScope?;
+  }
+
+  static double sideNavigationBleedOf(BuildContext context, {required bool alwaysKeepSidebarOpen}) {
+    final width = of(context)?.sideNavigationWidth;
+    if (width != null) return width;
+    return 0.0;
+  }
+
+  static double foregroundWidthOf(BuildContext context) {
+    final width = of(context)?.foregroundWidth;
+    if (width != null && width > 0) return width;
+    return MediaQuery.sizeOf(context).width;
+  }
+
+  static double foregroundLeftOf(BuildContext context) {
+    final left = of(context)?.foregroundLeft;
+    if (left != null) return left;
+    return 0.0;
+  }
+
+  static Size foregroundSizeOf(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    return Size(foregroundWidthOf(context), size.height);
+  }
+
+  static double fullBleedWidthOf(BuildContext context) {
+    final width = of(context)?.viewportWidth;
+    if (width != null && width > 0) return width;
+    return MediaQuery.sizeOf(context).width;
   }
 
   @override
   bool updateShouldNotify(MainScreenFocusScope oldWidget) {
-    return isSidebarFocused != oldWidget.isSidebarFocused;
+    return isSidebarFocused != oldWidget.isSidebarFocused ||
+        sideNavigationWidth != oldWidget.sideNavigationWidth ||
+        reservedSideNavigationWidth != oldWidget.reservedSideNavigationWidth ||
+        foregroundLeft != oldWidget.foregroundLeft ||
+        foregroundWidth != oldWidget.foregroundWidth ||
+        viewportWidth != oldWidget.viewportWidth;
   }
+}
+
+class SideNavigationBleedBuilder extends StatelessWidget {
+  final double targetBleed;
+  final Widget? child;
+  final Widget Function(BuildContext context, double bleed, Widget? child) builder;
+
+  const SideNavigationBleedBuilder({super.key, required this.targetBleed, this.child, required this.builder});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(end: targetBleed),
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+      builder: builder,
+      child: child,
+    );
+  }
+}
+
+@visibleForTesting
+({double left, double width}) mainScreenSideNavigationContentLayout({
+  required double viewportWidth,
+  required double currentSideNavigationWidth,
+  required double reservedSideNavigationWidth,
+}) {
+  return (
+    left: currentSideNavigationWidth,
+    width: (viewportWidth - reservedSideNavigationWidth).clamp(0.0, double.infinity).toDouble(),
+  );
 }
 
 @visibleForTesting
@@ -89,6 +165,15 @@ bool shouldRetryActiveProfileBindAfterReconnect({
   required bool hasKnownOfflineServers,
 }) {
   return hasActiveProfile && !hasVisibleConnectedServers && (hasManagerOnlineServers || !hasKnownOfflineServers);
+}
+
+@visibleForTesting
+bool shouldRenderMainScreenOffline({
+  required bool providerOffline,
+  required bool startupOfflineUntilConnected,
+  required bool hasVisibleConnectedServers,
+}) {
+  return providerOffline || (startupOfflineUntilConnected && !hasVisibleConnectedServers);
 }
 
 class MainScreen extends StatefulWidget {
@@ -134,6 +219,11 @@ class _MainScreenState extends State<MainScreen>
   /// Whether a reconnection attempt is in progress
   bool _isReconnecting = false;
 
+  /// Startup routed here explicitly offline. Keep the offline shell until a
+  /// visible server actually connects; provider warmup can be optimistic when
+  /// failed Plex servers have no live client yet.
+  bool _offlineUntilConnected = false;
+
   /// Prevents double-pushing the profile selection screen
   bool _isShowingProfileSelection = false;
 
@@ -150,6 +240,7 @@ class _MainScreenState extends State<MainScreen>
   final FocusScopeNode _sidebarFocusScope = FocusScopeNode(debugLabel: 'Sidebar');
   final FocusScopeNode _contentFocusScope = FocusScopeNode(debugLabel: 'Content');
   bool _isSidebarFocused = false;
+  bool _isSidebarInteractionExpanded = false;
 
   /// The binder is now owned by a top-level [Provider] (see main.dart) so
   /// the splash can await its first settle before navigating here. We just
@@ -196,6 +287,7 @@ class _MainScreenState extends State<MainScreen>
   void initState() {
     super.initState();
     _isOffline = widget.isOfflineMode;
+    _offlineUntilConnected = widget.isOfflineMode;
 
     WidgetsBinding.instance.addObserver(this);
 
@@ -204,10 +296,6 @@ class _MainScreenState extends State<MainScreen>
       windowManager.setPreventClose(true);
     }
 
-    _currentTab = _isOffline ? NavigationTabId.downloads : NavigationTabId.discover;
-    _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
-    _autoSwitchedToDownloads = _isOffline;
-
     // Synchronize _lastHasLiveTv with provider before building screens
     // so _buildScreens and _hasLiveTv getter agree from the start.
     try {
@@ -215,6 +303,9 @@ class _MainScreenState extends State<MainScreen>
     } catch (_) {
       _lastHasLiveTv = false;
     }
+    _currentTab = _defaultTabForMode(_isOffline);
+    _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
+    _autoSwitchedToDownloads = _isOffline && _currentTab == NavigationTabId.downloads;
     _screens = _buildScreens(_isOffline);
 
     // Set up Watch Together callbacks immediately (must be synchronous to catch early messages)
@@ -234,8 +325,10 @@ class _MainScreenState extends State<MainScreen>
         unawaited(_plexHomeService!.start());
         final manager = context.read<MultiServerProvider>().serverManager;
         // Read the binder so the Provider's `lazy: false` create has fired
-        // for sure; it manages its own lifecycle and disposal.
-        context.read<ActiveProfileBinder>();
+        // for sure; start only in online mode so explicit startup offline does
+        // not immediately kick off the same connection attempts it skipped.
+        final binder = context.read<ActiveProfileBinder>();
+        if (!_isOffline) binder.start();
         _runStartupOnFirstOnlineServer(manager);
       }
       if (!_isOffline) {
@@ -304,45 +397,7 @@ class _MainScreenState extends State<MainScreen>
       _startupSettleTimeout?.cancel();
       _startupSettleTimeout = null;
 
-      // Mirror `_invalidateAllScreens`: await the libraries fetch BEFORE
-      // calling `fullRefresh` on the tab screens. Without the await the
-      // libraries screen's `_initializeWithLibraries` runs against an
-      // empty provider, returns early, and never sets a selected library
-      // — so the tab renders nothing even though libraries arrive moments
-      // later. The Plex auth path goes through `_invalidateAllScreens`
-      // (active-profile id changes) and was unaffected; fresh-install
-      // Jellyfin sign-in is bound to the pre-existing placeholder Owner
-      // profile, so only this prime path runs.
-      unawaited(() async {
-        if (manager.onlineServerIds.isNotEmpty) {
-          if (!mounted) return;
-          final mp = context.read<MultiServerProvider>();
-          final lp = context.read<LibrariesProvider>();
-          lp.initialize(mp.aggregationService);
-          await lp.loadLibraries();
-          if (!mounted) return;
-          context.read<OfflineWatchSyncService>().onServersConnected();
-          // DownloadProvider's initial load can race with [Connections]
-          // table inserts done by [ActiveProfileBinder]. Now that servers
-          // are connected the per-backend caches resolve, so retry.
-          unawaited(context.read<DownloadProvider>().refreshMetadataFromCache());
-        }
-
-        // The tab screens called their initial load in `initState` — well
-        // before the binder finished its first connect — and stayed in
-        // their loading state. Re-trigger so they reload (or, if no
-        // servers came online, render their proper error state).
-        if (!mounted) return;
-        if (_discoverKey.currentState case final FullRefreshable refreshable) {
-          refreshable.fullRefresh();
-        }
-        if (_librariesKey.currentState case final FullRefreshable refreshable) {
-          refreshable.fullRefresh();
-        }
-        if (_searchKey.currentState case final FullRefreshable refreshable) {
-          refreshable.fullRefresh();
-        }
-      }());
+      unawaited(_primeOnlineServices(manager));
     }
 
     void tryDownloadResume() {
@@ -384,6 +439,52 @@ class _MainScreenState extends State<MainScreen>
     if (_downloadResumeFired) return;
 
     _serverStatusSub = manager.statusStream.listen((_) => tryDownloadResume());
+  }
+
+  /// Shared online-entry hook for cold startup and reconnect-from-offline.
+  /// It mirrors `_invalidateAllScreens`: libraries load before tab refreshes
+  /// so screens don't initialize against an empty provider and remain blank.
+  Future<void> _primeOnlineServices(MultiServerManager manager) async {
+    if (manager.onlineServerIds.isNotEmpty) {
+      if (!mounted) return;
+      final mp = context.read<MultiServerProvider>();
+      if (mp.hasConnectedServers) {
+        final lp = context.read<LibrariesProvider>();
+        lp.initialize(mp.aggregationService);
+        await lp.loadLibraries();
+        if (!mounted) return;
+        context.read<OfflineWatchSyncService>().onServersConnected();
+        unawaited(context.read<DownloadProvider>().refreshMetadataFromCache());
+        _resumeQueuedDownloadsIfPossible(mp);
+      }
+    }
+
+    if (!mounted) return;
+    if (_discoverKey.currentState case final FullRefreshable refreshable) {
+      refreshable.fullRefresh();
+    }
+    if (_librariesKey.currentState case final FullRefreshable refreshable) {
+      refreshable.fullRefresh();
+    }
+    if (_searchKey.currentState case final FullRefreshable refreshable) {
+      refreshable.fullRefresh();
+    }
+  }
+
+  void _resumeQueuedDownloadsIfPossible(MultiServerProvider mp) {
+    if (_downloadResumeFired || !mounted) return;
+    for (final serverId in mp.onlineServerIds) {
+      final onlineClient = mp.getClientForServer(serverId);
+      if (onlineClient == null) continue;
+      _downloadResumeFired = true;
+      unawaited(
+        context.read<DownloadProvider>().ensureInitialized().then((_) {
+          if (!mounted) return;
+          context.read<DownloadProvider>().resumeQueuedDownloads(onlineClient);
+        }),
+      );
+      return;
+    }
   }
 
   void _onActiveProfileChanged() {
@@ -585,9 +686,8 @@ class _MainScreenState extends State<MainScreen>
     super.didChangeDependencies();
 
     // Listen for offline/online transitions to refresh navigation & screens.
-    // `widget.isOfflineMode` stays authoritative when SetupScreen explicitly
-    // routed here offline, but if the provider already observed a failed bind
-    // before this listener attached, mirror that missed state after build.
+    // If the provider already observed a failed bind before this listener
+    // attached, mirror that missed state after build.
     final provider = context.read<OfflineModeProvider?>();
     if (provider != null && provider != _offlineModeProvider) {
       _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
@@ -744,6 +844,7 @@ class _MainScreenState extends State<MainScreen>
         Expanded(
           child: IndexedStack(
             index: _currentIndex,
+            clipBehavior: Clip.none,
             children: [
               for (var i = 0; i < _screens.length; i++) TickerMode(enabled: i == _currentIndex, child: _screens[i]),
             ],
@@ -775,6 +876,15 @@ class _MainScreenState extends State<MainScreen>
   NavigationTabId _normalizeTabForMode(NavigationTabId currentTab, bool isOffline) {
     final tabs = _getVisibleTabs(isOffline);
     if (tabs.any((t) => t.id == currentTab)) return currentTab;
+    return _defaultTabForMode(isOffline);
+  }
+
+  NavigationTabId _defaultTabForMode(bool isOffline) {
+    final tabs = _getVisibleTabs(isOffline);
+    if (isOffline) {
+      final downloads = tabs.where((t) => t.id == NavigationTabId.downloads).firstOrNull;
+      if (downloads != null) return downloads.id;
+    }
     return tabs.first.id;
   }
 
@@ -788,6 +898,7 @@ class _MainScreenState extends State<MainScreen>
     final binder = context.read<ActiveProfileBinder>();
     unawaited(() async {
       try {
+        binder.start();
         // Health check first so stale "online" servers get marked offline before
         // we snapshot the offline list for reconnection.
         await serverManager.checkServerHealth();
@@ -800,6 +911,11 @@ class _MainScreenState extends State<MainScreen>
           hasKnownOfflineServers: serverManager.offlineServerIds.isNotEmpty,
         )) {
           await binder.rebindActive();
+        }
+        if (!mounted) return;
+        if (multiServerProvider.hasConnectedServers) {
+          _offlineUntilConnected = false;
+          _handleOfflineStatusChanged();
         }
       } finally {
         setStateIfMounted(() => _isReconnecting = false);
@@ -819,7 +935,14 @@ class _MainScreenState extends State<MainScreen>
   }
 
   void _handleOfflineStatusChanged() {
-    final newOffline = _offlineModeProvider?.isOffline ?? widget.isOfflineMode;
+    final hasVisibleConnectedServers = context.read<MultiServerProvider>().hasConnectedServers;
+    if (hasVisibleConnectedServers) _offlineUntilConnected = false;
+    final providerOffline = _offlineModeProvider?.isOffline ?? false;
+    final newOffline = shouldRenderMainScreenOffline(
+      providerOffline: providerOffline,
+      startupOfflineUntilConnected: _offlineUntilConnected,
+      hasVisibleConnectedServers: hasVisibleConnectedServers,
+    );
 
     if (newOffline == _isOffline) return;
 
@@ -862,7 +985,18 @@ class _MainScreenState extends State<MainScreen>
 
     // Ensure profile settings are warmed when coming back online
     if (!_isOffline) {
-      unawaited(context.userProfile.initialize());
+      unawaited(() async {
+        final mp = context.read<MultiServerProvider>();
+        final binder = context.read<ActiveProfileBinder>();
+        binder.start();
+        if (!mp.hasConnectedServers && context.read<ActiveProfileProvider>().active != null) {
+          await binder.rebindActive();
+          if (!mounted) return;
+        }
+        await context.userProfile.initialize();
+        if (!mounted) return;
+        await _primeOnlineServices(mp.serverManager);
+      }());
     }
   }
 
@@ -890,6 +1024,18 @@ class _MainScreenState extends State<MainScreen>
         }
       }
     });
+  }
+
+  void _handleSidebarInteractionExpandedChanged(bool expanded) {
+    if (_isSidebarInteractionExpanded == expanded) return;
+    setState(() => _isSidebarInteractionExpanded = expanded);
+  }
+
+  double _sideNavigationWidth(BuildContext context, {required bool alwaysExpanded}) {
+    final isExpanded = alwaysExpanded || _isSidebarFocused || _isSidebarInteractionExpanded;
+    return isExpanded
+        ? SideNavigationRailState.expandedWidth
+        : SideNavigationRailState.collapsedWidthForContext(context);
   }
 
   /// Suppress stray back events after a child route pops.
@@ -1210,7 +1356,8 @@ class _MainScreenState extends State<MainScreen>
       return SettingValueBuilder<bool>(
         pref: SettingsService.alwaysKeepSidebarOpen,
         builder: (context, alwaysExpanded, _) {
-          final contentLeftPadding = alwaysExpanded
+          final targetContentOffset = _sideNavigationWidth(context, alwaysExpanded: alwaysExpanded);
+          final reservedContentOffset = alwaysExpanded
               ? SideNavigationRailState.expandedWidth
               : SideNavigationRailState.collapsedWidthForContext(context);
 
@@ -1227,59 +1374,81 @@ class _MainScreenState extends State<MainScreen>
                   if (searchResult == KeyEventResult.handled) return searchResult;
                   return _handleBackKey(event);
                 },
-                child: MainScreenFocusScope(
-                  focusSidebar: _focusSidebar,
-                  focusContent: _focusContent,
-                  isSidebarFocused: _isSidebarFocused,
-                  selectLibrary: _selectLibrary,
-                  child: SideNavigationScope(
-                    child: Stack(
-                      children: [
-                        // Content with animated left padding based on sidebar state
-                        Positioned.fill(
-                          child: AnimatedPadding(
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeOutCubic,
-                            padding: EdgeInsets.only(left: contentLeftPadding),
-                            child: FocusScope(
-                              node: _contentFocusScope,
-                              // No autofocus - we control focus programmatically to prevent
-                              // autofocus from stealing focus back after setState() rebuilds
-                              child: _buildTickerAwareStack(),
-                            ),
-                          ),
-                        ),
-                        // Sidebar overlays content when expanded (unless always expanded)
-                        Positioned(
-                          top: 0,
-                          bottom: 0,
-                          left: 0,
-                          child: FocusScope(
-                            node: _sidebarFocusScope,
-                            child: SideNavigationRail(
-                              key: _sideNavKey,
-                              selectedTab: _currentTab,
-                              selectedLibraryKey: _selectedLibraryGlobalKey,
-                              isOfflineMode: _isOffline,
-                              isSidebarFocused: _isSidebarFocused,
-                              alwaysExpanded: alwaysExpanded,
-                              isReconnecting: _isReconnecting,
-                              onDestinationSelected: (tab) {
-                                _selectTab(tab);
-                                _focusContent();
-                              },
-                              onLibrarySelected: (key) {
-                                _selectLibrary(key);
-                                _focusContent();
-                              },
-                              onNavigateToContent: _focusContent,
-                              onReconnect: _triggerReconnect,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                child: TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 200),
+                  curve: Curves.easeOutCubic,
+                  tween: Tween<double>(end: targetContentOffset),
+                  child: FocusScope(
+                    node: _contentFocusScope,
+                    // No autofocus - we control focus programmatically to prevent
+                    // autofocus from stealing focus back after setState() rebuilds
+                    child: _buildTickerAwareStack(),
                   ),
+                  builder: (context, contentLeftPadding, contentChild) {
+                    return LayoutBuilder(
+                      builder: (context, constraints) {
+                        final viewportWidth = constraints.maxWidth;
+                        final contentLayout = mainScreenSideNavigationContentLayout(
+                          viewportWidth: viewportWidth,
+                          currentSideNavigationWidth: contentLeftPadding,
+                          reservedSideNavigationWidth: reservedContentOffset,
+                        );
+                        return MainScreenFocusScope(
+                          focusSidebar: _focusSidebar,
+                          focusContent: _focusContent,
+                          isSidebarFocused: _isSidebarFocused,
+                          sideNavigationWidth: targetContentOffset,
+                          reservedSideNavigationWidth: reservedContentOffset,
+                          foregroundLeft: contentLayout.left,
+                          foregroundWidth: contentLayout.width,
+                          viewportWidth: viewportWidth,
+                          selectLibrary: _selectLibrary,
+                          child: SideNavigationScope(
+                            child: Stack(
+                              clipBehavior: Clip.hardEdge,
+                              children: [
+                                Positioned(
+                                  top: 0,
+                                  bottom: 0,
+                                  left: contentLayout.left,
+                                  width: contentLayout.width,
+                                  child: contentChild!,
+                                ),
+                                Positioned(
+                                  top: 0,
+                                  bottom: 0,
+                                  left: 0,
+                                  child: FocusScope(
+                                    node: _sidebarFocusScope,
+                                    child: SideNavigationRail(
+                                      key: _sideNavKey,
+                                      selectedTab: _currentTab,
+                                      selectedLibraryKey: _selectedLibraryGlobalKey,
+                                      isOfflineMode: _isOffline,
+                                      isSidebarFocused: _isSidebarFocused,
+                                      alwaysExpanded: alwaysExpanded,
+                                      isReconnecting: _isReconnecting,
+                                      onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
+                                      onDestinationSelected: (tab) {
+                                        _selectTab(tab);
+                                        _focusContent();
+                                      },
+                                      onLibrarySelected: (key) {
+                                        _selectLibrary(key);
+                                        _focusContent();
+                                      },
+                                      onNavigateToContent: _focusContent,
+                                      onReconnect: _triggerReconnect,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
               ),
             ),

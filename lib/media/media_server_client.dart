@@ -505,7 +505,8 @@ abstract class MediaServerClient {
   /// Resolve the video URL, media info, and external subtitle list for
   /// playback. Backends own the per-backend particulars: Plex runs the
   /// transcode-decision flow when [PlaybackInitializationOptions.qualityPreset]
-  /// is non-original; Jellyfin always direct-streams. Throws
+  /// is non-original; Jellyfin asks PlaybackInfo for a matching stream when a
+  /// non-original preset is explicitly selected. Throws
   /// [PlaybackException] when the item can't be resolved (no MediaSources,
   /// no playable URL, transcode decision unavailable).
   ///

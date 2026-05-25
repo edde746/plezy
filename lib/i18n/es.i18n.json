@@ -414,7 +414,7 @@
     "nextChapterButton": "Capítulo siguiente",
     "muteButton": "Silenciar",
     "unmuteButton": "Activar sonido",
-    "settingsButton": "Ajustes de video",
+    "settingsButton": "Ajustes de reproducción",
     "tracksButton": "Audio y subtítulos",
     "chaptersButton": "Capítulos",
     "versionsButton": "Versiones de video",
@@ -1076,7 +1076,6 @@
     }
   },
   "videoSettings": {
-    "playbackSettings": "Ajustes de reproducción",
     "playbackSpeed": "Velocidad de reproducción",
     "sleepTimer": "Temporizador de apagado",
     "audioSync": "Sincronización de audio",

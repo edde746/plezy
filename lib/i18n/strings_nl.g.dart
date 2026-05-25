@@ -575,7 +575,7 @@ class _TranslationsVideoControlsNl extends TranslationsVideoControlsEn {
 	@override String get nextChapterButton => 'Volgend hoofdstuk';
 	@override String get muteButton => 'Dempen';
 	@override String get unmuteButton => 'Dempen opheffen';
-	@override String get settingsButton => 'Video-instellingen';
+	@override String get settingsButton => 'Afspeelinstellingen';
 	@override String get tracksButton => 'Audio en ondertitels';
 	@override String get chaptersButton => 'Hoofdstukken';
 	@override String get versionsButton => 'Videoversies';
@@ -1302,7 +1302,6 @@ class _TranslationsVideoSettingsNl extends TranslationsVideoSettingsEn {
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get playbackSettings => 'Afspeelinstellingen';
 	@override String get playbackSpeed => 'Afspeelsnelheid';
 	@override String get sleepTimer => 'Slaaptimer';
 	@override String get audioSync => 'Audio synchronisatie';
@@ -2187,7 +2186,7 @@ extension on TranslationsNl {
 			'videoControls.nextChapterButton' => 'Volgend hoofdstuk',
 			'videoControls.muteButton' => 'Dempen',
 			'videoControls.unmuteButton' => 'Dempen opheffen',
-			'videoControls.settingsButton' => 'Video-instellingen',
+			'videoControls.settingsButton' => 'Afspeelinstellingen',
 			'videoControls.tracksButton' => 'Audio en ondertitels',
 			'videoControls.chaptersButton' => 'Hoofdstukken',
 			'videoControls.versionsButton' => 'Videoversies',
@@ -2787,7 +2786,6 @@ extension on TranslationsNl {
 			'companionRemote.remote.subtitles' => 'Ondertitels',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Zoeken op desktop...',
-			'videoSettings.playbackSettings' => 'Afspeelinstellingen',
 			'videoSettings.playbackSpeed' => 'Afspeelsnelheid',
 			'videoSettings.sleepTimer' => 'Slaaptimer',
 			'videoSettings.audioSync' => 'Audio synchronisatie',
@@ -2827,9 +2825,9 @@ extension on TranslationsNl {
 			'metadataEdit.summary' => 'Samenvatting',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Achtergrond',
+			'metadataEdit.logo' => 'Logo',
 			_ => null,
 		} ?? switch (path) {
-			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Vierkante afbeelding',
 			'metadataEdit.selectPoster' => 'Poster selecteren',
 			'metadataEdit.selectBackground' => 'Achtergrond selecteren',

@@ -1135,14 +1135,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       );
     } else if (selectedLibrary != null) {
       Widget buildTab(int index) {
-        return ClipRect(
-          child: _buildTabContent(
-            _visibleTabs[index],
-            library: selectedLibrary,
-            isActive: tabController.index == index,
-            tabIndex: index,
-          ),
+        final tabContent = _buildTabContent(
+          _visibleTabs[index],
+          library: selectedLibrary,
+          isActive: tabController.index == index,
+          tabIndex: index,
         );
+        if (useTvRecommendedBackdrop) return tabContent;
+
+        return ClipRect(child: tabContent);
       }
 
       Widget buildTabs({bool activeOnly = false}) {
@@ -1169,6 +1170,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           onKeyEvent: (_, event) => event.logicalKey.isDpadDirection ? KeyEventResult.handled : KeyEventResult.ignored,
           child: Stack(
             fit: StackFit.expand,
+            clipBehavior: Clip.none,
             children: [
               buildTabs(activeOnly: true),
               Positioned(top: 0, left: 0, right: 0, child: ExcludeFocusTraversal(child: buildTransparentTvTopBar())),

@@ -283,7 +283,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   String _getTitle() {
     switch (_currentView) {
       case _SettingsView.menu:
-        return t.videoSettings.playbackSettings;
+        return t.videoControls.settingsButton;
       case _SettingsView.speed:
         return t.videoSettings.playbackSpeed;
       case _SettingsView.versionQuality:
@@ -599,7 +599,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
       initialData: widget.player.state.rate,
       builder: (context, snapshot) {
         final currentRate = snapshot.data ?? 1.0;
-        final speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 2.5, 3.0];
+        final speeds = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25, 2.5, 2.75, 3.0];
 
         return ListView.builder(
           itemCount: speeds.length,

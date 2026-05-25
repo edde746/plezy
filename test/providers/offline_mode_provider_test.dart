@@ -1,6 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:vibe_stream/connection/connection.dart';
 import 'package:vibe_stream/providers/offline_mode_provider.dart';
+import 'package:vibe_stream/providers/multi_server_provider.dart';
+import 'package:vibe_stream/services/data_aggregation_service.dart';
+import 'package:vibe_stream/services/jellyfin_client.dart';
 import 'package:vibe_stream/services/multi_server_manager.dart';
+import 'package:vibe_stream/services/plex_auth_service.dart';
 
 import '../test_helpers/prefs.dart';
 
@@ -112,5 +119,140 @@ void main() {
       p.dispose();
       manager.dispose();
     });
+
+    test('auth-error-only visible servers do not collapse to generic offline', () async {
+      final manager = MultiServerManager();
+      final client = JellyfinClient.forTesting(
+        connection: _jellyfinConnection(),
+        httpClient: MockClient((_) async => http.Response('', 401)),
+      );
+      manager.debugRegisterJellyfinClientForTesting(client, online: false);
+      final multi = MultiServerProvider(manager, DataAggregationService(manager));
+      final p = OfflineModeProvider(manager, multiServerProvider: multi);
+      await p.initialize();
+
+      manager.debugMarkAuthErrorForTesting('jf-machine');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(multi.authErrorServerIds, contains('jf-machine'));
+      expect(p.isOffline, isFalse);
+
+      p.dispose();
+      multi.dispose();
+      manager.dispose();
+    });
+
+    test('expected but unreachable visible servers enter offline without live clients', () async {
+      final manager = MultiServerManager();
+      final multi = MultiServerProvider(manager, DataAggregationService(manager));
+      final p = OfflineModeProvider(manager, multiServerProvider: multi);
+      await p.initialize();
+      manager.updateServerStatus('plex-server', false);
+      await Future<void>.delayed(Duration.zero);
+      expect(p.isOffline, isFalse);
+
+      var notifications = 0;
+      p.addListener(() => notifications++);
+
+      multi.setExpectedVisibleServerIds({'plex-server'});
+      multi.setVisibleServerIds(<String>{});
+      await Future<void>.delayed(Duration.zero);
+
+      expect(p.isOffline, isTrue);
+      expect(notifications, 1);
+
+      p.dispose();
+      multi.dispose();
+      manager.dispose();
+    });
+
+    test('expected but unreachable profile servers enter offline once visibility settles', () async {
+      final manager = MultiServerManager();
+      final multi = MultiServerProvider(manager, DataAggregationService(manager));
+      final p = OfflineModeProvider(manager, multiServerProvider: multi);
+
+      expect(p.isOffline, isFalse);
+
+      var notifications = 0;
+      p.addListener(() => notifications++);
+
+      multi.setExpectedVisibleServerIds({'jf-machine'});
+      await Future<void>.delayed(Duration.zero);
+
+      expect(p.isOffline, isFalse);
+      expect(notifications, 0);
+
+      multi.setVisibleServerIds(<String>{});
+      await Future<void>.delayed(Duration.zero);
+
+      expect(p.isOffline, isTrue);
+      expect(notifications, 1);
+
+      p.dispose();
+      multi.dispose();
+      manager.dispose();
+    });
+
+    test('Plex auth errors without live clients stay out of generic offline', () async {
+      final manager = MultiServerManager();
+      final multi = MultiServerProvider(manager, DataAggregationService(manager));
+      final p = OfflineModeProvider(manager, multiServerProvider: multi);
+      await p.initialize();
+
+      multi.setExpectedVisibleServerIds({'plex-server'});
+      manager.markPlexConnectionAuthError(_plexConnection());
+      await Future<void>.delayed(Duration.zero);
+
+      expect(multi.authErrorServerIds, ['plex-server']);
+      expect(multi.authErrorServers.single.displayName, 'Plex');
+      expect(p.isOffline, isFalse);
+
+      p.dispose();
+      multi.dispose();
+      manager.dispose();
+    });
   });
+}
+
+PlexAccountConnection _plexConnection() {
+  return PlexAccountConnection(
+    id: 'plex-account',
+    accountToken: 'account-token',
+    clientIdentifier: 'client-id',
+    accountLabel: 'Plex Account',
+    servers: [
+      PlexServer(
+        name: 'Plex',
+        clientIdentifier: 'plex-server',
+        accessToken: 'server-token',
+        connections: [
+          PlexConnection(
+            protocol: 'https',
+            address: 'plex.example',
+            port: 32400,
+            uri: 'https://plex.example:32400',
+            local: true,
+            relay: false,
+            ipv6: false,
+          ),
+        ],
+        owned: true,
+      ),
+    ],
+    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+  );
+}
+
+JellyfinConnection _jellyfinConnection() {
+  return JellyfinConnection(
+    id: 'jf-machine/user-a',
+    baseUrl: 'https://jellyfin.example',
+    serverName: 'Jellyfin',
+    serverMachineId: 'jf-machine',
+    userId: 'user-a',
+    userName: 'User A',
+    accessToken: 'token',
+    deviceId: 'device',
+    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
+  );
 }

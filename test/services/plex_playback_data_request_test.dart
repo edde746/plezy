@@ -186,6 +186,13 @@ void main() {
         '&audioCodec=opus%2Cvorbis%2Cflac%2C*&subtitleCodec=ass%2Cpgs%2Cvobsub%2C*)',
       ),
     );
+    expect(
+      params['X-Plex-Client-Profile-Extra'],
+      contains(
+        'add-transcode-target-settings(type=videoProfile&context=streaming'
+        '&protocol=http&CopyMatroskaAttachments=true)',
+      ),
+    );
     expect(params['X-Plex-Client-Profile-Extra'], isNot(contains('protocol=hls')));
     expect(params['X-Plex-Client-Profile-Extra'], isNot(contains('type=subtitleProfile')));
   });

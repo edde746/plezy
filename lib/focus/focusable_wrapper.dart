@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../widgets/clickable_cursor.dart';
-import '../utils/app_logger.dart';
-import '../utils/platform_detector.dart';
+import '../utils/text_input_diagnostics.dart';
 import 'dpad_navigator.dart';
 import 'focus_theme.dart';
 import 'input_mode_tracker.dart';
@@ -17,8 +16,7 @@ String _describeFocusableKey(KeyEvent event) {
 }
 
 void _logFocusableWrapper(String message) {
-  if (!PlatformDetector.isTV()) return;
-  appLogger.i('TextInputDiag FocusableWrapper: $message');
+  TextInputDiagnostics.log('FocusableWrapper', message);
 }
 
 /// A wrapper widget that makes its child focusable with D-pad navigation support.

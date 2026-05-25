@@ -4,8 +4,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'app_logger.dart';
-import 'platform_detector.dart';
+import 'text_input_diagnostics.dart';
 
 String _describeSimulatedKey(KeyEvent event) {
   return 'type=${event.runtimeType} logical=${event.logicalKey.keyLabel}/${event.logicalKey.keyId} '
@@ -13,8 +12,7 @@ String _describeSimulatedKey(KeyEvent event) {
 }
 
 void _logKeySimulator(String message) {
-  if (!PlatformDetector.isTV()) return;
-  appLogger.i('TextInputDiag KeySimulator: $message');
+  TextInputDiagnostics.log('KeySimulator', message);
 }
 
 /// Shared utility for simulating key press events through the focus tree.

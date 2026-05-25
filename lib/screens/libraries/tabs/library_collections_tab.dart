@@ -176,7 +176,7 @@ class _LibraryCollectionsTabState extends BaseLibraryTabState<MediaItem, Library
   }
 
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context)?.focusSidebar();
+    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
   }
 
   @override

@@ -414,7 +414,7 @@
     "nextChapterButton": "Volgend hoofdstuk",
     "muteButton": "Dempen",
     "unmuteButton": "Dempen opheffen",
-    "settingsButton": "Video-instellingen",
+    "settingsButton": "Afspeelinstellingen",
     "tracksButton": "Audio en ondertitels",
     "chaptersButton": "Hoofdstukken",
     "versionsButton": "Videoversies",
@@ -1076,7 +1076,6 @@
     }
   },
   "videoSettings": {
-    "playbackSettings": "Afspeelinstellingen",
     "playbackSpeed": "Afspeelsnelheid",
     "sleepTimer": "Slaaptimer",
     "audioSync": "Audio synchronisatie",

@@ -6,6 +6,8 @@ import '../media/media_item.dart';
 import '../media/media_playlist.dart';
 import '../mixins/grid_focus_node_mixin.dart';
 import '../services/settings_service.dart';
+import '../utils/platform_detector.dart';
+import '../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../widgets/settings_builder.dart';
 import '../utils/grid_size_calculator.dart';
 import '../widgets/focusable_media_card.dart';
@@ -90,11 +92,11 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
 
   /// Wrap [slivers] in the standard detail-screen scaffold — PopScope that
   /// defers to [handleBackNavigation], plus a Scaffold with a CustomScrollView
-  /// bound to [scrollController]. Callers build the slivers themselves
+  /// bound as the primary scroll view. Callers build the slivers themselves
   /// (typically `[appBar, ...header, ...buildStateSlivers(), grid]`).
   Widget buildDetailScaffold({required List<Widget> slivers}) {
     return PopScope(
-      canPop: false,
+      canPop: PlatformDetector.isHandheldIOS(context),
       onPopInvokedWithResult: (didPop, result) {
         if (BackKeyCoordinator.consumeIfHandled()) return;
         if (didPop) return;
@@ -103,8 +105,12 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
           Navigator.pop(context);
         }
       },
-      child: Scaffold(
-        body: CustomScrollView(controller: scrollController, slivers: slivers),
+      child: PrimaryScrollController(
+        controller: scrollController,
+        child: IosStatusBarTapScrollToTop(
+          controller: scrollController,
+          child: Scaffold(body: CustomScrollView(primary: true, slivers: slivers)),
+        ),
       ),
     );
   }

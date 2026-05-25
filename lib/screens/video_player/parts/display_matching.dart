@@ -73,7 +73,10 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     final p = player;
     if (!mounted || !Platform.isAndroid || p == null || p is PlayerAndroid) return;
 
-    // Subscribe before flushing so the broadcast event isn't dropped when
+    final isLive = widget.isLive;
+    final targetPosition = p.state.position;
+
+    // Subscribe before refreshing so the broadcast event isn't dropped when
     // the restart fires synchronously fast.
     var timedOut = false;
     final restartFuture = p.streams.playbackRestart.first.timeout(
@@ -84,16 +87,24 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
     );
     final sw = Stopwatch()..start();
     try {
-      appLogger.d('Frame rate matching: flushing Android MPV buffers ($reason, command=drop-buffers)');
-      await p.command(['drop-buffers']);
+      if (isLive) {
+        appLogger.d('Frame rate matching: flushing Android MPV live buffers ($reason, command=drop-buffers)');
+        await p.command(['drop-buffers']);
+      } else {
+        appLogger.d(
+          'Frame rate matching: refreshing Android MPV decoder '
+          '($reason, target=${targetPosition.inMilliseconds}ms)',
+        );
+        await p.seek(targetPosition);
+      }
       await restartFuture;
       appLogger.d(
-        'Frame rate matching: flushed Android MPV buffers '
-        '($reason, waited=${sw.elapsedMilliseconds}ms, '
+        'Frame rate matching: refreshed Android MPV decoder '
+        '($reason, target=${isLive ? 'live' : '${targetPosition.inMilliseconds}ms'}, waited=${sw.elapsedMilliseconds}ms, '
         'gate=${timedOut ? 'timeout' : 'playback-restart'})',
       );
     } catch (e) {
-      appLogger.w('Failed to flush Android MPV buffers after frame rate switch ($reason)', error: e);
+      appLogger.w('Failed to refresh Android MPV decoder after frame rate switch ($reason)', error: e);
     }
   }
 

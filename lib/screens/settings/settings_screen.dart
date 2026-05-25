@@ -121,7 +121,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context)?.focusSidebar();
+    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
   }
 
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {

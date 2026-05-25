@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -142,6 +145,127 @@ void main() {
     expect(activeProfile.lastBindingSucceeded, isTrue);
     expect(binder.debugLastBoundProfileId, profile.id);
     expect(binder.consumeUserInitiatedActivation(profile.id), isFalse);
+  });
+
+  test('tracks expected Plex server ids when bind cannot create a live client', () async {
+    binder.dispose();
+    multiServerProvider.dispose();
+
+    final failingManager = _FailingPlexMultiServerManager();
+    manager = failingManager;
+    multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    binder = ActiveProfileBinder(
+      activeProfile: activeProfile,
+      connections: connections,
+      profileConnections: profileConnections,
+      serverManager: manager,
+      multiServerProvider: multiServerProvider,
+      pinPrompt: (_, {String? errorMessage}) async => null,
+      shouldDeferInitialBind: (_) async => false,
+      plexAuth: PlexAuthService.forTesting(
+        http: MediaServerHttpClient(
+          client: MockClient(
+            (_) async => http.Response(jsonEncode([_serverJson()]), 200, headers: {'content-type': 'application/json'}),
+          ),
+        ),
+      ),
+    );
+
+    final profile = await createActiveLocalProfile('local-plex-offline');
+    final account = PlexAccountConnection(
+      id: 'plex.account',
+      accountToken: 'account-token',
+      clientIdentifier: 'client-id',
+      accountLabel: 'Owner',
+      servers: [_server(accessToken: 'account-server-token')],
+      createdAt: DateTime(2026, 1, 1),
+    );
+    await connections.upsert(account);
+    await profileConnections.upsert(
+      ProfileConnection(
+        profileId: profile.id,
+        connectionId: account.id,
+        userToken: 'home-user-token',
+        userIdentifier: 'home-user-uuid',
+        tokenAcquiredAt: DateTime(2026, 1, 1),
+      ),
+    );
+
+    await binder.rebindActive();
+
+    expect(activeProfile.lastBindingSucceeded, isFalse);
+    expect(failingManager.refreshCalls, 1);
+    expect(multiServerProvider.serverIds, isEmpty);
+    expect(multiServerProvider.expectedServerIds, ['srv-1']);
+  });
+
+  test('binds Plex and Jellyfin join rows in parallel', () async {
+    binder.dispose();
+    multiServerProvider.dispose();
+
+    final mixedManager = _BlockingMixedMultiServerManager();
+    manager = mixedManager;
+    multiServerProvider = MultiServerProvider(manager, DataAggregationService(manager));
+    binder = ActiveProfileBinder(
+      activeProfile: activeProfile,
+      connections: connections,
+      profileConnections: profileConnections,
+      serverManager: manager,
+      multiServerProvider: multiServerProvider,
+      pinPrompt: (_, {String? errorMessage}) async => null,
+      shouldDeferInitialBind: (_) async => false,
+      plexAuth: PlexAuthService.forTesting(
+        http: MediaServerHttpClient(
+          client: MockClient(
+            (_) async => http.Response(jsonEncode([_serverJson()]), 200, headers: {'content-type': 'application/json'}),
+          ),
+        ),
+      ),
+    );
+
+    final profile = await createActiveLocalProfile('local-mixed');
+    final plexAccount = PlexAccountConnection(
+      id: 'plex.account',
+      accountToken: 'account-token',
+      clientIdentifier: 'client-id',
+      accountLabel: 'Owner',
+      servers: [_server(accessToken: 'account-server-token')],
+      createdAt: DateTime(2026, 1, 1),
+    );
+    final jellyfin = _jellyfinConnection();
+    await connections.upsert(plexAccount);
+    await connections.upsert(jellyfin);
+    await profileConnections.upsert(
+      ProfileConnection(
+        profileId: profile.id,
+        connectionId: plexAccount.id,
+        userToken: 'home-user-token',
+        userIdentifier: 'home-user-uuid',
+        tokenAcquiredAt: DateTime(2026, 1, 1),
+      ),
+    );
+    await profileConnections.upsert(
+      ProfileConnection(
+        profileId: profile.id,
+        connectionId: jellyfin.id,
+        userIdentifier: jellyfin.userId,
+        tokenAcquiredAt: DateTime(2026, 1, 1),
+      ),
+    );
+
+    final bind = binder.rebindActive();
+    await mixedManager.plexStarted.future;
+    await Future<void>.delayed(Duration.zero);
+
+    expect(mixedManager.jellyfinStarted.isCompleted, isTrue);
+    expect(activeProfile.isBinding, isTrue);
+
+    mixedManager.releasePlex.complete();
+    await bind;
+
+    expect(activeProfile.lastBindingSucceeded, isTrue);
+    expect(multiServerProvider.onlineServerIds, ['jf-machine']);
+    expect(multiServerProvider.expectedServerIds.toSet(), {'srv-1', 'jf-machine'});
   });
 
   group('Plex Home token cache policy', () {
@@ -289,6 +413,39 @@ PlexServer _server({required String accessToken}) {
   );
 }
 
+Map<String, dynamic> _serverJson() => {
+  'name': 'Home Server',
+  'clientIdentifier': 'srv-1',
+  'accessToken': 'server-token',
+  'owned': true,
+  'provides': 'server',
+  'connections': [
+    {
+      'protocol': 'https',
+      'address': '192.168.1.3',
+      'port': 32400,
+      'uri': 'https://192-168-1-3.machine.plex.direct:32400',
+      'local': true,
+      'relay': false,
+      'IPv6': false,
+    },
+  ],
+};
+
+JellyfinConnection _jellyfinConnection() {
+  return JellyfinConnection(
+    id: 'jf-machine/user-a',
+    baseUrl: 'https://jellyfin.example',
+    serverName: 'Jellyfin',
+    serverMachineId: 'jf-machine',
+    userId: 'user-a',
+    userName: 'User A',
+    accessToken: 'token',
+    deviceId: 'device',
+    createdAt: DateTime(2026, 1, 1),
+  );
+}
+
 class _CapturingMultiServerManager extends MultiServerManager {
   int refreshCalls = 0;
   PlexAccountConnection? lastConnection;
@@ -301,5 +458,47 @@ class _CapturingMultiServerManager extends MultiServerManager {
     refreshCalls++;
     lastConnection = connection;
     return connection.servers.map((server) => server.clientIdentifier).toSet();
+  }
+}
+
+class _FailingPlexMultiServerManager extends MultiServerManager {
+  int refreshCalls = 0;
+
+  @override
+  Future<Set<String>> refreshTokensForProfile(
+    PlexAccountConnection connection, {
+    Duration timeout = MediaServerTimeouts.perServerConnect,
+  }) async {
+    refreshCalls++;
+    for (final server in connection.servers) {
+      updateServerStatus(server.clientIdentifier, false);
+    }
+    return const {};
+  }
+}
+
+class _BlockingMixedMultiServerManager extends MultiServerManager {
+  final plexStarted = Completer<void>();
+  final releasePlex = Completer<void>();
+  final jellyfinStarted = Completer<void>();
+
+  @override
+  Future<Set<String>> refreshTokensForProfile(
+    PlexAccountConnection connection, {
+    Duration timeout = MediaServerTimeouts.perServerConnect,
+  }) async {
+    if (!plexStarted.isCompleted) plexStarted.complete();
+    await releasePlex.future;
+    for (final server in connection.servers) {
+      updateServerStatus(server.clientIdentifier, false);
+    }
+    return const {};
+  }
+
+  @override
+  Future<bool> addJellyfinConnection(JellyfinConnection connection) async {
+    if (!jellyfinStarted.isCompleted) jellyfinStarted.complete();
+    updateServerStatus(connection.serverMachineId, true);
+    return true;
   }
 }

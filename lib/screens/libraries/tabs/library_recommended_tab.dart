@@ -245,7 +245,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context)?.focusSidebar();
+    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
   }
 
   // Extra top padding for focus decoration (scale + border extends beyond item bounds)
@@ -302,18 +302,25 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     final svc = SettingsService.instanceOrNull!;
     final client = context.tryGetMediaClientForServer(spotlight?.serverId ?? widget.library.serverId);
     final scale = TvLayoutConstants.scaleForSize(size);
+    final sidebarBleed = MainScreenFocusScope.sideNavigationBleedOf(
+      context,
+      alwaysKeepSidebarOpen: svc.read(SettingsService.alwaysKeepSidebarOpen),
+    );
+    final railSize = MainScreenFocusScope.foregroundSizeOf(context);
+    final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
+    final foregroundLeft = MainScreenFocusScope.foregroundLeftOf(context);
     final railHeight = tvHubs.isEmpty
         ? 0.0
         : TvBrowseRailLayout.estimateHeight(
-            size: size,
+            size: railSize,
             hubs: tvHubs,
             density: svc.read(SettingsService.libraryDensity),
             episodePosterMode: svc.read(SettingsService.episodePosterMode),
             tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
           );
     final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
-    final minimumSpotlightBottom = railHeight + (16 * scale);
-    final baseSpotlightBottom = (size.height * 0.53).clamp(180.0, 900.0).toDouble();
+    final minimumSpotlightBottom = railHeight + (8 * scale);
+    final baseSpotlightBottom = (size.height * 0.48).clamp(160.0, 820.0).toDouble();
     final desiredSpotlightBottom = minimumSpotlightBottom > baseSpotlightBottom
         ? minimumSpotlightBottom
         : baseSpotlightBottom;
@@ -326,16 +333,23 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
       child: SizedBox.expand(
         child: Stack(
           fit: StackFit.expand,
+          clipBehavior: Clip.none,
           children: [
-            TvSpotlightBackground(
-              item: spotlight,
-              client: client,
-              hideSpoilers: svc.read(SettingsService.hideSpoilers),
-              contentTop: spotlightTop,
-              contentBottom: spotlightBottom,
-              contentLeft: spotlightLeft,
-              compact: true,
-              showPrimaryAction: false,
+            Positioned(
+              top: 0,
+              bottom: 0,
+              left: -foregroundLeft,
+              width: fullBleedWidth,
+              child: TvSpotlightBackground(
+                item: spotlight,
+                client: client,
+                hideSpoilers: svc.read(SettingsService.hideSpoilers),
+                contentTop: spotlightTop,
+                contentBottom: spotlightBottom,
+                contentLeft: spotlightLeft + foregroundLeft,
+                compact: true,
+                showPrimaryAction: false,
+              ),
             ),
             if (tvHubs.isNotEmpty)
               Positioned(
@@ -354,6 +368,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
                   onNavigateToSidebar: _navigateToSidebar,
                   onBack: widget.onBack,
                   tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+                  backgroundBleedLeft: sidebarBleed,
                 ),
               ),
           ],

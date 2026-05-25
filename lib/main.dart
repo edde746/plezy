@@ -711,10 +711,29 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return MultiServerProvider(_serverManager, _aggregationService);
           },
         ),
+        ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
+          create: (context) {
+            final provider = OfflineModeProvider(
+              _serverManager,
+              multiServerProvider: context.read<MultiServerProvider>(),
+            );
+            provider.initialize(); // Initialize immediately so statusStream listener is ready
+            return provider;
+          },
+          update: (_, multiServerProvider, previous) {
+            final provider = previous ?? OfflineModeProvider(_serverManager, multiServerProvider: multiServerProvider);
+            provider.updateMultiServerProvider(multiServerProvider);
+            provider.initialize(); // Idempotent - safe to call again
+            return provider;
+          },
+        ),
         // Profile binder owns the cold-start client connect: Plex token
         // refresh + Jellyfin client creation. Hoisted out of MainScreen so
         // the splash can await its first settle — without this, MainScreen
         // mounts (and discover/libraries query) before any client exists.
+        // It is intentionally not auto-started here: SetupScreen first checks
+        // whether startup should go straight offline, otherwise the binder's
+        // microtask can begin network work before the offline decision lands.
         Provider<ActiveProfileBinder>(
           lazy: false,
           create: (context) {
@@ -731,21 +750,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                 return settings.read(SettingsService.requireProfileSelectionOnOpen) &&
                     activeProfile.hasMultipleProfiles;
               },
-            )..start();
+            );
           },
           dispose: (_, binder) => binder.dispose(),
-        ),
-        ChangeNotifierProxyProvider<MultiServerProvider, OfflineModeProvider>(
-          create: (_) {
-            final provider = OfflineModeProvider(_serverManager);
-            provider.initialize(); // Initialize immediately so statusStream listener is ready
-            return provider;
-          },
-          update: (_, multiServerProvider, previous) {
-            final provider = previous ?? OfflineModeProvider(_serverManager);
-            provider.initialize(); // Idempotent - safe to call again
-            return provider;
-          },
         ),
         // Download provider. Downloads are shared, but sync rules are scoped to
         // the active profile and reload when the profile changes.
@@ -1054,6 +1061,7 @@ class SetupScreen extends StatefulWidget {
 
 class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
   String _statusMessage = '';
+  bool _enteringOffline = false;
 
   // Per-server connection status: serverId -> (name, connected?)
   final Map<String, (String name, bool? connected)> _serverStatus = {};
@@ -1066,6 +1074,15 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
 
   void _setStatus(String message) {
     setStateIfMounted(() => _statusMessage = message);
+  }
+
+  Future<void> _enterOfflineMode() async {
+    if (_enteringOffline) return;
+    _enteringOffline = true;
+    _setStatus(t.common.startingOfflineMode);
+    await context.read<DownloadProvider>().ensureInitialized();
+    if (!mounted) return;
+    unawaited(Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true))));
   }
 
   Future<void> _loadSavedCredentials() async {
@@ -1153,10 +1170,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
 
     // No network — skip connection attempts and go straight to offline mode
     if (!hasNetwork) {
-      _setStatus(t.common.startingOfflineMode);
-      await context.read<DownloadProvider>().ensureInitialized();
-      if (!mounted) return;
-      unawaited(Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true))));
+      await _enterOfflineMode();
       return;
     }
 
@@ -1188,9 +1202,8 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
 
     // Snapshot Provider refs before further awaits.
     final activeProfile = context.read<ActiveProfileProvider>();
-    // Reading the binder here is enough — the Provider is `lazy: false` so
-    // it has already constructed the binder and called `start()` during
-    // MultiProvider build. We just need to wait for it.
+    // The Provider is `lazy: false` so the binder is constructed already, but
+    // SetupScreen starts it only after the offline fast path has been ruled out.
     final binder = context.read<ActiveProfileBinder>();
     final downloadProvider = context.read<DownloadProvider>();
 
@@ -1210,6 +1223,11 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     // Wire the per-server status listener before either branch so the splash
     // checkmarks fill in even while the user is choosing a profile.
     _bindServerStatusListener(activeProfile, _serverManagerFromContext);
+
+    // Start only after network/offline startup has been decided and the
+    // active profile snapshot is hydrated. This prevents an eager binder
+    // microtask from racing the no-network/manual-offline fast path.
+    binder.start();
 
     // If "prompt for profile on launch" is on (or no profile is selected
     // yet), surface the picker BEFORE waiting for the previously-active
@@ -1239,12 +1257,6 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
       // available" race the old eager-navigate flow caused.
       bindingSucceeded = await activeProfile.awaitBindingSettle();
       if (!mounted) return;
-      if (!bindingSucceeded) {
-        appLogger.w('Setup: initial profile bind failed; retrying once before entering main screen');
-        await binder.rebindActive();
-        if (!mounted) return;
-        bindingSucceeded = activeProfile.lastBindingSucceeded;
-      }
     }
 
     if (shouldEnterOfflineModeAfterStartupBind(
@@ -1252,9 +1264,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
       hasOnlineServers: _serverManagerFromContext().onlineServerIds.isNotEmpty,
     )) {
       appLogger.w('Setup: no servers online after startup bind; starting offline mode');
-      await downloadProvider.ensureInitialized();
-      if (!mounted) return;
-      unawaited(Navigator.pushReplacement(context, fadeRoute(const MainScreen(isOfflineMode: true))));
+      await _enterOfflineMode();
       return;
     }
 

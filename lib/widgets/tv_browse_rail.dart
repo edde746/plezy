@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -18,7 +19,6 @@ import '../utils/media_image_helper.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/layout_constants.dart';
-import '../utils/scroll_utils.dart';
 import 'app_icon.dart';
 import 'focus_builders.dart';
 import 'horizontal_scroll_with_arrows.dart';
@@ -55,7 +55,8 @@ class TvBrowseRailLayoutMetrics {
 }
 
 class TvBrowseRailLayout {
-  static const double compactTallPosterScale = 0.84;
+  static const double compactTallPosterScale = 0.80;
+  static const double compactEpisodeThumbnailScale = compactTallPosterScale;
 
   static double scaleForSize(Size size) => TvLayoutConstants.scaleForSize(size);
 
@@ -65,9 +66,22 @@ class TvBrowseRailLayout {
 
   static double railBottomPaddingForScale(double scale) => 8 * scale;
 
-  static double hubStripHeightForScale(double scale) => 44 * scale;
+  static double railInteractionExpansionForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
-  static double hubStripGapForScale(double scale) => 8 * scale;
+  static double hubStripHeightForScale(double scale) => 36 * scale;
+
+  static double hubStripGapForScale(double _) => 0;
+
+  static double nextHubPeekHeightForScale(double scale) => 30 * scale;
+
+  static double hubSectionHeightFor({required double scale, required double activeRailHeight}) {
+    return hubStripHeightForScale(scale) + hubStripGapForScale(scale) + activeRailHeight;
+  }
+
+  static double viewportHeightFor({required int hubCount, required double scale, required double sectionHeight}) {
+    final peekHeight = hubCount > 1 ? nextHubPeekHeightForScale(scale) : 0.0;
+    return sectionHeight + peekHeight;
+  }
 
   static bool isPersonHub(MediaHub hub) => hub.type == 'person';
 
@@ -96,6 +110,7 @@ class TvBrowseRailLayout {
     required EpisodePosterMode episodePosterMode,
     required double scale,
     double tallPosterScale = 1.0,
+    double widePosterScale = 1.0,
   }) {
     final focusExtra = FocusTheme.focusBorderWidth * 2 * scale;
     final railEdgePadding = focusExtra + (12 * scale);
@@ -113,7 +128,7 @@ class TvBrowseRailLayout {
       horizontalPadding: railEdgePadding * 2,
       itemGap: itemGap,
     );
-    final cardWidth = useWideLayout ? baseCardWidth : baseCardWidth * tallPosterScale;
+    final cardWidth = baseCardWidth * (useWideLayout ? widePosterScale : tallPosterScale);
     final posterWidth = cardWidth - (6 * scale);
     final posterHeight = isPersonHub ? posterWidth : (useWideLayout ? posterWidth * 9 / 16 : posterWidth * 1.5);
     final containerHeight = (posterHeight + ((isPersonHub ? 58 : 42) * scale)).ceilToDouble();
@@ -140,8 +155,10 @@ class TvBrowseRailLayout {
     required int density,
     required EpisodePosterMode episodePosterMode,
     EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub,
+    double Function(MediaHub hub)? widePosterScaleForHub,
     required double scale,
     double tallPosterScale = 1.0,
+    double widePosterScale = 1.0,
   }) {
     var maxHeight = 0.0;
     for (final hub in hubs) {
@@ -152,6 +169,7 @@ class TvBrowseRailLayout {
         episodePosterMode: episodePosterModeForHub?.call(hub) ?? episodePosterMode,
         scale: scale,
         tallPosterScale: tallPosterScale,
+        widePosterScale: widePosterScaleForHub?.call(hub) ?? widePosterScale,
       );
       if (metrics.height > maxHeight) maxHeight = metrics.height;
     }
@@ -170,14 +188,33 @@ class TvBrowseRailLayout {
     return (contentWidth - viewportWidth).clamp(0.0, double.infinity).toDouble();
   }
 
+  static double itemExtentForIndex({
+    required MediaHub hub,
+    required int index,
+    required TvBrowseRailLayoutMetrics metrics,
+    required double scale,
+  }) {
+    if (index == hub.items.length && hub.more) return (132 * scale) + metrics.itemGap;
+    return metrics.cardWidth + metrics.itemGap;
+  }
+
   static double scrollOffsetForIndex({
+    required MediaHub hub,
     required int index,
     required TvBrowseRailLayoutMetrics metrics,
     required double viewportWidth,
     required double maxScrollExtent,
+    required double scale,
   }) {
-    final itemExtent = metrics.cardWidth + metrics.itemGap;
-    final targetCenter = metrics.railEdgePadding + (index * itemExtent) + (itemExtent / 2);
+    final totalCount = hub.items.length + (hub.more ? 1 : 0);
+    if (totalCount == 0) return 0;
+
+    final clampedIndex = index.clamp(0, totalCount - 1).toInt();
+    final normalItemExtent = metrics.cardWidth + metrics.itemGap;
+    final normalItemsBefore = clampedIndex < hub.items.length ? clampedIndex : hub.items.length;
+    final leadingOffset = metrics.railEdgePadding + (normalItemsBefore * normalItemExtent);
+    final targetExtent = itemExtentForIndex(hub: hub, index: clampedIndex, metrics: metrics, scale: scale);
+    final targetCenter = leadingOffset + (targetExtent / 2);
     return (targetCenter - (viewportWidth / 2)).clamp(0.0, maxScrollExtent).toDouble();
   }
 
@@ -187,7 +224,9 @@ class TvBrowseRailLayout {
     required int density,
     required EpisodePosterMode episodePosterMode,
     EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub,
+    double Function(MediaHub hub)? widePosterScaleForHub,
     double tallPosterScale = 1.0,
+    double widePosterScale = 1.0,
   }) {
     if (hubs.isEmpty) return 0;
 
@@ -195,20 +234,22 @@ class TvBrowseRailLayout {
     final availableWidth = size.width - horizontalInsetForScale(scale);
     if (availableWidth <= 0) return 0;
 
-    final activeRailHeight = maxActiveRailHeight(
+    final railHeight = maxActiveRailHeight(
       hubs: hubs,
       availableWidth: availableWidth,
       density: density,
       episodePosterMode: episodePosterMode,
       episodePosterModeForHub: episodePosterModeForHub,
+      widePosterScaleForHub: widePosterScaleForHub,
       scale: scale,
       tallPosterScale: tallPosterScale,
+      widePosterScale: widePosterScale,
     );
 
+    final sectionHeight = hubSectionHeightFor(scale: scale, activeRailHeight: railHeight);
+
     return railTopPaddingForScale(scale) +
-        hubStripHeightForScale(scale) +
-        hubStripGapForScale(scale) +
-        activeRailHeight +
+        viewportHeightFor(hubCount: hubs.length, scale: scale, sectionHeight: sectionHeight) +
         railBottomPaddingForScale(scale);
   }
 }
@@ -228,10 +269,13 @@ class TvBrowseRail extends StatefulWidget {
   final VoidCallback? onBack;
   final FutureOr<bool> Function(MediaHub hub, MediaItem item)? onActivateItem;
   final double tallPosterScale;
+  final double widePosterScale;
   final String? initialHubId;
   final String? initialItemId;
   final bool autofocus;
   final EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub;
+  final double Function(MediaHub hub)? widePosterScaleForHub;
+  final double backgroundBleedLeft;
 
   const TvBrowseRail({
     super.key,
@@ -249,10 +293,13 @@ class TvBrowseRail extends StatefulWidget {
     this.onBack,
     this.onActivateItem,
     this.tallPosterScale = 1.0,
+    this.widePosterScale = 1.0,
     this.initialHubId,
     this.initialItemId,
     this.autofocus = false,
     this.episodePosterModeForHub,
+    this.widePosterScaleForHub,
+    this.backgroundBleedLeft = 0,
   });
 
   @override
@@ -261,25 +308,28 @@ class TvBrowseRail extends StatefulWidget {
 
 class TvBrowseRailState extends State<TvBrowseRail> {
   static const _longPressDuration = Duration(milliseconds: 500);
+  static const _navigationScrollDuration = Duration(milliseconds: 130);
+  static const _repeatNavigationScrollDuration = Duration(milliseconds: 65);
+  static const _scrollCatchUpViewportDistance = 2.5;
+  static const _inactiveHubContentOpacity = 0.7;
 
   final FocusNode _focusNode = FocusNode(debugLabel: 'tv_browse_rail');
   final Map<String, ScrollController> _scrollControllers = {};
-  final ScrollController _hubStripController = ScrollController();
-  final Map<int, GlobalKey> _hubStripKeys = {};
+  final ScrollController _verticalController = ScrollController();
+  final Map<int, GlobalKey> _hubSectionKeys = {};
   final Map<String, GlobalKey<MediaCardState>> _mediaCardKeys = {};
+  final Map<String, TvBrowseRailLayoutMetrics> _metricsByHub = {};
+  final Map<String, double> _scaleByHub = {};
 
   int _hubIndex = 0;
   int _itemIndex = 0;
-  double _itemExtent = 260;
-  double _railLeadingPadding = 0;
+  List<double> _sectionOffsets = const [];
+  double _sectionMaxScrollExtent = 0;
   Timer? _longPressTimer;
   bool _isSelectKeyDown = false;
   bool _longPressTriggered = false;
   bool _hasUserChangedHub = false;
   bool _hasUserChangedItem = false;
-  bool _railScrollCorrectionPending = false;
-  bool _hubStripCanScrollLeft = false;
-  bool _hubStripCanScrollRight = false;
 
   MediaHub? get _activeHub => widget.hubs.isEmpty ? null : widget.hubs[_hubIndex.clamp(0, widget.hubs.length - 1)];
 
@@ -292,14 +342,12 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   void initState() {
     super.initState();
     _focusNode.addListener(_handleFocusChange);
-    _hubStripController.addListener(_updateHubStripScrollState);
     _selectInitialHubIfPossible();
     final selectedInitialItem = _selectInitialItemIfPossible();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || widget.hubs.isEmpty) return;
       if (selectedInitialItem) _scrollToItem(animate: false);
-      _scrollHubStripToActive(animate: false);
-      _updateHubStripScrollState();
+      _scrollActiveHubToTop(animate: false);
       _notifyActiveHubChanged();
       _notifyFocusedItem();
       if (widget.autofocus) _focusNode.requestFocus();
@@ -309,6 +357,19 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   @override
   void didUpdateWidget(covariant TvBrowseRail oldWidget) {
     super.didUpdateWidget(oldWidget);
+    final hubStateChanged = !_hasSameHubState(oldWidget.hubs, widget.hubs);
+    final initialSelectionChanged =
+        oldWidget.initialHubId != widget.initialHubId || oldWidget.initialItemId != widget.initialItemId;
+
+    if (!hubStateChanged && !initialSelectionChanged) {
+      if (!oldWidget.autofocus && widget.autofocus) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _focusNode.requestFocus();
+        });
+      }
+      return;
+    }
+
     final oldActiveHubId = oldWidget.hubs.isEmpty
         ? null
         : oldWidget.hubs[_hubIndex.clamp(0, oldWidget.hubs.length - 1)].id;
@@ -336,15 +397,30 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     _itemIndex = _itemIndex.clamp(0, _totalItemCount(hub) == 0 ? 0 : _totalItemCount(hub) - 1);
     final selectedInitialItem = _selectInitialItemIfPossible();
     final activeHubChanged = oldActiveHubId != _activeHub?.id;
+    final shouldAlignActiveHub = selectedInitialHub || activeHubChanged || !_hasUserChangedHub;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (selectedInitialItem) _scrollToItem(animate: false);
-      _scrollHubStripToActive(animate: false);
-      _updateHubStripScrollState();
+      if (shouldAlignActiveHub) _scrollActiveHubToTop(animate: false);
       if (!oldWidget.autofocus && widget.autofocus) _focusNode.requestFocus();
       if (activeHubChanged) _notifyActiveHubChanged();
       _notifyFocusedItem();
     });
+  }
+
+  bool _hasSameHubState(List<MediaHub> oldHubs, List<MediaHub> newHubs) {
+    if (oldHubs.length != newHubs.length) return false;
+    for (var i = 0; i < oldHubs.length; i++) {
+      final oldHub = oldHubs[i];
+      final newHub = newHubs[i];
+      if (oldHub.id != newHub.id || oldHub.more != newHub.more || oldHub.items.length != newHub.items.length) {
+        return false;
+      }
+      for (var j = 0; j < oldHub.items.length; j++) {
+        if (oldHub.items[j].globalKey != newHub.items[j].globalKey) return false;
+      }
+    }
+    return true;
   }
 
   @override
@@ -352,17 +428,23 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     _longPressTimer?.cancel();
     _focusNode.removeListener(_handleFocusChange);
     _focusNode.dispose();
-    _hubStripController.removeListener(_updateHubStripScrollState);
     for (final controller in _scrollControllers.values) {
       controller.dispose();
     }
-    _hubStripController.dispose();
+    _verticalController.dispose();
     super.dispose();
   }
 
   void _handleFocusChange() {
+    if (!_focusNode.hasFocus) _resetLongPressState();
     if (_focusNode.hasFocus) _notifyFocusedItem();
     setState(() {});
+  }
+
+  void _resetLongPressState() {
+    _longPressTimer?.cancel();
+    _isSelectKeyDown = false;
+    _longPressTriggered = false;
   }
 
   int _totalItemCount(MediaHub hub) => hub.items.length + (hub.more ? 1 : 0);
@@ -453,7 +535,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         });
         _rememberFocus(hub);
         _notifyFocusedItem();
-        _scrollToItem();
+        _scrollToItem(duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
       } else {
         widget.onNavigateToSidebar?.call();
       }
@@ -468,7 +550,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         });
         _rememberFocus(hub);
         _notifyFocusedItem();
-        _scrollToItem();
+        _scrollToItem(duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
       }
       return KeyEventResult.handled;
     }
@@ -499,60 +581,52 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     if (widget.hubs.isEmpty) return;
     final next = (_hubIndex + delta).clamp(0, widget.hubs.length - 1);
     if (next == _hubIndex) return;
+    final currentHub = _activeHub;
+    if (currentHub != null) _rememberFocus(currentHub);
     final nextHub = widget.hubs[next];
-    final remembered = HubFocusMemory.getForHub(nextHub.id, _totalItemCount(nextHub));
+    final remembered = HubFocusMemory.getForHubOnly(nextHub.id, _totalItemCount(nextHub));
     setState(() {
       _hubIndex = next;
       _itemIndex = remembered.clamp(0, _totalItemCount(nextHub) == 0 ? 0 : _totalItemCount(nextHub) - 1);
       _hasUserChangedHub = true;
-      _railScrollCorrectionPending = true;
     });
     _notifyFocusedItem();
     _notifyActiveHubChanged();
-    _scrollToItemAfterLayout(animate: false, revealRail: true);
-    _scrollHubStripToActive();
+    _scrollToItemAfterLayout(animate: false);
+    _scrollActiveHubToTop();
   }
 
-  void _scrollHubStripToActive({bool animate = true}) {
+  void _scrollActiveHubToTop({bool animate = true}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final key = _hubStripKeys[_hubIndex];
+      if (_verticalController.hasClients && _hubIndex >= 0 && _hubIndex < _sectionOffsets.length) {
+        final target = _sectionOffsets[_hubIndex].clamp(0.0, _sectionMaxScrollExtent).toDouble();
+        if (animate) {
+          unawaited(
+            _verticalController.animateTo(
+              target,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+            ),
+          );
+        } else {
+          _verticalController.jumpTo(target);
+        }
+        return;
+      }
+
+      final key = _hubSectionKeys[_hubIndex];
       final context = key?.currentContext;
       if (context == null) return;
 
       unawaited(
         Scrollable.ensureVisible(
           context,
-          alignment: 0.35,
-          duration: animate ? const Duration(milliseconds: 180) : Duration.zero,
+          alignment: 0,
+          duration: animate ? const Duration(milliseconds: 250) : Duration.zero,
           curve: Curves.easeOutCubic,
-        ).then((_) {
-          if (mounted) _updateHubStripScrollState();
-        }),
+        ),
       );
-    });
-  }
-
-  void _scheduleHubStripScrollStateUpdate() {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateHubStripScrollState());
-  }
-
-  void _updateHubStripScrollState() {
-    if (!mounted) return;
-
-    var canScrollLeft = false;
-    var canScrollRight = false;
-    if (_hubStripController.hasClients && _hubStripController.position.hasContentDimensions) {
-      const edgeTolerance = 0.5;
-      final position = _hubStripController.position;
-      canScrollLeft = position.pixels > position.minScrollExtent + edgeTolerance;
-      canScrollRight = position.pixels < position.maxScrollExtent - edgeTolerance;
-    }
-
-    if (canScrollLeft == _hubStripCanScrollLeft && canScrollRight == _hubStripCanScrollRight) return;
-    setState(() {
-      _hubStripCanScrollLeft = canScrollLeft;
-      _hubStripCanScrollRight = canScrollRight;
     });
   }
 
@@ -566,32 +640,66 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     _notifyFocusedItem();
   }
 
+  void _selectHubItem(MediaHub hub, int hubIndex, int itemIndex) {
+    final totalCount = _totalItemCount(hub);
+    if (totalCount == 0) return;
+
+    final clampedItemIndex = itemIndex.clamp(0, totalCount - 1).toInt();
+    final hubChanged = _hubIndex != hubIndex;
+    final previousHub = _activeHub;
+    if (hubChanged && previousHub != null) _rememberFocus(previousHub);
+    setState(() {
+      _hubIndex = hubIndex;
+      _itemIndex = clampedItemIndex;
+      _hasUserChangedHub = true;
+      _hasUserChangedItem = true;
+    });
+    _rememberFocus(hub);
+    _notifyFocusedItem();
+    if (hubChanged) _notifyActiveHubChanged();
+    _scrollActiveHubToTop();
+    _scrollToItemAfterLayout(animate: false);
+  }
+
   void _rememberFocus(MediaHub hub) {
     HubFocusMemory.setForHub(hub.id, _itemIndex);
   }
 
-  void _scrollToItem({bool animate = true}) {
+  void _scrollToItem({bool animate = true, Duration duration = _navigationScrollDuration}) {
     final hub = _activeHub;
     if (hub == null) return;
     final controller = _scrollControllers[hub.id];
     if (controller == null) return;
-
-    scrollListToIndex(
-      controller,
-      _itemIndex,
-      itemExtent: _itemExtent,
-      leadingPadding: _railLeadingPadding,
-      animate: animate,
+    if (controller.positions.length != 1) return;
+    final metrics = _metricsByHub[hub.id];
+    if (metrics == null) return;
+    final scale = _scaleByHub[hub.id] ?? 1.0;
+    final position = controller.position;
+    final viewportWidth = position.viewportDimension;
+    final maxScrollExtent = position.maxScrollExtent;
+    if (!viewportWidth.isFinite || !maxScrollExtent.isFinite) return;
+    final target = TvBrowseRailLayout.scrollOffsetForIndex(
+      hub: hub,
+      index: _itemIndex,
+      metrics: metrics,
+      viewportWidth: viewportWidth,
+      maxScrollExtent: maxScrollExtent,
+      scale: scale,
     );
+
+    final distance = (position.pixels - target).abs();
+    if (distance < 0.5) return;
+    if (!animate || duration == Duration.zero || distance > viewportWidth * _scrollCatchUpViewportDistance) {
+      position.jumpTo(target);
+    } else {
+      unawaited(position.animateTo(target, duration: duration, curve: Curves.easeOutCubic));
+    }
   }
 
-  void _scrollToItemAfterLayout({bool animate = true, bool revealRail = false}) {
+  void _scrollToItemAfterLayout({bool animate = true}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _scrollToItem(animate: animate);
-      if (revealRail && _railScrollCorrectionPending) {
-        setState(() => _railScrollCorrectionPending = false);
-      }
     });
   }
 
@@ -600,6 +708,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     TvBrowseRailLayoutMetrics metrics,
     double viewportWidth,
     double scale,
+    int initialItemIndex,
   ) {
     return _scrollControllers.putIfAbsent(hub.id, () {
       final maxScrollExtent = TvBrowseRailLayout.estimatedMaxScrollExtent(
@@ -609,10 +718,12 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         scale: scale,
       );
       final initialScrollOffset = TvBrowseRailLayout.scrollOffsetForIndex(
-        index: _itemIndex,
+        hub: hub,
+        index: initialItemIndex,
         metrics: metrics,
         viewportWidth: viewportWidth,
         maxScrollExtent: maxScrollExtent,
+        scale: scale,
       );
       return ScrollController(initialScrollOffset: initialScrollOffset);
     });
@@ -669,316 +780,343 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
   @override
   Widget build(BuildContext context) {
-    final hub = _activeHub;
-    if (hub == null) return const SizedBox.shrink();
-    final hasFocus = _focusNode.hasFocus;
-    final theme = Theme.of(context);
-    final scale = _scale(context);
-    final horizontalInset = _horizontalInset(context);
-
-    return Focus(
-      focusNode: _focusNode,
-      onKeyEvent: _handleKeyEvent,
-      child: Container(
-        padding: EdgeInsets.fromLTRB(
-          horizontalInset,
-          TvBrowseRailLayout.railTopPaddingForScale(scale),
-          0,
-          TvBrowseRailLayout.railBottomPaddingForScale(scale),
-        ),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.transparent, theme.scaffoldBackgroundColor.withValues(alpha: 0.7)],
-          ),
-        ),
-        child: AnimatedOpacity(
-          opacity: hasFocus ? 1 : 0.6,
-          duration: FocusTheme.getAnimationDuration(context),
-          curve: Curves.easeOutCubic,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHubStrip(context),
-              SizedBox(height: TvBrowseRailLayout.hubStripGapForScale(scale)),
-              _buildActiveRail(hub, hasFocus),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHubStrip(BuildContext context) {
-    final scale = _scale(context);
-    final height = TvBrowseRailLayout.hubStripHeightForScale(scale);
-
-    return SizedBox(
-      height: height,
-      child: ExcludeFocus(
-        child: Row(
-          children: [
-            if (widget.hubs.length > 1) ...[
-              _buildHubStripAffordance(
-                scale: scale,
-                hasAbove: _hubIndex > 0,
-                hasBelow: _hubIndex < widget.hubs.length - 1,
-              ),
-              SizedBox(width: 8 * scale),
-            ],
-            Expanded(
-              child: NotificationListener<ScrollMetricsNotification>(
-                onNotification: (_) {
-                  _scheduleHubStripScrollStateUpdate();
-                  return false;
-                },
-                child: ShaderMask(
-                  blendMode: BlendMode.dstIn,
-                  shaderCallback: (bounds) {
-                    final fadeStop = bounds.width <= 0
-                        ? 0.08
-                        : ((32 * scale) / bounds.width).clamp(0.02, 0.12).toDouble();
-                    return LinearGradient(
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                      colors: [
-                        _hubStripCanScrollLeft ? Colors.transparent : Colors.white,
-                        Colors.white,
-                        Colors.white,
-                        _hubStripCanScrollRight ? Colors.transparent : Colors.white,
-                      ],
-                      stops: [0, fadeStop, 1 - fadeStop, 1],
-                    ).createShader(bounds);
-                  },
-                  child: ListView.separated(
-                    controller: _hubStripController,
-                    scrollDirection: Axis.horizontal,
-                    physics: const NeverScrollableScrollPhysics(),
-                    clipBehavior: Clip.hardEdge,
-                    padding: EdgeInsets.only(right: 36 * scale),
-                    itemCount: widget.hubs.length,
-                    separatorBuilder: (context, index) => SizedBox(width: 8 * scale),
-                    itemBuilder: _buildHubStripChip,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHubStripChip(BuildContext context, int index) {
-    final scale = _scale(context);
-    final colorScheme = Theme.of(context).colorScheme;
-    final isActive = index == _hubIndex;
-    final hub = widget.hubs[index];
-    final primaryColor = isActive ? Colors.white : colorScheme.onSurface.withValues(alpha: 0.62);
-
-    return AnimatedContainer(
-      key: _hubStripKeys.putIfAbsent(index, () => GlobalKey()),
-      duration: const Duration(milliseconds: 160),
-      curve: Curves.easeOutCubic,
-      padding: EdgeInsets.symmetric(horizontal: 12 * scale, vertical: 7 * scale),
-      decoration: BoxDecoration(
-        color: isActive ? Colors.white.withValues(alpha: 0.16) : Colors.transparent,
-        borderRadius: BorderRadius.circular(tokens(context).radiusMd),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppIcon(
-            widget.iconForHub(hub, index),
-            fill: 1,
-            size: 21 * scale,
-            color: isActive ? Colors.white : colorScheme.onSurface.withValues(alpha: 0.5),
-          ),
-          SizedBox(width: 8 * scale),
-          ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 260 * scale),
-            child: Text(
-              hub.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: primaryColor,
-                fontSize: 16 * scale,
-                height: 1,
-                fontWeight: isActive ? FontWeight.w800 : FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHubStripAffordance({required double scale, required bool hasAbove, required bool hasBelow}) {
-    final enabledColor = Colors.white.withValues(alpha: 0.62);
-    final disabledColor = Colors.white.withValues(alpha: 0.18);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AppIcon(
-          Symbols.keyboard_arrow_up_rounded,
-          fill: 1,
-          size: 12 * scale,
-          color: hasAbove ? enabledColor : disabledColor,
-        ),
-        AppIcon(
-          Symbols.keyboard_arrow_down_rounded,
-          fill: 1,
-          size: 12 * scale,
-          color: hasBelow ? enabledColor : disabledColor,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildActiveRail(MediaHub hub, bool hasFocus) {
+    if (_activeHub == null) return const SizedBox.shrink();
     return SettingsBuilder(
       prefs: const [SettingsService.libraryDensity, SettingsService.episodePosterMode],
       builder: (context) => LayoutBuilder(
         builder: (context, constraints) {
           final svc = SettingsService.instanceOrNull!;
-          final density = svc.read(SettingsService.libraryDensity);
-          final EpisodePosterMode episodePosterMode =
-              widget.episodePosterModeForHub?.call(hub) ?? svc.read(SettingsService.episodePosterMode);
+          final hasFocus = _focusNode.hasFocus;
+          final theme = Theme.of(context);
           final scale = _scale(context);
-          final metrics = TvBrowseRailLayout.metricsForHub(
-            hub: hub,
-            availableWidth: constraints.maxWidth,
-            density: density,
-            episodePosterMode: episodePosterMode,
-            scale: scale,
-            tallPosterScale: widget.tallPosterScale,
-          );
-          final scrollController = _scrollControllerForHub(hub, metrics, constraints.maxWidth, scale);
-          final maxActiveRailHeight = TvBrowseRailLayout.maxActiveRailHeight(
-            hubs: widget.hubs,
-            availableWidth: constraints.maxWidth,
-            density: density,
-            episodePosterMode: svc.read(SettingsService.episodePosterMode),
-            episodePosterModeForHub: widget.episodePosterModeForHub,
-            scale: scale,
-            tallPosterScale: widget.tallPosterScale,
-          );
-          _railLeadingPadding = metrics.railEdgePadding;
-          _itemExtent = metrics.cardWidth + metrics.itemGap;
+          final horizontalInset = _horizontalInset(context);
+          final interactionExpansion = TvBrowseRailLayout.railInteractionExpansionForScale(
+            scale,
+          ).clamp(0.0, horizontalInset).toDouble();
+          final width = constraints.maxWidth.isFinite ? constraints.maxWidth : MediaQuery.sizeOf(context).width;
+          final availableWidth = (width - horizontalInset).clamp(1.0, double.infinity).toDouble();
+          final railViewportWidth = (availableWidth + interactionExpansion).clamp(1.0, double.infinity).toDouble();
+          final density = svc.read(SettingsService.libraryDensity);
+          final episodePosterMode = svc.read(SettingsService.episodePosterMode);
+          final modes = [for (final hub in widget.hubs) widget.episodePosterModeForHub?.call(hub) ?? episodePosterMode];
+          final wideScales = [
+            for (final hub in widget.hubs) widget.widePosterScaleForHub?.call(hub) ?? widget.widePosterScale,
+          ];
+          final metricsByHub = [
+            for (var i = 0; i < widget.hubs.length; i++)
+              TvBrowseRailLayout.metricsForHub(
+                hub: widget.hubs[i],
+                availableWidth: availableWidth,
+                density: density,
+                episodePosterMode: modes[i],
+                scale: scale,
+                tallPosterScale: widget.tallPosterScale,
+                widePosterScale: wideScales[i],
+              ),
+          ];
+          final sectionHeights = [
+            for (final metrics in metricsByHub)
+              TvBrowseRailLayout.hubSectionHeightFor(scale: scale, activeRailHeight: metrics.height),
+          ];
+          final offsets = <double>[];
+          var nextOffset = 0.0;
+          for (final height in sectionHeights) {
+            offsets.add(nextOffset);
+            nextOffset += height;
+          }
+          _sectionOffsets = offsets;
 
-          return Opacity(
-            opacity: _railScrollCorrectionPending ? 0 : 1,
-            child: SizedBox(
-              height: maxActiveRailHeight,
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: SizedBox(
-                  height: metrics.height,
-                  child: ClipRect(
-                    clipper: _RailClipper(
-                      rightOverflow: metrics.railEdgePadding + metrics.cardWidth + metrics.itemGap,
-                      verticalOverflow: metrics.focusExtra,
+          var viewportSectionHeight = 0.0;
+          for (final height in sectionHeights) {
+            if (height > viewportSectionHeight) viewportSectionHeight = height;
+          }
+          final viewportHeight = TvBrowseRailLayout.viewportHeightFor(
+            hubCount: widget.hubs.length,
+            scale: scale,
+            sectionHeight: viewportSectionHeight,
+          );
+          final bottomPadding = (viewportHeight - sectionHeights.last).clamp(0.0, double.infinity).toDouble();
+          _sectionMaxScrollExtent = (nextOffset + bottomPadding - viewportHeight)
+              .clamp(0.0, double.infinity)
+              .toDouble();
+          final totalHeight =
+              TvBrowseRailLayout.railTopPaddingForScale(scale) +
+              viewportHeight +
+              TvBrowseRailLayout.railBottomPaddingForScale(scale);
+
+          return Focus(
+            focusNode: _focusNode,
+            onKeyEvent: _handleKeyEvent,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              heightFactor: 1,
+              child: SizedBox(
+                height: totalHeight,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    _RailBackgroundBleed(
+                      width: width,
+                      targetBleedLeft: widget.backgroundBleedLeft,
+                      backgroundColor: theme.scaffoldBackgroundColor,
                     ),
-                    child: HorizontalScrollWithArrows(
-                      controller: scrollController,
-                      builder: (scrollController) => ListView.builder(
-                        controller: scrollController,
-                        scrollDirection: Axis.horizontal,
-                        clipBehavior: Clip.none,
-                        padding: EdgeInsets.symmetric(horizontal: metrics.railEdgePadding, vertical: 6 * scale),
-                        itemCount: _totalItemCount(hub),
-                        itemBuilder: (context, index) {
-                          final isFocused = hasFocus && index == _itemIndex;
-                          if (index == hub.items.length) {
-                            return Padding(
-                              padding: EdgeInsets.only(right: metrics.itemGap),
-                              child: FocusBuilders.buildLockedFocusWrapper(
-                                context: context,
-                                isFocused: isFocused,
-                                onTap: () {
-                                  setState(() {
-                                    _itemIndex = index;
-                                    _hasUserChangedItem = true;
-                                  });
-                                  _navigateToHubDetail(hub);
-                                },
-                                child: SizedBox(
-                                  width: 132 * scale,
-                                  height: metrics.containerHeight - metrics.itemGap,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      AppIcon(
-                                        Symbols.arrow_forward_rounded,
-                                        fill: 1,
-                                        size: 42 * scale,
-                                        color: Colors.white,
-                                      ),
-                                      SizedBox(height: 6 * scale),
-                                      Text(
-                                        t.common.viewAll,
-                                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          }
-
-                          final item = hub.items[index];
-                          return Padding(
-                            padding: EdgeInsets.only(right: metrics.itemGap),
-                            child: MouseRegion(
-                              onEnter: (_) => _setHoveredItem(hub, index),
-                              child: FocusBuilders.buildLockedFocusWrapper(
-                                context: context,
-                                isFocused: isFocused,
-                                onTap: () {
-                                  setState(() {
-                                    _itemIndex = index;
-                                    _hasUserChangedItem = true;
-                                  });
-                                  _activateCurrentItem();
-                                },
-                                onLongPress: metrics.isPersonHub
-                                    ? null
-                                    : () => _cardKeyFor(hub, index).currentState?.showContextMenu(),
-                                child: metrics.isPersonHub
-                                    ? _buildPersonCard(
-                                        context,
-                                        item,
-                                        cardWidth: metrics.cardWidth,
-                                        imageSize: metrics.posterHeight,
-                                        scale: scale,
-                                      )
-                                    : MediaCard(
-                                        key: _cardKeyFor(hub, index),
-                                        item: item,
-                                        width: metrics.cardWidth,
-                                        height: metrics.posterHeight,
-                                        onRefresh: widget.onRefresh,
-                                        onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
-                                        forceGridMode: true,
-                                        isInContinueWatching: widget.isContinueWatchingHub?.call(hub) ?? false,
-                                        mixedHubContext: metrics.isMixedHub,
-                                        episodePosterModeOverride: episodePosterMode,
-                                      ),
-                              ),
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        horizontalInset,
+                        TvBrowseRailLayout.railTopPaddingForScale(scale),
+                        0,
+                        TvBrowseRailLayout.railBottomPaddingForScale(scale),
+                      ),
+                      child: AnimatedOpacity(
+                        opacity: hasFocus ? 1 : 0.6,
+                        duration: FocusTheme.getAnimationDuration(context),
+                        curve: Curves.easeOutCubic,
+                        child: ClipRect(
+                          clipper: _RailClipper(leftOverflow: horizontalInset, rightOverflow: 0, verticalOverflow: 0),
+                          child: SizedBox(
+                            height: viewportHeight,
+                            child: _buildHubSectionList(
+                              hasFocus: hasFocus,
+                              modes: modes,
+                              metricsByHub: metricsByHub,
+                              sectionHeights: sectionHeights,
+                              scale: scale,
+                              leftOverflow: horizontalInset,
+                              interactionExpansion: interactionExpansion,
+                              railViewportWidth: railViewportWidth,
+                              bottomPadding: bottomPadding,
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildHubSectionList({
+    required bool hasFocus,
+    required List<EpisodePosterMode> modes,
+    required List<TvBrowseRailLayoutMetrics> metricsByHub,
+    required List<double> sectionHeights,
+    required double scale,
+    required double leftOverflow,
+    required double interactionExpansion,
+    required double railViewportWidth,
+    required double bottomPadding,
+  }) {
+    return ListView.builder(
+      key: const ValueKey('tv_browse_rail_vertical'),
+      controller: _verticalController,
+      physics: const NeverScrollableScrollPhysics(),
+      clipBehavior: Clip.none,
+      padding: EdgeInsets.only(bottom: bottomPadding),
+      itemExtentBuilder: (index, _) => sectionHeights[index],
+      itemCount: widget.hubs.length,
+      itemBuilder: (context, hubIndex) {
+        final hub = widget.hubs[hubIndex];
+        final isActive = hubIndex == _hubIndex;
+        final metrics = metricsByHub[hubIndex];
+        final sectionHeight = sectionHeights[hubIndex];
+
+        return SizedBox(
+          key: _hubSectionKeys.putIfAbsent(hubIndex, () => GlobalKey()),
+          height: sectionHeight,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
+              SizedBox(height: TvBrowseRailLayout.hubStripGapForScale(scale)),
+              AnimatedOpacity(
+                opacity: isActive ? 1 : _inactiveHubContentOpacity,
+                duration: FocusTheme.getAnimationDuration(context),
+                curve: Curves.easeOutCubic,
+                child: _buildHubRail(
+                  hub: hub,
+                  hubIndex: hubIndex,
+                  hasFocus: hasFocus,
+                  episodePosterMode: modes[hubIndex],
+                  metrics: metrics,
+                  scale: scale,
+                  leftOverflow: leftOverflow,
+                  interactionExpansion: interactionExpansion,
+                  railViewportWidth: railViewportWidth,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildHubHeader(
+    BuildContext context, {
+    required MediaHub hub,
+    required int hubIndex,
+    required bool isActive,
+    required double scale,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final titleColor = isActive ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.54);
+    final iconColor = isActive ? colorScheme.onSurface : colorScheme.onSurface.withValues(alpha: 0.42);
+
+    return SizedBox(
+      height: TvBrowseRailLayout.hubStripHeightForScale(scale),
+      child: ExcludeFocus(
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Row(
+            children: [
+              AppIcon(widget.iconForHub(hub, hubIndex), fill: 1, size: 20 * scale, color: iconColor),
+              SizedBox(width: 8 * scale),
+              Expanded(
+                child: Text(
+                  hub.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: titleColor,
+                    fontSize: 18 * scale,
+                    height: 1,
+                    fontWeight: isActive ? FontWeight.w800 : FontWeight.w700,
+                  ),
+                ),
+              ),
+              if (hub.more) ...[
+                SizedBox(width: 8 * scale),
+                AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 20 * scale, color: iconColor),
+                SizedBox(width: 30 * scale),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHubRail({
+    required MediaHub hub,
+    required int hubIndex,
+    required bool hasFocus,
+    required EpisodePosterMode episodePosterMode,
+    required TvBrowseRailLayoutMetrics metrics,
+    required double scale,
+    required double leftOverflow,
+    required double interactionExpansion,
+    required double railViewportWidth,
+  }) {
+    final isActiveHub = hubIndex == _hubIndex;
+    final totalCount = _totalItemCount(hub);
+    final inactiveIndex = HubFocusMemory.getForHubOnly(hub.id, totalCount);
+    final focusedIndex = isActiveHub ? _itemIndex : inactiveIndex;
+    final scrollController = _scrollControllerForHub(hub, metrics, railViewportWidth, scale, focusedIndex);
+    _metricsByHub[hub.id] = metrics;
+    _scaleByHub[hub.id] = scale;
+
+    return Transform.translate(
+      offset: Offset(-interactionExpansion, 0),
+      child: SizedBox(
+        width: railViewportWidth,
+        height: metrics.height,
+        child: ClipRect(
+          clipper: _RailClipper(
+            leftOverflow: leftOverflow,
+            rightOverflow: metrics.railEdgePadding + metrics.cardWidth + metrics.itemGap,
+            verticalOverflow: metrics.focusExtra,
+          ),
+          child: HorizontalScrollWithArrows(
+            controller: scrollController,
+            builder: (scrollController) => ListView.builder(
+              controller: scrollController,
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              padding: EdgeInsets.fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 6 * scale),
+              itemExtentBuilder: (itemIndex, _) =>
+                  TvBrowseRailLayout.itemExtentForIndex(hub: hub, index: itemIndex, metrics: metrics, scale: scale),
+              itemCount: totalCount,
+              itemBuilder: (context, itemIndex) {
+                final isFocused = hasFocus && isActiveHub && itemIndex == _itemIndex;
+                if (itemIndex == hub.items.length) {
+                  return Padding(
+                    padding: EdgeInsets.only(right: metrics.itemGap),
+                    child: FocusBuilders.buildLockedFocusWrapper(
+                      context: context,
+                      isFocused: isFocused,
+                      onTap: () {
+                        _selectHubItem(hub, hubIndex, itemIndex);
+                        _navigateToHubDetail(hub);
+                      },
+                      child: SizedBox(
+                        width: 132 * scale,
+                        height: metrics.containerHeight - metrics.itemGap,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            AppIcon(Symbols.arrow_forward_rounded, fill: 1, size: 42 * scale, color: Colors.white),
+                            SizedBox(height: 6 * scale),
+                            Text(
+                              t.common.viewAll,
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                final item = hub.items[itemIndex];
+                return Padding(
+                  padding: EdgeInsets.only(right: metrics.itemGap),
+                  child: MouseRegion(
+                    onEnter: (_) => _setHoveredItem(hub, itemIndex),
+                    child: FocusBuilders.buildLockedFocusWrapper(
+                      context: context,
+                      isFocused: isFocused,
+                      onTap: () {
+                        _selectHubItem(hub, hubIndex, itemIndex);
+                        unawaited(_activateCurrentItem());
+                      },
+                      onLongPress: metrics.isPersonHub
+                          ? null
+                          : () {
+                              _selectHubItem(hub, hubIndex, itemIndex);
+                              _cardKeyFor(hub, itemIndex).currentState?.showContextMenu();
+                            },
+                      child: metrics.isPersonHub
+                          ? _buildPersonCard(
+                              context,
+                              item,
+                              cardWidth: metrics.cardWidth,
+                              imageSize: metrics.posterHeight,
+                              scale: scale,
+                            )
+                          : MediaCard(
+                              key: _cardKeyFor(hub, itemIndex),
+                              item: item,
+                              width: metrics.cardWidth,
+                              height: metrics.posterHeight,
+                              onRefresh: widget.onRefresh,
+                              onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
+                              forceGridMode: true,
+                              isInContinueWatching: widget.isContinueWatchingHub?.call(hub) ?? false,
+                              mixedHubContext: metrics.isMixedHub,
+                              episodePosterModeOverride: episodePosterMode,
+                            ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1045,18 +1183,51 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   }
 }
 
+class _RailBackgroundBleed extends StatelessWidget {
+  final double width;
+  final double targetBleedLeft;
+  final Color backgroundColor;
+
+  const _RailBackgroundBleed({required this.width, required this.targetBleedLeft, required this.backgroundColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(end: targetBleedLeft),
+      duration: FocusTheme.getAnimationDuration(context),
+      curve: Curves.easeOutCubic,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.transparent, backgroundColor.withValues(alpha: 0.7)],
+          ),
+        ),
+      ),
+      builder: (context, bleedLeft, child) {
+        final backgroundWidth = math.max(width + bleedLeft, MediaQuery.sizeOf(context).width);
+        return Positioned(top: 0, bottom: 0, left: -bleedLeft, width: backgroundWidth, child: child!);
+      },
+    );
+  }
+}
+
 class _RailClipper extends CustomClipper<Rect> {
+  final double leftOverflow;
   final double rightOverflow;
   final double verticalOverflow;
 
-  const _RailClipper({required this.rightOverflow, required this.verticalOverflow});
+  const _RailClipper({this.leftOverflow = 0, required this.rightOverflow, required this.verticalOverflow});
 
   @override
   Rect getClip(Size size) =>
-      Rect.fromLTRB(0, -verticalOverflow, size.width + rightOverflow, size.height + verticalOverflow);
+      Rect.fromLTRB(-leftOverflow, -verticalOverflow, size.width + rightOverflow, size.height + verticalOverflow);
 
   @override
   bool shouldReclip(covariant _RailClipper oldClipper) {
-    return oldClipper.rightOverflow != rightOverflow || oldClipper.verticalOverflow != verticalOverflow;
+    return oldClipper.leftOverflow != leftOverflow ||
+        oldClipper.rightOverflow != rightOverflow ||
+        oldClipper.verticalOverflow != verticalOverflow;
   }
 }

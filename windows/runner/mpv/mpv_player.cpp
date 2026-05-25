@@ -45,8 +45,8 @@ bool MpvPlayer::Initialize(HWND container, HWND flutter_window) {
   mpv_set_option_string(mpv_, "input-vo-keyboard", "no");
   mpv_set_option_string(mpv_, "osc", "no");
 
-  // HDR passthrough - let mpv handle color space
-  mpv_set_option_string(mpv_, "target-colorspace-hint", "yes");
+  // Let mpv use display/context detection instead of forcing HDR signaling.
+  mpv_set_option_string(mpv_, "target-colorspace-hint", "auto");
 
   // Fallback tone mapping when display doesn't support HDR
   mpv_set_option_string(mpv_, "tone-mapping", "auto");
@@ -506,7 +506,7 @@ void MpvPlayer::SetHDREnabled(bool enabled, StatusCallback callback) {
   hdr_enabled_ = enabled;
 
   if (mpv_) {
-    SetPropertyAsync("target-colorspace-hint", enabled ? "yes" : "no", std::move(callback));
+    SetPropertyAsync("target-colorspace-hint", enabled ? "auto" : "no", std::move(callback));
   } else if (callback) {
     callback(0);
   }
@@ -516,7 +516,7 @@ void MpvPlayer::SetHDREnabled(bool enabled, StatusCallback callback) {
 
 void MpvPlayer::UpdateHDRMode(double sigPeak) {
   // On Windows, mpv handles HDR passthrough automatically when:
-  // - target-colorspace-hint=yes
+  // - target-colorspace-hint=auto
   // - Windows HDR is enabled in Display Settings
   // - Display supports HDR
   // No explicit DXGI calls needed - mpv's gpu-next/vulkan handles it

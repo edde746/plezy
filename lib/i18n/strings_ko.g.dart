@@ -575,7 +575,7 @@ class _TranslationsVideoControlsKo extends TranslationsVideoControlsEn {
 	@override String get nextChapterButton => '다음 챕터';
 	@override String get muteButton => '음소거';
 	@override String get unmuteButton => '음소거 해제';
-	@override String get settingsButton => '동영상 설정';
+	@override String get settingsButton => '재생 설정';
 	@override String get tracksButton => '오디오 및 자막';
 	@override String get chaptersButton => '챕터';
 	@override String get versionsButton => '동영상 버전';
@@ -1302,7 +1302,6 @@ class _TranslationsVideoSettingsKo extends TranslationsVideoSettingsEn {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get playbackSettings => '재생 설정';
 	@override String get playbackSpeed => '재생 속도';
 	@override String get sleepTimer => '취침 타이머';
 	@override String get audioSync => '오디오 동기화';
@@ -2187,7 +2186,7 @@ extension on TranslationsKo {
 			'videoControls.nextChapterButton' => '다음 챕터',
 			'videoControls.muteButton' => '음소거',
 			'videoControls.unmuteButton' => '음소거 해제',
-			'videoControls.settingsButton' => '동영상 설정',
+			'videoControls.settingsButton' => '재생 설정',
 			'videoControls.tracksButton' => '오디오 및 자막',
 			'videoControls.chaptersButton' => '챕터',
 			'videoControls.versionsButton' => '동영상 버전',
@@ -2787,7 +2786,6 @@ extension on TranslationsKo {
 			'companionRemote.remote.subtitles' => '자막',
 			'companionRemote.remote.audio' => '오디오',
 			'companionRemote.remote.searchHint' => '데스크톱에서 검색...',
-			'videoSettings.playbackSettings' => '재생 설정',
 			'videoSettings.playbackSpeed' => '재생 속도',
 			'videoSettings.sleepTimer' => '취침 타이머',
 			'videoSettings.audioSync' => '오디오 동기화',
@@ -2827,9 +2825,9 @@ extension on TranslationsKo {
 			'metadataEdit.summary' => '줄거리',
 			'metadataEdit.poster' => '포스터',
 			'metadataEdit.background' => '배경',
+			'metadataEdit.logo' => '로고',
 			_ => null,
 		} ?? switch (path) {
-			'metadataEdit.logo' => '로고',
 			'metadataEdit.squareArt' => '정사각형 아트',
 			'metadataEdit.selectPoster' => '포스터 선택',
 			'metadataEdit.selectBackground' => '배경 선택',

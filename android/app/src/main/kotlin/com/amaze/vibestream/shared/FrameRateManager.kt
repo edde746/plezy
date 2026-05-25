@@ -6,11 +6,11 @@ import android.hardware.display.DisplayManager
 import android.os.Build
 import android.os.Handler
 import android.util.Log
-import android.view.Surface
+import android.view.Display
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
-import java.math.BigDecimal
-import java.math.RoundingMode
+import kotlin.math.abs
+import kotlin.math.roundToInt
 
 class FrameRateManager(
   private val activity: Activity,
@@ -19,10 +19,22 @@ class FrameRateManager(
 ) {
   companion object {
     private const val TAG = "FrameRateManager"
-    private const val SHORT_VIDEO_LENGTH_MS = 300000L // 5 minutes
     private const val DISPLAY_SETTLE_MS = 2000L
     private const val WATCHDOG_MARGIN_MS = 3000L
+    private const val RATE_TOLERANCE = 0.1f
   }
+
+  private data class RefreshRateMatch(
+    val reason: String,
+    val priority: Int,
+    val error: Float
+  )
+
+  @RequiresApi(Build.VERSION_CODES.M)
+  private data class DisplayModeCandidate(
+    val mode: Display.Mode,
+    val match: RefreshRateMatch
+  )
 
   private var currentVideoFps: Float = 0f
   private var displayListener: DisplayManager.DisplayListener? = null
@@ -32,20 +44,18 @@ class FrameRateManager(
 
   private fun getDisplayManager(): DisplayManager = activity.getSystemService(Context.DISPLAY_SERVICE) as DisplayManager
 
-  // / Request a display frame-rate switch. Invokes [onComplete] once, either:
-  // /  - immediately with `switched=false` when no switch is needed (invalid
-  // /    fps, no matching mode, seamless fallback); or
-  // /  - after the real DisplayListener event + [DISPLAY_SETTLE_MS] + the
-  // /    caller's [extraDelayMs], with `switched=true`; or
-  // /  - via a watchdog with `switched=true` if the real event never arrives,
-  // /    so the caller doesn't hang.
-  // /
-  // / The caller is responsible for pausing playback before calling and
-  // / resuming it after [onComplete] fires.
+  // Request a display frame-rate switch. Invokes [onComplete] once, either:
+  // - immediately with `switched=false` when no switch is needed (invalid fps,
+  //   no matching mode, or already matching); or
+  // - after the real DisplayListener event + [DISPLAY_SETTLE_MS] + the caller's
+  //   [extraDelayMs], with `switched=true`; or
+  // - via a watchdog if the real event never arrives, so the caller doesn't hang.
+  //
+  // The caller is responsible for pausing playback before calling and resuming
+  // it after [onComplete] fires.
   fun setVideoFrameRate(
     fps: Float,
     videoDurationMs: Long,
-    surface: Surface?,
     extraDelayMs: Long,
     onComplete: (switched: Boolean) -> Unit
   ) {
@@ -56,22 +66,15 @@ class FrameRateManager(
       return
     }
 
-    log("fps=$fps, duration=${videoDurationMs}ms, extraDelayMs=$extraDelayMs, API=${Build.VERSION.SDK_INT}")
+    log(
+      "request fps=$fps, duration=${videoDurationMs}ms, extraDelayMs=$extraDelayMs, " +
+        "API=${Build.VERSION.SDK_INT}, currentMode=${currentModeDescription()}"
+    )
 
-    when {
-      Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-        if (surface == null) {
-          Log.d(TAG, "setVideoFrameRate: Surface not available")
-          onComplete(false)
-          return
-        }
-        setFrameRateS(fps, surface, videoDurationMs, extraDelayMs, onComplete)
-      }
-      // API R's Surface.setFrameRate() only supports seamless switching (no
-      // CHANGE_FRAME_RATE_ALWAYS), so 60→24Hz won't switch. Fall through to
-      // preferredDisplayModeId which directly sets the display mode.
-      Build.VERSION.SDK_INT >= Build.VERSION_CODES.M -> setFrameRateM(fps, extraDelayMs, onComplete)
-      else -> onComplete(false)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      setDisplayMode(fps, extraDelayMs, onComplete)
+    } else {
+      onComplete(false)
     }
   }
 
@@ -116,11 +119,11 @@ class FrameRateManager(
     }
     val cb = pendingCompletion ?: return
     pendingCompletion = null
-    Log.d(TAG, "FrameRateManager complete ($reason, switched=$switched)")
+    log("complete reason=$reason, switched=$switched, currentMode=${currentModeDescription()}")
     cb(switched)
   }
 
-  private fun registerDisplayListener(extraDelayMs: Long, onComplete: (switched: Boolean) -> Unit) {
+  private fun registerDisplayListener(fps: Float, extraDelayMs: Long, onComplete: (switched: Boolean) -> Unit) {
     // Resolve any previous pending op before starting a new one.
     firePendingCompletion("superseded", switched = false)
     pendingCompletion = onComplete
@@ -135,7 +138,7 @@ class FrameRateManager(
         getDisplayManager().unregisterDisplayListener(this)
         displayListener = null
 
-        val settle = Runnable { firePendingCompletion("display settled", switched = true) }
+        val settle = Runnable { firePendingCompletion("display settled", switched = currentRateMatch(fps) != null) }
         pendingSettleRunnable = settle
         handler.postDelayed(settle, DISPLAY_SETTLE_MS + extraDelayMs)
       }
@@ -145,148 +148,122 @@ class FrameRateManager(
     // Watchdog: if the TV never signals a display change (silently ignoring
     // the mode request), still complete after a bounded wait so the caller
     // doesn't hang.
-    val watchdog = Runnable { firePendingCompletion("watchdog", switched = true) }
+    val watchdog = Runnable { firePendingCompletion("watchdog", switched = currentRateMatch(fps) != null) }
     watchdogRunnable = watchdog
     handler.postDelayed(watchdog, DISPLAY_SETTLE_MS + extraDelayMs + WATCHDOG_MARGIN_MS)
   }
 
-  private fun currentRateMatchesFps(fps: Float): Boolean {
-    val current = activity.display?.mode?.refreshRate ?: return false
-    if (current <= 0f) return false
-    // Treat "equal within a frame" and "clean multiple" as a match —
-    // same tolerance the API M matcher uses below.
-    if (kotlin.math.abs(current - fps) < 0.1f) return true
-    val mod = current % fps
-    return mod < 0.1f || (fps - mod) < 0.1f
+  private fun matchRefreshRate(refreshRate: Float, fps: Float): RefreshRateMatch? {
+    if (refreshRate <= 0f || fps <= 0f) return null
+
+    val exactError = abs(refreshRate - fps)
+    if (exactError < RATE_TOLERANCE) {
+      return RefreshRateMatch(reason = "exact", priority = 0, error = exactError)
+    }
+
+    val multiple = (refreshRate / fps).roundToInt()
+    if (multiple > 1) {
+      val multipleError = abs(refreshRate - (fps * multiple))
+      if (multipleError < RATE_TOLERANCE) {
+        return RefreshRateMatch(reason = "${multiple}x", priority = 1, error = multipleError)
+      }
+    }
+
+    return null
   }
 
-  @RequiresApi(Build.VERSION_CODES.S)
-  private fun setFrameRateS(
-    fps: Float,
-    surface: Surface,
-    videoDurationMs: Long,
-    extraDelayMs: Long,
-    onComplete: (switched: Boolean) -> Unit
-  ) {
-    Log.d(TAG, "setFrameRateS: fps=$fps, duration=${videoDurationMs}ms")
-
-    // If the current display rate already satisfies the video fps, issue
-    // the hint for book-keeping but skip the listener — otherwise we'd
-    // wait for an onDisplayChanged event that never fires and end up
-    // burning the watchdog timeout for no reason.
-    if (currentRateMatchesFps(fps)) {
-      Log.d(TAG, "Current display rate already matches ${fps}fps, no switch needed")
-      surface.setFrameRate(
-        fps,
-        Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-        Surface.CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS
-      )
-      onComplete(false)
-      return
-    }
-
-    if (videoDurationMs < SHORT_VIDEO_LENGTH_MS) {
-      Log.d(TAG, "Short video, using seamless-only switching")
-      surface.setFrameRate(
-        fps,
-        Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-        Surface.CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS
-      )
-      onComplete(false)
-      return
-    }
-
-    var seamless = false
-    activity.display?.mode?.alternativeRefreshRates?.let { refreshRates ->
-      for (rate in refreshRates) {
-        if (fps.toString().startsWith(rate.toString()) ||
-          rate.toString().startsWith(fps.toString()) ||
-          rate % fps == 0f
-        ) {
-          seamless = true
-          break
-        }
-      }
-    }
-
-    if (seamless) {
-      log("Seamless switch available for ${fps}fps")
-      surface.setFrameRate(
-        fps,
-        Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-        Surface.CHANGE_FRAME_RATE_ALWAYS
-      )
-      registerDisplayListener(extraDelayMs, onComplete)
+  private fun currentRateMatch(fps: Float): RefreshRateMatch? {
+    val current = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+      currentDisplayMode()?.refreshRate
     } else {
-      val userPreference = getDisplayManager().matchContentFrameRateUserPreference
-      if (userPreference == DisplayManager.MATCH_CONTENT_FRAMERATE_ALWAYS) {
-        Log.d(TAG, "User preference allows non-seamless switch")
-        surface.setFrameRate(
-          fps,
-          Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-          Surface.CHANGE_FRAME_RATE_ALWAYS
-        )
-        registerDisplayListener(extraDelayMs, onComplete)
-      } else {
-        Log.d(TAG, "Non-seamless switch not allowed, using seamless-only")
-        surface.setFrameRate(
-          fps,
-          Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-          Surface.CHANGE_FRAME_RATE_ONLY_IF_SEAMLESS
-        )
-        onComplete(false)
-      }
-    }
+      null
+    } ?: return null
+    return matchRefreshRate(current, fps)
+  }
+
+  private fun currentModeDescription(): String = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+    describeMode(currentDisplayMode())
+  } else {
+    "unavailable"
   }
 
   @RequiresApi(Build.VERSION_CODES.M)
-  private fun setFrameRateM(fps: Float, extraDelayMs: Long, onComplete: (switched: Boolean) -> Unit) {
-    Log.d(TAG, "setFrameRateM: fps=$fps")
-    val wm = activity.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-
+  private fun currentDisplay(): Display? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+    activity.display
+  } else {
     @Suppress("DEPRECATION")
-    val display = wm.defaultDisplay
+    (activity.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
+  }
+
+  @RequiresApi(Build.VERSION_CODES.M)
+  private fun currentDisplayMode(): Display.Mode? = currentDisplay()?.mode
+
+  @RequiresApi(Build.VERSION_CODES.M)
+  private fun describeMode(mode: Display.Mode?): String {
+    if (mode == null) return "unknown"
+    return "#${mode.modeId} ${mode.physicalWidth}x${mode.physicalHeight}@${mode.refreshRate}Hz"
+  }
+
+  @RequiresApi(Build.VERSION_CODES.M)
+  private fun describeSupportedModes(modes: Array<Display.Mode>): String = modes.joinToString(prefix = "[", postfix = "]") { describeMode(it) }
+
+  @RequiresApi(Build.VERSION_CODES.M)
+  private fun findBestModeMatch(fps: Float, currentMode: Display.Mode, supportedModes: Array<Display.Mode>): DisplayModeCandidate? = supportedModes.asSequence()
+    .filter { mode ->
+      mode.physicalHeight == currentMode.physicalHeight &&
+        mode.physicalWidth == currentMode.physicalWidth
+    }
+    .mapNotNull { mode -> matchRefreshRate(mode.refreshRate, fps)?.let { DisplayModeCandidate(mode, it) } }
+    .minWithOrNull(
+      compareBy<DisplayModeCandidate> { it.match.priority }
+        .thenBy { it.match.error }
+        .thenBy { abs(it.mode.refreshRate - currentMode.refreshRate) }
+    )
+
+  @RequiresApi(Build.VERSION_CODES.M)
+  private fun setDisplayMode(fps: Float, extraDelayMs: Long, onComplete: (switched: Boolean) -> Unit) {
+    log("setDisplayMode fps=$fps")
+    val display = currentDisplay()
     if (display == null) {
+      log("display unavailable")
       onComplete(false)
       return
     }
 
     val supportedModes = display.supportedModes
     if (supportedModes == null) {
+      log("supported display modes unavailable")
       onComplete(false)
       return
     }
     val currentMode = display.mode
-    var modeToUse = currentMode
+    log("supported modes=${describeSupportedModes(supportedModes)}")
 
-    for (mode in supportedModes) {
-      if (mode.physicalHeight != currentMode.physicalHeight ||
-        mode.physicalWidth != currentMode.physicalWidth
-      ) {
-        continue
-      }
-
-      if (BigDecimal(fps.toString()).setScale(1, RoundingMode.FLOOR) ==
-        BigDecimal(mode.refreshRate.toString()).setScale(1, RoundingMode.FLOOR)
-      ) {
-        modeToUse = mode
-        break
-      } else if ((mode.refreshRate % fps).let { it < 0.1f || (fps - it) < 0.1f }) {
-        modeToUse = mode
-        break
-      }
-    }
-
-    if (modeToUse == currentMode) {
+    val modeMatch = findBestModeMatch(fps, currentMode, supportedModes)
+    if (modeMatch == null) {
+      log("no matching display mode for ${fps}fps at ${currentMode.physicalWidth}x${currentMode.physicalHeight}")
       onComplete(false)
       return
     }
 
-    Log.d(TAG, "Switching to mode ${modeToUse.modeId} (${modeToUse.refreshRate}Hz)")
-    activity.window?.attributes?.let { attrs ->
-      attrs.preferredDisplayModeId = modeToUse.modeId
-      activity.window?.attributes = attrs
+    val modeToUse = modeMatch.mode
+    if (modeToUse.modeId == currentMode.modeId) {
+      log("current mode already matches ${fps}fps (${modeMatch.match.reason}), no switch needed")
+      onComplete(false)
+      return
     }
-    registerDisplayListener(extraDelayMs, onComplete)
+
+    log(
+      "switching to ${describeMode(modeToUse)} for ${fps}fps " +
+        "(${modeMatch.match.reason}, error=${modeMatch.match.error})"
+    )
+    val window = activity.window
+    if (window == null) {
+      log("window unavailable")
+      onComplete(false)
+      return
+    }
+    registerDisplayListener(fps, extraDelayMs, onComplete)
+    window.attributes = window.attributes.apply { preferredDisplayModeId = modeToUse.modeId }
   }
 }

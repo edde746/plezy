@@ -949,10 +949,7 @@ void _navigateToSeason(BuildContext context, MediaItem episode, {bool isOffline 
     );
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) =>
-            MediaDetailScreen(metadata: showStub, isOffline: isOffline, initialSeasonIndex: episode.parentIndex),
-      ),
+      mediaDetailRoute(metadata: showStub, isOffline: isOffline, initialSeasonIndex: episode.parentIndex),
     );
   } else if (episode.parentId != null) {
     // Fallback: navigate to season directly if no grandparent
@@ -969,12 +966,7 @@ void _navigateToSeason(BuildContext context, MediaItem episode, {bool isOffline 
       serverId: episode.serverId,
       serverName: episode.serverName,
     );
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => MediaDetailScreen(metadata: seasonStub, isOffline: isOffline),
-      ),
-    );
+    Navigator.push(context, mediaDetailRoute(metadata: seasonStub, isOffline: isOffline));
   }
 }
 
@@ -1016,9 +1008,7 @@ void _navigateToDetail(BuildContext context, MediaItem mi, {bool isOffline = fal
 
   Navigator.push(
     context,
-    MaterialPageRoute(
-      builder: (_) => MediaDetailScreen(metadata: target, isOffline: isOffline, initialSeasonIndex: initialSeasonIndex),
-    ),
+    mediaDetailRoute(metadata: target, isOffline: isOffline, initialSeasonIndex: initialSeasonIndex),
   );
 }
 

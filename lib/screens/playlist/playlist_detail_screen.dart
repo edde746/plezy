@@ -23,6 +23,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/download_utils.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../base_media_list_detail_screen.dart';
 import '../focusable_detail_screen_mixin.dart';
 import '../../mixins/grid_focus_node_mixin.dart';
@@ -42,7 +43,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         StandardItemLoader<PlaylistDetailScreen>,
         GridFocusNodeMixin<PlaylistDetailScreen>,
         FocusableDetailScreenMixin<PlaylistDetailScreen> {
-  static const int _pageSize = 100;
+  static const int _pageSize = playlistItemsPageSize;
 
   @override
   Object get mediaItem => widget.playlist;
@@ -193,7 +194,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       if (!mounted || generation != _playlistLoadGeneration) return;
 
       setState(() {
-        items = firstPage.items;
+        items = List.of(firstPage.items);
         _playlistTotalSize = firstPage.totalCount;
         isLoading = false;
         _isLoadingFullPlaylist = firstPage.items.length < firstPage.totalCount;
@@ -233,7 +234,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         if (!mounted || generation != _playlistLoadGeneration) return;
         if (page.items.isEmpty) break;
         setState(() {
-          items.addAll(page.items);
+          items = List.of(items)..addAll(page.items);
           total = page.totalCount;
           _playlistTotalSize = page.totalCount;
         });
@@ -689,13 +690,14 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   @override
   Widget build(BuildContext context) {
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
+    final allowsNativeBackGesture = PlatformDetector.isHandheldIOS(context);
 
     // For regular playlists, wrap the scroll view with the Focus widget
     // (Focus is a RenderObject widget and cannot directly wrap a sliver)
     final needsListFocus = !_isReadOnly && items.isNotEmpty;
 
     Widget scrollView = CustomScrollView(
-      controller: scrollController,
+      primary: true,
       slivers: [
         CustomAppBar(
           title: Column(
@@ -759,7 +761,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
     }
 
     return PopScope(
-      canPop: false,
+      canPop: allowsNativeBackGesture && _movingIndex == null,
       onPopInvokedWithResult: (didPop, result) {
         if (BackKeyCoordinator.consumeIfHandled()) return;
         if (didPop) return;
@@ -768,7 +770,13 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           Navigator.pop(context);
         }
       },
-      child: Scaffold(body: scrollView),
+      child: PrimaryScrollController(
+        controller: scrollController,
+        child: IosStatusBarTapScrollToTop(
+          controller: scrollController,
+          child: Scaffold(body: scrollView),
+        ),
+      ),
     );
   }
 

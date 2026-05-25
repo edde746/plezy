@@ -193,7 +193,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       final needsAndroidMpvFrameRateStartup = willAutoSwitch && isAndroidMpv && result.videoUrl != null;
       var didPreLoadFrameRateSwitch = false;
       var needsPostOpenFrameRateSwitch = willAutoSwitch && !needsAndroidMpvFrameRateStartup;
-      var needsAndroidMpvStartupRefresh = needsAndroidMpvFrameRateStartup;
+      var needsAndroidMpvStartupRefresh = false;
       final hasExternalSubs = result.externalSubtitles.isNotEmpty;
       Future<bool>? androidMpvStartupReady;
 
@@ -220,6 +220,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           if (!mounted || player != currentPlayer) return;
           if (didPreLoadFrameRateSwitch) {
             _frameRateMatchingApplied = true;
+            needsAndroidMpvStartupRefresh = true;
           }
           appLogger.d(
             'Frame rate matching: pre-load MPV switch complete '
@@ -291,13 +292,13 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
         final shouldAutoPlay = !shouldHoldPlaybackStart && (isExoPlayer || !hasExternalSubs);
         if (needsAndroidMpvStartupRefresh) {
-          appLogger.d('Frame rate matching: opening Android MPV paused for startup buffer flush');
+          appLogger.d('Frame rate matching: opening Android MPV paused for startup decoder refresh');
           androidMpvStartupReady = currentPlayer.streams.playbackRestart.first
               .then((_) => true)
               .timeout(
                 const Duration(seconds: 15),
                 onTimeout: () {
-                  appLogger.w('Timed out waiting for Android MPV startup frame before buffer flush');
+                  appLogger.w('Timed out waiting for Android MPV startup frame before decoder refresh');
                   return false;
                 },
               );
@@ -306,21 +307,22 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // ExoPlayer: attach external subs at open time so it discovers
         // them in a single prepare() — no media reload needed for selection.
         // MPV (all platforms including Android): external subs added after open via sub-add.
-        final transcodeTimelineOffset = result.isTranscoding ? resumePosition ?? Duration.zero : Duration.zero;
-        final transcodeTimelineDuration = result.isTranscoding && _currentMetadata.durationMs != null
-            ? Duration(milliseconds: _currentMetadata.durationMs!)
-            : null;
-        // Plex's chunked HTTP/MKV transcode can be seekable even when MPV
-        // cannot prove it from response headers. Force only for that path and
-        // reset everywhere else so live/direct/offline streams keep native
-        // seekability detection.
+        final openTiming = _playbackOpenTiming(
+          backend: _currentMetadata.backend,
+          isTranscoding: result.isTranscoding,
+          resumePosition: resumePosition,
+          durationMs: _currentMetadata.durationMs,
+        );
+        // Transcode streams can be seekable even when MPV cannot prove it
+        // from response headers. Reset non-transcodes so live/direct/offline
+        // streams keep native seekability detection.
         await currentPlayer.setProperty('force-seekable', result.isTranscoding ? 'yes' : 'no');
         await currentPlayer.open(
-          Media(result.videoUrl!, start: result.isTranscoding ? null : resumePosition, headers: streamHeaders),
+          Media(result.videoUrl!, start: openTiming.mediaStart, headers: streamHeaders),
           play: shouldAutoPlay,
           externalSubtitles: isExoPlayer && hasExternalSubs ? result.externalSubtitles : null,
-          timelineOffset: transcodeTimelineOffset,
-          timelineDuration: transcodeTimelineDuration,
+          timelineOffset: openTiming.timelineOffset,
+          timelineDuration: openTiming.timelineDuration,
         );
         if (!mounted || player != currentPlayer) return;
 
@@ -502,15 +504,15 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             ),
           );
         } else if (needsAndroidMpvStartupRefresh && mounted && player == currentPlayer) {
-          appLogger.d('Frame rate matching: waiting for Android MPV startup frame before buffer flush');
+          appLogger.d('Frame rate matching: waiting for Android MPV startup frame before decoder refresh');
           final startupReady = androidMpvStartupReady == null ? false : await androidMpvStartupReady;
           if (mounted && player == currentPlayer) {
             if (startupReady) {
               await Future<void>.delayed(const Duration(milliseconds: 100));
               await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'pre-load frame rate startup');
-              await resumeAfterStartupGate('startup buffer flush');
+              await resumeAfterStartupGate('startup decoder refresh');
             } else {
-              appLogger.w('Frame rate matching: skipping Android MPV buffer flush because startup frame timed out');
+              appLogger.w('Frame rate matching: skipping Android MPV decoder refresh because startup frame timed out');
               await resumeAfterStartupGate('startup frame timeout');
             }
           }
@@ -518,7 +520,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           unawaited(
             Sentry.addBreadcrumb(
               Breadcrumb(
-                message: 'Android MPV startup buffer flush after pre-load frame-rate switch',
+                message: 'Android MPV startup decoder refresh after pre-load frame-rate switch',
                 category: 'player',
               ),
             ),

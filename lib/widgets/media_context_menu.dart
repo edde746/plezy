@@ -121,6 +121,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
   bool get isContextMenuOpen => _isContextMenuOpen;
 
+  void _notifyRefresh(String itemId) {
+    if (!mounted) return;
+    widget.onRefresh?.call(itemId);
+  }
+
+  void _notifyListRefresh() {
+    if (!mounted) return;
+    widget.onListRefresh?.call();
+  }
+
   /// The widget's [item] cast as a [MediaItem]. Returns `null` for playlists.
   MediaItem? get _mediaItem => widget.item is MediaItem ? widget.item as MediaItem : null;
 
@@ -545,7 +555,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             await offlineWatch.markAsWatched(serverId: mediaItem!.serverId!, itemId: mediaItem.id);
             if (context.mounted) {
               showAppSnackBar(context, t.messages.markedAsWatchedOffline);
-              widget.onRefresh?.call(mediaItem.id);
+              _notifyRefresh(mediaItem.id);
             }
           } else {
             // Resolve the right backend client — Plex hits scrobble, Jellyfin
@@ -570,7 +580,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             await offlineWatch.markAsUnwatched(serverId: mediaItem!.serverId!, itemId: mediaItem.id);
             if (context.mounted) {
               showAppSnackBar(context, t.messages.markedAsUnwatchedOffline);
-              widget.onRefresh?.call(mediaItem.id);
+              _notifyRefresh(mediaItem.id);
             }
           } else {
             await _executeAction(context, () async {
@@ -596,7 +606,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
               if (widget.onRemoveFromContinueWatching != null) {
                 widget.onRemoveFromContinueWatching!();
               } else {
-                widget.onRefresh?.call(mediaItem.id);
+                _notifyRefresh(mediaItem.id);
               }
             }
           } catch (e) {
@@ -622,22 +632,21 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         case 'edit_metadata':
           didNavigate = true;
           if (context.mounted) {
+            final item = mediaItem!;
             await Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => PlexMetadataEditScreen(metadata: mediaItem!)),
+              MaterialPageRoute(builder: (context) => PlexMetadataEditScreen(metadata: item)),
             );
-            widget.onRefresh?.call(mediaItem!.id);
+            _notifyRefresh(item.id);
           }
           break;
 
         case 'match':
           didNavigate = true;
           if (context.mounted) {
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => PlexMatchScreen(metadata: mediaItem!)),
-            );
-            widget.onRefresh?.call(mediaItem!.id);
+            final item = mediaItem!;
+            await Navigator.push(context, MaterialPageRoute(builder: (context) => PlexMatchScreen(metadata: item)));
+            _notifyRefresh(item.id);
           }
           break;
 
@@ -654,7 +663,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await _navigateToRelated(
             context,
             mediaItem!.kind == MediaKind.season ? mediaItem.parentId : mediaItem.grandparentId,
-            (item) => MediaDetailScreen(metadata: item),
+            (item) => mediaDetailRoute(metadata: item),
             t.messages.errorLoadingSeries,
           );
           break;
@@ -667,7 +676,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await _navigateToRelated(
             context,
             seasonParentKey,
-            (show) => MediaDetailScreen(metadata: show, initialSeasonIndex: seasonIndex),
+            (show) => mediaDetailRoute(metadata: show, initialSeasonIndex: seasonIndex),
             t.messages.errorLoadingSeason,
           );
           break;
@@ -753,7 +762,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       await action();
       if (context.mounted) {
         showSuccessSnackBar(context, successMessage);
-        widget.onRefresh?.call(_itemId());
+        _notifyRefresh(_itemId());
       }
     } catch (e) {
       if (context.mounted) {
@@ -785,7 +794,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (!context.mounted) return;
       if (success) {
         showSuccessSnackBar(context, t.matchScreen.unmatchSuccess);
-        widget.onRefresh?.call(item.id);
+        _notifyRefresh(item.id);
       } else {
         showErrorSnackBar(context, t.matchScreen.unmatchFailed);
       }
@@ -800,18 +809,19 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   Future<void> _navigateToRelated(
     BuildContext context,
     String? id,
-    Widget Function(MediaItem) screenBuilder,
+    Route<Object?> Function(MediaItem) routeBuilder,
     String errorPrefix,
   ) async {
     if (id == null) return;
 
     final client = _getMediaClientForItem();
+    final refreshItemId = _itemId();
 
     try {
       final metadata = await client.fetchItem(id);
       if (metadata != null && context.mounted) {
-        await Navigator.push(context, MaterialPageRoute(builder: (context) => screenBuilder(metadata)));
-        widget.onRefresh?.call(_itemId());
+        await Navigator.push(context, routeBuilder(metadata));
+        _notifyRefresh(refreshItemId);
       }
     } catch (e) {
       if (context.mounted) {
@@ -1123,11 +1133,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     await OverlaySheetController.showAdaptive(
       context,
       showDragHandle: true,
-      builder: (context) => RatingBottomSheet(
-        item: item,
-        serverClient: client,
-        onServerRatingChanged: (_) => widget.onRefresh?.call(item.id),
-      ),
+      builder: (context) =>
+          RatingBottomSheet(item: item, serverClient: client, onServerRatingChanged: (_) => _notifyRefresh(item.id)),
     );
   }
 
@@ -1158,7 +1165,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           // Trigger refresh of collections tab
           LibraryRefreshNotifier().notifyCollectionsChanged();
           // Trigger list refresh to remove the item from the view
-          widget.onListRefresh?.call();
+          _notifyListRefresh();
         } else {
           showErrorSnackBar(context, t.collections.removeFromCollectionFailed);
         }
@@ -1223,7 +1230,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         if (success) {
           showSuccessSnackBar(context, isCollection ? t.collections.deleted : t.playlists.deleted);
           // Trigger list refresh
-          widget.onListRefresh?.call();
+          _notifyListRefresh();
         } else {
           showErrorSnackBar(context, isCollection ? t.collections.deleteFailed : t.playlists.errorDeleting);
         }
@@ -1395,7 +1402,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         // DownloadProvider.deleteDownload now broadcasts the DeletionEvent,
         // so DeletionAware screens (e.g. offline season detail) update without
         // a duplicate notification here.
-        widget.onRefresh?.call(item.id);
+        _notifyRefresh(item.id);
       }
     } catch (e) {
       appLogger.e('Failed to delete download', error: e);
@@ -1494,7 +1501,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           // Broadcast deletion event for cross-screen propagation
           DeletionNotifier().notifyDeletedItem(item: item);
           // Backward-compatible list refresh for screens that are not DeletionAware yet
-          widget.onListRefresh?.call();
+          _notifyListRefresh();
         } else {
           showErrorSnackBar(context, t.mediaMenu.mediaFailedToDelete);
         }

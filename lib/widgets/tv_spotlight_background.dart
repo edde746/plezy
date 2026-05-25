@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -12,6 +14,7 @@ import '../utils/formatters.dart';
 import '../utils/layout_constants.dart';
 import '../utils/media_image_helper.dart';
 import 'app_icon.dart';
+import 'fitting_title_text.dart';
 import 'optimized_media_image.dart' show blurArtwork;
 
 class TvSpotlightBackground extends StatelessWidget {
@@ -26,6 +29,7 @@ class TvSpotlightBackground extends StatelessWidget {
   final bool compact;
   final bool showPrimaryAction;
   final bool showInfo;
+  final String? Function(String? artworkPath)? localArtworkPathResolver;
 
   const TvSpotlightBackground({
     super.key,
@@ -40,6 +44,7 @@ class TvSpotlightBackground extends StatelessWidget {
     this.compact = false,
     this.showPrimaryAction = true,
     this.showInfo = true,
+    this.localArtworkPathResolver,
   });
 
   double _scale(BuildContext context) => TvLayoutConstants.scaleOf(context);
@@ -59,16 +64,7 @@ class TvSpotlightBackground extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             if (media != null) _buildArtwork(context, media) else ColoredBox(color: bgColor),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [bgColor.withValues(alpha: 0.86), bgColor.withValues(alpha: 0.32), Colors.transparent],
-                  stops: const [0.0, 0.56, 1.0],
-                ),
-              ),
-            ),
+            _buildHorizontalScrim(bgColor),
             DecoratedBox(
               decoration: BoxDecoration(
                 gradient: LinearGradient(
@@ -112,12 +108,33 @@ class TvSpotlightBackground extends StatelessWidget {
     final size = MediaQuery.sizeOf(context);
     final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
     final containerAspect = size.width / size.height;
-    final artPath =
-        media.heroArt(containerAspectRatio: containerAspect) ??
-        media.grandparentArtPath ??
-        media.artPath ??
-        media.backgroundSquarePath ??
-        media.thumbPath;
+    final artCandidates = <String?>[
+      media.heroArt(containerAspectRatio: containerAspect) ??
+          media.grandparentArtPath ??
+          media.artPath ??
+          media.backgroundSquarePath ??
+          media.thumbPath,
+      media.grandparentArtPath,
+      media.artPath,
+      media.backgroundSquarePath,
+      media.thumbPath,
+    ];
+    for (final candidate in artCandidates) {
+      final localPath = localArtworkPathResolver?.call(candidate);
+      if (localPath != null && File(localPath).existsSync()) {
+        return blurArtwork(
+          Image.file(
+            File(localPath),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+                ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
+          ),
+        );
+      }
+    }
+
+    final artPath = artCandidates.firstWhere((path) => path != null && path.isNotEmpty, orElse: () => null);
+
     final imageUrl = MediaImageHelper.getOptimizedImageUrl(
       client: client,
       thumbPath: artPath,
@@ -150,6 +167,19 @@ class TvSpotlightBackground extends StatelessWidget {
     );
   }
 
+  Widget _buildHorizontalScrim(Color bgColor) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+          colors: [bgColor.withValues(alpha: 0.86), bgColor.withValues(alpha: 0.32), Colors.transparent],
+          stops: const [0.0, 0.56, 1.0],
+        ),
+      ),
+    );
+  }
+
   Widget _buildInfo(BuildContext context, MediaItem media) {
     final scale = _scale(context);
     final shouldHideSpoiler = hideSpoilers && media.shouldHideSpoiler;
@@ -166,8 +196,8 @@ class TvSpotlightBackground extends StatelessWidget {
         if (summary != null && summary.isNotEmpty) ...[
           SizedBox(height: _sectionGap(scale)),
           Text(
-            _summaryText(media, summary),
-            maxLines: compact ? 2 : 4,
+            summary,
+            maxLines: compact ? 3 : 4,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: Colors.white.withValues(alpha: 0.78),
@@ -178,7 +208,7 @@ class TvSpotlightBackground extends StatelessWidget {
         ] else if (shouldHideSpoiler && media.isEpisode) ...[
           SizedBox(height: _sectionGap(scale)),
           Text(
-            _episodePrefix(media) ?? media.title ?? '',
+            media.title ?? '',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -199,11 +229,31 @@ class TvSpotlightBackground extends StatelessWidget {
   Widget _buildLogoOrTitle(BuildContext context, MediaItem media, String title) {
     final scale = _scale(context);
     final logoPath = media.clearLogoPath;
-    if (logoPath == null || logoPath.isEmpty) return _buildTitle(context, title);
-
-    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
     final logoWidth = _logoWidth(scale);
     final logoHeight = _logoHeight(scale);
+    if (logoPath == null || logoPath.isEmpty) {
+      return SizedBox(width: logoWidth, height: logoHeight, child: _buildTitle(context, title));
+    }
+
+    final localLogoPath = localArtworkPathResolver?.call(logoPath);
+    if (localLogoPath != null && File(localLogoPath).existsSync()) {
+      return SizedBox(
+        width: logoWidth,
+        height: logoHeight,
+        child: blurArtwork(
+          Image.file(
+            File(localLogoPath),
+            fit: BoxFit.contain,
+            alignment: Alignment.centerLeft,
+            errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),
+          ),
+          sigma: 10,
+          clip: false,
+        ),
+      );
+    }
+
+    final dpr = MediaImageHelper.effectiveDevicePixelRatio(context);
     final imageUrl = MediaImageHelper.getOptimizedImageUrl(
       client: client,
       thumbPath: logoPath,
@@ -235,10 +285,8 @@ class TvSpotlightBackground extends StatelessWidget {
 
   Widget _buildTitle(BuildContext context, String title) {
     final scale = _scale(context);
-    return Text(
+    return FittingTitleText(
       title,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
       style: Theme.of(context).textTheme.displaySmall?.copyWith(
         color: Colors.white,
         fontSize: _titleFontSize(scale),
@@ -250,12 +298,17 @@ class TvSpotlightBackground extends StatelessWidget {
 
   Widget _buildMetadataLine(BuildContext context, MediaItem media) {
     final scale = _scale(context);
+    final episodeLabel = formatSeasonEpisodeLabel(media.parentIndex, media.index);
     final parts = [
+      if (media.isEpisode && episodeLabel != null) episodeLabel,
       if (media.isMovie) t.discover.movie else if (media.isShow) t.discover.tvShow,
       if (media.rating != null) '★ ${formatRating(media.rating!)}',
       if (media.contentRating != null) formatContentRating(media.contentRating!),
       if (media.durationMs != null) formatDurationTextual(media.durationMs!),
-      if (media.year != null) media.year.toString(),
+      if (media.isEpisode && media.originallyAvailableAt != null)
+        formatFullDate(media.originallyAvailableAt!)
+      else if (media.year != null)
+        media.year.toString(),
     ];
     return Text(
       parts.join('  •  '),
@@ -309,16 +362,5 @@ class TvSpotlightBackground extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _summaryText(MediaItem media, String summary) {
-    final prefix = _episodePrefix(media);
-    if (prefix == null) return summary;
-    return '$prefix: $summary';
-  }
-
-  String? _episodePrefix(MediaItem media) {
-    if (!media.isEpisode || media.parentIndex == null || media.index == null) return null;
-    return 'S${media.parentIndex}, E${media.index}';
   }
 }

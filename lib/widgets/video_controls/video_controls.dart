@@ -77,6 +77,17 @@ part 'parts/track_controls.dart';
 part 'parts/visibility.dart';
 
 @visibleForTesting
+ShaderPreset resolveShaderTogglePreset({
+  required ShaderPreset currentPreset,
+  required ShaderPreset savedPreset,
+  required List<ShaderPreset> allPresets,
+}) {
+  if (currentPreset.isEnabled) return ShaderPreset.none;
+  if (savedPreset.isEnabled) return savedPreset;
+  return allPresets.firstWhere((p) => p.isEnabled, orElse: () => ShaderPreset.nvscalerDefault);
+}
+
+@visibleForTesting
 ({
   List<MediaVersion> availableVersions,
   bool serverSupportsTranscoding,

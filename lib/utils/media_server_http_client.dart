@@ -208,8 +208,21 @@ class MediaServerHttpClient {
         abort: requestAbort,
       );
 
+      if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
+        await streamed.stream.drain<void>();
+        throw MediaServerHttpException(
+          type: MediaServerHttpErrorType.unknown,
+          statusCode: streamed.statusCode,
+          requestUri: uri,
+          message: 'HTTP ${streamed.statusCode}',
+        );
+      }
+
       final file = File(filePath);
-      final sink = file.openWrite();
+      await file.parent.create(recursive: true);
+      final tempFile = File('$filePath.download');
+      if (await tempFile.exists()) await tempFile.delete();
+      final sink = tempFile.openWrite();
       try {
         await _withAbortOnTimeout(
           streamed.stream.pipe(sink),
@@ -220,8 +233,16 @@ class MediaServerHttpClient {
       } finally {
         await sink.close();
       }
+      if (await file.exists()) await file.delete();
+      await tempFile.rename(filePath);
     } catch (e) {
       requestAbort.abort();
+      final tempFile = File('$filePath.download');
+      if (await tempFile.exists()) {
+        try {
+          await tempFile.delete();
+        } catch (_) {}
+      }
       throw MediaServerHttpException.from(e, uri: uri);
     } finally {
       _activeAborts.remove(requestAbort);

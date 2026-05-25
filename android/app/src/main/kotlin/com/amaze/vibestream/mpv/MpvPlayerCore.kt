@@ -174,7 +174,8 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
       )
       frameRateManager = FrameRateManager(
         activity = activity,
-        handler = handler
+        handler = handler,
+        log = { emitLog("info", "framerate", it) }
       )
 
       // Create FrameLayout container for video
@@ -276,6 +277,17 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
 
   // Flow collectors
 
+  private fun emitLog(level: String, prefix: String, text: String) {
+    delegate?.onEvent(
+      "log-message",
+      mapOf(
+        "prefix" to prefix,
+        "level" to level,
+        "text" to text
+      )
+    )
+  }
+
   private fun collectEvents(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
       p.eventFlow.collect { event ->
@@ -317,14 +329,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
   private fun collectLogMessages(p: MpvPlayer) {
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
       p.logFlow.collect { msg ->
-        delegate?.onEvent(
-          "log-message",
-          mapOf(
-            "prefix" to msg.prefix,
-            "level" to msg.level.name.lowercase(),
-            "text" to msg.text
-          )
-        )
+        emitLog(msg.level.name.lowercase(), msg.prefix, msg.text)
       }
     }
   }
@@ -784,7 +789,7 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
       onComplete(false)
       return
     }
-    mgr.setVideoFrameRate(fps, videoDurationMs, surfaceView?.holder?.surface, extraDelayMs) { switched ->
+    mgr.setVideoFrameRate(fps, videoDurationMs, extraDelayMs) { switched ->
       player?.let { updateDisplayFpsOverride(it, "frame rate switch, switched=$switched") }
       onComplete(switched)
     }

@@ -12,6 +12,7 @@ import 'package:window_manager/window_manager.dart';
 import '../utils/app_logger.dart';
 import '../utils/key_event_simulator.dart' as key_sim;
 import '../utils/platform_detector.dart';
+import '../utils/text_input_diagnostics.dart';
 
 String _describeGamepadKeyEvent(KeyEvent event) {
   return 'type=${event.runtimeType} logical=${event.logicalKey.keyLabel}/${event.logicalKey.keyId} '
@@ -27,8 +28,7 @@ String _describeGamepadAxis(GamepadAxisEvent event) {
 }
 
 void _logGamepadDiag(String message) {
-  if (!PlatformDetector.isTV()) return;
-  appLogger.i('TextInputDiag GamepadService: $message');
+  TextInputDiagnostics.log('GamepadService', message);
 }
 
 /// Suppresses synthetic gamepad key events when the OS has just delivered an

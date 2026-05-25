@@ -73,7 +73,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
     final sectionKey = mi.librarySectionKey;
     if (sectionKey != null && mi.serverId != null) {
       final libraryGlobalKey = buildGlobalKey(mi.serverId!, sectionKey);
-      MainScreenFocusScope.of(context)?.selectLibrary?.call(libraryGlobalKey);
+      MainScreenFocusScope.of(context, listen: false)?.selectLibrary?.call(libraryGlobalKey);
       return MediaNavigationResult.librarySelected;
     }
     return MediaNavigationResult.unsupported;
@@ -100,7 +100,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
     case MediaKind.clip:
     case MediaKind.episode:
       final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
-      if (result == true) {
+      if (result == true && context.mounted) {
         onRefresh?.call(mi.id);
       }
       return MediaNavigationResult.navigated;
@@ -108,7 +108,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
     case MediaKind.movie:
       if (playDirectly) {
         final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
-        if (result == true) {
+        if (result == true && context.mounted) {
           onRefresh?.call(mi.id);
         }
         return MediaNavigationResult.navigated;
@@ -131,12 +131,9 @@ Future<MediaNavigationResult> navigateToMediaItem(
         );
         final result = await Navigator.push<bool>(
           context,
-          MaterialPageRoute(
-            builder: (context) =>
-                MediaDetailScreen(metadata: showStub, isOffline: isOffline, initialSeasonIndex: mi.index),
-          ),
+          mediaDetailRoute(metadata: showStub, isOffline: isOffline, initialSeasonIndex: mi.index),
         );
-        if (result == true) {
+        if (result == true && context.mounted) {
           onRefresh?.call(mi.id);
         }
         return MediaNavigationResult.navigated;
@@ -154,13 +151,8 @@ Future<MediaNavigationResult> _showDetail(
   bool isOffline,
   void Function(String)? onRefresh,
 ) async {
-  final result = await Navigator.push<bool>(
-    context,
-    MaterialPageRoute(
-      builder: (context) => MediaDetailScreen(metadata: mi, isOffline: isOffline),
-    ),
-  );
-  if (result == true) {
+  final result = await Navigator.push<bool>(context, mediaDetailRoute(metadata: mi, isOffline: isOffline));
+  if (result == true && context.mounted) {
     onRefresh?.call(mi.id);
   }
   return MediaNavigationResult.navigated;

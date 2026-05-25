@@ -8,6 +8,7 @@ import '../focus/focusable_text_field.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../mixins/controller_disposer_mixin.dart';
+import '../mixins/mounted_set_state_mixin.dart';
 import '../mixins/refreshable.dart';
 import '../providers/multi_server_provider.dart';
 import '../utils/app_logger.dart';
@@ -28,7 +29,13 @@ class SearchScreen extends StatefulWidget {
 }
 
 class _SearchScreenState extends State<SearchScreen>
-    with Refreshable, FullRefreshable, SearchInputFocusable, FocusableTab, ControllerDisposerMixin {
+    with
+        Refreshable,
+        FullRefreshable,
+        SearchInputFocusable,
+        FocusableTab,
+        ControllerDisposerMixin,
+        MountedSetStateMixin {
   late final _searchController = createTextEditingController();
   final _searchFocusNode = FocusNode(debugLabel: 'SearchInput');
   final _firstResultFocusNode = FocusNode(debugLabel: 'SearchFirstResult');
@@ -56,11 +63,13 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   void _onSearchChanged() {
+    if (!mounted) return;
+
     final query = _searchController.text;
 
     if (query.trim().isEmpty) {
       _searchDebounce.cancel();
-      setState(() {
+      setStateIfMounted(() {
         _searchResults = [];
         _hasSearched = false;
         _isSearching = false;
@@ -78,20 +87,23 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   Future<void> _performSearch(String query) async {
+    if (!mounted) return;
+
     if (query.trim().isEmpty) {
-      setState(() {
+      setStateIfMounted(() {
         _searchResults = [];
         _hasSearched = false;
       });
       return;
     }
 
-    setState(() {
+    setStateIfMounted(() {
       _isSearching = true;
       _hasSearched = true;
     });
 
     try {
+      if (!mounted) return;
       final multiServerProvider = Provider.of<MultiServerProvider>(context, listen: false);
 
       if (!multiServerProvider.hasConnectedServers) {
@@ -100,7 +112,7 @@ class _SearchScreenState extends State<SearchScreen>
 
       final neutral = await multiServerProvider.aggregationService.searchAcrossServers(query);
       if (mounted) {
-        setState(() {
+        setStateIfMounted(() {
           _searchResults = neutral;
           _isSearching = false;
           _lastSearchedQuery = query.trim();
@@ -108,7 +120,7 @@ class _SearchScreenState extends State<SearchScreen>
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
+        setStateIfMounted(() {
           _isSearching = false;
         });
         showErrorSnackBar(context, t.errors.searchFailed(error: e));
@@ -118,6 +130,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   @override
   void refresh() {
+    if (!mounted) return;
     if (_searchController.text.isNotEmpty) {
       _performSearch(_searchController.text);
     }
@@ -126,27 +139,31 @@ class _SearchScreenState extends State<SearchScreen>
   /// Focus the search input field
   @override
   void focusSearchInput() {
+    if (!mounted) return;
     _searchFocusNode.requestFocus();
   }
 
   @override
   void focusActiveTabIfReady() {
+    if (!mounted) return;
     _searchFocusNode.requestFocus();
   }
 
   /// Set the search query externally (e.g. from companion remote)
   @override
   void setSearchQuery(String query) {
+    if (!mounted) return;
     _searchController.text = query;
   }
 
   // Public method to fully reload all content (for profile switches)
   @override
   void fullRefresh() {
+    if (!mounted) return;
     appLogger.d('SearchScreen.fullRefresh() called - clearing search and reloading');
     // Clear search results and search text for new profile
     _searchController.clear();
-    setState(() {
+    setStateIfMounted(() {
       _searchResults.clear();
       _isSearching = false;
       _hasSearched = false;
@@ -155,6 +172,7 @@ class _SearchScreenState extends State<SearchScreen>
   }
 
   void updateItem(String _) {
+    if (!mounted) return;
     // Trigger a refresh of the search to get updated metadata
     if (_searchController.text.isNotEmpty) {
       _performSearch(_searchController.text);
@@ -163,7 +181,7 @@ class _SearchScreenState extends State<SearchScreen>
 
   /// Navigate focus to the sidebar
   void _navigateToSidebar() {
-    MainScreenFocusScope.of(context)?.focusSidebar();
+    MainScreenFocusScope.of(context, listen: false)?.focusSidebar();
   }
 
   Widget _buildResultsList(BuildContext context) {
