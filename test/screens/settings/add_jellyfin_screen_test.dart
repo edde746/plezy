@@ -1,5 +1,3 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,16 +24,17 @@ void main() {
     expect(field.autofocus, isTrue);
   });
 
-  testWidgets('TV initial focus stays on the server URL field', (tester) async {
+  testWidgets('TV initial focus opens the server URL keyboard', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
 
     await tester.pumpWidget(const InputModeTracker(child: MaterialApp(home: AddJellyfinScreen())));
     await tester.pumpAndSettle();
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
   });
 
-  testWidgets('Android TV remote navigation stays with native URL keyboard', (tester) async {
+  testWidgets('Android TV remote navigation stays with virtual URL keyboard', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(null);
     await TvDetectionService.getInstance(forceTv: true);
     TvDetectionService.setForceTVSync(true);
@@ -43,21 +42,17 @@ void main() {
     await tester.pumpWidget(const InputModeTracker(child: MaterialApp(home: AddJellyfinScreen())));
     await tester.pumpAndSettle();
 
-    final urlFocus = FocusManager.instance.primaryFocus!;
-    expect(urlFocus.debugLabel, 'AddJellyfin:Url');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
 
-    final result = urlFocus.onKeyEvent!(
-      urlFocus,
-      const KeyDownEvent(
-        physicalKey: PhysicalKeyboardKey.arrowDown,
-        logicalKey: LogicalKeyboardKey.arrowDown,
-        timeStamp: Duration.zero,
-        deviceType: ui.KeyEventDeviceType.directionalPad,
-      ),
-    );
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
 
-    expect(result, KeyEventResult.skipRemainingHandlers);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+    await tester.pumpAndSettle();
+
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
   });
 

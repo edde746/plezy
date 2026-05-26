@@ -30,6 +30,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+    await tester.pumpAndSettle();
+
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:Name');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
@@ -45,7 +51,7 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:Cancel');
   });
 
-  testWidgets('Android TV native keyboard done leaves profile name input', (tester) async {
+  testWidgets('Android TV virtual keyboard done leaves profile name input', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(null);
     await TvDetectionService.getInstance(forceTv: true);
     TvDetectionService.setForceTVSync(true);
@@ -57,11 +63,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:Name');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
 
-    await tester.showKeyboard(find.byType(TextField));
-    await tester.testTextInput.receiveAction(TextInputAction.done);
-    await tester.pump();
+    await tester.tap(find.byIcon(Icons.check_rounded));
+    await tester.pumpAndSettle();
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddLocalProfile:SetPin');
   });
@@ -90,6 +95,13 @@ void main() {
     await tester.tap(find.text('Open new profile'));
     await tester.pumpAndSettle();
     expect(find.text(t.profiles.newProfile), findsOneWidget);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+    await tester.pumpAndSettle();
+
+    expect(find.text(t.profiles.newProfile), findsOneWidget);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
     await tester.pumpAndSettle();
