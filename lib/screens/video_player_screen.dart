@@ -609,12 +609,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           throw StateError('No client registered for ${_currentMetadata.serverId}');
         }
         _streamHeaders = genericClient.streamHeaders;
-        // Single source of truth for showing quality controls. Plex uses a
-        // per-server probe; Jellyfin supports explicit quality selection but
-        // should not inherit the global Plex-style default on ordinary play.
+        // Single source of truth for showing quality controls and applying the
+        // saved startup quality. Backends that cannot transcode always start at
+        // Original even if the user picked a lower default quality.
         _serverSupportsTranscoding = genericClient.capabilities.videoTranscoding;
         if (widget.selectedQualityPreset == null) {
-          _selectedQualityPreset = genericClient.backend == MediaBackend.plex && _serverSupportsTranscoding
+          _selectedQualityPreset = _serverSupportsTranscoding
               ? settingsService.read(SettingsService.defaultQualityPreset)
               : TranscodeQualityPreset.original;
         } else {
