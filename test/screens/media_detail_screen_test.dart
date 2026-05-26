@@ -70,6 +70,38 @@ void main() {
     expect(titleText.style!.fontSize!, lessThan(baseFontSize));
   });
 
+  testWidgets('TV detail reveals without waiting for directional input', (tester) async {
+    await SettingsService.getInstance();
+
+    final movie = MediaItem(
+      id: 'movie_1',
+      backend: MediaBackend.jellyfin,
+      kind: MediaKind.movie,
+      title: 'Idle Reveal Movie',
+      summary: 'The detail foreground should appear without needing a D-pad frame.',
+    );
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: MediaDetailScreen(metadata: movie),
+        ),
+      ),
+    );
+
+    final revealGate = find.byWidgetPredicate(
+      (widget) => widget is AnimatedOpacity && widget.duration == const Duration(milliseconds: 160),
+      description: 'TV detail reveal AnimatedOpacity',
+    );
+    expect(revealGate, findsOneWidget);
+    expect(tester.widget<AnimatedOpacity>(revealGate).opacity, 0);
+
+    await tester.pump();
+
+    expect(tester.widget<AnimatedOpacity>(revealGate).opacity, 1);
+  });
+
   testWidgets('TV detail defaults to first regular season when specials precede it', (tester) async {
     await SettingsService.getInstance();
 

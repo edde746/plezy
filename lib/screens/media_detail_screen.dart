@@ -779,21 +779,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     _tvDetailRevealScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _tvDetailStableRailHeight = _tvDetailPendingRailHeight ?? railHeight;
+        _tvDetailRevealScheduled = false;
+        _tvDetailRevealed = true;
+      });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        setState(() {
-          _tvDetailStableRailHeight = _tvDetailPendingRailHeight ?? railHeight;
-          _tvDetailRevealScheduled = false;
-          _tvDetailRevealed = true;
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          if (focusPrimaryAction) {
-            _playButtonFocusNode.requestFocus();
-          } else {
-            _tvDetailRailKey.currentState?.requestFocus();
-          }
-        });
+        if (focusPrimaryAction) {
+          _playButtonFocusNode.requestFocus();
+        } else {
+          _tvDetailRailKey.currentState?.requestFocus();
+        }
       });
     });
   }
