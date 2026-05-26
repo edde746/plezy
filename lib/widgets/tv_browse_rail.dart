@@ -1059,11 +1059,19 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            AppIcon(Symbols.arrow_forward_rounded, fill: 1, size: 42 * scale, color: Colors.white),
+                            AppIcon(
+                              Symbols.arrow_forward_rounded,
+                              fill: 1,
+                              size: 42 * scale,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72),
+                            ),
                             SizedBox(height: 6 * scale),
                             Text(
                               t.common.viewAll,
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72),
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ],
                         ),

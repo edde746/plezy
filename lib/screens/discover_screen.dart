@@ -1217,15 +1217,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   Widget _buildOverlaidAppBar() {
     final statusBarHeight = MediaQuery.paddingOf(context).top;
+    final colorScheme = Theme.of(context).colorScheme;
+    final overlayColor = colorScheme.brightness == Brightness.dark ? Colors.black : colorScheme.surface;
+    final foregroundColor = colorScheme.onSurface;
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withValues(alpha: 0.7),
-            Colors.black.withValues(alpha: 0.5),
-            Colors.black.withValues(alpha: 0.3),
+            overlayColor.withValues(alpha: 0.7),
+            overlayColor.withValues(alpha: 0.5),
+            overlayColor.withValues(alpha: 0.3),
             Colors.transparent,
           ],
           stops: const [0.0, 0.3, 0.6, 1.0],
@@ -1242,20 +1245,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   t.discover.title,
                   style: Theme.of(
                     context,
-                  ).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                  ).textTheme.titleLarge?.copyWith(color: foregroundColor, fontWeight: FontWeight.bold),
                 ),
               const Spacer(),
               Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
                 builder: (context, watchTogether, companionRemote, _) {
                   final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
-                  final colorScheme = Theme.of(context).colorScheme;
 
                   return FocusableActionBar(
                     key: _actionBarKey,
                     onNavigateLeft: _navigateToSidebar,
                     onNavigateDown: _focusContentFromAppBar,
                     actions: [
-                      FocusableAction(icon: Symbols.refresh_rounded, iconColor: Colors.white, onPressed: _loadContent),
+                      FocusableAction(
+                        icon: Symbols.refresh_rounded,
+                        iconColor: foregroundColor,
+                        onPressed: _loadContent,
+                      ),
                       // Watch Together
                       FocusableAction(
                         onPressed: () =>
@@ -1266,7 +1272,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               icon: AppIcon(
                                 Symbols.group_rounded,
                                 fill: watchTogether.isInSession ? 1 : 0,
-                                color: watchTogether.isInSession ? colorScheme.primary : Colors.white,
+                                color: watchTogether.isInSession ? colorScheme.primary : foregroundColor,
                               ),
                               onPressed: () => Navigator.push(
                                 context,
@@ -1315,7 +1321,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               icon: AppIcon(
                                 Symbols.phone_android_rounded,
                                 fill: companionRemote.isConnected ? 1 : 0,
-                                color: companionRemote.isConnected ? colorScheme.primary : Colors.white,
+                                color: companionRemote.isConnected ? colorScheme.primary : foregroundColor,
                               ),
                               onPressed: () {
                                 if (isDesktop) {
@@ -1336,10 +1342,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 child: Container(
                                   width: 8,
                                   height: 8,
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     color: Colors.green,
                                     shape: BoxShape.circle,
-                                    border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 1)),
+                                    border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
                                   ),
                                 ),
                               ),
@@ -1995,7 +2001,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 if (heroItem.year != null) heroItem.year.toString(),
                               ].join(' • '),
                               style: TextStyle(
-                                color: Colors.white,
+                                color: colorScheme.onSurface,
                                 fontSize: isTv ? 18 : 14,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -2015,9 +2021,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                               text: TextSpan(
                                 style: TextStyle(
-                                  color: alignLeft
-                                      ? Colors.white.withValues(alpha: 0.7)
-                                      : colorScheme.onSurface.withValues(alpha: 0.7),
+                                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                                   fontSize: isTv ? 18 : 14,
                                   height: isTv ? 1.45 : 1.4,
                                 ),
@@ -2025,10 +2029,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
                                     TextSpan(
                                       text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: alignLeft ? Colors.white : colorScheme.onSurface,
-                                      ),
+                                      style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface),
                                     ),
                                   TextSpan(
                                     text: heroItem.summary?.isNotEmpty == true
@@ -2049,9 +2050,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               overflow: TextOverflow.ellipsis,
                               textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                               style: TextStyle(
-                                color: alignLeft
-                                    ? Colors.white.withValues(alpha: 0.7)
-                                    : colorScheme.onSurface.withValues(alpha: 0.7),
+                                color: colorScheme.onSurface.withValues(alpha: 0.7),
                                 fontSize: isTv ? 18 : 14,
                                 height: isTv ? 1.45 : 1.4,
                               ),
