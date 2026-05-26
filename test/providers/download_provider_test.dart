@@ -415,6 +415,22 @@ void main() {
       p.dispose();
     });
 
+    test('queueDownload leaves paused downloads paused instead of re-queueing them', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(
+        downloads: {'srv:1': const DownloadProgress(globalKey: 'srv:1', status: DownloadStatus.paused)},
+        metadata: {'srv:1': movie},
+      );
+
+      final count = await p.queueDownload(movie, _ThrowingClient());
+
+      expect(count, 0);
+      expect(p.getProgress('srv:1')?.status, DownloadStatus.paused);
+
+      p.dispose();
+    });
+
     test('deleteDownload removes only active-profile ownership when another owner remains', () async {
       await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'srv:1');
       await db.addDownloadOwner(profileId: 'profile-b', globalKey: 'srv:1');
