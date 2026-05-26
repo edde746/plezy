@@ -7,8 +7,10 @@ import '../../../i18n/strings.g.dart';
 import '../../../media/media_hub.dart';
 import '../../../media/media_item.dart';
 import '../../../mixins/item_updatable.dart';
+import '../../../mixins/tracker_sync_aware.dart';
 import '../../../mixins/watch_state_aware.dart';
 import '../../../services/settings_service.dart';
+import '../../../services/trackers/watch_state_overlay.dart';
 import '../../../utils/global_key_utils.dart';
 import '../../../utils/layout_constants.dart';
 import '../../../utils/platform_detector.dart';
@@ -41,7 +43,7 @@ class LibraryRecommendedTab extends BaseLibraryTab<MediaHub> {
 }
 
 class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryRecommendedTab>
-    with ItemUpdatable, WatchStateAware {
+    with ItemUpdatable, WatchStateAware, TrackerSyncAware {
   /// GlobalKeys for each hub section to enable vertical navigation
   final List<GlobalKey<HubSectionState>> _hubKeys = [];
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
@@ -66,6 +68,20 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
   void _setSpotlightItem(MediaItem item) {
     if (_spotlightItem?.globalKey == item.globalKey) return;
     setState(() => _spotlightItem = item);
+  }
+
+  @override
+  void onTrackerSyncChanged() {
+    if (items.isEmpty) return;
+    if (!hasTrackerAuthority) {
+      unawaited(loadItems());
+      return;
+    }
+    setState(() {
+      items = items
+          .map((hub) => hub.copyWith(items: applyOverlayAll(hub.items)))
+          .toList();
+    });
   }
 
   @override
@@ -189,14 +205,37 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
             ),
           );
 
+    // Apply watch state authority (Trakt, etc.) and server info.
+    // When Trakt authority is active: Continue Watching shows only items with
+    // Trakt in-progress data; Recently Watched shows only items Trakt has any
+    // record for. Items not in Trakt are excluded from both hubs.
+    final overlay = WatchStateOverlay.instance;
+    final overlaidHubs = hubs
+        .map((hub) {
+          final processedItems = hub.items
+              .map((item) => item.copyWith(serverId: widget.library.serverId, serverName: widget.library.serverName))
+              .toList();
+
+          // For Continue Watching hubs, filter to tracker-known items only when
+          // the tracker is the authority — prevents Plex-only in-progress items
+          // from leaking through when Trakt is managing watch state.
+          final overlaidItems = _isContinueWatchingHub(hub)
+              ? overlay.applyAllContinueWatching(processedItems)
+              : overlay.applyAll(processedItems);
+
+          return hub.copyWith(items: overlaidItems);
+        })
+        .where((hub) => hub.items.isNotEmpty)
+        .toList();
+
     // Move Continue Watching hub to the front if present
-    final cwIndex = hubs.indexWhere(_isContinueWatchingHub);
+    final cwIndex = overlaidHubs.indexWhere(_isContinueWatchingHub);
     if (cwIndex > 0) {
-      final cwHub = hubs.removeAt(cwIndex);
-      hubs.insert(0, cwHub);
+      final cwHub = overlaidHubs.removeAt(cwIndex);
+      overlaidHubs.insert(0, cwHub);
     }
 
-    return hubs;
+    return overlaidHubs;
   }
 
   /// Ensure we have enough GlobalKeys for all hubs

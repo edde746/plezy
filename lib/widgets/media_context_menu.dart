@@ -13,6 +13,9 @@ import '../media/media_server_client.dart';
 import '../media/media_version.dart';
 import '../mixins/controller_disposer_mixin.dart';
 import '../services/plex_client.dart';
+import '../services/trackers/tracker_sync_notifier.dart';
+import '../services/trackers/tracker_ui_helper.dart';
+import '../services/trackers/watch_state_overlay.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../services/playlist_items_loader.dart';
 import '../services/trackers/tracker_coordinator.dart';
@@ -561,13 +564,27 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             // Resolve the right backend client — Plex hits scrobble, Jellyfin
             // hits /UserPlayedItems. WatchStateNotifier event is fired in both
             // paths so cross-screen UI updates regardless of backend.
+            //
+            final target = await resolveTrackerItemForAction(context, mediaItem!);
+            if (!context.mounted || target == null) break;
+            final wasStub = target.id != mediaItem.id;
             await _executeAction(context, () async {
-              final item = mediaItem;
-              final client = context.tryGetMediaClientForServer(_itemServerId!);
-              if (client != null && item != null) {
-                await client.markWatched(item);
-                unawaited(TrackerCoordinator.instance.markWatched(item, client));
+              // Evict BEFORE markWatched: WatchStateNotifier fires synchronously
+              // inside markWatched, which would trigger a CW refresh with the
+              // stale cache. Evicting first ensures that refresh sees 0 items
+              // for this show/movie.
+              if (wasStub || WatchStateOverlay.instance.hasActiveAuthority) {
+                WatchStateOverlay.instance.evictFromPlayback(target);
+                TrackerSyncNotifier.instance.notifySync();
               }
+              final client = context.tryGetMediaClientForServer(target.serverId ?? _itemServerId!);
+              if (client != null) {
+                await client.markWatched(target);
+                unawaited(TrackerCoordinator.instance.markWatched(target, client));
+              }
+              // No triggerPostPlaybackSync here — an immediate force-sync races
+              // TraktSyncService's history push and restores the old cache.
+              // The next natural sync (foreground, manual refresh) confirms.
             }, t.messages.markedAsWatched);
           }
           break;
@@ -595,18 +612,41 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           break;
 
         case 'remove_from_continue_watching':
-          // Remove from Continue Watching without affecting watch status or progress
-          // This preserves the progression for partially watched items
-          // and doesn't mark unwatched next episodes as watched
+          // For tracker stubs (synthetic Trakt IDs), Plex's removeFromContinueWatching
+          // has no effect. Instead, mark as watched so Trakt removes the item from
+          // /sync/playback, then force a re-sync so the UI updates.
+          // For native Plex items, use the normal removeFromContinueWatching path.
           try {
-            final client = _getMediaClientForItem();
-            await client.removeFromContinueWatching(mediaItem!);
+            final isOffline = context.read<OfflineModeProvider>().isOffline;
+            final item = mediaItem!;
+            // Tracker stubs require a network call to signal the tracker (e.g. Trakt's
+            // /sync/playback). When offline there is nothing to do — suppress with info.
+            if (isOffline && (WatchStateOverlay.instance.stubResolver?.ownsStub(item.id) ?? false)) {
+              if (context.mounted) {
+                showAppSnackBar(context, 'Connect to the internet to remove tracker items from Continue Watching');
+              }
+              break;
+            }
+            final target = isOffline ? item : await resolveTrackerItemForAction(context, item);
+            if (!context.mounted || target == null) break;
+            if (target.id != item.id) {
+              // Tracker stub: mark watched so Trakt drops it from /sync/playback.
+              // triggerPostPlaybackSync() is safe here (unlike mark_watched) because
+              // no TraktSyncService history push races this path — we are removing,
+              // not adding, so the re-sync will see the eviction correctly.
+              final client = context.tryGetMediaClientForServer(target.serverId ?? _itemServerId!);
+              if (client != null) await client.markWatched(target);
+              TrackerSyncNotifier.instance.triggerPostPlaybackSync();
+            } else {
+              final client = _getMediaClientForItem();
+              await client.removeFromContinueWatching(item);
+            }
             if (context.mounted) {
               showSuccessSnackBar(context, t.messages.removedFromContinueWatching);
               if (widget.onRemoveFromContinueWatching != null) {
                 widget.onRemoveFromContinueWatching!();
               } else {
-                _notifyRefresh(mediaItem.id);
+                _notifyRefresh(item.id);
               }
             }
           } catch (e) {
@@ -1352,14 +1392,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   /// Handle download action
   Future<void> _handleDownload(BuildContext context) async {
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-    final item = _mediaItem!;
+    // Resolve tracker stubs (e.g. trakt_upnext_*) to real Plex items before
+    // download so the download manager receives a valid Plex rating key.
+    final target = await resolveTrackerItemForAction(context, _mediaItem!);
+    if (!context.mounted || target == null) return;
     // Backend-agnostic resolve so Jellyfin items can be downloaded too.
     final client = context.getMediaClientWithFallback(_itemServerId);
 
     try {
       final result = await showDownloadOptionsAndQueue(
         context,
-        metadata: item,
+        metadata: target,
         client: client,
         downloadProvider: downloadProvider,
       );

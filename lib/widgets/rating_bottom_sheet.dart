@@ -15,13 +15,10 @@ import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../providers/trackers_provider.dart';
 import '../providers/trakt_account_provider.dart';
-import '../services/trackers/anilist/anilist_tracker.dart';
-import '../services/trackers/mal/mal_tracker.dart';
-import '../services/trackers/simkl/simkl_tracker.dart';
 import '../services/trackers/tracker.dart';
 import '../services/trackers/tracker_constants.dart';
 import '../services/trackers/tracker_id_resolver.dart';
-import '../services/trakt/trakt_scrobble_service.dart';
+import '../services/trackers/tracker_rating_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
 import 'app_icon.dart';
@@ -245,63 +242,58 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
     );
   }
 
+  _TrackerRatingSource _buildSource({
+    required TrackerService service,
+    required String title,
+    required String? username,
+    required String logoAsset,
+  }) {
+    final rating = TrackerRatingService.instance;
+    return _TrackerRatingSource(
+      service: service,
+      title: title,
+      username: username,
+      connectedLabel: t.trakt.connected,
+      logoAsset: logoAsset,
+      getRating: (ctx) => rating.getRating(service, ctx),
+      onRate: (ctx, score) => rating.rate(service, ctx, score),
+      onClear: (ctx) => rating.clearRating(service, ctx),
+    );
+  }
+
   List<_TrackerRatingSource> _trackerSources(TraktAccountProvider trakt, TrackersProvider trackers) {
     final sources = <_TrackerRatingSource>[];
     if (trakt.isConnected) {
-      sources.add(
-        _TrackerRatingSource(
-          service: TrackerService.trakt,
-          title: t.trakt.title,
-          username: trakt.username,
-          connectedLabel: t.trakt.connected,
-          logoAsset: 'assets/trakt_circlemark.svg',
-          getRating: TraktScrobbleService.instance.getRating,
-          onRate: TraktScrobbleService.instance.rate,
-          onClear: TraktScrobbleService.instance.clearRating,
-        ),
-      );
+      sources.add(_buildSource(
+        service: TrackerService.trakt,
+        title: t.trakt.title,
+        username: trakt.username,
+        logoAsset: 'assets/trakt_circlemark.svg',
+      ));
     }
     if (trackers.isMalConnected) {
-      sources.add(
-        _TrackerRatingSource(
-          service: TrackerService.mal,
-          title: t.trackers.services.mal,
-          username: trackers.malUsername,
-          connectedLabel: t.trakt.connected,
-          logoAsset: 'assets/mal_mark.svg',
-          getRating: MalTracker.instance.getRating,
-          onRate: MalTracker.instance.rate,
-          onClear: MalTracker.instance.clearRating,
-        ),
-      );
+      sources.add(_buildSource(
+        service: TrackerService.mal,
+        title: t.trackers.services.mal,
+        username: trackers.malUsername,
+        logoAsset: 'assets/mal_mark.svg',
+      ));
     }
     if (trackers.isAnilistConnected) {
-      sources.add(
-        _TrackerRatingSource(
-          service: TrackerService.anilist,
-          title: t.trackers.services.anilist,
-          username: trackers.anilistUsername,
-          connectedLabel: t.trakt.connected,
-          logoAsset: 'assets/anilist_mark.svg',
-          getRating: AnilistTracker.instance.getRating,
-          onRate: AnilistTracker.instance.rate,
-          onClear: AnilistTracker.instance.clearRating,
-        ),
-      );
+      sources.add(_buildSource(
+        service: TrackerService.anilist,
+        title: t.trackers.services.anilist,
+        username: trackers.anilistUsername,
+        logoAsset: 'assets/anilist_mark.svg',
+      ));
     }
     if (trackers.isSimklConnected) {
-      sources.add(
-        _TrackerRatingSource(
-          service: TrackerService.simkl,
-          title: t.trackers.services.simkl,
-          username: trackers.simklUsername,
-          connectedLabel: t.trakt.connected,
-          logoAsset: 'assets/simkl_mark.svg',
-          getRating: SimklTracker.instance.getRating,
-          onRate: SimklTracker.instance.rate,
-          onClear: SimklTracker.instance.clearRating,
-        ),
-      );
+      sources.add(_buildSource(
+        service: TrackerService.simkl,
+        title: t.trackers.services.simkl,
+        username: trackers.simklUsername,
+        logoAsset: 'assets/simkl_mark.svg',
+      ));
     }
     return sources;
   }

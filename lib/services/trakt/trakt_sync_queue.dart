@@ -19,8 +19,21 @@ class TraktSyncQueueItem {
   final int? season;
   final int? number;
 
+  /// Progress percentage (0–100). Used for TraktSyncOp.progress items.
+  final double? progress;
+
   final String watchedAtIso;
   final int attempts;
+
+  /// When non-null, drain skips this item until the current epoch-second
+  /// exceeds this value. Used for 404 backoff: the item exists in Trakt's DB
+  /// but may be added later, so we retry daily instead of dropping it.
+  final int? retryNotBefore;
+
+  /// When true, this item was queued while external IDs were unavailable
+  /// (e.g. offline — Plex GUID lookup failed). IDs and season/number are
+  /// placeholders. The drain resolves them on the next online flush.
+  final bool needsResolution;
 
   const TraktSyncQueueItem({
     required this.op,
@@ -32,7 +45,10 @@ class TraktSyncQueueItem {
     this.libraryGlobalKey,
     this.season,
     this.number,
+    this.progress,
     this.attempts = 0,
+    this.retryNotBefore,
+    this.needsResolution = false,
   });
 
   TraktSyncQueueItem incrementAttempts() => TraktSyncQueueItem(
@@ -45,7 +61,25 @@ class TraktSyncQueueItem {
     watchedAtIso: watchedAtIso,
     season: season,
     number: number,
+    progress: progress,
     attempts: attempts + 1,
+    retryNotBefore: retryNotBefore,
+    needsResolution: needsResolution,
+  );
+
+  TraktSyncQueueItem withRetryNotBefore(int epochSeconds) => TraktSyncQueueItem(
+    op: op,
+    ratingKey: ratingKey,
+    serverId: serverId,
+    kind: kind,
+    ids: ids,
+    watchedAtIso: watchedAtIso,
+    season: season,
+    number: number,
+    progress: progress,
+    attempts: attempts,
+    retryNotBefore: epochSeconds,
+    needsResolution: needsResolution,
   );
 
   Map<String, dynamic> toJson() => {
@@ -57,8 +91,11 @@ class TraktSyncQueueItem {
     'ids': ids.toJson(),
     if (season != null) 'season': season,
     if (number != null) 'number': number,
+    if (progress != null) 'progress': progress,
     'watchedAtIso': watchedAtIso,
     'attempts': attempts,
+    if (retryNotBefore != null) 'retryNotBefore': retryNotBefore,
+    if (needsResolution) 'needsResolution': true,
   };
 
   factory TraktSyncQueueItem.fromJson(Map<String, dynamic> json) => TraktSyncQueueItem(
@@ -70,8 +107,11 @@ class TraktSyncQueueItem {
     ids: TraktIds.fromJson(json['ids'] as Map<String, dynamic>),
     season: (json['season'] as num?)?.toInt(),
     number: (json['number'] as num?)?.toInt(),
+    progress: (json['progress'] as num?)?.toDouble(),
     watchedAtIso: json['watchedAtIso'] as String,
     attempts: (json['attempts'] as num?)?.toInt() ?? 0,
+    retryNotBefore: (json['retryNotBefore'] as num?)?.toInt(),
+    needsResolution: json['needsResolution'] as bool? ?? false,
   );
 }
 

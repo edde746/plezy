@@ -71,8 +71,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     _isReplacingWithVideo = true;
 
     unawaited(DiscordRPCService.instance.stopPlayback());
-    unawaited(TraktScrobbleService.instance.stopPlayback());
-    unawaited(TrackerCoordinator.instance.stopPlayback());
+    unawaited(TrackerLifecycle.stopPlayback());
 
     if (player == null) {
       if (mounted) {
@@ -154,13 +153,18 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     final playbackState = context.read<PlaybackStateProvider>();
     final database = context.read<AppDatabase>();
 
+    // stopPlayback() must come before _sendStoppedProgressOnce() so that
+    // wasRecentlyStopped is true when TraktSyncService processes the
+    // progressUpdate event — prevents re-adding the skipped episode to
+    // Trakt's /sync/playback (Bug D). Both calls are unawaited so they
+    // run synchronously through their first await; _lastSentState = stop
+    // is set before notifyProgress() fires inside _sendStoppedProgressOnce.
+    unawaited(DiscordRPCService.instance.stopPlayback());
+    unawaited(TrackerLifecycle.stopPlayback());
     await _sendStoppedProgressOnce();
     _progressTracker?.stopTracking();
     _progressTracker?.dispose();
     _progressTracker = null;
-    unawaited(DiscordRPCService.instance.stopPlayback());
-    unawaited(TraktScrobbleService.instance.stopPlayback());
-    unawaited(TrackerCoordinator.instance.stopPlayback());
 
     _currentMetadata = episodeMetadata;
     VideoPlayerScreenState._activeId = episodeMetadata.id;
@@ -303,6 +307,15 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       _currentMetadata = previousMetadata;
       VideoPlayerScreenState._activeId = previousMetadata.id;
       appLogger.e('Failed to swap episode in PiP', error: e);
+    }
+    // Mirror what dispose() does for the non-PiP path: the PiP screen is never
+    // disposed between episodes, so triggerPostPlaybackSync must be scheduled
+    // here after each swap (covers both manual skip and auto-play completion).
+    if (mounted) {
+      Future.delayed(
+        const Duration(seconds: 2),
+        TrackerSyncNotifier.instance.triggerPostPlaybackSync,
+      );
     }
   }
 }

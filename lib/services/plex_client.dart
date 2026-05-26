@@ -888,6 +888,7 @@ class PlexClient
     AbortController? abort,
   }) async {
     final queryParams = _buildPaginationParams(start, size);
+    queryParams['includeGuids'] = 1;
     if (filters != null) queryParams.addAll(filters);
     final endpoint = sectionId == 'shared' ? '/library/shared/all' : '/library/sections/$sectionId/all';
     final response = await _getWithFailover(endpoint, queryParameters: queryParams, abort: abort);
@@ -1011,7 +1012,7 @@ class PlexClient
           cacheKey: cacheKey,
           networkCall: () => _http.get(
             '/library/metadata/$ratingKey',
-            queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'includeOnDeck': 1},
+            queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'includeOnDeck': 1, 'includeGuids': 1},
           ),
           parseCache: (cachedData) {
             final metadata = _parseMetadataWithImagesFromCachedResponse(cachedData);
@@ -1066,8 +1067,10 @@ class PlexClient
 
     return fetchWithCacheFallback<PlexMetadataDto>(
       cacheKey: cacheKey,
-      networkCall: () =>
-          _http.get('/library/metadata/$ratingKey', queryParameters: {'includeChapters': 1, 'includeMarkers': 1}),
+      networkCall: () => _http.get(
+        '/library/metadata/$ratingKey',
+        queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'includeGuids': 1},
+      ),
       parseCache: (cachedData) => _parseMetadataWithImagesFromCachedResponse(cachedData),
       parseResponse: (response) {
         final container = _getMediaContainer(response);
@@ -1283,6 +1286,7 @@ class PlexClient
         'searchTypes': 'movies,tv',
         'includeCollections': 1,
         'includeExternalMedia': 1,
+        'includeGuids': 1,
         'X-Plex-Container-Size': limit,
       },
     );
@@ -1311,6 +1315,155 @@ class PlexClient
     }
 
     return results;
+  }
+
+  /// Fetch all leaf (episode) items for a container (show), including their
+  /// secondary GUIDs. Used to resolve a specific episode by external ID when
+  /// /library/all?guid=... doesn't match episode-level GUIDs in plex:// libraries.
+  Future<List<MediaItem>> getAllLeaves(String ratingKey) async {
+    try {
+      final response = await _getWithFailover(
+        '/library/metadata/$ratingKey/allLeaves',
+        queryParameters: {'includeGuids': 1},
+      );
+      return _extractMetadataList(response).map(PlexMappers.mediaItem).toList();
+    } catch (e) {
+      appLogger.d('getAllLeaves failed for $ratingKey', error: e);
+      return [];
+    }
+  }
+
+  /// Direct GUID-based library lookup. Uses /library/all?guid=X&includeGuids=1.
+  /// The GUID value is embedded directly in the path (not via queryParameters)
+  /// so that `:` and `/` in scheme-like IDs (tvdb://X, imdb://X) are sent
+  /// as literal characters instead of being percent-encoded. Plex compares raw
+  /// strings and never matches `tvdb%3A%2F%2F73244`.
+  Future<List<MediaItem>> searchByExternalIdUri(String guid) async {
+    try {
+      final response = await _getWithFailover('/library/all?guid=$guid&includeGuids=1');
+      final results = _extractMetadataList(response).map(PlexMappers.mediaItem).toList();
+      appLogger.d(
+        'searchByExternalIdUri: guid=$guid → ${results.length} results: ${results.map((r) => r.id).toList()}',
+      );
+      return results;
+    } catch (e) {
+      appLogger.d('searchByExternalIdUri failed for $guid', error: e);
+      return [];
+    }
+  }
+
+  /// Section-based GUID lookup for secondary IDs (imdb://, tmdb://, tvdb://).
+  /// Plex's /library/all?guid=X only matches primary GUIDs (plex://show/UUID).
+  /// /library/sections/{id}/all?guid=X matches ALL GUIDs including secondary ones.
+  /// [sectionType] should be "show" or "movie" to limit which sections are searched.
+  Future<List<MediaItem>> searchSectionsByExternalIdUri(String guid, String sectionType) async {
+    try {
+      final libs = await _getLibraries();
+      appLogger.t(
+        'searchSectionsByExternalIdUri: guid=$guid sectionType=$sectionType — total libs=${libs.length} types=${libs.map((l) => "${l.key}:${l.type}:shared=${l.isShared}").toList()}',
+      );
+      final sections = libs.where((l) => l.type == sectionType && !l.isShared).toList();
+      appLogger.t(
+        'searchSectionsByExternalIdUri: matched ${sections.length} sections: ${sections.map((s) => "${s.key}(${s.title})").toList()}',
+      );
+      for (final section in sections) {
+        final path = '/library/sections/${section.key}/all?guid=$guid&includeGuids=1';
+        appLogger.t('searchSectionsByExternalIdUri: querying $path');
+        final response = await _getWithFailover(path);
+        final results = _extractMetadataList(response).map(PlexMappers.mediaItem).toList();
+        appLogger.t('searchSectionsByExternalIdUri: section=${section.key} raw results=${results.length}');
+        if (results.isNotEmpty) {
+          appLogger.d(
+            'searchSectionsByExternalIdUri: guid=$guid section=${section.key}(${section.title}) → ${results.length} results',
+          );
+          return results;
+        }
+      }
+      appLogger.d('searchSectionsByExternalIdUri: guid=$guid → 0 results across ${sections.length} sections');
+      return [];
+    } catch (e) {
+      appLogger.d('searchSectionsByExternalIdUri failed for $guid', error: e);
+      return [];
+    }
+  }
+
+  /// ID-only fallback for items where the GUID-parameter section search returns
+  /// no results (e.g. legacy-agent items). Filters sections by [year] to keep
+  /// the candidate set small, then compares external IDs from `includeGuids=1`
+  /// response. Searches ALL sections including shared ones.
+  Future<MediaItem?> findByYearAndExternalIds(
+    int year,
+    ExternalIds ids,
+    MediaKind kind,
+  ) async {
+    final sectionType = kind == MediaKind.movie ? 'movie' : 'show';
+    final plexType = kind == MediaKind.movie ? 1 : 2;
+    final libs = await _getLibraries();
+    final sections = libs.where((l) => l.type == sectionType).toList();
+    appLogger.t('[YearIdSearch] year=$year kind=$kind sections=${sections.length} ids=$ids');
+
+    for (final section in sections) {
+      try {
+        final response = await _getWithFailover(
+          '/library/sections/${section.key}/all',
+          queryParameters: {'type': plexType, 'year': year, 'includeGuids': 1},
+        );
+        final results = _extractMetadataList(response).map(PlexMappers.mediaItem).toList();
+        appLogger.t('[YearIdSearch] section=${section.key}(${section.title}) year=$year → ${results.length} candidates');
+        for (final item in results) {
+          final itemGuids = item.raw?['Guid'] as List?;
+          final ExternalIds itemIds;
+          if (itemGuids != null && itemGuids.isNotEmpty) {
+            itemIds = ExternalIds.fromGuids(itemGuids);
+          } else {
+            // Legacy-agent: Guid array absent; extract ID from primary guid.
+            itemIds = ExternalIds.fromPrimaryGuid(item.guid);
+          }
+          if (!itemIds.hasAny) continue;
+          if ((ids.imdb != null && ids.imdb == itemIds.imdb) ||
+              (ids.tmdb != null && ids.tmdb == itemIds.tmdb) ||
+              (ids.tvdb != null && ids.tvdb == itemIds.tvdb)) {
+            appLogger.d('[YearIdSearch] MATCH ${item.id} via year+ID in section ${section.key}');
+            return item;
+          }
+        }
+      } catch (e) {
+        appLogger.t('[YearIdSearch] section ${section.key} failed', error: e);
+      }
+    }
+    return null;
+  }
+
+  /// Fetches every item in all [sectionType] libraries and returns a map of
+  /// secondary GUID URI → MediaItem (e.g. 'tvdb://73244' → The Office item).
+  ///
+  /// Called once per enrichment run before the parallel stub loop so that
+  /// new-agent items (whose primary guid is plex://show/uuid and therefore
+  /// invisible to ?guid= filters) can be found via their secondary Guid array.
+  Future<Map<String, MediaItem>> buildGuidIndex(String sectionType) async {
+    final plexType = sectionType == 'movie' ? 1 : 2;
+    final libs = await _getLibraries();
+    final sections = libs.where((l) => l.type == sectionType && !l.isShared).toList();
+    final index = <String, MediaItem>{};
+    for (final section in sections) {
+      try {
+        final path = '/library/sections/${section.key}/all?type=$plexType&includeGuids=1';
+        final response = await _getWithFailover(path);
+        final dtos = _extractMetadataList(response);
+        for (final dto in dtos) {
+          final item = PlexMappers.mediaItem(dto);
+          for (final g in dto.guids ?? []) {
+            final id = (g as Map<String, dynamic>)['id'] as String?;
+            if (id != null) index[id] = item;
+          }
+        }
+        appLogger.t('[GuidIndex] section ${section.key}(${section.title}) → ${dtos.length} items indexed');
+      } catch (e) {
+        appLogger.t('[GuidIndex] section ${section.key} failed', error: e);
+      }
+    }
+    appLogger.d('[GuidIndex] $sectionType index ready — ${index.length} GUID entries');
+    return index;
   }
 
   /// Get recently added media (filtered to video content only)
@@ -1549,7 +1702,37 @@ class PlexClient
       final first = metadata.first;
       if (first is! Map) return const [];
       final guids = first['Guid'];
-      if (guids is List) return guids;
+      if (guids is List && guids.isNotEmpty) return guids;
+
+      // Fallback: some Plex servers don't include the Guid array on the detail
+      // endpoint (e.g. unrefreshed new-agent movies). Try the global library
+      // search by primary GUID — it goes through a different server code path
+      // and often returns the external IDs when the detail endpoint doesn't.
+      final primaryGuid = first['guid'] as String?;
+      if (primaryGuid != null && primaryGuid.isNotEmpty) {
+        appLogger.t('fetchExternalGuids: no Guid array for $ratingKey, trying /library/all?guid=$primaryGuid fallback');
+        try {
+          final fallback = await _getWithFailover('/library/all?guid=$primaryGuid&includeGuids=1');
+          final fb = fallback.data;
+          if (fb is Map) {
+            final fbContainer = fb['MediaContainer'] as Map?;
+            final fbMetadata = fbContainer?['Metadata'];
+            if (fbMetadata is List && fbMetadata.isNotEmpty) {
+              final fbFirst = fbMetadata.first;
+              if (fbFirst is Map) {
+                final fbGuids = fbFirst['Guid'];
+                if (fbGuids is List && fbGuids.isNotEmpty) {
+                  appLogger.d('fetchExternalGuids: fallback returned ${fbGuids.length} Guids for $ratingKey');
+                  return fbGuids;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          appLogger.t('fetchExternalGuids fallback failed for $ratingKey', error: e);
+        }
+      }
+
       return const [];
     } catch (e) {
       appLogger.d('fetchExternalGuids failed for $ratingKey', error: e);

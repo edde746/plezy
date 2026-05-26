@@ -5,6 +5,7 @@ import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_server_client.dart';
 import '../../models/trakt/trakt_ids.dart';
+import '../../utils/external_ids.dart';
 import '../../models/trakt/trakt_scrobble_request.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/episode_collection.dart';
@@ -14,6 +15,7 @@ import '../settings_service.dart';
 import '../trackers/tracker_constants.dart';
 import '../trackers/tracker_id_resolver.dart';
 import 'trakt_client.dart';
+import 'trakt_scrobble_service.dart';
 import 'trakt_constants.dart';
 import 'trakt_session.dart';
 import 'trakt_sync_queue.dart';
@@ -56,6 +58,28 @@ class TraktSyncService {
 
   bool _isFlushing = false;
 
+  /// Set when [flushQueue] runs. Used to detect offline-reconnect progress
+  /// pushes (which happen shortly after a flush) so [_onProgressPushed] fires
+  /// only for that case and not for every 10-second online progress push.
+  DateTime? _lastFlushTime;
+
+  /// Called after each successful history-add dispatch. Registered by
+  /// [TraktAccountProvider] to trigger a lightweight playback refresh so the
+  /// next episode surfaces in Continue Watching without waiting for the next sync.
+  void Function()? _onHistoryAdded;
+
+  /// Register (or clear) the post-history-add callback.
+  void setOnHistoryAdded(void Function()? callback) => _onHistoryAdded = callback;
+
+  /// Called after the first successful progress push that follows a [flushQueue]
+  /// run. Registered by [TraktAccountProvider] to refresh the playback cache so
+  /// Continue Watching reflects the offline position without waiting for the
+  /// next full sync.
+  void Function()? _onProgressPushed;
+
+  /// Register (or clear) the post-progress-push callback.
+  void setOnProgressPushed(void Function()? callback) => _onProgressPushed = callback;
+
   Future<void> initialize({required MultiServerManager serverManager}) async {
     if (_isInitialized) return;
     _isInitialized = true;
@@ -97,6 +121,16 @@ class TraktSyncService {
 
   bool get _canPush => _isEnabled && _client != null;
 
+  /// Resolve external IDs for a movie without pushing any sync operation.
+  /// Used by [TraktWatchStateProvider] as a background fetch callback for
+  /// movies whose Plex detail endpoint returns no Guid array.
+  Future<ExternalIds?> resolveMovieIds(String ratingKey, String serverId) async {
+    final resolver = _resolverFor(serverId);
+    if (resolver == null) return null;
+    final resolved = await resolver.resolveForMovie(ratingKey);
+    return resolved?.external;
+  }
+
   TrackerIdResolver? _resolverFor(String serverId) {
     final cached = _resolvers[serverId];
     if (cached != null) return cached;
@@ -115,16 +149,49 @@ class TraktSyncService {
   MediaServerClient? _clientFor(String serverId) => _serverManager?.getClient(serverId);
 
   Future<void> _onWatchStateEvent(WatchStateEvent event) async {
+    appLogger.i('Trakt sync: event received — ${event.changeType.name} for ${event.itemId} (canPush=$_canPush, enabled=$_isEnabled, hasClient=${_client != null})');
     if (!_canPush) return;
-    if (event.changeType != WatchStateChangeType.watched && event.changeType != WatchStateChangeType.unwatched) return;
+
+    final kind = TraktMediaKind.tryFromMediaKindId(event.mediaType);
+    if (kind == null) return;
+
+    if (event.changeType == WatchStateChangeType.progressUpdate) {
+      // Suppress progress save when the scrobble service just sent a stop.
+      // The stop itself captures the final position; a subsequent
+      // savePlaybackProgress() → POST /scrobble/stop would re-add the episode
+      // to Trakt's /sync/playback, undoing the stop's cleanup and making the
+      // skipped episode reappear in Continue Watching.
+      // Checked here (before any await) — cancelInFlight() clears _lastSentState
+      // before _dispatch fires, so a later check would always return false.
+      if (TraktScrobbleService.instance.wasRecentlyStopped) {
+        appLogger.i('Trakt sync: progressUpdate suppressed — scrobble stop just sent (ep skip path)');
+        return;
+      }
+      // Save resume point so the user can continue on another device.
+      final progress = event.progressPercent;
+      appLogger.i('Trakt sync: progressUpdate — pushing resume point for ${event.itemId} at ${((progress ?? 0) * 100).toStringAsFixed(1)}%');
+      if (progress != null && progress > 0.01) {
+        await _push(
+          op: TraktSyncOp.progress,
+          ratingKey: event.itemId,
+          serverId: event.serverId,
+          libraryGlobalKey: event.librarySectionGlobalKey,
+          kind: kind,
+          watchedAtIso: DateTime.now().toUtc().toIso8601String(),
+          progress: (progress * 100.0).clamp(0.0, 100.0),
+        );
+      }
+      return;
+    }
 
     if (!_isLibraryAllowed(event.librarySectionGlobalKey)) {
-      appLogger.d('Trakt sync: library filtered out for ${event.itemId}');
+      appLogger.i('Trakt sync: ${event.changeType.name} for ${event.itemId} dropped — library ${event.librarySectionGlobalKey} not allowed');
       return;
     }
 
     final op = event.changeType == WatchStateChangeType.watched ? TraktSyncOp.add : TraktSyncOp.remove;
     final watchedAtIso = DateTime.now().toUtc().toIso8601String();
+    appLogger.i('Trakt sync: ${event.changeType.name} event — op=${op.name} for ${event.itemId} (${event.mediaType})');
 
     switch (event.mediaType) {
       case 'movie':
@@ -205,6 +272,7 @@ class TraktSyncService {
     required TraktMediaKind kind,
     required String watchedAtIso,
     MediaItem? episodeMeta,
+    double? progress,
   }) async {
     final resolver = _resolverFor(serverId);
     if (resolver == null) {
@@ -224,24 +292,32 @@ class TraktSyncService {
       // MediaServerClient surface (Plex `/library/metadata`, Jellyfin
       // `/Users/{id}/Items/{id}`).
       final mediaClient = _clientFor(serverId);
-      if (mediaClient == null) return;
+      if (mediaClient == null) {
+        appLogger.d('Trakt sync: no media client for $serverId, skipping $ratingKey');
+        return;
+      }
       final metadata = episodeMeta ?? await mediaClient.fetchItem(ratingKey);
-      if (metadata == null) return;
+      if (metadata == null) {
+        appLogger.i('Trakt sync: fetchItem returned null for $ratingKey, skipping');
+        return;
+      }
       season = metadata.parentIndex;
       number = metadata.index;
-      if (season == null || number == null) return;
+      if (season == null || number == null) {
+        appLogger.i('Trakt sync: missing season/number for $ratingKey (s=$season e=$number), skipping');
+        return;
+      }
       resolved = await resolver.resolveShowForEpisode(metadata, includeAnimeProgress: false);
     }
 
     if (resolved == null) {
-      appLogger.d('Trakt sync: no IDs for ${kind.name} $ratingKey, dropping');
+      appLogger.i('Trakt sync: no IDs for ${kind.name} $ratingKey, dropping');
       return;
     }
-
     final ids = TraktIds.fromExternal(resolved.external);
     final body = kind == TraktMediaKind.movie
-        ? TraktScrobbleRequest.movie(ids: ids)
-        : TraktScrobbleRequest.episode(showIds: ids, season: season!, number: number!);
+        ? TraktScrobbleRequest.movie(ids: ids, progress: progress)
+        : TraktScrobbleRequest.episode(showIds: ids, season: season!, number: number!, progress: progress);
 
     final item = TraktSyncQueueItem(
       op: op,
@@ -252,6 +328,7 @@ class TraktSyncService {
       ids: ids,
       season: season,
       number: number,
+      progress: progress,
       watchedAtIso: watchedAtIso,
     );
 
@@ -266,9 +343,17 @@ class TraktSyncService {
     }
     try {
       await _dispatch(client, item, body);
-      appLogger.d('Trakt sync: ${item.op.name} ${item.ratingKey} → ok');
+      appLogger.i('Trakt sync: ${item.op.name} ${item.ratingKey} → ok');
+      if (item.op == TraktSyncOp.add) _onHistoryAdded?.call();
+      if (item.op == TraktSyncOp.progress) {
+        final lastFlush = _lastFlushTime;
+        if (lastFlush != null && DateTime.now().difference(lastFlush).inSeconds < 60) {
+          _lastFlushTime = null; // fire once per flush cycle
+          _onProgressPushed?.call();
+        }
+      }
     } catch (e) {
-      appLogger.d('Trakt sync: ${item.op.name} ${item.ratingKey} failed, queuing', error: e);
+      appLogger.i('Trakt sync: ${item.op.name} ${item.ratingKey} failed, queuing', error: e);
       await _persistOrBuffer(item);
     }
   }
@@ -297,6 +382,7 @@ class TraktSyncService {
     return switch (item.op) {
       TraktSyncOp.add => client.addToHistory(body, watchedAt: item.watchedAtIso),
       TraktSyncOp.remove => client.removeFromHistory(body),
+      TraktSyncOp.progress => client.savePlaybackProgress(body),
     };
   }
 
@@ -307,26 +393,51 @@ class TraktSyncService {
     final client = _client;
     if (client == null) return;
     _isFlushing = true;
+    _lastFlushTime = DateTime.now();
     try {
       await _recoverInMemoryFallback();
 
+      // fetchExternalGuids returns [] (not throws) on network failure, so
+      // offline lookups are cached as null in TrackerIdResolver. Clear before
+      // draining so reconnect pushes — including those triggered by the
+      // notifyProgress event from OfflineWatchSyncService._syncAction() —
+      // make a fresh network call instead of hitting a stale null entry.
+      for (final resolver in _resolvers.values) {
+        resolver.clearCache();
+      }
+
+      final nowEpoch = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       await _queue.drainWith(_activeUserUuid, (item) async {
         if (!_isLibraryAllowed(item.libraryGlobalKey)) {
           appLogger.d('Trakt sync: queued library filtered out for ${item.ratingKey}');
           return null;
         }
-        if (item.attempts >= TraktSyncQueue.maxAttempts) {
+
+        // Legacy items queued with needsResolution=true by an older build are
+        // dropped; the OfflineWatchSyncService._syncAction() → notifyProgress
+        // path now handles these items correctly on reconnect.
+        if (item.needsResolution) return null;
+
+        // 404 backoff: item not in Trakt's DB yet — retry after 24 h.
+        if (item.retryNotBefore != null && nowEpoch < item.retryNotBefore!) {
+          return item; // keep, skip for now
+        }
+        if (item.retryNotBefore == null && item.attempts >= TraktSyncQueue.maxAttempts) {
           appLogger.w('Trakt sync: dropping ${item.op.name} ${item.ratingKey} after ${item.attempts} attempts');
           return null;
         }
         try {
           await _dispatch(client, item, _bodyFor(item));
-          appLogger.d('Trakt sync: drained ${item.op.name} ${item.ratingKey}');
           await Future<void>.delayed(_queueRequestSpacing);
           return null;
         } catch (e) {
-          appLogger.d('Trakt sync: drain failed for ${item.ratingKey}, will retry', error: e);
           await Future<void>.delayed(_queueRequestSpacing);
+          if (e is TraktApiException && e.statusCode == 404) {
+            // Item not found in Trakt's DB — may be added later; retry in 24 h.
+            appLogger.d('Trakt sync: 404 for ${item.ratingKey}, backing off 24 h');
+            return item.withRetryNotBefore(nowEpoch + 86400);
+          }
+          appLogger.d('Trakt sync: drain failed for ${item.ratingKey}, will retry', error: e);
           return item.incrementAttempts();
         }
       });
@@ -353,11 +464,12 @@ class TraktSyncService {
 
   TraktScrobbleRequest _bodyFor(TraktSyncQueueItem item) {
     return switch (item.kind) {
-      TraktMediaKind.movie => TraktScrobbleRequest.movie(ids: item.ids),
+      TraktMediaKind.movie => TraktScrobbleRequest.movie(ids: item.ids, progress: item.progress),
       TraktMediaKind.episode => TraktScrobbleRequest.episode(
         showIds: item.ids,
         season: item.season!,
         number: item.number!,
+        progress: item.progress,
       ),
     };
   }

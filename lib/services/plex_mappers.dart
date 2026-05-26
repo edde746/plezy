@@ -478,6 +478,8 @@ class PlexMetadataDto {
   final bool? skipChildren;
   @JsonKey(fromJson: flexibleInt)
   final int? flattenSeasons;
+  @JsonKey(name: 'Guid', includeToJson: false)
+  final List<dynamic>? guids;
 
   const PlexMetadataDto({
     required this.ratingKey,
@@ -547,6 +549,7 @@ class PlexMetadataDto {
     this.backgroundSquare,
     this.skipChildren,
     this.flattenSeasons,
+    this.guids,
   });
 
   factory PlexMetadataDto.fromJson(Map<String, dynamic> rawJson) {
@@ -676,6 +679,7 @@ class PlexMetadataDto {
     String? backgroundSquare,
     bool? skipChildren,
     int? flattenSeasons,
+    List<dynamic>? guids,
   }) {
     return PlexMetadataDto(
       ratingKey: ratingKey ?? this.ratingKey,
@@ -745,6 +749,7 @@ class PlexMetadataDto {
       backgroundSquare: backgroundSquare ?? this.backgroundSquare,
       skipChildren: skipChildren ?? this.skipChildren,
       flattenSeasons: flattenSeasons ?? this.flattenSeasons,
+      guids: guids ?? this.guids,
     );
   }
 }
@@ -754,6 +759,7 @@ Map<String, Object?>? _rawMetadata(PlexMetadataDto dto) {
   if (dto.key != null) raw['key'] = dto.key;
   if (dto.skipChildren != null) raw['skipChildren'] = dto.skipChildren;
   if (dto.flattenSeasons != null) raw['flattenSeasons'] = dto.flattenSeasons;
+  if (dto.guids != null) raw['Guid'] = dto.guids;
   return raw.isEmpty ? null : raw;
 }
 

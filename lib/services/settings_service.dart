@@ -15,6 +15,8 @@ export 'base_shared_preferences_service.dart'
 import '../models/transcode_quality_preset.dart';
 import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
+import 'trackers/tracker_coordinator.dart';
+import 'trackers/watch_state_overlay.dart';
 
 enum ThemeMode { system, light, dark, oled }
 
@@ -144,6 +146,12 @@ class _AutoPipPref extends Pref<bool> {
 
   @override
   Future<void> writeTo(BaseSharedPreferencesService svc, bool value) => svc.writeBool(key, value);
+}
+
+/// Stores the name of the active watch-state authority tracker: 'trakt',
+/// 'simkl', 'mal', 'anilist', or 'none' (disabled).
+class _WatchStateAuthorityTrackerPref extends StringPref {
+  const _WatchStateAuthorityTrackerPref() : super('watch_state_authority_tracker', defaultValue: 'none');
 }
 
 String? _trimEmptyAsNull(String? v) {
@@ -319,6 +327,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const enableDiscordRPC = BoolPref('enable_discord_rpc');
   static const enableTraktScrobble = BoolPref('enable_trakt_scrobble', defaultValue: true);
   static const enableTraktWatchedSync = BoolPref('enable_trakt_watched_sync', defaultValue: true);
+  static const trackerStateAuthority = _WatchStateAuthorityTrackerPref();
   static const enableMalScrobble = BoolPref('enable_mal_scrobble', defaultValue: true);
   static const enableAnilistScrobble = BoolPref('enable_anilist_scrobble', defaultValue: true);
   static const enableSimklScrobble = BoolPref('enable_simkl_scrobble', defaultValue: true);
@@ -668,89 +677,88 @@ class SettingsService extends BaseSharedPreferencesService {
   /// reset surface — notably excludes user-customized data (intro/credits regex
   /// patterns) and opt-in toggles prior versions didn't reset, so behavior
   /// stays identical for users.
-  static List<Pref<Object?>> _resettablePrefs() => [
-    enableDebugLogging,
-    bufferSize,
-    enableHardwareDecoding,
-    enableHDR,
-    preferredVideoCodec,
-    preferredAudioCodec,
-    viewMode,
-    showHeroSection,
-    seekTimeSmall,
-    seekTimeLarge,
-    sleepTimerDuration,
-    audioSyncOffset,
-    subtitleSyncOffset,
-    subtitleSearchLanguage,
-    volume,
-    maxVolume,
-    subtitleFontSize,
-    subtitleTextColor,
-    subtitleBorderSize,
-    subtitleBorderColor,
-    subtitleBackgroundColor,
-    subtitleBackgroundOpacity,
-    subtitlePosition,
-    rememberTrackSelections,
-    customDownloadPathType,
-    downloadOnWifiOnly,
-    autoCheckUpdatesOnStartup,
-    showPerformanceOverlay,
-    autoHidePerformanceOverlay,
-    enableDiscordRPC,
-    enableTraktScrobble,
-    enableTraktWatchedSync,
-    enableMalScrobble,
-    enableAnilistScrobble,
-    enableSimklScrobble,
-    matchContentFrameRate,
-    tunneledPlayback,
-    dvConversionMode,
-    defaultPlaybackSpeed,
-    defaultBoxFitMode,
-    autoPlayNextEpisode,
-    useExoPlayer,
-    alwaysKeepSidebarOpen,
-    showUnwatchedCount,
-    showEpisodeNumberOnCards,
-    showSeasonPostersOnTabs,
-    hideSpoilers,
-    showNavBarLabels,
-    globalShaderPreset,
-    requireProfileSelectionOnOpen,
-    useExternalPlayer,
-    forceTvMode,
-    ambientLighting,
-    audioPassthrough,
-    audioNormalization,
-    themeMode,
-    keyboardShortcuts,
-    keyboardHotkeys,
-    libraryDensity,
-    episodePosterMode,
-    mediaVersionPreferences,
-    appLocale,
-    customDownloadPath,
-    videoPlayerNavigationEnabled,
-    mpvConfigText,
-    mpvPresets,
-    autoPip,
-    customShaderPresets,
-    selectedExternalPlayer,
-    customExternalPlayers,
-    customRelayUrl,
-    companionRemoteLastHostAddress,
+  static List<String> _resettableKeys() => [
+    enableDebugLogging.key,
+    bufferSize.key,
+    enableHardwareDecoding.key,
+    enableHDR.key,
+    preferredVideoCodec.key,
+    preferredAudioCodec.key,
+    viewMode.key,
+    showHeroSection.key,
+    seekTimeSmall.key,
+    seekTimeLarge.key,
+    sleepTimerDuration.key,
+    audioSyncOffset.key,
+    subtitleSyncOffset.key,
+    subtitleSearchLanguage.key,
+    volume.key,
+    maxVolume.key,
+    subtitleFontSize.key,
+    subtitleTextColor.key,
+    subtitleBorderSize.key,
+    subtitleBorderColor.key,
+    subtitleBackgroundColor.key,
+    subtitleBackgroundOpacity.key,
+    subtitlePosition.key,
+    rememberTrackSelections.key,
+    customDownloadPathType.key,
+    downloadOnWifiOnly.key,
+    autoCheckUpdatesOnStartup.key,
+    showPerformanceOverlay.key,
+    autoHidePerformanceOverlay.key,
+    enableDiscordRPC.key,
+    enableTraktScrobble.key,
+    enableTraktWatchedSync.key,
+    trackerStateAuthority.key,
+    enableMalScrobble.key,
+    enableAnilistScrobble.key,
+    enableSimklScrobble.key,
+    matchContentFrameRate.key,
+    tunneledPlayback.key,
+    dvConversionMode.key,
+    defaultPlaybackSpeed.key,
+    defaultBoxFitMode.key,
+    autoPlayNextEpisode.key,
+    useExoPlayer.key,
+    alwaysKeepSidebarOpen.key,
+    showUnwatchedCount.key,
+    showEpisodeNumberOnCards.key,
+    showSeasonPostersOnTabs.key,
+    hideSpoilers.key,
+    showNavBarLabels.key,
+    globalShaderPreset.key,
+    requireProfileSelectionOnOpen.key,
+    useExternalPlayer.key,
+    forceTvMode.key,
+    ambientLighting.key,
+    audioPassthrough.key,
+    audioNormalization.key,
+    themeMode.key,
+    keyboardShortcuts.key,
+    keyboardHotkeys.key,
+    libraryDensity.key,
+    _legacyUseSeasonPosterKey,
+    episodePosterMode.key,
+    mediaVersionPreferences.key,
+    appLocale.key,
+    customDownloadPath.key,
+    videoPlayerNavigationEnabled.key,
+    _legacyMpvConfigEntriesKey,
+    mpvConfigText.key,
+    mpvPresets.key,
+    autoPip.key,
+    customShaderPresets.key,
+    selectedExternalPlayer.key,
+    customExternalPlayers.key,
+    _bufferSizeMigratedKey,
+    customRelayUrl.key,
+    companionRemoteLastHostAddress.key,
   ];
 
   Future<void> resetAllSettings() async {
-    final resettable = _resettablePrefs();
     await Future.wait([
-      ...resettable.map((p) => prefs.remove(p.key)),
-      // Legacy migration sentinels — removed alongside the keys they guarded.
-      prefs.remove(_legacyUseSeasonPosterKey),
-      prefs.remove(_legacyMpvConfigEntriesKey),
-      prefs.remove(_bufferSizeMigratedKey),
+      ..._resettableKeys().map((k) => prefs.remove(k)),
       ...TrackerService.values.expand(
         (s) => [prefs.remove(trackerFilterModePref(s).key), prefs.remove(trackerFilterIdsPref(s).key)],
       ),
@@ -769,5 +777,7 @@ class SettingsService extends BaseSharedPreferencesService {
     PaintingBinding.instance.imageCache.clear();
     PaintingBinding.instance.imageCache.clearLiveImages();
     await PlexImageCacheManager.instance.emptyCache();
+    await WatchStateOverlay.instance.invalidateCache();
+    TrackerCoordinator.instance.invalidateResolverCache();
   }
 }

@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/trackers_provider.dart';
 import '../../providers/trakt_account_provider.dart';
+import '../../services/settings_service.dart';
+import '../../services/trackers/tracker_constants.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'tracker_settings_screen.dart';
@@ -44,18 +46,33 @@ class TrackersSettingsScreen extends StatelessWidget {
   }
 
   Widget _trakt() => Consumer<TraktAccountProvider>(
-    builder: (context, account, _) => _TrackerHubRow(
-      leading: const _TrackerLogo('assets/trakt_circlemark.svg'),
-      title: t.trakt.title,
-      username: account.isConnected ? account.username : null,
-      onTap: () {
-        if (account.isConnected) {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const TraktSettingsScreen()));
-        } else {
-          startTraktConnection(context);
-        }
-      },
-    ),
+    builder: (context, account, _) {
+      final svc = SettingsService.instanceOrNull;
+      if (svc == null) {
+        return _TrackerHubRow(
+          leading: const _TrackerLogo('assets/trakt_circlemark.svg'),
+          title: t.trakt.title,
+          username: null,
+          onTap: () => startTraktConnection(context),
+        );
+      }
+      return ValueListenableBuilder<String>(
+        valueListenable: svc.listenable(SettingsService.trackerStateAuthority),
+        builder: (_, authorityValue, _) => _TrackerHubRow(
+          leading: const _TrackerLogo('assets/trakt_circlemark.svg'),
+          title: t.trakt.title,
+          username: account.isConnected ? account.username : null,
+          isAuthority: account.isConnected && authorityValue == TrackerService.trakt.name,
+          onTap: () {
+            if (account.isConnected) {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const TraktSettingsScreen()));
+            } else {
+              startTraktConnection(context);
+            }
+          },
+        ),
+      );
+    },
   );
 
   Widget _mal() => Consumer<TrackersProvider>(
@@ -120,16 +137,33 @@ class _TrackerHubRow extends StatelessWidget {
   /// Non-null when connected. When null, the subtitle shows "Not connected".
   final String? username;
 
+  /// True when this tracker is currently acting as watch-state authority.
+  final bool isAuthority;
+
   final VoidCallback onTap;
 
-  const _TrackerHubRow({required this.leading, required this.title, required this.username, required this.onTap});
+  const _TrackerHubRow({
+    required this.leading,
+    required this.title,
+    required this.username,
+    required this.onTap,
+    this.isAuthority = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final String subtitle;
+    if (username != null) {
+      subtitle = isAuthority
+          ? '${t.trackers.connectedAs(username: username!)} · Watch history source'
+          : t.trackers.connectedAs(username: username!);
+    } else {
+      subtitle = t.trackers.notConnected;
+    }
     return ListTile(
       leading: leading,
       title: Text(title),
-      subtitle: Text(username != null ? t.trackers.connectedAs(username: username!) : t.trackers.notConnected),
+      subtitle: Text(subtitle),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: onTap,
     );

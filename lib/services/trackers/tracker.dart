@@ -1,6 +1,7 @@
 import '../../models/trackers/tracker_context.dart';
 import '../settings_service.dart';
 import 'tracker_constants.dart';
+import 'tracker_watch_state_provider.dart';
 
 /// Abstract tracker contract: the coordinator calls [markWatched] once per
 /// playback when progress crosses the watched threshold. Enabled/auth gating
@@ -31,6 +32,10 @@ abstract class Tracker {
 
   Future<void> markWatched(TrackerContext ctx);
   Future<void> markUnwatched(TrackerContext ctx);
+
+  /// Optional: if this tracker supports pull-based watch state authority,
+  /// return its provider here. Returns [null] by default (push-only trackers).
+  TrackerWatchStateProvider? get watchStateProvider => null;
 }
 
 class TrackerRatingUnavailableException implements Exception {
@@ -56,6 +61,9 @@ abstract class TrackerBase implements Tracker {
   bool get canScrobble => _isEnabled && hasActiveClient;
 
   @override
+  TrackerWatchStateProvider? get watchStateProvider => null;
+
+  @override
   Future<void> initialize() async {
     if (_isInitialized) return;
     _isInitialized = true;
@@ -66,6 +74,9 @@ abstract class TrackerBase implements Tracker {
   Future<void> setEnabled(bool enabled) async {
     _isEnabled = enabled;
   }
+
+  @override
+  Future<void> markUnwatched(TrackerContext ctx) async {}
 
   @override
   bool shouldScrobbleForLibrary(String? libraryGlobalKey) =>

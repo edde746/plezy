@@ -20,6 +20,8 @@ import '../../media/media_server_client.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/libraries_provider.dart';
 import '../../services/settings_service.dart';
+import '../../services/trackers/tracker_sync_notifier.dart';
+import '../../services/trackers/watch_state_overlay.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
@@ -40,6 +42,7 @@ import 'tabs/library_browse_tab.dart';
 import 'tabs/library_recommended_tab.dart';
 import 'tabs/library_collections_tab.dart';
 import 'tabs/library_playlists_tab.dart';
+import 'tabs/library_tracker_playlists_tab.dart';
 
 enum LibraryTabType { recommended, browse, collections, playlists }
 
@@ -420,13 +423,30 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         onDataLoaded: () => _handleTabDataLoaded(tabIndex),
         onBack: focusTabBar,
       ),
-      LibraryTabType.playlists => LibraryPlaylistsTab(
-        key: _playlistsTabKey,
-        library: library,
-        isActive: isActive,
-        suppressAutoFocus: suppressAutoFocus,
-        onDataLoaded: () => _handleTabDataLoaded(tabIndex),
-        onBack: focusTabBar,
+      LibraryTabType.playlists => ListenableBuilder(
+        // Rebuild on activate/deactivate so the tab swaps to the tracker's
+        // curated list (and back) without remounting the parent.
+        listenable: TrackerSyncNotifier.instance,
+        builder: (_, _) {
+          if (WatchStateOverlay.instance.hasActiveAuthority) {
+            return LibraryTrackerPlaylistsTab(
+              key: _playlistsTabKey,
+              library: library,
+              isActive: isActive,
+              suppressAutoFocus: suppressAutoFocus,
+              onDataLoaded: () => _handleTabDataLoaded(tabIndex),
+              onBack: focusTabBar,
+            );
+          }
+          return LibraryPlaylistsTab(
+            key: _playlistsTabKey,
+            library: library,
+            isActive: isActive,
+            suppressAutoFocus: suppressAutoFocus,
+            onDataLoaded: () => _handleTabDataLoaded(tabIndex),
+            onBack: focusTabBar,
+          );
+        },
       ),
     };
   }

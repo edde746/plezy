@@ -62,8 +62,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // neutral [MediaServerClient]; null short-circuits cleanly.
     if (mediaClient != null) {
       unawaited(DiscordRPCService.instance.startPlayback(metadata, mediaClient));
-      unawaited(TraktScrobbleService.instance.startPlayback(metadata, mediaClient, isLive: widget.isLive));
-      unawaited(TrackerCoordinator.instance.startPlayback(metadata, mediaClient, isLive: widget.isLive));
+      TrackerLifecycle.startPlayback(metadata, mediaClient, isLive: widget.isLive);
     }
   }
 
@@ -171,12 +170,10 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         speed: currentPlayer.state.rate,
       );
       DiscordRPCService.instance.updatePosition(position);
-      TraktScrobbleService.instance.updatePosition(position);
-      TrackerCoordinator.instance.updatePosition(position);
+      TrackerLifecycle.updatePosition(position);
       // Keep Trakt's known duration current — mpv only emits on the duration
       // stream once per load, but this is cheap and avoids an extra listener.
-      TraktScrobbleService.instance.updateDuration(currentPlayer.state.duration);
-      TrackerCoordinator.instance.updateDuration(currentPlayer.state.duration);
+      TrackerLifecycle.updateDuration(currentPlayer.state.duration);
     });
 
     // Listen to playback rate changes for Discord Rich Presence
@@ -221,10 +218,10 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // Update Discord Rich Presence + Trakt scrobble
     if (isPlaying) {
       DiscordRPCService.instance.resumePlayback();
-      TraktScrobbleService.instance.resumePlayback();
+      TrackerLifecycle.resumePlayback();
     } else {
       DiscordRPCService.instance.pausePlayback();
-      TraktScrobbleService.instance.pausePlayback();
+      TrackerLifecycle.pausePlayback();
     }
 
     // Update auto-PiP readiness

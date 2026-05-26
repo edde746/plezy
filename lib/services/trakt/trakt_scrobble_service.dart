@@ -50,11 +50,15 @@ class TraktScrobbleService {
   TraktClient? _client;
   TrackerIdResolver? _resolver;
   TraktScrobbleRequest? _currentBody;
+  void Function(int traktShowId, int season, int episode)? _onPlaybackStopped;
   Duration _currentPosition = Duration.zero;
   Duration _currentDuration = Duration.zero;
   TraktScrobbleState? _lastSentState;
   DateTime? _lastSentAt;
   DateTime? _lastSeekCheckpointAt;
+  // Incremented by cancelInFlight() so any in-flight startPlayback can detect
+  // it has been superseded and self-abort before sending a ghost scrobble.
+  int _startGeneration = 0;
 
   Future<void> initialize() async {
     if (_isInitialized) return;
@@ -66,6 +70,14 @@ class TraktScrobbleService {
   Future<void> setEnabled(bool enabled) async {
     _isEnabled = enabled;
     if (!enabled) cancelInFlight();
+  }
+
+  /// Register a callback fired after each successful scrobble stop for an episode.
+  /// The resolved Trakt show ID, season, and episode number are passed directly
+  /// so the receiver can stamp the local cache without re-deriving IDs.
+  /// Pass null to unregister (e.g. on profile switch / disconnect).
+  void setOnPlaybackStopped(void Function(int traktShowId, int season, int episode)? callback) {
+    _onPlaybackStopped = callback;
   }
 
   /// Switch to a different account. Cancels any in-flight scrobble for the
@@ -88,7 +100,7 @@ class TraktScrobbleService {
     final localIds = TraktIds.fromExternal(ctx.ids.external).toJson();
     if (localIds.isEmpty) throw const TrackerRatingUnavailableException('Trakt');
 
-    final entries = await client.getRatings(_ratingType(ctx));
+    final entries = await client.getRatings(type: _ratingType(ctx));
     for (final entry in entries) {
       if (entry is! Map) continue;
       if (!_ratingEntryMatches(ctx, entry.cast<String, dynamic>(), localIds)) continue;
@@ -112,7 +124,11 @@ class TraktScrobbleService {
 
   /// Drop the current scrobble state without sending a stop. Called on profile
   /// switch and when the service is disabled mid-playback.
+  /// Incrementing [_startGeneration] causes any concurrent [startPlayback]
+  /// still awaiting [_buildBody] to self-abort rather than send a ghost scrobble.
   void cancelInFlight() {
+    appLogger.d('Trakt [scrobble]: cancelInFlight() gen $_startGeneration → ${_startGeneration + 1}, hadBody=${_currentBody != null}, lastState=$_lastSentState');
+    _startGeneration++;
     _currentBody = null;
     _lastSentState = null;
     _lastSentAt = null;
@@ -123,6 +139,13 @@ class TraktScrobbleService {
   }
 
   bool get _canScrobble => _isEnabled && _client != null;
+
+  /// True when the most recent scrobble event sent was a stop.
+  /// Used by TraktSyncService to suppress the final progress push that fires
+  /// immediately after _sendStoppedProgressOnce() during episode navigation.
+  /// Must be checked before any await — cancelInFlight() clears _lastSentState
+  /// before _dispatch fires, so a late check would always return false.
+  bool get wasRecentlyStopped => _lastSentState == TraktScrobbleState.stop;
 
   String _ratingType(TrackerRatingContext ctx) => switch (ctx.kind) {
     MediaKind.movie => 'movies',
@@ -219,7 +242,10 @@ class TraktScrobbleService {
   }
 
   Future<void> startPlayback(MediaItem metadata, MediaServerClient client, {bool isLive = false}) async {
-    if (!_canScrobble) return;
+    if (!_canScrobble) {
+      appLogger.i('Trakt [scrobble]: startPlayback() — skipped (enabled=$_isEnabled, hasClient=${_client != null})');
+      return;
+    }
     if (isLive) return;
 
     final type = metadata.kind;
@@ -227,7 +253,7 @@ class TraktScrobbleService {
 
     final settings = SettingsService.instanceOrNull;
     if (settings != null && !settings.isLibraryAllowedForTracker(TrackerService.trakt, metadata.libraryGlobalKey)) {
-      appLogger.d('Trakt: library filtered out for ${metadata.id}');
+      appLogger.i('Trakt [scrobble]: startPlayback() — library filtered for ${metadata.id}');
       return;
     }
 
@@ -238,12 +264,21 @@ class TraktScrobbleService {
     _lastSeekCheckpointAt = null;
     _resolver = TrackerIdResolver(client, needsFribb: () => false);
 
+    final generation = ++_startGeneration;
+    appLogger.d('Trakt [scrobble]: startPlayback() — resolving IDs for ${metadata.id} at gen=$generation');
     final body = await _buildBody(metadata);
+    // A concurrent stopPlayback() or new startPlayback() increments _startGeneration.
+    // If ours no longer matches, this start was cancelled — abort without sending.
+    if (_startGeneration != generation) {
+      appLogger.d('Trakt [scrobble]: startPlayback() — aborted for ${metadata.id} (gen changed $generation → $_startGeneration)');
+      return;
+    }
     if (body == null) {
-      appLogger.d('Trakt: skipping scrobble — no usable IDs for ${metadata.id}');
+      appLogger.d('Trakt [scrobble]: startPlayback() — no usable IDs for ${metadata.id}, cancelling');
       cancelInFlight();
       return;
     }
+    appLogger.d('Trakt [scrobble]: startPlayback() — sending start for ${metadata.id} at gen=$generation');
     _currentBody = body;
     await _send(TraktScrobbleState.start, progress: _progressPercent());
   }
@@ -273,19 +308,63 @@ class TraktScrobbleService {
   }
 
   Future<void> pausePlayback() async {
-    if (_currentBody == null) return;
+    if (_currentBody == null) {
+      appLogger.d('Trakt [scrobble]: pausePlayback() — skipped (no active body)');
+      return;
+    }
+    // Don't send a pause if the last state was already a stop — the player
+    // fires isPlaying=false as a side-effect of navigation (pause() called in
+    // _navigateToEpisode before pushReplacement). Sending pause after stop
+    // would re-add the episode to Trakt's /sync/playback, undoing the
+    // watched-marking from the stop scrobble.
+    if (_lastSentState == TraktScrobbleState.stop) {
+      appLogger.d('Trakt [scrobble]: pausePlayback() — suppressed (last sent was stop, would undo watched-mark)');
+      return;
+    }
+    appLogger.d('Trakt [scrobble]: pausePlayback() — sending pause @ ${_progressPercent().toStringAsFixed(1)}% (lastState=$_lastSentState)');
     await _send(TraktScrobbleState.pause, progress: _progressPercent());
   }
 
   Future<void> resumePlayback() async {
-    if (_currentBody == null) return;
+    if (_currentBody == null) {
+      appLogger.d('Trakt [scrobble]: resumePlayback() — skipped (no active body)');
+      return;
+    }
+    appLogger.d('Trakt [scrobble]: resumePlayback() — sending start');
     await _send(TraktScrobbleState.start, progress: _progressPercent());
   }
 
   Future<void> stopPlayback() async {
-    if (_currentBody == null) return;
+    final body = _currentBody;
+    if (body == null) {
+      // No active scrobble body yet — startPlayback may still be resolving IDs.
+      // Cancel it so it doesn't send a ghost start after we've moved on.
+      appLogger.d('Trakt [scrobble]: stopPlayback() — no body, cancelling in-flight (gen=$_startGeneration)');
+      cancelInFlight();
+      return;
+    }
+    // Capture generation before the async send so we can detect if a concurrent
+    // startPlayback() incremented it while we were waiting (episode-skip race).
+    final genAtStop = _startGeneration;
+    appLogger.d('Trakt [scrobble]: stopPlayback() — sending stop @ ${_progressPercent().toStringAsFixed(1)}% gen=$genAtStop lastState=$_lastSentState');
     await _send(TraktScrobbleState.stop, progress: _progressPercent());
-    cancelInFlight();
+    // Fire before clearing body.
+    if (body case TraktScrobbleEpisodeRequest(:final showIds, :final season, :final number)) {
+      final traktId = showIds.trakt;
+      if (traktId != null) _onPlaybackStopped?.call(traktId, season, number);
+    }
+    if (_startGeneration == genAtStop) {
+      // Nothing started while we were stopping — full reset.
+      appLogger.d('Trakt [scrobble]: stopPlayback() — gen unchanged ($genAtStop), full reset');
+      cancelInFlight();
+    } else {
+      // A concurrent startPlayback() incremented _startGeneration while we were
+      // sending stop (episode-skip path). We must NOT touch _startGeneration or
+      // _resolver — that would abort the new episode's in-flight start. Only
+      // null the body if startPlayback hasn't already replaced it with ep2's body.
+      appLogger.d('Trakt [scrobble]: stopPlayback() — gen changed ($genAtStop → $_startGeneration), ep2 already started; partial reset only');
+      if (_currentBody == body) _currentBody = null;
+    }
   }
 
   Future<TraktScrobbleRequest?> _buildBody(MediaItem metadata) async {
@@ -343,13 +422,22 @@ class TraktScrobbleService {
   Future<void> _send(TraktScrobbleState state, {required double progress}) async {
     final client = _client;
     final body = _currentBody;
-    if (client == null || body == null) return;
+    if (client == null || body == null) {
+      appLogger.d('Trakt [scrobble]: _send(${state.name}) — skipped (client=${client != null}, body=${body != null})');
+      return;
+    }
 
     final now = DateTime.now();
     if (_lastSentState == state && _lastSentAt != null) {
       final elapsed = now.difference(_lastSentAt!);
-      if (elapsed < _duplicateStateDebounce) return;
-      if (state == TraktScrobbleState.start && elapsed < _startResendThrottle) return;
+      if (elapsed < _duplicateStateDebounce) {
+        appLogger.d('Trakt [scrobble]: _send(${state.name}) — deduped (${elapsed.inMilliseconds}ms < debounce)');
+        return;
+      }
+      if (state == TraktScrobbleState.start && elapsed < _startResendThrottle) {
+        appLogger.d('Trakt [scrobble]: _send(start) — throttled (${elapsed.inSeconds}s < ${_startResendThrottle.inSeconds}s)');
+        return;
+      }
     }
     _lastSentState = state;
     _lastSentAt = now;
@@ -364,10 +452,10 @@ class TraktScrobbleService {
         case TraktScrobbleState.stop:
           await client.scrobbleStop(scrobble);
       }
-      appLogger.d('Trakt: scrobble ${state.name} @ ${progress.toStringAsFixed(1)}%');
+      appLogger.d('Trakt [scrobble]: ✓ ${state.name} @ ${progress.toStringAsFixed(1)}%');
     } catch (e) {
       // Never let scrobble errors block playback.
-      appLogger.d('Trakt: scrobble ${state.name} failed', error: e);
+      appLogger.d('Trakt [scrobble]: ✗ ${state.name} failed', error: e);
     }
   }
 }

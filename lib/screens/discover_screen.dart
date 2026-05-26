@@ -26,7 +26,6 @@ import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/clickable_cursor.dart';
-import '../widgets/loading_indicator_box.dart';
 import '../widgets/profile_switching_overlay.dart';
 import 'profile/profile_switch_screen.dart';
 import '../connection/connection_registry.dart';
@@ -65,6 +64,10 @@ import 'libraries/content_state_builder.dart';
 import 'main_screen.dart';
 import '../watch_together/watch_together.dart';
 import '../providers/companion_remote_provider.dart';
+import '../mixins/tracker_sync_aware.dart';
+import '../services/trackers/tracker_sync_notifier.dart';
+import '../services/trackers/tracker_ui_helper.dart' show resolveTrackerItemForAction;
+import '../services/trackers/watch_state_overlay.dart';
 import '../widgets/companion_remote/remote_session_dialog.dart';
 import 'companion_remote/mobile_remote_screen.dart';
 
@@ -81,6 +84,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         FullRefreshable,
         ItemUpdatable,
         WatchStateAware,
+        TrackerSyncAware,
         TabVisibilityAware,
         FocusableTab,
         WidgetsBindingObserver {
@@ -143,6 +147,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   LibrariesProvider? _librariesProvider;
   Set<String> _lastSeenHiddenKeys = {};
   List<String> _lastSeenLibraryOrderKeys = const [];
+  bool _isCWRefreshing = false;
+  DateTime? _lastTrackerSyncCheck;
+  static const _syncDebounce = Duration(seconds: 60);
 
   // WatchStateAware: watch on-deck items and their parent shows/seasons
   @override
@@ -452,6 +459,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
   }
 
+  @override
+  void onTrackerSyncChanged() {
+    unawaited(_refreshContinueWatching());
+    if (hasTrackerAuthority && _hubs.isNotEmpty) {
+      setState(() {
+        _hubs = _hubs
+            .map((hub) => hub.copyWith(items: applyOverlayAll(hub.items)))
+            .toList();
+      });
+    }
+  }
+
   void _onHiddenLibrariesChanged() {
     final currentKeys = _hiddenLibrariesProvider?.hiddenLibraryKeys ?? {};
     if (currentKeys.length == _lastSeenHiddenKeys.length && currentKeys.containsAll(_lastSeenHiddenKeys)) {
@@ -514,7 +533,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       },
       onSelect: () {
         if (_onDeck.isNotEmpty && _currentHeroIndex < _onDeck.length) {
-          navigateToVideoPlayer(context, metadata: _onDeck[_currentHeroIndex]);
+          unawaited(() async {
+            final resolved = await resolveTrackerItemForAction(context, _onDeck[_currentHeroIndex]);
+            if (resolved != null && mounted) {
+              unawaited(navigateToVideoPlayer(context, metadata: resolved));
+            }
+          }());
         }
       },
     )(node, event);
@@ -682,7 +706,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return 8.0; // Normal size
   }
 
-  Future<void> _loadContent() async {
+  Future<void> _loadContent({bool forceRefresh = false}) async {
     appLogger.d('Loading discover content from all servers');
     setState(() {
       _isLoading = true;
@@ -710,109 +734,145 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       if (!mounted) return;
       _lastSeenHiddenKeys = Set.of(hiddenLibrariesProvider.hiddenLibraryKeys);
 
-      // Let aggregation service fetch libraries internally; the LibrariesProvider
-      // stores neutral MediaLibrary objects.
+      // Capture before async gaps
+      await SettingsService.getInstance();
 
-      // Start OnDeck and hubs fetch in parallel
-      final useGlobalHubs = context.settingsRead(SettingsService.useGlobalHubs);
-      final onDeckFuture = multiServerProvider.aggregationService.getOnDeckFromAllServers(
-        limit: _continueWatchingProbeLimit,
-        hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
-      );
-      final hubsFuture = multiServerProvider.aggregationService.getHubsFromAllServers(
-        hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
-        useGlobalHubs: useGlobalHubs,
-        includePlaybackHubs: false,
-      );
-
-      // Wait for OnDeck to complete and show it immediately
-      final fetchedOnDeck = await onDeckFuture;
-      final hasMoreContinueWatching = fetchedOnDeck.length > _continueWatchingPreviewLimit;
-      final onDeck = hasMoreContinueWatching
-          ? fetchedOnDeck.take(_continueWatchingPreviewLimit).toList()
-          : fetchedOnDeck;
-
-      if (!mounted) return;
-      setState(() {
-        _onDeck = onDeck;
-        _hasMoreContinueWatching = hasMoreContinueWatching;
-        _isLoading = false; // Show content, but hubs still loading
-
-        // Reset hero index to avoid sync issues
-        _currentHeroIndex = 0;
-
-        // Create continue watching hub key if needed
-        if (_onDeck.isNotEmpty) {
-          _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
-        }
-      });
-      _applyPendingTvBrowseRailFocus();
-
-      // Focus hero section now that it's visible, but only if no modal route is on top
-      if (!PlatformDetector.isTV() && onDeck.isNotEmpty && (ModalRoute.of(context)?.isCurrent ?? false)) {
-        _heroFocusNode.requestFocus();
-      }
-
-      // Sync to Android TV Watch Next row
-      if (Platform.isAndroid) {
-        unawaited(_syncWatchNext(onDeck));
-      }
-
-      // Sync PageController to first page after OnDeck loads
-      if (_heroController.hasClients && onDeck.isNotEmpty) {
-        _heroController.jumpToPage(0);
-      }
-
-      // On initial load, focus the hero so the user starts on content (not the toolbar)
-      if (!_initialLoadComplete && onDeck.isNotEmpty) {
-        _initialLoadComplete = true;
-        if (PlatformDetector.isTV()) {
-          _focusTvBrowseRailWhenReady();
-        } else {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return;
-            if (_heroFocusNode.canRequestFocus) {
-              _heroFocusNode.requestFocus();
-            }
+      // Force tracker cache refresh so manual reload always reflects latest
+      // external changes (e.g. marked watched on the tracker website).
+      if (WatchStateOverlay.instance.hasActiveAuthority) {
+        // Show the previous sync's in-memory items immediately (already loaded
+        // from ApiCache on boot) so the screen is never blank on repeat visits.
+        final cached = WatchStateOverlay.instance.getContinueWatchingItems();
+        if (cached.isNotEmpty && _onDeck.isEmpty) {
+          if (!mounted) return;
+          setState(() {
+            _onDeck = cached.map((e) => e.metadata).toList();
+            _isLoading = false;
+            _currentHeroIndex = 0;
+            _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
           });
         }
+        // Sync in background — TrackerSyncNotifier fires onTrackerSyncChanged
+        // → _refreshContinueWatching when complete, updating the UI.
+        unawaited(TrackerSyncNotifier.instance.forceSyncWatchState());
+        if (!mounted) return;
+        _lastTrackerSyncCheck = DateTime.now(); // reset debounce — data is fresh
       }
 
-      // Wait for global hubs
-      final allHubs = await hubsFuture;
-
-      if (!mounted) return;
-
-      // Filter out playback-progress hubs handled by the top Continue Watching row.
-      final filteredHubs = allHubs.where((hub) {
-        final hubId = hub.identifier?.toLowerCase() ?? '';
-        final title = hub.title.toLowerCase();
-        return !hubId.contains('ondeck') &&
-            !hubId.contains('continue') &&
-            !hubId.contains('nextup') &&
-            !title.contains('continue watching') &&
-            !title.contains('on deck') &&
-            !title.contains('next up');
-      }).toList();
-
+      // Start OnDeck and hubs fetch in parallel.
+      // Capture context-dependent values before any further async gaps.
+      final useGlobalHubs = context.settingsRead(SettingsService.useGlobalHubs);
       final libraryOrder = context.read<LibrariesProvider>().libraries;
-      sortMediaHubsByLibraryOrder(filteredHubs, libraryOrder);
+      // Skip CW fetch when tracker already showed cached items — the background
+      // forceSyncWatchState → _refreshContinueWatching chain handles the update.
+      // Never skip on forceRefresh (manual reload / profile switch — user expects fresh data).
+      final bool trackerServedFromCache = !forceRefresh &&
+          WatchStateOverlay.instance.hasActiveAuthority && _onDeck.isNotEmpty;
+      final onDeckFuture = trackerServedFromCache
+          ? null
+          : multiServerProvider.aggregationService.getOnDeckFromAllServers(
+              limit: _continueWatchingProbeLimit,
+              hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+            );
 
-      appLogger.d('Received ${onDeck.length} on deck items and ${filteredHubs.length} global hubs from all servers');
-      if (!mounted) return;
-      setState(() {
-        _hubs = filteredHubs;
-        _areHubsLoading = false;
-        _updateHubKeys();
-      });
-      _applyPendingTvBrowseRailFocus();
+      // Hubs process independently so Recently Added / recommendations appear
+      // as soon as their data arrives, without waiting for CW to resolve first.
+      unawaited(
+        multiServerProvider.aggregationService.getHubsFromAllServers(
+          hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+          useGlobalHubs: useGlobalHubs,
+          includePlaybackHubs: false,
+        ).then((allHubs) {
+          if (!mounted) return;
+          final filteredHubs = allHubs.where((hub) {
+            final hubId = hub.identifier?.toLowerCase() ?? '';
+            final title = hub.title.toLowerCase();
+            return !hubId.contains('ondeck') &&
+                !hubId.contains('continue') &&
+                !hubId.contains('nextup') &&
+                !title.contains('continue watching') &&
+                !title.contains('on deck') &&
+                !title.contains('next up');
+          }).toList();
+          sortMediaHubsByLibraryOrder(filteredHubs, libraryOrder);
+          appLogger.d('Received ${filteredHubs.length} global hubs from all servers');
+          setState(() {
+            _hubs = filteredHubs;
+            _areHubsLoading = false;
+            _updateHubKeys();
+          });
+          _applyPendingTvBrowseRailFocus();
+          if (PlatformDetector.isTV() && !_initialLoadComplete && filteredHubs.isNotEmpty) {
+            _initialLoadComplete = true;
+            _focusTvBrowseRailWhenReady();
+          }
+        }).catchError((Object e) {
+          appLogger.e('Failed to load hubs', error: e);
+          if (!mounted) return;
+          setState(() { _areHubsLoading = false; });
+        }),
+      );
 
-      if (PlatformDetector.isTV() && !_initialLoadComplete && filteredHubs.isNotEmpty) {
-        _initialLoadComplete = true;
-        _focusTvBrowseRailWhenReady();
+      if (onDeckFuture != null) {
+        // Wait for OnDeck to complete and show it immediately
+        final fetchedOnDeck = await onDeckFuture;
+        final hasMoreContinueWatching = fetchedOnDeck.length > _continueWatchingPreviewLimit;
+        final onDeck = hasMoreContinueWatching
+            ? fetchedOnDeck.take(_continueWatchingPreviewLimit).toList()
+            : fetchedOnDeck;
+
+        if (!mounted) return;
+        setState(() {
+          _onDeck = onDeck;
+          _hasMoreContinueWatching = hasMoreContinueWatching;
+          _isLoading = false; // Show content, but hubs still loading
+
+          // Reset hero index to avoid sync issues
+          _currentHeroIndex = 0;
+
+          // Create continue watching hub key if needed
+          if (_onDeck.isNotEmpty) {
+            _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
+          }
+        });
+        _applyPendingTvBrowseRailFocus();
+
+        // Focus hero section now that it's visible, but only if no modal route is on top
+        if (!PlatformDetector.isTV() && onDeck.isNotEmpty && (ModalRoute.of(context)?.isCurrent ?? false)) {
+          _heroFocusNode.requestFocus();
+        }
+
+        // Sync to Android TV Watch Next row
+        if (Platform.isAndroid) {
+          unawaited(_syncWatchNext(onDeck));
+        }
+
+        // Sync PageController to first page after OnDeck loads
+        if (_heroController.hasClients && onDeck.isNotEmpty) {
+          _heroController.jumpToPage(0);
+        }
+
+        // On initial load, focus the hero so the user starts on content (not the toolbar)
+        if (!_initialLoadComplete && onDeck.isNotEmpty) {
+          _initialLoadComplete = true;
+          if (PlatformDetector.isTV()) {
+            _focusTvBrowseRailWhenReady();
+          } else {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return;
+              if (_heroFocusNode.canRequestFocus) {
+                _heroFocusNode.requestFocus();
+              }
+            });
+          }
+        }
+
+        appLogger.d('Received ${onDeck.length} on deck items from all servers');
+      } else if (_isLoading) {
+        // Tracker served from cache — cached items are already displayed, clear the loading flag.
+        if (!mounted) return;
+        setState(() { _isLoading = false; });
       }
-
-      appLogger.d('Discover content loaded successfully');
     } catch (e) {
       appLogger.e('Failed to load discover content', error: e);
       if (!mounted) return;
@@ -826,17 +886,44 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// Refresh only the Continue Watching section in the background
   /// This is called when returning to the home screen to avoid blocking UI
-  Future<void> _refreshContinueWatching() async {
+  Future<void> _refreshContinueWatching({bool syncTracker = false}) async {
+    if (_isCWRefreshing) return;
+    _isCWRefreshing = true;
+    try {
+      await _doRefreshContinueWatching(syncTracker: syncTracker);
+    } finally {
+      _isCWRefreshing = false;
+    }
+  }
+
+  Future<void> _doRefreshContinueWatching({bool syncTracker = false}) async {
     appLogger.d('Refreshing Continue Watching in background from all servers');
 
-    try {
-      final multiServerProvider = context.read<MultiServerProvider>();
-      if (!multiServerProvider.hasConnectedServers) {
-        appLogger.w('No servers available for background refresh');
-        return;
-      }
+    final multiServerProvider = context.read<MultiServerProvider>();
+    final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
 
-      final hiddenLibrariesProvider = context.read<HiddenLibrariesProvider>();
+    if (!multiServerProvider.hasConnectedServers) {
+      appLogger.w('No servers available for background refresh');
+      return;
+    }
+
+    // Determine whether a tracker sync should be kicked off.
+    // Debounce to avoid hammering /sync/last_activities on rapid tab switches.
+    final now = DateTime.now();
+    final shouldSync = syncTracker &&
+        WatchStateOverlay.instance.hasActiveAuthority &&
+        (_lastTrackerSyncCheck == null ||
+            now.difference(_lastTrackerSyncCheck!) > _syncDebounce);
+
+    // Fire sync in background (non-blocking) so Phase 1 can show data immediately.
+    Future<void>? pendingSync;
+    if (shouldSync) {
+      _lastTrackerSyncCheck = now;
+      pendingSync = TrackerSyncNotifier.instance.syncIfStale();
+    }
+
+    // Phase 1 — show current cached state right away.
+    try {
       final fetchedOnDeck = await multiServerProvider.aggregationService.getOnDeckFromAllServers(
         limit: _continueWatchingProbeLimit,
         hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
@@ -845,12 +932,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       final onDeck = hasMoreContinueWatching
           ? fetchedOnDeck.take(_continueWatchingPreviewLimit).toList()
           : fetchedOnDeck;
-
       if (mounted) {
         setState(() {
           _onDeck = onDeck;
           _hasMoreContinueWatching = hasMoreContinueWatching;
-          // Reset hero index if needed
           if (_currentHeroIndex >= onDeck.length) {
             _currentHeroIndex = 0;
             if (_heroController.hasClients && onDeck.isNotEmpty) {
@@ -858,17 +943,41 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             }
           }
         });
-
-        // Sync to Android TV Watch Next row
-        if (Platform.isAndroid) {
-          unawaited(_syncWatchNext(onDeck));
-        }
-
-        appLogger.d('Continue Watching refreshed successfully');
+        if (Platform.isAndroid) unawaited(_syncWatchNext(onDeck));
+        appLogger.d('Continue Watching — phase 1 done (${onDeck.length} items)');
       }
     } catch (e) {
-      appLogger.w('Failed to refresh Continue Watching', error: e);
-      // Silently fail - don't show error to user for background refresh
+      appLogger.w('Failed to refresh Continue Watching (phase 1)', error: e);
+    }
+
+    // Phase 2 — once tracker sync finishes, re-fetch with updated state.
+    if (pendingSync != null) {
+      try {
+        await pendingSync;
+        if (!mounted) return;
+        final fetchedFresh = await multiServerProvider.aggregationService.getOnDeckFromAllServers(
+          limit: _continueWatchingProbeLimit,
+          hiddenLibraryKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+        );
+        final freshHasMore = fetchedFresh.length > _continueWatchingPreviewLimit;
+        final fresh = freshHasMore ? fetchedFresh.take(_continueWatchingPreviewLimit).toList() : fetchedFresh;
+        if (mounted) {
+          setState(() {
+            _onDeck = fresh;
+            _hasMoreContinueWatching = freshHasMore;
+            if (_currentHeroIndex >= fresh.length) {
+              _currentHeroIndex = 0;
+              if (_heroController.hasClients && fresh.isNotEmpty) {
+                _heroController.jumpToPage(0);
+              }
+            }
+          });
+          if (Platform.isAndroid) unawaited(_syncWatchNext(fresh));
+          appLogger.d('Continue Watching — phase 2 done (${fresh.length} items)');
+        }
+      } catch (e) {
+        appLogger.w('Failed to refresh Continue Watching (phase 2)', error: e);
+      }
     }
   }
 
@@ -902,8 +1011,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   @override
   void refresh() {
     appLogger.d('DiscoverScreen.refresh() called');
-    // Only refresh Continue Watching in background, not full screen reload
-    _refreshContinueWatching();
+    // Explicit refresh (e.g. returning from player) always bypasses the
+    // background-tab debounce so tracker state is re-synced immediately.
+    _lastTrackerSyncCheck = null;
+    _refreshContinueWatching(syncTracker: true);
+    // Update hub watch-state badges inline (no network needed) so items like
+    // "Recently Added" reflect the latest tracker state immediately on return.
+    if (WatchStateOverlay.instance.hasActiveAuthority && _hubs.isNotEmpty) {
+      setState(() {
+        _hubs = _hubs
+            .map((h) => h.copyWith(items: applyOverlayAll(h.items)))
+            .toList();
+      });
+    }
   }
 
   // Public method to fully reload all content (for profile switches)
@@ -911,7 +1031,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   void fullRefresh() {
     appLogger.d('DiscoverScreen.fullRefresh() called - reloading all content');
     // Reload all content including On Deck and content hubs
-    _loadContent();
+    _loadContent(forceRefresh: true);
   }
 
   /// Get icon for hub based on its title
@@ -1260,7 +1380,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       FocusableAction(
                         icon: Symbols.refresh_rounded,
                         iconColor: foregroundColor,
-                        onPressed: _loadContent,
+                        onPressed: () => _loadContent(forceRefresh: true),
                       ),
                       // Watch Together
                       FocusableAction(
@@ -1418,10 +1538,46 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   );
                 },
               ),
-              if (_isLoading) LoadingIndicatorBox.sliver,
-              if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _loadContent),
-              if (!_isLoading && _errorMessage == null) ...[
-                // On Deck / Continue Watching
+              if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: () => _loadContent(forceRefresh: true)),
+              if (_errorMessage == null) ...[
+                // Continue Watching: skeleton while loading and nothing cached yet,
+                // content once items are available (from cache or network).
+                if (_isLoading && _onDeck.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 180,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.surfaceContainerHighest,
+                              borderRadius: const BorderRadius.all(Radius.circular(4)),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 200,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: 4,
+                              itemBuilder: (_, _) => Container(
+                                margin: const EdgeInsets.only(right: 12),
+                                width: 140,
+                                decoration: BoxDecoration(
+                                  color: theme.colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 if (_onDeck.isNotEmpty)
                   SliverToBoxAdapter(
                     child: HubSection(
@@ -1446,7 +1602,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     ),
                   ),
 
-                // Recommendation Hubs (Trending, Top in Genre, etc.)
+                // Recommendation Hubs (Trending, Top in Genre, etc.) — load
+                // independently of Continue Watching so Recently Added appears
+                // immediately while CW is still resolving.
                 for (int i = 0; i < _hubs.length; i++)
                   SliverToBoxAdapter(
                     child: HubSection(
@@ -1502,7 +1660,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       ),
                     ),
 
-                if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
+                if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading && !_isLoading)
                   SliverFillRemaining(
                     child: Center(
                       child: Column(
@@ -1597,7 +1755,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   const SizedBox(height: 16),
                   Text(_errorMessage!),
                   const SizedBox(height: 16),
-                  FilledButton(onPressed: _loadContent, child: Text(t.common.retry)),
+                  FilledButton(onPressed: () => _loadContent(forceRefresh: true), child: Text(t.common.retry)),
                 ],
               ),
             ),
@@ -1807,9 +1965,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       hint: t.accessibility.tapToPlay,
       child: ClickableCursor(
         child: GestureDetector(
-          onTap: () {
+          onTap: () async {
             appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
-            navigateToVideoPlayer(context, metadata: heroItem);
+            final resolved = await resolveTrackerItemForAction(context, heroItem);
+            if (resolved != null && mounted) {
+              unawaited(navigateToVideoPlayer(context, metadata: resolved));
+            }
           },
           child: Stack(
             fit: StackFit.expand,
@@ -2088,9 +2249,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         final backgroundColor = showFocus ? colorScheme.primary : Colors.white;
         final foregroundColor = showFocus ? colorScheme.onPrimary : Colors.black;
         return InkWell(
-          onTap: () {
+          onTap: () async {
             appLogger.d('Playing: ${heroItem.title}');
-            navigateToVideoPlayer(context, metadata: heroItem);
+            final resolved = await resolveTrackerItemForAction(context, heroItem);
+            if (!context.mounted || resolved == null) return;
+            unawaited(navigateToVideoPlayer(context, metadata: resolved));
           },
           borderRadius: BorderRadius.all(Radius.circular(isTv ? 32 : 24)),
           child: AnimatedContainer(

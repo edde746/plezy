@@ -33,6 +33,7 @@ import '../i18n/strings.g.dart';
 import '../widgets/optimized_media_image.dart';
 import '../utils/media_image_helper.dart';
 import '../services/plex_client.dart';
+import '../services/plex_api_cache.dart';
 import '../media/media_server_client.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../utils/content_utils.dart';
@@ -61,6 +62,7 @@ import '../widgets/horizontal_scroll_with_arrows.dart';
 import '../widgets/media_context_menu.dart';
 import '../widgets/overlay_sheet.dart';
 import '../widgets/placeholder_container.dart';
+import '../mixins/tracker_sync_aware.dart';
 import '../mixins/watch_state_aware.dart';
 import '../mixins/deletion_aware.dart';
 import '../mixins/mounted_set_state_mixin.dart';
@@ -75,6 +77,7 @@ import '../widgets/focusable_tab_chip.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../widgets/loading_indicator_box.dart';
+import '../services/trackers/watch_state_overlay.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_background.dart';
 
@@ -124,7 +127,7 @@ PageRoute<bool> mediaDetailRoute({required MediaItem metadata, bool isOffline = 
 }
 
 class _MediaDetailScreenState extends State<MediaDetailScreen>
-    with WatchStateAware, DeletionAware, MountedSetStateMixin, ServerBoundMediaMixin, RouteAware {
+    with TrackerSyncAware, WatchStateAware, DeletionAware, MountedSetStateMixin, ServerBoundMediaMixin, RouteAware {
   /// Public input alias — used as the live source of truth until the detail
   /// fetch returns. Holds backend-neutral [MediaItem] data.
   MediaItem get _metadata => _fullMetadata ?? widget.metadata;
@@ -155,6 +158,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _suppressBackAfterPop = false;
   bool _tvDetailRevealed = false;
   bool _tvDetailRevealScheduled = false;
+  // Captured by onPlaybackExit when the player pops; consumed once by
+  // _refreshFromLocalPlex. Instance-scoped so two MediaDetailScreens (PiP,
+  // multi-window) do not stomp on each other's exit state.
+  int? _pendingExitViewOffset;
+  String? _pendingExitRatingKey;
   bool _hasLoadedSeasons = false;
   bool _hasLoadedEpisodes = false;
   double? _tvDetailPendingRailHeight;
@@ -188,6 +196,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _isSelectKeyDown = false;
   bool _longPressTriggered = false;
   static const _longPressDuration = Duration(milliseconds: 500);
+  MediaItem? _rawMetadata;
+  List<MediaItem> _rawSeasons = [];
+  // After post-playback, tracks the season/episode of the most-recently-played episode.
+  // _applyTrackerUpNextToOnDeck won't regress _onDeckEpisode behind this position, preventing
+  // Trakt's "up next" from overwriting a later episode the user just watched.
+  int? _postPlaybackMinSeason;
+  int? _postPlaybackMinEpisode;
+  // Guard against concurrent _applyTrackerUpNextToOnDeck calls — prevents multiple
+  // simultaneous getAllLeaves (Strategy 2) HTTP requests for the same show.
+  bool _isApplyingUpNext = false;
 
   // Context menu key for the three-dots button
   final _contextMenuKey = GlobalKey<MediaContextMenuState>();
@@ -660,13 +678,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final metadata = result.item;
       final onDeckEpisode = result.onDeckEpisode;
       if (metadata != null) {
-        final refreshedMetadata = _applyLocalProgress(
-          _withFallbackLibrary(
-            metadata.copyWith(serverId: serverId, serverName: serverName ?? metadata.serverName),
-            _metadata,
+        final refreshedMetadata = WatchStateOverlay.instance.apply(
+          _applyLocalProgress(
+            _withFallbackLibrary(
+              metadata.copyWith(serverId: serverId, serverName: serverName ?? metadata.serverName),
+              _metadata,
+            ),
           ),
         );
-        final refreshedOnDeck = onDeckEpisode == null
+        final refreshedOnDeck = WatchStateOverlay.instance.hasActiveAuthority
+            ? null
+            : onDeckEpisode == null
             ? null
             : _applyLocalProgress(
                 _withFallbackLibrary(
@@ -715,6 +737,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (_route != null) routeObserver.unsubscribe(this);
     _route = route;
     routeObserver.subscribe(this, route);
+  }
+
+  @override
+  void onTrackerSyncChanged() {
+    setStateIfMounted(() {
+      if (_rawMetadata != null) _fullMetadata = applyOverlay(_rawMetadata!);
+      if (_onDeckEpisode != null) _onDeckEpisode = applyOverlay(_onDeckEpisode!);
+      _seasons = applyOverlayAll(_rawSeasons.isNotEmpty ? _rawSeasons : _seasons);
+      if (_episodes.isNotEmpty) _episodes = applyOverlayAll(_episodes);
+    });
+    _episodeCache.clear();
+    if (hasTrackerAuthority) {
+      unawaited(_applyTrackerUpNextToOnDeck());
+    }
   }
 
   @override
@@ -814,6 +850,130 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         ),
       ),
     );
+  }
+
+  /// Post-playback refresh: shows Plex's fresh local data immediately without
+  /// applying the tracker overlay. The overlay is re-applied by _onTrackerSyncChanged
+  /// once the post-playback tracker sync completes (~2 s later).
+  /// For offline mode, reads from PlexApiCache so cached state is shown.
+  Future<void> _refreshFromLocalPlex() async {
+    final exitOffset = _pendingExitViewOffset;
+    final playedRatingKey = _pendingExitRatingKey;
+    _pendingExitViewOffset = null;
+    _pendingExitRatingKey = null;
+
+    appLogger.d('[played_refresh] exitOffset=$exitOffset key=$playedRatingKey');
+
+    try {
+      MediaItem? rawMeta;
+      MediaItem? rawOnDeck;
+
+      if (widget.isOffline) {
+        rawMeta = await PlexApiCache.instance.getMetadata(widget.metadata.serverId ?? '', widget.metadata.id);
+      } else {
+        final client = _getMediaClientForMetadata(context);
+        if (client == null) {
+          appLogger.w('[played_refresh] no client — aborting');
+          return;
+        }
+        final result = await client.fetchItemWithOnDeck(_metadata.id);
+        final meta = result.item;
+        final fetchedOnDeck = result.onDeckEpisode;
+        if (meta != null) {
+          rawMeta = meta.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName);
+        } else {
+          appLogger.w('[played_refresh] Plex returned null show metadata');
+        }
+        if (fetchedOnDeck != null) {
+          rawOnDeck = fetchedOnDeck.copyWith(
+            serverId: widget.metadata.serverId,
+            serverName: widget.metadata.serverName,
+          );
+        }
+      }
+
+      if (!mounted) return;
+
+      if (exitOffset != null) {
+        rawMeta = (rawMeta ?? _rawMetadata ?? _fullMetadata ?? widget.metadata).copyWith(viewOffsetMs: exitOffset);
+
+        if (widget.metadata.isShow) {
+          MediaItem? playedEpisode;
+
+          if (playedRatingKey != null) {
+            if (playedRatingKey == _onDeckEpisode?.id) {
+              playedEpisode = _onDeckEpisode;
+            } else {
+              // 1. Loaded episodes for current season
+              playedEpisode = _episodes.where((e) => e.id == playedRatingKey).firstOrNull;
+
+              // 2. Episode cache (other seasons fetched this session)
+              if (playedEpisode == null) {
+                for (final eps in _episodeCache.values) {
+                  playedEpisode = eps.where((e) => e.id == playedRatingKey).firstOrNull;
+                  if (playedEpisode != null) break;
+                }
+              }
+              // 3. Plex's returned on-deck if it's the same episode — critical
+              //    when _onDeckEpisode=null (Trakt authority) and _episodes is empty
+              if (playedEpisode == null && rawOnDeck?.id == playedRatingKey) {
+                playedEpisode = rawOnDeck;
+              }
+              // 4. Last resort
+              playedEpisode ??= _onDeckEpisode;
+            }
+          } else {
+            playedEpisode = _onDeckEpisode;
+          }
+
+          if (playedEpisode != null) {
+            final base = (rawOnDeck?.id == playedEpisode.id) ? rawOnDeck! : playedEpisode;
+            rawOnDeck = base.copyWith(viewOffsetMs: exitOffset);
+          } else {
+            appLogger.w('[played_refresh] playedEpisode=null — cannot apply exit offset to onDeck');
+          }
+        }
+      }
+
+      if (rawMeta == null) {
+        appLogger.w('[played_refresh] rawMeta=null — aborting without UI update');
+        return;
+      }
+      _rawMetadata = rawMeta;
+      setStateIfMounted(() {
+        _fullMetadata = rawMeta;
+        if (widget.metadata.isShow && rawOnDeck != null) {
+          _onDeckEpisode = rawOnDeck;
+          _postPlaybackMinSeason = rawOnDeck.parentIndex;
+          _postPlaybackMinEpisode = rawOnDeck.index;
+        }
+      });
+
+      if (!widget.isOffline && widget.metadata.isShow) {
+        final client = _getMediaClientForMetadata(context);
+        if (client == null) return;
+        final seasons = await client.fetchChildren(_metadata.id);
+        if (!mounted) return;
+        final rawSeasons = seasons
+            .map((s) => s.copyWith(serverId: widget.metadata.serverId, serverName: widget.metadata.serverName))
+            .toList();
+        _rawSeasons = rawSeasons;
+        setStateIfMounted(() {
+          _seasons = rawSeasons;
+          _episodeCache.clear();
+        });
+        if (!_showEpisodesDirectly && _seasons.isNotEmpty) {
+          unawaited(_fetchSeasonEpisodes(_selectedSeasonIndex));
+        }
+        if (WatchStateOverlay.instance.hasActiveAuthority) {
+          unawaited(_applyTrackerUpNextToOnDeck());
+        }
+      }
+
+      appLogger.d('[played_refresh] done — onDeck="${_onDeckEpisode?.title}" viewOffsetMs=${_onDeckEpisode?.viewOffsetMs}');
+    } catch (e, st) {
+      appLogger.e('[played_refresh] ✖ ERROR — stale data kept', error: e, stackTrace: st);
+    }
   }
 
   @override
@@ -967,6 +1127,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // User rating chip (tappable)
     if (!widget.isOffline) {
       chips.add(_buildUserRatingChip(metadata));
+    }
+
+    // Tracker sync indicator — only when a tracker authority is active.
+    final trackerName = WatchStateOverlay.instance.activeTrackerName;
+    if (trackerName != null) {
+      final isSynced = WatchStateOverlay.instance.hasTrackerRecord(metadata);
+      final hasWatchData =
+          (metadata.viewCount ?? 0) > 0 ||
+          (metadata.viewedLeafCount ?? 0) > 0 ||
+          (metadata.viewOffsetMs ?? 0) > 0;
+      if (isSynced) {
+        chips.add(_buildMetadataChip(trackerName, icon: Symbols.cloud_done_rounded));
+      } else if (hasWatchData) {
+        chips.add(_buildMetadataChip('Not in $trackerName', icon: Symbols.cloud_off_rounded));
+      }
     }
 
     return chips;
@@ -1361,9 +1536,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               ),
             );
 
+      _rawMetadata = base;
+      await WatchStateOverlay.instance.cacheReady;
+      if (!mounted) return;
       setState(() {
-        _fullMetadata = base;
-        _onDeckEpisode = onDeckWithServerId;
+        _fullMetadata = WatchStateOverlay.instance.apply(base);
+        _onDeckEpisode = WatchStateOverlay.instance.hasActiveAuthority ? null : onDeckWithServerId;
         _isLoadingMetadata = false;
       });
 
@@ -1428,13 +1606,26 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final prefsFuture = (client is PlexClient && sectionId != null)
           ? client.getLibrarySectionPrefs(sectionId)
           : Future.value(<String, dynamic>{});
+      // Fire Trakt deep-fetch in the background — completion data refreshes
+      // episode checkmarks after episodes are already rendered, not before.
+      // The up-next position (for the play button) comes from cached stubs, so
+      // _applyTrackerUpNextToOnDeck() doesn't need to wait for this.
+      unawaited(
+        WatchStateOverlay.instance.fetchShowProgressIfNeeded(_fullMetadata ?? widget.metadata).then((newData) {
+          if (!newData || !mounted) return;
+          // New episode completion data arrived — clear episode cache and
+          // re-render the visible season with updated checkmarks/progress.
+          _episodeCache.clear();
+          unawaited(_fetchSeasonEpisodes(_selectedSeasonIndex));
+        }),
+      );
 
       final results = await Future.wait([seasonsFuture, prefsFuture]);
       final seasons = results[0] as List<MediaItem>;
       final prefs = results[1] as Map<String, dynamic>;
 
       // Preserve serverId for each season.
-      final seasonsWithServerId = seasons
+      final rawSeasons = seasons
           .map(
             (season) => _withFallbackLibrary(
               season.copyWith(serverId: serverId, serverName: _metadata.serverName ?? season.serverName),
@@ -1442,6 +1633,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             ),
           )
           .toList();
+      _rawSeasons = rawSeasons;
+      final seasonsWithServerId = WatchStateOverlay.instance.applyAll(rawSeasons);
 
       // Plex can override the library season mode per show; Jellyfin falls
       // through to "flatten when there's a single season".
@@ -1481,6 +1674,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           unawaited(_fetchSeasonEpisodes(onDeckSeasonIndex));
         }
       }
+
+      // If Trakt authority is active, replace Plex's on-deck with Trakt's up-next.
+      unawaited(_applyTrackerUpNextToOnDeck());
     } catch (e, st) {
       appLogger.w('Seasons load failed', error: e, stackTrace: st);
       setStateIfMounted(() {
@@ -1604,6 +1800,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final idx = seasons.indexWhere((s) => s.index == widget.initialSeasonIndex);
       if (idx != -1) return idx;
     }
+    // When Trakt is the authority, use its up-next position to pre-select the right season.
+    if (WatchStateOverlay.instance.hasActiveAuthority) {
+      final pos = WatchStateOverlay.instance.getUpNextPosition(widget.metadata.id);
+      if (pos != null && seasons.isNotEmpty) {
+        final idx = seasons.indexWhere((s) => s.index == pos.season);
+        if (idx != -1) return idx;
+      }
+    }
     // Fall back to on-deck episode's season
     final onDeckEpisode = _onDeckEpisode;
     if (onDeckEpisode != null && seasons.isNotEmpty) {
@@ -1631,6 +1835,140 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   MediaItem? _defaultPlaybackSeason(List<MediaItem> seasons) {
     if (seasons.isEmpty) return null;
     return seasons[_defaultPlaybackSeasonIndex(seasons)];
+  }
+
+  /// Replaces Plex's on-deck episode with Trakt's up-next when authority is active.
+  ///
+  /// Plex on-deck can lag behind the active tracker (e.g. Plex shows S2E2, tracker knows S2E5).
+  /// Searches the already-fetched episode list for the tracker's up-next position.
+  /// Also switches the selected season tab if needed.
+  Future<void> _applyTrackerUpNextToOnDeck() async {
+    if (_isApplyingUpNext) return;
+    if (!WatchStateOverlay.instance.hasActiveAuthority) return;
+    _isApplyingUpNext = true;
+    try {
+      await _doApplyTrackerUpNextToOnDeck();
+    } finally {
+      _isApplyingUpNext = false;
+    }
+  }
+
+  Future<void> _doApplyTrackerUpNextToOnDeck() async {
+    if (!WatchStateOverlay.instance.hasActiveAuthority) return;
+    // Short-circuit: if _onDeckEpisode already matches the CW stub's resolved S/E,
+    // skip the full getUpNextPosition() + episode search pipeline.
+    if (_onDeckEpisode != null) {
+      final cwItem = WatchStateOverlay.instance
+          .getContinueWatchingItems()
+          .where((i) => i.metadata.grandparentId == widget.metadata.id)
+          .firstOrNull;
+      if (cwItem != null &&
+          cwItem.metadata.parentIndex == _onDeckEpisode!.parentIndex &&
+          cwItem.metadata.index == _onDeckEpisode!.index) {
+        return;
+      }
+    }
+    final pos = WatchStateOverlay.instance.getUpNextPosition(widget.metadata.id);
+    appLogger.d(
+      '_applyTrackerUpNextToOnDeck: showId=${widget.metadata.id} pos=$pos '
+      '_episodes=${_episodes.length} _episodeCache.keys=${_episodeCache.keys.toList()}',
+    );
+    if (pos == null) return;
+
+    // Strategy 1: S/E index — fast, works when Trakt and Plex numbering agree.
+    MediaItem? target = _episodes.where((e) => e.parentIndex == pos.season && e.index == pos.episode).firstOrNull;
+    if (target != null) {
+      appLogger.d('_applyTrackerUpNextToOnDeck: Strategy1 hit S${target.parentIndex}E${target.index} (${target.id}) offset=${target.viewOffsetMs} durationMs=${target.durationMs}');
+    }
+
+    // Also check cached episodes for other seasons.
+    if (target == null) {
+      for (final eps in _episodeCache.values) {
+        final hit = eps.where((e) => e.parentIndex == pos.season && e.index == pos.episode);
+        if (hit.isNotEmpty) {
+          target = hit.first;
+          appLogger.d('_applyTrackerUpNextToOnDeck: Strategy1-cache hit S${target.parentIndex}E${target.index} (${target.id}) offset=${target.viewOffsetMs}');
+          break;
+        }
+      }
+    }
+
+    // Strategy 2: ID match via getAllLeaves — used when S/E index finds nothing
+    // and episode IDs are available. Handles shows where Trakt and Plex use
+    // different numbering (e.g. Dan Da Dan S1E15 on Trakt = Plex S2E3).
+    if (target == null && widget.isOffline) return;
+    if (target == null && (pos.tvdb != null || pos.tmdb != null)) {
+      appLogger.d('_applyTrackerUpNextToOnDeck: Strategy2 — getAllLeaves tvdb=${pos.tvdb} tmdb=${pos.tmdb}');
+      final plexClient = getServerBoundPlexClient(context);
+      if (plexClient != null) {
+        final leaves = await plexClient.getAllLeaves(widget.metadata.id);
+        if (!mounted) return;
+        for (final ep in leaves) {
+          final guids = (ep.raw?['Guid'] as List? ?? [])
+              .map((g) => (g as Map?)?['id'] as String?)
+              .whereType<String>();
+          if (pos.tvdb != null && guids.contains('tvdb://${pos.tvdb}')) {
+            target = ep;
+            break;
+          }
+          if (pos.tmdb != null && guids.contains('tmdb://${pos.tmdb}')) {
+            target = ep;
+            break;
+          }
+        }
+        appLogger.d(
+          '_applyTrackerUpNextToOnDeck: Strategy2 result — '
+          '${target == null ? "NOT FOUND" : "found S${target.parentIndex}E${target.index} (${target.id}) offset=${target.viewOffsetMs}"}',
+        );
+      } else {
+        appLogger.d('_applyTrackerUpNextToOnDeck: Strategy2 skipped — no plexClient');
+      }
+    } else if (target == null) {
+      appLogger.d('_applyTrackerUpNextToOnDeck: Strategy2 skipped — pos.tvdb=${pos.tvdb} pos.tmdb=${pos.tmdb}');
+    }
+
+    if (target == null) {
+      // Season not yet loaded — trigger a fetch so this method is retried.
+      final newSeasonIdx = _seasons.indexWhere((s) => s.index == pos.season);
+      appLogger.d('_applyTrackerUpNextToOnDeck: target null — newSeasonIdx=$newSeasonIdx seasons=${_seasons.map((s) => s.index).toList()}');
+      if (newSeasonIdx != -1 && _episodeCache[_seasons[newSeasonIdx].id] == null) {
+        unawaited(_fetchSeasonEpisodes(newSeasonIdx));
+      }
+      return;
+    }
+    // Don't regress _onDeckEpisode behind the episode the user most recently
+    // played. Trakt's "up next" returns the first unwatched episode, which
+    // can be earlier than what the user just watched (e.g. user skips from
+    // S3E3 to S3E4 while S3E3 still has progress).
+    if (_postPlaybackMinSeason != null && _postPlaybackMinEpisode != null) {
+      final ts = target.parentIndex ?? 0;
+      final te = target.index ?? 0;
+      if (ts < _postPlaybackMinSeason! || (ts == _postPlaybackMinSeason && te < _postPlaybackMinEpisode!)) return;
+    }
+
+    // Switch season tab to Trakt's season if needed.
+    final newSeasonIdx = _seasons.indexWhere((s) => s.index == pos.season);
+
+    final t = target;
+    final overlaid = hasTrackerAuthority ? applyOverlay(t) : t;
+    appLogger.d(
+      '_applyTrackerUpNextToOnDeck: setting onDeck → S${overlaid.parentIndex}E${overlaid.index} '
+      '(${overlaid.id}) offset_before=${t.viewOffsetMs} offset_after=${overlaid.viewOffsetMs}',
+    );
+    setStateIfMounted(() {
+      // Apply Trakt overlay before setting as on-deck: ensures Trakt's resume
+      // offset is used, not Plex's raw viewOffsetMs. Critical when target came
+      // from getAllLeaves (Strategy 2 — raw Plex episode, no overlay applied).
+      _onDeckEpisode = overlaid;
+      if (newSeasonIdx != -1 && newSeasonIdx != _selectedSeasonIndex) {
+        _selectedSeasonIndex = newSeasonIdx;
+      }
+    });
+
+    // Fetch episodes for the new season if not already loaded.
+    if (newSeasonIdx != -1 && _episodeCache[_seasons[newSeasonIdx].id] == null) {
+      unawaited(_fetchSeasonEpisodes(newSeasonIdx));
+    }
   }
 
   /// Fetch episodes for a specific season by index, using cache when available
@@ -1698,7 +2036,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             )
             .map(_applyLocalProgress)
             .toList();
-        _completeSeasonEpisodesLoad(seasonIndex: seasonIndex, seasonId: seasonId, episodes: episodesWithServerId);
+        final overlaidEpisodes = applyOverlayAll(episodesWithServerId);
+        _episodeCache[season.id] = overlaidEpisodes;
+        setStateIfMounted(() {
+          _episodes = List.of(overlaidEpisodes);
+          _isLoadingSeasonEpisodes = false;
+        });
+        unawaited(_applyTrackerUpNextToOnDeck());
       }
     } catch (e) {
       _completeSeasonEpisodesLoad(seasonIndex: seasonIndex, seasonId: seasonId, episodes: const <MediaItem>[]);
@@ -2636,8 +2980,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final firstPage = await client.fetchPlayableDescendantsPage(_metadata.id, start: 0, size: _episodesPageSize);
       if (!mounted || generation != _episodesLoadGeneration) return;
       final enriched = _enrichPlayableEpisodes(firstPage.items, serverId);
+      final overlaid = applyOverlayAll(enriched);
       setStateIfMounted(() {
-        _episodes = enriched;
+        _episodes = overlaid;
         _isLoadingEpisodes = false;
         _isLoadingAllEpisodes = firstPage.items.length < firstPage.totalCount;
         _hasLoadedEpisodes = true;
@@ -2694,8 +3039,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         if (!mounted || generation != _episodesLoadGeneration) return;
         if (page.items.isEmpty) break;
         final enriched = _enrichPlayableEpisodes(page.items, serverId);
+        final overlaid = applyOverlayAll(enriched);
         setStateIfMounted(() {
-          _episodes.addAll(enriched);
+          _episodes.addAll(overlaid);
         });
         offset += page.items.length;
         total = page.totalCount;
@@ -2790,7 +3136,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           context,
           metadata: episodeWithServerId,
           isOffline: widget.isOffline,
-          onRefresh: _loadFullMetadata,
+          onPlaybackExit: (offset, ratingKey) {
+            _pendingExitViewOffset = offset;
+            _pendingExitRatingKey = ratingKey;
+          },
+          onRefresh: _refreshFromLocalPlex,
         );
       }
     } catch (e) {
@@ -4090,6 +4440,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       }
     }
 
-    return Symbols.play_arrow_rounded; // Default play icon
+    return Symbols.play_arrow_rounded;
   }
 }

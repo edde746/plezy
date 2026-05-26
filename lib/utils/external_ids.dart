@@ -15,6 +15,34 @@ class ExternalIds {
 
   bool get hasAny => imdb != null || tmdb != null || tvdb != null;
 
+  /// Parse external IDs from a Plex primary GUID string.
+  /// Handles the modern `imdb://tt123` form and the legacy Plex agent form
+  /// `com.plexapp.agents.imdb://tt123/0/0`.
+  static ExternalIds fromPrimaryGuid(String? guid) {
+    if (guid == null || guid.isEmpty) return const ExternalIds();
+    return ExternalIds.fromGuids([
+      {'id': _normalizeLegacyGuid(guid)}
+    ]);
+  }
+
+  /// Normalise a legacy `com.plexapp.agents.*` GUID to the standard scheme
+  /// that [fromGuids] already handles.  Returns the string unchanged when it
+  /// is already in standard form or unrecognised.
+  static String _normalizeLegacyGuid(String guid) {
+    const prefixes = <String, String>{
+      'agents.imdb://': 'imdb://',
+      'agents.themoviedb://': 'tmdb://',
+      'agents.thetvdb://': 'tvdb://',
+    };
+    for (final entry in prefixes.entries) {
+      final idx = guid.indexOf(entry.key);
+      if (idx == -1) continue;
+      final id = guid.substring(idx + entry.key.length).split('/').first;
+      return '${entry.value}$id';
+    }
+    return guid;
+  }
+
   factory ExternalIds.fromGuids(List<dynamic> guids) {
     String? imdb;
     int? tmdb;

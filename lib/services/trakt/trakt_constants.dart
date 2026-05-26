@@ -14,6 +14,7 @@ class TraktConstants {
   static const String clientSecret = 'acfa17b9d77fabd7e51175b7da6631aea69423530a6d49b3b3c38cd107cbd207';
 
   static const String apiBase = 'https://api.trakt.tv';
+  static const String apizBase = 'https://apiz.trakt.tv';
   static const String apiVersion = '2';
 
   // OAuth endpoints
@@ -48,7 +49,8 @@ enum TraktScrobbleState { start, pause, stop }
 /// Direction of a watched-status sync push.
 enum TraktSyncOp {
   add,
-  remove;
+  remove,
+  progress;
 
   static TraktSyncOp fromName(String name) =>
       values.firstWhere((v) => v.name == name, orElse: () => throw ArgumentError('Unknown TraktSyncOp: $name'));

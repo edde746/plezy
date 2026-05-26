@@ -6,9 +6,14 @@ import '../screens/collection_detail_screen.dart';
 import '../screens/main_screen.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/playlist/playlist_detail_screen.dart';
+import '../services/trackers/tracker_ui_helper.dart';
+import '../services/trackers/watch_state_overlay.dart';
 import '../utils/global_key_utils.dart';
+import 'app_logger.dart';
 import 'plex_library_section_helpers.dart';
 import 'video_player_navigation.dart';
+
+export '../services/trackers/tracker_ui_helper.dart' show navigateToTrackerStubShow, navigateToTrackerMovieDetail;
 
 /// Result of media navigation indicating what action was taken
 enum MediaNavigationResult {
@@ -99,7 +104,18 @@ Future<MediaNavigationResult> navigateToMediaItem(
 
     case MediaKind.clip:
     case MediaKind.episode:
-      final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
+      // For episodes and clips (trailers/extras), start playback directly.
+      // Resolve synthetic Trakt stubs to real Plex episodes first.
+      final resolved = await resolveTrackerEpisodeStub(context, mi);
+      if (!context.mounted) return MediaNavigationResult.navigated;
+      // If still unresolved (stub), the show wasn't found in Plex — bail early.
+      if (WatchStateOverlay.instance.stubResolver?.ownsStub(resolved.id) ?? false) {
+        ScaffoldMessenger.maybeOf(
+          context,
+        )?.showSnackBar(const SnackBar(content: Text('Could not find this show in your Plex library')));
+        return MediaNavigationResult.unsupported;
+      }
+      final result = await navigateToVideoPlayer(context, metadata: resolved, isOffline: isOffline);
       if (result == true && context.mounted) {
         onRefresh?.call(mi.id);
       }
@@ -107,7 +123,25 @@ Future<MediaNavigationResult> navigateToMediaItem(
 
     case MediaKind.movie:
       if (playDirectly) {
-        final result = await navigateToVideoPlayer(context, metadata: mi, isOffline: isOffline);
+        appLogger.d(
+          '[MovieNav] playDirectly=true id=${mi.id} title="${mi.title}" serverId=${mi.serverId} grandparentId=${mi.grandparentId}',
+        );
+        // Resolve Trakt movie stubs to real Plex items before starting playback.
+        final resolved = await resolveTrackerMovieStub(context, mi);
+        if (!context.mounted) return MediaNavigationResult.navigated;
+        if (resolved == null) {
+          appLogger.d(
+            '[MovieNav] resolveTrackerMovieStub returned null for "${mi.title}" — showing not-found snackbar',
+          );
+          ScaffoldMessenger.maybeOf(
+            context,
+          )?.showSnackBar(const SnackBar(content: Text('Could not find this movie in your Plex library')));
+          return MediaNavigationResult.unsupported;
+        }
+        appLogger.d(
+          '[MovieNav] resolved → id=${resolved.id} title="${resolved.title}" — navigating to player',
+        );
+        final result = await navigateToVideoPlayer(context, metadata: resolved, isOffline: isOffline);
         if (result == true && context.mounted) {
           onRefresh?.call(mi.id);
         }

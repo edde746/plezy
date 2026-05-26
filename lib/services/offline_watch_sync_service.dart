@@ -550,7 +550,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
     final emitsEvent =
         action.actionType == OfflineActionType.watched.id ||
         action.actionType == OfflineActionType.unwatched.id ||
-        (action.actionType == OfflineActionType.progress.id && action.shouldMarkWatched);
+        action.actionType == OfflineActionType.progress.id;
     MediaItem? item;
     if (emitsEvent) {
       try {
@@ -594,6 +594,13 @@ class OfflineWatchSyncService extends ChangeNotifier {
             appLogger.d('Offline progress: started call failed (continuing)', error: e);
           }
           await client.reportPlaybackStopped(itemId: action.ratingKey, position: position, duration: duration);
+          // Notify downstream listeners (Trakt) so they can update the resume
+          // position now that we're back online and IDs can be resolved.
+          WatchStateNotifier().notifyProgress(
+            item: item,
+            viewOffset: action.viewOffset!,
+            duration: action.duration!,
+          );
         }
 
         // If progress exceeded threshold, also mark as watched.

@@ -42,6 +42,9 @@ class WatchStateEvent with HierarchicalEventMixin {
   /// New progress value (for progressUpdate)
   final int? viewOffset;
 
+  /// Progress as a fraction (0.0–1.0). Populated by notifyProgress().
+  final double? progressPercent;
+
   /// Whether item is now considered watched (>90% progress or marked)
   final bool? isNowWatched;
 
@@ -58,6 +61,7 @@ class WatchStateEvent with HierarchicalEventMixin {
     required this.mediaType,
     this.cacheServerId,
     this.viewOffset,
+    this.progressPercent,
     this.isNowWatched,
     this.librarySectionID,
   }) : globalKey = buildGlobalKey(serverId, itemId);
@@ -128,6 +132,7 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
         parentChain: item.parentChain,
         mediaType: item.kind.id,
         viewOffset: viewOffset,
+        progressPercent: duration > 0 ? viewOffset / duration : null,
         isNowWatched: isNowWatched,
         librarySectionID: item.libraryId,
       ),

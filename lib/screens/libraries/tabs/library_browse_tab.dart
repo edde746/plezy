@@ -57,8 +57,10 @@ import '../../../utils/global_key_utils.dart';
 import '../../../utils/watch_state_notifier.dart';
 import '../../../utils/platform_detector.dart';
 import '../../../i18n/strings.g.dart';
+import '../../../mixins/tracker_sync_aware.dart';
 import '../../main_screen.dart';
 import 'base_library_tab.dart';
+import '../../../services/trackers/watch_state_overlay.dart';
 
 /// Browse tab for library screen
 /// Shows library items with grouping, filtering, and sorting
@@ -90,6 +92,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         LibraryTabFocusMixin,
         GridFocusNodeMixin,
         WatchStateAware,
+        TrackerSyncAware,
         DeletionAware,
         PaginatedItemLoader<MediaItem, LibraryBrowseTab> {
   @override
@@ -336,6 +339,21 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     _isScrollActive.dispose();
     disposeGridFocusNodes();
     super.dispose();
+  }
+
+  @override
+  void onTrackerSyncChanged() {
+    if (loadedItems.isEmpty) return;
+    if (!hasTrackerAuthority) {
+      unawaited(loadItems());
+      return;
+    }
+    setState(() {
+      for (final key in loadedItems.keys.toList()) {
+        final item = loadedItems[key];
+        if (item != null) loadedItems[key] = applyOverlay(item);
+      }
+    });
   }
 
   // Override tryFocus to use loadedItems instead of base class items list
@@ -652,11 +670,20 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       offset: start,
       limit: size,
     );
-    return client.fetchLibraryPagedContent(
+    final page = await client.fetchLibraryPagedContent(
       widget.library.id,
       query: query,
       libraryKind: widget.library.kind,
       abort: abort,
+    );
+    return LibraryPage(
+      items: WatchStateOverlay.instance.applyAll(
+        page.items.map((item) {
+          return item.copyWith(serverId: widget.library.serverId, serverName: widget.library.serverName);
+        }).toList(),
+      ),
+      totalCount: page.totalCount,
+      offset: page.offset,
     );
   }
 

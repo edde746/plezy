@@ -16,6 +16,11 @@ import 'app_logger.dart';
 
 const String kVideoPlayerRouteName = '/video_player';
 
+// Guards against concurrent pushes of the same item (e.g. hero card GestureDetector
+// and Play button InkWell both firing for the same tap). Set synchronously before
+// the first await so the second concurrent call sees it immediately.
+String? _pendingNavigationKey;
+
 class WatchTogetherPlaybackNavigationException implements Exception {
   final String message;
 
@@ -56,82 +61,99 @@ Future<bool?> navigateToVideoPlayer(
   TranscodeQualityPreset? selectedQualityPreset,
   bool usePushReplacement = false,
   bool isOffline = false,
+  void Function(int viewOffsetMs, String ratingKey)? onPlaybackExit,
 }) async {
-  final navigator = Navigator.of(context);
-  final downloadProvider = context.read<DownloadProvider>();
-  // Use the manager-routed lookup so Jellyfin items don't trip the
-  // Plex-only client. The player branches on the returned type internally.
-  final manager = context.read<MultiServerProvider>().serverManager;
-  final mediaClient = isOffline ? null : manager.getClient(metadata.serverId ?? '');
+  // Guard: prevent concurrent navigation to the same item.
+  if (!usePushReplacement) {
+    if (_pendingNavigationKey == metadata.id) return null;
+    _pendingNavigationKey = metadata.id;
+  }
 
-  int mediaIndex = selectedMediaIndex ?? 0;
-  if (selectedMediaIndex == null) {
+  try {
+    final navigator = Navigator.of(context);
+    final downloadProvider = context.read<DownloadProvider>();
+    final manager = context.read<MultiServerProvider>().serverManager;
+    final mediaClient = isOffline ? null : manager.getClient(metadata.serverId ?? '');
+
+    int mediaIndex = selectedMediaIndex ?? 0;
+    if (selectedMediaIndex == null) {
+      try {
+        final settingsService = await SettingsService.getInstance();
+        final seriesKey = metadata.grandparentId ?? metadata.id;
+        final savedPreference = settingsService.read(SettingsService.mediaVersionPreferences)[seriesKey];
+        if (savedPreference != null) {
+          mediaIndex = savedPreference;
+        }
+      } catch (_) {}
+    }
+
+    // Check if external player is enabled
     try {
       final settingsService = await SettingsService.getInstance();
-      final seriesKey = metadata.grandparentId ?? metadata.id;
-      final savedPreference = settingsService.read(SettingsService.mediaVersionPreferences)[seriesKey];
-      if (savedPreference != null) {
-        mediaIndex = savedPreference;
-      }
-    } catch (_) {}
-  }
+      if (settingsService.read(SettingsService.useExternalPlayer)) {
+        bool launched = false;
 
-  // Check if external player is enabled
-  try {
-    final settingsService = await SettingsService.getInstance();
-    if (settingsService.read(SettingsService.useExternalPlayer)) {
-      bool launched = false;
-
-      if (isOffline) {
-        final globalKey = metadata.globalKey;
-        final videoPath = await downloadProvider.getVideoFilePath(globalKey);
-        if (videoPath != null && context.mounted) {
-          final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
-          launched = await ExternalPlayerService.launch(context: context, videoUrl: videoUrl);
+        if (isOffline) {
+          final globalKey = metadata.globalKey;
+          final videoPath = await downloadProvider.getVideoFilePath(globalKey);
+          if (videoPath != null && context.mounted) {
+            final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
+            launched = await ExternalPlayerService.launch(context: context, videoUrl: videoUrl);
+          }
+        } else if (context.mounted) {
+          launched = await ExternalPlayerService.launch(
+            context: context,
+            metadata: metadata,
+            client: mediaClient,
+            mediaIndex: mediaIndex,
+          );
+        } else if (context.mounted) {
+          launched = await ExternalPlayerService.launch(
+            context: context,
+            metadata: metadata,
+            client: mediaClient,
+            mediaIndex: mediaIndex,
+            mediaSourceId: selectedMediaSourceId,
+          );
         }
-      } else if (context.mounted) {
-        launched = await ExternalPlayerService.launch(
-          context: context,
-          metadata: metadata,
-          client: mediaClient,
-          mediaIndex: mediaIndex,
-          mediaSourceId: selectedMediaSourceId,
-        );
+
+        if (launched) return null;
       }
-
-      if (launched) return null;
+    } catch (e) {
+      appLogger.w('External player launch failed, falling back to built-in player', error: e);
     }
-  } catch (e) {
-    appLogger.w('External player launch failed, falling back to built-in player', error: e);
-  }
 
-  // Prevent stacking an identical video player when already active
-  if (!usePushReplacement &&
-      VideoPlayerScreenState.activeId == metadata.id &&
-      VideoPlayerScreenState.activeMediaIndex == mediaIndex) {
-    appLogger.d(
-      'Video player already active for ${metadata.id} (mediaIndex=$mediaIndex), skipping duplicate navigation',
+    // Prevent stacking an identical video player when already active
+    if (!usePushReplacement &&
+        VideoPlayerScreenState.activeId == metadata.id &&
+        VideoPlayerScreenState.activeMediaIndex == mediaIndex) {
+      appLogger.d(
+        'Video player already active for ${metadata.id} (mediaIndex=$mediaIndex), skipping duplicate navigation',
+      );
+      return null;
+    }
+
+    final route = PageRouteBuilder<bool>(
+      settings: const RouteSettings(name: kVideoPlayerRouteName),
+      pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
+        metadata: metadata,
+        preferredAudioTrack: preferredAudioTrack,
+        preferredSubtitleTrack: preferredSubtitleTrack,
+        preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
+        selectedMediaIndex: mediaIndex,
+        selectedMediaSourceId: selectedMediaSourceId,
+        selectedQualityPreset: selectedQualityPreset,
+        isOffline: isOffline,
+        onPlaybackExit: onPlaybackExit,
+      ),
+      transitionDuration: Duration.zero,
+      reverseTransitionDuration: Duration.zero,
     );
-    return null;
+
+    return usePushReplacement ? navigator.pushReplacement<bool, bool>(route) : navigator.push<bool>(route);
+  } finally {
+    if (!usePushReplacement) _pendingNavigationKey = null;
   }
-
-  final route = PageRouteBuilder<bool>(
-    settings: const RouteSettings(name: kVideoPlayerRouteName),
-    pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
-      metadata: metadata,
-      preferredAudioTrack: preferredAudioTrack,
-      preferredSubtitleTrack: preferredSubtitleTrack,
-      preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
-      selectedMediaIndex: mediaIndex,
-      selectedMediaSourceId: selectedMediaSourceId,
-      selectedQualityPreset: selectedQualityPreset,
-      isOffline: isOffline,
-    ),
-    transitionDuration: Duration.zero,
-    reverseTransitionDuration: Duration.zero,
-  );
-
-  return usePushReplacement ? navigator.pushReplacement<bool, bool>(route) : navigator.push<bool>(route);
 }
 
 /// Navigates to the video player and optionally refreshes content when returning.
@@ -153,6 +175,7 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   required MediaItem metadata,
   bool isOffline = false,
   VoidCallback? onRefresh,
+  void Function(int viewOffsetMs, String ratingKey)? onPlaybackExit,
   AudioTrack? preferredAudioTrack,
   SubtitleTrack? preferredSubtitleTrack,
   SubtitleTrack? preferredSecondarySubtitleTrack,
@@ -160,6 +183,10 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
   String? selectedMediaSourceId,
   bool usePushReplacement = false,
 }) async {
+  appLogger.d(
+    '[NavWithRefresh] entering — title="${metadata.title}" id=${metadata.id} isOffline=$isOffline onRefresh=${onRefresh != null ? "set" : "NULL"}',
+  );
+
   final result = await navigateToVideoPlayer(
     context,
     metadata: metadata,
@@ -170,13 +197,18 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
     selectedMediaIndex: selectedMediaIndex,
     selectedMediaSourceId: selectedMediaSourceId,
     usePushReplacement: usePushReplacement,
+    onPlaybackExit: onPlaybackExit,
   );
 
-  appLogger.d('Returned from playback, refreshing metadata');
+  appLogger.d(
+    '[NavWithRefresh] player returned result=$result, onRefresh=${onRefresh != null ? "set" : "NULL"} — calling now',
+  );
 
   if (!isOffline && onRefresh != null && context.mounted) {
     onRefresh();
   }
+
+  appLogger.d('[NavWithRefresh] onRefresh call completed');
 
   return result;
 }

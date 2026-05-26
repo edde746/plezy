@@ -10,6 +10,7 @@ import '../../services/trackers/tracker_constants.dart';
 import '../../services/trakt/trakt_scrobble_service.dart';
 import '../../services/trakt/trakt_sync_service.dart';
 import '../../utils/dialogs.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/device_code_dialog.dart';
 import '../../widgets/settings_page.dart';
 import 'tracker_account_settings_body.dart';
@@ -51,8 +52,7 @@ class TraktSettingsScreen extends StatelessWidget {
     return Consumer<TraktAccountProvider>(
       builder: (context, account, _) {
         // Safety net: if we end up here while not connected (e.g. refresh failed
-        // in the background and cleared the session), bail out. The settings
-        // tile is the only supported entry point for the unauthed flow.
+        // in the background and cleared the session), bail out.
         if (!account.isConnected) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (context.mounted) Navigator.of(context).pop();
@@ -64,11 +64,31 @@ class TraktSettingsScreen extends StatelessWidget {
         }
 
         final username = account.username;
+        final svc = SettingsService.instanceOrNull!;
         return TrackerAccountSettingsBody(
           title: Text(t.trakt.title),
           accountTitle: username != null ? t.trakt.connectedAs(username: username) : t.trakt.connected,
           accountSubtitle: t.trakt.connected,
           service: TrackerService.trakt,
+          prefixChildren: [
+            ValueListenableBuilder<String>(
+              valueListenable: svc.listenable(SettingsService.trackerStateAuthority),
+              builder: (_, value, _) => SwitchListTile(
+                secondary: const AppIcon(Symbols.admin_panel_settings_rounded, fill: 1),
+                title: const Text('Use Trakt as the source for watch history'),
+                subtitle: const Text(
+                  'Trakt provides watched status, progress, Continue Watching, '
+                  'and the Playlists tab (watchlist). Scrobble + watched-sync '
+                  'below send your Plezy activity back to Trakt.',
+                ),
+                value: value == TrackerService.trakt.name,
+                onChanged: (v) async {
+                  await svc.write(SettingsService.trackerStateAuthority, v ? TrackerService.trakt.name : 'none');
+                  account.setWatchStateAuthorityEnabled(v);
+                },
+              ),
+            ),
+          ],
           toggles: [
             TrackerSettingsToggle(
               pref: SettingsService.enableTraktScrobble,

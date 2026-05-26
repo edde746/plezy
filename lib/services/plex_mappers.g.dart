@@ -147,6 +147,7 @@ PlexMetadataDto _$PlexMetadataDtoFromJson(Map<String, dynamic> json) =>
       backgroundSquare: json['backgroundSquare'] as String?,
       skipChildren: flexibleBoolNullable(json['skipChildren']),
       flattenSeasons: flexibleInt(json['flattenSeasons']),
+      guids: json['Guid'] as List<dynamic>?,
     );
 
 Map<String, dynamic> _$PlexMetadataDtoToJson(PlexMetadataDto instance) =>

@@ -10,6 +10,9 @@ import '../utils/external_ids.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/search_relevance.dart';
 import 'multi_server_manager.dart';
+import 'plex_client.dart';
+import 'trackers/tracker_ui_helper.dart';
+import 'trackers/watch_state_overlay.dart';
 
 /// Cross-server aggregation: fans calls out to every online client and
 /// merges the results. Single-server operations now go through the
@@ -44,8 +47,16 @@ class DataAggregationService {
 
   /// Fetch "On Deck" (Continue Watching) from all servers and merge by recency.
   /// Items are tagged with server info by the underlying client. Returns
-  /// neutral [MediaItem]s.
+  /// neutral [MediaItem]s. When a tracker authority is active (e.g. Trakt),
+  /// the authority is the sole source of truth for Continue Watching.
   Future<List<MediaItem>> getOnDeckFromAllServers({int? limit, Set<String>? hiddenLibraryKeys}) async {
+    await WatchStateOverlay.instance.cacheReady;
+
+    // When a tracker authority is active it is the sole source of truth.
+    if (WatchStateOverlay.instance.hasActiveAuthority) {
+      return _getOnDeckFromAuthority(limit: limit, hiddenLibraryKeys: hiddenLibraryKeys);
+    }
+
     final clients = _serverManager.onlineClients;
     if (clients.isEmpty) {
       appLogger.w('No online servers available for fetching on deck');
@@ -62,30 +73,30 @@ class DataAggregationService {
     });
     final allOnDeck = (await Future.wait(futures)).expand((l) => l).toList();
 
-    // Filter out items from hidden libraries
-    List<MediaItem> filteredOnDeck = allOnDeck;
+    // Re-check: if authority became active during the fetch, use it instead.
+    if (WatchStateOverlay.instance.hasActiveAuthority) {
+      return _getOnDeckFromAuthority(limit: limit, hiddenLibraryKeys: hiddenLibraryKeys);
+    }
+
+    List<MediaItem> result = allOnDeck;
     if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
-      filteredOnDeck = allOnDeck.where((item) {
+      result = allOnDeck.where((item) {
         if (item.libraryId == null || item.serverId == null) return true;
         final globalKey = buildGlobalKey(item.serverId!, item.libraryId!);
         return !hiddenLibraryKeys.contains(globalKey);
       }).toList();
     }
 
-    // Sort by most recently viewed, falling back to addedAt for unwatched items
-    filteredOnDeck.sort((a, b) {
+    result.sort((a, b) {
       final aTime = a.lastViewedAt ?? a.addedAt ?? 0;
       final bTime = b.lastViewedAt ?? b.addedAt ?? 0;
-      return bTime.compareTo(aTime); // Descending (most recent first)
+      return bTime.compareTo(aTime);
     });
 
-    filteredOnDeck = await _deduplicateContinueWatching(filteredOnDeck);
+    result = await _deduplicateContinueWatching(result);
 
-    // Apply limit if specified
-    final result = limit != null && limit < filteredOnDeck.length ? filteredOnDeck.sublist(0, limit) : filteredOnDeck;
-
+    if (limit != null && limit < result.length) result = result.sublist(0, limit);
     appLogger.i('Fetched ${result.length} on deck items from all servers');
-
     return result;
   }
 
@@ -223,6 +234,49 @@ class DataAggregationService {
     return value.toLowerCase();
   }
 
+  Future<List<MediaItem>> _getOnDeckFromAuthority({int? limit, Set<String>? hiddenLibraryKeys}) async {
+    final plexClients = Map.fromEntries(
+      _serverManager.onlineClients.entries
+          .where((e) => e.value is PlexClient)
+          .map((e) => MapEntry(e.key, e.value as PlexClient)),
+    );
+    final fallbackServerId = plexClients.keys.firstOrNull;
+    // Await enrichment so not-found stubs are filtered before returning.
+    // Fast on subsequent calls (needsWork empty, returns immediately).
+    await Future.wait([
+      enrichTrackerStubs(fallbackServerId, plexClients),
+      resolveTrackerEpisodeDisplayPositions(plexClients, fallbackServerId),
+    ]);
+
+    var items = WatchStateOverlay.instance.getContinueWatchingItems().map((i) {
+      final meta = i.metadata;
+      if (meta.serverId != null || fallbackServerId == null) return meta;
+      return meta.copyWith(serverId: fallbackServerId);
+    }).toList();
+
+    if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
+      items = items.where((item) {
+        if (item.libraryId == null || item.serverId == null) return true;
+        return !hiddenLibraryKeys.contains(buildGlobalKey(item.serverId!, item.libraryId!));
+      }).toList();
+    }
+
+    if (limit != null && limit < items.length) items = items.sublist(0, limit);
+    appLogger.i('Fetched ${items.length} on deck items from tracker authority');
+    return items;
+  }
+
+  /// Enriches Trakt stubs by searching Plex servers, populating the bridge map
+  /// so stub-to-Plex resolution is ready before the user taps an item.
+  Future<void> enrichTrackerStubsFromPlex(String? preferredServerId) {
+    final plexClients = Map.fromEntries(
+      _serverManager.onlineClients.entries
+          .where((e) => e.value is PlexClient)
+          .map((e) => MapEntry(e.key, e.value as PlexClient)),
+    );
+    return enrichTrackerStubs(preferredServerId, plexClients);
+  }
+
   /// Fetch recommendation hubs from all servers as neutral [MediaHub]s.
   /// When useGlobalHubs is true (default), rich-hub backends use their true
   /// home page hubs (Plex's promoted/global hub endpoint).
@@ -272,7 +326,12 @@ class DataAggregationService {
     for (final list in results) {
       all.addAll(list);
     }
-    return limit != null && limit < all.length ? all.sublist(0, limit) : all;
+    // Apply watch state overlay (Trakt authority, etc.) to all hub items.
+    await WatchStateOverlay.instance.cacheReady;
+    final overlaid = all
+        .map((hub) => hub.copyWith(items: WatchStateOverlay.instance.applyAll(hub.items)))
+        .toList();
+    return limit != null && limit < overlaid.length ? overlaid.sublist(0, limit) : overlaid;
   }
 
   /// Per-library hub fetch for a single client. Filters to visible
@@ -365,7 +424,8 @@ class DataAggregationService {
     });
 
     final allResults = (await Future.wait(futures)).expand((l) => l).toList();
-    final result = rankMediaSearchResults(allResults, query, limit: resultLimit);
+    final overlaid = allResults.map(WatchStateOverlay.instance.apply).toList();
+    final result = rankMediaSearchResults(overlaid, query, limit: resultLimit);
 
     appLogger.i('Found ${result.length} search results across all servers');
 

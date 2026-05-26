@@ -35,6 +35,12 @@ class TrackerAccountSettingsBody extends StatelessWidget {
   final String? accountSubtitle;
   final TrackerService service;
   final List<TrackerSettingsToggle> toggles;
+  /// Rendered immediately after the "Behavior" section header, before
+  /// [toggles]. Used by per-tracker screens to surface their primary setting
+  /// (e.g. Trakt's watch-state authority toggle) above the standard
+  /// scrobble/sync toggles.
+  final List<Widget> prefixChildren;
+  final List<Widget> extraChildren;
   final FutureOr<void> Function() onDisconnect;
 
   const TrackerAccountSettingsBody({
@@ -44,6 +50,8 @@ class TrackerAccountSettingsBody extends StatelessWidget {
     this.accountSubtitle,
     required this.service,
     required this.toggles,
+    this.prefixChildren = const [],
+    this.extraChildren = const [],
     required this.onDisconnect,
   });
 
@@ -58,6 +66,7 @@ class TrackerAccountSettingsBody extends StatelessWidget {
           subtitle: accountSubtitle != null ? Text(accountSubtitle!) : null,
         ),
         SettingsSectionHeader(t.settings.behavior),
+        ...prefixChildren,
         for (final toggle in toggles)
           SettingSwitchTile(
             pref: toggle.pref,
@@ -81,6 +90,7 @@ class TrackerAccountSettingsBody extends StatelessWidget {
             );
           },
         ),
+        ...extraChildren,
         const Divider(height: 32),
         ListTile(
           leading: AppIcon(Symbols.link_off_rounded, fill: 1, color: Theme.of(context).colorScheme.error),

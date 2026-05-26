@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -19,6 +20,7 @@ import '../screens/media_detail_screen.dart';
 import '../utils/content_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/formatters.dart';
+import '../services/trackers/watch_state_overlay.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/snackbar_helper.dart';
 import '../theme/mono_tokens.dart';
@@ -927,7 +929,15 @@ class _MediaCardHelpers {
 /// Whether this media item has a clickable title that navigates somewhere.
 /// Episodes/seasons navigate to their parent show; movies navigate to their detail page.
 bool _hasClickableTitle(MediaItem mi) {
-  if (mi.isEpisode) return mi.grandparentId != null;
+  if (mi.isEpisode) {
+    if (mi.grandparentId != null) return true;
+    // Trakt stubs have no grandparentId yet — resolved async on tap.
+    if ((mi.id.startsWith('trakt_episode_pb_') || mi.id.startsWith('trakt_upnext_')) &&
+        mi.grandparentTitle != null) {
+      return true;
+    }
+    return false;
+  }
   if (mi.isSeason) return mi.parentId != null;
   if (mi.isMovie) return true;
   return false;
@@ -974,6 +984,19 @@ void _navigateToSeason(BuildContext context, MediaItem episode, {bool isOffline 
 /// For episodes/seasons: navigates to the parent show with season pre-selected.
 /// For movies and other types: navigates to the item's own detail page.
 void _navigateToDetail(BuildContext context, MediaItem mi, {bool isOffline = false}) {
+  // Tracker episode/upnext stubs with no resolved Plex key — resolve async via search.
+  final stubResolver = WatchStateOverlay.instance.stubResolver;
+  if (mi.isEpisode && mi.grandparentId == null && (stubResolver?.ownsStub(mi.id) ?? false)) {
+    unawaited(navigateToTrackerStubShow(context, mi, isOffline: isOffline));
+    return;
+  }
+
+  // Tracker movie stubs: resolve bridge map and navigate async.
+  if (mi.isMovie && (stubResolver?.ownsStub(mi.id) ?? false)) {
+    unawaited(navigateToTrackerMovieDetail(context, mi, isOffline: isOffline));
+    return;
+  }
+
   MediaItem target = mi;
   int? initialSeasonIndex;
 

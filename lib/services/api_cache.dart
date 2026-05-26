@@ -85,6 +85,11 @@ abstract class ApiCache {
         );
   }
 
+  Future<void> delete(String serverId, String endpoint) async {
+    final key = _buildKey(serverId, endpoint);
+    await (_db.delete(_db.apiCache)..where((t) => t.cacheKey.equals(key))).go();
+  }
+
   Future<void> deleteForServer(String serverId) async {
     await (_db.delete(_db.apiCache)..where((t) => t.cacheKey.like('$serverId:%'))).go();
   }

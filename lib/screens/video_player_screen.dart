@@ -38,8 +38,8 @@ import '../providers/companion_remote_provider.dart';
 import '../services/companion_remote/companion_remote_receiver.dart';
 import '../services/fullscreen_state_manager.dart';
 import '../services/discord_rpc_service.dart';
-import '../services/trackers/tracker_coordinator.dart';
-import '../services/trakt/trakt_scrobble_service.dart';
+import '../services/trackers/tracker_lifecycle.dart';
+import '../services/trackers/tracker_sync_notifier.dart';
 import '../services/episode_navigation_service.dart';
 import '../services/app_foreground_service.dart';
 import '../services/media_controls_manager.dart';
@@ -212,6 +212,15 @@ class VideoPlayerScreen extends StatefulWidget {
   final String? liveSessionIdentifier;
   final String? liveSessionPath;
 
+  /// Fires synchronously when the user exits playback, before [Navigator.pop].
+  /// Receives the player's final position (ms) and the rating-key of the item
+  /// that was playing — used by callers to apply a fresh resume position
+  /// without waiting for the post-playback tracker sync.
+  ///
+  /// Instance-scoped so concurrent players (PiP, multi-window) do not stomp on
+  /// each other's exit state.
+  final void Function(int viewOffsetMs, String ratingKey)? onPlaybackExit;
+
   const VideoPlayerScreen({
     super.key,
     required this.metadata,
@@ -234,6 +243,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.liveClient,
     this.liveSessionIdentifier,
     this.liveSessionPath,
+    this.onPlaybackExit,
   });
 
   @override
@@ -249,6 +259,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   static String? get activeId => _activeId;
   static int? get activeMediaIndex => _activeMediaIndex;
+
+  /// Single pending post-playback Trakt sync. Static because rapid play→exit→
+  /// play cycles each call [dispose] on a different state instance; the prior
+  /// instance is gone before the next would naturally cancel its own timer.
+  /// Cancelling the prior timer here coalesces overlapping syncs into one.
+  static Timer? _postPlaybackSyncTimer;
 
   Player? player;
   bool _isPlayerInitialized = false;
@@ -997,6 +1013,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             final navigator = Navigator.of(context);
             if (navigator.canPop()) {
               _isExiting.value = true;
+              _notifyPlaybackExit();
               await _sendStoppedProgressOnce();
               if (!mounted) return;
               navigator.pop(true);
@@ -1011,6 +1028,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final navigator = Navigator.of(context);
       if (navigator.canPop()) {
         _isExiting.value = true;
+        _notifyPlaybackExit();
         await _sendStoppedProgressOnce();
         if (!mounted) return;
         navigator.pop(true);
@@ -1018,6 +1036,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     } finally {
       _isHandlingBack = false;
     }
+  }
+
+  /// Surface the current player position and rating-key to the caller via the
+  /// [VideoPlayerScreen.onPlaybackExit] callback. Safe to call when [player]
+  /// is null (no-op).
+  void _notifyPlaybackExit() {
+    final position = player?.state.position.inMilliseconds;
+    if (position == null) return;
+    widget.onPlaybackExit?.call(position, _currentMetadata.id);
   }
 
   @override
@@ -1101,8 +1128,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _mediaControlsManager?.dispose();
 
     DiscordRPCService.instance.stopPlayback();
-    TraktScrobbleService.instance.stopPlayback();
-    TrackerCoordinator.instance.stopPlayback();
+    unawaited(TrackerLifecycle.stopPlayback());
+    // Coalesce overlapping post-playback syncs: if a prior playback session
+    // exited within the last 2s and its timer hasn't fired yet, cancel it so
+    // we don't dispatch two redundant Trakt round-trips for the same window.
+    _postPlaybackSyncTimer?.cancel();
+    _postPlaybackSyncTimer = Timer(
+      const Duration(seconds: 2),
+      TrackerSyncNotifier.instance.triggerPostPlaybackSync,
+    );
 
     if (Platform.isWindows && _displayModeService != null) {
       FullscreenStateManager().removeListener(_onFullscreenChanged);

@@ -12,6 +12,8 @@ import 'settings_service.dart';
 import 'track_selection_service.dart';
 import '../utils/app_logger.dart';
 import '../utils/watch_state_notifier.dart';
+import 'trackers/watch_state_overlay.dart';
+import 'plex_client.dart';
 
 /// Tracks playback progress and reports it to the active media server.
 ///
@@ -171,6 +173,15 @@ class PlaybackProgressTracker {
         // Queue progress update for later sync
         await _sendOfflineProgress(position, duration);
         _notifyProgressIfNeeded(position, duration, force: state == 'stopped');
+        // Mirror _maybeScrobble: queue a tracker scrobble the first time the
+        // watch threshold is crossed during offline playback.
+        if (!_scrobbled && WatchStateOverlay.instance.hasActiveAuthority && duration.inMilliseconds > 0) {
+          final pct = position.inMilliseconds / duration.inMilliseconds;
+          if (pct >= 0.9) {
+            _scrobbled = true;
+            unawaited(WatchStateOverlay.instance.queueOfflineScrobble(metadata, progressPercent: pct * 100));
+          }
+        }
       } else if (state == 'stopped') {
         // Stopped must complete before disposal
         final accepted = await _sendOnlineProgress(state, position, duration);
@@ -199,6 +210,27 @@ class PlaybackProgressTracker {
                 );
               }),
         );
+      }
+
+      // Emit watch state event on stop for UI updates across screens.
+      // Skip if already scrobbled — markAsWatched already emitted a watched event.
+      if (state == 'stopped' && position.inMilliseconds > 0 && !_scrobbled) {
+        final threshold = (client is PlexClient) ? (client as PlexClient).watchedThresholdPercent / 100.0 : 0.9;
+        WatchStateNotifier().notifyProgress(
+          item: metadata,
+          viewOffset: position.inMilliseconds,
+          duration: duration.inMilliseconds,
+          watchedThreshold: threshold,
+        );
+        // When Trakt authority is active, markAsWatched was skipped (Plex write
+        // guard). Emit a watched event so TraktSyncService can push addToHistory
+        // as a reliable fallback to the scrobble stop.
+        if (WatchStateOverlay.instance.hasActiveAuthority && duration.inMilliseconds > 0) {
+          final progressFraction = position.inMilliseconds / duration.inMilliseconds;
+          if (progressFraction >= threshold) {
+            WatchStateNotifier().notifyWatched(item: metadata, isNowWatched: true);
+          }
+        }
       }
     } catch (e) {
       if (!isOffline) {
@@ -245,6 +277,13 @@ class PlaybackProgressTracker {
   /// Send progress update to the active server through the unified
   /// [MediaServerClient.reportPlayback*] surface.
   Future<bool> _sendOnlineProgress(String state, Duration position, Duration duration) async {
+    // When a tracker is authoritative for watch state, skip Plex timeline
+    // updates so the tracker remains the single source of truth.
+    if (WatchStateOverlay.instance.hasActiveAuthority) {
+      appLogger.d('PlaybackProgress: skipping Plex timeline (tracker authority active)');
+      return false;
+    }
+
     final c = client;
     final session = _reportSession;
     if (c == null || session == null) return false;

@@ -36,9 +36,8 @@ import 'services/discord_rpc_service.dart';
 import 'package:path_provider/path_provider.dart';
 import 'services/image_cache_service.dart';
 import 'services/gamepad_service.dart';
-import 'services/trakt/trakt_scrobble_service.dart';
-import 'services/trakt/trakt_sync_service.dart';
-import 'services/trackers/tracker_coordinator.dart';
+import 'services/trackers/tracker_lifecycle.dart';
+import 'services/trackers/watch_state_overlay.dart';
 import 'providers/trakt_account_provider.dart';
 import 'providers/trackers_provider.dart';
 import 'providers/user_profile_provider.dart';
@@ -245,7 +244,7 @@ Future<void> _bootstrapApp() async {
     unawaited(DiscordRPCService.instance.initialize());
   }
 
-  await TraktScrobbleService.instance.initialize();
+  await TrackerLifecycle.initializeScrobble();
 
   _registerShaderLicenses();
 
@@ -483,9 +482,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
     _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);
 
-    // Trakt sync service (subscribes to WatchStateNotifier, requires serverManager
-    // to resolve PlexClients for GUID lookups).
-    TraktSyncService.instance.initialize(serverManager: _serverManager);
+    TrackerLifecycle.initializeWithServerManager(_serverManager);
 
     _appLifecycleListener = AppLifecycleListener(
       onExitRequested: () async {
@@ -505,9 +502,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     _memoryCheckTimer?.cancel();
 
     _downloadManager.dispose();
-    TrackerCoordinator.instance.cancelInFlight();
-    TraktScrobbleService.instance.cancelInFlight();
-    await TraktSyncService.instance.dispose();
+    TrackerLifecycle.cancelInFlight();
+    await TrackerLifecycle.dispose();
 
     await _serverManager.disconnectAllGracefully();
     await Future.wait([
@@ -566,6 +562,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           if (transitioned) {
             appLogger.d('Connectivity moved onto WiFi/Ethernet — triggering sync pass');
             _autoDeleteAndSync(downloadProvider);
+            // Drain any offline scrobbles queued while the network was unavailable.
+            unawaited(WatchStateOverlay.instance.flushOfflineQueue());
           }
         });
       } catch (e) {
@@ -633,7 +631,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         // App came back to foreground - trigger sync check
         _offlineWatchSyncService.onAppResumed();
-        TraktSyncService.instance.flushQueue();
+        TrackerLifecycle.flushQueue();
         // Re-probe servers — mobile OS may have dropped TCP connections during doze/sleep.
         // On desktop, resumed fires on every window focus (alt-tab), so apply a cooldown
         // to avoid piling up network probes from rapid alt-tabbing.
@@ -864,7 +862,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                 final trackers = context.read<TrackersProvider>();
                 return _TrackerProfileBootstrap(
                   onProfileChanged: [trakt.onActiveProfileChanged, trackers.onActiveProfileChanged],
-                  onFirstMount: TrackerCoordinator.instance.initialize,
+                  onFirstMount: TrackerLifecycle.initializeCoordinator,
                   child: Listener(
                     onPointerDown: (event) {
                       if ((event.buttons & kBackMouseButton) != 0) {
@@ -1223,6 +1221,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     // Wire the per-server status listener before either branch so the splash
     // checkmarks fill in even while the user is choosing a profile.
     _bindServerStatusListener(activeProfile, _serverManagerFromContext);
+    _initTrackerStatus();
 
     // Start only after network/offline startup has been decided and the
     // active profile snapshot is hydrated. This prevents an eager binder
@@ -1301,6 +1300,22 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
   }
 
   MultiServerManager _serverManagerFromContext() => context.read<MultiServerProvider>().serverManager;
+
+  void _initTrackerStatus() {
+    final overlay = WatchStateOverlay.instance;
+    if (!overlay.hasActiveAuthority) return;
+
+    final trackerName = overlay.activeTrackerName ?? 'Tracker';
+    final username = context.read<TraktAccountProvider>().username;
+    final label = username != null ? '$trackerName: $username' : trackerName;
+    setState(() => _serverStatus['tracker'] = (label, null));
+
+    // Flip to checkmark once the cache finishes loading from disk (fast path).
+    // Navigation is not blocked — this is fire-and-forget.
+    overlay.cacheReady.then((_) {
+      if (mounted) setState(() => _serverStatus['tracker'] = (label, true));
+    }).catchError((_) {/* ignore — row stays as spinner */});
+  }
 
   @override
   void dispose() {

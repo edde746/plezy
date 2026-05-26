@@ -64,12 +64,88 @@ class TraktClient {
 
   Future<void> removeRatings(Map<String, dynamic> body) => _request('POST', '/sync/ratings/remove', body: body);
 
-  Future<List<dynamic>> getRatings(String type) async {
-    final res = await _request('GET', '/sync/ratings/$type');
-    return res is List ? res : const [];
+  /// Saves current playback progress as a resume point.
+  /// Per trakt.apib, /scrobble/stop with progress < 80% stores the position
+  /// without marking as watched. Returns immediately for progress < 1% to
+  /// avoid Trakt's 422 response.
+  Future<void> savePlaybackProgress(TraktScrobbleRequest item) {
+    if ((item.progress ?? 0) < 1.0) return Future.value();
+    return scrobbleStop(item);
   }
 
-  /// Refresh the access token. Coalesces concurrent calls so
+  // ---------------------------------------------------------------------------
+  // Pull methods — used by TraktWatchStateProvider for authoritative watch state
+  // ---------------------------------------------------------------------------
+
+  /// `GET /sync/watched/movies` — full history for all watched movies.
+  Future<List<dynamic>> getWatchedMovies() async {
+    final res = await _request('GET', '/sync/watched/movies');
+    return res as List<dynamic>? ?? [];
+  }
+
+  /// `GET /sync/watched/shows` — full history including per-season/episode data.
+  /// Does NOT use `?extended=noseasons` so we get the complete episode breakdown.
+  Future<List<dynamic>> getWatchedShows() async {
+    final res = await _request('GET', '/sync/watched/shows');
+    return res as List<dynamic>? ?? [];
+  }
+
+  /// `GET apiz.trakt.tv/sync/progress/up_next_nitro` — private endpoint that
+  /// returns shows with a next episode to watch, regardless of whether it has
+  /// been started. Used to supplement /sync/playback/episodes for shows where
+  /// the last episode was completed but the next hasn't been started.
+  Future<List<dynamic>> getUpNextItems() async {
+    final res = await _request('GET', '${TraktConstants.apizBase}/sync/progress/up_next_nitro');
+    return res as List<dynamic>? ?? [];
+  }
+
+  /// `GET /sync/playback/movies?extended=full,images` — all in-progress movies, paginated.
+  Future<List<dynamic>> getPlaybackMovies({int limit = 100}) =>
+      _fetchAllPages('/sync/playback/movies?extended=full,images', limit: limit);
+
+  /// `GET /sync/playback/episodes?extended=full,images` — all in-progress episodes, paginated.
+  Future<List<dynamic>> getPlaybackEpisodes({int limit = 100}) =>
+      _fetchAllPages('/sync/playback/episodes?extended=full,images', limit: limit);
+
+  /// `GET /sync/last_activities` — timestamps of the most recent watched/paused
+  /// events. Used to decide whether a full re-sync is necessary.
+  Future<Map<String, dynamic>> getLastActivities() async {
+    final res = await _request('GET', '/sync/last_activities');
+    return res as Map<String, dynamic>? ?? {};
+  }
+
+  /// `GET /shows/{id}/progress/watched` — detailed season/episode breakdown for
+  /// a specific show. Called lazily when a show detail screen is opened.
+  Future<Map<String, dynamic>> getShowWatchedProgress(int traktId) async {
+    final res = await _request('GET', '/shows/$traktId/progress/watched');
+    return res as Map<String, dynamic>? ?? {};
+  }
+
+  /// `GET /sync/watchlist/{type}` — user's watchlist (movies or shows).
+  Future<List<dynamic>> getWatchlist({String type = 'shows'}) async {
+    final res = await _request('GET', '/sync/watchlist/$type');
+    return res as List<dynamic>? ?? [];
+  }
+
+  /// `GET /sync/ratings/{type}` — user's ratings with rating value and date.
+  Future<List<dynamic>> getRatings({String type = 'shows'}) async {
+    final res = await _request('GET', '/sync/ratings/$type');
+    return res as List<dynamic>? ?? [];
+  }
+
+  /// `GET /sync/favorites/{type}` — user's favorites with optional notes.
+  Future<List<dynamic>> getFavorites({String type = 'shows'}) async {
+    final res = await _request('GET', '/sync/favorites/$type');
+    return res as List<dynamic>? ?? [];
+  }
+
+  /// `GET /sync/collection/{type}` — user's collected items with metadata.
+  Future<List<dynamic>> getCollection({String type = 'shows'}) async {
+    final res = await _request('GET', '/sync/collection/$type');
+    return res as List<dynamic>? ?? [];
+  }
+
+  /// Refresh the access token. Coalesces concurrent calls via [_refreshLock] so
   /// duplicate POSTs don't race when multiple in-flight requests hit 401.
   Future<TraktSession> refresh() => _refreshCoalescer.run(_doRefresh);
 
@@ -123,6 +199,50 @@ class TraktClient {
     }
   }
 
+  /// Fetches every page of a paginated Trakt list endpoint and returns the
+  /// merged items. [path] must already contain query params (e.g.
+  /// `?extended=full,images`) — `&page=N&limit=L` are appended per iteration.
+  Future<List<dynamic>> _fetchAllPages(String path, {int limit = 100}) async {
+    if (_session.needsRefresh) {
+      try {
+        await refresh();
+      } catch (_) {}
+    }
+
+    final allItems = <dynamic>[];
+    var page = 1;
+    var totalPages = 1;
+
+    do {
+      final pagePath = '$path&page=$page&limit=$limit';
+      var res = await _send('GET', pagePath);
+
+      if (res.statusCode == 401) {
+        await refresh();
+        res = await _send('GET', pagePath);
+      }
+      if (res.statusCode == 429) {
+        throw TraktRateLimitException(retryAfterSeconds: int.tryParse(res.headers['retry-after'] ?? ''));
+      }
+      if (res.statusCode != 200) {
+        throw TraktApiException(statusCode: res.statusCode, body: res.body);
+      }
+
+      if (res.body.isNotEmpty) {
+        try {
+          final decoded = json.decode(res.body);
+          if (decoded is List) allItems.addAll(decoded);
+        } catch (_) {}
+      }
+
+      totalPages = int.tryParse(res.headers['x-pagination-page-count'] ?? '1') ?? 1;
+      appLogger.d('Trakt paginated $path page=$page/$totalPages total=${allItems.length}');
+      page++;
+    } while (page <= totalPages);
+
+    return allItems;
+  }
+
   /// Send an authenticated request, refreshing on 401 and retrying once.
   Future<dynamic> _request(
     String method,
@@ -162,7 +282,7 @@ class TraktClient {
   }
 
   Future<http.Response> _send(String method, String path, {Map<String, dynamic>? body}) async {
-    final uri = Uri.parse('${TraktConstants.apiBase}$path');
+    final uri = path.startsWith('https://') ? Uri.parse(path) : Uri.parse('${TraktConstants.apiBase}$path');
     final headers = TraktConstants.headers(accessToken: _session.accessToken);
     final encoded = body == null ? null : json.encode(body);
 
