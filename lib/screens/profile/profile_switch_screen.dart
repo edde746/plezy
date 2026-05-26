@@ -167,20 +167,36 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   }
 
   void _pruneProfileFocusResources(Set<String> activeIds) {
+    var removedFocusedNode = false;
     for (final id in _profileFocusNodes.keys.toList()) {
       if (!activeIds.contains(id)) {
-        _profileFocusNodes.remove(id)?.dispose();
+        final node = _profileFocusNodes.remove(id);
+        if (node != null) {
+          if (node.hasFocus) removedFocusedNode = true;
+          node.dispose();
+        }
       }
     }
     for (final id in _profileMenuFocusNodes.keys.toList()) {
       if (!activeIds.contains(id)) {
-        _profileMenuFocusNodes.remove(id)?.dispose();
+        final node = _profileMenuFocusNodes.remove(id);
+        if (node != null) {
+          if (node.hasFocus) removedFocusedNode = true;
+          node.dispose();
+        }
       }
     }
     for (final id in _profileMenuKeys.keys.toList()) {
       if (!activeIds.contains(id)) {
         _profileMenuKeys.remove(id);
       }
+    }
+    // Disposing a focused FocusNode orphans the D-pad cursor — happens on
+    // tvOS when the focused tile (or its menu button) is the one being
+    // deleted. Re-arm autofocus so the next build moves focus to the first
+    // remaining tile.
+    if (removedFocusedNode) {
+      _focusRequested = false;
     }
   }
 
