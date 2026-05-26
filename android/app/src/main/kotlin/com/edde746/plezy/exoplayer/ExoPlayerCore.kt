@@ -126,6 +126,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var exoPlayer: ExoPlayer? = null
   private var renderersFactory: PlezyRenderersFactory? = null
   private val subtitleDelayUs = AtomicLong(0L)
+  private var subtitlePositionPercent: Int = 100
+  private var subtitleFontSize: Float = 55f
+  private var lastSubtitleCues: List<Cue> = emptyList()
   private var httpDataSourceFactory: HttpDataSource.Factory? = null
   private var dataSourceFactory: DefaultDataSource.Factory? = null
   private var trackSelector: DefaultTrackSelector? = null
@@ -728,12 +731,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     // With OVERLAY_CANVAS mode, ASS subtitles are rendered directly by AssSubtitleView
     // This callback is for non-ASS subtitles (SRT, VTT, etc.)
     val incoming = cueGroup.cues
-    val outgoing = stackUnpositionedCues(incoming)
+    lastSubtitleCues = incoming
+    val stacked = stackUnpositionedCues(incoming)
+    val outgoing = applySubtitlePosition(stacked)
     if (incoming.isNotEmpty()) {
       Log.d(
         TAG,
         "onCues: received ${incoming.size} cues (non-ASS)" +
-          if (outgoing !== incoming) " — stacked" else ""
+          (if (stacked !== incoming) " - stacked" else "") +
+          (if (outgoing !== stacked) " - positioned" else "")
       )
     }
     subtitleView?.setCues(outgoing)
@@ -765,6 +771,44 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       nextRow -= rowsConsumed
     }
     return rebuilt
+  }
+
+  private fun applySubtitlePosition(cues: List<Cue>): List<Cue> {
+    val clampedPosition = subtitlePositionPercent.coerceIn(0, 100)
+    if (clampedPosition == 100 || cues.isEmpty()) return cues
+
+    val baseLine = clampedPosition / 100f
+    val rowHeight = (subtitleFontSize / 720f * 1.2f).coerceAtLeast(0.01f)
+    var changed = false
+
+    val rebuilt = cues.map { cue ->
+      if (!usesDefaultVerticalPlacement(cue)) return@map cue
+
+      val rowOffset = if (cue.lineType == Cue.LINE_TYPE_NUMBER && cue.line < 0f) {
+        (-cue.line - 1f).coerceAtLeast(0f)
+      } else {
+        0f
+      }
+      val line = if (clampedPosition == 0) {
+        (rowOffset * rowHeight).coerceAtMost(1f)
+      } else {
+        (baseLine - rowOffset * rowHeight).coerceIn(0f, 1f)
+      }
+      val lineAnchor = if (clampedPosition == 0) Cue.ANCHOR_TYPE_START else Cue.ANCHOR_TYPE_END
+
+      changed = true
+      cue.buildUpon()
+        .setLine(line, Cue.LINE_TYPE_FRACTION)
+        .setLineAnchor(lineAnchor)
+        .build()
+    }
+
+    return if (changed) rebuilt else cues
+  }
+
+  private fun usesDefaultVerticalPlacement(cue: Cue): Boolean {
+    if (cue.text == null || cue.bitmap != null || cue.verticalType != Cue.TYPE_UNSET) return false
+    return cue.line == Cue.DIMEN_UNSET || (cue.lineType == Cue.LINE_TYPE_NUMBER && cue.line < 0f)
   }
 
   override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -2048,6 +2092,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     externalSubtitles.clear()
     externalSubtitleUris.clear()
+    lastSubtitleCues = emptyList()
     audioTrackGroupMap.clear()
     subtitleTrackGroupMap.clear()
     selectedAudioTrackId = null
@@ -2402,23 +2447,23 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       val fraction = fontSize / 720f
       subtitleView?.setFractionalTextSize(fraction)
 
-      // Subtitle position: adjust gravity and bottom padding
+      // Subtitle position: VTT default cues arrive with explicit line numbers,
+      // so app positioning is applied at cue level below.
       val clampedPosition = subtitlePosition.coerceIn(0, 100)
-      val gravity = when {
-        clampedPosition <= 33 -> Gravity.TOP
-        clampedPosition <= 66 -> Gravity.CENTER
-        else -> Gravity.BOTTOM
-      }
-      (subtitleView?.layoutParams as? FrameLayout.LayoutParams)?.let { params ->
-        params.gravity = gravity or Gravity.CENTER_HORIZONTAL
-        subtitleView?.layoutParams = params
-      }
-      // Fine-grained positioning within bottom region via bottom padding fraction
+      subtitlePositionPercent = clampedPosition
+      subtitleFontSize = fontSize
+
+      // Cue-level positioning handles default VTT/SRT placement, whose line
+      // numbers bypass SubtitleView bottom padding. Authored VTT line positions
+      // are preserved in applySubtitlePosition().
       if (clampedPosition > 66) {
         val bottomFraction = (100 - clampedPosition) / 100f
         subtitleView?.setBottomPaddingFraction(bottomFraction)
       } else {
         subtitleView?.setBottomPaddingFraction(0f)
+      }
+      if (lastSubtitleCues.isNotEmpty()) {
+        subtitleView?.setCues(applySubtitlePosition(stackUnpositionedCues(lastSubtitleCues)))
       }
 
       // 2. ASS subtitles: font scale via libass
