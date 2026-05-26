@@ -1012,13 +1012,22 @@ class _MainScreenState extends State<MainScreen>
     });
   }
 
-  void _focusContent() {
+  void _focusContent({bool restorePreviousFocus = true}) {
     setState(() => _isSidebarFocused = false);
-    _contentFocusScope.requestFocus();
+    if (restorePreviousFocus) {
+      _contentFocusScope.requestFocus();
+    }
     // Only programmatically focus if the scope didn't auto-restore a child.
     // This preserves the user's focus position when returning from sidebar.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_contentFocusScope.focusedChild == null) {
+      if (!mounted) return;
+      if (restorePreviousFocus) {
+        if (_contentFocusScope.focusedChild == null) {
+          if (_screenKeyFor(_currentTab)?.currentState case final FocusableTab focusable) {
+            focusable.focusActiveTabIfReady();
+          }
+        }
+      } else {
         if (_screenKeyFor(_currentTab)?.currentState case final FocusableTab focusable) {
           focusable.focusActiveTabIfReady();
         }
@@ -1430,12 +1439,13 @@ class _MainScreenState extends State<MainScreen>
                                       isReconnecting: _isReconnecting,
                                       onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
                                       onDestinationSelected: (tab) {
+                                        final restorePreviousFocus = tab == _currentTab;
                                         _selectTab(tab);
-                                        _focusContent();
+                                        _focusContent(restorePreviousFocus: restorePreviousFocus);
                                       },
                                       onLibrarySelected: (key) {
                                         _selectLibrary(key);
-                                        _focusContent();
+                                        _focusContent(restorePreviousFocus: false);
                                       },
                                       onNavigateToContent: _focusContent,
                                       onReconnect: _triggerReconnect,
