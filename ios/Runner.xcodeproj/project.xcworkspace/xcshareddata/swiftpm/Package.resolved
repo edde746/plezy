@@ -36,7 +36,7 @@
       }
     },
     {
-      "identity" : "mpvkit",
+      "identity" : "mpvkitam",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/MazeDev7/MPVKitAM",
       "state" : {
