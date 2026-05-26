@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import '../i18n/strings.g.dart';
 import '../services/app_exit_service.dart';
+import '../services/tvos_system_navigation_service.dart';
 import '../services/update_service.dart';
 import '../utils/app_logger.dart';
 import '../widgets/auth_error_banner.dart';
@@ -176,6 +177,25 @@ bool shouldRenderMainScreenOffline({
   return providerOffline || (startupOfflineUntilConnected && !hasVisibleConnectedServers);
 }
 
+@visibleForTesting
+bool shouldPassTvosMenuToSystem({
+  required bool isAppleTV,
+  required bool isShowingProfileSelection,
+  required bool isOverlaySheetOpen,
+  required bool isRouteCurrent,
+  required bool isSidebarFocused,
+  required bool hasVisibleTabs,
+  required bool isCurrentTabRoot,
+}) {
+  return isAppleTV &&
+      isSidebarFocused &&
+      !isShowingProfileSelection &&
+      !isOverlaySheetOpen &&
+      isRouteCurrent &&
+      hasVisibleTabs &&
+      isCurrentTabRoot;
+}
+
 class MainScreen extends StatefulWidget {
   final bool isOfflineMode;
 
@@ -241,6 +261,7 @@ class _MainScreenState extends State<MainScreen>
   final FocusScopeNode _contentFocusScope = FocusScopeNode(debugLabel: 'Content');
   bool _isSidebarFocused = false;
   bool _isSidebarInteractionExpanded = false;
+  bool _isOverlaySheetOpen = false;
 
   /// The binder is now owned by a top-level [Provider] (see main.dart) so
   /// the splash can await its first settle before navigating here. We just
@@ -351,6 +372,8 @@ class _MainScreenState extends State<MainScreen>
       if (!_isSidebarFocused && !_isShowingProfileSelection) {
         _contentFocusScope.requestFocus();
       }
+
+      _updateTvosMenuPassthrough();
 
       // Check for updates on startup
       unawaited(_checkForUpdatesOnStartup());
@@ -549,10 +572,12 @@ class _MainScreenState extends State<MainScreen>
     if (!hasNoActive && !requireOnOpen) return;
 
     _isShowingProfileSelection = true;
+    _setTvosMenuPassthrough(false);
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
     _isShowingProfileSelection = false;
+    _updateTvosMenuPassthrough();
   }
 
   Future<void> _checkForUpdatesOnStartup() async {
@@ -785,6 +810,7 @@ class _MainScreenState extends State<MainScreen>
     _startupSettleTimeout = null;
     _sidebarFocusScope.dispose();
     _contentFocusScope.dispose();
+    _setTvosMenuPassthrough(false);
 
     // Clean up companion remote callbacks
     if (_companionRemoteSetup) {
@@ -829,10 +855,12 @@ class _MainScreenState extends State<MainScreen>
     if (!activeProfile.hasMultipleProfiles) return;
 
     _isShowingProfileSelection = true;
+    _setTvosMenuPassthrough(false);
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
     _isShowingProfileSelection = false;
+    _updateTvosMenuPassthrough();
   }
 
   /// IndexedStack that disables tickers for offscreen children to prevent
@@ -932,6 +960,7 @@ class _MainScreenState extends State<MainScreen>
       _screens = _buildScreens(_isOffline);
       _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
     });
+    _updateTvosMenuPassthrough();
   }
 
   void _handleOfflineStatusChanged() {
@@ -977,6 +1006,7 @@ class _MainScreenState extends State<MainScreen>
         _autoSwitchedToDownloads = false;
       }
     });
+    _updateTvosMenuPassthrough();
 
     // Refresh sidebar focus after rebuilding navigation
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1005,6 +1035,7 @@ class _MainScreenState extends State<MainScreen>
     // and overwrites lastFocusedKey (e.g. to the Libraries toggle button).
     final targetKey = _sideNavKey.currentState?.lastFocusedKey;
     setState(() => _isSidebarFocused = true);
+    _updateTvosMenuPassthrough();
     _sidebarFocusScope.requestFocus();
     // Focus the active item after the focus scope has focus
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1014,6 +1045,7 @@ class _MainScreenState extends State<MainScreen>
 
   void _focusContent({bool restorePreviousFocus = true}) {
     setState(() => _isSidebarFocused = false);
+    _updateTvosMenuPassthrough();
     if (restorePreviousFocus) {
       _contentFocusScope.requestFocus();
     }
@@ -1040,6 +1072,12 @@ class _MainScreenState extends State<MainScreen>
     setState(() => _isSidebarInteractionExpanded = expanded);
   }
 
+  void _handleOverlaySheetOpenChanged(bool open) {
+    if (_isOverlaySheetOpen == open) return;
+    _isOverlaySheetOpen = open;
+    _updateTvosMenuPassthrough();
+  }
+
   double _sideNavigationWidth(BuildContext context, {required bool alwaysExpanded}) {
     final isExpanded = alwaysExpanded || _isSidebarFocused || _isSidebarInteractionExpanded;
     return isExpanded
@@ -1047,12 +1085,34 @@ class _MainScreenState extends State<MainScreen>
         : SideNavigationRailState.collapsedWidthForContext(context);
   }
 
+  bool get _shouldPassTvosMenuToSystem {
+    final tabs = _getVisibleTabs(_isOffline);
+    return shouldPassTvosMenuToSystem(
+      isAppleTV: PlatformDetector.isAppleTV(),
+      isShowingProfileSelection: _isShowingProfileSelection,
+      isOverlaySheetOpen: _isOverlaySheetOpen,
+      isRouteCurrent: ModalRoute.of(context)?.isCurrent == true,
+      isSidebarFocused: _isSidebarFocused,
+      hasVisibleTabs: tabs.isNotEmpty,
+      isCurrentTabRoot: tabs.isNotEmpty && _currentTab == tabs.first.id,
+    );
+  }
+
+  void _setTvosMenuPassthrough(bool enabled) {
+    if (!PlatformDetector.isAppleTV()) return;
+    unawaited(TvosSystemNavigationService.setMenuPassthroughEnabled(enabled));
+  }
+
+  void _updateTvosMenuPassthrough() {
+    _setTvosMenuPassthrough(_shouldPassTvosMenuToSystem);
+  }
+
   /// Suppress stray back events after a child route pops.
   /// On Android TV the platform popRoute can arrive before the key events,
   /// so BackKeySuppressorObserver misses them and they leak into _handleBackKey.
   bool _suppressBackAfterPop = false;
 
-  KeyEventResult _handleMainBack({bool allowTvSystemExit = false}) {
+  KeyEventResult _handleMainBack() {
     final tabs = _getVisibleTabs(_isOffline);
     if (tabs.isEmpty) return KeyEventResult.handled;
 
@@ -1063,11 +1123,18 @@ class _MainScreenState extends State<MainScreen>
       return KeyEventResult.handled;
     }
 
+    // The tvOS engine normally passes root Menu presses through to UIKit. If a
+    // stale event still reaches Flutter, avoid showing an exit prompt that
+    // cannot be honored app-side.
+    if (PlatformDetector.isAppleTV()) {
+      _lastBackPressAt = null;
+      return KeyEventResult.handled;
+    }
+
     final now = DateTime.now();
     final lastBackPressAt = _lastBackPressAt;
     if (lastBackPressAt != null && now.difference(lastBackPressAt) < _backExitWindow) {
       _lastBackPressAt = null;
-      if (allowTvSystemExit && PlatformDetector.isAppleTV()) return KeyEventResult.skipRemainingHandlers;
       unawaited(AppExitService.requestExit());
       return KeyEventResult.handled;
     }
@@ -1088,7 +1155,7 @@ class _MainScreenState extends State<MainScreen>
     // matching comment in handleBackKeyAction for why the suppressor pattern
     // doesn't fit here.
     if (PlatformDetector.isAppleTV() && event is KeyDownEvent) {
-      final result = _handleMainBack(allowTvSystemExit: true);
+      final result = _handleMainBack();
       if (result == KeyEventResult.handled) {
         BackKeyCoordinator.markHandled();
       }
@@ -1099,7 +1166,7 @@ class _MainScreenState extends State<MainScreen>
     }
 
     if (event is KeyUpEvent) {
-      final result = _handleMainBack(allowTvSystemExit: PlatformDetector.isAppleTV());
+      final result = _handleMainBack();
       if (result == KeyEventResult.handled) {
         BackKeyCoordinator.markHandled();
       }
@@ -1176,6 +1243,7 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void didPushNext() {
+    _setTvosMenuPassthrough(false);
     // Called when a child route is pushed on top (e.g., video player)
     if (_currentTab == NavigationTabId.discover) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
@@ -1196,6 +1264,7 @@ class _MainScreenState extends State<MainScreen>
     });
 
     // Called when returning to this route from a child route (e.g., from video player)
+    _updateTvosMenuPassthrough();
     if (_currentTab == NavigationTabId.discover) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
         aware.onTabShown();
@@ -1282,6 +1351,7 @@ class _MainScreenState extends State<MainScreen>
         _autoSwitchedToDownloads = false;
       }
     });
+    _updateTvosMenuPassthrough();
 
     if (previousTab != tab) {
       // Notify previous screen it's being hidden
@@ -1371,6 +1441,7 @@ class _MainScreenState extends State<MainScreen>
               : SideNavigationRailState.collapsedWidthForContext(context);
 
           return OverlaySheetHost(
+            onOpenChanged: _handleOverlaySheetOpenChanged,
             child: PopScope(
               canPop: false, // Prevent system back from popping on Android TV
               // ignore: no-empty-block - required callback, back navigation handled by _handleBackKey
@@ -1474,6 +1545,7 @@ class _MainScreenState extends State<MainScreen>
         _handleMainBack();
       },
       child: OverlaySheetHost(
+        onOpenChanged: _handleOverlaySheetOpenChanged,
         child: ScaffoldMessenger(
           key: mainScaffoldMessengerKey,
           child: Scaffold(

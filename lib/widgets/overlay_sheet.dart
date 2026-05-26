@@ -191,8 +191,9 @@ class OverlaySheetController {
 /// and skip their own back handling when a sheet is open.
 class OverlaySheetHost extends StatefulWidget {
   final Widget child;
+  final ValueChanged<bool>? onOpenChanged;
 
-  const OverlaySheetHost({super.key, required this.child});
+  const OverlaySheetHost({super.key, required this.child, this.onOpenChanged});
 
   @override
   State<OverlaySheetHost> createState() => _OverlaySheetHostState();
@@ -264,6 +265,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     bool showDragHandle = false,
   }) {
     // If already open, close first (instant)
+    final wasOpen = _isOpen;
     if (_isOpen) {
       for (final entry in _pageStack) {
         if (!entry.completer.isCompleted) {
@@ -291,6 +293,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       _dragOffset = 0;
       _isDragging = false;
     });
+    if (!wasOpen) widget.onOpenChanged?.call(true);
 
     BackKeyUpSuppressor.clearSuppression();
     _animationController.forward(from: 0);
@@ -351,6 +354,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         _isDragging = false;
         _sheetHorizontalAnchor = null;
       });
+      widget.onOpenChanged?.call(false);
       // Clear stale back-key flags. handleBackKeyAction sets
       // markClosedViaBackKey() expecting a route pop, but the overlay
       // doesn't pop a route. Without clearing, the flag leaks into the
