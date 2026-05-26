@@ -56,6 +56,7 @@ import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.mp4.Mp4Extractor
+import androidx.media3.extractor.ts.TsExtractor
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
@@ -96,6 +97,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private const val WATCHDOG_TIMEOUT_MS = 8000L
     private const val DECODER_HANG_TIMEOUT_MS = 5000L
     private const val FPS_SAMPLE_COUNT = 8
+    private const val TS_TIMESTAMP_SEARCH_PACKETS = 1800
 
     // Codec capability caches — codec support doesn't change at runtime
     private val hwAudioDecoderCache = HashMap<String, Boolean>()
@@ -456,6 +458,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         .setReadTimeoutMs(10_000)
       dataSourceFactory = DefaultDataSource.Factory(activity, httpDataSourceFactory!!)
       val extractorsFactory = DefaultExtractorsFactory()
+        // High-bitrate Plex DVR MPEG-TS recordings can have sparse PCR packets; the default
+        // 600-packet window may leave duration unknown and seeking disabled.
+        .setTsExtractorTimestampSearchBytes(TS_TIMESTAMP_SEARCH_PACKETS * TsExtractor.TS_PACKET_SIZE)
 
       // Inline buildWithAssSupport to retain AssHandler reference for font scale control.
       // OVERLAY_OPEN_GL uses TextureView which follows normal View hierarchy z-ordering,
