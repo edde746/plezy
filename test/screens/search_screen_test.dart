@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/i18n/strings.g.dart';
-import 'package:plezy/mixins/refreshable.dart';
-import 'package:plezy/screens/search_screen.dart';
+import 'package:vibe_stream/i18n/strings.g.dart';
+import 'package:vibe_stream/mixins/refreshable.dart';
+import 'package:vibe_stream/screens/search_screen.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

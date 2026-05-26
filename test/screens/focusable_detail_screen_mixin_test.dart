@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/focus/focusable_action_bar.dart';
-import 'package:plezy/mixins/grid_focus_node_mixin.dart';
-import 'package:plezy/screens/focusable_detail_screen_mixin.dart';
-import 'package:plezy/theme/mono_theme.dart';
-import 'package:plezy/utils/platform_detector.dart';
+import 'package:vibe_stream/focus/focusable_action_bar.dart';
+import 'package:vibe_stream/mixins/grid_focus_node_mixin.dart';
+import 'package:vibe_stream/screens/focusable_detail_screen_mixin.dart';
+import 'package:vibe_stream/theme/mono_theme.dart';
+import 'package:vibe_stream/utils/platform_detector.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
