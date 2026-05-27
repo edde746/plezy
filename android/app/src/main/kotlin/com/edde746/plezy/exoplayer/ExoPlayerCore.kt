@@ -300,12 +300,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var dvMode: DvConversionMode = DvConversionMode.DISABLED
   private var debugDvModeOverride: DvConversionMode? = null
   private var dv7RetryAttempted = false
+  private var currentVideoFormat: Format? = null
+  private var loggedNativeDvSelectionKey: String? = null
+  private var loggedNativeDvFirstFrame = false
 
   @Volatile private var activeDoviMkvWrapper: DoviExtractorWrapper? = null
 
   @Volatile private var activeDoviMp4Wrapper: DoviExtractorWrapper? = null
 
-  private fun getConfiguredDvMode(): DvConversionMode = debugDvModeOverride ?: DoviBridge.getConversionMode()
+  private fun getConfiguredDvMode(): DvConversionMode = debugDvModeOverride ?: DoviBridge.getConversionMode(activity)
 
   fun initialize(bufferSizeBytes: Int? = null, tunnelingEnabled: Boolean = true): Boolean {
     if (isInitialized) {
@@ -315,10 +318,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     tunnelingUserEnabled = tunnelingEnabled
     this.dvMode = getConfiguredDvMode()
+    DoviBridge.logSupportSummary(activity)
     Log.i(
       TAG,
-      "DV conversion: mode=$dvMode, bridge=${DoviBridge.isAvailable()}, " +
-        "deviceDV7=${DoviBridge.deviceSupportsDvProfile7}, deviceDV8=${DoviBridge.deviceSupportsDvProfile8}"
+      "DV conversion: mode=$dvMode, override=${debugDvModeOverride?.name ?: "AUTO"}"
     )
     disposing = false
 
@@ -889,11 +892,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val audioGroup = tracks.groups.firstOrNull { it.type == C.TRACK_TYPE_AUDIO && it.isSelected }
     if (videoGroup != null) {
       val vf = videoGroup.mediaTrackGroup.getFormat(0)
+      currentVideoFormat = vf
       val hdr = vf.colorInfo?.let { ci ->
         val transfer = ci.colorTransfer
         if (transfer != null && transfer != 0) " HDR(transfer=$transfer)" else ""
       } ?: ""
       emitLog("info", "tracks", "Video: ${vf.codecs} ${vf.width}x${vf.height}$hdr")
+      logNativeDvSelectionIfNeeded(vf)
+    } else {
+      currentVideoFormat = null
     }
     if (audioGroup != null) {
       val af = audioGroup.mediaTrackGroup.getFormat(0)
@@ -967,22 +974,85 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     )
   }
 
+  private fun isDvProfile7Format(format: Format): Boolean {
+    val codecs = format.codecs?.lowercase() ?: return false
+    return codecs.startsWith("dvhe.07") || codecs.startsWith("dvh1.07")
+  }
+
+  private fun findDv7VideoFormat(): Format? {
+    currentVideoFormat?.takeIf { isDvProfile7Format(it) }?.let { return it }
+    val tracks = exoPlayer?.currentTracks ?: return null
+    for (group in tracks.groups) {
+      if (group.type != C.TRACK_TYPE_VIDEO) continue
+      for (i in 0 until group.mediaTrackGroup.length) {
+        val format = group.mediaTrackGroup.getFormat(i)
+        if (isDvProfile7Format(format)) return format
+      }
+    }
+    return null
+  }
+
+  private fun describeVideoFormat(format: Format?): String {
+    if (format == null) return "none"
+    return "mime=${format.sampleMimeType}, codecs=${format.codecs}, size=${format.width}x${format.height}"
+  }
+
+  private fun logNativeDvSelectionIfNeeded(format: Format) {
+    if (dvMode != DvConversionMode.DISABLED || !isDvProfile7Format(format)) return
+    val key = "${format.sampleMimeType}|${format.codecs}|${format.width}x${format.height}"
+    if (loggedNativeDvSelectionKey == key) return
+    loggedNativeDvSelectionKey = key
+    emitLog(
+      "info",
+      "dv-native",
+      "Selected DV Profile 7 for native playback: ${describeVideoFormat(format)}, " +
+        "displayDV=${DoviBridge.displaySupportsDolbyVision(activity)}, " +
+        "nativeDecoder=${DoviBridge.hasNativeDolbyVisionDecoder}, " +
+        "advertisedP7=${DoviBridge.deviceSupportsDvProfile7}, advertisedP8=${DoviBridge.deviceSupportsDvProfile8}"
+    )
+  }
+
+  private fun logNativeDvFirstFrameIfNeeded() {
+    if (loggedNativeDvFirstFrame || dvMode != DvConversionMode.DISABLED) return
+    val format = currentVideoFormat ?: return
+    if (!isDvProfile7Format(format)) return
+    loggedNativeDvFirstFrame = true
+    emitLog(
+      "info",
+      "dv-native",
+      "Native DV Profile 7 playback confirmed: ${describeVideoFormat(format)}, decoder=${decoderInitName ?: "unknown"}"
+    )
+  }
+
   /**
-   * When native DV7 decoding fails (device falsely advertises DV7 support),
-   * upgrade to DV7→8.1 conversion or HEVC strip and reload the media.
-   * Returns true if retry was initiated.
+   * When native DV7 decoding fails, upgrade to DV7→8.1 conversion or HEVC strip
+   * and reload the media. Returns true if retry was initiated.
    */
   private fun retryWithDvConversion(reason: String): Boolean {
     if (dv7RetryAttempted) return false
-    if (debugDvModeOverride == DvConversionMode.DISABLED) return false
-    if (dvMode != DvConversionMode.DISABLED) return false
-    if (!DoviBridge.isAvailable()) return false
+    if (debugDvModeOverride == DvConversionMode.DISABLED) {
+      emitLog("debug", "dv-fallback", "Skipping DV conversion retry for $reason: native/disabled mode is forced")
+      return false
+    }
+    if (dvMode != DvConversionMode.DISABLED) {
+      emitLog("debug", "dv-fallback", "Skipping DV conversion retry for $reason: conversion already active ($dvMode)")
+      return false
+    }
     if (currentMediaUri == null) return false
+    val dv7Format = findDv7VideoFormat()
+    if (dv7Format == null) {
+      emitLog(
+        "debug",
+        "dv-fallback",
+        "Skipping DV conversion retry for $reason: current video is not DV Profile 7 (${describeVideoFormat(currentVideoFormat)})"
+      )
+      return false
+    }
 
     dv7RetryAttempted = true
-    val newMode = DoviBridge.getDv7FallbackMode()
+    val newMode = DoviBridge.getDv7FallbackMode(activity)
     dvMode = newMode
-    Log.i(TAG, "Native DV7 playback failed ($reason), retrying with $newMode")
+    Log.i(TAG, "Native DV7 playback failed ($reason, ${describeVideoFormat(dv7Format)}), retrying with $newMode")
     emitLog("info", "dv-fallback", "DV7 native failed ($reason), retrying as $newMode")
 
     return reloadCurrentMediaForDvMode()
@@ -1938,6 +2008,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       firstFrameRendered = true
       cancelDecoderHangCheck()
       emitLog("debug", "decoder-hang", "First frame rendered — decoder OK")
+      logNativeDvFirstFrameIfNeeded()
       // STATE_READY fires when the player has enough buffered to start, but
       // the first frame may not be on screen yet (decoder init + keyframe
       // decode). The MPV-parity `playback-restart` event consumers (Dart
@@ -2078,6 +2149,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     decoderInitName = null
     audioDecoderInitName = null
+    currentVideoFormat = null
+    loggedNativeDvSelectionKey = null
+    loggedNativeDvFirstFrame = false
     loggedDecodedTrueHdTunnelingGuard = false
     updateAudioDecoderPolicy("open")
     currentMediaUri = uri
@@ -2209,6 +2283,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     detectedFrameRate = -1f
     fpsTimestampCount = 0
     firstFrameRendered = false
+    currentVideoFormat = null
+    loggedNativeDvSelectionKey = null
+    loggedNativeDvFirstFrame = false
     activeDoviMkvWrapper = null
     activeDoviMp4Wrapper = null
     stopFrameWatchdog()
@@ -2606,6 +2683,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
           "dvConversionDebugMode" to (debugDvModeOverride?.name ?: "AUTO"),
           "dvStrippedInitNals" to (dovi?.strippedInitNalCount ?: 0L),
           "dvStrippedNals" to (dovi?.strippedNalCount ?: 0L),
+          "dvStrippedRpuNals" to (dovi?.strippedRpuNalCount ?: 0L),
+          "dvStrippedElNals" to (dovi?.strippedElNalCount ?: 0L),
           "dvConvertedRpus" to (dovi?.convertedRpuCount ?: 0L),
           "dvRpuConversionFailures" to (dovi?.rpuConversionFailureCount ?: 0L),
           "dvRpuOutputTooSmall" to (dovi?.rpuOutputTooSmallCount ?: 0L),
