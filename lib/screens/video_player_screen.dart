@@ -998,6 +998,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             if (navigator.canPop()) {
               _isExiting.value = true;
               await _sendStoppedProgressOnce();
+              await _restoreSystemUiAndOrientation();
               if (!mounted) return;
               navigator.pop(true);
             }
@@ -1012,11 +1013,35 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (navigator.canPop()) {
         _isExiting.value = true;
         await _sendStoppedProgressOnce();
+        await _restoreSystemUiAndOrientation();
         if (!mounted) return;
         navigator.pop(true);
       }
     } finally {
       _isHandlingBack = false;
+    }
+  }
+
+  Future<void> _restoreSystemUiAndOrientation() async {
+    try {
+      await OrientationHelper.restoreSystemUI();
+    } catch (e) {
+      appLogger.w('Failed to restore system UI', error: e);
+    }
+
+    try {
+      if (_isPhone) {
+        await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+      } else {
+        await SystemChrome.setPreferredOrientations([
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+      }
+    } catch (e) {
+      appLogger.w('Failed to restore orientation', error: e);
     }
   }
 
@@ -1128,23 +1153,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Restore system UI and orientation preferences (skip if navigating to another video)
     if (!_isReplacingWithVideo) {
-      OrientationHelper.restoreSystemUI();
-
-      // Restore orientation based on cached device type (no context needed)
-      try {
-        if (_isPhone) {
-          SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-        } else {
-          SystemChrome.setPreferredOrientations([
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-            DeviceOrientation.landscapeLeft,
-            DeviceOrientation.landscapeRight,
-          ]);
-        }
-      } catch (e) {
-        appLogger.w('Failed to restore orientation in dispose', error: e);
-      }
+      unawaited(_restoreSystemUiAndOrientation());
     }
 
     Sentry.addBreadcrumb(Breadcrumb(message: 'Player dispose', category: 'player'));
