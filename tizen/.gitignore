@@ -1,0 +1,12 @@
+flutter/
+.vs/
+*.user
+bin/
+obj/
+
+# Tizen Core CLI (tz) related files
+tizen_dotnet_project.yaml
+*.csproj.backup
+
+# Flutter-tizen dependency information file
+.app.deps.json
