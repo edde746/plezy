@@ -800,8 +800,121 @@ jobs:
             plezy-linux-arm64.rpm
             plezy-linux-arm64.pkg.tar.zst
 
+  build-tizen:
+    runs-on: ubuntu-22.04
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Tizen Dependencies
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y curl file git make unzip xz-utils zip \
+           software-properties-common wget \
+           libkf5itemmodels5 libkf5kiowidgets5 libkchart2 gettext cpio \
+           rpm2cpio dbus dbus-x11 gnome-keyring libsecret-tools
+          sudo add-apt-repository ppa:deadsnakes/ppa -y
+          sudo add-apt-repository ppa:dotnet/backports -y
+          sudo apt-get update -y
+          # Python 3.8 install prompts for timezone config if not preset
+          sudo ln -snf /usr/share/zoneinfo/UTC /etc/localtime
+          echo "UTC" | sudo tee /etc/timezone
+          sudo apt-get install -y python3.8 libpython3.8 dotnet-sdk-10.0
+          wget -q "http://archive.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb" \
+           -O /tmp/libtinfo5.deb
+          sudo dpkg -i /tmp/libtinfo5.deb
+          rm /tmp/libtinfo5.deb
+
+      - name: Cache flutter-tizen
+        id: cache-flutter-tizen
+        uses: actions/cache@v4
+        with:
+          path: ~/flutter-tizen
+          key: flutter-tizen-3.41.9-tizen.1.0.0
+
+      - name: Setup flutter-tizen & Flutter
+        run: |
+          if [[ "${{ steps.cache-flutter-tizen.outputs.cache-hit }}" != 'true' ]]; then
+            git clone --depth 1 --branch 3.41.9-tizen.1.0.0 \
+              https://github.com/flutter-tizen/flutter-tizen.git $HOME/flutter-tizen
+            # Bootstrap: downloads the Flutter SDK and Dart into the clone
+            $HOME/flutter-tizen/bin/flutter-tizen
+          fi
+          # $GITHUB_PATH additions only take effect in subsequent steps
+          echo "$HOME/flutter-tizen/bin" >> $GITHUB_PATH
+          echo "$HOME/flutter-tizen/flutter/bin" >> $GITHUB_PATH
+
+      - name: Cache Tizen Studio
+        id: cache-tizen-studio
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/tizen-studio
+            ~/tizen-studio-data
+          key: tizen-studio-6.0-NativeToolchain-Gcc-9.2-IOT-Headed-6.0
+
+      - name: Setup Tizen Studio CLI & Tizen Packages
+        if: steps.cache-tizen-studio.outputs.cache-hit != 'true'
+        run: |
+          wget -q https://download.tizen.org/sdk/Installer/tizen-studio_6.0/web-cli_Tizen_Studio_6.0_ubuntu-64.bin \
+            -O tizen-studio-cli.bin
+          chmod +x tizen-studio-cli.bin
+          ./tizen-studio-cli.bin --accept-license "$HOME/tizen-studio"
+          rm -f tizen-studio-cli.bin
+          "$HOME/tizen-studio/package-manager/package-manager-cli.bin" \
+            install --no-java-check --accept-license NativeToolchain-Gcc-9.2 IOT-Headed-6.0-NativeAppDevelopment
+
+      - name: Add Tizen Studio to PATH
+        run: |
+          echo "$HOME/tizen-studio/tools" >> $GITHUB_PATH
+          echo "$HOME/tizen-studio/tools/ide/bin" >> $GITHUB_PATH
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.pub-cache
+          key: ${{ runner.os }}-${{ runner.arch }}-pub-v2-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+
+      - name: Install dependencies
+        run: flutter-tizen pub get --enforce-lockfile --no-example
+
+      - name: Start D-Bus session and unlock GNOME keyring
+        # Required for Tizen Studio signing: tizen security-profiles add stores
+        # certificate passwords in keyring, which needs a live D-Bus
+        # session and an unlocked keyring daemon to accept them.
+        run: |
+          eval "$(dbus-launch --sh-syntax)"
+          echo "DBUS_SESSION_BUS_ADDRESS=$DBUS_SESSION_BUS_ADDRESS" >> $GITHUB_ENV
+          echo "" | gnome-keyring-daemon --unlock --replace --components=secrets,pkcs11
+
+      - name: Build Tizen TPK
+        env:
+          TIZEN_AUTHOR_CERT_BASE64: ${{ secrets.TIZEN_AUTHOR_CERT_BASE64 }}
+          TIZEN_AUTHOR_CERT_PASSWORD: ${{ secrets.TIZEN_AUTHOR_CERT_PASSWORD }}
+          TIZEN_DIST_CERT_BASE64: ${{ secrets.TIZEN_DIST_CERT_BASE64 }}
+          TIZEN_DIST_CERT_PASSWORD: ${{ secrets.TIZEN_DIST_CERT_PASSWORD }}
+        run: bash tizen/scripts/build_tizen.sh ${{ env.GIT_COMMIT_DART_DEFINE }} ${{ env.DONATIONS_DART_DEFINE }}
+
+      - name: Rename TPK
+        run: cp build/tizen/tpk/*.tpk plezy-tizen.tpk
+
+      - name: Attest TPK
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: plezy-tizen.tpk
+
+      - name: Upload TPK
+        uses: actions/upload-artifact@v4
+        with:
+          name: tizen-tpk
+          path: plezy-tizen.tpk
+
   create-release:
-    needs: [build-android, build-ios, build-macos, package-windows, build-linux-x64, build-linux-arm64]
+    needs: [build-android, build-ios, build-macos, package-windows, build-linux-x64, build-linux-arm64, build-tizen]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -858,6 +971,12 @@ jobs:
         with:
           name: linux-arm64
           path: artifacts/linux-arm64
+
+      - name: Download Tizen artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tizen-tpk
+          path: artifacts/tizen-tpk
 
       - name: Display structure of downloaded files
         run: ls -R artifacts
@@ -954,6 +1073,7 @@ jobs:
             artifacts/windows-installer/plezy-windows-installer.exe
             artifacts/linux-x64/*
             artifacts/linux-arm64/*
+            artifacts/tizen-tpk/plezy-tizen.tpk
             appcast.xml
           draft: true
           prerelease: false
