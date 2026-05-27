@@ -84,6 +84,53 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
   });
+
+  testWidgets('orders profiles by recent usage from storage', (tester) async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final profiles = _FakeProfileRegistry(db, [
+      Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)),
+      Profile.local(id: 'local-kids', displayName: 'Kids', createdAt: DateTime(2026, 1, 2)),
+    ]);
+    final connections = _FakeConnectionRegistry(db);
+    final profileConnections = _FakeProfileConnectionRegistry(db);
+    final storage = await StorageService.getInstance();
+    await storage.markProfileUsed('local-kids', DateTime(2026, 1, 3));
+    final plexHome = PlexHomeService(
+      connections: connections,
+      profileConnections: profileConnections,
+      storage: storage,
+      plexHomeUserFetcher: (_) async => const [],
+    );
+    final activeProfile = ActiveProfileProvider(
+      registry: profiles,
+      plexHome: plexHome,
+      connections: connections,
+      storage: storage,
+    );
+    addTearDown(() async {
+      activeProfile.dispose();
+      await plexHome.dispose();
+      await db.close();
+    });
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            Provider<ProfileRegistry>.value(value: profiles),
+            Provider<ProfileConnectionRegistry>.value(value: profileConnections),
+            Provider<ConnectionRegistry>.value(value: connections),
+            Provider<PlexHomeService>.value(value: plexHome),
+            ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
+          ],
+          child: const MaterialApp(home: ProfileSwitchScreen()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.getTopLeft(find.text('Kids')).dy, lessThan(tester.getTopLeft(find.text('Owner')).dy));
+  });
 }
 
 class _FakeProfileRegistry extends ProfileRegistry {
