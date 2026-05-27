@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 
 import '../../../../mpv/mpv.dart';
 import '../../../../mpv/player/platform/player_android.dart';
+import '../../../../mpv/player/platform/player_tizen.dart';
 import '../../../../utils/app_logger.dart';
 import 'performance_stats.dart';
 
@@ -119,6 +120,8 @@ class PerformanceStatsService {
         // For Android (ExoPlayer or MPV fallback), always use getStats()
         // The native side returns appropriate stats based on which backend is active
         await _fetchAndroidStats();
+      } else if (player is PlayerTizen) {
+        _fetchTizenStats(player as PlayerTizen);
       } else {
         // For non-Android platforms, use MPV property queries
         await _fetchMpvStats();
@@ -231,6 +234,32 @@ class PerformanceStatsService {
       8 => '7.1',
       _ => '$channels ch',
     };
+  }
+
+  /// Fetch basic stats from the Tizen native player state.
+  void _fetchTizenStats(PlayerTizen tizenPlayer) {
+    int? appMemory;
+    try {
+      appMemory = ProcessInfo.currentRss;
+    } catch (_) {}
+
+    final state = tizenPlayer.state;
+
+    _statsController.add(
+      PerformanceStats(
+        playerType: 'tizen',
+        videoCodec: _formatCodecName(tizenPlayer.videoCodec),
+        audioCodec: _formatCodecName(tizenPlayer.audioCodec),
+        videoWidth: tizenPlayer.videoWidth,
+        videoHeight: tizenPlayer.videoHeight,
+        audioSamplerate: tizenPlayer.audioSampleRate,
+        audioChannels: tizenPlayer.audioChannels != null ? '${tizenPlayer.audioChannels} ch' : null,
+        hwdecCurrent: tizenPlayer.decoderType == 'Hardware' ? 'tizen-hw' : 'no',
+        cacheDuration: state.buffer != Duration.zero ? state.buffer.inMilliseconds / 1000.0 : null,
+        appMemoryBytes: appMemory,
+        uiFps: _currentUiFps,
+      ),
+    );
   }
 
   /// Fetch stats from MPV via property queries.

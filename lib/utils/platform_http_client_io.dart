@@ -8,6 +8,7 @@ import 'package:win_http/win_http.dart';
 
 import 'app_logger.dart';
 import 'managed_http_client.dart';
+import 'platform_detector.dart';
 
 /// Shared Cronet engine so all clients reuse the same connection pool.
 CronetEngine? _sharedEngine;
@@ -58,6 +59,10 @@ http.Client createPlatformClient() {
       _logPlatformClient(Platform.isIOS ? 'ios' : 'macos', 'IOClient (fallback)');
       return ManagedHttpClient(IOClient(), debugLabel: 'IOClient (fallback)');
     }
+  }
+  if (PlatformDetector.isTizen()) {
+    _logPlatformClient('tizen', 'IOClient (Tizen tuned)');
+    return _createTunedIoClient('IOClient (Tizen tuned)');
   }
   if (Platform.isWindows) {
     try {

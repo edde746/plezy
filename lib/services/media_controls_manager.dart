@@ -5,6 +5,7 @@ import '../media/media_server_client.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../utils/app_logger.dart';
+import '../utils/platform_detector.dart';
 
 /// Manages OS media controls integration for video playback.
 ///
@@ -14,8 +15,10 @@ import '../utils/app_logger.dart';
 /// - Control event streaming (play, pause, next, previous, seek)
 /// - Position update throttling to prevent excessive API calls
 class MediaControlsManager {
+  static final bool _supported = !PlatformDetector.isTizen();
+
   /// Stream of control events from OS media controls
-  Stream<dynamic> get controlEvents => OsMediaControls.controlEvents;
+  Stream<dynamic> get controlEvents => _supported ? OsMediaControls.controlEvents : const Stream.empty();
 
   /// Throttled playback state update (1 second interval, leading + trailing)
   late final Throttle _throttledUpdate;
@@ -42,7 +45,7 @@ class MediaControlsManager {
   /// shape (Plex's `/photo/:/transcode` proxy vs. Jellyfin's
   /// self-authenticated image URL).
   Future<void> updateMetadata({required MediaItem metadata, MediaServerClient? client, Duration? duration}) async {
-    if (_updatesSuspended) return;
+    if (!_supported || _updatesSuspended) return;
 
     try {
       String? artworkUrl;
@@ -80,7 +83,7 @@ class MediaControlsManager {
     required double speed,
     bool force = false,
   }) async {
-    if (_updatesSuspended) return;
+    if (!_supported || _updatesSuspended) return;
 
     final params = _PlaybackStateParams(isPlaying: isPlaying, position: position, speed: speed);
 
@@ -115,7 +118,7 @@ class MediaControlsManager {
   /// - Playlist items: Enable based on playlist position
   /// - Movies: Usually disabled
   Future<void> setControlsEnabled({bool canGoNext = false, bool canGoPrevious = false, bool canSeek = false}) async {
-    if (_updatesSuspended) return;
+    if (!_supported || _updatesSuspended) return;
 
     try {
       final controlsToEnable = <MediaControl>[];
@@ -153,6 +156,7 @@ class MediaControlsManager {
   ///
   /// Should be called when playback stops or screen is disposed.
   Future<void> clear() async {
+    if (!_supported) return;
     try {
       await OsMediaControls.clear();
       _throttledUpdate.cancel();

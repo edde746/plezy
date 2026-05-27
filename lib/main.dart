@@ -175,7 +175,10 @@ Future<void> _bootstrapApp() async {
   }
 
   // Configure image cache — keep budget modest to leave headroom for Skia decode buffers
-  if (PlatformDetector.isDesktopOS()) {
+  if (PlatformDetector.isTizen()) {
+    PaintingBinding.instance.imageCache.maximumSize = 200;
+    PaintingBinding.instance.imageCache.maximumSizeBytes = 30 << 20; // 30MB
+  } else if (PlatformDetector.isDesktopOS()) {
     PaintingBinding.instance.imageCache.maximumSize = 1000;
     PaintingBinding.instance.imageCache.maximumSizeBytes = 150 << 20; // 150MB
   } else {
@@ -235,8 +238,9 @@ Future<void> _bootstrapApp() async {
   }
 
   // Initialize gamepad service (all platforms — universal_gamepad auto-registers
-  // and intercepts input events, so we must listen to re-dispatch them)
-  GamepadService.instance.start();
+  // and intercepts input events, so we must listen to re-dispatch them).
+  // Tizen excluded: no universal_gamepad implementation, TV remote uses key events.
+  if (!PlatformDetector.isTizen()) GamepadService.instance.start();
   if (PlatformDetector.isAppleTV()) {
     AppleTvRemoteTouchService.instance.start();
   }

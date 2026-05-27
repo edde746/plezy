@@ -140,8 +140,12 @@ class TvDetectionService {
 }
 
 class PlatformDetector {
+  static const bool _isTizenBuild = bool.fromEnvironment('TIZEN_BUILD');
+
+  static bool isTizen() => _isTizenBuild;
+
   static bool isTV() {
-    return TvDetectionService.isTVSync();
+    return _isTizenBuild || TvDetectionService.isTVSync();
   }
 
   static bool isAppleTV() {
@@ -188,7 +192,7 @@ class PlatformDetector {
   /// BuildContext. Use for OS-level capability checks (window state, native
   /// keyboard, etc.); use [isDesktop] for layout decisions.
   static bool isDesktopOS() {
-    return Platform.isWindows || Platform.isMacOS || Platform.isLinux;
+    return !_isTizenBuild && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
   }
 
   /// Detects if the device is likely a tablet based on screen size

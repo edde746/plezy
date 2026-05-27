@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:drift_sqflite/drift_sqflite.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
@@ -9,6 +10,7 @@ import 'tables.dart';
 import '../models/download_models.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
+import '../utils/platform_detector.dart';
 
 part 'app_database.g.dart';
 
@@ -558,6 +560,11 @@ class AppDatabase extends _$AppDatabase {
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
+    // Tizen doesn't expose libsqlite3.so; sqflite_tizen wraps the internal SQLite.
+    if (PlatformDetector.isTizen()) {
+      return SqfliteQueryExecutor(path: 'plezy.db', logStatements: false);
+    }
+
     final dbFolder = (Platform.isAndroid || Platform.isIOS)
         ? await getApplicationDocumentsDirectory()
         : await getApplicationSupportDirectory();

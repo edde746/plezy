@@ -18,6 +18,7 @@ import '../services/companion_remote/lan_discovery_service.dart';
 import '../services/companion_remote/remote_auth_context.dart';
 import '../services/companion_remote/remote_auth_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/platform_detector.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 
 export '../services/companion_remote/lan_discovery_service.dart' show DiscoveredHost;
@@ -92,6 +93,9 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
         final windowsInfo = await deviceInfo.windowsInfo;
         _deviceName = windowsInfo.computerName;
         _platform = 'Windows';
+      } else if (PlatformDetector.isTizen()) {
+        _deviceName = 'Samsung TV';
+        _platform = 'Tizen';
       } else if (Platform.isLinux) {
         final linuxInfo = await deviceInfo.linuxInfo;
         _deviceName = linuxInfo.name;

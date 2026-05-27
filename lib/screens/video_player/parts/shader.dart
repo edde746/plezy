@@ -63,6 +63,13 @@ extension _VideoPlayerShaderMethods on VideoPlayerScreenState {
     _setPlayerState(() {
       _videoFilterManager?.cycleBoxFitMode();
     });
+
+    // On Tizen the video renders via native overlay; BoxFit has no effect.
+    // Forward the mode change to the native player instead.
+    if (player is PlayerTizen) {
+      final newMode = _videoFilterManager?.boxFitMode ?? 0;
+      (player as PlayerTizen).setNativeDisplayMode(newMode);
+    }
   }
 
   /// Update video-aspect-override when player size changes.

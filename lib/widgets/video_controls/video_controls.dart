@@ -69,6 +69,7 @@ import '../../providers/shader_provider.dart';
 import '../../services/shader_service.dart';
 
 part 'parts/key_events.dart';
+part 'parts/tizen_key_events.dart';
 part 'parts/markers.dart';
 part 'parts/navigation.dart';
 part 'parts/playback_extras.dart';
