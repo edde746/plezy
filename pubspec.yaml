@@ -4,8 +4,8 @@ publish_to: "none"
 version: 2.3.0+102
 
 environment:
-  sdk: ">=3.12.0 <4.0.0"
-  flutter: ">=3.44.0"
+  sdk: ">=3.11.0 <4.0.0"
+  flutter: ">=3.41.9"
 
 dependencies:
   flutter:
@@ -77,6 +77,15 @@ dependencies:
   freezed_annotation: ^3.1.0
   xml: ^6.6.1
   string_similarity: ^2.2.0
+  wakelock_plus_tizen: ^2.0.0
+  shared_preferences_tizen: ^2.3.3
+  url_launcher_tizen: ^2.1.5
+  path_provider_tizen: ^2.3.0
+  device_info_plus_tizen: ^1.4.0
+  connectivity_plus_tizen: ^1.3.0
+  package_info_plus_tizen: ^1.1.0
+  drift_sqflite: ^2.0.1
+  sqflite_tizen: ^0.1.4
 
 dev_dependencies:
   flutter_test:

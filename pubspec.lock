@@ -255,6 +255,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  connectivity_plus_tizen:
+    dependency: "direct main"
+    description:
+      name: connectivity_plus_tizen
+      sha256: "9f0c14acdceebda77b0bca129b81dc53d0197845ca030032ab5d0198ec5837b3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.3.0"
   convert:
     dependency: transitive
     description:
@@ -359,6 +367,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "7.0.3"
+  device_info_plus_tizen:
+    dependency: "direct main"
+    description:
+      name: device_info_plus_tizen
+      sha256: ab5ba568c8c8c3eba302fcc78db4ca2affd4da5243b09285834930c009f2652c
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.4.0"
   drift:
     dependency: "direct main"
     description:
@@ -375,6 +391,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.31.0"
+  drift_sqflite:
+    dependency: "direct main"
+    description:
+      name: drift_sqflite
+      sha256: dd1afbd72555b7a72ebf053926078d8c302059af4f1eb22040fc27a056429acb
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.1"
   duration:
     dependency: "direct main"
     description:
@@ -797,6 +821,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.1"
+  package_info_plus_tizen:
+    dependency: "direct main"
+    description:
+      name: package_info_plus_tizen
+      sha256: "064b1891c7797e2f9e53f16cf1121d04a0fdf8eebcfd3801139a0005f236f48b"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
   path:
     dependency: "direct main"
     description:
@@ -853,6 +885,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.2"
+  path_provider_tizen:
+    dependency: "direct main"
+    description:
+      name: path_provider_tizen
+      sha256: "1dcafe206f0cfe94931ea8a58fc1e99de53a656b66bd8a85977c8b6fb998fef2"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.0"
   path_provider_windows:
     dependency: transitive
     description:
@@ -1103,6 +1143,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.4.1"
+  shared_preferences_tizen:
+    dependency: "direct main"
+    description:
+      name: shared_preferences_tizen
+      sha256: "0bb9e5d424570676d23729de251703126d9927016c2617543aa06f463f06401d"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.3"
   shared_preferences_web:
     dependency: transitive
     description:
@@ -1188,6 +1236,54 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.10.2"
+  sqflite:
+    dependency: transitive
+    description:
+      name: sqflite
+      sha256: "564cfed0746fe53140c23b70b308e045c3b31f17778f2f326ccb7d804ea0250a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.2+1"
+  sqflite_android:
+    dependency: transitive
+    description:
+      name: sqflite_android
+      sha256: "881e28efdcc9950fd8e9bb42713dcf1103e62a2e7168f23c9338d82db13dec40"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.2+3"
+  sqflite_common:
+    dependency: transitive
+    description:
+      name: sqflite_common
+      sha256: f8a08a13fb8f0f8c590df89d745000bed44a673ed94bac846739e1a016875c21
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.5.7"
+  sqflite_darwin:
+    dependency: transitive
+    description:
+      name: sqflite_darwin
+      sha256: "279832e5cde3fe99e8571879498c9211f3ca6391b0d818df4e17d9fff5c6ccb3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.2"
+  sqflite_platform_interface:
+    dependency: transitive
+    description:
+      name: sqflite_platform_interface
+      sha256: "8dd4515c7bdcae0a785b0062859336de775e8c65db81ae33dd5445f35be61920"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.0"
+  sqflite_tizen:
+    dependency: "direct main"
+    description:
+      name: sqflite_tizen
+      sha256: b4fcbeae6928b58ba2d092b5171067bcf457dcd8d5d55f3e35d3121fc190f307
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.4"
   sqlite3:
     dependency: transitive
     description:
@@ -1252,6 +1348,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  synchronized:
+    dependency: transitive
+    description:
+      name: synchronized
+      sha256: "63896c27e81b28f8cb4e69ead0d3e8f03f1d1e5fc531a3e579cabed6a2c7c9e5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.4.0+1"
   system_info2:
     dependency: transitive
     description:
@@ -1276,6 +1380,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.11"
+  tizen_app_control:
+    dependency: transitive
+    description:
+      name: tizen_app_control
+      sha256: "1822a0815434db29b0ac3cf8c37c4d4ad33da08704f68701a926bc99550ccda1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.3"
+  tizen_interop:
+    dependency: transitive
+    description:
+      name: tizen_interop
+      sha256: "46303c36a7e45491ce0149c77a3f54f3d57654938983c482ab0363a8ebe6ee27"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.3.0"
   typed_data:
     dependency: transitive
     description:
@@ -1340,6 +1460,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.2"
+  url_launcher_tizen:
+    dependency: "direct main"
+    description:
+      name: url_launcher_tizen
+      sha256: a667a5664e9668505dcb8cf618064e3e3944bb351ef7e8d58ef9d5b59e6e8c36
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.5"
   url_launcher_web:
     dependency: transitive
     description:
@@ -1421,6 +1549,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
+  wakelock_plus_tizen:
+    dependency: "direct main"
+    description:
+      name: wakelock_plus_tizen
+      sha256: "12bb99ccc5503bdc98d850b6fb01ac424e05d78c9805dc1c80d01c5d73a70a00"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.0"
   watcher:
     dependency: transitive
     description:
@@ -1510,5 +1646,5 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.12.0 <4.0.0"
-  flutter: ">=3.44.0"
+  dart: ">=3.11.0 <4.0.0"
+  flutter: ">=3.41.9"
