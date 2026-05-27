@@ -338,32 +338,35 @@ class _MainScreenState extends State<MainScreen>
 
     // Wire profile binder + tracker bootstrap (skip in offline mode)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (mounted) {
-        final activeProfile = context.read<ActiveProfileProvider>();
-        _activeProfileForListener = activeProfile;
-        _lastSeenProfileId = activeProfile.activeId;
-        activeProfile.addListener(_onActiveProfileChanged);
-        _plexHomeService = context.read<PlexHomeService>();
-        unawaited(_plexHomeService!.start());
-        final manager = context.read<MultiServerProvider>().serverManager;
-        // Read the binder so the Provider's `lazy: false` create has fired
-        // for sure; start only in online mode so explicit startup offline does
-        // not immediately kick off the same connection attempts it skipped.
-        final binder = context.read<ActiveProfileBinder>();
-        if (!_isOffline) binder.start();
-        _runStartupOnFirstOnlineServer(manager);
-      }
+      if (!mounted) return;
+
+      final activeProfile = context.read<ActiveProfileProvider>();
+      _activeProfileForListener = activeProfile;
+      _lastSeenProfileId = activeProfile.activeId;
+      activeProfile.addListener(_onActiveProfileChanged);
+      _plexHomeService = context.read<PlexHomeService>();
+      unawaited(_plexHomeService!.start());
+      final manager = context.read<MultiServerProvider>().serverManager;
+      // Read the binder so the Provider's `lazy: false` create has fired
+      // for sure; start only in online mode so explicit startup offline does
+      // not immediately kick off the same connection attempts it skipped.
+      final binder = context.read<ActiveProfileBinder>();
+      if (!_isOffline) binder.start();
+      _runStartupOnFirstOnlineServer(manager);
+
       if (!_isOffline) {
         // Settings-only initialization — profile identity is managed by
         // ActiveProfileProvider + ActiveProfileBinder.
         final userProfileProvider = context.userProfile;
         await userProfileProvider.initialize();
+        if (!mounted) return;
 
         // Ensure first login (or any unset profile state) requires explicit selection.
         await _promptForInitialProfileSelection();
+        if (!mounted) return;
 
         // Auto-start companion remote server once the active profile is known.
-        if (_companionRemoteSetup && mounted) {
+        if (_companionRemoteSetup) {
           unawaited(_autoStartCompanionRemoteServer());
         }
       }
@@ -577,6 +580,7 @@ class _MainScreenState extends State<MainScreen>
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
+    if (!mounted) return;
     _isShowingProfileSelection = false;
     _updateTvosMenuPassthrough();
   }
@@ -860,6 +864,7 @@ class _MainScreenState extends State<MainScreen>
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
+    if (!mounted) return;
     _isShowingProfileSelection = false;
     _updateTvosMenuPassthrough();
   }
@@ -1106,6 +1111,7 @@ class _MainScreenState extends State<MainScreen>
   }
 
   void _updateTvosMenuPassthrough() {
+    if (!mounted) return;
     _setTvosMenuPassthrough(_shouldPassTvosMenuToSystem);
   }
 
