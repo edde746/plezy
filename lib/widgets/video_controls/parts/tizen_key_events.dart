@@ -25,8 +25,8 @@ extension _TizenKeyEventMethods on _PlexVideoControlsState {
     if (event is KeyDownEvent) {
       if (_isDirectionalKey(event.logicalKey) || _isSelectKey(event.logicalKey)) {
         if (_isDirectionalKey(event.logicalKey)) {
-          final isHorizontal = event.logicalKey == LogicalKeyboardKey.arrowLeft ||
-              event.logicalKey == LogicalKeyboardKey.arrowRight;
+          final isHorizontal =
+              event.logicalKey == LogicalKeyboardKey.arrowLeft || event.logicalKey == LogicalKeyboardKey.arrowRight;
           if (!_showControls) {
             if (isHorizontal) {
               _showControlsWithTimelineFocus();

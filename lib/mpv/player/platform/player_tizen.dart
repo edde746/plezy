@@ -278,14 +278,14 @@ class PlayerTizen with PlayerStreamControllersMixin implements Player, VideoRect
     _embeddedSubtitleClearTimer = null;
     _embeddedSubtitleDelayTimer?.cancel();
     _embeddedSubtitleDelayTimer = null;
-    _subtitlePositionSub?.cancel();
+    await _subtitlePositionSub?.cancel();
     _subtitlePositionSub = null;
     _lastSubtitleText = '';
     _subDelayMs = 0;
     if (!_subtitleTextCtrl.isClosed) _subtitleTextCtrl.add('');
     // Reset secondary subtitle state.
     _secondaryActiveSubtitleCues = const [];
-    _secondarySubtitlePositionSub?.cancel();
+    await _secondarySubtitlePositionSub?.cancel();
     _secondarySubtitlePositionSub = null;
     _pendingSecondarySubtitleTrack = null;
     _lastSecondarySubtitleText = '';
@@ -466,7 +466,7 @@ class PlayerTizen with PlayerStreamControllersMixin implements Player, VideoRect
 
   @override
   Future<void> selectSubtitleTrack(SubtitleTrack track) async {
-    _subtitlePositionSub?.cancel();
+    await _subtitlePositionSub?.cancel();
     _subtitlePositionSub = null;
     _embeddedSubtitleClearTimer?.cancel();
     _embeddedSubtitleClearTimer = null;
@@ -523,7 +523,7 @@ class PlayerTizen with PlayerStreamControllersMixin implements Player, VideoRect
 
   @override
   Future<void> selectSecondarySubtitleTrack(SubtitleTrack track) async {
-    _secondarySubtitlePositionSub?.cancel();
+    await _secondarySubtitlePositionSub?.cancel();
     _secondarySubtitlePositionSub = null;
 
     if (track.id == 'no' || track.id == 'auto') {
@@ -584,7 +584,7 @@ class PlayerTizen with PlayerStreamControllersMixin implements Player, VideoRect
       if (select) {
         _embeddedSubtitleActive = false;
         _activeSubtitleCues = _loadedSubtitles[uri]!;
-        _subtitlePositionSub?.cancel();
+        await _subtitlePositionSub?.cancel();
         _subtitlePositionSub = _streams.position.listen(_onSubtitlePosition);
         _state = _state.copyWith(track: _state.track.copyWith(subtitle: dartTrack));
         trackController.add(_state.track);
@@ -597,7 +597,7 @@ class PlayerTizen with PlayerStreamControllersMixin implements Player, VideoRect
         _pendingSubtitleTrack = null;
         _embeddedSubtitleActive = false;
         _activeSubtitleCues = _loadedSubtitles[uri]!;
-        _subtitlePositionSub?.cancel();
+        await _subtitlePositionSub?.cancel();
         _subtitlePositionSub = _streams.position.listen(_onSubtitlePosition);
         _state = _state.copyWith(track: _state.track.copyWith(subtitle: pending));
         trackController.add(_state.track);
@@ -610,7 +610,7 @@ class PlayerTizen with PlayerStreamControllersMixin implements Player, VideoRect
       if (pendingSecondary != null && pendingSecondary.uri == uri) {
         _pendingSecondarySubtitleTrack = null;
         _secondaryActiveSubtitleCues = _loadedSubtitles[uri]!;
-        _secondarySubtitlePositionSub?.cancel();
+        await _secondarySubtitlePositionSub?.cancel();
         _secondarySubtitlePositionSub = _streams.position.listen(_onSecondarySubtitlePosition);
         _state = _state.copyWith(track: _state.track.copyWith(secondarySubtitle: pendingSecondary));
         trackController.add(_state.track);
@@ -826,7 +826,9 @@ class PlayerTizen with PlayerStreamControllersMixin implements Player, VideoRect
     final timingRe = RegExp(r'(\d{1,2}):(\d{2}):(\d{2})[,.:](\d{3})\s*-->\s*(\d{1,2}):(\d{2}):(\d{2})[,.:](\d{3})');
     int i = 0;
     while (i < lines.length) {
-      while (i < lines.length && lines[i].trim().isEmpty) i++;
+      while (i < lines.length && lines[i].trim().isEmpty) {
+        i++;
+      }
       if (i >= lines.length) break;
       // Skip optional cue index line (all-digit)
       if (RegExp(r'^\d+$').hasMatch(lines[i].trim())) i++;
@@ -860,7 +862,9 @@ class PlayerTizen with PlayerStreamControllersMixin implements Player, VideoRect
       r'(?:(\d{1,2}):)?(\d{2}):(\d{2})[,.](\d{3})\s*-->\s*(?:(\d{1,2}):)?(\d{2}):(\d{2})[,.](\d{3})',
     );
     int i = 0;
-    while (i < lines.length && !lines[i].contains('-->')) i++;
+    while (i < lines.length && !lines[i].contains('-->')) {
+      i++;
+    }
     while (i < lines.length) {
       final m = timingRe.firstMatch(lines[i]);
       if (m != null) {
