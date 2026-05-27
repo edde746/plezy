@@ -158,9 +158,10 @@ class DownloadManagerService {
     required AppDatabase database,
     required DownloadStorageService storageService,
     MediaServerHttpClient? http,
-    @visibleForTesting this._downloadsSupportedOverride,
+    @visibleForTesting bool? downloadsSupportedOverride,
   }) : _database = database,
        _storageService = storageService,
+       _downloadsSupportedOverride = downloadsSupportedOverride,
        _http = http ?? httpClient,
        _artworkService = DownloadArtworkService(storageService: storageService, http: http ?? httpClient);
 

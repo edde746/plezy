@@ -46,7 +46,7 @@ class SyncRuleExecutor {
 
   OfflineModeSource? _offlineSource;
 
-  SyncRuleExecutor({required this._database});
+  SyncRuleExecutor({required AppDatabase database}) : _database = database;
 
   bool get isExecuting => _isExecuting;
 

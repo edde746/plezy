@@ -86,8 +86,13 @@ class JellyfinClient
         _JellyfinLiveTvMethods,
         _JellyfinImageDownloadMethods
     implements MediaServerClient, ScopedMediaServerClient, GracefullyCloseable {
-  JellyfinClient._({required this._connection, required this._http, FavoriteChannelsRepository? favoritesRepository})
-    : _favoritesRepository = favoritesRepository ?? const SharedPreferencesFavoriteChannelsRepository();
+  JellyfinClient._({
+    required JellyfinConnection connection,
+    required MediaServerHttpClient http,
+    FavoriteChannelsRepository? favoritesRepository,
+  }) : _connection = connection,
+       _http = http,
+       _favoritesRepository = favoritesRepository ?? const SharedPreferencesFavoriteChannelsRepository();
 
   /// Build a fully-initialised [JellyfinClient]. The factory probes
   /// `/System/Info/Public` to confirm the server is reachable; callers can

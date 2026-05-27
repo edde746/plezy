@@ -14,7 +14,13 @@ class TrackerAccountStore<T> {
   final T Function(String raw) _decode;
   final String Function(T session) _encode;
 
-  const TrackerAccountStore({required this._baseKey, required this._decode, required this._encode});
+  const TrackerAccountStore({
+    required String baseKey,
+    required T Function(String raw) decode,
+    required String Function(T session) encode,
+  }) : _baseKey = baseKey,
+       _decode = decode,
+       _encode = encode;
 
   String _scopedKey(String userUuid) => userUuid.isEmpty ? _baseKey : 'user_${userUuid}_$_baseKey';
 

@@ -51,8 +51,8 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     required this.clientName,
     required this.clientVersion,
     required this.deviceName,
-    @visibleForTesting this._testHttpClientFactory,
-  });
+    @visibleForTesting http.Client Function()? testHttpClientFactory,
+  }) : _testHttpClientFactory = testHttpClientFactory;
 
   /// App identity sent in the `MediaBrowser` Authorization header. Jellyfin
   /// uses `Client`/`Device`/`DeviceId`/`Version` to populate the device list

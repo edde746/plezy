@@ -52,8 +52,8 @@ class ActiveProfileBinder {
     required this.multiServerProvider,
     required this.pinPrompt,
     this.shouldDeferInitialBind,
-    this._plexAuth,
-  });
+    PlexAuthService? plexAuth,
+  }) : _plexAuth = plexAuth;
 
   final ActiveProfileProvider activeProfile;
   final ConnectionRegistry connections;

@@ -23,7 +23,9 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
   final OfflineWatchSyncService _syncService;
   final DownloadProvider _downloadProvider;
 
-  OfflineWatchProvider({required this._syncService, required this._downloadProvider}) {
+  OfflineWatchProvider({required OfflineWatchSyncService syncService, required DownloadProvider downloadProvider})
+    : _syncService = syncService,
+      _downloadProvider = downloadProvider {
     // Listen to sync service changes to update UI
     _syncService.addListener(_onSyncServiceChanged);
   }

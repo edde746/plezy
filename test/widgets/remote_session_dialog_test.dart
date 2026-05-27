@@ -77,7 +77,7 @@ void main() {
 }
 
 class _FakeCompanionRemoteProvider extends CompanionRemoteProvider {
-  _FakeCompanionRemoteProvider({this._isHostServerRunning = false});
+  _FakeCompanionRemoteProvider({bool isHostServerRunning = false}) : _isHostServerRunning = isHostServerRunning;
 
   bool _isHostServerRunning;
   int startCount = 0;

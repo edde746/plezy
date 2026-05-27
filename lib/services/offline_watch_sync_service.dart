@@ -80,7 +80,9 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// silently drops local watch progress.
   static const int maxSyncAttempts = 5;
 
-  OfflineWatchSyncService({required this._database, required this._serverManager});
+  OfflineWatchSyncService({required AppDatabase database, required MultiServerManager serverManager})
+    : _database = database,
+      _serverManager = serverManager;
 
   /// Whether a sync is currently in progress
   bool get isSyncing => _isSyncing;
