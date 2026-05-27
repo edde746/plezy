@@ -373,6 +373,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _autoPipEnabled = false;
   bool _androidAutoPipTransitionInFlight = false;
   bool _pipFiltersPrepared = false;
+  VoidCallback? _autoPipEnteringCallback;
   bool _resumeLiveTimelineOnResume = false;
   int _rewindOnResume = 0;
   Future<void> _lifecycleTransition = Future<void>.value();
@@ -1083,11 +1084,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _sendLiveTimeline('stopped');
     _stopLiveTimelineUpdates();
 
-    _videoPIPManager?.isPipActive.removeListener(_onPipStateChanged);
+    _detachPipStateListener();
     _videoPIPManager?.onBeforeEnterPip = null;
-    _videoPIPManager?.disableAutoPip();
-    PipService.onAutoPipEntering = null;
+    unawaited(_videoPIPManager?.disableAutoPip());
+    _clearAutoPipEnteringCallback();
     _videoFilterManager?.dispose();
+    _videoPIPManager = null;
+    _videoFilterManager = null;
 
     _scrubPreviewSource?.dispose();
 
@@ -1274,6 +1277,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _detachFromWatchTogetherSession();
       await _sendStoppedProgressOnce();
       _progressTracker?.stopTracking();
+      _detachPipStateListener();
+      _videoPIPManager?.onBeforeEnterPip = null;
+      unawaited(_videoPIPManager?.disableAutoPip());
+      _clearAutoPipEnteringCallback();
       // Clear frame rate matching before disposing (Android only)
       await _clearFrameRateMatching();
       // Restore Windows display mode before disposing
