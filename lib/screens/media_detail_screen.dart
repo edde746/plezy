@@ -704,7 +704,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _onScroll() {
-    _scrollOffset.value = _scrollController.offset;
+    final positions = _scrollController.positions;
+    if (positions.length != 1) return;
+    _scrollOffset.value = positions.first.pixels;
   }
 
   @override

@@ -546,6 +546,8 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     final colorScheme = Theme.of(context).colorScheme;
 
     Widget content = _pageStack.isNotEmpty ? Builder(builder: _pageStack.last.builder) : const SizedBox.shrink();
+    // Keep sheet scrollables from attaching to the route's primary controller.
+    content = PrimaryScrollController.none(child: content);
 
     // Wrap content in NotificationListener for scroll-aware drag-to-dismiss
     if (showHandle) {
