@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'player/platform/tizen_subtitle_overlay.dart';
 import 'player/player.dart';
+import 'player/subtitle_stream_support.dart';
 import 'player/video_rect_support.dart';
 
 /// Video widget for displaying player output.
@@ -60,6 +62,13 @@ class _VideoState extends State<Video> {
         children: [
           // Video rendering area
           _buildVideoSurface(),
+
+          // Subtitle overlay for players that stream subtitle text to Flutter
+          // (e.g. PlayerTizen, where the video renders in a native overlay window)
+          if (widget.player is SubtitleStreamSupport) ...[
+            TizenSubtitleOverlay(player: widget.player as SubtitleStreamSupport),
+            TizenSecondarySubtitleOverlay(player: widget.player as SubtitleStreamSupport),
+          ],
 
           // Controls overlay
           if (widget.controls != null) widget.controls!(context),
