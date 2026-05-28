@@ -3885,7 +3885,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     const innerPadding = 3.0;
     final imageSize = cardWidth;
     // image + inner padding + text area + outer list padding + focus scale headroom
-    final containerHeight = imageSize + innerPadding * 2 + 66 + 16;
+    final containerHeight = imageSize + innerPadding * 2 + 58 + 10;
 
     final theme = Theme.of(context);
     final actorNameStyle = theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600);
@@ -3988,7 +3988,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final cardWidth = _getResponsiveCardWidth();
     // 16:9 aspect ratio for clip thumbnails (cardWidth includes 8px padding on each side)
     final posterHeight = (cardWidth - 16) * (9 / 16);
-    final containerHeight = posterHeight + 66;
+    final containerHeight = posterHeight + 52;
 
     return Focus(
       focusNode: _extrasFocusNode,
