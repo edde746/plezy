@@ -43,6 +43,7 @@ import androidx.media3.datasource.cronet.CronetDataSource
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.RenderersFactory
 import androidx.media3.exoplayer.analytics.AnalyticsListener
@@ -96,6 +97,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private const val WATCHDOG_CHECK_INTERVAL_MS = 1000L
     private const val WATCHDOG_TIMEOUT_MS = 8000L
     private const val DECODER_HANG_TIMEOUT_MS = 5000L
+    private const val MAX_AUDIO_RECOVERY_ATTEMPTS = 2
     private const val FPS_SAMPLE_COUNT = 8
     private const val TS_TIMESTAMP_SEARCH_PACKETS = 1800
 
@@ -136,8 +138,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var tunnelingDisabledForAudioCodec: Boolean = false
   private var tunnelingDisabledForVideoCodec: Boolean = false
   private var tunnelingDisabledForDecodedTrueHdPcm: Boolean = false
+  private var tunnelingDisabledForAudioRecovery: Boolean = false
   private val tunnelingDisabledForCodec: Boolean
-    get() = tunnelingDisabledForAudioCodec || tunnelingDisabledForVideoCodec || tunnelingDisabledForDecodedTrueHdPcm
+    get() = tunnelingDisabledForAudioCodec || tunnelingDisabledForVideoCodec || tunnelingDisabledForDecodedTrueHdPcm || tunnelingDisabledForAudioRecovery
   private var currentTunneledPlayback: Boolean = false
   private var lastSeekable: Boolean? = null
 
@@ -153,6 +156,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var decoderHangRunnable: Runnable? = null
   private var decoderInitName: String? = null
   private var audioDecoderInitName: String? = null
+  private var lastAudioTrackConfig: AudioSink.AudioTrackConfig? = null
+  private val directAudioOutputBlockedAfterFailure = mutableSetOf<String>()
+  private val loggedDirectAudioRecoveryBlocks = mutableSetOf<String>()
+  private var audioRecoveryAttempts: Int = 0
+  private var lastAudioRecoveryAction: String? = null
+  private var lastAudioRecoveryReason: String? = null
+  private var lastAudioSinkError: String? = null
   private var loggedEwasteEac3Workaround: Boolean = false
   private var lastTrueHdDirectOutputLogKey: String? = null
   private var loggedDecodedTrueHdTunnelingGuard: Boolean = false
@@ -439,7 +449,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       // Use DefaultRenderersFactory with FFmpeg fallback for unsupported or blocked audio codecs.
       val renderersFactory = PlezyRenderersFactory(activity).apply {
         audioDiagnosticsLogger = { level, prefix, message -> emitLog(level, prefix, message) }
-        shouldBlockDirectTrueHd = { format -> this@ExoPlayerCore.shouldBlockDirectTrueHd(format, "sink support") }
+        shouldBlockDirectAudioOutput = { format -> this@ExoPlayerCore.shouldBlockDirectAudioOutput(format, "sink support") }
         onAudioCapabilitiesChanged = { updateAudioDecoderPolicy("audio capabilities changed") }
         setEnableDecoderFallback(true)
         setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
@@ -953,6 +963,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       return
     }
 
+    if (retryAfterAudioTrackError(error, causeChain)) return
+
     if (currentMediaUri != null) {
       Log.w(TAG, "ExoPlayer error (code ${error.errorCode}) - attempting fallback to MPV")
       val handled = delegate?.onFormatUnsupported(
@@ -972,6 +984,95 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         "message" to (error.message ?: "Unknown error")
       )
     )
+  }
+
+  private fun retryAfterAudioTrackError(error: PlaybackException, causeChain: String): Boolean {
+    if (!isAudioTrackError(error.errorCode)) return false
+
+    val player = exoPlayer ?: return false
+    val uri = currentMediaUri ?: return false
+    if (audioRecoveryAttempts >= MAX_AUDIO_RECOVERY_ATTEMPTS) {
+      emitLog(
+        "warn",
+        "audio-recovery",
+        "ExoPlayer audio recovery exhausted after $audioRecoveryAttempts attempts for ${PlaybackException.getErrorCodeName(error.errorCode)}"
+      )
+      return false
+    }
+
+    val selectedFormat = selectedAudioFormat()
+    val errorFormat = (error as? ExoPlaybackException)?.rendererFormat?.takeIf { format ->
+      format.sampleMimeType?.startsWith("audio/") == true
+    }
+    val recoveryFormat = selectedFormat ?: errorFormat
+    val actions = mutableListOf<String>()
+
+    recoveryFormat?.sampleMimeType
+      ?.takeIf { isEncodedAudioMimeType(it) }
+      ?.let { mimeType ->
+        if (directAudioOutputBlockedAfterFailure.add(mimeType)) {
+          actions.add("force-decoded-pcm($mimeType)")
+        }
+      }
+
+    if (!tunnelingDisabledForAudioRecovery) {
+      tunnelingDisabledForAudioRecovery = true
+      actions.add("disable-tunneling")
+    }
+    if (actions.isEmpty()) actions.add("reload")
+
+    audioRecoveryAttempts++
+    val savedPosition = maxOf(player.currentPosition, lastPosition, pendingStartPositionMs)
+    val savedPlayWhenReady = player.playWhenReady
+    val previousAudioTrackConfig = lastAudioTrackConfig
+    pendingStartPositionMs = savedPosition
+    pendingPlayWhenReady = savedPlayWhenReady
+    audioDecoderInitName = null
+    lastAudioTrackConfig = null
+    lastAudioRecoveryAction = actions.joinToString(",")
+    lastAudioRecoveryReason = "${PlaybackException.getErrorCodeName(error.errorCode)}: ${error.message ?: causeChain.ifEmpty { "unknown" }}"
+
+    stopFrameWatchdog()
+    cancelDecoderHangCheck()
+    applyTrackSelectorPolicy(reason = "audio recovery", forceSelector = true)
+
+    emitLog(
+      "warn",
+      "audio-recovery",
+      "Retrying in ExoPlayer ($audioRecoveryAttempts/$MAX_AUDIO_RECOVERY_ATTEMPTS) at ${savedPosition}ms; " +
+        "format=${recoveryFormat?.let { formatAudioSummary(it) } ?: "unknown"}, " +
+        "lastOutput=${describeAudioTrackConfig(previousAudioTrackConfig)}, actions=$lastAudioRecoveryAction"
+    )
+
+    if (!setCurrentMediaForRetry(player, uri, savedPosition)) return false
+    player.prepare()
+    player.playWhenReady = savedPlayWhenReady
+    return true
+  }
+
+  private fun isAudioTrackError(errorCode: Int): Boolean = when (errorCode) {
+    PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED,
+    PlaybackException.ERROR_CODE_AUDIO_TRACK_WRITE_FAILED,
+    PlaybackException.ERROR_CODE_AUDIO_TRACK_OFFLOAD_INIT_FAILED,
+    PlaybackException.ERROR_CODE_AUDIO_TRACK_OFFLOAD_WRITE_FAILED -> true
+    else -> false
+  }
+
+  private fun isEncodedAudioMimeType(mimeType: String): Boolean = mimeType.startsWith("audio/") && mimeType != MimeTypes.AUDIO_RAW
+
+  private fun setCurrentMediaForRetry(player: ExoPlayer, uri: String, positionMs: Long): Boolean {
+    if (currentMediaIsLive) {
+      val factory = dataSourceFactory ?: return false
+      val extractorsFactory = androidx.media3.extractor.ExtractorsFactory {
+        arrayOf(MatroskaExtractor(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES))
+      }
+      val mediaSource = ProgressiveMediaSource.Factory(factory, extractorsFactory)
+        .createMediaSource(MediaItem.fromUri(uri))
+      player.setMediaSource(mediaSource, positionMs)
+    } else {
+      player.setMediaItem(buildMediaItem(uri), positionMs)
+    }
+    return true
   }
 
   private fun isDvProfile7Format(format: Format): Boolean {
@@ -1473,6 +1574,21 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     return decision.blockDirectOutput
   }
 
+  private fun shouldBlockDirectAudioOutput(format: Format, reason: String): Boolean {
+    val mimeType = format.sampleMimeType ?: return false
+    if (directAudioOutputBlockedAfterFailure.contains(mimeType)) {
+      if (loggedDirectAudioRecoveryBlocks.add("$mimeType|$reason")) {
+        emitLog(
+          "info",
+          "audio-recovery",
+          "Direct $mimeType output disabled after AudioTrack failure (reason=$reason); decoded PCM will be preferred"
+        )
+      }
+      return true
+    }
+    return mimeType == MimeTypes.AUDIO_TRUEHD && shouldBlockDirectTrueHd(format, reason)
+  }
+
   private fun updateAudioDecoderPolicy(reason: String, format: Format? = null) {
     if (format != null && format.sampleMimeType != MimeTypes.AUDIO_TRUEHD) return
     val decision = evaluateTrueHdDirectOutput(format)
@@ -1825,7 +1941,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     currentTunneledPlayback = shouldTunnel
     val speed = exoPlayer?.playbackParameters?.speed ?: 1f
     val audioDelayActive = (renderersFactory?.audioDelayUs?.get() ?: 0L) != 0L
-    emitLog("info", "tunneling", "Toggling tunneling=$shouldTunnel (reason=$reason, user=$tunnelingUserEnabled, speed=$speed, audioCodecDisabled=$tunnelingDisabledForAudioCodec, videoCodecDisabled=$tunnelingDisabledForVideoCodec, decodedTrueHdPcmDisabled=$tunnelingDisabledForDecodedTrueHdPcm, audioDelay=$audioDelayActive)")
+    emitLog("info", "tunneling", "Toggling tunneling=$shouldTunnel (reason=$reason, user=$tunnelingUserEnabled, speed=$speed, audioCodecDisabled=$tunnelingDisabledForAudioCodec, videoCodecDisabled=$tunnelingDisabledForVideoCodec, decodedTrueHdPcmDisabled=$tunnelingDisabledForDecodedTrueHdPcm, audioRecoveryDisabled=$tunnelingDisabledForAudioRecovery, audioDelay=$audioDelayActive)")
     return true
   }
 
@@ -1892,6 +2008,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     return parts.joinToString(", ")
   }
 
+  private fun describeAudioTrackConfig(config: AudioSink.AudioTrackConfig?): String {
+    if (config == null) return "none"
+    return "encoding=${config.encoding}, channels=${Integer.bitCount(config.channelConfig)}, " +
+      "channelConfig=0x${config.channelConfig.toString(16)}, buffer=${config.bufferSize}B, " +
+      "tunneling=${config.tunneling}, offload=${config.offload}"
+  }
+
   // Decoder hang detection via AnalyticsListener:
   // Tracks the gap between onVideoDecoderInitialized and onRenderedFirstFrame.
   // If the decoder is initialized and fed input but never produces output, it's hung
@@ -1950,6 +2073,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     override fun onAudioSinkError(eventTime: AnalyticsListener.EventTime, audioSinkError: Exception) {
+      lastAudioSinkError = "${audioSinkError.javaClass.name}: ${audioSinkError.message}"
       emitLog("warn", "audio", "Sink error: ${audioSinkError.javaClass.name}: ${audioSinkError.message}")
     }
 
@@ -1961,14 +2085,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       eventTime: AnalyticsListener.EventTime,
       audioTrackConfig: AudioSink.AudioTrackConfig
     ) {
+      lastAudioTrackConfig = audioTrackConfig
+      val audioFormat = selectedAudioFormat()
       emitLog(
         "info",
         "audio",
-        "AudioTrack initialized: encoding=${audioTrackConfig.encoding}, sampleRate=${audioTrackConfig.sampleRate}, " +
-          "channelConfig=0x${audioTrackConfig.channelConfig.toString(16)}, buffer=${audioTrackConfig.bufferSize}B, " +
-          "tunneling=${audioTrackConfig.tunneling}, offload=${audioTrackConfig.offload}"
+        "AudioTrack initialized: input=${audioFormat?.let { formatAudioSummary(it) } ?: "unknown"}, " +
+          "decoder=${audioDecoderInitName ?: "direct/bypass"}, ${describeAudioTrackConfig(audioTrackConfig)}"
       )
-      val audioFormat = selectedAudioFormat()
       if (audioFormat?.sampleMimeType == MimeTypes.AUDIO_TRUEHD) {
         if (audioTrackConfig.tunneling && isPcmEncoding(audioTrackConfig.encoding)) {
           if (!loggedDecodedTrueHdTunnelingGuard) {
@@ -2149,6 +2273,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     decoderInitName = null
     audioDecoderInitName = null
+    lastAudioTrackConfig = null
+    lastAudioSinkError = null
+    audioRecoveryAttempts = 0
+    lastAudioRecoveryAction = null
+    lastAudioRecoveryReason = null
+    directAudioOutputBlockedAfterFailure.clear()
+    loggedDirectAudioRecoveryBlocks.clear()
     currentVideoFormat = null
     loggedNativeDvSelectionKey = null
     loggedNativeDvFirstFrame = false
@@ -2188,6 +2319,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     tunnelingDisabledForAudioCodec = false
     tunnelingDisabledForVideoCodec = false
     tunnelingDisabledForDecodedTrueHdPcm = false
+    tunnelingDisabledForAudioRecovery = false
     currentTunneledPlayback = false
     pendingStartPositionMs = startPositionMs
     pendingPlayWhenReady = autoPlay
@@ -2634,6 +2766,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val player = exoPlayer ?: return emptyMap()
     val videoFormat = player.videoFormat
     val audioFormat = player.audioFormat
+    val audioTrackConfig = lastAudioTrackConfig
 
     // Get decoder info from the format's codecs field and check if hardware accelerated
     val videoDecoderInfo = getVideoDecoderInfo(videoFormat)
@@ -2661,6 +2794,17 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       "audioChannels" to audioFormat?.channelCount,
       "audioBitrate" to audioFormat?.bitrate,
       "audioDecoderName" to audioDecoderInitName,
+      "audioOutputEncoding" to audioTrackConfig?.encoding,
+      "audioOutputChannels" to audioTrackConfig?.channelConfig?.let { Integer.bitCount(it) },
+      "audioOutputChannelConfig" to audioTrackConfig?.channelConfig,
+      "audioOutputTunneling" to audioTrackConfig?.tunneling,
+      "audioOutputOffload" to audioTrackConfig?.offload,
+      "audioOutputBufferSize" to audioTrackConfig?.bufferSize,
+      "audioLastSinkError" to lastAudioSinkError,
+      "audioRecoveryAttempts" to audioRecoveryAttempts,
+      "audioRecoveryLastAction" to lastAudioRecoveryAction,
+      "audioRecoveryLastReason" to lastAudioRecoveryReason,
+      "audioDirectOutputBlockedMimes" to directAudioOutputBlockedAfterFailure.toList(),
       // Tunneling
       "tunneledPlayback" to currentTunneledPlayback,
       "tunnelingStatus" to getTunnelingStatus(player),
@@ -2725,6 +2869,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (currentTunneledPlayback) return "Active"
     if (!tunnelingUserEnabled) return "Disabled by user"
     if (player.playbackParameters.speed != 1f) return "Off (speed ≠ 1×)"
+    if (tunnelingDisabledForAudioRecovery) return "Off (audio recovery)"
     if (tunnelingDisabledForDecodedTrueHdPcm) return "Off (decoded TrueHD PCM)"
     if (tunnelingDisabledForVideoCodec) return "Off (video codec unsupported)"
     if (tunnelingDisabledForAudioCodec) return "Off (no HW audio decoder)"
@@ -2761,9 +2906,17 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     decoderInitName = null
     audioDecoderInitName = null
+    lastAudioTrackConfig = null
+    lastAudioSinkError = null
+    audioRecoveryAttempts = 0
+    lastAudioRecoveryAction = null
+    lastAudioRecoveryReason = null
+    directAudioOutputBlockedAfterFailure.clear()
+    loggedDirectAudioRecoveryBlocks.clear()
     tunnelingDisabledForAudioCodec = false
     tunnelingDisabledForVideoCodec = false
     tunnelingDisabledForDecodedTrueHdPcm = false
+    tunnelingDisabledForAudioRecovery = false
     currentTunneledPlayback = false
     pendingStartPositionMs = 0L
     pendingPlayWhenReady = null
