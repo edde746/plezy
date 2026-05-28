@@ -162,6 +162,11 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           SizedBox(width: isTv ? 8 * tvScale : 12),
           // Mark as watched/unwatched toggle (works offline too)
           _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale),
+          // Watchlist toggle (Plex movies/shows only, online)
+          if (_watchlistEligible) ...[
+            SizedBox(width: isTv ? 8 * tvScale : 12),
+            _buildWatchlistToggleButton(metadata, actionButtonStyle, tvScale),
+          ],
           // Three-dots menu button (hidden in offline mode)
           if (!widget.isOffline) ...[
             SizedBox(width: isTv ? 8 * tvScale : 12),
@@ -223,6 +228,21 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       },
       icon: AppIcon(metadata.isWatched ? Symbols.remove_done_rounded : Symbols.check_rounded, fill: 1),
       tooltip: metadata.isWatched ? t.tooltips.markAsUnwatched : t.tooltips.markAsWatched,
+      iconSize: PlatformDetector.isTV() ? 21 * tvScale : 20,
+      style: actionButtonStyle(),
+    );
+  }
+
+  Widget _buildWatchlistToggleButton(
+    MediaItem metadata,
+    ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding}) actionButtonStyle,
+    double tvScale,
+  ) {
+    final onList = _isWatchlisted ?? false;
+    return IconButton.filledTonal(
+      onPressed: _watchlistBusy ? null : _toggleWatchlist,
+      icon: AppIcon(onList ? Symbols.bookmark_rounded : Symbols.bookmark_add_rounded, fill: onList ? 1 : 0),
+      tooltip: onList ? t.watchlist.remove : t.watchlist.add,
       iconSize: PlatformDetector.isTV() ? 21 * tvScale : 20,
       style: actionButtonStyle(),
     );

@@ -85,7 +85,12 @@
     "empty": "Your watchlist is empty",
     "emptyDescription": "Add movies and shows to your Plex watchlist to see them here",
     "loadFailed": "Failed to load watchlist",
-    "notOnServers": "Not available on your servers"
+    "notOnServers": "Not available on your servers",
+    "add": "Add to Watchlist",
+    "remove": "Remove from Watchlist",
+    "added": "Added to Watchlist",
+    "removed": "Removed from Watchlist",
+    "actionFailed": "Couldn't update watchlist"
   },
   "settings": {
     "title": "Settings",

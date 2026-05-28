@@ -368,6 +368,21 @@ class TranslationsWatchlistEn {
 
 	/// en: 'Not available on your servers'
 	String get notOnServers => 'Not available on your servers';
+
+	/// en: 'Add to Watchlist'
+	String get add => 'Add to Watchlist';
+
+	/// en: 'Remove from Watchlist'
+	String get remove => 'Remove from Watchlist';
+
+	/// en: 'Added to Watchlist'
+	String get added => 'Added to Watchlist';
+
+	/// en: 'Removed from Watchlist'
+	String get removed => 'Removed from Watchlist';
+
+	/// en: 'Couldn't update watchlist'
+	String get actionFailed => 'Couldn\'t update watchlist';
 }
 
 // Path: settings
@@ -4252,6 +4267,11 @@ extension on Translations {
 			'watchlist.emptyDescription' => 'Add movies and shows to your Plex watchlist to see them here',
 			'watchlist.loadFailed' => 'Failed to load watchlist',
 			'watchlist.notOnServers' => 'Not available on your servers',
+			'watchlist.add' => 'Add to Watchlist',
+			'watchlist.remove' => 'Remove from Watchlist',
+			'watchlist.added' => 'Added to Watchlist',
+			'watchlist.removed' => 'Removed from Watchlist',
+			'watchlist.actionFailed' => 'Couldn\'t update watchlist',
 			'settings.title' => 'Settings',
 			'settings.supportDeveloper' => 'Support Plezy',
 			'settings.supportDeveloperDescription' => 'Donate via Liberapay to fund development',
