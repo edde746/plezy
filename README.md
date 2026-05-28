@@ -19,10 +19,6 @@ A modern client for Plex and Jellyfin on desktop, mobile, and TV. Built with Flu
 
 ## Download
 
-<a href='https://apps.apple.com/us/app/id6754315964'><img height='60' alt='Download on the App Store' src='./assets/app-store-badge.png'/></a>
-<a href='https://play.google.com/store/apps/details?id=com.edde746.plezy'><img height='60' alt='Get it on Google Play' src='./assets/play-store-badge.png'/></a>
-<a href='https://www.amazon.com/gp/product/B0GK65CVS1'><img height='60' alt='Available at the Amazon App Store' src='./assets/amazon-badge.png'/></a>
-
 | Platform | Download |
 | --- | --- |
 | Windows | [Installer (x64, arm64)](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-installer.exe) · [Portable x64](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-x64-portable.7z) · [Portable arm64](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-arm64-portable.7z) |
