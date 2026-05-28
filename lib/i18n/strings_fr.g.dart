@@ -143,6 +143,7 @@ class _TranslationsCommonFr extends TranslationsCommonEn {
 	@override String get yes => 'Oui';
 	@override String get no => 'Non';
 	@override String get delete => 'Supprimer';
+	@override String get edit => 'Modifier';
 	@override String get shuffle => 'Mélanger';
 	@override String get addTo => 'Ajouter à...';
 	@override String get createNew => 'Créer';
@@ -812,6 +813,8 @@ class _TranslationsConnectionsFr extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => 'Session expirée pour ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Session expirée pour ${count} serveurs';
 	@override String get signInAgain => 'Se reconnecter';
+	@override String get editJellyfinTitle => 'Modifier la connexion Jellyfin';
+	@override String editJellyfinIntro({required Object serverName}) => 'Ajoutez ou supprimez des URL pour ${serverName}. Plezy utilisera l\'URL joignable avec la latence la plus faible.';
 }
 
 // Path: discover
@@ -1502,7 +1505,9 @@ class _TranslationsAddServerFr extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Ajouter un serveur Jellyfin';
 	@override String get jellyfinUrlIntro => 'Saisissez l\'URL du serveur, par ex. `https://jellyfin.example.com`.';
+	@override String get jellyfinUrlsIntro => 'Saisissez une ou plusieurs URL de serveur, séparées par des virgules ou des retours à la ligne. Plezy utilisera l\'URL joignable avec la latence la plus faible.';
 	@override String get serverUrl => 'URL du serveur';
+	@override String get serverUrls => 'URL du serveur';
 	@override String get findServer => 'Rechercher un serveur';
 	@override String get username => 'Nom d\'utilisateur';
 	@override String get password => 'Mot de passe';
@@ -1833,6 +1838,7 @@ extension on TranslationsFr {
 			'common.yes' => 'Oui',
 			'common.no' => 'Non',
 			'common.delete' => 'Supprimer',
+			'common.edit' => 'Modifier',
 			'common.shuffle' => 'Mélanger',
 			'common.addTo' => 'Ajouter à...',
 			'common.createNew' => 'Créer',
@@ -2312,9 +2318,9 @@ extension on TranslationsFr {
 			'profiles.delete' => 'Supprimer',
 			'profiles.signOut' => 'Se déconnecter',
 			'profiles.signOutPlexTitle' => 'Se déconnecter de Plex ?',
-			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Supprimer ${displayName} et tous les utilisateurs Plex Home ? Reconnexion possible à tout moment.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Supprimer ${displayName} et tous les utilisateurs Plex Home ? Reconnexion possible à tout moment.',
 			'profiles.signedOutPlex' => 'Déconnecté de Plex.',
 			'profiles.signOutFailed' => 'Échec de la déconnexion.',
 			'profiles.sectionTitle' => 'Profils',
@@ -2369,6 +2375,8 @@ extension on TranslationsFr {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expirée pour ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expirée pour ${count} serveurs',
 			'connections.signInAgain' => 'Se reconnecter',
+			'connections.editJellyfinTitle' => 'Modifier la connexion Jellyfin',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Ajoutez ou supprimez des URL pour ${serverName}. Plezy utilisera l\'URL joignable avec la latence la plus faible.',
 			'discover.title' => 'Découvrez',
 			'discover.switchProfile' => 'Changer de profil',
 			'discover.noContentAvailable' => 'Aucun contenu disponible',
@@ -2824,11 +2832,11 @@ extension on TranslationsFr {
 			'metadataEdit.contentRating' => 'Classification',
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Slogan',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'Résumé',
 			'metadataEdit.poster' => 'Affiche',
 			'metadataEdit.background' => 'Arrière-plan',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Image carrée',
 			'metadataEdit.selectPoster' => 'Sélectionner l\'affiche',
@@ -2947,7 +2955,9 @@ extension on TranslationsFr {
 			'trackers.libraryFilter.noLibraries' => 'Aucune bibliothèque disponible',
 			'addServer.addJellyfinTitle' => 'Ajouter un serveur Jellyfin',
 			'addServer.jellyfinUrlIntro' => 'Saisissez l\'URL du serveur, par ex. `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => 'Saisissez une ou plusieurs URL de serveur, séparées par des virgules ou des retours à la ligne. Plezy utilisera l\'URL joignable avec la latence la plus faible.',
 			'addServer.serverUrl' => 'URL du serveur',
+			'addServer.serverUrls' => 'URL du serveur',
 			'addServer.findServer' => 'Rechercher un serveur',
 			'addServer.username' => 'Nom d\'utilisateur',
 			'addServer.password' => 'Mot de passe',

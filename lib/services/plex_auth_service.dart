@@ -9,6 +9,7 @@ import '../models/plex/plex_user_profile.dart';
 import '../models/plex/plex_home.dart';
 import '../models/user_switch_response.dart';
 import '../utils/app_logger.dart';
+import '../utils/endpoint_race.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/poll_with_backoff.dart';
@@ -427,9 +428,6 @@ class PlexServer {
       return;
     }
 
-    const preferredTimeout = MediaServerTimeouts.preferredEndpointProbe;
-    const raceTimeout = MediaServerTimeouts.connectionRace;
-
     final candidates = _buildPrioritizedCandidates();
     if (candidates.isEmpty) {
       appLogger.w('No connection candidates generated for server discovery');
@@ -456,150 +454,66 @@ class PlexServer {
       );
     }
 
-    _ConnectionCandidate? firstCandidate;
-
-    // Fast-path: if we have a cached working URI, probe it with a short timeout
-    if (preferredUri != null) {
-      final cachedCandidate = _candidateForUrl(preferredUri);
-      if (cachedCandidate != null) {
-        appLogger.d('Testing cached endpoint before running full race', error: {'uri': preferredUri});
-        final result = await PlexClient.testConnectionWithLatency(
-          cachedCandidate.url,
-          accessToken,
-          timeout: preferredTimeout,
+    PlexConnection? firstConnection;
+    await for (final selection in raceEndpointCandidates<_ConnectionCandidate, ConnectionTestResult>(
+      label: 'Plex server connection',
+      candidates: candidates,
+      preferredUrl: preferredUri,
+      candidateForUrl: _candidateForUrl,
+      urlOf: (candidate) => candidate.url,
+      displayTypeOf: (candidate) => candidate.connection.displayType,
+      failureLogFields: (candidate, result) => {
+        'https': candidate.isHttps,
+        'error': result.error,
+        'latencyMs': result.latencyMs,
+      },
+      probe: (candidate, timeout) => PlexClient.testConnectionWithLatency(
+        candidate.url,
+        accessToken,
+        timeout: timeout,
+        clientIdentifier: clientIdentifier,
+      ),
+      measure: (candidate) => PlexClient.testConnectionWithAverageLatency(
+        candidate.url,
+        accessToken,
+        attempts: 2,
+        clientIdentifier: clientIdentifier,
+      ),
+      isSuccess: (result) => result.success,
+      selectBestCandidate: _selectBestCandidateWithLatency,
+      onFirstSuccess: (_, result) {
+        if (result.transcoderVideo != null) onTranscoderCapability?.call(result.transcoderVideo!);
+      },
+    )) {
+      if (selection.phase == EndpointRacePhase.first) {
+        final firstCandidate = selection.candidate;
+        final upgradedFirstCandidate = await _upgradeCandidateToHttpsIfPossible(
+          firstCandidate,
           clientIdentifier: clientIdentifier,
         );
+        final emitCandidate = upgradedFirstCandidate ?? firstCandidate;
 
-        if (result.success) {
-          appLogger.i('Cached endpoint succeeded, using immediately', error: {'uri': preferredUri});
-          firstCandidate = cachedCandidate;
-          if (result.transcoderVideo != null) onTranscoderCapability?.call(result.transcoderVideo!);
-        } else {
-          appLogger.w('Cached endpoint failed, falling back to candidate race', error: {'uri': preferredUri});
+        firstConnection = _updateConnectionUrl(emitCandidate.connection, emitCandidate.url);
+        yield firstConnection;
+        if (upgradedFirstCandidate != null && upgradedFirstCandidate.url != firstCandidate.url) {
+          appLogger.i(
+            'Phase 1 winner upgraded to HTTPS',
+            error: {'from': firstCandidate.url, 'to': upgradedFirstCandidate.url},
+          );
         }
-      }
-    }
-
-    // If no cached candidate or it failed, race candidates to find first success
-    if (firstCandidate == null) {
-      final completer = Completer<_ConnectionCandidate?>();
-      int completedTests = 0;
-
-      appLogger.d('Running connection race to find first working endpoint', error: {'candidateCount': totalCandidates});
-
-      for (final candidate in candidates) {
-        unawaited(
-          PlexClient.testConnectionWithLatency(
-            candidate.url,
-            accessToken,
-            timeout: raceTimeout,
-            clientIdentifier: clientIdentifier,
-          ).then((result) {
-            completedTests++;
-
-            if (!result.success) {
-              appLogger.w(
-                'Connection candidate failed',
-                error: {
-                  'url': candidate.url,
-                  'type': candidate.connection.displayType,
-                  'https': candidate.isHttps,
-                  'error': result.error,
-                  'latencyMs': result.latencyMs,
-                },
-              );
-            }
-
-            if (result.success && !completer.isCompleted) {
-              if (result.transcoderVideo != null) onTranscoderCapability?.call(result.transcoderVideo!);
-              completer.complete(candidate);
-            }
-
-            if (completedTests == candidates.length && !completer.isCompleted) {
-              completer.complete(null);
-            }
-          }),
+        appLogger.d(
+          'Emitted first working connection, continuing latency tests in background',
+          error: {'uri': firstConnection.uri},
         );
+        continue;
       }
 
-      firstCandidate = await completer.future;
-      if (firstCandidate == null) {
-        appLogger.e(
-          'No working server connections after race',
-          error: {
-            'server': name,
-            'candidateCount': totalCandidates,
-            'types': candidates.map((c) => c.connection.displayType).toSet().toList(),
-          },
-        );
-        return; // No working connections found
-      }
-      appLogger.i(
-        'Connection race found first working endpoint',
-        error: {'uri': firstCandidate.url, 'type': firstCandidate.connection.displayType},
-      );
-    }
-
-    // Attempt HTTPS upgrade on the Phase 1 winner before emitting
-    final upgradedFirstCandidate = await _upgradeCandidateToHttpsIfPossible(
-      firstCandidate,
-      clientIdentifier: clientIdentifier,
-    );
-    final emitCandidate = upgradedFirstCandidate ?? firstCandidate;
-
-    final firstConnection = _updateConnectionUrl(emitCandidate.connection, emitCandidate.url);
-    yield firstConnection;
-    if (upgradedFirstCandidate != null && upgradedFirstCandidate.url != firstCandidate.url) {
-      appLogger.i(
-        'Phase 1 winner upgraded to HTTPS',
-        error: {'from': firstCandidate.url, 'to': upgradedFirstCandidate.url},
-      );
-    }
-    appLogger.d(
-      'Emitted first working connection, continuing latency tests in background',
-      error: {'uri': firstConnection.uri},
-    );
-
-    // Phase 2: Continue testing in background to find best connection
-    // Test each candidate 2-3 times and average the latency
-    final candidateResults = <_ConnectionCandidate, ConnectionTestResult>{};
-
-    await Future.wait(
-      candidates.map((candidate) async {
-        final result = await PlexClient.testConnectionWithAverageLatency(
-          candidate.url,
-          accessToken,
-          attempts: 2,
-          clientIdentifier: clientIdentifier,
-        );
-
-        if (result.success) {
-          candidateResults[candidate] = result;
-        }
-      }),
-    );
-
-    // If no connections succeeded, we're done
-    if (candidateResults.isEmpty) {
-      appLogger.w('Latency sweep found no additional working endpoints');
-      return;
-    }
-
-    appLogger.d(
-      'Completed latency sweep for server connections',
-      error: {'successfulCandidates': candidateResults.length},
-    );
-
-    // Find the best connection considering priority, latency, and URL type
-    final bestCandidate = _selectBestCandidateWithLatency(candidateResults);
-
-    // Emit the best connection if it's different from the first one
-    if (bestCandidate != null) {
+      final bestCandidate = selection.candidate;
       final upgradedCandidate =
           await _upgradeCandidateToHttpsIfPossible(bestCandidate, clientIdentifier: clientIdentifier) ?? bestCandidate;
 
       final bestConnection = _updateConnectionUrl(upgradedCandidate.connection, upgradedCandidate.url);
-      if (bestConnection.uri != firstConnection.uri) {
+      if (firstConnection == null || bestConnection.uri != firstConnection.uri) {
         appLogger.i('Latency sweep selected better endpoint', error: {'uri': bestConnection.uri});
         yield bestConnection;
       } else {

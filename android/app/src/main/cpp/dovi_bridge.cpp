@@ -86,7 +86,7 @@ extern "C" JNIEXPORT jint JNICALL Java_com_edde746_plezy_exoplayer_DoviBridge_na
     }
   }
 
-  // Convert to target profile (mode 2 = P8.1 with no-op curves)
+  // Mode 2 matches Kodi's P8.1 compatibility path and sets luma/chroma curves to no-op.
   int32_t ret = dovi_convert_rpu_with_mode(rpu, static_cast<uint8_t>(mode));
   if (ret != 0) {
     err = dovi_rpu_get_error(rpu);

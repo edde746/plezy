@@ -185,6 +185,12 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   late int _subtitleSyncOffset;
   String _dvConversionMode = 'auto';
 
+  bool get _showDebugDvConversionMode {
+    if (!kDebugMode) return false;
+    if (Platform.isAndroid) return widget.player.playerType == 'exoplayer';
+    return (Platform.isIOS || Platform.isMacOS) && widget.player.playerType == 'mpv';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -194,7 +200,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   Future<void> _loadDebugDvConversionMode() async {
-    if (!kDebugMode || !Platform.isAndroid || widget.player.playerType != 'exoplayer') return;
+    if (!_showDebugDvConversionMode) return;
     final dvConversionMode = await widget.player.getProperty('dv-conversion-mode');
     if (!mounted) return;
     setState(() {
@@ -535,7 +541,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           title: t.videoSettings.performanceOverlay,
         ),
 
-        if (kDebugMode && Platform.isAndroid && widget.player.playerType == 'exoplayer')
+        if (_showDebugDvConversionMode)
           _SettingsMenuItem(
             icon: Symbols.hdr_strong_rounded,
             title: 'DV Conversion Mode',

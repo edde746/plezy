@@ -506,7 +506,7 @@ abstract class MediaServerClient {
   /// playback. Backends own the per-backend particulars: Plex runs the
   /// transcode-decision flow when [PlaybackInitializationOptions.qualityPreset]
   /// is non-original; Jellyfin asks PlaybackInfo for a matching stream when a
-  /// non-original preset is explicitly selected. Throws
+  /// non-original preset is selected. Throws
   /// [PlaybackException] when the item can't be resolved (no MediaSources,
   /// no playable URL, transcode decision unavailable).
   ///

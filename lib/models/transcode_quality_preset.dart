@@ -1,8 +1,8 @@
 /// Video transcode quality presets modeled on Plex Web's custom-quality table.
 ///
-/// When a non-[original] preset is selected, playback goes through Plex's
-/// `/video/:/transcode/universal/decision` + `start` flow. [original] bypasses
-/// transcoding entirely and uses the direct-play URL.
+/// When a non-[original] preset is selected, playback asks the active backend
+/// for a capped transcode stream. [original] bypasses transcoding entirely and
+/// uses the direct-play URL.
 enum TranscodeQualityPreset {
   original(null, null, null),
   p240_320(320, '420x240', 30),

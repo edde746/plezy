@@ -200,8 +200,12 @@ class JellyfinConnection extends Connection {
   @override
   final DateTime? lastAuthenticatedAt;
 
-  /// Server base URL, no trailing slash. e.g. `https://jellyfin.home.lan`.
+  /// Active server base URL, no trailing slash. e.g. `https://jellyfin.home.lan`.
   final String baseUrl;
+
+  /// Candidate server URLs for this Jellyfin server, with [baseUrl] first.
+  /// Existing installs only have [baseUrl]; deserialization backfills this.
+  final List<String> baseUrls;
 
   /// Server's reported name (System/Info).
   final String serverName;
@@ -230,6 +234,7 @@ class JellyfinConnection extends Connection {
   JellyfinConnection({
     required this.id,
     required this.baseUrl,
+    List<String>? baseUrls,
     required this.serverName,
     required this.serverMachineId,
     required this.userId,
@@ -240,7 +245,7 @@ class JellyfinConnection extends Connection {
     this.status = ConnectionStatus.unknown,
     required this.createdAt,
     this.lastAuthenticatedAt,
-  });
+  }) : baseUrls = _normalizeBaseUrls(baseUrl, baseUrls);
 
   @override
   ConnectionKind get kind => ConnectionKind.jellyfin;
@@ -252,16 +257,38 @@ class JellyfinConnection extends Connection {
   String get displayLabel => serverName;
 
   @override
-  String? get displaySubtitle => '$userName · ${_truncateUrl(baseUrl)}';
+  String? get displaySubtitle {
+    final extraCount = baseUrls.length - 1;
+    final suffix = extraCount > 0 ? ' +$extraCount' : '';
+    return '$userName · ${_truncateUrl(baseUrl)}$suffix';
+  }
 
   static String _truncateUrl(String url) {
     if (url.length <= 40) return url;
     return '${url.substring(0, 37)}…';
   }
 
+  static List<String> _normalizeBaseUrls(String activeBaseUrl, List<String>? urls) {
+    final result = <String>[];
+    final seen = <String>{};
+
+    void add(String url) {
+      final trimmed = url.trim();
+      if (trimmed.isEmpty || !seen.add(trimmed)) return;
+      result.add(trimmed);
+    }
+
+    add(activeBaseUrl);
+    for (final url in urls ?? const <String>[]) {
+      add(url);
+    }
+    return List.unmodifiable(result);
+  }
+
   JellyfinConnection copyWith({
     String? id,
     String? baseUrl,
+    List<String>? baseUrls,
     String? serverName,
     String? serverMachineId,
     String? userId,
@@ -273,9 +300,11 @@ class JellyfinConnection extends Connection {
     DateTime? createdAt,
     DateTime? lastAuthenticatedAt,
   }) {
+    final nextBaseUrl = baseUrl ?? this.baseUrl;
     return JellyfinConnection(
       id: id ?? this.id,
-      baseUrl: baseUrl ?? this.baseUrl,
+      baseUrl: nextBaseUrl,
+      baseUrls: baseUrls ?? this.baseUrls,
       serverName: serverName ?? this.serverName,
       serverMachineId: serverMachineId ?? this.serverMachineId,
       userId: userId ?? this.userId,
@@ -293,6 +322,7 @@ class JellyfinConnection extends Connection {
   Map<String, Object?> toConfigJson() {
     return {
       'baseUrl': baseUrl,
+      'baseUrls': baseUrls,
       'serverName': serverName,
       'serverMachineId': serverMachineId,
       'userId': userId,
@@ -310,9 +340,16 @@ class JellyfinConnection extends Connection {
     required DateTime createdAt,
     DateTime? lastAuthenticatedAt,
   }) {
+    final rawBaseUrls = json['baseUrls'];
+    final baseUrls = rawBaseUrls is List ? rawBaseUrls.whereType<String>().toList(growable: false) : const <String>[];
+    final rawBaseUrl = json['baseUrl'] as String?;
+    final baseUrl = rawBaseUrl != null && rawBaseUrl.isNotEmpty
+        ? rawBaseUrl
+        : (baseUrls.isNotEmpty ? baseUrls.first : '');
     return JellyfinConnection(
       id: id,
-      baseUrl: json['baseUrl'] as String? ?? '',
+      baseUrl: baseUrl,
+      baseUrls: baseUrls,
       serverName: json['serverName'] as String? ?? 'Jellyfin',
       serverMachineId: json['serverMachineId'] as String? ?? '',
       userId: json['userId'] as String? ?? '',

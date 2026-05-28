@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -8,9 +11,10 @@ import 'package:plezy/exceptions/media_server_exceptions.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 
-JellyfinConnection _conn() => JellyfinConnection(
+JellyfinConnection _conn({String baseUrl = 'https://jf.example.com', List<String>? baseUrls}) => JellyfinConnection(
   id: 'srv-1/user-1',
-  baseUrl: 'https://jf.example.com',
+  baseUrl: baseUrl,
+  baseUrls: baseUrls,
   serverName: 'Home',
   serverMachineId: 'srv-1',
   userId: 'user-1',
@@ -134,6 +138,31 @@ void main() {
       expect(children, isEmpty);
       expect(seenItems, isTrue);
       client.close();
+    });
+  });
+
+  group('JellyfinClient endpoint failover', () {
+    test('switches to the fallback URL after a transient GET failure', () async {
+      final requests = <Uri>[];
+      final client = JellyfinClient.forTesting(
+        connection: _conn(
+          baseUrl: 'https://primary.example.com',
+          baseUrls: const ['https://primary.example.com', 'https://fallback.example.com'],
+        ),
+        httpClient: MockClient((req) async {
+          requests.add(req.url);
+          if (req.url.host == 'primary.example.com') {
+            throw TimeoutException('primary down');
+          }
+          return http.Response(jsonEncode({'Id': 'srv-1'}), 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(client.close);
+
+      expect(await client.getMachineIdentifier(), 'srv-1');
+      expect(requests.map((uri) => uri.host), ['primary.example.com', 'fallback.example.com']);
+      expect(client.connection.baseUrl, 'https://fallback.example.com');
+      expect(client.connection.baseUrls, ['https://fallback.example.com', 'https://primary.example.com']);
     });
   });
 }

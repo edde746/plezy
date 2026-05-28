@@ -282,6 +282,8 @@ class AppearanceSettingsScreen extends StatelessWidget {
         return 'Dansk';
       case AppLocale.nb:
         return 'Norsk bokmål';
+      case AppLocale.bg:
+        return 'Български';
     }
   }
 

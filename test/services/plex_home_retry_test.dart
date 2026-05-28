@@ -127,6 +127,40 @@ void main() {
       expect(httpClient.requests.last.url.queryParameters['count'], '12');
     });
 
+    test('fetchContinueWatching uses advertised provider feature endpoint', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      addTearDown(db.close);
+
+      final httpClient = _SequenceClient([
+        (_) async => _jsonResponse(_mediaProvidersPayload()),
+        (_) async => _jsonResponse(_continueWatchingPayload()),
+      ]);
+      final client = await PlexClient.create(
+        PlexConfig(
+          baseUrl: 'http://server:32400',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: 'server-id',
+        serverName: 'Server',
+        httpClient: httpClient,
+        seedTranscoderVideoSupport: true,
+      );
+      addTearDown(client.close);
+
+      final items = await client.fetchContinueWatching(count: 21);
+
+      expect(items, hasLength(1));
+      expect(items.single.title, 'Movie A');
+      expect(httpClient.requests.map((r) => r.url.path), ['/media/providers', '/hubs/continueWatching']);
+      expect(httpClient.requests.last.url.queryParameters['count'], '21');
+      expect(httpClient.requests.last.url.queryParameters['includeGuids'], '1');
+      expect(httpClient.requests.last.url.queryParameters.containsKey('identifier'), isFalse);
+    });
+
     test('fetchContinueWatching omits count when uncapped', () async {
       final db = AppDatabase.forTesting(NativeDatabase.memory());
       PlexApiCache.initialize(db);
@@ -260,6 +294,7 @@ Map<String, dynamic> _mediaProvidersPayload() => {
             ],
           },
           {'type': 'promoted', 'key': '/hubs/promoted'},
+          {'type': 'continuewatching', 'key': '/hubs/continueWatching'},
         ],
       },
     ],
