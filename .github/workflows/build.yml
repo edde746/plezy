@@ -195,6 +195,11 @@ jobs:
 
   build-macos:
     runs-on: macos-26
+    # Upstream-only: macOS release builds require Apple signing/notarization
+    # certificates this fork doesn't have, so the job is skipped here (it would
+    # otherwise fail at "Import Code Signing Certificate"). Restore by removing
+    # this gate if Apple credentials are added as secrets.
+    if: github.repository == 'edde746/plezy'
     permissions:
       id-token: write
       attestations: write
