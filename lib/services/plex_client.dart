@@ -3530,6 +3530,27 @@ class PlexClient
     return results.map((m) => PlexMappers.mediaItem(m)).toList();
   }
 
+  /// Find a library item on this server matching a Plex discover [guid]
+  /// (e.g. `plex://show/5d9c...` or `plex://movie/...`). Returns the first
+  /// match mapped to a server-tagged [MediaItem], or null if the title isn't
+  /// in this server's libraries. Used to resolve a Watchlist entry to an
+  /// openable server item.
+  Future<MediaItem?> findByGuid(String guid) async {
+    if (guid.isEmpty) return null;
+    try {
+      final response = await _getWithFailover(
+        '/library/all',
+        queryParameters: {'guid': guid, 'X-Plex-Container-Size': 1, 'includeGuids': 1},
+      );
+      final items = _extractMetadataList(response);
+      if (items.isEmpty) return null;
+      return PlexMappers.mediaItem(items.first);
+    } catch (e) {
+      appLogger.w('PlexClient.findByGuid failed', error: e);
+      return null;
+    }
+  }
+
   @override
   Future<List<MediaItem>> fetchRecentlyAdded({int limit = 50}) async {
     final items = await _getRecentlyAdded(limit: limit);

@@ -23,6 +23,8 @@ import '../mixins/refreshable.dart';
 import '../widgets/overlay_sheet.dart';
 import '../mixins/tab_visibility_aware.dart';
 import '../navigation/navigation_tabs.dart';
+import '../connection/connection.dart';
+import '../connection/connection_registry.dart';
 import '../profiles/active_profile_binder.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
@@ -50,6 +52,7 @@ import 'libraries/libraries_screen.dart';
 import 'livetv/live_tv_screen.dart';
 import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
+import 'watchlist/watchlist_screen.dart';
 import 'settings/settings_screen.dart';
 import 'profile/profile_switch_screen.dart';
 import '../services/watch_next_service.dart';
@@ -216,6 +219,11 @@ class _MainScreenState extends State<MainScreen>
   MultiServerProvider? _multiServerProvider;
   bool _lastHasLiveTv = false;
 
+  /// Whether a Plex.tv account is connected. Gates the Watchlist tab. Tracked
+  /// via [_connectionsSub] on the ConnectionRegistry.
+  bool _hasPlexAccount = false;
+  StreamSubscription<List<Connection>>? _connectionsSub;
+
   /// Whether a reconnection attempt is in progress
   bool _isReconnecting = false;
 
@@ -233,6 +241,7 @@ class _MainScreenState extends State<MainScreen>
   final GlobalKey<State<LiveTvScreen>> _liveTvKey = GlobalKey();
   final GlobalKey<State<SearchScreen>> _searchKey = GlobalKey();
   final GlobalKey<State<DownloadsScreen>> _downloadsKey = GlobalKey();
+  final GlobalKey<State<WatchlistScreen>> _watchlistKey = GlobalKey();
   final GlobalKey<State<SettingsScreen>> _settingsKey = GlobalKey();
   final GlobalKey<SideNavigationRailState> _sideNavKey = GlobalKey();
 
@@ -708,6 +717,21 @@ class _MainScreenState extends State<MainScreen>
       _multiServerProvider!.addListener(_handleLiveTvChanged);
     }
 
+    // Track Plex.tv account presence to gate the Watchlist tab. Drift's
+    // watch() emits the current value immediately on subscription.
+    if (_connectionsSub == null && !_isOffline) {
+      _connectionsSub = context.read<ConnectionRegistry>().watchConnections().listen((connections) {
+        final hasPlexAccount = connections.whereType<PlexAccountConnection>().any((c) => c.accountToken.isNotEmpty);
+        if (hasPlexAccount != _hasPlexAccount && mounted) {
+          setState(() {
+            _hasPlexAccount = hasPlexAccount;
+            _screens = _buildScreens(_isOffline);
+            _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
+          });
+        }
+      });
+    }
+
     // Wire up Companion Remote command routing (host devices only, once)
     if (!_companionRemoteSetup && PlatformDetector.shouldActAsRemoteHost(context)) {
       _companionRemoteSetup = true;
@@ -776,6 +800,7 @@ class _MainScreenState extends State<MainScreen>
     }
     _offlineModeProvider?.removeListener(_handleOfflineStatusChanged);
     _multiServerProvider?.removeListener(_handleLiveTvChanged);
+    _connectionsSub?.cancel();
     if (_bindingSettleListener != null) {
       _activeProfileForListener?.removeListener(_bindingSettleListener!);
     }
@@ -866,6 +891,7 @@ class _MainScreenState extends State<MainScreen>
           NavigationTabId.liveTv => LiveTvScreen(key: _liveTvKey),
           NavigationTabId.search => SearchScreen(key: _searchKey),
           NavigationTabId.downloads => DownloadsScreen(key: _downloadsKey),
+          NavigationTabId.watchlist => WatchlistScreen(key: _watchlistKey),
           NavigationTabId.settings => SettingsScreen(key: _settingsKey),
         },
     ];
@@ -1333,7 +1359,7 @@ class _MainScreenState extends State<MainScreen>
 
   /// Get navigation tabs filtered by offline mode
   List<NavigationTab> _getVisibleTabs(bool isOffline) {
-    return NavigationTab.getVisibleTabs(isOffline: isOffline, hasLiveTv: _hasLiveTv);
+    return NavigationTab.getVisibleTabs(isOffline: isOffline, hasLiveTv: _hasLiveTv, hasPlexAccount: _hasPlexAccount);
   }
 
   /// Get the GlobalKey for a given tab.
@@ -1344,6 +1370,7 @@ class _MainScreenState extends State<MainScreen>
       NavigationTabId.liveTv => _liveTvKey,
       NavigationTabId.search => _searchKey,
       NavigationTabId.downloads => _downloadsKey,
+      NavigationTabId.watchlist => _watchlistKey,
       NavigationTabId.settings => _settingsKey,
     };
   }
@@ -1437,6 +1464,7 @@ class _MainScreenState extends State<MainScreen>
                                       isSidebarFocused: _isSidebarFocused,
                                       alwaysExpanded: alwaysExpanded,
                                       isReconnecting: _isReconnecting,
+                                      hasWatchlist: _hasPlexAccount,
                                       onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
                                       onDestinationSelected: (tab) {
                                         final restorePreviousFocus = tab == _currentTab;
