@@ -2879,14 +2879,23 @@ class TranslationsDownloadsEn {
 	/// en: 'Next ${count} unwatched'
 	String nextNUnwatched({required Object count}) => 'Next ${count} unwatched';
 
-	/// en: 'Custom amount...'
-	String get customAmount => 'Custom amount...';
+	/// en: 'Custom amount unwatched'
+	String get customAmountUnwatched => 'Custom amount unwatched';
+
+	/// en: 'Custom amount'
+	String get customAmount => 'Custom amount';
 
 	/// en: 'Random selection'
 	String get randomSelection => 'Random selection';
 
 	/// en: 'Pick episodes at random instead of in order'
 	String get randomSelectionDescription => 'Pick episodes at random instead of in order';
+
+	/// en: 'Download only from ${season}'
+	String downloadOnlyFromSeason({required Object season}) => 'Download only from ${season}';
+
+	/// en: 'Otherwise the whole show'
+	String get downloadOnlyFromSeasonDescription => 'Otherwise the whole show';
 
 	/// en: 'How many episodes?'
 	String get howManyEpisodes => 'How many episodes?';
@@ -2914,6 +2923,9 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Sync rule created — keeping ${count} unwatched episodes'
 	String syncRuleCreated({required Object count}) => 'Sync rule created — keeping ${count} unwatched episodes';
+
+	/// en: 'Sync rule created — keeping ${count} episodes'
+	String syncRuleAllCreated({required Object count}) => 'Sync rule created — keeping ${count} episodes';
 
 	/// en: 'Sync rule updated'
 	String get syncRuleUpdated => 'Sync rule updated';
@@ -5046,9 +5058,12 @@ extension on Translations {
 			'downloads.allEpisodes' => 'All episodes',
 			'downloads.unwatchedOnly' => 'Unwatched only',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
-			'downloads.customAmount' => 'Custom amount...',
+			'downloads.customAmountUnwatched' => 'Custom amount unwatched',
+			'downloads.customAmount' => 'Custom amount',
 			'downloads.randomSelection' => 'Random selection',
 			'downloads.randomSelectionDescription' => 'Pick episodes at random instead of in order',
+			'downloads.downloadOnlyFromSeason' => ({required Object season}) => 'Download only from ${season}',
+			'downloads.downloadOnlyFromSeasonDescription' => 'Otherwise the whole show',
 			'downloads.howManyEpisodes' => 'How many episodes?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			'downloads.keepSynced' => 'Keep synced',
@@ -5058,6 +5073,7 @@ extension on Translations {
 			'downloads.removeSyncRule' => 'Remove sync rule',
 			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Stop syncing "${title}"? Downloaded episodes will be kept.',
 			'downloads.syncRuleCreated' => ({required Object count}) => 'Sync rule created — keeping ${count} unwatched episodes',
+			'downloads.syncRuleAllCreated' => ({required Object count}) => 'Sync rule created — keeping ${count} episodes',
 			'downloads.syncRuleUpdated' => 'Sync rule updated',
 			'downloads.syncRuleRemoved' => 'Sync rule removed',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}',
@@ -5179,12 +5195,12 @@ extension on Translations {
 			'metadataEdit.sortTitle' => 'Sort Title',
 			'metadataEdit.originalTitle' => 'Original Title',
 			'metadataEdit.releaseDate' => 'Release Date',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.contentRating' => 'Content Rating',
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Summary',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Background',
 			'metadataEdit.logo' => 'Logo',

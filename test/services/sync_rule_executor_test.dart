@@ -32,9 +32,10 @@ JellyfinConnection _jellyfinConnection(String userId) => JellyfinConnection(
   createdAt: DateTime.fromMillisecondsSinceEpoch(0),
 );
 
-/// A Jellyfin client whose show `show-1` has [episodeCount] unwatched episodes
-/// (`ep-1`..`ep-N`). Used to give random-rule deficit fills a pool to draw from.
-JellyfinClient _showWithEpisodesClient(String userId, int episodeCount) {
+/// A Jellyfin client whose show `show-1` has [episodeCount] episodes
+/// (`ep-1`..`ep-N`). The last [watchedCount] are reported as watched
+/// (PlayCount: 1); the rest are unwatched. Used to give rule fills a pool.
+JellyfinClient _showWithEpisodesClient(String userId, int episodeCount, {int watchedCount = 0}) {
   return JellyfinClient.forTesting(
     connection: _jellyfinConnection(userId),
     httpClient: MockClient((request) async {
@@ -46,9 +47,10 @@ JellyfinClient _showWithEpisodesClient(String userId, int episodeCount) {
         );
       }
       if (request.method == 'GET' && request.url.path == '/Items') {
+        final unwatchedEnd = episodeCount - watchedCount;
         final items = [
           for (var i = 1; i <= episodeCount; i++)
-            '{"Id":"ep-$i","Type":"Episode","Name":"E$i","SeriesId":"show-1","UserData":{"PlayCount":0}}',
+            '{"Id":"ep-$i","Type":"Episode","Name":"E$i","SeriesId":"show-1","UserData":{"PlayCount":${i <= unwatchedEnd ? 0 : 1}}}',
         ].join(',');
         return http.Response('{"Items":[$items]}', 200, headers: {'content-type': 'application/json'});
       }
@@ -461,6 +463,106 @@ void main() {
     expect(queued, hasLength(1));
     // The single top-up must come from the not-yet-downloaded remainder.
     expect({'ep-3', 'ep-4', 'ep-5', 'ep-6'}, contains(queued.single.id));
+  });
+
+  test('filter=all episode rule tops up to N total, counting watched episodes', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    JellyfinApiCache.initialize(db);
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    // 6 episodes: ep-1..ep-4 unwatched, ep-5..ep-6 already watched on server.
+    final client = _showWithEpisodesClient('user-a', 6, watchedCount: 2);
+    addTearDown(client.close);
+    manager.debugRegisterJellyfinClientForTesting(client);
+
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: 'jf-machine',
+      ratingKey: 'show-1',
+      globalKey: 'profile-a|jf-machine:show-1',
+      targetType: 'show',
+      episodeCount: 5,
+      downloadFilter: SyncRuleFilter.all,
+    );
+
+    final queued = <MediaItem>[];
+    final executor = SyncRuleExecutor(database: db);
+    final results = await executor.executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {},
+      metadata: const {},
+      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+        queued.add(item);
+        return true;
+      },
+      force: true,
+    );
+
+    // Five episodes queued from the six-episode pool. Non-random fills in
+    // airing order, so the first five (ep-1..ep-5) are queued — that includes
+    // ep-5, a *watched* episode, which a filter=unwatched rule would have
+    // dropped from `_collectPlayable`. This pins the filter=all behaviour.
+    expect(results.single.queuedCount, 5);
+    expect(queued.map((e) => e.id).toList(), ['ep-1', 'ep-2', 'ep-3', 'ep-4', 'ep-5']);
+  });
+
+  test('filter=all episode rule keeps locally-watched episodes in the candidate pool', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    JellyfinApiCache.initialize(db);
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    // 4 episodes, all unwatched on the server.
+    final client = _showWithEpisodesClient('user-a', 4);
+    addTearDown(client.close);
+    manager.debugRegisterJellyfinClientForTesting(client);
+
+    // The user marked ep-1 watched offline — a filter=unwatched rule would
+    // exclude it; filter=all must not.
+    await db.insertWatchAction(
+      profileId: 'profile-a',
+      serverId: 'jf-machine',
+      clientScopeId: 'jf-machine/user-a',
+      ratingKey: 'ep-1',
+      actionType: OfflineActionType.watched.id,
+    );
+
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: 'jf-machine',
+      ratingKey: 'show-1',
+      globalKey: 'profile-a|jf-machine:show-1',
+      targetType: 'show',
+      episodeCount: 4,
+      downloadFilter: SyncRuleFilter.all,
+    );
+
+    final queued = <MediaItem>[];
+    final executor = SyncRuleExecutor(database: db);
+    final results = await executor.executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {},
+      metadata: const {},
+      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+        queued.add(item);
+        return true;
+      },
+      force: true,
+    );
+
+    expect(results.single.queuedCount, 4);
+    // ep-1 is locally watched but still queued — _excludeLocallyWatched must
+    // be skipped for filter=all.
+    expect(queued.map((e) => e.id).toSet(), {'ep-1', 'ep-2', 'ep-3', 'ep-4'});
   });
 }
 

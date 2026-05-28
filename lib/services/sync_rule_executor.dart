@@ -253,8 +253,16 @@ class SyncRuleExecutor {
     return cacheServerId == serverId || cacheServerId.isEmpty ? null : cacheServerId;
   }
 
-  /// Keep [rule.episodeCount] unwatched episodes queued for a show/season
-  /// (0 = all). Always "unwatched" — watched/all filtering doesn't apply here.
+  /// Keep [rule.episodeCount] episodes queued for a show/season (0 = all).
+  ///
+  /// `rule.downloadFilter` decides the scope of "episodes":
+  /// - [SyncRuleFilter.unwatched] (default for show/season rules) — maintains a
+  ///   rolling window of N unwatched episodes; locally-marked-watched items
+  ///   are excluded so the rule doesn't re-queue something the user just
+  ///   watched offline before the server has caught up.
+  /// - [SyncRuleFilter.all] — counts every episode (watched or unwatched)
+  ///   toward the cap; locally-watched is irrelevant and we still want the
+  ///   episode present.
   Future<SyncRuleResult?> _executeEpisodeRule({
     required SyncRuleItem rule,
     required MediaServerClient client,
@@ -264,13 +272,15 @@ class SyncRuleExecutor {
     required Map<String, MediaItem> metadata,
     required Future<bool> Function(MediaItem episode, MediaServerClient client, {int mediaIndex}) queueSingleDownload,
   }) async {
+    final unwatchedOnly = rule.downloadFilter != SyncRuleFilter.all;
+
     final fromServer = <MediaItem>[];
     final sourceMetadata = metadata[rule.globalKey];
     if (rule.targetType == ContentTypes.show) {
       await collectEpisodesForShow(
         client,
         rule.ratingKey,
-        unwatchedOnly: true,
+        unwatchedOnly: unwatchedOnly,
         out: fromServer,
         fallback: sourceMetadata,
       );
@@ -278,33 +288,40 @@ class SyncRuleExecutor {
       await collectEpisodesForSeason(
         client,
         rule.ratingKey,
-        unwatchedOnly: true,
+        unwatchedOnly: unwatchedOnly,
         out: fromServer,
         fallback: sourceMetadata,
       );
     }
 
-    final unwatchedEpisodes = await _excludeLocallyWatched(
-      episodes: fromServer,
-      serverId: rule.serverId,
-      profileId: profileId,
-      clientScopeId: clientScopeId,
-    );
+    // Locally-watched exclusion is an unwatched-window concern: it prevents
+    // re-queueing an episode the user just marked watched on-device before
+    // the server sees the update. For filter=all rules, every episode is a
+    // valid candidate regardless of watched state, so this filter is skipped.
+    final candidates = unwatchedOnly
+        ? await _excludeLocallyWatched(
+            episodes: fromServer,
+            serverId: rule.serverId,
+            profileId: profileId,
+            clientScopeId: clientScopeId,
+          )
+        : fromServer;
 
-    if (unwatchedEpisodes.isEmpty) {
-      appLogger.d('Sync rule ${rule.globalKey}: no unwatched episodes available');
+    if (candidates.isEmpty) {
+      appLogger.d('Sync rule ${rule.globalKey}: no candidate episodes available');
       await _database.updateSyncRuleLastExecuted(rule.globalKey);
       return null;
     }
 
     int alreadyHave = 0;
-    for (final ep in unwatchedEpisodes) {
+    for (final ep in candidates) {
       final gk = buildGlobalKey(rule.serverId, ep.id);
       if (_isActiveDownload(downloads[gk])) alreadyHave++;
     }
 
-    // episodeCount == 0 means "all unwatched" — target is total unwatched count
-    final targetCount = rule.episodeCount > 0 ? rule.episodeCount : unwatchedEpisodes.length;
+    // episodeCount == 0 means "all available" — target is the full candidate
+    // pool (every unwatched / every episode depending on filter).
+    final targetCount = rule.episodeCount > 0 ? rule.episodeCount : candidates.length;
     final deficit = targetCount - alreadyHave;
     if (deficit <= 0) {
       appLogger.d('Sync rule ${rule.globalKey}: no deficit ($alreadyHave/$targetCount already have)');
@@ -316,7 +333,7 @@ class SyncRuleExecutor {
     // episodes are picked at random rather than in airing order. Episodes
     // already downloaded are left in place (the `_isActiveDownload` skip
     // below), so this only randomises which *new* episodes get pulled in.
-    final fillOrder = rule.random ? ([...unwatchedEpisodes]..shuffle(_random)) : unwatchedEpisodes;
+    final fillOrder = rule.random ? ([...candidates]..shuffle(_random)) : candidates;
 
     int queued = 0;
     for (final ep in fillOrder) {

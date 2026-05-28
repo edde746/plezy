@@ -254,6 +254,17 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     );
   }
 
+  /// The season currently selected in the show's season tabs, when the
+  /// download dialog should offer to restrict to it. Null for single-season
+  /// shows (redundant) and when the viewed item is itself a season/movie.
+  MediaItem? _selectedSeasonForDownload(MediaItem metadata) {
+    if (!metadata.isShow) return null;
+    if (_seasons.length < 2) return null;
+    if (_selectedSeasonIndex < 0 || _selectedSeasonIndex >= _seasons.length) return null;
+    final season = _seasons[_selectedSeasonIndex];
+    return season.isSeason ? season : null;
+  }
+
   Widget _buildDownloadButton(
     MediaItem metadata,
     ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding}) actionButtonStyle,
@@ -522,6 +533,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
                 metadata: metadata,
                 client: client,
                 downloadProvider: downloadProvider,
+                currentSeason: _selectedSeasonForDownload(metadata),
               );
               if (result == null || !context.mounted) return;
 

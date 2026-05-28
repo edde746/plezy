@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/utils/download_utils.dart';
 
 void main() {
-  Future<void> pumpDialog(WidgetTester tester) async {
+  Future<void> pumpDialog(WidgetTester tester, {MediaItem? currentSeason}) async {
     await tester.pumpWidget(
-      MaterialApp(home: Scaffold(body: debugDownloadOptionsDialog())),
+      MaterialApp(home: Scaffold(body: debugDownloadOptionsDialog(currentSeason: currentSeason))),
     );
     await tester.pumpAndSettle();
   }
@@ -15,17 +18,26 @@ void main() {
     find.ancestor(of: find.text(label), matching: find.byType(ListTile)),
   );
 
-  testWidgets('all five scopes are enabled when random is off', (tester) async {
+  final season3 = MediaItem(
+    id: 'season-3',
+    backend: MediaBackend.plex,
+    kind: MediaKind.season,
+    title: 'Season 3',
+    index: 3,
+  );
+
+  testWidgets('all six scopes are enabled when random is off', (tester) async {
     await pumpDialog(tester);
 
     expect(tileFor(tester, t.downloads.allEpisodes).enabled, isTrue);
     expect(tileFor(tester, t.downloads.unwatchedOnly).enabled, isTrue);
     expect(tileFor(tester, t.downloads.nextNUnwatched(count: 5)).enabled, isTrue);
     expect(tileFor(tester, t.downloads.nextNUnwatched(count: 10)).enabled, isTrue);
+    expect(tileFor(tester, t.downloads.customAmountUnwatched).enabled, isTrue);
     expect(tileFor(tester, t.downloads.customAmount).enabled, isTrue);
   });
 
-  testWidgets('toggling random dims the uncapped scopes only', (tester) async {
+  testWidgets('toggling random dims only the two uncapped scopes', (tester) async {
     await pumpDialog(tester);
 
     await tester.tap(find.text(t.downloads.randomSelection));
@@ -34,18 +46,37 @@ void main() {
     // Uncapped scopes have no subset to randomise → disabled.
     expect(tileFor(tester, t.downloads.allEpisodes).enabled, isFalse);
     expect(tileFor(tester, t.downloads.unwatchedOnly).enabled, isFalse);
-    // Count-capped scopes stay actionable.
+    // All four count-capped scopes stay actionable, including both customs.
     expect(tileFor(tester, t.downloads.nextNUnwatched(count: 5)).enabled, isTrue);
     expect(tileFor(tester, t.downloads.nextNUnwatched(count: 10)).enabled, isTrue);
+    expect(tileFor(tester, t.downloads.customAmountUnwatched).enabled, isTrue);
     expect(tileFor(tester, t.downloads.customAmount).enabled, isTrue);
   });
 
-  testWidgets('the random switch reflects its toggled state', (tester) async {
+  testWidgets('season-restrict toggle is hidden when no season context is given', (tester) async {
     await pumpDialog(tester);
 
-    expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
-    await tester.tap(find.text(t.downloads.randomSelection));
+    expect(find.text(t.downloads.downloadOnlyFromSeason(season: 'Season 3')), findsNothing);
+    // Only the random switch is present.
+    expect(find.byType(Switch), findsOneWidget);
+  });
+
+  testWidgets('season-restrict toggle appears with the season label when provided', (tester) async {
+    await pumpDialog(tester, currentSeason: season3);
+
+    expect(find.text(t.downloads.downloadOnlyFromSeason(season: 'Season 3')), findsOneWidget);
+    // Random switch + season switch.
+    expect(find.byType(Switch), findsNWidgets(2));
+  });
+
+  testWidgets('toggling season-restrict leaves all scopes enabled', (tester) async {
+    await pumpDialog(tester, currentSeason: season3);
+
+    await tester.tap(find.text(t.downloads.downloadOnlyFromSeason(season: 'Season 3')));
     await tester.pumpAndSettle();
-    expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
+
+    expect(tileFor(tester, t.downloads.allEpisodes).enabled, isTrue);
+    expect(tileFor(tester, t.downloads.unwatchedOnly).enabled, isTrue);
+    expect(tileFor(tester, t.downloads.customAmount).enabled, isTrue);
   });
 }

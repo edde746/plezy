@@ -153,6 +153,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   @override
   void onDeletionEvent(DeletionEvent event) {
+    // Browse reflects what the server has. Deleting a local download leaves
+    // the server data untouched, so we must not pull the item (or decrement a
+    // parent's leafCount) out of the grid — that's why DeletionEvent carries
+    // the `isDownloadOnly` flag. Without this guard, "Delete all downloads"
+    // on a show silently hides the show from the library browse.
+    if (event.isDownloadOnly) return;
+
     // If we have an item that matches the rating key exactly, remove it and rebuild indices
     final matchEntry = loadedItems.entries.where((e) => e.value.id == event.itemId).firstOrNull;
     if (matchEntry != null) {
