@@ -80,6 +80,13 @@
     "latestVersion": "You are on the latest version",
     "checkFailed": "Failed to check for updates"
   },
+  "watchlist": {
+    "title": "Watchlist",
+    "empty": "Your watchlist is empty",
+    "emptyDescription": "Add movies and shows to your Plex watchlist to see them here",
+    "loadFailed": "Failed to load watchlist",
+    "notOnServers": "Not available on your servers"
+  },
   "settings": {
     "title": "Settings",
     "supportDeveloper": "Support Plezy",

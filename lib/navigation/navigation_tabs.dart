@@ -6,7 +6,7 @@ import '../i18n/strings.g.dart';
 import '../utils/platform_detector.dart';
 
 /// Navigation tab identifiers
-enum NavigationTabId { discover, libraries, liveTv, search, downloads, settings }
+enum NavigationTabId { discover, libraries, liveTv, search, downloads, watchlist, settings }
 
 /// Represents a navigation tab with its configuration
 class NavigationTab {
@@ -22,17 +22,24 @@ class NavigationTab {
   }
 
   /// Get the index for a tab ID in the visible tabs list
-  static int indexFor(NavigationTabId id, {required bool isOffline, bool hasLiveTv = false}) {
-    final tabs = getVisibleTabs(isOffline: isOffline, hasLiveTv: hasLiveTv);
+  static int indexFor(NavigationTabId id, {required bool isOffline, bool hasLiveTv = false, bool hasPlexAccount = false}) {
+    final tabs = getVisibleTabs(isOffline: isOffline, hasLiveTv: hasLiveTv, hasPlexAccount: hasPlexAccount);
     return tabs.indexWhere((tab) => tab.id == id);
   }
 
   /// Get tabs filtered by offline mode and feature availability
-  static List<NavigationTab> getVisibleTabs({required bool isOffline, bool hasLiveTv = false}) {
+  static List<NavigationTab> getVisibleTabs({
+    required bool isOffline,
+    bool hasLiveTv = false,
+    bool hasPlexAccount = false,
+  }) {
     return allNavigationTabs.where((tab) {
       if (isOffline && tab.onlineOnly) return false;
       if (tab.id == NavigationTabId.liveTv && !hasLiveTv) return false;
       if (tab.id == NavigationTabId.downloads && PlatformDetector.isAppleTV()) return false;
+      // Watchlist is a Plex-account-level feature; hide it for Jellyfin-only
+      // setups (no connected Plex.tv account).
+      if (tab.id == NavigationTabId.watchlist && !hasPlexAccount) return false;
       return true;
     }).toList();
   }
@@ -44,6 +51,7 @@ String _getLibrariesLabel() => t.navigation.libraries;
 String _getLiveTvLabel() => t.navigation.liveTv;
 String _getSearchLabel() => t.common.search;
 String _getDownloadsLabel() => t.navigation.downloads;
+String _getWatchlistLabel() => t.watchlist.title;
 String _getSettingsLabel() => t.common.settings;
 
 /// All navigation tabs in display order
@@ -62,6 +70,12 @@ const allNavigationTabs = [
     onlineOnly: false,
     icon: Symbols.download_rounded,
     getLabel: _getDownloadsLabel,
+  ),
+  NavigationTab(
+    id: NavigationTabId.watchlist,
+    onlineOnly: true,
+    icon: Symbols.bookmark_rounded,
+    getLabel: _getWatchlistLabel,
   ),
   NavigationTab(
     id: NavigationTabId.settings,
