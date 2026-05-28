@@ -102,77 +102,85 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         if (isTv) _setTvDetailActionRowFocus(hasFocus);
       },
       onKeyEvent: _handlePlayButtonKeyEvent,
-      child: Row(
-        children: [
-          SizedBox(
-            height: actionSize,
-            child: FilledButton(
-              focusNode: _playButtonFocusNode,
-              autofocus: isKeyboardMode,
-              onPressed: onPlayPressed,
-              style: actionButtonStyle(
-                padding: EdgeInsets.symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
+      // Phone/desktop: scroll horizontally if the actions overflow the width so
+      // the bookmark + overflow menu aren't clipped. TV has the room and its own
+      // d-pad focus handling, so it stays a plain non-scrolling Row.
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: isTv ? const NeverScrollableScrollPhysics() : const ClampingScrollPhysics(),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              height: actionSize,
+              child: FilledButton(
+                focusNode: _playButtonFocusNode,
+                autofocus: isKeyboardMode,
+                onPressed: onPlayPressed,
+                style: actionButtonStyle(
+                  padding: EdgeInsets.symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
+                ),
+                child: playButtonLabel.isNotEmpty
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          playButtonIcon,
+                          SizedBox(width: isTv ? 7 * tvScale : 8),
+                          Text(
+                            playButtonLabel,
+                            style: TextStyle(fontSize: isTv ? 17 * tvScale : 16, fontWeight: FontWeight.w700),
+                          ),
+                        ],
+                      )
+                    : playButtonIcon,
               ),
-              child: playButtonLabel.isNotEmpty
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        playButtonIcon,
-                        SizedBox(width: isTv ? 7 * tvScale : 8),
-                        Text(
-                          playButtonLabel,
-                          style: TextStyle(fontSize: isTv ? 17 * tvScale : 16, fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    )
-                  : playButtonIcon,
-            ),
-          ),
-          SizedBox(width: isTv ? 8 * tvScale : 12),
-          // Trailer button (only if trailer is available)
-          if (primaryTrailer != null) ...[
-            IconButton.filledTonal(
-              onPressed: () async {
-                await navigateToVideoPlayer(context, metadata: primaryTrailer);
-              },
-              icon: const AppIcon(Symbols.theaters_rounded, fill: 1),
-              tooltip: t.tooltips.playTrailer,
-              iconSize: isTv ? 21 * tvScale : 20,
-              style: actionButtonStyle(),
             ),
             SizedBox(width: isTv ? 8 * tvScale : 12),
-          ],
-          // Shuffle button (only for shows and seasons)
-          if (metadata.isShow || metadata.isSeason) ...[
-            IconButton.filledTonal(
-              onPressed: () async {
-                await _handleShufflePlayWithQueue(context, metadata);
-              },
-              icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
-              tooltip: t.tooltips.shufflePlay,
-              iconSize: isTv ? 21 * tvScale : 20,
-              style: actionButtonStyle(),
-            ),
+            // Trailer button (only if trailer is available)
+            if (primaryTrailer != null) ...[
+              IconButton.filledTonal(
+                onPressed: () async {
+                  await navigateToVideoPlayer(context, metadata: primaryTrailer);
+                },
+                icon: const AppIcon(Symbols.theaters_rounded, fill: 1),
+                tooltip: t.tooltips.playTrailer,
+                iconSize: isTv ? 21 * tvScale : 20,
+                style: actionButtonStyle(),
+              ),
+              SizedBox(width: isTv ? 8 * tvScale : 12),
+            ],
+            // Shuffle button (only for shows and seasons)
+            if (metadata.isShow || metadata.isSeason) ...[
+              IconButton.filledTonal(
+                onPressed: () async {
+                  await _handleShufflePlayWithQueue(context, metadata);
+                },
+                icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
+                tooltip: t.tooltips.shufflePlay,
+                iconSize: isTv ? 21 * tvScale : 20,
+                style: actionButtonStyle(),
+              ),
+              SizedBox(width: isTv ? 8 * tvScale : 12),
+            ],
+            // Download button (hide in offline mode - already downloaded,
+            // and on Apple TV where there's no user file storage).
+            if (!widget.isOffline && !PlatformDetector.isAppleTV())
+              _buildDownloadButton(metadata, actionButtonStyle, tvScale),
             SizedBox(width: isTv ? 8 * tvScale : 12),
+            // Mark as watched/unwatched toggle (works offline too)
+            _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale),
+            // Watchlist toggle (Plex movies/shows only, online)
+            if (_watchlistEligible) ...[
+              SizedBox(width: isTv ? 8 * tvScale : 12),
+              _buildWatchlistToggleButton(metadata, actionButtonStyle, tvScale),
+            ],
+            // Three-dots menu button (hidden in offline mode)
+            if (!widget.isOffline) ...[
+              SizedBox(width: isTv ? 8 * tvScale : 12),
+              _buildMoreActionsButton(metadata, actionButtonStyle, tvScale),
+            ],
           ],
-          // Download button (hide in offline mode - already downloaded,
-          // and on Apple TV where there's no user file storage).
-          if (!widget.isOffline && !PlatformDetector.isAppleTV())
-            _buildDownloadButton(metadata, actionButtonStyle, tvScale),
-          SizedBox(width: isTv ? 8 * tvScale : 12),
-          // Mark as watched/unwatched toggle (works offline too)
-          _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale),
-          // Watchlist toggle (Plex movies/shows only, online)
-          if (_watchlistEligible) ...[
-            SizedBox(width: isTv ? 8 * tvScale : 12),
-            _buildWatchlistToggleButton(metadata, actionButtonStyle, tvScale),
-          ],
-          // Three-dots menu button (hidden in offline mode)
-          if (!widget.isOffline) ...[
-            SizedBox(width: isTv ? 8 * tvScale : 12),
-            _buildMoreActionsButton(metadata, actionButtonStyle, tvScale),
-          ],
-        ],
+        ),
       ),
     );
   }
