@@ -488,6 +488,12 @@ class TranslationsSettingsEn {
 	/// en: 'Show each season's poster above its tab'
 	String get showSeasonPostersOnTabsDescription => 'Show each season\'s poster above its tab';
 
+	/// en: 'Full TV Cards'
+	String get tvFullCardLayout => 'Full TV Cards';
+
+	/// en: 'Use image-only TV cards with actor names overlaid'
+	String get tvFullCardLayoutDescription => 'Use image-only TV cards with actor names overlaid';
+
 	/// en: 'Hide Spoilers for Unwatched Episodes'
 	String get hideSpoilers => 'Hide Spoilers for Unwatched Episodes';
 
@@ -4282,6 +4288,8 @@ extension on Translations {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Show season and episode number on episode cards',
 			'settings.showSeasonPostersOnTabs' => 'Show Season Posters on Tabs',
 			'settings.showSeasonPostersOnTabsDescription' => 'Show each season\'s poster above its tab',
+			'settings.tvFullCardLayout' => 'Full TV Cards',
+			'settings.tvFullCardLayoutDescription' => 'Use image-only TV cards with actor names overlaid',
 			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
 			'settings.hideSpoilersDescription' => 'Blur thumbnails and descriptions for unwatched episodes',
 			'settings.playerBackend' => 'Player Backend',
@@ -4676,10 +4684,10 @@ extension on Translations {
 			'profiles.active' => 'Active',
 			'profiles.manage' => 'Manage',
 			'profiles.delete' => 'Delete',
-			'profiles.signOut' => 'Sign out',
-			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'Sign out',
+			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.',
 			'profiles.signedOutPlex' => 'Signed out of Plex.',
 			'profiles.signOutFailed' => 'Sign out failed.',
@@ -5190,10 +5198,10 @@ extension on Translations {
 			'metadataEdit.originalTitle' => 'Original Title',
 			'metadataEdit.releaseDate' => 'Release Date',
 			'metadataEdit.contentRating' => 'Content Rating',
-			'metadataEdit.studio' => 'Studio',
-			'metadataEdit.tagline' => 'Tagline',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'Studio',
+			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Summary',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Background',

@@ -106,6 +106,18 @@ class FocusableWrapper extends StatefulWidget {
   /// Useful for elements like sliders where scaling looks odd.
   final bool disableScale;
 
+  /// Scale used for the focus animation.
+  final double focusScale;
+
+  /// Stroke alignment for the focus border.
+  final double focusBorderStrokeAlign;
+
+  /// Whether to draw a glow around the focused widget.
+  final bool useFocusGlow;
+
+  /// Whether to draw the focus border as a foreground decoration.
+  final bool useForegroundFocusDecoration;
+
   /// Whether descendants can receive focus.
   /// Set to false when the child widget has its own Focus (e.g. buttons)
   /// that would compete with this wrapper's focus handling.
@@ -136,6 +148,10 @@ class FocusableWrapper extends StatefulWidget {
     this.useBackgroundFocus = false,
     this.focusColor,
     this.disableScale = false,
+    this.focusScale = FocusTheme.focusScale,
+    this.focusBorderStrokeAlign = BorderSide.strokeAlignInside,
+    this.useFocusGlow = false,
+    this.useForegroundFocusDecoration = false,
     this.descendantsAreFocusable = true,
   });
 
@@ -149,7 +165,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
   bool _isFocused = false;
 
   late final AnimationController _animationController;
-  late final Animation<double> _scaleAnimation;
+  late Animation<double> _scaleAnimation;
 
   // Long-press detection for SELECT key
   Timer? _longPressTimer;
@@ -178,9 +194,13 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
   void _initAnimations() {
     _animationController = AnimationController(vsync: this, duration: const Duration(milliseconds: 150));
 
-    _scaleAnimation = Tween<double>(
+    _scaleAnimation = _createScaleAnimation();
+  }
+
+  Animation<double> _createScaleAnimation() {
+    return Tween<double>(
       begin: 1.0,
-      end: FocusTheme.focusScale,
+      end: widget.focusScale,
     ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
   }
 
@@ -199,6 +219,10 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     // Update canRequestFocus
     if (widget.canRequestFocus != oldWidget.canRequestFocus) {
       _focusNode.canRequestFocus = widget.canRequestFocus;
+    }
+
+    if (widget.focusScale != oldWidget.focusScale) {
+      _scaleAnimation = _createScaleAnimation();
     }
   }
 
@@ -447,14 +471,23 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     }
 
     // Choose decoration based on useBackgroundFocus
-    final decoration = widget.useBackgroundFocus
+    final focusDecoration = widget.useBackgroundFocus
         ? FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: widget.borderRadius)
         : FocusTheme.focusDecoration(
             context,
             isFocused: showFocus,
             borderRadius: widget.borderRadius,
             color: widget.focusColor,
+            borderStrokeAlign: widget.focusBorderStrokeAlign,
           );
+    final glowDecoration = widget.useFocusGlow
+        ? FocusTheme.focusGlowDecoration(
+            context,
+            isFocused: showFocus,
+            borderRadius: widget.borderRadius,
+            color: widget.focusColor,
+          )
+        : null;
 
     Widget result = Focus(
       focusNode: _focusNode,
@@ -471,7 +504,8 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
             child: AnimatedContainer(
               duration: duration,
               curve: Curves.easeOutCubic,
-              decoration: decoration,
+              decoration: widget.useForegroundFocusDecoration ? glowDecoration : focusDecoration,
+              foregroundDecoration: widget.useForegroundFocusDecoration ? focusDecoration : null,
               child: widget.child,
             ),
           );

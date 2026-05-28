@@ -254,6 +254,8 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Toon seizoen- en afleveringsnummer op afleveringskaarten';
 	@override String get showSeasonPostersOnTabs => 'Toon seizoensposters op tabbladen';
 	@override String get showSeasonPostersOnTabsDescription => 'Toon de poster van elk seizoen boven het tabblad';
+	@override String get tvFullCardLayout => 'Volledige tv-kaarten';
+	@override String get tvFullCardLayoutDescription => 'Gebruik tv-kaarten met alleen afbeeldingen en namen van acteurs als overlay';
 	@override String get hideSpoilers => 'Spoilers voor ongekeken afleveringen verbergen';
 	@override String get hideSpoilersDescription => 'Vervaag miniaturen en beschrijvingen voor niet-bekeken afleveringen';
 	@override String get playerBackend => 'Speler backend';
@@ -1922,6 +1924,8 @@ extension on TranslationsNl {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Toon seizoen- en afleveringsnummer op afleveringskaarten',
 			'settings.showSeasonPostersOnTabs' => 'Toon seizoensposters op tabbladen',
 			'settings.showSeasonPostersOnTabsDescription' => 'Toon de poster van elk seizoen boven het tabblad',
+			'settings.tvFullCardLayout' => 'Volledige tv-kaarten',
+			'settings.tvFullCardLayoutDescription' => 'Gebruik tv-kaarten met alleen afbeeldingen en namen van acteurs als overlay',
 			'settings.hideSpoilers' => 'Spoilers voor ongekeken afleveringen verbergen',
 			'settings.hideSpoilersDescription' => 'Vervaag miniaturen en beschrijvingen voor niet-bekeken afleveringen',
 			'settings.playerBackend' => 'Speler backend',
@@ -2316,10 +2320,10 @@ extension on TranslationsNl {
 			'profiles.active' => 'Actief',
 			'profiles.manage' => 'Beheren',
 			'profiles.delete' => 'Verwijderen',
-			'profiles.signOut' => 'Afmelden',
-			'profiles.signOutPlexTitle' => 'Afmelden bij Plex?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'Afmelden',
+			'profiles.signOutPlexTitle' => 'Afmelden bij Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} en alle Plex Home-gebruikers verwijderen? Je kunt altijd opnieuw inloggen.',
 			'profiles.signedOutPlex' => 'Afgemeld bij Plex.',
 			'profiles.signOutFailed' => 'Afmelden mislukt.',
@@ -2830,10 +2834,10 @@ extension on TranslationsNl {
 			'metadataEdit.originalTitle' => 'Oorspronkelijke titel',
 			'metadataEdit.releaseDate' => 'Releasedatum',
 			'metadataEdit.contentRating' => 'Leeftijdsclassificatie',
-			'metadataEdit.studio' => 'Studio',
-			'metadataEdit.tagline' => 'Tagline',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'Studio',
+			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Samenvatting',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Achtergrond',

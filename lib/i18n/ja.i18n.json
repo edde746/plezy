@@ -126,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "エピソードカードにシーズン番号とエピソード番号を表示します",
     "showSeasonPostersOnTabs": "タブにシーズンポスターを表示",
     "showSeasonPostersOnTabsDescription": "各シーズンのポスターをタブの上に表示します",
+    "tvFullCardLayout": "フルTVカード",
+    "tvFullCardLayoutDescription": "TVカードを画像のみで表示し、俳優名を重ねて表示します",
     "hideSpoilers": "未視聴エピソードのネタバレを非表示",
     "hideSpoilersDescription": "未視聴エピソードのサムネイルと説明をぼかします",
     "playerBackend": "プレーヤーバックエンド",

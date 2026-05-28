@@ -254,6 +254,8 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Показывать номер сезона и серии на карточках серий';
 	@override String get showSeasonPostersOnTabs => 'Показывать постеры сезонов на вкладках';
 	@override String get showSeasonPostersOnTabsDescription => 'Показывать постер каждого сезона над его вкладкой';
+	@override String get tvFullCardLayout => 'Полные TV-карточки';
+	@override String get tvFullCardLayoutDescription => 'Использовать TV-карточки только с изображением и именами актёров поверх него';
 	@override String get hideSpoilers => 'Скрыть спойлеры непросмотренных эпизодов';
 	@override String get hideSpoilersDescription => 'Размывать миниатюры и описания непросмотренных серий';
 	@override String get playerBackend => 'Бэкенд плеера';
@@ -1922,6 +1924,8 @@ extension on TranslationsRu {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Показывать номер сезона и серии на карточках серий',
 			'settings.showSeasonPostersOnTabs' => 'Показывать постеры сезонов на вкладках',
 			'settings.showSeasonPostersOnTabsDescription' => 'Показывать постер каждого сезона над его вкладкой',
+			'settings.tvFullCardLayout' => 'Полные TV-карточки',
+			'settings.tvFullCardLayoutDescription' => 'Использовать TV-карточки только с изображением и именами актёров поверх него',
 			'settings.hideSpoilers' => 'Скрыть спойлеры непросмотренных эпизодов',
 			'settings.hideSpoilersDescription' => 'Размывать миниатюры и описания непросмотренных серий',
 			'settings.playerBackend' => 'Бэкенд плеера',
@@ -2316,10 +2320,10 @@ extension on TranslationsRu {
 			'profiles.active' => 'Активный',
 			'profiles.manage' => 'Управление',
 			'profiles.delete' => 'Удалить',
-			'profiles.signOut' => 'Выйти',
-			'profiles.signOutPlexTitle' => 'Выйти из Plex?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'Выйти',
+			'profiles.signOutPlexTitle' => 'Выйти из Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Удалить ${displayName} и всех пользователей Plex Home? Вы сможете войти снова в любое время.',
 			'profiles.signedOutPlex' => 'Вы вышли из Plex.',
 			'profiles.signOutFailed' => 'Не удалось выйти.',
@@ -2830,10 +2834,10 @@ extension on TranslationsRu {
 			'metadataEdit.originalTitle' => 'Оригинальное название',
 			'metadataEdit.releaseDate' => 'Дата выпуска',
 			'metadataEdit.contentRating' => 'Возрастной рейтинг',
-			'metadataEdit.studio' => 'Студия',
-			'metadataEdit.tagline' => 'Слоган',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'Студия',
+			'metadataEdit.tagline' => 'Слоган',
 			'metadataEdit.summary' => 'Описание',
 			'metadataEdit.poster' => 'Постер',
 			'metadataEdit.background' => 'Фон',

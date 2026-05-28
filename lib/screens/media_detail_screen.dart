@@ -3445,6 +3445,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       episodePosterMode: svc.read(SettingsService.episodePosterMode),
       episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
       widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
+      fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
       tallPosterScale: _tvDetailTallPosterScale,
     );
   }
@@ -3471,6 +3472,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       availableWidth: availableWidth,
       density: svc.read(SettingsService.libraryDensity),
       episodePosterMode: svc.read(SettingsService.episodePosterMode),
+      fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
       scale: scale,
       tallPosterScale: _tvDetailTallPosterScale,
       widePosterScale: 1.0,

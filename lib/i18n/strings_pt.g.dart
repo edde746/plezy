@@ -254,6 +254,8 @@ class _TranslationsSettingsPt extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Mostrar temporada e episódio nos cartões de episódio';
 	@override String get showSeasonPostersOnTabs => 'Mostrar Pôsteres de Temporada nas Abas';
 	@override String get showSeasonPostersOnTabsDescription => 'Mostrar o pôster de cada temporada acima da aba';
+	@override String get tvFullCardLayout => 'Cartões TV completos';
+	@override String get tvFullCardLayoutDescription => 'Usar cartões de TV só com imagem e nomes dos atores sobrepostos';
 	@override String get hideSpoilers => 'Ocultar Spoilers de Episódios Não Assistidos';
 	@override String get hideSpoilersDescription => 'Desfocar miniaturas e descrições de episódios não vistos';
 	@override String get playerBackend => 'Backend do Player';
@@ -1922,6 +1924,8 @@ extension on TranslationsPt {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Mostrar temporada e episódio nos cartões de episódio',
 			'settings.showSeasonPostersOnTabs' => 'Mostrar Pôsteres de Temporada nas Abas',
 			'settings.showSeasonPostersOnTabsDescription' => 'Mostrar o pôster de cada temporada acima da aba',
+			'settings.tvFullCardLayout' => 'Cartões TV completos',
+			'settings.tvFullCardLayoutDescription' => 'Usar cartões de TV só com imagem e nomes dos atores sobrepostos',
 			'settings.hideSpoilers' => 'Ocultar Spoilers de Episódios Não Assistidos',
 			'settings.hideSpoilersDescription' => 'Desfocar miniaturas e descrições de episódios não vistos',
 			'settings.playerBackend' => 'Backend do Player',
@@ -2316,10 +2320,10 @@ extension on TranslationsPt {
 			'profiles.active' => 'Ativo',
 			'profiles.manage' => 'Gerenciar',
 			'profiles.delete' => 'Excluir',
-			'profiles.signOut' => 'Sair',
-			'profiles.signOutPlexTitle' => 'Sair do Plex?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'Sair',
+			'profiles.signOutPlexTitle' => 'Sair do Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remover ${displayName} e todos os usuários Plex Home? Você pode entrar novamente quando quiser.',
 			'profiles.signedOutPlex' => 'Saiu do Plex.',
 			'profiles.signOutFailed' => 'Falha ao sair.',
@@ -2830,10 +2834,10 @@ extension on TranslationsPt {
 			'metadataEdit.originalTitle' => 'Título Original',
 			'metadataEdit.releaseDate' => 'Data de Lançamento',
 			'metadataEdit.contentRating' => 'Classificação Indicativa',
-			'metadataEdit.studio' => 'Estúdio',
-			'metadataEdit.tagline' => 'Tagline',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'Estúdio',
+			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Sinopse',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Plano de Fundo',

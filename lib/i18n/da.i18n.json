@@ -126,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "Vis sæson- og episodenummer på episodekort",
     "showSeasonPostersOnTabs": "Vis sæsonplakater på faner",
     "showSeasonPostersOnTabsDescription": "Vis hver sæsons plakat over dens fane",
+    "tvFullCardLayout": "Fuldflade TV-kort",
+    "tvFullCardLayoutDescription": "Brug TV-kort kun med billeder og skuespillernavne ovenpå",
     "hideSpoilers": "Skjul spoilere for usete episoder",
     "hideSpoilersDescription": "Slør miniaturebilleder og beskrivelser for usete episoder",
     "playerBackend": "Afspillerbackend",

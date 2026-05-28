@@ -126,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "在剧集卡片上显示季和集编号",
     "showSeasonPostersOnTabs": "在选项卡上显示季海报",
     "showSeasonPostersOnTabsDescription": "在每季标签上方显示该季海报",
+    "tvFullCardLayout": "完整 TV 卡片",
+    "tvFullCardLayoutDescription": "使用仅显示图片的 TV 卡片，并叠加演员姓名",
     "hideSpoilers": "隐藏未看剧集的剧透内容",
     "hideSpoilersDescription": "模糊未观看剧集的缩略图和描述",
     "playerBackend": "播放器引擎",

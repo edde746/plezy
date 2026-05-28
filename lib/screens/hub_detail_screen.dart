@@ -510,12 +510,14 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                         SettingsService.viewMode,
                         SettingsService.episodePosterMode,
                         SettingsService.libraryDensity,
+                        SettingsService.tvFullCardLayout,
                       ],
                       builder: (context) {
                         final svc = SettingsService.instanceOrNull!;
                         final isListMode = svc.read(SettingsService.viewMode) == ViewMode.list;
                         final episodePosterMode = svc.read(SettingsService.episodePosterMode);
                         final libraryDensity = svc.read(SettingsService.libraryDensity);
+                        final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
 
                         // Determine hub content type for layout decisions
                         final hasEpisodes = _filteredItems.any((item) => item.usesWideAspectRatio(episodePosterMode));
@@ -570,9 +572,14 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                                 libraryDensity,
                                 16,
                               );
+                              final gridSpacing = MediaGridDelegate.spacingFor(
+                                context: context,
+                                fullBleedImage: fullCardLayout,
+                              );
                               final columnCount = GridSizeCalculator.getColumnCount(
                                 constraints.crossAxisExtent,
                                 useWideLayout ? maxExtent * 1.8 : maxExtent,
+                                crossAxisSpacing: gridSpacing,
                               );
 
                               return SliverGrid(
@@ -582,6 +589,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                                   usePaddingAware: true,
                                   horizontalPadding: 16,
                                   useWideAspectRatio: useWideLayout,
+                                  fullBleedImage: fullCardLayout,
                                 ),
                                 delegate: SliverChildBuilderDelegate((context, index) {
                                   final item = _filteredItems[index];
@@ -602,6 +610,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                                     onBack: handleBackFromContent,
                                     onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
                                     mixedHubContext: isMixedHub,
+                                    fullBleedImage: fullCardLayout,
                                   );
                                 }, childCount: _filteredItems.length),
                               );

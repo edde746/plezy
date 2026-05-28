@@ -254,6 +254,8 @@ class _TranslationsSettingsPl extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Pokazuj numer sezonu i odcinka na kartach odcinków';
 	@override String get showSeasonPostersOnTabs => 'Pokaż plakaty sezonów na zakładkach';
 	@override String get showSeasonPostersOnTabsDescription => 'Pokazuj plakat każdego sezonu nad jego kartą';
+	@override String get tvFullCardLayout => 'Pełne karty TV';
+	@override String get tvFullCardLayoutDescription => 'Używaj kart TV tylko z obrazem i nałożonymi nazwiskami aktorów';
 	@override String get hideSpoilers => 'Ukryj spoilery nieobejrzanych odcinków';
 	@override String get hideSpoilersDescription => 'Rozmywaj miniatury i opisy nieobejrzanych odcinków';
 	@override String get playerBackend => 'Backend odtwarzacza';
@@ -1922,6 +1924,8 @@ extension on TranslationsPl {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Pokazuj numer sezonu i odcinka na kartach odcinków',
 			'settings.showSeasonPostersOnTabs' => 'Pokaż plakaty sezonów na zakładkach',
 			'settings.showSeasonPostersOnTabsDescription' => 'Pokazuj plakat każdego sezonu nad jego kartą',
+			'settings.tvFullCardLayout' => 'Pełne karty TV',
+			'settings.tvFullCardLayoutDescription' => 'Używaj kart TV tylko z obrazem i nałożonymi nazwiskami aktorów',
 			'settings.hideSpoilers' => 'Ukryj spoilery nieobejrzanych odcinków',
 			'settings.hideSpoilersDescription' => 'Rozmywaj miniatury i opisy nieobejrzanych odcinków',
 			'settings.playerBackend' => 'Backend odtwarzacza',
@@ -2316,10 +2320,10 @@ extension on TranslationsPl {
 			'profiles.active' => 'Aktywny',
 			'profiles.manage' => 'Zarządzaj',
 			'profiles.delete' => 'Usuń',
-			'profiles.signOut' => 'Wyloguj się',
-			'profiles.signOutPlexTitle' => 'Wylogować się z Plex?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'Wyloguj się',
+			'profiles.signOutPlexTitle' => 'Wylogować się z Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Usunąć ${displayName} i wszystkich użytkowników Plex Home? Możesz zalogować się ponownie w każdej chwili.',
 			'profiles.signedOutPlex' => 'Wylogowano z Plex.',
 			'profiles.signOutFailed' => 'Wylogowanie nie powiodło się.',
@@ -2830,10 +2834,10 @@ extension on TranslationsPl {
 			'metadataEdit.originalTitle' => 'Tytuł oryginalny',
 			'metadataEdit.releaseDate' => 'Data premiery',
 			'metadataEdit.contentRating' => 'Klasyfikacja wiekowa',
-			'metadataEdit.studio' => 'Studio',
-			'metadataEdit.tagline' => 'Tagline',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'Studio',
+			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Opis',
 			'metadataEdit.poster' => 'Plakat',
 			'metadataEdit.background' => 'Tło',

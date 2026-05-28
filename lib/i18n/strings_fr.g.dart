@@ -254,6 +254,8 @@ class _TranslationsSettingsFr extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Afficher la saison et l\'épisode sur les cartes d\'épisode';
 	@override String get showSeasonPostersOnTabs => 'Afficher les posters de saison sur les onglets';
 	@override String get showSeasonPostersOnTabsDescription => 'Afficher l\'affiche de chaque saison au-dessus de son onglet';
+	@override String get tvFullCardLayout => 'Cartes TV pleines';
+	@override String get tvFullCardLayoutDescription => 'Utiliser des cartes TV avec image seule et noms des acteurs superposés';
 	@override String get hideSpoilers => 'Masquer les spoilers des épisodes non vus';
 	@override String get hideSpoilersDescription => 'Flouter les miniatures et descriptions des épisodes non vus';
 	@override String get playerBackend => 'Moteur de lecture';
@@ -1922,6 +1924,8 @@ extension on TranslationsFr {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Afficher la saison et l\'épisode sur les cartes d\'épisode',
 			'settings.showSeasonPostersOnTabs' => 'Afficher les posters de saison sur les onglets',
 			'settings.showSeasonPostersOnTabsDescription' => 'Afficher l\'affiche de chaque saison au-dessus de son onglet',
+			'settings.tvFullCardLayout' => 'Cartes TV pleines',
+			'settings.tvFullCardLayoutDescription' => 'Utiliser des cartes TV avec image seule et noms des acteurs superposés',
 			'settings.hideSpoilers' => 'Masquer les spoilers des épisodes non vus',
 			'settings.hideSpoilersDescription' => 'Flouter les miniatures et descriptions des épisodes non vus',
 			'settings.playerBackend' => 'Moteur de lecture',
@@ -2316,10 +2320,10 @@ extension on TranslationsFr {
 			'profiles.active' => 'Actif',
 			'profiles.manage' => 'Gérer',
 			'profiles.delete' => 'Supprimer',
-			'profiles.signOut' => 'Se déconnecter',
-			'profiles.signOutPlexTitle' => 'Se déconnecter de Plex ?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'Se déconnecter',
+			'profiles.signOutPlexTitle' => 'Se déconnecter de Plex ?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Supprimer ${displayName} et tous les utilisateurs Plex Home ? Reconnexion possible à tout moment.',
 			'profiles.signedOutPlex' => 'Déconnecté de Plex.',
 			'profiles.signOutFailed' => 'Échec de la déconnexion.',
@@ -2830,10 +2834,10 @@ extension on TranslationsFr {
 			'metadataEdit.originalTitle' => 'Titre original',
 			'metadataEdit.releaseDate' => 'Date de sortie',
 			'metadataEdit.contentRating' => 'Classification',
-			'metadataEdit.studio' => 'Studio',
-			'metadataEdit.tagline' => 'Slogan',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'Studio',
+			'metadataEdit.tagline' => 'Slogan',
 			'metadataEdit.summary' => 'Résumé',
 			'metadataEdit.poster' => 'Affiche',
 			'metadataEdit.background' => 'Arrière-plan',

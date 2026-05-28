@@ -254,6 +254,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => '에피소드 카드에 시즌 및 에피소드 번호 표시';
 	@override String get showSeasonPostersOnTabs => '탭에 시즌 포스터 표시';
 	@override String get showSeasonPostersOnTabsDescription => '각 시즌 포스터를 탭 위에 표시';
+	@override String get tvFullCardLayout => '전체 TV 카드';
+	@override String get tvFullCardLayoutDescription => 'TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시';
 	@override String get hideSpoilers => '미시청 에피소드 스포일러 숨기기';
 	@override String get hideSpoilersDescription => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리';
 	@override String get playerBackend => '플레이어 백엔드';
@@ -1922,6 +1924,8 @@ extension on TranslationsKo {
 			'settings.showEpisodeNumberOnCardsDescription' => '에피소드 카드에 시즌 및 에피소드 번호 표시',
 			'settings.showSeasonPostersOnTabs' => '탭에 시즌 포스터 표시',
 			'settings.showSeasonPostersOnTabsDescription' => '각 시즌 포스터를 탭 위에 표시',
+			'settings.tvFullCardLayout' => '전체 TV 카드',
+			'settings.tvFullCardLayoutDescription' => 'TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시',
 			'settings.hideSpoilers' => '미시청 에피소드 스포일러 숨기기',
 			'settings.hideSpoilersDescription' => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리',
 			'settings.playerBackend' => '플레이어 백엔드',
@@ -2316,10 +2320,10 @@ extension on TranslationsKo {
 			'profiles.active' => '활성',
 			'profiles.manage' => '관리',
 			'profiles.delete' => '삭제',
-			'profiles.signOut' => '로그아웃',
-			'profiles.signOutPlexTitle' => 'Plex에서 로그아웃하시겠습니까?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => '로그아웃',
+			'profiles.signOutPlexTitle' => 'Plex에서 로그아웃하시겠습니까?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} 및 모든 Plex Home 사용자를 제거할까요? 언제든 다시 로그인할 수 있습니다.',
 			'profiles.signedOutPlex' => 'Plex에서 로그아웃되었습니다.',
 			'profiles.signOutFailed' => '로그아웃에 실패했습니다.',
@@ -2830,10 +2834,10 @@ extension on TranslationsKo {
 			'metadataEdit.originalTitle' => '원제',
 			'metadataEdit.releaseDate' => '출시일',
 			'metadataEdit.contentRating' => '콘텐츠 등급',
-			'metadataEdit.studio' => '스튜디오',
-			'metadataEdit.tagline' => '태그라인',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => '스튜디오',
+			'metadataEdit.tagline' => '태그라인',
 			'metadataEdit.summary' => '줄거리',
 			'metadataEdit.poster' => '포스터',
 			'metadataEdit.background' => '배경',

@@ -254,6 +254,8 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Показвай сезон и номер на епизод върху картите на епизодите';
 	@override String get showSeasonPostersOnTabs => 'Показвай постери на сезоните в табовете';
 	@override String get showSeasonPostersOnTabsDescription => 'Показвай постера на всеки сезон над неговия таб';
+	@override String get tvFullCardLayout => 'Пълни TV карти';
+	@override String get tvFullCardLayoutDescription => 'Използвай TV карти само с изображения, с насложени имена на актьорите';
 	@override String get hideSpoilers => 'Скривай спойлери за негледани епизоди';
 	@override String get hideSpoilersDescription => 'Замазвай миниатюри и описания за негледани епизоди';
 	@override String get playerBackend => 'Енджин на плеъра';
@@ -1922,6 +1924,8 @@ extension on TranslationsBg {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Показвай сезон и номер на епизод върху картите на епизодите',
 			'settings.showSeasonPostersOnTabs' => 'Показвай постери на сезоните в табовете',
 			'settings.showSeasonPostersOnTabsDescription' => 'Показвай постера на всеки сезон над неговия таб',
+			'settings.tvFullCardLayout' => 'Пълни TV карти',
+			'settings.tvFullCardLayoutDescription' => 'Използвай TV карти само с изображения, с насложени имена на актьорите',
 			'settings.hideSpoilers' => 'Скривай спойлери за негледани епизоди',
 			'settings.hideSpoilersDescription' => 'Замазвай миниатюри и описания за негледани епизоди',
 			'settings.playerBackend' => 'Енджин на плеъра',
@@ -2316,10 +2320,10 @@ extension on TranslationsBg {
 			'profiles.active' => 'Активен',
 			'profiles.manage' => 'Управление',
 			'profiles.delete' => 'Изтрий',
-			'profiles.signOut' => 'Изход',
-			'profiles.signOutPlexTitle' => 'Изход от Plex?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'Изход',
+			'profiles.signOutPlexTitle' => 'Изход от Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Премахване на ${displayName} и всички Plex Home потребители? Можете да влезете отново по всяко време.',
 			'profiles.signedOutPlex' => 'Излязохте от Plex.',
 			'profiles.signOutFailed' => 'Изходът е неуспешен.',
@@ -2830,10 +2834,10 @@ extension on TranslationsBg {
 			'metadataEdit.originalTitle' => 'Оригинално заглавие',
 			'metadataEdit.releaseDate' => 'Дата на излизане',
 			'metadataEdit.contentRating' => 'Възрастов рейтинг',
-			'metadataEdit.studio' => 'Студио',
-			'metadataEdit.tagline' => 'Слоган',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'Студио',
+			'metadataEdit.tagline' => 'Слоган',
 			'metadataEdit.summary' => 'Резюме',
 			'metadataEdit.poster' => 'Постер',
 			'metadataEdit.background' => 'Фон',

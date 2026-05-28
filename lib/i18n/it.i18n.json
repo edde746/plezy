@@ -126,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "Mostra stagione ed episodio sulle schede episodio",
     "showSeasonPostersOnTabs": "Mostra poster delle stagioni sulle schede",
     "showSeasonPostersOnTabsDescription": "Mostra il poster di ogni stagione sopra la sua scheda",
+    "tvFullCardLayout": "Schede TV piene",
+    "tvFullCardLayoutDescription": "Usa schede TV solo immagine con i nomi degli attori sovrapposti",
     "hideSpoilers": "Nascondi spoiler per episodi non visti",
     "hideSpoilersDescription": "Sfoca miniature e descrizioni degli episodi non visti",
     "playerBackend": "Motore di riproduzione",

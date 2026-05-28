@@ -254,6 +254,8 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'エピソードカードにシーズン番号とエピソード番号を表示します';
 	@override String get showSeasonPostersOnTabs => 'タブにシーズンポスターを表示';
 	@override String get showSeasonPostersOnTabsDescription => '各シーズンのポスターをタブの上に表示します';
+	@override String get tvFullCardLayout => 'フルTVカード';
+	@override String get tvFullCardLayoutDescription => 'TVカードを画像のみで表示し、俳優名を重ねて表示します';
 	@override String get hideSpoilers => '未視聴エピソードのネタバレを非表示';
 	@override String get hideSpoilersDescription => '未視聴エピソードのサムネイルと説明をぼかします';
 	@override String get playerBackend => 'プレーヤーバックエンド';
@@ -1922,6 +1924,8 @@ extension on TranslationsJa {
 			'settings.showEpisodeNumberOnCardsDescription' => 'エピソードカードにシーズン番号とエピソード番号を表示します',
 			'settings.showSeasonPostersOnTabs' => 'タブにシーズンポスターを表示',
 			'settings.showSeasonPostersOnTabsDescription' => '各シーズンのポスターをタブの上に表示します',
+			'settings.tvFullCardLayout' => 'フルTVカード',
+			'settings.tvFullCardLayoutDescription' => 'TVカードを画像のみで表示し、俳優名を重ねて表示します',
 			'settings.hideSpoilers' => '未視聴エピソードのネタバレを非表示',
 			'settings.hideSpoilersDescription' => '未視聴エピソードのサムネイルと説明をぼかします',
 			'settings.playerBackend' => 'プレーヤーバックエンド',
@@ -2316,10 +2320,10 @@ extension on TranslationsJa {
 			'profiles.active' => 'アクティブ',
 			'profiles.manage' => '管理',
 			'profiles.delete' => '削除',
-			'profiles.signOut' => 'サインアウト',
-			'profiles.signOutPlexTitle' => 'Plex からサインアウトしますか？',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'サインアウト',
+			'profiles.signOutPlexTitle' => 'Plex からサインアウトしますか？',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName}とすべてのPlex Homeユーザーを削除しますか？いつでも再サインインできます。',
 			'profiles.signedOutPlex' => 'Plex からサインアウトしました。',
 			'profiles.signOutFailed' => 'サインアウトに失敗しました。',
@@ -2830,10 +2834,10 @@ extension on TranslationsJa {
 			'metadataEdit.originalTitle' => '原題',
 			'metadataEdit.releaseDate' => '公開日',
 			'metadataEdit.contentRating' => 'コンテンツレーティング',
-			'metadataEdit.studio' => 'スタジオ',
-			'metadataEdit.tagline' => 'タグライン',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'スタジオ',
+			'metadataEdit.tagline' => 'タグライン',
 			'metadataEdit.summary' => 'あらすじ',
 			'metadataEdit.poster' => 'ポスター',
 			'metadataEdit.background' => '背景',

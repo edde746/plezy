@@ -126,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "Visa säsongs- och avsnittsnummer på avsnittskort",
     "showSeasonPostersOnTabs": "Visa säsongsaffischer på flikar",
     "showSeasonPostersOnTabsDescription": "Visa varje säsongs affisch ovanför fliken",
+    "tvFullCardLayout": "Heltäckande TV-kort",
+    "tvFullCardLayoutDescription": "Använd TV-kort med enbart bild och skådespelarnamn ovanpå",
     "hideSpoilers": "Dölj spoilers för osedda avsnitt",
     "hideSpoilersDescription": "Sudda miniatyrbilder och beskrivningar för osedda avsnitt",
     "playerBackend": "Spelarmotor",

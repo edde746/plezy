@@ -254,6 +254,8 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => '在剧集卡片上显示季和集编号';
 	@override String get showSeasonPostersOnTabs => '在选项卡上显示季海报';
 	@override String get showSeasonPostersOnTabsDescription => '在每季标签上方显示该季海报';
+	@override String get tvFullCardLayout => '完整 TV 卡片';
+	@override String get tvFullCardLayoutDescription => '使用仅显示图片的 TV 卡片，并叠加演员姓名';
 	@override String get hideSpoilers => '隐藏未看剧集的剧透内容';
 	@override String get hideSpoilersDescription => '模糊未观看剧集的缩略图和描述';
 	@override String get playerBackend => '播放器引擎';
@@ -1922,6 +1924,8 @@ extension on TranslationsZh {
 			'settings.showEpisodeNumberOnCardsDescription' => '在剧集卡片上显示季和集编号',
 			'settings.showSeasonPostersOnTabs' => '在选项卡上显示季海报',
 			'settings.showSeasonPostersOnTabsDescription' => '在每季标签上方显示该季海报',
+			'settings.tvFullCardLayout' => '完整 TV 卡片',
+			'settings.tvFullCardLayoutDescription' => '使用仅显示图片的 TV 卡片，并叠加演员姓名',
 			'settings.hideSpoilers' => '隐藏未看剧集的剧透内容',
 			'settings.hideSpoilersDescription' => '模糊未观看剧集的缩略图和描述',
 			'settings.playerBackend' => '播放器引擎',
@@ -2316,10 +2320,10 @@ extension on TranslationsZh {
 			'profiles.active' => '活跃',
 			'profiles.manage' => '管理',
 			'profiles.delete' => '删除',
-			'profiles.signOut' => '退出登录',
-			'profiles.signOutPlexTitle' => '退出 Plex 登录？',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => '退出登录',
+			'profiles.signOutPlexTitle' => '退出 Plex 登录？',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '要移除 ${displayName} 和所有 Plex Home 用户吗？可随时重新登录。',
 			'profiles.signedOutPlex' => '已退出 Plex 登录。',
 			'profiles.signOutFailed' => '退出登录失败。',
@@ -2830,10 +2834,10 @@ extension on TranslationsZh {
 			'metadataEdit.originalTitle' => '原始标题',
 			'metadataEdit.releaseDate' => '上映日期',
 			'metadataEdit.contentRating' => '内容分级',
-			'metadataEdit.studio' => '制片厂',
-			'metadataEdit.tagline' => '标语',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => '制片厂',
+			'metadataEdit.tagline' => '标语',
 			'metadataEdit.summary' => '简介',
 			'metadataEdit.poster' => '海报',
 			'metadataEdit.background' => '背景',

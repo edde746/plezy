@@ -20,6 +20,7 @@ import '../utils/media_navigation_helper.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/layout_constants.dart';
 import 'app_icon.dart';
+import 'clickable_cursor.dart';
 import 'focus_builders.dart';
 import 'horizontal_scroll_with_arrows.dart';
 import 'media_card.dart';
@@ -57,6 +58,7 @@ class TvBrowseRailLayoutMetrics {
 class TvBrowseRailLayout {
   static const double compactTallPosterScale = 0.80;
   static const double compactEpisodeThumbnailScale = compactTallPosterScale;
+  static const double fullCardFocusScale = FocusTheme.fullCardFocusScale;
 
   static double scaleForSize(Size size) => TvLayoutConstants.scaleForSize(size);
 
@@ -69,6 +71,21 @@ class TvBrowseRailLayout {
   static double railInteractionExpansionForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
   static double itemGapForScale(double _) => 0;
+
+  static double fullCardItemGapForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
+
+  static double viewAllItemWidthForScale(double scale) => (104 * scale).clamp(88, 132).toDouble();
+
+  static double viewAllPillHeightForScale(double scale) => (44 * scale).clamp(36, 54).toDouble();
+
+  static double fullCardFocusPaintOverflowForScale(double scale) {
+    return (FocusTheme.focusGlowOuterBlurRadius +
+            FocusTheme.focusGlowSpreadRadius +
+            FocusTheme.focusBorderWidth +
+            (10 * scale))
+        .clamp(42, 64)
+        .toDouble();
+  }
 
   static double hubStripHeightForScale(double scale) => 36 * scale;
 
@@ -111,12 +128,13 @@ class TvBrowseRailLayout {
     required int density,
     required EpisodePosterMode episodePosterMode,
     required double scale,
+    bool fullCardLayout = false,
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
   }) {
     final focusExtra = FocusTheme.focusBorderWidth * 2 * scale;
     final railEdgePadding = focusExtra + (12 * scale);
-    final itemGap = itemGapForScale(scale);
+    final itemGap = fullCardLayout ? fullCardItemGapForScale(scale) : itemGapForScale(scale);
     final isPersonHub = TvBrowseRailLayout.isPersonHub(hub);
     final hasWide = !isPersonHub && hub.items.any((item) => item.usesWideAspectRatio(episodePosterMode));
     final hasTall = !isPersonHub && hub.items.any((item) => !item.usesWideAspectRatio(episodePosterMode));
@@ -131,9 +149,10 @@ class TvBrowseRailLayout {
       itemGap: itemGap,
     );
     final cardWidth = baseCardWidth * (useWideLayout ? widePosterScale : tallPosterScale);
-    final posterWidth = cardWidth - (6 * scale);
+    final posterWidth = fullCardLayout ? cardWidth : cardWidth - (6 * scale);
     final posterHeight = isPersonHub ? posterWidth : (useWideLayout ? posterWidth * 9 / 16 : posterWidth * 1.5);
-    final containerHeight = (posterHeight + ((isPersonHub ? 58 : 42) * scale)).ceilToDouble();
+    final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 58 : 42) * scale);
+    final containerHeight = (posterHeight + labelHeight).ceilToDouble();
     final height = containerHeight + focusExtra + (14 * scale);
 
     return TvBrowseRailLayoutMetrics(
@@ -159,6 +178,7 @@ class TvBrowseRailLayout {
     EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub,
     double Function(MediaHub hub)? widePosterScaleForHub,
     required double scale,
+    bool fullCardLayout = false,
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
   }) {
@@ -170,6 +190,7 @@ class TvBrowseRailLayout {
         density: density,
         episodePosterMode: episodePosterModeForHub?.call(hub) ?? episodePosterMode,
         scale: scale,
+        fullCardLayout: fullCardLayout,
         tallPosterScale: tallPosterScale,
         widePosterScale: widePosterScaleForHub?.call(hub) ?? widePosterScale,
       );
@@ -185,7 +206,7 @@ class TvBrowseRailLayout {
     required double scale,
   }) {
     final itemContentWidth = hub.items.length * (metrics.cardWidth + metrics.itemGap);
-    final moreContentWidth = hub.more ? (132 * scale) + metrics.itemGap : 0.0;
+    final moreContentWidth = hub.more ? viewAllItemWidthForScale(scale) + metrics.itemGap : 0.0;
     final contentWidth = (metrics.railEdgePadding * 2) + itemContentWidth + moreContentWidth;
     return (contentWidth - viewportWidth).clamp(0.0, double.infinity).toDouble();
   }
@@ -196,7 +217,7 @@ class TvBrowseRailLayout {
     required TvBrowseRailLayoutMetrics metrics,
     required double scale,
   }) {
-    if (index == hub.items.length && hub.more) return (132 * scale) + metrics.itemGap;
+    if (index == hub.items.length && hub.more) return viewAllItemWidthForScale(scale) + metrics.itemGap;
     return metrics.cardWidth + metrics.itemGap;
   }
 
@@ -227,6 +248,7 @@ class TvBrowseRailLayout {
     required EpisodePosterMode episodePosterMode,
     EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub,
     double Function(MediaHub hub)? widePosterScaleForHub,
+    bool fullCardLayout = false,
     double tallPosterScale = 1.0,
     double widePosterScale = 1.0,
   }) {
@@ -244,6 +266,7 @@ class TvBrowseRailLayout {
       episodePosterModeForHub: episodePosterModeForHub,
       widePosterScaleForHub: widePosterScaleForHub,
       scale: scale,
+      fullCardLayout: fullCardLayout,
       tallPosterScale: tallPosterScale,
       widePosterScale: widePosterScale,
     );
@@ -784,7 +807,11 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   Widget build(BuildContext context) {
     if (_activeHub == null) return const SizedBox.shrink();
     return SettingsBuilder(
-      prefs: const [SettingsService.libraryDensity, SettingsService.episodePosterMode],
+      prefs: const [
+        SettingsService.libraryDensity,
+        SettingsService.episodePosterMode,
+        SettingsService.tvFullCardLayout,
+      ],
       builder: (context) => LayoutBuilder(
         builder: (context, constraints) {
           final svc = SettingsService.instanceOrNull!;
@@ -800,6 +827,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
           final railViewportWidth = (availableWidth + interactionExpansion).clamp(1.0, double.infinity).toDouble();
           final density = svc.read(SettingsService.libraryDensity);
           final episodePosterMode = svc.read(SettingsService.episodePosterMode);
+          final fullCardLayout = svc.read(SettingsService.tvFullCardLayout);
           final modes = [for (final hub in widget.hubs) widget.episodePosterModeForHub?.call(hub) ?? episodePosterMode];
           final wideScales = [
             for (final hub in widget.hubs) widget.widePosterScaleForHub?.call(hub) ?? widget.widePosterScale,
@@ -812,6 +840,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                 density: density,
                 episodePosterMode: modes[i],
                 scale: scale,
+                fullCardLayout: fullCardLayout,
                 tallPosterScale: widget.tallPosterScale,
                 widePosterScale: wideScales[i],
               ),
@@ -845,7 +874,9 @@ class TvBrowseRailState extends State<TvBrowseRail> {
               TvBrowseRailLayout.railTopPaddingForScale(scale) +
               viewportHeight +
               TvBrowseRailLayout.railBottomPaddingForScale(scale);
-
+          final paintOverflow = fullCardLayout && hasFocus
+              ? TvBrowseRailLayout.fullCardFocusPaintOverflowForScale(scale)
+              : 0.0;
           return Focus(
             focusNode: _focusNode,
             onKeyEvent: _handleKeyEvent,
@@ -874,7 +905,12 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                         duration: FocusTheme.getAnimationDuration(context),
                         curve: Curves.easeOutCubic,
                         child: ClipRect(
-                          clipper: _RailClipper(leftOverflow: horizontalInset, rightOverflow: 0, verticalOverflow: 0),
+                          clipper: _RailClipper(
+                            leftOverflow: horizontalInset,
+                            rightOverflow: paintOverflow,
+                            topOverflow: 0,
+                            bottomOverflow: paintOverflow,
+                          ),
                           child: SizedBox(
                             height: viewportHeight,
                             child: _buildHubSectionList(
@@ -883,6 +919,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                               metricsByHub: metricsByHub,
                               sectionHeights: sectionHeights,
                               scale: scale,
+                              fullCardLayout: fullCardLayout,
                               leftOverflow: horizontalInset,
                               interactionExpansion: interactionExpansion,
                               railViewportWidth: railViewportWidth,
@@ -908,6 +945,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     required List<TvBrowseRailLayoutMetrics> metricsByHub,
     required List<double> sectionHeights,
     required double scale,
+    required bool fullCardLayout,
     required double leftOverflow,
     required double interactionExpansion,
     required double railViewportWidth,
@@ -946,6 +984,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                   episodePosterMode: modes[hubIndex],
                   metrics: metrics,
                   scale: scale,
+                  fullCardLayout: fullCardLayout,
                   leftOverflow: leftOverflow,
                   interactionExpansion: interactionExpansion,
                   railViewportWidth: railViewportWidth,
@@ -1010,6 +1049,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     required EpisodePosterMode episodePosterMode,
     required TvBrowseRailLayoutMetrics metrics,
     required double scale,
+    required bool fullCardLayout,
     required double leftOverflow,
     required double interactionExpansion,
     required double railViewportWidth,
@@ -1019,6 +1059,9 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     final inactiveIndex = HubFocusMemory.getForHubOnly(hub.id, totalCount);
     final focusedIndex = isActiveHub ? _itemIndex : inactiveIndex;
     final scrollController = _scrollControllerForHub(hub, metrics, railViewportWidth, scale, focusedIndex);
+    final paintOverflow = fullCardLayout && hasFocus && isActiveHub
+        ? TvBrowseRailLayout.fullCardFocusPaintOverflowForScale(scale)
+        : 0.0;
     _metricsByHub[hub.id] = metrics;
     _scaleByHub[hub.id] = scale;
 
@@ -1030,8 +1073,8 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         child: ClipRect(
           clipper: _RailClipper(
             leftOverflow: leftOverflow,
-            rightOverflow: metrics.railEdgePadding + metrics.cardWidth + metrics.itemGap,
-            verticalOverflow: metrics.focusExtra,
+            rightOverflow: metrics.railEdgePadding + metrics.cardWidth + metrics.itemGap + paintOverflow,
+            verticalOverflow: fullCardLayout ? math.max(metrics.focusExtra, paintOverflow) : metrics.focusExtra,
           ),
           child: HorizontalScrollWithArrows(
             controller: scrollController,
@@ -1048,79 +1091,69 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                 if (itemIndex == hub.items.length) {
                   return Padding(
                     padding: EdgeInsets.only(right: metrics.itemGap),
-                    child: FocusBuilders.buildLockedFocusWrapper(
-                      context: context,
-                      isFocused: isFocused,
-                      onTap: () {
-                        _selectHubItem(hub, hubIndex, itemIndex);
-                        _navigateToHubDetail(hub);
-                      },
-                      child: SizedBox(
-                        width: 132 * scale,
-                        height: metrics.containerHeight - metrics.itemGap,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            AppIcon(
-                              Symbols.arrow_forward_rounded,
-                              fill: 1,
-                              size: 42 * scale,
-                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72),
-                            ),
-                            SizedBox(height: 6 * scale),
-                            Text(
-                              t.common.viewAll,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.72),
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: _buildViewAllButton(
+                        context,
+                        isFocused: isFocused,
+                        scale: scale,
+                        onTap: () {
+                          _selectHubItem(hub, hubIndex, itemIndex);
+                          _navigateToHubDetail(hub);
+                        },
                       ),
                     ),
                   );
                 }
 
                 final item = hub.items[itemIndex];
+                final focusableCard = FocusBuilders.buildLockedFocusWrapper(
+                  context: context,
+                  isFocused: isFocused,
+                  borderRadius: tokens(context).radiusSm,
+                  focusScale: fullCardLayout ? TvBrowseRailLayout.fullCardFocusScale : FocusTheme.focusScale,
+                  focusBorderStrokeAlign: fullCardLayout ? BorderSide.strokeAlignOutside : BorderSide.strokeAlignInside,
+                  useFocusGlow: fullCardLayout,
+                  useForegroundFocusDecoration: fullCardLayout,
+                  onTap: () {
+                    _selectHubItem(hub, hubIndex, itemIndex);
+                    unawaited(_activateCurrentItem());
+                  },
+                  onLongPress: metrics.isPersonHub
+                      ? null
+                      : () {
+                          _selectHubItem(hub, hubIndex, itemIndex);
+                          _cardKeyFor(hub, itemIndex).currentState?.showContextMenu();
+                        },
+                  child: metrics.isPersonHub
+                      ? _buildPersonCard(
+                          context,
+                          item,
+                          cardWidth: metrics.cardWidth,
+                          imageSize: metrics.posterHeight,
+                          scale: scale,
+                          fullCardLayout: fullCardLayout,
+                        )
+                      : MediaCard(
+                          key: _cardKeyFor(hub, itemIndex),
+                          item: item,
+                          width: metrics.cardWidth,
+                          height: metrics.posterHeight,
+                          onRefresh: widget.onRefresh,
+                          onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
+                          forceGridMode: true,
+                          fullBleedImage: fullCardLayout,
+                          isInContinueWatching: widget.isContinueWatchingHub?.call(hub) ?? false,
+                          mixedHubContext: metrics.isMixedHub,
+                          episodePosterModeOverride: episodePosterMode,
+                        ),
+                );
+
                 return Padding(
                   padding: EdgeInsets.only(right: metrics.itemGap),
                   child: MouseRegion(
                     onEnter: (_) => _setHoveredItem(hub, itemIndex),
-                    child: FocusBuilders.buildLockedFocusWrapper(
-                      context: context,
-                      isFocused: isFocused,
-                      onTap: () {
-                        _selectHubItem(hub, hubIndex, itemIndex);
-                        unawaited(_activateCurrentItem());
-                      },
-                      onLongPress: metrics.isPersonHub
-                          ? null
-                          : () {
-                              _selectHubItem(hub, hubIndex, itemIndex);
-                              _cardKeyFor(hub, itemIndex).currentState?.showContextMenu();
-                            },
-                      child: metrics.isPersonHub
-                          ? _buildPersonCard(
-                              context,
-                              item,
-                              cardWidth: metrics.cardWidth,
-                              imageSize: metrics.posterHeight,
-                              scale: scale,
-                            )
-                          : MediaCard(
-                              key: _cardKeyFor(hub, itemIndex),
-                              item: item,
-                              width: metrics.cardWidth,
-                              height: metrics.posterHeight,
-                              onRefresh: widget.onRefresh,
-                              onRemoveFromContinueWatching: widget.onRemoveFromContinueWatching,
-                              forceGridMode: true,
-                              isInContinueWatching: widget.isContinueWatchingHub?.call(hub) ?? false,
-                              mixedHubContext: metrics.isMixedHub,
-                              episodePosterModeOverride: episodePosterMode,
-                            ),
-                    ),
+                    child: Align(alignment: Alignment.topLeft, child: focusableCard),
                   ),
                 );
               },
@@ -1137,9 +1170,80 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     required double cardWidth,
     required double imageSize,
     required double scale,
+    required bool fullCardLayout,
   }) {
     final theme = Theme.of(context);
     final characterName = item.parentTitle;
+
+    if (fullCardLayout) {
+      return SizedBox(
+        width: cardWidth,
+        height: imageSize,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              OptimizedMediaImage(
+                client: context.tryGetMediaClientWithFallback(item.serverId),
+                imagePath: item.thumbPath,
+                width: cardWidth,
+                height: imageSize,
+                fit: BoxFit.cover,
+                imageType: ImageType.avatar,
+                fallbackIcon: Symbols.person_rounded,
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [Colors.transparent, Colors.black.withValues(alpha: 0.78)],
+                    stops: const [0.45, 1.0],
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 10 * scale,
+                right: 10 * scale,
+                bottom: 9 * scale,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.displayTitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13 * scale,
+                        height: 1.1,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    if (characterName != null && characterName.isNotEmpty) ...[
+                      SizedBox(height: 2 * scale),
+                      Text(
+                        characterName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.82),
+                          fontSize: 11 * scale,
+                          height: 1.1,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return SizedBox(
       width: cardWidth,
@@ -1191,6 +1295,78 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       ),
     );
   }
+
+  Widget _buildViewAllButton(
+    BuildContext context, {
+    required bool isFocused,
+    required double scale,
+    required VoidCallback onTap,
+  }) {
+    final theme = Theme.of(context);
+    final duration = FocusTheme.getAnimationDuration(context);
+    final width = TvBrowseRailLayout.viewAllItemWidthForScale(scale);
+    final height = TvBrowseRailLayout.viewAllPillHeightForScale(scale);
+    final foreground = isFocused ? theme.colorScheme.primary : theme.colorScheme.onSurface.withValues(alpha: 0.78);
+    final background = isFocused
+        ? theme.colorScheme.primary.withValues(alpha: 0.20)
+        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.42);
+
+    return ClickableCursor(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedScale(
+          scale: isFocused ? 1.04 : 1.0,
+          duration: duration,
+          curve: Curves.easeOutCubic,
+          child: AnimatedContainer(
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            width: width,
+            height: height,
+            padding: EdgeInsets.symmetric(horizontal: (12 * scale).clamp(10, 16).toDouble()),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(height / 2),
+              boxShadow: isFocused
+                  ? [
+                      BoxShadow(
+                        color: theme.colorScheme.primary.withValues(alpha: 0.20),
+                        blurRadius: 18,
+                        spreadRadius: 1,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: Text(
+                    t.common.viewAll,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: foreground,
+                      fontSize: (13 * scale).clamp(12, 16).toDouble(),
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                ),
+                SizedBox(width: (5 * scale).clamp(4, 7).toDouble()),
+                AppIcon(
+                  Symbols.arrow_forward_rounded,
+                  fill: 1,
+                  size: (18 * scale).clamp(16, 22).toDouble(),
+                  color: foreground,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _RailBackgroundBleed extends StatelessWidget {
@@ -1226,18 +1402,27 @@ class _RailBackgroundBleed extends StatelessWidget {
 class _RailClipper extends CustomClipper<Rect> {
   final double leftOverflow;
   final double rightOverflow;
-  final double verticalOverflow;
+  final double topOverflow;
+  final double bottomOverflow;
 
-  const _RailClipper({this.leftOverflow = 0, required this.rightOverflow, required this.verticalOverflow});
+  const _RailClipper({
+    this.leftOverflow = 0,
+    required this.rightOverflow,
+    double verticalOverflow = 0,
+    double? topOverflow,
+    double? bottomOverflow,
+  }) : topOverflow = topOverflow ?? verticalOverflow,
+       bottomOverflow = bottomOverflow ?? verticalOverflow;
 
   @override
   Rect getClip(Size size) =>
-      Rect.fromLTRB(-leftOverflow, -verticalOverflow, size.width + rightOverflow, size.height + verticalOverflow);
+      Rect.fromLTRB(-leftOverflow, -topOverflow, size.width + rightOverflow, size.height + bottomOverflow);
 
   @override
   bool shouldReclip(covariant _RailClipper oldClipper) {
     return oldClipper.leftOverflow != leftOverflow ||
         oldClipper.rightOverflow != rightOverflow ||
-        oldClipper.verticalOverflow != verticalOverflow;
+        oldClipper.topOverflow != topOverflow ||
+        oldClipper.bottomOverflow != bottomOverflow;
   }
 }

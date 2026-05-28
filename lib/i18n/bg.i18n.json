@@ -126,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "Показвай сезон и номер на епизод върху картите на епизодите",
     "showSeasonPostersOnTabs": "Показвай постери на сезоните в табовете",
     "showSeasonPostersOnTabsDescription": "Показвай постера на всеки сезон над неговия таб",
+    "tvFullCardLayout": "Пълни TV карти",
+    "tvFullCardLayoutDescription": "Използвай TV карти само с изображения, с насложени имена на актьорите",
     "hideSpoilers": "Скривай спойлери за негледани епизоди",
     "hideSpoilersDescription": "Замазвай миниатюри и описания за негледани епизоди",
     "playerBackend": "Енджин на плеъра",

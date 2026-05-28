@@ -126,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "에피소드 카드에 시즌 및 에피소드 번호 표시",
     "showSeasonPostersOnTabs": "탭에 시즌 포스터 표시",
     "showSeasonPostersOnTabsDescription": "각 시즌 포스터를 탭 위에 표시",
+    "tvFullCardLayout": "전체 TV 카드",
+    "tvFullCardLayoutDescription": "TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시",
     "hideSpoilers": "미시청 에피소드 스포일러 숨기기",
     "hideSpoilersDescription": "시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리",
     "playerBackend": "플레이어 백엔드",

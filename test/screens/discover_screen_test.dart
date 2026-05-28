@@ -165,6 +165,7 @@ void main() {
       hubs: [hub],
       density: LibraryDensity.max,
       episodePosterMode: settings.read(SettingsService.episodePosterMode),
+      fullCardLayout: settings.read(SettingsService.tvFullCardLayout),
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
     );
     final minimumSpotlightBottom = railHeight + (8 * scale);

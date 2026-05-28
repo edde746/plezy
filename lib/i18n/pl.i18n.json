@@ -126,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "Pokazuj numer sezonu i odcinka na kartach odcinków",
     "showSeasonPostersOnTabs": "Pokaż plakaty sezonów na zakładkach",
     "showSeasonPostersOnTabsDescription": "Pokazuj plakat każdego sezonu nad jego kartą",
+    "tvFullCardLayout": "Pełne karty TV",
+    "tvFullCardLayoutDescription": "Używaj kart TV tylko z obrazem i nałożonymi nazwiskami aktorów",
     "hideSpoilers": "Ukryj spoilery nieobejrzanych odcinków",
     "hideSpoilersDescription": "Rozmywaj miniatury i opisy nieobejrzanych odcinków",
     "playerBackend": "Backend odtwarzacza",

@@ -254,6 +254,8 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Staffel- und Episodennummer auf Episodenkarten anzeigen';
 	@override String get showSeasonPostersOnTabs => 'Staffelposter auf Tabs anzeigen';
 	@override String get showSeasonPostersOnTabsDescription => 'Poster jeder Staffel über ihrem Tab anzeigen';
+	@override String get tvFullCardLayout => 'Vollflächige TV-Karten';
+	@override String get tvFullCardLayoutDescription => 'TV-Karten nur mit Bild verwenden und Darstellernamen einblenden';
 	@override String get hideSpoilers => 'Spoiler für nicht gesehene Episoden verbergen';
 	@override String get hideSpoilersDescription => 'Vorschaubilder und Beschreibungen ungesehener Episoden verwischen';
 	@override String get playerBackend => 'Player-Backend';
@@ -1922,6 +1924,8 @@ extension on TranslationsDe {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Staffel- und Episodennummer auf Episodenkarten anzeigen',
 			'settings.showSeasonPostersOnTabs' => 'Staffelposter auf Tabs anzeigen',
 			'settings.showSeasonPostersOnTabsDescription' => 'Poster jeder Staffel über ihrem Tab anzeigen',
+			'settings.tvFullCardLayout' => 'Vollflächige TV-Karten',
+			'settings.tvFullCardLayoutDescription' => 'TV-Karten nur mit Bild verwenden und Darstellernamen einblenden',
 			'settings.hideSpoilers' => 'Spoiler für nicht gesehene Episoden verbergen',
 			'settings.hideSpoilersDescription' => 'Vorschaubilder und Beschreibungen ungesehener Episoden verwischen',
 			'settings.playerBackend' => 'Player-Backend',
@@ -2316,10 +2320,10 @@ extension on TranslationsDe {
 			'profiles.active' => 'Aktiv',
 			'profiles.manage' => 'Verwalten',
 			'profiles.delete' => 'Löschen',
-			'profiles.signOut' => 'Abmelden',
-			'profiles.signOutPlexTitle' => 'Von Plex abmelden?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'Abmelden',
+			'profiles.signOutPlexTitle' => 'Von Plex abmelden?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} und alle Plex Home-Benutzer entfernen? Du kannst dich jederzeit wieder anmelden.',
 			'profiles.signedOutPlex' => 'Von Plex abgemeldet.',
 			'profiles.signOutFailed' => 'Abmeldung fehlgeschlagen.',
@@ -2830,10 +2834,10 @@ extension on TranslationsDe {
 			'metadataEdit.originalTitle' => 'Originaltitel',
 			'metadataEdit.releaseDate' => 'Erscheinungsdatum',
 			'metadataEdit.contentRating' => 'Altersfreigabe',
-			'metadataEdit.studio' => 'Studio',
-			'metadataEdit.tagline' => 'Tagline',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'Studio',
+			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Zusammenfassung',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Hintergrund',

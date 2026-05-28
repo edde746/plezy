@@ -126,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "Mostrar temporada y episodio en tarjetas de episodio",
     "showSeasonPostersOnTabs": "Mostrar pósters de temporada en las pestañas",
     "showSeasonPostersOnTabsDescription": "Mostrar el póster de cada temporada sobre su pestaña",
+    "tvFullCardLayout": "Tarjetas TV completas",
+    "tvFullCardLayoutDescription": "Usar tarjetas TV solo con imagen y nombres de actores superpuestos",
     "hideSpoilers": "Ocultar spoilers de episodios no vistos",
     "hideSpoilersDescription": "Desenfocar miniaturas y descripciones de episodios no vistos",
     "playerBackend": "Reproductor",

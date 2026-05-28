@@ -254,6 +254,8 @@ class _TranslationsSettingsEs extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Mostrar temporada y episodio en tarjetas de episodio';
 	@override String get showSeasonPostersOnTabs => 'Mostrar pósters de temporada en las pestañas';
 	@override String get showSeasonPostersOnTabsDescription => 'Mostrar el póster de cada temporada sobre su pestaña';
+	@override String get tvFullCardLayout => 'Tarjetas TV completas';
+	@override String get tvFullCardLayoutDescription => 'Usar tarjetas TV solo con imagen y nombres de actores superpuestos';
 	@override String get hideSpoilers => 'Ocultar spoilers de episodios no vistos';
 	@override String get hideSpoilersDescription => 'Desenfocar miniaturas y descripciones de episodios no vistos';
 	@override String get playerBackend => 'Reproductor';
@@ -1922,6 +1924,8 @@ extension on TranslationsEs {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Mostrar temporada y episodio en tarjetas de episodio',
 			'settings.showSeasonPostersOnTabs' => 'Mostrar pósters de temporada en las pestañas',
 			'settings.showSeasonPostersOnTabsDescription' => 'Mostrar el póster de cada temporada sobre su pestaña',
+			'settings.tvFullCardLayout' => 'Tarjetas TV completas',
+			'settings.tvFullCardLayoutDescription' => 'Usar tarjetas TV solo con imagen y nombres de actores superpuestos',
 			'settings.hideSpoilers' => 'Ocultar spoilers de episodios no vistos',
 			'settings.hideSpoilersDescription' => 'Desenfocar miniaturas y descripciones de episodios no vistos',
 			'settings.playerBackend' => 'Reproductor',
@@ -2316,10 +2320,10 @@ extension on TranslationsEs {
 			'profiles.active' => 'Activo',
 			'profiles.manage' => 'Administrar',
 			'profiles.delete' => 'Eliminar',
-			'profiles.signOut' => 'Cerrar sesión',
-			'profiles.signOutPlexTitle' => '¿Cerrar sesión de Plex?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'Cerrar sesión',
+			'profiles.signOutPlexTitle' => '¿Cerrar sesión de Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '¿Eliminar ${displayName} y todos los usuarios de Plex Home? Puedes iniciar sesión de nuevo cuando quieras.',
 			'profiles.signedOutPlex' => 'Sesión de Plex cerrada.',
 			'profiles.signOutFailed' => 'Error al cerrar sesión.',
@@ -2830,10 +2834,10 @@ extension on TranslationsEs {
 			'metadataEdit.originalTitle' => 'Título original',
 			'metadataEdit.releaseDate' => 'Fecha de estreno',
 			'metadataEdit.contentRating' => 'Clasificación de contenido',
-			'metadataEdit.studio' => 'Estudio',
-			'metadataEdit.tagline' => 'Eslogan',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'Estudio',
+			'metadataEdit.tagline' => 'Eslogan',
 			'metadataEdit.summary' => 'Resumen',
 			'metadataEdit.poster' => 'Póster',
 			'metadataEdit.background' => 'Fondo',

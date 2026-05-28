@@ -60,6 +60,7 @@ class MediaCard extends StatefulWidget {
   final bool mixedHubContext; // True when in a hub with mixed content (movies + episodes)
   final bool showServerName; // Show server name in list view (multi-server)
   final EpisodePosterMode? episodePosterModeOverride;
+  final bool fullBleedImage;
 
   const MediaCard({
     super.key,
@@ -77,6 +78,7 @@ class MediaCard extends StatefulWidget {
     this.mixedHubContext = false,
     this.showServerName = false,
     this.episodePosterModeOverride,
+    this.fullBleedImage = false,
   });
 
   @override
@@ -264,8 +266,65 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
   /// Grid layout — inlined from former _MediaCardGrid, _PosterOverlay, and
   /// flattened Column. Semantics removed (InkWell provides button semantics).
   Widget _buildGridCard(BuildContext context, Object item, String? localPosterPath) {
+    if (widget.fullBleedImage) {
+      return LayoutBuilder(
+        builder: (context, constraints) {
+          final cardWidth = widget.width ?? (constraints.hasBoundedWidth ? constraints.maxWidth : null);
+          final cardHeight = widget.height ?? (constraints.hasBoundedHeight ? constraints.maxHeight : null);
+          if (cardHeight == null) return _buildStandardGridCard(context, item, localPosterPath);
+          return _buildFullBleedGridCard(context, item, localPosterPath, width: cardWidth, height: cardHeight);
+        },
+      );
+    }
+
+    return _buildStandardGridCard(context, item, localPosterPath);
+  }
+
+  Widget _buildFullBleedGridCard(
+    BuildContext context,
+    Object item,
+    String? localPosterPath, {
+    required double? width,
+    required double height,
+  }) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
+        canRequestFocus: false,
+        onTap: () => _handleTap(context, item),
+        onTapDown: storeTapPosition,
+        onLongPress: showContextMenuFromTap,
+        onSecondaryTapDown: storeTapPosition,
+        onSecondaryTap: showContextMenuFromTap,
+        borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _buildPosterImage(
+                context,
+                item,
+                isOffline: widget.isOffline,
+                localPosterPath: localPosterPath,
+                mixedHubContext: widget.mixedHubContext,
+                episodePosterModeOverride: widget.episodePosterModeOverride,
+                knownWidth: width,
+                knownHeight: height,
+              ),
+              if (item is MediaItem) _MediaCardHelpers.buildWatchProgress(context, item),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStandardGridCard(BuildContext context, Object item, String? localPosterPath) {
     // Compute actual poster dimensions from card dimensions
-    final posterWidth = widget.width != null ? widget.width! - 6 : null; // 3px padding each side
+    final posterWidth = widget.width != null ? widget.width! - 6 : null;
     final posterHeight = widget.height;
 
     return SizedBox(

@@ -254,6 +254,8 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Visa säsongs- och avsnittsnummer på avsnittskort';
 	@override String get showSeasonPostersOnTabs => 'Visa säsongsaffischer på flikar';
 	@override String get showSeasonPostersOnTabsDescription => 'Visa varje säsongs affisch ovanför fliken';
+	@override String get tvFullCardLayout => 'Heltäckande TV-kort';
+	@override String get tvFullCardLayoutDescription => 'Använd TV-kort med enbart bild och skådespelarnamn ovanpå';
 	@override String get hideSpoilers => 'Dölj spoilers för osedda avsnitt';
 	@override String get hideSpoilersDescription => 'Sudda miniatyrbilder och beskrivningar för osedda avsnitt';
 	@override String get playerBackend => 'Spelarmotor';
@@ -1922,6 +1924,8 @@ extension on TranslationsSv {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Visa säsongs- och avsnittsnummer på avsnittskort',
 			'settings.showSeasonPostersOnTabs' => 'Visa säsongsaffischer på flikar',
 			'settings.showSeasonPostersOnTabsDescription' => 'Visa varje säsongs affisch ovanför fliken',
+			'settings.tvFullCardLayout' => 'Heltäckande TV-kort',
+			'settings.tvFullCardLayoutDescription' => 'Använd TV-kort med enbart bild och skådespelarnamn ovanpå',
 			'settings.hideSpoilers' => 'Dölj spoilers för osedda avsnitt',
 			'settings.hideSpoilersDescription' => 'Sudda miniatyrbilder och beskrivningar för osedda avsnitt',
 			'settings.playerBackend' => 'Spelarmotor',
@@ -2316,10 +2320,10 @@ extension on TranslationsSv {
 			'profiles.active' => 'Aktiv',
 			'profiles.manage' => 'Hantera',
 			'profiles.delete' => 'Ta bort',
-			'profiles.signOut' => 'Logga ut',
-			'profiles.signOutPlexTitle' => 'Logga ut från Plex?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'Logga ut',
+			'profiles.signOutPlexTitle' => 'Logga ut från Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Ta bort ${displayName} och alla Plex Home-användare? Du kan logga in igen när som helst.',
 			'profiles.signedOutPlex' => 'Utloggad från Plex.',
 			'profiles.signOutFailed' => 'Utloggningen misslyckades.',
@@ -2830,10 +2834,10 @@ extension on TranslationsSv {
 			'metadataEdit.originalTitle' => 'Originaltitel',
 			'metadataEdit.releaseDate' => 'Utgivningsdatum',
 			'metadataEdit.contentRating' => 'Åldersgräns',
-			'metadataEdit.studio' => 'Studio',
-			'metadataEdit.tagline' => 'Tagline',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'Studio',
+			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Sammanfattning',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Bakgrund',

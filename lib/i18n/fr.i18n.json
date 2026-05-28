@@ -126,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "Afficher la saison et l'épisode sur les cartes d'épisode",
     "showSeasonPostersOnTabs": "Afficher les posters de saison sur les onglets",
     "showSeasonPostersOnTabsDescription": "Afficher l'affiche de chaque saison au-dessus de son onglet",
+    "tvFullCardLayout": "Cartes TV pleines",
+    "tvFullCardLayoutDescription": "Utiliser des cartes TV avec image seule et noms des acteurs superposés",
     "hideSpoilers": "Masquer les spoilers des épisodes non vus",
     "hideSpoilersDescription": "Flouter les miniatures et descriptions des épisodes non vus",
     "playerBackend": "Moteur de lecture",

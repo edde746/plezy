@@ -254,6 +254,8 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Vis sæson- og episodenummer på episodekort';
 	@override String get showSeasonPostersOnTabs => 'Vis sæsonplakater på faner';
 	@override String get showSeasonPostersOnTabsDescription => 'Vis hver sæsons plakat over dens fane';
+	@override String get tvFullCardLayout => 'Fuldflade TV-kort';
+	@override String get tvFullCardLayoutDescription => 'Brug TV-kort kun med billeder og skuespillernavne ovenpå';
 	@override String get hideSpoilers => 'Skjul spoilere for usete episoder';
 	@override String get hideSpoilersDescription => 'Slør miniaturebilleder og beskrivelser for usete episoder';
 	@override String get playerBackend => 'Afspillerbackend';
@@ -1922,6 +1924,8 @@ extension on TranslationsDa {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Vis sæson- og episodenummer på episodekort',
 			'settings.showSeasonPostersOnTabs' => 'Vis sæsonplakater på faner',
 			'settings.showSeasonPostersOnTabsDescription' => 'Vis hver sæsons plakat over dens fane',
+			'settings.tvFullCardLayout' => 'Fuldflade TV-kort',
+			'settings.tvFullCardLayoutDescription' => 'Brug TV-kort kun med billeder og skuespillernavne ovenpå',
 			'settings.hideSpoilers' => 'Skjul spoilere for usete episoder',
 			'settings.hideSpoilersDescription' => 'Slør miniaturebilleder og beskrivelser for usete episoder',
 			'settings.playerBackend' => 'Afspillerbackend',
@@ -2316,10 +2320,10 @@ extension on TranslationsDa {
 			'profiles.active' => 'Aktiv',
 			'profiles.manage' => 'Administrer',
 			'profiles.delete' => 'Slet',
-			'profiles.signOut' => 'Log ud',
-			'profiles.signOutPlexTitle' => 'Log ud af Plex?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'Log ud',
+			'profiles.signOutPlexTitle' => 'Log ud af Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Fjern ${displayName} og alle Plex Home-brugere? Log ind igen når som helst.',
 			'profiles.signedOutPlex' => 'Logget ud af Plex.',
 			'profiles.signOutFailed' => 'Log ud mislykkedes.',
@@ -2830,10 +2834,10 @@ extension on TranslationsDa {
 			'metadataEdit.originalTitle' => 'Originaltitel',
 			'metadataEdit.releaseDate' => 'Udgivelsesdato',
 			'metadataEdit.contentRating' => 'Aldersgrænse',
-			'metadataEdit.studio' => 'Studie',
-			'metadataEdit.tagline' => 'Tagline',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'Studie',
+			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Resumé',
 			'metadataEdit.poster' => 'Plakat',
 			'metadataEdit.background' => 'Baggrund',
