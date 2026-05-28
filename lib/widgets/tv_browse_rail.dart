@@ -68,6 +68,8 @@ class TvBrowseRailLayout {
 
   static double railInteractionExpansionForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
+  static double itemGapForScale(double _) => 0;
+
   static double hubStripHeightForScale(double scale) => 36 * scale;
 
   static double hubStripGapForScale(double _) => 0;
@@ -114,7 +116,7 @@ class TvBrowseRailLayout {
   }) {
     final focusExtra = FocusTheme.focusBorderWidth * 2 * scale;
     final railEdgePadding = focusExtra + (12 * scale);
-    final itemGap = 8 * scale;
+    final itemGap = itemGapForScale(scale);
     final isPersonHub = TvBrowseRailLayout.isPersonHub(hub);
     final hasWide = !isPersonHub && hub.items.any((item) => item.usesWideAspectRatio(episodePosterMode));
     final hasTall = !isPersonHub && hub.items.any((item) => !item.usesWideAspectRatio(episodePosterMode));

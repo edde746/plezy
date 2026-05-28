@@ -143,6 +143,7 @@ class _TranslationsCommonRu extends TranslationsCommonEn {
 	@override String get yes => 'Да';
 	@override String get no => 'Нет';
 	@override String get delete => 'Удалить';
+	@override String get edit => 'Редактировать';
 	@override String get shuffle => 'Перемешать';
 	@override String get addTo => 'Добавить в...';
 	@override String get createNew => 'Создать новый';
@@ -812,6 +813,8 @@ class _TranslationsConnectionsRu extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => 'Сессия истекла для ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Сессия истекла для ${count} серверов';
 	@override String get signInAgain => 'Войти снова';
+	@override String get editJellyfinTitle => 'Изменить подключение Jellyfin';
+	@override String editJellyfinIntro({required Object serverName}) => 'Добавьте или удалите URL для ${serverName}. Plezy будет использовать доступный URL с минимальной задержкой.';
 }
 
 // Path: discover
@@ -1502,7 +1505,9 @@ class _TranslationsAddServerRu extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Добавить сервер Jellyfin';
 	@override String get jellyfinUrlIntro => 'Введите URL сервера, например `https://jellyfin.example.com`.';
+	@override String get jellyfinUrlsIntro => 'Введите один или несколько URL сервера, разделяя их запятыми или новыми строками. Plezy будет использовать доступный URL с минимальной задержкой.';
 	@override String get serverUrl => 'URL сервера';
+	@override String get serverUrls => 'URL сервера';
 	@override String get findServer => 'Найти сервер';
 	@override String get username => 'Имя пользователя';
 	@override String get password => 'Пароль';
@@ -1833,6 +1838,7 @@ extension on TranslationsRu {
 			'common.yes' => 'Да',
 			'common.no' => 'Нет',
 			'common.delete' => 'Удалить',
+			'common.edit' => 'Редактировать',
 			'common.shuffle' => 'Перемешать',
 			'common.addTo' => 'Добавить в...',
 			'common.createNew' => 'Создать новый',
@@ -2312,9 +2318,9 @@ extension on TranslationsRu {
 			'profiles.delete' => 'Удалить',
 			'profiles.signOut' => 'Выйти',
 			'profiles.signOutPlexTitle' => 'Выйти из Plex?',
-			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Удалить ${displayName} и всех пользователей Plex Home? Вы сможете войти снова в любое время.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Удалить ${displayName} и всех пользователей Plex Home? Вы сможете войти снова в любое время.',
 			'profiles.signedOutPlex' => 'Вы вышли из Plex.',
 			'profiles.signOutFailed' => 'Не удалось выйти.',
 			'profiles.sectionTitle' => 'Профили',
@@ -2369,6 +2375,8 @@ extension on TranslationsRu {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сессия истекла для ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Сессия истекла для ${count} серверов',
 			'connections.signInAgain' => 'Войти снова',
+			'connections.editJellyfinTitle' => 'Изменить подключение Jellyfin',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Добавьте или удалите URL для ${serverName}. Plezy будет использовать доступный URL с минимальной задержкой.',
 			'discover.title' => 'Обзор',
 			'discover.switchProfile' => 'Сменить профиль',
 			'discover.noContentAvailable' => 'Контент недоступен',
@@ -2824,11 +2832,11 @@ extension on TranslationsRu {
 			'metadataEdit.contentRating' => 'Возрастной рейтинг',
 			'metadataEdit.studio' => 'Студия',
 			'metadataEdit.tagline' => 'Слоган',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'Описание',
 			'metadataEdit.poster' => 'Постер',
 			'metadataEdit.background' => 'Фон',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => 'Логотип',
 			'metadataEdit.squareArt' => 'Квадратное изображение',
 			'metadataEdit.selectPoster' => 'Выбрать постер',
@@ -2947,7 +2955,9 @@ extension on TranslationsRu {
 			'trackers.libraryFilter.noLibraries' => 'Библиотеки недоступны',
 			'addServer.addJellyfinTitle' => 'Добавить сервер Jellyfin',
 			'addServer.jellyfinUrlIntro' => 'Введите URL сервера, например `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => 'Введите один или несколько URL сервера, разделяя их запятыми или новыми строками. Plezy будет использовать доступный URL с минимальной задержкой.',
 			'addServer.serverUrl' => 'URL сервера',
+			'addServer.serverUrls' => 'URL сервера',
 			'addServer.findServer' => 'Найти сервер',
 			'addServer.username' => 'Имя пользователя',
 			'addServer.password' => 'Пароль',

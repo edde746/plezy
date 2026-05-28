@@ -111,11 +111,14 @@ void main() {
 
       final conn = await svc.authenticateByName(
         baseUrl: 'https://jf.example.com',
+        baseUrls: const ['https://jf.example.com', 'https://jf.lan:8096'],
         username: 'edde',
         password: 'pw',
         deviceId: 'dev-xyz',
       );
       expect(conn.accessToken, 'tok-new');
+      expect(conn.baseUrl, 'https://jf.example.com');
+      expect(conn.baseUrls, ['https://jf.example.com', 'https://jf.lan:8096']);
       expect(conn.userId, 'user-7');
       expect(conn.userName, 'edde');
       expect(conn.serverMachineId, 'srv-1');

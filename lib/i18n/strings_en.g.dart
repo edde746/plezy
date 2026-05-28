@@ -210,6 +210,9 @@ class TranslationsCommonEn {
 	/// en: 'Delete'
 	String get delete => 'Delete';
 
+	/// en: 'Edit'
+	String get edit => 'Edit';
+
 	/// en: 'Shuffle'
 	String get shuffle => 'Shuffle';
 
@@ -1929,6 +1932,12 @@ class TranslationsConnectionsEn {
 
 	/// en: 'Sign in again'
 	String get signInAgain => 'Sign in again';
+
+	/// en: 'Edit Jellyfin connection'
+	String get editJellyfinTitle => 'Edit Jellyfin connection';
+
+	/// en: 'Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency.'
+	String editJellyfinIntro({required Object serverName}) => 'Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency.';
 }
 
 // Path: discover
@@ -3549,8 +3558,14 @@ class TranslationsAddServerEn {
 	/// en: 'Enter the server URL, e.g. `https://jellyfin.example.com`.'
 	String get jellyfinUrlIntro => 'Enter the server URL, e.g. `https://jellyfin.example.com`.';
 
+	/// en: 'Enter one or more server URLs, separated by commas or new lines. Plezy will use the reachable URL with the lowest latency.'
+	String get jellyfinUrlsIntro => 'Enter one or more server URLs, separated by commas or new lines. Plezy will use the reachable URL with the lowest latency.';
+
 	/// en: 'Server URL'
 	String get serverUrl => 'Server URL';
+
+	/// en: 'Server URLs'
+	String get serverUrls => 'Server URLs';
 
 	/// en: 'Find server'
 	String get findServer => 'Find server';
@@ -4223,6 +4238,7 @@ extension on Translations {
 			'common.yes' => 'Yes',
 			'common.no' => 'No',
 			'common.delete' => 'Delete',
+			'common.edit' => 'Edit',
 			'common.shuffle' => 'Shuffle',
 			'common.addTo' => 'Add to...',
 			'common.createNew' => 'Create new',
@@ -4702,9 +4718,9 @@ extension on Translations {
 			'mpvConfig.presetDeleted' => 'Preset deleted',
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
-			'dialog.confirmAction' => 'Confirm Action',
 			_ => null,
 		} ?? switch (path) {
+			'dialog.confirmAction' => 'Confirm Action',
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
@@ -4769,6 +4785,8 @@ extension on Translations {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expired for ${count} servers',
 			'connections.signInAgain' => 'Sign in again',
+			'connections.editJellyfinTitle' => 'Edit Jellyfin connection',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency.',
 			'discover.title' => 'Discover',
 			'discover.switchProfile' => 'Switch Profile',
 			'discover.noContentAvailable' => 'No content available',
@@ -5214,11 +5232,11 @@ extension on Translations {
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
 			'metadataEdit.editMetadata' => 'Edit...',
 			'metadataEdit.screenTitle' => 'Edit Metadata',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.basicInfo' => 'Basic Info',
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Advanced Settings',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.title' => 'Title',
 			'metadataEdit.sortTitle' => 'Sort Title',
 			'metadataEdit.originalTitle' => 'Original Title',
@@ -5347,7 +5365,9 @@ extension on Translations {
 			'trackers.libraryFilter.noLibraries' => 'No libraries available',
 			'addServer.addJellyfinTitle' => 'Add Jellyfin server',
 			'addServer.jellyfinUrlIntro' => 'Enter the server URL, e.g. `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => 'Enter one or more server URLs, separated by commas or new lines. Plezy will use the reachable URL with the lowest latency.',
 			'addServer.serverUrl' => 'Server URL',
+			'addServer.serverUrls' => 'Server URLs',
 			'addServer.findServer' => 'Find server',
 			'addServer.username' => 'Username',
 			'addServer.password' => 'Password',

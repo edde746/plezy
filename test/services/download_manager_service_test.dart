@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:background_downloader/background_downloader.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -262,6 +263,179 @@ void main() {
       expect(row?.thumbPath, artworkStorageKey('/ep-thumb'));
     });
   });
+
+  group('task session validation', () {
+    test('ignores progress from stale native task ids', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: 'srv',
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+      final events = <DownloadProgress>[];
+      final sub = manager.progressStream.listen(events.add);
+      addTearDown(sub.cancel);
+
+      await manager.debugHandleTaskProgress(TaskProgressUpdate(_downloadTask('stale-task', globalKey), 0.5, 1000));
+      await Future<void>.delayed(Duration.zero);
+      expect(events, isEmpty);
+
+      await manager.debugHandleTaskProgress(TaskProgressUpdate(_downloadTask('current-task', globalKey), 0.5, 1000));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(events, hasLength(1));
+      expect(events.single.globalKey, globalKey);
+      expect(events.single.progress, 50);
+    });
+
+    test('ignores terminal status from stale native task ids', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: 'srv',
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      await manager.debugHandleTaskStatus(TaskStatusUpdate(_downloadTask('stale-task', globalKey), TaskStatus.failed));
+
+      final row = await db.getDownloadedMedia(globalKey);
+      expect(row?.status, DownloadStatus.downloading.index);
+      expect(row?.errorMessage, isNull);
+      expect(row?.bgTaskId, 'current-task');
+    });
+
+    test('requeues current system cancel without in-memory context', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: 'srv',
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(_downloadTask('current-task', globalKey), TaskStatus.canceled),
+      );
+
+      final row = await db.getDownloadedMedia(globalKey);
+      expect(row?.status, DownloadStatus.queued.index);
+      expect(row?.bgTaskId, isNull);
+      expect((await db.getNextQueueItem())?.mediaGlobalKey, globalKey);
+    });
+  });
+
+  group('resume handling', () {
+    test('failed native resume leaves paused row paused', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: 'srv',
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.paused.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      final resumed = await manager.debugTryResumeNativeTask(
+        globalKey,
+        'current-task',
+        taskForId: (_) async => _downloadTask('current-task', globalKey),
+        resumeTask: (_) async => false,
+      );
+
+      final row = await db.getDownloadedMedia(globalKey);
+      expect(resumed, isFalse);
+      expect(row?.status, DownloadStatus.paused.index);
+      expect(row?.bgTaskId, 'current-task');
+    });
+
+    test('successful native resume transitions to downloading', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: 'srv',
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.paused.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      final resumed = await manager.debugTryResumeNativeTask(
+        globalKey,
+        'current-task',
+        taskForId: (_) async => _downloadTask('current-task', globalKey),
+        resumeTask: (_) async => true,
+      );
+
+      final row = await db.getDownloadedMedia(globalKey);
+      expect(resumed, isTrue);
+      expect(row?.status, DownloadStatus.downloading.index);
+      expect(row?.bgTaskId, 'current-task');
+    });
+  });
+}
+
+DownloadTask _downloadTask(String taskId, String globalKey) {
+  return DownloadTask(
+    taskId: taskId,
+    url: 'https://example.test/video.mp4',
+    filename: 'video.mp4',
+    directory: 'downloads',
+    metaData: globalKey,
+  );
 }
 
 MediaItem _movie({String? thumbPath}) {

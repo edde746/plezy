@@ -36,6 +36,7 @@
     "yes": "はい",
     "no": "いいえ",
     "delete": "削除",
+    "edit": "編集",
     "shuffle": "シャッフル",
     "addTo": "追加...",
     "createNew": "新規作成",
@@ -609,7 +610,9 @@
     "addConnectionSubtitleScoped": "${displayName}に追加: Plex、Jellyfin、または別プロフィールの接続",
     "sessionExpiredOne": "${name} のセッションの有効期限が切れました",
     "sessionExpiredMany": "${count} 台のサーバーのセッションの有効期限が切れました",
-    "signInAgain": "再度サインイン"
+    "signInAgain": "再度サインイン",
+    "editJellyfinTitle": "Jellyfin接続を編集",
+    "editJellyfinIntro": "${serverName} のURLを追加または削除します。Plezyは到達可能なURLのうち最も低遅延のものを使用します。"
   },
   "discover": {
     "title": "探す",
@@ -1256,7 +1259,9 @@
   "addServer": {
     "addJellyfinTitle": "Jellyfinサーバーを追加",
     "jellyfinUrlIntro": "サーバーURLを入力してください。例: `https://jellyfin.example.com`。",
+    "jellyfinUrlsIntro": "サーバーURLを1つ以上、カンマまたは改行で区切って入力してください。Plezyは到達可能なURLのうち最も低遅延のものを使用します。",
     "serverUrl": "サーバーURL",
+    "serverUrls": "サーバーURL",
     "findServer": "サーバーを検索",
     "username": "ユーザー名",
     "password": "パスワード",

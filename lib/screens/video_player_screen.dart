@@ -373,6 +373,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _autoPipEnabled = false;
   bool _androidAutoPipTransitionInFlight = false;
   bool _pipFiltersPrepared = false;
+  VoidCallback? _autoPipEnteringCallback;
   bool _resumeLiveTimelineOnResume = false;
   int _rewindOnResume = 0;
   Future<void> _lifecycleTransition = Future<void>.value();
@@ -609,12 +610,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           throw StateError('No client registered for ${_currentMetadata.serverId}');
         }
         _streamHeaders = genericClient.streamHeaders;
-        // Single source of truth for showing quality controls. Plex uses a
-        // per-server probe; Jellyfin supports explicit quality selection but
-        // should not inherit the global Plex-style default on ordinary play.
+        // Single source of truth for showing quality controls and applying the
+        // saved startup quality. Backends that cannot transcode always start at
+        // Original even if the user picked a lower default quality.
         _serverSupportsTranscoding = genericClient.capabilities.videoTranscoding;
         if (widget.selectedQualityPreset == null) {
-          _selectedQualityPreset = genericClient.backend == MediaBackend.plex && _serverSupportsTranscoding
+          _selectedQualityPreset = _serverSupportsTranscoding
               ? settingsService.read(SettingsService.defaultQualityPreset)
               : TranscodeQualityPreset.original;
         } else {
@@ -647,8 +648,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (Platform.isAndroid && useExoPlayer) {
         final tunneledPlayback = settingsService.read(SettingsService.tunneledPlayback);
         await currentPlayer.setProperty('tunneled-playback', tunneledPlayback ? 'yes' : 'no');
+      }
+      if ((Platform.isAndroid && useExoPlayer) || Platform.isIOS || Platform.isMacOS) {
         final dvConversionMode = settingsService.read(SettingsService.dvConversionMode);
         await currentPlayer.setProperty('dv-conversion-mode', dvConversionMode.nativeValue);
+      }
+      if (Platform.isIOS || Platform.isMacOS) {
+        await currentPlayer.setProperty('dv-conversion-log', debugLoggingEnabled ? 'yes' : 'no');
       }
       if (bufferSizeMB > 0) {
         final bufferSizeBytes = bufferSizeMB * 1024 * 1024;
@@ -998,6 +1004,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
             if (navigator.canPop()) {
               _isExiting.value = true;
               await _sendStoppedProgressOnce();
+              await _restoreSystemUiAndOrientation();
               if (!mounted) return;
               navigator.pop(true);
             }
@@ -1012,11 +1019,35 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (navigator.canPop()) {
         _isExiting.value = true;
         await _sendStoppedProgressOnce();
+        await _restoreSystemUiAndOrientation();
         if (!mounted) return;
         navigator.pop(true);
       }
     } finally {
       _isHandlingBack = false;
+    }
+  }
+
+  Future<void> _restoreSystemUiAndOrientation() async {
+    try {
+      await OrientationHelper.restoreSystemUI();
+    } catch (e) {
+      appLogger.w('Failed to restore system UI', error: e);
+    }
+
+    try {
+      if (_isPhone) {
+        await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
+      } else {
+        await SystemChrome.setPreferredOrientations([
+          DeviceOrientation.portraitUp,
+          DeviceOrientation.portraitDown,
+          DeviceOrientation.landscapeLeft,
+          DeviceOrientation.landscapeRight,
+        ]);
+      }
+    } catch (e) {
+      appLogger.w('Failed to restore orientation', error: e);
     }
   }
 
@@ -1053,11 +1084,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _sendLiveTimeline('stopped');
     _stopLiveTimelineUpdates();
 
-    _videoPIPManager?.isPipActive.removeListener(_onPipStateChanged);
+    _detachPipStateListener();
     _videoPIPManager?.onBeforeEnterPip = null;
-    _videoPIPManager?.disableAutoPip();
-    PipService.onAutoPipEntering = null;
+    unawaited(_videoPIPManager?.disableAutoPip());
+    _clearAutoPipEnteringCallback();
     _videoFilterManager?.dispose();
+    _videoPIPManager = null;
+    _videoFilterManager = null;
 
     _scrubPreviewSource?.dispose();
 
@@ -1128,23 +1161,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
     // Restore system UI and orientation preferences (skip if navigating to another video)
     if (!_isReplacingWithVideo) {
-      OrientationHelper.restoreSystemUI();
-
-      // Restore orientation based on cached device type (no context needed)
-      try {
-        if (_isPhone) {
-          SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-        } else {
-          SystemChrome.setPreferredOrientations([
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-            DeviceOrientation.landscapeLeft,
-            DeviceOrientation.landscapeRight,
-          ]);
-        }
-      } catch (e) {
-        appLogger.w('Failed to restore orientation in dispose', error: e);
-      }
+      unawaited(_restoreSystemUiAndOrientation());
     }
 
     Sentry.addBreadcrumb(Breadcrumb(message: 'Player dispose', category: 'player'));
@@ -1260,6 +1277,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       _detachFromWatchTogetherSession();
       await _sendStoppedProgressOnce();
       _progressTracker?.stopTracking();
+      _detachPipStateListener();
+      _videoPIPManager?.onBeforeEnterPip = null;
+      unawaited(_videoPIPManager?.disableAutoPip());
+      _clearAutoPipEnteringCallback();
       // Clear frame rate matching before disposing (Android only)
       await _clearFrameRateMatching();
       // Restore Windows display mode before disposing

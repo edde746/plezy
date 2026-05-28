@@ -36,6 +36,7 @@
     "yes": "Да",
     "no": "Нет",
     "delete": "Удалить",
+    "edit": "Редактировать",
     "shuffle": "Перемешать",
     "addTo": "Добавить в...",
     "createNew": "Создать новый",
@@ -609,7 +610,9 @@
     "addConnectionSubtitleScoped": "Добавить к ${displayName}: Plex, Jellyfin или подключение другого профиля",
     "sessionExpiredOne": "Сессия истекла для ${name}",
     "sessionExpiredMany": "Сессия истекла для ${count} серверов",
-    "signInAgain": "Войти снова"
+    "signInAgain": "Войти снова",
+    "editJellyfinTitle": "Изменить подключение Jellyfin",
+    "editJellyfinIntro": "Добавьте или удалите URL для ${serverName}. Plezy будет использовать доступный URL с минимальной задержкой."
   },
   "discover": {
     "title": "Обзор",
@@ -1256,7 +1259,9 @@
   "addServer": {
     "addJellyfinTitle": "Добавить сервер Jellyfin",
     "jellyfinUrlIntro": "Введите URL сервера, например `https://jellyfin.example.com`.",
+    "jellyfinUrlsIntro": "Введите один или несколько URL сервера, разделяя их запятыми или новыми строками. Plezy будет использовать доступный URL с минимальной задержкой.",
     "serverUrl": "URL сервера",
+    "serverUrls": "URL сервера",
     "findServer": "Найти сервер",
     "username": "Имя пользователя",
     "password": "Пароль",

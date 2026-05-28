@@ -85,6 +85,13 @@ void main() {
     await tester.tap(find.text('Open profile'));
     await tester.pumpAndSettle();
     expect(find.text(t.profiles.connectionsLabel), findsOneWidget);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+    await tester.pumpAndSettle();
+
+    expect(find.text(t.profiles.connectionsLabel), findsOneWidget);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
     await tester.pumpAndSettle();

@@ -143,6 +143,7 @@ class _TranslationsCommonJa extends TranslationsCommonEn {
 	@override String get yes => 'はい';
 	@override String get no => 'いいえ';
 	@override String get delete => '削除';
+	@override String get edit => '編集';
 	@override String get shuffle => 'シャッフル';
 	@override String get addTo => '追加...';
 	@override String get createNew => '新規作成';
@@ -812,6 +813,8 @@ class _TranslationsConnectionsJa extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => '${name} のセッションの有効期限が切れました';
 	@override String sessionExpiredMany({required Object count}) => '${count} 台のサーバーのセッションの有効期限が切れました';
 	@override String get signInAgain => '再度サインイン';
+	@override String get editJellyfinTitle => 'Jellyfin接続を編集';
+	@override String editJellyfinIntro({required Object serverName}) => '${serverName} のURLを追加または削除します。Plezyは到達可能なURLのうち最も低遅延のものを使用します。';
 }
 
 // Path: discover
@@ -1502,7 +1505,9 @@ class _TranslationsAddServerJa extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Jellyfinサーバーを追加';
 	@override String get jellyfinUrlIntro => 'サーバーURLを入力してください。例: `https://jellyfin.example.com`。';
+	@override String get jellyfinUrlsIntro => 'サーバーURLを1つ以上、カンマまたは改行で区切って入力してください。Plezyは到達可能なURLのうち最も低遅延のものを使用します。';
 	@override String get serverUrl => 'サーバーURL';
+	@override String get serverUrls => 'サーバーURL';
 	@override String get findServer => 'サーバーを検索';
 	@override String get username => 'ユーザー名';
 	@override String get password => 'パスワード';
@@ -1833,6 +1838,7 @@ extension on TranslationsJa {
 			'common.yes' => 'はい',
 			'common.no' => 'いいえ',
 			'common.delete' => '削除',
+			'common.edit' => '編集',
 			'common.shuffle' => 'シャッフル',
 			'common.addTo' => '追加...',
 			'common.createNew' => '新規作成',
@@ -2312,9 +2318,9 @@ extension on TranslationsJa {
 			'profiles.delete' => '削除',
 			'profiles.signOut' => 'サインアウト',
 			'profiles.signOutPlexTitle' => 'Plex からサインアウトしますか？',
-			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName}とすべてのPlex Homeユーザーを削除しますか？いつでも再サインインできます。',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName}とすべてのPlex Homeユーザーを削除しますか？いつでも再サインインできます。',
 			'profiles.signedOutPlex' => 'Plex からサインアウトしました。',
 			'profiles.signOutFailed' => 'サインアウトに失敗しました。',
 			'profiles.sectionTitle' => 'プロファイル',
@@ -2369,6 +2375,8 @@ extension on TranslationsJa {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} のセッションの有効期限が切れました',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 台のサーバーのセッションの有効期限が切れました',
 			'connections.signInAgain' => '再度サインイン',
+			'connections.editJellyfinTitle' => 'Jellyfin接続を編集',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => '${serverName} のURLを追加または削除します。Plezyは到達可能なURLのうち最も低遅延のものを使用します。',
 			'discover.title' => '探す',
 			'discover.switchProfile' => 'プロフィール切替',
 			'discover.noContentAvailable' => 'コンテンツがありません',
@@ -2824,11 +2832,11 @@ extension on TranslationsJa {
 			'metadataEdit.contentRating' => 'コンテンツレーティング',
 			'metadataEdit.studio' => 'スタジオ',
 			'metadataEdit.tagline' => 'タグライン',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'あらすじ',
 			'metadataEdit.poster' => 'ポスター',
 			'metadataEdit.background' => '背景',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => 'ロゴ',
 			'metadataEdit.squareArt' => '正方形アート',
 			'metadataEdit.selectPoster' => 'ポスターを選択',
@@ -2947,7 +2955,9 @@ extension on TranslationsJa {
 			'trackers.libraryFilter.noLibraries' => '利用できるライブラリがありません',
 			'addServer.addJellyfinTitle' => 'Jellyfinサーバーを追加',
 			'addServer.jellyfinUrlIntro' => 'サーバーURLを入力してください。例: `https://jellyfin.example.com`。',
+			'addServer.jellyfinUrlsIntro' => 'サーバーURLを1つ以上、カンマまたは改行で区切って入力してください。Plezyは到達可能なURLのうち最も低遅延のものを使用します。',
 			'addServer.serverUrl' => 'サーバーURL',
+			'addServer.serverUrls' => 'サーバーURL',
 			'addServer.findServer' => 'サーバーを検索',
 			'addServer.username' => 'ユーザー名',
 			'addServer.password' => 'パスワード',

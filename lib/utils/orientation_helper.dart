@@ -33,10 +33,12 @@ class OrientationHelper {
     SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
   }
 
-  /// Restores edge-to-edge system UI mode.
+  /// Restores the app's default visible system UI mode.
   ///
   /// Should be called when exiting full-screen mode.
-  static void restoreSystemUI() {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  static Future<void> restoreSystemUI() async {
+    // Explicitly show both overlays first to clear any legacy immersive flags.
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: SystemUiOverlay.values);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 }

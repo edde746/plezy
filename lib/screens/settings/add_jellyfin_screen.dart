@@ -19,6 +19,7 @@ import '../../profiles/profile.dart';
 import '../../profiles/profile_connection.dart';
 import '../../profiles/profile_registry.dart';
 import '../../services/jellyfin_auth_service.dart';
+import '../../services/jellyfin_endpoint_discovery.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
@@ -47,7 +48,7 @@ bool shouldPromptForJellyfinProfileSelection({
 }
 
 /// Three-step form to add a Jellyfin server:
-///   1. Probe URL (`/System/Info/Public`).
+///   1. Probe URL candidates (`/System/Info/Public`).
 ///   2. Username + password (`/Users/AuthenticateByName`) **or** Quick Connect
 ///      (`/QuickConnect/Initiate` → poll → `/Users/AuthenticateWithQuickConnect`).
 ///   3. Persist via [ConnectionRegistry] and create a [ProfileConnection]
@@ -84,6 +85,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   final _formKey = GlobalKey<FormState>();
 
   JellyfinServerInfo? _serverInfo;
+  JellyfinEndpointRaceResult? _serverEndpoint;
   bool _quickConnectEnabled = false;
   JellyfinQuickConnectInitiation? _qcInitiation;
   bool _qcCancelled = false;
@@ -106,24 +108,22 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   }
 
   Future<void> _probe() async {
-    final url = _urlController.text.trim();
-    if (url.isEmpty) {
+    final urls = _enteredUrls();
+    if (urls.isEmpty) {
       setErrorText(t.addServer.enterJellyfinUrlError);
       return;
     }
     await runAsync<void>(
       () async {
         final auth = await _buildAuthService();
-        // Run the probe and the QC capability check in parallel — the latter
-        // is independent and just tells the UI whether to surface the button.
-        final probeFuture = auth.probe(url);
-        final qcFuture = auth.isQuickConnectEnabled(url);
-        final info = await probeFuture;
-        final qcEnabled = await qcFuture;
+        final endpoint = await auth.raceEndpoints(urls);
+        final qcEnabled = await auth.isQuickConnectEnabled(endpoint.activeBaseUrl);
         if (!mounted) return;
         setState(() {
-          _serverInfo = info;
+          _serverEndpoint = endpoint;
+          _serverInfo = endpoint.serverInfo;
           _quickConnectEnabled = qcEnabled;
+          _urlController.text = endpoint.baseUrls.join('\n');
         });
         // On TV, typing a username/password with a remote is misery — auto-jump
         // to Quick Connect when the server supports it. Mirrors the
@@ -140,7 +140,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   Future<void> _signIn() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final info = _serverInfo;
-    if (info == null) {
+    final endpoint = _serverEndpoint;
+    if (info == null || endpoint == null) {
       await _probe();
       return;
     }
@@ -151,7 +152,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         final deviceId = await storage.getOrCreateClientIdentifier();
 
         final connection = await auth.authenticateByName(
-          baseUrl: _urlController.text,
+          baseUrl: endpoint.activeBaseUrl,
+          baseUrls: endpoint.baseUrls,
           username: _usernameController.text,
           password: _passwordController.text,
           deviceId: deviceId,
@@ -171,7 +173,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
 
   Future<void> _startQuickConnect() async {
     final info = _serverInfo;
-    if (info == null) return;
+    final endpoint = _serverEndpoint;
+    if (info == null || endpoint == null) return;
     final attemptId = ++_qcAttemptId;
     setState(() => _qcCancelled = false);
     await runAsync<void>(
@@ -180,7 +183,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         final storage = await StorageService.getInstance();
         final deviceId = await storage.getOrCreateClientIdentifier();
 
-        final initiation = await auth.initiateQuickConnect(baseUrl: _urlController.text, deviceId: deviceId);
+        final initiation = await auth.initiateQuickConnect(baseUrl: endpoint.activeBaseUrl, deviceId: deviceId);
         if (!_isCurrentQuickConnectAttempt(attemptId)) return;
         // Show the waiting panel without a spinner — opt-out of busy mid-flow
         // so the user-visible state matches "we're polling, nothing for you to do".
@@ -188,7 +191,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         setBusy(false);
 
         final connection = await auth.authenticateByQuickConnect(
-          baseUrl: _urlController.text,
+          baseUrl: endpoint.activeBaseUrl,
+          baseUrls: endpoint.baseUrls,
           secret: initiation.secret,
           deviceId: deviceId,
           serverInfo: info,
@@ -227,6 +231,14 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       _qcInitiation = null;
     });
     setBusy(false);
+  }
+
+  List<String> _enteredUrls() {
+    return _urlController.text
+        .split(RegExp(r'[\n,]+'))
+        .map(JellyfinEndpointDiscovery.normalizeBaseUrl)
+        .where((url) => url.isNotEmpty)
+        .toList(growable: false);
   }
 
   /// Shared persistence path for both username/password and Quick Connect:
@@ -347,24 +359,34 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       ];
     }
     return [
-      Text(t.addServer.jellyfinUrlIntro, style: theme.textTheme.bodyMedium),
+      Text(t.addServer.jellyfinUrlsIntro, style: theme.textTheme.bodyMedium),
       const SizedBox(height: 16),
       FocusableTextFormField(
         controller: _urlController,
         focusNode: _urlFocus,
         autofocus: true,
         keyboardType: TextInputType.url,
+        minLines: 1,
+        maxLines: 4,
         autocorrect: false,
         enableSuggestions: false,
         enabled: !busy,
+        onChanged: (_) {
+          if (_serverInfo == null && _serverEndpoint == null && !_quickConnectEnabled) return;
+          setState(() {
+            _serverEndpoint = null;
+            _serverInfo = null;
+            _quickConnectEnabled = false;
+          });
+        },
         onNavigateDown: _serverInfo == null ? () => _findServerFocus.requestFocus() : null,
         textInputAction: TextInputAction.go,
         onFieldSubmitted: busy ? null : (_) => _probe(),
         decoration: InputDecoration(
-          labelText: t.addServer.serverUrl,
+          labelText: t.addServer.serverUrls,
           prefixIcon: const AppIcon(Symbols.link_rounded, fill: 1),
         ),
-        validator: (v) => v == null || v.trim().isEmpty ? t.addServer.required : null,
+        validator: (_) => _enteredUrls().isEmpty ? t.addServer.required : null,
       ),
       if (_serverInfo == null) ...[
         const SizedBox(height: 16),
@@ -477,6 +499,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
             onPressed: busy
                 ? null
                 : () => setState(() {
+                    _serverEndpoint = null;
                     _serverInfo = null;
                     _quickConnectEnabled = false;
                   }),

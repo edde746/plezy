@@ -36,6 +36,7 @@
     "yes": "Sì",
     "no": "No",
     "delete": "Elimina",
+    "edit": "Modifica",
     "shuffle": "Casuale",
     "addTo": "Aggiungi a...",
     "createNew": "Crea",
@@ -609,7 +610,9 @@
     "addConnectionSubtitleScoped": "Aggiungi a ${displayName}: Plex, Jellyfin o un'altra connessione profilo",
     "sessionExpiredOne": "Sessione scaduta per ${name}",
     "sessionExpiredMany": "Sessione scaduta per ${count} server",
-    "signInAgain": "Accedi di nuovo"
+    "signInAgain": "Accedi di nuovo",
+    "editJellyfinTitle": "Modifica connessione Jellyfin",
+    "editJellyfinIntro": "Aggiungi o rimuovi URL per ${serverName}. Plezy userà l'URL raggiungibile con la latenza più bassa."
   },
   "discover": {
     "title": "Esplora",
@@ -1256,7 +1259,9 @@
   "addServer": {
     "addJellyfinTitle": "Aggiungi server Jellyfin",
     "jellyfinUrlIntro": "Inserisci l'URL del server, es. `https://jellyfin.example.com`.",
+    "jellyfinUrlsIntro": "Inserisci uno o più URL del server, separati da virgole o nuove righe. Plezy userà l'URL raggiungibile con la latenza più bassa.",
     "serverUrl": "URL del server",
+    "serverUrls": "URL del server",
     "findServer": "Trova server",
     "username": "Nome utente",
     "password": "Password",

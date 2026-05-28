@@ -97,6 +97,8 @@ class MpvPlayerCoreBase: NSObject {
   private var cachedVideoPrimaries: String?
   private var cachedVideoColorMatrix: String?
   private var serverDisplayCriteriaActive = false
+  private var cachedDvConversionMode = "auto"
+  private var cachedDvConversionLogEnabled = false
   var hdrEnabled: Bool {
     cacheLock.lock()
     defer { cacheLock.unlock() }
@@ -284,6 +286,8 @@ class MpvPlayerCoreBase: NSObject {
       guard let renderLayer = videoLayer else { return false }
     #endif
 
+    applyDvConversionModeEnvironment()
+
     mpv = mpv_create()
     guard let mpv else {
       print("[MpvPlayerCore] Failed to create MPV context")
@@ -386,7 +390,88 @@ class MpvPlayerCoreBase: NSObject {
       return
     }
 
+    if name == "dv-conversion-mode" {
+      setDvConversionMode(value)
+      completion(.success(()))
+      return
+    }
+
+    if name == "dv-conversion-log" {
+      setDvConversionLogEnabled(parseBoolProperty(value))
+      completion(.success(()))
+      return
+    }
+
     setRawStringPropertyAsync(name, value: value, completion: completion)
+  }
+
+  private func parseBoolProperty(_ value: String) -> Bool {
+    switch value.lowercased() {
+    case "1", "true", "yes", "on":
+      return true
+    default:
+      return false
+    }
+  }
+
+  private func normalizeDvConversionMode(_ value: String) -> String {
+    switch value.lowercased() {
+    case "disabled", "native":
+      return "disabled"
+    case "dv81", "p8", "p7_to_p8", "p7-to-p8":
+      return "dv81"
+    case "hevc", "hevc_strip", "p7_to_hevc", "p7-to-hevc":
+      return "hevc_strip"
+    default:
+      return "auto"
+    }
+  }
+
+  private func applyDvConversionModeEnvironment() {
+    cacheLock.lock()
+    let mode = cachedDvConversionMode
+    let logEnabled = cachedDvConversionLogEnabled
+    cacheLock.unlock()
+
+    setenv("PLEZY_DV_CONVERSION_MODE", mode, 1)
+    setenv("PLEZY_DV_CONVERSION_LOG", logEnabled ? "1" : "0", 1)
+  }
+
+  func setDvConversionMode(_ mode: String) {
+    cacheLock.lock()
+    cachedDvConversionMode = normalizeDvConversionMode(mode)
+    let normalized = cachedDvConversionMode
+    let logEnabled = cachedDvConversionLogEnabled
+    cacheLock.unlock()
+
+    applyDvConversionModeEnvironment()
+    if logEnabled {
+      print("[MpvPlayerCore] DV conversion mode: \(normalized)")
+    }
+  }
+
+  func setDvConversionLogEnabled(_ enabled: Bool) {
+    cacheLock.lock()
+    cachedDvConversionLogEnabled = enabled
+    let mode = cachedDvConversionMode
+    cacheLock.unlock()
+
+    applyDvConversionModeEnvironment()
+    if enabled {
+      print("[MpvPlayerCore] DV conversion logging enabled (mode: \(mode))")
+    }
+  }
+
+  func getDvConversionMode() -> String {
+    cacheLock.lock()
+    defer { cacheLock.unlock() }
+    return cachedDvConversionMode
+  }
+
+  func getDvConversionLogEnabled() -> Bool {
+    cacheLock.lock()
+    defer { cacheLock.unlock() }
+    return cachedDvConversionLogEnabled
   }
 
   func setInt64PropertyAsync(
@@ -443,6 +528,16 @@ class MpvPlayerCoreBase: NSObject {
   }
 
   func getPropertyAsync(_ name: String, completion: @escaping (Result<String?, Error>) -> Void) {
+    if name == "dv-conversion-mode" {
+      completion(.success(getDvConversionMode()))
+      return
+    }
+
+    if name == "dv-conversion-log" {
+      completion(.success(getDvConversionLogEnabled() ? "yes" : "no"))
+      return
+    }
+
     guard let mpv else {
       completion(.success(nil))
       return

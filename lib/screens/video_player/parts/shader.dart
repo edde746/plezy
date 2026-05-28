@@ -24,8 +24,11 @@ extension _VideoPlayerShaderMethods on VideoPlayerScreenState {
 
   /// Restore ambient lighting from persisted setting
   Future<void> _restoreAmbientLighting() async {
+    if (!mounted) return;
+
     final shaderProvider = context.read<ShaderProvider>();
     final settings = await SettingsService.getInstance();
+    if (!mounted) return;
     if (!settings.read(SettingsService.ambientLighting)) return;
 
     final ambientLighting = _ambientLightingService;

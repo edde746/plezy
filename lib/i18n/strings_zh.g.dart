@@ -143,6 +143,7 @@ class _TranslationsCommonZh extends TranslationsCommonEn {
 	@override String get yes => '是';
 	@override String get no => '否';
 	@override String get delete => '删除';
+	@override String get edit => '编辑';
 	@override String get shuffle => '随机播放';
 	@override String get addTo => '添加到...';
 	@override String get createNew => '新建';
@@ -812,6 +813,8 @@ class _TranslationsConnectionsZh extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => '${name} 的会话已过期';
 	@override String sessionExpiredMany({required Object count}) => '${count} 个服务器的会话已过期';
 	@override String get signInAgain => '重新登录';
+	@override String get editJellyfinTitle => '编辑 Jellyfin 连接';
+	@override String editJellyfinIntro({required Object serverName}) => '添加或移除 ${serverName} 的 URL。Plezy 会使用可访问且延迟最低的 URL。';
 }
 
 // Path: discover
@@ -1502,7 +1505,9 @@ class _TranslationsAddServerZh extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => '添加 Jellyfin 服务器';
 	@override String get jellyfinUrlIntro => '输入服务器 URL，例如 `https://jellyfin.example.com`。';
+	@override String get jellyfinUrlsIntro => '输入一个或多个服务器 URL，用逗号或换行分隔。Plezy 会使用可访问且延迟最低的 URL。';
 	@override String get serverUrl => '服务器 URL';
+	@override String get serverUrls => '服务器 URL';
 	@override String get findServer => '查找服务器';
 	@override String get username => '用户名';
 	@override String get password => '密码';
@@ -1833,6 +1838,7 @@ extension on TranslationsZh {
 			'common.yes' => '是',
 			'common.no' => '否',
 			'common.delete' => '删除',
+			'common.edit' => '编辑',
 			'common.shuffle' => '随机播放',
 			'common.addTo' => '添加到...',
 			'common.createNew' => '新建',
@@ -2312,9 +2318,9 @@ extension on TranslationsZh {
 			'profiles.delete' => '删除',
 			'profiles.signOut' => '退出登录',
 			'profiles.signOutPlexTitle' => '退出 Plex 登录？',
-			'profiles.signOutPlexMessage' => ({required Object displayName}) => '要移除 ${displayName} 和所有 Plex Home 用户吗？可随时重新登录。',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => '要移除 ${displayName} 和所有 Plex Home 用户吗？可随时重新登录。',
 			'profiles.signedOutPlex' => '已退出 Plex 登录。',
 			'profiles.signOutFailed' => '退出登录失败。',
 			'profiles.sectionTitle' => '配置文件',
@@ -2369,6 +2375,8 @@ extension on TranslationsZh {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 的会话已过期',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 个服务器的会话已过期',
 			'connections.signInAgain' => '重新登录',
+			'connections.editJellyfinTitle' => '编辑 Jellyfin 连接',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => '添加或移除 ${serverName} 的 URL。Plezy 会使用可访问且延迟最低的 URL。',
 			'discover.title' => '发现',
 			'discover.switchProfile' => '切换用户',
 			'discover.noContentAvailable' => '没有可用内容',
@@ -2824,11 +2832,11 @@ extension on TranslationsZh {
 			'metadataEdit.contentRating' => '内容分级',
 			'metadataEdit.studio' => '制片厂',
 			'metadataEdit.tagline' => '标语',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => '简介',
 			'metadataEdit.poster' => '海报',
 			'metadataEdit.background' => '背景',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => '标志',
 			'metadataEdit.squareArt' => '方形图片',
 			'metadataEdit.selectPoster' => '选择海报',
@@ -2947,7 +2955,9 @@ extension on TranslationsZh {
 			'trackers.libraryFilter.noLibraries' => '没有可用的媒体库',
 			'addServer.addJellyfinTitle' => '添加 Jellyfin 服务器',
 			'addServer.jellyfinUrlIntro' => '输入服务器 URL，例如 `https://jellyfin.example.com`。',
+			'addServer.jellyfinUrlsIntro' => '输入一个或多个服务器 URL，用逗号或换行分隔。Plezy 会使用可访问且延迟最低的 URL。',
 			'addServer.serverUrl' => '服务器 URL',
+			'addServer.serverUrls' => '服务器 URL',
 			'addServer.findServer' => '查找服务器',
 			'addServer.username' => '用户名',
 			'addServer.password' => '密码',
