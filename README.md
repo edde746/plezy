@@ -24,23 +24,6 @@ A modern client for Plex and Jellyfin on desktop, mobile, and TV. Built with Flu
 | Windows | [Installer (x64, arm64)](https://github.com/TeeJS/plezy/releases/download/windows-latest/plezy-windows-installer.exe) · [Portable x64](https://github.com/TeeJS/plezy/releases/download/windows-latest/plezy-windows-x64-portable.7z) · [Portable arm64](https://github.com/TeeJS/plezy/releases/download/windows-latest/plezy-windows-arm64-portable.7z) |
 | Android | [APK arm64-v8a](https://github.com/TeeJS/plezy/releases/download/android-latest/plezy-android-arm64-v8a.apk) · [armeabi-v7a](https://github.com/TeeJS/plezy/releases/download/android-latest/plezy-android-armeabi-v7a.apk) · [x86_64](https://github.com/TeeJS/plezy/releases/download/android-latest/plezy-android-x86_64.apk) |
 
-Package managers:
-
-- [Nix](https://search.nixos.org/packages?channel=unstable&query=plezy) - Community package by [@mio-19](https://github.com/mio-19) and [@MiniHarinn](https://github.com/MiniHarinn)
-- **Homebrew** (macOS):
-  ```bash
-  brew tap edde746/plezy https://github.com/edde746/plezy
-  brew install --cask plezy
-  ```
-- [AUR](https://aur.archlinux.org/packages/plezy-bin) (Arch Linux) - Community maintained by [@jianglai](https://github.com/jianglai):
-  ```bash
-  yay -S plezy-bin
-  ```
-- **WinGet** (Windows):
-  ```bash
-  winget install edde746.Plezy
-  ```
-
 ## Features
 
 ### <img src="assets/readme_icons/browse.svg" height="20" alt="" align="center" /> Browse & Discover
