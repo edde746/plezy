@@ -187,6 +187,7 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
         downloadProvider: downloadProvider,
         globalKey: rule.globalKey,
         currentCount: rule.episodeCount,
+        currentRandom: rule.random,
         displayTitle: _title(),
       );
     }

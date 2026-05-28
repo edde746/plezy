@@ -968,6 +968,8 @@
     "unwatchedOnly": "Unwatched only",
     "nextNUnwatched": "Next ${count} unwatched",
     "customAmount": "Custom amount...",
+    "randomSelection": "Random selection",
+    "randomSelectionDescription": "Pick episodes at random instead of in order",
     "howManyEpisodes": "How many episodes?",
     "itemsQueued": "${count} items queued for download",
     "keepSynced": "Keep synced",

@@ -37,8 +37,8 @@ class _AppDatabaseTestSuite {
     // ============================================================
 
     group('schema', () {
-      test('schemaVersion is 14', () {
-        expect(db.schemaVersion, 14);
+      test('schemaVersion is 15', () {
+        expect(db.schemaVersion, 15);
       });
 
       test('all tables are accessible and start empty', () async {
@@ -844,7 +844,26 @@ class _AppDatabaseTestSuite {
         expect(rules.first.enabled, isTrue); // default
         expect(rules.first.downloadFilter, 'unwatched'); // default
         expect(rules.first.mediaIndex, 0); // default
+        expect(rules.first.random, isFalse); // default
         expect(rules.first.lastExecutedAt, isNull);
+      });
+
+      test('insertSyncRule persists the random flag and updateSyncRuleRandom toggles it', () async {
+        await db.insertSyncRule(
+          serverId: 'srv',
+          ratingKey: '10',
+          globalKey: 'srv:10',
+          targetType: 'show',
+          episodeCount: 5,
+          random: true,
+        );
+        expect((await db.getSyncRule('srv:10'))!.random, isTrue);
+
+        await db.updateSyncRuleRandom('srv:10', false);
+        expect((await db.getSyncRule('srv:10'))!.random, isFalse);
+
+        await db.updateSyncRuleRandom('srv:10', true);
+        expect((await db.getSyncRule('srv:10'))!.random, isTrue);
       });
 
       test('insertSyncRule upserts on the UNIQUE globalKey instead of crashing', () async {

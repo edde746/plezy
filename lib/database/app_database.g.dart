@@ -3094,6 +3094,19 @@ class $SyncRulesTable extends SyncRules
     requiredDuringInsert: false,
     defaultValue: const Constant('unwatched'),
   );
+  static const VerificationMeta _randomMeta = const VerificationMeta('random');
+  @override
+  late final GeneratedColumn<bool> random = GeneratedColumn<bool>(
+    'random',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("random" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -3108,6 +3121,7 @@ class $SyncRulesTable extends SyncRules
     lastExecutedAt,
     mediaIndex,
     downloadFilter,
+    random,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -3211,6 +3225,12 @@ class $SyncRulesTable extends SyncRules
         ),
       );
     }
+    if (data.containsKey('random')) {
+      context.handle(
+        _randomMeta,
+        random.isAcceptableOrUnknown(data['random']!, _randomMeta),
+      );
+    }
     return context;
   }
 
@@ -3268,6 +3288,10 @@ class $SyncRulesTable extends SyncRules
         DriftSqlType.string,
         data['${effectivePrefix}download_filter'],
       )!,
+      random: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}random'],
+      )!,
     );
   }
 
@@ -3290,6 +3314,11 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   final int? lastExecutedAt;
   final int mediaIndex;
   final String downloadFilter;
+
+  /// When true, the rule's deficit top-up picks episodes at random from the
+  /// not-yet-downloaded unwatched pool instead of in airing order. Only
+  /// meaningful for show/season rules with a non-zero [episodeCount].
+  final bool random;
   const SyncRuleItem({
     required this.id,
     required this.profileId,
@@ -3303,6 +3332,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     this.lastExecutedAt,
     required this.mediaIndex,
     required this.downloadFilter,
+    required this.random,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3321,6 +3351,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     }
     map['media_index'] = Variable<int>(mediaIndex);
     map['download_filter'] = Variable<String>(downloadFilter);
+    map['random'] = Variable<bool>(random);
     return map;
   }
 
@@ -3340,6 +3371,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           : Value(lastExecutedAt),
       mediaIndex: Value(mediaIndex),
       downloadFilter: Value(downloadFilter),
+      random: Value(random),
     );
   }
 
@@ -3361,6 +3393,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       lastExecutedAt: serializer.fromJson<int?>(json['lastExecutedAt']),
       mediaIndex: serializer.fromJson<int>(json['mediaIndex']),
       downloadFilter: serializer.fromJson<String>(json['downloadFilter']),
+      random: serializer.fromJson<bool>(json['random']),
     );
   }
   @override
@@ -3379,6 +3412,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       'lastExecutedAt': serializer.toJson<int?>(lastExecutedAt),
       'mediaIndex': serializer.toJson<int>(mediaIndex),
       'downloadFilter': serializer.toJson<String>(downloadFilter),
+      'random': serializer.toJson<bool>(random),
     };
   }
 
@@ -3395,6 +3429,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     Value<int?> lastExecutedAt = const Value.absent(),
     int? mediaIndex,
     String? downloadFilter,
+    bool? random,
   }) => SyncRuleItem(
     id: id ?? this.id,
     profileId: profileId ?? this.profileId,
@@ -3410,6 +3445,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
         : this.lastExecutedAt,
     mediaIndex: mediaIndex ?? this.mediaIndex,
     downloadFilter: downloadFilter ?? this.downloadFilter,
+    random: random ?? this.random,
   );
   SyncRuleItem copyWithCompanion(SyncRulesCompanion data) {
     return SyncRuleItem(
@@ -3435,6 +3471,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       downloadFilter: data.downloadFilter.present
           ? data.downloadFilter.value
           : this.downloadFilter,
+      random: data.random.present ? data.random.value : this.random,
     );
   }
 
@@ -3452,7 +3489,8 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           ..write('createdAt: $createdAt, ')
           ..write('lastExecutedAt: $lastExecutedAt, ')
           ..write('mediaIndex: $mediaIndex, ')
-          ..write('downloadFilter: $downloadFilter')
+          ..write('downloadFilter: $downloadFilter, ')
+          ..write('random: $random')
           ..write(')'))
         .toString();
   }
@@ -3471,6 +3509,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     lastExecutedAt,
     mediaIndex,
     downloadFilter,
+    random,
   );
   @override
   bool operator ==(Object other) =>
@@ -3487,7 +3526,8 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           other.createdAt == this.createdAt &&
           other.lastExecutedAt == this.lastExecutedAt &&
           other.mediaIndex == this.mediaIndex &&
-          other.downloadFilter == this.downloadFilter);
+          other.downloadFilter == this.downloadFilter &&
+          other.random == this.random);
 }
 
 class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
@@ -3503,6 +3543,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   final Value<int?> lastExecutedAt;
   final Value<int> mediaIndex;
   final Value<String> downloadFilter;
+  final Value<bool> random;
   const SyncRulesCompanion({
     this.id = const Value.absent(),
     this.profileId = const Value.absent(),
@@ -3516,6 +3557,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     this.lastExecutedAt = const Value.absent(),
     this.mediaIndex = const Value.absent(),
     this.downloadFilter = const Value.absent(),
+    this.random = const Value.absent(),
   });
   SyncRulesCompanion.insert({
     this.id = const Value.absent(),
@@ -3530,6 +3572,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     this.lastExecutedAt = const Value.absent(),
     this.mediaIndex = const Value.absent(),
     this.downloadFilter = const Value.absent(),
+    this.random = const Value.absent(),
   }) : serverId = Value(serverId),
        ratingKey = Value(ratingKey),
        globalKey = Value(globalKey),
@@ -3549,6 +3592,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Expression<int>? lastExecutedAt,
     Expression<int>? mediaIndex,
     Expression<String>? downloadFilter,
+    Expression<bool>? random,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -3563,6 +3607,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       if (lastExecutedAt != null) 'last_executed_at': lastExecutedAt,
       if (mediaIndex != null) 'media_index': mediaIndex,
       if (downloadFilter != null) 'download_filter': downloadFilter,
+      if (random != null) 'random': random,
     });
   }
 
@@ -3579,6 +3624,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Value<int?>? lastExecutedAt,
     Value<int>? mediaIndex,
     Value<String>? downloadFilter,
+    Value<bool>? random,
   }) {
     return SyncRulesCompanion(
       id: id ?? this.id,
@@ -3593,6 +3639,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       lastExecutedAt: lastExecutedAt ?? this.lastExecutedAt,
       mediaIndex: mediaIndex ?? this.mediaIndex,
       downloadFilter: downloadFilter ?? this.downloadFilter,
+      random: random ?? this.random,
     );
   }
 
@@ -3635,6 +3682,9 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     if (downloadFilter.present) {
       map['download_filter'] = Variable<String>(downloadFilter.value);
     }
+    if (random.present) {
+      map['random'] = Variable<bool>(random.value);
+    }
     return map;
   }
 
@@ -3652,7 +3702,8 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
           ..write('createdAt: $createdAt, ')
           ..write('lastExecutedAt: $lastExecutedAt, ')
           ..write('mediaIndex: $mediaIndex, ')
-          ..write('downloadFilter: $downloadFilter')
+          ..write('downloadFilter: $downloadFilter, ')
+          ..write('random: $random')
           ..write(')'))
         .toString();
   }
@@ -6765,6 +6816,7 @@ typedef $$SyncRulesTableCreateCompanionBuilder =
       Value<int?> lastExecutedAt,
       Value<int> mediaIndex,
       Value<String> downloadFilter,
+      Value<bool> random,
     });
 typedef $$SyncRulesTableUpdateCompanionBuilder =
     SyncRulesCompanion Function({
@@ -6780,6 +6832,7 @@ typedef $$SyncRulesTableUpdateCompanionBuilder =
       Value<int?> lastExecutedAt,
       Value<int> mediaIndex,
       Value<String> downloadFilter,
+      Value<bool> random,
     });
 
 class $$SyncRulesTableFilterComposer
@@ -6848,6 +6901,11 @@ class $$SyncRulesTableFilterComposer
 
   ColumnFilters<String> get downloadFilter => $composableBuilder(
     column: $table.downloadFilter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get random => $composableBuilder(
+    column: $table.random,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6920,6 +6978,11 @@ class $$SyncRulesTableOrderingComposer
     column: $table.downloadFilter,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<bool> get random => $composableBuilder(
+    column: $table.random,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$SyncRulesTableAnnotationComposer
@@ -6976,6 +7039,9 @@ class $$SyncRulesTableAnnotationComposer
     column: $table.downloadFilter,
     builder: (column) => column,
   );
+
+  GeneratedColumn<bool> get random =>
+      $composableBuilder(column: $table.random, builder: (column) => column);
 }
 
 class $$SyncRulesTableTableManager
@@ -7021,6 +7087,7 @@ class $$SyncRulesTableTableManager
                 Value<int?> lastExecutedAt = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String> downloadFilter = const Value.absent(),
+                Value<bool> random = const Value.absent(),
               }) => SyncRulesCompanion(
                 id: id,
                 profileId: profileId,
@@ -7034,6 +7101,7 @@ class $$SyncRulesTableTableManager
                 lastExecutedAt: lastExecutedAt,
                 mediaIndex: mediaIndex,
                 downloadFilter: downloadFilter,
+                random: random,
               ),
           createCompanionCallback:
               ({
@@ -7049,6 +7117,7 @@ class $$SyncRulesTableTableManager
                 Value<int?> lastExecutedAt = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String> downloadFilter = const Value.absent(),
+                Value<bool> random = const Value.absent(),
               }) => SyncRulesCompanion.insert(
                 id: id,
                 profileId: profileId,
@@ -7062,6 +7131,7 @@ class $$SyncRulesTableTableManager
                 lastExecutedAt: lastExecutedAt,
                 mediaIndex: mediaIndex,
                 downloadFilter: downloadFilter,
+                random: random,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

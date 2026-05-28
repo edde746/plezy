@@ -2882,6 +2882,12 @@ class TranslationsDownloadsEn {
 	/// en: 'Custom amount...'
 	String get customAmount => 'Custom amount...';
 
+	/// en: 'Random selection'
+	String get randomSelection => 'Random selection';
+
+	/// en: 'Pick episodes at random instead of in order'
+	String get randomSelectionDescription => 'Pick episodes at random instead of in order';
+
 	/// en: 'How many episodes?'
 	String get howManyEpisodes => 'How many episodes?';
 
@@ -5041,6 +5047,8 @@ extension on Translations {
 			'downloads.unwatchedOnly' => 'Unwatched only',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
 			'downloads.customAmount' => 'Custom amount...',
+			'downloads.randomSelection' => 'Random selection',
+			'downloads.randomSelectionDescription' => 'Pick episodes at random instead of in order',
 			'downloads.howManyEpisodes' => 'How many episodes?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			'downloads.keepSynced' => 'Keep synced',
@@ -5175,10 +5183,10 @@ extension on Translations {
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Summary',
-			'metadataEdit.poster' => 'Poster',
-			'metadataEdit.background' => 'Background',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.poster' => 'Poster',
+			'metadataEdit.background' => 'Background',
 			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Square Art',
 			'metadataEdit.selectPoster' => 'Select Poster',

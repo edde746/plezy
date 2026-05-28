@@ -1,6 +1,37 @@
+import 'dart:math';
+
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
+
+/// Airing-order comparator: season number, then episode number. Missing
+/// indices sort first (treated as 0). Used to restore a randomly-picked subset
+/// to a natural order before queueing.
+int episodeAiringOrder(MediaItem a, MediaItem b) {
+  final seasonCompare = (a.parentIndex ?? 0).compareTo(b.parentIndex ?? 0);
+  if (seasonCompare != 0) return seasonCompare;
+  return (a.index ?? 0).compareTo(b.index ?? 0);
+}
+
+/// Choose which of the collected [episodes] to queue.
+///
+/// By default returns [episodes] unchanged (the caller applies [maxCount] while
+/// queueing, taking them in airing order). When [random] is set alongside a
+/// [maxCount] smaller than the pool, picks [maxCount] episodes uniformly at
+/// random and then restores airing order so the queue and offline library
+/// still read naturally. Without a cap there is no subset to randomise.
+///
+/// [rng] is injectable so tests can pin the selection.
+List<MediaItem> selectEpisodesForDownload(
+  List<MediaItem> episodes, {
+  int? maxCount,
+  bool random = false,
+  Random? rng,
+}) {
+  if (!random || maxCount == null || maxCount >= episodes.length) return episodes;
+  final shuffled = [...episodes]..shuffle(rng);
+  return shuffled.take(maxCount).toList()..sort(episodeAiringOrder);
+}
 
 /// Collect every episode of a show into [out] using the backend's one-shot
 /// recursive-leaves call ([MediaServerClient.fetchPlayableDescendants] —

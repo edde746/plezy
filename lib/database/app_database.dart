@@ -60,7 +60,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration {
@@ -205,6 +205,10 @@ class AppDatabase extends _$AppDatabase {
             'Index idx_offline_watch_progress_profile',
             () => m.create(idxOfflineWatchProgressProfile),
           );
+        }
+        if (from < 15) {
+          appLogger.i('Adding random column to SyncRules (v15 migration)');
+          await _ignoreAlreadyExists('SyncRules.random column', () => m.addColumn(syncRules, syncRules.random));
         }
       },
     );
@@ -471,6 +475,7 @@ class AppDatabase extends _$AppDatabase {
     required int episodeCount,
     int mediaIndex = 0,
     String downloadFilter = 'unwatched',
+    bool random = false,
   }) async {
     // [insertOnConflictUpdate] defaults the conflict target to the primary
     // key (`id`), which is auto-incremented — the conflict never triggers
@@ -488,6 +493,7 @@ class AppDatabase extends _$AppDatabase {
         createdAt: DateTime.now().millisecondsSinceEpoch,
         mediaIndex: Value(mediaIndex),
         downloadFilter: Value(downloadFilter),
+        random: Value(random),
       ),
       onConflict: DoUpdate(
         (_) => SyncRulesCompanion(
@@ -498,6 +504,7 @@ class AppDatabase extends _$AppDatabase {
           episodeCount: Value(episodeCount),
           mediaIndex: Value(mediaIndex),
           downloadFilter: Value(downloadFilter),
+          random: Value(random),
         ),
         target: [syncRules.globalKey],
       ),
@@ -532,6 +539,12 @@ class AppDatabase extends _$AppDatabase {
     await (update(
       syncRules,
     )..where((t) => t.globalKey.equals(globalKey))).write(SyncRulesCompanion(downloadFilter: Value(downloadFilter)));
+  }
+
+  Future<void> updateSyncRuleRandom(String globalKey, bool random) async {
+    await (update(
+      syncRules,
+    )..where((t) => t.globalKey.equals(globalKey))).write(SyncRulesCompanion(random: Value(random)));
   }
 
   Future<void> updateSyncRuleEnabled(String globalKey, bool enabled) async {

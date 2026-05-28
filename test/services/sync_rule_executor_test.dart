@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -29,6 +31,31 @@ JellyfinConnection _jellyfinConnection(String userId) => JellyfinConnection(
   deviceId: 'device',
   createdAt: DateTime.fromMillisecondsSinceEpoch(0),
 );
+
+/// A Jellyfin client whose show `show-1` has [episodeCount] unwatched episodes
+/// (`ep-1`..`ep-N`). Used to give random-rule deficit fills a pool to draw from.
+JellyfinClient _showWithEpisodesClient(String userId, int episodeCount) {
+  return JellyfinClient.forTesting(
+    connection: _jellyfinConnection(userId),
+    httpClient: MockClient((request) async {
+      if (request.method == 'GET' && request.url.path == '/Users/$userId/Items/show-1') {
+        return http.Response(
+          '{"Id":"show-1","Type":"Series","Name":"Show","RecursiveItemCount":$episodeCount}',
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      if (request.method == 'GET' && request.url.path == '/Items') {
+        final items = [
+          for (var i = 1; i <= episodeCount; i++)
+            '{"Id":"ep-$i","Type":"Episode","Name":"E$i","SeriesId":"show-1","UserData":{"PlayCount":0}}',
+        ].join(',');
+        return http.Response('{"Items":[$items]}', 200, headers: {'content-type': 'application/json'});
+      }
+      return http.Response('not found', 404);
+    }),
+  );
+}
 
 void main() {
   setUp(resetSharedPreferencesForTest);
@@ -342,6 +369,98 @@ void main() {
     expect(queued.single.id, 'movie-1');
     expect(client.collectionPageCalls, [(start: 0, size: 100)]);
     expect(client.fetchChildrenCalled, isFalse);
+  });
+
+  test('random episode rule fills the deficit with episodes drawn from the pool', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    JellyfinApiCache.initialize(db);
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _showWithEpisodesClient('user-a', 6);
+    addTearDown(client.close);
+    manager.debugRegisterJellyfinClientForTesting(client);
+
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: 'jf-machine',
+      ratingKey: 'show-1',
+      globalKey: 'profile-a|jf-machine:show-1',
+      targetType: 'show',
+      episodeCount: 2,
+      random: true,
+    );
+
+    final queued = <MediaItem>[];
+    final executor = SyncRuleExecutor(database: db, random: Random(1));
+    final results = await executor.executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {},
+      metadata: const {},
+      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+        queued.add(item);
+        return true;
+      },
+      force: true,
+    );
+
+    // Exactly `episodeCount` queued, all from the pool, no duplicates.
+    expect(results.single.queuedCount, 2);
+    expect(queued, hasLength(2));
+    final pool = {for (var i = 1; i <= 6; i++) 'ep-$i'};
+    expect(queued.every((e) => pool.contains(e.id)), isTrue);
+    expect(queued.map((e) => e.id).toSet(), hasLength(2));
+  });
+
+  test('random episode rule tops up only the deficit and never re-queues active downloads', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    JellyfinApiCache.initialize(db);
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _showWithEpisodesClient('user-a', 6);
+    addTearDown(client.close);
+    manager.debugRegisterJellyfinClientForTesting(client);
+
+    await db.insertSyncRule(
+      profileId: 'profile-a',
+      serverId: 'jf-machine',
+      ratingKey: 'show-1',
+      globalKey: 'profile-a|jf-machine:show-1',
+      targetType: 'show',
+      episodeCount: 3,
+      random: true,
+    );
+
+    // ep-1 and ep-2 are already downloaded → deficit is 1.
+    final queued = <MediaItem>[];
+    final executor = SyncRuleExecutor(database: db, random: Random(5));
+    final results = await executor.executeSyncRules(
+      profileId: 'profile-a',
+      serverManager: manager,
+      downloads: const {
+        'jf-machine:ep-1': DownloadProgress(globalKey: 'jf-machine:ep-1', status: DownloadStatus.completed),
+        'jf-machine:ep-2': DownloadProgress(globalKey: 'jf-machine:ep-2', status: DownloadStatus.downloading),
+      },
+      metadata: const {},
+      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+        queued.add(item);
+        return true;
+      },
+      force: true,
+    );
+
+    expect(results.single.queuedCount, 1);
+    expect(queued, hasLength(1));
+    // The single top-up must come from the not-yet-downloaded remainder.
+    expect({'ep-3', 'ep-4', 'ep-5', 'ep-6'}, contains(queued.single.id));
   });
 }
 

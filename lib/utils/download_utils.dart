@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../focus/input_mode_tracker.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -8,9 +9,12 @@ import '../media/media_server_client.dart';
 import '../database/app_database.dart';
 import '../providers/download_provider.dart';
 import '../services/sync_rule_executor.dart';
+import '../widgets/app_icon.dart';
+import '../widgets/focusable_list_tile.dart';
 import 'content_utils.dart';
 import 'dialogs.dart';
 import 'download_version_utils.dart';
+import 'focus_utils.dart';
 import 'snackbar_helper.dart';
 
 /// Dialog option for the download picker. Typed to avoid stringly-typed values.
@@ -18,6 +22,11 @@ enum _DownloadChoice { all, unwatched, next5, next10, custom }
 
 /// Whether the user chose a one-time download or a persistent sync rule.
 enum _SyncChoice { downloadOnce, keepSynced }
+
+/// What the show/season download dialog returns: the picked option, whether
+/// the "random selection" toggle was on, and (for [_DownloadChoice.custom])
+/// the entered episode count.
+typedef _DownloadOptionsResult = ({_DownloadChoice choice, bool random, int? customCount});
 
 /// Result of the download dialog + queue operation.
 class DownloadResult {
@@ -60,33 +69,15 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   var filter = DownloadFilter.all;
   int? maxCount;
   bool keepSynced = false;
+  bool random = false;
 
   if (kind == MediaKind.show || kind == MediaKind.season) {
-    int? customCount;
-    final selected = await showOptionPickerDialog<_DownloadChoice>(
-      context,
-      title: t.downloads.downloadNow,
-      options: [
-        (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: _DownloadChoice.all),
-        (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: _DownloadChoice.unwatched),
-        (icon: Symbols.filter_5_rounded, label: t.downloads.nextNUnwatched(count: 5), value: _DownloadChoice.next5),
-        (
-          icon: Symbols.filter_9_plus_rounded,
-          label: t.downloads.nextNUnwatched(count: 10),
-          value: _DownloadChoice.next10,
-        ),
-        (icon: Symbols.tune_rounded, label: t.downloads.customAmount, value: _DownloadChoice.custom),
-      ],
-      onBeforeClose: (value) async {
-        if (value != _DownloadChoice.custom) return value;
-        customCount = await _showEpisodeCountDialog(context);
-        return customCount != null ? value : null;
-      },
-    );
+    final selected = await _showDownloadOptionsDialog(context);
 
     if (selected == null || !context.mounted) return null;
 
-    switch (selected) {
+    random = selected.random;
+    switch (selected.choice) {
       case _DownloadChoice.all:
         break;
       case _DownloadChoice.unwatched:
@@ -99,7 +90,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
         maxCount = 10;
       case _DownloadChoice.custom:
         filter = DownloadFilter.unwatched;
-        maxCount = customCount;
+        maxCount = selected.customCount;
     }
 
     if (filter == DownloadFilter.unwatched && kind == MediaKind.show && context.mounted) {
@@ -134,6 +125,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
       targetType: metadata.kind.id.isNotEmpty ? metadata.kind.id : ContentTypes.show,
       episodeCount: syncCount,
       mediaIndex: versionConfig.mediaIndex,
+      random: random,
       targetMetadata: metadata,
     );
   }
@@ -144,6 +136,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
     versionConfig: versionConfig,
     filter: filter,
     maxCount: maxCount,
+    random: random,
   );
 
   return DownloadResult(
@@ -258,6 +251,109 @@ Future<DownloadResult?> showCollectionDownloadOptionsAndQueue(
   downloadProvider: downloadProvider,
 );
 
+/// Shows the show/season download options menu: a "random selection" toggle
+/// plus the five scope choices. Returns null if dismissed (or if the custom
+/// count sub-prompt is cancelled). Bespoke (rather than [showOptionPickerDialog])
+/// because it needs a persistent toggle, per-row dimming, and a compound result.
+Future<_DownloadOptionsResult?> _showDownloadOptionsDialog(BuildContext context) {
+  final focusFirstItem = InputModeTracker.isKeyboardMode(context);
+  return showDialog<_DownloadOptionsResult>(
+    context: context,
+    builder: (context) => _DownloadOptionsDialog(focusFirstItem: focusFirstItem),
+  );
+}
+
+/// Test-only handle to the show/season download options dialog so its toggle
+/// and row-dimming behaviour can be widget-tested without the full queue flow.
+@visibleForTesting
+Widget debugDownloadOptionsDialog({bool focusFirstItem = false}) =>
+    _DownloadOptionsDialog(focusFirstItem: focusFirstItem);
+
+class _DownloadOptionsDialog extends StatefulWidget {
+  final bool focusFirstItem;
+
+  const _DownloadOptionsDialog({this.focusFirstItem = false});
+
+  @override
+  State<_DownloadOptionsDialog> createState() => _DownloadOptionsDialogState();
+}
+
+class _DownloadOptionsDialogState extends State<_DownloadOptionsDialog> {
+  bool _random = false;
+  late final FocusNode _initialFocusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialFocusNode = FocusNode(debugLabel: 'DownloadOptionsInitialFocus');
+    if (widget.focusFirstItem) {
+      FocusUtils.requestFocusAfterBuild(this, _initialFocusNode);
+    }
+  }
+
+  @override
+  void dispose() {
+    _initialFocusNode.dispose();
+    super.dispose();
+  }
+
+  /// "Random" only changes which episodes a capped pick downloads, so the
+  /// uncapped scopes are disabled while it's on.
+  bool _isEnabled(_DownloadChoice choice) {
+    if (!_random) return true;
+    return choice != _DownloadChoice.all && choice != _DownloadChoice.unwatched;
+  }
+
+  Future<void> _select(_DownloadChoice choice) async {
+    int? customCount;
+    if (choice == _DownloadChoice.custom) {
+      customCount = await _showEpisodeCountDialog(context);
+      // Cancelled the count prompt — keep the options dialog open.
+      if (customCount == null) return;
+    }
+    if (!mounted) return;
+    Navigator.pop(context, (choice: choice, random: _random, customCount: customCount));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final options = <({IconData icon, String label, _DownloadChoice value})>[
+      (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: _DownloadChoice.all),
+      (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: _DownloadChoice.unwatched),
+      (icon: Symbols.filter_5_rounded, label: t.downloads.nextNUnwatched(count: 5), value: _DownloadChoice.next5),
+      (icon: Symbols.filter_9_plus_rounded, label: t.downloads.nextNUnwatched(count: 10), value: _DownloadChoice.next10),
+      (icon: Symbols.tune_rounded, label: t.downloads.customAmount, value: _DownloadChoice.custom),
+    ];
+
+    return SimpleDialog(
+      title: Text(t.downloads.downloadNow),
+      contentPadding: const EdgeInsets.symmetric(vertical: 8),
+      children: [
+        FocusableSwitchListTile(
+          value: _random,
+          onChanged: (value) => setState(() => _random = value),
+          secondary: const AppIcon(Symbols.shuffle_rounded, fill: 1, size: 24),
+          title: Text(t.downloads.randomSelection),
+          subtitle: Text(t.downloads.randomSelectionDescription),
+        ),
+        const Divider(height: 8),
+        ...List.generate(options.length, (index) {
+          final option = options[index];
+          final enabled = _isEnabled(option.value);
+          return FocusableListTile(
+            focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
+            enabled: enabled,
+            leading: AppIcon(option.icon, fill: 1, size: 24),
+            title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+            onTap: enabled ? () => _select(option.value) : null,
+          );
+        }),
+      ],
+    );
+  }
+}
+
 Future<int?> _showEpisodeCountDialog(
   BuildContext context, {
   String? title,
@@ -282,23 +378,29 @@ Future<int?> _showEpisodeCountDialog(
   return int.tryParse(result);
 }
 
-/// Shows a dialog to edit a sync rule's episode count. Returns true if updated.
+/// Shows a dialog to edit a sync rule's episode count and random flag. Entering
+/// 0 removes the rule (after confirmation). Returns true if updated.
 Future<bool> editSyncRuleCount(
   BuildContext context, {
   required DownloadProvider downloadProvider,
   required String globalKey,
   required int currentCount,
+  required bool currentRandom,
   String? displayTitle,
 }) async {
-  final count = await _showEpisodeCountDialog(
+  final result = await showCountWithToggleDialog(
     context,
     title: t.downloads.editEpisodeCount,
+    initialCount: currentCount,
+    initialToggle: currentRandom,
+    toggleTitle: t.downloads.randomSelection,
+    toggleSubtitle: t.downloads.randomSelectionDescription,
     hintText: currentCount.toString(),
     allowZero: true,
   );
-  if (count == null || !context.mounted) return false;
+  if (result == null || !context.mounted) return false;
 
-  if (count == 0) {
+  if (result.count == 0) {
     final removed = await confirmAndRemoveSyncRule(
       context,
       downloadProvider: downloadProvider,
@@ -311,7 +413,10 @@ Future<bool> editSyncRuleCount(
     return false;
   }
 
-  await downloadProvider.updateSyncRuleCount(globalKey, count);
+  await downloadProvider.updateSyncRuleCount(globalKey, result.count);
+  if (result.toggle != currentRandom) {
+    await downloadProvider.updateSyncRuleRandom(globalKey, result.toggle);
+  }
   return true;
 }
 
@@ -390,6 +495,7 @@ Future<void> manageSyncRule(
       downloadProvider: downloadProvider,
       globalKey: globalKey,
       currentCount: rule.episodeCount,
+      currentRandom: rule.random,
       displayTitle: displayTitle ?? rule.ratingKey,
     );
   }

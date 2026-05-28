@@ -302,6 +302,125 @@ class _TextInputDialogState extends State<_TextInputDialog>
   }
 }
 
+/// Shows a number-entry dialog with a boolean toggle beneath the field (e.g.
+/// an episode count plus a "random selection" switch). Returns the entered
+/// count and toggle state, or null if cancelled. A count of 0 is only accepted
+/// when [allowZero] is true — callers use 0 as a "remove" sentinel.
+Future<({int count, bool toggle})?> showCountWithToggleDialog(
+  BuildContext context, {
+  required String title,
+  required int initialCount,
+  required bool initialToggle,
+  required String toggleTitle,
+  String? toggleSubtitle,
+  String? hintText,
+  bool allowZero = false,
+}) {
+  return showDialog<({int count, bool toggle})>(
+    context: context,
+    builder: (context) => _CountWithToggleDialog(
+      title: title,
+      initialCount: initialCount,
+      initialToggle: initialToggle,
+      toggleTitle: toggleTitle,
+      toggleSubtitle: toggleSubtitle,
+      hintText: hintText,
+      allowZero: allowZero,
+    ),
+  );
+}
+
+class _CountWithToggleDialog extends StatefulWidget {
+  final String title;
+  final int initialCount;
+  final bool initialToggle;
+  final String toggleTitle;
+  final String? toggleSubtitle;
+  final String? hintText;
+  final bool allowZero;
+
+  const _CountWithToggleDialog({
+    required this.title,
+    required this.initialCount,
+    required this.initialToggle,
+    required this.toggleTitle,
+    this.toggleSubtitle,
+    this.hintText,
+    this.allowZero = false,
+  });
+
+  @override
+  State<_CountWithToggleDialog> createState() => _CountWithToggleDialogState();
+}
+
+class _CountWithToggleDialogState extends State<_CountWithToggleDialog>
+    with ControllerDisposerMixin, _TextInputDialogStateMixin<_CountWithToggleDialog> {
+  late bool _toggle;
+
+  @override
+  String? get initialValue => widget.initialCount > 0 ? widget.initialCount.toString() : null;
+
+  @override
+  void initState() {
+    super.initState();
+    _toggle = widget.initialToggle;
+  }
+
+  void _submit() {
+    final n = int.tryParse(_controller.text);
+    if (n == null || n < 0 || (!widget.allowZero && n == 0)) return;
+    Navigator.pop(context, (count: n, toggle: _toggle));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SizedBox(
+        width: 360,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            FocusableTextField(
+              controller: _controller,
+              focusNode: _fieldFocusNode,
+              autofocus: true,
+              decoration: InputDecoration(hintText: widget.hintText),
+              keyboardType: TextInputType.number,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              textInputAction: TextInputAction.done,
+              onNavigateDown: _saveFocusNode.requestFocus,
+              onSubmitted: (_) => _saveFocusNode.requestFocus(),
+            ),
+            const SizedBox(height: 8),
+            FocusableSwitchListTile(
+              value: _toggle,
+              onChanged: (value) => setState(() => _toggle = value),
+              title: Text(widget.toggleTitle),
+              subtitle: widget.toggleSubtitle != null ? Text(widget.toggleSubtitle!) : null,
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        DialogActionButton(
+          focusNode: _cancelFocusNode,
+          onPressed: () => Navigator.pop(context),
+          onNavigateRight: _saveFocusNode.requestFocus,
+          label: t.common.cancel,
+        ),
+        DialogActionButton(
+          onPressed: _submit,
+          label: t.common.save,
+          focusNode: _saveFocusNode,
+          onNavigateLeft: _cancelFocusNode.requestFocus,
+        ),
+      ],
+    );
+  }
+}
+
 /// Shows a simple option picker dialog with focusable items for TV/keyboard navigation.
 /// Returns the selected value, or null if cancelled. Each option's [icon] may
 /// be `null` to render a label-only row (useful when the choices are variants

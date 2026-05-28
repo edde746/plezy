@@ -880,6 +880,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadVersionConfig? versionConfig,
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
+    bool random = false,
   }) async {
     if (!_downloadManager.downloadsSupported) return 0;
 
@@ -905,7 +906,14 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         final hadMetadata = _metadata.containsKey(globalKey);
         _metadata[globalKey] = metadata;
         try {
-          return await _queueShowDownload(metadata, client, versionConfig: config, filter: filter, maxCount: maxCount);
+          return await _queueShowDownload(
+            metadata,
+            client,
+            versionConfig: config,
+            filter: filter,
+            maxCount: maxCount,
+            random: random,
+          );
         } catch (_) {
           if (!hadMetadata) _metadata.remove(globalKey);
           rethrow;
@@ -920,6 +928,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
             versionConfig: config,
             filter: filter,
             maxCount: maxCount,
+            random: random,
           );
         } catch (_) {
           if (!hadMetadata) _metadata.remove(globalKey);
@@ -1163,6 +1172,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadVersionConfig? versionConfig,
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
+    bool random = false,
   }) async {
     await _storeLeafCount(show.globalKey, show);
     return _expandAndQueue(
@@ -1171,6 +1181,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       versionConfig: versionConfig,
       filter: filter,
       maxCount: maxCount,
+      random: random,
       skipExisting: false,
     );
   }
@@ -1182,6 +1193,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadVersionConfig? versionConfig,
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
+    bool random = false,
   }) async {
     await _storeLeafCount(season.globalKey, season);
     return _expandAndQueue(
@@ -1190,6 +1202,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       versionConfig: versionConfig,
       filter: filter,
       maxCount: maxCount,
+      random: random,
       skipExisting: false,
     );
   }
@@ -1221,6 +1234,12 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Shared expansion: fetch all episodes under [container] (show or season),
   /// apply [filter] and optional [maxCount], optionally skip items already
   /// queued/downloading/completed ([skipExisting]), and queue each one.
+  ///
+  /// When [random] is set alongside a [maxCount], the [maxCount] episodes are
+  /// drawn uniformly at random from the (filtered) pool rather than taken in
+  /// airing order — then restored to airing order so the queue and offline
+  /// library still read naturally. Without a [maxCount] there is no subset to
+  /// randomise, so [random] has no effect.
   Future<int> _expandAndQueue({
     required MediaItem container,
     required MediaServerClient client,
@@ -1228,6 +1247,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required DownloadFilter filter,
     required int? maxCount,
     required bool skipExisting,
+    bool random = false,
   }) async {
     final unwatchedOnly = filter == DownloadFilter.unwatched;
     final relatedContext = _RelatedMetadataDownloadContext();
@@ -1250,8 +1270,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       );
     }
 
+    final ordered = selectEpisodesForDownload(episodes, maxCount: maxCount, random: random);
+
     int count = 0;
-    for (final episode in episodes) {
+    for (final episode in ordered) {
       if (maxCount != null && count >= maxCount) break;
 
       final episodeWithServer = _ensureServerId(episode, container.serverId);
@@ -1609,6 +1631,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required int episodeCount,
     int mediaIndex = 0,
     String downloadFilter = SyncRuleFilter.unwatched,
+    bool random = false,
     MediaItem? targetMetadata,
   }) async {
     final profileId = _requireActiveProfileId();
@@ -1623,6 +1646,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       episodeCount: episodeCount,
       mediaIndex: mediaIndex,
       downloadFilter: downloadFilter,
+      random: random,
     );
 
     if (targetMetadata != null) {
@@ -1636,7 +1660,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _syncRules[rule.globalKey] = rule;
       safeNotifyListeners();
     }
-    appLogger.i('Created sync rule: $scopedGlobalKey ($targetType, filter=$downloadFilter, keep $episodeCount)');
+    appLogger.i(
+      'Created sync rule: $scopedGlobalKey ($targetType, filter=$downloadFilter, keep $episodeCount, random=$random)',
+    );
   }
 
   /// Update the episode count for an existing show/season sync rule.
@@ -1649,6 +1675,20 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       safeNotifyListeners();
     }
     appLogger.i('Updated sync rule $globalKey: keep $episodeCount');
+  }
+
+  /// Update the random flag for an existing show/season sync rule. Only
+  /// affects how future deficit top-ups are chosen; already-downloaded
+  /// episodes are left in place.
+  Future<void> updateSyncRuleRandom(String globalKey, bool random) async {
+    _requireActiveProfileId();
+    await _database.updateSyncRuleRandom(globalKey, random);
+    final existing = _syncRules[globalKey];
+    if (existing != null) {
+      _syncRules[globalKey] = existing.copyWith(random: random);
+      safeNotifyListeners();
+    }
+    appLogger.i('Updated sync rule $globalKey: random=$random');
   }
 
   /// Update the download filter for an existing collection/playlist sync rule.

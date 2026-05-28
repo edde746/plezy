@@ -100,6 +100,11 @@ class SyncRules extends Table {
   IntColumn get lastExecutedAt => integer().nullable()();
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
   TextColumn get downloadFilter => text().withDefault(const Constant('unwatched'))();
+
+  /// When true, the rule's deficit top-up picks episodes at random from the
+  /// not-yet-downloaded unwatched pool instead of in airing order. Only
+  /// meaningful for show/season rules with a non-zero [episodeCount].
+  BoolColumn get random => boolean().withDefault(const Constant(false))();
 }
 
 /// Persisted media-server connections.

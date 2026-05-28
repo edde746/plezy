@@ -1247,6 +1247,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           downloadProvider: downloadProvider,
           globalKey: ruleKey,
           currentCount: syncRule.episodeCount,
+          currentRandom: syncRule.random,
           displayTitle: metadata.displayTitle,
         );
         if (updated && context.mounted) {

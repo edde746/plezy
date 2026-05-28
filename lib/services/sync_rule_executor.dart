@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 import '../database/app_database.dart';
@@ -46,7 +48,11 @@ class SyncRuleExecutor {
 
   OfflineModeSource? _offlineSource;
 
-  SyncRuleExecutor({required this._database});
+  /// Source of randomness for `random` rule deficit fills. Injectable so tests
+  /// can pin which episodes a random rule picks.
+  final Random _random;
+
+  SyncRuleExecutor({required this._database, Random? random}) : _random = random ?? Random();
 
   bool get isExecuting => _isExecuting;
 
@@ -306,8 +312,14 @@ class SyncRuleExecutor {
       return null;
     }
 
+    // Random rules fill the deficit from a shuffled pool so the next-up
+    // episodes are picked at random rather than in airing order. Episodes
+    // already downloaded are left in place (the `_isActiveDownload` skip
+    // below), so this only randomises which *new* episodes get pulled in.
+    final fillOrder = rule.random ? ([...unwatchedEpisodes]..shuffle(_random)) : unwatchedEpisodes;
+
     int queued = 0;
-    for (final ep in unwatchedEpisodes) {
+    for (final ep in fillOrder) {
       if (queued >= deficit) break;
 
       final gk = buildGlobalKey(rule.serverId, ep.id);
