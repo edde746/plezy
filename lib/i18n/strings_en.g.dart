@@ -392,8 +392,8 @@ class TranslationsSettingsEn {
 	/// en: 'Thumbnail'
 	String get episodeThumbnail => 'Thumbnail';
 
-	/// en: 'Display featured content carousel on home screen'
-	String get showHeroSectionDescription => 'Display featured content carousel on home screen';
+	/// en: 'Display featured content area on home screen'
+	String get showHeroSectionDescription => 'Display featured content area on home screen';
 
 	/// en: 'Seconds'
 	String get secondsLabel => 'Seconds';
@@ -4235,7 +4235,7 @@ extension on Translations {
 			'settings.seriesPoster' => 'Series Poster',
 			'settings.seasonPoster' => 'Season Poster',
 			'settings.episodeThumbnail' => 'Thumbnail',
-			'settings.showHeroSectionDescription' => 'Display featured content carousel on home screen',
+			'settings.showHeroSectionDescription' => 'Display featured content area on home screen',
 			'settings.secondsLabel' => 'Seconds',
 			'settings.minutesLabel' => 'Minutes',
 			'settings.secondsShort' => 's',

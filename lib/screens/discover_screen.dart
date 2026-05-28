@@ -1538,8 +1538,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final spotlight = _effectiveSpotlightItem;
     final svc = SettingsService.instanceOrNull!;
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
+    final showHeroSection = svc.read(SettingsService.showHeroSection);
     final browseHubs = _tvBrowseHubs;
     final scale = TvLayoutConstants.scaleForSize(size);
+
+    // When the hero section toggle is off on TV, render a vertically-scrolling
+    // stack of HubSection rows (matches phone/desktop "hero off" layout) and
+    // omit the cinematic TvSpotlightBackground that normally fills the screen.
+    if (!showHeroSection) {
+      return _buildTvExpandedContent(context, browseHubs);
+    }
     final sidebarBleed = MainScreenFocusScope.sideNavigationBleedOf(
       context,
       alwaysKeepSidebarOpen: svc.read(SettingsService.alwaysKeepSidebarOpen),
@@ -1634,6 +1642,106 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onNavigateToSidebar: _navigateToSidebar,
                 tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
                 backgroundBleedLeft: sidebarBleed,
+              ),
+            ),
+          SideNavigationBleedBuilder(
+            targetBleed: sidebarBleed,
+            child: ExcludeFocusTraversal(child: _buildOverlaidAppBar()),
+            builder: (context, animatedBleed, child) =>
+                Positioned(top: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
+          ),
+          if (_switchingProfile) const ProfileSwitchingOverlay(),
+        ],
+      ),
+    );
+  }
+
+  /// TV layout when "Show Hero Section" is disabled. Renders a vertically
+  /// scrolling list of HubSection rows (Netflix-style) and skips the
+  /// TvSpotlightBackground entirely, freeing up the screen so multiple
+  /// hub rows are visible at once.
+  Widget _buildTvExpandedContent(BuildContext context, List<MediaHub> browseHubs) {
+    final theme = Theme.of(context);
+    final svc = SettingsService.instanceOrNull!;
+    final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
+    final duplicateHubTitles = _getDuplicateHubTitles();
+    final size = MediaQuery.sizeOf(context);
+    final scale = TvLayoutConstants.scaleForSize(size);
+    final sidebarBleed = MainScreenFocusScope.sideNavigationBleedOf(
+      context,
+      alwaysKeepSidebarOpen: svc.read(SettingsService.alwaysKeepSidebarOpen),
+    );
+    final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
+    final appBarReserve = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
+    final cwIndexOffset = _onDeck.isNotEmpty ? 1 : 0;
+
+    return Material(
+      color: theme.scaffoldBackgroundColor,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          if (_isLoading || (_areHubsLoading && browseHubs.isEmpty))
+            const Center(child: CircularProgressIndicator()),
+          if (_errorMessage != null)
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text(_errorMessage!),
+                  const SizedBox(height: 16),
+                  FilledButton(onPressed: _loadContent, child: Text(t.common.retry)),
+                ],
+              ),
+            ),
+          if (!_isLoading && _errorMessage == null && browseHubs.isEmpty && !_areHubsLoading)
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  Text(t.discover.noContentAvailable),
+                  const SizedBox(height: 8),
+                  Text(t.discover.addMediaToLibraries, style: const TextStyle(color: Colors.grey)),
+                ],
+              ),
+            ),
+          if (browseHubs.isNotEmpty)
+            Positioned.fill(
+              child: CustomScrollView(
+                controller: _scrollController,
+                slivers: [
+                  SliverToBoxAdapter(child: SizedBox(height: appBarReserve)),
+                  for (int i = 0; i < browseHubs.length; i++)
+                    SliverToBoxAdapter(
+                      child: Builder(
+                        builder: (context) {
+                          final hub = browseHubs[i];
+                          final isCw = hub.id == 'continue_watching';
+                          final hubKey = isCw
+                              ? _continueWatchingHubKey
+                              : (i - cwIndexOffset < _hubKeys.length ? _hubKeys[i - cwIndexOffset] : null);
+                          return HubSection(
+                            key: hubKey,
+                            hub: hub,
+                            icon: isCw ? Symbols.play_circle_rounded : _getHubIcon(hub.title),
+                            isInContinueWatching: isCw,
+                            showServerName: !isCw && (showServerNameOnHubs || duplicateHubTitles.contains(hub.title)),
+                            onRefresh: updateItem,
+                            onRemoveFromContinueWatching: isCw ? _refreshContinueWatching : null,
+                            loadMoreItems: isCw ? _loadAllContinueWatchingItems : null,
+                            onFocusedItemChanged: _setSpotlightItem,
+                            onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
+                            onNavigateUp: i == 0 ? _focusTopActions : null,
+                            onNavigateToSidebar: _navigateToSidebar,
+                          );
+                        },
+                      ),
+                    ),
+                  SliverToBoxAdapter(child: SizedBox(height: MediaQuery.paddingOf(context).bottom + 24)),
+                ],
               ),
             ),
           SideNavigationBleedBuilder(

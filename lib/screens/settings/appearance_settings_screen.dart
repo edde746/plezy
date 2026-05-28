@@ -48,13 +48,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
           ),
 
         SettingsSectionHeader(t.settings.homeScreen),
-        if (!PlatformDetector.isTV())
-          SettingSwitchTile(
-            pref: SettingsService.showHeroSection,
-            icon: Symbols.featured_play_list_rounded,
-            title: t.settings.showHeroSection,
-            subtitle: t.settings.showHeroSectionDescription,
-          ),
+        SettingSwitchTile(
+          pref: SettingsService.showHeroSection,
+          icon: Symbols.featured_play_list_rounded,
+          title: t.settings.showHeroSection,
+          subtitle: t.settings.showHeroSectionDescription,
+        ),
         SettingSwitchTile(
           pref: SettingsService.useGlobalHubs,
           icon: Symbols.home_rounded,
