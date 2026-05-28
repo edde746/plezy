@@ -143,6 +143,7 @@ class _TranslationsCommonNb extends TranslationsCommonEn {
 	@override String get yes => 'Ja';
 	@override String get no => 'Nei';
 	@override String get delete => 'Slett';
+	@override String get edit => 'Rediger';
 	@override String get shuffle => 'Tilfeldig';
 	@override String get addTo => 'Legg til i...';
 	@override String get createNew => 'Opprett ny';
@@ -812,6 +813,8 @@ class _TranslationsConnectionsNb extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => 'Økten er utløpt for ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Økten er utløpt for ${count} servere';
 	@override String get signInAgain => 'Logg inn igjen';
+	@override String get editJellyfinTitle => 'Rediger Jellyfin-tilkobling';
+	@override String editJellyfinIntro({required Object serverName}) => 'Legg til eller fjern URL-er for ${serverName}. Plezy bruker den tilgjengelige URL-en med lavest forsinkelse.';
 }
 
 // Path: discover
@@ -1502,7 +1505,9 @@ class _TranslationsAddServerNb extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Legg til Jellyfin-server';
 	@override String get jellyfinUrlIntro => 'Skriv inn server-URL-en, f.eks. `https://jellyfin.example.com`.';
+	@override String get jellyfinUrlsIntro => 'Skriv inn én eller flere server-URL-er, adskilt med kommaer eller nye linjer. Plezy bruker den tilgjengelige URL-en med lavest forsinkelse.';
 	@override String get serverUrl => 'Server-URL';
+	@override String get serverUrls => 'Server-URL-er';
 	@override String get findServer => 'Finn server';
 	@override String get username => 'Brukernavn';
 	@override String get password => 'Passord';
@@ -1833,6 +1838,7 @@ extension on TranslationsNb {
 			'common.yes' => 'Ja',
 			'common.no' => 'Nei',
 			'common.delete' => 'Slett',
+			'common.edit' => 'Rediger',
 			'common.shuffle' => 'Tilfeldig',
 			'common.addTo' => 'Legg til i...',
 			'common.createNew' => 'Opprett ny',
@@ -2312,9 +2318,9 @@ extension on TranslationsNb {
 			'profiles.delete' => 'Slett',
 			'profiles.signOut' => 'Logg ut',
 			'profiles.signOutPlexTitle' => 'Logge ut av Plex?',
-			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Fjerne ${displayName} og alle Plex Home-brukere? Du kan logge inn igjen når som helst.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Fjerne ${displayName} og alle Plex Home-brukere? Du kan logge inn igjen når som helst.',
 			'profiles.signedOutPlex' => 'Logget ut av Plex.',
 			'profiles.signOutFailed' => 'Utlogging mislyktes.',
 			'profiles.sectionTitle' => 'Profiler',
@@ -2369,6 +2375,8 @@ extension on TranslationsNb {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Økten er utløpt for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Økten er utløpt for ${count} servere',
 			'connections.signInAgain' => 'Logg inn igjen',
+			'connections.editJellyfinTitle' => 'Rediger Jellyfin-tilkobling',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Legg til eller fjern URL-er for ${serverName}. Plezy bruker den tilgjengelige URL-en med lavest forsinkelse.',
 			'discover.title' => 'Oppdag',
 			'discover.switchProfile' => 'Bytt profil',
 			'discover.noContentAvailable' => 'Ingen innhold tilgjengelig',
@@ -2824,11 +2832,11 @@ extension on TranslationsNb {
 			'metadataEdit.contentRating' => 'Innholdsvurdering',
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Slagord',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'Sammendrag',
 			'metadataEdit.poster' => 'Plakat',
 			'metadataEdit.background' => 'Bakgrunn',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Kvadratisk bilde',
 			'metadataEdit.selectPoster' => 'Velg plakat',
@@ -2947,7 +2955,9 @@ extension on TranslationsNb {
 			'trackers.libraryFilter.noLibraries' => 'Ingen biblioteker tilgjengelige',
 			'addServer.addJellyfinTitle' => 'Legg til Jellyfin-server',
 			'addServer.jellyfinUrlIntro' => 'Skriv inn server-URL-en, f.eks. `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => 'Skriv inn én eller flere server-URL-er, adskilt med kommaer eller nye linjer. Plezy bruker den tilgjengelige URL-en med lavest forsinkelse.',
 			'addServer.serverUrl' => 'Server-URL',
+			'addServer.serverUrls' => 'Server-URL-er',
 			'addServer.findServer' => 'Finn server',
 			'addServer.username' => 'Brukernavn',
 			'addServer.password' => 'Passord',

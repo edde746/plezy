@@ -36,6 +36,7 @@
     "yes": "是",
     "no": "否",
     "delete": "删除",
+    "edit": "编辑",
     "shuffle": "随机播放",
     "addTo": "添加到...",
     "createNew": "新建",
@@ -609,7 +610,9 @@
     "addConnectionSubtitleScoped": "添加到 ${displayName}: Plex、Jellyfin 或其他个人资料连接",
     "sessionExpiredOne": "${name} 的会话已过期",
     "sessionExpiredMany": "${count} 个服务器的会话已过期",
-    "signInAgain": "重新登录"
+    "signInAgain": "重新登录",
+    "editJellyfinTitle": "编辑 Jellyfin 连接",
+    "editJellyfinIntro": "添加或移除 ${serverName} 的 URL。Plezy 会使用可访问且延迟最低的 URL。"
   },
   "discover": {
     "title": "发现",
@@ -1256,7 +1259,9 @@
   "addServer": {
     "addJellyfinTitle": "添加 Jellyfin 服务器",
     "jellyfinUrlIntro": "输入服务器 URL，例如 `https://jellyfin.example.com`。",
+    "jellyfinUrlsIntro": "输入一个或多个服务器 URL，用逗号或换行分隔。Plezy 会使用可访问且延迟最低的 URL。",
     "serverUrl": "服务器 URL",
+    "serverUrls": "服务器 URL",
     "findServer": "查找服务器",
     "username": "用户名",
     "password": "密码",

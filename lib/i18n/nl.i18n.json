@@ -36,6 +36,7 @@
     "yes": "Ja",
     "no": "Nee",
     "delete": "Verwijderen",
+    "edit": "Bewerken",
     "shuffle": "Willekeurig",
     "addTo": "Toevoegen aan...",
     "createNew": "Nieuw aanmaken",
@@ -609,7 +610,9 @@
     "addConnectionSubtitleScoped": "Toevoegen aan ${displayName}: Plex, Jellyfin of een andere profielverbinding",
     "sessionExpiredOne": "Sessie verlopen voor ${name}",
     "sessionExpiredMany": "Sessie verlopen voor ${count} servers",
-    "signInAgain": "Opnieuw aanmelden"
+    "signInAgain": "Opnieuw aanmelden",
+    "editJellyfinTitle": "Jellyfin-verbinding bewerken",
+    "editJellyfinIntro": "Voeg URL's voor ${serverName} toe of verwijder ze. Plezy gebruikt de bereikbare URL met de laagste latentie."
   },
   "discover": {
     "title": "Ontdekken",
@@ -1256,7 +1259,9 @@
   "addServer": {
     "addJellyfinTitle": "Jellyfin-server toevoegen",
     "jellyfinUrlIntro": "Voer de server-URL in, bijv. `https://jellyfin.example.com`.",
+    "jellyfinUrlsIntro": "Voer een of meer server-URL's in, gescheiden door komma's of nieuwe regels. Plezy gebruikt de bereikbare URL met de laagste latentie.",
     "serverUrl": "Server-URL",
+    "serverUrls": "Server-URL's",
     "findServer": "Server zoeken",
     "username": "Gebruikersnaam",
     "password": "Wachtwoord",

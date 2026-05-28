@@ -36,6 +36,7 @@
     "yes": "Ja",
     "no": "Nei",
     "delete": "Slett",
+    "edit": "Rediger",
     "shuffle": "Tilfeldig",
     "addTo": "Legg til i...",
     "createNew": "Opprett ny",
@@ -609,7 +610,9 @@
     "addConnectionSubtitleScoped": "Legg til for ${displayName}: Plex, Jellyfin eller en annen profiltilkobling",
     "sessionExpiredOne": "Økten er utløpt for ${name}",
     "sessionExpiredMany": "Økten er utløpt for ${count} servere",
-    "signInAgain": "Logg inn igjen"
+    "signInAgain": "Logg inn igjen",
+    "editJellyfinTitle": "Rediger Jellyfin-tilkobling",
+    "editJellyfinIntro": "Legg til eller fjern URL-er for ${serverName}. Plezy bruker den tilgjengelige URL-en med lavest forsinkelse."
   },
   "discover": {
     "title": "Oppdag",
@@ -1256,7 +1259,9 @@
   "addServer": {
     "addJellyfinTitle": "Legg til Jellyfin-server",
     "jellyfinUrlIntro": "Skriv inn server-URL-en, f.eks. `https://jellyfin.example.com`.",
+    "jellyfinUrlsIntro": "Skriv inn én eller flere server-URL-er, adskilt med kommaer eller nye linjer. Plezy bruker den tilgjengelige URL-en med lavest forsinkelse.",
     "serverUrl": "Server-URL",
+    "serverUrls": "Server-URL-er",
     "findServer": "Finn server",
     "username": "Brukernavn",
     "password": "Passord",

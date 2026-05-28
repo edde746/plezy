@@ -143,6 +143,7 @@ class _TranslationsCommonIt extends TranslationsCommonEn {
 	@override String get yes => 'Sì';
 	@override String get no => 'No';
 	@override String get delete => 'Elimina';
+	@override String get edit => 'Modifica';
 	@override String get shuffle => 'Casuale';
 	@override String get addTo => 'Aggiungi a...';
 	@override String get createNew => 'Crea';
@@ -812,6 +813,8 @@ class _TranslationsConnectionsIt extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => 'Sessione scaduta per ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Sessione scaduta per ${count} server';
 	@override String get signInAgain => 'Accedi di nuovo';
+	@override String get editJellyfinTitle => 'Modifica connessione Jellyfin';
+	@override String editJellyfinIntro({required Object serverName}) => 'Aggiungi o rimuovi URL per ${serverName}. Plezy userà l\'URL raggiungibile con la latenza più bassa.';
 }
 
 // Path: discover
@@ -1502,7 +1505,9 @@ class _TranslationsAddServerIt extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Aggiungi server Jellyfin';
 	@override String get jellyfinUrlIntro => 'Inserisci l\'URL del server, es. `https://jellyfin.example.com`.';
+	@override String get jellyfinUrlsIntro => 'Inserisci uno o più URL del server, separati da virgole o nuove righe. Plezy userà l\'URL raggiungibile con la latenza più bassa.';
 	@override String get serverUrl => 'URL del server';
+	@override String get serverUrls => 'URL del server';
 	@override String get findServer => 'Trova server';
 	@override String get username => 'Nome utente';
 	@override String get password => 'Password';
@@ -1833,6 +1838,7 @@ extension on TranslationsIt {
 			'common.yes' => 'Sì',
 			'common.no' => 'No',
 			'common.delete' => 'Elimina',
+			'common.edit' => 'Modifica',
 			'common.shuffle' => 'Casuale',
 			'common.addTo' => 'Aggiungi a...',
 			'common.createNew' => 'Crea',
@@ -2312,9 +2318,9 @@ extension on TranslationsIt {
 			'profiles.delete' => 'Elimina',
 			'profiles.signOut' => 'Esci',
 			'profiles.signOutPlexTitle' => 'Uscire da Plex?',
-			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Rimuovere ${displayName} e tutti gli utenti Plex Home? Puoi accedere di nuovo quando vuoi.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Rimuovere ${displayName} e tutti gli utenti Plex Home? Puoi accedere di nuovo quando vuoi.',
 			'profiles.signedOutPlex' => 'Uscito da Plex.',
 			'profiles.signOutFailed' => 'Uscita non riuscita.',
 			'profiles.sectionTitle' => 'Profili',
@@ -2369,6 +2375,8 @@ extension on TranslationsIt {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessione scaduta per ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sessione scaduta per ${count} server',
 			'connections.signInAgain' => 'Accedi di nuovo',
+			'connections.editJellyfinTitle' => 'Modifica connessione Jellyfin',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Aggiungi o rimuovi URL per ${serverName}. Plezy userà l\'URL raggiungibile con la latenza più bassa.',
 			'discover.title' => 'Esplora',
 			'discover.switchProfile' => 'Cambia profilo',
 			'discover.noContentAvailable' => 'Nessun contenuto disponibile',
@@ -2824,11 +2832,11 @@ extension on TranslationsIt {
 			'metadataEdit.contentRating' => 'Classificazione',
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Tagline',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'Trama',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Sfondo',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Immagine quadrata',
 			'metadataEdit.selectPoster' => 'Seleziona poster',
@@ -2947,7 +2955,9 @@ extension on TranslationsIt {
 			'trackers.libraryFilter.noLibraries' => 'Nessuna libreria disponibile',
 			'addServer.addJellyfinTitle' => 'Aggiungi server Jellyfin',
 			'addServer.jellyfinUrlIntro' => 'Inserisci l\'URL del server, es. `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => 'Inserisci uno o più URL del server, separati da virgole o nuove righe. Plezy userà l\'URL raggiungibile con la latenza più bassa.',
 			'addServer.serverUrl' => 'URL del server',
+			'addServer.serverUrls' => 'URL del server',
 			'addServer.findServer' => 'Trova server',
 			'addServer.username' => 'Nome utente',
 			'addServer.password' => 'Password',

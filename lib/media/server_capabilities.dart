@@ -75,9 +75,9 @@ class ServerCapabilities {
   /// still works but choices don't follow the user across devices.
   final bool trackPreferencePersistence;
 
-  /// Multi-endpoint connection model with relay/local/remote racing
-  /// (Plex `findBestWorkingConnection`). Jellyfin servers expose a single
-  /// URL, so this is false there.
+  /// Multi-endpoint connection model with endpoint racing/failover. Plex gets
+  /// local/remote/relay candidates from plex.tv; Jellyfin uses user-entered
+  /// URLs for the same server.
   final bool endpointFailover;
 
   /// Watch progress can be queued offline and replayed when reconnected
@@ -173,7 +173,7 @@ class ServerCapabilities {
     numericUserRating: false,
     externalSubtitleSearch: false,
     trackPreferencePersistence: true,
-    endpointFailover: false,
+    endpointFailover: true,
     offlineWatchQueue: false,
     discordRpc: false,
     richMetadataEdit: false,

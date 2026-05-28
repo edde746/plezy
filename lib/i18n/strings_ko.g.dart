@@ -143,6 +143,7 @@ class _TranslationsCommonKo extends TranslationsCommonEn {
 	@override String get yes => '예';
 	@override String get no => '아니오';
 	@override String get delete => '삭제';
+	@override String get edit => '편집';
 	@override String get shuffle => '무작위 재생';
 	@override String get addTo => '추가하기...';
 	@override String get createNew => '새로 만들기';
@@ -812,6 +813,8 @@ class _TranslationsConnectionsKo extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => '${name} 의 세션이 만료되었습니다';
 	@override String sessionExpiredMany({required Object count}) => '${count} 개의 서버에서 세션이 만료되었습니다';
 	@override String get signInAgain => '다시 로그인';
+	@override String get editJellyfinTitle => 'Jellyfin 연결 편집';
+	@override String editJellyfinIntro({required Object serverName}) => '${serverName}의 URL을 추가하거나 제거하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.';
 }
 
 // Path: discover
@@ -1502,7 +1505,9 @@ class _TranslationsAddServerKo extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Jellyfin 서버 추가';
 	@override String get jellyfinUrlIntro => '서버 URL을 입력하세요. 예: `https://jellyfin.example.com`.';
+	@override String get jellyfinUrlsIntro => '서버 URL을 하나 이상 쉼표나 줄바꿈으로 구분해 입력하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.';
 	@override String get serverUrl => '서버 URL';
+	@override String get serverUrls => '서버 URL';
 	@override String get findServer => '서버 찾기';
 	@override String get username => '사용자 이름';
 	@override String get password => '비밀번호';
@@ -1833,6 +1838,7 @@ extension on TranslationsKo {
 			'common.yes' => '예',
 			'common.no' => '아니오',
 			'common.delete' => '삭제',
+			'common.edit' => '편집',
 			'common.shuffle' => '무작위 재생',
 			'common.addTo' => '추가하기...',
 			'common.createNew' => '새로 만들기',
@@ -2312,9 +2318,9 @@ extension on TranslationsKo {
 			'profiles.delete' => '삭제',
 			'profiles.signOut' => '로그아웃',
 			'profiles.signOutPlexTitle' => 'Plex에서 로그아웃하시겠습니까?',
-			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} 및 모든 Plex Home 사용자를 제거할까요? 언제든 다시 로그인할 수 있습니다.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} 및 모든 Plex Home 사용자를 제거할까요? 언제든 다시 로그인할 수 있습니다.',
 			'profiles.signedOutPlex' => 'Plex에서 로그아웃되었습니다.',
 			'profiles.signOutFailed' => '로그아웃에 실패했습니다.',
 			'profiles.sectionTitle' => '프로필',
@@ -2369,6 +2375,8 @@ extension on TranslationsKo {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 의 세션이 만료되었습니다',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 개의 서버에서 세션이 만료되었습니다',
 			'connections.signInAgain' => '다시 로그인',
+			'connections.editJellyfinTitle' => 'Jellyfin 연결 편집',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => '${serverName}의 URL을 추가하거나 제거하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.',
 			'discover.title' => '발견',
 			'discover.switchProfile' => '사용자 전환',
 			'discover.noContentAvailable' => '사용 가능한 콘텐츠가 없습니다',
@@ -2824,11 +2832,11 @@ extension on TranslationsKo {
 			'metadataEdit.contentRating' => '콘텐츠 등급',
 			'metadataEdit.studio' => '스튜디오',
 			'metadataEdit.tagline' => '태그라인',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => '줄거리',
 			'metadataEdit.poster' => '포스터',
 			'metadataEdit.background' => '배경',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => '로고',
 			'metadataEdit.squareArt' => '정사각형 아트',
 			'metadataEdit.selectPoster' => '포스터 선택',
@@ -2947,7 +2955,9 @@ extension on TranslationsKo {
 			'trackers.libraryFilter.noLibraries' => '사용 가능한 라이브러리가 없습니다',
 			'addServer.addJellyfinTitle' => 'Jellyfin 서버 추가',
 			'addServer.jellyfinUrlIntro' => '서버 URL을 입력하세요. 예: `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => '서버 URL을 하나 이상 쉼표나 줄바꿈으로 구분해 입력하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.',
 			'addServer.serverUrl' => '서버 URL',
+			'addServer.serverUrls' => '서버 URL',
 			'addServer.findServer' => '서버 찾기',
 			'addServer.username' => '사용자 이름',
 			'addServer.password' => '비밀번호',

@@ -143,6 +143,7 @@ class _TranslationsCommonNl extends TranslationsCommonEn {
 	@override String get yes => 'Ja';
 	@override String get no => 'Nee';
 	@override String get delete => 'Verwijderen';
+	@override String get edit => 'Bewerken';
 	@override String get shuffle => 'Willekeurig';
 	@override String get addTo => 'Toevoegen aan...';
 	@override String get createNew => 'Nieuw aanmaken';
@@ -812,6 +813,8 @@ class _TranslationsConnectionsNl extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => 'Sessie verlopen voor ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Sessie verlopen voor ${count} servers';
 	@override String get signInAgain => 'Opnieuw aanmelden';
+	@override String get editJellyfinTitle => 'Jellyfin-verbinding bewerken';
+	@override String editJellyfinIntro({required Object serverName}) => 'Voeg URL\'s voor ${serverName} toe of verwijder ze. Plezy gebruikt de bereikbare URL met de laagste latentie.';
 }
 
 // Path: discover
@@ -1502,7 +1505,9 @@ class _TranslationsAddServerNl extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Jellyfin-server toevoegen';
 	@override String get jellyfinUrlIntro => 'Voer de server-URL in, bijv. `https://jellyfin.example.com`.';
+	@override String get jellyfinUrlsIntro => 'Voer een of meer server-URL\'s in, gescheiden door komma\'s of nieuwe regels. Plezy gebruikt de bereikbare URL met de laagste latentie.';
 	@override String get serverUrl => 'Server-URL';
+	@override String get serverUrls => 'Server-URL\'s';
 	@override String get findServer => 'Server zoeken';
 	@override String get username => 'Gebruikersnaam';
 	@override String get password => 'Wachtwoord';
@@ -1833,6 +1838,7 @@ extension on TranslationsNl {
 			'common.yes' => 'Ja',
 			'common.no' => 'Nee',
 			'common.delete' => 'Verwijderen',
+			'common.edit' => 'Bewerken',
 			'common.shuffle' => 'Willekeurig',
 			'common.addTo' => 'Toevoegen aan...',
 			'common.createNew' => 'Nieuw aanmaken',
@@ -2312,9 +2318,9 @@ extension on TranslationsNl {
 			'profiles.delete' => 'Verwijderen',
 			'profiles.signOut' => 'Afmelden',
 			'profiles.signOutPlexTitle' => 'Afmelden bij Plex?',
-			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} en alle Plex Home-gebruikers verwijderen? Je kunt altijd opnieuw inloggen.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} en alle Plex Home-gebruikers verwijderen? Je kunt altijd opnieuw inloggen.',
 			'profiles.signedOutPlex' => 'Afgemeld bij Plex.',
 			'profiles.signOutFailed' => 'Afmelden mislukt.',
 			'profiles.sectionTitle' => 'Profielen',
@@ -2369,6 +2375,8 @@ extension on TranslationsNl {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessie verlopen voor ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sessie verlopen voor ${count} servers',
 			'connections.signInAgain' => 'Opnieuw aanmelden',
+			'connections.editJellyfinTitle' => 'Jellyfin-verbinding bewerken',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Voeg URL\'s voor ${serverName} toe of verwijder ze. Plezy gebruikt de bereikbare URL met de laagste latentie.',
 			'discover.title' => 'Ontdekken',
 			'discover.switchProfile' => 'Wissel van profiel',
 			'discover.noContentAvailable' => 'Geen inhoud beschikbaar',
@@ -2824,11 +2832,11 @@ extension on TranslationsNl {
 			'metadataEdit.contentRating' => 'Leeftijdsclassificatie',
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Tagline',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.summary' => 'Samenvatting',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Achtergrond',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Vierkante afbeelding',
 			'metadataEdit.selectPoster' => 'Poster selecteren',
@@ -2947,7 +2955,9 @@ extension on TranslationsNl {
 			'trackers.libraryFilter.noLibraries' => 'Geen bibliotheken beschikbaar',
 			'addServer.addJellyfinTitle' => 'Jellyfin-server toevoegen',
 			'addServer.jellyfinUrlIntro' => 'Voer de server-URL in, bijv. `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => 'Voer een of meer server-URL\'s in, gescheiden door komma\'s of nieuwe regels. Plezy gebruikt de bereikbare URL met de laagste latentie.',
 			'addServer.serverUrl' => 'Server-URL',
+			'addServer.serverUrls' => 'Server-URL\'s',
 			'addServer.findServer' => 'Server zoeken',
 			'addServer.username' => 'Gebruikersnaam',
 			'addServer.password' => 'Wachtwoord',
