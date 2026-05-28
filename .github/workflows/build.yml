@@ -130,6 +130,11 @@ jobs:
 
   build-ios:
     runs-on: macos-26
+    # Fork-only skip: the fork has no Apple Developer account, so iOS builds
+    # `--no-codesign` and the resulting IPA can't be sideloaded. It also only
+    # feeds the (already-skipped) create-release job and runs on a 10x-billed
+    # macOS runner. Restore by removing this gate if Apple credentials are added.
+    if: github.repository == 'edde746/plezy'
     permissions:
       id-token: write
       attestations: write
@@ -557,6 +562,10 @@ jobs:
 
   build-linux-x64:
     runs-on: ubuntu-latest
+    # Fork-only skip: the fork doesn't distribute Linux builds (no README row,
+    # no rolling release) and this job only feeds the already-skipped
+    # create-release. Restore by removing this gate to ship Linux again.
+    if: github.repository == 'edde746/plezy'
     permissions:
       id-token: write
       attestations: write
@@ -691,6 +700,8 @@ jobs:
 
   build-linux-arm64:
     runs-on: ubuntu-24.04-arm
+    # Fork-only skip: see build-linux-x64. Restore by removing this gate.
+    if: github.repository == 'edde746/plezy'
     permissions:
       id-token: write
       attestations: write
