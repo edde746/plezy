@@ -17,9 +17,7 @@ sealed class ScrubFrame {
   double get aspectRatio;
 }
 
-/// Plex BIF: standalone JPEG bytes ready for [Image.memory]. Plex doesn't
-/// expose per-BIF dimensions out-of-band; servers virtually always use
-/// 16:9, which matches the default tooltip box.
+/// Plex BIF: standalone JPEG bytes ready for [Image.memory].
 class BytesScrubFrame extends ScrubFrame {
   final Uint8List bytes;
   @override
