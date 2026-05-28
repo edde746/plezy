@@ -12,7 +12,10 @@ import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
 import '../media/media_version.dart';
 import '../mixins/controller_disposer_mixin.dart';
+import '../connection/connection_registry.dart';
 import '../services/plex_client.dart';
+import '../services/plex_watchlist_service.dart';
+import '../utils/watchlist_notifier.dart';
 import '../services/media_list_playback_launcher.dart';
 import '../services/playlist_items_loader.dart';
 import '../services/trackers/tracker_coordinator.dart';
@@ -933,14 +936,21 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     await launcher.launchShuffledShow(metadata: mediaItem, showLoadingIndicator: true);
   }
 
-  /// Show submenu for Add to... (Playlist or Collection)
+  /// Show submenu for Add to... (Playlist, Collection, or Watchlist)
   Future<void> _showAddToSubmenu(BuildContext context) async {
+    final mi = _mediaItem;
+    // Watchlist is a Plex account-level feature, movies/shows only.
+    final watchlistEligible =
+        mi != null && mi.backend == MediaBackend.plex && (mi.kind == MediaKind.movie || mi.kind == MediaKind.show);
+
     final selected = await showOptionPickerDialog<String>(
       context,
       title: t.common.addTo,
       options: [
         (icon: Symbols.playlist_play_rounded, label: t.playlists.playlist, value: 'playlist'),
         (icon: Symbols.collections_rounded, label: t.collections.collection, value: 'collection'),
+        if (watchlistEligible)
+          (icon: Symbols.bookmark_add_rounded, label: t.watchlist.title, value: 'watchlist'),
       ],
     );
 
@@ -948,6 +958,32 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       await _showAddToPlaylistDialog(context);
     } else if (selected == 'collection' && context.mounted) {
       await _showAddToCollectionDialog(context);
+    } else if (selected == 'watchlist' && context.mounted) {
+      await _addToWatchlist(context);
+    }
+  }
+
+  Future<void> _addToWatchlist(BuildContext context) async {
+    final item = _mediaItem;
+    if (item == null) return;
+    final ratingKey = PlexWatchlistService.cloudRatingKeyFromGuid(item.guid);
+    if (ratingKey == null) {
+      if (context.mounted) showErrorSnackBar(context, t.watchlist.actionFailed);
+      return;
+    }
+    final messenger = ScaffoldMessenger.of(context);
+    PlexWatchlistService? service;
+    try {
+      service = await PlexWatchlistService.forActiveAccount(context.read<ConnectionRegistry>());
+      if (service == null) throw StateError('No Plex account');
+      await service.addToWatchlist(ratingKey);
+      WatchlistNotifier().notifyChanged(ratingKey: ratingKey, added: true);
+      messenger.showSnackBar(SnackBar(content: Text(t.watchlist.added)));
+    } catch (e) {
+      appLogger.w('Context menu: add to watchlist failed', error: e);
+      messenger.showSnackBar(SnackBar(content: Text(t.watchlist.actionFailed)));
+    } finally {
+      service?.dispose();
     }
   }
 

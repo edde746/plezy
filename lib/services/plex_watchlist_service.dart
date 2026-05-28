@@ -1,3 +1,5 @@
+import '../connection/connection.dart';
+import '../connection/connection_registry.dart';
 import '../media/media_item.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart';
@@ -33,6 +35,32 @@ class PlexWatchlistService {
         connectTimeout: MediaServerTimeouts.plexTvConnect,
         receiveTimeout: MediaServerTimeouts.plexTvReceive,
       );
+
+  /// Build a service for the active Plex account, or null if no Plex account
+  /// is connected. Centralizes the account-token lookup so callers (detail
+  /// screen, context menu, watchlist screen) don't each duplicate it.
+  static Future<PlexWatchlistService?> forActiveAccount(ConnectionRegistry registry) async {
+    final accounts = await registry.listPlexAccounts();
+    PlexAccountConnection? account;
+    for (final a in accounts) {
+      if (a.accountToken.isNotEmpty) {
+        account = a;
+        break;
+      }
+    }
+    if (account == null) return null;
+    return PlexWatchlistService(accountToken: account.accountToken, clientIdentifier: account.clientIdentifier);
+  }
+
+  /// Extract the cloud ratingKey from a Plex `guid` (`plex://movie/<id>` →
+  /// `<id>`). Returns null for non-plex or malformed guids. Watchlist add/remove
+  /// endpoints key off this cloud ratingKey, which is also a watchlist item's
+  /// own `id`.
+  static String? cloudRatingKeyFromGuid(String? guid) {
+    if (guid == null || !guid.startsWith('plex://')) return null;
+    final id = guid.split('/').last.trim();
+    return id.isEmpty ? null : id;
+  }
 
   /// Close the underlying HTTP client. Call when the service is no longer
   /// needed (e.g. screen disposed) to avoid leaking sockets.
@@ -80,16 +108,35 @@ class PlexWatchlistService {
         // Rewrite cloud-relative image paths into absolute token-authenticated
         // URLs so they render with `client: null` on the watchlist screen.
         items.add(
-          mapped.copyWith(
-            thumbPath: _absolutizeImage(mapped.thumbPath),
-            artPath: _absolutizeImage(mapped.artPath),
-          ),
+          mapped.copyWith(thumbPath: _absolutizeImage(mapped.thumbPath), artPath: _absolutizeImage(mapped.artPath)),
         );
       } catch (e) {
         appLogger.w('PlexWatchlistService: skipped unparseable watchlist item', error: e);
       }
     }
     return items;
+  }
+
+  /// Add an item to the account watchlist by its cloud [ratingKey].
+  Future<void> addToWatchlist(String ratingKey) async {
+    final response = await _http.put(
+      '/actions/addToWatchlist',
+      queryParameters: {'ratingKey': ratingKey},
+      headers: _headers,
+      timeout: MediaServerTimeouts.plexTvReceive,
+    );
+    throwIfHttpError(response);
+  }
+
+  /// Remove an item from the account watchlist by its cloud [ratingKey].
+  Future<void> removeFromWatchlist(String ratingKey) async {
+    final response = await _http.put(
+      '/actions/removeFromWatchlist',
+      queryParameters: {'ratingKey': ratingKey},
+      headers: _headers,
+      timeout: MediaServerTimeouts.plexTvReceive,
+    );
+    throwIfHttpError(response);
   }
 
   /// Convert a discover-provider image path into an absolute URL on

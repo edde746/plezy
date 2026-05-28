@@ -162,7 +162,9 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           SizedBox(width: isTv ? 8 * tvScale : 12),
           // Mark as watched/unwatched toggle (works offline too)
           _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale),
-          // Three-dots menu button (hidden in offline mode)
+          // Three-dots menu button (hidden in offline mode). Watchlist add/remove
+          // lives in the long-press "Add to…" menu and the Watchlist screen, so
+          // no dedicated button is needed here (keeps the row from overflowing).
           if (!widget.isOffline) ...[
             SizedBox(width: isTv ? 8 * tvScale : 12),
             _buildMoreActionsButton(metadata, actionButtonStyle, tvScale),

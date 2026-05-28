@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -14,6 +16,7 @@ import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/grid_size_calculator.dart';
 import '../../utils/media_navigation_helper.dart';
+import '../../utils/watchlist_notifier.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/media_grid_delegate.dart';
 import '../../widgets/optimized_media_image.dart';
@@ -40,15 +43,21 @@ class WatchlistScreenState extends State<WatchlistScreen> with FocusableTab, Ref
   String? _error;
 
   final FocusNode _firstItemFocusNode = FocusNode(debugLabel: 'watchlist_first_item');
+  StreamSubscription<WatchlistEvent>? _watchlistSub;
 
   @override
   void initState() {
     super.initState();
     _load();
+    // Reload when an add/remove happens anywhere (detail page, browse menu).
+    _watchlistSub = WatchlistNotifier().stream.listen((_) {
+      if (mounted) _load(silent: true);
+    });
   }
 
   @override
   void dispose() {
+    _watchlistSub?.cancel();
     _firstItemFocusNode.dispose();
     _service?.dispose();
     super.dispose();
@@ -64,9 +73,9 @@ class WatchlistScreenState extends State<WatchlistScreen> with FocusableTab, Ref
     });
   }
 
-  Future<void> _load() async {
+  Future<void> _load({bool silent = false}) async {
     setState(() {
-      _loading = true;
+      if (!silent) _loading = true;
       _error = null;
     });
     try {
@@ -133,6 +142,52 @@ class WatchlistScreenState extends State<WatchlistScreen> with FocusableTab, Ref
 
   void _showNotOnServers(ScaffoldMessengerState messenger) {
     messenger.showSnackBar(SnackBar(content: Text(t.watchlist.notOnServers)));
+  }
+
+  /// Confirm + remove a watchlist item. A watchlist item's own [id] is the
+  /// cloud ratingKey, so no guid parsing is needed here.
+  Future<void> _confirmRemove(MediaItem item) async {
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Symbols.bookmark_remove_rounded),
+              title: Text(t.watchlist.remove),
+              onTap: () => Navigator.pop(sheetContext, true),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true) return;
+    await _removeItem(item);
+  }
+
+  Future<void> _removeItem(MediaItem item) async {
+    final ratingKey = item.id;
+    final messenger = ScaffoldMessenger.of(context);
+    // Optimistically drop from the grid.
+    final previous = _items;
+    setState(() => _items = _items.where((i) => i.id != item.id).toList());
+    PlexWatchlistService? service;
+    try {
+      service = await PlexWatchlistService.forActiveAccount(context.read<ConnectionRegistry>());
+      if (service == null) throw StateError('No Plex account');
+      await service.removeFromWatchlist(ratingKey);
+      WatchlistNotifier().notifyChanged(ratingKey: ratingKey, added: false);
+      if (mounted) messenger.showSnackBar(SnackBar(content: Text(t.watchlist.removed)));
+    } catch (e) {
+      appLogger.w('WatchlistScreen: remove failed', error: e);
+      if (mounted) {
+        setState(() => _items = previous); // revert
+        messenger.showSnackBar(SnackBar(content: Text(t.watchlist.actionFailed)));
+      }
+    } finally {
+      service?.dispose();
+    }
   }
 
   void _navigateToSidebar() {
@@ -210,6 +265,7 @@ class WatchlistScreenState extends State<WatchlistScreen> with FocusableTab, Ref
                   item: item,
                   focusNode: isFirst ? _firstItemFocusNode : null,
                   onSelect: () => _openItem(item),
+                  onRemove: () => _confirmRemove(item),
                   onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
                 );
               },
@@ -229,19 +285,29 @@ class _WatchlistCard extends StatelessWidget {
   final MediaItem item;
   final FocusNode? focusNode;
   final VoidCallback onSelect;
+  final VoidCallback? onRemove;
   final VoidCallback? onNavigateLeft;
 
-  const _WatchlistCard({required this.item, required this.onSelect, this.focusNode, this.onNavigateLeft});
+  const _WatchlistCard({
+    required this.item,
+    required this.onSelect,
+    this.onRemove,
+    this.focusNode,
+    this.onNavigateLeft,
+  });
 
   @override
   Widget build(BuildContext context) {
     return FocusableWrapper(
       focusNode: focusNode,
       onSelect: onSelect,
+      onLongPress: onRemove,
+      enableLongPress: onRemove != null,
       onNavigateLeft: onNavigateLeft,
       child: InkWell(
         canRequestFocus: false,
         onTap: onSelect,
+        onLongPress: onRemove,
         borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(3, 3, 3, 1),
