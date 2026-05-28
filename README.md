@@ -21,28 +21,8 @@ A modern client for Plex and Jellyfin on desktop, mobile, and TV. Built with Flu
 
 | Platform | Download |
 | --- | --- |
-| Windows | [Installer (x64, arm64)](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-installer.exe) · [Portable x64](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-x64-portable.7z) · [Portable arm64](https://github.com/edde746/plezy/releases/latest/download/plezy-windows-arm64-portable.7z) |
-| macOS | [DMG (x64, arm64)](https://github.com/edde746/plezy/releases/latest/download/plezy-macos.dmg) |
+| Windows | [Installer (x64, arm64)](https://github.com/TeeJS/plezy/releases/download/windows-latest/plezy-windows-installer.exe) · [Portable x64](https://github.com/TeeJS/plezy/releases/download/windows-latest/plezy-windows-x64-portable.7z) · [Portable arm64](https://github.com/TeeJS/plezy/releases/download/windows-latest/plezy-windows-arm64-portable.7z) |
 | Android | [APK arm64-v8a](https://github.com/TeeJS/plezy/releases/download/android-latest/plezy-android-arm64-v8a.apk) · [armeabi-v7a](https://github.com/TeeJS/plezy/releases/download/android-latest/plezy-android-armeabi-v7a.apk) · [x86_64](https://github.com/TeeJS/plezy/releases/download/android-latest/plezy-android-x86_64.apk) |
-| Linux x64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.pkg.tar.zst) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-x64.tar.gz) |
-| Linux arm64 | [.deb](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.deb) · [.rpm](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.pkg.tar.zst) · [portable tar.gz](https://github.com/edde746/plezy/releases/latest/download/plezy-linux-arm64.tar.gz) |
-
-Package managers:
-
-- [Nix](https://search.nixos.org/packages?channel=unstable&query=plezy) - Community package by [@mio-19](https://github.com/mio-19) and [@MiniHarinn](https://github.com/MiniHarinn)
-- **Homebrew** (macOS):
-  ```bash
-  brew tap edde746/plezy https://github.com/edde746/plezy
-  brew install --cask plezy
-  ```
-- [AUR](https://aur.archlinux.org/packages/plezy-bin) (Arch Linux) - Community maintained by [@jianglai](https://github.com/jianglai):
-  ```bash
-  yay -S plezy-bin
-  ```
-- **WinGet** (Windows):
-  ```bash
-  winget install edde746.Plezy
-  ```
 
 ## Features
 

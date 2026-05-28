@@ -828,6 +828,48 @@ jobs:
             plezy-linux-arm64.rpm
             plezy-linux-arm64.pkg.tar.zst
 
+  # Fork-only: publish the Windows binaries to a rolling "windows-latest"
+  # release so the README download links always serve the newest build. Runs
+  # only on this fork's main branch so feature-branch builds don't clobber it.
+  publish-windows-latest:
+    needs: [package-windows]
+    runs-on: ubuntu-latest
+    if: github.repository == 'TeeJS/plezy' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - name: Download Windows installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          path: artifacts/windows-installer
+      - name: Download Windows x64 portable artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-x64-portable
+          path: artifacts/windows-x64-portable
+      - name: Download Windows arm64 portable artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-arm64-portable
+          path: artifacts/windows-arm64-portable
+      - name: Publish Windows builds to windows-latest release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: windows-latest
+          name: Windows builds (latest)
+          body: |
+            Rolling release of the latest Windows builds from this fork.
+            Updated automatically by CI on each build of `main`.
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/windows-installer/plezy-windows-installer.exe
+            artifacts/windows-x64-portable/plezy-windows-x64-portable.7z
+            artifacts/windows-arm64-portable/plezy-windows-arm64-portable.7z
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   create-release:
     needs: [build-android, build-ios, build-macos, package-windows, build-linux-x64, build-linux-arm64]
     runs-on: ubuntu-latest
