@@ -306,6 +306,9 @@
       "speedIncrease": "速度を上げる",
       "speedDecrease": "速度を下げる",
       "speedReset": "速度をリセット",
+      "zoomIn": "ズームイン",
+      "zoomOut": "ズームアウト",
+      "zoomReset": "ズームをリセット",
       "subSeekNext": "次の字幕にシーク",
       "subSeekPrev": "前の字幕にシーク",
       "shaderToggle": "シェーダー切替",
@@ -444,6 +447,7 @@
     "pipActive": "ピクチャーインピクチャーで再生中",
     "pipFailed": "ピクチャーインピクチャーの開始に失敗しました",
     "screenshotSaved": "スクリーンショットを保存しました",
+    "zoomPercent": "ズーム ${percent}%",
     "pipErrors": {
       "androidVersion": "Android 8.0以降が必要です",
       "iosVersion": "iOS 15.0以降が必要です",
@@ -1083,6 +1087,7 @@
   },
   "videoSettings": {
     "playbackSpeed": "再生速度",
+    "zoom": "ズーム",
     "sleepTimer": "スリープタイマー",
     "audioSync": "音声同期",
     "subtitleSync": "字幕同期",

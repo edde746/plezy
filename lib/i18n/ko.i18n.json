@@ -306,6 +306,9 @@
       "speedIncrease": "속도 높이기",
       "speedDecrease": "속도 낮추기",
       "speedReset": "속도 초기화",
+      "zoomIn": "확대",
+      "zoomOut": "축소",
+      "zoomReset": "확대/축소 초기화",
       "subSeekNext": "다음 자막으로 이동",
       "subSeekPrev": "이전 자막으로 이동",
       "shaderToggle": "셰이더 전환",
@@ -444,6 +447,7 @@
     "pipActive": "화면 속 화면으로 재생 중",
     "pipFailed": "화면 속 화면 모드를 시작할 수 없습니다",
     "screenshotSaved": "스크린샷 저장됨",
+    "zoomPercent": "확대/축소 ${percent}%",
     "pipErrors": {
       "androidVersion": "Android 8.0 이상이 필요합니다",
       "iosVersion": "iOS 15.0 이상이 필요합니다",
@@ -1083,6 +1087,7 @@
   },
   "videoSettings": {
     "playbackSpeed": "재생 속도",
+    "zoom": "확대/축소",
     "sleepTimer": "취침 타이머",
     "audioSync": "오디오 동기화",
     "subtitleSync": "자막 동기화",

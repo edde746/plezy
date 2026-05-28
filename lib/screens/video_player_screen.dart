@@ -400,6 +400,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   Size? _pendingVideoLayoutSize;
   Player? _lastVideoLayoutPlayer;
   bool _videoLayoutUpdateScheduled = false;
+  double? _pinchStartZoomScale;
+  bool _isPinchZooming = false;
+  bool _pinchZoomChanged = false;
   final EpisodeNavigationService _episodeNavigation = EpisodeNavigationService();
 
   WatchTogetherProvider? _watchTogetherProvider;

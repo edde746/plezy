@@ -306,6 +306,9 @@
       "speedIncrease": "Увеличить скорость",
       "speedDecrease": "Уменьшить скорость",
       "speedReset": "Сбросить скорость",
+      "zoomIn": "Увеличить масштаб",
+      "zoomOut": "Уменьшить масштаб",
+      "zoomReset": "Сбросить масштаб",
       "subSeekNext": "К следующему субтитру",
       "subSeekPrev": "К предыдущему субтитру",
       "shaderToggle": "Вкл./выкл. шейдеры",
@@ -444,6 +447,7 @@
     "pipActive": "Воспроизводится в режиме «картинка в картинке»",
     "pipFailed": "Не удалось запустить режим «картинка в картинке»",
     "screenshotSaved": "Снимок экрана сохранён",
+    "zoomPercent": "Масштаб ${percent}%",
     "pipErrors": {
       "androidVersion": "Требуется Android 8.0 или новее",
       "iosVersion": "Требуется iOS 15.0 или новее",
@@ -1083,6 +1087,7 @@
   },
   "videoSettings": {
     "playbackSpeed": "Скорость воспроизведения",
+    "zoom": "Масштаб",
     "sleepTimer": "Таймер сна",
     "audioSync": "Синхронизация аудио",
     "subtitleSync": "Синхронизация субтитров",

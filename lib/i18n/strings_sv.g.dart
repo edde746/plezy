@@ -605,6 +605,7 @@ class _TranslationsVideoControlsSv extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Spelar i bild-i-bild';
 	@override String get pipFailed => 'Bild-i-bild kunde inte starta';
 	@override String get screenshotSaved => 'Skärmbild sparad';
+	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsSv pipErrors = _TranslationsVideoControlsPipErrorsSv._(_root);
 	@override String get chapters => 'Kapitel';
 	@override String get noChaptersAvailable => 'Inga kapitel tillgängliga';
@@ -1308,6 +1309,7 @@ class _TranslationsVideoSettingsSv extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Uppspelningshastighet';
+	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Sovtimer';
 	@override String get audioSync => 'Ljudsynkronisering';
 	@override String get subtitleSync => 'Undertextsynkronisering';
@@ -1565,6 +1567,9 @@ class _TranslationsHotkeysActionsSv extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => 'Öka hastighet';
 	@override String get speedDecrease => 'Minska hastighet';
 	@override String get speedReset => 'Återställ hastighet';
+	@override String get zoomIn => 'Zooma in';
+	@override String get zoomOut => 'Zooma ut';
+	@override String get zoomReset => 'Återställ zoom';
 	@override String get subSeekNext => 'Hoppa till nästa undertext';
 	@override String get subSeekPrev => 'Hoppa till föregående undertext';
 	@override String get shaderToggle => 'Växla shaders';
@@ -2099,6 +2104,9 @@ extension on TranslationsSv {
 			'hotkeys.actions.speedIncrease' => 'Öka hastighet',
 			'hotkeys.actions.speedDecrease' => 'Minska hastighet',
 			'hotkeys.actions.speedReset' => 'Återställ hastighet',
+			'hotkeys.actions.zoomIn' => 'Zooma in',
+			'hotkeys.actions.zoomOut' => 'Zooma ut',
+			'hotkeys.actions.zoomReset' => 'Återställ zoom',
 			'hotkeys.actions.subSeekNext' => 'Hoppa till nästa undertext',
 			'hotkeys.actions.subSeekPrev' => 'Hoppa till föregående undertext',
 			'hotkeys.actions.shaderToggle' => 'Växla shaders',
@@ -2224,6 +2232,7 @@ extension on TranslationsSv {
 			'videoControls.pipActive' => 'Spelar i bild-i-bild',
 			'videoControls.pipFailed' => 'Bild-i-bild kunde inte starta',
 			'videoControls.screenshotSaved' => 'Skärmbild sparad',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Kräver Android 8.0 eller nyare',
 			'videoControls.pipErrors.iosVersion' => 'Kräver iOS 15.0 eller nyare',
 			'videoControls.pipErrors.permissionDisabled' => 'Bild-i-bild är inaktiverat. Aktivera det i systeminställningarna.',
@@ -2316,12 +2325,12 @@ extension on TranslationsSv {
 			'profiles.addPlezyProfile' => 'Lägg till Plezy-profil',
 			'profiles.switchingProfile' => 'Byter profil…',
 			'profiles.deleteThisProfileTitle' => 'Ta bort denna profil?',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Ta bort ${displayName}. Anslutningar påverkas inte.',
 			'profiles.active' => 'Aktiv',
 			'profiles.manage' => 'Hantera',
 			'profiles.delete' => 'Ta bort',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signOut' => 'Logga ut',
 			'profiles.signOutPlexTitle' => 'Logga ut från Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Ta bort ${displayName} och alla Plex Home-användare? Du kan logga in igen när som helst.',
@@ -2801,6 +2810,7 @@ extension on TranslationsSv {
 			'companionRemote.remote.audio' => 'Ljud',
 			'companionRemote.remote.searchHint' => 'Sök på datorn...',
 			'videoSettings.playbackSpeed' => 'Uppspelningshastighet',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sovtimer',
 			'videoSettings.audioSync' => 'Ljudsynkronisering',
 			'videoSettings.subtitleSync' => 'Undertextsynkronisering',
@@ -2829,13 +2839,13 @@ extension on TranslationsSv {
 			'metadataEdit.basicInfo' => 'Grundläggande info',
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Avancerade inställningar',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.title' => 'Titel',
 			'metadataEdit.sortTitle' => 'Sorteringstitel',
 			'metadataEdit.originalTitle' => 'Originaltitel',
 			'metadataEdit.releaseDate' => 'Utgivningsdatum',
 			'metadataEdit.contentRating' => 'Åldersgräns',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Sammanfattning',

@@ -605,6 +605,7 @@ class _TranslationsVideoControlsZh extends TranslationsVideoControlsEn {
 	@override String get pipActive => '正在画中画模式中播放';
 	@override String get pipFailed => '画中画启动失败';
 	@override String get screenshotSaved => '截图已保存';
+	@override String zoomPercent({required Object percent}) => '缩放 ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsZh pipErrors = _TranslationsVideoControlsPipErrorsZh._(_root);
 	@override String get chapters => '章节';
 	@override String get noChaptersAvailable => '没有可用的章节';
@@ -1308,6 +1309,7 @@ class _TranslationsVideoSettingsZh extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => '播放速度';
+	@override String get zoom => '缩放';
 	@override String get sleepTimer => '睡眠定时器';
 	@override String get audioSync => '音频同步';
 	@override String get subtitleSync => '字幕同步';
@@ -1565,6 +1567,9 @@ class _TranslationsHotkeysActionsZh extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => '加速';
 	@override String get speedDecrease => '减速';
 	@override String get speedReset => '重置速度';
+	@override String get zoomIn => '放大';
+	@override String get zoomOut => '缩小';
+	@override String get zoomReset => '重置缩放';
 	@override String get subSeekNext => '跳转到下一字幕';
 	@override String get subSeekPrev => '跳转到上一字幕';
 	@override String get shaderToggle => '切换着色器';
@@ -2099,6 +2104,9 @@ extension on TranslationsZh {
 			'hotkeys.actions.speedIncrease' => '加速',
 			'hotkeys.actions.speedDecrease' => '减速',
 			'hotkeys.actions.speedReset' => '重置速度',
+			'hotkeys.actions.zoomIn' => '放大',
+			'hotkeys.actions.zoomOut' => '缩小',
+			'hotkeys.actions.zoomReset' => '重置缩放',
 			'hotkeys.actions.subSeekNext' => '跳转到下一字幕',
 			'hotkeys.actions.subSeekPrev' => '跳转到上一字幕',
 			'hotkeys.actions.shaderToggle' => '切换着色器',
@@ -2224,6 +2232,7 @@ extension on TranslationsZh {
 			'videoControls.pipActive' => '正在画中画模式中播放',
 			'videoControls.pipFailed' => '画中画启动失败',
 			'videoControls.screenshotSaved' => '截图已保存',
+			'videoControls.zoomPercent' => ({required Object percent}) => '缩放 ${percent}%',
 			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
 			'videoControls.pipErrors.iosVersion' => '需要 iOS 15.0 或更高版本',
 			'videoControls.pipErrors.permissionDisabled' => '画中画已禁用。请在系统设置中启用。',
@@ -2316,12 +2325,12 @@ extension on TranslationsZh {
 			'profiles.addPlezyProfile' => '添加 Plezy 配置文件',
 			'profiles.switchingProfile' => '切换配置文件中…',
 			'profiles.deleteThisProfileTitle' => '删除此配置文件？',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '移除 ${displayName}。连接不会受影响。',
 			'profiles.active' => '活跃',
 			'profiles.manage' => '管理',
 			'profiles.delete' => '删除',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signOut' => '退出登录',
 			'profiles.signOutPlexTitle' => '退出 Plex 登录？',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '要移除 ${displayName} 和所有 Plex Home 用户吗？可随时重新登录。',
@@ -2801,6 +2810,7 @@ extension on TranslationsZh {
 			'companionRemote.remote.audio' => '音频',
 			'companionRemote.remote.searchHint' => '在桌面上搜索...',
 			'videoSettings.playbackSpeed' => '播放速度',
+			'videoSettings.zoom' => '缩放',
 			'videoSettings.sleepTimer' => '睡眠定时器',
 			'videoSettings.audioSync' => '音频同步',
 			'videoSettings.subtitleSync' => '字幕同步',
@@ -2829,13 +2839,13 @@ extension on TranslationsZh {
 			'metadataEdit.basicInfo' => '基本信息',
 			'metadataEdit.artwork' => '封面图片',
 			'metadataEdit.advancedSettings' => '高级设置',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.title' => '标题',
 			'metadataEdit.sortTitle' => '排序标题',
 			'metadataEdit.originalTitle' => '原始标题',
 			'metadataEdit.releaseDate' => '上映日期',
 			'metadataEdit.contentRating' => '内容分级',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.studio' => '制片厂',
 			'metadataEdit.tagline' => '标语',
 			'metadataEdit.summary' => '简介',

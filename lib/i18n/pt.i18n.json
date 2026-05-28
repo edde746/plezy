@@ -306,6 +306,9 @@
       "speedIncrease": "Aumentar Velocidade",
       "speedDecrease": "Diminuir Velocidade",
       "speedReset": "Redefinir Velocidade",
+      "zoomIn": "Aumentar zoom",
+      "zoomOut": "Diminuir zoom",
+      "zoomReset": "Redefinir zoom",
       "subSeekNext": "Ir para Próxima Legenda",
       "subSeekPrev": "Ir para Legenda Anterior",
       "shaderToggle": "Alternar Shaders",
@@ -444,6 +447,7 @@
     "pipActive": "Reproduzindo em Picture-in-Picture",
     "pipFailed": "Falha ao iniciar picture-in-picture",
     "screenshotSaved": "Captura de tela salva",
+    "zoomPercent": "Zoom ${percent}%",
     "pipErrors": {
       "androidVersion": "Requer Android 8.0 ou superior",
       "iosVersion": "Requer iOS 15.0 ou superior",
@@ -1083,6 +1087,7 @@
   },
   "videoSettings": {
     "playbackSpeed": "Velocidade de Reprodução",
+    "zoom": "Zoom",
     "sleepTimer": "Timer de Sono",
     "audioSync": "Sincronia de Áudio",
     "subtitleSync": "Sincronia de Legendas",

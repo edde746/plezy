@@ -306,6 +306,9 @@
       "speedIncrease": "加速",
       "speedDecrease": "减速",
       "speedReset": "重置速度",
+      "zoomIn": "放大",
+      "zoomOut": "缩小",
+      "zoomReset": "重置缩放",
       "subSeekNext": "跳转到下一字幕",
       "subSeekPrev": "跳转到上一字幕",
       "shaderToggle": "切换着色器",
@@ -444,6 +447,7 @@
     "pipActive": "正在画中画模式中播放",
     "pipFailed": "画中画启动失败",
     "screenshotSaved": "截图已保存",
+    "zoomPercent": "缩放 ${percent}%",
     "pipErrors": {
       "androidVersion": "需要 Android 8.0 或更高版本",
       "iosVersion": "需要 iOS 15.0 或更高版本",
@@ -1083,6 +1087,7 @@
   },
   "videoSettings": {
     "playbackSpeed": "播放速度",
+    "zoom": "缩放",
     "sleepTimer": "睡眠定时器",
     "audioSync": "音频同步",
     "subtitleSync": "字幕同步",

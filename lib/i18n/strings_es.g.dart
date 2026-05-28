@@ -605,6 +605,7 @@ class _TranslationsVideoControlsEs extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Reproduciendo en Imagen en Imagen';
 	@override String get pipFailed => 'Error al iniciar Imagen en Imagen';
 	@override String get screenshotSaved => 'Captura de pantalla guardada';
+	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsEs pipErrors = _TranslationsVideoControlsPipErrorsEs._(_root);
 	@override String get chapters => 'Capítulos';
 	@override String get noChaptersAvailable => 'No hay capítulos disponibles';
@@ -1308,6 +1309,7 @@ class _TranslationsVideoSettingsEs extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Velocidad de reproducción';
+	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Temporizador de apagado';
 	@override String get audioSync => 'Sincronización de audio';
 	@override String get subtitleSync => 'Sincronización de subtítulos';
@@ -1565,6 +1567,9 @@ class _TranslationsHotkeysActionsEs extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => 'Aumentar Velocidad';
 	@override String get speedDecrease => 'Disminuir Velocidad';
 	@override String get speedReset => 'Restablecer Velocidad';
+	@override String get zoomIn => 'Acercar';
+	@override String get zoomOut => 'Alejar';
+	@override String get zoomReset => 'Restablecer zoom';
 	@override String get subSeekNext => 'Ir al Siguiente Subtítulo';
 	@override String get subSeekPrev => 'Ir al Anterior Subtítulo';
 	@override String get shaderToggle => 'Alternar Shaders';
@@ -2099,6 +2104,9 @@ extension on TranslationsEs {
 			'hotkeys.actions.speedIncrease' => 'Aumentar Velocidad',
 			'hotkeys.actions.speedDecrease' => 'Disminuir Velocidad',
 			'hotkeys.actions.speedReset' => 'Restablecer Velocidad',
+			'hotkeys.actions.zoomIn' => 'Acercar',
+			'hotkeys.actions.zoomOut' => 'Alejar',
+			'hotkeys.actions.zoomReset' => 'Restablecer zoom',
 			'hotkeys.actions.subSeekNext' => 'Ir al Siguiente Subtítulo',
 			'hotkeys.actions.subSeekPrev' => 'Ir al Anterior Subtítulo',
 			'hotkeys.actions.shaderToggle' => 'Alternar Shaders',
@@ -2224,6 +2232,7 @@ extension on TranslationsEs {
 			'videoControls.pipActive' => 'Reproduciendo en Imagen en Imagen',
 			'videoControls.pipFailed' => 'Error al iniciar Imagen en Imagen',
 			'videoControls.screenshotSaved' => 'Captura de pantalla guardada',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Requiere Android 8.0 o más reciente',
 			'videoControls.pipErrors.iosVersion' => 'Requiere iOS 15.0 o más reciente',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture está desactivado. Actívalo en los ajustes del sistema.',
@@ -2316,12 +2325,12 @@ extension on TranslationsEs {
 			'profiles.addPlezyProfile' => 'Añadir perfil de Plezy',
 			'profiles.switchingProfile' => 'Cambiando de perfil…',
 			'profiles.deleteThisProfileTitle' => '¿Eliminar este perfil?',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Eliminar ${displayName}. Las conexiones no se verán afectadas.',
 			'profiles.active' => 'Activo',
 			'profiles.manage' => 'Administrar',
 			'profiles.delete' => 'Eliminar',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signOut' => 'Cerrar sesión',
 			'profiles.signOutPlexTitle' => '¿Cerrar sesión de Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '¿Eliminar ${displayName} y todos los usuarios de Plex Home? Puedes iniciar sesión de nuevo cuando quieras.',
@@ -2801,6 +2810,7 @@ extension on TranslationsEs {
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Buscar en escritorio...',
 			'videoSettings.playbackSpeed' => 'Velocidad de reproducción',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Temporizador de apagado',
 			'videoSettings.audioSync' => 'Sincronización de audio',
 			'videoSettings.subtitleSync' => 'Sincronización de subtítulos',
@@ -2829,13 +2839,13 @@ extension on TranslationsEs {
 			'metadataEdit.basicInfo' => 'Información básica',
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Ajustes avanzados',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.title' => 'Título',
 			'metadataEdit.sortTitle' => 'Título de ordenación',
 			'metadataEdit.originalTitle' => 'Título original',
 			'metadataEdit.releaseDate' => 'Fecha de estreno',
 			'metadataEdit.contentRating' => 'Clasificación de contenido',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.studio' => 'Estudio',
 			'metadataEdit.tagline' => 'Eslogan',
 			'metadataEdit.summary' => 'Resumen',

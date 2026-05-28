@@ -2,6 +2,7 @@ part of '../../video_player_screen.dart';
 
 extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
   static const double _videoLayoutSizeTolerance = 0.1;
+  static const double _pinchZoomActivationThreshold = 0.015;
 
   bool _isSameVideoLayoutSize(Size a, Size b) {
     return (a.width - b.width).abs() <= _videoLayoutSizeTolerance &&
@@ -138,6 +139,22 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     );
   }
 
+  void _startMobileZoomGesture() {
+    final filterManager = _videoFilterManager;
+    if (filterManager == null || _isPinchZooming) return;
+
+    _ambientLightingService?.disable();
+    _isPinchZooming = true;
+    _pinchZoomChanged = false;
+    _pinchStartZoomScale = filterManager.zoomScale;
+  }
+
+  void _clearMobileZoomGesture() {
+    _isPinchZooming = false;
+    _pinchZoomChanged = false;
+    _pinchStartZoomScale = null;
+  }
+
   Widget _buildVideoPlayer(BuildContext context) {
     // Cache platform detection to avoid multiple calls
     final isMobile = PlatformDetector.isMobile(context);
@@ -167,22 +184,33 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
           behavior: HitTestBehavior.translucent, // Allow taps to pass through to controls
           onScaleStart: (details) {
             if (!isMobile) return;
-            if (_videoFilterManager != null) {
-              _videoFilterManager!.isPinching = false;
-            }
+            if (details.pointerCount >= 2) _startMobileZoomGesture();
           },
           onScaleUpdate: (details) {
             if (!isMobile) return;
-            if (details.pointerCount >= 2 && _videoFilterManager != null) {
-              _videoFilterManager!.isPinching = true;
-            }
+            if (details.pointerCount < 2) return;
+            if (!_isPinchZooming) _startMobileZoomGesture();
+
+            final startZoom = _pinchStartZoomScale;
+            final filterManager = _videoFilterManager;
+            if (!_isPinchZooming || startZoom == null || filterManager == null) return;
+            if ((details.scale - 1.0).abs() <= _pinchZoomActivationThreshold && !_pinchZoomChanged) return;
+
+            _pinchZoomChanged = true;
+            filterManager.setZoomScale(startZoom * details.scale);
           },
           onScaleEnd: (details) {
             if (!isMobile) return;
-            if (_videoFilterManager != null && _videoFilterManager!.isPinching) {
-              _toggleContainCover();
-              _videoFilterManager!.isPinching = false;
+            if (!_isPinchZooming) return;
+            if (!_pinchZoomChanged) {
+              _clearMobileZoomGesture();
+              return;
             }
+
+            final zoomScale = _videoFilterManager?.zoomScale ?? 1.0;
+            _showZoomToast(zoomScale);
+            _clearMobileZoomGesture();
+            _setPlayerState(() {});
           },
           child: Stack(
             children: [
@@ -244,7 +272,12 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         sourcePartId: _currentMediaInfo?.partId,
                         onTogglePIPMode: _togglePIPMode,
                         boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
+                        videoZoomScale: _videoFilterManager?.zoomScale ?? 1.0,
                         onCycleBoxFitMode: _cycleBoxFitMode,
+                        onVideoZoomChanged: _setVideoZoom,
+                        onZoomIn: _zoomVideoIn,
+                        onZoomOut: _zoomVideoOut,
+                        onResetVideoZoom: _resetVideoZoom,
                         onCycleAudioTrack: _cycleAudioTrack,
                         onCycleSubtitleTrack: _cycleSubtitleTrack,
                         onAudioTrackChanged: _onAudioTrackChanged,

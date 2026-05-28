@@ -306,6 +306,9 @@
       "speedIncrease": "Öka hastighet",
       "speedDecrease": "Minska hastighet",
       "speedReset": "Återställ hastighet",
+      "zoomIn": "Zooma in",
+      "zoomOut": "Zooma ut",
+      "zoomReset": "Återställ zoom",
       "subSeekNext": "Hoppa till nästa undertext",
       "subSeekPrev": "Hoppa till föregående undertext",
       "shaderToggle": "Växla shaders",
@@ -444,6 +447,7 @@
     "pipActive": "Spelar i bild-i-bild",
     "pipFailed": "Bild-i-bild kunde inte starta",
     "screenshotSaved": "Skärmbild sparad",
+    "zoomPercent": "Zoom ${percent}%",
     "pipErrors": {
       "androidVersion": "Kräver Android 8.0 eller nyare",
       "iosVersion": "Kräver iOS 15.0 eller nyare",
@@ -1083,6 +1087,7 @@
   },
   "videoSettings": {
     "playbackSpeed": "Uppspelningshastighet",
+    "zoom": "Zoom",
     "sleepTimer": "Sovtimer",
     "audioSync": "Ljudsynkronisering",
     "subtitleSync": "Undertextsynkronisering",

@@ -372,6 +372,12 @@ class PlayerAndroid extends PlayerBase {
     await invoke('setBoxFitMode', {'mode': mode});
   }
 
+  /// Apply custom zoom to the native ExoPlayer layer.
+  Future<void> setVideoZoom(double scale) async {
+    if (disposed || !initialized) return;
+    await invoke('setVideoZoom', {'scale': scale});
+  }
+
   @override
   Future<bool> setVideoFrameRate(double fps, int durationMs, {int extraDelayMs = 0}) async {
     if (disposed || !initialized) return false;

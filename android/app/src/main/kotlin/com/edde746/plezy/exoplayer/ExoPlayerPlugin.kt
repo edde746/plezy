@@ -148,6 +148,7 @@ class ExoPlayerPlugin :
       }
       "setSubtitleStyle" -> handleSetSubtitleStyle(call, result)
       "setBoxFitMode" -> handleSetBoxFitMode(call, result)
+      "setVideoZoom" -> handleSetVideoZoom(call, result)
       "setDvConversionMode" -> handleSetDvConversionMode(call, result)
       "observeProperty" -> handleObserveProperty(call, result)
       "setMpvProperty" -> handleSetMpvProperty(call, result)
@@ -546,6 +547,22 @@ class ExoPlayerPlugin :
     }
     activity?.runOnUiThread {
       playerCore?.setBoxFitMode(mode)
+      result.success(null)
+    } ?: result.success(null)
+  }
+
+  private fun handleSetVideoZoom(call: MethodCall, result: MethodChannel.Result) {
+    val scale = call.argument<Number>("scale")?.toDouble()
+    if (scale == null) {
+      result.error("INVALID_ARGS", "Missing 'scale'", null)
+      return
+    }
+    if (usingMpvFallback) {
+      result.success(null)
+      return
+    }
+    activity?.runOnUiThread {
+      playerCore?.setVideoZoom(scale)
       result.success(null)
     } ?: result.success(null)
   }

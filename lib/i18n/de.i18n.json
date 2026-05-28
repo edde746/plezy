@@ -306,6 +306,9 @@
       "speedIncrease": "Geschwindigkeit erhöhen",
       "speedDecrease": "Geschwindigkeit verringern",
       "speedReset": "Geschwindigkeit zurücksetzen",
+      "zoomIn": "Vergrößern",
+      "zoomOut": "Verkleinern",
+      "zoomReset": "Zoom zurücksetzen",
       "subSeekNext": "Zum nächsten Untertitel springen",
       "subSeekPrev": "Zum vorherigen Untertitel springen",
       "shaderToggle": "Shader umschalten",
@@ -444,6 +447,7 @@
     "pipActive": "Wiedergabe im Bild-in-Bild-Modus",
     "pipFailed": "Bild-in-Bild konnte nicht gestartet werden",
     "screenshotSaved": "Screenshot gespeichert",
+    "zoomPercent": "Zoom ${percent}%",
     "pipErrors": {
       "androidVersion": "Erfordert Android 8.0 oder neuer",
       "iosVersion": "Erfordert iOS 15.0 oder neuer",
@@ -1083,6 +1087,7 @@
   },
   "videoSettings": {
     "playbackSpeed": "Wiedergabegeschwindigkeit",
+    "zoom": "Zoom",
     "sleepTimer": "Schlaftimer",
     "audioSync": "Audio-Synchronisation",
     "subtitleSync": "Untertitel-Synchronisation",
