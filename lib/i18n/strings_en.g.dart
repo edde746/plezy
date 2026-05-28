@@ -4703,6 +4703,8 @@ extension on Translations {
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirm Action',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
@@ -4713,8 +4715,6 @@ extension on Translations {
 			'profiles.signOut' => 'Sign out',
 			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signedOutPlex' => 'Signed out of Plex.',
 			'profiles.signOutFailed' => 'Sign out failed.',
 			'profiles.sectionTitle' => 'Profiles',
@@ -5217,6 +5217,8 @@ extension on Translations {
 			'metadataEdit.basicInfo' => 'Basic Info',
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Advanced Settings',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.title' => 'Title',
 			'metadataEdit.sortTitle' => 'Sort Title',
 			'metadataEdit.originalTitle' => 'Original Title',
@@ -5227,8 +5229,6 @@ extension on Translations {
 			'metadataEdit.summary' => 'Summary',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Background',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Square Art',
 			'metadataEdit.selectPoster' => 'Select Poster',
