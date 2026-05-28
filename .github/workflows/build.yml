@@ -15,7 +15,7 @@ jobs:
     permissions:
       id-token: write
       attestations: write
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -99,6 +99,34 @@ jobs:
             plezy-android-arm64-v8a.tar.gz
             plezy-android-armeabi-v7a.tar.gz
             plezy-android-x86_64.tar.gz
+
+      # Fork-only: publish the raw APKs to a rolling "android-latest" release so
+      # the README download links always serve the newest build. Runs only on
+      # this fork's main branch so feature-branch builds don't clobber the files.
+      - name: Stage raw APKs for release
+        if: github.repository == 'TeeJS/plezy' && github.ref == 'refs/heads/main'
+        run: |
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk plezy-android-arm64-v8a.apk
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk plezy-android-armeabi-v7a.apk
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk plezy-android-x86_64.apk
+
+      - name: Publish APKs to android-latest release
+        if: github.repository == 'TeeJS/plezy' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: android-latest
+          name: Android APKs (latest)
+          body: |
+            Rolling release of the latest Android APKs built from this fork.
+            Updated automatically by CI on each build of `main`.
+          draft: false
+          prerelease: false
+          files: |
+            plezy-android-arm64-v8a.apk
+            plezy-android-armeabi-v7a.apk
+            plezy-android-x86_64.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build-ios:
     runs-on: macos-26
