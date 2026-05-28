@@ -389,6 +389,8 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'Принуди ТВ оформление. За устройства, които не се разпознават автоматично. Изисква рестарт.';
 	@override String get startInFullscreen => 'Стартирай на цял екран';
 	@override String get startInFullscreenDescription => 'Отваряй Plezy в режим цял екран при стартиране';
+	@override String get exitFullscreenOnPlayerClose => 'Изход от цял екран при затваряне на плейъра';
+	@override String get exitFullscreenOnPlayerCloseDescription => 'Автоматично излиза от режим цял екран при затваряне на видео плейъра';
 	@override String get autoHidePerformanceOverlay => 'Автоматично скриване на оверлея за производителност';
 	@override String get autoHidePerformanceOverlayDescription => 'Скривай постепенно оверлея за производителност заедно с контролите за възпроизвеждане';
 	@override String get showNavBarLabels => 'Показвай етикети в навигационната лента';
@@ -2057,6 +2059,8 @@ extension on TranslationsBg {
 			'settings.forceTvModeDescription' => 'Принуди ТВ оформление. За устройства, които не се разпознават автоматично. Изисква рестарт.',
 			'settings.startInFullscreen' => 'Стартирай на цял екран',
 			'settings.startInFullscreenDescription' => 'Отваряй Plezy в режим цял екран при стартиране',
+			'settings.exitFullscreenOnPlayerClose' => 'Изход от цял екран при затваряне на плейъра',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'Автоматично излиза от режим цял екран при затваряне на видео плейъра',
 			'settings.autoHidePerformanceOverlay' => 'Автоматично скриване на оверлея за производителност',
 			'settings.autoHidePerformanceOverlayDescription' => 'Скривай постепенно оверлея за производителност заедно с контролите за възпроизвеждане',
 			'settings.showNavBarLabels' => 'Показвай етикети в навигационната лента',
@@ -2316,10 +2320,10 @@ extension on TranslationsBg {
 			'profiles.active' => 'Активен',
 			'profiles.manage' => 'Управление',
 			'profiles.delete' => 'Изтрий',
-			'profiles.signOut' => 'Изход',
-			'profiles.signOutPlexTitle' => 'Изход от Plex?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'Изход',
+			'profiles.signOutPlexTitle' => 'Изход от Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Премахване на ${displayName} и всички Plex Home потребители? Можете да влезете отново по всяко време.',
 			'profiles.signedOutPlex' => 'Излязохте от Plex.',
 			'profiles.signOutFailed' => 'Изходът е неуспешен.',
@@ -2830,10 +2834,10 @@ extension on TranslationsBg {
 			'metadataEdit.originalTitle' => 'Оригинално заглавие',
 			'metadataEdit.releaseDate' => 'Дата на излизане',
 			'metadataEdit.contentRating' => 'Възрастов рейтинг',
-			'metadataEdit.studio' => 'Студио',
-			'metadataEdit.tagline' => 'Слоган',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'Студио',
+			'metadataEdit.tagline' => 'Слоган',
 			'metadataEdit.summary' => 'Резюме',
 			'metadataEdit.poster' => 'Постер',
 			'metadataEdit.background' => 'Фон',

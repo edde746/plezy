@@ -118,6 +118,16 @@ class AppearanceSettingsScreen extends StatelessWidget {
           ),
         ],
 
+        if (PlatformDetector.isDesktopOS()) ...[
+          if (!(Platform.isWindows || Platform.isLinux)) SettingsSectionHeader(t.settings.window),
+          SettingSwitchTile(
+            pref: SettingsService.exitFullscreenOnPlayerClose,
+            icon: Symbols.fullscreen_exit_rounded,
+            title: t.settings.exitFullscreenOnPlayerClose,
+            subtitle: t.settings.exitFullscreenOnPlayerCloseDescription,
+          ),
+        ],
+
         SettingsSectionHeader(t.settings.content),
         SettingSwitchTile(
           pref: SettingsService.liveTvDefaultFavorites,

@@ -261,6 +261,8 @@
     "forceTvModeDescription": "Forzar diseño TV. Para dispositivos que no lo detectan. Requiere reinicio.",
     "startInFullscreen": "Iniciar en pantalla completa",
     "startInFullscreenDescription": "Abrir Plezy en modo pantalla completa al iniciar",
+    "exitFullscreenOnPlayerClose": "Salir de pantalla completa al cerrar el reproductor",
+    "exitFullscreenOnPlayerCloseDescription": "Salir automáticamente del modo de pantalla completa al cerrar el reproductor de vídeo",
     "autoHidePerformanceOverlay": "Ocultar superposición de rendimiento automáticamente",
     "autoHidePerformanceOverlayDescription": "Desvanecer la superposición de rendimiento con los controles de reproducción",
     "showNavBarLabels": "Mostrar etiquetas de la barra de navegación",

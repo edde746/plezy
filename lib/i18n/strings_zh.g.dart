@@ -389,6 +389,8 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => '强制 TV 布局。适用于无法自动检测的设备。需要重启。';
 	@override String get startInFullscreen => '以全屏模式启动';
 	@override String get startInFullscreenDescription => '启动时以全屏模式打开 Plezy';
+	@override String get exitFullscreenOnPlayerClose => '关闭播放器时退出全屏';
+	@override String get exitFullscreenOnPlayerCloseDescription => '关闭视频播放器时自动退出全屏模式';
 	@override String get autoHidePerformanceOverlay => '自动隐藏性能叠加层';
 	@override String get autoHidePerformanceOverlayDescription => '性能叠加层随播放控件一起淡入淡出';
 	@override String get showNavBarLabels => '显示导航栏标签';
@@ -2057,6 +2059,8 @@ extension on TranslationsZh {
 			'settings.forceTvModeDescription' => '强制 TV 布局。适用于无法自动检测的设备。需要重启。',
 			'settings.startInFullscreen' => '以全屏模式启动',
 			'settings.startInFullscreenDescription' => '启动时以全屏模式打开 Plezy',
+			'settings.exitFullscreenOnPlayerClose' => '关闭播放器时退出全屏',
+			'settings.exitFullscreenOnPlayerCloseDescription' => '关闭视频播放器时自动退出全屏模式',
 			'settings.autoHidePerformanceOverlay' => '自动隐藏性能叠加层',
 			'settings.autoHidePerformanceOverlayDescription' => '性能叠加层随播放控件一起淡入淡出',
 			'settings.showNavBarLabels' => '显示导航栏标签',
@@ -2316,10 +2320,10 @@ extension on TranslationsZh {
 			'profiles.active' => '活跃',
 			'profiles.manage' => '管理',
 			'profiles.delete' => '删除',
-			'profiles.signOut' => '退出登录',
-			'profiles.signOutPlexTitle' => '退出 Plex 登录？',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => '退出登录',
+			'profiles.signOutPlexTitle' => '退出 Plex 登录？',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '要移除 ${displayName} 和所有 Plex Home 用户吗？可随时重新登录。',
 			'profiles.signedOutPlex' => '已退出 Plex 登录。',
 			'profiles.signOutFailed' => '退出登录失败。',
@@ -2830,10 +2834,10 @@ extension on TranslationsZh {
 			'metadataEdit.originalTitle' => '原始标题',
 			'metadataEdit.releaseDate' => '上映日期',
 			'metadataEdit.contentRating' => '内容分级',
-			'metadataEdit.studio' => '制片厂',
-			'metadataEdit.tagline' => '标语',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => '制片厂',
+			'metadataEdit.tagline' => '标语',
 			'metadataEdit.summary' => '简介',
 			'metadataEdit.poster' => '海报',
 			'metadataEdit.background' => '背景',

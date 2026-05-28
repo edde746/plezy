@@ -261,6 +261,8 @@
     "forceTvModeDescription": "Принуди ТВ оформление. За устройства, които не се разпознават автоматично. Изисква рестарт.",
     "startInFullscreen": "Стартирай на цял екран",
     "startInFullscreenDescription": "Отваряй Plezy в режим цял екран при стартиране",
+    "exitFullscreenOnPlayerClose": "Изход от цял екран при затваряне на плейъра",
+    "exitFullscreenOnPlayerCloseDescription": "Автоматично излиза от режим цял екран при затваряне на видео плейъра",
     "autoHidePerformanceOverlay": "Автоматично скриване на оверлея за производителност",
     "autoHidePerformanceOverlayDescription": "Скривай постепенно оверлея за производителност заедно с контролите за възпроизвеждане",
     "showNavBarLabels": "Показвай етикети в навигационната лента",

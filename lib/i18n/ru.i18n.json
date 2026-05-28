@@ -261,6 +261,8 @@
     "forceTvModeDescription": "Принудительно включить ТВ-интерфейс. Для устройств без автоопределения. Требуется перезапуск.",
     "startInFullscreen": "Запускать в полноэкранном режиме",
     "startInFullscreenDescription": "Открывать Plezy в полноэкранном режиме при запуске",
+    "exitFullscreenOnPlayerClose": "Выходить из полноэкранного режима при закрытии плеера",
+    "exitFullscreenOnPlayerCloseDescription": "Автоматически выходить из полноэкранного режима при закрытии видеоплеера",
     "autoHidePerformanceOverlay": "Автоскрытие оверлея производительности",
     "autoHidePerformanceOverlayDescription": "Скрывать оверлей производительности вместе с элементами управления воспроизведением",
     "showNavBarLabels": "Показывать подписи панели навигации",

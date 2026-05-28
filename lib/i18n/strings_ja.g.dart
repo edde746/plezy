@@ -389,6 +389,8 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'TVレイアウトを強制します。自動検出しないデバイス向けです。再起動が必要です。';
 	@override String get startInFullscreen => '全画面表示で起動';
 	@override String get startInFullscreenDescription => '起動時にPlezyを全画面モードで開きます';
+	@override String get exitFullscreenOnPlayerClose => 'プレイヤーを閉じたときに全画面を終了';
+	@override String get exitFullscreenOnPlayerCloseDescription => 'ビデオプレイヤーを閉じたときに自動的に全画面モードを終了します';
 	@override String get autoHidePerformanceOverlay => 'パフォーマンスオーバーレイを自動非表示';
 	@override String get autoHidePerformanceOverlayDescription => '再生コントロールと一緒にパフォーマンスオーバーレイをフェードする';
 	@override String get showNavBarLabels => 'ナビゲーションバーラベルを表示';
@@ -2057,6 +2059,8 @@ extension on TranslationsJa {
 			'settings.forceTvModeDescription' => 'TVレイアウトを強制します。自動検出しないデバイス向けです。再起動が必要です。',
 			'settings.startInFullscreen' => '全画面表示で起動',
 			'settings.startInFullscreenDescription' => '起動時にPlezyを全画面モードで開きます',
+			'settings.exitFullscreenOnPlayerClose' => 'プレイヤーを閉じたときに全画面を終了',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'ビデオプレイヤーを閉じたときに自動的に全画面モードを終了します',
 			'settings.autoHidePerformanceOverlay' => 'パフォーマンスオーバーレイを自動非表示',
 			'settings.autoHidePerformanceOverlayDescription' => '再生コントロールと一緒にパフォーマンスオーバーレイをフェードする',
 			'settings.showNavBarLabels' => 'ナビゲーションバーラベルを表示',
@@ -2316,10 +2320,10 @@ extension on TranslationsJa {
 			'profiles.active' => 'アクティブ',
 			'profiles.manage' => '管理',
 			'profiles.delete' => '削除',
-			'profiles.signOut' => 'サインアウト',
-			'profiles.signOutPlexTitle' => 'Plex からサインアウトしますか？',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => 'サインアウト',
+			'profiles.signOutPlexTitle' => 'Plex からサインアウトしますか？',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName}とすべてのPlex Homeユーザーを削除しますか？いつでも再サインインできます。',
 			'profiles.signedOutPlex' => 'Plex からサインアウトしました。',
 			'profiles.signOutFailed' => 'サインアウトに失敗しました。',
@@ -2830,10 +2834,10 @@ extension on TranslationsJa {
 			'metadataEdit.originalTitle' => '原題',
 			'metadataEdit.releaseDate' => '公開日',
 			'metadataEdit.contentRating' => 'コンテンツレーティング',
-			'metadataEdit.studio' => 'スタジオ',
-			'metadataEdit.tagline' => 'タグライン',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => 'スタジオ',
+			'metadataEdit.tagline' => 'タグライン',
 			'metadataEdit.summary' => 'あらすじ',
 			'metadataEdit.poster' => 'ポスター',
 			'metadataEdit.background' => '背景',

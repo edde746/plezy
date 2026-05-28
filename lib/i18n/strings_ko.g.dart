@@ -389,6 +389,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'TV 레이아웃을 강제합니다. 자동 감지되지 않는 기기용입니다. 재시작이 필요합니다.';
 	@override String get startInFullscreen => '전체화면으로 시작';
 	@override String get startInFullscreenDescription => '실행 시 Plezy를 전체화면 모드로 엽니다';
+	@override String get exitFullscreenOnPlayerClose => '플레이어 닫을 때 전체화면 종료';
+	@override String get exitFullscreenOnPlayerCloseDescription => '비디오 플레이어를 닫을 때 자동으로 전체화면을 종료합니다';
 	@override String get autoHidePerformanceOverlay => '성능 오버레이 자동 숨기기';
 	@override String get autoHidePerformanceOverlayDescription => '재생 컨트롤과 함께 성능 오버레이를 페이드 처리';
 	@override String get showNavBarLabels => '내비게이션 바 라벨 표시';
@@ -2057,6 +2059,8 @@ extension on TranslationsKo {
 			'settings.forceTvModeDescription' => 'TV 레이아웃을 강제합니다. 자동 감지되지 않는 기기용입니다. 재시작이 필요합니다.',
 			'settings.startInFullscreen' => '전체화면으로 시작',
 			'settings.startInFullscreenDescription' => '실행 시 Plezy를 전체화면 모드로 엽니다',
+			'settings.exitFullscreenOnPlayerClose' => '플레이어 닫을 때 전체화면 종료',
+			'settings.exitFullscreenOnPlayerCloseDescription' => '비디오 플레이어를 닫을 때 자동으로 전체화면을 종료합니다',
 			'settings.autoHidePerformanceOverlay' => '성능 오버레이 자동 숨기기',
 			'settings.autoHidePerformanceOverlayDescription' => '재생 컨트롤과 함께 성능 오버레이를 페이드 처리',
 			'settings.showNavBarLabels' => '내비게이션 바 라벨 표시',
@@ -2316,10 +2320,10 @@ extension on TranslationsKo {
 			'profiles.active' => '활성',
 			'profiles.manage' => '관리',
 			'profiles.delete' => '삭제',
-			'profiles.signOut' => '로그아웃',
-			'profiles.signOutPlexTitle' => 'Plex에서 로그아웃하시겠습니까?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOut' => '로그아웃',
+			'profiles.signOutPlexTitle' => 'Plex에서 로그아웃하시겠습니까?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} 및 모든 Plex Home 사용자를 제거할까요? 언제든 다시 로그인할 수 있습니다.',
 			'profiles.signedOutPlex' => 'Plex에서 로그아웃되었습니다.',
 			'profiles.signOutFailed' => '로그아웃에 실패했습니다.',
@@ -2830,10 +2834,10 @@ extension on TranslationsKo {
 			'metadataEdit.originalTitle' => '원제',
 			'metadataEdit.releaseDate' => '출시일',
 			'metadataEdit.contentRating' => '콘텐츠 등급',
-			'metadataEdit.studio' => '스튜디오',
-			'metadataEdit.tagline' => '태그라인',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.studio' => '스튜디오',
+			'metadataEdit.tagline' => '태그라인',
 			'metadataEdit.summary' => '줄거리',
 			'metadataEdit.poster' => '포스터',
 			'metadataEdit.background' => '배경',

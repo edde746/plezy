@@ -261,6 +261,8 @@
     "forceTvModeDescription": "Wymuś układ TV. Dla urządzeń bez autodetekcji. Wymaga restartu.",
     "startInFullscreen": "Uruchom na pełnym ekranie",
     "startInFullscreenDescription": "Otwiera Plezy w trybie pełnoekranowym przy uruchomieniu",
+    "exitFullscreenOnPlayerClose": "Wyjdź z pełnego ekranu przy zamykaniu odtwarzacza",
+    "exitFullscreenOnPlayerCloseDescription": "Automatycznie wychodzi z trybu pełnoekranowego po zamknięciu odtwarzacza wideo",
     "autoHidePerformanceOverlay": "Automatycznie ukrywaj nakładkę wydajności",
     "autoHidePerformanceOverlayDescription": "Wygaszaj nakładkę wydajności wraz z kontrolkami odtwarzania",
     "showNavBarLabels": "Pokaż etykiety paska nawigacji",

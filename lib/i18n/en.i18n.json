@@ -261,6 +261,8 @@
     "forceTvModeDescription": "Force TV layout. For devices that don't auto-detect. Requires restart.",
     "startInFullscreen": "Start in fullscreen",
     "startInFullscreenDescription": "Open Plezy in fullscreen mode at launch",
+    "exitFullscreenOnPlayerClose": "Exit fullscreen on player close",
+    "exitFullscreenOnPlayerCloseDescription": "Automatically exit fullscreen when closing the video player",
     "autoHidePerformanceOverlay": "Auto-Hide Performance Overlay",
     "autoHidePerformanceOverlayDescription": "Fade the performance overlay with the playback controls",
     "showNavBarLabels": "Show Navigation Bar Labels",
