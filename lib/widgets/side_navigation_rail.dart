@@ -165,6 +165,9 @@ class SideNavigationRail extends StatefulWidget {
   final bool isSidebarFocused;
   final bool alwaysExpanded;
   final bool isReconnecting;
+
+  /// Whether to show the Watchlist entry (Plex-account-level feature).
+  final bool hasWatchlist;
   final ValueChanged<NavigationTabId> onDestinationSelected;
   final ValueChanged<String> onLibrarySelected;
 
@@ -185,6 +188,7 @@ class SideNavigationRail extends StatefulWidget {
     this.isSidebarFocused = false,
     this.alwaysExpanded = false,
     this.isReconnecting = false,
+    this.hasWatchlist = false,
     required this.onDestinationSelected,
     required this.onLibrarySelected,
     this.onNavigateToContent,
@@ -232,6 +236,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
   static const _kLibraries = 'libraries';
   static const _kSearch = 'search';
   static const _kDownloads = 'downloads';
+  static const _kWatchlist = 'watchlist';
   static const _kSettings = 'settings';
   static const _kReconnect = 'reconnect';
   static const _kFullscreen = 'fullscreen';
@@ -371,6 +376,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       _kLibraries,
       _kSearch,
       if (_showDownloads) _kDownloads,
+      if (widget.hasWatchlist) _kWatchlist,
       _kSettings,
       _kReconnect,
       if (hasHiddenLibraries) _kHiddenLibraries,
@@ -458,6 +464,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         _kSearch,
       ],
       if (_showDownloads) _kDownloads,
+      if (widget.hasWatchlist) _kWatchlist,
       _kSettings,
       if (_showFullscreenToggle) _kFullscreen,
     ];
@@ -724,6 +731,19 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                       isFocused: _focusTracker.isFocused(_kDownloads),
                                       onTap: () => widget.onDestinationSelected(NavigationTabId.downloads),
                                       focusNode: _focusTracker.get(_kDownloads),
+                                      isCollapsed: isCollapsed,
+                                    ),
+                                    const SizedBox(height: 8),
+                                  ],
+                                  if (widget.hasWatchlist) ...[
+                                    _buildNavItem(
+                                      icon: Symbols.bookmark_rounded,
+                                      selectedIcon: Symbols.bookmark_rounded,
+                                      label: Translations.of(context).watchlist.title,
+                                      isSelected: widget.selectedTab == NavigationTabId.watchlist,
+                                      isFocused: _focusTracker.isFocused(_kWatchlist),
+                                      onTap: () => widget.onDestinationSelected(NavigationTabId.watchlist),
+                                      focusNode: _focusTracker.get(_kWatchlist),
                                       isCollapsed: isCollapsed,
                                     ),
                                     const SizedBox(height: 8),

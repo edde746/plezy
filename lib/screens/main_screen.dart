@@ -1464,6 +1464,7 @@ class _MainScreenState extends State<MainScreen>
                                       isSidebarFocused: _isSidebarFocused,
                                       alwaysExpanded: alwaysExpanded,
                                       isReconnecting: _isReconnecting,
+                                      hasWatchlist: _hasPlexAccount,
                                       onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
                                       onDestinationSelected: (tab) {
                                         final restorePreviousFocus = tab == _currentTab;
