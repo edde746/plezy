@@ -50,9 +50,6 @@ import '../providers/download_provider.dart';
 import '../providers/offline_watch_provider.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
-import '../connection/connection_registry.dart';
-import '../services/plex_watchlist_service.dart';
-import '../utils/watchlist_notifier.dart';
 import '../utils/formatters.dart';
 import '../utils/scroll_utils.dart';
 import '../utils/dialogs.dart';
@@ -154,10 +151,6 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   late final ScrollController _scrollController;
   final ScrollController _extrasScrollController = ScrollController();
   bool _watchStateChanged = false;
-  // Watchlist toggle state (Plex movie/show only). null = membership unknown
-  // (loading); true/false once resolved. _watchlistBusy guards in-flight toggles.
-  bool? _isWatchlisted;
-  bool _watchlistBusy = false;
   final ValueNotifier<double> _scrollOffset = ValueNotifier<double>(0);
   bool _suppressBackAfterPop = false;
   bool _tvDetailRevealed = false;
@@ -708,79 +701,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _castFocusNode = FocusNode(debugLabel: 'cast_row');
     _infoRowsFocusNode = FocusNode(debugLabel: 'info_rows');
     _loadFullMetadata();
-    _loadWatchlistMembership();
   }
 
   void _onScroll() {
     _scrollOffset.value = _scrollController.offset;
-  }
-
-  /// Whether the current item supports the Plex watchlist toggle: online, a
-  /// Plex movie/show, with a usable guid.
-  bool get _watchlistEligible =>
-      !widget.isOffline &&
-      _metadata.backend == MediaBackend.plex &&
-      (_metadata.isMovie || _metadata.isShow) &&
-      (_metadata.guid?.isNotEmpty ?? false);
-
-  /// Resolve whether the displayed item is on the account watchlist, to set the
-  /// bookmark button's initial state. No-op for ineligible items.
-  Future<void> _loadWatchlistMembership() async {
-    if (!_watchlistEligible) return;
-    final guid = _metadata.guid;
-    if (guid == null) return;
-    try {
-      final service = await PlexWatchlistService.forActiveAccount(context.read<ConnectionRegistry>());
-      if (service == null) return;
-      try {
-        final onList = await service.isOnWatchlist(guid);
-        if (mounted) setState(() => _isWatchlisted = onList);
-      } finally {
-        service.dispose();
-      }
-    } catch (e) {
-      appLogger.w('MediaDetail: watchlist membership check failed', error: e);
-    }
-  }
-
-  /// Toggle the displayed item's watchlist membership. Optimistic; reverts on
-  /// failure.
-  Future<void> _toggleWatchlist() async {
-    if (_watchlistBusy || !_watchlistEligible) return;
-    final guid = _metadata.guid!;
-    final ratingKey = PlexWatchlistService.cloudRatingKeyFromGuid(guid);
-    if (ratingKey == null) return;
-    final wasOnList = _isWatchlisted ?? false;
-    setState(() {
-      _watchlistBusy = true;
-      _isWatchlisted = !wasOnList;
-    });
-    final messenger = ScaffoldMessenger.of(context);
-    PlexWatchlistService? service;
-    try {
-      service = await PlexWatchlistService.forActiveAccount(context.read<ConnectionRegistry>());
-      if (service == null) throw StateError('No Plex account');
-      if (wasOnList) {
-        await service.removeFromWatchlist(ratingKey);
-      } else {
-        await service.addToWatchlist(ratingKey);
-      }
-      WatchlistNotifier().notifyChanged(ratingKey: ratingKey, added: !wasOnList);
-      if (mounted) {
-        messenger.showSnackBar(
-          SnackBar(content: Text(wasOnList ? t.watchlist.removed : t.watchlist.added)),
-        );
-      }
-    } catch (e) {
-      appLogger.w('MediaDetail: watchlist toggle failed', error: e);
-      if (mounted) {
-        setState(() => _isWatchlisted = wasOnList); // revert
-        messenger.showSnackBar(SnackBar(content: Text(t.watchlist.actionFailed)));
-      }
-    } finally {
-      service?.dispose();
-      if (mounted) setState(() => _watchlistBusy = false);
-    }
   }
 
   @override

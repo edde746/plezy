@@ -108,10 +108,7 @@ class PlexWatchlistService {
         // Rewrite cloud-relative image paths into absolute token-authenticated
         // URLs so they render with `client: null` on the watchlist screen.
         items.add(
-          mapped.copyWith(
-            thumbPath: _absolutizeImage(mapped.thumbPath),
-            artPath: _absolutizeImage(mapped.artPath),
-          ),
+          mapped.copyWith(thumbPath: _absolutizeImage(mapped.thumbPath), artPath: _absolutizeImage(mapped.artPath)),
         );
       } catch (e) {
         appLogger.w('PlexWatchlistService: skipped unparseable watchlist item', error: e);
@@ -140,15 +137,6 @@ class PlexWatchlistService {
       timeout: MediaServerTimeouts.plexTvReceive,
     );
     throwIfHttpError(response);
-  }
-
-  /// Whether the item with the given Plex [guid] is currently on the watchlist.
-  /// Reuses [getWatchlist] and matches by guid — the list is small and this
-  /// avoids integrating a separate per-item user-state endpoint.
-  Future<bool> isOnWatchlist(String guid) async {
-    if (guid.isEmpty) return false;
-    final items = await getWatchlist();
-    return items.any((i) => i.guid == guid);
   }
 
   /// Convert a discover-provider image path into an absolute URL on
