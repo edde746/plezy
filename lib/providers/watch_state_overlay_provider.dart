@@ -81,10 +81,10 @@ class WatchStateOverlayProvider extends ChangeNotifier with DisposableChangeNoti
         hasViewOffsetMs: true,
         viewOffsetMs: 0,
       ),
-      WatchStateChangeType.progressUpdate => WatchStateOverlayPatch(
-        hasViewOffsetMs: event.viewOffset != null,
-        viewOffsetMs: event.viewOffset,
-      ),
+      WatchStateChangeType.progressUpdate =>
+        event.isNowWatched == true
+            ? const WatchStateOverlayPatch(isWatched: true, hasViewOffsetMs: true, viewOffsetMs: 0)
+            : WatchStateOverlayPatch(hasViewOffsetMs: event.viewOffset != null, viewOffsetMs: event.viewOffset),
       WatchStateChangeType.removedFromContinueWatching => null,
     };
 

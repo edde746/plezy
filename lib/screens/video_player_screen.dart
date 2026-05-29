@@ -420,6 +420,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return context.read<MultiServerProvider>().serverManager.getClient(id);
   }
 
+  MediaServerClient? _getOnlineMediaServerClient(BuildContext context) {
+    final id = _currentMetadata.serverId;
+    if (id == null) return null;
+    final manager = context.read<MultiServerProvider>().serverManager;
+    if (!manager.isClientOnline(id)) return null;
+    return manager.getClient(id);
+  }
+
+  bool get _usesLocalPlaybackSource => _effectiveIsOffline;
+
   bool get _isOfflinePlayback => widget.isOffline || _effectiveIsOffline;
 
   ScrubFrame? _getThumbnailData(Duration time) => _scrubPreviewSource?.getFrame(time);
@@ -442,7 +452,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _playbackSessionIdentifier = widget.reusedSessionIdentifier ?? generateSessionIdentifier();
     _playbackTranscodeSessionId = widget.reusedTranscodeSessionId ?? generateSessionIdentifier();
     _selectedAudioStreamId = widget.selectedAudioStreamId;
-    _effectiveIsOffline = widget.isOffline;
+    _effectiveIsOffline = false;
     _selectedQualityPreset = widget.selectedQualityPreset ?? TranscodeQualityPreset.original;
 
     _liveChannelIndex = widget.liveCurrentChannelIndex ?? -1;
@@ -1258,14 +1268,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   String get playbackSessionIdentifier => _playbackSessionIdentifier;
   String get playbackTranscodeSessionId => _playbackTranscodeSessionId;
 
-  Future<void> _sendStoppedProgressOnce() {
+  Future<void> _sendStoppedProgressOnce({Duration? positionOverride}) {
     final existing = _stoppedProgressFuture;
     if (existing != null) return existing;
 
     final tracker = _progressTracker;
     if (tracker == null) return Future<void>.value();
 
-    final future = tracker.sendProgress('stopped').catchError((Object e, StackTrace st) {
+    final future = tracker.sendProgress('stopped', positionOverride: positionOverride).catchError((
+      Object e,
+      StackTrace st,
+    ) {
       appLogger.d('Stopped progress flush failed', error: e, stackTrace: st);
     });
     _stoppedProgressFuture = future;

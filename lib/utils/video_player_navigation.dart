@@ -62,7 +62,10 @@ Future<bool?> navigateToVideoPlayer(
   // Use the manager-routed lookup so Jellyfin items don't trip the
   // Plex-only client. The player branches on the returned type internally.
   final manager = context.read<MultiServerProvider>().serverManager;
-  final mediaClient = isOffline ? null : manager.getClient(metadata.serverId ?? '');
+  final serverId = metadata.serverId ?? '';
+  final mediaClient = serverId.isNotEmpty && (!isOffline || manager.isClientOnline(serverId))
+      ? manager.getClient(serverId)
+      : null;
 
   int mediaIndex = selectedMediaIndex ?? 0;
   if (selectedMediaIndex == null) {
@@ -87,7 +90,14 @@ Future<bool?> navigateToVideoPlayer(
         final videoPath = await downloadProvider.getVideoFilePath(globalKey);
         if (videoPath != null && context.mounted) {
           final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
-          launched = await ExternalPlayerService.launch(context: context, videoUrl: videoUrl);
+          launched = await ExternalPlayerService.launch(
+            context: context,
+            videoUrl: videoUrl,
+            metadata: metadata,
+            client: mediaClient,
+            mediaIndex: mediaIndex,
+            mediaSourceId: selectedMediaSourceId,
+          );
         }
       } else if (context.mounted) {
         launched = await ExternalPlayerService.launch(

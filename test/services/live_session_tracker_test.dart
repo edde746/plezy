@@ -45,6 +45,9 @@ class _FakeJellyfinClient implements JellyfinClient {
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
+    bool offline = false,
+    DateTime? updatedAt,
+    bool? continuing,
   }) async {
     calls.add('stopped:$itemId:$playSessionId');
   }

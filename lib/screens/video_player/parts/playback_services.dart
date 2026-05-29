@@ -22,25 +22,27 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     if (currentPlayer == null) return;
     _stoppedProgressFuture = null;
 
-    // Progress tracker — offline mode queues for later sync; online mode
-    // dispatches to the right backend through the neutral client.
-    if (_isOfflinePlayback) {
+    // Progress tracker — local media still reports live when its server is
+    // online; only queue locally when no reporting client is reachable.
+    if (mediaClient != null) {
+      _progressTracker = PlaybackProgressTracker(
+        client: mediaClient,
+        metadata: metadata,
+        player: currentPlayer,
+        offlineWatchService: offlineWatchService,
+        queueOnOnlineFailure: _usesLocalPlaybackSource,
+        playMethod: playMethod ?? (_isTranscoding ? 'Transcode' : 'DirectPlay'),
+        playSessionId: playSessionId,
+        mediaInfo: mediaInfo,
+      );
+      _progressTracker!.startTracking();
+    } else if (_isOfflinePlayback) {
       _progressTracker = PlaybackProgressTracker(
         client: null,
         metadata: metadata,
         player: currentPlayer,
         isOffline: true,
         offlineWatchService: offlineWatchService,
-      );
-      _progressTracker!.startTracking();
-    } else if (mediaClient != null) {
-      _progressTracker = PlaybackProgressTracker(
-        client: mediaClient,
-        metadata: metadata,
-        player: currentPlayer,
-        playMethod: playMethod ?? (_isTranscoding ? 'Transcode' : 'DirectPlay'),
-        playSessionId: playSessionId,
-        mediaInfo: mediaInfo,
       );
       _progressTracker!.startTracking();
     }
@@ -78,10 +80,9 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       return;
     }
 
-    // Get client (null in offline mode). Backend-neutral lookup so Jellyfin
-    // items also wire a [PlaybackProgressTracker]; the tracker dispatches
-    // to the right backend's reporting endpoints internally.
-    final mediaClient = _isOfflinePlayback ? null : _getMediaServerClient(context);
+    // Get a live reporting client when possible. Downloaded/local playback
+    // still uses this path when the server is reachable.
+    final mediaClient = _getOnlineMediaServerClient(context);
     final offlineWatchService = context.read<OfflineWatchSyncService>();
 
     // Initialize media controls manager (must exist before the per-item

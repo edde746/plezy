@@ -373,19 +373,20 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         if (base == null) continue;
         final action = entry.value;
         bool? isWatched;
+        int? viewOffsetMs;
         switch (action.actionType) {
           case 'watched':
             isWatched = true;
+            viewOffsetMs = 0;
           case 'unwatched':
             isWatched = false;
+            viewOffsetMs = 0;
           case 'progress':
             isWatched = action.shouldMarkWatched;
+            viewOffsetMs = action.shouldMarkWatched ? 0 : action.viewOffset;
         }
         if (isWatched == null) continue;
-        _metadata[entry.key] = base.copyWith(
-          viewCount: isWatched ? 1 : 0,
-          viewOffsetMs: isWatched ? base.viewOffsetMs : 0,
-        );
+        _metadata[entry.key] = base.copyWith(viewCount: isWatched ? 1 : 0, viewOffsetMs: viewOffsetMs);
       }
     } catch (e) {
       appLogger.w('Failed to apply offline watch overlay', error: e);
@@ -494,9 +495,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   void _onWatchStateChanged(WatchStateEvent event) {
-    // Progress ticks fire continuously during playback; only react to discrete
-    // watched/unwatched flips so we don't churn listeners on every frame.
-    if (event.changeType == WatchStateChangeType.progressUpdate) return;
+    // Progress ticks fire continuously during playback; only react when a
+    // progress update crosses the watched threshold.
+    if (event.changeType == WatchStateChangeType.progressUpdate && event.isNowWatched != true) return;
     if (event.isNowWatched == null) return;
 
     final globalKey = buildGlobalKey(event.serverId, event.itemId);
@@ -504,7 +505,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (base == null) return;
 
     final isWatched = event.isNowWatched!;
-    _metadata[globalKey] = base.copyWith(viewCount: isWatched ? 1 : 0, viewOffsetMs: isWatched ? base.viewOffsetMs : 0);
+    _metadata[globalKey] = base.copyWith(viewCount: isWatched ? 1 : 0, viewOffsetMs: 0);
     // Persist into the per-backend pinned cache so the patch survives reloads
     // (`_loadPersistedDownloads` rehydrates `_metadata` from the cache).
     unawaited(

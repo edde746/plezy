@@ -191,6 +191,7 @@ class PlaybackInitializationService {
       mediaInfo: mediaInfo,
       externalSubtitles: sidecarSubtitles,
       isOffline: true,
+      playMethod: 'DirectPlay',
     );
   }
 

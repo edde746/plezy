@@ -6,6 +6,10 @@ import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -57,6 +61,75 @@ class _FakeOfflineModeSource extends ChangeNotifier implements OfflineModeSource
   @override
   // ignore: unnecessary_overrides
   bool get hasListeners => super.hasListeners;
+}
+
+class _RecordingMediaClient implements MediaServerClient {
+  _RecordingMediaClient({required this.serverId, required this.backend});
+
+  @override
+  final String serverId;
+
+  @override
+  final MediaBackend backend;
+
+  @override
+  double get watchedThreshold => 0.9;
+
+  @override
+  void close() {}
+
+  final started = <({String itemId, int positionMs, int? durationMs})>[];
+  final stopped =
+      <({String itemId, int positionMs, int? durationMs, bool offline, DateTime? updatedAt, bool? continuing})>[];
+  final watched = <String>[];
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async =>
+      MediaItem(id: id, backend: backend, kind: MediaKind.movie, serverId: serverId);
+
+  @override
+  Future<void> reportPlaybackStarted({
+    required String itemId,
+    required Duration position,
+    Duration? duration,
+    String? playSessionId,
+    String? playMethod,
+    String? mediaSourceId,
+    int? audioStreamIndex,
+    int? subtitleStreamIndex,
+  }) async {
+    started.add((itemId: itemId, positionMs: position.inMilliseconds, durationMs: duration?.inMilliseconds));
+  }
+
+  @override
+  Future<void> reportPlaybackStopped({
+    required String itemId,
+    required Duration position,
+    Duration? duration,
+    String? playSessionId,
+    String? mediaSourceId,
+    bool offline = false,
+    DateTime? updatedAt,
+    bool? continuing,
+  }) async {
+    stopped.add((
+      itemId: itemId,
+      positionMs: position.inMilliseconds,
+      durationMs: duration?.inMilliseconds,
+      offline: offline,
+      updatedAt: updatedAt,
+      continuing: continuing,
+    ));
+  }
+
+  @override
+  Future<void> markWatched(MediaItem item) async {
+    watched.add(item.id);
+    WatchStateNotifier().notifyWatched(item: item, isNowWatched: true);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 /// Build a service against an in-memory database and a bare-metal
@@ -261,6 +334,57 @@ void main() {
       expect(retained, isNotNull);
       expect(retained!.syncAttempts, OfflineWatchSyncService.maxSyncAttempts);
       expect(retained.lastError, 'server error');
+    });
+
+    test('partial Plex offline progress replays as offline stopped progress', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      final client = _RecordingMediaClient(serverId: 'srv', backend: MediaBackend.plex);
+      mgr.debugRegisterClientForTesting(client);
+      await svc.queueProgressUpdate(serverId: 'srv', itemId: '42', viewOffset: 50000, duration: 100000);
+      final queued = await db.getLatestWatchAction('srv:42');
+
+      await svc.syncPendingItems();
+
+      expect(client.started, hasLength(1));
+      expect(client.started.single.positionMs, 50000);
+      expect(client.stopped, hasLength(1));
+      expect(client.stopped.single.positionMs, 50000);
+      expect(client.stopped.single.offline, isTrue);
+      expect(client.stopped.single.updatedAt?.millisecondsSinceEpoch, queued!.updatedAt);
+      expect(client.watched, isEmpty);
+      expect(await svc.getPendingSyncCount(), 0);
+    });
+
+    test('completed Plex offline progress replays at duration and marks watched', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      final client = _RecordingMediaClient(serverId: 'srv', backend: MediaBackend.plex);
+      mgr.debugRegisterClientForTesting(client);
+      await svc.queueProgressUpdate(serverId: 'srv', itemId: '42', viewOffset: 95000, duration: 100000);
+      final queued = await db.getLatestWatchAction('srv:42');
+
+      await svc.syncPendingItems();
+
+      expect(client.started, isEmpty);
+      expect(client.stopped, hasLength(1));
+      expect(client.stopped.single.positionMs, 100000);
+      expect(client.stopped.single.durationMs, 100000);
+      expect(client.stopped.single.offline, isTrue);
+      expect(client.stopped.single.continuing, isFalse);
+      expect(client.stopped.single.updatedAt?.millisecondsSinceEpoch, queued!.updatedAt);
+      expect(client.watched, ['42']);
+      expect(await svc.getPendingSyncCount(), 0);
     });
   });
 
@@ -646,7 +770,7 @@ void main() {
       );
 
       expect(await svc.getLocalWatchStatus('jf-machine:item-1'), isTrue);
-      expect(await svc.getLocalViewOffset('jf-machine:item-1'), 90000);
+      expect(await svc.getLocalViewOffset('jf-machine:item-1'), isNull);
       expect(await svc.getLocalWatchStatus('jf-machine:item-1', clientScopeId: 'jf-machine/user-a'), isFalse);
       expect(await svc.getLocalViewOffset('jf-machine:item-1', clientScopeId: 'jf-machine/user-a'), 5000);
     });

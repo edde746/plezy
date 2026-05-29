@@ -81,7 +81,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
             context,
             metadata: episodeMetadata,
             usePushReplacement: true,
-            isOffline: _isOfflinePlayback,
+            isOffline: widget.isOffline,
           ),
         );
       }
@@ -97,7 +97,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
             context,
             metadata: episodeMetadata,
             usePushReplacement: true,
-            isOffline: _isOfflinePlayback,
+            isOffline: widget.isOffline,
           ),
         );
       }
@@ -123,7 +123,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           preferredSubtitleTrack: currentSubtitleTrack,
           preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
           usePushReplacement: true,
-          isOffline: _isOfflinePlayback,
+          isOffline: widget.isOffline,
         ),
       );
     }
@@ -146,9 +146,9 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     // backend. We still narrow to [plexClient] for [TrackManager]'s
     // server-side track persistence, which is Plex-only — Jellyfin
     // sessions get a null `getPlexClient` and skip that path.
-    final mediaClient = _isOfflinePlayback ? null : _getMediaServerClient(context);
+    final mediaClient = _getOnlineMediaServerClient(context);
     final plexClient = mediaClient is PlexClient ? mediaClient : null;
-    final streamHeaders = mediaClient?.streamHeaders ?? const <String, String>{};
+    final streamHeaders = mediaClient?.streamHeaders;
     final offlineWatchService = context.read<OfflineWatchSyncService>();
     final userProfileProvider = context.read<UserProfileProvider>();
     final playbackState = context.read<PlaybackStateProvider>();
@@ -176,7 +176,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       final result = await playbackService.getPlaybackData(
         metadata: episodeMetadata,
         selectedMediaIndex: widget.selectedMediaIndex,
-        preferOffline: _isOfflinePlayback || _selectedQualityPreset.isOriginal,
+        preferOffline: widget.isOffline || _selectedQualityPreset.isOriginal,
         qualityPreset: _selectedQualityPreset,
         selectedAudioStreamId: _selectedAudioStreamId,
         sessionIdentifier: _playbackSessionIdentifier,
@@ -224,7 +224,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       );
       await currentPlayer.setProperty('force-seekable', result.isTranscoding ? 'yes' : 'no');
       await currentPlayer.open(
-        Media(result.videoUrl!, start: openTiming.mediaStart, headers: streamHeaders),
+        Media(result.videoUrl!, start: openTiming.mediaStart, headers: result.usesLocalMedia ? null : streamHeaders),
         play: isExoPlayer || !hasExternalSubs,
         externalSubtitles: isExoPlayer && hasExternalSubs ? result.externalSubtitles : null,
         timelineOffset: openTiming.timelineOffset,

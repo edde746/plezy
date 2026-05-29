@@ -129,7 +129,15 @@ class _FakePlexClient implements PlexClient {
   Object? throwOnNextCall;
 
   @override
-  Future<void> updateProgress(String ratingKey, {required int time, required String state, int? duration}) async {
+  Future<void> updateProgress(
+    String ratingKey, {
+    required int time,
+    required String state,
+    int? duration,
+    bool offline = false,
+    DateTime? updatedAt,
+    bool? continuing,
+  }) async {
     if (throwOnNextCall != null) {
       final err = throwOnNextCall!;
       throwOnNextCall = null;
@@ -193,6 +201,9 @@ class _FakePlexClient implements PlexClient {
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
+    bool offline = false,
+    DateTime? updatedAt,
+    bool? continuing,
   }) {
     playbackSessionIds.add(playSessionId);
     playbackStreamSelections.add((mediaSourceId: mediaSourceId, audioStreamIndex: null, subtitleStreamIndex: null));
@@ -340,6 +351,23 @@ void main() {
       expect(call.time, 30000); // 30s in ms
       expect(call.state, 'stopped');
       expect(call.duration, 100000); // 100s in ms
+    });
+
+    test('"stopped" can override stale player position for completion', () async {
+      final client = _FakePlexClient();
+      final player = _FakePlayer(position: const Duration(seconds: 12), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped', positionOverride: const Duration(seconds: 100));
+
+      expect(client.updateProgressCalls.single.time, 100000);
+      expect(client.markWatchedCalls, ['42']);
     });
 
     test('"playing" fires-and-forgets but eventually invokes updateProgress', () async {
@@ -760,6 +788,34 @@ void main() {
       await tracker.sendProgress('playing');
       expect(await svc.getPendingSyncCount(), 0);
     });
+
+    test('online local playback queues fallback progress when reporting fails', () async {
+      final (svc: svc, db: db, mgr: mgr) = await makeOfflineService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      final client = _FakePlexClient()..throwOnNextCall = StateError('offline');
+      final player = _FakePlayer(position: const Duration(seconds: 10), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42', serverId: 'srv'),
+        player: player,
+        isOffline: false,
+        offlineWatchService: svc,
+        queueOnOnlineFailure: true,
+      );
+      addTearDown(tracker.dispose);
+
+      await tracker.sendProgress('stopped', positionOverride: const Duration(seconds: 100));
+
+      final action = await db.getLatestWatchAction('srv:42');
+      expect(action, isNotNull);
+      expect(action!.viewOffset, 100000);
+      expect(action.shouldMarkWatched, isTrue);
+    });
   });
 
   // ============================================================
@@ -913,7 +969,15 @@ class _ScrobblePreciseClient implements PlexClient {
   int markWatchedSuccesses = 0;
 
   @override
-  Future<void> updateProgress(String ratingKey, {required int time, required String state, int? duration}) async {}
+  Future<void> updateProgress(
+    String ratingKey, {
+    required int time,
+    required String state,
+    int? duration,
+    bool offline = false,
+    DateTime? updatedAt,
+    bool? continuing,
+  }) async {}
 
   @override
   Future<void> reportPlaybackStarted({
@@ -947,6 +1011,9 @@ class _ScrobblePreciseClient implements PlexClient {
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
+    bool offline = false,
+    DateTime? updatedAt,
+    bool? continuing,
   }) async {}
 
   @override

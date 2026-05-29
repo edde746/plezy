@@ -363,6 +363,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
     // Only return offset for progress actions
     if (action.actionType == OfflineActionType.progress.id) {
+      if (action.shouldMarkWatched) return null;
       return action.viewOffset;
     }
 
@@ -578,22 +579,30 @@ class OfflineWatchSyncService extends ChangeNotifier {
         break;
 
       case 'progress':
-        // Push the resume position. Jellyfin's `/Sessions/Playing/Stopped`
-        // ignores events that arrive without an open session row, so we
-        // bracket with a Started call. Plex's `/:/timeline` collapses both
-        // into a single row and treats the second as the canonical state.
+        // Push resumable progress, or a completed offline playback. Jellyfin's
+        // `/Sessions/Playing/Stopped` ignores events without an open session
+        // row, so non-Plex backends still get a lightweight Started call.
         if (action.viewOffset != null && action.duration != null) {
-          final position = Duration(milliseconds: action.viewOffset!);
           final duration = Duration(milliseconds: action.duration!);
-          try {
-            await client.reportPlaybackStarted(itemId: action.ratingKey, position: position, duration: duration);
-          } catch (e) {
-            // Plex sometimes 5xxs the start when nothing follows; treat as
-            // best-effort and continue to the stop call which is the one
-            // that actually persists the resume position.
-            appLogger.d('Offline progress: started call failed (continuing)', error: e);
+          final position = action.shouldMarkWatched ? duration : Duration(milliseconds: action.viewOffset!);
+          if (!action.shouldMarkWatched || client.backend != MediaBackend.plex) {
+            try {
+              await client.reportPlaybackStarted(itemId: action.ratingKey, position: position, duration: duration);
+            } catch (e) {
+              // Plex sometimes 5xxs the start when nothing follows; treat as
+              // best-effort and continue to the stop call which is the one
+              // that actually persists the resume position.
+              appLogger.d('Offline progress: started call failed (continuing)', error: e);
+            }
           }
-          await client.reportPlaybackStopped(itemId: action.ratingKey, position: position, duration: duration);
+          await client.reportPlaybackStopped(
+            itemId: action.ratingKey,
+            position: position,
+            duration: duration,
+            offline: true,
+            updatedAt: DateTime.fromMillisecondsSinceEpoch(action.updatedAt),
+            continuing: false,
+          );
         }
 
         // If progress exceeded threshold, also mark as watched.

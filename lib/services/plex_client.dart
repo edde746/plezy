@@ -1610,6 +1610,9 @@ class PlexClient
     required int time,
     required String state, // 'playing', 'paused', 'stopped', 'buffering'
     int? duration,
+    bool offline = false,
+    DateTime? updatedAt,
+    bool? continuing,
   }) async {
     final response = await _http.post(
       '/:/timeline',
@@ -1619,6 +1622,9 @@ class PlexClient
         'time': time,
         'state': state,
         'duration': ?duration,
+        if (offline) 'offline': 1,
+        if (updatedAt != null) 'updated': updatedAt.millisecondsSinceEpoch ~/ 1000,
+        if (continuing != null) 'continuing': continuing ? 1 : 0,
       },
     );
     // Surface non-2xx instead of swallowing — progress is the cornerstone
@@ -3922,7 +3928,18 @@ class PlexClient
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
-  }) => updateProgress(itemId, time: position.inMilliseconds, state: 'stopped', duration: duration?.inMilliseconds);
+    bool offline = false,
+    DateTime? updatedAt,
+    bool? continuing,
+  }) => updateProgress(
+    itemId,
+    time: position.inMilliseconds,
+    state: 'stopped',
+    duration: duration?.inMilliseconds,
+    offline: offline,
+    updatedAt: updatedAt,
+    continuing: continuing,
+  );
 
   // ── Downloads ────────────────────────────────────────────────────
 

@@ -493,13 +493,18 @@ abstract class MediaServerClient {
   });
 
   /// End-of-session signal. Plex sends `state=stopped`; Jellyfin closes
-  /// the session row.
+  /// the session row. [offline] and [updatedAt] are used by Plex when replaying
+  /// queued offline watch progress; backends that have no equivalent may ignore
+  /// them.
   Future<void> reportPlaybackStopped({
     required String itemId,
     required Duration position,
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
+    bool offline = false,
+    DateTime? updatedAt,
+    bool? continuing,
   });
 
   /// Resolve the video URL, media info, and external subtitle list for

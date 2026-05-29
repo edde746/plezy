@@ -47,6 +47,9 @@ class _RecordingClient implements MediaServerClient {
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
+    bool offline = false,
+    DateTime? updatedAt,
+    bool? continuing,
   }) async {
     calls.add('stopped-attempt:${position.inMilliseconds}:$mediaSourceId');
     if (failNextStop) {

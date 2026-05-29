@@ -135,7 +135,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // (possibly null) cached client. The service reads cached media
         // info via the client when available, falls back to local file +
         // sidecar subtitles otherwise.
-        final cachedSourceClient = _getMediaServerClient(context);
+        final cachedSourceClient = _getOnlineMediaServerClient(context);
         final offlineService = PlaybackInitializationService(
           client: cachedSourceClient,
           database: context.read<AppDatabase>(),
@@ -149,6 +149,14 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         if (result.videoUrl == null) {
           throw PlaybackException(t.messages.fileInfoNotAvailable);
         }
+        if (!result.usesLocalMedia) {
+          streamHeaders = cachedSourceClient?.streamHeaders;
+        }
+        _isTranscoding = result.isTranscoding;
+        _effectiveIsOffline = result.isOffline;
+        _playbackPlaySessionId = result.playSessionId;
+        _playbackPlayMethod = result.playMethod;
+        _selectedAudioStreamId = result.activeAudioStreamId;
       } else {
         // Online path: `_playbackDataFuture` was kicked off in `_initializePlayer`
         // in parallel with MPV setup. Quality preset + server capabilities +
@@ -160,6 +168,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         }
         result = await playbackDataFuture;
         if (!mounted || player != currentPlayer) return;
+        if (result.usesLocalMedia) {
+          streamHeaders = null;
+        }
 
         _isTranscoding = result.isTranscoding;
         _effectiveIsOffline = result.isOffline;
