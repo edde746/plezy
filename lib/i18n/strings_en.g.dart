@@ -2897,11 +2897,11 @@ class TranslationsDownloadsEn {
 	/// en: 'Pick episodes at random instead of in order'
 	String get randomSelectionDescription => 'Pick episodes at random instead of in order';
 
-	/// en: 'Download only from ${season}'
-	String downloadOnlyFromSeason({required Object season}) => 'Download only from ${season}';
+	/// en: 'Download only from selected season'
+	String get downloadOnlyFromSeason => 'Download only from selected season';
 
-	/// en: 'Otherwise the whole show'
-	String get downloadOnlyFromSeasonDescription => 'Otherwise the whole show';
+	/// en: '${season}'
+	String downloadOnlyFromSeasonDescription({required Object season}) => '${season}';
 
 	/// en: 'How many episodes?'
 	String get howManyEpisodes => 'How many episodes?';
@@ -5076,8 +5076,8 @@ extension on Translations {
 			'downloads.customAmount' => 'Custom amount',
 			'downloads.randomSelection' => 'Random selection',
 			'downloads.randomSelectionDescription' => 'Pick episodes at random instead of in order',
-			'downloads.downloadOnlyFromSeason' => ({required Object season}) => 'Download only from ${season}',
-			'downloads.downloadOnlyFromSeasonDescription' => 'Otherwise the whole show',
+			'downloads.downloadOnlyFromSeason' => 'Download only from selected season',
+			'downloads.downloadOnlyFromSeasonDescription' => ({required Object season}) => '${season}',
 			'downloads.howManyEpisodes' => 'How many episodes?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			'downloads.keepSynced' => 'Keep synced',

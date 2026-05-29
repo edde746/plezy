@@ -395,8 +395,8 @@ class _DownloadOptionsDialogState extends State<_DownloadOptionsDialog> {
             value: _onlySeason,
             onChanged: (value) => setState(() => _onlySeason = value),
             secondary: const AppIcon(Symbols.tv_rounded, fill: 1, size: 24),
-            title: Text(t.downloads.downloadOnlyFromSeason(season: _seasonLabel(season))),
-            subtitle: Text(t.downloads.downloadOnlyFromSeasonDescription),
+            title: Text(t.downloads.downloadOnlyFromSeason),
+            subtitle: Text(t.downloads.downloadOnlyFromSeasonDescription(season: _seasonLabel(season))),
           ),
         const Divider(height: 8),
         ...List.generate(options.length, (index) {

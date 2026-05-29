@@ -56,7 +56,7 @@ void main() {
   testWidgets('season-restrict toggle is hidden when no season context is given', (tester) async {
     await pumpDialog(tester);
 
-    expect(find.text(t.downloads.downloadOnlyFromSeason(season: 'Season 3')), findsNothing);
+    expect(find.text(t.downloads.downloadOnlyFromSeason), findsNothing);
     // Only the random switch is present.
     expect(find.byType(Switch), findsOneWidget);
   });
@@ -64,7 +64,11 @@ void main() {
   testWidgets('season-restrict toggle appears with the season label when provided', (tester) async {
     await pumpDialog(tester, currentSeason: season3);
 
-    expect(find.text(t.downloads.downloadOnlyFromSeason(season: 'Season 3')), findsOneWidget);
+    // Static title ("Download only from selected season") + dynamic subtitle
+    // ("Season 3") — the season name lives in the subtitle so the title can
+    // stay a stable label regardless of which season is selected.
+    expect(find.text(t.downloads.downloadOnlyFromSeason), findsOneWidget);
+    expect(find.text(t.downloads.downloadOnlyFromSeasonDescription(season: 'Season 3')), findsOneWidget);
     // Random switch + season switch.
     expect(find.byType(Switch), findsNWidgets(2));
   });
@@ -72,7 +76,7 @@ void main() {
   testWidgets('toggling season-restrict leaves all scopes enabled', (tester) async {
     await pumpDialog(tester, currentSeason: season3);
 
-    await tester.tap(find.text(t.downloads.downloadOnlyFromSeason(season: 'Season 3')));
+    await tester.tap(find.text(t.downloads.downloadOnlyFromSeason));
     await tester.pumpAndSettle();
 
     expect(tileFor(tester, t.downloads.allEpisodes).enabled, isTrue);
