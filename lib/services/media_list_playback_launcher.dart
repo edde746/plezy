@@ -63,7 +63,16 @@ abstract class MediaListPlaybackLauncher {
   /// via `fetchClientSideEpisodeQueue`, shuffles locally, and publishes
   /// through `setPlaybackFromLocalQueue` (same path as the sequential
   /// queue from `EpisodeNavigationService`).
-  Future<PlayQueueResult> launchShuffledShow({required MediaItem metadata, bool showLoadingIndicator = true});
+  ///
+  /// When [season] is provided, the shuffle is scoped to that season's
+  /// episodes only (used by the action row's "shuffle current season"
+  /// button). When omitted, the full series is shuffled — preserving the
+  /// behavior the existing series-wide shuffle button has always had.
+  Future<PlayQueueResult> launchShuffledShow({
+    required MediaItem metadata,
+    MediaItem? season,
+    bool showLoadingIndicator = true,
+  });
 
   /// Pick the right implementation for [item]. Reads
   /// [MediaItem.backend] / [MediaPlaylist.backend].

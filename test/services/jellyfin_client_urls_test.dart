@@ -1598,6 +1598,27 @@ void main() {
       expect(items, hasLength(501));
     });
 
+    test('fetchClientSideEpisodeQueue threads seasonId to scope the query', () async {
+      final capturedSeasonIds = <String?>[];
+      final scopedClient = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          capturedSeasonIds.add(req.url.queryParameters['SeasonId']);
+          return http.Response(
+            jsonEncode({'Items': const [], 'TotalRecordCount': 0}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scopedClient.close);
+
+      await scopedClient.fetchClientSideEpisodeQueue('show-1', seasonId: 'season-7');
+      await scopedClient.fetchClientSideEpisodeQueue('show-1');
+
+      expect(capturedSeasonIds, ['season-7', null]);
+    });
+
     test('fetchClientSideEpisodeQueue pages past the first 200 episodes', () async {
       final starts = <String?>[];
       final pagedClient = JellyfinClient.forTesting(

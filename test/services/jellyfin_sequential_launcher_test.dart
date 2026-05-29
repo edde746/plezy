@@ -25,6 +25,7 @@ class _RecordingJellyfinClient implements JellyfinClient {
   final List<String> fetchPlayableDescendantsCalls = [];
   final List<String> fetchPlayableFolderDescendantsCalls = [];
   final List<String> fetchSeriesEpisodesCalls = [];
+  final List<String?> fetchSeriesEpisodesSeasonIdCalls = [];
   final List<({String id, int offset, int limit})> fetchPlaylistItemsCalls = [];
 
   _RecordingJellyfinClient({
@@ -47,8 +48,9 @@ class _RecordingJellyfinClient implements JellyfinClient {
   }
 
   @override
-  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
+  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId, {String? seasonId}) async {
     fetchSeriesEpisodesCalls.add(seriesId);
+    fetchSeriesEpisodesSeasonIdCalls.add(seasonId);
     return seriesEpisodesResponse;
   }
 

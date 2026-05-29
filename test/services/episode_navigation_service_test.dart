@@ -60,7 +60,7 @@ class _RecordingClient implements MediaServerClient {
   final List<String> seriesQueueCalls = [];
 
   @override
-  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
+  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId, {String? seasonId}) async {
     seriesQueueCalls.add(seriesId);
     return seriesEpisodes;
   }

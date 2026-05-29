@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:cached_network_image_ce/cached_network_image.dart';
 import 'package:flutter/material.dart';
@@ -48,6 +49,8 @@ import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
 import '../providers/download_provider.dart';
 import '../providers/offline_watch_provider.dart';
+import '../providers/playback_state_provider.dart';
+import '../media/play_queue.dart';
 import '../theme/mono_tokens.dart';
 import '../utils/app_logger.dart';
 import '../utils/formatters.dart';
@@ -1460,26 +1463,28 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // Create focus nodes for season tabs
       _updateSeasonTabFocusNodes(seasonsWithServerId.length);
 
-      // Auto-select the on-deck season
-      final onDeckSeasonIndex = _findOnDeckSeasonIndex(seasonsWithServerId);
+      // Auto-select the on-deck season — but preserve the user's existing
+      // selection across reloads so returning from the player doesn't snap
+      // the tab back to Season 1.
+      final selectedSeasonIndex = _resolveSelectedSeasonIndex(seasonsWithServerId);
 
       setStateIfMounted(() {
         _seasons = seasonsWithServerId;
         _isLoadingSeasons = false;
         _hasLoadedSeasons = true;
         _showEpisodesDirectly = shouldShowEpisodesDirectly;
-        _selectedSeasonIndex = onDeckSeasonIndex;
+        _selectedSeasonIndex = selectedSeasonIndex;
       });
 
       if (shouldShowEpisodesDirectly) {
         await _fetchAllEpisodes();
       } else if (seasonsWithServerId.isNotEmpty) {
         if (PlatformDetector.isTV()) {
-          await _fetchSeasonEpisodes(onDeckSeasonIndex);
-          unawaited(_warmTvSeasonEpisodeCaches(onDeckSeasonIndex));
+          await _fetchSeasonEpisodes(selectedSeasonIndex);
+          unawaited(_warmTvSeasonEpisodeCaches(selectedSeasonIndex));
         } else {
           // Fetch episodes for the auto-selected season
-          unawaited(_fetchSeasonEpisodes(onDeckSeasonIndex));
+          unawaited(_fetchSeasonEpisodes(selectedSeasonIndex));
         }
       }
     } catch (e, st) {
@@ -1553,18 +1558,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       _episodeCache[seasonRatingKey] = entry.value..sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
     }
 
-    final onDeckSeasonIndex = _findOnDeckSeasonIndex(seasons);
+    // Auto-select the on-deck season — but preserve the user's existing
+    // selection across reloads (e.g. returning from the player).
+    final selectedSeasonIndex = _resolveSelectedSeasonIndex(seasons);
 
     setState(() {
       _seasons = seasons;
       _isLoadingSeasons = false;
       _hasLoadedSeasons = true;
-      _selectedSeasonIndex = onDeckSeasonIndex;
+      _selectedSeasonIndex = selectedSeasonIndex;
     });
 
     // Load episodes for the selected season from cache
     if (seasons.isNotEmpty) {
-      _fetchSeasonEpisodes(onDeckSeasonIndex);
+      _fetchSeasonEpisodes(selectedSeasonIndex);
     }
 
     if (!(_seasonsCompleter?.isCompleted ?? true)) {
@@ -1595,6 +1602,22 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       _seasonTabFocusNodes = List.generate(count, (i) => FocusNode(debugLabel: 'season_tab_$i'));
       _seasonContextMenuKeys.clear();
     }
+  }
+
+  /// Pick the season index to select after (re)loading [_seasons]. Prefers
+  /// the user's current selection so that returning from the player — which
+  /// triggers `_loadFullMetadata` and a fresh season fetch — doesn't silently
+  /// snap the tab back to the on-deck (often Season 1) default. Falls
+  /// through to [_findOnDeckSeasonIndex] on the initial load (when there's
+  /// no prior selection) or if the previously-selected season has
+  /// disappeared from the new list.
+  int _resolveSelectedSeasonIndex(List<MediaItem> newSeasons) {
+    if (_seasons.isNotEmpty && _selectedSeasonIndex >= 0 && _selectedSeasonIndex < _seasons.length) {
+      final currentId = _seasons[_selectedSeasonIndex].id;
+      final preservedIdx = newSeasons.indexWhere((s) => s.id == currentId);
+      if (preservedIdx != -1) return preservedIdx;
+    }
+    return _findOnDeckSeasonIndex(newSeasons);
   }
 
   /// Find the season index matching the initial selection or on-deck episode,
@@ -2814,6 +2837,59 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     final launcher = MediaListPlaybackLauncher.forItem(context, metadata);
     final result = await launcher.launchShuffledShow(metadata: metadata);
+    if (result is PlayQueueSuccess && mounted) {
+      unawaited(_loadFullMetadata());
+    }
+  }
+
+  /// Resolve which season the "shuffle current season" action targets.
+  /// Returns null on items where the action shouldn't be available (movies,
+  /// episodes, single-season shows, or before the season tabs have loaded).
+  MediaItem? _seasonForCurrentSeasonShuffle(MediaItem metadata) {
+    if (metadata.isSeason) return metadata;
+    if (!metadata.isShow) return null;
+    if (_seasons.length < 2) return null;
+    if (_selectedSeasonIndex < 0 || _selectedSeasonIndex >= _seasons.length) return null;
+    final season = _seasons[_selectedSeasonIndex];
+    return season.isSeason ? season : null;
+  }
+
+  /// Handle "shuffle current season". Online: routes through the launcher
+  /// with `season: ...` so Plex queues the season's episodes server-side and
+  /// Jellyfin scopes `fetchClientSideEpisodeQueue` to that season. Offline:
+  /// shuffles the already-loaded [_episodes] list locally — these are the
+  /// downloaded episodes for the selected season, sourced from
+  /// [DownloadProvider] by `_fetchSeasonEpisodes` when `widget.isOffline`.
+  Future<void> _handleShuffleCurrentSeason(BuildContext context, MediaItem metadata) async {
+    final season = _seasonForCurrentSeasonShuffle(metadata);
+    if (season == null) return;
+
+    if (widget.isOffline) {
+      if (_episodes.isEmpty) {
+        if (context.mounted) {
+          showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems);
+        }
+        return;
+      }
+      final shuffled = List.of(_episodes)..shuffle(Random());
+      final playbackState = context.read<PlaybackStateProvider>();
+      playbackState.setPlaybackFromLocalQueue(
+        LocalPlayQueue(
+          id: '${metadata.backend.id}:season:${season.id}:shuffle',
+          items: shuffled,
+          currentIndex: 0,
+          shuffled: true,
+          backendId: metadata.backend.id,
+        ),
+        contextKey: season.id,
+      );
+      if (!context.mounted) return;
+      await navigateToVideoPlayer(context, metadata: shuffled.first);
+      return;
+    }
+
+    final launcher = MediaListPlaybackLauncher.forItem(context, metadata);
+    final result = await launcher.launchShuffledShow(metadata: metadata, season: season);
     if (result is PlayQueueSuccess && mounted) {
       unawaited(_loadFullMetadata());
     }

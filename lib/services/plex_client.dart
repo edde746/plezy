@@ -2608,6 +2608,47 @@ class PlexClient
     }
   }
 
+  /// Create a play queue scoped to a single season's episodes.
+  ///
+  /// Plex's `/playQueues?uri=…/library/metadata/{seasonKey}/children` doesn't
+  /// reliably stay inside the season — it tends to fall through to the
+  /// parent show's full episode list. We work around that by fetching the
+  /// season's episodes ourselves and POSTing an explicit, comma-joined
+  /// `library/metadata/{epKey1},{epKey2},…` URI so Plex can't expand
+  /// outward.
+  Future<PlayQueueResponse?> createSeasonPlayQueue({
+    required String seasonRatingKey,
+    int shuffle = 0,
+    String? librarySectionID,
+    String? librarySectionTitle,
+  }) async {
+    try {
+      final machineId = config.machineIdentifier ?? await getMachineIdentifier();
+      if (machineId == null) {
+        throw Exception('Could not get server machine identifier');
+      }
+
+      // Pull the season's direct children (episodes). Same endpoint the
+      // detail screen uses for its episode list, so what plays matches
+      // what the user sees.
+      final episodes = await fetchChildren(seasonRatingKey);
+      if (episodes.isEmpty) return null;
+      final episodeKeys = episodes.map((e) => e.id).join(',');
+
+      final uri = 'server://$machineId/com.plexapp.plugins.library/library/metadata/$episodeKeys';
+      return await createPlayQueue(
+        uri: uri,
+        type: 'video',
+        shuffle: shuffle,
+        librarySectionID: librarySectionID,
+        librarySectionTitle: librarySectionTitle,
+      );
+    } catch (e) {
+      appLogger.e('Failed to create season play queue', error: e);
+      return null;
+    }
+  }
+
   /// Extract both Metadata and Directory entries from response
   /// Folders can come back as either type
   /// Automatically tags all items with this client's serverId and serverName
@@ -3207,7 +3248,7 @@ class PlexClient
   /// client-side window EpisodeNavigationService builds for Jellyfin isn't
   /// needed here.
   @override
-  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async => null;
+  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId, {String? seasonId}) async => null;
 
   /// Plex playback resolution. Reuses [getVideoPlaybackData] for metadata,
   /// then either runs the transcode-decision flow or returns the direct-play

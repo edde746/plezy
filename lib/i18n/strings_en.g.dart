@@ -1195,8 +1195,11 @@ class TranslationsTooltipsEn {
 
 	// Translations
 
-	/// en: 'Shuffle play'
-	String get shufflePlay => 'Shuffle play';
+	/// en: 'Shuffle show'
+	String get shufflePlay => 'Shuffle show';
+
+	/// en: 'Shuffle ${seasonTitle}'
+	String shuffleSeason({required Object seasonTitle}) => 'Shuffle ${seasonTitle}';
 
 	/// en: 'Play trailer'
 	String get playTrailer => 'Play trailer';
@@ -4527,7 +4530,8 @@ extension on Translations {
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent} percent watched',
 			'accessibility.mediaCardUnwatched' => 'unwatched',
 			'accessibility.tapToPlay' => 'Tap to play',
-			'tooltips.shufflePlay' => 'Shuffle play',
+			'tooltips.shufflePlay' => 'Shuffle show',
+			'tooltips.shuffleSeason' => ({required Object seasonTitle}) => 'Shuffle ${seasonTitle}',
 			'tooltips.playTrailer' => 'Play trailer',
 			'tooltips.markAsWatched' => 'Mark as watched',
 			'tooltips.markAsUnwatched' => 'Mark as unwatched',
@@ -4686,9 +4690,9 @@ extension on Translations {
 			'profiles.delete' => 'Delete',
 			'profiles.signOut' => 'Sign out',
 			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
-			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.',
 			'profiles.signedOutPlex' => 'Signed out of Plex.',
 			'profiles.signOutFailed' => 'Sign out failed.',
 			'profiles.sectionTitle' => 'Profiles',
@@ -5200,9 +5204,9 @@ extension on Translations {
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Advanced Settings',
 			'metadataEdit.title' => 'Title',
-			'metadataEdit.sortTitle' => 'Sort Title',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.sortTitle' => 'Sort Title',
 			'metadataEdit.originalTitle' => 'Original Title',
 			'metadataEdit.releaseDate' => 'Release Date',
 			'metadataEdit.contentRating' => 'Content Rating',

@@ -203,7 +203,11 @@ abstract class MediaServerClient {
   /// empty for an empty series) for backends without that capability
   /// (Jellyfin). Callers distinguish "no client-side queue" from "empty
   /// series" via the null vs `[]` distinction.
-  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId);
+  ///
+  /// When [seasonId] is provided, the queue is scoped to that season's
+  /// episodes only (used by the "shuffle current season" action). Backends
+  /// without per-season filtering may still return the full series list.
+  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId, {String? seasonId});
 
   /// Free-text search across the user's libraries.
   Future<List<MediaItem>> searchItems(String query, {int limit = 100});

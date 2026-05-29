@@ -155,6 +155,12 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             ),
             SizedBox(width: isTv ? 8 * tvScale : 12),
           ],
+          // Shuffle-current-season button — sits next to the series-wide
+          // shuffle. Hidden when there's no meaningful "current season"
+          // (single-season show, no season selected yet, or this isn't a
+          // show/season at all). Disabled while episodes are still loading
+          // or the season has no episodes to shuffle.
+          ..._buildShuffleCurrentSeasonButton(metadata, actionButtonStyle, tvScale, isTv),
           // Download button (hide in offline mode - already downloaded,
           // and on Apple TV where there's no user file storage).
           if (!widget.isOffline && !PlatformDetector.isAppleTV())
@@ -170,6 +176,43 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         ],
       ),
     );
+  }
+
+  /// Builds the "shuffle current season" action. Returns an empty list (so
+  /// the spread is a no-op) when the button shouldn't appear at all —
+  /// movies, episodes, single-season shows, or before the season tabs have
+  /// resolved. When visible, the button is disabled while the season's
+  /// episodes haven't loaded yet (so the offline path has nothing to shuffle
+  /// and the online path would just fire an empty-queue snackbar).
+  List<Widget> _buildShuffleCurrentSeasonButton(
+    MediaItem metadata,
+    ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding}) actionButtonStyle,
+    double tvScale,
+    bool isTv,
+  ) {
+    final season = _seasonForCurrentSeasonShuffle(metadata);
+    if (season == null) return const <Widget>[];
+
+    final hasEpisodes = _episodes.isNotEmpty && !_isLoadingSeasonEpisodes;
+    // `displayTitle` hoists to grandparentTitle (the show's name) for
+    // seasons — we want the season's own name ("Season 3", "Specials"),
+    // which lives on `title`. Same field the season tabs use.
+    final seasonTitle = season.title ?? '';
+
+    return [
+      IconButton.filledTonal(
+        onPressed: hasEpisodes
+            ? () async {
+                await _handleShuffleCurrentSeason(context, metadata);
+              }
+            : null,
+        icon: const AppIcon(Symbols.shuffle_on_rounded, fill: 1),
+        tooltip: t.tooltips.shuffleSeason(seasonTitle: seasonTitle),
+        iconSize: isTv ? 21 * tvScale : 20,
+        style: actionButtonStyle(),
+      ),
+      SizedBox(width: isTv ? 8 * tvScale : 12),
+    ];
   }
 
   Widget _buildWatchedToggleButton(

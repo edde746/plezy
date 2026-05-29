@@ -193,7 +193,11 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
   }
 
   @override
-  Future<PlayQueueResult> launchShuffledShow({required MediaItem metadata, bool showLoadingIndicator = true}) async {
+  Future<PlayQueueResult> launchShuffledShow({
+    required MediaItem metadata,
+    MediaItem? season,
+    bool showLoadingIndicator = true,
+  }) async {
     final kind = metadata.kind;
     if (kind != MediaKind.show && kind != MediaKind.season) {
       return PlayQueueError(Exception('Shuffle play only works for shows and seasons'));
@@ -213,6 +217,14 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
       seriesId = parent;
     }
 
+    // When scoping to a season, Jellyfin filters the `/Shows/{seriesId}/
+    // Episodes` response with the `SeasonId` param. The queue id/contextKey
+    // also become season-scoped so playback state doesn't collide with an
+    // active series-wide queue.
+    final seasonId = season?.id;
+    final queueId = seasonId != null ? 'jellyfin:season:$seasonId' : 'jellyfin:$seriesId';
+    final contextKey = seasonId ?? seriesId;
+
     return executeWithLoading(
       context: context,
       showLoading: showLoadingIndicator,
@@ -227,7 +239,7 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
           return PlayQueueError(Exception('No client for server $serverId'));
         }
 
-        final raw = await client.fetchClientSideEpisodeQueue(seriesId);
+        final raw = await client.fetchClientSideEpisodeQueue(seriesId, seasonId: seasonId);
         if (raw == null || raw.isEmpty) return const PlayQueueEmpty();
 
         final shuffled = List.of(raw)..shuffle(Random());
@@ -245,13 +257,13 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
           context: context,
           playbackState: playbackState,
           queue: LocalPlayQueue(
-            id: 'jellyfin:$seriesId',
+            id: queueId,
             items: items,
             currentIndex: 0,
             shuffled: true,
             backendId: client.backend.id,
           ),
-          contextKey: seriesId,
+          contextKey: contextKey,
           navigateForTesting: navigateForTesting,
         );
       },

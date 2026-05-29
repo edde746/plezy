@@ -203,7 +203,11 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
 
   /// Launch shuffled playback for a show or season.
   @override
-  Future<PlayQueueResult> launchShuffledShow({required MediaItem metadata, bool showLoadingIndicator = true}) async {
+  Future<PlayQueueResult> launchShuffledShow({
+    required MediaItem metadata,
+    MediaItem? season,
+    bool showLoadingIndicator = true,
+  }) async {
     final kind = metadata.kind;
 
     if (kind != MediaKind.show && kind != MediaKind.season) {
@@ -215,31 +219,46 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
       showLoading: showLoadingIndicator,
       actionLabel: t.common.shuffle,
       execute: (dismissLoading) async {
-        // Determine the rating key for the play queue
-        String showRatingKey;
-        if (kind == MediaKind.show) {
-          showRatingKey = metadata.id;
+        // Season scope and series scope hit different Plex endpoints because
+        // `/playQueues?uri=…/{seasonKey}/children` doesn't reliably stay
+        // inside the season — see [PlexClient.createSeasonPlayQueue] for the
+        // workaround. Series scope keeps using `createShowPlayQueue` because
+        // that path already shuffles correctly across the whole library.
+        final String ratingKey;
+        final PlayQueueResponse? playQueue;
+        if (season != null) {
+          ratingKey = season.id;
+          playQueue = await client.createSeasonPlayQueue(
+            seasonRatingKey: season.id,
+            shuffle: 1,
+            librarySectionID: season.libraryId ?? metadata.libraryId,
+            librarySectionTitle: season.libraryTitle ?? metadata.libraryTitle,
+          );
         } else {
-          // For seasons, we need the show's rating key
-          if (metadata.parentId == null) {
-            throw Exception('Season is missing parentRatingKey');
+          if (kind == MediaKind.show) {
+            ratingKey = metadata.id;
+          } else {
+            // metadata is a season — fall back to the show's rating key for
+            // the series-wide shuffle path.
+            if (metadata.parentId == null) {
+              throw Exception('Season is missing parentRatingKey');
+            }
+            ratingKey = metadata.parentId!;
           }
-          showRatingKey = metadata.parentId!;
+          playQueue = await client.createShowPlayQueue(
+            showRatingKey: ratingKey,
+            shuffle: 1,
+            librarySectionID: metadata.libraryId,
+            librarySectionTitle: metadata.libraryTitle,
+          );
         }
-
-        final playQueue = await client.createShowPlayQueue(
-          showRatingKey: showRatingKey,
-          shuffle: 1,
-          librarySectionID: metadata.libraryId,
-          librarySectionTitle: metadata.libraryTitle,
-        );
 
         // Close loading dialog before navigating to the player
         await dismissLoading();
 
         return _launchFromQueue(
           playQueue: playQueue,
-          ratingKey: showRatingKey,
+          ratingKey: ratingKey,
           serverId: metadata.serverId ?? serverId,
           serverName: metadata.serverName ?? serverName,
           libraryId: metadata.libraryId,

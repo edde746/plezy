@@ -667,8 +667,11 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   ///
   /// Paged in [_episodeQueuePageSize] chunks so long-running shows still get
   /// a complete client-side next/previous queue without one huge response.
+  ///
+  /// When [seasonId] is provided, Jellyfin filters to that season server-side
+  /// via the `SeasonId` query param — used by "shuffle current season".
   @override
-  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
+  Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId, {String? seasonId}) async {
     final all = <MediaItem>[];
     var startIndex = 0;
     int? totalRecordCount;
@@ -681,6 +684,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           'Fields': _queueFields,
           'StartIndex': '$startIndex',
           'Limit': '$_episodeQueuePageSize',
+          'SeasonId': ?seasonId,
           ...jellyfinImageQueryParameters,
         },
       );

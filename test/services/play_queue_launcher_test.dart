@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/models/plex/play_queue_response.dart';
 import 'package:plezy/services/play_queue_launcher.dart';
 import 'package:plezy/services/plex_client.dart';
 
@@ -26,6 +27,44 @@ import 'package:plezy/services/plex_client.dart';
 // PlexClient fake + a Provider tree + a real Navigator. Skipped.
 
 class _StubPlexClient implements PlexClient {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Recording stub — captures whichever play-queue creation method the
+/// launcher reaches, plus the rating key it was called with. The launcher's
+/// season path now uses [createSeasonPlayQueue] (explicit episode keys);
+/// the series path keeps using [createShowPlayQueue].
+class _RecordingShowQueueClient implements PlexClient {
+  String? lastShowRatingKey;
+  String? lastSeasonRatingKey;
+  int? lastShuffle;
+
+  @override
+  Future<PlayQueueResponse?> createShowPlayQueue({
+    required String showRatingKey,
+    int shuffle = 0,
+    String? startingEpisodeKey,
+    String? librarySectionID,
+    String? librarySectionTitle,
+  }) async {
+    lastShowRatingKey = showRatingKey;
+    lastShuffle = shuffle;
+    return null; // null PlayQueueResponse → launcher returns PlayQueueEmpty
+  }
+
+  @override
+  Future<PlayQueueResponse?> createSeasonPlayQueue({
+    required String seasonRatingKey,
+    int shuffle = 0,
+    String? librarySectionID,
+    String? librarySectionTitle,
+  }) async {
+    lastSeasonRatingKey = seasonRatingKey;
+    lastShuffle = shuffle;
+    return null;
+  }
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -89,6 +128,65 @@ void main() {
       expect(result, isA<PlayQueueError>());
       final error = (result as PlayQueueError).error;
       expect(error.toString(), contains('shows and seasons'));
+    });
+  });
+
+  group('launchShuffledShow season scoping', () {
+    // Wrap in MaterialApp + Scaffold so `executeWithLoading`'s empty-queue
+    // snackbar (fired when the recording client returns null) has a
+    // ScaffoldMessenger to land on. The recording client still captures
+    // showRatingKey/shuffle before the snackbar runs.
+    Future<BuildContext> pumpScaffold(WidgetTester tester) async {
+      late BuildContext capturedContext;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Builder(
+              builder: (context) {
+                capturedContext = context;
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ),
+      );
+      return capturedContext;
+    }
+
+    testWidgets('routes the season case through createSeasonPlayQueue with season.id', (tester) async {
+      final ctx = await pumpScaffold(tester);
+      final client = _RecordingShowQueueClient();
+      final launcher = PlexPlayQueueLauncher(context: ctx, client: client);
+
+      final show = MediaItem(id: 'show-99', backend: MediaBackend.plex, kind: MediaKind.show);
+      final season = MediaItem(
+        id: 'season-42',
+        backend: MediaBackend.plex,
+        kind: MediaKind.season,
+        parentId: 'show-99',
+        title: 'Season 3',
+      );
+
+      await launcher.launchShuffledShow(metadata: show, season: season, showLoadingIndicator: false);
+
+      // Season path hits createSeasonPlayQueue (explicit episode keys), not
+      // createShowPlayQueue (whose /children URI tends to expand outward).
+      expect(client.lastSeasonRatingKey, 'season-42');
+      expect(client.lastShowRatingKey, isNull);
+      expect(client.lastShuffle, 1);
+    });
+
+    testWidgets('routes the series case through createShowPlayQueue with show.id', (tester) async {
+      final ctx = await pumpScaffold(tester);
+      final client = _RecordingShowQueueClient();
+      final launcher = PlexPlayQueueLauncher(context: ctx, client: client);
+
+      final show = MediaItem(id: 'show-99', backend: MediaBackend.plex, kind: MediaKind.show);
+
+      await launcher.launchShuffledShow(metadata: show, showLoadingIndicator: false);
+
+      expect(client.lastShowRatingKey, 'show-99');
+      expect(client.lastSeasonRatingKey, isNull);
     });
   });
 
