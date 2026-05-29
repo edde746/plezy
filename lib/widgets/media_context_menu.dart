@@ -112,6 +112,15 @@ class MediaContextMenu extends StatefulWidget {
   /// the built-in whole-show shuffle.
   final Future<void> Function()? onShufflePlay;
 
+  /// Optional season currently selected in the show-detail screen's
+  /// season tabs. When non-null on a `'download'` action, the options
+  /// dialog surfaces the "Download only from Season X" toggle so the
+  /// menu path matches the inline download button. Other call sites
+  /// (cards, episode rows, season-tab menus) leave it null because they
+  /// have no notion of a "currently-selected season" — their item is
+  /// already the scope they care about.
+  final MediaItem? currentSeasonForDownload;
+
   const MediaContextMenu({
     super.key,
     required this.item,
@@ -124,6 +133,7 @@ class MediaContextMenu extends StatefulWidget {
     this.collectionId,
     this.primaryTrailer,
     this.onShufflePlay,
+    this.currentSeasonForDownload,
   });
 
   @override
@@ -1404,6 +1414,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         metadata: item,
         client: client,
         downloadProvider: downloadProvider,
+        currentSeason: widget.currentSeasonForDownload,
       );
       if (result == null || !context.mounted) return;
 
