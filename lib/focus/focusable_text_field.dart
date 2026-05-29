@@ -74,6 +74,7 @@ class _NativeTvTextInputFocusBridge {
 
 KeyEventResult _handleInputKey({
   required TextEditingController controller,
+  required FocusNode node,
   required bool usesTvKeyboard,
   required bool enabled,
   required VoidCallback openKeyboard,
@@ -150,24 +151,52 @@ KeyEventResult _handleInputKey({
 
   if (!event.isActionable) return finish(KeyEventResult.ignored, 'non-actionable');
 
-  if (key.isUpKey && onNavigateUp != null) {
-    onNavigateUp();
-    return finish(KeyEventResult.handled, 'onNavigateUp');
+  final isMultiline = _isMultilineTextInput(keyboardType: keyboardType, maxLines: maxLines);
+
+  // Directional escape: an explicit callback always wins. Otherwise, fall back
+  // to the framework's geometry-based directional traversal so an un-wired
+  // field moves to its nearest neighbour instead of dead-ending (the field's
+  // own onKeyEvent runs before EditableText, which would otherwise swallow the
+  // arrow). Single-line only for UP/DOWN — multiline falls through so
+  // EditableText can move the caret between lines.
+  if (key.isUpKey) {
+    if (onNavigateUp != null) {
+      onNavigateUp();
+      return finish(KeyEventResult.handled, 'onNavigateUp');
+    }
+    if (!isMultiline) {
+      final moved = node.focusInDirection(TraversalDirection.up);
+      return finish(moved ? KeyEventResult.handled : KeyEventResult.ignored, 'focusInDirection-up');
+    }
   }
-  if (key.isDownKey && onNavigateDown != null) {
-    onNavigateDown();
-    return finish(KeyEventResult.handled, 'onNavigateDown');
+  if (key.isDownKey) {
+    if (onNavigateDown != null) {
+      onNavigateDown();
+      return finish(KeyEventResult.handled, 'onNavigateDown');
+    }
+    if (!isMultiline) {
+      final moved = node.focusInDirection(TraversalDirection.down);
+      return finish(moved ? KeyEventResult.handled : KeyEventResult.ignored, 'focusInDirection-down');
+    }
   }
 
   final sel = controller.selection;
   if (sel.isCollapsed) {
-    if (key.isLeftKey && sel.baseOffset == 0 && onNavigateLeft != null) {
-      onNavigateLeft();
-      return finish(KeyEventResult.handled, 'onNavigateLeft-at-start');
+    if (key.isLeftKey && sel.baseOffset == 0) {
+      if (onNavigateLeft != null) {
+        onNavigateLeft();
+        return finish(KeyEventResult.handled, 'onNavigateLeft-at-start');
+      }
+      final moved = node.focusInDirection(TraversalDirection.left);
+      return finish(moved ? KeyEventResult.handled : KeyEventResult.ignored, 'focusInDirection-left-at-start');
     }
-    if (key.isRightKey && sel.baseOffset == controller.text.length && onNavigateRight != null) {
-      onNavigateRight();
-      return finish(KeyEventResult.handled, 'onNavigateRight-at-end');
+    if (key.isRightKey && sel.baseOffset == controller.text.length) {
+      if (onNavigateRight != null) {
+        onNavigateRight();
+        return finish(KeyEventResult.handled, 'onNavigateRight-at-end');
+      }
+      final moved = node.focusInDirection(TraversalDirection.right);
+      return finish(moved ? KeyEventResult.handled : KeyEventResult.ignored, 'focusInDirection-right-at-end');
     }
   }
 
@@ -571,9 +600,10 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     }
   }
 
-  KeyEventResult _handleKey(BuildContext context, FocusNode _, KeyEvent event, VoidCallback openKeyboard) {
+  KeyEventResult _handleKey(BuildContext context, FocusNode node, KeyEvent event, VoidCallback openKeyboard) {
     return _handleInputKey(
       controller: controller,
+      node: node,
       usesTvKeyboard: _hasTvKeyboard,
       enabled: enabled,
       openKeyboard: openKeyboard,

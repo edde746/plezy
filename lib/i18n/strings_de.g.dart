@@ -143,6 +143,7 @@ class _TranslationsCommonDe extends TranslationsCommonEn {
 	@override String get yes => 'Ja';
 	@override String get no => 'Nein';
 	@override String get delete => 'Löschen';
+	@override String get edit => 'Bearbeiten';
 	@override String get shuffle => 'Zufall';
 	@override String get addTo => 'Hinzufügen zu...';
 	@override String get createNew => 'Neu erstellen';
@@ -253,6 +254,8 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Staffel- und Episodennummer auf Episodenkarten anzeigen';
 	@override String get showSeasonPostersOnTabs => 'Staffelposter auf Tabs anzeigen';
 	@override String get showSeasonPostersOnTabsDescription => 'Poster jeder Staffel über ihrem Tab anzeigen';
+	@override String get tvFullCardLayout => 'Vollflächige TV-Karten';
+	@override String get tvFullCardLayoutDescription => 'TV-Karten nur mit Bild verwenden und Darstellernamen einblenden';
 	@override String get hideSpoilers => 'Spoiler für nicht gesehene Episoden verbergen';
 	@override String get hideSpoilersDescription => 'Vorschaubilder und Beschreibungen ungesehener Episoden verwischen';
 	@override String get playerBackend => 'Player-Backend';
@@ -602,6 +605,7 @@ class _TranslationsVideoControlsDe extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Wiedergabe im Bild-in-Bild-Modus';
 	@override String get pipFailed => 'Bild-in-Bild konnte nicht gestartet werden';
 	@override String get screenshotSaved => 'Screenshot gespeichert';
+	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsDe pipErrors = _TranslationsVideoControlsPipErrorsDe._(_root);
 	@override String get chapters => 'Kapitel';
 	@override String get noChaptersAvailable => 'Keine Kapitel verfügbar';
@@ -812,6 +816,8 @@ class _TranslationsConnectionsDe extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => 'Sitzung für ${name} abgelaufen';
 	@override String sessionExpiredMany({required Object count}) => 'Sitzungen für ${count} Server abgelaufen';
 	@override String get signInAgain => 'Erneut anmelden';
+	@override String get editJellyfinTitle => 'Jellyfin-Verbindung bearbeiten';
+	@override String editJellyfinIntro({required Object serverName}) => 'Füge URLs für ${serverName} hinzu oder entferne sie. Plezy verwendet die erreichbare URL mit der geringsten Latenz.';
 }
 
 // Path: discover
@@ -1303,6 +1309,7 @@ class _TranslationsVideoSettingsDe extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Wiedergabegeschwindigkeit';
+	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Schlaftimer';
 	@override String get audioSync => 'Audio-Synchronisation';
 	@override String get subtitleSync => 'Untertitel-Synchronisation';
@@ -1502,7 +1509,9 @@ class _TranslationsAddServerDe extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Jellyfin-Server hinzufügen';
 	@override String get jellyfinUrlIntro => 'Gib die Server-URL ein, z. B. `https://jellyfin.example.com`.';
+	@override String get jellyfinUrlsIntro => 'Gib eine oder mehrere Server-URLs ein, getrennt durch Kommas oder neue Zeilen. Plezy verwendet die erreichbare URL mit der geringsten Latenz.';
 	@override String get serverUrl => 'Server-URL';
+	@override String get serverUrls => 'Server-URLs';
 	@override String get findServer => 'Server finden';
 	@override String get username => 'Benutzername';
 	@override String get password => 'Passwort';
@@ -1558,6 +1567,9 @@ class _TranslationsHotkeysActionsDe extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => 'Geschwindigkeit erhöhen';
 	@override String get speedDecrease => 'Geschwindigkeit verringern';
 	@override String get speedReset => 'Geschwindigkeit zurücksetzen';
+	@override String get zoomIn => 'Vergrößern';
+	@override String get zoomOut => 'Verkleinern';
+	@override String get zoomReset => 'Zoom zurücksetzen';
 	@override String get subSeekNext => 'Zum nächsten Untertitel springen';
 	@override String get subSeekPrev => 'Zum vorherigen Untertitel springen';
 	@override String get shaderToggle => 'Shader umschalten';
@@ -1833,6 +1845,7 @@ extension on TranslationsDe {
 			'common.yes' => 'Ja',
 			'common.no' => 'Nein',
 			'common.delete' => 'Löschen',
+			'common.edit' => 'Bearbeiten',
 			'common.shuffle' => 'Zufall',
 			'common.addTo' => 'Hinzufügen zu...',
 			'common.createNew' => 'Neu erstellen',
@@ -1916,6 +1929,8 @@ extension on TranslationsDe {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Staffel- und Episodennummer auf Episodenkarten anzeigen',
 			'settings.showSeasonPostersOnTabs' => 'Staffelposter auf Tabs anzeigen',
 			'settings.showSeasonPostersOnTabsDescription' => 'Poster jeder Staffel über ihrem Tab anzeigen',
+			'settings.tvFullCardLayout' => 'Vollflächige TV-Karten',
+			'settings.tvFullCardLayoutDescription' => 'TV-Karten nur mit Bild verwenden und Darstellernamen einblenden',
 			'settings.hideSpoilers' => 'Spoiler für nicht gesehene Episoden verbergen',
 			'settings.hideSpoilersDescription' => 'Vorschaubilder und Beschreibungen ungesehener Episoden verwischen',
 			'settings.playerBackend' => 'Player-Backend',
@@ -2089,6 +2104,9 @@ extension on TranslationsDe {
 			'hotkeys.actions.speedIncrease' => 'Geschwindigkeit erhöhen',
 			'hotkeys.actions.speedDecrease' => 'Geschwindigkeit verringern',
 			'hotkeys.actions.speedReset' => 'Geschwindigkeit zurücksetzen',
+			'hotkeys.actions.zoomIn' => 'Vergrößern',
+			'hotkeys.actions.zoomOut' => 'Verkleinern',
+			'hotkeys.actions.zoomReset' => 'Zoom zurücksetzen',
 			'hotkeys.actions.subSeekNext' => 'Zum nächsten Untertitel springen',
 			'hotkeys.actions.subSeekPrev' => 'Zum vorherigen Untertitel springen',
 			'hotkeys.actions.shaderToggle' => 'Shader umschalten',
@@ -2214,6 +2232,7 @@ extension on TranslationsDe {
 			'videoControls.pipActive' => 'Wiedergabe im Bild-in-Bild-Modus',
 			'videoControls.pipFailed' => 'Bild-in-Bild konnte nicht gestartet werden',
 			'videoControls.screenshotSaved' => 'Screenshot gespeichert',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Erfordert Android 8.0 oder neuer',
 			'videoControls.pipErrors.iosVersion' => 'Erfordert iOS 15.0 oder neuer',
 			'videoControls.pipErrors.permissionDisabled' => 'Bild-in-Bild ist deaktiviert. Aktiviere es in den Systemeinstellungen.',
@@ -2306,6 +2325,8 @@ extension on TranslationsDe {
 			'profiles.addPlezyProfile' => 'Plezy-Profil hinzufügen',
 			'profiles.switchingProfile' => 'Profil wird gewechselt…',
 			'profiles.deleteThisProfileTitle' => 'Dieses Profil löschen?',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName} entfernen. Verbindungen bleiben unberührt.',
 			'profiles.active' => 'Aktiv',
 			'profiles.manage' => 'Verwalten',
@@ -2313,8 +2334,6 @@ extension on TranslationsDe {
 			'profiles.signOut' => 'Abmelden',
 			'profiles.signOutPlexTitle' => 'Von Plex abmelden?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} und alle Plex Home-Benutzer entfernen? Du kannst dich jederzeit wieder anmelden.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signedOutPlex' => 'Von Plex abgemeldet.',
 			'profiles.signOutFailed' => 'Abmeldung fehlgeschlagen.',
 			'profiles.sectionTitle' => 'Profile',
@@ -2369,6 +2388,8 @@ extension on TranslationsDe {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sitzung für ${name} abgelaufen',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sitzungen für ${count} Server abgelaufen',
 			'connections.signInAgain' => 'Erneut anmelden',
+			'connections.editJellyfinTitle' => 'Jellyfin-Verbindung bearbeiten',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Füge URLs für ${serverName} hinzu oder entferne sie. Plezy verwendet die erreichbare URL mit der geringsten Latenz.',
 			'discover.title' => 'Entdecken',
 			'discover.switchProfile' => 'Profil wechseln',
 			'discover.noContentAvailable' => 'Kein Inhalt verfügbar',
@@ -2789,6 +2810,7 @@ extension on TranslationsDe {
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Auf Desktop suchen...',
 			'videoSettings.playbackSpeed' => 'Wiedergabegeschwindigkeit',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Schlaftimer',
 			'videoSettings.audioSync' => 'Audio-Synchronisation',
 			'videoSettings.subtitleSync' => 'Untertitel-Synchronisation',
@@ -2817,6 +2839,8 @@ extension on TranslationsDe {
 			'metadataEdit.basicInfo' => 'Grundlegende Infos',
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Erweiterte Einstellungen',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.title' => 'Titel',
 			'metadataEdit.sortTitle' => 'Sortiertitel',
 			'metadataEdit.originalTitle' => 'Originaltitel',
@@ -2827,8 +2851,6 @@ extension on TranslationsDe {
 			'metadataEdit.summary' => 'Zusammenfassung',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Hintergrund',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Quadratisches Bild',
 			'metadataEdit.selectPoster' => 'Poster auswählen',
@@ -2947,7 +2969,9 @@ extension on TranslationsDe {
 			'trackers.libraryFilter.noLibraries' => 'Keine Bibliotheken verfügbar',
 			'addServer.addJellyfinTitle' => 'Jellyfin-Server hinzufügen',
 			'addServer.jellyfinUrlIntro' => 'Gib die Server-URL ein, z. B. `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => 'Gib eine oder mehrere Server-URLs ein, getrennt durch Kommas oder neue Zeilen. Plezy verwendet die erreichbare URL mit der geringsten Latenz.',
 			'addServer.serverUrl' => 'Server-URL',
+			'addServer.serverUrls' => 'Server-URLs',
 			'addServer.findServer' => 'Server finden',
 			'addServer.username' => 'Benutzername',
 			'addServer.password' => 'Passwort',

@@ -77,6 +77,10 @@ class PlaybackInitializationResult {
   /// expects one of `DirectPlay`, `DirectStream`, or `Transcode`.
   final String? playMethod;
 
+  /// True when [videoUrl] points at a downloaded/local copy. This is a media
+  /// source detail, not a statement about whether server reporting is possible.
+  bool get usesLocalMedia => isOffline;
+
   PlaybackInitializationResult({
     required this.availableVersions,
     this.videoUrl,

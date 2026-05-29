@@ -73,6 +73,7 @@ import 'utils/media_server_http_client.dart';
 import 'utils/orientation_helper.dart';
 import 'utils/watch_state_notifier.dart';
 import 'i18n/strings.g.dart';
+import 'media/media_server_client.dart';
 import 'focus/input_mode_tracker.dart';
 import 'focus/key_event_utils.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -715,11 +716,15 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return provider;
           },
         ),
-        ChangeNotifierProxyProvider<ActiveProfileProvider, WatchStateOverlayProvider>(
+        ChangeNotifierProxyProvider2<ActiveProfileProvider, MultiServerProvider, WatchStateOverlayProvider>(
           create: (_) => WatchStateOverlayProvider(),
-          update: (_, activeProfile, previous) {
+          update: (_, activeProfile, multiServer, previous) {
             final provider = previous ?? WatchStateOverlayProvider();
             provider.setActiveProfileId(activeProfile.activeId);
+            provider.setActiveClientScopesByServer({
+              for (final serverId in multiServer.serverManager.serverIds)
+                serverId: multiServer.serverManager.getClient(serverId)?.cacheServerId,
+            });
             return provider;
           },
         ),

@@ -143,6 +143,7 @@ class _TranslationsCommonFr extends TranslationsCommonEn {
 	@override String get yes => 'Oui';
 	@override String get no => 'Non';
 	@override String get delete => 'Supprimer';
+	@override String get edit => 'Modifier';
 	@override String get shuffle => 'Mélanger';
 	@override String get addTo => 'Ajouter à...';
 	@override String get createNew => 'Créer';
@@ -253,6 +254,8 @@ class _TranslationsSettingsFr extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Afficher la saison et l\'épisode sur les cartes d\'épisode';
 	@override String get showSeasonPostersOnTabs => 'Afficher les posters de saison sur les onglets';
 	@override String get showSeasonPostersOnTabsDescription => 'Afficher l\'affiche de chaque saison au-dessus de son onglet';
+	@override String get tvFullCardLayout => 'Cartes TV pleines';
+	@override String get tvFullCardLayoutDescription => 'Utiliser des cartes TV avec image seule et noms des acteurs superposés';
 	@override String get hideSpoilers => 'Masquer les spoilers des épisodes non vus';
 	@override String get hideSpoilersDescription => 'Flouter les miniatures et descriptions des épisodes non vus';
 	@override String get playerBackend => 'Moteur de lecture';
@@ -602,6 +605,7 @@ class _TranslationsVideoControlsFr extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Lecture en mode image dans l\'image';
 	@override String get pipFailed => 'Échec du démarrage du mode image dans l\'image';
 	@override String get screenshotSaved => 'Capture d\'écran enregistrée';
+	@override String zoomPercent({required Object percent}) => 'Zoom ${percent} %';
 	@override late final _TranslationsVideoControlsPipErrorsFr pipErrors = _TranslationsVideoControlsPipErrorsFr._(_root);
 	@override String get chapters => 'Chapitres';
 	@override String get noChaptersAvailable => 'Aucun chapitre disponible';
@@ -812,6 +816,8 @@ class _TranslationsConnectionsFr extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => 'Session expirée pour ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Session expirée pour ${count} serveurs';
 	@override String get signInAgain => 'Se reconnecter';
+	@override String get editJellyfinTitle => 'Modifier la connexion Jellyfin';
+	@override String editJellyfinIntro({required Object serverName}) => 'Ajoutez ou supprimez des URL pour ${serverName}. Plezy utilisera l\'URL joignable avec la latence la plus faible.';
 }
 
 // Path: discover
@@ -1303,6 +1309,7 @@ class _TranslationsVideoSettingsFr extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Vitesse de lecture';
+	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Minuterie de mise en veille';
 	@override String get audioSync => 'Synchronisation audio';
 	@override String get subtitleSync => 'Synchronisation des sous-titres';
@@ -1502,7 +1509,9 @@ class _TranslationsAddServerFr extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Ajouter un serveur Jellyfin';
 	@override String get jellyfinUrlIntro => 'Saisissez l\'URL du serveur, par ex. `https://jellyfin.example.com`.';
+	@override String get jellyfinUrlsIntro => 'Saisissez une ou plusieurs URL de serveur, séparées par des virgules ou des retours à la ligne. Plezy utilisera l\'URL joignable avec la latence la plus faible.';
 	@override String get serverUrl => 'URL du serveur';
+	@override String get serverUrls => 'URL du serveur';
 	@override String get findServer => 'Rechercher un serveur';
 	@override String get username => 'Nom d\'utilisateur';
 	@override String get password => 'Mot de passe';
@@ -1558,6 +1567,9 @@ class _TranslationsHotkeysActionsFr extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => 'Augmenter la vitesse';
 	@override String get speedDecrease => 'Réduire la vitesse';
 	@override String get speedReset => 'Réinitialiser la vitesse';
+	@override String get zoomIn => 'Zoom avant';
+	@override String get zoomOut => 'Zoom arrière';
+	@override String get zoomReset => 'Réinitialiser le zoom';
 	@override String get subSeekNext => 'Rechercher le sous-titre suivant';
 	@override String get subSeekPrev => 'Rechercher le sous-titre précédent';
 	@override String get shaderToggle => 'Activer/désactiver les shaders';
@@ -1833,6 +1845,7 @@ extension on TranslationsFr {
 			'common.yes' => 'Oui',
 			'common.no' => 'Non',
 			'common.delete' => 'Supprimer',
+			'common.edit' => 'Modifier',
 			'common.shuffle' => 'Mélanger',
 			'common.addTo' => 'Ajouter à...',
 			'common.createNew' => 'Créer',
@@ -1916,6 +1929,8 @@ extension on TranslationsFr {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Afficher la saison et l\'épisode sur les cartes d\'épisode',
 			'settings.showSeasonPostersOnTabs' => 'Afficher les posters de saison sur les onglets',
 			'settings.showSeasonPostersOnTabsDescription' => 'Afficher l\'affiche de chaque saison au-dessus de son onglet',
+			'settings.tvFullCardLayout' => 'Cartes TV pleines',
+			'settings.tvFullCardLayoutDescription' => 'Utiliser des cartes TV avec image seule et noms des acteurs superposés',
 			'settings.hideSpoilers' => 'Masquer les spoilers des épisodes non vus',
 			'settings.hideSpoilersDescription' => 'Flouter les miniatures et descriptions des épisodes non vus',
 			'settings.playerBackend' => 'Moteur de lecture',
@@ -2089,6 +2104,9 @@ extension on TranslationsFr {
 			'hotkeys.actions.speedIncrease' => 'Augmenter la vitesse',
 			'hotkeys.actions.speedDecrease' => 'Réduire la vitesse',
 			'hotkeys.actions.speedReset' => 'Réinitialiser la vitesse',
+			'hotkeys.actions.zoomIn' => 'Zoom avant',
+			'hotkeys.actions.zoomOut' => 'Zoom arrière',
+			'hotkeys.actions.zoomReset' => 'Réinitialiser le zoom',
 			'hotkeys.actions.subSeekNext' => 'Rechercher le sous-titre suivant',
 			'hotkeys.actions.subSeekPrev' => 'Rechercher le sous-titre précédent',
 			'hotkeys.actions.shaderToggle' => 'Activer/désactiver les shaders',
@@ -2214,6 +2232,7 @@ extension on TranslationsFr {
 			'videoControls.pipActive' => 'Lecture en mode image dans l\'image',
 			'videoControls.pipFailed' => 'Échec du démarrage du mode image dans l\'image',
 			'videoControls.screenshotSaved' => 'Capture d\'écran enregistrée',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent} %',
 			'videoControls.pipErrors.androidVersion' => 'Nécessite Android 8.0 ou plus récent',
 			'videoControls.pipErrors.iosVersion' => 'Nécessite iOS 15.0 ou plus récent',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture est désactivé. Activez-le dans les paramètres système.',
@@ -2306,6 +2325,8 @@ extension on TranslationsFr {
 			'profiles.addPlezyProfile' => 'Ajouter un profil Plezy',
 			'profiles.switchingProfile' => 'Changement de profil…',
 			'profiles.deleteThisProfileTitle' => 'Supprimer ce profil ?',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Supprimer ${displayName}. Les connexions ne sont pas affectées.',
 			'profiles.active' => 'Actif',
 			'profiles.manage' => 'Gérer',
@@ -2313,8 +2334,6 @@ extension on TranslationsFr {
 			'profiles.signOut' => 'Se déconnecter',
 			'profiles.signOutPlexTitle' => 'Se déconnecter de Plex ?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Supprimer ${displayName} et tous les utilisateurs Plex Home ? Reconnexion possible à tout moment.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signedOutPlex' => 'Déconnecté de Plex.',
 			'profiles.signOutFailed' => 'Échec de la déconnexion.',
 			'profiles.sectionTitle' => 'Profils',
@@ -2369,6 +2388,8 @@ extension on TranslationsFr {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expirée pour ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expirée pour ${count} serveurs',
 			'connections.signInAgain' => 'Se reconnecter',
+			'connections.editJellyfinTitle' => 'Modifier la connexion Jellyfin',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Ajoutez ou supprimez des URL pour ${serverName}. Plezy utilisera l\'URL joignable avec la latence la plus faible.',
 			'discover.title' => 'Découvrez',
 			'discover.switchProfile' => 'Changer de profil',
 			'discover.noContentAvailable' => 'Aucun contenu disponible',
@@ -2789,6 +2810,7 @@ extension on TranslationsFr {
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Rechercher sur le bureau...',
 			'videoSettings.playbackSpeed' => 'Vitesse de lecture',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Minuterie de mise en veille',
 			'videoSettings.audioSync' => 'Synchronisation audio',
 			'videoSettings.subtitleSync' => 'Synchronisation des sous-titres',
@@ -2817,6 +2839,8 @@ extension on TranslationsFr {
 			'metadataEdit.basicInfo' => 'Informations de base',
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Paramètres avancés',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.title' => 'Titre',
 			'metadataEdit.sortTitle' => 'Titre de tri',
 			'metadataEdit.originalTitle' => 'Titre original',
@@ -2827,8 +2851,6 @@ extension on TranslationsFr {
 			'metadataEdit.summary' => 'Résumé',
 			'metadataEdit.poster' => 'Affiche',
 			'metadataEdit.background' => 'Arrière-plan',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Image carrée',
 			'metadataEdit.selectPoster' => 'Sélectionner l\'affiche',
@@ -2947,7 +2969,9 @@ extension on TranslationsFr {
 			'trackers.libraryFilter.noLibraries' => 'Aucune bibliothèque disponible',
 			'addServer.addJellyfinTitle' => 'Ajouter un serveur Jellyfin',
 			'addServer.jellyfinUrlIntro' => 'Saisissez l\'URL du serveur, par ex. `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => 'Saisissez une ou plusieurs URL de serveur, séparées par des virgules ou des retours à la ligne. Plezy utilisera l\'URL joignable avec la latence la plus faible.',
 			'addServer.serverUrl' => 'URL du serveur',
+			'addServer.serverUrls' => 'URL du serveur',
 			'addServer.findServer' => 'Rechercher un serveur',
 			'addServer.username' => 'Nom d\'utilisateur',
 			'addServer.password' => 'Mot de passe',

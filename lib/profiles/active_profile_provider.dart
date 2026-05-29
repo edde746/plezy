@@ -223,7 +223,9 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     await storage.setActiveProfileId(profile.id);
     final now = DateTime.now();
     await storage.markProfileUsed(profile.id, now);
-    _active = profile.copyWith(lastUsedAt: now);
+    final activated = profile.copyWith(lastUsedAt: now);
+    _active = activated;
+    _profiles = sortProfilesByLastUsed([for (final p in _profiles) p.id == profile.id ? activated : p]);
     safeNotifyListeners();
     appLogger.i('ActiveProfileProvider: activated ${profile.displayName} (${profile.id})');
     if (profile.isLocal) {

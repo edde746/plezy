@@ -360,21 +360,33 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
         // Extra top padding for focus decoration (scale + border extends beyond item bounds)
         const effectivePadding = EdgeInsets.only(left: 8, right: 8, top: 8);
 
-        return SettingValueBuilder<int>(
-          pref: SettingsService.libraryDensity,
-          builder: (context, density, _) {
+        return SettingsBuilder(
+          prefs: const [SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
+          builder: (context) {
+            final settings = SettingsService.instanceOrNull!;
+            final density = settings.read(SettingsService.libraryDensity);
+            final fullCardLayout = PlatformDetector.isTV() && settings.read(SettingsService.tvFullCardLayout);
             final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);
             // Use LayoutBuilder to get actual available width (accounting for sidebar)
             return LayoutBuilder(
               builder: (context, constraints) {
                 final availableWidth = constraints.maxWidth - effectivePadding.left - effectivePadding.right;
-                final columnCount = GridSizeCalculator.getColumnCount(availableWidth, maxCrossAxisExtent);
+                final gridSpacing = MediaGridDelegate.spacingFor(context: context, fullBleedImage: fullCardLayout);
+                final columnCount = GridSizeCalculator.getColumnCount(
+                  availableWidth,
+                  maxCrossAxisExtent,
+                  crossAxisSpacing: gridSpacing,
+                );
 
                 return GridView.builder(
                   padding: effectivePadding,
                   // Allow focus decoration to render outside scroll bounds
                   clipBehavior: Clip.none,
-                  gridDelegate: MediaGridDelegate.createDelegate(context: context, density: density),
+                  gridDelegate: MediaGridDelegate.createDelegate(
+                    context: context,
+                    density: density,
+                    fullBleedImage: fullCardLayout,
+                  ),
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     final item = items[index];
@@ -385,6 +397,7 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
                       focusNode: isFirst ? _firstItemFocusNode : null,
                       onBack: widget.onBack,
                       isOffline: true, // Downloaded content works without server
+                      fullBleedImage: fullCardLayout,
                       onNavigateLeft: isFirstColumn ? _navigateToSidebar : null,
                     );
                   },

@@ -16,6 +16,7 @@ import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
+import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
 import '../utils/external_ids.dart';
 import 'bif_thumbnail_service.dart';
@@ -248,6 +249,9 @@ class PlexClient
   /// Promoted home hub endpoint advertised by /media/providers (usually /hubs/promoted).
   String? _providerPromotedHubKey;
 
+  /// Dedicated Continue Watching hub endpoint advertised by /media/providers.
+  String? _providerContinueWatchingHubKey;
+
   /// EPG providers parsed from /media/providers
   @override
   List<({String identifier, String gridEndpoint})> _providerEpg = const [];
@@ -348,6 +352,7 @@ class PlexClient
     List<({String identifier, String gridEndpoint})> epgProviders = const [],
     String? homeHubKey,
     String? promotedHubKey,
+    String? continueWatchingHubKey,
   }) {
     final client = PlexClient._(
       config,
@@ -360,6 +365,7 @@ class PlexClient
     client._providerEpg = epgProviders;
     client._providerHomeHubKey = homeHubKey;
     client._providerPromotedHubKey = promotedHubKey;
+    client._providerContinueWatchingHubKey = continueWatchingHubKey;
     return client;
   }
 
@@ -459,6 +465,7 @@ class PlexClient
         _providerEpg = [];
         _providerHomeHubKey = null;
         _providerPromotedHubKey = null;
+        _providerContinueWatchingHubKey = null;
         return;
       }
 
@@ -468,6 +475,7 @@ class PlexClient
         _providerEpg = [];
         _providerHomeHubKey = null;
         _providerPromotedHubKey = null;
+        _providerContinueWatchingHubKey = null;
         return;
       }
 
@@ -475,6 +483,7 @@ class PlexClient
       final epg = <({String identifier, String gridEndpoint})>[];
       String? homeHubKey;
       String? promotedHubKey;
+      String? continueWatchingHubKey;
 
       for (final provider in providers) {
         if (provider is! Map) continue;
@@ -491,6 +500,10 @@ class PlexClient
 
             if (feature['type'] == 'promoted') {
               promotedHubKey ??= feature['key'] as String?;
+            }
+
+            if (feature['type'] == 'continuewatching') {
+              continueWatchingHubKey ??= feature['key'] as String?;
             }
 
             if (feature['type'] != 'content') continue;
@@ -552,6 +565,7 @@ class PlexClient
       _providerEpg = epg;
       _providerHomeHubKey = homeHubKey;
       _providerPromotedHubKey = promotedHubKey;
+      _providerContinueWatchingHubKey = continueWatchingHubKey;
       appLogger.d('Media providers: ${libraries.length} libraries, ${epg.length} EPG provider(s)');
     } catch (e) {
       appLogger.w('Failed to fetch /media/providers, will fall back to /library/sections', error: e);
@@ -559,6 +573,7 @@ class PlexClient
       _providerEpg = [];
       _providerHomeHubKey = null;
       _providerPromotedHubKey = null;
+      _providerContinueWatchingHubKey = null;
     }
   }
 
@@ -1326,15 +1341,22 @@ class PlexClient
   }
 
   /// Get continue watching items via the hubs system.
-  /// Uses /hubs?identifier=home.continue,home.ondeck which respects the
+  /// Prefer the provider's dedicated Continue Watching feature key when
+  /// advertised; fall back to Plex Web's legacy hubs query. Both respect the
   /// server's OnDeckWindow preference (unlike /library/onDeck).
   Future<List<PlexMetadataDto>> _getContinueWatching({int? count = 20}) async {
+    final continueWatchingHubKey = _providerContinueWatchingHubKey;
+    final queryParameters = <String, dynamic>{'count': ?count, 'includeGuids': 1};
+    if (continueWatchingHubKey == null) {
+      queryParameters['identifier'] = 'home.continue,home.ondeck';
+    }
+
     final response = await retryTransientMediaServerCall(
       operation: 'Plex continue watching hubs',
       attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
       call: (timeout, abort) => _getWithFailover(
-        '/hubs',
-        queryParameters: {'identifier': 'home.continue,home.ondeck', 'count': ?count, 'includeGuids': 1},
+        continueWatchingHubKey ?? '/hubs',
+        queryParameters: queryParameters,
         timeout: timeout,
         abort: abort,
         allowEndpointFailover: false,
@@ -1589,6 +1611,7 @@ class PlexClient
     required int time,
     required String state, // 'playing', 'paused', 'stopped', 'buffering'
     int? duration,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     final response = await _http.post(
       '/:/timeline',
@@ -1598,6 +1621,9 @@ class PlexClient
         'time': time,
         'state': state,
         'duration': ?duration,
+        if (report.isOfflineReplay) 'offline': 1,
+        if (report.recordedAt != null) 'updated': report.recordedAt!.millisecondsSinceEpoch ~/ 1000,
+        if (report.willContinue != null) 'continuing': report.willContinue! ? 1 : 0,
       },
     );
     // Surface non-2xx instead of swallowing — progress is the cornerstone
@@ -3452,6 +3478,9 @@ class PlexClient
             url,
             title: plexTrack.displayTitle ?? plexTrack.title ?? plexTrack.language ?? 'Track ${plexTrack.id}',
             language: plexTrack.languageCode,
+            codec: plexTrack.codec,
+            isDefault: plexTrack.selected,
+            isForced: plexTrack.forced,
           ),
         );
       } catch (e) {
@@ -3525,7 +3554,7 @@ class PlexClient
     if (partId == null) return null;
     final service = BifThumbnailService();
     try {
-      await service.load(this, partId);
+      await service.load(this, partId, aspectRatio: mediaSource.videoAspectRatio);
       return service;
     } catch (e, st) {
       appLogger.w('BIF thumbnail load failed for part $partId', error: e, stackTrace: st);
@@ -3942,7 +3971,14 @@ class PlexClient
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
-  }) => updateProgress(itemId, time: position.inMilliseconds, state: 'stopped', duration: duration?.inMilliseconds);
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
+  }) => updateProgress(
+    itemId,
+    time: position.inMilliseconds,
+    state: 'stopped',
+    duration: duration?.inMilliseconds,
+    report: report,
+  );
 
   // ── Downloads ────────────────────────────────────────────────────
 
@@ -3975,7 +4011,11 @@ class PlexClient
         );
       }
     }
-    return DownloadResolution(videoUrl: playbackData.videoUrl, externalSubtitles: subtitles);
+    return DownloadResolution(
+      videoUrl: playbackData.videoUrl,
+      mediaSourceId: playbackData.mediaInfo?.mediaSourceId,
+      externalSubtitles: subtitles,
+    );
   }
 
   @override

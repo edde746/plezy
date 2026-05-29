@@ -36,6 +36,7 @@
     "yes": "Yes",
     "no": "No",
     "delete": "Delete",
+    "edit": "Edit",
     "shuffle": "Shuffle",
     "addTo": "Add to...",
     "createNew": "Create new",
@@ -125,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "Show season and episode number on episode cards",
     "showSeasonPostersOnTabs": "Show Season Posters on Tabs",
     "showSeasonPostersOnTabsDescription": "Show each season's poster above its tab",
+    "tvFullCardLayout": "Full TV Cards",
+    "tvFullCardLayoutDescription": "Use image-only TV cards with actor names overlaid",
     "hideSpoilers": "Hide Spoilers for Unwatched Episodes",
     "hideSpoilersDescription": "Blur thumbnails and descriptions for unwatched episodes",
     "playerBackend": "Player Backend",
@@ -303,6 +306,9 @@
       "speedIncrease": "Increase Speed",
       "speedDecrease": "Decrease Speed",
       "speedReset": "Reset Speed",
+      "zoomIn": "Zoom In",
+      "zoomOut": "Zoom Out",
+      "zoomReset": "Reset Zoom",
       "subSeekNext": "Seek to Next Subtitle",
       "subSeekPrev": "Seek to Previous Subtitle",
       "shaderToggle": "Toggle Shaders",
@@ -443,6 +449,7 @@
     "pipActive": "Playing in Picture-in-Picture",
     "pipFailed": "Picture-in-picture failed to start",
     "screenshotSaved": "Screenshot saved",
+    "zoomPercent": "Zoom ${percent}%",
     "pipErrors": {
       "androidVersion": "Requires Android 8.0 or newer",
       "iosVersion": "Requires iOS 15.0 or newer",
@@ -611,7 +618,9 @@
     "addConnectionSubtitleScoped": "Add to ${displayName}: Plex, Jellyfin, or another profile connection",
     "sessionExpiredOne": "Session expired for ${name}",
     "sessionExpiredMany": "Session expired for ${count} servers",
-    "signInAgain": "Sign in again"
+    "signInAgain": "Sign in again",
+    "editJellyfinTitle": "Edit Jellyfin connection",
+    "editJellyfinIntro": "Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency."
   },
   "discover": {
     "title": "Discover",
@@ -1088,6 +1097,7 @@
   },
   "videoSettings": {
     "playbackSpeed": "Playback Speed",
+    "zoom": "Zoom",
     "sleepTimer": "Sleep Timer",
     "audioSync": "Audio Sync",
     "subtitleSync": "Subtitle Sync",
@@ -1266,7 +1276,9 @@
   "addServer": {
     "addJellyfinTitle": "Add Jellyfin server",
     "jellyfinUrlIntro": "Enter the server URL, e.g. `https://jellyfin.example.com`.",
+    "jellyfinUrlsIntro": "Enter one or more server URLs, separated by commas or new lines. Plezy will use the reachable URL with the lowest latency.",
     "serverUrl": "Server URL",
+    "serverUrls": "Server URLs",
     "findServer": "Find server",
     "username": "Username",
     "password": "Password",

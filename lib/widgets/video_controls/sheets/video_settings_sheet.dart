@@ -20,6 +20,7 @@ import '../../../services/file_picker_service.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/shader_service.dart';
 import '../../../services/sleep_timer_service.dart';
+import '../../../services/video_filter_manager.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../utils/dialogs.dart';
 import '../../../utils/formatters.dart';
@@ -35,7 +36,18 @@ import '../../../i18n/strings.g.dart';
 import 'base_video_control_sheet.dart';
 import 'version_quality_sheet.dart';
 
-enum _SettingsView { menu, speed, versionQuality, sleep, audioSync, subtitleSync, audioDevice, shader, dvConversion }
+enum _SettingsView {
+  menu,
+  speed,
+  zoom,
+  versionQuality,
+  sleep,
+  audioSync,
+  subtitleSync,
+  audioDevice,
+  shader,
+  dvConversion,
+}
 
 class _SettingsMenuItem extends StatelessWidget {
   final IconData icon;
@@ -115,6 +127,9 @@ class VideoSettingsSheet extends StatefulWidget {
   final Player player;
   final int audioSyncOffset;
   final int subtitleSyncOffset;
+  final double videoZoomScale;
+  final ValueChanged<double>? onVideoZoomChanged;
+  final VoidCallback? onResetVideoZoom;
 
   /// Whether the user can control playback (false hides speed option in host-only mode).
   final bool canControl;
@@ -157,6 +172,9 @@ class VideoSettingsSheet extends StatefulWidget {
     required this.player,
     required this.audioSyncOffset,
     required this.subtitleSyncOffset,
+    this.videoZoomScale = 1.0,
+    this.onVideoZoomChanged,
+    this.onResetVideoZoom,
     this.canControl = true,
     this.isLive = false,
     this.availableVersions = const [],
@@ -183,18 +201,34 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   _SettingsView _currentView = _SettingsView.menu;
   late int _audioSyncOffset;
   late int _subtitleSyncOffset;
+  late double _zoomScale;
   String _dvConversionMode = 'auto';
+
+  bool get _showDebugDvConversionMode {
+    if (!kDebugMode) return false;
+    if (Platform.isAndroid) return widget.player.playerType == 'exoplayer';
+    return (Platform.isIOS || Platform.isMacOS) && widget.player.playerType == 'mpv';
+  }
 
   @override
   void initState() {
     super.initState();
     _audioSyncOffset = widget.audioSyncOffset;
     _subtitleSyncOffset = widget.subtitleSyncOffset;
+    _zoomScale = widget.videoZoomScale;
     _loadDebugDvConversionMode();
   }
 
+  @override
+  void didUpdateWidget(covariant VideoSettingsSheet oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if ((widget.videoZoomScale - oldWidget.videoZoomScale).abs() > 0.0001) {
+      _zoomScale = widget.videoZoomScale;
+    }
+  }
+
   Future<void> _loadDebugDvConversionMode() async {
-    if (!kDebugMode || !Platform.isAndroid || widget.player.playerType != 'exoplayer') return;
+    if (!_showDebugDvConversionMode) return;
     final dvConversionMode = await widget.player.getProperty('dv-conversion-mode');
     if (!mounted) return;
     setState(() {
@@ -286,6 +320,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return t.videoControls.settingsButton;
       case _SettingsView.speed:
         return t.videoSettings.playbackSpeed;
+      case _SettingsView.zoom:
+        return t.videoSettings.zoom;
       case _SettingsView.versionQuality:
         return _versionQualityTitle();
       case _SettingsView.sleep:
@@ -309,6 +345,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Symbols.tune_rounded;
       case _SettingsView.speed:
         return Symbols.speed_rounded;
+      case _SettingsView.zoom:
+        return Symbols.zoom_in_rounded;
       case _SettingsView.versionQuality:
         return Symbols.art_track;
       case _SettingsView.sleep:
@@ -349,6 +387,28 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     final remaining = sleepTimer.remainingTime;
     if (remaining == null) return 'Off';
     return 'Active (${formatDurationWithSeconds(remaining)})';
+  }
+
+  String _formatZoomScale(double scale) => '${(scale * 100).round()}%';
+
+  void _setZoomScale(double scale) {
+    final next = scale.clamp(VideoFilterManager.minZoomScale, VideoFilterManager.maxZoomScale).toDouble();
+    setState(() {
+      _zoomScale = next;
+    });
+    widget.onVideoZoomChanged?.call(next);
+  }
+
+  void _resetZoomScale() {
+    setState(() {
+      _zoomScale = 1.0;
+    });
+    final reset = widget.onResetVideoZoom;
+    if (reset != null) {
+      reset();
+    } else {
+      widget.onVideoZoomChanged?.call(1.0);
+    }
   }
 
   bool get _hasVersionQuality {
@@ -398,6 +458,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                 onTap: () => _navigateTo(_SettingsView.speed),
               );
             },
+          ),
+
+        if (widget.onVideoZoomChanged != null || widget.onResetVideoZoom != null)
+          _SettingsMenuItem(
+            icon: Symbols.zoom_in_rounded,
+            title: t.videoSettings.zoom,
+            valueText: _formatZoomScale(_zoomScale),
+            isHighlighted: (_zoomScale - 1.0).abs() > 0.0001,
+            onTap: () => _navigateTo(_SettingsView.zoom),
           ),
 
         if (_hasVersionQuality)
@@ -535,7 +604,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           title: t.videoSettings.performanceOverlay,
         ),
 
-        if (kDebugMode && Platform.isAndroid && widget.player.playerType == 'exoplayer')
+        if (_showDebugDvConversionMode)
           _SettingsMenuItem(
             icon: Symbols.hdr_strong_rounded,
             title: 'DV Conversion Mode',
@@ -624,6 +693,32 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildZoomView() {
+    const zoomPresets = [0.5, 0.75, 0.9, 1.0, 1.1, 1.2, 1.3, 1.5, 1.75, 2.0];
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return ListView(
+      children: [
+        FocusableListTile(
+          leading: AppIcon(Symbols.restart_alt_rounded, fill: 1, color: tokens(context).textMuted),
+          title: Text(t.common.reset),
+          onTap: _resetZoomScale,
+        ),
+        for (final scale in zoomPresets)
+          FocusableListTile(
+            title: Text(
+              _formatZoomScale(scale),
+              style: TextStyle(color: (_zoomScale - scale).abs() < 0.005 ? primary : null),
+            ),
+            trailing: (_zoomScale - scale).abs() < 0.005
+                ? AppIcon(Symbols.check_rounded, fill: 1, color: primary)
+                : null,
+            onTap: () => _setZoomScale(scale),
+          ),
+      ],
     );
   }
 
@@ -888,9 +983,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   Widget build(BuildContext context) {
     final sleepTimer = SleepTimerService();
     final isShaderActive = widget.shaderService != null && widget.shaderService!.currentPreset.isEnabled;
+    final isZoomActive = (_zoomScale - 1.0).abs() > 0.0001;
     final isIconActive =
         _currentView == _SettingsView.menu &&
-        (sleepTimer.isActive || _audioSyncOffset != 0 || _subtitleSyncOffset != 0 || isShaderActive);
+        (sleepTimer.isActive || _audioSyncOffset != 0 || _subtitleSyncOffset != 0 || isShaderActive || isZoomActive);
 
     return BaseVideoControlSheet(
       title: _getTitle(),
@@ -907,6 +1003,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             return _buildMenuView();
           case _SettingsView.speed:
             return _buildSpeedView();
+          case _SettingsView.zoom:
+            return _buildZoomView();
           case _SettingsView.versionQuality:
             return _buildVersionQualityView();
           case _SettingsView.sleep:

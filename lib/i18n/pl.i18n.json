@@ -36,6 +36,7 @@
     "yes": "Tak",
     "no": "Nie",
     "delete": "Usuń",
+    "edit": "Edytuj",
     "shuffle": "Losowo",
     "addTo": "Dodaj do...",
     "createNew": "Utwórz nowy",
@@ -125,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "Pokazuj numer sezonu i odcinka na kartach odcinków",
     "showSeasonPostersOnTabs": "Pokaż plakaty sezonów na zakładkach",
     "showSeasonPostersOnTabsDescription": "Pokazuj plakat każdego sezonu nad jego kartą",
+    "tvFullCardLayout": "Pełne karty TV",
+    "tvFullCardLayoutDescription": "Używaj kart TV tylko z obrazem i nałożonymi nazwiskami aktorów",
     "hideSpoilers": "Ukryj spoilery nieobejrzanych odcinków",
     "hideSpoilersDescription": "Rozmywaj miniatury i opisy nieobejrzanych odcinków",
     "playerBackend": "Backend odtwarzacza",
@@ -303,6 +306,9 @@
       "speedIncrease": "Zwiększ prędkość",
       "speedDecrease": "Zmniejsz prędkość",
       "speedReset": "Zresetuj prędkość",
+      "zoomIn": "Powiększ",
+      "zoomOut": "Pomniejsz",
+      "zoomReset": "Zresetuj zoom",
       "subSeekNext": "Przewiń do następnego napisu",
       "subSeekPrev": "Przewiń do poprzedniego napisu",
       "shaderToggle": "Przełącz shadery",
@@ -441,6 +447,7 @@
     "pipActive": "Odtwarzanie w trybie obraz w obrazie",
     "pipFailed": "Nie udało się uruchomić trybu obraz w obrazie",
     "screenshotSaved": "Zrzut ekranu zapisany",
+    "zoomPercent": "Zoom ${percent}%",
     "pipErrors": {
       "androidVersion": "Wymaga Androida 8.0 lub nowszego",
       "iosVersion": "Wymaga iOS 15.0 lub nowszego",
@@ -609,7 +616,9 @@
     "addConnectionSubtitleScoped": "Dodaj do ${displayName}: Plex, Jellyfin lub połączenie innego profilu",
     "sessionExpiredOne": "Sesja wygasła dla ${name}",
     "sessionExpiredMany": "Sesja wygasła dla ${count} serwerów",
-    "signInAgain": "Zaloguj się ponownie"
+    "signInAgain": "Zaloguj się ponownie",
+    "editJellyfinTitle": "Edytuj połączenie Jellyfin",
+    "editJellyfinIntro": "Dodaj lub usuń adresy URL dla ${serverName}. Plezy użyje osiągalnego URL-a o najniższym opóźnieniu."
   },
   "discover": {
     "title": "Odkryj",
@@ -1078,6 +1087,7 @@
   },
   "videoSettings": {
     "playbackSpeed": "Prędkość odtwarzania",
+    "zoom": "Zoom",
     "sleepTimer": "Wyłącznik czasowy",
     "audioSync": "Synchronizacja audio",
     "subtitleSync": "Synchronizacja napisów",
@@ -1256,7 +1266,9 @@
   "addServer": {
     "addJellyfinTitle": "Dodaj serwer Jellyfin",
     "jellyfinUrlIntro": "Wpisz URL serwera, np. `https://jellyfin.example.com`.",
+    "jellyfinUrlsIntro": "Wpisz co najmniej jeden URL serwera, oddzielając je przecinkami lub nowymi wierszami. Plezy użyje osiągalnego URL-a o najniższym opóźnieniu.",
     "serverUrl": "URL serwera",
+    "serverUrls": "URL-e serwera",
     "findServer": "Znajdź serwer",
     "username": "Nazwa użytkownika",
     "password": "Hasło",

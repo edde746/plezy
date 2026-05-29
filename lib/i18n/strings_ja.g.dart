@@ -143,6 +143,7 @@ class _TranslationsCommonJa extends TranslationsCommonEn {
 	@override String get yes => 'はい';
 	@override String get no => 'いいえ';
 	@override String get delete => '削除';
+	@override String get edit => '編集';
 	@override String get shuffle => 'シャッフル';
 	@override String get addTo => '追加...';
 	@override String get createNew => '新規作成';
@@ -253,6 +254,8 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'エピソードカードにシーズン番号とエピソード番号を表示します';
 	@override String get showSeasonPostersOnTabs => 'タブにシーズンポスターを表示';
 	@override String get showSeasonPostersOnTabsDescription => '各シーズンのポスターをタブの上に表示します';
+	@override String get tvFullCardLayout => 'フルTVカード';
+	@override String get tvFullCardLayoutDescription => 'TVカードを画像のみで表示し、俳優名を重ねて表示します';
 	@override String get hideSpoilers => '未視聴エピソードのネタバレを非表示';
 	@override String get hideSpoilersDescription => '未視聴エピソードのサムネイルと説明をぼかします';
 	@override String get playerBackend => 'プレーヤーバックエンド';
@@ -602,6 +605,7 @@ class _TranslationsVideoControlsJa extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'ピクチャーインピクチャーで再生中';
 	@override String get pipFailed => 'ピクチャーインピクチャーの開始に失敗しました';
 	@override String get screenshotSaved => 'スクリーンショットを保存しました';
+	@override String zoomPercent({required Object percent}) => 'ズーム ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsJa pipErrors = _TranslationsVideoControlsPipErrorsJa._(_root);
 	@override String get chapters => 'チャプター';
 	@override String get noChaptersAvailable => 'チャプターがありません';
@@ -812,6 +816,8 @@ class _TranslationsConnectionsJa extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => '${name} のセッションの有効期限が切れました';
 	@override String sessionExpiredMany({required Object count}) => '${count} 台のサーバーのセッションの有効期限が切れました';
 	@override String get signInAgain => '再度サインイン';
+	@override String get editJellyfinTitle => 'Jellyfin接続を編集';
+	@override String editJellyfinIntro({required Object serverName}) => '${serverName} のURLを追加または削除します。Plezyは到達可能なURLのうち最も低遅延のものを使用します。';
 }
 
 // Path: discover
@@ -1303,6 +1309,7 @@ class _TranslationsVideoSettingsJa extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => '再生速度';
+	@override String get zoom => 'ズーム';
 	@override String get sleepTimer => 'スリープタイマー';
 	@override String get audioSync => '音声同期';
 	@override String get subtitleSync => '字幕同期';
@@ -1502,7 +1509,9 @@ class _TranslationsAddServerJa extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Jellyfinサーバーを追加';
 	@override String get jellyfinUrlIntro => 'サーバーURLを入力してください。例: `https://jellyfin.example.com`。';
+	@override String get jellyfinUrlsIntro => 'サーバーURLを1つ以上、カンマまたは改行で区切って入力してください。Plezyは到達可能なURLのうち最も低遅延のものを使用します。';
 	@override String get serverUrl => 'サーバーURL';
+	@override String get serverUrls => 'サーバーURL';
 	@override String get findServer => 'サーバーを検索';
 	@override String get username => 'ユーザー名';
 	@override String get password => 'パスワード';
@@ -1558,6 +1567,9 @@ class _TranslationsHotkeysActionsJa extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => '速度を上げる';
 	@override String get speedDecrease => '速度を下げる';
 	@override String get speedReset => '速度をリセット';
+	@override String get zoomIn => 'ズームイン';
+	@override String get zoomOut => 'ズームアウト';
+	@override String get zoomReset => 'ズームをリセット';
 	@override String get subSeekNext => '次の字幕にシーク';
 	@override String get subSeekPrev => '前の字幕にシーク';
 	@override String get shaderToggle => 'シェーダー切替';
@@ -1833,6 +1845,7 @@ extension on TranslationsJa {
 			'common.yes' => 'はい',
 			'common.no' => 'いいえ',
 			'common.delete' => '削除',
+			'common.edit' => '編集',
 			'common.shuffle' => 'シャッフル',
 			'common.addTo' => '追加...',
 			'common.createNew' => '新規作成',
@@ -1916,6 +1929,8 @@ extension on TranslationsJa {
 			'settings.showEpisodeNumberOnCardsDescription' => 'エピソードカードにシーズン番号とエピソード番号を表示します',
 			'settings.showSeasonPostersOnTabs' => 'タブにシーズンポスターを表示',
 			'settings.showSeasonPostersOnTabsDescription' => '各シーズンのポスターをタブの上に表示します',
+			'settings.tvFullCardLayout' => 'フルTVカード',
+			'settings.tvFullCardLayoutDescription' => 'TVカードを画像のみで表示し、俳優名を重ねて表示します',
 			'settings.hideSpoilers' => '未視聴エピソードのネタバレを非表示',
 			'settings.hideSpoilersDescription' => '未視聴エピソードのサムネイルと説明をぼかします',
 			'settings.playerBackend' => 'プレーヤーバックエンド',
@@ -2089,6 +2104,9 @@ extension on TranslationsJa {
 			'hotkeys.actions.speedIncrease' => '速度を上げる',
 			'hotkeys.actions.speedDecrease' => '速度を下げる',
 			'hotkeys.actions.speedReset' => '速度をリセット',
+			'hotkeys.actions.zoomIn' => 'ズームイン',
+			'hotkeys.actions.zoomOut' => 'ズームアウト',
+			'hotkeys.actions.zoomReset' => 'ズームをリセット',
 			'hotkeys.actions.subSeekNext' => '次の字幕にシーク',
 			'hotkeys.actions.subSeekPrev' => '前の字幕にシーク',
 			'hotkeys.actions.shaderToggle' => 'シェーダー切替',
@@ -2214,6 +2232,7 @@ extension on TranslationsJa {
 			'videoControls.pipActive' => 'ピクチャーインピクチャーで再生中',
 			'videoControls.pipFailed' => 'ピクチャーインピクチャーの開始に失敗しました',
 			'videoControls.screenshotSaved' => 'スクリーンショットを保存しました',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'ズーム ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0以降が必要です',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0以降が必要です',
 			'videoControls.pipErrors.permissionDisabled' => 'ピクチャーインピクチャーが無効です。システム設定で有効にしてください。',
@@ -2306,6 +2325,8 @@ extension on TranslationsJa {
 			'profiles.addPlezyProfile' => 'Plezyプロファイルを追加',
 			'profiles.switchingProfile' => 'プロファイルを切り替え中…',
 			'profiles.deleteThisProfileTitle' => 'このプロファイルを削除しますか？',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName}を削除します。接続には影響しません。',
 			'profiles.active' => 'アクティブ',
 			'profiles.manage' => '管理',
@@ -2313,8 +2334,6 @@ extension on TranslationsJa {
 			'profiles.signOut' => 'サインアウト',
 			'profiles.signOutPlexTitle' => 'Plex からサインアウトしますか？',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName}とすべてのPlex Homeユーザーを削除しますか？いつでも再サインインできます。',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signedOutPlex' => 'Plex からサインアウトしました。',
 			'profiles.signOutFailed' => 'サインアウトに失敗しました。',
 			'profiles.sectionTitle' => 'プロファイル',
@@ -2369,6 +2388,8 @@ extension on TranslationsJa {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} のセッションの有効期限が切れました',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 台のサーバーのセッションの有効期限が切れました',
 			'connections.signInAgain' => '再度サインイン',
+			'connections.editJellyfinTitle' => 'Jellyfin接続を編集',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => '${serverName} のURLを追加または削除します。Plezyは到達可能なURLのうち最も低遅延のものを使用します。',
 			'discover.title' => '探す',
 			'discover.switchProfile' => 'プロフィール切替',
 			'discover.noContentAvailable' => 'コンテンツがありません',
@@ -2789,6 +2810,7 @@ extension on TranslationsJa {
 			'companionRemote.remote.audio' => '音声',
 			'companionRemote.remote.searchHint' => 'デスクトップで検索...',
 			'videoSettings.playbackSpeed' => '再生速度',
+			'videoSettings.zoom' => 'ズーム',
 			'videoSettings.sleepTimer' => 'スリープタイマー',
 			'videoSettings.audioSync' => '音声同期',
 			'videoSettings.subtitleSync' => '字幕同期',
@@ -2817,6 +2839,8 @@ extension on TranslationsJa {
 			'metadataEdit.basicInfo' => '基本情報',
 			'metadataEdit.artwork' => 'アートワーク',
 			'metadataEdit.advancedSettings' => '詳細設定',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.title' => 'タイトル',
 			'metadataEdit.sortTitle' => 'ソートタイトル',
 			'metadataEdit.originalTitle' => '原題',
@@ -2827,8 +2851,6 @@ extension on TranslationsJa {
 			'metadataEdit.summary' => 'あらすじ',
 			'metadataEdit.poster' => 'ポスター',
 			'metadataEdit.background' => '背景',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => 'ロゴ',
 			'metadataEdit.squareArt' => '正方形アート',
 			'metadataEdit.selectPoster' => 'ポスターを選択',
@@ -2947,7 +2969,9 @@ extension on TranslationsJa {
 			'trackers.libraryFilter.noLibraries' => '利用できるライブラリがありません',
 			'addServer.addJellyfinTitle' => 'Jellyfinサーバーを追加',
 			'addServer.jellyfinUrlIntro' => 'サーバーURLを入力してください。例: `https://jellyfin.example.com`。',
+			'addServer.jellyfinUrlsIntro' => 'サーバーURLを1つ以上、カンマまたは改行で区切って入力してください。Plezyは到達可能なURLのうち最も低遅延のものを使用します。',
 			'addServer.serverUrl' => 'サーバーURL',
+			'addServer.serverUrls' => 'サーバーURL',
 			'addServer.findServer' => 'サーバーを検索',
 			'addServer.username' => 'ユーザー名',
 			'addServer.password' => 'パスワード',

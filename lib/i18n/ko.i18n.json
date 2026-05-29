@@ -36,6 +36,7 @@
     "yes": "예",
     "no": "아니오",
     "delete": "삭제",
+    "edit": "편집",
     "shuffle": "무작위 재생",
     "addTo": "추가하기...",
     "createNew": "새로 만들기",
@@ -125,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "에피소드 카드에 시즌 및 에피소드 번호 표시",
     "showSeasonPostersOnTabs": "탭에 시즌 포스터 표시",
     "showSeasonPostersOnTabsDescription": "각 시즌 포스터를 탭 위에 표시",
+    "tvFullCardLayout": "전체 TV 카드",
+    "tvFullCardLayoutDescription": "TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시",
     "hideSpoilers": "미시청 에피소드 스포일러 숨기기",
     "hideSpoilersDescription": "시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리",
     "playerBackend": "플레이어 백엔드",
@@ -303,6 +306,9 @@
       "speedIncrease": "속도 높이기",
       "speedDecrease": "속도 낮추기",
       "speedReset": "속도 초기화",
+      "zoomIn": "확대",
+      "zoomOut": "축소",
+      "zoomReset": "확대/축소 초기화",
       "subSeekNext": "다음 자막으로 이동",
       "subSeekPrev": "이전 자막으로 이동",
       "shaderToggle": "셰이더 전환",
@@ -441,6 +447,7 @@
     "pipActive": "화면 속 화면으로 재생 중",
     "pipFailed": "화면 속 화면 모드를 시작할 수 없습니다",
     "screenshotSaved": "스크린샷 저장됨",
+    "zoomPercent": "확대/축소 ${percent}%",
     "pipErrors": {
       "androidVersion": "Android 8.0 이상이 필요합니다",
       "iosVersion": "iOS 15.0 이상이 필요합니다",
@@ -609,7 +616,9 @@
     "addConnectionSubtitleScoped": "${displayName}에 추가: Plex, Jellyfin 또는 다른 프로필 연결",
     "sessionExpiredOne": "${name} 의 세션이 만료되었습니다",
     "sessionExpiredMany": "${count} 개의 서버에서 세션이 만료되었습니다",
-    "signInAgain": "다시 로그인"
+    "signInAgain": "다시 로그인",
+    "editJellyfinTitle": "Jellyfin 연결 편집",
+    "editJellyfinIntro": "${serverName}의 URL을 추가하거나 제거하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다."
   },
   "discover": {
     "title": "발견",
@@ -1078,6 +1087,7 @@
   },
   "videoSettings": {
     "playbackSpeed": "재생 속도",
+    "zoom": "확대/축소",
     "sleepTimer": "취침 타이머",
     "audioSync": "오디오 동기화",
     "subtitleSync": "자막 동기화",
@@ -1256,7 +1266,9 @@
   "addServer": {
     "addJellyfinTitle": "Jellyfin 서버 추가",
     "jellyfinUrlIntro": "서버 URL을 입력하세요. 예: `https://jellyfin.example.com`.",
+    "jellyfinUrlsIntro": "서버 URL을 하나 이상 쉼표나 줄바꿈으로 구분해 입력하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.",
     "serverUrl": "서버 URL",
+    "serverUrls": "서버 URL",
     "findServer": "서버 찾기",
     "username": "사용자 이름",
     "password": "비밀번호",

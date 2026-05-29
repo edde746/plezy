@@ -4,6 +4,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
   Future<void> _startPlayback() async {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return;
+    final playbackGeneration = _beginPlaybackGeneration();
 
     // Live TV mode: bypass standard playback initialization
     if (widget.isLive) {
@@ -11,7 +12,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         _hasFirstFrame.value = false;
         await currentPlayer.requestAudioFocus();
         await _setLiveStreamOptions();
-        if (!mounted || player != currentPlayer) return;
+        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
 
         String streamUrl;
         if (_liveStreamUrl != null) {
@@ -97,7 +98,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         _livePlaybackStartTime = DateTime.now();
         await currentPlayer.setProperty('force-seekable', 'no');
         await currentPlayer.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
-        if (!mounted || player != currentPlayer) return;
+        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
 
         _trackManager?.cacheExternalSubtitles(const []);
 
@@ -128,27 +129,34 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
 
     try {
       PlaybackInitializationResult result;
+      PlaybackContext playbackContext;
       Map<String, String>? streamHeaders;
 
       if (widget.isOffline) {
-        // Offline mode: route through PlaybackInitializationService with a
-        // (possibly null) cached client. The service reads cached media
-        // info via the client when available, falls back to local file +
-        // sidecar subtitles otherwise.
-        final cachedSourceClient = _getMediaServerClient(context);
-        final offlineService = PlaybackInitializationService(
-          client: cachedSourceClient,
+        final playbackResolver = PlaybackSourceResolver(
+          serverManager: context.read<MultiServerProvider>().serverManager,
           database: context.read<AppDatabase>(),
         );
-        result = await offlineService.getPlaybackData(
+        playbackContext = await playbackResolver.resolve(
           metadata: _currentMetadata,
           selectedMediaIndex: widget.selectedMediaIndex,
           selectedMediaSourceId: widget.selectedMediaSourceId,
-          preferOffline: true,
+          offlineLibraryMode: true,
+          qualityPreset: _selectedQualityPreset,
+          selectedAudioStreamId: _selectedAudioStreamId,
+          sessionIdentifier: _playbackSessionIdentifier,
+          transcodeSessionId: _playbackTranscodeSessionId,
         );
+        result = playbackContext.result;
         if (result.videoUrl == null) {
           throw PlaybackException(t.messages.fileInfoNotAvailable);
         }
+        streamHeaders = playbackContext.streamHeaders;
+        _isTranscoding = result.isTranscoding;
+        _effectiveIsOffline = result.isOffline;
+        _playbackPlaySessionId = result.playSessionId;
+        _playbackPlayMethod = result.playMethod;
+        _selectedAudioStreamId = result.activeAudioStreamId;
       } else {
         // Online path: `_playbackDataFuture` was kicked off in `_initializePlayer`
         // in parallel with MPV setup. Quality preset + server capabilities +
@@ -158,8 +166,10 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         if (playbackDataFuture == null) {
           throw StateError('Playback data was not prepared before playback start');
         }
-        result = await playbackDataFuture;
+        playbackContext = await playbackDataFuture;
+        result = playbackContext.result;
         if (!mounted || player != currentPlayer) return;
+        streamHeaders = playbackContext.streamHeaders;
 
         _isTranscoding = result.isTranscoding;
         _effectiveIsOffline = result.isOffline;
@@ -175,12 +185,13 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           _selectedQualityPreset = TranscodeQualityPreset.original;
         }
       }
+      _playbackContext = playbackContext;
 
       // Primary refresh-rate path: when metadata provides FPS, Android MPV can
       // switch before `loadfile`; ExoPlayer and MPV fallback cases still open
       // paused and switch before visible playback starts.
       final settingsService = await SettingsService.getInstance();
-      if (!mounted || player != currentPlayer) return;
+      if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
       final displayCriteria = result.mediaInfo?.displayCriteria;
       final preKnownFps = displayCriteria?.fps;
       final willAutoSwitch =
@@ -257,7 +268,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         } else {
           await currentPlayer.requestAudioFocus();
         }
-        if (!mounted || player != currentPlayer) return;
+        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
 
         // Pass resume position if available.
         // In offline mode, prefer locally tracked progress over the cached server value
@@ -324,7 +335,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           timelineOffset: openTiming.timelineOffset,
           timelineDuration: openTiming.timelineDuration,
         );
-        if (!mounted || player != currentPlayer) return;
+        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
 
         // Apply subtitle styling to ExoPlayer native layer (CaptionStyleCompat + libass font scale)
         // Must be called after open() since that's when ExoPlayer initializes
@@ -383,15 +394,18 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         }
 
         await _initVideoFilterAndPip();
-        if (!mounted || player != currentPlayer) return;
+        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
 
         if (player == currentPlayer) {
           // Auto-PiP: set up callback for API 26-30 path and initial state
           if (_autoPipEnabled) {
-            PipService.onAutoPipEntering = () {
+            final autoPipEnteringCallback = () {
+              if (!mounted || player != currentPlayer) return;
               _setAndroidAutoPipTransitionInFlight(true, reason: 'native_auto_pip_entering');
               _preparePipFiltersForEntry();
             };
+            _autoPipEnteringCallback = autoPipEnteringCallback;
+            PipService.onAutoPipEntering = autoPipEnteringCallback;
             final pipManager = _videoPIPManager;
             if (currentPlayer.state.playing && pipManager != null) {
               unawaited(pipManager.updateAutoPipState(isPlaying: true));
@@ -410,7 +424,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             await _restoreAmbientLighting();
           }
         }
-        if (!mounted || player != currentPlayer) return;
+        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
 
         // Track manager: owns track selection, external subtitle loading, and Plex
         // immediate stream writes. Jellyfin persists selected stream indexes through

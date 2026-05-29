@@ -47,6 +47,7 @@ import '../widgets/side_navigation_rail.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import 'discover_screen.dart';
+import 'libraries/library_quick_picker_sheet.dart';
 import 'libraries/libraries_screen.dart';
 import 'livetv/live_tv_screen.dart';
 import 'search_screen.dart';
@@ -337,32 +338,35 @@ class _MainScreenState extends State<MainScreen>
 
     // Wire profile binder + tracker bootstrap (skip in offline mode)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (mounted) {
-        final activeProfile = context.read<ActiveProfileProvider>();
-        _activeProfileForListener = activeProfile;
-        _lastSeenProfileId = activeProfile.activeId;
-        activeProfile.addListener(_onActiveProfileChanged);
-        _plexHomeService = context.read<PlexHomeService>();
-        unawaited(_plexHomeService!.start());
-        final manager = context.read<MultiServerProvider>().serverManager;
-        // Read the binder so the Provider's `lazy: false` create has fired
-        // for sure; start only in online mode so explicit startup offline does
-        // not immediately kick off the same connection attempts it skipped.
-        final binder = context.read<ActiveProfileBinder>();
-        if (!_isOffline) binder.start();
-        _runStartupOnFirstOnlineServer(manager);
-      }
+      if (!mounted) return;
+
+      final activeProfile = context.read<ActiveProfileProvider>();
+      _activeProfileForListener = activeProfile;
+      _lastSeenProfileId = activeProfile.activeId;
+      activeProfile.addListener(_onActiveProfileChanged);
+      _plexHomeService = context.read<PlexHomeService>();
+      unawaited(_plexHomeService!.start());
+      final manager = context.read<MultiServerProvider>().serverManager;
+      // Read the binder so the Provider's `lazy: false` create has fired
+      // for sure; start only in online mode so explicit startup offline does
+      // not immediately kick off the same connection attempts it skipped.
+      final binder = context.read<ActiveProfileBinder>();
+      if (!_isOffline) binder.start();
+      _runStartupOnFirstOnlineServer(manager);
+
       if (!_isOffline) {
         // Settings-only initialization — profile identity is managed by
         // ActiveProfileProvider + ActiveProfileBinder.
         final userProfileProvider = context.userProfile;
         await userProfileProvider.initialize();
+        if (!mounted) return;
 
         // Ensure first login (or any unset profile state) requires explicit selection.
         await _promptForInitialProfileSelection();
+        if (!mounted) return;
 
         // Auto-start companion remote server once the active profile is known.
-        if (_companionRemoteSetup && mounted) {
+        if (_companionRemoteSetup) {
           unawaited(_autoStartCompanionRemoteServer());
         }
       }
@@ -576,6 +580,7 @@ class _MainScreenState extends State<MainScreen>
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
+    if (!mounted) return;
     _isShowingProfileSelection = false;
     _updateTvosMenuPassthrough();
   }
@@ -859,6 +864,7 @@ class _MainScreenState extends State<MainScreen>
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
+    if (!mounted) return;
     _isShowingProfileSelection = false;
     _updateTvosMenuPassthrough();
   }
@@ -890,6 +896,7 @@ class _MainScreenState extends State<MainScreen>
           NavigationTabId.libraries => LibrariesScreen(
             key: _librariesKey,
             onLibraryOrderChanged: _onLibraryOrderChanged,
+            onLibrarySelected: _handleLibrariesScreenSelected,
           ),
           NavigationTabId.liveTv => LiveTvScreen(key: _liveTvKey),
           NavigationTabId.search => SearchScreen(key: _searchKey),
@@ -1104,6 +1111,7 @@ class _MainScreenState extends State<MainScreen>
   }
 
   void _updateTvosMenuPassthrough() {
+    if (!mounted) return;
     _setTvosMenuPassthrough(_shouldPassTvosMenuToSystem);
   }
 
@@ -1396,6 +1404,63 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
+  void _handleLibrariesScreenSelected(String libraryGlobalKey) {
+    if (_selectedLibraryGlobalKey == libraryGlobalKey) return;
+    setState(() => _selectedLibraryGlobalKey = libraryGlobalKey);
+  }
+
+  void _showLibraryQuickPicker(BuildContext context) {
+    if (_isOffline) return;
+
+    final controller = OverlaySheetController.of(context);
+    final groupByServer = SettingsService.instanceOrNull?.read(SettingsService.groupLibrariesByServer) ?? false;
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.62;
+
+    controller
+        .show<String>(
+          showDragHandle: true,
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          builder: (sheetContext) {
+            return Consumer2<LibrariesProvider, HiddenLibrariesProvider>(
+              builder: (context, librariesProvider, hiddenLibrariesProvider, _) {
+                if (!hiddenLibrariesProvider.isInitialized) {
+                  return LibraryQuickPickerSheet(
+                    libraries: const [],
+                    selectedLibraryKey: _selectedLibraryGlobalKey,
+                    isLoading: true,
+                    groupByServer: groupByServer,
+                    emptyMessage: t.libraries.noLibrariesFound,
+                    onSelected: (libraryGlobalKey) => controller.close(libraryGlobalKey),
+                  );
+                }
+
+                final allLibraries = librariesProvider.libraries;
+                final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
+                final visibleLibraries = allLibraries
+                    .where((library) => !hiddenKeys.contains(library.globalKey))
+                    .toList();
+                final emptyMessage = allLibraries.isEmpty
+                    ? t.libraries.noLibrariesFound
+                    : t.libraries.allLibrariesHidden;
+
+                return LibraryQuickPickerSheet(
+                  libraries: visibleLibraries,
+                  selectedLibraryKey: _selectedLibraryGlobalKey,
+                  isLoading: librariesProvider.isLoading,
+                  groupByServer: groupByServer,
+                  emptyMessage: emptyMessage,
+                  onSelected: (libraryGlobalKey) => controller.close(libraryGlobalKey),
+                );
+              },
+            );
+          },
+        )
+        .then((libraryGlobalKey) {
+          if (!mounted || libraryGlobalKey == null) return;
+          _selectLibrary(libraryGlobalKey);
+        });
+  }
+
   /// Whether the Live TV tab is currently visible
   /// Use the synchronized value so screens list and nav bar always agree.
   /// Updated by _handleLiveTvChanged when the provider notifies.
@@ -1418,9 +1483,52 @@ class _MainScreenState extends State<MainScreen>
     };
   }
 
-  /// Build navigation destinations for bottom navigation bar.
-  List<NavigationDestination> _buildNavDestinations(bool isOffline) {
-    return _getVisibleTabs(isOffline).map((tab) => tab.toDestination()).toList();
+  Widget _buildBottomNavigationBar(BuildContext context, {required bool hideLabels}) {
+    final tabs = _getVisibleTabs(_isOffline);
+    final navigationBar = NavigationBar(
+      selectedIndex: _currentIndex,
+      onDestinationSelected: (i) {
+        if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
+      },
+      labelBehavior: hideLabels
+          ? NavigationDestinationLabelBehavior.alwaysHide
+          : NavigationDestinationLabelBehavior.alwaysShow,
+      destinations: tabs.map((tab) => tab.toDestination()).toList(),
+    );
+
+    final librariesIndex = tabs.indexWhere((tab) => tab.id == NavigationTabId.libraries);
+    if (librariesIndex < 0 || tabs.isEmpty) return navigationBar;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (!constraints.hasBoundedWidth) return navigationBar;
+
+        final itemWidth = constraints.maxWidth / tabs.length;
+        final isRtl = Directionality.of(context) == TextDirection.rtl;
+        final left = isRtl ? constraints.maxWidth - (itemWidth * (librariesIndex + 1)) : itemWidth * librariesIndex;
+
+        return Stack(
+          children: [
+            navigationBar,
+            Positioned(
+              left: left,
+              top: 0,
+              bottom: 0,
+              width: itemWidth,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                excludeFromSemantics: true,
+                onLongPress: () {
+                  Feedback.forLongPress(context);
+                  _showLibraryQuickPicker(context);
+                },
+                child: const SizedBox.expand(),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -1595,17 +1703,7 @@ class _MainScreenState extends State<MainScreen>
                     final hideLabels = !showNavBarLabels;
                     return NavigationBarTheme(
                       data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
-                      child: NavigationBar(
-                        selectedIndex: _currentIndex,
-                        onDestinationSelected: (i) {
-                          final tabs = _getVisibleTabs(_isOffline);
-                          if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
-                        },
-                        labelBehavior: hideLabels
-                            ? NavigationDestinationLabelBehavior.alwaysHide
-                            : NavigationDestinationLabelBehavior.alwaysShow,
-                        destinations: _buildNavDestinations(_isOffline),
-                      ),
+                      child: _buildBottomNavigationBar(context, hideLabels: hideLabels),
                     );
                   },
                 ),

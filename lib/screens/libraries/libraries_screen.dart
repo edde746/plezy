@@ -71,8 +71,9 @@ class ContextMenuItem {
 
 class LibrariesScreen extends StatefulWidget {
   final VoidCallback? onLibraryOrderChanged;
+  final ValueChanged<String>? onLibrarySelected;
 
-  const LibrariesScreen({super.key, this.onLibraryOrderChanged});
+  const LibrariesScreen({super.key, this.onLibraryOrderChanged, this.onLibrarySelected});
 
   @override
   State<LibrariesScreen> createState() => _LibrariesScreenState();
@@ -469,6 +470,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       // Clear loaded tabs tracking for new library
       _loadedTabs.clear();
     });
+    widget.onLibrarySelected?.call(libraryGlobalKey);
 
     // The new TabBarView mounts with fresh inner positions at offset 0;
     // bring the floating header back too. Also covers the case where the

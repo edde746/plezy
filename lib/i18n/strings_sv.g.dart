@@ -143,6 +143,7 @@ class _TranslationsCommonSv extends TranslationsCommonEn {
 	@override String get yes => 'Ja';
 	@override String get no => 'Nej';
 	@override String get delete => 'Ta bort';
+	@override String get edit => 'Redigera';
 	@override String get shuffle => 'Blanda';
 	@override String get addTo => 'Lägg till i...';
 	@override String get createNew => 'Skapa ny';
@@ -253,6 +254,8 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Visa säsongs- och avsnittsnummer på avsnittskort';
 	@override String get showSeasonPostersOnTabs => 'Visa säsongsaffischer på flikar';
 	@override String get showSeasonPostersOnTabsDescription => 'Visa varje säsongs affisch ovanför fliken';
+	@override String get tvFullCardLayout => 'Heltäckande TV-kort';
+	@override String get tvFullCardLayoutDescription => 'Använd TV-kort med enbart bild och skådespelarnamn ovanpå';
 	@override String get hideSpoilers => 'Dölj spoilers för osedda avsnitt';
 	@override String get hideSpoilersDescription => 'Sudda miniatyrbilder och beskrivningar för osedda avsnitt';
 	@override String get playerBackend => 'Spelarmotor';
@@ -602,6 +605,7 @@ class _TranslationsVideoControlsSv extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Spelar i bild-i-bild';
 	@override String get pipFailed => 'Bild-i-bild kunde inte starta';
 	@override String get screenshotSaved => 'Skärmbild sparad';
+	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsSv pipErrors = _TranslationsVideoControlsPipErrorsSv._(_root);
 	@override String get chapters => 'Kapitel';
 	@override String get noChaptersAvailable => 'Inga kapitel tillgängliga';
@@ -812,6 +816,8 @@ class _TranslationsConnectionsSv extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => 'Sessionen har gått ut för ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Sessionen har gått ut för ${count} servrar';
 	@override String get signInAgain => 'Logga in igen';
+	@override String get editJellyfinTitle => 'Redigera Jellyfin-anslutning';
+	@override String editJellyfinIntro({required Object serverName}) => 'Lägg till eller ta bort URL:er för ${serverName}. Plezy använder den nåbara URL:en med lägst latens.';
 }
 
 // Path: discover
@@ -1303,6 +1309,7 @@ class _TranslationsVideoSettingsSv extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Uppspelningshastighet';
+	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Sovtimer';
 	@override String get audioSync => 'Ljudsynkronisering';
 	@override String get subtitleSync => 'Undertextsynkronisering';
@@ -1502,7 +1509,9 @@ class _TranslationsAddServerSv extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Lägg till Jellyfin-server';
 	@override String get jellyfinUrlIntro => 'Ange server-URL, t.ex. `https://jellyfin.example.com`.';
+	@override String get jellyfinUrlsIntro => 'Ange en eller flera server-URL:er, separerade med kommatecken eller nya rader. Plezy använder den nåbara URL:en med lägst latens.';
 	@override String get serverUrl => 'Server-URL';
+	@override String get serverUrls => 'Server-URL:er';
 	@override String get findServer => 'Hitta server';
 	@override String get username => 'Användarnamn';
 	@override String get password => 'Lösenord';
@@ -1558,6 +1567,9 @@ class _TranslationsHotkeysActionsSv extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => 'Öka hastighet';
 	@override String get speedDecrease => 'Minska hastighet';
 	@override String get speedReset => 'Återställ hastighet';
+	@override String get zoomIn => 'Zooma in';
+	@override String get zoomOut => 'Zooma ut';
+	@override String get zoomReset => 'Återställ zoom';
 	@override String get subSeekNext => 'Hoppa till nästa undertext';
 	@override String get subSeekPrev => 'Hoppa till föregående undertext';
 	@override String get shaderToggle => 'Växla shaders';
@@ -1833,6 +1845,7 @@ extension on TranslationsSv {
 			'common.yes' => 'Ja',
 			'common.no' => 'Nej',
 			'common.delete' => 'Ta bort',
+			'common.edit' => 'Redigera',
 			'common.shuffle' => 'Blanda',
 			'common.addTo' => 'Lägg till i...',
 			'common.createNew' => 'Skapa ny',
@@ -1916,6 +1929,8 @@ extension on TranslationsSv {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Visa säsongs- och avsnittsnummer på avsnittskort',
 			'settings.showSeasonPostersOnTabs' => 'Visa säsongsaffischer på flikar',
 			'settings.showSeasonPostersOnTabsDescription' => 'Visa varje säsongs affisch ovanför fliken',
+			'settings.tvFullCardLayout' => 'Heltäckande TV-kort',
+			'settings.tvFullCardLayoutDescription' => 'Använd TV-kort med enbart bild och skådespelarnamn ovanpå',
 			'settings.hideSpoilers' => 'Dölj spoilers för osedda avsnitt',
 			'settings.hideSpoilersDescription' => 'Sudda miniatyrbilder och beskrivningar för osedda avsnitt',
 			'settings.playerBackend' => 'Spelarmotor',
@@ -2089,6 +2104,9 @@ extension on TranslationsSv {
 			'hotkeys.actions.speedIncrease' => 'Öka hastighet',
 			'hotkeys.actions.speedDecrease' => 'Minska hastighet',
 			'hotkeys.actions.speedReset' => 'Återställ hastighet',
+			'hotkeys.actions.zoomIn' => 'Zooma in',
+			'hotkeys.actions.zoomOut' => 'Zooma ut',
+			'hotkeys.actions.zoomReset' => 'Återställ zoom',
 			'hotkeys.actions.subSeekNext' => 'Hoppa till nästa undertext',
 			'hotkeys.actions.subSeekPrev' => 'Hoppa till föregående undertext',
 			'hotkeys.actions.shaderToggle' => 'Växla shaders',
@@ -2214,6 +2232,7 @@ extension on TranslationsSv {
 			'videoControls.pipActive' => 'Spelar i bild-i-bild',
 			'videoControls.pipFailed' => 'Bild-i-bild kunde inte starta',
 			'videoControls.screenshotSaved' => 'Skärmbild sparad',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Kräver Android 8.0 eller nyare',
 			'videoControls.pipErrors.iosVersion' => 'Kräver iOS 15.0 eller nyare',
 			'videoControls.pipErrors.permissionDisabled' => 'Bild-i-bild är inaktiverat. Aktivera det i systeminställningarna.',
@@ -2306,6 +2325,8 @@ extension on TranslationsSv {
 			'profiles.addPlezyProfile' => 'Lägg till Plezy-profil',
 			'profiles.switchingProfile' => 'Byter profil…',
 			'profiles.deleteThisProfileTitle' => 'Ta bort denna profil?',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Ta bort ${displayName}. Anslutningar påverkas inte.',
 			'profiles.active' => 'Aktiv',
 			'profiles.manage' => 'Hantera',
@@ -2313,8 +2334,6 @@ extension on TranslationsSv {
 			'profiles.signOut' => 'Logga ut',
 			'profiles.signOutPlexTitle' => 'Logga ut från Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Ta bort ${displayName} och alla Plex Home-användare? Du kan logga in igen när som helst.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signedOutPlex' => 'Utloggad från Plex.',
 			'profiles.signOutFailed' => 'Utloggningen misslyckades.',
 			'profiles.sectionTitle' => 'Profiler',
@@ -2369,6 +2388,8 @@ extension on TranslationsSv {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessionen har gått ut för ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sessionen har gått ut för ${count} servrar',
 			'connections.signInAgain' => 'Logga in igen',
+			'connections.editJellyfinTitle' => 'Redigera Jellyfin-anslutning',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Lägg till eller ta bort URL:er för ${serverName}. Plezy använder den nåbara URL:en med lägst latens.',
 			'discover.title' => 'Upptäck',
 			'discover.switchProfile' => 'Byt profil',
 			'discover.noContentAvailable' => 'Inget innehåll tillgängligt',
@@ -2789,6 +2810,7 @@ extension on TranslationsSv {
 			'companionRemote.remote.audio' => 'Ljud',
 			'companionRemote.remote.searchHint' => 'Sök på datorn...',
 			'videoSettings.playbackSpeed' => 'Uppspelningshastighet',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sovtimer',
 			'videoSettings.audioSync' => 'Ljudsynkronisering',
 			'videoSettings.subtitleSync' => 'Undertextsynkronisering',
@@ -2817,6 +2839,8 @@ extension on TranslationsSv {
 			'metadataEdit.basicInfo' => 'Grundläggande info',
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Avancerade inställningar',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.title' => 'Titel',
 			'metadataEdit.sortTitle' => 'Sorteringstitel',
 			'metadataEdit.originalTitle' => 'Originaltitel',
@@ -2827,8 +2851,6 @@ extension on TranslationsSv {
 			'metadataEdit.summary' => 'Sammanfattning',
 			'metadataEdit.poster' => 'Poster',
 			'metadataEdit.background' => 'Bakgrund',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => 'Logotyp',
 			'metadataEdit.squareArt' => 'Kvadratisk bild',
 			'metadataEdit.selectPoster' => 'Välj poster',
@@ -2947,7 +2969,9 @@ extension on TranslationsSv {
 			'trackers.libraryFilter.noLibraries' => 'Inga bibliotek tillgängliga',
 			'addServer.addJellyfinTitle' => 'Lägg till Jellyfin-server',
 			'addServer.jellyfinUrlIntro' => 'Ange server-URL, t.ex. `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => 'Ange en eller flera server-URL:er, separerade med kommatecken eller nya rader. Plezy använder den nåbara URL:en med lägst latens.',
 			'addServer.serverUrl' => 'Server-URL',
+			'addServer.serverUrls' => 'Server-URL:er',
 			'addServer.findServer' => 'Hitta server',
 			'addServer.username' => 'Användarnamn',
 			'addServer.password' => 'Lösenord',

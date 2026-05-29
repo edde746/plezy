@@ -143,6 +143,7 @@ class _TranslationsCommonKo extends TranslationsCommonEn {
 	@override String get yes => '예';
 	@override String get no => '아니오';
 	@override String get delete => '삭제';
+	@override String get edit => '편집';
 	@override String get shuffle => '무작위 재생';
 	@override String get addTo => '추가하기...';
 	@override String get createNew => '새로 만들기';
@@ -253,6 +254,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => '에피소드 카드에 시즌 및 에피소드 번호 표시';
 	@override String get showSeasonPostersOnTabs => '탭에 시즌 포스터 표시';
 	@override String get showSeasonPostersOnTabsDescription => '각 시즌 포스터를 탭 위에 표시';
+	@override String get tvFullCardLayout => '전체 TV 카드';
+	@override String get tvFullCardLayoutDescription => 'TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시';
 	@override String get hideSpoilers => '미시청 에피소드 스포일러 숨기기';
 	@override String get hideSpoilersDescription => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리';
 	@override String get playerBackend => '플레이어 백엔드';
@@ -602,6 +605,7 @@ class _TranslationsVideoControlsKo extends TranslationsVideoControlsEn {
 	@override String get pipActive => '화면 속 화면으로 재생 중';
 	@override String get pipFailed => '화면 속 화면 모드를 시작할 수 없습니다';
 	@override String get screenshotSaved => '스크린샷 저장됨';
+	@override String zoomPercent({required Object percent}) => '확대/축소 ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsKo pipErrors = _TranslationsVideoControlsPipErrorsKo._(_root);
 	@override String get chapters => '챕터';
 	@override String get noChaptersAvailable => '사용 가능한 챕터가 없습니다';
@@ -812,6 +816,8 @@ class _TranslationsConnectionsKo extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => '${name} 의 세션이 만료되었습니다';
 	@override String sessionExpiredMany({required Object count}) => '${count} 개의 서버에서 세션이 만료되었습니다';
 	@override String get signInAgain => '다시 로그인';
+	@override String get editJellyfinTitle => 'Jellyfin 연결 편집';
+	@override String editJellyfinIntro({required Object serverName}) => '${serverName}의 URL을 추가하거나 제거하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.';
 }
 
 // Path: discover
@@ -1303,6 +1309,7 @@ class _TranslationsVideoSettingsKo extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => '재생 속도';
+	@override String get zoom => '확대/축소';
 	@override String get sleepTimer => '취침 타이머';
 	@override String get audioSync => '오디오 동기화';
 	@override String get subtitleSync => '자막 동기화';
@@ -1502,7 +1509,9 @@ class _TranslationsAddServerKo extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Jellyfin 서버 추가';
 	@override String get jellyfinUrlIntro => '서버 URL을 입력하세요. 예: `https://jellyfin.example.com`.';
+	@override String get jellyfinUrlsIntro => '서버 URL을 하나 이상 쉼표나 줄바꿈으로 구분해 입력하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.';
 	@override String get serverUrl => '서버 URL';
+	@override String get serverUrls => '서버 URL';
 	@override String get findServer => '서버 찾기';
 	@override String get username => '사용자 이름';
 	@override String get password => '비밀번호';
@@ -1558,6 +1567,9 @@ class _TranslationsHotkeysActionsKo extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => '속도 높이기';
 	@override String get speedDecrease => '속도 낮추기';
 	@override String get speedReset => '속도 초기화';
+	@override String get zoomIn => '확대';
+	@override String get zoomOut => '축소';
+	@override String get zoomReset => '확대/축소 초기화';
 	@override String get subSeekNext => '다음 자막으로 이동';
 	@override String get subSeekPrev => '이전 자막으로 이동';
 	@override String get shaderToggle => '셰이더 전환';
@@ -1833,6 +1845,7 @@ extension on TranslationsKo {
 			'common.yes' => '예',
 			'common.no' => '아니오',
 			'common.delete' => '삭제',
+			'common.edit' => '편집',
 			'common.shuffle' => '무작위 재생',
 			'common.addTo' => '추가하기...',
 			'common.createNew' => '새로 만들기',
@@ -1916,6 +1929,8 @@ extension on TranslationsKo {
 			'settings.showEpisodeNumberOnCardsDescription' => '에피소드 카드에 시즌 및 에피소드 번호 표시',
 			'settings.showSeasonPostersOnTabs' => '탭에 시즌 포스터 표시',
 			'settings.showSeasonPostersOnTabsDescription' => '각 시즌 포스터를 탭 위에 표시',
+			'settings.tvFullCardLayout' => '전체 TV 카드',
+			'settings.tvFullCardLayoutDescription' => 'TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시',
 			'settings.hideSpoilers' => '미시청 에피소드 스포일러 숨기기',
 			'settings.hideSpoilersDescription' => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리',
 			'settings.playerBackend' => '플레이어 백엔드',
@@ -2089,6 +2104,9 @@ extension on TranslationsKo {
 			'hotkeys.actions.speedIncrease' => '속도 높이기',
 			'hotkeys.actions.speedDecrease' => '속도 낮추기',
 			'hotkeys.actions.speedReset' => '속도 초기화',
+			'hotkeys.actions.zoomIn' => '확대',
+			'hotkeys.actions.zoomOut' => '축소',
+			'hotkeys.actions.zoomReset' => '확대/축소 초기화',
 			'hotkeys.actions.subSeekNext' => '다음 자막으로 이동',
 			'hotkeys.actions.subSeekPrev' => '이전 자막으로 이동',
 			'hotkeys.actions.shaderToggle' => '셰이더 전환',
@@ -2214,6 +2232,7 @@ extension on TranslationsKo {
 			'videoControls.pipActive' => '화면 속 화면으로 재생 중',
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.screenshotSaved' => '스크린샷 저장됨',
+			'videoControls.zoomPercent' => ({required Object percent}) => '확대/축소 ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 이상이 필요합니다',
 			'videoControls.pipErrors.permissionDisabled' => '화면 속 화면이 비활성화되어 있습니다. 시스템 설정에서 활성화하세요.',
@@ -2306,6 +2325,8 @@ extension on TranslationsKo {
 			'profiles.addPlezyProfile' => 'Plezy 프로필 추가',
 			'profiles.switchingProfile' => '프로필 전환 중…',
 			'profiles.deleteThisProfileTitle' => '이 프로필을 삭제하시겠습니까?',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName}을(를) 제거합니다. 연결에는 영향이 없습니다.',
 			'profiles.active' => '활성',
 			'profiles.manage' => '관리',
@@ -2313,8 +2334,6 @@ extension on TranslationsKo {
 			'profiles.signOut' => '로그아웃',
 			'profiles.signOutPlexTitle' => 'Plex에서 로그아웃하시겠습니까?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} 및 모든 Plex Home 사용자를 제거할까요? 언제든 다시 로그인할 수 있습니다.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signedOutPlex' => 'Plex에서 로그아웃되었습니다.',
 			'profiles.signOutFailed' => '로그아웃에 실패했습니다.',
 			'profiles.sectionTitle' => '프로필',
@@ -2369,6 +2388,8 @@ extension on TranslationsKo {
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} 의 세션이 만료되었습니다',
 			'connections.sessionExpiredMany' => ({required Object count}) => '${count} 개의 서버에서 세션이 만료되었습니다',
 			'connections.signInAgain' => '다시 로그인',
+			'connections.editJellyfinTitle' => 'Jellyfin 연결 편집',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => '${serverName}의 URL을 추가하거나 제거하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.',
 			'discover.title' => '발견',
 			'discover.switchProfile' => '사용자 전환',
 			'discover.noContentAvailable' => '사용 가능한 콘텐츠가 없습니다',
@@ -2789,6 +2810,7 @@ extension on TranslationsKo {
 			'companionRemote.remote.audio' => '오디오',
 			'companionRemote.remote.searchHint' => '데스크톱에서 검색...',
 			'videoSettings.playbackSpeed' => '재생 속도',
+			'videoSettings.zoom' => '확대/축소',
 			'videoSettings.sleepTimer' => '취침 타이머',
 			'videoSettings.audioSync' => '오디오 동기화',
 			'videoSettings.subtitleSync' => '자막 동기화',
@@ -2817,6 +2839,8 @@ extension on TranslationsKo {
 			'metadataEdit.basicInfo' => '기본 정보',
 			'metadataEdit.artwork' => '아트워크',
 			'metadataEdit.advancedSettings' => '고급 설정',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.title' => '제목',
 			'metadataEdit.sortTitle' => '정렬 제목',
 			'metadataEdit.originalTitle' => '원제',
@@ -2827,8 +2851,6 @@ extension on TranslationsKo {
 			'metadataEdit.summary' => '줄거리',
 			'metadataEdit.poster' => '포스터',
 			'metadataEdit.background' => '배경',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => '로고',
 			'metadataEdit.squareArt' => '정사각형 아트',
 			'metadataEdit.selectPoster' => '포스터 선택',
@@ -2947,7 +2969,9 @@ extension on TranslationsKo {
 			'trackers.libraryFilter.noLibraries' => '사용 가능한 라이브러리가 없습니다',
 			'addServer.addJellyfinTitle' => 'Jellyfin 서버 추가',
 			'addServer.jellyfinUrlIntro' => '서버 URL을 입력하세요. 예: `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => '서버 URL을 하나 이상 쉼표나 줄바꿈으로 구분해 입력하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.',
 			'addServer.serverUrl' => '서버 URL',
+			'addServer.serverUrls' => '서버 URL',
 			'addServer.findServer' => '서버 찾기',
 			'addServer.username' => '사용자 이름',
 			'addServer.password' => '비밀번호',

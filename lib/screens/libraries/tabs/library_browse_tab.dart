@@ -1518,7 +1518,12 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
     return [
       SettingsBuilder(
-        prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.episodePosterMode],
+        prefs: const [
+          SettingsService.viewMode,
+          SettingsService.libraryDensity,
+          SettingsService.episodePosterMode,
+          SettingsService.tvFullCardLayout,
+        ],
         builder: (context) => _buildItemsSliver(context),
       ),
     ];
@@ -1575,6 +1580,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final viewMode = svc.read(SettingsService.viewMode);
     final libraryDensity = svc.read(SettingsService.libraryDensity);
     final episodePosterMode = svc.read(SettingsService.episodePosterMode);
+    final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
     final itemCount = totalSize;
     final isPhone = _isPhone(context);
     final topPadding = isPhone ? _gridTopPaddingPhone : _gridTopPadding;
@@ -1618,17 +1624,28 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         padding: EdgeInsets.fromLTRB(8, topPadding, rightPadding, 8),
         sliver: SliverLayoutBuilder(
           builder: (context, constraints) {
+            final gridSpacing = MediaGridDelegate.spacingFor(context: context, fullBleedImage: fullCardLayout);
             // Compute column count from the width the grid would have without the alpha
             // bar's reservation, so toggling the bar doesn't repack the grid into one
             // fewer column and blow up poster size.
             final baselineWidth = constraints.crossAxisExtent + (rightPadding - 8.0);
-            final columnCount = GridSizeCalculator.getColumnCount(baselineWidth, effectiveMaxExtent);
+            final columnCount = GridSizeCalculator.getColumnCount(
+              baselineWidth,
+              effectiveMaxExtent,
+              crossAxisSpacing: gridSpacing,
+            );
             // Cache grid metrics for alpha jump bar scroll calculations
-            final itemWidth = constraints.crossAxisExtent / columnCount;
-            final itemHeight = itemWidth / GridLayoutConstants.posterAspectRatio;
+            final itemWidth = GridSizeCalculator.getCellWidthForColumnCount(
+              constraints.crossAxisExtent,
+              columnCount,
+              crossAxisSpacing: gridSpacing,
+            );
+            final itemHeight =
+                itemWidth /
+                MediaGridDelegate.aspectRatioFor(useWideAspectRatio: useWideRatio, fullBleedImage: fullCardLayout);
             _scrollMetrics = LibraryAlphaScrollMetrics(
               columnCount: columnCount,
-              rowHeight: itemHeight + GridLayoutConstants.mainAxisSpacing,
+              rowHeight: itemHeight + gridSpacing,
               itemWidth: itemWidth,
               itemHeight: itemHeight,
             );
@@ -1637,7 +1654,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
                 context: context,
                 density: libraryDensity,
                 useWideAspectRatio: useWideRatio,
-                maxCrossAxisExtentOverride: hasAlphaBarReservation ? constraints.crossAxisExtent / columnCount : null,
+                fullBleedImage: fullCardLayout,
+                maxCrossAxisExtentOverride: hasAlphaBarReservation ? itemWidth : null,
               ),
               itemCount: itemCount,
               itemBuilder: (context, index) => _buildMediaCardItem(
@@ -1647,6 +1665,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
                 isLastColumn: (index % columnCount) == (columnCount - 1),
                 columnCount: columnCount,
                 itemCount: itemCount,
+                fullBleedImage: fullCardLayout,
               ),
             );
           },
@@ -1661,6 +1680,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     required bool isFirstColumn,
     bool isLastColumn = false,
     bool disableScale = false,
+    bool fullBleedImage = false,
     int columnCount = 1,
     int itemCount = 0,
   }) {
@@ -1718,6 +1738,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       onBack: widget.onBack,
       onFocusChange: (hasFocus) => trackGridItemFocus(index, hasFocus),
       onListRefresh: _loadItems,
+      fullBleedImage: fullBleedImage,
     );
   }
 

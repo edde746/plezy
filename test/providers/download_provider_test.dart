@@ -127,6 +127,31 @@ void main() {
     });
   });
 
+  group('DownloadProvider — local file selection', () {
+    test('falls back to media index when caller has no source id', () async {
+      const globalKey = 'srv:movie-1';
+      await db.insertDownload(
+        serverId: 'srv',
+        ratingKey: 'movie-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+        mediaIndex: 0,
+        mediaSourceId: 'source-a',
+      );
+      await db.updateVideoFilePath(globalKey, 'content://offline/movie-1-v1');
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(ownedDownloadKeys: {globalKey});
+
+      expect(await p.getVideoFilePath(globalKey, mediaIndex: 1), isNull);
+      expect(await p.getVideoFilePath(globalKey, mediaIndex: 0), 'content://offline/movie-1-v1');
+
+      p.dispose();
+    });
+  });
+
   group('DownloadProvider — sync rule CRUD', () {
     test('createSyncRule inserts into the database and updates the in-memory map', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
@@ -771,6 +796,58 @@ void main() {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
       expect(p.getMetadata('srv:absent'), isNull);
+      p.dispose();
+    });
+
+    test('watched progress events mark downloaded metadata watched and clear resume', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+
+      final item = MediaItem(
+        id: '42',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Movie',
+        serverId: 'srv',
+        durationMs: 100000,
+        viewOffsetMs: 12000,
+        viewCount: 0,
+      );
+      p.debugSeedState(metadata: {'srv:42': item});
+
+      WatchStateNotifier().notifyProgress(item: item, viewOffset: 95000, duration: 100000, watchedThreshold: 0.9);
+      await Future<void>.delayed(Duration.zero);
+
+      final updated = p.getMetadata('srv:42');
+      expect(updated?.isWatched, isTrue);
+      expect(updated?.viewOffsetMs, 0);
+
+      p.dispose();
+    });
+
+    test('sub-threshold progress events update downloaded metadata resume', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+
+      final item = MediaItem(
+        id: '42',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Movie',
+        serverId: 'srv',
+        durationMs: 100000,
+        viewOffsetMs: 0,
+        viewCount: 1,
+      );
+      p.debugSeedState(metadata: {'srv:42': item});
+
+      WatchStateNotifier().notifyProgress(item: item, viewOffset: 50000, duration: 100000, watchedThreshold: 0.9);
+      await Future<void>.delayed(Duration.zero);
+
+      final updated = p.getMetadata('srv:42');
+      expect(updated?.isWatched, isFalse);
+      expect(updated?.viewOffsetMs, 50000);
+
       p.dispose();
     });
   });

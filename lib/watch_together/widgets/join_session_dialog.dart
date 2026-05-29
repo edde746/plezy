@@ -94,8 +94,6 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
                     }
                     return null;
                   },
-                  onNavigateUp: _closeFocusNode.requestFocus,
-                  onNavigateDown: _joinFocusNode.requestFocus,
                   onFieldSubmitted: (_) => _join(),
                   autofocus: true,
                 ),

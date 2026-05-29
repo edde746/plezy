@@ -37,6 +37,10 @@ class PlaybackProgressTracker {
   /// Service for queuing offline progress updates
   final OfflineWatchSyncService? offlineWatchService;
 
+  /// Queue the latest progress locally if online reporting fails. Used for
+  /// downloaded/local playback where playback can continue without a server.
+  final bool queueOnOnlineFailure;
+
   final String? playMethod;
 
   /// Backend session ID to echo in progress reports. Jellyfin uses this to
@@ -70,6 +74,8 @@ class PlaybackProgressTracker {
   /// Whether the final stopped progress event was already emitted locally.
   bool _stopProgressNotified = false;
 
+  Future<void>? _stoppedProgressFuture;
+
   Duration? _lastProgressNotifiedPosition;
 
   static const Duration _progressNotifyDelta = Duration(seconds: 30);
@@ -82,6 +88,7 @@ class PlaybackProgressTracker {
     required this.player,
     this.isOffline = false,
     this.offlineWatchService,
+    this.queueOnOnlineFailure = false,
     this.playMethod,
     this.playSessionId,
     this.mediaInfo,
@@ -152,15 +159,32 @@ class PlaybackProgressTracker {
     appLogger.d('Stopped progress tracking');
   }
 
-  /// [state] can be 'playing', 'paused', or 'stopped'
-  Future<void> sendProgress(String state) async {
-    await _sendProgress(state);
+  /// [state] can be 'playing', 'paused', or 'stopped'.
+  Future<void> sendProgress(String state, {Duration? positionOverride}) async {
+    await _sendProgress(state, positionOverride: positionOverride);
   }
 
-  Future<void> _sendProgress(String state) async {
+  Future<void> sendStoppedProgressOnce({Duration? positionOverride}) {
+    final existing = _stoppedProgressFuture;
+    if (existing != null) return existing;
+    final future = sendProgress('stopped', positionOverride: positionOverride);
+    _stoppedProgressFuture = future;
+    return future;
+  }
+
+  void resumeAfterStoppedReport() {
+    _stoppedProgressFuture = null;
+    _reportSession?.resetAfterStop();
+  }
+
+  Future<void> _sendProgress(String state, {Duration? positionOverride}) async {
+    Duration? attemptedPosition;
+    Duration? attemptedDuration;
     try {
-      final position = player.state.position;
       final duration = player.state.duration;
+      final position = _clampPosition(positionOverride ?? player.state.position, duration);
+      attemptedPosition = position;
+      attemptedDuration = duration;
 
       // Don't send progress if no duration (not ready)
       if (duration.inMilliseconds == 0) {
@@ -197,6 +221,7 @@ class PlaybackProgressTracker {
                   'skipping next $_ticksToSkip tick(s)',
                   error: e,
                 );
+                unawaited(_queueOnlineFailureProgress(position, duration));
               }),
         );
       }
@@ -209,9 +234,30 @@ class PlaybackProgressTracker {
           'skipping next $_ticksToSkip tick(s)',
           error: e,
         );
+        await _queueOnlineFailureProgress(
+          attemptedPosition ?? player.state.position,
+          attemptedDuration ?? player.state.duration,
+        );
       } else {
         appLogger.d('Failed to send progress update (non-critical)', error: e);
       }
+    }
+  }
+
+  Duration _clampPosition(Duration position, Duration duration) {
+    if (duration.inMilliseconds <= 0) return position;
+    if (position.isNegative) return Duration.zero;
+    if (position > duration) return duration;
+    return position;
+  }
+
+  Future<void> _queueOnlineFailureProgress(Duration position, Duration duration) async {
+    if (!queueOnOnlineFailure || offlineWatchService == null) return;
+    if (duration.inMilliseconds == 0) return;
+    try {
+      await _sendOfflineProgress(_clampPosition(position, duration), duration);
+    } catch (e) {
+      appLogger.d('Failed to queue fallback progress after online report failure', error: e);
     }
   }
 
