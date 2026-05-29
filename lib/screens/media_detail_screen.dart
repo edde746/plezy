@@ -704,7 +704,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   void _onScroll() {
-    _scrollOffset.value = _scrollController.offset;
+    final positions = _scrollController.positions;
+    if (positions.length != 1) return;
+    _scrollOffset.value = positions.first.pixels;
   }
 
   @override
@@ -779,21 +781,19 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     _tvDetailRevealScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      setState(() {
+        _tvDetailStableRailHeight = _tvDetailPendingRailHeight ?? railHeight;
+        _tvDetailRevealScheduled = false;
+        _tvDetailRevealed = true;
+      });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        setState(() {
-          _tvDetailStableRailHeight = _tvDetailPendingRailHeight ?? railHeight;
-          _tvDetailRevealScheduled = false;
-          _tvDetailRevealed = true;
-        });
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          if (focusPrimaryAction) {
-            _playButtonFocusNode.requestFocus();
-          } else {
-            _tvDetailRailKey.currentState?.requestFocus();
-          }
-        });
+        if (focusPrimaryAction) {
+          _playButtonFocusNode.requestFocus();
+        } else {
+          _tvDetailRailKey.currentState?.requestFocus();
+        }
       });
     });
   }
@@ -1012,6 +1012,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             }
             if (key.isUpKey) {
               return KeyEventResult.handled; // consume — nothing above
+            }
+            if (key.isLeftKey || key.isRightKey) {
+              return KeyEventResult.handled; // consume — single chip, nothing beside it (#1181)
             }
             return KeyEventResult.ignored;
           },
@@ -2001,7 +2004,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Intercept DOWN from the play button row to focus the first available section
-  KeyEventResult _handlePlayButtonKeyEvent(FocusNode _, KeyEvent event) {
+  KeyEventResult _handlePlayButtonKeyEvent(FocusNode node, KeyEvent event) {
     final key = event.logicalKey;
     if (!event.isActionable) return KeyEventResult.ignored;
     final isTv = PlatformDetector.isTV();
@@ -2017,6 +2020,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         return KeyEventResult.handled;
       }
       return KeyEventResult.handled;
+    }
+
+    // LEFT/RIGHT: let the framework move between buttons in the row, but trap
+    // at the row's edges so focus can't fall off into a black hole (#1181).
+    if (key.isLeftKey || key.isRightKey) {
+      final dir = key.isRightKey ? TraversalDirection.right : TraversalDirection.left;
+      return hasHorizontalNeighbor(node, dir) ? KeyEventResult.ignored : KeyEventResult.handled;
     }
 
     if (!key.isDownKey) return KeyEventResult.ignored;
@@ -3445,6 +3455,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       episodePosterMode: svc.read(SettingsService.episodePosterMode),
       episodePosterModeForHub: _tvDetailEpisodePosterModeForHub,
       widePosterScaleForHub: _tvDetailWidePosterScaleForHub,
+      fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
       tallPosterScale: _tvDetailTallPosterScale,
     );
   }
@@ -3471,6 +3482,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       availableWidth: availableWidth,
       density: svc.read(SettingsService.libraryDensity),
       episodePosterMode: svc.read(SettingsService.episodePosterMode),
+      fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
       scale: scale,
       tallPosterScale: _tvDetailTallPosterScale,
       widePosterScale: 1.0,
@@ -3885,7 +3897,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     const innerPadding = 3.0;
     final imageSize = cardWidth;
     // image + inner padding + text area + outer list padding + focus scale headroom
-    final containerHeight = imageSize + innerPadding * 2 + 66 + 16;
+    final containerHeight = imageSize + innerPadding * 2 + 58 + 10;
 
     final theme = Theme.of(context);
     final actorNameStyle = theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600);
@@ -3988,7 +4000,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final cardWidth = _getResponsiveCardWidth();
     // 16:9 aspect ratio for clip thumbnails (cardWidth includes 8px padding on each side)
     final posterHeight = (cardWidth - 16) * (9 / 16);
-    final containerHeight = posterHeight + 66;
+    final containerHeight = posterHeight + 52;
 
     return Focus(
       focusNode: _extrasFocusNode,

@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import '../i18n/strings.g.dart';
 import '../services/app_exit_service.dart';
+import '../services/tvos_system_navigation_service.dart';
 import '../services/update_service.dart';
 import '../utils/app_logger.dart';
 import '../widgets/auth_error_banner.dart';
@@ -46,6 +47,7 @@ import '../widgets/side_navigation_rail.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import 'discover_screen.dart';
+import 'libraries/library_quick_picker_sheet.dart';
 import 'libraries/libraries_screen.dart';
 import 'livetv/live_tv_screen.dart';
 import 'search_screen.dart';
@@ -176,6 +178,25 @@ bool shouldRenderMainScreenOffline({
   return providerOffline || (startupOfflineUntilConnected && !hasVisibleConnectedServers);
 }
 
+@visibleForTesting
+bool shouldPassTvosMenuToSystem({
+  required bool isAppleTV,
+  required bool isShowingProfileSelection,
+  required bool isOverlaySheetOpen,
+  required bool isRouteCurrent,
+  required bool isSidebarFocused,
+  required bool hasVisibleTabs,
+  required bool isCurrentTabRoot,
+}) {
+  return isAppleTV &&
+      isSidebarFocused &&
+      !isShowingProfileSelection &&
+      !isOverlaySheetOpen &&
+      isRouteCurrent &&
+      hasVisibleTabs &&
+      isCurrentTabRoot;
+}
+
 class MainScreen extends StatefulWidget {
   final bool isOfflineMode;
 
@@ -241,6 +262,7 @@ class _MainScreenState extends State<MainScreen>
   final FocusScopeNode _contentFocusScope = FocusScopeNode(debugLabel: 'Content');
   bool _isSidebarFocused = false;
   bool _isSidebarInteractionExpanded = false;
+  bool _isOverlaySheetOpen = false;
 
   /// The binder is now owned by a top-level [Provider] (see main.dart) so
   /// the splash can await its first settle before navigating here. We just
@@ -316,32 +338,35 @@ class _MainScreenState extends State<MainScreen>
 
     // Wire profile binder + tracker bootstrap (skip in offline mode)
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (mounted) {
-        final activeProfile = context.read<ActiveProfileProvider>();
-        _activeProfileForListener = activeProfile;
-        _lastSeenProfileId = activeProfile.activeId;
-        activeProfile.addListener(_onActiveProfileChanged);
-        _plexHomeService = context.read<PlexHomeService>();
-        unawaited(_plexHomeService!.start());
-        final manager = context.read<MultiServerProvider>().serverManager;
-        // Read the binder so the Provider's `lazy: false` create has fired
-        // for sure; start only in online mode so explicit startup offline does
-        // not immediately kick off the same connection attempts it skipped.
-        final binder = context.read<ActiveProfileBinder>();
-        if (!_isOffline) binder.start();
-        _runStartupOnFirstOnlineServer(manager);
-      }
+      if (!mounted) return;
+
+      final activeProfile = context.read<ActiveProfileProvider>();
+      _activeProfileForListener = activeProfile;
+      _lastSeenProfileId = activeProfile.activeId;
+      activeProfile.addListener(_onActiveProfileChanged);
+      _plexHomeService = context.read<PlexHomeService>();
+      unawaited(_plexHomeService!.start());
+      final manager = context.read<MultiServerProvider>().serverManager;
+      // Read the binder so the Provider's `lazy: false` create has fired
+      // for sure; start only in online mode so explicit startup offline does
+      // not immediately kick off the same connection attempts it skipped.
+      final binder = context.read<ActiveProfileBinder>();
+      if (!_isOffline) binder.start();
+      _runStartupOnFirstOnlineServer(manager);
+
       if (!_isOffline) {
         // Settings-only initialization — profile identity is managed by
         // ActiveProfileProvider + ActiveProfileBinder.
         final userProfileProvider = context.userProfile;
         await userProfileProvider.initialize();
+        if (!mounted) return;
 
         // Ensure first login (or any unset profile state) requires explicit selection.
         await _promptForInitialProfileSelection();
+        if (!mounted) return;
 
         // Auto-start companion remote server once the active profile is known.
-        if (_companionRemoteSetup && mounted) {
+        if (_companionRemoteSetup) {
           unawaited(_autoStartCompanionRemoteServer());
         }
       }
@@ -351,6 +376,8 @@ class _MainScreenState extends State<MainScreen>
       if (!_isSidebarFocused && !_isShowingProfileSelection) {
         _contentFocusScope.requestFocus();
       }
+
+      _updateTvosMenuPassthrough();
 
       // Check for updates on startup
       unawaited(_checkForUpdatesOnStartup());
@@ -549,10 +576,13 @@ class _MainScreenState extends State<MainScreen>
     if (!hasNoActive && !requireOnOpen) return;
 
     _isShowingProfileSelection = true;
+    _setTvosMenuPassthrough(false);
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
+    if (!mounted) return;
     _isShowingProfileSelection = false;
+    _updateTvosMenuPassthrough();
   }
 
   Future<void> _checkForUpdatesOnStartup() async {
@@ -785,6 +815,7 @@ class _MainScreenState extends State<MainScreen>
     _startupSettleTimeout = null;
     _sidebarFocusScope.dispose();
     _contentFocusScope.dispose();
+    _setTvosMenuPassthrough(false);
 
     // Clean up companion remote callbacks
     if (_companionRemoteSetup) {
@@ -829,10 +860,13 @@ class _MainScreenState extends State<MainScreen>
     if (!activeProfile.hasMultipleProfiles) return;
 
     _isShowingProfileSelection = true;
+    _setTvosMenuPassthrough(false);
     await Navigator.of(
       context,
     ).push(MaterialPageRoute(builder: (context) => const ProfileSwitchScreen(requireSelection: true)));
+    if (!mounted) return;
     _isShowingProfileSelection = false;
+    _updateTvosMenuPassthrough();
   }
 
   /// IndexedStack that disables tickers for offscreen children to prevent
@@ -862,6 +896,7 @@ class _MainScreenState extends State<MainScreen>
           NavigationTabId.libraries => LibrariesScreen(
             key: _librariesKey,
             onLibraryOrderChanged: _onLibraryOrderChanged,
+            onLibrarySelected: _handleLibrariesScreenSelected,
           ),
           NavigationTabId.liveTv => LiveTvScreen(key: _liveTvKey),
           NavigationTabId.search => SearchScreen(key: _searchKey),
@@ -932,6 +967,7 @@ class _MainScreenState extends State<MainScreen>
       _screens = _buildScreens(_isOffline);
       _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
     });
+    _updateTvosMenuPassthrough();
   }
 
   void _handleOfflineStatusChanged() {
@@ -977,6 +1013,7 @@ class _MainScreenState extends State<MainScreen>
         _autoSwitchedToDownloads = false;
       }
     });
+    _updateTvosMenuPassthrough();
 
     // Refresh sidebar focus after rebuilding navigation
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1005,6 +1042,7 @@ class _MainScreenState extends State<MainScreen>
     // and overwrites lastFocusedKey (e.g. to the Libraries toggle button).
     final targetKey = _sideNavKey.currentState?.lastFocusedKey;
     setState(() => _isSidebarFocused = true);
+    _updateTvosMenuPassthrough();
     _sidebarFocusScope.requestFocus();
     // Focus the active item after the focus scope has focus
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -1012,13 +1050,23 @@ class _MainScreenState extends State<MainScreen>
     });
   }
 
-  void _focusContent() {
+  void _focusContent({bool restorePreviousFocus = true}) {
     setState(() => _isSidebarFocused = false);
-    _contentFocusScope.requestFocus();
+    _updateTvosMenuPassthrough();
+    if (restorePreviousFocus) {
+      _contentFocusScope.requestFocus();
+    }
     // Only programmatically focus if the scope didn't auto-restore a child.
     // This preserves the user's focus position when returning from sidebar.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_contentFocusScope.focusedChild == null) {
+      if (!mounted) return;
+      if (restorePreviousFocus) {
+        if (_contentFocusScope.focusedChild == null) {
+          if (_screenKeyFor(_currentTab)?.currentState case final FocusableTab focusable) {
+            focusable.focusActiveTabIfReady();
+          }
+        }
+      } else {
         if (_screenKeyFor(_currentTab)?.currentState case final FocusableTab focusable) {
           focusable.focusActiveTabIfReady();
         }
@@ -1031,6 +1079,12 @@ class _MainScreenState extends State<MainScreen>
     setState(() => _isSidebarInteractionExpanded = expanded);
   }
 
+  void _handleOverlaySheetOpenChanged(bool open) {
+    if (_isOverlaySheetOpen == open) return;
+    _isOverlaySheetOpen = open;
+    _updateTvosMenuPassthrough();
+  }
+
   double _sideNavigationWidth(BuildContext context, {required bool alwaysExpanded}) {
     final isExpanded = alwaysExpanded || _isSidebarFocused || _isSidebarInteractionExpanded;
     return isExpanded
@@ -1038,12 +1092,35 @@ class _MainScreenState extends State<MainScreen>
         : SideNavigationRailState.collapsedWidthForContext(context);
   }
 
+  bool get _shouldPassTvosMenuToSystem {
+    final tabs = _getVisibleTabs(_isOffline);
+    return shouldPassTvosMenuToSystem(
+      isAppleTV: PlatformDetector.isAppleTV(),
+      isShowingProfileSelection: _isShowingProfileSelection,
+      isOverlaySheetOpen: _isOverlaySheetOpen,
+      isRouteCurrent: ModalRoute.of(context)?.isCurrent == true,
+      isSidebarFocused: _isSidebarFocused,
+      hasVisibleTabs: tabs.isNotEmpty,
+      isCurrentTabRoot: tabs.isNotEmpty && _currentTab == tabs.first.id,
+    );
+  }
+
+  void _setTvosMenuPassthrough(bool enabled) {
+    if (!PlatformDetector.isAppleTV()) return;
+    unawaited(TvosSystemNavigationService.setMenuPassthroughEnabled(enabled));
+  }
+
+  void _updateTvosMenuPassthrough() {
+    if (!mounted) return;
+    _setTvosMenuPassthrough(_shouldPassTvosMenuToSystem);
+  }
+
   /// Suppress stray back events after a child route pops.
   /// On Android TV the platform popRoute can arrive before the key events,
   /// so BackKeySuppressorObserver misses them and they leak into _handleBackKey.
   bool _suppressBackAfterPop = false;
 
-  KeyEventResult _handleMainBack({bool allowTvSystemExit = false}) {
+  KeyEventResult _handleMainBack() {
     final tabs = _getVisibleTabs(_isOffline);
     if (tabs.isEmpty) return KeyEventResult.handled;
 
@@ -1054,11 +1131,18 @@ class _MainScreenState extends State<MainScreen>
       return KeyEventResult.handled;
     }
 
+    // The tvOS engine normally passes root Menu presses through to UIKit. If a
+    // stale event still reaches Flutter, avoid showing an exit prompt that
+    // cannot be honored app-side.
+    if (PlatformDetector.isAppleTV()) {
+      _lastBackPressAt = null;
+      return KeyEventResult.handled;
+    }
+
     final now = DateTime.now();
     final lastBackPressAt = _lastBackPressAt;
     if (lastBackPressAt != null && now.difference(lastBackPressAt) < _backExitWindow) {
       _lastBackPressAt = null;
-      if (allowTvSystemExit && PlatformDetector.isAppleTV()) return KeyEventResult.skipRemainingHandlers;
       unawaited(AppExitService.requestExit());
       return KeyEventResult.handled;
     }
@@ -1079,7 +1163,7 @@ class _MainScreenState extends State<MainScreen>
     // matching comment in handleBackKeyAction for why the suppressor pattern
     // doesn't fit here.
     if (PlatformDetector.isAppleTV() && event is KeyDownEvent) {
-      final result = _handleMainBack(allowTvSystemExit: true);
+      final result = _handleMainBack();
       if (result == KeyEventResult.handled) {
         BackKeyCoordinator.markHandled();
       }
@@ -1090,7 +1174,7 @@ class _MainScreenState extends State<MainScreen>
     }
 
     if (event is KeyUpEvent) {
-      final result = _handleMainBack(allowTvSystemExit: PlatformDetector.isAppleTV());
+      final result = _handleMainBack();
       if (result == KeyEventResult.handled) {
         BackKeyCoordinator.markHandled();
       }
@@ -1167,6 +1251,7 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void didPushNext() {
+    _setTvosMenuPassthrough(false);
     // Called when a child route is pushed on top (e.g., video player)
     if (_currentTab == NavigationTabId.discover) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
@@ -1187,6 +1272,7 @@ class _MainScreenState extends State<MainScreen>
     });
 
     // Called when returning to this route from a child route (e.g., from video player)
+    _updateTvosMenuPassthrough();
     if (_currentTab == NavigationTabId.discover) {
       if (_discoverKey.currentState case final TabVisibilityAware aware) {
         aware.onTabShown();
@@ -1273,6 +1359,7 @@ class _MainScreenState extends State<MainScreen>
         _autoSwitchedToDownloads = false;
       }
     });
+    _updateTvosMenuPassthrough();
 
     if (previousTab != tab) {
       // Notify previous screen it's being hidden
@@ -1317,6 +1404,63 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
+  void _handleLibrariesScreenSelected(String libraryGlobalKey) {
+    if (_selectedLibraryGlobalKey == libraryGlobalKey) return;
+    setState(() => _selectedLibraryGlobalKey = libraryGlobalKey);
+  }
+
+  void _showLibraryQuickPicker(BuildContext context) {
+    if (_isOffline) return;
+
+    final controller = OverlaySheetController.of(context);
+    final groupByServer = SettingsService.instanceOrNull?.read(SettingsService.groupLibrariesByServer) ?? false;
+    final maxHeight = MediaQuery.sizeOf(context).height * 0.62;
+
+    controller
+        .show<String>(
+          showDragHandle: true,
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          builder: (sheetContext) {
+            return Consumer2<LibrariesProvider, HiddenLibrariesProvider>(
+              builder: (context, librariesProvider, hiddenLibrariesProvider, _) {
+                if (!hiddenLibrariesProvider.isInitialized) {
+                  return LibraryQuickPickerSheet(
+                    libraries: const [],
+                    selectedLibraryKey: _selectedLibraryGlobalKey,
+                    isLoading: true,
+                    groupByServer: groupByServer,
+                    emptyMessage: t.libraries.noLibrariesFound,
+                    onSelected: (libraryGlobalKey) => controller.close(libraryGlobalKey),
+                  );
+                }
+
+                final allLibraries = librariesProvider.libraries;
+                final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
+                final visibleLibraries = allLibraries
+                    .where((library) => !hiddenKeys.contains(library.globalKey))
+                    .toList();
+                final emptyMessage = allLibraries.isEmpty
+                    ? t.libraries.noLibrariesFound
+                    : t.libraries.allLibrariesHidden;
+
+                return LibraryQuickPickerSheet(
+                  libraries: visibleLibraries,
+                  selectedLibraryKey: _selectedLibraryGlobalKey,
+                  isLoading: librariesProvider.isLoading,
+                  groupByServer: groupByServer,
+                  emptyMessage: emptyMessage,
+                  onSelected: (libraryGlobalKey) => controller.close(libraryGlobalKey),
+                );
+              },
+            );
+          },
+        )
+        .then((libraryGlobalKey) {
+          if (!mounted || libraryGlobalKey == null) return;
+          _selectLibrary(libraryGlobalKey);
+        });
+  }
+
   /// Whether the Live TV tab is currently visible
   /// Use the synchronized value so screens list and nav bar always agree.
   /// Updated by _handleLiveTvChanged when the provider notifies.
@@ -1339,9 +1483,52 @@ class _MainScreenState extends State<MainScreen>
     };
   }
 
-  /// Build navigation destinations for bottom navigation bar.
-  List<NavigationDestination> _buildNavDestinations(bool isOffline) {
-    return _getVisibleTabs(isOffline).map((tab) => tab.toDestination()).toList();
+  Widget _buildBottomNavigationBar(BuildContext context, {required bool hideLabels}) {
+    final tabs = _getVisibleTabs(_isOffline);
+    final navigationBar = NavigationBar(
+      selectedIndex: _currentIndex,
+      onDestinationSelected: (i) {
+        if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
+      },
+      labelBehavior: hideLabels
+          ? NavigationDestinationLabelBehavior.alwaysHide
+          : NavigationDestinationLabelBehavior.alwaysShow,
+      destinations: tabs.map((tab) => tab.toDestination()).toList(),
+    );
+
+    final librariesIndex = tabs.indexWhere((tab) => tab.id == NavigationTabId.libraries);
+    if (librariesIndex < 0 || tabs.isEmpty) return navigationBar;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (!constraints.hasBoundedWidth) return navigationBar;
+
+        final itemWidth = constraints.maxWidth / tabs.length;
+        final isRtl = Directionality.of(context) == TextDirection.rtl;
+        final left = isRtl ? constraints.maxWidth - (itemWidth * (librariesIndex + 1)) : itemWidth * librariesIndex;
+
+        return Stack(
+          children: [
+            navigationBar,
+            Positioned(
+              left: left,
+              top: 0,
+              bottom: 0,
+              width: itemWidth,
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                excludeFromSemantics: true,
+                onLongPress: () {
+                  Feedback.forLongPress(context);
+                  _showLibraryQuickPicker(context);
+                },
+                child: const SizedBox.expand(),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -1362,6 +1549,7 @@ class _MainScreenState extends State<MainScreen>
               : SideNavigationRailState.collapsedWidthForContext(context);
 
           return OverlaySheetHost(
+            onOpenChanged: _handleOverlaySheetOpenChanged,
             child: PopScope(
               canPop: false, // Prevent system back from popping on Android TV
               // ignore: no-empty-block - required callback, back navigation handled by _handleBackKey
@@ -1430,12 +1618,13 @@ class _MainScreenState extends State<MainScreen>
                                       isReconnecting: _isReconnecting,
                                       onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
                                       onDestinationSelected: (tab) {
+                                        final restorePreviousFocus = tab == _currentTab;
                                         _selectTab(tab);
-                                        _focusContent();
+                                        _focusContent(restorePreviousFocus: restorePreviousFocus);
                                       },
                                       onLibrarySelected: (key) {
                                         _selectLibrary(key);
-                                        _focusContent();
+                                        _focusContent(restorePreviousFocus: false);
                                       },
                                       onNavigateToContent: _focusContent,
                                       onReconnect: _triggerReconnect,
@@ -1464,6 +1653,7 @@ class _MainScreenState extends State<MainScreen>
         _handleMainBack();
       },
       child: OverlaySheetHost(
+        onOpenChanged: _handleOverlaySheetOpenChanged,
         child: ScaffoldMessenger(
           key: mainScaffoldMessengerKey,
           child: Scaffold(
@@ -1513,17 +1703,7 @@ class _MainScreenState extends State<MainScreen>
                     final hideLabels = !showNavBarLabels;
                     return NavigationBarTheme(
                       data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
-                      child: NavigationBar(
-                        selectedIndex: _currentIndex,
-                        onDestinationSelected: (i) {
-                          final tabs = _getVisibleTabs(_isOffline);
-                          if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
-                        },
-                        labelBehavior: hideLabels
-                            ? NavigationDestinationLabelBehavior.alwaysHide
-                            : NavigationDestinationLabelBehavior.alwaysShow,
-                        destinations: _buildNavDestinations(_isOffline),
-                      ),
+                      child: _buildBottomNavigationBar(context, hideLabels: hideLabels),
                     );
                   },
                 ),

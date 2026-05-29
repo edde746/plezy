@@ -248,6 +248,9 @@ class PlexClient
   /// Promoted home hub endpoint advertised by /media/providers (usually /hubs/promoted).
   String? _providerPromotedHubKey;
 
+  /// Dedicated Continue Watching hub endpoint advertised by /media/providers.
+  String? _providerContinueWatchingHubKey;
+
   /// EPG providers parsed from /media/providers
   @override
   List<({String identifier, String gridEndpoint})> _providerEpg = const [];
@@ -348,6 +351,7 @@ class PlexClient
     List<({String identifier, String gridEndpoint})> epgProviders = const [],
     String? homeHubKey,
     String? promotedHubKey,
+    String? continueWatchingHubKey,
   }) {
     final client = PlexClient._(
       config,
@@ -360,6 +364,7 @@ class PlexClient
     client._providerEpg = epgProviders;
     client._providerHomeHubKey = homeHubKey;
     client._providerPromotedHubKey = promotedHubKey;
+    client._providerContinueWatchingHubKey = continueWatchingHubKey;
     return client;
   }
 
@@ -459,6 +464,7 @@ class PlexClient
         _providerEpg = [];
         _providerHomeHubKey = null;
         _providerPromotedHubKey = null;
+        _providerContinueWatchingHubKey = null;
         return;
       }
 
@@ -468,6 +474,7 @@ class PlexClient
         _providerEpg = [];
         _providerHomeHubKey = null;
         _providerPromotedHubKey = null;
+        _providerContinueWatchingHubKey = null;
         return;
       }
 
@@ -475,6 +482,7 @@ class PlexClient
       final epg = <({String identifier, String gridEndpoint})>[];
       String? homeHubKey;
       String? promotedHubKey;
+      String? continueWatchingHubKey;
 
       for (final provider in providers) {
         if (provider is! Map) continue;
@@ -491,6 +499,10 @@ class PlexClient
 
             if (feature['type'] == 'promoted') {
               promotedHubKey ??= feature['key'] as String?;
+            }
+
+            if (feature['type'] == 'continuewatching') {
+              continueWatchingHubKey ??= feature['key'] as String?;
             }
 
             if (feature['type'] != 'content') continue;
@@ -552,6 +564,7 @@ class PlexClient
       _providerEpg = epg;
       _providerHomeHubKey = homeHubKey;
       _providerPromotedHubKey = promotedHubKey;
+      _providerContinueWatchingHubKey = continueWatchingHubKey;
       appLogger.d('Media providers: ${libraries.length} libraries, ${epg.length} EPG provider(s)');
     } catch (e) {
       appLogger.w('Failed to fetch /media/providers, will fall back to /library/sections', error: e);
@@ -559,6 +572,7 @@ class PlexClient
       _providerEpg = [];
       _providerHomeHubKey = null;
       _providerPromotedHubKey = null;
+      _providerContinueWatchingHubKey = null;
     }
   }
 
@@ -1326,15 +1340,22 @@ class PlexClient
   }
 
   /// Get continue watching items via the hubs system.
-  /// Uses /hubs?identifier=home.continue,home.ondeck which respects the
+  /// Prefer the provider's dedicated Continue Watching feature key when
+  /// advertised; fall back to Plex Web's legacy hubs query. Both respect the
   /// server's OnDeckWindow preference (unlike /library/onDeck).
   Future<List<PlexMetadataDto>> _getContinueWatching({int? count = 20}) async {
+    final continueWatchingHubKey = _providerContinueWatchingHubKey;
+    final queryParameters = <String, dynamic>{'count': ?count, 'includeGuids': 1};
+    if (continueWatchingHubKey == null) {
+      queryParameters['identifier'] = 'home.continue,home.ondeck';
+    }
+
     final response = await retryTransientMediaServerCall(
       operation: 'Plex continue watching hubs',
       attemptTimeouts: MediaServerTimeouts.homeHubAttemptTimeouts,
       call: (timeout, abort) => _getWithFailover(
-        '/hubs',
-        queryParameters: {'identifier': 'home.continue,home.ondeck', 'count': ?count, 'includeGuids': 1},
+        continueWatchingHubKey ?? '/hubs',
+        queryParameters: queryParameters,
         timeout: timeout,
         abort: abort,
         allowEndpointFailover: false,
@@ -3484,7 +3505,7 @@ class PlexClient
     if (partId == null) return null;
     final service = BifThumbnailService();
     try {
-      await service.load(this, partId);
+      await service.load(this, partId, aspectRatio: mediaSource.videoAspectRatio);
       return service;
     } catch (e, st) {
       appLogger.w('BIF thumbnail load failed for part $partId', error: e, stackTrace: st);

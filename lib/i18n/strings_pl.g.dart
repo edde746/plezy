@@ -143,6 +143,7 @@ class _TranslationsCommonPl extends TranslationsCommonEn {
 	@override String get yes => 'Tak';
 	@override String get no => 'Nie';
 	@override String get delete => 'Usuń';
+	@override String get edit => 'Edytuj';
 	@override String get shuffle => 'Losowo';
 	@override String get addTo => 'Dodaj do...';
 	@override String get createNew => 'Utwórz nowy';
@@ -253,6 +254,8 @@ class _TranslationsSettingsPl extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Pokazuj numer sezonu i odcinka na kartach odcinków';
 	@override String get showSeasonPostersOnTabs => 'Pokaż plakaty sezonów na zakładkach';
 	@override String get showSeasonPostersOnTabsDescription => 'Pokazuj plakat każdego sezonu nad jego kartą';
+	@override String get tvFullCardLayout => 'Pełne karty TV';
+	@override String get tvFullCardLayoutDescription => 'Używaj kart TV tylko z obrazem i nałożonymi nazwiskami aktorów';
 	@override String get hideSpoilers => 'Ukryj spoilery nieobejrzanych odcinków';
 	@override String get hideSpoilersDescription => 'Rozmywaj miniatury i opisy nieobejrzanych odcinków';
 	@override String get playerBackend => 'Backend odtwarzacza';
@@ -602,6 +605,7 @@ class _TranslationsVideoControlsPl extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Odtwarzanie w trybie obraz w obrazie';
 	@override String get pipFailed => 'Nie udało się uruchomić trybu obraz w obrazie';
 	@override String get screenshotSaved => 'Zrzut ekranu zapisany';
+	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsPl pipErrors = _TranslationsVideoControlsPipErrorsPl._(_root);
 	@override String get chapters => 'Rozdziały';
 	@override String get noChaptersAvailable => 'Brak dostępnych rozdziałów';
@@ -812,6 +816,8 @@ class _TranslationsConnectionsPl extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => 'Sesja wygasła dla ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Sesja wygasła dla ${count} serwerów';
 	@override String get signInAgain => 'Zaloguj się ponownie';
+	@override String get editJellyfinTitle => 'Edytuj połączenie Jellyfin';
+	@override String editJellyfinIntro({required Object serverName}) => 'Dodaj lub usuń adresy URL dla ${serverName}. Plezy użyje osiągalnego URL-a o najniższym opóźnieniu.';
 }
 
 // Path: discover
@@ -1303,6 +1309,7 @@ class _TranslationsVideoSettingsPl extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Prędkość odtwarzania';
+	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Wyłącznik czasowy';
 	@override String get audioSync => 'Synchronizacja audio';
 	@override String get subtitleSync => 'Synchronizacja napisów';
@@ -1502,7 +1509,9 @@ class _TranslationsAddServerPl extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Dodaj serwer Jellyfin';
 	@override String get jellyfinUrlIntro => 'Wpisz URL serwera, np. `https://jellyfin.example.com`.';
+	@override String get jellyfinUrlsIntro => 'Wpisz co najmniej jeden URL serwera, oddzielając je przecinkami lub nowymi wierszami. Plezy użyje osiągalnego URL-a o najniższym opóźnieniu.';
 	@override String get serverUrl => 'URL serwera';
+	@override String get serverUrls => 'URL-e serwera';
 	@override String get findServer => 'Znajdź serwer';
 	@override String get username => 'Nazwa użytkownika';
 	@override String get password => 'Hasło';
@@ -1558,6 +1567,9 @@ class _TranslationsHotkeysActionsPl extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => 'Zwiększ prędkość';
 	@override String get speedDecrease => 'Zmniejsz prędkość';
 	@override String get speedReset => 'Zresetuj prędkość';
+	@override String get zoomIn => 'Powiększ';
+	@override String get zoomOut => 'Pomniejsz';
+	@override String get zoomReset => 'Zresetuj zoom';
 	@override String get subSeekNext => 'Przewiń do następnego napisu';
 	@override String get subSeekPrev => 'Przewiń do poprzedniego napisu';
 	@override String get shaderToggle => 'Przełącz shadery';
@@ -1833,6 +1845,7 @@ extension on TranslationsPl {
 			'common.yes' => 'Tak',
 			'common.no' => 'Nie',
 			'common.delete' => 'Usuń',
+			'common.edit' => 'Edytuj',
 			'common.shuffle' => 'Losowo',
 			'common.addTo' => 'Dodaj do...',
 			'common.createNew' => 'Utwórz nowy',
@@ -1916,6 +1929,8 @@ extension on TranslationsPl {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Pokazuj numer sezonu i odcinka na kartach odcinków',
 			'settings.showSeasonPostersOnTabs' => 'Pokaż plakaty sezonów na zakładkach',
 			'settings.showSeasonPostersOnTabsDescription' => 'Pokazuj plakat każdego sezonu nad jego kartą',
+			'settings.tvFullCardLayout' => 'Pełne karty TV',
+			'settings.tvFullCardLayoutDescription' => 'Używaj kart TV tylko z obrazem i nałożonymi nazwiskami aktorów',
 			'settings.hideSpoilers' => 'Ukryj spoilery nieobejrzanych odcinków',
 			'settings.hideSpoilersDescription' => 'Rozmywaj miniatury i opisy nieobejrzanych odcinków',
 			'settings.playerBackend' => 'Backend odtwarzacza',
@@ -2089,6 +2104,9 @@ extension on TranslationsPl {
 			'hotkeys.actions.speedIncrease' => 'Zwiększ prędkość',
 			'hotkeys.actions.speedDecrease' => 'Zmniejsz prędkość',
 			'hotkeys.actions.speedReset' => 'Zresetuj prędkość',
+			'hotkeys.actions.zoomIn' => 'Powiększ',
+			'hotkeys.actions.zoomOut' => 'Pomniejsz',
+			'hotkeys.actions.zoomReset' => 'Zresetuj zoom',
 			'hotkeys.actions.subSeekNext' => 'Przewiń do następnego napisu',
 			'hotkeys.actions.subSeekPrev' => 'Przewiń do poprzedniego napisu',
 			'hotkeys.actions.shaderToggle' => 'Przełącz shadery',
@@ -2214,6 +2232,7 @@ extension on TranslationsPl {
 			'videoControls.pipActive' => 'Odtwarzanie w trybie obraz w obrazie',
 			'videoControls.pipFailed' => 'Nie udało się uruchomić trybu obraz w obrazie',
 			'videoControls.screenshotSaved' => 'Zrzut ekranu zapisany',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Wymaga Androida 8.0 lub nowszego',
 			'videoControls.pipErrors.iosVersion' => 'Wymaga iOS 15.0 lub nowszego',
 			'videoControls.pipErrors.permissionDisabled' => 'Obraz w obrazie jest wyłączony. Włącz go w ustawieniach systemu.',
@@ -2306,6 +2325,8 @@ extension on TranslationsPl {
 			'profiles.addPlezyProfile' => 'Dodaj profil Plezy',
 			'profiles.switchingProfile' => 'Przełączanie profilu…',
 			'profiles.deleteThisProfileTitle' => 'Usunąć ten profil?',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Usuń ${displayName}. Połączenia nie zostaną zmienione.',
 			'profiles.active' => 'Aktywny',
 			'profiles.manage' => 'Zarządzaj',
@@ -2313,8 +2334,6 @@ extension on TranslationsPl {
 			'profiles.signOut' => 'Wyloguj się',
 			'profiles.signOutPlexTitle' => 'Wylogować się z Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Usunąć ${displayName} i wszystkich użytkowników Plex Home? Możesz zalogować się ponownie w każdej chwili.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signedOutPlex' => 'Wylogowano z Plex.',
 			'profiles.signOutFailed' => 'Wylogowanie nie powiodło się.',
 			'profiles.sectionTitle' => 'Profile',
@@ -2369,6 +2388,8 @@ extension on TranslationsPl {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sesja wygasła dla ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Sesja wygasła dla ${count} serwerów',
 			'connections.signInAgain' => 'Zaloguj się ponownie',
+			'connections.editJellyfinTitle' => 'Edytuj połączenie Jellyfin',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Dodaj lub usuń adresy URL dla ${serverName}. Plezy użyje osiągalnego URL-a o najniższym opóźnieniu.',
 			'discover.title' => 'Odkryj',
 			'discover.switchProfile' => 'Zmień profil',
 			'discover.noContentAvailable' => 'Brak dostępnych treści',
@@ -2789,6 +2810,7 @@ extension on TranslationsPl {
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Szukaj na komputerze...',
 			'videoSettings.playbackSpeed' => 'Prędkość odtwarzania',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Wyłącznik czasowy',
 			'videoSettings.audioSync' => 'Synchronizacja audio',
 			'videoSettings.subtitleSync' => 'Synchronizacja napisów',
@@ -2817,6 +2839,8 @@ extension on TranslationsPl {
 			'metadataEdit.basicInfo' => 'Podstawowe informacje',
 			'metadataEdit.artwork' => 'Grafika',
 			'metadataEdit.advancedSettings' => 'Ustawienia zaawansowane',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.title' => 'Tytuł',
 			'metadataEdit.sortTitle' => 'Tytuł do sortowania',
 			'metadataEdit.originalTitle' => 'Tytuł oryginalny',
@@ -2827,8 +2851,6 @@ extension on TranslationsPl {
 			'metadataEdit.summary' => 'Opis',
 			'metadataEdit.poster' => 'Plakat',
 			'metadataEdit.background' => 'Tło',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => 'Logo',
 			'metadataEdit.squareArt' => 'Kwadratowy obraz',
 			'metadataEdit.selectPoster' => 'Wybierz plakat',
@@ -2947,7 +2969,9 @@ extension on TranslationsPl {
 			'trackers.libraryFilter.noLibraries' => 'Brak dostępnych bibliotek',
 			'addServer.addJellyfinTitle' => 'Dodaj serwer Jellyfin',
 			'addServer.jellyfinUrlIntro' => 'Wpisz URL serwera, np. `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => 'Wpisz co najmniej jeden URL serwera, oddzielając je przecinkami lub nowymi wierszami. Plezy użyje osiągalnego URL-a o najniższym opóźnieniu.',
 			'addServer.serverUrl' => 'URL serwera',
+			'addServer.serverUrls' => 'URL-e serwera',
 			'addServer.findServer' => 'Znajdź serwer',
 			'addServer.username' => 'Nazwa użytkownika',
 			'addServer.password' => 'Hasło',

@@ -182,6 +182,7 @@ class TvSpotlightBackground extends StatelessWidget {
 
   Widget _buildInfo(BuildContext context, MediaItem media) {
     final scale = _scale(context);
+    final colorScheme = Theme.of(context).colorScheme;
     final shouldHideSpoiler = hideSpoilers && media.shouldHideSpoiler;
     final summary = shouldHideSpoiler ? null : media.summary;
     final title = media.grandparentTitle ?? media.displayTitle;
@@ -200,7 +201,7 @@ class TvSpotlightBackground extends StatelessWidget {
             maxLines: compact ? 3 : 4,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.white.withValues(alpha: 0.78),
+              color: colorScheme.onSurface.withValues(alpha: 0.78),
               fontSize: _summaryFontSize(scale),
               height: compact ? 1.34 : 1.45,
             ),
@@ -212,7 +213,7 @@ class TvSpotlightBackground extends StatelessWidget {
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.white.withValues(alpha: 0.72),
+              color: colorScheme.onSurface.withValues(alpha: 0.72),
               fontSize: _summaryFontSize(scale),
               height: compact ? 1.34 : 1.45,
             ),
@@ -285,19 +286,21 @@ class TvSpotlightBackground extends StatelessWidget {
 
   Widget _buildTitle(BuildContext context, String title) {
     final scale = _scale(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return FittingTitleText(
       title,
       style: Theme.of(context).textTheme.displaySmall?.copyWith(
-        color: Colors.white,
+        color: colorScheme.onSurface,
         fontSize: _titleFontSize(scale),
         fontWeight: FontWeight.w800,
-        shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 12)],
+        shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 12)],
       ),
     );
   }
 
   Widget _buildMetadataLine(BuildContext context, MediaItem media) {
     final scale = _scale(context);
+    final colorScheme = Theme.of(context).colorScheme;
     final episodeLabel = formatSeasonEpisodeLabel(media.parentIndex, media.index);
     final parts = [
       if (media.isEpisode && episodeLabel != null) episodeLabel,
@@ -315,7 +318,7 @@ class TvSpotlightBackground extends StatelessWidget {
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       style: TextStyle(
-        color: Colors.white,
+        color: colorScheme.onSurface,
         fontSize: _metadataFontSize(scale),
         fontWeight: FontWeight.w700,
         letterSpacing: 0.1,

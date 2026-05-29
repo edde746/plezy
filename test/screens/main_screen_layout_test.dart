@@ -41,6 +41,35 @@ void main() {
     expect(expanded.left + expanded.width, viewportWidth);
   });
 
+  test('tvOS Menu pass-through only enables at root with sidebar focus', () {
+    bool shouldPass({
+      bool isAppleTV = true,
+      bool isShowingProfileSelection = false,
+      bool isOverlaySheetOpen = false,
+      bool isRouteCurrent = true,
+      bool isSidebarFocused = true,
+      bool hasVisibleTabs = true,
+      bool isCurrentTabRoot = true,
+    }) {
+      return shouldPassTvosMenuToSystem(
+        isAppleTV: isAppleTV,
+        isShowingProfileSelection: isShowingProfileSelection,
+        isOverlaySheetOpen: isOverlaySheetOpen,
+        isRouteCurrent: isRouteCurrent,
+        isSidebarFocused: isSidebarFocused,
+        hasVisibleTabs: hasVisibleTabs,
+        isCurrentTabRoot: isCurrentTabRoot,
+      );
+    }
+
+    expect(shouldPass(), isTrue);
+    expect(shouldPass(isSidebarFocused: false), isFalse);
+    expect(shouldPass(isCurrentTabRoot: false), isFalse);
+    expect(shouldPass(isOverlaySheetOpen: true), isFalse);
+    expect(shouldPass(isRouteCurrent: false), isFalse);
+    expect(shouldPass(isAppleTV: false), isFalse);
+  });
+
   testWidgets('side navigation bleed animates from the previous value', (tester) async {
     Widget build(double targetBleed) {
       return Directionality(

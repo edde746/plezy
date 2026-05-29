@@ -89,8 +89,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "4c965996210e408465e3c8b66e63ab4a659a62f9"
-      resolved-ref: "4c965996210e408465e3c8b66e63ab4a659a62f9"
+      ref: b4d36f88bb365faaf308ff26be7ade49bbaec859
+      resolved-ref: b4d36f88bb365faaf308ff26be7ade49bbaec859
       url: "https://github.com/edde746/background_downloader"
     source: git
     version: "9.5.4"
@@ -768,8 +768,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "5ddd27c"
-      resolved-ref: "5ddd27c2acacca31060d288db1371a870602cf46"
+      ref: d5c1885
+      resolved-ref: d5c18857ada19896cf456b832c143da435a7155d
       url: "https://github.com/edde746/os-media-controls"
     source: git
     version: "0.2.1"

@@ -58,25 +58,33 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   bool _focusRequested = false;
   bool _switching = false;
   Stream<ProfilesView>? _viewStream;
+  StorageService? _viewStreamStorage;
   StorageService? _storage;
+  Future<StorageService>? _storageFuture;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _viewStream ??= watchProfilesView(
+    _ensureViewStream();
+    if (_storage == null) {
+      unawaited(
+        (_storageFuture ??= StorageService.getInstance()).then((s) {
+          setStateIfMounted(() => _storage = s);
+        }),
+      );
+    }
+  }
+
+  void _ensureViewStream() {
+    if (_viewStream != null && identical(_viewStreamStorage, _storage)) return;
+    _viewStreamStorage = _storage;
+    _viewStream = watchProfilesView(
       profiles: context.read<ProfileRegistry>(),
       profileConnections: context.read<ProfileConnectionRegistry>(),
       connections: context.read<ConnectionRegistry>(),
       plexHome: context.read<PlexHomeService>(),
       storage: _storage,
     );
-    if (_storage == null) {
-      unawaited(
-        StorageService.getInstance().then((s) {
-          setStateIfMounted(() => _storage = s);
-        }),
-      );
-    }
   }
 
   @override
@@ -92,6 +100,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
 
   @override
   Widget build(BuildContext context) {
+    _ensureViewStream();
     return PopScope(
       canPop: !widget.requireSelection || _allowPop,
       onPopInvokedWithResult: (didPop, _) {

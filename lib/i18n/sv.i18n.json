@@ -36,6 +36,7 @@
     "yes": "Ja",
     "no": "Nej",
     "delete": "Ta bort",
+    "edit": "Redigera",
     "shuffle": "Blanda",
     "addTo": "Lägg till i...",
     "createNew": "Skapa ny",
@@ -125,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "Visa säsongs- och avsnittsnummer på avsnittskort",
     "showSeasonPostersOnTabs": "Visa säsongsaffischer på flikar",
     "showSeasonPostersOnTabsDescription": "Visa varje säsongs affisch ovanför fliken",
+    "tvFullCardLayout": "Heltäckande TV-kort",
+    "tvFullCardLayoutDescription": "Använd TV-kort med enbart bild och skådespelarnamn ovanpå",
     "hideSpoilers": "Dölj spoilers för osedda avsnitt",
     "hideSpoilersDescription": "Sudda miniatyrbilder och beskrivningar för osedda avsnitt",
     "playerBackend": "Spelarmotor",
@@ -303,6 +306,9 @@
       "speedIncrease": "Öka hastighet",
       "speedDecrease": "Minska hastighet",
       "speedReset": "Återställ hastighet",
+      "zoomIn": "Zooma in",
+      "zoomOut": "Zooma ut",
+      "zoomReset": "Återställ zoom",
       "subSeekNext": "Hoppa till nästa undertext",
       "subSeekPrev": "Hoppa till föregående undertext",
       "shaderToggle": "Växla shaders",
@@ -441,6 +447,7 @@
     "pipActive": "Spelar i bild-i-bild",
     "pipFailed": "Bild-i-bild kunde inte starta",
     "screenshotSaved": "Skärmbild sparad",
+    "zoomPercent": "Zoom ${percent}%",
     "pipErrors": {
       "androidVersion": "Kräver Android 8.0 eller nyare",
       "iosVersion": "Kräver iOS 15.0 eller nyare",
@@ -609,7 +616,9 @@
     "addConnectionSubtitleScoped": "Lägg till för ${displayName}: Plex, Jellyfin eller en annan profilanslutning",
     "sessionExpiredOne": "Sessionen har gått ut för ${name}",
     "sessionExpiredMany": "Sessionen har gått ut för ${count} servrar",
-    "signInAgain": "Logga in igen"
+    "signInAgain": "Logga in igen",
+    "editJellyfinTitle": "Redigera Jellyfin-anslutning",
+    "editJellyfinIntro": "Lägg till eller ta bort URL:er för ${serverName}. Plezy använder den nåbara URL:en med lägst latens."
   },
   "discover": {
     "title": "Upptäck",
@@ -1078,6 +1087,7 @@
   },
   "videoSettings": {
     "playbackSpeed": "Uppspelningshastighet",
+    "zoom": "Zoom",
     "sleepTimer": "Sovtimer",
     "audioSync": "Ljudsynkronisering",
     "subtitleSync": "Undertextsynkronisering",
@@ -1256,7 +1266,9 @@
   "addServer": {
     "addJellyfinTitle": "Lägg till Jellyfin-server",
     "jellyfinUrlIntro": "Ange server-URL, t.ex. `https://jellyfin.example.com`.",
+    "jellyfinUrlsIntro": "Ange en eller flera server-URL:er, separerade med kommatecken eller nya rader. Plezy använder den nåbara URL:en med lägst latens.",
     "serverUrl": "Server-URL",
+    "serverUrls": "Server-URL:er",
     "findServer": "Hitta server",
     "username": "Användarnamn",
     "password": "Lösenord",

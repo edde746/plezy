@@ -22,11 +22,13 @@ Future<void> showTvVirtualKeyboard({
   ValueChanged<String>? onSubmitted,
   VoidCallback? onAction,
 }) {
-  if (!PlatformDetector.isAppleTV()) return Future.value();
+  if (!PlatformDetector.isTV()) return Future.value();
 
   return showDialog<void>(
     context: context,
     barrierDismissible: true,
+    barrierColor: Colors.black.withValues(alpha: 0.10),
+    useSafeArea: false,
     builder: (context) => _TvVirtualKeyboardDialog(
       controller: controller,
       hintText: hintText,
@@ -43,7 +45,7 @@ Future<void> showTvVirtualKeyboard({
   );
 }
 
-enum _TvKeyType { spacer, character, shift, space, newline, backspace, clear, cancel, done }
+enum _TvKeyType { spacer, character, shift, symbols, space, newline, backspace, clear, cancel, done }
 
 class _TvKey {
   final String label;
@@ -88,16 +90,14 @@ class _TvVirtualKeyboardDialog extends StatefulWidget {
 }
 
 class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with MountedSetStateMixin {
-  static const double _keySize = 60;
-  static const double _keyGap = 6;
-  static const double _rowGap = 6;
-
   final _focusNode = FocusNode(debugLabel: 'TvVirtualKeyboard');
   int _row = 0;
   int _column = 0;
   bool _shiftEnabled = false;
+  bool _symbolsPage = false;
 
-  List<List<_TvKey>> get _rows => _buildRows();
+  List<List<_TvKey>> get _rows => _symbolsPage ? _buildSymbolRows() : _buildMainRows();
+  int get _gridColumnCount => _isNumberKeyboard ? 3 : 12;
 
   @override
   void initState() {
@@ -130,7 +130,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
     return type?.index == TextInputType.multiline.index || (widget.maxLines != null && widget.maxLines != 1);
   }
 
-  List<List<_TvKey>> _buildRows() {
+  List<List<_TvKey>> _buildMainRows() {
     if (_isNumberKeyboard) {
       return [
         _characters('123'),
@@ -156,6 +156,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
       const _TvKey.character('_'),
       const _TvKey.character('/'),
       const _TvKey.character(':'),
+      const _TvKey.character('='),
       _isMultiline
           ? const _TvKey.action('Line', _TvKeyType.newline, icon: Icons.keyboard_return_rounded)
           : const _TvKey.character('&'),
@@ -165,15 +166,53 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
     ];
 
     return [
-      [const _TvKey.spacer(), ..._characters('1234567890')],
-      [const _TvKey.spacer(), ..._characters('qwertyuiop')],
-      [const _TvKey.spacer(), ..._characters('asdfghjkl'), const _TvKey.character("'")],
+      [const _TvKey.spacer(), ..._characters('1234567890'), const _TvKey.spacer()],
+      [const _TvKey.spacer(), ..._characters('qwertyuiop'), const _TvKey.spacer()],
+      [const _TvKey.spacer(), ..._characters('asdfghjkl'), const _TvKey.character("'"), const _TvKey.spacer()],
       [
+        const _TvKey.action('', _TvKeyType.symbols, icon: Icons.functions_rounded),
         _TvKey.action('Shift', _TvKeyType.shift, icon: Symbols.shift),
         ..._characters('zxcvbnm.-'),
         const _TvKey.action('Del', _TvKeyType.backspace, icon: Icons.backspace_outlined),
       ],
       [const _TvKey.spacer(), ...actionRow],
+    ];
+  }
+
+  List<List<_TvKey>> _buildSymbolRows() {
+    return [
+      [
+        const _TvKey.action('ABC', _TvKeyType.symbols),
+        ..._symbols(['!', '?', r'$', '%', '^', '*', '+', '=', '~']),
+        const _TvKey.action('Del', _TvKeyType.backspace, icon: Icons.backspace_outlined),
+        const _TvKey.spacer(),
+      ],
+      [
+        const _TvKey.spacer(),
+        ..._symbols(['`', r'\', '|', ';', ':', '"', "'", '<', '>']),
+        const _TvKey.spacer(),
+        const _TvKey.spacer(),
+      ],
+      [
+        const _TvKey.spacer(),
+        ..._symbols(['[', ']', '{', '}', '(', ')', ',', '.', '-']),
+        const _TvKey.spacer(),
+        const _TvKey.spacer(),
+      ],
+      [
+        const _TvKey.spacer(),
+        const _TvKey.spacer(),
+        const _TvKey.action('Space', _TvKeyType.space, icon: Icons.space_bar_rounded),
+        const _TvKey.character('@'),
+        const _TvKey.character('#'),
+        const _TvKey.character('_'),
+        const _TvKey.character('/'),
+        _TvKey.action(t.common.clear, _TvKeyType.clear, icon: Icons.clear_all_rounded),
+        _TvKey.action(t.common.cancel, _TvKeyType.cancel, icon: Icons.close_rounded),
+        _TvKey.action(_doneLabel(), _TvKeyType.done, icon: _doneIcon()),
+        const _TvKey.spacer(),
+        const _TvKey.spacer(),
+      ],
     ];
   }
 
@@ -186,6 +225,10 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
           return _TvKey.character(shifted);
         })
         .toList(growable: false);
+  }
+
+  List<_TvKey> _symbols(List<String> symbols) {
+    return symbols.map((symbol) => _TvKey.character(symbol)).toList(growable: false);
   }
 
   String _doneLabel() {
@@ -223,8 +266,14 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
     }
 
     if (event is KeyDownEvent || event is KeyRepeatEvent) {
-      if (key == LogicalKeyboardKey.backspace || key == LogicalKeyboardKey.delete) {
+      if (_handlePhysicalKeyboardTextInput(event)) return KeyEventResult.handled;
+
+      if (key == LogicalKeyboardKey.backspace) {
         _backspace();
+        return KeyEventResult.handled;
+      }
+      if (key == LogicalKeyboardKey.delete) {
+        _deleteForward();
         return KeyEventResult.handled;
       }
 
@@ -269,17 +318,59 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
     return KeyEventResult.handled;
   }
 
+  bool _handlePhysicalKeyboardTextInput(KeyEvent event) {
+    if (!event.isPhysicalKeyboardEvent) return false;
+
+    final key = event.logicalKey;
+    if (key == LogicalKeyboardKey.backspace) {
+      _backspace();
+      _dismissForPhysicalKeyboardInput();
+      return true;
+    }
+    if (key == LogicalKeyboardKey.delete) {
+      _deleteForward();
+      _dismissForPhysicalKeyboardInput();
+      return true;
+    }
+    if (event.isPhysicalKeyboardEnter && _isMultiline) {
+      _insert('\n');
+      _dismissForPhysicalKeyboardInput();
+      return true;
+    }
+
+    final character = event.character;
+    if (character != null && character.isNotEmpty && !key.isNavigationKey && !_isControlCharacter(character)) {
+      _insert(character);
+      _dismissForPhysicalKeyboardInput();
+      return true;
+    }
+    return false;
+  }
+
+  bool _isControlCharacter(String text) {
+    return text.runes.every((codeUnit) => codeUnit < 0x20 || codeUnit == 0x7f);
+  }
+
+  void _dismissForPhysicalKeyboardInput() {
+    Navigator.of(context).pop();
+  }
+
   void _moveHorizontal(int delta) {
-    final nextColumn = _nextFocusableColumn(_row, _column + delta, delta);
+    var nextColumn = _nextFocusableColumn(_row, _column + delta, delta);
+    if (nextColumn == null) {
+      final wrapStart = delta > 0 ? 0 : _rows[_row].length - 1;
+      nextColumn = _nextFocusableColumn(_row, wrapStart, delta);
+    }
     if (nextColumn == null) return;
+    final column = nextColumn;
     setState(() {
-      _column = nextColumn;
+      _column = column;
     });
   }
 
   void _moveVertical(int delta) {
     final rows = _rows;
-    final nextRow = (_row + delta).clamp(0, rows.length - 1).toInt();
+    final nextRow = (_row + delta) % rows.length;
     final nextColumn = _nearestFocusableColumn(nextRow, _column);
     setState(() {
       _row = nextRow;
@@ -331,6 +422,9 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
       case _TvKeyType.shift:
         setState(() => _shiftEnabled = !_shiftEnabled);
         return;
+      case _TvKeyType.symbols:
+        _toggleSymbolsPage();
+        return;
       case _TvKeyType.space:
         _insert(' ');
         return;
@@ -352,6 +446,15 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
     }
   }
 
+  void _toggleSymbolsPage() {
+    setState(() {
+      _symbolsPage = !_symbolsPage;
+      final rows = _rows;
+      _row = _row.clamp(0, rows.length - 1).toInt();
+      _column = _nearestFocusableColumn(_row, _column);
+    });
+  }
+
   void _submit() {
     final text = widget.controller.text;
     final onSubmitted = widget.onSubmitted;
@@ -368,13 +471,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
 
   void _insert(String text) {
     final value = widget.controller.value;
-    final selection = value.selection;
-    final start = selection.isValid
-        ? (selection.start < selection.end ? selection.start : selection.end)
-        : value.text.length;
-    final end = selection.isValid
-        ? (selection.start > selection.end ? selection.start : selection.end)
-        : value.text.length;
+    final (:start, :end) = _selectionRangeForEdit(value);
     final newText = value.text.replaceRange(start, end, text);
     _replace(
       value.copyWith(
@@ -387,13 +484,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
 
   void _backspace() {
     final value = widget.controller.value;
-    final selection = value.selection;
-    final start = selection.isValid
-        ? (selection.start < selection.end ? selection.start : selection.end)
-        : value.text.length;
-    final end = selection.isValid
-        ? (selection.start > selection.end ? selection.start : selection.end)
-        : value.text.length;
+    final (:start, :end) = _selectionRangeForEdit(value);
 
     if (start != end) {
       _replace(
@@ -415,6 +506,43 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
     );
   }
 
+  void _deleteForward() {
+    final value = widget.controller.value;
+    final (:start, :end) = _selectionRangeForEdit(value);
+
+    if (start != end) {
+      _replace(
+        value.copyWith(
+          text: value.text.replaceRange(start, end, ''),
+          selection: TextSelection.collapsed(offset: start),
+          composing: TextRange.empty,
+        ),
+      );
+      return;
+    }
+    if (start >= value.text.length) return;
+
+    _replace(
+      value.copyWith(
+        text: value.text.replaceRange(start, start + 1, ''),
+        selection: TextSelection.collapsed(offset: start),
+        composing: TextRange.empty,
+      ),
+    );
+  }
+
+  ({int start, int end}) _selectionRangeForEdit(TextEditingValue value) {
+    final selection = value.selection;
+    if (!selection.isValid) return (start: value.text.length, end: value.text.length);
+    if (selection.isCollapsed && selection.baseOffset == 0 && value.text.isNotEmpty) {
+      return (start: value.text.length, end: value.text.length);
+    }
+    return (
+      start: selection.start < selection.end ? selection.start : selection.end,
+      end: selection.start > selection.end ? selection.start : selection.end,
+    );
+  }
+
   void _replace(TextEditingValue nextValue) {
     final previousValue = widget.controller.value;
     var formattedValue = nextValue;
@@ -427,100 +555,138 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
       formattedValue = formatter.formatEditUpdate(previousValue, formattedValue);
     }
     widget.controller.value = formattedValue;
-    widget.onChanged?.call(formattedValue.text);
+    if (formattedValue.text != previousValue.text) {
+      widget.onChanged?.call(formattedValue.text);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final media = MediaQuery.of(context);
+    final metrics = _metricsFor(media.size);
     final colorScheme = Theme.of(context).colorScheme;
     final text = widget.controller.text;
 
     return Dialog(
-      insetPadding: const EdgeInsets.symmetric(horizontal: 56, vertical: 32),
+      key: const Key('tv_virtual_keyboard_dialog'),
+      alignment: Alignment.bottomCenter,
+      insetPadding: EdgeInsets.only(
+        left: metrics.edgeInset,
+        right: metrics.edgeInset,
+        top: media.padding.top + 48,
+        bottom: media.padding.bottom + metrics.bottomInset,
+      ),
       backgroundColor: Colors.transparent,
+      elevation: 0,
       child: Focus(
         focusNode: _focusNode,
         onKeyEvent: _handleKey,
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 860),
-          padding: const EdgeInsets.all(14),
+          key: const Key('tv_virtual_keyboard_panel'),
+          constraints: BoxConstraints(maxWidth: metrics.panelWidth),
+          padding: EdgeInsets.all(metrics.panelPadding),
           decoration: BoxDecoration(
             color: colorScheme.surface.withValues(alpha: 0.96),
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(metrics.panelRadius),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildPreview(context, text),
-              const SizedBox(height: 12),
-              for (var row = 0; row < _rows.length; row++) ...[
-                _buildRow(context, row),
-                if (row != _rows.length - 1) const SizedBox(height: _rowGap),
+          child: SizedBox(
+            width: metrics.gridWidth,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildPreview(context, text, metrics),
+                SizedBox(height: metrics.previewGap),
+                for (var row = 0; row < _rows.length; row++) ...[
+                  _buildRow(context, row, metrics),
+                  if (row != _rows.length - 1) SizedBox(height: metrics.rowGap),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildPreview(BuildContext context, String text) {
+  _TvKeyboardMetrics _metricsFor(Size size) {
+    final columns = _gridColumnCount;
+    var keySize = (size.height * 0.061).clamp(36.0, 52.0).toDouble();
+    var keyGap = (keySize * 0.09).clamp(3.0, 6.0).toDouble();
+    var panelPadding = (keySize * 0.24).clamp(8.0, 14.0).toDouble();
+    final edgeInset = (size.width * 0.035).clamp(20.0, 56.0).toDouble();
+
+    final availableWidth = size.width - edgeInset * 2 - panelPadding * 2;
+    final maxKeySize = (availableWidth - keyGap * (columns - 1)) / columns;
+    final widthBoundKeySize = maxKeySize.clamp(24.0, 52.0).toDouble();
+    if (keySize > widthBoundKeySize) keySize = widthBoundKeySize;
+    keyGap = (keySize * 0.09).clamp(3.0, 6.0).toDouble();
+    panelPadding = (keySize * 0.24).clamp(8.0, 14.0).toDouble();
+    final gridWidth = keySize * columns + keyGap * (columns - 1);
+    return _TvKeyboardMetrics(
+      keySize: keySize,
+      keyGap: keyGap,
+      rowGap: keyGap,
+      panelPadding: panelPadding,
+      edgeInset: edgeInset,
+      bottomInset: (size.height * 0.025).clamp(12.0, 28.0).toDouble(),
+      gridWidth: gridWidth,
+      panelWidth: gridWidth + panelPadding * 2,
+      panelRadius: (keySize * 0.55).clamp(18.0, 28.0).toDouble(),
+      keyRadius: (keySize * 0.28).clamp(10.0, 16.0).toDouble(),
+      previewHeight: (_isMultiline ? keySize * 1.45 : keySize).clamp(40.0, 76.0).toDouble(),
+      previewGap: (keySize * 0.18).clamp(6.0, 12.0).toDouble(),
+      previewRadius: (keySize * 0.36).clamp(12.0, 18.0).toDouble(),
+      iconSize: (keySize * 0.58).clamp(20.0, 30.0).toDouble(),
+      keyFontSize: (keySize * 0.52).clamp(17.0, 26.0).toDouble(),
+    );
+  }
+
+  Widget _buildPreview(BuildContext context, String text, _TvKeyboardMetrics metrics) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isEmpty = text.isEmpty;
     final displayText = widget.obscureText && !isEmpty ? List.filled(text.length, '*').join() : text;
     final previewText = isEmpty ? (widget.hintText ?? '') : displayText;
     final multiline = _isMultiline;
+    final style = (multiline ? theme.textTheme.titleMedium : theme.textTheme.titleLarge)?.copyWith(
+      color: isEmpty ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
+      fontSize: (metrics.keyFontSize * 1.08).clamp(16.0, 24.0).toDouble(),
+    );
 
     return Container(
-      height: multiline ? 86 : 60,
+      height: metrics.previewHeight,
       alignment: Alignment.centerLeft,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: metrics.keySize * 0.30),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(metrics.previewRadius),
       ),
       child: multiline
-          ? SingleChildScrollView(
-              reverse: true,
-              child: Text(
-                previewText,
-                maxLines: 3,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: isEmpty ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
-                ),
-              ),
-            )
+          ? SingleChildScrollView(reverse: true, child: Text(previewText, maxLines: 3, style: style))
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               reverse: true,
-              child: Text(
-                previewText,
-                maxLines: 1,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: isEmpty ? colorScheme.onSurfaceVariant : colorScheme.onSurface,
-                ),
-              ),
+              child: Text(previewText, maxLines: 1, style: style),
             ),
     );
   }
 
-  Widget _buildRow(BuildContext context, int row) {
+  Widget _buildRow(BuildContext context, int row, _TvKeyboardMetrics metrics) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         for (var column = 0; column < _rows[row].length; column++) ...[
-          _buildKey(context, _rows[row][column], row, column),
-          if (column != _rows[row].length - 1) const SizedBox(width: _keyGap),
+          _buildKey(context, _rows[row][column], row, column, metrics),
+          if (column != _rows[row].length - 1) SizedBox(width: metrics.keyGap),
         ],
       ],
     );
   }
 
-  Widget _buildKey(BuildContext context, _TvKey key, int row, int column) {
+  Widget _buildKey(BuildContext context, _TvKey key, int row, int column, _TvKeyboardMetrics metrics) {
     if (key.type == _TvKeyType.spacer) {
-      return const SizedBox(width: _keySize, height: _keySize);
+      return SizedBox(width: metrics.keySize, height: metrics.keySize);
     }
 
     final colorScheme = Theme.of(context).colorScheme;
@@ -548,23 +714,27 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
-          width: _keySize,
-          height: _keySize,
+          width: metrics.keySize,
+          height: metrics.keySize,
           alignment: Alignment.center,
-          decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(16)),
+          decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(metrics.keyRadius)),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: _buildKeyContent(context, key, foreground),
+            padding: EdgeInsets.symmetric(horizontal: metrics.keySize * 0.04),
+            child: _buildKeyContent(context, key, foreground, metrics),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildKeyContent(BuildContext context, _TvKey key, Color foreground) {
+  Widget _buildKeyContent(BuildContext context, _TvKey key, Color foreground, _TvKeyboardMetrics metrics) {
     final icon = key.icon;
     if (icon != null) {
-      return Icon(icon, color: foreground, size: key.type == _TvKeyType.space ? 34 : 30);
+      return Icon(
+        icon,
+        color: foreground,
+        size: key.type == _TvKeyType.space ? metrics.iconSize * 1.12 : metrics.iconSize,
+      );
     }
 
     return FittedBox(
@@ -572,8 +742,46 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
       child: Text(
         key.label,
         maxLines: 1,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foreground, fontWeight: FontWeight.w800),
+        style: Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(color: foreground, fontSize: metrics.keyFontSize, fontWeight: FontWeight.w800),
       ),
     );
   }
+}
+
+class _TvKeyboardMetrics {
+  final double keySize;
+  final double keyGap;
+  final double rowGap;
+  final double panelPadding;
+  final double edgeInset;
+  final double bottomInset;
+  final double gridWidth;
+  final double panelWidth;
+  final double panelRadius;
+  final double keyRadius;
+  final double previewHeight;
+  final double previewGap;
+  final double previewRadius;
+  final double iconSize;
+  final double keyFontSize;
+
+  const _TvKeyboardMetrics({
+    required this.keySize,
+    required this.keyGap,
+    required this.rowGap,
+    required this.panelPadding,
+    required this.edgeInset,
+    required this.bottomInset,
+    required this.gridWidth,
+    required this.panelWidth,
+    required this.panelRadius,
+    required this.keyRadius,
+    required this.previewHeight,
+    required this.previewGap,
+    required this.previewRadius,
+    required this.iconSize,
+    required this.keyFontSize,
+  });
 }

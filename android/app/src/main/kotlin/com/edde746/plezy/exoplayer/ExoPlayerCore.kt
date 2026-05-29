@@ -43,6 +43,7 @@ import androidx.media3.datasource.cronet.CronetDataSource
 import androidx.media3.exoplayer.DecoderReuseEvaluation
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.DefaultRenderersFactory
+import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.RenderersFactory
 import androidx.media3.exoplayer.analytics.AnalyticsListener
@@ -56,6 +57,7 @@ import androidx.media3.extractor.DefaultExtractorsFactory
 import androidx.media3.extractor.mkv.MatroskaExtractor
 import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.mp4.Mp4Extractor
+import androidx.media3.extractor.ts.TsExtractor
 import androidx.media3.ui.AspectRatioFrameLayout
 import androidx.media3.ui.CaptionStyleCompat
 import androidx.media3.ui.SubtitleView
@@ -95,7 +97,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private const val WATCHDOG_CHECK_INTERVAL_MS = 1000L
     private const val WATCHDOG_TIMEOUT_MS = 8000L
     private const val DECODER_HANG_TIMEOUT_MS = 5000L
+    private const val MAX_AUDIO_RECOVERY_ATTEMPTS = 2
     private const val FPS_SAMPLE_COUNT = 8
+    private const val TS_TIMESTAMP_SEARCH_PACKETS = 1800
 
     // Codec capability caches — codec support doesn't change at runtime
     private val hwAudioDecoderCache = HashMap<String, Boolean>()
@@ -118,12 +122,16 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var surfaceContainer: FrameLayout? = null
   private var videoAspectContainer: AspectRatioFrameLayout? = null
   private var subtitleView: SubtitleView? = null
+  private var videoZoomScale: Float = 1.0f
   private var assHandler: AssHandler? = null
   private var overlayLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
   private var lastVideoSize: VideoSize? = null
   private var exoPlayer: ExoPlayer? = null
   private var renderersFactory: PlezyRenderersFactory? = null
   private val subtitleDelayUs = AtomicLong(0L)
+  private var subtitlePositionPercent: Int = 100
+  private var subtitleFontSize: Float = 55f
+  private var lastSubtitleCues: List<Cue> = emptyList()
   private var httpDataSourceFactory: HttpDataSource.Factory? = null
   private var dataSourceFactory: DefaultDataSource.Factory? = null
   private var trackSelector: DefaultTrackSelector? = null
@@ -131,8 +139,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var tunnelingDisabledForAudioCodec: Boolean = false
   private var tunnelingDisabledForVideoCodec: Boolean = false
   private var tunnelingDisabledForDecodedTrueHdPcm: Boolean = false
+  private var tunnelingDisabledForAudioRecovery: Boolean = false
   private val tunnelingDisabledForCodec: Boolean
-    get() = tunnelingDisabledForAudioCodec || tunnelingDisabledForVideoCodec || tunnelingDisabledForDecodedTrueHdPcm
+    get() = tunnelingDisabledForAudioCodec || tunnelingDisabledForVideoCodec || tunnelingDisabledForDecodedTrueHdPcm || tunnelingDisabledForAudioRecovery
   private var currentTunneledPlayback: Boolean = false
   private var lastSeekable: Boolean? = null
 
@@ -148,6 +157,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var decoderHangRunnable: Runnable? = null
   private var decoderInitName: String? = null
   private var audioDecoderInitName: String? = null
+  private var lastAudioTrackConfig: AudioSink.AudioTrackConfig? = null
+  private val directAudioOutputBlockedAfterFailure = mutableSetOf<String>()
+  private val loggedDirectAudioRecoveryBlocks = mutableSetOf<String>()
+  private var audioRecoveryAttempts: Int = 0
+  private var lastAudioRecoveryAction: String? = null
+  private var lastAudioRecoveryReason: String? = null
+  private var lastAudioSinkError: String? = null
   private var loggedEwasteEac3Workaround: Boolean = false
   private var lastTrueHdDirectOutputLogKey: String? = null
   private var loggedDecodedTrueHdTunnelingGuard: Boolean = false
@@ -295,12 +311,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var dvMode: DvConversionMode = DvConversionMode.DISABLED
   private var debugDvModeOverride: DvConversionMode? = null
   private var dv7RetryAttempted = false
+  private var currentVideoFormat: Format? = null
+  private var loggedNativeDvSelectionKey: String? = null
+  private var loggedNativeDvFirstFrame = false
 
   @Volatile private var activeDoviMkvWrapper: DoviExtractorWrapper? = null
 
   @Volatile private var activeDoviMp4Wrapper: DoviExtractorWrapper? = null
 
-  private fun getConfiguredDvMode(): DvConversionMode = debugDvModeOverride ?: DoviBridge.getConversionMode()
+  private fun getConfiguredDvMode(): DvConversionMode = debugDvModeOverride ?: DoviBridge.getConversionMode(activity)
 
   fun initialize(bufferSizeBytes: Int? = null, tunnelingEnabled: Boolean = true): Boolean {
     if (isInitialized) {
@@ -310,10 +329,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     tunnelingUserEnabled = tunnelingEnabled
     this.dvMode = getConfiguredDvMode()
+    DoviBridge.logSupportSummary(activity)
     Log.i(
       TAG,
-      "DV conversion: mode=$dvMode, bridge=${DoviBridge.isAvailable()}, " +
-        "deviceDV7=${DoviBridge.deviceSupportsDvProfile7}, deviceDV8=${DoviBridge.deviceSupportsDvProfile8}"
+      "DV conversion: mode=$dvMode, override=${debugDvModeOverride?.name ?: "AUTO"}"
     )
     disposing = false
 
@@ -431,7 +450,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       // Use DefaultRenderersFactory with FFmpeg fallback for unsupported or blocked audio codecs.
       val renderersFactory = PlezyRenderersFactory(activity).apply {
         audioDiagnosticsLogger = { level, prefix, message -> emitLog(level, prefix, message) }
-        shouldBlockDirectTrueHd = { format -> this@ExoPlayerCore.shouldBlockDirectTrueHd(format, "sink support") }
+        shouldBlockDirectAudioOutput = { format -> this@ExoPlayerCore.shouldBlockDirectAudioOutput(format, "sink support") }
         onAudioCapabilitiesChanged = { updateAudioDecoderPolicy("audio capabilities changed") }
         setEnableDecoderFallback(true)
         setExtensionRendererMode(DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON)
@@ -456,6 +475,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         .setReadTimeoutMs(10_000)
       dataSourceFactory = DefaultDataSource.Factory(activity, httpDataSourceFactory!!)
       val extractorsFactory = DefaultExtractorsFactory()
+        // High-bitrate Plex DVR MPEG-TS recordings can have sparse PCR packets; the default
+        // 600-packet window may leave duration unknown and seeking disabled.
+        .setTsExtractorTimestampSearchBytes(TS_TIMESTAMP_SEARCH_PACKETS * TsExtractor.TS_PACKET_SIZE)
 
       // Inline buildWithAssSupport to retain AssHandler reference for font scale control.
       // OVERLAY_OPEN_GL uses TextureView which follows normal View hierarchy z-ordering,
@@ -723,12 +745,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     // With OVERLAY_CANVAS mode, ASS subtitles are rendered directly by AssSubtitleView
     // This callback is for non-ASS subtitles (SRT, VTT, etc.)
     val incoming = cueGroup.cues
-    val outgoing = stackUnpositionedCues(incoming)
+    lastSubtitleCues = incoming
+    val stacked = stackUnpositionedCues(incoming)
+    val outgoing = applySubtitlePosition(stacked)
     if (incoming.isNotEmpty()) {
       Log.d(
         TAG,
         "onCues: received ${incoming.size} cues (non-ASS)" +
-          if (outgoing !== incoming) " — stacked" else ""
+          (if (stacked !== incoming) " - stacked" else "") +
+          (if (outgoing !== stacked) " - positioned" else "")
       )
     }
     subtitleView?.setCues(outgoing)
@@ -760,6 +785,44 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       nextRow -= rowsConsumed
     }
     return rebuilt
+  }
+
+  private fun applySubtitlePosition(cues: List<Cue>): List<Cue> {
+    val clampedPosition = subtitlePositionPercent.coerceIn(0, 100)
+    if (clampedPosition == 100 || cues.isEmpty()) return cues
+
+    val baseLine = clampedPosition / 100f
+    val rowHeight = (subtitleFontSize / 720f * 1.2f).coerceAtLeast(0.01f)
+    var changed = false
+
+    val rebuilt = cues.map { cue ->
+      if (!usesDefaultVerticalPlacement(cue)) return@map cue
+
+      val rowOffset = if (cue.lineType == Cue.LINE_TYPE_NUMBER && cue.line < 0f) {
+        (-cue.line - 1f).coerceAtLeast(0f)
+      } else {
+        0f
+      }
+      val line = if (clampedPosition == 0) {
+        (rowOffset * rowHeight).coerceAtMost(1f)
+      } else {
+        (baseLine - rowOffset * rowHeight).coerceIn(0f, 1f)
+      }
+      val lineAnchor = if (clampedPosition == 0) Cue.ANCHOR_TYPE_START else Cue.ANCHOR_TYPE_END
+
+      changed = true
+      cue.buildUpon()
+        .setLine(line, Cue.LINE_TYPE_FRACTION)
+        .setLineAnchor(lineAnchor)
+        .build()
+    }
+
+    return if (changed) rebuilt else cues
+  }
+
+  private fun usesDefaultVerticalPlacement(cue: Cue): Boolean {
+    if (cue.text == null || cue.bitmap != null || cue.verticalType != Cue.TYPE_UNSET) return false
+    return cue.line == Cue.DIMEN_UNSET || (cue.lineType == Cue.LINE_TYPE_NUMBER && cue.line < 0f)
   }
 
   override fun onIsPlayingChanged(isPlaying: Boolean) {
@@ -840,11 +903,15 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val audioGroup = tracks.groups.firstOrNull { it.type == C.TRACK_TYPE_AUDIO && it.isSelected }
     if (videoGroup != null) {
       val vf = videoGroup.mediaTrackGroup.getFormat(0)
+      currentVideoFormat = vf
       val hdr = vf.colorInfo?.let { ci ->
         val transfer = ci.colorTransfer
         if (transfer != null && transfer != 0) " HDR(transfer=$transfer)" else ""
       } ?: ""
       emitLog("info", "tracks", "Video: ${vf.codecs} ${vf.width}x${vf.height}$hdr")
+      logNativeDvSelectionIfNeeded(vf)
+    } else {
+      currentVideoFormat = null
     }
     if (audioGroup != null) {
       val af = audioGroup.mediaTrackGroup.getFormat(0)
@@ -897,6 +964,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       return
     }
 
+    if (retryAfterAudioTrackError(error, causeChain)) return
+
     if (currentMediaUri != null) {
       Log.w(TAG, "ExoPlayer error (code ${error.errorCode}) - attempting fallback to MPV")
       val handled = delegate?.onFormatUnsupported(
@@ -918,22 +987,174 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     )
   }
 
+  private fun retryAfterAudioTrackError(error: PlaybackException, causeChain: String): Boolean {
+    if (!isAudioTrackError(error.errorCode)) return false
+
+    val player = exoPlayer ?: return false
+    val uri = currentMediaUri ?: return false
+    if (audioRecoveryAttempts >= MAX_AUDIO_RECOVERY_ATTEMPTS) {
+      emitLog(
+        "warn",
+        "audio-recovery",
+        "ExoPlayer audio recovery exhausted after $audioRecoveryAttempts attempts for ${PlaybackException.getErrorCodeName(error.errorCode)}"
+      )
+      return false
+    }
+
+    val selectedFormat = selectedAudioFormat()
+    val errorFormat = (error as? ExoPlaybackException)?.rendererFormat?.takeIf { format ->
+      format.sampleMimeType?.startsWith("audio/") == true
+    }
+    val recoveryFormat = selectedFormat ?: errorFormat
+    val actions = mutableListOf<String>()
+
+    recoveryFormat?.sampleMimeType
+      ?.takeIf { isEncodedAudioMimeType(it) }
+      ?.let { mimeType ->
+        if (directAudioOutputBlockedAfterFailure.add(mimeType)) {
+          actions.add("force-decoded-pcm($mimeType)")
+        }
+      }
+
+    if (!tunnelingDisabledForAudioRecovery) {
+      tunnelingDisabledForAudioRecovery = true
+      actions.add("disable-tunneling")
+    }
+    if (actions.isEmpty()) actions.add("reload")
+
+    audioRecoveryAttempts++
+    val savedPosition = maxOf(player.currentPosition, lastPosition, pendingStartPositionMs)
+    val savedPlayWhenReady = player.playWhenReady
+    val previousAudioTrackConfig = lastAudioTrackConfig
+    pendingStartPositionMs = savedPosition
+    pendingPlayWhenReady = savedPlayWhenReady
+    audioDecoderInitName = null
+    lastAudioTrackConfig = null
+    lastAudioRecoveryAction = actions.joinToString(",")
+    lastAudioRecoveryReason = "${PlaybackException.getErrorCodeName(error.errorCode)}: ${error.message ?: causeChain.ifEmpty { "unknown" }}"
+
+    stopFrameWatchdog()
+    cancelDecoderHangCheck()
+    applyTrackSelectorPolicy(reason = "audio recovery", forceSelector = true)
+
+    emitLog(
+      "warn",
+      "audio-recovery",
+      "Retrying in ExoPlayer ($audioRecoveryAttempts/$MAX_AUDIO_RECOVERY_ATTEMPTS) at ${savedPosition}ms; " +
+        "format=${recoveryFormat?.let { formatAudioSummary(it) } ?: "unknown"}, " +
+        "lastOutput=${describeAudioTrackConfig(previousAudioTrackConfig)}, actions=$lastAudioRecoveryAction"
+    )
+
+    if (!setCurrentMediaForRetry(player, uri, savedPosition)) return false
+    player.prepare()
+    player.playWhenReady = savedPlayWhenReady
+    return true
+  }
+
+  private fun isAudioTrackError(errorCode: Int): Boolean = when (errorCode) {
+    PlaybackException.ERROR_CODE_AUDIO_TRACK_INIT_FAILED,
+    PlaybackException.ERROR_CODE_AUDIO_TRACK_WRITE_FAILED,
+    PlaybackException.ERROR_CODE_AUDIO_TRACK_OFFLOAD_INIT_FAILED,
+    PlaybackException.ERROR_CODE_AUDIO_TRACK_OFFLOAD_WRITE_FAILED -> true
+    else -> false
+  }
+
+  private fun isEncodedAudioMimeType(mimeType: String): Boolean = mimeType.startsWith("audio/") && mimeType != MimeTypes.AUDIO_RAW
+
+  private fun setCurrentMediaForRetry(player: ExoPlayer, uri: String, positionMs: Long): Boolean {
+    if (currentMediaIsLive) {
+      val factory = dataSourceFactory ?: return false
+      val extractorsFactory = androidx.media3.extractor.ExtractorsFactory {
+        arrayOf(MatroskaExtractor(MatroskaExtractor.FLAG_DISABLE_SEEK_FOR_CUES))
+      }
+      val mediaSource = ProgressiveMediaSource.Factory(factory, extractorsFactory)
+        .createMediaSource(MediaItem.fromUri(uri))
+      player.setMediaSource(mediaSource, positionMs)
+    } else {
+      player.setMediaItem(buildMediaItem(uri), positionMs)
+    }
+    return true
+  }
+
+  private fun isDvProfile7Format(format: Format): Boolean {
+    val codecs = format.codecs?.lowercase() ?: return false
+    return codecs.startsWith("dvhe.07") || codecs.startsWith("dvh1.07")
+  }
+
+  private fun findDv7VideoFormat(): Format? {
+    currentVideoFormat?.takeIf { isDvProfile7Format(it) }?.let { return it }
+    val tracks = exoPlayer?.currentTracks ?: return null
+    for (group in tracks.groups) {
+      if (group.type != C.TRACK_TYPE_VIDEO) continue
+      for (i in 0 until group.mediaTrackGroup.length) {
+        val format = group.mediaTrackGroup.getFormat(i)
+        if (isDvProfile7Format(format)) return format
+      }
+    }
+    return null
+  }
+
+  private fun describeVideoFormat(format: Format?): String {
+    if (format == null) return "none"
+    return "mime=${format.sampleMimeType}, codecs=${format.codecs}, size=${format.width}x${format.height}"
+  }
+
+  private fun logNativeDvSelectionIfNeeded(format: Format) {
+    if (dvMode != DvConversionMode.DISABLED || !isDvProfile7Format(format)) return
+    val key = "${format.sampleMimeType}|${format.codecs}|${format.width}x${format.height}"
+    if (loggedNativeDvSelectionKey == key) return
+    loggedNativeDvSelectionKey = key
+    emitLog(
+      "info",
+      "dv-native",
+      "Selected DV Profile 7 for native playback: ${describeVideoFormat(format)}, " +
+        "displayDV=${DoviBridge.displaySupportsDolbyVision(activity)}, " +
+        "nativeDecoder=${DoviBridge.hasNativeDolbyVisionDecoder}, " +
+        "advertisedP7=${DoviBridge.deviceSupportsDvProfile7}, advertisedP8=${DoviBridge.deviceSupportsDvProfile8}"
+    )
+  }
+
+  private fun logNativeDvFirstFrameIfNeeded() {
+    if (loggedNativeDvFirstFrame || dvMode != DvConversionMode.DISABLED) return
+    val format = currentVideoFormat ?: return
+    if (!isDvProfile7Format(format)) return
+    loggedNativeDvFirstFrame = true
+    emitLog(
+      "info",
+      "dv-native",
+      "Native DV Profile 7 playback confirmed: ${describeVideoFormat(format)}, decoder=${decoderInitName ?: "unknown"}"
+    )
+  }
+
   /**
-   * When native DV7 decoding fails (device falsely advertises DV7 support),
-   * upgrade to DV7→8.1 conversion or HEVC strip and reload the media.
-   * Returns true if retry was initiated.
+   * When native DV7 decoding fails, upgrade to DV7→8.1 conversion or HEVC strip
+   * and reload the media. Returns true if retry was initiated.
    */
   private fun retryWithDvConversion(reason: String): Boolean {
     if (dv7RetryAttempted) return false
-    if (debugDvModeOverride == DvConversionMode.DISABLED) return false
-    if (dvMode != DvConversionMode.DISABLED) return false
-    if (!DoviBridge.isAvailable()) return false
+    if (debugDvModeOverride == DvConversionMode.DISABLED) {
+      emitLog("debug", "dv-fallback", "Skipping DV conversion retry for $reason: native/disabled mode is forced")
+      return false
+    }
+    if (dvMode != DvConversionMode.DISABLED) {
+      emitLog("debug", "dv-fallback", "Skipping DV conversion retry for $reason: conversion already active ($dvMode)")
+      return false
+    }
     if (currentMediaUri == null) return false
+    val dv7Format = findDv7VideoFormat()
+    if (dv7Format == null) {
+      emitLog(
+        "debug",
+        "dv-fallback",
+        "Skipping DV conversion retry for $reason: current video is not DV Profile 7 (${describeVideoFormat(currentVideoFormat)})"
+      )
+      return false
+    }
 
     dv7RetryAttempted = true
-    val newMode = DoviBridge.getDv7FallbackMode()
+    val newMode = DoviBridge.getDv7FallbackMode(activity)
     dvMode = newMode
-    Log.i(TAG, "Native DV7 playback failed ($reason), retrying with $newMode")
+    Log.i(TAG, "Native DV7 playback failed ($reason, ${describeVideoFormat(dv7Format)}), retrying with $newMode")
     emitLog("info", "dv-fallback", "DV7 native failed ($reason), retrying as $newMode")
 
     return reloadCurrentMediaForDvMode()
@@ -973,17 +1194,25 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val containerHeight = contentView.height
     if (containerWidth == 0 || containerHeight == 0) return
 
-    // In cover/stretch modes subtitles stay at container size so they never get
-    // cropped or distorted. In letterbox mode they follow the video rect so they
-    // anchor to the bottom of the video (matching MPV's default sub positioning).
+    // In cover/stretch/zoomed-in modes subtitles stay at container size so they
+    // never get cropped. In letterbox mode they follow the visible video rect.
     val isLetterbox = videoAspectContainer?.resizeMode == AspectRatioFrameLayout.RESIZE_MODE_FIT
     val (subWidth, subHeight) = if (isLetterbox) {
       val videoAspect = (videoWidth * pixelRatio) / videoHeight
       val containerAspect = containerWidth.toFloat() / containerHeight
-      if (videoAspect > containerAspect) {
+      val (baseWidth, baseHeight) = if (videoAspect > containerAspect) {
         containerWidth to (containerWidth / videoAspect).toInt()
       } else {
         (containerHeight * videoAspect).toInt() to containerHeight
+      }
+      if (videoZoomScale < 0.999f) {
+        val zoomedWidth = ((baseWidth * videoZoomScale).toInt()).coerceAtLeast(1)
+        val zoomedHeight = ((baseHeight * videoZoomScale).toInt()).coerceAtLeast(1)
+        zoomedWidth to zoomedHeight
+      } else if (videoZoomScale > 1.001f) {
+        containerWidth to containerHeight
+      } else {
+        baseWidth to baseHeight
       }
     } else {
       containerWidth to containerHeight
@@ -1007,6 +1236,21 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (disposing) return
     activity.runOnUiThread {
       videoAspectContainer?.resizeMode = boxFitModeToResizeMode(mode.coerceIn(0, 2))
+      lastVideoSize?.let { vs ->
+        if (vs.width > 0 && vs.height > 0) {
+          updateSubtitleViewSize(vs.width, vs.height, vs.pixelWidthHeightRatio)
+        }
+      }
+    }
+  }
+
+  fun setVideoZoom(scale: Double) {
+    if (disposing) return
+    val clamped = scale.coerceIn(0.5, 2.0).toFloat()
+    activity.runOnUiThread {
+      videoZoomScale = clamped
+      videoAspectContainer?.scaleX = clamped
+      videoAspectContainer?.scaleY = clamped
       lastVideoSize?.let { vs ->
         if (vs.width > 0 && vs.height > 0) {
           updateSubtitleViewSize(vs.width, vs.height, vs.pixelWidthHeightRatio)
@@ -1352,6 +1596,21 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val decision = evaluateTrueHdDirectOutput(format)
     logTrueHdDirectOutputDecision(reason, format, decision)
     return decision.blockDirectOutput
+  }
+
+  private fun shouldBlockDirectAudioOutput(format: Format, reason: String): Boolean {
+    val mimeType = format.sampleMimeType ?: return false
+    if (directAudioOutputBlockedAfterFailure.contains(mimeType)) {
+      if (loggedDirectAudioRecoveryBlocks.add("$mimeType|$reason")) {
+        emitLog(
+          "info",
+          "audio-recovery",
+          "Direct $mimeType output disabled after AudioTrack failure (reason=$reason); decoded PCM will be preferred"
+        )
+      }
+      return true
+    }
+    return mimeType == MimeTypes.AUDIO_TRUEHD && shouldBlockDirectTrueHd(format, reason)
   }
 
   private fun updateAudioDecoderPolicy(reason: String, format: Format? = null) {
@@ -1706,7 +1965,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     currentTunneledPlayback = shouldTunnel
     val speed = exoPlayer?.playbackParameters?.speed ?: 1f
     val audioDelayActive = (renderersFactory?.audioDelayUs?.get() ?: 0L) != 0L
-    emitLog("info", "tunneling", "Toggling tunneling=$shouldTunnel (reason=$reason, user=$tunnelingUserEnabled, speed=$speed, audioCodecDisabled=$tunnelingDisabledForAudioCodec, videoCodecDisabled=$tunnelingDisabledForVideoCodec, decodedTrueHdPcmDisabled=$tunnelingDisabledForDecodedTrueHdPcm, audioDelay=$audioDelayActive)")
+    emitLog("info", "tunneling", "Toggling tunneling=$shouldTunnel (reason=$reason, user=$tunnelingUserEnabled, speed=$speed, audioCodecDisabled=$tunnelingDisabledForAudioCodec, videoCodecDisabled=$tunnelingDisabledForVideoCodec, decodedTrueHdPcmDisabled=$tunnelingDisabledForDecodedTrueHdPcm, audioRecoveryDisabled=$tunnelingDisabledForAudioRecovery, audioDelay=$audioDelayActive)")
     return true
   }
 
@@ -1773,6 +2032,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     return parts.joinToString(", ")
   }
 
+  private fun describeAudioTrackConfig(config: AudioSink.AudioTrackConfig?): String {
+    if (config == null) return "none"
+    return "encoding=${config.encoding}, channels=${Integer.bitCount(config.channelConfig)}, " +
+      "channelConfig=0x${config.channelConfig.toString(16)}, buffer=${config.bufferSize}B, " +
+      "tunneling=${config.tunneling}, offload=${config.offload}"
+  }
+
   // Decoder hang detection via AnalyticsListener:
   // Tracks the gap between onVideoDecoderInitialized and onRenderedFirstFrame.
   // If the decoder is initialized and fed input but never produces output, it's hung
@@ -1831,6 +2097,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     override fun onAudioSinkError(eventTime: AnalyticsListener.EventTime, audioSinkError: Exception) {
+      lastAudioSinkError = "${audioSinkError.javaClass.name}: ${audioSinkError.message}"
       emitLog("warn", "audio", "Sink error: ${audioSinkError.javaClass.name}: ${audioSinkError.message}")
     }
 
@@ -1842,14 +2109,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       eventTime: AnalyticsListener.EventTime,
       audioTrackConfig: AudioSink.AudioTrackConfig
     ) {
+      lastAudioTrackConfig = audioTrackConfig
+      val audioFormat = selectedAudioFormat()
       emitLog(
         "info",
         "audio",
-        "AudioTrack initialized: encoding=${audioTrackConfig.encoding}, sampleRate=${audioTrackConfig.sampleRate}, " +
-          "channelConfig=0x${audioTrackConfig.channelConfig.toString(16)}, buffer=${audioTrackConfig.bufferSize}B, " +
-          "tunneling=${audioTrackConfig.tunneling}, offload=${audioTrackConfig.offload}"
+        "AudioTrack initialized: input=${audioFormat?.let { formatAudioSummary(it) } ?: "unknown"}, " +
+          "decoder=${audioDecoderInitName ?: "direct/bypass"}, ${describeAudioTrackConfig(audioTrackConfig)}"
       )
-      val audioFormat = selectedAudioFormat()
       if (audioFormat?.sampleMimeType == MimeTypes.AUDIO_TRUEHD) {
         if (audioTrackConfig.tunneling && isPcmEncoding(audioTrackConfig.encoding)) {
           if (!loggedDecodedTrueHdTunnelingGuard) {
@@ -1889,6 +2156,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       firstFrameRendered = true
       cancelDecoderHangCheck()
       emitLog("debug", "decoder-hang", "First frame rendered — decoder OK")
+      logNativeDvFirstFrameIfNeeded()
       // STATE_READY fires when the player has enough buffered to start, but
       // the first frame may not be on screen yet (decoder init + keyframe
       // decode). The MPV-parity `playback-restart` event consumers (Dart
@@ -2029,6 +2297,16 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     decoderInitName = null
     audioDecoderInitName = null
+    lastAudioTrackConfig = null
+    lastAudioSinkError = null
+    audioRecoveryAttempts = 0
+    lastAudioRecoveryAction = null
+    lastAudioRecoveryReason = null
+    directAudioOutputBlockedAfterFailure.clear()
+    loggedDirectAudioRecoveryBlocks.clear()
+    currentVideoFormat = null
+    loggedNativeDvSelectionKey = null
+    loggedNativeDvFirstFrame = false
     loggedDecodedTrueHdTunnelingGuard = false
     updateAudioDecoderPolicy("open")
     currentMediaUri = uri
@@ -2043,6 +2321,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     externalSubtitles.clear()
     externalSubtitleUris.clear()
+    lastSubtitleCues = emptyList()
     audioTrackGroupMap.clear()
     subtitleTrackGroupMap.clear()
     selectedAudioTrackId = null
@@ -2064,6 +2343,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     tunnelingDisabledForAudioCodec = false
     tunnelingDisabledForVideoCodec = false
     tunnelingDisabledForDecodedTrueHdPcm = false
+    tunnelingDisabledForAudioRecovery = false
     currentTunneledPlayback = false
     pendingStartPositionMs = startPositionMs
     pendingPlayWhenReady = autoPlay
@@ -2159,6 +2439,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     detectedFrameRate = -1f
     fpsTimestampCount = 0
     firstFrameRendered = false
+    currentVideoFormat = null
+    loggedNativeDvSelectionKey = null
+    loggedNativeDvFirstFrame = false
     activeDoviMkvWrapper = null
     activeDoviMp4Wrapper = null
     stopFrameWatchdog()
@@ -2397,23 +2680,23 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       val fraction = fontSize / 720f
       subtitleView?.setFractionalTextSize(fraction)
 
-      // Subtitle position: adjust gravity and bottom padding
+      // Subtitle position: VTT default cues arrive with explicit line numbers,
+      // so app positioning is applied at cue level below.
       val clampedPosition = subtitlePosition.coerceIn(0, 100)
-      val gravity = when {
-        clampedPosition <= 33 -> Gravity.TOP
-        clampedPosition <= 66 -> Gravity.CENTER
-        else -> Gravity.BOTTOM
-      }
-      (subtitleView?.layoutParams as? FrameLayout.LayoutParams)?.let { params ->
-        params.gravity = gravity or Gravity.CENTER_HORIZONTAL
-        subtitleView?.layoutParams = params
-      }
-      // Fine-grained positioning within bottom region via bottom padding fraction
+      subtitlePositionPercent = clampedPosition
+      subtitleFontSize = fontSize
+
+      // Cue-level positioning handles default VTT/SRT placement, whose line
+      // numbers bypass SubtitleView bottom padding. Authored VTT line positions
+      // are preserved in applySubtitlePosition().
       if (clampedPosition > 66) {
         val bottomFraction = (100 - clampedPosition) / 100f
         subtitleView?.setBottomPaddingFraction(bottomFraction)
       } else {
         subtitleView?.setBottomPaddingFraction(0f)
+      }
+      if (lastSubtitleCues.isNotEmpty()) {
+        subtitleView?.setCues(applySubtitlePosition(stackUnpositionedCues(lastSubtitleCues)))
       }
 
       // 2. ASS subtitles: font scale via libass
@@ -2507,6 +2790,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val player = exoPlayer ?: return emptyMap()
     val videoFormat = player.videoFormat
     val audioFormat = player.audioFormat
+    val audioTrackConfig = lastAudioTrackConfig
 
     // Get decoder info from the format's codecs field and check if hardware accelerated
     val videoDecoderInfo = getVideoDecoderInfo(videoFormat)
@@ -2534,6 +2818,17 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       "audioChannels" to audioFormat?.channelCount,
       "audioBitrate" to audioFormat?.bitrate,
       "audioDecoderName" to audioDecoderInitName,
+      "audioOutputEncoding" to audioTrackConfig?.encoding,
+      "audioOutputChannels" to audioTrackConfig?.channelConfig?.let { Integer.bitCount(it) },
+      "audioOutputChannelConfig" to audioTrackConfig?.channelConfig,
+      "audioOutputTunneling" to audioTrackConfig?.tunneling,
+      "audioOutputOffload" to audioTrackConfig?.offload,
+      "audioOutputBufferSize" to audioTrackConfig?.bufferSize,
+      "audioLastSinkError" to lastAudioSinkError,
+      "audioRecoveryAttempts" to audioRecoveryAttempts,
+      "audioRecoveryLastAction" to lastAudioRecoveryAction,
+      "audioRecoveryLastReason" to lastAudioRecoveryReason,
+      "audioDirectOutputBlockedMimes" to directAudioOutputBlockedAfterFailure.toList(),
       // Tunneling
       "tunneledPlayback" to currentTunneledPlayback,
       "tunnelingStatus" to getTunnelingStatus(player),
@@ -2556,6 +2851,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
           "dvConversionDebugMode" to (debugDvModeOverride?.name ?: "AUTO"),
           "dvStrippedInitNals" to (dovi?.strippedInitNalCount ?: 0L),
           "dvStrippedNals" to (dovi?.strippedNalCount ?: 0L),
+          "dvStrippedRpuNals" to (dovi?.strippedRpuNalCount ?: 0L),
+          "dvStrippedElNals" to (dovi?.strippedElNalCount ?: 0L),
           "dvConvertedRpus" to (dovi?.convertedRpuCount ?: 0L),
           "dvRpuConversionFailures" to (dovi?.rpuConversionFailureCount ?: 0L),
           "dvRpuOutputTooSmall" to (dovi?.rpuOutputTooSmallCount ?: 0L),
@@ -2596,6 +2893,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (currentTunneledPlayback) return "Active"
     if (!tunnelingUserEnabled) return "Disabled by user"
     if (player.playbackParameters.speed != 1f) return "Off (speed ≠ 1×)"
+    if (tunnelingDisabledForAudioRecovery) return "Off (audio recovery)"
     if (tunnelingDisabledForDecodedTrueHdPcm) return "Off (decoded TrueHD PCM)"
     if (tunnelingDisabledForVideoCodec) return "Off (video codec unsupported)"
     if (tunnelingDisabledForAudioCodec) return "Off (no HW audio decoder)"
@@ -2632,9 +2930,17 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     decoderInitName = null
     audioDecoderInitName = null
+    lastAudioTrackConfig = null
+    lastAudioSinkError = null
+    audioRecoveryAttempts = 0
+    lastAudioRecoveryAction = null
+    lastAudioRecoveryReason = null
+    directAudioOutputBlockedAfterFailure.clear()
+    loggedDirectAudioRecoveryBlocks.clear()
     tunnelingDisabledForAudioCodec = false
     tunnelingDisabledForVideoCodec = false
     tunnelingDisabledForDecodedTrueHdPcm = false
+    tunnelingDisabledForAudioRecovery = false
     currentTunneledPlayback = false
     pendingStartPositionMs = 0L
     pendingPlayWhenReady = null

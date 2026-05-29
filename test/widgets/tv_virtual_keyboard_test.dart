@@ -72,7 +72,63 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(controller.text, 'a\n');
-    expect(find.byType(Dialog), findsOneWidget);
+    expect(find.byType(Dialog), findsNothing);
+  });
+
+  testWidgets('physical keyboard character inserts text and hides keyboard', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyA, character: 'a');
+    await tester.pumpAndSettle();
+
+    expect(controller.text, 'a');
+    expect(find.byType(Dialog), findsNothing);
+  });
+
+  testWidgets('physical keyboard backspace deletes existing text from end and hides keyboard', (tester) async {
+    final controller = TextEditingController(text: 'query');
+    controller.selection = const TextSelection.collapsed(offset: 0);
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+    await tester.pumpAndSettle();
+
+    expect(controller.text, 'quer');
+    expect(find.byType(Dialog), findsNothing);
+  });
+
+  testWidgets('keyboard is compact and bottom aligned on TV', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    final panelRect = tester.getRect(find.byKey(const Key('tv_virtual_keyboard_panel')));
+    expect(panelRect.height, lessThanOrEqualTo(330));
+    expect(panelRect.width, lessThanOrEqualTo(650));
+    expect(panelRect.bottom, greaterThan(680));
+  });
+
+  testWidgets('keyboard keeps equals on main page and exposes symbols page', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    expect(find.text('='), findsOneWidget);
+    expect(find.byIcon(Icons.functions_rounded), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.functions_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ABC'), findsOneWidget);
+    expect(find.text('!'), findsOneWidget);
+    expect(find.text('='), findsOneWidget);
   });
 }
 

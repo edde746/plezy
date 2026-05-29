@@ -24,8 +24,11 @@ extension _VideoPlayerShaderMethods on VideoPlayerScreenState {
 
   /// Restore ambient lighting from persisted setting
   Future<void> _restoreAmbientLighting() async {
+    if (!mounted) return;
+
     final shaderProvider = context.read<ShaderProvider>();
     final settings = await SettingsService.getInstance();
+    if (!mounted) return;
     if (!settings.read(SettingsService.ambientLighting)) return;
 
     final ambientLighting = _ambientLightingService;
@@ -63,6 +66,35 @@ extension _VideoPlayerShaderMethods on VideoPlayerScreenState {
     _setPlayerState(() {
       _videoFilterManager?.cycleBoxFitMode();
     });
+  }
+
+  void _showZoomToast(double zoomScale) {
+    _toastController.show(Symbols.zoom_in_rounded, t.videoControls.zoomPercent(percent: (zoomScale * 100).round()));
+  }
+
+  double _setVideoZoom(double zoomScale, {bool showToast = true}) {
+    final filterManager = _videoFilterManager;
+    if (filterManager == null) return 1.0;
+
+    _ambientLightingService?.disable();
+    final next = filterManager.setZoomScale(zoomScale);
+    if (showToast) _showZoomToast(next);
+    if (mounted) _setPlayerState(() {});
+    return next;
+  }
+
+  void _zoomVideoIn() {
+    final current = _videoFilterManager?.zoomScale ?? 1.0;
+    _setVideoZoom(current + VideoFilterManager.zoomStep);
+  }
+
+  void _zoomVideoOut() {
+    final current = _videoFilterManager?.zoomScale ?? 1.0;
+    _setVideoZoom(current - VideoFilterManager.zoomStep);
+  }
+
+  void _resetVideoZoom() {
+    _setVideoZoom(1.0);
   }
 
   /// Update video-aspect-override when player size changes.
@@ -116,12 +148,5 @@ extension _VideoPlayerShaderMethods on VideoPlayerScreenState {
     unawaited(settings.write(SettingsService.ambientLighting, ambientLighting.isEnabled));
 
     if (mounted) _setPlayerState(() {});
-  }
-
-  /// Toggle between contain and cover modes only (for pinch gesture)
-  void _toggleContainCover() {
-    _setPlayerState(() {
-      _videoFilterManager?.toggleContainCover();
-    });
   }
 }

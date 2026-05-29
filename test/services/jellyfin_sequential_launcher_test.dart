@@ -19,14 +19,17 @@ import 'package:plezy/utils/media_server_http_client.dart';
 /// `implements JellyfinClient` so existing tests stay backend-tagged.
 class _RecordingJellyfinClient implements JellyfinClient {
   final List<MediaItem> playableDescendantsResponse;
+  final List<MediaItem> playableFolderDescendantsResponse;
   final List<MediaItem> seriesEpisodesResponse;
   final List<MediaItem> playlistItemsResponse;
   final List<String> fetchPlayableDescendantsCalls = [];
+  final List<String> fetchPlayableFolderDescendantsCalls = [];
   final List<String> fetchSeriesEpisodesCalls = [];
   final List<({String id, int offset, int limit})> fetchPlaylistItemsCalls = [];
 
   _RecordingJellyfinClient({
     this.playableDescendantsResponse = const [],
+    this.playableFolderDescendantsResponse = const [],
     this.seriesEpisodesResponse = const [],
     this.playlistItemsResponse = const [],
   });
@@ -35,6 +38,12 @@ class _RecordingJellyfinClient implements JellyfinClient {
   Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
     fetchPlayableDescendantsCalls.add(parentId);
     return playableDescendantsResponse;
+  }
+
+  @override
+  Future<List<MediaItem>> fetchPlayableFolderDescendants(String parentId) async {
+    fetchPlayableFolderDescendantsCalls.add(parentId);
+    return playableFolderDescendantsResponse;
   }
 
   @override
@@ -79,6 +88,15 @@ MediaItem _ep(String id, {String? serverId = 'srv-jf'}) => MediaItem(
   title: 'Episode $id',
   serverId: serverId,
 );
+
+MediaItem _movie(String id, {String? serverId = 'srv-jf'}) =>
+    MediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.movie, title: 'Movie $id', serverId: serverId);
+
+MediaItem _clip(String id, {String? serverId = 'srv-jf'}) =>
+    MediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.clip, title: 'Video $id', serverId: serverId);
+
+MediaItem _track(String id, {String? serverId = 'srv-jf'}) =>
+    MediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.track, title: 'Track $id', serverId: serverId);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -382,6 +400,105 @@ void main() {
 
       expect(result, isA<PlayQueueSuccess>());
       expect(navigated.single.id, 'a');
+    });
+
+    testWidgets('folder path seeds a video-only local queue', (tester) async {
+      final ctx = await pumpContext(tester);
+      final fakeClient = _RecordingJellyfinClient(
+        playableFolderDescendantsResponse: [_track('song'), _movie('movie', serverId: null), _clip('video')],
+      );
+      final playback = PlaybackStateProvider();
+      final navigated = <MediaItem>[];
+
+      final launcher = JellyfinSequentialLauncher(
+        context: ctx,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: playback,
+        navigateForTesting: (m) async => navigated.add(m),
+      );
+
+      final folder = MediaItem(
+        id: 'folder-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.unknown,
+        title: 'Folder',
+        serverId: 'srv-jf',
+        serverName: 'Home Jellyfin',
+        libraryId: 'lib-1',
+        libraryTitle: 'Videos',
+      );
+
+      final result = await launcher.launchFromFolder(folder: folder, shuffle: false, showLoadingIndicator: false);
+
+      expect(result, isA<PlayQueueSuccess>());
+      expect(fakeClient.fetchPlayableFolderDescendantsCalls, ['folder-1']);
+      expect(fakeClient.fetchPlayableDescendantsCalls, isEmpty);
+      expect(playback.loadedItems.map((m) => m.id).toList(), ['movie', 'video']);
+      expect(playback.loadedItems.any((m) => m.kind == MediaKind.track), isFalse);
+      expect(playback.loadedItems.first.serverId, 'srv-jf');
+      expect(playback.loadedItems.first.libraryId, 'lib-1');
+      expect(playback.isQueueActive, isTrue);
+      expect(playback.isShuffleActive, isFalse);
+      expect(navigated.single.id, 'movie');
+    });
+
+    testWidgets('folder shuffle reorders the video queue', (tester) async {
+      final ctx = await pumpContext(tester);
+      final originalIds = List.generate(50, (i) => 'v$i');
+      final fakeClient = _RecordingJellyfinClient(playableFolderDescendantsResponse: originalIds.map(_clip).toList());
+      final playback = PlaybackStateProvider();
+
+      final launcher = JellyfinSequentialLauncher(
+        context: ctx,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: playback,
+        navigateForTesting: (_) async {},
+      );
+
+      final folder = MediaItem(
+        id: 'folder-shuffle',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.unknown,
+        serverId: 'srv-jf',
+      );
+
+      final result = await launcher.launchFromFolder(folder: folder, shuffle: true, showLoadingIndicator: false);
+
+      expect(result, isA<PlayQueueSuccess>());
+      final shuffledIds = playback.loadedItems.map((m) => m.id).toList();
+      expect(shuffledIds.toSet(), originalIds.toSet());
+      expect(shuffledIds.length, originalIds.length);
+      expect(shuffledIds, isNot(equals(originalIds)));
+      expect(playback.isShuffleActive, isTrue);
+    });
+
+    testWidgets('music-only folder returns PlayQueueEmpty', (tester) async {
+      final ctx = await pumpContext(tester);
+      final fakeClient = _RecordingJellyfinClient(playableFolderDescendantsResponse: [_track('a'), _track('b')]);
+      final playback = PlaybackStateProvider();
+      var didNavigate = false;
+
+      final launcher = JellyfinSequentialLauncher(
+        context: ctx,
+        clientForTesting: fakeClient,
+        playbackStateForTesting: playback,
+        navigateForTesting: (_) async {
+          didNavigate = true;
+        },
+      );
+
+      final folder = MediaItem(
+        id: 'music-folder',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.unknown,
+        serverId: 'srv-jf',
+      );
+
+      final result = await launcher.launchFromFolder(folder: folder, shuffle: false, showLoadingIndicator: false);
+
+      expect(result, isA<PlayQueueEmpty>());
+      expect(playback.isQueueActive, isFalse);
+      expect(didNavigate, isFalse);
     });
 
     testWidgets('launchShuffledShow rejects non-show/season kinds', (tester) async {

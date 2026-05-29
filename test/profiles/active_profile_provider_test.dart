@@ -151,6 +151,20 @@ void main() {
       expect(provider.activeId, 'p2');
     });
 
+    test('activate moves the selected profile to the front by recent usage', () async {
+      await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
+      await registry.upsert(Profile.local(id: 'p2', displayName: 'Kids', createdAt: DateTime(2026, 1, 2)));
+      await provider.initialize();
+      expect(provider.profiles.map((p) => p.id).toList(), ['p1', 'p2']);
+
+      final p2 = provider.profiles.firstWhere((p) => p.id == 'p2');
+      final ok = await provider.activate(p2);
+
+      expect(ok, isTrue);
+      expect(provider.profiles.map((p) => p.id).toList(), ['p2', 'p1']);
+      expect(storage.getProfileLastUsed('p2'), isNotNull);
+    });
+
     test('clearActiveProfile clears storage and in-memory active profile', () async {
       await registry.upsert(Profile.local(id: 'p1', displayName: 'Owner', createdAt: DateTime(2026, 1, 1)));
       await provider.initialize();

@@ -41,12 +41,16 @@ class AppDurations {
 class GridLayoutConstants {
   static const double posterAspectRatio = 2 / 3.3;
 
+  static const double fullCardPosterAspectRatio = 2 / 3;
+
   static const double episodeThumbnailAspectRatio = 16 / 9;
 
   static const double episodeGridCellAspectRatio = 1.4;
 
   static const double crossAxisSpacing = 0;
   static const double mainAxisSpacing = 0;
+
+  static double fullCardGridSpacingForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
   /// Standard grid padding
   static EdgeInsets get gridPadding => const EdgeInsets.only(left: 2, right: 2, bottom: 2);

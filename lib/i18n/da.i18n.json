@@ -36,6 +36,7 @@
     "yes": "Ja",
     "no": "Nej",
     "delete": "Slet",
+    "edit": "Rediger",
     "shuffle": "Bland",
     "addTo": "Tilføj til...",
     "createNew": "Opret ny",
@@ -125,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "Vis sæson- og episodenummer på episodekort",
     "showSeasonPostersOnTabs": "Vis sæsonplakater på faner",
     "showSeasonPostersOnTabsDescription": "Vis hver sæsons plakat over dens fane",
+    "tvFullCardLayout": "Fuldflade TV-kort",
+    "tvFullCardLayoutDescription": "Brug TV-kort kun med billeder og skuespillernavne ovenpå",
     "hideSpoilers": "Skjul spoilere for usete episoder",
     "hideSpoilersDescription": "Slør miniaturebilleder og beskrivelser for usete episoder",
     "playerBackend": "Afspillerbackend",
@@ -303,6 +306,9 @@
       "speedIncrease": "Øg hastighed",
       "speedDecrease": "Sænk hastighed",
       "speedReset": "Nulstil hastighed",
+      "zoomIn": "Zoom ind",
+      "zoomOut": "Zoom ud",
+      "zoomReset": "Nulstil zoom",
       "subSeekNext": "Søg til næste undertekst",
       "subSeekPrev": "Søg til forrige undertekst",
       "shaderToggle": "Skift shadere",
@@ -441,6 +447,7 @@
     "pipActive": "Afspiller i billede-i-billede",
     "pipFailed": "Billede-i-billede kunne ikke starte",
     "screenshotSaved": "Skærmbillede gemt",
+    "zoomPercent": "Zoom ${percent}%",
     "pipErrors": {
       "androidVersion": "Kræver Android 8.0 eller nyere",
       "iosVersion": "Kræver iOS 15.0 eller nyere",
@@ -609,7 +616,9 @@
     "addConnectionSubtitleScoped": "Føj til ${displayName}: Plex, Jellyfin eller en anden profilforbindelse",
     "sessionExpiredOne": "Sessionen er udløbet for ${name}",
     "sessionExpiredMany": "Sessionen er udløbet for ${count} servere",
-    "signInAgain": "Log ind igen"
+    "signInAgain": "Log ind igen",
+    "editJellyfinTitle": "Rediger Jellyfin-forbindelse",
+    "editJellyfinIntro": "Tilføj eller fjern URL'er for ${serverName}. Plezy bruger den tilgængelige URL med lavest latenstid."
   },
   "discover": {
     "title": "Opdag",
@@ -1078,6 +1087,7 @@
   },
   "videoSettings": {
     "playbackSpeed": "Afspilningshastighed",
+    "zoom": "Zoom",
     "sleepTimer": "Sove-timer",
     "audioSync": "Lydsynkronisering",
     "subtitleSync": "Undertekstsynkronisering",
@@ -1256,7 +1266,9 @@
   "addServer": {
     "addJellyfinTitle": "Tilføj Jellyfin-server",
     "jellyfinUrlIntro": "Indtast server-URL'en, f.eks. `https://jellyfin.example.com`.",
+    "jellyfinUrlsIntro": "Indtast en eller flere server-URL'er, adskilt med kommaer eller nye linjer. Plezy bruger den tilgængelige URL med lavest latenstid.",
     "serverUrl": "Server-URL",
+    "serverUrls": "Server-URL'er",
     "findServer": "Find server",
     "username": "Brugernavn",
     "password": "Adgangskode",

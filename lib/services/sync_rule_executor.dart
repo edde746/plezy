@@ -480,7 +480,8 @@ class SyncRuleExecutor {
       p != null &&
       (p.status == DownloadStatus.completed ||
           p.status == DownloadStatus.downloading ||
-          p.status == DownloadStatus.queued);
+          p.status == DownloadStatus.queued ||
+          p.status == DownloadStatus.paused);
 
   Future<List<ConnectivityResult>> _readConnectivity() async {
     try {

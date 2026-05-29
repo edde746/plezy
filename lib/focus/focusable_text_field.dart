@@ -9,7 +9,7 @@ import '../utils/text_input_diagnostics.dart';
 import '../widgets/tv_virtual_keyboard.dart';
 import 'dpad_navigator.dart';
 
-bool _usesTvKeyboard(bool enableTvKeyboard) => enableTvKeyboard && PlatformDetector.isAppleTV();
+bool _usesTvKeyboard(bool enableTvKeyboard) => enableTvKeyboard && PlatformDetector.isTV();
 
 String? _keyboardHint(InputDecoration? decoration) => decoration?.hintText ?? decoration?.labelText;
 
@@ -74,6 +74,7 @@ class _NativeTvTextInputFocusBridge {
 
 KeyEventResult _handleInputKey({
   required TextEditingController controller,
+  required FocusNode node,
   required bool usesTvKeyboard,
   required bool enabled,
   required VoidCallback openKeyboard,
@@ -150,24 +151,52 @@ KeyEventResult _handleInputKey({
 
   if (!event.isActionable) return finish(KeyEventResult.ignored, 'non-actionable');
 
-  if (key.isUpKey && onNavigateUp != null) {
-    onNavigateUp();
-    return finish(KeyEventResult.handled, 'onNavigateUp');
+  final isMultiline = _isMultilineTextInput(keyboardType: keyboardType, maxLines: maxLines);
+
+  // Directional escape: an explicit callback always wins. Otherwise, fall back
+  // to the framework's geometry-based directional traversal so an un-wired
+  // field moves to its nearest neighbour instead of dead-ending (the field's
+  // own onKeyEvent runs before EditableText, which would otherwise swallow the
+  // arrow). Single-line only for UP/DOWN — multiline falls through so
+  // EditableText can move the caret between lines.
+  if (key.isUpKey) {
+    if (onNavigateUp != null) {
+      onNavigateUp();
+      return finish(KeyEventResult.handled, 'onNavigateUp');
+    }
+    if (!isMultiline) {
+      final moved = node.focusInDirection(TraversalDirection.up);
+      return finish(moved ? KeyEventResult.handled : KeyEventResult.ignored, 'focusInDirection-up');
+    }
   }
-  if (key.isDownKey && onNavigateDown != null) {
-    onNavigateDown();
-    return finish(KeyEventResult.handled, 'onNavigateDown');
+  if (key.isDownKey) {
+    if (onNavigateDown != null) {
+      onNavigateDown();
+      return finish(KeyEventResult.handled, 'onNavigateDown');
+    }
+    if (!isMultiline) {
+      final moved = node.focusInDirection(TraversalDirection.down);
+      return finish(moved ? KeyEventResult.handled : KeyEventResult.ignored, 'focusInDirection-down');
+    }
   }
 
   final sel = controller.selection;
   if (sel.isCollapsed) {
-    if (key.isLeftKey && sel.baseOffset == 0 && onNavigateLeft != null) {
-      onNavigateLeft();
-      return finish(KeyEventResult.handled, 'onNavigateLeft-at-start');
+    if (key.isLeftKey && sel.baseOffset == 0) {
+      if (onNavigateLeft != null) {
+        onNavigateLeft();
+        return finish(KeyEventResult.handled, 'onNavigateLeft-at-start');
+      }
+      final moved = node.focusInDirection(TraversalDirection.left);
+      return finish(moved ? KeyEventResult.handled : KeyEventResult.ignored, 'focusInDirection-left-at-start');
     }
-    if (key.isRightKey && sel.baseOffset == controller.text.length && onNavigateRight != null) {
-      onNavigateRight();
-      return finish(KeyEventResult.handled, 'onNavigateRight-at-end');
+    if (key.isRightKey && sel.baseOffset == controller.text.length) {
+      if (onNavigateRight != null) {
+        onNavigateRight();
+        return finish(KeyEventResult.handled, 'onNavigateRight-at-end');
+      }
+      final moved = node.focusInDirection(TraversalDirection.right);
+      return finish(moved ? KeyEventResult.handled : KeyEventResult.ignored, 'focusInDirection-right-at-end');
     }
   }
 
@@ -541,9 +570,9 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     return null;
   }
 
-  void _showTvKeyboard(BuildContext context) {
-    if (!enabled) return;
-    showTvVirtualKeyboard(
+  Future<void> _showTvKeyboard(BuildContext context) {
+    if (!enabled) return Future.value();
+    return showTvVirtualKeyboard(
       context: context,
       controller: controller,
       hintText: _keyboardHint(decoration),
@@ -571,12 +600,13 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     }
   }
 
-  KeyEventResult _handleKey(BuildContext context, FocusNode _, KeyEvent event) {
+  KeyEventResult _handleKey(BuildContext context, FocusNode node, KeyEvent event, VoidCallback openKeyboard) {
     return _handleInputKey(
       controller: controller,
+      node: node,
       usesTvKeyboard: _hasTvKeyboard,
       enabled: enabled,
-      openKeyboard: () => _showTvKeyboard(context),
+      openKeyboard: openKeyboard,
       event: event,
       keyboardType: keyboardType,
       textInputAction: textInputAction,
@@ -595,14 +625,17 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     );
   }
 
-  Widget buildFocusableInput(BuildContext context, Widget Function(bool usesTvKeyboard, FocusNode focusNode) builder) {
+  Widget buildFocusableInput(
+    BuildContext context,
+    Widget Function(bool usesTvKeyboard, FocusNode focusNode, VoidCallback openKeyboard) builder,
+  ) {
     return _FocusableTextInputHost(input: this, builder: builder);
   }
 }
 
 class _FocusableTextInputHost extends StatefulWidget {
   final _FocusableTextInputBase input;
-  final Widget Function(bool usesTvKeyboard, FocusNode focusNode) builder;
+  final Widget Function(bool usesTvKeyboard, FocusNode focusNode, VoidCallback openKeyboard) builder;
 
   const _FocusableTextInputHost({required this.input, required this.builder});
 
@@ -615,9 +648,12 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
   FocusNode? _installedFocusNode;
   FocusOnKeyEventCallback? _previousOnKeyEvent;
   late final FocusOnKeyEventCallback _keyHandler = _handleKey;
-  late final VoidCallback _focusListener = _syncNativeTextInputFocus;
+  late final VoidCallback _focusListener = _handleFocusChanged;
   final Object _nativeFocusToken = Object();
   bool _reportedNativeTextInputFocused = false;
+  bool _tvKeyboardOpen = false;
+  bool _tvKeyboardOpenScheduled = false;
+  bool _suppressTvKeyboardAutoOpen = false;
 
   FocusNode get _effectiveFocusNode =>
       widget.input.focusNode ?? (_ownedFocusNode ??= FocusNode(debugLabel: 'FocusableTextInput'));
@@ -627,8 +663,10 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.input.focusNode != widget.input.focusNode) {
       _restoreInstalledHandler();
+      _suppressTvKeyboardAutoOpen = false;
+      _tvKeyboardOpenScheduled = false;
     }
-    _syncNativeTextInputFocus();
+    _handleFocusChanged();
   }
 
   @override
@@ -636,6 +674,11 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     _restoreInstalledHandler();
     _ownedFocusNode?.dispose();
     super.dispose();
+  }
+
+  void _handleFocusChanged() {
+    _syncNativeTextInputFocus();
+    _syncTvKeyboardAutoOpen();
   }
 
   void _syncNativeTextInputFocus() {
@@ -646,6 +689,65 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
       'usesNativeTvKeyboard=${widget.input._usesNativeTvKeyboard}',
     );
     _setNativeTextInputFocused(focused);
+  }
+
+  void _syncTvKeyboardAutoOpen() {
+    final focused = _installedFocusNode?.hasFocus == true && widget.input.enabled && widget.input._hasTvKeyboard;
+    final visible = _canShowTvKeyboard;
+    _logTvTextInput(
+      'Host.syncTvKeyboardAutoOpen focused=$focused open=$_tvKeyboardOpen scheduled=$_tvKeyboardOpenScheduled '
+      'suppressed=$_suppressTvKeyboardAutoOpen installed=${_installedFocusNode?.debugLabel} '
+      'hasFocus=${_installedFocusNode?.hasFocus} enabled=${widget.input.enabled} '
+      'usesTvKeyboard=${widget.input._hasTvKeyboard} visible=$visible',
+    );
+
+    if (!focused) {
+      if (!_tvKeyboardOpen && !_tvKeyboardOpenScheduled) {
+        _suppressTvKeyboardAutoOpen = false;
+      }
+      return;
+    }
+
+    if (!visible) return;
+    if (_suppressTvKeyboardAutoOpen || _tvKeyboardOpen || _tvKeyboardOpenScheduled) return;
+
+    _tvKeyboardOpenScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _tvKeyboardOpenScheduled = false;
+      final stillFocused = _installedFocusNode?.hasFocus == true && widget.input.enabled && widget.input._hasTvKeyboard;
+      if (!stillFocused || !_canShowTvKeyboard || _suppressTvKeyboardAutoOpen || _tvKeyboardOpen) return;
+      _openTvKeyboard();
+    });
+  }
+
+  bool get _canShowTvKeyboard {
+    final route = ModalRoute.of(context);
+    return TickerMode.valuesOf(context).enabled && (route?.isCurrent ?? true);
+  }
+
+  void _openTvKeyboard() {
+    if (!mounted || !widget.input.enabled || !widget.input._hasTvKeyboard || !_canShowTvKeyboard || _tvKeyboardOpen) {
+      return;
+    }
+
+    _tvKeyboardOpenScheduled = false;
+    _tvKeyboardOpen = true;
+    _suppressTvKeyboardAutoOpen = true;
+    _logTvTextInput('Host.openTvKeyboard node=${_installedFocusNode?.debugLabel}');
+    unawaited(
+      widget.input._showTvKeyboard(context).whenComplete(() {
+        if (!mounted) return;
+        _tvKeyboardOpen = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (_installedFocusNode?.hasFocus != true) {
+            _suppressTvKeyboardAutoOpen = false;
+          }
+          _syncTvKeyboardAutoOpen();
+        });
+      }),
+    );
   }
 
   void _setNativeTextInputFocused(bool focused) {
@@ -667,7 +769,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
       );
       if (result != KeyEventResult.ignored) return result;
     }
-    return widget.input._handleKey(context, node, event);
+    return widget.input._handleKey(context, node, event, _openTvKeyboard);
   }
 
   void _installKeyHandler(FocusNode node) {
@@ -707,8 +809,8 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
   Widget build(BuildContext context) {
     final focusNode = _effectiveFocusNode;
     _installKeyHandler(focusNode);
-    _syncNativeTextInputFocus();
-    return widget.builder(widget.input._hasTvKeyboard, focusNode);
+    _handleFocusChanged();
+    return widget.builder(widget.input._hasTvKeyboard, focusNode, _openTvKeyboard);
   }
 }
 
@@ -756,7 +858,7 @@ class FocusableTextField extends _FocusableTextInputBase {
   Widget build(BuildContext context) {
     return buildFocusableInput(
       context,
-      (usesTvKeyboard, effectiveFocusNode) => TextField(
+      (usesTvKeyboard, effectiveFocusNode, openKeyboard) => TextField(
         controller: controller,
         focusNode: effectiveFocusNode,
         enabled: enabled,
@@ -780,7 +882,7 @@ class FocusableTextField extends _FocusableTextInputBase {
         readOnly: usesTvKeyboard,
         showCursor: usesTvKeyboard ? true : null,
         enableInteractiveSelection: usesTvKeyboard ? false : enableInteractiveSelection,
-        onTap: usesTvKeyboard ? () => _showTvKeyboard(context) : null,
+        onTap: usesTvKeyboard ? openKeyboard : null,
       ),
     );
   }
@@ -831,7 +933,7 @@ class FocusableTextFormField extends _FocusableTextInputBase {
   Widget build(BuildContext context) {
     return buildFocusableInput(
       context,
-      (usesTvKeyboard, effectiveFocusNode) => TextFormField(
+      (usesTvKeyboard, effectiveFocusNode, openKeyboard) => TextFormField(
         controller: controller,
         focusNode: effectiveFocusNode,
         enabled: enabled,
@@ -858,7 +960,7 @@ class FocusableTextFormField extends _FocusableTextInputBase {
         readOnly: usesTvKeyboard,
         showCursor: usesTvKeyboard ? true : null,
         enableInteractiveSelection: usesTvKeyboard ? false : enableInteractiveSelection,
-        onTap: usesTvKeyboard ? () => _showTvKeyboard(context) : null,
+        onTap: usesTvKeyboard ? openKeyboard : null,
       ),
     );
   }

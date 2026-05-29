@@ -11,10 +11,11 @@ import '../media/play_queue.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/snackbar_helper.dart';
+import 'jellyfin_client.dart';
 import 'media_list_playback_launcher.dart';
 import 'playlist_items_loader.dart';
 
-/// Backend-neutral launcher for Jellyfin collections and playlists.
+/// Backend-neutral launcher for Jellyfin collections, playlists, and folders.
 ///
 /// Jellyfin has no server-side queue resource — the client fetches
 /// children (collection) or playlist items, applies shuffle locally,
@@ -117,6 +118,74 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
             backendId: client.backend.id,
           ),
           contextKey: facts.id,
+          navigateForTesting: navigateForTesting,
+        );
+      },
+    );
+  }
+
+  /// Launch playback from a Jellyfin folder row. Jellyfin has no server-side
+  /// queue resource, so folders use the same local queue path as collections.
+  /// The client query is video-only; music-only folders return [PlayQueueEmpty].
+  Future<PlayQueueResult> launchFromFolder({
+    required MediaItem folder,
+    required bool shuffle,
+    bool showLoadingIndicator = true,
+  }) async {
+    final serverId = folder.serverId;
+    if (serverId == null) {
+      return PlayQueueError(Exception('Item is missing serverId'));
+    }
+
+    return executeWithLoading(
+      context: context,
+      showLoading: showLoadingIndicator,
+      actionLabel: shuffle ? t.common.shuffle : t.common.play,
+      execute: (dismissLoading) async {
+        final client = clientForTesting ?? _resolveClient(serverId);
+        if (client == null) {
+          await dismissLoading();
+          if (context.mounted) {
+            showErrorSnackBar(context, t.errors.noClientAvailable);
+          }
+          return PlayQueueError(Exception('No client for server $serverId'));
+        }
+
+        final fetched = client is JellyfinClient
+            ? await client.fetchPlayableFolderDescendants(folder.id)
+            : await client.fetchPlayableDescendants(folder.id);
+        var items = fetched.where((item) => item.kind.isVideo).map((item) {
+          return item.copyWith(
+            serverId: item.serverId ?? serverId,
+            serverName: item.serverName ?? folder.serverName,
+            libraryId: item.libraryId ?? folder.libraryId,
+            libraryTitle: item.libraryTitle ?? folder.libraryTitle,
+          );
+        }).toList();
+
+        if (items.isEmpty) return const PlayQueueEmpty();
+
+        if (shuffle) {
+          items = List.of(items)..shuffle(Random());
+        }
+
+        await dismissLoading();
+        if (!context.mounted && navigateForTesting == null) {
+          return const PlayQueueError('Context not mounted');
+        }
+
+        final playbackState = playbackStateForTesting ?? context.read<PlaybackStateProvider>();
+        return launchLocalQueuePlayback(
+          context: context,
+          playbackState: playbackState,
+          queue: LocalPlayQueue(
+            id: 'jellyfin:folder:${folder.id}',
+            items: items,
+            currentIndex: 0,
+            shuffled: shuffle,
+            backendId: client.backend.id,
+          ),
+          contextKey: folder.id,
           navigateForTesting: navigateForTesting,
         );
       },

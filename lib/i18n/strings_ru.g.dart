@@ -143,6 +143,7 @@ class _TranslationsCommonRu extends TranslationsCommonEn {
 	@override String get yes => 'Да';
 	@override String get no => 'Нет';
 	@override String get delete => 'Удалить';
+	@override String get edit => 'Редактировать';
 	@override String get shuffle => 'Перемешать';
 	@override String get addTo => 'Добавить в...';
 	@override String get createNew => 'Создать новый';
@@ -253,6 +254,8 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Показывать номер сезона и серии на карточках серий';
 	@override String get showSeasonPostersOnTabs => 'Показывать постеры сезонов на вкладках';
 	@override String get showSeasonPostersOnTabsDescription => 'Показывать постер каждого сезона над его вкладкой';
+	@override String get tvFullCardLayout => 'Полные TV-карточки';
+	@override String get tvFullCardLayoutDescription => 'Использовать TV-карточки только с изображением и именами актёров поверх него';
 	@override String get hideSpoilers => 'Скрыть спойлеры непросмотренных эпизодов';
 	@override String get hideSpoilersDescription => 'Размывать миниатюры и описания непросмотренных серий';
 	@override String get playerBackend => 'Бэкенд плеера';
@@ -602,6 +605,7 @@ class _TranslationsVideoControlsRu extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Воспроизводится в режиме «картинка в картинке»';
 	@override String get pipFailed => 'Не удалось запустить режим «картинка в картинке»';
 	@override String get screenshotSaved => 'Снимок экрана сохранён';
+	@override String zoomPercent({required Object percent}) => 'Масштаб ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsRu pipErrors = _TranslationsVideoControlsPipErrorsRu._(_root);
 	@override String get chapters => 'Главы';
 	@override String get noChaptersAvailable => 'Главы недоступны';
@@ -812,6 +816,8 @@ class _TranslationsConnectionsRu extends TranslationsConnectionsEn {
 	@override String sessionExpiredOne({required Object name}) => 'Сессия истекла для ${name}';
 	@override String sessionExpiredMany({required Object count}) => 'Сессия истекла для ${count} серверов';
 	@override String get signInAgain => 'Войти снова';
+	@override String get editJellyfinTitle => 'Изменить подключение Jellyfin';
+	@override String editJellyfinIntro({required Object serverName}) => 'Добавьте или удалите URL для ${serverName}. Plezy будет использовать доступный URL с минимальной задержкой.';
 }
 
 // Path: discover
@@ -1303,6 +1309,7 @@ class _TranslationsVideoSettingsRu extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Скорость воспроизведения';
+	@override String get zoom => 'Масштаб';
 	@override String get sleepTimer => 'Таймер сна';
 	@override String get audioSync => 'Синхронизация аудио';
 	@override String get subtitleSync => 'Синхронизация субтитров';
@@ -1502,7 +1509,9 @@ class _TranslationsAddServerRu extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Добавить сервер Jellyfin';
 	@override String get jellyfinUrlIntro => 'Введите URL сервера, например `https://jellyfin.example.com`.';
+	@override String get jellyfinUrlsIntro => 'Введите один или несколько URL сервера, разделяя их запятыми или новыми строками. Plezy будет использовать доступный URL с минимальной задержкой.';
 	@override String get serverUrl => 'URL сервера';
+	@override String get serverUrls => 'URL сервера';
 	@override String get findServer => 'Найти сервер';
 	@override String get username => 'Имя пользователя';
 	@override String get password => 'Пароль';
@@ -1558,6 +1567,9 @@ class _TranslationsHotkeysActionsRu extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => 'Увеличить скорость';
 	@override String get speedDecrease => 'Уменьшить скорость';
 	@override String get speedReset => 'Сбросить скорость';
+	@override String get zoomIn => 'Увеличить масштаб';
+	@override String get zoomOut => 'Уменьшить масштаб';
+	@override String get zoomReset => 'Сбросить масштаб';
 	@override String get subSeekNext => 'К следующему субтитру';
 	@override String get subSeekPrev => 'К предыдущему субтитру';
 	@override String get shaderToggle => 'Вкл./выкл. шейдеры';
@@ -1833,6 +1845,7 @@ extension on TranslationsRu {
 			'common.yes' => 'Да',
 			'common.no' => 'Нет',
 			'common.delete' => 'Удалить',
+			'common.edit' => 'Редактировать',
 			'common.shuffle' => 'Перемешать',
 			'common.addTo' => 'Добавить в...',
 			'common.createNew' => 'Создать новый',
@@ -1916,6 +1929,8 @@ extension on TranslationsRu {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Показывать номер сезона и серии на карточках серий',
 			'settings.showSeasonPostersOnTabs' => 'Показывать постеры сезонов на вкладках',
 			'settings.showSeasonPostersOnTabsDescription' => 'Показывать постер каждого сезона над его вкладкой',
+			'settings.tvFullCardLayout' => 'Полные TV-карточки',
+			'settings.tvFullCardLayoutDescription' => 'Использовать TV-карточки только с изображением и именами актёров поверх него',
 			'settings.hideSpoilers' => 'Скрыть спойлеры непросмотренных эпизодов',
 			'settings.hideSpoilersDescription' => 'Размывать миниатюры и описания непросмотренных серий',
 			'settings.playerBackend' => 'Бэкенд плеера',
@@ -2089,6 +2104,9 @@ extension on TranslationsRu {
 			'hotkeys.actions.speedIncrease' => 'Увеличить скорость',
 			'hotkeys.actions.speedDecrease' => 'Уменьшить скорость',
 			'hotkeys.actions.speedReset' => 'Сбросить скорость',
+			'hotkeys.actions.zoomIn' => 'Увеличить масштаб',
+			'hotkeys.actions.zoomOut' => 'Уменьшить масштаб',
+			'hotkeys.actions.zoomReset' => 'Сбросить масштаб',
 			'hotkeys.actions.subSeekNext' => 'К следующему субтитру',
 			'hotkeys.actions.subSeekPrev' => 'К предыдущему субтитру',
 			'hotkeys.actions.shaderToggle' => 'Вкл./выкл. шейдеры',
@@ -2214,6 +2232,7 @@ extension on TranslationsRu {
 			'videoControls.pipActive' => 'Воспроизводится в режиме «картинка в картинке»',
 			'videoControls.pipFailed' => 'Не удалось запустить режим «картинка в картинке»',
 			'videoControls.screenshotSaved' => 'Снимок экрана сохранён',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Масштаб ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Требуется Android 8.0 или новее',
 			'videoControls.pipErrors.iosVersion' => 'Требуется iOS 15.0 или новее',
 			'videoControls.pipErrors.permissionDisabled' => 'Картинка-в-картинке отключена. Включите ее в системных настройках.',
@@ -2306,6 +2325,8 @@ extension on TranslationsRu {
 			'profiles.addPlezyProfile' => 'Добавить профиль Plezy',
 			'profiles.switchingProfile' => 'Переключение профиля…',
 			'profiles.deleteThisProfileTitle' => 'Удалить этот профиль?',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Удалить ${displayName}. Подключения не изменятся.',
 			'profiles.active' => 'Активный',
 			'profiles.manage' => 'Управление',
@@ -2313,8 +2334,6 @@ extension on TranslationsRu {
 			'profiles.signOut' => 'Выйти',
 			'profiles.signOutPlexTitle' => 'Выйти из Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Удалить ${displayName} и всех пользователей Plex Home? Вы сможете войти снова в любое время.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signedOutPlex' => 'Вы вышли из Plex.',
 			'profiles.signOutFailed' => 'Не удалось выйти.',
 			'profiles.sectionTitle' => 'Профили',
@@ -2369,6 +2388,8 @@ extension on TranslationsRu {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Сессия истекла для ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Сессия истекла для ${count} серверов',
 			'connections.signInAgain' => 'Войти снова',
+			'connections.editJellyfinTitle' => 'Изменить подключение Jellyfin',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Добавьте или удалите URL для ${serverName}. Plezy будет использовать доступный URL с минимальной задержкой.',
 			'discover.title' => 'Обзор',
 			'discover.switchProfile' => 'Сменить профиль',
 			'discover.noContentAvailable' => 'Контент недоступен',
@@ -2789,6 +2810,7 @@ extension on TranslationsRu {
 			'companionRemote.remote.audio' => 'Аудио',
 			'companionRemote.remote.searchHint' => 'Поиск на десктопе...',
 			'videoSettings.playbackSpeed' => 'Скорость воспроизведения',
+			'videoSettings.zoom' => 'Масштаб',
 			'videoSettings.sleepTimer' => 'Таймер сна',
 			'videoSettings.audioSync' => 'Синхронизация аудио',
 			'videoSettings.subtitleSync' => 'Синхронизация субтитров',
@@ -2817,6 +2839,8 @@ extension on TranslationsRu {
 			'metadataEdit.basicInfo' => 'Основная информация',
 			'metadataEdit.artwork' => 'Обложка',
 			'metadataEdit.advancedSettings' => 'Дополнительные настройки',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.title' => 'Название',
 			'metadataEdit.sortTitle' => 'Название для сортировки',
 			'metadataEdit.originalTitle' => 'Оригинальное название',
@@ -2827,8 +2851,6 @@ extension on TranslationsRu {
 			'metadataEdit.summary' => 'Описание',
 			'metadataEdit.poster' => 'Постер',
 			'metadataEdit.background' => 'Фон',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.logo' => 'Логотип',
 			'metadataEdit.squareArt' => 'Квадратное изображение',
 			'metadataEdit.selectPoster' => 'Выбрать постер',
@@ -2947,7 +2969,9 @@ extension on TranslationsRu {
 			'trackers.libraryFilter.noLibraries' => 'Библиотеки недоступны',
 			'addServer.addJellyfinTitle' => 'Добавить сервер Jellyfin',
 			'addServer.jellyfinUrlIntro' => 'Введите URL сервера, например `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => 'Введите один или несколько URL сервера, разделяя их запятыми или новыми строками. Plezy будет использовать доступный URL с минимальной задержкой.',
 			'addServer.serverUrl' => 'URL сервера',
+			'addServer.serverUrls' => 'URL сервера',
 			'addServer.findServer' => 'Найти сервер',
 			'addServer.username' => 'Имя пользователя',
 			'addServer.password' => 'Пароль',

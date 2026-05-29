@@ -36,6 +36,7 @@
     "yes": "Да",
     "no": "Нет",
     "delete": "Удалить",
+    "edit": "Редактировать",
     "shuffle": "Перемешать",
     "addTo": "Добавить в...",
     "createNew": "Создать новый",
@@ -125,6 +126,8 @@
     "showEpisodeNumberOnCardsDescription": "Показывать номер сезона и серии на карточках серий",
     "showSeasonPostersOnTabs": "Показывать постеры сезонов на вкладках",
     "showSeasonPostersOnTabsDescription": "Показывать постер каждого сезона над его вкладкой",
+    "tvFullCardLayout": "Полные TV-карточки",
+    "tvFullCardLayoutDescription": "Использовать TV-карточки только с изображением и именами актёров поверх него",
     "hideSpoilers": "Скрыть спойлеры непросмотренных эпизодов",
     "hideSpoilersDescription": "Размывать миниатюры и описания непросмотренных серий",
     "playerBackend": "Бэкенд плеера",
@@ -303,6 +306,9 @@
       "speedIncrease": "Увеличить скорость",
       "speedDecrease": "Уменьшить скорость",
       "speedReset": "Сбросить скорость",
+      "zoomIn": "Увеличить масштаб",
+      "zoomOut": "Уменьшить масштаб",
+      "zoomReset": "Сбросить масштаб",
       "subSeekNext": "К следующему субтитру",
       "subSeekPrev": "К предыдущему субтитру",
       "shaderToggle": "Вкл./выкл. шейдеры",
@@ -441,6 +447,7 @@
     "pipActive": "Воспроизводится в режиме «картинка в картинке»",
     "pipFailed": "Не удалось запустить режим «картинка в картинке»",
     "screenshotSaved": "Снимок экрана сохранён",
+    "zoomPercent": "Масштаб ${percent}%",
     "pipErrors": {
       "androidVersion": "Требуется Android 8.0 или новее",
       "iosVersion": "Требуется iOS 15.0 или новее",
@@ -609,7 +616,9 @@
     "addConnectionSubtitleScoped": "Добавить к ${displayName}: Plex, Jellyfin или подключение другого профиля",
     "sessionExpiredOne": "Сессия истекла для ${name}",
     "sessionExpiredMany": "Сессия истекла для ${count} серверов",
-    "signInAgain": "Войти снова"
+    "signInAgain": "Войти снова",
+    "editJellyfinTitle": "Изменить подключение Jellyfin",
+    "editJellyfinIntro": "Добавьте или удалите URL для ${serverName}. Plezy будет использовать доступный URL с минимальной задержкой."
   },
   "discover": {
     "title": "Обзор",
@@ -1078,6 +1087,7 @@
   },
   "videoSettings": {
     "playbackSpeed": "Скорость воспроизведения",
+    "zoom": "Масштаб",
     "sleepTimer": "Таймер сна",
     "audioSync": "Синхронизация аудио",
     "subtitleSync": "Синхронизация субтитров",
@@ -1256,7 +1266,9 @@
   "addServer": {
     "addJellyfinTitle": "Добавить сервер Jellyfin",
     "jellyfinUrlIntro": "Введите URL сервера, например `https://jellyfin.example.com`.",
+    "jellyfinUrlsIntro": "Введите один или несколько URL сервера, разделяя их запятыми или новыми строками. Plezy будет использовать доступный URL с минимальной задержкой.",
     "serverUrl": "URL сервера",
+    "serverUrls": "URL сервера",
     "findServer": "Найти сервер",
     "username": "Имя пользователя",
     "password": "Пароль",

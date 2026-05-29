@@ -1,6 +1,8 @@
 part of '../video_controls.dart';
 
 extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
+  static const Duration _touchTapSuppressionPadding = Duration(milliseconds: 80);
+
   void _onRateChanged(double newRate) {
     if (!mounted) return;
     if (_isLongPressing) return;
@@ -95,9 +97,52 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     unawaited(_seekToPosition(position));
   }
 
+  bool get _isTouchTapSuppressed {
+    final until = _suppressTouchTapUntil;
+    if (until == null) return false;
+    if (DateTime.now().isAfter(until)) {
+      _suppressTouchTapUntil = null;
+      return false;
+    }
+    return true;
+  }
+
+  void _suppressTouchTaps() {
+    _singleTapTimer?.cancel();
+    _singleTapTimer = null;
+    _suppressTouchTapUntil = DateTime.now().add(kDoubleTapTimeout + _touchTapSuppressionPadding);
+  }
+
+  void _handleTouchPointerDown(PointerDownEvent event) {
+    if (event.kind != PointerDeviceKind.touch) return;
+    _twoFingerDoubleTapTracker.pointerDown(event.pointer, event.position);
+    if (_twoFingerDoubleTapTracker.isChordActive) _suppressTouchTaps();
+  }
+
+  void _handleTouchPointerMove(PointerMoveEvent event) {
+    if (event.kind != PointerDeviceKind.touch) return;
+    _twoFingerDoubleTapTracker.pointerMove(event.pointer, event.position);
+    if (_twoFingerDoubleTapTracker.isChordActive) _suppressTouchTaps();
+  }
+
+  void _handleTouchPointerUp(PointerUpEvent event) {
+    if (event.kind != PointerDeviceKind.touch) return;
+    final isResetGesture = _twoFingerDoubleTapTracker.pointerUp(event.pointer, event.position);
+    if (_isTouchTapSuppressed || isResetGesture) _suppressTouchTaps();
+    if (isResetGesture) widget.onResetVideoZoom?.call();
+  }
+
+  void _handleTouchPointerCancel(PointerCancelEvent event) {
+    if (event.kind != PointerDeviceKind.touch) return;
+    _twoFingerDoubleTapTracker.pointerCancel(event.pointer);
+    if (_twoFingerDoubleTapTracker.isChordActive) _suppressTouchTaps();
+  }
+
   /// Timing-based double-click detection: avoids `onDoubleTap`'s ~300 ms
   /// tap-resolution delay and the arena competition it introduces.
   void _handleOuterTap() {
+    if (PlatformDetector.isMobile(context) && _isTouchTapSuppressed) return;
+
     if (widget.canControl && _clickVideoTogglesPlayback) {
       _playOrPause();
     } else {
@@ -117,6 +162,8 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
   /// Handle tap in skip zone with custom double-tap detection
   void _handleTapInSkipZone({required bool isForward}) {
+    if (_isTouchTapSuppressed) return;
+
     final now = DateTime.now();
 
     // Cancel any pending single-tap action
@@ -252,6 +299,8 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
       _lastSkipTapTime = now;
       return;
     }
+
+    if (_isTouchTapSuppressed) return;
 
     final skipZone = mobileSkipZoneForTap(position: details.localPosition, size: size);
     if (skipZone != null) {

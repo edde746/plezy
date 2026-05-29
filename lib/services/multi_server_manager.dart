@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../connection/connection.dart';
 import '../media/media_server_client.dart';
 import 'jellyfin_client.dart';
+import 'jellyfin_endpoint_discovery.dart';
 import 'plex_client.dart';
 import '../models/plex/plex_config.dart';
 import '../utils/app_logger.dart';
@@ -485,9 +486,9 @@ class MultiServerManager {
   /// Add a Jellyfin server backed by an authenticated [JellyfinConnection].
   /// Returns true on success.
   ///
-  /// Jellyfin clients aren't part of the Plex connection-racing flow — they
-  /// have a single configured base URL — so they bypass the
-  /// [_createClientForServer] / [findBestWorkingConnection] logic.
+  /// Jellyfin clients use the shared endpoint-racing flow when multiple URLs
+  /// are configured, then instantiate the client against the lowest-latency
+  /// reachable URL.
   ///
   /// Two users on the same Jellyfin server are tracked separately in
   /// [_jellyfinByCompoundId]; only one is "active" per machineId at a time.
@@ -495,12 +496,34 @@ class MultiServerManager {
   /// client (preserves any in-flight operations on the prior profile).
   Future<bool> addJellyfinConnection(JellyfinConnection connection) async {
     try {
-      final client = await JellyfinClient.create(connection);
+      var resolvedConnection = connection;
+      if (connection.baseUrls.length > 1) {
+        try {
+          final endpoint = await JellyfinEndpointDiscovery().raceEndpoints(
+            connection.baseUrls,
+            preferredUrl: connection.baseUrl,
+            expectedMachineId: connection.serverMachineId,
+          );
+          resolvedConnection = connection.copyWith(
+            baseUrl: endpoint.activeBaseUrl,
+            baseUrls: endpoint.baseUrls,
+            serverName: endpoint.serverInfo.serverName,
+          );
+        } catch (e, st) {
+          appLogger.w('Jellyfin endpoint race failed; using stored active URL', error: e, stackTrace: st);
+        }
+      }
+
+      final client = await JellyfinClient.create(resolvedConnection);
       // Admin status can change server-side; re-broadcast and persist so
       // admin-gated UI survives app restarts without requiring re-auth.
       _wireJellyfinConnectionUpdates(client);
-      final compoundId = connection.id;
-      final machineId = connection.serverMachineId;
+      if (resolvedConnection.baseUrl != connection.baseUrl ||
+          !listEquals(resolvedConnection.baseUrls, connection.baseUrls)) {
+        await onJellyfinConnectionUpdated?.call(resolvedConnection);
+      }
+      final compoundId = resolvedConnection.id;
+      final machineId = resolvedConnection.serverMachineId;
 
       // Replace any prior client for this exact compound id (re-add of the
       // same user — e.g., token refresh or settings re-add).
@@ -519,7 +542,7 @@ class MultiServerManager {
       _jellyfinHealthByCompoundId[compoundId] = health;
       _applyHealth(machineId, health);
 
-      appLogger.i('Added Jellyfin server: ${connection.serverName}${healthy ? '' : ' (unhealthy)'}');
+      appLogger.i('Added Jellyfin server: ${resolvedConnection.serverName}${healthy ? '' : ' (unhealthy)'}');
       if (_connectivitySubscription == null && healthy) {
         _startNetworkMonitoring();
       }
@@ -736,8 +759,8 @@ class MultiServerManager {
       }
     }
 
-    // Jellyfin has no endpoint-racing — only offline servers need a reprobe.
-    // Online ones are left alone; checkServerHealth runs on the same tick.
+    // Jellyfin re-probes offline servers here. Online clients keep their current
+    // endpoint and can still fail over per request through JellyfinClient.
     for (final entry in _activeJellyfinMachine.entries) {
       final serverId = entry.key;
       if (_activeOptimizations.containsKey(serverId)) continue;

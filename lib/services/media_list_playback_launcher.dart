@@ -38,10 +38,10 @@ class PlayQueueError extends PlayQueueResult {
 /// Backend-neutral playback launcher for collections and playlists.
 ///
 /// Plex uses server-side `/playQueues` (one round trip, server tracks
-/// queue state). Jellyfin has no equivalent — the client builds an
-/// in-memory queue from `fetchChildren` (collection) or
-/// `fetchPlaylistItems` (playlist). [MediaListPlaybackLauncher.forItem]
-/// picks the implementation by inspecting the item's backend.
+/// queue state). Jellyfin has no equivalent — the concrete Jellyfin launcher
+/// builds an in-memory queue from playable descendants or playlist items.
+/// [MediaListPlaybackLauncher.forItem] picks the implementation by inspecting
+/// the item's backend.
 abstract class MediaListPlaybackLauncher {
   /// Launch playback from a collection (a [MediaItem] with
   /// `kind == MediaKind.collection`) or a [MediaPlaylist].

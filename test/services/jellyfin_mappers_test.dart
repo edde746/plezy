@@ -94,6 +94,24 @@ void main() {
       expect(item.isWatched, isFalse);
     });
 
+    test('maps generic Jellyfin video types to playable clips', () {
+      final video = JellyfinMappers.mediaItem(
+        {'Id': 'home-video', 'Name': 'Home Video', 'Type': 'Video'},
+        serverId: _serverId,
+        absolutizer: null,
+      )!;
+      final musicVideo = JellyfinMappers.mediaItem(
+        {'Id': 'music-video', 'Name': 'Music Video', 'Type': 'MusicVideo'},
+        serverId: _serverId,
+        absolutizer: null,
+      )!;
+
+      expect(video.kind, MediaKind.clip);
+      expect(musicVideo.kind, MediaKind.clip);
+      expect(video.kind.isVideo, isTrue);
+      expect(musicVideo.kind.isVideo, isTrue);
+    });
+
     test('episode preserves series/season hierarchy', () {
       final json = {
         'Id': 'ep1',

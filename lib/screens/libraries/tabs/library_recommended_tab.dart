@@ -316,6 +316,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
             hubs: tvHubs,
             density: svc.read(SettingsService.libraryDensity),
             episodePosterMode: svc.read(SettingsService.episodePosterMode),
+            fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
             tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
           );
     final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();

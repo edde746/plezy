@@ -26,9 +26,9 @@ export 'media_list_playback_launcher.dart' show PlayQueueResult, PlayQueueSucces
 /// 4. Handling errors with appropriate feedback
 ///
 /// Implements [MediaListPlaybackLauncher.launchFromCollectionOrPlaylist] for
-/// the backend-neutral entry point. Plex-only flows
-/// ([launchFromPlaylistItem], [launchShuffledShow], [launchFromFolder]) live
-/// directly on this class because they have no Jellyfin equivalent.
+/// the backend-neutral entry point. Plex-only flows such as
+/// [launchFromPlaylistItem] live directly on this class because they have no
+/// Jellyfin equivalent.
 class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
   final BuildContext context;
   final PlexClient client;

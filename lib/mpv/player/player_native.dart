@@ -11,6 +11,8 @@ import 'player_base.dart';
 /// or FlTextureGL (Linux).
 class PlayerNative extends PlayerBase {
   int? _textureIdValue;
+  String _dvConversionMode = 'auto';
+  String _dvConversionLog = 'no';
 
   @override
   int? get textureId => _textureIdValue;
@@ -33,6 +35,52 @@ class PlayerNative extends PlayerBase {
   /// Node properties are returned as structured maps on macOS/iOS/Linux,
   /// but as JSON strings on Android/Windows.
   static final String _nodeFormat = (Platform.isAndroid || Platform.isWindows) ? 'string' : 'node';
+
+  static String _normalizeDvConversionMode(String value) {
+    return switch (value.toLowerCase()) {
+      'disabled' || 'native' => 'disabled',
+      'dv81' || 'p8' || 'p7_to_p8' || 'p7-to-p8' => 'dv81',
+      'hevc' || 'hevc_strip' || 'p7_to_hevc' || 'p7-to-hevc' => 'hevc_strip',
+      _ => 'auto',
+    };
+  }
+
+  static String _normalizeBoolProperty(String value) {
+    return switch (value.toLowerCase()) {
+      '1' || 'true' || 'yes' || 'on' => 'yes',
+      _ => 'no',
+    };
+  }
+
+  MediaDisplayCriteria? _effectiveDisplayCriteria(MediaDisplayCriteria? criteria) {
+    if (criteria == null || (criteria.doviProfile ?? 0) != 7) return criteria;
+
+    final convertToDv81 = _dvConversionMode == 'auto' || _dvConversionMode == 'dv81';
+    if (convertToDv81) {
+      return MediaDisplayCriteria(
+        fps: criteria.fps,
+        width: criteria.width,
+        height: criteria.height,
+        doviProfile: 8,
+        doviLevel: criteria.doviLevel,
+        doviCompatibilityId: 1,
+        transfer: criteria.transfer ?? 'smpte2084',
+        primaries: criteria.primaries ?? 'bt2020',
+        matrix: criteria.matrix ?? 'bt2020nc',
+      );
+    }
+
+    return MediaDisplayCriteria(
+      fps: criteria.fps,
+      width: criteria.width,
+      height: criteria.height,
+      doviProfile: 0,
+      doviCompatibilityId: criteria.doviCompatibilityId ?? 1,
+      transfer: criteria.transfer ?? 'smpte2084',
+      primaries: criteria.primaries ?? 'bt2020',
+      matrix: criteria.matrix ?? 'bt2020nc',
+    );
+  }
 
   // Memoizes the in-flight init Future so concurrent callers (e.g. the
   // parallel `requestAudioFocus()` and `setProperty()` paths kicked off in
@@ -209,6 +257,14 @@ class PlayerNative extends PlayerBase {
   @override
   Future<void> setProperty(String name, String value) async {
     if (disposed) return;
+    if ((Platform.isIOS || Platform.isMacOS) && name == 'dv-conversion-mode') {
+      value = _normalizeDvConversionMode(value);
+      _dvConversionMode = value;
+    }
+    if ((Platform.isIOS || Platform.isMacOS) && name == 'dv-conversion-log') {
+      value = _normalizeBoolProperty(value);
+      _dvConversionLog = value;
+    }
     await _ensureInitialized();
     await invoke('setProperty', {'name': name, 'value': value});
   }
@@ -216,6 +272,12 @@ class PlayerNative extends PlayerBase {
   @override
   Future<String?> getProperty(String name) async {
     if (disposed) return null;
+    if ((Platform.isIOS || Platform.isMacOS) && name == 'dv-conversion-mode') {
+      return _dvConversionMode;
+    }
+    if ((Platform.isIOS || Platform.isMacOS) && name == 'dv-conversion-log') {
+      return _dvConversionLog;
+    }
     await _ensureInitialized();
     return await invoke<String>('getProperty', {'name': name});
   }
@@ -231,7 +293,7 @@ class PlayerNative extends PlayerBase {
   Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria) async {
     if (disposed || !Platform.isIOS) return;
     await _ensureInitialized();
-    await invoke('setDisplayCriteria', {'criteria': criteria?.toJson()});
+    await invoke('setDisplayCriteria', {'criteria': _effectiveDisplayCriteria(criteria)?.toJson()});
   }
 
   @override

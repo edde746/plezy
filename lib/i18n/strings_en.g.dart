@@ -209,6 +209,9 @@ class TranslationsCommonEn {
 	/// en: 'Delete'
 	String get delete => 'Delete';
 
+	/// en: 'Edit'
+	String get edit => 'Edit';
+
 	/// en: 'Shuffle'
 	String get shuffle => 'Shuffle';
 
@@ -484,6 +487,12 @@ class TranslationsSettingsEn {
 
 	/// en: 'Show each season's poster above its tab'
 	String get showSeasonPostersOnTabsDescription => 'Show each season\'s poster above its tab';
+
+	/// en: 'Full TV Cards'
+	String get tvFullCardLayout => 'Full TV Cards';
+
+	/// en: 'Use image-only TV cards with actor names overlaid'
+	String get tvFullCardLayoutDescription => 'Use image-only TV cards with actor names overlaid';
 
 	/// en: 'Hide Spoilers for Unwatched Episodes'
 	String get hideSpoilers => 'Hide Spoilers for Unwatched Episodes';
@@ -1399,6 +1408,9 @@ class TranslationsVideoControlsEn {
 	/// en: 'Screenshot saved'
 	String get screenshotSaved => 'Screenshot saved';
 
+	/// en: 'Zoom ${percent}%'
+	String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
+
 	late final TranslationsVideoControlsPipErrorsEn pipErrors = TranslationsVideoControlsPipErrorsEn.internal(_root);
 
 	/// en: 'Chapters'
@@ -1901,6 +1913,12 @@ class TranslationsConnectionsEn {
 
 	/// en: 'Sign in again'
 	String get signInAgain => 'Sign in again';
+
+	/// en: 'Edit Jellyfin connection'
+	String get editJellyfinTitle => 'Edit Jellyfin connection';
+
+	/// en: 'Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency.'
+	String editJellyfinIntro({required Object serverName}) => 'Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency.';
 }
 
 // Path: discover
@@ -3057,6 +3075,9 @@ class TranslationsVideoSettingsEn {
 	/// en: 'Playback Speed'
 	String get playbackSpeed => 'Playback Speed';
 
+	/// en: 'Zoom'
+	String get zoom => 'Zoom';
+
 	/// en: 'Sleep Timer'
 	String get sleepTimer => 'Sleep Timer';
 
@@ -3521,8 +3542,14 @@ class TranslationsAddServerEn {
 	/// en: 'Enter the server URL, e.g. `https://jellyfin.example.com`.'
 	String get jellyfinUrlIntro => 'Enter the server URL, e.g. `https://jellyfin.example.com`.';
 
+	/// en: 'Enter one or more server URLs, separated by commas or new lines. Plezy will use the reachable URL with the lowest latency.'
+	String get jellyfinUrlsIntro => 'Enter one or more server URLs, separated by commas or new lines. Plezy will use the reachable URL with the lowest latency.';
+
 	/// en: 'Server URL'
 	String get serverUrl => 'Server URL';
+
+	/// en: 'Server URLs'
+	String get serverUrls => 'Server URLs';
 
 	/// en: 'Find server'
 	String get findServer => 'Find server';
@@ -3670,6 +3697,15 @@ class TranslationsHotkeysActionsEn {
 
 	/// en: 'Reset Speed'
 	String get speedReset => 'Reset Speed';
+
+	/// en: 'Zoom In'
+	String get zoomIn => 'Zoom In';
+
+	/// en: 'Zoom Out'
+	String get zoomOut => 'Zoom Out';
+
+	/// en: 'Reset Zoom'
+	String get zoomReset => 'Reset Zoom';
 
 	/// en: 'Seek to Next Subtitle'
 	String get subSeekNext => 'Seek to Next Subtitle';
@@ -4195,6 +4231,7 @@ extension on Translations {
 			'common.yes' => 'Yes',
 			'common.no' => 'No',
 			'common.delete' => 'Delete',
+			'common.edit' => 'Edit',
 			'common.shuffle' => 'Shuffle',
 			'common.addTo' => 'Add to...',
 			'common.createNew' => 'Create new',
@@ -4278,6 +4315,8 @@ extension on Translations {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Show season and episode number on episode cards',
 			'settings.showSeasonPostersOnTabs' => 'Show Season Posters on Tabs',
 			'settings.showSeasonPostersOnTabsDescription' => 'Show each season\'s poster above its tab',
+			'settings.tvFullCardLayout' => 'Full TV Cards',
+			'settings.tvFullCardLayoutDescription' => 'Use image-only TV cards with actor names overlaid',
 			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
 			'settings.hideSpoilersDescription' => 'Blur thumbnails and descriptions for unwatched episodes',
 			'settings.playerBackend' => 'Player Backend',
@@ -4451,6 +4490,9 @@ extension on Translations {
 			'hotkeys.actions.speedIncrease' => 'Increase Speed',
 			'hotkeys.actions.speedDecrease' => 'Decrease Speed',
 			'hotkeys.actions.speedReset' => 'Reset Speed',
+			'hotkeys.actions.zoomIn' => 'Zoom In',
+			'hotkeys.actions.zoomOut' => 'Zoom Out',
+			'hotkeys.actions.zoomReset' => 'Reset Zoom',
 			'hotkeys.actions.subSeekNext' => 'Seek to Next Subtitle',
 			'hotkeys.actions.subSeekPrev' => 'Seek to Previous Subtitle',
 			'hotkeys.actions.shaderToggle' => 'Toggle Shaders',
@@ -4580,6 +4622,7 @@ extension on Translations {
 			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
 			'videoControls.screenshotSaved' => 'Screenshot saved',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Requires Android 8.0 or newer',
 			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture is disabled. Enable it in system settings.',
@@ -4668,6 +4711,8 @@ extension on Translations {
 			'mpvConfig.presetDeleted' => 'Preset deleted',
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			_ => null,
+		} ?? switch (path) {
 			'dialog.confirmAction' => 'Confirm Action',
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
@@ -4675,8 +4720,6 @@ extension on Translations {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
 			'profiles.manage' => 'Manage',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.delete' => 'Delete',
 			'profiles.signOut' => 'Sign out',
 			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
@@ -4735,6 +4778,8 @@ extension on Translations {
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
 			'connections.sessionExpiredMany' => ({required Object count}) => 'Session expired for ${count} servers',
 			'connections.signInAgain' => 'Sign in again',
+			'connections.editJellyfinTitle' => 'Edit Jellyfin connection',
+			'connections.editJellyfinIntro' => ({required Object serverName}) => 'Add or remove URLs for ${serverName}. Plezy will use the reachable URL with the lowest latency.',
 			'discover.title' => 'Discover',
 			'discover.switchProfile' => 'Switch Profile',
 			'discover.noContentAvailable' => 'No content available',
@@ -5155,6 +5200,7 @@ extension on Translations {
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Search on desktop...',
 			'videoSettings.playbackSpeed' => 'Playback Speed',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',
 			'videoSettings.subtitleSync' => 'Subtitle Sync',
@@ -5179,6 +5225,8 @@ extension on Translations {
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
 			'metadataEdit.editMetadata' => 'Edit...',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.screenTitle' => 'Edit Metadata',
 			'metadataEdit.basicInfo' => 'Basic Info',
 			'metadataEdit.artwork' => 'Artwork',
@@ -5189,8 +5237,6 @@ extension on Translations {
 			'metadataEdit.releaseDate' => 'Release Date',
 			'metadataEdit.contentRating' => 'Content Rating',
 			'metadataEdit.studio' => 'Studio',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Summary',
 			'metadataEdit.poster' => 'Poster',
@@ -5313,7 +5359,9 @@ extension on Translations {
 			'trackers.libraryFilter.noLibraries' => 'No libraries available',
 			'addServer.addJellyfinTitle' => 'Add Jellyfin server',
 			'addServer.jellyfinUrlIntro' => 'Enter the server URL, e.g. `https://jellyfin.example.com`.',
+			'addServer.jellyfinUrlsIntro' => 'Enter one or more server URLs, separated by commas or new lines. Plezy will use the reachable URL with the lowest latency.',
 			'addServer.serverUrl' => 'Server URL',
+			'addServer.serverUrls' => 'Server URLs',
 			'addServer.findServer' => 'Find server',
 			'addServer.username' => 'Username',
 			'addServer.password' => 'Password',

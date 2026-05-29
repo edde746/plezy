@@ -164,6 +164,150 @@ void main() {
       expect(captured.single.queryParameters['count'], '21');
     });
 
+    test('getOnDeckFromAllServers hides duplicate show entries by stable show ids', () async {
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: 'https://plex.example.com',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: 'plex-1',
+        serverName: 'Plex',
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/hubs') {
+            return _json({
+              'MediaContainer': {
+                'Hub': [
+                  {
+                    'key': '/hubs/home/continueWatching',
+                    'title': 'Continue Watching',
+                    'type': 'mixed',
+                    'hubIdentifier': 'home.continue',
+                    'size': 2,
+                    'Metadata': [
+                      {
+                        'ratingKey': 'old-episode',
+                        'type': 'episode',
+                        'title': 'Episode 1',
+                        'grandparentRatingKey': 'old-show',
+                        'grandparentTitle': 'Shared Show',
+                        'guid': 'plex://episode/shared-episode-1',
+                        'lastViewedAt': 100,
+                        'librarySectionID': 1,
+                      },
+                      {
+                        'ratingKey': 'new-episode',
+                        'type': 'episode',
+                        'title': 'Episode 2',
+                        'grandparentRatingKey': 'new-show',
+                        'grandparentTitle': 'Shared Show',
+                        'guid': 'plex://episode/shared-episode-2',
+                        'lastViewedAt': 200,
+                        'librarySectionID': 2,
+                      },
+                    ],
+                  },
+                ],
+              },
+            });
+          }
+          if (req.url.path == '/library/metadata/old-show' || req.url.path == '/library/metadata/new-show') {
+            return _json({
+              'MediaContainer': {
+                'Metadata': [
+                  {
+                    'ratingKey': req.url.pathSegments.last,
+                    'type': 'show',
+                    'title': 'Shared Show',
+                    'Guid': [
+                      {'id': 'tvdb://12345'},
+                    ],
+                  },
+                ],
+              },
+            });
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+      manager.debugRegisterClientForTesting(client);
+
+      final items = await service.getOnDeckFromAllServers(limit: 10);
+
+      expect(items.map((item) => item.id), ['new-episode']);
+    });
+
+    test('getOnDeckFromAllServers keeps duplicate titles without stable ids', () async {
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: 'https://plex.example.com',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: 'plex-1',
+        serverName: 'Plex',
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/hubs') {
+            return _json({
+              'MediaContainer': {
+                'Hub': [
+                  {
+                    'key': '/hubs/home/continueWatching',
+                    'title': 'Continue Watching',
+                    'type': 'mixed',
+                    'hubIdentifier': 'home.continue',
+                    'size': 2,
+                    'Metadata': [
+                      {
+                        'ratingKey': 'old-unmatched',
+                        'type': 'episode',
+                        'title': 'Episode 1',
+                        'grandparentRatingKey': 'old-unmatched-show',
+                        'grandparentTitle': 'Shared Show',
+                        'guid': 'com.plexapp.agents.none://old-unmatched',
+                        'lastViewedAt': 100,
+                      },
+                      {
+                        'ratingKey': 'new-unmatched',
+                        'type': 'episode',
+                        'title': 'Episode 2',
+                        'grandparentRatingKey': 'new-unmatched-show',
+                        'grandparentTitle': 'Shared Show',
+                        'guid': 'com.plexapp.agents.none://new-unmatched',
+                        'lastViewedAt': 200,
+                      },
+                    ],
+                  },
+                ],
+              },
+            });
+          }
+          if (req.url.path == '/library/metadata/old-unmatched-show' ||
+              req.url.path == '/library/metadata/new-unmatched-show') {
+            return _json({
+              'MediaContainer': {
+                'Metadata': [
+                  {'ratingKey': req.url.pathSegments.last, 'type': 'show', 'title': 'Shared Show'},
+                ],
+              },
+            });
+          }
+          return http.Response('unexpected request', 500);
+        }),
+      );
+      addTearDown(client.close);
+      manager.debugRegisterClientForTesting(client);
+
+      final items = await service.getOnDeckFromAllServers(limit: 10);
+
+      expect(items.map((item) => item.id), ['new-unmatched', 'old-unmatched']);
+    });
+
     test('per-library hubs skip playback rows and fetch in bounded batches', () async {
       final captured = <Uri>[];
       var activeLatest = 0;
