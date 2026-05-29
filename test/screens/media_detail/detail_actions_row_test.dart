@@ -123,10 +123,7 @@ void main() {
       // Even though the highest-priority entries sit in the middle of the
       // list, what survives must stay in original left-to-right order.
       final result = selectVisibleActions(fullActionSet(), 320, gap);
-      expect(
-        result.map((a) => a.debugId).toList(),
-        ['play', 'random', 'download', 'more'],
-      );
+      expect(result.map((a) => a.debugId).toList(), ['play', 'random', 'download', 'more']);
     });
 
     test('returns full set unchanged when everything fits', () {

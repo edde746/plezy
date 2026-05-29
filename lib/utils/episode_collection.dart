@@ -22,12 +22,7 @@ int episodeAiringOrder(MediaItem a, MediaItem b) {
 /// still read naturally. Without a cap there is no subset to randomise.
 ///
 /// [rng] is injectable so tests can pin the selection.
-List<MediaItem> selectEpisodesForDownload(
-  List<MediaItem> episodes, {
-  int? maxCount,
-  bool random = false,
-  Random? rng,
-}) {
+List<MediaItem> selectEpisodesForDownload(List<MediaItem> episodes, {int? maxCount, bool random = false, Random? rng}) {
   if (!random || maxCount == null || maxCount >= episodes.length) return episodes;
   final shuffled = [...episodes]..shuffle(rng);
   return shuffled.take(maxCount).toList()..sort(episodeAiringOrder);

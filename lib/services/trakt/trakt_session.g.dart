@@ -15,12 +15,11 @@ TraktSession _$TraktSessionFromJson(Map<String, dynamic> json) => TraktSession(
   username: json['username'] as String?,
 );
 
-Map<String, dynamic> _$TraktSessionToJson(TraktSession instance) =>
-    <String, dynamic>{
-      'access_token': instance.accessToken,
-      'refresh_token': instance.refreshToken,
-      'expires_at': instance.expiresAt,
-      'username': instance.username,
-      'scope': instance.scope,
-      'created_at': instance.createdAt,
-    };
+Map<String, dynamic> _$TraktSessionToJson(TraktSession instance) => <String, dynamic>{
+  'access_token': instance.accessToken,
+  'refresh_token': instance.refreshToken,
+  'expires_at': instance.expiresAt,
+  'username': instance.username,
+  'scope': instance.scope,
+  'created_at': instance.createdAt,
+};

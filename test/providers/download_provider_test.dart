@@ -350,12 +350,7 @@ void main() {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
-      await p.createSyncRule(
-        serverId: 'srv',
-        ratingKey: 'season-2',
-        targetType: 'season',
-        episodeCount: 5,
-      );
+      await p.createSyncRule(serverId: 'srv', ratingKey: 'season-2', targetType: 'season', episodeCount: 5);
 
       final showKey = p.syncRuleKeyFor('srv', 'show-13023');
       final seasonKey = p.syncRuleKeyFor('srv', 'season-2');
@@ -958,11 +953,7 @@ void main() {
       expect(p.isAutoDeleteAndSyncRunning, isFalse);
 
       var upToDateFired = false;
-      await p.runAutoDeleteAndSync(
-        MultiServerManager(),
-        force: true,
-        onUpToDate: () => upToDateFired = true,
-      );
+      await p.runAutoDeleteAndSync(MultiServerManager(), force: true, onUpToDate: () => upToDateFired = true);
 
       expect(p.isAutoDeleteAndSyncRunning, isFalse);
       // The button-spinner state depends on listeners seeing the flag flip on.
@@ -982,16 +973,8 @@ void main() {
       // Fire two overlapping calls. The flag is set synchronously before the
       // first await, so the second invocation must see _autoDeleteAndSyncRunning
       // and return immediately without running the body again.
-      final f1 = p.runAutoDeleteAndSync(
-        MultiServerManager(),
-        force: true,
-        onUpToDate: () => upToDateCount++,
-      );
-      final f2 = p.runAutoDeleteAndSync(
-        MultiServerManager(),
-        force: true,
-        onUpToDate: () => upToDateCount++,
-      );
+      final f1 = p.runAutoDeleteAndSync(MultiServerManager(), force: true, onUpToDate: () => upToDateCount++);
+      final f2 = p.runAutoDeleteAndSync(MultiServerManager(), force: true, onUpToDate: () => upToDateCount++);
       await Future.wait([f1, f2]);
 
       expect(upToDateCount, 1);
@@ -1201,7 +1184,9 @@ void main() {
       expect(p.getProgress(showGlobalKey)!.progress, 0);
 
       // Advance: one completes → 1/5 = 20%.
-      p.debugSeedState(downloads: {epKey('ep1'): DownloadProgress(globalKey: epKey('ep1'), status: DownloadStatus.completed)});
+      p.debugSeedState(
+        downloads: {epKey('ep1'): DownloadProgress(globalKey: epKey('ep1'), status: DownloadStatus.completed)},
+      );
       expect(p.getProgress(showGlobalKey)!.progress, 20);
 
       // User adds 3 more to the same in-flight session.
@@ -1249,11 +1234,15 @@ void main() {
       expect(p.getProgress(showGlobalKey)!.progress, 0);
 
       // Advance: one completes → 1/5 = 20%.
-      p.debugSeedState(downloads: {epKey('ep1'): DownloadProgress(globalKey: epKey('ep1'), status: DownloadStatus.completed)});
+      p.debugSeedState(
+        downloads: {epKey('ep1'): DownloadProgress(globalKey: epKey('ep1'), status: DownloadStatus.completed)},
+      );
       expect(p.getProgress(showGlobalKey)!.progress, 20);
 
       // Pause ep5. Denominator shrinks to 4: 1 done + 1 downloading + 2 queued.
-      p.debugSeedState(downloads: {epKey('ep5'): DownloadProgress(globalKey: epKey('ep5'), status: DownloadStatus.paused)});
+      p.debugSeedState(
+        downloads: {epKey('ep5'): DownloadProgress(globalKey: epKey('ep5'), status: DownloadStatus.paused)},
+      );
       expect(
         p.getProgress(showGlobalKey),
         isA<DownloadProgress>()

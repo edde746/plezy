@@ -41,13 +41,13 @@ EXTERNAL SOURCES:
     :path: Flutter/ephemeral/.symlinks/plugins/universal_gamepad/macos
 
 SPEC CHECKSUMS:
-  auto_updater_macos: 3e3462c418fe4e731917eacd8d28eef7af84086d
-  cupertino_http: 947a233f40cfea55167a49f2facc18434ea117ba
+  auto_updater_macos: 3a42f1a06be6981f1a18be37e6e7bf86aa732118
+  cupertino_http: 94ac07f5ff090b8effa6c5e2c47871d48ab7c86c
   FlutterMacOS: d0db08ddef1a9af05a5ec4b724367152bb0500b1
-  os_media_controls: 98a4a88bec7fa5719156732c1a6bb7a4d462a010
-  screen_retriever_macos: 776e0fa5d42c6163d2bf772d22478df4b302b161
+  os_media_controls: 116bf9c1acadf13faf49b470b06a5033a19b67f0
+  screen_retriever_macos: 452e51764a9e1cdb74b3c541238795849f21557f
   Sparkle: f4355f9ebbe9b7d932df4980d70f13922ac97b2a
-  universal_gamepad: e7928c0af322652075b42fbc24782ad9ab7fcd07
+  universal_gamepad: 8922f1f238f62d6847de887228976d5b572b57da
 
 PODFILE CHECKSUM: d16f5e5d196d1ca9863d7a71d5885cad7ffa7d2d
 

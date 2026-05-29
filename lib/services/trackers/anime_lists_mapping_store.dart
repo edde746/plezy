@@ -326,10 +326,7 @@ AnimeListSeasonRef? _seasonRef(String? value) {
 
 List<int> _intList(String? value) {
   if (value == null || value.isEmpty) return const [];
-  return [
-    for (final part in value.split(','))
-      ?flexibleInt(part.trim()),
-  ];
+  return [for (final part in value.split(',')) ?flexibleInt(part.trim())];
 }
 
 List<String> _stringList(String? value) {

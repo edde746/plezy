@@ -12,9 +12,8 @@ SimklSession _$SimklSessionFromJson(Map<String, dynamic> json) => SimklSession(
   username: json['username'] as String?,
 );
 
-Map<String, dynamic> _$SimklSessionToJson(SimklSession instance) =>
-    <String, dynamic>{
-      'access_token': instance.accessToken,
-      'username': instance.username,
-      'created_at': instance.createdAt,
-    };
+Map<String, dynamic> _$SimklSessionToJson(SimklSession instance) => <String, dynamic>{
+  'access_token': instance.accessToken,
+  'username': instance.username,
+  'created_at': instance.createdAt,
+};

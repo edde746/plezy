@@ -9,14 +9,15 @@ import 'package:plezy/utils/download_utils.dart';
 void main() {
   Future<void> pumpDialog(WidgetTester tester, {MediaItem? currentSeason}) async {
     await tester.pumpWidget(
-      MaterialApp(home: Scaffold(body: debugDownloadOptionsDialog(currentSeason: currentSeason))),
+      MaterialApp(
+        home: Scaffold(body: debugDownloadOptionsDialog(currentSeason: currentSeason)),
+      ),
     );
     await tester.pumpAndSettle();
   }
 
-  ListTile tileFor(WidgetTester tester, String label) => tester.widget<ListTile>(
-    find.ancestor(of: find.text(label), matching: find.byType(ListTile)),
-  );
+  ListTile tileFor(WidgetTester tester, String label) =>
+      tester.widget<ListTile>(find.ancestor(of: find.text(label), matching: find.byType(ListTile)));
 
   final season3 = MediaItem(
     id: 'season-3',

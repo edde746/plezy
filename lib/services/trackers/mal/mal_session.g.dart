@@ -14,11 +14,10 @@ MalSession _$MalSessionFromJson(Map<String, dynamic> json) => MalSession(
   username: json['username'] as String?,
 );
 
-Map<String, dynamic> _$MalSessionToJson(MalSession instance) =>
-    <String, dynamic>{
-      'access_token': instance.accessToken,
-      'refresh_token': instance.refreshToken,
-      'expires_at': instance.expiresAt,
-      'username': instance.username,
-      'created_at': instance.createdAt,
-    };
+Map<String, dynamic> _$MalSessionToJson(MalSession instance) => <String, dynamic>{
+  'access_token': instance.accessToken,
+  'refresh_token': instance.refreshToken,
+  'expires_at': instance.expiresAt,
+  'username': instance.username,
+  'created_at': instance.createdAt,
+};

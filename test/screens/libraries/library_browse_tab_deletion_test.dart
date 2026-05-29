@@ -42,27 +42,16 @@ void main() {
     );
     await tester.pump();
 
-    expect(
-      state.handled,
-      isEmpty,
-      reason: 'download-only events must short-circuit before mutating loaded items',
-    );
+    expect(state.handled, isEmpty, reason: 'download-only events must short-circuit before mutating loaded items');
 
     DeletionNotifier().notify(
-      DeletionEvent(
-        itemId: 'show-server-side',
-        serverId: 'srv',
-        parentChain: const [],
-        mediaType: 'show',
-      ),
+      DeletionEvent(itemId: 'show-server-side', serverId: 'srv', parentChain: const [], mediaType: 'show'),
     );
     await tester.pump();
 
-    expect(
-      state.handled.map((e) => e.itemId),
-      ['show-server-side'],
-      reason: 'genuine server-side deletions must still flow through',
-    );
+    expect(state.handled.map((e) => e.itemId), [
+      'show-server-side',
+    ], reason: 'genuine server-side deletions must still flow through');
   });
 
   test('library_browse_tab onDeletionEvent still guards against isDownloadOnly', () {

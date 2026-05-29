@@ -250,11 +250,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       context,
       title: t.tooltips.playRandom,
       options: [
-        (
-          icon: Symbols.shuffle_rounded,
-          label: t.tooltips.playRandomAllEpisodes,
-          value: _PlayRandomChoice.allEpisodes,
-        ),
+        (icon: Symbols.shuffle_rounded, label: t.tooltips.playRandomAllEpisodes, value: _PlayRandomChoice.allEpisodes),
         (
           icon: Symbols.shuffle_on_rounded,
           label: t.tooltips.playRandomSelectedSeason(name: seasonTitle),

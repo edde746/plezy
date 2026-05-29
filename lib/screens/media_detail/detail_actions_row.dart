@@ -21,12 +21,7 @@ class DetailAction {
   /// Optional id used by widget tests to assert visibility per button.
   final String? debugId;
 
-  const DetailAction({
-    required this.child,
-    required this.predictedWidth,
-    this.dropPriority = 0,
-    this.debugId,
-  });
+  const DetailAction({required this.child, required this.predictedWidth, this.dropPriority = 0, this.debugId});
 }
 
 /// A horizontal row of detail-screen action buttons that drops items in
@@ -78,11 +73,7 @@ class DetailActionsRow extends StatelessWidget {
 /// width plus gaps is `<= maxWidth` or there are no droppable candidates
 /// left. Order of the survivors is preserved.
 @visibleForTesting
-List<DetailAction> selectVisibleActions(
-  List<DetailAction> all,
-  double maxWidth,
-  double gap,
-) {
+List<DetailAction> selectVisibleActions(List<DetailAction> all, double maxWidth, double gap) {
   final visible = List<DetailAction>.from(all);
 
   double totalWidth(List<DetailAction> entries) {

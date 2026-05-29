@@ -25,19 +25,14 @@ LiveTvDvr _$LiveTvDvrFromJson(Map<String, dynamic> json) => LiveTvDvr(
   sources: json['sources'] as String?,
   uri: json['uri'] as String?,
   lastSeenAt: flexibleInt(json['lastSeenAt']),
-  channelMappings: json['ChannelMapping'] == null
-      ? const []
-      : _parseChannelMappings(json['ChannelMapping']),
-  settings: json['Setting'] == null
-      ? const []
-      : _parseSettings(json['Setting']),
+  channelMappings: json['ChannelMapping'] == null ? const [] : _parseChannelMappings(json['ChannelMapping']),
+  settings: json['Setting'] == null ? const [] : _parseSettings(json['Setting']),
   devices: json['Device'] == null ? const [] : _parseRawMaps(json['Device']),
 );
 
-ChannelMapping _$ChannelMappingFromJson(Map<String, dynamic> json) =>
-    ChannelMapping(
-      channelKey: json['channelKey'] as String?,
-      deviceIdentifier: json['deviceIdentifier'] as String?,
-      enabled: flexibleBool(json['enabled']),
-      lineupIdentifier: json['lineupIdentifier'] as String?,
-    );
+ChannelMapping _$ChannelMappingFromJson(Map<String, dynamic> json) => ChannelMapping(
+  channelKey: json['channelKey'] as String?,
+  deviceIdentifier: json['deviceIdentifier'] as String?,
+  enabled: flexibleBool(json['enabled']),
+  lineupIdentifier: json['lineupIdentifier'] as String?,
+);

@@ -22,19 +22,18 @@ PlexHomeUser _$PlexHomeUserFromJson(Map<String, dynamic> json) => PlexHomeUser(
   protected: json['protected'] as bool? ?? false,
 );
 
-Map<String, dynamic> _$PlexHomeUserToJson(PlexHomeUser instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'uuid': instance.uuid,
-      'title': instance.title,
-      'username': instance.username,
-      'email': instance.email,
-      'friendlyName': instance.friendlyName,
-      'thumb': instance.thumb,
-      'hasPassword': instance.hasPassword,
-      'restricted': instance.restricted,
-      'updatedAt': instance.updatedAt,
-      'admin': instance.admin,
-      'guest': instance.guest,
-      'protected': instance.protected,
-    };
+Map<String, dynamic> _$PlexHomeUserToJson(PlexHomeUser instance) => <String, dynamic>{
+  'id': instance.id,
+  'uuid': instance.uuid,
+  'title': instance.title,
+  'username': instance.username,
+  'email': instance.email,
+  'friendlyName': instance.friendlyName,
+  'thumb': instance.thumb,
+  'hasPassword': instance.hasPassword,
+  'restricted': instance.restricted,
+  'updatedAt': instance.updatedAt,
+  'admin': instance.admin,
+  'guest': instance.guest,
+  'protected': instance.protected,
+};

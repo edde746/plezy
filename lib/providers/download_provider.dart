@@ -769,8 +769,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // the user's current request. Paused episodes are excluded from the
     // denominator per the product call (see grilling session) — they're
     // re-included if the user resumes them.
-    final bool sessionActive =
-        overallStatus == DownloadStatus.downloading || overallStatus == DownloadStatus.queued;
+    final bool sessionActive = overallStatus == DownloadStatus.downloading || overallStatus == DownloadStatus.queued;
 
     final int overallProgress;
     final String currentFile;

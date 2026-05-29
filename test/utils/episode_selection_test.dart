@@ -18,8 +18,12 @@ MediaItem _ep(int season, int episode) => MediaItem(
 void main() {
   group('episodeAiringOrder', () {
     test('sorts by season then episode, missing indices first', () {
-      final items = [_ep(2, 1), _ep(1, 3), _ep(1, 1), MediaItem(id: 'x', backend: MediaBackend.plex, kind: MediaKind.episode)]
-        ..sort(episodeAiringOrder);
+      final items = [
+        _ep(2, 1),
+        _ep(1, 3),
+        _ep(1, 1),
+        MediaItem(id: 'x', backend: MediaBackend.plex, kind: MediaKind.episode),
+      ]..sort(episodeAiringOrder);
       expect(items.map((e) => e.id), ['x', 's1e1', 's1e3', 's2e1']);
     });
   });

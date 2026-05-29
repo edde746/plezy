@@ -18,15 +18,14 @@ MediaVersion _$MediaVersionFromJson(Map<String, dynamic> json) => MediaVersion(
   name: json['name'] as String?,
 );
 
-Map<String, dynamic> _$MediaVersionToJson(MediaVersion instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'width': ?instance.width,
-      'height': ?instance.height,
-      'videoResolution': ?instance.videoResolution,
-      'videoCodec': ?instance.videoCodec,
-      'bitrate': ?instance.bitrate,
-      'container': ?instance.container,
-      'parts': _partsToJson(instance.parts),
-      'name': ?instance.name,
-    };
+Map<String, dynamic> _$MediaVersionToJson(MediaVersion instance) => <String, dynamic>{
+  'id': instance.id,
+  'width': ?instance.width,
+  'height': ?instance.height,
+  'videoResolution': ?instance.videoResolution,
+  'videoCodec': ?instance.videoCodec,
+  'bitrate': ?instance.bitrate,
+  'container': ?instance.container,
+  'parts': _partsToJson(instance.parts),
+  'name': ?instance.name,
+};
