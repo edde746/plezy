@@ -1013,6 +1013,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             if (key.isUpKey) {
               return KeyEventResult.handled; // consume — nothing above
             }
+            if (key.isLeftKey || key.isRightKey) {
+              return KeyEventResult.handled; // consume — single chip, nothing beside it (#1181)
+            }
             return KeyEventResult.ignored;
           },
           child: GestureDetector(
@@ -2001,7 +2004,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Intercept DOWN from the play button row to focus the first available section
-  KeyEventResult _handlePlayButtonKeyEvent(FocusNode _, KeyEvent event) {
+  KeyEventResult _handlePlayButtonKeyEvent(FocusNode node, KeyEvent event) {
     final key = event.logicalKey;
     if (!event.isActionable) return KeyEventResult.ignored;
     final isTv = PlatformDetector.isTV();
@@ -2017,6 +2020,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         return KeyEventResult.handled;
       }
       return KeyEventResult.handled;
+    }
+
+    // LEFT/RIGHT: let the framework move between buttons in the row, but trap
+    // at the row's edges so focus can't fall off into a black hole (#1181).
+    if (key.isLeftKey || key.isRightKey) {
+      final dir = key.isRightKey ? TraversalDirection.right : TraversalDirection.left;
+      return hasHorizontalNeighbor(node, dir) ? KeyEventResult.ignored : KeyEventResult.handled;
     }
 
     if (!key.isDownKey) return KeyEventResult.ignored;
