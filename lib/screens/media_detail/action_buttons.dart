@@ -244,7 +244,8 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
     // `title` is the season's own name ("Season 3", "Specials"); the season
     // tabs use the same field. `displayTitle` would hoist to the show name.
-    final seasonTitle = season.title ?? '';
+    // Fallback chain matches _scopedSyncTargetLabel: title → "Season N" → "Season".
+    final seasonTitle = season.title ?? (season.index != null ? 'Season ${season.index}' : 'Season');
     final choice = await showOptionPickerDialog<_PlayRandomChoice>(
       context,
       title: t.tooltips.playRandom,
@@ -256,7 +257,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         ),
         (
           icon: Symbols.shuffle_on_rounded,
-          label: seasonTitle,
+          label: t.tooltips.playRandomSelectedSeason(name: seasonTitle),
           value: _PlayRandomChoice.currentSeason,
         ),
       ],

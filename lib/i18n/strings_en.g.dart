@@ -1201,6 +1201,9 @@ class TranslationsTooltipsEn {
 	/// en: 'All episodes'
 	String get playRandomAllEpisodes => 'All episodes';
 
+	/// en: 'Selected Season (${name})'
+	String playRandomSelectedSeason({required Object name}) => 'Selected Season (${name})';
+
 	/// en: 'Play trailer'
 	String get playTrailer => 'Play trailer';
 
@@ -4532,6 +4535,7 @@ extension on Translations {
 			'accessibility.tapToPlay' => 'Tap to play',
 			'tooltips.playRandom' => 'Play random',
 			'tooltips.playRandomAllEpisodes' => 'All episodes',
+			'tooltips.playRandomSelectedSeason' => ({required Object name}) => 'Selected Season (${name})',
 			'tooltips.playTrailer' => 'Play trailer',
 			'tooltips.markAsWatched' => 'Mark as watched',
 			'tooltips.markAsUnwatched' => 'Mark as unwatched',
@@ -4689,9 +4693,9 @@ extension on Translations {
 			'profiles.manage' => 'Manage',
 			'profiles.delete' => 'Delete',
 			'profiles.signOut' => 'Sign out',
-			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.',
 			'profiles.signedOutPlex' => 'Signed out of Plex.',
 			'profiles.signOutFailed' => 'Sign out failed.',
@@ -5203,9 +5207,9 @@ extension on Translations {
 			'metadataEdit.basicInfo' => 'Basic Info',
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Advanced Settings',
-			'metadataEdit.title' => 'Title',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.title' => 'Title',
 			'metadataEdit.sortTitle' => 'Sort Title',
 			'metadataEdit.originalTitle' => 'Original Title',
 			'metadataEdit.releaseDate' => 'Release Date',

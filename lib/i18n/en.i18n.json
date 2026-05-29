@@ -380,6 +380,7 @@
   "tooltips": {
     "playRandom": "Play random",
     "playRandomAllEpisodes": "All episodes",
+    "playRandomSelectedSeason": "Selected Season (${name})",
     "playTrailer": "Play trailer",
     "markAsWatched": "Mark as watched",
     "markAsUnwatched": "Mark as unwatched"
