@@ -13,6 +13,7 @@ import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/services/download_manager_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
+import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 
@@ -894,6 +895,61 @@ void main() {
     test('DownloadFilter has all/unwatched values', () {
       expect(DownloadFilter.values, contains(DownloadFilter.all));
       expect(DownloadFilter.values, contains(DownloadFilter.unwatched));
+    });
+  });
+
+  group('DownloadProvider — runAutoDeleteAndSync', () {
+    test('flips isAutoDeleteAndSyncRunning during the pass and notifies listeners', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      addTearDown(p.dispose);
+
+      // Snapshot the flag on every notify so we can prove it was observed
+      // running. Without this we'd only see the final false state.
+      final flagSnapshots = <bool>[];
+      p.addListener(() => flagSnapshots.add(p.isAutoDeleteAndSyncRunning));
+
+      expect(p.isAutoDeleteAndSyncRunning, isFalse);
+
+      var upToDateFired = false;
+      await p.runAutoDeleteAndSync(
+        MultiServerManager(),
+        force: true,
+        onUpToDate: () => upToDateFired = true,
+      );
+
+      expect(p.isAutoDeleteAndSyncRunning, isFalse);
+      // The button-spinner state depends on listeners seeing the flag flip on.
+      expect(flagSnapshots, contains(true));
+      // With no profile/no rules and no auto-delete enabled, nothing happens
+      // — the user-initiated callback must fire so the button can show
+      // explicit "up to date" feedback instead of a silent no-op.
+      expect(upToDateFired, isTrue);
+    });
+
+    test('re-entrant calls short-circuit while a pass is already running', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      addTearDown(p.dispose);
+
+      var upToDateCount = 0;
+      // Fire two overlapping calls. The flag is set synchronously before the
+      // first await, so the second invocation must see _autoDeleteAndSyncRunning
+      // and return immediately without running the body again.
+      final f1 = p.runAutoDeleteAndSync(
+        MultiServerManager(),
+        force: true,
+        onUpToDate: () => upToDateCount++,
+      );
+      final f2 = p.runAutoDeleteAndSync(
+        MultiServerManager(),
+        force: true,
+        onUpToDate: () => upToDateCount++,
+      );
+      await Future.wait([f1, f2]);
+
+      expect(upToDateCount, 1);
+      expect(p.isAutoDeleteAndSyncRunning, isFalse);
     });
   });
 }

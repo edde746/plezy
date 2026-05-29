@@ -20,6 +20,8 @@ import '../../widgets/download_tree_view.dart';
 import '../main_screen.dart';
 import '../libraries/state_messages.dart';
 import '../../i18n/strings.g.dart';
+import '../../utils/snackbar_helper.dart';
+import '../video_player_screen.dart';
 import 'sync_rules_screen.dart';
 
 class DownloadsScreen extends StatefulWidget {
@@ -83,6 +85,20 @@ class DownloadsScreenState extends State<DownloadsScreen>
       if (!mounted) return;
       // Focus will be handled by the tab content
     });
+  }
+
+  /// Manual trigger for the auto-delete + sync pipeline. `force: true`
+  /// bypasses the executor's cooldown since this is a user-initiated tap;
+  /// the offline / cellular guards in the executor still apply, in which
+  /// case it short-circuits and the up-to-date snackbar fires.
+  Future<void> _runManualSync(BuildContext context, DownloadProvider downloadProvider) async {
+    final serverManager = context.read<MultiServerProvider>().serverManager;
+    await downloadProvider.runAutoDeleteAndSync(
+      serverManager,
+      force: true,
+      activeId: VideoPlayerScreenState.activeId,
+      onUpToDate: () => showMainSnackBar(t.downloads.syncUpToDate),
+    );
   }
 
   Widget _buildTabChip(String label, int index) {
@@ -162,18 +178,45 @@ class DownloadsScreenState extends State<DownloadsScreen>
             shadowColor: Colors.transparent,
             scrolledUnderElevation: 0,
             actions: [
-              FocusableActionBar(
-                key: _actionBarKey,
-                onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
-                onNavigateDown: _focusCurrentTab,
-                actions: [
-                  FocusableAction(
-                    icon: Symbols.rule_settings,
-                    tooltip: t.downloads.activeSyncRules,
-                    onPressed: () =>
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
-                  ),
-                ],
+              Consumer<DownloadProvider>(
+                builder: (context, downloadProvider, _) {
+                  final hasRules = downloadProvider.syncRules.isNotEmpty;
+                  final running = downloadProvider.isAutoDeleteAndSyncRunning;
+                  return FocusableActionBar(
+                    key: _actionBarKey,
+                    onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
+                    onNavigateDown: _focusCurrentTab,
+                    actions: [
+                      FocusableAction(
+                        icon: Symbols.rule_settings,
+                        tooltip: t.downloads.activeSyncRules,
+                        onPressed: () =>
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
+                      ),
+                      // Manual sync trigger. Hidden when there are no rules
+                      // (nothing for it to do) and disabled while a pass is
+                      // running, with the icon swapped for a spinner so the
+                      // tap feels acknowledged across the executor's network
+                      // round-trips.
+                      if (hasRules)
+                        FocusableAction(
+                          icon: Symbols.sync_rounded,
+                          tooltip: t.downloads.runSyncNow,
+                          onPressed: running ? null : () => _runManualSync(context, downloadProvider),
+                          child: running
+                              ? const Padding(
+                                  padding: EdgeInsets.all(12),
+                                  child: SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(strokeWidth: 2.5),
+                                  ),
+                                )
+                              : null,
+                        ),
+                    ],
+                  );
+                },
               ),
             ],
           ),

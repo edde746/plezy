@@ -23,8 +23,11 @@ import '../utils/app_logger.dart';
 import '../utils/deletion_notifier.dart';
 import '../utils/episode_collection.dart';
 import '../utils/global_key_utils.dart';
+import '../utils/snackbar_helper.dart';
 import '../utils/watch_state_notifier.dart';
+import '../i18n/strings.g.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
+import '../services/settings_service.dart';
 
 /// Filter mode for batch downloads (shows/seasons).
 /// Use [all] to download everything, or [unwatched] with an optional maxCount.
@@ -73,6 +76,16 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   // Track items currently being queued (building download queue)
   final Set<String> _queueing = {};
+
+  // Re-entrancy guard for [runAutoDeleteAndSync] — both the connectivity
+  // trigger and the manual "Run sync now" button funnel through that method,
+  // so they share this flag to avoid stacking passes.
+  bool _autoDeleteAndSyncRunning = false;
+
+  /// Whether the auto-delete + sync-rule pipeline is currently running.
+  /// Used by the manual sync button to render an inline spinner / disabled
+  /// state while a pass is in flight.
+  bool get isAutoDeleteAndSyncRunning => _autoDeleteAndSyncRunning;
 
   // Public download keys owned by the active profile. Physical download rows
   // stay app-wide; this set controls profile-visible state.
@@ -1760,6 +1773,79 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       final title = r.title ?? 'Unknown';
       return '$title (${r.queuedCount})';
     }).toList();
+  }
+
+  /// Run the full auto-delete + sync-rule pipeline.
+  ///
+  /// Mirrors the connectivity-reconnect trigger: refresh metadata cache,
+  /// auto-delete watched downloads (when [SettingsService.autoRemoveWatchedDownloads]
+  /// is on), then run the sync-rule executor.
+  ///
+  /// When [targetKeys] is non-null only those rules are re-evaluated (eager
+  /// path, cooldown bypassed). When null every rule runs via [executeSyncRules]
+  /// with [force] gating the cooldown — `true` for user-initiated drains
+  /// (manual button, offline-sync flush) and `false` for background probes
+  /// (connectivity transitions).
+  ///
+  /// [activeId] is the currently-playing item, excluded from auto-deletion so
+  /// playback isn't interrupted. Callers pass [VideoPlayerScreenState.activeId]
+  /// — taking it as a parameter keeps the provider free of any UI-layer import.
+  ///
+  /// [onUpToDate] fires when the pass completes without queueing or deleting
+  /// anything. The manual sync button uses this to surface explicit "Everything
+  /// is up to date" feedback; automatic triggers leave it null so they stay
+  /// silent on empty passes.
+  ///
+  /// Re-entrant calls return immediately while a pass is already running.
+  Future<void> runAutoDeleteAndSync(
+    MultiServerManager serverManager, {
+    List<String>? targetKeys,
+    bool force = false,
+    String? activeId,
+    VoidCallback? onUpToDate,
+  }) async {
+    if (_autoDeleteAndSyncRunning) return;
+    _autoDeleteAndSyncRunning = true;
+    safeNotifyListeners();
+    var didAnything = false;
+    try {
+      await refreshMetadataFromCache();
+
+      final settings = SettingsService.instanceOrNull;
+      if (settings != null && settings.read(SettingsService.autoRemoveWatchedDownloads)) {
+        final deleted = await autoDeleteWatchedDownloads(activeId: activeId);
+        if (deleted.isNotEmpty) {
+          didAnything = true;
+          final msg = deleted.length == 1
+              ? t.messages.autoRemovedWatchedDownload(title: deleted.first)
+              : t.messages.autoRemovedWatchedDownload(title: '${deleted.length} items');
+          showMainSnackBar(msg);
+        }
+      }
+
+      if (targetKeys != null) {
+        for (final key in targetKeys) {
+          if (!hasSyncRule(key)) continue;
+          final result = await executeSyncRuleFor(key, serverManager);
+          if (result != null && result.queuedCount > 0) {
+            didAnything = true;
+            final title = result.title ?? 'Unknown';
+            showMainSnackBar(t.downloads.syncedNewEpisodes(count: '1', title: '$title (${result.queuedCount})'));
+          }
+        }
+      } else {
+        final synced = await executeSyncRules(serverManager, force: force);
+        if (synced.isNotEmpty) {
+          didAnything = true;
+          showMainSnackBar(t.downloads.syncedNewEpisodes(count: synced.length.toString(), title: synced.first));
+        }
+      }
+
+      if (!didAnything && onUpToDate != null) onUpToDate();
+    } finally {
+      _autoDeleteAndSyncRunning = false;
+      safeNotifyListeners();
+    }
   }
 
   /// Execute a single sync rule immediately (eager path for `addToPlaylist` /

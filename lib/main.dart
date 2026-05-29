@@ -439,7 +439,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   Timer? _syncDebounce;
   final Set<String> _pendingSyncKeys = <String>{};
-  bool _isAutoDeleteRunning = false;
   bool _lastConnectivityWasWifi = false;
   bool _shutdownStarted = false;
 
@@ -545,9 +544,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     PaintingBinding.instance.imageCache.clearLiveImages();
   }
 
-  /// Fires [_autoDeleteAndSync] on each WiFi/Ethernet reconnect so rules run
-  /// as soon as the device is back online. Rapid flapping is bounded by the
-  /// executor's cooldown.
+  /// Fires the auto-delete + sync pipeline on each WiFi/Ethernet reconnect so
+  /// rules run as soon as the device is back online. Rapid flapping is bounded
+  /// by the executor's cooldown (force: false).
   void _startConnectivitySyncTrigger(DownloadProvider downloadProvider) {
     Future<void> setup() async {
       try {
@@ -565,7 +564,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           _lastConnectivityWasWifi = hasWifi;
           if (transitioned) {
             appLogger.d('Connectivity moved onto WiFi/Ethernet — triggering sync pass');
-            _autoDeleteAndSync(downloadProvider);
+            downloadProvider.runAutoDeleteAndSync(_serverManager, activeId: VideoPlayerScreenState.activeId);
           }
         });
       } catch (e) {
@@ -578,54 +577,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
 
   static bool _hasWifiOrEthernet(List<ConnectivityResult> results) =>
       results.contains(ConnectivityResult.wifi) || results.contains(ConnectivityResult.ethernet);
-
-  /// Run auto-delete (if enabled) and then a sync-rule pass.
-  ///
-  /// When [targetKeys] is non-null, only those rules are re-evaluated
-  /// (cooldown doesn't apply — targeted runs are always "we know this
-  /// changed"). When null, every rule runs via the executor, with [force]
-  /// gating the cooldown: `true` for user-initiated drains, `false` for
-  /// background probes like a connectivity reconnect.
-  Future<void> _autoDeleteAndSync(
-    DownloadProvider downloadProvider, {
-    List<String>? targetKeys,
-    bool force = false,
-  }) async {
-    if (_isAutoDeleteRunning) return;
-    _isAutoDeleteRunning = true;
-    try {
-      await downloadProvider.refreshMetadataFromCache();
-      final activeKey = VideoPlayerScreenState.activeId;
-      final settings = SettingsService.instanceOrNull;
-      if (settings != null && settings.read(SettingsService.autoRemoveWatchedDownloads)) {
-        final deleted = await downloadProvider.autoDeleteWatchedDownloads(activeId: activeKey);
-        if (deleted.isNotEmpty) {
-          final msg = deleted.length == 1
-              ? t.messages.autoRemovedWatchedDownload(title: deleted.first)
-              : t.messages.autoRemovedWatchedDownload(title: '${deleted.length} items');
-          showMainSnackBar(msg);
-        }
-      }
-
-      if (targetKeys != null) {
-        for (final key in targetKeys) {
-          if (!downloadProvider.hasSyncRule(key)) continue;
-          final result = await downloadProvider.executeSyncRuleFor(key, _serverManager);
-          if (result != null && result.queuedCount > 0) {
-            final title = result.title ?? 'Unknown';
-            showMainSnackBar(t.downloads.syncedNewEpisodes(count: '1', title: '$title (${result.queuedCount})'));
-          }
-        }
-      } else {
-        final synced = await downloadProvider.executeSyncRules(_serverManager, force: force);
-        if (synced.isNotEmpty) {
-          showMainSnackBar(t.downloads.syncedNewEpisodes(count: synced.length.toString(), title: synced.first));
-        }
-      }
-    } finally {
-      _isAutoDeleteRunning = false;
-    }
-  }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -785,7 +736,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             // Offline-sync drain replays a batch of queued watch actions without
             // per-item data, so we can't target rules — force a full pass.
             _offlineWatchSyncService.onWatchStatesRefreshed = () async {
-              await _autoDeleteAndSync(downloadProvider, force: true);
+              await downloadProvider.runAutoDeleteAndSync(
+                _serverManager,
+                force: true,
+                activeId: VideoPlayerScreenState.activeId,
+              );
             };
 
             // In-session watch events carry the episode's parent chain, so we
@@ -802,7 +757,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
               _syncDebounce = Timer(const Duration(seconds: 5), () {
                 final keys = _pendingSyncKeys.toList();
                 _pendingSyncKeys.clear();
-                _autoDeleteAndSync(downloadProvider, targetKeys: keys);
+                downloadProvider.runAutoDeleteAndSync(
+                  _serverManager,
+                  targetKeys: keys,
+                  activeId: VideoPlayerScreenState.activeId,
+                );
               });
             });
 

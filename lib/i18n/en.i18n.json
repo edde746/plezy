@@ -987,6 +987,8 @@
     "syncRuleRemoved": "Sync rule removed",
     "syncedNewEpisodes": "Synced ${count} new episodes for ${title}",
     "activeSyncRules": "Sync rules",
+    "runSyncNow": "Run sync now",
+    "syncUpToDate": "Everything is up to date",
     "noSyncRules": "No sync rules",
     "manageSyncRule": "Manage sync",
     "editEpisodeCount": "Episode count",

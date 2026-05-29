@@ -2939,6 +2939,12 @@ class TranslationsDownloadsEn {
 	/// en: 'Sync rules'
 	String get activeSyncRules => 'Sync rules';
 
+	/// en: 'Run sync now'
+	String get runSyncNow => 'Run sync now';
+
+	/// en: 'Everything is up to date'
+	String get syncUpToDate => 'Everything is up to date';
+
 	/// en: 'No sync rules'
 	String get noSyncRules => 'No sync rules';
 
@@ -5078,6 +5084,8 @@ extension on Translations {
 			'downloads.syncRuleRemoved' => 'Sync rule removed',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}',
 			'downloads.activeSyncRules' => 'Sync rules',
+			'downloads.runSyncNow' => 'Run sync now',
+			'downloads.syncUpToDate' => 'Everything is up to date',
 			'downloads.noSyncRules' => 'No sync rules',
 			'downloads.manageSyncRule' => 'Manage sync',
 			'downloads.editEpisodeCount' => 'Episode count',
@@ -5193,10 +5201,10 @@ extension on Translations {
 			'metadataEdit.advancedSettings' => 'Advanced Settings',
 			'metadataEdit.title' => 'Title',
 			'metadataEdit.sortTitle' => 'Sort Title',
-			'metadataEdit.originalTitle' => 'Original Title',
-			'metadataEdit.releaseDate' => 'Release Date',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.originalTitle' => 'Original Title',
+			'metadataEdit.releaseDate' => 'Release Date',
 			'metadataEdit.contentRating' => 'Content Rating',
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Tagline',
