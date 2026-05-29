@@ -115,7 +115,7 @@ extension _VideoPlayerShaderMethods on VideoPlayerScreenState {
 
     if (ambientLighting.isEnabled) {
       await ambientLighting.disable();
-      _videoFilterManager?.updateVideoFilter();
+      unawaited(_videoFilterManager?.updateVideoFilter());
     } else {
       // Get video display aspect ratio
       final dwidth = await player?.getProperty('dwidth');

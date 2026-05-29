@@ -41,12 +41,10 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
         initialBoxFitMode: settings.read(SettingsService.defaultBoxFitMode),
         onBoxFitModeChanged: (mode) => settings.write(SettingsService.defaultBoxFitMode, mode),
       );
-      _videoFilterManager!.updateVideoFilter();
+      unawaited(_videoFilterManager!.updateVideoFilter());
     }
 
-    if (_videoPIPManager == null) {
-      _videoPIPManager = VideoPIPManager(player: currentPlayer);
-    }
+    _videoPIPManager ??= VideoPIPManager(player: currentPlayer);
     _videoPIPManager!.onBeforeEnterPip = _preparePipFiltersForEntry;
     _attachPipStateListener();
   }

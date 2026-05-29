@@ -47,8 +47,7 @@ class JellyfinEndpointCandidate {
 }
 
 class JellyfinEndpointDiscovery {
-  JellyfinEndpointDiscovery({http.Client Function()? testHttpClientFactory})
-    : _testHttpClientFactory = testHttpClientFactory;
+  JellyfinEndpointDiscovery({this._testHttpClientFactory});
 
   final http.Client Function()? _testHttpClientFactory;
 
