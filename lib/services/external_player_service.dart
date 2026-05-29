@@ -12,6 +12,8 @@ import '../utils/snackbar_helper.dart';
 import '../utils/watch_state_notifier.dart';
 import '../i18n/strings.g.dart';
 import 'settings_service.dart';
+import 'offline_watch_sync_service.dart';
+import 'playback_report_session.dart';
 import 'trackers/tracker_coordinator.dart';
 
 const _externalPlayerChannel = MethodChannel('com.plezy/external_player');
@@ -60,6 +62,7 @@ class ExternalPlayerService {
     required BuildContext context,
     MediaItem? metadata,
     MediaServerClient? client,
+    OfflineWatchSyncService? offlineWatchService,
     int mediaIndex = 0,
     String? mediaSourceId,
     String? videoUrl,
@@ -93,11 +96,12 @@ class ExternalPlayerService {
       // On Android, always use native intent to avoid url_launcher opening in browser
       if (Platform.isAndroid && context.mounted) {
         final launchResult = await _launchAndroidNative(resolvedUrl, player, context, metadata: metadata);
-        if (launchResult.launched && metadata != null && client != null) {
+        if (launchResult.launched && metadata != null) {
           await _reportAndroidExternalProgress(
             launchResult,
             metadata: metadata,
             client: client,
+            offlineWatchService: offlineWatchService,
             mediaSourceId: mediaSourceId,
           );
         }
@@ -147,7 +151,8 @@ class ExternalPlayerService {
   static Future<void> _reportAndroidExternalProgress(
     _ExternalPlayerLaunchResult result, {
     required MediaItem metadata,
-    required MediaServerClient client,
+    required MediaServerClient? client,
+    OfflineWatchSyncService? offlineWatchService,
     String? mediaSourceId,
   }) async {
     if (result.playbackError) {
@@ -162,25 +167,28 @@ class ExternalPlayerService {
     final positionMs = durationMs == null ? reportedPositionMs : reportedPositionMs.clamp(0, durationMs).toInt();
     final position = Duration(milliseconds: positionMs);
     final duration = durationMs == null ? null : Duration(milliseconds: durationMs);
+    if (client == null) {
+      await _queueExternalProgress(metadata, offlineWatchService, position: position, duration: duration);
+      return;
+    }
 
     try {
-      try {
-        await client.reportPlaybackStarted(
-          itemId: metadata.id,
+      final session = PlaybackReportSession(client: client, itemId: metadata.id, playMethod: 'DirectPlay');
+      await session.report(
+        PlaybackReportSnapshot(
+          state: 'playing',
           position: position,
-          duration: duration,
-          playMethod: 'DirectPlay',
-          mediaSourceId: mediaSourceId,
-        );
-      } catch (e) {
-        appLogger.d('External player progress: started call failed (continuing)', error: e);
-      }
-
-      await client.reportPlaybackStopped(
-        itemId: metadata.id,
-        position: position,
-        duration: duration,
-        mediaSourceId: mediaSourceId,
+          duration: duration ?? position,
+          resolveStreamSelection: () => PlaybackStreamSelection(mediaSourceId: mediaSourceId),
+        ),
+      );
+      await session.report(
+        PlaybackReportSnapshot(
+          state: 'stopped',
+          position: position,
+          duration: duration ?? position,
+          resolveStreamSelection: () => PlaybackStreamSelection(mediaSourceId: mediaSourceId),
+        ),
       );
 
       if (duration == null) return;
@@ -198,7 +206,24 @@ class ExternalPlayerService {
       }
     } catch (e) {
       appLogger.w('Failed to sync external player progress for ${metadata.id}', error: e);
+      await _queueExternalProgress(metadata, offlineWatchService, position: position, duration: duration);
     }
+  }
+
+  static Future<void> _queueExternalProgress(
+    MediaItem metadata,
+    OfflineWatchSyncService? offlineWatchService, {
+    required Duration position,
+    required Duration? duration,
+  }) async {
+    final serverId = metadata.serverId;
+    if (offlineWatchService == null || serverId == null || duration == null || duration.inMilliseconds <= 0) return;
+    await offlineWatchService.queueProgressUpdate(
+      serverId: serverId,
+      itemId: metadata.id,
+      viewOffset: position.inMilliseconds.clamp(0, duration.inMilliseconds).toInt(),
+      duration: duration.inMilliseconds,
+    );
   }
 
   static int? _positive(int? value) => value != null && value > 0 ? value : null;

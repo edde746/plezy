@@ -647,9 +647,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
-    bool offline = false,
-    DateTime? updatedAt,
-    bool? continuing,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     final response = await _http.post(
       '/Sessions/Playing/Stopped',

@@ -116,7 +116,7 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
       }
     }
 
-    return DownloadResolution(videoUrl: videoUrl, externalSubtitles: subtitles);
+    return DownloadResolution(videoUrl: videoUrl, mediaSourceId: selectedSourceId, externalSubtitles: subtitles);
   }
 
   Map<String, dynamic>? _selectDownloadMediaSource(List<dynamic> sources, String? selectedSourceId, int mediaIndex) {

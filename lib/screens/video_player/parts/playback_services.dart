@@ -20,7 +20,6 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   }) {
     final currentPlayer = player;
     if (currentPlayer == null) return;
-    _stoppedProgressFuture = null;
 
     // Progress tracker — local media still reports live when its server is
     // online; only queue locally when no reporting client is reachable.
@@ -30,7 +29,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         metadata: metadata,
         player: currentPlayer,
         offlineWatchService: offlineWatchService,
-        queueOnOnlineFailure: _usesLocalPlaybackSource,
+        queueOnOnlineFailure: _playbackContext?.shouldQueueOnReportFailure ?? _usesLocalPlaybackSource,
         playMethod: playMethod ?? (_isTranscoding ? 'Transcode' : 'DirectPlay'),
         playSessionId: playSessionId,
         mediaInfo: mediaInfo,
@@ -82,7 +81,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
 
     // Get a live reporting client when possible. Downloaded/local playback
     // still uses this path when the server is reachable.
-    final mediaClient = _getOnlineMediaServerClient(context);
+    final mediaClient = _playbackContext?.reportingClient ?? _getOnlineMediaServerClient(context);
     final offlineWatchService = context.read<OfflineWatchSyncService>();
 
     // Initialize media controls manager (must exist before the per-item

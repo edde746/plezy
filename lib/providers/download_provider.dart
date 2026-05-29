@@ -17,6 +17,7 @@ import '../services/download_storage_service.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_mode_source.dart';
 import '../services/storage_service.dart';
+import '../services/watch_state_resolver.dart';
 import '../media/media_server_client.dart';
 import '../services/sync_rule_executor.dart';
 import '../utils/app_logger.dart';
@@ -361,7 +362,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         scopes[key] = await _offlineWatchScopeForGlobalKey(key);
       }
       final profileId = _activeProfileId;
-      final actions = await _database.getLatestWatchActionsForKeys(
+      final actions = await _database.getWatchActionsForKeys(
         keys,
         profileId: profileId,
         filterProfile: profileId != null,
@@ -371,22 +372,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       for (final entry in actions.entries) {
         final base = _metadata[entry.key];
         if (base == null) continue;
-        final action = entry.value;
-        bool? isWatched;
-        int? viewOffsetMs;
-        switch (action.actionType) {
-          case 'watched':
-            isWatched = true;
-            viewOffsetMs = 0;
-          case 'unwatched':
-            isWatched = false;
-            viewOffsetMs = 0;
-          case 'progress':
-            isWatched = action.shouldMarkWatched;
-            viewOffsetMs = action.shouldMarkWatched ? 0 : action.viewOffset;
-        }
-        if (isWatched == null) continue;
-        _metadata[entry.key] = base.copyWith(viewCount: isWatched ? 1 : 0, viewOffsetMs: viewOffsetMs);
+        final snapshot = WatchStateResolver.fromActions(entry.value);
+        if (snapshot.isEmpty) continue;
+        _metadata[entry.key] = snapshot.apply(base);
       }
     } catch (e) {
       appLogger.w('Failed to apply offline watch overlay', error: e);
@@ -503,6 +491,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     final globalKey = buildGlobalKey(event.serverId, event.itemId);
     final base = _metadata[globalKey];
     if (base == null) return;
+    final eventScope = event.cacheServerId;
+    final activeScope = _downloadManager.activeClientScopeIdForServer(event.serverId);
+    if (eventScope != null && eventScope.isNotEmpty && eventScope != event.serverId && eventScope != activeScope) {
+      return;
+    }
 
     final isWatched = event.isNowWatched!;
     _metadata[globalKey] = base.copyWith(viewCount: isWatched ? 1 : 0, viewOffsetMs: 0);
@@ -829,7 +822,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Get the local video file path for a downloaded item
   /// Returns null if not downloaded or file doesn't exist
-  Future<String?> getVideoFilePath(String globalKey) async {
+  Future<String?> getVideoFilePath(String globalKey, {int? mediaIndex, String? mediaSourceId}) async {
     appLogger.d('getVideoFilePath called with globalKey: $globalKey');
     if (!_ownsDownloadKey(globalKey)) {
       appLogger.w('Profile does not own downloaded item: $globalKey');
@@ -843,6 +836,26 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
     if (downloadedItem.status != DownloadStatus.completed.index) {
       appLogger.w('Download not complete. Status: ${downloadedItem.status}');
+      return null;
+    }
+    final expectedSourceId = mediaSourceId?.trim();
+    final downloadedSourceId = downloadedItem.mediaSourceId;
+    if (expectedSourceId != null &&
+        expectedSourceId.isNotEmpty &&
+        downloadedSourceId != null &&
+        downloadedSourceId.isNotEmpty &&
+        expectedSourceId != downloadedSourceId) {
+      appLogger.w(
+        'Downloaded media source mismatch for $globalKey: have $downloadedSourceId, expected $expectedSourceId',
+      );
+      return null;
+    }
+    if ((downloadedSourceId == null || downloadedSourceId.isEmpty) &&
+        mediaIndex != null &&
+        downloadedItem.mediaIndex != mediaIndex) {
+      appLogger.w(
+        'Downloaded media index mismatch for $globalKey: have ${downloadedItem.mediaIndex}, expected $mediaIndex',
+      );
       return null;
     }
     if (downloadedItem.videoFilePath == null) {

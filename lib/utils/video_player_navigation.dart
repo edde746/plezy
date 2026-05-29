@@ -11,6 +11,7 @@ import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
+import '../services/offline_watch_sync_service.dart';
 import '../services/settings_service.dart';
 import 'app_logger.dart';
 
@@ -62,6 +63,7 @@ Future<bool?> navigateToVideoPlayer(
   // Use the manager-routed lookup so Jellyfin items don't trip the
   // Plex-only client. The player branches on the returned type internally.
   final manager = context.read<MultiServerProvider>().serverManager;
+  final offlineWatchService = context.read<OfflineWatchSyncService>();
   final serverId = metadata.serverId ?? '';
   final mediaClient = serverId.isNotEmpty && (!isOffline || manager.isClientOnline(serverId))
       ? manager.getClient(serverId)
@@ -87,7 +89,11 @@ Future<bool?> navigateToVideoPlayer(
 
       if (isOffline) {
         final globalKey = metadata.globalKey;
-        final videoPath = await downloadProvider.getVideoFilePath(globalKey);
+        final videoPath = await downloadProvider.getVideoFilePath(
+          globalKey,
+          mediaIndex: mediaIndex,
+          mediaSourceId: selectedMediaSourceId,
+        );
         if (videoPath != null && context.mounted) {
           final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
           launched = await ExternalPlayerService.launch(
@@ -95,6 +101,7 @@ Future<bool?> navigateToVideoPlayer(
             videoUrl: videoUrl,
             metadata: metadata,
             client: mediaClient,
+            offlineWatchService: offlineWatchService,
             mediaIndex: mediaIndex,
             mediaSourceId: selectedMediaSourceId,
           );
@@ -104,6 +111,7 @@ Future<bool?> navigateToVideoPlayer(
           context: context,
           metadata: metadata,
           client: mediaClient,
+          offlineWatchService: offlineWatchService,
           mediaIndex: mediaIndex,
           mediaSourceId: selectedMediaSourceId,
         );

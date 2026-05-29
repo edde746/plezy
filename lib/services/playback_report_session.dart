@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../media/media_server_client.dart';
+import '../media/playback_report_metadata.dart';
 
 enum _PlaybackReportState { idle, starting, started, stopping, stopFailed, stopped }
 
@@ -35,12 +36,14 @@ class PlaybackReportSnapshot {
   final String state;
   final Duration position;
   final Duration duration;
+  final PlaybackReportMetadata report;
   final PlaybackStreamSelectionResolver resolveStreamSelection;
 
   const PlaybackReportSnapshot({
     required this.state,
     required this.position,
     required this.duration,
+    this.report = const PlaybackReportMetadata.live(),
     this.resolveStreamSelection = _noStreamSelection,
   });
 
@@ -69,6 +72,18 @@ class PlaybackReportSession {
   Future<void>? _stopFuture;
 
   bool get isIdle => _state == _PlaybackReportState.idle;
+
+  bool get isStopped => _state == _PlaybackReportState.stopped;
+
+  void resetAfterStop() {
+    if (_state == _PlaybackReportState.stopped || _state == _PlaybackReportState.stopFailed) {
+      _state = _PlaybackReportState.idle;
+      _startSnapshot = null;
+      _discardPendingProgress();
+      _pumpFuture = null;
+      _stopFuture = null;
+    }
+  }
 
   bool get _isStoppingOrTerminal =>
       _state == _PlaybackReportState.stopping ||
@@ -248,6 +263,7 @@ class PlaybackReportSession {
       duration: snapshot.duration,
       playSessionId: playSessionId,
       mediaSourceId: selection.mediaSourceId,
+      report: snapshot.report,
     );
   }
 }

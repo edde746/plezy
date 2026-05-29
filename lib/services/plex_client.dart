@@ -16,6 +16,7 @@ import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
+import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
 import '../utils/external_ids.dart';
 import 'bif_thumbnail_service.dart';
@@ -1610,9 +1611,7 @@ class PlexClient
     required int time,
     required String state, // 'playing', 'paused', 'stopped', 'buffering'
     int? duration,
-    bool offline = false,
-    DateTime? updatedAt,
-    bool? continuing,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     final response = await _http.post(
       '/:/timeline',
@@ -1622,9 +1621,9 @@ class PlexClient
         'time': time,
         'state': state,
         'duration': ?duration,
-        if (offline) 'offline': 1,
-        if (updatedAt != null) 'updated': updatedAt.millisecondsSinceEpoch ~/ 1000,
-        if (continuing != null) 'continuing': continuing ? 1 : 0,
+        if (report.isOfflineReplay) 'offline': 1,
+        if (report.recordedAt != null) 'updated': report.recordedAt!.millisecondsSinceEpoch ~/ 1000,
+        if (report.willContinue != null) 'continuing': report.willContinue! ? 1 : 0,
       },
     );
     // Surface non-2xx instead of swallowing — progress is the cornerstone
@@ -3928,17 +3927,13 @@ class PlexClient
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
-    bool offline = false,
-    DateTime? updatedAt,
-    bool? continuing,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) => updateProgress(
     itemId,
     time: position.inMilliseconds,
     state: 'stopped',
     duration: duration?.inMilliseconds,
-    offline: offline,
-    updatedAt: updatedAt,
-    continuing: continuing,
+    report: report,
   );
 
   // ── Downloads ────────────────────────────────────────────────────
@@ -3972,7 +3967,11 @@ class PlexClient
         );
       }
     }
-    return DownloadResolution(videoUrl: playbackData.videoUrl, externalSubtitles: subtitles);
+    return DownloadResolution(
+      videoUrl: playbackData.videoUrl,
+      mediaSourceId: playbackData.mediaInfo?.mediaSourceId,
+      externalSubtitles: subtitles,
+    );
   }
 
   @override

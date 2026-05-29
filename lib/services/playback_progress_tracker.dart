@@ -74,6 +74,8 @@ class PlaybackProgressTracker {
   /// Whether the final stopped progress event was already emitted locally.
   bool _stopProgressNotified = false;
 
+  Future<void>? _stoppedProgressFuture;
+
   Duration? _lastProgressNotifiedPosition;
 
   static const Duration _progressNotifyDelta = Duration(seconds: 30);
@@ -160,6 +162,20 @@ class PlaybackProgressTracker {
   /// [state] can be 'playing', 'paused', or 'stopped'.
   Future<void> sendProgress(String state, {Duration? positionOverride}) async {
     await _sendProgress(state, positionOverride: positionOverride);
+  }
+
+  Future<void> sendStoppedProgressOnce({Duration? positionOverride}) {
+    final existing = _stoppedProgressFuture;
+    if (existing != null) return existing;
+    final future = sendProgress('stopped', positionOverride: positionOverride);
+    _stoppedProgressFuture = future;
+    return future;
+  }
+
+  void resumeAfterStoppedReport() {
+    _stoppedProgressFuture = null;
+    _stopProgressNotified = false;
+    _reportSession?.resetAfterStop();
   }
 
   Future<void> _sendProgress(String state, {Duration? positionOverride}) async {

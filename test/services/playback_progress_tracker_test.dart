@@ -7,6 +7,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
+import 'package:plezy/media/playback_report_metadata.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/offline_watch_sync_service.dart';
@@ -134,9 +135,7 @@ class _FakePlexClient implements PlexClient {
     required int time,
     required String state,
     int? duration,
-    bool offline = false,
-    DateTime? updatedAt,
-    bool? continuing,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     if (throwOnNextCall != null) {
       final err = throwOnNextCall!;
@@ -201,9 +200,7 @@ class _FakePlexClient implements PlexClient {
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
-    bool offline = false,
-    DateTime? updatedAt,
-    bool? continuing,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) {
     playbackSessionIds.add(playSessionId);
     playbackStreamSelections.add((mediaSourceId: mediaSourceId, audioStreamIndex: null, subtitleStreamIndex: null));
@@ -974,9 +971,7 @@ class _ScrobblePreciseClient implements PlexClient {
     required int time,
     required String state,
     int? duration,
-    bool offline = false,
-    DateTime? updatedAt,
-    bool? continuing,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {}
 
   @override
@@ -1011,9 +1006,7 @@ class _ScrobblePreciseClient implements PlexClient {
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
-    bool offline = false,
-    DateTime? updatedAt,
-    bool? continuing,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {}
 
   @override

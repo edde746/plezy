@@ -10,6 +10,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/playback_report_metadata.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -79,8 +80,7 @@ class _RecordingMediaClient implements MediaServerClient {
   void close() {}
 
   final started = <({String itemId, int positionMs, int? durationMs})>[];
-  final stopped =
-      <({String itemId, int positionMs, int? durationMs, bool offline, DateTime? updatedAt, bool? continuing})>[];
+  final stopped = <({String itemId, int positionMs, int? durationMs, PlaybackReportMetadata report})>[];
   final watched = <String>[];
 
   @override
@@ -108,17 +108,13 @@ class _RecordingMediaClient implements MediaServerClient {
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
-    bool offline = false,
-    DateTime? updatedAt,
-    bool? continuing,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     stopped.add((
       itemId: itemId,
       positionMs: position.inMilliseconds,
       durationMs: duration?.inMilliseconds,
-      offline: offline,
-      updatedAt: updatedAt,
-      continuing: continuing,
+      report: report,
     ));
   }
 
@@ -355,8 +351,8 @@ void main() {
       expect(client.started.single.positionMs, 50000);
       expect(client.stopped, hasLength(1));
       expect(client.stopped.single.positionMs, 50000);
-      expect(client.stopped.single.offline, isTrue);
-      expect(client.stopped.single.updatedAt?.millisecondsSinceEpoch, queued!.updatedAt);
+      expect(client.stopped.single.report.isOfflineReplay, isTrue);
+      expect(client.stopped.single.report.recordedAt?.millisecondsSinceEpoch, queued!.updatedAt);
       expect(client.watched, isEmpty);
       expect(await svc.getPendingSyncCount(), 0);
     });
@@ -380,9 +376,9 @@ void main() {
       expect(client.stopped, hasLength(1));
       expect(client.stopped.single.positionMs, 100000);
       expect(client.stopped.single.durationMs, 100000);
-      expect(client.stopped.single.offline, isTrue);
-      expect(client.stopped.single.continuing, isFalse);
-      expect(client.stopped.single.updatedAt?.millisecondsSinceEpoch, queued!.updatedAt);
+      expect(client.stopped.single.report.isOfflineReplay, isTrue);
+      expect(client.stopped.single.report.willContinue, isFalse);
+      expect(client.stopped.single.report.recordedAt?.millisecondsSinceEpoch, queued!.updatedAt);
       expect(client.watched, ['42']);
       expect(await svc.getPendingSyncCount(), 0);
     });
@@ -482,7 +478,7 @@ void main() {
       expect(await svc.getLocalWatchStatus('srv:1'), isFalse);
     });
 
-    test('returns shouldMarkWatched for a "progress" action', () async {
+    test('returns true only for progress that crossed the watched threshold', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
       addTearDown(() async {
         svc.dispose();
@@ -490,9 +486,9 @@ void main() {
         await db.close();
       });
 
-      // Below threshold → shouldMarkWatched=false → status=false.
+      // Below threshold is resume-only, not an explicit unwatched override.
       await svc.queueProgressUpdate(serverId: 'srv', itemId: '1', viewOffset: 50, duration: 100);
-      expect(await svc.getLocalWatchStatus('srv:1'), isFalse);
+      expect(await svc.getLocalWatchStatus('srv:1'), isNull);
 
       // Above threshold → shouldMarkWatched=true → status=true.
       await svc.queueProgressUpdate(serverId: 'srv', itemId: '2', viewOffset: 99, duration: 100);
@@ -771,7 +767,7 @@ void main() {
 
       expect(await svc.getLocalWatchStatus('jf-machine:item-1'), isTrue);
       expect(await svc.getLocalViewOffset('jf-machine:item-1'), isNull);
-      expect(await svc.getLocalWatchStatus('jf-machine:item-1', clientScopeId: 'jf-machine/user-a'), isFalse);
+      expect(await svc.getLocalWatchStatus('jf-machine:item-1', clientScopeId: 'jf-machine/user-a'), isNull);
       expect(await svc.getLocalViewOffset('jf-machine:item-1', clientScopeId: 'jf-machine/user-a'), 5000);
     });
 

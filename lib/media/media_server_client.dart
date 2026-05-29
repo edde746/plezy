@@ -18,6 +18,7 @@ import 'media_item.dart';
 import 'media_kind.dart';
 import 'media_library.dart';
 import 'media_playlist.dart';
+import 'playback_report_metadata.dart';
 import 'server_capabilities.dart';
 
 /// Backend-neutral client for a single media server (Plex or Jellyfin).
@@ -493,18 +494,15 @@ abstract class MediaServerClient {
   });
 
   /// End-of-session signal. Plex sends `state=stopped`; Jellyfin closes
-  /// the session row. [offline] and [updatedAt] are used by Plex when replaying
-  /// queued offline watch progress; backends that have no equivalent may ignore
-  /// them.
+  /// the session row. [report] carries semantic metadata such as offline
+  /// replay timing without leaking backend-specific wire parameter names.
   Future<void> reportPlaybackStopped({
     required String itemId,
     required Duration position,
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
-    bool offline = false,
-    DateTime? updatedAt,
-    bool? continuing,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   });
 
   /// Resolve the video URL, media info, and external subtitle list for

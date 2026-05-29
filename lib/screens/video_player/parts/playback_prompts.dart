@@ -88,7 +88,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _cancelAutoPlay() {
     _autoPlayTimer?.cancel();
-    _stoppedProgressFuture = null;
+    _progressTracker?.resumeAfterStoppedReport();
     _completionTriggered = false; // Reset so it can trigger again if user seeks near end
     _setPlayerState(() {
       _showPlayNextDialog = false;

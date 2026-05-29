@@ -135,6 +135,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   Future<void> _swapEpisodeInPip(MediaItem episodeMetadata) async {
     _isSwappingEpisode = true;
     final currentPlayer = player!;
+    final playbackGeneration = _beginPlaybackGeneration();
     final previousMetadata = _currentMetadata;
 
     final currentAudioTrack = currentPlayer.state.track.audio;
@@ -146,13 +147,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     // backend. We still narrow to [plexClient] for [TrackManager]'s
     // server-side track persistence, which is Plex-only — Jellyfin
     // sessions get a null `getPlexClient` and skip that path.
-    final mediaClient = _getOnlineMediaServerClient(context);
-    final plexClient = mediaClient is PlexClient ? mediaClient : null;
-    final streamHeaders = mediaClient?.streamHeaders;
     final offlineWatchService = context.read<OfflineWatchSyncService>();
     final userProfileProvider = context.read<UserProfileProvider>();
     final playbackState = context.read<PlaybackStateProvider>();
     final database = context.read<AppDatabase>();
+    final serverManager = context.read<MultiServerProvider>().serverManager;
 
     await _sendStoppedProgressOnce();
     _progressTracker?.stopTracking();
@@ -169,19 +168,21 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     _hasFirstFrame.value = false;
 
     try {
-      // Same service shape works for both online (mediaClient non-null,
-      // bundled video URL + media info) and pure-offline (mediaClient null,
-      // local file + cached media info if available).
-      final playbackService = PlaybackInitializationService(client: mediaClient, database: database);
-      final result = await playbackService.getPlaybackData(
+      final playbackResolver = PlaybackSourceResolver(serverManager: serverManager, database: database);
+      final playbackContext = await playbackResolver.resolve(
         metadata: episodeMetadata,
         selectedMediaIndex: widget.selectedMediaIndex,
-        preferOffline: widget.isOffline || _selectedQualityPreset.isOriginal,
+        selectedMediaSourceId: widget.selectedMediaSourceId,
+        offlineLibraryMode: widget.isOffline,
         qualityPreset: _selectedQualityPreset,
         selectedAudioStreamId: _selectedAudioStreamId,
         sessionIdentifier: _playbackSessionIdentifier,
         transcodeSessionId: _playbackTranscodeSessionId,
       );
+      final result = playbackContext.result;
+      final mediaClient = playbackContext.reportingClient;
+      final plexClient = mediaClient is PlexClient ? mediaClient : null;
+      final streamHeaders = playbackContext.streamHeaders;
 
       if (result.videoUrl == null) {
         throw PlaybackException('No video URL available');
@@ -190,6 +191,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       Duration? resumePosition;
       _isTranscoding = result.isTranscoding;
       _effectiveIsOffline = result.isOffline;
+      _playbackContext = playbackContext;
       _playbackPlaySessionId = result.playSessionId;
       _playbackPlayMethod = result.playMethod;
       _selectedAudioStreamId = result.activeAudioStreamId;
@@ -234,7 +236,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       _completionTriggered = false;
       _isSwappingEpisode = false;
 
-      if (!mounted) return;
+      if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
 
       _scrubPreviewSource?.dispose();
       _setPlayerState(() {
