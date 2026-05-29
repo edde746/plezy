@@ -95,6 +95,8 @@ const String _tvDetailActorPersonIdRawKey = 'tvDetailActorPersonId';
 
 enum _SyncRuleAction { edit, remove, delete }
 
+enum _PlayRandomChoice { allEpisodes, currentSeason }
+
 class MediaDetailScreen extends StatefulWidget {
   final MediaItem metadata;
   final bool isOffline;
@@ -2828,14 +2830,38 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
-  /// Handle shuffle play. Routes through [MediaListPlaybackLauncher.forItem]
+  /// Handle shuffle play. Online: routes through [MediaListPlaybackLauncher.forItem]
   /// so Plex uses its server-side `/playQueues` and Jellyfin builds a local
-  /// shuffled queue from `fetchClientSideEpisodeQueue`.
+  /// shuffled queue from `fetchClientSideEpisodeQueue`. Offline: pulls every
+  /// downloaded episode of the show from [DownloadProvider] and plays them
+  /// from a [LocalPlayQueue], mirroring the season-scoped offline path.
   Future<void> _handleShufflePlayWithQueue(BuildContext context, MediaItem metadata) async {
     if (widget.isOffline) {
-      if (context.mounted) {
-        showErrorSnackBar(context, 'Shuffle not available offline');
+      // The button is visible for shows and seasons; on a season detail page
+      // the picker is skipped (see action_buttons.dart), so this path is only
+      // hit when shuffling a whole show. Fall back to `grandparentId` for
+      // seasons just to stay robust if a future caller routes one through.
+      final showId = metadata.isShow ? metadata.id : (metadata.grandparentId ?? metadata.id);
+      final downloads = context.read<DownloadProvider>().getDownloadedEpisodesForShow(showId);
+      if (downloads.isEmpty) {
+        if (context.mounted) {
+          showErrorSnackBar(context, t.messages.failedToCreatePlayQueueNoItems);
+        }
+        return;
       }
+      final shuffled = List.of(downloads)..shuffle(Random());
+      context.read<PlaybackStateProvider>().setPlaybackFromLocalQueue(
+        LocalPlayQueue(
+          id: '${metadata.backend.id}:show:$showId:shuffle',
+          items: shuffled,
+          currentIndex: 0,
+          shuffled: true,
+          backendId: metadata.backend.id,
+        ),
+        contextKey: showId,
+      );
+      if (!context.mounted) return;
+      await navigateToVideoPlayer(context, metadata: shuffled.first);
       return;
     }
 

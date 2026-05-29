@@ -378,7 +378,7 @@
     "tapToPlay": "Dotknij, aby odtworzyć"
   },
   "tooltips": {
-    "shufflePlay": "Odtwarzanie losowe",
+    "playRandom": "Odtwarzanie losowe",
     "playTrailer": "Odtwórz zwiastun",
     "markAsWatched": "Oznacz jako obejrzane",
     "markAsUnwatched": "Oznacz jako nieobejrzane"

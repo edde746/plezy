@@ -378,7 +378,7 @@
     "tapToPlay": "タップして再生"
   },
   "tooltips": {
-    "shufflePlay": "シャッフル再生",
+    "playRandom": "シャッフル再生",
     "playTrailer": "予告編を再生",
     "markAsWatched": "視聴済みにする",
     "markAsUnwatched": "未視聴にする"

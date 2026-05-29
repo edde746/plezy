@@ -378,7 +378,7 @@
     "tapToPlay": "Appuyez pour lire"
   },
   "tooltips": {
-    "shufflePlay": "Lecture aléatoire",
+    "playRandom": "Lecture aléatoire",
     "playTrailer": "Lire la bande-annonce",
     "markAsWatched": "Marqué comme vu",
     "markAsUnwatched": "Marqué comme non vu"

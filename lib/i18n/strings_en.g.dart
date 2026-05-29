@@ -1195,11 +1195,11 @@ class TranslationsTooltipsEn {
 
 	// Translations
 
-	/// en: 'Shuffle show'
-	String get shufflePlay => 'Shuffle show';
+	/// en: 'Play random'
+	String get playRandom => 'Play random';
 
-	/// en: 'Shuffle ${seasonTitle}'
-	String shuffleSeason({required Object seasonTitle}) => 'Shuffle ${seasonTitle}';
+	/// en: 'All episodes'
+	String get playRandomAllEpisodes => 'All episodes';
 
 	/// en: 'Play trailer'
 	String get playTrailer => 'Play trailer';
@@ -4530,8 +4530,8 @@ extension on Translations {
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent} percent watched',
 			'accessibility.mediaCardUnwatched' => 'unwatched',
 			'accessibility.tapToPlay' => 'Tap to play',
-			'tooltips.shufflePlay' => 'Shuffle show',
-			'tooltips.shuffleSeason' => ({required Object seasonTitle}) => 'Shuffle ${seasonTitle}',
+			'tooltips.playRandom' => 'Play random',
+			'tooltips.playRandomAllEpisodes' => 'All episodes',
 			'tooltips.playTrailer' => 'Play trailer',
 			'tooltips.markAsWatched' => 'Mark as watched',
 			'tooltips.markAsUnwatched' => 'Mark as unwatched',

@@ -142,25 +142,15 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             ),
             SizedBox(width: isTv ? 8 * tvScale : 12),
           ],
-          // Shuffle button (only for shows and seasons)
+          // Combined "Play random" button (only for shows and seasons).
+          // On multi-season shows it opens a picker letting the user choose
+          // between shuffling the whole show and shuffling the current
+          // season; on single-season shows and season detail pages there's
+          // only one meaningful action, so it shuffles directly.
           if (metadata.isShow || metadata.isSeason) ...[
-            IconButton.filledTonal(
-              onPressed: () async {
-                await _handleShufflePlayWithQueue(context, metadata);
-              },
-              icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
-              tooltip: t.tooltips.shufflePlay,
-              iconSize: isTv ? 21 * tvScale : 20,
-              style: actionButtonStyle(),
-            ),
+            _buildPlayRandomButton(metadata, actionButtonStyle, tvScale, isTv),
             SizedBox(width: isTv ? 8 * tvScale : 12),
           ],
-          // Shuffle-current-season button — sits next to the series-wide
-          // shuffle. Hidden when there's no meaningful "current season"
-          // (single-season show, no season selected yet, or this isn't a
-          // show/season at all). Disabled while episodes are still loading
-          // or the season has no episodes to shuffle.
-          ..._buildShuffleCurrentSeasonButton(metadata, actionButtonStyle, tvScale, isTv),
           // Download button (hide in offline mode - already downloaded,
           // and on Apple TV where there's no user file storage).
           if (!widget.isOffline && !PlatformDetector.isAppleTV())
@@ -178,41 +168,73 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     );
   }
 
-  /// Builds the "shuffle current season" action. Returns an empty list (so
-  /// the spread is a no-op) when the button shouldn't appear at all —
-  /// movies, episodes, single-season shows, or before the season tabs have
-  /// resolved. When visible, the button is disabled while the season's
-  /// episodes haven't loaded yet (so the offline path has nothing to shuffle
-  /// and the online path would just fire an empty-queue snackbar).
-  List<Widget> _buildShuffleCurrentSeasonButton(
+  /// Builds the combined "Play random" action. On multi-season shows where
+  /// the selected season has loaded, a tap opens a picker offering "All
+  /// episodes" or the current season. Otherwise the picker is skipped —
+  /// season detail pages and single-season shows shuffle directly because
+  /// there's only one meaningful action to take.
+  Widget _buildPlayRandomButton(
     MediaItem metadata,
     ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding}) actionButtonStyle,
     double tvScale,
     bool isTv,
   ) {
+    return IconButton.filledTonal(
+      onPressed: () async {
+        await _handlePlayRandom(context, metadata);
+      },
+      icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
+      tooltip: t.tooltips.playRandom,
+      iconSize: isTv ? 21 * tvScale : 20,
+      style: actionButtonStyle(),
+    );
+  }
+
+  /// Routes a "Play random" tap. Season detail pages shuffle that season.
+  /// Single-season shows shuffle the whole show. Multi-season shows with a
+  /// loaded current season open a picker so the user can pick which scope.
+  /// If the current season isn't ready yet, we degrade to shuffling the
+  /// whole show — same end state the old disabled-season-button gave us.
+  Future<void> _handlePlayRandom(BuildContext context, MediaItem metadata) async {
+    if (metadata.isSeason) {
+      await _handleShuffleCurrentSeason(context, metadata);
+      return;
+    }
+
     final season = _seasonForCurrentSeasonShuffle(metadata);
-    if (season == null) return const <Widget>[];
-
     final hasEpisodes = _episodes.isNotEmpty && !_isLoadingSeasonEpisodes;
-    // `displayTitle` hoists to grandparentTitle (the show's name) for
-    // seasons — we want the season's own name ("Season 3", "Specials"),
-    // which lives on `title`. Same field the season tabs use.
-    final seasonTitle = season.title ?? '';
+    if (season == null || !hasEpisodes) {
+      await _handleShufflePlayWithQueue(context, metadata);
+      return;
+    }
 
-    return [
-      IconButton.filledTonal(
-        onPressed: hasEpisodes
-            ? () async {
-                await _handleShuffleCurrentSeason(context, metadata);
-              }
-            : null,
-        icon: const AppIcon(Symbols.shuffle_on_rounded, fill: 1),
-        tooltip: t.tooltips.shuffleSeason(seasonTitle: seasonTitle),
-        iconSize: isTv ? 21 * tvScale : 20,
-        style: actionButtonStyle(),
-      ),
-      SizedBox(width: isTv ? 8 * tvScale : 12),
-    ];
+    // `title` is the season's own name ("Season 3", "Specials"); the season
+    // tabs use the same field. `displayTitle` would hoist to the show name.
+    final seasonTitle = season.title ?? '';
+    final choice = await showOptionPickerDialog<_PlayRandomChoice>(
+      context,
+      title: t.tooltips.playRandom,
+      options: [
+        (
+          icon: Symbols.shuffle_rounded,
+          label: t.tooltips.playRandomAllEpisodes,
+          value: _PlayRandomChoice.allEpisodes,
+        ),
+        (
+          icon: Symbols.shuffle_on_rounded,
+          label: seasonTitle,
+          value: _PlayRandomChoice.currentSeason,
+        ),
+      ],
+    );
+    if (choice == null || !context.mounted) return;
+
+    switch (choice) {
+      case _PlayRandomChoice.allEpisodes:
+        await _handleShufflePlayWithQueue(context, metadata);
+      case _PlayRandomChoice.currentSeason:
+        await _handleShuffleCurrentSeason(context, metadata);
+    }
   }
 
   Widget _buildWatchedToggleButton(

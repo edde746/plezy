@@ -378,7 +378,7 @@
     "tapToPlay": "Tik om af te spelen"
   },
   "tooltips": {
-    "shufflePlay": "Willekeurig afspelen",
+    "playRandom": "Willekeurig afspelen",
     "playTrailer": "Trailer afspelen",
     "markAsWatched": "Markeer als gekeken",
     "markAsUnwatched": "Markeer als ongekeken"

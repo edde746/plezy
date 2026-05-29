@@ -532,7 +532,7 @@ class _TranslationsTooltipsNb extends TranslationsTooltipsEn {
 	final TranslationsNb _root; // ignore: unused_field
 
 	// Translations
-	@override String get shufflePlay => 'Tilfeldig avspilling';
+	@override String get playRandom => 'Tilfeldig avspilling';
 	@override String get playTrailer => 'Spill trailer';
 	@override String get markAsWatched => 'Merk som sett';
 	@override String get markAsUnwatched => 'Merk som usett';
@@ -2153,7 +2153,7 @@ extension on TranslationsNb {
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent} prosent sett',
 			'accessibility.mediaCardUnwatched' => 'usett',
 			'accessibility.tapToPlay' => 'Trykk for å spille',
-			'tooltips.shufflePlay' => 'Tilfeldig avspilling',
+			'tooltips.playRandom' => 'Tilfeldig avspilling',
 			'tooltips.playTrailer' => 'Spill trailer',
 			'tooltips.markAsWatched' => 'Merk som sett',
 			'tooltips.markAsUnwatched' => 'Merk som usett',

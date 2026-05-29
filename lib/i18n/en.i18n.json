@@ -378,8 +378,8 @@
     "tapToPlay": "Tap to play"
   },
   "tooltips": {
-    "shufflePlay": "Shuffle show",
-    "shuffleSeason": "Shuffle ${seasonTitle}",
+    "playRandom": "Play random",
+    "playRandomAllEpisodes": "All episodes",
     "playTrailer": "Play trailer",
     "markAsWatched": "Mark as watched",
     "markAsUnwatched": "Mark as unwatched"

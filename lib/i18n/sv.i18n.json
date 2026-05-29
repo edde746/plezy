@@ -378,7 +378,7 @@
     "tapToPlay": "Tryck för att spela"
   },
   "tooltips": {
-    "shufflePlay": "Blanda uppspelning",
+    "playRandom": "Blanda uppspelning",
     "playTrailer": "Spela trailer",
     "markAsWatched": "Markera som sedd",
     "markAsUnwatched": "Markera som osedd"

@@ -378,7 +378,7 @@
     "tapToPlay": "点击播放"
   },
   "tooltips": {
-    "shufflePlay": "随机播放",
+    "playRandom": "随机播放",
     "playTrailer": "播放预告片",
     "markAsWatched": "标记为已观看",
     "markAsUnwatched": "标记为未观看"

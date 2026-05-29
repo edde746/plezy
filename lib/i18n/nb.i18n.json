@@ -378,7 +378,7 @@
     "tapToPlay": "Trykk for å spille"
   },
   "tooltips": {
-    "shufflePlay": "Tilfeldig avspilling",
+    "playRandom": "Tilfeldig avspilling",
     "playTrailer": "Spill trailer",
     "markAsWatched": "Merk som sett",
     "markAsUnwatched": "Merk som usett"

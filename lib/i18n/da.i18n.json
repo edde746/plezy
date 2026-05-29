@@ -378,7 +378,7 @@
     "tapToPlay": "Tryk for at afspille"
   },
   "tooltips": {
-    "shufflePlay": "Afspil tilfældigt",
+    "playRandom": "Afspil tilfældigt",
     "playTrailer": "Afspil trailer",
     "markAsWatched": "Markér som set",
     "markAsUnwatched": "Markér som uset"

@@ -378,7 +378,7 @@
     "tapToPlay": "터치 하여 재생"
   },
   "tooltips": {
-    "shufflePlay": "무작위 재생",
+    "playRandom": "무작위 재생",
     "playTrailer": "예고편 재생",
     "markAsWatched": "시청 완료로 표시",
     "markAsUnwatched": "시청 안 함으로 표시"

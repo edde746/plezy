@@ -532,7 +532,7 @@ class _TranslationsTooltipsZh extends TranslationsTooltipsEn {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get shufflePlay => '随机播放';
+	@override String get playRandom => '随机播放';
 	@override String get playTrailer => '播放预告片';
 	@override String get markAsWatched => '标记为已观看';
 	@override String get markAsUnwatched => '标记为未观看';
@@ -2153,7 +2153,7 @@ extension on TranslationsZh {
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '已观看 ${percent} 百分比',
 			'accessibility.mediaCardUnwatched' => '未观看',
 			'accessibility.tapToPlay' => '点击播放',
-			'tooltips.shufflePlay' => '随机播放',
+			'tooltips.playRandom' => '随机播放',
 			'tooltips.playTrailer' => '播放预告片',
 			'tooltips.markAsWatched' => '标记为已观看',
 			'tooltips.markAsUnwatched' => '标记为未观看',

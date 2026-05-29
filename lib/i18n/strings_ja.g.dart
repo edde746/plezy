@@ -532,7 +532,7 @@ class _TranslationsTooltipsJa extends TranslationsTooltipsEn {
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String get shufflePlay => 'シャッフル再生';
+	@override String get playRandom => 'シャッフル再生';
 	@override String get playTrailer => '予告編を再生';
 	@override String get markAsWatched => '視聴済みにする';
 	@override String get markAsUnwatched => '未視聴にする';
@@ -2153,7 +2153,7 @@ extension on TranslationsJa {
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent}パーセント視聴済み',
 			'accessibility.mediaCardUnwatched' => '未視聴',
 			'accessibility.tapToPlay' => 'タップして再生',
-			'tooltips.shufflePlay' => 'シャッフル再生',
+			'tooltips.playRandom' => 'シャッフル再生',
 			'tooltips.playTrailer' => '予告編を再生',
 			'tooltips.markAsWatched' => '視聴済みにする',
 			'tooltips.markAsUnwatched' => '未視聴にする',

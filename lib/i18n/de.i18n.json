@@ -378,7 +378,7 @@
     "tapToPlay": "Zum Abspielen tippen"
   },
   "tooltips": {
-    "shufflePlay": "Zufallswiedergabe",
+    "playRandom": "Zufallswiedergabe",
     "playTrailer": "Trailer abspielen",
     "markAsWatched": "Als gesehen markieren",
     "markAsUnwatched": "Als ungesehen markieren"

@@ -378,7 +378,7 @@
     "tapToPlay": "Toque para reproduzir"
   },
   "tooltips": {
-    "shufflePlay": "Reprodução aleatória",
+    "playRandom": "Reprodução aleatória",
     "playTrailer": "Reproduzir trailer",
     "markAsWatched": "Marcar como assistido",
     "markAsUnwatched": "Marcar como não assistido"

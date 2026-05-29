@@ -532,7 +532,7 @@ class _TranslationsTooltipsSv extends TranslationsTooltipsEn {
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get shufflePlay => 'Blanda uppspelning';
+	@override String get playRandom => 'Blanda uppspelning';
 	@override String get playTrailer => 'Spela trailer';
 	@override String get markAsWatched => 'Markera som sedd';
 	@override String get markAsUnwatched => 'Markera som osedd';
@@ -2153,7 +2153,7 @@ extension on TranslationsSv {
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent} procent sedd',
 			'accessibility.mediaCardUnwatched' => 'osedd',
 			'accessibility.tapToPlay' => 'Tryck för att spela',
-			'tooltips.shufflePlay' => 'Blanda uppspelning',
+			'tooltips.playRandom' => 'Blanda uppspelning',
 			'tooltips.playTrailer' => 'Spela trailer',
 			'tooltips.markAsWatched' => 'Markera som sedd',
 			'tooltips.markAsUnwatched' => 'Markera som osedd',

@@ -532,7 +532,7 @@ class _TranslationsTooltipsKo extends TranslationsTooltipsEn {
 	final TranslationsKo _root; // ignore: unused_field
 
 	// Translations
-	@override String get shufflePlay => '무작위 재생';
+	@override String get playRandom => '무작위 재생';
 	@override String get playTrailer => '예고편 재생';
 	@override String get markAsWatched => '시청 완료로 표시';
 	@override String get markAsUnwatched => '시청 안 함으로 표시';
@@ -2153,7 +2153,7 @@ extension on TranslationsKo {
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent} 퍼센트 시청 완료',
 			'accessibility.mediaCardUnwatched' => '미시청',
 			'accessibility.tapToPlay' => '터치 하여 재생',
-			'tooltips.shufflePlay' => '무작위 재생',
+			'tooltips.playRandom' => '무작위 재생',
 			'tooltips.playTrailer' => '예고편 재생',
 			'tooltips.markAsWatched' => '시청 완료로 표시',
 			'tooltips.markAsUnwatched' => '시청 안 함으로 표시',

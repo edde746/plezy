@@ -532,7 +532,7 @@ class _TranslationsTooltipsDe extends TranslationsTooltipsEn {
 	final TranslationsDe _root; // ignore: unused_field
 
 	// Translations
-	@override String get shufflePlay => 'Zufallswiedergabe';
+	@override String get playRandom => 'Zufallswiedergabe';
 	@override String get playTrailer => 'Trailer abspielen';
 	@override String get markAsWatched => 'Als gesehen markieren';
 	@override String get markAsUnwatched => 'Als ungesehen markieren';
@@ -2153,7 +2153,7 @@ extension on TranslationsDe {
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent} Prozent angesehen',
 			'accessibility.mediaCardUnwatched' => 'ungeschaut',
 			'accessibility.tapToPlay' => 'Zum Abspielen tippen',
-			'tooltips.shufflePlay' => 'Zufallswiedergabe',
+			'tooltips.playRandom' => 'Zufallswiedergabe',
 			'tooltips.playTrailer' => 'Trailer abspielen',
 			'tooltips.markAsWatched' => 'Als gesehen markieren',
 			'tooltips.markAsUnwatched' => 'Als ungesehen markieren',
