@@ -214,7 +214,6 @@ class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog>
         DialogActionButton(
           focusNode: _cancelFocusNode,
           onPressed: () => Navigator.pop(context),
-          onNavigateUp: _fieldFocusNode.requestFocus,
           onNavigateRight: _saveFocusNode.requestFocus,
           label: t.common.cancel,
         ),
@@ -222,7 +221,6 @@ class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog>
           onPressed: () => Navigator.pop(context, _controller.text),
           label: t.common.save,
           focusNode: _saveFocusNode,
-          onNavigateUp: _fieldFocusNode.requestFocus,
           onNavigateLeft: _cancelFocusNode.requestFocus,
         ),
       ],
@@ -286,7 +284,6 @@ class _TextInputDialogState extends State<_TextInputDialog>
         DialogActionButton(
           focusNode: _cancelFocusNode,
           onPressed: () => Navigator.pop(context),
-          onNavigateUp: _fieldFocusNode.requestFocus,
           onNavigateRight: _saveFocusNode.requestFocus,
           label: t.common.cancel,
         ),
@@ -294,7 +291,6 @@ class _TextInputDialogState extends State<_TextInputDialog>
           onPressed: _submit,
           label: widget.confirmText ?? t.common.save,
           focusNode: _saveFocusNode,
-          onNavigateUp: _fieldFocusNode.requestFocus,
           onNavigateLeft: _cancelFocusNode.requestFocus,
         ),
       ],
