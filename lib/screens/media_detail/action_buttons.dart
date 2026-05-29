@@ -464,32 +464,32 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
         // State 7: Partial Download (some episodes downloaded, not all)
         if (progress?.status == DownloadStatus.partial) {
-          final hasSyncRule = downloadProvider.hasSyncRule(ruleKey);
           final currentFile = progress?.currentFile;
+          // Collect any sync rules that govern this view — the show's own rule
+          // when present, plus any season-scoped rules that "Download only from
+          // {season}" may have created against children of this show.
+          final scopedRules = _collectScopedSyncRules(context, downloadProvider, metadata, ruleKey);
 
-          if (hasSyncRule) {
-            // Synced partial — this is the normal state for sync rules
-            final syncRule = downloadProvider.getSyncRule(ruleKey);
-            final isEnabled = syncRule?.enabled ?? true;
-            final tooltip = currentFile != null
-                ? '$currentFile (syncing ${t.downloads.keepNUnwatched(count: syncRule?.episodeCount.toString() ?? '?')})'
-                : t.downloads.keepSynced;
-
+          if (scopedRules.isNotEmpty) {
+            final anyEnabled = scopedRules.any((r) => r.rule.enabled);
+            final tooltip = _scopedSyncTooltip(metadata, scopedRules, currentFile);
             return IconButton.filledTonal(
-              onPressed: () => _showSyncRuleActions(
+              onPressed: () => _manageScopedSyncRules(
                 context,
                 downloadProvider,
                 metadata,
-                ruleKey: ruleKey,
                 downloadGlobalKey: globalKey,
+                rules: scopedRules,
               ),
               tooltip: tooltip,
-              icon: AppIcon(isEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
+              icon: AppIcon(anyEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
               iconSize: iconSize,
-              style: actionButtonStyle(foregroundColor: isEnabled ? Colors.teal : Colors.grey),
+              style: actionButtonStyle(foregroundColor: anyEnabled ? Colors.teal : Colors.grey),
             );
           }
 
+          // No sync rule anywhere under this show — fall back to the original
+          // "click to complete" flow that queues every missing episode.
           final tooltip = currentFile != null
               ? 'Downloaded $currentFile - Click to complete'
               : 'Partially downloaded - Click to complete';
@@ -520,24 +520,25 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
         // State 8: Downloaded/Completed (can delete)
         if (downloadProvider.isDownloaded(globalKey)) {
-          final hasSyncRule = downloadProvider.hasSyncRule(ruleKey);
+          // Same widening as the partial branch: a season-scoped sync rule
+          // governs this show too if the show is fully downloaded via that rule.
+          final scopedRules = _collectScopedSyncRules(context, downloadProvider, metadata, ruleKey);
 
-          if (hasSyncRule) {
-            // Synced + complete — show sync icon
-            final syncRule = downloadProvider.getSyncRule(ruleKey);
-            final isEnabled = syncRule?.enabled ?? true;
+          if (scopedRules.isNotEmpty) {
+            final anyEnabled = scopedRules.any((r) => r.rule.enabled);
+            final tooltip = _scopedSyncTooltip(metadata, scopedRules, null);
             return IconButton.filledTonal(
-              onPressed: () => _showSyncRuleActions(
+              onPressed: () => _manageScopedSyncRules(
                 context,
                 downloadProvider,
                 metadata,
-                ruleKey: ruleKey,
                 downloadGlobalKey: globalKey,
+                rules: scopedRules,
               ),
-              icon: AppIcon(isEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
-              tooltip: t.downloads.keepNUnwatched(count: syncRule?.episodeCount.toString() ?? '?'),
+              icon: AppIcon(anyEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
+              tooltip: tooltip,
               iconSize: iconSize,
-              style: actionButtonStyle(foregroundColor: isEnabled ? Colors.teal : Colors.grey),
+              style: actionButtonStyle(foregroundColor: anyEnabled ? Colors.teal : Colors.grey),
             );
           }
 
@@ -593,6 +594,107 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           style: actionButtonStyle(),
         );
       },
+    );
+  }
+
+  /// Collect every sync rule that governs [metadata] or one of its seasons.
+  ///
+  /// Season-restricted downloads (the "Download only from {season}" toggle)
+  /// create a rule keyed to the season's rating key, not the show's. The
+  /// show-detail download button looks up by the show's key, so without this
+  /// widening it would treat the show as unsynced and route a tap to
+  /// `queueMissingEpisodes` — which queues the entire series.
+  List<({String key, SyncRuleItem rule, MediaItem target})> _collectScopedSyncRules(
+    BuildContext context,
+    DownloadProvider downloadProvider,
+    MediaItem metadata,
+    String ruleKey,
+  ) {
+    final results = <({String key, SyncRuleItem rule, MediaItem target})>[];
+    final ownRule = downloadProvider.getSyncRule(ruleKey);
+    if (ownRule != null) {
+      results.add((key: ruleKey, rule: ownRule, target: metadata));
+    }
+    if (!metadata.isShow) return results;
+    for (final season in _seasons) {
+      if (!season.isSeason) continue;
+      final seasonKey = _syncRuleKeyForMetadata(context, downloadProvider, season);
+      if (seasonKey == ruleKey) continue; // already covered as the own-rule
+      final rule = downloadProvider.getSyncRule(seasonKey);
+      if (rule != null) {
+        results.add((key: seasonKey, rule: rule, target: season));
+      }
+    }
+    return results;
+  }
+
+  String _scopedSyncTargetLabel(MediaItem target) {
+    if (target.isSeason) {
+      final idx = target.index;
+      return target.title ?? (idx != null ? 'Season $idx' : 'Season');
+    }
+    return target.displayTitle;
+  }
+
+  String _scopedSyncTooltip(
+    MediaItem metadata,
+    List<({String key, SyncRuleItem rule, MediaItem target})> rules,
+    String? currentFile,
+  ) {
+    if (rules.length == 1) {
+      final r = rules.first;
+      final base = r.rule.episodeCount > 0
+          ? t.downloads.keepNUnwatched(count: r.rule.episodeCount.toString())
+          : t.downloads.keepSynced;
+      if (r.target.id != metadata.id) {
+        final label = _scopedSyncTargetLabel(r.target);
+        return currentFile != null ? '$currentFile · $base ($label)' : '$base ($label)';
+      }
+      return currentFile != null ? '$currentFile · $base' : base;
+    }
+    final labels = rules.map((r) => _scopedSyncTargetLabel(r.target)).join(', ');
+    return currentFile != null
+        ? '$currentFile · ${t.downloads.keepSynced} ($labels)'
+        : '${t.downloads.keepSynced} ($labels)';
+  }
+
+  Future<void> _manageScopedSyncRules(
+    BuildContext context,
+    DownloadProvider downloadProvider,
+    MediaItem metadata, {
+    required String downloadGlobalKey,
+    required List<({String key, SyncRuleItem rule, MediaItem target})> rules,
+  }) async {
+    if (rules.isEmpty) return;
+    ({String key, SyncRuleItem rule, MediaItem target}) selected;
+    if (rules.length == 1) {
+      selected = rules.first;
+    } else {
+      final pickedKey = await showOptionPickerDialog<String>(
+        context,
+        title: t.downloads.manageSyncRule,
+        options: [
+          for (final r in rules)
+            (
+              icon: r.rule.enabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded,
+              label: _scopedSyncTargetLabel(r.target),
+              value: r.key,
+            ),
+        ],
+      );
+      if (pickedKey == null || !context.mounted) return;
+      selected = rules.firstWhere((r) => r.key == pickedKey);
+    }
+    // For season-scoped rules, route the actions sheet (edit count / remove /
+    // delete download) to the season so its title shows up in confirmations
+    // and "Delete download" wipes the season's files rather than the show's.
+    final isOwnRule = selected.target.id == metadata.id;
+    await _showSyncRuleActions(
+      context,
+      downloadProvider,
+      selected.target,
+      ruleKey: selected.key,
+      downloadGlobalKey: isOwnRule ? downloadGlobalKey : selected.target.globalKey,
     );
   }
 }

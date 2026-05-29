@@ -191,7 +191,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   String _collectionSyncRuleKey() {
     final serverId = widget.collection.serverId ?? mediaClient.serverId;
-    return context.read<DownloadProvider>().syncRuleKeyForClient(mediaClient, widget.collection.id, serverId: serverId);
+    return context.read<DownloadProvider>().syncRuleKeyFor(serverId, widget.collection.id);
   }
 
   Future<void> _deleteCollection() async {

@@ -47,6 +47,7 @@ import '../services/trackers/tracker_coordinator.dart';
 import '../widgets/settings_builder.dart';
 import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
+import '../database/app_database.dart' show SyncRuleItem;
 import '../providers/download_provider.dart';
 import '../providers/offline_watch_provider.dart';
 import '../providers/playback_state_provider.dart';
@@ -1185,9 +1186,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   String _syncRuleKeyForMetadata(BuildContext context, DownloadProvider downloadProvider, MediaItem metadata) {
     final serverId = metadata.serverId;
-    final client = _getMediaClientForMetadata(context);
-    if (client == null || serverId == null) return metadata.globalKey;
-    return downloadProvider.syncRuleKeyForClient(client, metadata.id, serverId: serverId);
+    if (serverId == null) return metadata.globalKey;
+    // syncRuleKeyFor auto-fills the active profile id, so the lookup matches
+    // the profile-scoped key createSyncRule stores under. Going via the client
+    // (the prior call) wrapped this too, but added an offline fallback that
+    // returned an unscoped key and silently missed every rule lookup.
+    return downloadProvider.syncRuleKeyFor(serverId, metadata.id);
   }
 
   void _navigateToActorMedia(MediaRole actor) {

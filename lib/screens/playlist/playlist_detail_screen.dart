@@ -122,7 +122,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   String _playlistSyncRuleKey() {
     final serverId = widget.playlist.serverId ?? mediaClient.serverId;
-    return context.read<DownloadProvider>().syncRuleKeyForClient(mediaClient, widget.playlist.id, serverId: serverId);
+    return context.read<DownloadProvider>().syncRuleKeyFor(serverId, widget.playlist.id);
   }
 
   Future<void> _managePlaylistSyncRule() =>

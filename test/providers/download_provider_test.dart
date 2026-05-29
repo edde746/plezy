@@ -339,6 +339,51 @@ void main() {
 
       p.dispose();
     });
+
+    test('season-scoped rule is invisible at the show key (UI widens for display)', () async {
+      // Regression: "Download only from {season}" + Keep synced creates a rule
+      // keyed to the season's rating key. The provider must NOT auto-widen the
+      // show-level lookup — that contract is owned by the UI, which iterates
+      // its season list. If the provider widened here, deletion and ownership
+      // semantics would silently drift across nested entities.
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+
+      await p.createSyncRule(
+        serverId: 'srv',
+        ratingKey: 'season-2',
+        targetType: 'season',
+        episodeCount: 5,
+      );
+
+      final showKey = p.syncRuleKeyFor('srv', 'show-13023');
+      final seasonKey = p.syncRuleKeyFor('srv', 'season-2');
+
+      expect(p.hasSyncRule(showKey), isFalse, reason: 'show key must not match a season-scoped rule');
+      expect(p.hasSyncRule(seasonKey), isTrue);
+      expect(p.getSyncRule(seasonKey)!.targetType, 'season');
+
+      p.dispose();
+    });
+
+    test('syncRuleKeyFor scopes by active profile by default', () async {
+      // Pin the contract every UI-side lookup relies on: callers can ask for a
+      // key with just (serverId, ratingKey) and get a profile-scoped result
+      // that matches what createSyncRule stores. Regressing this is what made
+      // the show-level button silently miss season rules in offline mode.
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+
+      final autoKey = p.syncRuleKeyFor('srv', '42');
+      final explicitKey = p.syncRuleKeyFor('srv', '42', profileId: 'test-profile');
+      expect(autoKey, equals(explicitKey));
+      expect(autoKey, startsWith('test-profile|'));
+
+      await p.createSyncRule(serverId: 'srv', ratingKey: '42', targetType: 'show', episodeCount: 3);
+      expect(p.hasSyncRule(autoKey), isTrue);
+
+      p.dispose();
+    });
   });
 
   group('DownloadProvider — profile-scoped download ownership', () {

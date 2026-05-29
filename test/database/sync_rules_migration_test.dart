@@ -82,4 +82,38 @@ void main() {
     await migrated.updateSyncRuleRandom('srv:10', true);
     expect((await migrated.getSyncRule('srv:10'))!.random, isTrue);
   });
+
+  test('adoptLegacySyncRulesForProfile rewrites unscoped rules under the active profile', () async {
+    // Pre-v16 rules were stored with profileId = '' and an unscoped globalKey
+    // ('serverId:ratingKey'). adoptLegacySyncRulesForProfile claims them for
+    // the active profile on next load so subsequent profile-scoped lookups
+    // hit. Regressing this is exactly the shape of the bug we just fixed —
+    // the wrong lookup key silently returns nothing.
+    final db = AppDatabase.forTesting(NativeDatabase(dbFile));
+    addTearDown(db.close);
+
+    await db.insertSyncRule(
+      // profileId defaults to '' — exercises the legacy shape.
+      serverId: 'srv',
+      ratingKey: '7',
+      globalKey: 'srv:7',
+      targetType: 'show',
+      episodeCount: 4,
+    );
+    // Sanity: the legacy row exists under the unscoped key.
+    expect((await db.getSyncRule('srv:7'))!.episodeCount, 4);
+    expect(await db.getSyncRule('p1|srv:7'), isNull);
+
+    await db.adoptLegacySyncRulesForProfile('p1');
+
+    // Now only the scoped key resolves, and the row has been claimed.
+    expect(await db.getSyncRule('srv:7'), isNull);
+    final adopted = await db.getSyncRule('p1|srv:7');
+    expect(adopted, isNotNull);
+    expect(adopted!.profileId, 'p1');
+    expect(adopted.episodeCount, 4);
+    // Running adoption a second time is a no-op (idempotent).
+    await db.adoptLegacySyncRulesForProfile('p1');
+    expect((await db.getSyncRule('p1|srv:7'))!.episodeCount, 4);
+  });
 }

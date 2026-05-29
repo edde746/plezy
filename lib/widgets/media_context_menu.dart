@@ -21,7 +21,6 @@ import '../utils/download_version_utils.dart';
 import '../utils/download_utils.dart';
 import '../utils/quality_preset_labels.dart';
 import '../utils/media_version_resolver.dart';
-import '../utils/global_key_utils.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
@@ -1427,9 +1426,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final globalKey = _itemGlobalKey();
     final serverId = _itemServerId;
     if (serverId == null) return globalKey;
-    final client = context.tryGetMediaClientForServer(serverId);
-    if (client == null) return globalKey;
-    return context.read<DownloadProvider>().syncRuleKeyForClient(client, _itemId(), serverId: serverId);
+    // syncRuleKeyFor scopes by active profile internally — no client needed.
+    // The prior client lookup added an offline fallback that returned the
+    // unscoped global key, which silently missed every sync-rule lookup.
+    return context.read<DownloadProvider>().syncRuleKeyFor(serverId, _itemId());
   }
 
   String _itemDisplayTitle() => switch (widget.item) {
@@ -1451,10 +1451,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   static void _triggerEagerSyncIfRuleExists(BuildContext context, String serverId, String listId) {
     try {
       final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
-      final client = Provider.of<MultiServerProvider>(context, listen: false).getClientForServer(serverId);
-      final globalKey = client == null
-          ? buildGlobalKey(serverId, listId)
-          : downloadProvider.syncRuleKeyForClient(client, listId, serverId: serverId);
+      // syncRuleKeyFor auto-fills active profile, so the lookup hits even when
+      // we couldn't resolve a client (offline, server unregistered, etc).
+      final globalKey = downloadProvider.syncRuleKeyFor(serverId, listId);
       if (!downloadProvider.hasSyncRule(globalKey)) return;
       final serverManager = Provider.of<MultiServerProvider>(context, listen: false).serverManager;
       unawaited(

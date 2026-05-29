@@ -1605,10 +1605,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return syncRuleKeyFor(parsed.serverId, parsed.ratingKey);
   }
 
-  String syncRuleKeyForClient(MediaServerClient client, String ratingKey, {String? serverId}) {
-    return syncRuleKeyFor(serverId ?? client.serverId, ratingKey);
-  }
-
   /// Candidate active-profile sync-rule keys touched by a watched item event.
   Set<String> syncRuleKeysForWatchEvent(WatchStateEvent event) {
     final profileId = _activeProfileId;
