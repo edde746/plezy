@@ -1220,30 +1220,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     );
   }
 
-  /// Queue only the missing (not downloaded) episodes for a show/season.
-  /// Used for resuming partial downloads. Returns the number of episodes queued.
-  Future<int> queueMissingEpisodes(
-    MediaItem metadata,
-    MediaServerClient client, {
-    DownloadVersionConfig? versionConfig,
-  }) async {
-    if (!metadata.isShow && !metadata.isSeason) {
-      throw Exception('queueMissingEpisodes only supports shows/seasons');
-    }
-    final queued = await _expandAndQueue(
-      container: metadata,
-      client: client,
-      versionConfig: versionConfig,
-      filter: DownloadFilter.all,
-      maxCount: null,
-      skipExisting: true,
-    );
-    if (metadata.isShow) {
-      appLogger.i('Queued $queued missing episodes for show ${metadata.title}');
-    }
-    return queued;
-  }
-
   /// Shared expansion: fetch all episodes under [container] (show or season),
   /// apply [filter] and optional [maxCount], optionally skip items already
   /// queued/downloading/completed ([skipExisting]), and queue each one.

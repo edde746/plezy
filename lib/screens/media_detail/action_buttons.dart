@@ -354,14 +354,38 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
         // State 3: Downloading (active download)
         if (progress?.status == DownloadStatus.downloading) {
-          // Show episode count in tooltip for shows/seasons
+          // Show episode count in tooltip for shows/seasons. Tappable so the
+          // user can queue more episodes / set up a sync rule mid-download
+          // instead of waiting for it to finish — routes through the same
+          // dialog every other actionable button uses, which also means it
+          // can no longer accidentally queue the entire series on a stray tap.
           final currentFile = progress?.currentFile;
-          final tooltip = currentFile != null && currentFile.contains('episodes')
+          final baseTooltip = currentFile != null && currentFile.contains('episodes')
               ? t.downloads.downloadingFilesTooltip(files: currentFile)
               : t.downloads.downloadingTooltip;
+          final tooltip = '$baseTooltip — tap to add more or sync';
 
           return IconButton.filledTonal(
-            onPressed: null,
+            onPressed: () async {
+              final client = _getMediaClientForMetadata(context);
+              if (client == null) return;
+
+              try {
+                final result = await showDownloadOptionsAndQueue(
+                  context,
+                  metadata: metadata,
+                  client: client,
+                  downloadProvider: downloadProvider,
+                  currentSeason: _selectedSeasonForDownload(metadata),
+                );
+                if (result == null || !context.mounted) return;
+                showSuccessSnackBar(context, result.toSnackBarMessage());
+              } on CellularDownloadBlockedException {
+                if (context.mounted) {
+                  showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
+                }
+              }
+            },
             tooltip: tooltip,
             icon: _buildRadialProgress(progress?.progressPercent),
             iconSize: iconSize,
@@ -488,31 +512,38 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             );
           }
 
-          // No sync rule anywhere under this show — fall back to the original
-          // "click to complete" flow that queues every missing episode.
+          // No sync rule anywhere under this show — open the full download
+          // options dialog (same one the never-downloaded button uses) so the
+          // user can add more one-off episodes, restrict to a season, pick
+          // random, or set up a sync rule. Already-downloaded episodes dedupe
+          // at _queueSingleDownload, so picking "All episodes" is safe.
           final tooltip = currentFile != null
-              ? 'Downloaded $currentFile - Click to complete'
-              : 'Partially downloaded - Click to complete';
+              ? '$currentFile downloaded — tap to add more or sync'
+              : 'Partially downloaded — tap to add more or sync';
 
           return IconButton.filledTonal(
             onPressed: () async {
               final client = _getMediaClientForMetadata(context);
               if (client == null) return;
 
-              final versionConfig = await _resolveDownloadVersion(context, metadata, client);
-              if (versionConfig == null || !context.mounted) return;
-
-              final count = await downloadProvider.queueMissingEpisodes(metadata, client, versionConfig: versionConfig);
-
-              if (context.mounted) {
-                final message = count > 0
-                    ? t.downloads.episodesQueued(count: count)
-                    : 'All episodes already downloaded';
-                showAppSnackBar(context, message);
+              try {
+                final result = await showDownloadOptionsAndQueue(
+                  context,
+                  metadata: metadata,
+                  client: client,
+                  downloadProvider: downloadProvider,
+                  currentSeason: _selectedSeasonForDownload(metadata),
+                );
+                if (result == null || !context.mounted) return;
+                showSuccessSnackBar(context, result.toSnackBarMessage());
+              } on CellularDownloadBlockedException {
+                if (context.mounted) {
+                  showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
+                }
               }
             },
             tooltip: tooltip,
-            icon: const AppIcon(Symbols.downloading_rounded, fill: 1),
+            icon: const AppIcon(Symbols.download_rounded, fill: 1),
             iconSize: iconSize,
             style: actionButtonStyle(foregroundColor: Colors.orange),
           );
