@@ -15,6 +15,7 @@ import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
+import 'package:plezy/utils/global_key_utils.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 
 /// Implements only [fetchPlayableDescendants] (the surface queueDownload
@@ -995,6 +996,334 @@ void main() {
 
       expect(upToDateCount, 1);
       expect(p.isAutoDeleteAndSyncRunning, isFalse);
+    });
+  });
+
+  group('DownloadProvider — aggregate progress (batch-scoped)', () {
+    // Regression: the download button's radial progress used to compute
+    // `completed / metadata.leafCount`, so queueing 5 of a 10-episode show
+    // capped the bar at 50% even after every queued episode finished. The
+    // fix re-scopes the denominator to the currently active batch (queued +
+    // downloading + completed-since-the-session-started + failed), excluding
+    // paused episodes per product decision. Pre-existing completes from past
+    // sessions are excluded via an in-memory baseline snapshot taken when the
+    // show transitions from idle to active.
+    //
+    // These helpers compose a show + episode set with the shape
+    // `_calculateAggregateProgress` expects (episodes carry `grandparentId`
+    // pointing at the show, the show carries `leafCount`).
+
+    const serverId = 'srv';
+    const showRatingKey = 'show1';
+    final showGlobalKey = buildGlobalKey(serverId, showRatingKey);
+
+    MediaItem showWithLeafCount(int leafCount) => MediaItem(
+      id: showRatingKey,
+      backend: MediaBackend.plex,
+      kind: MediaKind.show,
+      title: 'Test Show',
+      serverId: serverId,
+      leafCount: leafCount,
+    );
+
+    MediaItem episode(String id) => MediaItem(
+      id: id,
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      title: 'Episode $id',
+      serverId: serverId,
+      grandparentId: showRatingKey,
+    );
+
+    String epKey(String id) => buildGlobalKey(serverId, id);
+
+    /// Build a download/metadata pair for an episode under the show above.
+    MapEntry<String, DownloadProgress> epDownload(String id, DownloadStatus status) =>
+        MapEntry(epKey(id), DownloadProgress(globalKey: epKey(id), status: status));
+
+    MapEntry<String, MediaItem> epMeta(String id) => MapEntry(epKey(id), episode(id));
+
+    test('bug-fix: queueing 5 of 10 reaches 100% — not 50% — as the 5 complete', () async {
+      // The bug report verbatim: queue 5 episodes on a 10-episode show. As
+      // each finishes, the bar should tick by 20% and hit 100% on the 5th,
+      // not 50%. The status doesn't flip to "completed" here (the show as a
+      // whole isn't fully downloaded) — it flips to `partial`, which is
+      // correct and out of scope for this fix.
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      addTearDown(p.dispose);
+
+      // Seed: show metadata with leafCount=10, plus 5 queued episode rows
+      // (no pre-existing completes — this isolates the basic case).
+      p.debugSeedState(
+        metadata: {
+          showGlobalKey: showWithLeafCount(10),
+          ...Map.fromEntries(['ep1', 'ep2', 'ep3', 'ep4', 'ep5'].map(epMeta)),
+        },
+        downloads: Map.fromEntries([
+          epDownload('ep1', DownloadStatus.downloading),
+          epDownload('ep2', DownloadStatus.queued),
+          epDownload('ep3', DownloadStatus.queued),
+          epDownload('ep4', DownloadStatus.queued),
+          epDownload('ep5', DownloadStatus.queued),
+        ]),
+      );
+
+      // 0 of 5 done — bar starts at 0%.
+      expect(
+        p.getProgress(showGlobalKey),
+        isA<DownloadProgress>()
+            .having((d) => d.status, 'status', DownloadStatus.downloading)
+            .having((d) => d.progress, 'progress', 0)
+            .having((d) => d.currentFile, 'currentFile', '0/5 episodes'),
+      );
+
+      // Advance: 2 completed, 1 downloading, 2 queued → 2/5 = 40%.
+      p.debugSeedState(
+        downloads: Map.fromEntries([
+          epDownload('ep1', DownloadStatus.completed),
+          epDownload('ep2', DownloadStatus.completed),
+          epDownload('ep3', DownloadStatus.downloading),
+          epDownload('ep4', DownloadStatus.queued),
+          epDownload('ep5', DownloadStatus.queued),
+        ]),
+      );
+      expect(p.getProgress(showGlobalKey)!.progress, 40);
+
+      // Advance: 4 completed, 1 downloading → 4/5 = 80%.
+      p.debugSeedState(
+        downloads: Map.fromEntries([
+          epDownload('ep1', DownloadStatus.completed),
+          epDownload('ep2', DownloadStatus.completed),
+          epDownload('ep3', DownloadStatus.completed),
+          epDownload('ep4', DownloadStatus.completed),
+          epDownload('ep5', DownloadStatus.downloading),
+        ]),
+      );
+      expect(
+        p.getProgress(showGlobalKey),
+        isA<DownloadProgress>()
+            .having((d) => d.status, 'status', DownloadStatus.downloading)
+            .having((d) => d.progress, 'progress', 80)
+            .having((d) => d.currentFile, 'currentFile', '4/5 episodes'),
+      );
+    });
+
+    test('pre-existing completed episodes do not inflate the session denominator', () async {
+      // Scenario: user previously downloaded 3 episodes of a 10-episode show.
+      // Those rows still live in `_downloads` (loaded from DB on app start).
+      // Now they queue 5 new episodes. The bar must start at 0/5, not 3/8.
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      addTearDown(p.dispose);
+
+      // First: seed only the 3 pre-existing completed rows. Status is
+      // `partial` here (some episodes downloaded but show isn't done), so no
+      // baseline gets recorded.
+      p.debugSeedState(
+        metadata: {
+          showGlobalKey: showWithLeafCount(10),
+          ...Map.fromEntries(['ep1', 'ep2', 'ep3'].map(epMeta)),
+        },
+        downloads: Map.fromEntries([
+          epDownload('ep1', DownloadStatus.completed),
+          epDownload('ep2', DownloadStatus.completed),
+          epDownload('ep3', DownloadStatus.completed),
+        ]),
+      );
+      // Sanity: with only completes and no in-flight work, status is partial.
+      expect(p.getProgress(showGlobalKey)!.status, DownloadStatus.partial);
+
+      // Now queue 5 more. Status flips to downloading, and the baseline
+      // snapshot captures `completedCount=3` so they don't count toward this
+      // session's numerator or denominator.
+      p.debugSeedState(
+        metadata: Map.fromEntries(['ep4', 'ep5', 'ep6', 'ep7', 'ep8'].map(epMeta)),
+        downloads: Map.fromEntries([
+          epDownload('ep4', DownloadStatus.downloading),
+          epDownload('ep5', DownloadStatus.queued),
+          epDownload('ep6', DownloadStatus.queued),
+          epDownload('ep7', DownloadStatus.queued),
+          epDownload('ep8', DownloadStatus.queued),
+        ]),
+      );
+
+      expect(
+        p.getProgress(showGlobalKey),
+        isA<DownloadProgress>()
+            .having((d) => d.status, 'status', DownloadStatus.downloading)
+            .having((d) => d.progress, 'progress', 0)
+            .having((d) => d.currentFile, 'currentFile', '0/5 episodes'),
+      );
+
+      // After all 5 newly-queued episodes finish: numerator and denominator
+      // both equal 5 (the 3 pre-existing ones stay outside the session).
+      p.debugSeedState(
+        downloads: Map.fromEntries([
+          epDownload('ep4', DownloadStatus.completed),
+          epDownload('ep5', DownloadStatus.completed),
+          epDownload('ep6', DownloadStatus.completed),
+          epDownload('ep7', DownloadStatus.completed),
+          epDownload('ep8', DownloadStatus.completed),
+        ]),
+      );
+      // Session is now idle → falls back to the show-wide aggregate
+      // (8/10 = partial, 80% of the whole show).
+      expect(p.getProgress(showGlobalKey)!.status, DownloadStatus.partial);
+    });
+
+    test('queueing more episodes mid-batch grows the denominator', () async {
+      // Confirmed in grilling: bar moves backward when the user adds to the
+      // batch mid-flight ("how much of what I asked for is done").
+      //
+      // The order matters: the first observation has to see the freshly-
+      // queued state (no completes yet) so the baseline snapshot pins to
+      // zero. That mirrors real usage — queueDownload writes the queued
+      // rows, then notifyListeners() drives the first getProgress call.
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      addTearDown(p.dispose);
+
+      // Seed the initial queued state and observe (baseline → 0).
+      p.debugSeedState(
+        metadata: {
+          showGlobalKey: showWithLeafCount(10),
+          ...Map.fromEntries(['ep1', 'ep2', 'ep3', 'ep4', 'ep5'].map(epMeta)),
+        },
+        downloads: Map.fromEntries([
+          epDownload('ep1', DownloadStatus.downloading),
+          epDownload('ep2', DownloadStatus.queued),
+          epDownload('ep3', DownloadStatus.queued),
+          epDownload('ep4', DownloadStatus.queued),
+          epDownload('ep5', DownloadStatus.queued),
+        ]),
+      );
+      expect(p.getProgress(showGlobalKey)!.progress, 0);
+
+      // Advance: one completes → 1/5 = 20%.
+      p.debugSeedState(downloads: {epKey('ep1'): DownloadProgress(globalKey: epKey('ep1'), status: DownloadStatus.completed)});
+      expect(p.getProgress(showGlobalKey)!.progress, 20);
+
+      // User adds 3 more to the same in-flight session.
+      p.debugSeedState(
+        metadata: Map.fromEntries(['ep6', 'ep7', 'ep8'].map(epMeta)),
+        downloads: Map.fromEntries([
+          epDownload('ep6', DownloadStatus.queued),
+          epDownload('ep7', DownloadStatus.queued),
+          epDownload('ep8', DownloadStatus.queued),
+        ]),
+      );
+      // 1 completed / 8 total = 12.5% → rounded to 13.
+      expect(
+        p.getProgress(showGlobalKey),
+        isA<DownloadProgress>()
+            .having((d) => d.progress, 'progress', 13)
+            .having((d) => d.currentFile, 'currentFile', '1/8 episodes'),
+      );
+    });
+
+    test('paused episodes drop out of the active denominator', () async {
+      // Per Branch 4: paused episodes are removed from the denominator until
+      // resumed. Pausing one out of 5 should bump 1/5 → 1/4 = 25%.
+      //
+      // As with the mid-batch test, the initial observation must see all 5
+      // queued so the baseline pins to zero before any completion.
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      addTearDown(p.dispose);
+
+      // Seed the initial queued state and observe (baseline → 0).
+      p.debugSeedState(
+        metadata: {
+          showGlobalKey: showWithLeafCount(10),
+          ...Map.fromEntries(['ep1', 'ep2', 'ep3', 'ep4', 'ep5'].map(epMeta)),
+        },
+        downloads: Map.fromEntries([
+          epDownload('ep1', DownloadStatus.downloading),
+          epDownload('ep2', DownloadStatus.queued),
+          epDownload('ep3', DownloadStatus.queued),
+          epDownload('ep4', DownloadStatus.queued),
+          epDownload('ep5', DownloadStatus.queued),
+        ]),
+      );
+      expect(p.getProgress(showGlobalKey)!.progress, 0);
+
+      // Advance: one completes → 1/5 = 20%.
+      p.debugSeedState(downloads: {epKey('ep1'): DownloadProgress(globalKey: epKey('ep1'), status: DownloadStatus.completed)});
+      expect(p.getProgress(showGlobalKey)!.progress, 20);
+
+      // Pause ep5. Denominator shrinks to 4: 1 done + 1 downloading + 2 queued.
+      p.debugSeedState(downloads: {epKey('ep5'): DownloadProgress(globalKey: epKey('ep5'), status: DownloadStatus.paused)});
+      expect(
+        p.getProgress(showGlobalKey),
+        isA<DownloadProgress>()
+            .having((d) => d.progress, 'progress', 25)
+            .having((d) => d.currentFile, 'currentFile', '1/4 episodes'),
+      );
+    });
+
+    test('session baseline resets after a batch settles and a new batch begins', () async {
+      // After a batch ends (everything moves out of downloading/queued) the
+      // baseline must clear so the next batch starts fresh at 0%, not at
+      // "wherever the previous batch left the completed counter".
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      addTearDown(p.dispose);
+
+      // First batch: 2 queued. As they complete, status flips to partial
+      // (2 of 10 leafCount).
+      p.debugSeedState(
+        metadata: {
+          showGlobalKey: showWithLeafCount(10),
+          ...Map.fromEntries(['ep1', 'ep2'].map(epMeta)),
+        },
+        downloads: Map.fromEntries([
+          epDownload('ep1', DownloadStatus.downloading),
+          epDownload('ep2', DownloadStatus.queued),
+        ]),
+      );
+      expect(p.getProgress(showGlobalKey)!.progress, 0);
+
+      p.debugSeedState(
+        downloads: Map.fromEntries([
+          epDownload('ep1', DownloadStatus.completed),
+          epDownload('ep2', DownloadStatus.completed),
+        ]),
+      );
+      // Session ended; baseline cleared. Status is partial (out of 10).
+      expect(p.getProgress(showGlobalKey)!.status, DownloadStatus.partial);
+
+      // Second batch: 3 more episodes. Should start at 0/3, not 2/5 or
+      // similar — the previous session's completes are excluded by the
+      // newly-recorded baseline (=2).
+      p.debugSeedState(
+        metadata: Map.fromEntries(['ep3', 'ep4', 'ep5'].map(epMeta)),
+        downloads: Map.fromEntries([
+          epDownload('ep3', DownloadStatus.downloading),
+          epDownload('ep4', DownloadStatus.queued),
+          epDownload('ep5', DownloadStatus.queued),
+        ]),
+      );
+      expect(
+        p.getProgress(showGlobalKey),
+        isA<DownloadProgress>()
+            .having((d) => d.status, 'status', DownloadStatus.downloading)
+            .having((d) => d.progress, 'progress', 0)
+            .having((d) => d.currentFile, 'currentFile', '0/3 episodes'),
+      );
+
+      // And finishes at 100% of the new batch (not 5/10 = 50%).
+      p.debugSeedState(
+        downloads: Map.fromEntries([
+          epDownload('ep3', DownloadStatus.completed),
+          epDownload('ep4', DownloadStatus.completed),
+          epDownload('ep5', DownloadStatus.completed),
+        ]),
+      );
+      // Once the second batch settles, status flips back to partial (5/10).
+      // We don't assert progress% here — out-of-session calculations fall
+      // back to the show-wide aggregate, which is a separate concern.
+      expect(p.getProgress(showGlobalKey)!.status, DownloadStatus.partial);
     });
   });
 }

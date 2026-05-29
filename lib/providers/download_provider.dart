@@ -98,6 +98,14 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   // Key: globalKey (serverId:ratingKey), Value: total episode count
   final Map<String, int> _totalEpisodeCounts = {};
 
+  // Snapshot of completed-episode count at the moment a show/season
+  // transitioned from idle to having an in-flight download session.
+  // Used by _calculateAggregateProgress so the radial progress reflects
+  // "X of N queued episodes done" instead of "X of (full leafCount) done".
+  // Cleared when the session ends (no downloading/queued episodes remain).
+  // Key: aggregate globalKey (show or season), Value: completedCount-at-start.
+  final Map<String, int> _sessionBaselineCompleted = {};
+
   // Persistent sync rules keyed by profile-scoped globalKey
   // (profileId|serverId:ratingKey). Downloads remain public/shared.
   final Map<String, SyncRuleItem> _syncRules = {};
@@ -294,6 +302,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _artworkPaths.clear();
       _metadata.clear();
       _totalEpisodeCounts.clear();
+      _sessionBaselineCompleted.clear();
       _queueing.clear();
       _deletionProgress.clear();
       _ownedDownloadKeys.clear();
@@ -733,7 +742,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       }
     }
 
-    // Determine overall status
+    // Determine overall status. The full-show "completed" / "partial" tests
+    // still use totalEpisodes (leafCount) — the show isn't *done* until every
+    // episode is on the device, regardless of how many were in the active
+    // batch.
     final DownloadStatus overallStatus;
     if (completedCount == totalEpisodes) {
       overallStatus = DownloadStatus.completed;
@@ -749,13 +761,39 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return null;
     }
 
-    // Calculate overall progress percentage based on TOTAL episodes
-    final int overallProgress = totalEpisodes > 0 ? ((completedCount * 100) / totalEpisodes).round() : 0;
+    // Progress percentage rescopes to the active batch when a session is in
+    // flight. Without this, queueing 5 of 10 episodes caps the radial at 50%
+    // because completedCount is divided by leafCount. We snapshot
+    // completedCount at the moment the session begins ("baseline"), and the
+    // numerator/denominator drop everything that was already complete before
+    // the user's current request. Paused episodes are excluded from the
+    // denominator per the product call (see grilling session) — they're
+    // re-included if the user resumes them.
+    final bool sessionActive =
+        overallStatus == DownloadStatus.downloading || overallStatus == DownloadStatus.queued;
+
+    final int overallProgress;
+    final String currentFile;
+    if (sessionActive) {
+      final baseline = _sessionBaselineCompleted.putIfAbsent(globalKey, () => completedCount);
+      final int sessionCompleted = (completedCount - baseline).clamp(0, completedCount);
+      final int sessionDenom = sessionCompleted + downloadingCount + queuedCount + failedCount;
+      overallProgress = sessionDenom > 0 ? ((sessionCompleted * 100) / sessionDenom).round() : 0;
+      currentFile = '$sessionCompleted/$sessionDenom episodes';
+    } else {
+      // Session has ended (or never started). Drop any stale baseline so the
+      // next batch starts fresh. Tooltip falls back to the show-wide count
+      // for the partial/completed/failed states.
+      _sessionBaselineCompleted.remove(globalKey);
+      overallProgress = totalEpisodes > 0 ? ((completedCount * 100) / totalEpisodes).round() : 0;
+      currentFile = '$completedCount/$totalEpisodes episodes';
+    }
 
     appLogger.d(
       'Aggregate progress for $entityType $ratingKey: $overallProgress% '
       '($completedCount completed, $downloadingCount downloading, '
-      '$queuedCount queued of $totalEpisodes total) - Status: $overallStatus',
+      '$queuedCount queued of $totalEpisodes total, sessionActive=$sessionActive) '
+      '- Status: $overallStatus',
     );
 
     return DownloadProgress(
@@ -764,7 +802,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       progress: overallProgress,
       downloadedBytes: 0,
       totalBytes: 0,
-      currentFile: '$completedCount/$totalEpisodes episodes',
+      currentFile: currentFile,
     );
   }
 
