@@ -3437,6 +3437,9 @@ class PlexClient
             url,
             title: plexTrack.displayTitle ?? plexTrack.title ?? plexTrack.language ?? 'Track ${plexTrack.id}',
             language: plexTrack.languageCode,
+            codec: plexTrack.codec,
+            isDefault: plexTrack.selected,
+            isForced: plexTrack.forced,
           ),
         );
       } catch (e) {

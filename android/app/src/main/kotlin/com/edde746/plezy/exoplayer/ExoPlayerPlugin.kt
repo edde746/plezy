@@ -240,7 +240,7 @@ class ExoPlayerPlugin :
     val startPositionMs = call.argument<Number>("startPositionMs")?.toLong() ?: 0L
     val autoPlay = call.argument<Boolean>("autoPlay") ?: true
     val isLive = call.argument<Boolean>("isLive") ?: false
-    val externalSubtitles = call.argument<List<Map<String, String?>>>("externalSubtitles")
+    val externalSubtitles = call.argument<List<Map<String, Any?>>>("externalSubtitles")
 
     if (uri == null) {
       result.error("INVALID_ARGS", "Missing 'uri'", null)
@@ -260,6 +260,8 @@ class ExoPlayerPlugin :
         val options = mutableListOf<String>()
         options.add("start=$startSeconds")
         if (!autoPlay) options.add("pause=yes")
+        options.add("sid=no")
+        options.add("secondary-sid=no")
         headers?.forEach { (key, value) ->
           options.add("http-header-fields-append=$key: $value")
         }

@@ -343,6 +343,9 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
               cleanSubtitleTitle(track.displayTitle ?? track.title, codec: track.codec) ??
               cleanTrackMetadataValue(track.language),
           language: cleanTrackMetadataValue(track.languageCode),
+          codec: track.codec,
+          isDefault: track.selected,
+          isForced: track.forced,
         ),
       );
     }

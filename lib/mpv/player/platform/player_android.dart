@@ -120,7 +120,16 @@ class PlayerAndroid extends PlayerBase {
       if (externalSubtitles != null && externalSubtitles.isNotEmpty)
         'externalSubtitles': externalSubtitles
             .where((s) => s.uri != null)
-            .map((s) => {'uri': s.uri, 'title': s.title, 'language': s.language})
+            .map(
+              (s) => {
+                'uri': s.uri,
+                'title': s.title,
+                'language': s.language,
+                'codec': s.codec,
+                'isDefault': s.isDefault,
+                'isForced': s.isForced,
+              },
+            )
             .toList(),
     });
   }
