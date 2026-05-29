@@ -370,6 +370,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _hiddenForBackground = false;
   bool _mediaControlsSuspendedForTvBackground = false;
   bool _resumeFromSuspendedMediaControlOnForeground = false;
+  bool _resumeAfterAppleAudioSessionPause = false;
+  DateTime? _lastPlaybackPauseAt;
   bool _autoPipEnabled = false;
   bool _androidAutoPipTransitionInFlight = false;
   bool _pipFiltersPrepared = false;

@@ -103,6 +103,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         return;
       }
 
+      if (_isAppleAudioSessionEvent(event)) {
+        unawaited(_handleAppleAudioSessionEvent(event));
+        return;
+      }
+
       if (activePlayer == null && event is! NextTrackEvent && event is! PreviousTrackEvent) return;
 
       if (event is PlayEvent) {
@@ -190,6 +195,10 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   }
 
   void _onPlayingStateChanged(bool isPlaying) {
+    if (!isPlaying) {
+      _lastPlaybackPauseAt = DateTime.now();
+    }
+
     if (isPlaying && _mediaControlsSuspendedForTvBackground) {
       appLogger.w('Playback started while Android TV background media controls are suspended; pausing');
       Sentry.addBreadcrumb(
@@ -230,6 +239,77 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // Update auto-PiP readiness
     if (_autoPipEnabled) {
       _videoPIPManager?.updateAutoPipState(isPlaying: isPlaying);
+    }
+  }
+
+  bool _isAppleAudioSessionEvent(Object event) =>
+      event is AudioInterruptionBeganEvent ||
+      event is AudioInterruptionEndedEvent ||
+      event is AudioRouteOldDeviceUnavailableEvent ||
+      event is AudioRouteNewDeviceAvailableEvent;
+
+  Future<void> _handleAppleAudioSessionEvent(Object event) async {
+    if (!Platform.isIOS || PlatformDetector.isTV()) return;
+
+    final currentPlayer = player;
+    if (!mounted || currentPlayer == null || !_isPlayerInitialized) return;
+
+    if (event is AudioInterruptionBeganEvent) {
+      await _pauseForAppleAudioSessionEvent(currentPlayer, 'interruption began');
+    } else if (event is AudioRouteOldDeviceUnavailableEvent) {
+      await _pauseForAppleAudioSessionEvent(currentPlayer, 'private audio route disconnected');
+    } else if (event is AudioInterruptionEndedEvent) {
+      if (event.shouldResume) {
+        await _resumeAfterAppleAudioSessionEvent(currentPlayer, 'interruption ended');
+      } else {
+        _resumeAfterAppleAudioSessionPause = false;
+      }
+    } else if (event is AudioRouteNewDeviceAvailableEvent) {
+      await _resumeAfterAppleAudioSessionEvent(currentPlayer, 'private audio route connected');
+    }
+  }
+
+  Future<void> _pauseForAppleAudioSessionEvent(Player currentPlayer, String reason) async {
+    final wasPlayingBeforeEvent = currentPlayer.state.isActive || _wasRecentlyPaused();
+    if (wasPlayingBeforeEvent) {
+      _resumeAfterAppleAudioSessionPause = true;
+    }
+
+    try {
+      await currentPlayer.pause();
+      appLogger.d('Video paused after Apple audio session $reason');
+    } catch (e) {
+      appLogger.w('Failed to pause after Apple audio session $reason', error: e);
+    } finally {
+      _updateMediaControlsPlaybackState();
+    }
+  }
+
+  bool _wasRecentlyPaused() {
+    final pauseAt = _lastPlaybackPauseAt;
+    if (pauseAt == null) return false;
+    return DateTime.now().difference(pauseAt) < const Duration(seconds: 1);
+  }
+
+  Future<void> _resumeAfterAppleAudioSessionEvent(Player expectedPlayer, String reason) async {
+    if (!_resumeAfterAppleAudioSessionPause) return;
+    _resumeAfterAppleAudioSessionPause = false;
+
+    if (!mounted || player != expectedPlayer || !_isPlayerInitialized) return;
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      appLogger.d('Skipped Apple audio session resume after $reason because app is not resumed');
+      return;
+    }
+    if (expectedPlayer.state.isActive) return;
+
+    try {
+      await expectedPlayer.play();
+      _wasPlayingBeforeInactive = false;
+      appLogger.d('Video resumed after Apple audio session $reason');
+    } catch (e) {
+      appLogger.w('Failed to resume after Apple audio session $reason', error: e);
+    } finally {
+      _updateMediaControlsPlaybackState();
     }
   }
 
