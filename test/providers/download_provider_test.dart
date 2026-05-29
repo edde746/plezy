@@ -782,6 +782,32 @@ void main() {
 
       p.dispose();
     });
+
+    test('sub-threshold progress events update downloaded metadata resume', () async {
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+
+      final item = MediaItem(
+        id: '42',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        title: 'Movie',
+        serverId: 'srv',
+        durationMs: 100000,
+        viewOffsetMs: 0,
+        viewCount: 1,
+      );
+      p.debugSeedState(metadata: {'srv:42': item});
+
+      WatchStateNotifier().notifyProgress(item: item, viewOffset: 50000, duration: 100000, watchedThreshold: 0.9);
+      await Future<void>.delayed(Duration.zero);
+
+      final updated = p.getMetadata('srv:42');
+      expect(updated?.isWatched, isFalse);
+      expect(updated?.viewOffsetMs, 50000);
+
+      p.dispose();
+    });
   });
 
   group('DownloadProvider — progress stream', () {

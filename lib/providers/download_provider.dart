@@ -483,10 +483,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   void _onWatchStateChanged(WatchStateEvent event) {
-    // Progress ticks fire continuously during playback; only react when a
-    // progress update crosses the watched threshold.
-    if (event.changeType == WatchStateChangeType.progressUpdate && event.isNowWatched != true) return;
-    if (event.isNowWatched == null) return;
+    final snapshot = WatchStateResolver.fromEvent(event);
+    if (snapshot.isEmpty) return;
 
     final globalKey = buildGlobalKey(event.serverId, event.itemId);
     final base = _metadata[globalKey];
@@ -497,17 +495,29 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return;
     }
 
-    final isWatched = event.isNowWatched!;
-    _metadata[globalKey] = base.copyWith(viewCount: isWatched ? 1 : 0, viewOffsetMs: 0);
+    _metadata[globalKey] = snapshot.apply(base);
+
+    final isWatched = snapshot.isWatched;
+    // Sub-threshold progress ticks are frequent; offline reloads re-apply them
+    // from queued watch actions, so only durable watch flips hit the cache here.
+    final shouldPersistToCache =
+        isWatched != null && (event.changeType != WatchStateChangeType.progressUpdate || event.isNowWatched == true);
+
     // Persist into the per-backend pinned cache so the patch survives reloads
     // (`_loadPersistedDownloads` rehydrates `_metadata` from the cache).
-    unawaited(
-      ApiCache.forBackend(base.backend)
-          .applyWatchState(serverId: event.cacheServerId ?? event.serverId, itemId: event.itemId, isWatched: isWatched)
-          .catchError((Object e) {
-            appLogger.w('Failed to apply watch state to cache for $globalKey', error: e);
-          }),
-    );
+    if (shouldPersistToCache) {
+      unawaited(
+        ApiCache.forBackend(base.backend)
+            .applyWatchState(
+              serverId: event.cacheServerId ?? event.serverId,
+              itemId: event.itemId,
+              isWatched: isWatched,
+            )
+            .catchError((Object e) {
+              appLogger.w('Failed to apply watch state to cache for $globalKey', error: e);
+            }),
+      );
+    }
     safeNotifyListeners();
   }
 
