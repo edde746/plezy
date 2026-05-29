@@ -96,75 +96,109 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       );
     }
 
+    // Predicted widths feed the narrow-screen drop logic in
+    // [DetailActionsRow]. Icon-only buttons match the styled action size;
+    // the play button's width depends on its (possibly long, possibly
+    // localized) label, so it's measured with a TextPainter. The gap
+    // matches the SizedBox spacing the old Row used between siblings.
+    final double gap = isTv ? 8 * tvScale : 12.0;
+    final playLabelStyle = TextStyle(fontSize: isTv ? 17 * tvScale : 16.0, fontWeight: FontWeight.w700);
+    final double playIconSize = isTv ? 22 * tvScale : 20.0;
+    final double playHorizontalPadding = isTv ? 17 * tvScale : 16.0;
+    final double playIconLabelGap = isTv ? 7 * tvScale : 8.0;
+    final double playVerticalPadding = isTv ? 9 * tvScale : 0.0;
+    final double playButtonWidth;
+    if (playButtonLabel.isEmpty) {
+      // No label — FilledButton renders only the icon, ~square at actionSize.
+      playButtonWidth = actionSize;
+    } else {
+      final painter = TextPainter(
+        text: TextSpan(text: playButtonLabel, style: playLabelStyle),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+        textScaler: MediaQuery.textScalerOf(context),
+      )..layout();
+      playButtonWidth = playHorizontalPadding * 2 + playIconSize + playIconLabelGap + painter.width;
+    }
+
+    final trailerButton = primaryTrailer == null
+        ? null
+        : IconButton.filledTonal(
+            onPressed: () async {
+              await navigateToVideoPlayer(context, metadata: primaryTrailer);
+            },
+            icon: const AppIcon(Symbols.theaters_rounded, fill: 1),
+            tooltip: t.tooltips.playTrailer,
+            iconSize: isTv ? 21 * tvScale : 20,
+            style: actionButtonStyle(),
+          );
+
+    final actions = <DetailAction>[
+      DetailAction(
+        predictedWidth: playButtonWidth,
+        child: SizedBox(
+          height: actionSize,
+          child: FilledButton(
+            focusNode: _playButtonFocusNode,
+            autofocus: isKeyboardMode,
+            onPressed: onPlayPressed,
+            style: actionButtonStyle(
+              padding: EdgeInsets.symmetric(horizontal: playHorizontalPadding, vertical: playVerticalPadding),
+            ),
+            child: playButtonLabel.isNotEmpty
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      playButtonIcon,
+                      SizedBox(width: playIconLabelGap),
+                      Text(playButtonLabel, style: playLabelStyle),
+                    ],
+                  )
+                : playButtonIcon,
+          ),
+        ),
+      ),
+      // Trailer button (only if trailer is available). Drops after Watched.
+      if (trailerButton != null) DetailAction(predictedWidth: actionSize, dropPriority: 2, child: trailerButton),
+      // Combined "Play random" button (only for shows and seasons). On multi-
+      // season shows it opens a picker letting the user choose between
+      // shuffling the whole show and shuffling the current season; on
+      // single-season shows and season detail pages there's only one
+      // meaningful action, so it shuffles directly. Drops last of the three.
+      if (metadata.isShow || metadata.isSeason)
+        DetailAction(
+          predictedWidth: actionSize,
+          dropPriority: 1,
+          child: _buildPlayRandomButton(metadata, actionButtonStyle, tvScale, isTv),
+        ),
+      // Download button (hide in offline mode - already downloaded, and on
+      // Apple TV where there's no user file storage). Never dropped.
+      if (!widget.isOffline && !PlatformDetector.isAppleTV())
+        DetailAction(predictedWidth: actionSize, child: _buildDownloadButton(metadata, actionButtonStyle, tvScale)),
+      // Mark as watched/unwatched toggle (works offline too). Drops first
+      // when there isn't room — the same action is reachable from the
+      // three-dots menu.
+      DetailAction(
+        predictedWidth: actionSize,
+        dropPriority: 3,
+        child: _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale),
+      ),
+      // Three-dots menu button (hidden in offline mode). Never dropped —
+      // dropping it would orphan any inline actions the menu also exposes.
+      if (!widget.isOffline)
+        DetailAction(
+          predictedWidth: actionSize,
+          child: _buildMoreActionsButton(metadata, actionButtonStyle, tvScale, primaryTrailer: primaryTrailer),
+        ),
+    ];
+
     return Focus(
       skipTraversal: true,
       onFocusChange: (hasFocus) {
         if (isTv) _setTvDetailActionRowFocus(hasFocus);
       },
       onKeyEvent: _handlePlayButtonKeyEvent,
-      child: Row(
-        children: [
-          SizedBox(
-            height: actionSize,
-            child: FilledButton(
-              focusNode: _playButtonFocusNode,
-              autofocus: isKeyboardMode,
-              onPressed: onPlayPressed,
-              style: actionButtonStyle(
-                padding: EdgeInsets.symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
-              ),
-              child: playButtonLabel.isNotEmpty
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        playButtonIcon,
-                        SizedBox(width: isTv ? 7 * tvScale : 8),
-                        Text(
-                          playButtonLabel,
-                          style: TextStyle(fontSize: isTv ? 17 * tvScale : 16, fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    )
-                  : playButtonIcon,
-            ),
-          ),
-          SizedBox(width: isTv ? 8 * tvScale : 12),
-          // Trailer button (only if trailer is available)
-          if (primaryTrailer != null) ...[
-            IconButton.filledTonal(
-              onPressed: () async {
-                await navigateToVideoPlayer(context, metadata: primaryTrailer);
-              },
-              icon: const AppIcon(Symbols.theaters_rounded, fill: 1),
-              tooltip: t.tooltips.playTrailer,
-              iconSize: isTv ? 21 * tvScale : 20,
-              style: actionButtonStyle(),
-            ),
-            SizedBox(width: isTv ? 8 * tvScale : 12),
-          ],
-          // Combined "Play random" button (only for shows and seasons).
-          // On multi-season shows it opens a picker letting the user choose
-          // between shuffling the whole show and shuffling the current
-          // season; on single-season shows and season detail pages there's
-          // only one meaningful action, so it shuffles directly.
-          if (metadata.isShow || metadata.isSeason) ...[
-            _buildPlayRandomButton(metadata, actionButtonStyle, tvScale, isTv),
-            SizedBox(width: isTv ? 8 * tvScale : 12),
-          ],
-          // Download button (hide in offline mode - already downloaded,
-          // and on Apple TV where there's no user file storage).
-          if (!widget.isOffline && !PlatformDetector.isAppleTV())
-            _buildDownloadButton(metadata, actionButtonStyle, tvScale),
-          SizedBox(width: isTv ? 8 * tvScale : 12),
-          // Mark as watched/unwatched toggle (works offline too)
-          _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale),
-          // Three-dots menu button (hidden in offline mode)
-          if (!widget.isOffline) ...[
-            SizedBox(width: isTv ? 8 * tvScale : 12),
-            _buildMoreActionsButton(metadata, actionButtonStyle, tvScale),
-          ],
-        ],
-      ),
+      child: DetailActionsRow(actions: actions, gap: gap),
     );
   }
 
@@ -296,11 +330,13 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
   Widget _buildMoreActionsButton(
     MediaItem metadata,
     ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding}) actionButtonStyle,
-    double tvScale,
-  ) {
+    double tvScale, {
+    MediaItem? primaryTrailer,
+  }) {
     return MediaContextMenu(
       key: _contextMenuKey,
       item: metadata,
+      primaryTrailer: primaryTrailer,
       onRefresh: (itemId) => unawaited(_refreshItemInPlace(itemId)),
       child: Builder(
         builder: (buttonContext) => IconButton.filledTonal(

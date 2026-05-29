@@ -96,6 +96,13 @@ class MediaContextMenu extends StatefulWidget {
   final bool isInContinueWatching;
   final String? collectionId; // The collection ID if displaying within a collection
 
+  /// Optional trailer extra surfaced as a "Play trailer" entry in the menu.
+  /// Only the detail screen (which loads `extras`) passes this; everywhere
+  /// else it's null and the entry is omitted. Mirrors the inline trailer
+  /// button on the action row — both routes are reachable when the inline
+  /// button is hidden by narrow-screen drop logic.
+  final MediaItem? primaryTrailer;
+
   const MediaContextMenu({
     super.key,
     required this.item,
@@ -106,6 +113,7 @@ class MediaContextMenu extends StatefulWidget {
     required this.child,
     this.isInContinueWatching = false,
     this.collectionId,
+    this.primaryTrailer,
   });
 
   @override
@@ -289,6 +297,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             icon: Symbols.close_rounded,
             label: t.mediaMenu.removeFromContinueWatching,
           ),
+        );
+      }
+
+      // Play trailer — only the detail screen passes a primaryTrailer (it
+      // loads the extras list); other call sites leave it null. Sits right
+      // after the watch toggle so it's reachable when narrow-screen drop
+      // logic hides the inline trailer button on the action row.
+      if (widget.primaryTrailer != null) {
+        menuActions.add(
+          _MenuAction(value: 'play_trailer', icon: Symbols.theaters_rounded, label: t.tooltips.playTrailer),
         );
       }
 
@@ -590,6 +608,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
                 unawaited(TrackerCoordinator.instance.markUnwatched(item, client));
               }
             }, t.messages.markedAsUnwatched);
+          }
+          break;
+
+        case 'play_trailer':
+          didNavigate = true;
+          if (context.mounted && widget.primaryTrailer != null) {
+            await navigateToVideoPlayer(context, metadata: widget.primaryTrailer!);
           }
           break;
 

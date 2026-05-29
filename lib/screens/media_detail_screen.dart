@@ -81,6 +81,7 @@ import '../widgets/ios_status_bar_tap_scroll_to_top.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_background.dart';
+import 'media_detail/detail_actions_row.dart';
 
 part 'media_detail/action_buttons.dart';
 
