@@ -125,6 +125,31 @@ void main() {
     });
   });
 
+  group('DownloadProvider — local file selection', () {
+    test('falls back to media index when caller has no source id', () async {
+      const globalKey = 'srv:movie-1';
+      await db.insertDownload(
+        serverId: 'srv',
+        ratingKey: 'movie-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.completed.index,
+        mediaIndex: 0,
+        mediaSourceId: 'source-a',
+      );
+      await db.updateVideoFilePath(globalKey, 'content://offline/movie-1-v1');
+
+      final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
+      await p.ensureInitialized();
+      p.debugSeedState(ownedDownloadKeys: {globalKey});
+
+      expect(await p.getVideoFilePath(globalKey, mediaIndex: 1), isNull);
+      expect(await p.getVideoFilePath(globalKey, mediaIndex: 0), 'content://offline/movie-1-v1');
+
+      p.dispose();
+    });
+  });
+
   group('DownloadProvider — sync rule CRUD', () {
     test('createSyncRule inserts into the database and updates the in-memory map', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);

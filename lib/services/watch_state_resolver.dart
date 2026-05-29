@@ -37,49 +37,37 @@ class WatchStateResolver {
       WatchStateChangeType.progressUpdate =>
         event.isNowWatched == true
             ? const WatchStateSnapshot(isWatched: true, hasViewOffsetMs: true, viewOffsetMs: 0)
-            : WatchStateSnapshot(hasViewOffsetMs: event.viewOffset != null, viewOffsetMs: event.viewOffset),
-      WatchStateChangeType.removedFromContinueWatching => const WatchStateSnapshot(
-        hasViewOffsetMs: true,
-        viewOffsetMs: 0,
-      ),
+            : WatchStateSnapshot(
+                isWatched: false,
+                hasViewOffsetMs: event.viewOffset != null,
+                viewOffsetMs: event.viewOffset,
+              ),
+      WatchStateChangeType.removedFromContinueWatching => const WatchStateSnapshot(),
     };
   }
 
   static WatchStateSnapshot fromActions(Iterable<OfflineWatchProgressItem> actions) {
-    OfflineWatchProgressItem? latestManual;
-    OfflineWatchProgressItem? latestProgress;
+    OfflineWatchProgressItem? latest;
 
     for (final action in actions) {
-      if (action.actionType == 'watched' || action.actionType == 'unwatched') {
-        if (latestManual == null || action.updatedAt > latestManual.updatedAt) latestManual = action;
-      } else if (action.actionType == 'progress') {
-        if (latestProgress == null || action.updatedAt > latestProgress.updatedAt) latestProgress = action;
+      if (action.actionType != 'watched' && action.actionType != 'unwatched' && action.actionType != 'progress') {
+        continue;
       }
+      if (latest == null || action.updatedAt > latest.updatedAt) latest = action;
     }
 
-    bool? isWatched;
-    var hasViewOffsetMs = false;
-    int? viewOffsetMs;
-
-    final progress = latestProgress;
-    final manual = latestManual;
-    final progressIsNewest = progress != null && (manual == null || progress.updatedAt >= manual.updatedAt);
-
-    if (progress != null && progress.shouldMarkWatched && progressIsNewest) {
-      isWatched = true;
-      hasViewOffsetMs = true;
-      viewOffsetMs = 0;
-    } else if (manual != null) {
-      isWatched = manual.actionType == 'watched';
-      hasViewOffsetMs = true;
-      viewOffsetMs = 0;
-    }
-
-    if (progress != null && !progress.shouldMarkWatched && progressIsNewest) {
-      hasViewOffsetMs = true;
-      viewOffsetMs = progress.viewOffset;
-    }
-
-    return WatchStateSnapshot(isWatched: isWatched, hasViewOffsetMs: hasViewOffsetMs, viewOffsetMs: viewOffsetMs);
+    return switch (latest?.actionType) {
+      'watched' => const WatchStateSnapshot(isWatched: true, hasViewOffsetMs: true, viewOffsetMs: 0),
+      'unwatched' => const WatchStateSnapshot(isWatched: false, hasViewOffsetMs: true, viewOffsetMs: 0),
+      'progress' =>
+        latest!.shouldMarkWatched
+            ? const WatchStateSnapshot(isWatched: true, hasViewOffsetMs: true, viewOffsetMs: 0)
+            : WatchStateSnapshot(
+                isWatched: false,
+                hasViewOffsetMs: latest.viewOffset != null,
+                viewOffsetMs: latest.viewOffset,
+              ),
+      _ => const WatchStateSnapshot(),
+    };
   }
 }

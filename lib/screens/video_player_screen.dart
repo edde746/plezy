@@ -437,7 +437,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   ScrubFrame? _getThumbnailData(Duration time) => _scrubPreviewSource?.getFrame(time);
 
-  int _beginPlaybackGeneration() => ++_playbackGeneration;
+  int _beginPlaybackGeneration({bool isEpisodeSwap = false}) {
+    if (!isEpisodeSwap) _isSwappingEpisode = false;
+    return ++_playbackGeneration;
+  }
 
   bool _isCurrentPlaybackGeneration(int generation, Player currentPlayer) {
     return mounted && player == currentPlayer && _playbackGeneration == generation;

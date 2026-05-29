@@ -70,15 +70,21 @@ class PlaybackReportSession {
   _PendingProgressReport? _pendingProgress;
   Future<void>? _pumpFuture;
   Future<void>? _stopFuture;
+  bool _resetAfterStopRequested = false;
 
   bool get isIdle => _state == _PlaybackReportState.idle;
 
   bool get isStopped => _state == _PlaybackReportState.stopped;
 
   void resetAfterStop() {
+    if (_state == _PlaybackReportState.stopping) {
+      _resetAfterStopRequested = true;
+      return;
+    }
     if (_state == _PlaybackReportState.stopped || _state == _PlaybackReportState.stopFailed) {
       _state = _PlaybackReportState.idle;
       _startSnapshot = null;
+      _resetAfterStopRequested = false;
       _discardPendingProgress();
       _pumpFuture = null;
       _stopFuture = null;
@@ -203,10 +209,16 @@ class PlaybackReportSession {
       await _sendStopped(snapshot);
       stopSucceeded = true;
     } finally {
+      final shouldReset = _resetAfterStopRequested;
+      _resetAfterStopRequested = false;
       _stopFuture = null;
       _discardPendingProgress();
       _pumpFuture = null;
-      _state = stopSucceeded ? _PlaybackReportState.stopped : _PlaybackReportState.stopFailed;
+      _state = shouldReset
+          ? _PlaybackReportState.idle
+          : stopSucceeded
+          ? _PlaybackReportState.stopped
+          : _PlaybackReportState.stopFailed;
     }
   }
 

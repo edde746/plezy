@@ -22,7 +22,7 @@ class PlaybackSourceResolver {
     String? sessionIdentifier,
     String? transcodeSessionId,
   }) async {
-    final reportingClient = _onlineClient(metadata.serverId);
+    final reportingClient = _playbackClient(metadata.serverId, offlineLibraryMode: offlineLibraryMode);
     final service = PlaybackInitializationService(client: reportingClient, database: database);
     final result = await service.getPlaybackData(
       metadata: metadata,
@@ -58,9 +58,11 @@ class PlaybackSourceResolver {
     );
   }
 
-  MediaServerClient? _onlineClient(String? serverId) {
-    if (serverId == null || !serverManager.isClientOnline(serverId)) return null;
-    return serverManager.getClient(serverId);
+  MediaServerClient? _playbackClient(String? serverId, {required bool offlineLibraryMode}) {
+    if (serverId == null) return null;
+    final client = serverManager.getClient(serverId);
+    if (offlineLibraryMode && !serverManager.isClientOnline(serverId)) return null;
+    return client;
   }
 
   PlaybackReportingMode _reportingMode({

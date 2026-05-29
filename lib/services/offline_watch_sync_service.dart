@@ -217,9 +217,9 @@ class OfflineWatchSyncService extends ChangeNotifier {
     required String serverId,
     required String itemId,
     required int viewOffset,
-    required int duration,
+    required int? duration,
   }) async {
-    final shouldMarkWatched = isWatchedByProgress(viewOffset, duration, serverId: serverId);
+    final shouldMarkWatched = duration != null && isWatchedByProgress(viewOffset, duration, serverId: serverId);
     final clientScopeId = await _clientScopeIdForItem(serverId, itemId);
 
     await _database.upsertProgressAction(
@@ -232,8 +232,12 @@ class OfflineWatchSyncService extends ChangeNotifier {
       shouldMarkWatched: shouldMarkWatched,
     );
 
+    final durationLabel = duration == null ? 'unknown' : '${(duration / 1000).toStringAsFixed(0)}s';
+    final percentLabel = duration == null || duration <= 0
+        ? 'unknown'
+        : '${((viewOffset / duration) * 100).toStringAsFixed(1)}%';
     appLogger.d(
-      'Queued offline progress: $serverId:$itemId at ${(viewOffset / 1000).toStringAsFixed(0)}s / ${(duration / 1000).toStringAsFixed(0)}s (${((viewOffset / duration) * 100).toStringAsFixed(1)}%)',
+      'Queued offline progress: $serverId:$itemId at ${(viewOffset / 1000).toStringAsFixed(0)}s / $durationLabel ($percentLabel)',
     );
 
     notifyListeners();
@@ -552,9 +556,11 @@ class OfflineWatchSyncService extends ChangeNotifier {
         // Push resumable progress, or a completed offline playback. Jellyfin's
         // `/Sessions/Playing/Stopped` ignores events without an open session
         // row, so non-Plex backends still get a lightweight Started call.
-        if (action.viewOffset != null && action.duration != null) {
-          final duration = Duration(milliseconds: action.duration!);
-          final position = action.shouldMarkWatched ? duration : Duration(milliseconds: action.viewOffset!);
+        if (action.viewOffset != null) {
+          final duration = action.duration == null ? null : Duration(milliseconds: action.duration!);
+          final position = action.shouldMarkWatched && duration != null
+              ? duration
+              : Duration(milliseconds: action.viewOffset!);
           if (!action.shouldMarkWatched || client.backend != MediaBackend.plex) {
             try {
               await client.reportPlaybackStarted(itemId: action.ratingKey, position: position, duration: duration);

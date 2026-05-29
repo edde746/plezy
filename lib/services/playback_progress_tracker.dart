@@ -174,7 +174,6 @@ class PlaybackProgressTracker {
 
   void resumeAfterStoppedReport() {
     _stoppedProgressFuture = null;
-    _stopProgressNotified = false;
     _reportSession?.resetAfterStop();
   }
 

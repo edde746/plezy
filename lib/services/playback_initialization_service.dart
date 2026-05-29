@@ -71,11 +71,12 @@ class PlaybackInitializationService {
 
       final downloadedSourceId = downloadedItem.mediaSourceId;
       final requestedSourceId = selectedMediaSourceId?.trim();
-      if (requestedSourceId != null &&
+      final comparedBySourceId =
+          requestedSourceId != null &&
           requestedSourceId.isNotEmpty &&
           downloadedSourceId != null &&
-          downloadedSourceId.isNotEmpty &&
-          downloadedSourceId != requestedSourceId) {
+          downloadedSourceId.isNotEmpty;
+      if (comparedBySourceId && downloadedSourceId != requestedSourceId) {
         appLogger.d(
           '[VersionTrace] Offline video source is $downloadedSourceId, '
           'but requested source $requestedSourceId — skipping offline',
@@ -83,8 +84,8 @@ class PlaybackInitializationService {
         return null;
       }
 
-      // Legacy rows may not have a media source id, so keep index fallback.
-      if ((downloadedSourceId == null || downloadedSourceId.isEmpty) && downloadedItem.mediaIndex != mediaIndex) {
+      // Fall back to index when either side lacks a stable source id.
+      if (!comparedBySourceId && downloadedItem.mediaIndex != mediaIndex) {
         appLogger.d(
           '[VersionTrace] Offline video is version ${downloadedItem.mediaIndex}, '
           'but requested version $mediaIndex — skipping offline',

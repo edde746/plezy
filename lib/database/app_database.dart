@@ -284,7 +284,7 @@ class AppDatabase extends _$AppDatabase {
                 (filterProfile ? _nullableTextPredicate(t.profileId, profileId) : const Constant(true)) &
                 (filterClientScope ? _clientScopePredicate(t.clientScopeId, clientScopeId) : const Constant(true)),
           )
-          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)])
+          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt), (t) => OrderingTerm.desc(t.id)])
           ..limit(1))
         .getSingleOrNull();
   }
@@ -303,7 +303,7 @@ class AppDatabase extends _$AppDatabase {
                 (filterProfile ? _nullableTextPredicate(t.profileId, profileId) : const Constant(true)) &
                 (filterClientScope ? _clientScopePredicate(t.clientScopeId, clientScopeId) : const Constant(true)),
           )
-          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+          ..orderBy([(t) => OrderingTerm.desc(t.updatedAt), (t) => OrderingTerm.desc(t.id)]))
         .get();
   }
 
@@ -321,7 +321,7 @@ class AppDatabase extends _$AppDatabase {
                     t.globalKey.isIn(globalKeys) &
                     (filterProfile ? _nullableTextPredicate(t.profileId, profileId) : const Constant(true)),
               )
-              ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+              ..orderBy([(t) => OrderingTerm.desc(t.updatedAt), (t) => OrderingTerm.desc(t.id)]))
             .get();
 
     final result = <String, List<OfflineWatchProgressItem>>{};
@@ -355,7 +355,7 @@ class AppDatabase extends _$AppDatabase {
                     t.globalKey.isIn(globalKeys) &
                     (filterProfile ? _nullableTextPredicate(t.profileId, profileId) : const Constant(true)),
               )
-              ..orderBy([(t) => OrderingTerm.desc(t.updatedAt)]))
+              ..orderBy([(t) => OrderingTerm.desc(t.updatedAt), (t) => OrderingTerm.desc(t.id)]))
             .get();
 
     // Group by globalKey and take the latest (first due to ordering)
@@ -385,7 +385,7 @@ class AppDatabase extends _$AppDatabase {
     String? clientScopeId,
     required String ratingKey,
     required int viewOffset,
-    required int duration,
+    required int? duration,
     required bool shouldMarkWatched,
   }) async {
     final globalKey = buildGlobalKey(serverId, ratingKey);

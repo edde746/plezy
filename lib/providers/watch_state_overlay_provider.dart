@@ -34,6 +34,13 @@ class WatchStateOverlayPatch {
   int get hashCode => Object.hash(isWatched, hasViewOffsetMs, viewOffsetMs);
 }
 
+class _WatchStateOverlayEntry {
+  final WatchStateOverlayPatch patch;
+  final int sequence;
+
+  const _WatchStateOverlayEntry(this.patch, this.sequence);
+}
+
 /// Session-local watch-state overlay for immediate UI freshness.
 ///
 /// Server fetches remain the source of truth; this only patches stale
@@ -44,20 +51,24 @@ class WatchStateOverlayProvider extends ChangeNotifier with DisposableChangeNoti
   }
 
   StreamSubscription<WatchStateEvent>? _subscription;
-  final Map<String, WatchStateOverlayPatch> _patches = {};
+  final Map<String, _WatchStateOverlayEntry> _patches = {};
   String? _activeProfileId;
   Map<String, String?> _activeClientScopesByServer = const {};
+  int _sequence = 0;
 
   WatchStateOverlayPatch? patchForGlobalKey(String globalKey) {
+    _WatchStateOverlayEntry? scopedEntry;
     final parsed = parseGlobalKey(globalKey);
     if (parsed != null) {
       final scoped = _activeClientScopesByServer[parsed.serverId];
       if (scoped != null && scoped.isNotEmpty) {
-        final scopedPatch = _patches[buildGlobalKey(scoped, parsed.ratingKey)];
-        if (scopedPatch != null) return scopedPatch;
+        scopedEntry = _patches[buildGlobalKey(scoped, parsed.ratingKey)];
       }
     }
-    return _patches[globalKey];
+    final unscopedEntry = _patches[globalKey];
+    if (scopedEntry == null) return unscopedEntry?.patch;
+    if (unscopedEntry == null) return scopedEntry.patch;
+    return scopedEntry.sequence >= unscopedEntry.sequence ? scopedEntry.patch : unscopedEntry.patch;
   }
 
   WatchStateOverlayPatch? patchForItem(MediaItem item) => patchForGlobalKey(item.globalKey);
@@ -99,14 +110,15 @@ class WatchStateOverlayProvider extends ChangeNotifier with DisposableChangeNoti
   }
 
   void _onWatchStateEvent(WatchStateEvent event) {
-    final patch = WatchStateOverlayPatch.fromSnapshot(WatchStateResolver.fromEvent(event));
+    final snapshot = WatchStateResolver.fromEvent(event);
+    if (snapshot.isEmpty) return;
+    final patch = WatchStateOverlayPatch.fromSnapshot(snapshot);
 
     final cacheServerId = event.cacheServerId;
     final key = cacheServerId != null && cacheServerId.isNotEmpty && cacheServerId != event.serverId
         ? buildGlobalKey(cacheServerId, event.itemId)
         : event.globalKey;
-    if (_patches[key] == patch) return;
-    _patches[key] = patch;
+    _patches[key] = _WatchStateOverlayEntry(patch, ++_sequence);
     safeNotifyListeners();
   }
 

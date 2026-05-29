@@ -357,6 +357,30 @@ void main() {
       expect(await svc.getPendingSyncCount(), 0);
     });
 
+    test('unknown-duration offline progress still replays stopped position', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      final client = _RecordingMediaClient(serverId: 'srv', backend: MediaBackend.plex);
+      mgr.debugRegisterClientForTesting(client);
+      await svc.queueProgressUpdate(serverId: 'srv', itemId: '42', viewOffset: 50000, duration: null);
+
+      await svc.syncPendingItems();
+
+      expect(client.started, hasLength(1));
+      expect(client.started.single.positionMs, 50000);
+      expect(client.started.single.durationMs, isNull);
+      expect(client.stopped, hasLength(1));
+      expect(client.stopped.single.positionMs, 50000);
+      expect(client.stopped.single.durationMs, isNull);
+      expect(client.watched, isEmpty);
+      expect(await svc.getPendingSyncCount(), 0);
+    });
+
     test('completed Plex offline progress replays at duration and marks watched', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
       addTearDown(() async {
@@ -406,6 +430,24 @@ void main() {
       expect(action!.actionType, 'progress');
       expect(action.viewOffset, 50);
       expect(action.duration, 100);
+      expect(action.shouldMarkWatched, isFalse);
+    });
+
+    test('persists unknown-duration progress without marking watched', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      addTearDown(() async {
+        svc.dispose();
+        mgr.dispose();
+        await db.close();
+      });
+
+      await svc.queueProgressUpdate(serverId: 'srv', itemId: '42', viewOffset: 50, duration: null);
+
+      final action = await db.getLatestWatchAction('srv:42');
+      expect(action, isNotNull);
+      expect(action!.actionType, 'progress');
+      expect(action.viewOffset, 50);
+      expect(action.duration, isNull);
       expect(action.shouldMarkWatched, isFalse);
     });
 
@@ -486,9 +528,9 @@ void main() {
         await db.close();
       });
 
-      // Below threshold is resume-only, not an explicit unwatched override.
+      // Below threshold is explicit local progress, so it overrides stale watched metadata.
       await svc.queueProgressUpdate(serverId: 'srv', itemId: '1', viewOffset: 50, duration: 100);
-      expect(await svc.getLocalWatchStatus('srv:1'), isNull);
+      expect(await svc.getLocalWatchStatus('srv:1'), isFalse);
 
       // Above threshold → shouldMarkWatched=true → status=true.
       await svc.queueProgressUpdate(serverId: 'srv', itemId: '2', viewOffset: 99, duration: 100);
@@ -767,7 +809,7 @@ void main() {
 
       expect(await svc.getLocalWatchStatus('jf-machine:item-1'), isTrue);
       expect(await svc.getLocalViewOffset('jf-machine:item-1'), isNull);
-      expect(await svc.getLocalWatchStatus('jf-machine:item-1', clientScopeId: 'jf-machine/user-a'), isNull);
+      expect(await svc.getLocalWatchStatus('jf-machine:item-1', clientScopeId: 'jf-machine/user-a'), isFalse);
       expect(await svc.getLocalViewOffset('jf-machine:item-1', clientScopeId: 'jf-machine/user-a'), 5000);
     });
 

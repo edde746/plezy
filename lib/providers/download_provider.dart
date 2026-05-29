@@ -840,19 +840,18 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
     final expectedSourceId = mediaSourceId?.trim();
     final downloadedSourceId = downloadedItem.mediaSourceId;
-    if (expectedSourceId != null &&
+    final comparedBySourceId =
+        expectedSourceId != null &&
         expectedSourceId.isNotEmpty &&
         downloadedSourceId != null &&
-        downloadedSourceId.isNotEmpty &&
-        expectedSourceId != downloadedSourceId) {
+        downloadedSourceId.isNotEmpty;
+    if (comparedBySourceId && expectedSourceId != downloadedSourceId) {
       appLogger.w(
         'Downloaded media source mismatch for $globalKey: have $downloadedSourceId, expected $expectedSourceId',
       );
       return null;
     }
-    if ((downloadedSourceId == null || downloadedSourceId.isEmpty) &&
-        mediaIndex != null &&
-        downloadedItem.mediaIndex != mediaIndex) {
+    if (!comparedBySourceId && mediaIndex != null && downloadedItem.mediaIndex != mediaIndex) {
       appLogger.w(
         'Downloaded media index mismatch for $globalKey: have ${downloadedItem.mediaIndex}, expected $mediaIndex',
       );

@@ -8,6 +8,7 @@ import 'package:plezy/services/playback_report_session.dart';
 class _RecordingClient implements MediaServerClient {
   final calls = <String>[];
   Completer<void>? startGate;
+  Completer<void>? stopGate;
   bool failNextStop = false;
 
   @override
@@ -51,6 +52,8 @@ class _RecordingClient implements MediaServerClient {
     PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     calls.add('stopped-attempt:${position.inMilliseconds}:$mediaSourceId');
+    final gate = stopGate;
+    if (gate != null) await gate.future;
     if (failNextStop) {
       failNextStop = false;
       throw StateError('stop failed');
@@ -173,5 +176,25 @@ void main() {
     await session.report(_snapshot('stopped', positionMs: 3000));
 
     expect(client.calls, ['stopped-attempt:1000:null', 'stopped-attempt:3000:null', 'stopped:3000:null']);
+  });
+
+  test('resetAfterStop during in-flight stop reopens reporting after stop completes', () async {
+    final client = _RecordingClient()..stopGate = Completer<void>();
+    final session = PlaybackReportSession(client: client, itemId: 'item-1');
+
+    await session.report(_snapshot('playing', positionMs: 1000));
+    client.calls.clear();
+
+    final stopFuture = session.report(_snapshot('stopped', positionMs: 3000));
+    await Future<void>.delayed(Duration.zero);
+    expect(client.calls, ['stopped-attempt:3000:null']);
+
+    session.resetAfterStop();
+    client.stopGate!.complete();
+    await stopFuture;
+
+    expect(session.isIdle, isTrue);
+    expect(await session.report(_snapshot('playing', positionMs: 4000)), isTrue);
+    expect(client.calls, ['stopped-attempt:3000:null', 'stopped:3000:null', 'started:4000:null:null:null']);
   });
 }
