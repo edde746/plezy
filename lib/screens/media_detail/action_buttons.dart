@@ -337,6 +337,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       key: _contextMenuKey,
       item: metadata,
       primaryTrailer: primaryTrailer,
+      onShufflePlay: (metadata.isShow || metadata.isSeason) ? () => _handlePlayRandom(context, metadata) : null,
       onRefresh: (itemId) => unawaited(_refreshItemInPlace(itemId)),
       child: Builder(
         builder: (buttonContext) => IconButton.filledTonal(

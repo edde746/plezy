@@ -103,6 +103,15 @@ class MediaContextMenu extends StatefulWidget {
   /// button is hidden by narrow-screen drop logic.
   final MediaItem? primaryTrailer;
 
+  /// Optional override for the `'shuffle_play'` menu action. The detail
+  /// screen passes its `_handlePlayRandom` orchestrator so the menu
+  /// matches the inline Play random button: multi-season shows prompt
+  /// for whole-show vs current-season scope, while seasons and single-
+  /// season shows shuffle directly. When null (every other call site —
+  /// media cards, episode cards, season tabs) the menu falls through to
+  /// the built-in whole-show shuffle.
+  final Future<void> Function()? onShufflePlay;
+
   const MediaContextMenu({
     super.key,
     required this.item,
@@ -114,6 +123,7 @@ class MediaContextMenu extends StatefulWidget {
     this.isInContinueWatching = false,
     this.collectionId,
     this.primaryTrailer,
+    this.onShufflePlay,
   });
 
   @override
@@ -718,7 +728,15 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           break;
 
         case 'shuffle_play':
-          await _handleShufflePlayWithQueue(context);
+          // Detail screen passes its `_handlePlayRandom` orchestrator so
+          // the menu prompts for whole-show vs current-season scope when
+          // applicable. Other call sites fall through to the built-in
+          // whole-show shuffle.
+          if (widget.onShufflePlay != null) {
+            await widget.onShufflePlay!();
+          } else {
+            await _handleShufflePlayWithQueue(context);
+          }
           break;
 
         case 'play':
