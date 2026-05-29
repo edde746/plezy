@@ -328,7 +328,7 @@ List<int> _intList(String? value) {
   if (value == null || value.isEmpty) return const [];
   return [
     for (final part in value.split(','))
-      if (flexibleInt(part.trim()) case final parsed?) parsed,
+      ?flexibleInt(part.trim()),
   ];
 }
 

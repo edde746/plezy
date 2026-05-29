@@ -163,7 +163,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
 
   Future<void> _handleItemTap(MediaItem item) async {
     final result = await navigateToMediaItem(context, item, onRefresh: widget.onRefresh);
-    if (!context.mounted) return;
+    if (!mounted) return;
     switch (result) {
       case MediaNavigationResult.unsupported:
         showAppSnackBar(context, t.messages.musicNotSupported);

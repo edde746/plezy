@@ -187,6 +187,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         if (serverId == null || partId == null || effectiveSubtitleStreamId == null) {
           throw StateError('No Plex part available for subtitle stream selection');
         }
+        if (!mounted) return;
         final client = context.getPlexClientForServer(serverId);
         final saved = await client.selectStreams(partId, subtitleStreamID: effectiveSubtitleStreamId, allParts: true);
         if (!saved) {

@@ -142,7 +142,7 @@ class SimklTracker extends TrackerBase {
   }
 
   Map<String, dynamic> _ratingBody(TrackerRatingContext ctx, Map<String, Object> ids, {int? rating}) {
-    final item = {'ids': ids, if (rating != null) 'rating': rating};
+    final item = {'ids': ids, 'rating': ?rating};
     return ctx.isMovie
         ? {
             'movies': [item],
