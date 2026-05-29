@@ -404,6 +404,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
               _setAndroidAutoPipTransitionInFlight(true, reason: 'native_auto_pip_entering');
               _preparePipFiltersForEntry();
             }
+
             _autoPipEnteringCallback = autoPipEnteringCallback;
             PipService.onAutoPipEntering = autoPipEnteringCallback;
             final pipManager = _videoPIPManager;

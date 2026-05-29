@@ -63,11 +63,7 @@ class AddJellyfinScreen extends StatefulWidget {
   final Profile? targetProfile;
   final FutureOr<JellyfinConnectionAuthService> Function()? _authServiceFactory;
 
-  const AddJellyfinScreen({
-    super.key,
-    this.targetProfile,
-    @visibleForTesting this._authServiceFactory,
-  });
+  const AddJellyfinScreen({super.key, this.targetProfile, @visibleForTesting this._authServiceFactory});
 
   @override
   State<AddJellyfinScreen> createState() => _AddJellyfinScreenState();
