@@ -664,31 +664,15 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }) {
     final globalKey = buildGlobalKey(serverId, ratingKey);
 
-    // DIAGNOSTIC: Check all sources of episode count
-    final meta = _metadata[globalKey];
-    final metadataLeafCount = meta?.leafCount;
-    final storedCount = _totalEpisodeCounts[globalKey];
-    final downloadedCount = episodes.length;
-
-    appLogger.d(
-      '📊 Episode count sources for $entityType $ratingKey:\n'
-      '  - Metadata leafCount: $metadataLeafCount\n'
-      '  - Stored count: $storedCount\n'
-      '  - Downloaded episodes: $downloadedCount\n'
-      '  - Metadata exists: ${meta != null}\n'
-      '  - Type: ${meta?.kind.id}\n'
-      '  - Title: ${meta?.title}',
-    );
-
     // The progress ring reflects only the episodes the user actually queued for
     // this show/season — not the show's full episode count. _getEpisodeDownloads
     // returns just the owned download records, so episodes.length IS the queued
     // count. Downloading 5 of a 50-episode show therefore reaches 100% at 5/5.
     //
-    // NOTE: metadataLeafCount and _totalEpisodeCounts are intentionally no longer
-    // used as the denominator. _totalEpisodeCounts is now unused app-wide.
-    // TODO: remove the _totalEpisodeCounts plumbing in a dedicated cleanup.
-    final int totalEpisodes = downloadedCount;
+    // NOTE: the show's full episode count (metadata.leafCount / _totalEpisodeCounts)
+    // is intentionally not used as the denominator here.
+    // TODO: remove the now-unread _totalEpisodeCounts plumbing in a dedicated cleanup.
+    final int totalEpisodes = episodes.length;
 
     if (totalEpisodes == 0) {
       appLogger.d('⚠️  No queued downloads for $entityType $ratingKey, returning null');
@@ -736,8 +720,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
     // Smooth percentage across the queued episodes: an in-flight episode
     // contributes its partial progress so the ring advances continuously,
-    // rather than jumping only when whole episodes complete.
-    final int overallProgress = (summedProgress / totalEpisodes).round();
+    // rather than jumping only when whole episodes complete. Cap below 100%
+    // until every episode is actually complete — otherwise rounding (e.g.
+    // 99.8 → 100) could fill the ring while a download is still finishing.
+    final int rawProgress = (summedProgress / totalEpisodes).round();
+    final int overallProgress = completedCount == totalEpisodes ? 100 : (rawProgress > 99 ? 99 : rawProgress);
 
     appLogger.d(
       'Aggregate progress for $entityType $ratingKey: $overallProgress% '
