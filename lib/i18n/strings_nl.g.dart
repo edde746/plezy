@@ -565,6 +565,10 @@ class _TranslationsVideoControlsNl extends TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Ontgrendel rotatie';
 	@override String get timerActive => 'Timer actief';
 	@override String playbackWillPauseIn({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}';
+	@override String get sleepTimerEndOfVideo => 'Einde van huidige video';
+	@override String get sleepTimerStopAtHeader => 'Stoppen bij';
+	@override String get sleepTimerDurationHeader => 'Timer';
+	@override String get playbackWillPauseAtEnd => 'Afspelen wordt gepauzeerd aan het einde van deze video';
 	@override String get stillWatching => 'Kijk je nog?';
 	@override String pausingIn({required Object seconds}) => 'Pauze over ${seconds}s';
 	@override String get continueWatching => 'Doorgaan';
@@ -2194,6 +2198,10 @@ extension on TranslationsNl {
 			'videoControls.unlockRotation' => 'Ontgrendel rotatie',
 			'videoControls.timerActive' => 'Timer actief',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Afspelen wordt gepauzeerd over ${duration}',
+			'videoControls.sleepTimerEndOfVideo' => 'Einde van huidige video',
+			'videoControls.sleepTimerStopAtHeader' => 'Stoppen bij',
+			'videoControls.sleepTimerDurationHeader' => 'Timer',
+			'videoControls.playbackWillPauseAtEnd' => 'Afspelen wordt gepauzeerd aan het einde van deze video',
 			'videoControls.stillWatching' => 'Kijk je nog?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pauze over ${seconds}s',
 			'videoControls.continueWatching' => 'Doorgaan',
@@ -2323,12 +2331,12 @@ extension on TranslationsNl {
 			'mpvConfig.presetSaved' => 'Voorinstelling opgeslagen',
 			'mpvConfig.presetLoaded' => 'Voorinstelling geladen',
 			'mpvConfig.presetDeleted' => 'Voorinstelling verwijderd',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => 'Weet je zeker dat je deze voorinstelling wilt verwijderen?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Bevestig actie',
 			'profiles.addPlezyProfile' => 'Plezy-profiel toevoegen',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Profiel wisselen…',
 			'profiles.deleteThisProfileTitle' => 'Dit profiel verwijderen?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Verwijder ${displayName}. Verbindingen blijven ongewijzigd.',
@@ -2837,12 +2845,12 @@ extension on TranslationsNl {
 			'externalPlayer.off' => 'Uit',
 			'externalPlayer.launchFailed' => 'Kan externe speler niet openen',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is niet geïnstalleerd',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => 'Afspelen in externe speler',
 			'metadataEdit.editMetadata' => 'Bewerken...',
 			'metadataEdit.screenTitle' => 'Metadata bewerken',
 			'metadataEdit.basicInfo' => 'Basisinformatie',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Geavanceerde instellingen',
 			'metadataEdit.title' => 'Titel',

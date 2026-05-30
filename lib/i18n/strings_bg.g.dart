@@ -565,6 +565,10 @@ class _TranslationsVideoControlsBg extends TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Отключи ротацията';
 	@override String get timerActive => 'Таймерът е активен';
 	@override String playbackWillPauseIn({required Object duration}) => 'Възпроизвеждането ще спре след ${duration}';
+	@override String get sleepTimerEndOfVideo => 'Край на текущото видео';
+	@override String get sleepTimerStopAtHeader => 'Спиране при';
+	@override String get sleepTimerDurationHeader => 'Таймер';
+	@override String get playbackWillPauseAtEnd => 'Възпроизвеждането ще спре в края на това видео';
 	@override String get stillWatching => 'Още ли гледате?';
 	@override String pausingIn({required Object seconds}) => 'Пауза след ${seconds}сек';
 	@override String get continueWatching => 'Продължи';
@@ -2194,6 +2198,10 @@ extension on TranslationsBg {
 			'videoControls.unlockRotation' => 'Отключи ротацията',
 			'videoControls.timerActive' => 'Таймерът е активен',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Възпроизвеждането ще спре след ${duration}',
+			'videoControls.sleepTimerEndOfVideo' => 'Край на текущото видео',
+			'videoControls.sleepTimerStopAtHeader' => 'Спиране при',
+			'videoControls.sleepTimerDurationHeader' => 'Таймер',
+			'videoControls.playbackWillPauseAtEnd' => 'Възпроизвеждането ще спре в края на това видео',
 			'videoControls.stillWatching' => 'Още ли гледате?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Пауза след ${seconds}сек',
 			'videoControls.continueWatching' => 'Продължи',
@@ -2323,12 +2331,12 @@ extension on TranslationsBg {
 			'mpvConfig.presetSaved' => 'Пресетът е запазен',
 			'mpvConfig.presetLoaded' => 'Пресетът е зареден',
 			'mpvConfig.presetDeleted' => 'Пресетът е изтрит',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => 'Сигурни ли сте, че искате да изтриете този пресет?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Потвърждение на действие',
 			'profiles.addPlezyProfile' => 'Добави Plezy профил',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Смяна на профил…',
 			'profiles.deleteThisProfileTitle' => 'Да се изтрие ли този профил?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Премахване на ${displayName}. Връзките не се засягат.',
@@ -2837,12 +2845,12 @@ extension on TranslationsBg {
 			'externalPlayer.off' => 'Изключено',
 			'externalPlayer.launchFailed' => 'Неуспешно отваряне на външен плеър',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} не е инсталиран',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => 'Пусни във външен плеър',
 			'metadataEdit.editMetadata' => 'Редактирай...',
 			'metadataEdit.screenTitle' => 'Редактиране на метаданни',
 			'metadataEdit.basicInfo' => 'Основна информация',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Обложка',
 			'metadataEdit.advancedSettings' => 'Разширени настройки',
 			'metadataEdit.title' => 'Заглавие',

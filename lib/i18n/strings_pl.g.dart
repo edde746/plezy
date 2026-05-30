@@ -565,6 +565,10 @@ class _TranslationsVideoControlsPl extends TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Odblokuj obrót';
 	@override String get timerActive => 'Wyłącznik aktywny';
 	@override String playbackWillPauseIn({required Object duration}) => 'Odtwarzanie zatrzyma się za ${duration}';
+	@override String get sleepTimerEndOfVideo => 'Koniec bieżącego wideo';
+	@override String get sleepTimerStopAtHeader => 'Zatrzymaj na';
+	@override String get sleepTimerDurationHeader => 'Minutnik';
+	@override String get playbackWillPauseAtEnd => 'Odtwarzanie zatrzyma się na końcu tego wideo';
 	@override String get stillWatching => 'Nadal oglądasz?';
 	@override String pausingIn({required Object seconds}) => 'Pauza za ${seconds}s';
 	@override String get continueWatching => 'Kontynuuj';
@@ -2194,6 +2198,10 @@ extension on TranslationsPl {
 			'videoControls.unlockRotation' => 'Odblokuj obrót',
 			'videoControls.timerActive' => 'Wyłącznik aktywny',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Odtwarzanie zatrzyma się za ${duration}',
+			'videoControls.sleepTimerEndOfVideo' => 'Koniec bieżącego wideo',
+			'videoControls.sleepTimerStopAtHeader' => 'Zatrzymaj na',
+			'videoControls.sleepTimerDurationHeader' => 'Minutnik',
+			'videoControls.playbackWillPauseAtEnd' => 'Odtwarzanie zatrzyma się na końcu tego wideo',
 			'videoControls.stillWatching' => 'Nadal oglądasz?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pauza za ${seconds}s',
 			'videoControls.continueWatching' => 'Kontynuuj',
@@ -2323,12 +2331,12 @@ extension on TranslationsPl {
 			'mpvConfig.presetSaved' => 'Preset zapisany',
 			'mpvConfig.presetLoaded' => 'Preset załadowany',
 			'mpvConfig.presetDeleted' => 'Preset usunięty',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => 'Czy na pewno chcesz usunąć ten preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Potwierdź działanie',
 			'profiles.addPlezyProfile' => 'Dodaj profil Plezy',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Przełączanie profilu…',
 			'profiles.deleteThisProfileTitle' => 'Usunąć ten profil?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Usuń ${displayName}. Połączenia nie zostaną zmienione.',
@@ -2837,12 +2845,12 @@ extension on TranslationsPl {
 			'externalPlayer.off' => 'Wyłączony',
 			'externalPlayer.launchFailed' => 'Nie udało się otworzyć zewnętrznego odtwarzacza',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} nie jest zainstalowany',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => 'Odtwórz w zewnętrznym odtwarzaczu',
 			'metadataEdit.editMetadata' => 'Edytuj...',
 			'metadataEdit.screenTitle' => 'Edytuj metadane',
 			'metadataEdit.basicInfo' => 'Podstawowe informacje',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Grafika',
 			'metadataEdit.advancedSettings' => 'Ustawienia zaawansowane',
 			'metadataEdit.title' => 'Tytuł',

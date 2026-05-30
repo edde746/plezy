@@ -565,6 +565,10 @@ class _TranslationsVideoControlsKo extends TranslationsVideoControlsEn {
 	@override String get unlockRotation => '회전 잠금 해제';
 	@override String get timerActive => '타이머 활성화됨';
 	@override String playbackWillPauseIn({required Object duration}) => '재생이 ${duration} 후에 일시 중지 됩니다';
+	@override String get sleepTimerEndOfVideo => '현재 비디오의 끝';
+	@override String get sleepTimerStopAtHeader => '정지 시점';
+	@override String get sleepTimerDurationHeader => '타이머';
+	@override String get playbackWillPauseAtEnd => '재생이 이 비디오의 끝에서 일시 중지됩니다';
 	@override String get stillWatching => '아직 시청 중이신가요?';
 	@override String pausingIn({required Object seconds}) => '${seconds}초 후 일시 정지';
 	@override String get continueWatching => '계속';
@@ -2194,6 +2198,10 @@ extension on TranslationsKo {
 			'videoControls.unlockRotation' => '회전 잠금 해제',
 			'videoControls.timerActive' => '타이머 활성화됨',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => '재생이 ${duration} 후에 일시 중지 됩니다',
+			'videoControls.sleepTimerEndOfVideo' => '현재 비디오의 끝',
+			'videoControls.sleepTimerStopAtHeader' => '정지 시점',
+			'videoControls.sleepTimerDurationHeader' => '타이머',
+			'videoControls.playbackWillPauseAtEnd' => '재생이 이 비디오의 끝에서 일시 중지됩니다',
 			'videoControls.stillWatching' => '아직 시청 중이신가요?',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}초 후 일시 정지',
 			'videoControls.continueWatching' => '계속',
@@ -2323,12 +2331,12 @@ extension on TranslationsKo {
 			'mpvConfig.presetSaved' => '프리셋이 저장 되었습니다',
 			'mpvConfig.presetLoaded' => '프리셋이 로드 되었습니다',
 			'mpvConfig.presetDeleted' => '프리셋이 삭제 되었습니다',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => '이 프리셋을 삭제 하시겠습니까?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '확인',
 			'profiles.addPlezyProfile' => 'Plezy 프로필 추가',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.switchingProfile' => '프로필 전환 중…',
 			'profiles.deleteThisProfileTitle' => '이 프로필을 삭제하시겠습니까?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName}을(를) 제거합니다. 연결에는 영향이 없습니다.',
@@ -2837,12 +2845,12 @@ extension on TranslationsKo {
 			'externalPlayer.off' => '꺼짐',
 			'externalPlayer.launchFailed' => '외부 플레이어를 열 수 없습니다',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}이(가) 설치되어 있지 않습니다',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => '외부 플레이어에서 재생',
 			'metadataEdit.editMetadata' => '편집...',
 			'metadataEdit.screenTitle' => '메타데이터 편집',
 			'metadataEdit.basicInfo' => '기본 정보',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.artwork' => '아트워크',
 			'metadataEdit.advancedSettings' => '고급 설정',
 			'metadataEdit.title' => '제목',

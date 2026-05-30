@@ -1276,6 +1276,18 @@ class TranslationsVideoControlsEn {
 	/// en: 'Playback will pause in ${duration}'
 	String playbackWillPauseIn({required Object duration}) => 'Playback will pause in ${duration}';
 
+	/// en: 'End of current video'
+	String get sleepTimerEndOfVideo => 'End of current video';
+
+	/// en: 'Stop at'
+	String get sleepTimerStopAtHeader => 'Stop at';
+
+	/// en: 'Timer'
+	String get sleepTimerDurationHeader => 'Timer';
+
+	/// en: 'Playback will pause at the end of this video'
+	String get playbackWillPauseAtEnd => 'Playback will pause at the end of this video';
+
 	/// en: 'Still watching?'
 	String get stillWatching => 'Still watching?';
 
@@ -4572,6 +4584,10 @@ extension on Translations {
 			'videoControls.unlockRotation' => 'Unlock rotation',
 			'videoControls.timerActive' => 'Timer Active',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Playback will pause in ${duration}',
+			'videoControls.sleepTimerEndOfVideo' => 'End of current video',
+			'videoControls.sleepTimerStopAtHeader' => 'Stop at',
+			'videoControls.sleepTimerDurationHeader' => 'Timer',
+			'videoControls.playbackWillPauseAtEnd' => 'Playback will pause at the end of this video',
 			'videoControls.stillWatching' => 'Still watching?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausing in ${seconds}s',
 			'videoControls.continueWatching' => 'Continue',
@@ -4701,12 +4717,12 @@ extension on Translations {
 			'mpvConfig.presetSaved' => 'Preset saved',
 			'mpvConfig.presetLoaded' => 'Preset loaded',
 			'mpvConfig.presetDeleted' => 'Preset deleted',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirm Action',
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Switching profile…',
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
@@ -5215,12 +5231,12 @@ extension on Translations {
 			'externalPlayer.off' => 'Off',
 			'externalPlayer.launchFailed' => 'Failed to open external player',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
 			'metadataEdit.editMetadata' => 'Edit...',
 			'metadataEdit.screenTitle' => 'Edit Metadata',
 			'metadataEdit.basicInfo' => 'Basic Info',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Advanced Settings',
 			'metadataEdit.title' => 'Title',
