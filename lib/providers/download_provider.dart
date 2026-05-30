@@ -680,26 +680,18 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       '  - Title: ${meta?.title}',
     );
 
-    // Get total episode count - Use metadata.leafCount as primary source
-    int totalEpisodes;
-    String countSource;
+    // The progress ring reflects only the episodes the user actually queued for
+    // this show/season — not the show's full episode count. _getEpisodeDownloads
+    // returns just the owned download records, so episodes.length IS the queued
+    // count. Downloading 5 of a 50-episode show therefore reaches 100% at 5/5.
+    //
+    // NOTE: metadataLeafCount and _totalEpisodeCounts are intentionally no longer
+    // used as the denominator. _totalEpisodeCounts is now unused app-wide.
+    // TODO: remove the _totalEpisodeCounts plumbing in a dedicated cleanup.
+    final int totalEpisodes = downloadedCount;
 
-    if (metadataLeafCount != null && metadataLeafCount > 0) {
-      totalEpisodes = metadataLeafCount;
-      countSource = 'metadata.leafCount';
-    } else if (storedCount != null && storedCount > 0) {
-      totalEpisodes = storedCount;
-      countSource = 'stored count (StorageService)';
-    } else {
-      totalEpisodes = downloadedCount;
-      countSource = 'downloaded episodes (fallback)';
-    }
-
-    appLogger.d('✅ Using totalEpisodes=$totalEpisodes from [$countSource] for $entityType $ratingKey');
-
-    // If we have stored count but no downloads, check if it's a valid partial state
-    if (totalEpisodes == 0 || (episodes.isEmpty && totalEpisodes > 0)) {
-      appLogger.d('⚠️  No valid downloads for $entityType $ratingKey, returning null');
+    if (totalEpisodes == 0) {
+      appLogger.d('⚠️  No queued downloads for $entityType $ratingKey, returning null');
       return null;
     }
 
@@ -708,8 +700,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int downloadingCount = 0;
     int queuedCount = 0;
     int failedCount = 0;
+    int summedProgress = 0; // sum of per-episode progress (completed counts as 100)
 
     for (final ep in episodes) {
+      summedProgress += ep.status == DownloadStatus.completed ? 100 : ep.progress;
       switch (ep.status) {
         case DownloadStatus.completed:
           completedCount++;
@@ -740,8 +734,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return null;
     }
 
-    // Calculate overall progress percentage based on TOTAL episodes
-    final int overallProgress = totalEpisodes > 0 ? ((completedCount * 100) / totalEpisodes).round() : 0;
+    // Smooth percentage across the queued episodes: an in-flight episode
+    // contributes its partial progress so the ring advances continuously,
+    // rather than jumping only when whole episodes complete.
+    final int overallProgress = (summedProgress / totalEpisodes).round();
 
     appLogger.d(
       'Aggregate progress for $entityType $ratingKey: $overallProgress% '

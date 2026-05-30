@@ -14,7 +14,7 @@ import 'download_version_utils.dart';
 import 'snackbar_helper.dart';
 
 /// Dialog option for the download picker. Typed to avoid stringly-typed values.
-enum _DownloadChoice { all, unwatched, next5, next10, custom }
+enum _DownloadChoice { all, unwatched, next5, next10, custom, delete }
 
 /// Whether the user chose a one-time download or a persistent sync rule.
 enum _SyncChoice { downloadOnce, keepSynced }
@@ -49,11 +49,17 @@ class DownloadResult {
 /// Shows download options dialog for shows/seasons, then queues the download.
 /// For movies/episodes, queues directly without a dialog.
 /// Returns a [DownloadResult], or null if cancelled.
+///
+/// When [onDelete] is provided (i.e. the item already has downloads), a
+/// "Delete download" row is appended to the show/season options dialog so the
+/// completed-download button can double as a "download more / delete" menu.
+/// Selecting it runs [onDelete] and returns null.
 Future<DownloadResult?> showDownloadOptionsAndQueue(
   BuildContext context, {
   required MediaItem metadata,
   required MediaServerClient client,
   required DownloadProvider downloadProvider,
+  Future<void> Function()? onDelete,
 }) async {
   final kind = metadata.kind;
 
@@ -63,20 +69,21 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
 
   if (kind == MediaKind.show || kind == MediaKind.season) {
     int? customCount;
+    final options = <({IconData? icon, String label, _DownloadChoice value})>[
+      (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: _DownloadChoice.all),
+      (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: _DownloadChoice.unwatched),
+      (icon: Symbols.filter_5_rounded, label: t.downloads.nextNUnwatched(count: 5), value: _DownloadChoice.next5),
+      (icon: Symbols.filter_9_plus_rounded, label: t.downloads.nextNUnwatched(count: 10), value: _DownloadChoice.next10),
+      (icon: Symbols.tune_rounded, label: t.downloads.customAmount, value: _DownloadChoice.custom),
+    ];
+    // Already-downloaded show/season: offer deletion as the last row.
+    if (onDelete != null) {
+      options.add((icon: Symbols.delete_rounded, label: t.downloads.deleteDownload, value: _DownloadChoice.delete));
+    }
     final selected = await showOptionPickerDialog<_DownloadChoice>(
       context,
       title: t.downloads.downloadNow,
-      options: [
-        (icon: Symbols.download_rounded, label: t.downloads.allEpisodes, value: _DownloadChoice.all),
-        (icon: Symbols.visibility_off_rounded, label: t.downloads.unwatchedOnly, value: _DownloadChoice.unwatched),
-        (icon: Symbols.filter_5_rounded, label: t.downloads.nextNUnwatched(count: 5), value: _DownloadChoice.next5),
-        (
-          icon: Symbols.filter_9_plus_rounded,
-          label: t.downloads.nextNUnwatched(count: 10),
-          value: _DownloadChoice.next10,
-        ),
-        (icon: Symbols.tune_rounded, label: t.downloads.customAmount, value: _DownloadChoice.custom),
-      ],
+      options: options,
       onBeforeClose: (value) async {
         if (value != _DownloadChoice.custom) return value;
         customCount = await _showEpisodeCountDialog(context);
@@ -100,6 +107,9 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
       case _DownloadChoice.custom:
         filter = DownloadFilter.unwatched;
         maxCount = customCount;
+      case _DownloadChoice.delete:
+        if (onDelete != null) await onDelete();
+        return null;
     }
 
     if (filter == DownloadFilter.unwatched && kind == MediaKind.show && context.mounted) {
