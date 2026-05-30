@@ -9,6 +9,22 @@ import 'plex_mappers.dart';
 
 const _streamReader = PlexFileInfoStreamReader();
 
+List<Map> _mapList(Object? raw) {
+  final values = flexibleList(raw);
+  if (values == null || values.isEmpty) return const [];
+  return [
+    for (final value in values)
+      if (value is Map) value,
+  ];
+}
+
+int _firstPlayablePartIndex(MediaVersion version) {
+  final parts = version.parts;
+  if (parts.isEmpty) return 0;
+  final playable = parts.indexWhere((part) => part.isPlayable);
+  return playable >= 0 ? playable : 0;
+}
+
 PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
   Map<String, dynamic>? metadataJson, {
   required String baseUrl,
@@ -19,14 +35,15 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
   String? videoUrl;
   MediaSourceInfo? mediaInfo;
   List<MediaVersion> availableVersions = [];
+  var selectedMediaIndex = 0;
+  var selectedPartIndex = 0;
   final markers = plexMarkersFromCacheJson(metadataJson);
 
   if (metadataJson != null) {
-    if (metadataJson['Media'] != null && (metadataJson['Media'] as List).isNotEmpty) {
-      final mediaList = metadataJson['Media'] as List;
-
+    final mediaList = _mapList(metadataJson['Media']);
+    if (mediaList.isNotEmpty) {
       availableVersions = mediaList
-          .map((media) => PlexMappers.mediaVersionFromJson(media as Map<String, dynamic>))
+          .map((media) => PlexMappers.mediaVersionFromJson(Map<String, dynamic>.from(media)))
           .toList();
 
       if (mediaIndex < 0 || mediaIndex >= mediaList.length) {
@@ -41,15 +58,19 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
         }
       }
 
+      selectedMediaIndex = mediaIndex;
       final media = mediaList[mediaIndex];
-      if (media['Part'] != null && (media['Part'] as List).isNotEmpty) {
-        final part = media['Part'][0];
-        final partKey = part['key'] as String?;
+      final partList = _mapList(media['Part']);
+      if (partList.isNotEmpty) {
+        selectedPartIndex = _firstPlayablePartIndex(availableVersions[mediaIndex]);
+        if (selectedPartIndex < 0 || selectedPartIndex >= partList.length) selectedPartIndex = 0;
+        final part = partList[selectedPartIndex];
+        final partKey = part['key']?.toString();
 
         if (partKey != null) {
           videoUrl = '$baseUrl$partKey'.withPlexToken(token);
 
-          final streams = walkStreams(part['Stream'] as List<dynamic>?, _streamReader);
+          final streams = walkStreams(flexibleList(part['Stream']), _streamReader);
           final chapters = plexChaptersFromCacheJson(metadataJson);
 
           mediaInfo = MediaSourceInfo(
@@ -57,9 +78,9 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
             audioTracks: streams.audioTracks,
             subtitleTracks: streams.subtitleTracks,
             chapters: chapters,
-            partId: part['id'] as int?,
-            displayCriteria: PlexMappers.displayCriteriaFromJson(media as Map<String, dynamic>?, streams.videoStream),
-            videoAspectRatio: ((media as Map?)?['aspectRatio'] as num?)?.toDouble(),
+            partId: flexibleInt(part['id']),
+            displayCriteria: PlexMappers.displayCriteriaFromJson(Map<String, dynamic>.from(media), streams.videoStream),
+            videoAspectRatio: (media['aspectRatio'] as num?)?.toDouble(),
           );
         }
       }
@@ -71,18 +92,24 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
     mediaInfo: mediaInfo,
     availableVersions: availableVersions,
     markers: markers,
+    selectedMediaIndex: selectedMediaIndex,
+    selectedPartIndex: selectedPartIndex,
   );
 }
 
 MediaFileInfo? parsePlexFileInfoFromJson(Map<String, dynamic>? metadataJson) {
-  if (metadataJson != null && metadataJson['Media'] != null && (metadataJson['Media'] as List).isNotEmpty) {
-    final media = metadataJson['Media'][0];
-    final part = media['Part'] != null && (media['Part'] as List).isNotEmpty ? media['Part'][0] : null;
+  final mediaList = _mapList(metadataJson?['Media']);
+  if (mediaList.isNotEmpty) {
+    final media = mediaList[0];
+    final partList = _mapList(media['Part']);
+    final version = PlexMappers.mediaVersionFromJson(Map<String, dynamic>.from(media));
+    final partIndex = partList.isEmpty ? 0 : _firstPlayablePartIndex(version).clamp(0, partList.length - 1).toInt();
+    final part = partList.isNotEmpty ? partList[partIndex] : null;
 
     // One pass over the streams array, capturing both the raw video / audio
     // map pointers (for fields the parsed track classes don't carry —
     // colorSpace, bitDepth, …) and the parsed track lists.
-    final parsedTracks = walkStreams(part?['Stream'] as List<dynamic>?, _streamReader);
+    final parsedTracks = walkStreams(flexibleList(part?['Stream']), _streamReader);
     final videoStream = parsedTracks.videoStream;
     final audioStream = parsedTracks.audioStream;
 

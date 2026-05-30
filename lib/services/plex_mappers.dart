@@ -48,10 +48,17 @@ Map<String, dynamic> _obfuscatePlaylistJson(Map<String, dynamic> json) {
 int _flexibleIntOrZero(Object? v) => flexibleInt(v) ?? 0;
 
 Map? _firstPartMap(Object? raw) {
+  final parts = _partMaps(raw);
+  return parts.isEmpty ? null : parts.first;
+}
+
+List<Map> _partMaps(Object? raw) {
   final parts = flexibleList(raw);
-  if (parts == null || parts.isEmpty) return null;
-  final part = parts.first;
-  return part is Map ? part : null;
+  if (parts == null || parts.isEmpty) return const [];
+  return [
+    for (final part in parts)
+      if (part is Map) part,
+  ];
 }
 
 String _partKeyFromJson(Object? raw) => _firstPartMap(raw)?['key']?.toString() ?? '';
@@ -59,6 +66,31 @@ String _partKeyFromJson(Object? raw) => _firstPartMap(raw)?['key']?.toString() ?
 bool? _partAccessibleFromJson(Object? raw) => flexibleBoolNullable(_firstPartMap(raw)?['accessible']);
 
 bool? _partExistsFromJson(Object? raw) => flexibleBoolNullable(_firstPartMap(raw)?['exists']);
+
+MediaPart _mediaPartFromMap(Map json, {required String fallbackId, String? fallbackContainer}) {
+  return MediaPart(
+    id: (json['id'] ?? fallbackId).toString(),
+    streamPath: json['key']?.toString(),
+    sizeBytes: flexibleInt(json['size']),
+    container: json['container']?.toString() ?? fallbackContainer,
+    durationMs: flexibleInt(json['duration']),
+    accessible: flexibleBoolNullable(json['accessible']),
+    exists: flexibleBoolNullable(json['exists']),
+  );
+}
+
+List<MediaPart> _mediaPartsFromJson(Object? raw, {required String fallbackId, String? fallbackContainer}) {
+  final partMaps = _partMaps(raw);
+  if (partMaps.isEmpty) return const [];
+  return [
+    for (var i = 0; i < partMaps.length; i++)
+      _mediaPartFromMap(
+        partMaps[i],
+        fallbackId: i == 0 ? fallbackId : '$fallbackId:$i',
+        fallbackContainer: fallbackContainer,
+      ),
+  ];
+}
 
 Object? _readPartKey(Map json, String _) => _partKeyFromJson(json['Part']);
 
@@ -886,7 +918,19 @@ class PlexMappers {
 
   /// Map a Plex Media JSON entry directly into a [MediaVersion].
   static MediaVersion mediaVersionFromJson(Map<String, dynamic> json) {
-    return mediaVersion(PlexMediaVersionDto.fromJson(json));
+    final dto = PlexMediaVersionDto.fromJson(json);
+    final parts = _mediaPartsFromJson(json['Part'], fallbackId: dto.id.toString(), fallbackContainer: dto.container);
+    if (parts.isEmpty) return mediaVersion(dto);
+    return MediaVersion(
+      id: dto.id.toString(),
+      width: dto.width,
+      height: dto.height,
+      videoResolution: dto.videoResolution,
+      videoCodec: dto.videoCodec,
+      bitrate: dto.bitrate,
+      container: dto.container,
+      parts: parts,
+    );
   }
 
   static MediaDisplayCriteria? displayCriteriaFromJson(Map<String, dynamic>? media, Map<String, dynamic>? videoStream) {

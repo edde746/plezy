@@ -2877,6 +2877,7 @@ class PlexClient
   Future<({String? startPath, TranscodeDecisionOutcome outcome})> buildTranscodeStartPath({
     required String ratingKey,
     required int mediaIndex,
+    int partIndex = 0,
     required TranscodeQualityPreset preset,
     required String sessionIdentifier,
     required String transcodeSessionId,
@@ -2888,6 +2889,7 @@ class PlexClient
       final allParams = _buildTranscodeParams(
         ratingKey: ratingKey,
         mediaIndex: mediaIndex,
+        partIndex: partIndex,
         preset: preset,
         sessionIdentifier: sessionIdentifier,
         transcodeSessionId: transcodeSessionId,
@@ -2947,6 +2949,7 @@ class PlexClient
   Map<String, String> _buildTranscodeParams({
     required String ratingKey,
     required int mediaIndex,
+    int partIndex = 0,
     required TranscodeQualityPreset preset,
     required String sessionIdentifier,
     required String transcodeSessionId,
@@ -2997,7 +3000,7 @@ class PlexClient
       'hasMDE': '1',
       'path': '/library/metadata/$ratingKey',
       'mediaIndex': mediaIndex.toString(),
-      'partIndex': '0',
+      'partIndex': partIndex.toString(),
       'protocol': 'http',
       'fastSeek': '1',
       'directPlay': isOriginal ? '1' : '0',
@@ -3047,6 +3050,7 @@ class PlexClient
   Map<String, String> buildTranscodeParamsForTesting({
     required String ratingKey,
     required int mediaIndex,
+    int partIndex = 0,
     required TranscodeQualityPreset preset,
     required String sessionIdentifier,
     required String transcodeSessionId,
@@ -3057,6 +3061,7 @@ class PlexClient
     return _buildTranscodeParams(
       ratingKey: ratingKey,
       mediaIndex: mediaIndex,
+      partIndex: partIndex,
       preset: preset,
       sessionIdentifier: sessionIdentifier,
       transcodeSessionId: transcodeSessionId,
@@ -3257,7 +3262,8 @@ class PlexClient
         final selectedSubtitleTrack = _selectedSubtitleTrack(data.mediaInfo);
         final result = await buildTranscodeStartPath(
           ratingKey: options.metadata.id,
-          mediaIndex: options.selectedMediaIndex,
+          mediaIndex: data.selectedMediaIndex,
+          partIndex: data.selectedPartIndex,
           preset: options.qualityPreset,
           sessionIdentifier: options.sessionIdentifier!,
           transcodeSessionId: options.transcodeSessionId!,

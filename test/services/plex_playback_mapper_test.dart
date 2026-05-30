@@ -46,6 +46,45 @@ void main() {
       expect(result.mediaInfo?.partId, 20);
       expect(result.mediaInfo?.displayCriteria?.fps, 23.976);
       expect(result.mediaInfo?.audioTracks.single.languageCode, 'eng');
+      expect(result.selectedMediaIndex, 1);
+      expect(result.selectedPartIndex, 0);
+    });
+
+    test('uses playable part when the first part is unavailable', () {
+      final result = parsePlexVideoPlaybackDataFromJson(
+        {
+          'Media': [
+            {
+              'id': 1,
+              'videoResolution': '1080',
+              'Part': [
+                {'id': 10, 'key': '/library/parts/10/file.mkv', 'accessible': 0, 'exists': 1},
+                {
+                  'id': 20,
+                  'key': '/library/parts/20/file.mkv',
+                  'accessible': 1,
+                  'exists': 1,
+                  'Stream': [
+                    {'streamType': 1, 'frameRate': 24},
+                    {'streamType': 2, 'id': 201, 'index': 0, 'languageCode': 'eng', 'selected': 1},
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        baseUrl: 'http://plex:32400',
+        token: 'tok',
+      );
+
+      expect(result.videoUrl, 'http://plex:32400/library/parts/20/file.mkv?X-Plex-Token=tok');
+      expect(result.selectedMediaIndex, 0);
+      expect(result.selectedPartIndex, 1);
+      expect(result.mediaInfo?.partId, 20);
+      expect(result.mediaInfo?.displayCriteria?.fps, 24);
+      expect(result.availableVersions.single.parts, hasLength(2));
+      expect(result.availableVersions.single.parts.first.isPlayable, isFalse);
+      expect(result.availableVersions.single.parts.last.isPlayable, isTrue);
     });
 
     test('maps server display criteria from selected video stream', () {

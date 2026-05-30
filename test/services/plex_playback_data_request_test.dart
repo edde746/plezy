@@ -220,6 +220,23 @@ void main() {
     expect(startPath, isNot(contains('X-Plex-Token')));
   });
 
+  test('transcode params preserve resolved media and part indices', () {
+    final client = makeClient((_) async => http.Response('not used', 500));
+    addTearDown(client.close);
+
+    final params = client.buildTranscodeParamsForTesting(
+      ratingKey: '42',
+      mediaIndex: 1,
+      partIndex: 2,
+      preset: TranscodeQualityPreset.p720_3mbps,
+      sessionIdentifier: 'session-id',
+      transcodeSessionId: 'transcode-id',
+    );
+
+    expect(params['mediaIndex'], '1');
+    expect(params['partIndex'], '2');
+  });
+
   test('unsupported embedded subtitles keep main transcode subtitles disabled', () {
     final client = makeClient((_) async => http.Response('not used', 500));
     addTearDown(client.close);
