@@ -67,7 +67,17 @@ MpvContainer::WindowProc(HWND const window, UINT const message, WPARAM const wpa
       // Redirect focus to Flutter window.
       auto user_data = ::GetWindowLongPtr(window, GWLP_USERDATA);
       if (user_data) {
-        ::SetForegroundWindow(reinterpret_cast<HWND>(user_data));
+        HWND flutter_window = reinterpret_cast<HWND>(user_data);
+        // Don't try to foreground a minimized window (Windows refuses and flashes
+        // the taskbar button instead), and don't steal foreground from another
+        // application. Only redirect focus when our own window already owns the
+        // foreground.
+        if (!::IsIconic(flutter_window)) {
+          HWND foreground = ::GetForegroundWindow();
+          if (foreground == flutter_window || foreground == window) {
+            ::SetForegroundWindow(flutter_window);
+          }
+        }
       }
       break;
     }
