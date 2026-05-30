@@ -153,6 +153,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   @override
   void onDeletionEvent(DeletionEvent event) {
+    // Browse is online-only (the Libraries tab is hidden when offline), so it
+    // always reflects server-side content. A download-only deletion removes
+    // local files but leaves the item on the server, so it must not affect the
+    // browse grid. Without this guard, deleting every downloaded episode of a
+    // show drives its leafCount to zero and evicts the show from browse.
+    if (event.isDownloadOnly) return;
+
     // If we have an item that matches the rating key exactly, remove it and rebuild indices
     final matchEntry = loadedItems.entries.where((e) => e.value.id == event.itemId).firstOrNull;
     if (matchEntry != null) {
