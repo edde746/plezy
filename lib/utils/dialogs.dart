@@ -302,11 +302,17 @@ class _TextInputDialogState extends State<_TextInputDialog>
 /// Returns the selected value, or null if cancelled. Each option's [icon] may
 /// be `null` to render a label-only row (useful when the choices are variants
 /// of the same thing and a repeated icon would just be noise).
+/// When [toggle] is supplied, a switch row is pinned above the options (and
+/// separated by a divider). Flipping it does NOT close the dialog; the latest
+/// state is reported via [onToggleChanged] so the caller can read it when an
+/// option is finally tapped.
 Future<T?> showOptionPickerDialog<T>(
   BuildContext context, {
   required String title,
   required List<({IconData? icon, String label, T value})> options,
   Future<T?> Function(T value)? onBeforeClose,
+  ({IconData? icon, String label, bool initialValue})? toggle,
+  ValueChanged<bool>? onToggleChanged,
 }) {
   final focusFirstItem = InputModeTracker.isKeyboardMode(context);
   return showDialog<T>(
@@ -316,6 +322,8 @@ Future<T?> showOptionPickerDialog<T>(
       options: options,
       focusFirstItem: focusFirstItem,
       onBeforeClose: onBeforeClose,
+      toggle: toggle,
+      onToggleChanged: onToggleChanged,
     ),
   );
 }
@@ -325,12 +333,16 @@ class _OptionPickerDialog<T> extends StatefulWidget {
   final List<({IconData? icon, String label, T value})> options;
   final bool focusFirstItem;
   final Future<T?> Function(T value)? onBeforeClose;
+  final ({IconData? icon, String label, bool initialValue})? toggle;
+  final ValueChanged<bool>? onToggleChanged;
 
   const _OptionPickerDialog({
     required this.title,
     required this.options,
     this.focusFirstItem = false,
     this.onBeforeClose,
+    this.toggle,
+    this.onToggleChanged,
   });
 
   @override
@@ -339,10 +351,12 @@ class _OptionPickerDialog<T> extends StatefulWidget {
 
 class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
   late final FocusNode _initialFocusNode;
+  late bool _toggleValue;
 
   @override
   void initState() {
     super.initState();
+    _toggleValue = widget.toggle?.initialValue ?? false;
     _initialFocusNode = FocusNode(debugLabel: 'OptionPickerInitialFocus');
     if (widget.focusFirstItem) {
       FocusUtils.requestFocusAfterBuild(this, _initialFocusNode);
@@ -355,29 +369,48 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
     super.dispose();
   }
 
+  void _setToggle(bool value) {
+    if (_toggleValue == value) return;
+    setState(() => _toggleValue = value);
+    widget.onToggleChanged?.call(value);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final toggle = widget.toggle;
     return SimpleDialog(
       title: Text(widget.title),
       contentPadding: const EdgeInsets.symmetric(vertical: 8),
-      children: List.generate(widget.options.length, (index) {
-        final option = widget.options[index];
-        final icon = option.icon;
-        return FocusableListTile(
-          focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
-          leading: icon != null ? AppIcon(icon, fill: 1, size: 24) : null,
-          title: Text(option.label, style: Theme.of(context).textTheme.bodyLarge),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-          onTap: () async {
-            if (widget.onBeforeClose != null) {
-              final result = await widget.onBeforeClose!(option.value);
-              if (context.mounted) Navigator.pop(context, result);
-            } else {
-              Navigator.pop(context, option.value);
-            }
-          },
-        );
-      }),
+      children: [
+        if (toggle != null) ...[
+          FocusableListTile(
+            leading: toggle.icon != null ? AppIcon(toggle.icon!, fill: 1, size: 24) : null,
+            title: Text(toggle.label, style: Theme.of(context).textTheme.bodyLarge),
+            trailing: Switch(value: _toggleValue, onChanged: _setToggle),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+            onTap: () => _setToggle(!_toggleValue),
+          ),
+          const Divider(height: 8),
+        ],
+        for (var index = 0; index < widget.options.length; index++)
+          FocusableListTile(
+            focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
+            leading: widget.options[index].icon != null
+                ? AppIcon(widget.options[index].icon!, fill: 1, size: 24)
+                : null,
+            title: Text(widget.options[index].label, style: Theme.of(context).textTheme.bodyLarge),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
+            onTap: () async {
+              final value = widget.options[index].value;
+              if (widget.onBeforeClose != null) {
+                final result = await widget.onBeforeClose!(value);
+                if (context.mounted) Navigator.pop(context, result);
+              } else {
+                Navigator.pop(context, value);
+              }
+            },
+          ),
+      ],
     );
   }
 }

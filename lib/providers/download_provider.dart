@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
@@ -903,6 +904,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadVersionConfig? versionConfig,
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
+    bool random = false,
   }) async {
     if (!_downloadManager.downloadsSupported) return 0;
 
@@ -928,7 +930,14 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         final hadMetadata = _metadata.containsKey(globalKey);
         _metadata[globalKey] = metadata;
         try {
-          return await _queueShowDownload(metadata, client, versionConfig: config, filter: filter, maxCount: maxCount);
+          return await _queueShowDownload(
+            metadata,
+            client,
+            versionConfig: config,
+            filter: filter,
+            maxCount: maxCount,
+            random: random,
+          );
         } catch (_) {
           if (!hadMetadata) _metadata.remove(globalKey);
           rethrow;
@@ -943,6 +952,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
             versionConfig: config,
             filter: filter,
             maxCount: maxCount,
+            random: random,
           );
         } catch (_) {
           if (!hadMetadata) _metadata.remove(globalKey);
@@ -1186,6 +1196,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadVersionConfig? versionConfig,
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
+    bool random = false,
   }) async {
     await _storeLeafCount(show.globalKey, show);
     return _expandAndQueue(
@@ -1195,6 +1206,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       filter: filter,
       maxCount: maxCount,
       skipExisting: false,
+      random: random,
     );
   }
 
@@ -1205,6 +1217,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadVersionConfig? versionConfig,
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
+    bool random = false,
   }) async {
     await _storeLeafCount(season.globalKey, season);
     return _expandAndQueue(
@@ -1214,6 +1227,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       filter: filter,
       maxCount: maxCount,
       skipExisting: false,
+      random: random,
     );
   }
 
@@ -1251,6 +1265,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required DownloadFilter filter,
     required int? maxCount,
     required bool skipExisting,
+    bool random = false,
   }) async {
     final unwatchedOnly = filter == DownloadFilter.unwatched;
     final relatedContext = _RelatedMetadataDownloadContext();
@@ -1271,6 +1286,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         out: episodes,
         fallback: container,
       );
+    }
+
+    // Random selection: shuffle the candidate pool so the [maxCount] slice
+    // below picks a random subset instead of release order. Only meaningful
+    // when a count caps the selection.
+    if (random && maxCount != null) {
+      episodes.shuffle(Random());
     }
 
     int count = 0;
@@ -1562,6 +1584,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // Don't delete the episode that's currently playing
       if (activeId != null && meta.id == activeId) continue;
 
+      // Episodes owned by a "download any" sync rule are intentionally kept
+      // regardless of watched state, so the watched-cleanup must skip them —
+      // otherwise the rule would re-download what we just deleted.
+      if (_isKeptByAnyFilterRule(meta)) continue;
+
       try {
         appLogger.i('Auto-deleting watched download: ${meta.title} ($globalKey)');
         await deleteDownload(globalKey);
@@ -1572,6 +1599,22 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
 
     return deletedTitles;
+  }
+
+  /// Whether [episode]'s parent show or season has an enabled sync rule that
+  /// downloads ALL episodes (watched included). Such rules deliberately retain
+  /// watched downloads, so the watched-cleanup must leave them alone.
+  bool _isKeptByAnyFilterRule(MediaItem episode) {
+    final serverId = episode.serverId;
+    if (serverId == null) return false;
+    for (final ratingKey in [episode.parentId, episode.grandparentId]) {
+      if (ratingKey == null || ratingKey.isEmpty) continue;
+      final rule = _syncRules[syncRuleKeyFor(serverId, ratingKey)];
+      if (rule != null && rule.enabled && rule.downloadFilter == SyncRuleFilter.all) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /// All sync rules for the active profile (profile-scoped globalKey -> SyncRuleItem).
@@ -1632,6 +1675,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required int episodeCount,
     int mediaIndex = 0,
     String downloadFilter = SyncRuleFilter.unwatched,
+    bool randomEpisodes = false,
     MediaItem? targetMetadata,
   }) async {
     final profileId = _requireActiveProfileId();
@@ -1646,6 +1690,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       episodeCount: episodeCount,
       mediaIndex: mediaIndex,
       downloadFilter: downloadFilter,
+      randomEpisodes: randomEpisodes,
     );
 
     if (targetMetadata != null) {

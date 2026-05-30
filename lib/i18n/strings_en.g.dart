@@ -2915,8 +2915,14 @@ class TranslationsDownloadsEn {
 	/// en: 'Next ${count} unwatched'
 	String nextNUnwatched({required Object count}) => 'Next ${count} unwatched';
 
-	/// en: 'Custom amount...'
-	String get customAmount => 'Custom amount...';
+	/// en: 'Custom Amount (Unwatched)'
+	String get customAmountUnwatched => 'Custom Amount (Unwatched)';
+
+	/// en: 'Custom Amount (Any)'
+	String get customAmountAny => 'Custom Amount (Any)';
+
+	/// en: 'Random episodes'
+	String get randomEpisodes => 'Random episodes';
 
 	/// en: 'How many episodes?'
 	String get howManyEpisodes => 'How many episodes?';
@@ -5109,7 +5115,9 @@ extension on Translations {
 			'downloads.allEpisodes' => 'All episodes',
 			'downloads.unwatchedOnly' => 'Unwatched only',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
-			'downloads.customAmount' => 'Custom amount...',
+			'downloads.customAmountUnwatched' => 'Custom Amount (Unwatched)',
+			'downloads.customAmountAny' => 'Custom Amount (Any)',
+			'downloads.randomEpisodes' => 'Random episodes',
 			'downloads.howManyEpisodes' => 'How many episodes?',
 			'downloads.itemsQueued' => ({required Object count}) => '${count} items queued for download',
 			'downloads.keepSynced' => 'Keep synced',
@@ -5229,10 +5237,10 @@ extension on Translations {
 			'externalPlayer.playerPackage' => 'Package Name',
 			'externalPlayer.playerUrlScheme' => 'URL Scheme',
 			'externalPlayer.off' => 'Off',
-			'externalPlayer.launchFailed' => 'Failed to open external player',
-			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.launchFailed' => 'Failed to open external player',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
 			'metadataEdit.editMetadata' => 'Edit...',
 			'metadataEdit.screenTitle' => 'Edit Metadata',

@@ -60,7 +60,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.e);
 
   @override
-  int get schemaVersion => 15;
+  int get schemaVersion => 16;
 
   @override
   MigrationStrategy get migration {
@@ -211,6 +211,13 @@ class AppDatabase extends _$AppDatabase {
           await _ignoreAlreadyExists(
             'DownloadedMedia.mediaSourceId column',
             () => m.addColumn(downloadedMedia, downloadedMedia.mediaSourceId),
+          );
+        }
+        if (from < 16) {
+          appLogger.i('Adding randomEpisodes column to SyncRules (v16 migration)');
+          await _ignoreAlreadyExists(
+            'SyncRules.randomEpisodes column',
+            () => m.addColumn(syncRules, syncRules.randomEpisodes),
           );
         }
       },
@@ -531,6 +538,7 @@ class AppDatabase extends _$AppDatabase {
     required int episodeCount,
     int mediaIndex = 0,
     String downloadFilter = 'unwatched',
+    bool randomEpisodes = false,
   }) async {
     // [insertOnConflictUpdate] defaults the conflict target to the primary
     // key (`id`), which is auto-incremented — the conflict never triggers
@@ -548,6 +556,7 @@ class AppDatabase extends _$AppDatabase {
         createdAt: DateTime.now().millisecondsSinceEpoch,
         mediaIndex: Value(mediaIndex),
         downloadFilter: Value(downloadFilter),
+        randomEpisodes: Value(randomEpisodes),
       ),
       onConflict: DoUpdate(
         (_) => SyncRulesCompanion(
@@ -558,6 +567,7 @@ class AppDatabase extends _$AppDatabase {
           episodeCount: Value(episodeCount),
           mediaIndex: Value(mediaIndex),
           downloadFilter: Value(downloadFilter),
+          randomEpisodes: Value(randomEpisodes),
         ),
         target: [syncRules.globalKey],
       ),
