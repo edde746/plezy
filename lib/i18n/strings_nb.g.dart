@@ -391,6 +391,8 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'Tving TV-oppsett. For enheter som ikke oppdages automatisk. Krever omstart.';
 	@override String get startInFullscreen => 'Start i fullskjerm';
 	@override String get startInFullscreenDescription => 'Åpne Plezy i fullskjermmodus ved oppstart';
+	@override String get exitFullscreenOnPlayerClose => 'Avslutt fullskjerm ved lukking av avspiller';
+	@override String get exitFullscreenOnPlayerCloseDescription => 'Avslutt fullskjerm automatisk når videospilleren lukkes';
 	@override String get autoHidePerformanceOverlay => 'Skjul ytelsesoverlegg automatisk';
 	@override String get autoHidePerformanceOverlayDescription => 'Fade ytelsesoverlegget med avspillingskontrollene';
 	@override String get showNavBarLabels => 'Vis navigasjonsfeltlabeler';
@@ -2066,6 +2068,8 @@ extension on TranslationsNb {
 			'settings.forceTvModeDescription' => 'Tving TV-oppsett. For enheter som ikke oppdages automatisk. Krever omstart.',
 			'settings.startInFullscreen' => 'Start i fullskjerm',
 			'settings.startInFullscreenDescription' => 'Åpne Plezy i fullskjermmodus ved oppstart',
+			'settings.exitFullscreenOnPlayerClose' => 'Avslutt fullskjerm ved lukking av avspiller',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'Avslutt fullskjerm automatisk når videospilleren lukkes',
 			'settings.autoHidePerformanceOverlay' => 'Skjul ytelsesoverlegg automatisk',
 			'settings.autoHidePerformanceOverlayDescription' => 'Fade ytelsesoverlegget med avspillingskontrollene',
 			'settings.showNavBarLabels' => 'Vis navigasjonsfeltlabeler',
@@ -2323,10 +2327,10 @@ extension on TranslationsNb {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# kommentar',
 			'dialog.confirmAction' => 'Bekreft handling',
 			'profiles.addPlezyProfile' => 'Legg til Plezy-profil',
-			'profiles.switchingProfile' => 'Bytter profil…',
-			'profiles.deleteThisProfileTitle' => 'Slett denne profilen?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.switchingProfile' => 'Bytter profil…',
+			'profiles.deleteThisProfileTitle' => 'Slett denne profilen?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Fjern ${displayName}. Tilkoblinger påvirkes ikke.',
 			'profiles.active' => 'Aktiv',
 			'profiles.manage' => 'Administrer',
@@ -2837,10 +2841,10 @@ extension on TranslationsNb {
 			'metadataEdit.editMetadata' => 'Rediger...',
 			'metadataEdit.screenTitle' => 'Rediger metadata',
 			'metadataEdit.basicInfo' => 'Grunnleggende info',
-			'metadataEdit.artwork' => 'Kunstverk',
-			'metadataEdit.advancedSettings' => 'Avanserte innstillinger',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artwork' => 'Kunstverk',
+			'metadataEdit.advancedSettings' => 'Avanserte innstillinger',
 			'metadataEdit.title' => 'Tittel',
 			'metadataEdit.sortTitle' => 'Sorteringsstittel',
 			'metadataEdit.originalTitle' => 'Originaltittel',

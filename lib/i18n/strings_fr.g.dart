@@ -391,6 +391,8 @@ class _TranslationsSettingsFr extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'Forcer l\'interface TV. Pour appareils non détectés automatiquement. Redémarrage requis.';
 	@override String get startInFullscreen => 'Démarrer en plein écran';
 	@override String get startInFullscreenDescription => 'Ouvrir Plezy en mode plein écran au lancement';
+	@override String get exitFullscreenOnPlayerClose => 'Quitter le plein écran à la fermeture du lecteur';
+	@override String get exitFullscreenOnPlayerCloseDescription => 'Quitter automatiquement le plein écran lors de la fermeture du lecteur vidéo';
 	@override String get autoHidePerformanceOverlay => 'Masquer auto. superposition performances';
 	@override String get autoHidePerformanceOverlayDescription => 'Faire apparaître/disparaître la superposition avec les contrôles de lecture';
 	@override String get showNavBarLabels => 'Afficher les libellés de la barre de navigation';
@@ -2066,6 +2068,8 @@ extension on TranslationsFr {
 			'settings.forceTvModeDescription' => 'Forcer l\'interface TV. Pour appareils non détectés automatiquement. Redémarrage requis.',
 			'settings.startInFullscreen' => 'Démarrer en plein écran',
 			'settings.startInFullscreenDescription' => 'Ouvrir Plezy en mode plein écran au lancement',
+			'settings.exitFullscreenOnPlayerClose' => 'Quitter le plein écran à la fermeture du lecteur',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'Quitter automatiquement le plein écran lors de la fermeture du lecteur vidéo',
 			'settings.autoHidePerformanceOverlay' => 'Masquer auto. superposition performances',
 			'settings.autoHidePerformanceOverlayDescription' => 'Faire apparaître/disparaître la superposition avec les contrôles de lecture',
 			'settings.showNavBarLabels' => 'Afficher les libellés de la barre de navigation',
@@ -2323,10 +2327,10 @@ extension on TranslationsFr {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirmer l\'action',
 			'profiles.addPlezyProfile' => 'Ajouter un profil Plezy',
-			'profiles.switchingProfile' => 'Changement de profil…',
-			'profiles.deleteThisProfileTitle' => 'Supprimer ce profil ?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.switchingProfile' => 'Changement de profil…',
+			'profiles.deleteThisProfileTitle' => 'Supprimer ce profil ?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Supprimer ${displayName}. Les connexions ne sont pas affectées.',
 			'profiles.active' => 'Actif',
 			'profiles.manage' => 'Gérer',
@@ -2837,10 +2841,10 @@ extension on TranslationsFr {
 			'metadataEdit.editMetadata' => 'Modifier...',
 			'metadataEdit.screenTitle' => 'Modifier les métadonnées',
 			'metadataEdit.basicInfo' => 'Informations de base',
-			'metadataEdit.artwork' => 'Artwork',
-			'metadataEdit.advancedSettings' => 'Paramètres avancés',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artwork' => 'Artwork',
+			'metadataEdit.advancedSettings' => 'Paramètres avancés',
 			'metadataEdit.title' => 'Titre',
 			'metadataEdit.sortTitle' => 'Titre de tri',
 			'metadataEdit.originalTitle' => 'Titre original',

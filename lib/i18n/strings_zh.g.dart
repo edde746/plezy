@@ -391,6 +391,8 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => '强制 TV 布局。适用于无法自动检测的设备。需要重启。';
 	@override String get startInFullscreen => '以全屏模式启动';
 	@override String get startInFullscreenDescription => '启动时以全屏模式打开 Plezy';
+	@override String get exitFullscreenOnPlayerClose => '关闭播放器时退出全屏';
+	@override String get exitFullscreenOnPlayerCloseDescription => '关闭视频播放器时自动退出全屏模式';
 	@override String get autoHidePerformanceOverlay => '自动隐藏性能叠加层';
 	@override String get autoHidePerformanceOverlayDescription => '性能叠加层随播放控件一起淡入淡出';
 	@override String get showNavBarLabels => '显示导航栏标签';
@@ -2066,6 +2068,8 @@ extension on TranslationsZh {
 			'settings.forceTvModeDescription' => '强制 TV 布局。适用于无法自动检测的设备。需要重启。',
 			'settings.startInFullscreen' => '以全屏模式启动',
 			'settings.startInFullscreenDescription' => '启动时以全屏模式打开 Plezy',
+			'settings.exitFullscreenOnPlayerClose' => '关闭播放器时退出全屏',
+			'settings.exitFullscreenOnPlayerCloseDescription' => '关闭视频播放器时自动退出全屏模式',
 			'settings.autoHidePerformanceOverlay' => '自动隐藏性能叠加层',
 			'settings.autoHidePerformanceOverlayDescription' => '性能叠加层随播放控件一起淡入淡出',
 			'settings.showNavBarLabels' => '显示导航栏标签',
@@ -2323,10 +2327,10 @@ extension on TranslationsZh {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '确认操作',
 			'profiles.addPlezyProfile' => '添加 Plezy 配置文件',
-			'profiles.switchingProfile' => '切换配置文件中…',
-			'profiles.deleteThisProfileTitle' => '删除此配置文件？',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.switchingProfile' => '切换配置文件中…',
+			'profiles.deleteThisProfileTitle' => '删除此配置文件？',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '移除 ${displayName}。连接不会受影响。',
 			'profiles.active' => '活跃',
 			'profiles.manage' => '管理',
@@ -2837,10 +2841,10 @@ extension on TranslationsZh {
 			'metadataEdit.editMetadata' => '编辑...',
 			'metadataEdit.screenTitle' => '编辑元数据',
 			'metadataEdit.basicInfo' => '基本信息',
-			'metadataEdit.artwork' => '封面图片',
-			'metadataEdit.advancedSettings' => '高级设置',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artwork' => '封面图片',
+			'metadataEdit.advancedSettings' => '高级设置',
 			'metadataEdit.title' => '标题',
 			'metadataEdit.sortTitle' => '排序标题',
 			'metadataEdit.originalTitle' => '原始标题',

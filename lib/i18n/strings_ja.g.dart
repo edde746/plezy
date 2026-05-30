@@ -391,6 +391,8 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'TVレイアウトを強制します。自動検出しないデバイス向けです。再起動が必要です。';
 	@override String get startInFullscreen => '全画面表示で起動';
 	@override String get startInFullscreenDescription => '起動時にPlezyを全画面モードで開きます';
+	@override String get exitFullscreenOnPlayerClose => 'プレイヤーを閉じたときに全画面を終了';
+	@override String get exitFullscreenOnPlayerCloseDescription => 'ビデオプレイヤーを閉じたときに自動的に全画面モードを終了します';
 	@override String get autoHidePerformanceOverlay => 'パフォーマンスオーバーレイを自動非表示';
 	@override String get autoHidePerformanceOverlayDescription => '再生コントロールと一緒にパフォーマンスオーバーレイをフェードする';
 	@override String get showNavBarLabels => 'ナビゲーションバーラベルを表示';
@@ -2066,6 +2068,8 @@ extension on TranslationsJa {
 			'settings.forceTvModeDescription' => 'TVレイアウトを強制します。自動検出しないデバイス向けです。再起動が必要です。',
 			'settings.startInFullscreen' => '全画面表示で起動',
 			'settings.startInFullscreenDescription' => '起動時にPlezyを全画面モードで開きます',
+			'settings.exitFullscreenOnPlayerClose' => 'プレイヤーを閉じたときに全画面を終了',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'ビデオプレイヤーを閉じたときに自動的に全画面モードを終了します',
 			'settings.autoHidePerformanceOverlay' => 'パフォーマンスオーバーレイを自動非表示',
 			'settings.autoHidePerformanceOverlayDescription' => '再生コントロールと一緒にパフォーマンスオーバーレイをフェードする',
 			'settings.showNavBarLabels' => 'ナビゲーションバーラベルを表示',
@@ -2323,10 +2327,10 @@ extension on TranslationsJa {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '操作の確認',
 			'profiles.addPlezyProfile' => 'Plezyプロファイルを追加',
-			'profiles.switchingProfile' => 'プロファイルを切り替え中…',
-			'profiles.deleteThisProfileTitle' => 'このプロファイルを削除しますか？',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.switchingProfile' => 'プロファイルを切り替え中…',
+			'profiles.deleteThisProfileTitle' => 'このプロファイルを削除しますか？',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName}を削除します。接続には影響しません。',
 			'profiles.active' => 'アクティブ',
 			'profiles.manage' => '管理',
@@ -2837,10 +2841,10 @@ extension on TranslationsJa {
 			'metadataEdit.editMetadata' => '編集...',
 			'metadataEdit.screenTitle' => 'メタデータを編集',
 			'metadataEdit.basicInfo' => '基本情報',
-			'metadataEdit.artwork' => 'アートワーク',
-			'metadataEdit.advancedSettings' => '詳細設定',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artwork' => 'アートワーク',
+			'metadataEdit.advancedSettings' => '詳細設定',
 			'metadataEdit.title' => 'タイトル',
 			'metadataEdit.sortTitle' => 'ソートタイトル',
 			'metadataEdit.originalTitle' => '原題',

@@ -263,6 +263,8 @@
     "forceTvModeDescription": "Tvinga TV-layout. För enheter som inte upptäcks automatiskt. Kräver omstart.",
     "startInFullscreen": "Starta i helskärm",
     "startInFullscreenDescription": "Öppna Plezy i helskärm vid start",
+    "exitFullscreenOnPlayerClose": "Avsluta helskärm vid stängning av spelare",
+    "exitFullscreenOnPlayerCloseDescription": "Avslutar automatiskt helskärmsläge när videospelaren stängs",
     "autoHidePerformanceOverlay": "Dölj prestandaöverlagring automatiskt",
     "autoHidePerformanceOverlayDescription": "Tona prestandaöverlagringen med uppspelningskontrollerna",
     "showNavBarLabels": "Visa navigeringsfältets etiketter",

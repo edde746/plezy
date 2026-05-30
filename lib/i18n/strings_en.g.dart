@@ -899,6 +899,12 @@ class TranslationsSettingsEn {
 	/// en: 'Open Plezy in fullscreen mode at launch'
 	String get startInFullscreenDescription => 'Open Plezy in fullscreen mode at launch';
 
+	/// en: 'Exit fullscreen on player close'
+	String get exitFullscreenOnPlayerClose => 'Exit fullscreen on player close';
+
+	/// en: 'Automatically exit fullscreen when closing the video player'
+	String get exitFullscreenOnPlayerCloseDescription => 'Automatically exit fullscreen when closing the video player';
+
 	/// en: 'Auto-Hide Performance Overlay'
 	String get autoHidePerformanceOverlay => 'Auto-Hide Performance Overlay';
 
@@ -4440,6 +4446,8 @@ extension on Translations {
 			'settings.forceTvModeDescription' => 'Force TV layout. For devices that don\'t auto-detect. Requires restart.',
 			'settings.startInFullscreen' => 'Start in fullscreen',
 			'settings.startInFullscreenDescription' => 'Open Plezy in fullscreen mode at launch',
+			'settings.exitFullscreenOnPlayerClose' => 'Exit fullscreen on player close',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'Automatically exit fullscreen when closing the video player',
 			'settings.autoHidePerformanceOverlay' => 'Auto-Hide Performance Overlay',
 			'settings.autoHidePerformanceOverlayDescription' => 'Fade the performance overlay with the playback controls',
 			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
@@ -4697,10 +4705,10 @@ extension on Translations {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirm Action',
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
-			'profiles.switchingProfile' => 'Switching profile…',
-			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.switchingProfile' => 'Switching profile…',
+			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
 			'profiles.manage' => 'Manage',
@@ -5211,10 +5219,10 @@ extension on Translations {
 			'metadataEdit.editMetadata' => 'Edit...',
 			'metadataEdit.screenTitle' => 'Edit Metadata',
 			'metadataEdit.basicInfo' => 'Basic Info',
-			'metadataEdit.artwork' => 'Artwork',
-			'metadataEdit.advancedSettings' => 'Advanced Settings',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artwork' => 'Artwork',
+			'metadataEdit.advancedSettings' => 'Advanced Settings',
 			'metadataEdit.title' => 'Title',
 			'metadataEdit.sortTitle' => 'Sort Title',
 			'metadataEdit.originalTitle' => 'Original Title',

@@ -391,6 +391,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'TV 레이아웃을 강제합니다. 자동 감지되지 않는 기기용입니다. 재시작이 필요합니다.';
 	@override String get startInFullscreen => '전체화면으로 시작';
 	@override String get startInFullscreenDescription => '실행 시 Plezy를 전체화면 모드로 엽니다';
+	@override String get exitFullscreenOnPlayerClose => '플레이어 닫을 때 전체화면 종료';
+	@override String get exitFullscreenOnPlayerCloseDescription => '비디오 플레이어를 닫을 때 자동으로 전체화면을 종료합니다';
 	@override String get autoHidePerformanceOverlay => '성능 오버레이 자동 숨기기';
 	@override String get autoHidePerformanceOverlayDescription => '재생 컨트롤과 함께 성능 오버레이를 페이드 처리';
 	@override String get showNavBarLabels => '내비게이션 바 라벨 표시';
@@ -2066,6 +2068,8 @@ extension on TranslationsKo {
 			'settings.forceTvModeDescription' => 'TV 레이아웃을 강제합니다. 자동 감지되지 않는 기기용입니다. 재시작이 필요합니다.',
 			'settings.startInFullscreen' => '전체화면으로 시작',
 			'settings.startInFullscreenDescription' => '실행 시 Plezy를 전체화면 모드로 엽니다',
+			'settings.exitFullscreenOnPlayerClose' => '플레이어 닫을 때 전체화면 종료',
+			'settings.exitFullscreenOnPlayerCloseDescription' => '비디오 플레이어를 닫을 때 자동으로 전체화면을 종료합니다',
 			'settings.autoHidePerformanceOverlay' => '성능 오버레이 자동 숨기기',
 			'settings.autoHidePerformanceOverlayDescription' => '재생 컨트롤과 함께 성능 오버레이를 페이드 처리',
 			'settings.showNavBarLabels' => '내비게이션 바 라벨 표시',
@@ -2323,10 +2327,10 @@ extension on TranslationsKo {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '확인',
 			'profiles.addPlezyProfile' => 'Plezy 프로필 추가',
-			'profiles.switchingProfile' => '프로필 전환 중…',
-			'profiles.deleteThisProfileTitle' => '이 프로필을 삭제하시겠습니까?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.switchingProfile' => '프로필 전환 중…',
+			'profiles.deleteThisProfileTitle' => '이 프로필을 삭제하시겠습니까?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName}을(를) 제거합니다. 연결에는 영향이 없습니다.',
 			'profiles.active' => '활성',
 			'profiles.manage' => '관리',
@@ -2837,10 +2841,10 @@ extension on TranslationsKo {
 			'metadataEdit.editMetadata' => '편집...',
 			'metadataEdit.screenTitle' => '메타데이터 편집',
 			'metadataEdit.basicInfo' => '기본 정보',
-			'metadataEdit.artwork' => '아트워크',
-			'metadataEdit.advancedSettings' => '고급 설정',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artwork' => '아트워크',
+			'metadataEdit.advancedSettings' => '고급 설정',
 			'metadataEdit.title' => '제목',
 			'metadataEdit.sortTitle' => '정렬 제목',
 			'metadataEdit.originalTitle' => '원제',

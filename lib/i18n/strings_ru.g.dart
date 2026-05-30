@@ -391,6 +391,8 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'Принудительно включить ТВ-интерфейс. Для устройств без автоопределения. Требуется перезапуск.';
 	@override String get startInFullscreen => 'Запускать в полноэкранном режиме';
 	@override String get startInFullscreenDescription => 'Открывать Plezy в полноэкранном режиме при запуске';
+	@override String get exitFullscreenOnPlayerClose => 'Выходить из полноэкранного режима при закрытии плеера';
+	@override String get exitFullscreenOnPlayerCloseDescription => 'Автоматически выходить из полноэкранного режима при закрытии видеоплеера';
 	@override String get autoHidePerformanceOverlay => 'Автоскрытие оверлея производительности';
 	@override String get autoHidePerformanceOverlayDescription => 'Скрывать оверлей производительности вместе с элементами управления воспроизведением';
 	@override String get showNavBarLabels => 'Показывать подписи панели навигации';
@@ -2066,6 +2068,8 @@ extension on TranslationsRu {
 			'settings.forceTvModeDescription' => 'Принудительно включить ТВ-интерфейс. Для устройств без автоопределения. Требуется перезапуск.',
 			'settings.startInFullscreen' => 'Запускать в полноэкранном режиме',
 			'settings.startInFullscreenDescription' => 'Открывать Plezy в полноэкранном режиме при запуске',
+			'settings.exitFullscreenOnPlayerClose' => 'Выходить из полноэкранного режима при закрытии плеера',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'Автоматически выходить из полноэкранного режима при закрытии видеоплеера',
 			'settings.autoHidePerformanceOverlay' => 'Автоскрытие оверлея производительности',
 			'settings.autoHidePerformanceOverlayDescription' => 'Скрывать оверлей производительности вместе с элементами управления воспроизведением',
 			'settings.showNavBarLabels' => 'Показывать подписи панели навигации',
@@ -2323,10 +2327,10 @@ extension on TranslationsRu {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Подтвердить действие',
 			'profiles.addPlezyProfile' => 'Добавить профиль Plezy',
-			'profiles.switchingProfile' => 'Переключение профиля…',
-			'profiles.deleteThisProfileTitle' => 'Удалить этот профиль?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.switchingProfile' => 'Переключение профиля…',
+			'profiles.deleteThisProfileTitle' => 'Удалить этот профиль?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Удалить ${displayName}. Подключения не изменятся.',
 			'profiles.active' => 'Активный',
 			'profiles.manage' => 'Управление',
@@ -2837,10 +2841,10 @@ extension on TranslationsRu {
 			'metadataEdit.editMetadata' => 'Редактировать...',
 			'metadataEdit.screenTitle' => 'Редактировать метаданные',
 			'metadataEdit.basicInfo' => 'Основная информация',
-			'metadataEdit.artwork' => 'Обложка',
-			'metadataEdit.advancedSettings' => 'Дополнительные настройки',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artwork' => 'Обложка',
+			'metadataEdit.advancedSettings' => 'Дополнительные настройки',
 			'metadataEdit.title' => 'Название',
 			'metadataEdit.sortTitle' => 'Название для сортировки',
 			'metadataEdit.originalTitle' => 'Оригинальное название',

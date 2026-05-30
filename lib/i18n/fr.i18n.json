@@ -263,6 +263,8 @@
     "forceTvModeDescription": "Forcer l'interface TV. Pour appareils non détectés automatiquement. Redémarrage requis.",
     "startInFullscreen": "Démarrer en plein écran",
     "startInFullscreenDescription": "Ouvrir Plezy en mode plein écran au lancement",
+    "exitFullscreenOnPlayerClose": "Quitter le plein écran à la fermeture du lecteur",
+    "exitFullscreenOnPlayerCloseDescription": "Quitter automatiquement le plein écran lors de la fermeture du lecteur vidéo",
     "autoHidePerformanceOverlay": "Masquer auto. superposition performances",
     "autoHidePerformanceOverlayDescription": "Faire apparaître/disparaître la superposition avec les contrôles de lecture",
     "showNavBarLabels": "Afficher les libellés de la barre de navigation",

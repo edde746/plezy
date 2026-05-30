@@ -263,6 +263,8 @@
     "forceTvModeDescription": "TV-Layout erzwingen. Für Geräte ohne automatische Erkennung. Neustart erforderlich.",
     "startInFullscreen": "Im Vollbildmodus starten",
     "startInFullscreenDescription": "Plezy beim Start im Vollbildmodus öffnen",
+    "exitFullscreenOnPlayerClose": "Vollbild beim Schließen des Players beenden",
+    "exitFullscreenOnPlayerCloseDescription": "Vollbildmodus automatisch beenden, wenn der Videoplayer geschlossen wird",
     "autoHidePerformanceOverlay": "Leistungsoverlay automatisch ausblenden",
     "autoHidePerformanceOverlayDescription": "Leistungsoverlay mit den Wiedergabesteuerungen ein-/ausblenden",
     "showNavBarLabels": "Navigationsleisten-Beschriftungen anzeigen",

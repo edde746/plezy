@@ -391,6 +391,8 @@ class _TranslationsSettingsPt extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'Forçar layout TV. Para dispositivos sem detecção automática. Requer reinício.';
 	@override String get startInFullscreen => 'Iniciar em tela cheia';
 	@override String get startInFullscreenDescription => 'Abrir o Plezy em modo de tela cheia ao iniciar';
+	@override String get exitFullscreenOnPlayerClose => 'Sair do ecrã inteiro ao fechar o leitor';
+	@override String get exitFullscreenOnPlayerCloseDescription => 'Sair automaticamente do modo de ecrã inteiro ao fechar o leitor de vídeo';
 	@override String get autoHidePerformanceOverlay => 'Ocultar overlay de desempenho automaticamente';
 	@override String get autoHidePerformanceOverlayDescription => 'Desvanecer o overlay de desempenho com os controles de reprodução';
 	@override String get showNavBarLabels => 'Mostrar Rótulos da Barra de Navegação';
@@ -2066,6 +2068,8 @@ extension on TranslationsPt {
 			'settings.forceTvModeDescription' => 'Forçar layout TV. Para dispositivos sem detecção automática. Requer reinício.',
 			'settings.startInFullscreen' => 'Iniciar em tela cheia',
 			'settings.startInFullscreenDescription' => 'Abrir o Plezy em modo de tela cheia ao iniciar',
+			'settings.exitFullscreenOnPlayerClose' => 'Sair do ecrã inteiro ao fechar o leitor',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'Sair automaticamente do modo de ecrã inteiro ao fechar o leitor de vídeo',
 			'settings.autoHidePerformanceOverlay' => 'Ocultar overlay de desempenho automaticamente',
 			'settings.autoHidePerformanceOverlayDescription' => 'Desvanecer o overlay de desempenho com os controles de reprodução',
 			'settings.showNavBarLabels' => 'Mostrar Rótulos da Barra de Navegação',
@@ -2323,10 +2327,10 @@ extension on TranslationsPt {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirmar Ação',
 			'profiles.addPlezyProfile' => 'Adicionar perfil Plezy',
-			'profiles.switchingProfile' => 'Mudando perfil…',
-			'profiles.deleteThisProfileTitle' => 'Excluir este perfil?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.switchingProfile' => 'Mudando perfil…',
+			'profiles.deleteThisProfileTitle' => 'Excluir este perfil?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remover ${displayName}. As conexões não serão afetadas.',
 			'profiles.active' => 'Ativo',
 			'profiles.manage' => 'Gerenciar',
@@ -2837,10 +2841,10 @@ extension on TranslationsPt {
 			'metadataEdit.editMetadata' => 'Editar...',
 			'metadataEdit.screenTitle' => 'Editar Metadados',
 			'metadataEdit.basicInfo' => 'Informações Básicas',
-			'metadataEdit.artwork' => 'Arte',
-			'metadataEdit.advancedSettings' => 'Configurações Avançadas',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artwork' => 'Arte',
+			'metadataEdit.advancedSettings' => 'Configurações Avançadas',
 			'metadataEdit.title' => 'Título',
 			'metadataEdit.sortTitle' => 'Título para Ordenação',
 			'metadataEdit.originalTitle' => 'Título Original',

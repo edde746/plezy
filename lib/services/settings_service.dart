@@ -393,6 +393,7 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: PlatformDetector.isDesktopOS(),
   );
   static const startInFullscreen = BoolPref('start_in_fullscreen');
+  static const exitFullscreenOnPlayerClose = BoolPref('exit_fullscreen_on_player_close');
 
   static const bufferSize = _BufferSizePref();
   static const libraryDensity = _LibraryDensityPref();

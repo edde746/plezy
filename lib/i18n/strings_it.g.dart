@@ -391,6 +391,8 @@ class _TranslationsSettingsIt extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'Forza layout TV. Per dispositivi non rilevati automaticamente. Richiede riavvio.';
 	@override String get startInFullscreen => 'Avvia a schermo intero';
 	@override String get startInFullscreenDescription => 'Apri Plezy a schermo intero all\'avvio';
+	@override String get exitFullscreenOnPlayerClose => 'Esci dallo schermo intero alla chiusura del player';
+	@override String get exitFullscreenOnPlayerCloseDescription => 'Esci automaticamente dallo schermo intero quando il lettore video viene chiuso';
 	@override String get autoHidePerformanceOverlay => 'Nascondi automaticamente overlay prestazioni';
 	@override String get autoHidePerformanceOverlayDescription => 'Dissolvi l\'overlay prestazioni con i controlli di riproduzione';
 	@override String get showNavBarLabels => 'Mostra etichette barra di navigazione';
@@ -2066,6 +2068,8 @@ extension on TranslationsIt {
 			'settings.forceTvModeDescription' => 'Forza layout TV. Per dispositivi non rilevati automaticamente. Richiede riavvio.',
 			'settings.startInFullscreen' => 'Avvia a schermo intero',
 			'settings.startInFullscreenDescription' => 'Apri Plezy a schermo intero all\'avvio',
+			'settings.exitFullscreenOnPlayerClose' => 'Esci dallo schermo intero alla chiusura del player',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'Esci automaticamente dallo schermo intero quando il lettore video viene chiuso',
 			'settings.autoHidePerformanceOverlay' => 'Nascondi automaticamente overlay prestazioni',
 			'settings.autoHidePerformanceOverlayDescription' => 'Dissolvi l\'overlay prestazioni con i controlli di riproduzione',
 			'settings.showNavBarLabels' => 'Mostra etichette barra di navigazione',
@@ -2323,10 +2327,10 @@ extension on TranslationsIt {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Conferma azione',
 			'profiles.addPlezyProfile' => 'Aggiungi profilo Plezy',
-			'profiles.switchingProfile' => 'Cambio profilo…',
-			'profiles.deleteThisProfileTitle' => 'Eliminare questo profilo?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.switchingProfile' => 'Cambio profilo…',
+			'profiles.deleteThisProfileTitle' => 'Eliminare questo profilo?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Rimuovi ${displayName}. Le connessioni non sono interessate.',
 			'profiles.active' => 'Attivo',
 			'profiles.manage' => 'Gestisci',
@@ -2837,10 +2841,10 @@ extension on TranslationsIt {
 			'metadataEdit.editMetadata' => 'Modifica...',
 			'metadataEdit.screenTitle' => 'Modifica metadati',
 			'metadataEdit.basicInfo' => 'Informazioni di base',
-			'metadataEdit.artwork' => 'Artwork',
-			'metadataEdit.advancedSettings' => 'Impostazioni avanzate',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artwork' => 'Artwork',
+			'metadataEdit.advancedSettings' => 'Impostazioni avanzate',
 			'metadataEdit.title' => 'Titolo',
 			'metadataEdit.sortTitle' => 'Titolo di ordinamento',
 			'metadataEdit.originalTitle' => 'Titolo originale',

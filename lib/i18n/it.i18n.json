@@ -263,6 +263,8 @@
     "forceTvModeDescription": "Forza layout TV. Per dispositivi non rilevati automaticamente. Richiede riavvio.",
     "startInFullscreen": "Avvia a schermo intero",
     "startInFullscreenDescription": "Apri Plezy a schermo intero all'avvio",
+    "exitFullscreenOnPlayerClose": "Esci dallo schermo intero alla chiusura del player",
+    "exitFullscreenOnPlayerCloseDescription": "Esci automaticamente dallo schermo intero quando il lettore video viene chiuso",
     "autoHidePerformanceOverlay": "Nascondi automaticamente overlay prestazioni",
     "autoHidePerformanceOverlayDescription": "Dissolvi l'overlay prestazioni con i controlli di riproduzione",
     "showNavBarLabels": "Mostra etichette barra di navigazione",

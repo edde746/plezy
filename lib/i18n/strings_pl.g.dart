@@ -391,6 +391,8 @@ class _TranslationsSettingsPl extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'Wymuś układ TV. Dla urządzeń bez autodetekcji. Wymaga restartu.';
 	@override String get startInFullscreen => 'Uruchom na pełnym ekranie';
 	@override String get startInFullscreenDescription => 'Otwiera Plezy w trybie pełnoekranowym przy uruchomieniu';
+	@override String get exitFullscreenOnPlayerClose => 'Wyjdź z pełnego ekranu przy zamykaniu odtwarzacza';
+	@override String get exitFullscreenOnPlayerCloseDescription => 'Automatycznie wychodzi z trybu pełnoekranowego po zamknięciu odtwarzacza wideo';
 	@override String get autoHidePerformanceOverlay => 'Automatycznie ukrywaj nakładkę wydajności';
 	@override String get autoHidePerformanceOverlayDescription => 'Wygaszaj nakładkę wydajności wraz z kontrolkami odtwarzania';
 	@override String get showNavBarLabels => 'Pokaż etykiety paska nawigacji';
@@ -2066,6 +2068,8 @@ extension on TranslationsPl {
 			'settings.forceTvModeDescription' => 'Wymuś układ TV. Dla urządzeń bez autodetekcji. Wymaga restartu.',
 			'settings.startInFullscreen' => 'Uruchom na pełnym ekranie',
 			'settings.startInFullscreenDescription' => 'Otwiera Plezy w trybie pełnoekranowym przy uruchomieniu',
+			'settings.exitFullscreenOnPlayerClose' => 'Wyjdź z pełnego ekranu przy zamykaniu odtwarzacza',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'Automatycznie wychodzi z trybu pełnoekranowego po zamknięciu odtwarzacza wideo',
 			'settings.autoHidePerformanceOverlay' => 'Automatycznie ukrywaj nakładkę wydajności',
 			'settings.autoHidePerformanceOverlayDescription' => 'Wygaszaj nakładkę wydajności wraz z kontrolkami odtwarzania',
 			'settings.showNavBarLabels' => 'Pokaż etykiety paska nawigacji',
@@ -2323,10 +2327,10 @@ extension on TranslationsPl {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Potwierdź działanie',
 			'profiles.addPlezyProfile' => 'Dodaj profil Plezy',
-			'profiles.switchingProfile' => 'Przełączanie profilu…',
-			'profiles.deleteThisProfileTitle' => 'Usunąć ten profil?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.switchingProfile' => 'Przełączanie profilu…',
+			'profiles.deleteThisProfileTitle' => 'Usunąć ten profil?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Usuń ${displayName}. Połączenia nie zostaną zmienione.',
 			'profiles.active' => 'Aktywny',
 			'profiles.manage' => 'Zarządzaj',
@@ -2837,10 +2841,10 @@ extension on TranslationsPl {
 			'metadataEdit.editMetadata' => 'Edytuj...',
 			'metadataEdit.screenTitle' => 'Edytuj metadane',
 			'metadataEdit.basicInfo' => 'Podstawowe informacje',
-			'metadataEdit.artwork' => 'Grafika',
-			'metadataEdit.advancedSettings' => 'Ustawienia zaawansowane',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artwork' => 'Grafika',
+			'metadataEdit.advancedSettings' => 'Ustawienia zaawansowane',
 			'metadataEdit.title' => 'Tytuł',
 			'metadataEdit.sortTitle' => 'Tytuł do sortowania',
 			'metadataEdit.originalTitle' => 'Tytuł oryginalny',
