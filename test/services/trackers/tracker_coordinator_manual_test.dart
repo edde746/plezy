@@ -31,10 +31,14 @@ class _FakeMediaServerClient implements MediaServerClient {
   final List<String> externalIdCalls = [];
   final List<String> descendantCalls = [];
 
+  @override
+  final double watchedThreshold;
+
   _FakeMediaServerClient({
     this.serverId = 'server-1',
     required this.externalIdsByItem,
     required this.descendantsByParent,
+    this.watchedThreshold = 0.9,
   });
 
   @override
@@ -109,6 +113,15 @@ MediaItem _show() => MediaItem(
   backend: MediaBackend.plex,
   kind: MediaKind.show,
   title: 'Show 1',
+  serverId: 'server-1',
+  libraryId: 'lib-1',
+);
+
+MediaItem _movie() => MediaItem(
+  id: 'movie-1',
+  backend: MediaBackend.plex,
+  kind: MediaKind.movie,
+  title: 'Movie 1',
   serverId: 'server-1',
   libraryId: 'lib-1',
 );
@@ -494,6 +507,61 @@ void main() {
 
       expect(firstClient.externalIdCalls, ['show-a']);
       expect(secondClient.externalIdCalls, ['show-b']);
+    });
+  });
+
+  group('TrackerCoordinator playback threshold', () {
+    final coordinator = TrackerCoordinator.instance;
+    final simkl = SimklTracker.instance;
+    final mal = MalTracker.instance;
+    final anilist = AnilistTracker.instance;
+
+    setUp(() async {
+      await mal.setEnabled(false);
+      await anilist.setEnabled(false);
+      await simkl.setEnabled(true);
+    });
+
+    tearDown(() async {
+      coordinator.cancelInFlight();
+      coordinator.debugUseResolverDependencies();
+      simkl.rebindSession(null, onSessionInvalidated: () {});
+      await simkl.setEnabled(false);
+    });
+
+    test('marks watched at the server threshold, not the tracker default', () async {
+      final posts = <Map<String, dynamic>>[];
+      final httpClient = MockClient((request) async {
+        expect(request.method, 'POST');
+        expect(request.url.path, '/sync/history');
+        posts.add((json.decode(request.body) as Map).cast<String, dynamic>());
+        return http.Response('{}', 200);
+      });
+      simkl.rebindSession(_simklSession(), onSessionInvalidated: () {}, httpClient: httpClient);
+
+      final client = _FakeMediaServerClient(
+        externalIdsByItem: {'movie-1': const ExternalIds(tmdb: 603)},
+        descendantsByParent: const {},
+        watchedThreshold: 0.95,
+      );
+
+      await coordinator.startPlayback(_movie(), client);
+      coordinator.updateDuration(const Duration(seconds: 100));
+
+      // 90% — past the old hardcoded 80% tracker default but below the server's 95%.
+      coordinator.updatePosition(const Duration(seconds: 90));
+      await pumpEventQueue();
+      expect(posts, isEmpty);
+
+      // 95% — crosses the server threshold; fires exactly once.
+      coordinator.updatePosition(const Duration(seconds: 95));
+      await pumpEventQueue();
+      expect(posts, hasLength(1));
+      expect(posts.single['movies'], [
+        {
+          'ids': {'tmdb': 603},
+        },
+      ]);
     });
   });
 }

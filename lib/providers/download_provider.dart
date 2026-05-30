@@ -665,42 +665,18 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }) {
     final globalKey = buildGlobalKey(serverId, ratingKey);
 
-    // DIAGNOSTIC: Check all sources of episode count
-    final meta = _metadata[globalKey];
-    final metadataLeafCount = meta?.leafCount;
-    final storedCount = _totalEpisodeCounts[globalKey];
-    final downloadedCount = episodes.length;
+    // The progress ring reflects only the episodes the user actually queued for
+    // this show/season — not the show's full episode count. _getEpisodeDownloads
+    // returns just the owned download records, so episodes.length IS the queued
+    // count. Downloading 5 of a 50-episode show therefore reaches 100% at 5/5.
+    //
+    // NOTE: the show's full episode count (metadata.leafCount / _totalEpisodeCounts)
+    // is intentionally not used as the denominator here.
+    // TODO: remove the now-unread _totalEpisodeCounts plumbing in a dedicated cleanup.
+    final int totalEpisodes = episodes.length;
 
-    appLogger.d(
-      '📊 Episode count sources for $entityType $ratingKey:\n'
-      '  - Metadata leafCount: $metadataLeafCount\n'
-      '  - Stored count: $storedCount\n'
-      '  - Downloaded episodes: $downloadedCount\n'
-      '  - Metadata exists: ${meta != null}\n'
-      '  - Type: ${meta?.kind.id}\n'
-      '  - Title: ${meta?.title}',
-    );
-
-    // Get total episode count - Use metadata.leafCount as primary source
-    int totalEpisodes;
-    String countSource;
-
-    if (metadataLeafCount != null && metadataLeafCount > 0) {
-      totalEpisodes = metadataLeafCount;
-      countSource = 'metadata.leafCount';
-    } else if (storedCount != null && storedCount > 0) {
-      totalEpisodes = storedCount;
-      countSource = 'stored count (StorageService)';
-    } else {
-      totalEpisodes = downloadedCount;
-      countSource = 'downloaded episodes (fallback)';
-    }
-
-    appLogger.d('✅ Using totalEpisodes=$totalEpisodes from [$countSource] for $entityType $ratingKey');
-
-    // If we have stored count but no downloads, check if it's a valid partial state
-    if (totalEpisodes == 0 || (episodes.isEmpty && totalEpisodes > 0)) {
-      appLogger.d('⚠️  No valid downloads for $entityType $ratingKey, returning null');
+    if (totalEpisodes == 0) {
+      appLogger.d('⚠️  No queued downloads for $entityType $ratingKey, returning null');
       return null;
     }
 
@@ -709,8 +685,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int downloadingCount = 0;
     int queuedCount = 0;
     int failedCount = 0;
+    int summedProgress = 0; // sum of per-episode progress (completed counts as 100)
 
     for (final ep in episodes) {
+      summedProgress += ep.status == DownloadStatus.completed ? 100 : ep.progress;
       switch (ep.status) {
         case DownloadStatus.completed:
           completedCount++;
@@ -741,8 +719,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return null;
     }
 
-    // Calculate overall progress percentage based on TOTAL episodes
-    final int overallProgress = totalEpisodes > 0 ? ((completedCount * 100) / totalEpisodes).round() : 0;
+    // Smooth percentage across the queued episodes: an in-flight episode
+    // contributes its partial progress so the ring advances continuously,
+    // rather than jumping only when whole episodes complete. Cap below 100%
+    // until every episode is actually complete — otherwise rounding (e.g.
+    // 99.8 → 100) could fill the ring while a download is still finishing.
+    final int rawProgress = (summedProgress / totalEpisodes).round();
+    final int overallProgress = completedCount == totalEpisodes ? 100 : (rawProgress > 99 ? 99 : rawProgress);
 
     appLogger.d(
       'Aggregate progress for $entityType $ratingKey: $overallProgress% '

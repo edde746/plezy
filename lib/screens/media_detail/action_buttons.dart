@@ -487,26 +487,54 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             );
           }
 
+          // Shows/seasons may have more episodes to fetch; movies/episodes don't.
+          final canDownloadMore = metadata.isShow || metadata.isSeason;
+
+          Future<void> confirmAndDelete() async {
+            final confirmed = await showDeleteConfirmation(
+              context,
+              title: t.downloads.deleteDownload,
+              message: t.downloads.deleteConfirm(title: metadata.displayTitle),
+            );
+            if (confirmed && context.mounted) {
+              await downloadProvider.deleteDownload(globalKey);
+              if (context.mounted) {
+                showSuccessSnackBar(context, t.downloads.downloadDeleted);
+              }
+            }
+          }
+
           return IconButton.filledTonal(
             onPressed: () async {
-              // Show delete download confirmation
-              final confirmed = await showDeleteConfirmation(
-                context,
-                title: t.downloads.deleteDownload,
-                message: t.downloads.deleteConfirm(title: metadata.displayTitle),
-              );
-
-              if (confirmed && context.mounted) {
-                await downloadProvider.deleteDownload(globalKey);
+              // Movies/episodes: nothing more to download, so delete directly.
+              if (!canDownloadMore) {
+                await confirmAndDelete();
+                return;
+              }
+              // Shows/seasons: reopen the download options menu so the user can
+              // grab more episodes (or switch to sync), with delete as a row.
+              final client = _getMediaClientForMetadata(context);
+              if (client == null) return;
+              try {
+                final result = await showDownloadOptionsAndQueue(
+                  context,
+                  metadata: metadata,
+                  client: client,
+                  downloadProvider: downloadProvider,
+                  onDelete: confirmAndDelete,
+                );
+                if (result == null || !context.mounted) return;
+                showSuccessSnackBar(context, result.toSnackBarMessage());
+              } on CellularDownloadBlockedException {
                 if (context.mounted) {
-                  showSuccessSnackBar(context, t.downloads.downloadDeleted);
+                  showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
                 }
               }
             },
-            icon: const AppIcon(Symbols.file_download_done_rounded, fill: 1),
-            tooltip: t.downloads.deleteDownload,
+            icon: const AppIcon(Symbols.download_rounded, fill: 1),
+            tooltip: canDownloadMore ? t.downloads.manage : t.downloads.deleteDownload,
             iconSize: iconSize,
-            style: actionButtonStyle(foregroundColor: Colors.green),
+            style: actionButtonStyle(foregroundColor: Colors.orange),
           );
         }
 

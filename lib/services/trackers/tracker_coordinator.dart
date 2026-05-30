@@ -42,6 +42,17 @@ class TrackerCoordinator {
   Duration _lastPosition = Duration.zero;
   bool _thresholdCrossed = false;
 
+  /// Seed used before [startPlayback] captures the server's threshold; never
+  /// actually consulted (a crossing is only evaluated once `_ctx` is set,
+  /// after the client value is assigned).
+  static const double _fallbackWatchedThreshold = TrackerConstants.watchedThresholdPercent / 100.0;
+
+  /// Captured from the active server client in [startPlayback]; trackers mark
+  /// watched once progress crosses it (Plex's `LibraryVideoPlayedThreshold`,
+  /// Jellyfin's fixed 0.9). Mirrors [PlaybackProgressTracker]'s local-marking
+  /// path so trackers and the server stay in lock-step.
+  double _watchedThreshold = _fallbackWatchedThreshold;
+
   Future<void> initialize() async {
     await Future.wait(_trackers.map((t) => t.initialize()));
   }
@@ -71,6 +82,7 @@ class TrackerCoordinator {
     }
     _reset();
     _ctx = ctx;
+    _watchedThreshold = client.watchedThreshold;
   }
 
   bool _anyTrackerNeedsFribb() => _anyTrackerNeedsFribbForLibrary(_activeLibraryGlobalKey);
@@ -332,12 +344,13 @@ class TrackerCoordinator {
     _duration = Duration.zero;
     _lastPosition = Duration.zero;
     _thresholdCrossed = false;
+    _watchedThreshold = _fallbackWatchedThreshold;
   }
 
-  static bool _crossed(Duration duration, Duration position) {
+  bool _crossed(Duration duration, Duration position) {
     final dMs = duration.inMilliseconds;
     if (dMs == 0) return false;
-    return position.inMilliseconds * 100 >= dMs * TrackerConstants.watchedThresholdPercent;
+    return position.inMilliseconds / dMs >= _watchedThreshold;
   }
 
   Future<void> _dispatchMarkWatched(TrackerContext ctx) async {
