@@ -6,7 +6,9 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     final tvScale = TvLayoutConstants.scaleOf(context);
     final actionSize = isTv ? _tvDetailActionSize * tvScale : 48.0;
     final playButtonLabel = _getPlayButtonLabel(metadata);
-    final playButtonIcon = AppIcon(_getPlayButtonIcon(metadata), fill: 1, size: isTv ? 22 * tvScale : 20);
+    final playIconSize = isTv ? 22 * tvScale : 20.0;
+    final playTextStyle = TextStyle(fontSize: isTv ? 17 * tvScale : 16, fontWeight: FontWeight.w700);
+    final playButtonIcon = AppIcon(_getPlayButtonIcon(metadata), fill: 1, size: playIconSize);
 
     Future<void> onPlayPressed() async {
       // For TV shows, play the OnDeck episode if available
@@ -96,79 +98,143 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       );
     }
 
+    // Plays the resolved trailer. Shared by the row's trailer button and the
+    // ⋮ menu item so the trailer stays reachable when the row hides its button.
+    final VoidCallback? onPlayTrailer = primaryTrailer == null
+        ? null
+        : () => unawaited(navigateToVideoPlayer(context, metadata: primaryTrailer));
+
+    final gap = isTv ? 8.0 * tvScale : 12.0;
+
+    final playButton = SizedBox(
+      height: actionSize,
+      child: FilledButton(
+        focusNode: _playButtonFocusNode,
+        autofocus: isKeyboardMode,
+        onPressed: onPlayPressed,
+        style: actionButtonStyle(
+          padding: EdgeInsets.symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
+        ),
+        child: playButtonLabel.isNotEmpty
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  playButtonIcon,
+                  SizedBox(width: isTv ? 7 * tvScale : 8),
+                  Text(playButtonLabel, style: playTextStyle),
+                ],
+              )
+            : playButtonIcon,
+      ),
+    );
+
+    final trailerButton = primaryTrailer == null
+        ? null
+        : IconButton.filledTonal(
+            onPressed: onPlayTrailer,
+            icon: const AppIcon(Symbols.theaters_rounded, fill: 1),
+            tooltip: t.tooltips.playTrailer,
+            iconSize: isTv ? 21 * tvScale : 20,
+            style: actionButtonStyle(),
+          );
+
+    final shuffleButton = (metadata.isShow || metadata.isSeason)
+        ? IconButton.filledTonal(
+            onPressed: () async {
+              await _handleShufflePlayWithQueue(context, metadata);
+            },
+            icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
+            tooltip: t.tooltips.shufflePlay,
+            iconSize: isTv ? 21 * tvScale : 20,
+            style: actionButtonStyle(),
+          )
+        : null;
+
+    final downloadButton = !widget.isOffline && !PlatformDetector.isAppleTV()
+        ? _buildDownloadButton(metadata, actionButtonStyle, tvScale)
+        : null;
+    final watchedButton = _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale);
+    final moreActionsButton = widget.isOffline
+        ? null
+        : _buildMoreActionsButton(metadata, actionButtonStyle, tvScale, onPlayTrailer: onPlayTrailer);
+
+    Row actionRow(List<Widget> buttons) {
+      return Row(
+        children: [
+          for (var i = 0; i < buttons.length; i++) ...[if (i > 0) SizedBox(width: gap), buttons[i]],
+        ],
+      );
+    }
+
+    final allButtons = <Widget>[
+      playButton,
+      if (trailerButton != null) trailerButton,
+      if (shuffleButton != null) shuffleButton,
+      if (downloadButton != null) downloadButton,
+      watchedButton,
+      if (moreActionsButton != null) moreActionsButton,
+    ];
+
+    double playButtonWidthEstimate() {
+      if (playButtonLabel.isEmpty) return 64.0;
+      final textPainter = TextPainter(
+        text: TextSpan(text: playButtonLabel, style: playTextStyle),
+        maxLines: 1,
+        textDirection: Directionality.of(context),
+      )..layout();
+      final textWidth = textPainter.width;
+      textPainter.dispose();
+      final horizontalPadding = isTv ? 34.0 * tvScale : 32.0;
+      final iconGap = isTv ? 7.0 * tvScale : 8.0;
+      return (horizontalPadding + playIconSize + iconGap + textWidth).clamp(64.0, double.infinity).toDouble();
+    }
+
+    final estimatedPlayWidth = playButtonWidthEstimate();
+    double estimatedRowWidth(List<Widget> buttons) {
+      if (buttons.isEmpty) return 0;
+      return estimatedPlayWidth + (buttons.length - 1) * actionSize + (buttons.length - 1) * gap;
+    }
+
+    List<Widget> compactButtonsFor(double maxWidth) {
+      if (widget.isOffline) {
+        final compact = <Widget>[playButton, watchedButton];
+        if (maxWidth.isFinite && estimatedRowWidth(compact) > maxWidth) return [playButton];
+        return compact;
+      }
+
+      final medium = <Widget>[
+        playButton,
+        if (downloadButton != null) downloadButton,
+        watchedButton,
+        if (moreActionsButton != null) moreActionsButton,
+      ];
+      if (!maxWidth.isFinite || estimatedRowWidth(medium) <= maxWidth) return medium;
+
+      final compact = <Widget>[playButton, watchedButton, if (moreActionsButton != null) moreActionsButton];
+      if (estimatedRowWidth(compact) <= maxWidth) return compact;
+
+      return [playButton, if (moreActionsButton != null) moreActionsButton];
+    }
+
     return Focus(
       skipTraversal: true,
       onFocusChange: (hasFocus) {
         if (isTv) _setTvDetailActionRowFocus(hasFocus);
       },
       onKeyEvent: _handlePlayButtonKeyEvent,
-      child: Row(
-        children: [
-          SizedBox(
-            height: actionSize,
-            child: FilledButton(
-              focusNode: _playButtonFocusNode,
-              autofocus: isKeyboardMode,
-              onPressed: onPlayPressed,
-              style: actionButtonStyle(
-                padding: EdgeInsets.symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
-              ),
-              child: playButtonLabel.isNotEmpty
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        playButtonIcon,
-                        SizedBox(width: isTv ? 7 * tvScale : 8),
-                        Text(
-                          playButtonLabel,
-                          style: TextStyle(fontSize: isTv ? 17 * tvScale : 16, fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    )
-                  : playButtonIcon,
-            ),
-          ),
-          SizedBox(width: isTv ? 8 * tvScale : 12),
-          // Trailer button (only if trailer is available)
-          if (primaryTrailer != null) ...[
-            IconButton.filledTonal(
-              onPressed: () async {
-                await navigateToVideoPlayer(context, metadata: primaryTrailer);
+      // TV screens are wide and D-pad focus should see every direct action.
+      // On smaller online screens, hidden actions remain available from ⋮.
+      child: isTv
+          ? actionRow(allButtons)
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                final maxWidth = constraints.maxWidth;
+                if (!maxWidth.isFinite || estimatedRowWidth(allButtons) <= maxWidth) {
+                  return actionRow(allButtons);
+                }
+                return actionRow(compactButtonsFor(maxWidth));
               },
-              icon: const AppIcon(Symbols.theaters_rounded, fill: 1),
-              tooltip: t.tooltips.playTrailer,
-              iconSize: isTv ? 21 * tvScale : 20,
-              style: actionButtonStyle(),
             ),
-            SizedBox(width: isTv ? 8 * tvScale : 12),
-          ],
-          // Shuffle button (only for shows and seasons)
-          if (metadata.isShow || metadata.isSeason) ...[
-            IconButton.filledTonal(
-              onPressed: () async {
-                await _handleShufflePlayWithQueue(context, metadata);
-              },
-              icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
-              tooltip: t.tooltips.shufflePlay,
-              iconSize: isTv ? 21 * tvScale : 20,
-              style: actionButtonStyle(),
-            ),
-            SizedBox(width: isTv ? 8 * tvScale : 12),
-          ],
-          // Download button (hide in offline mode - already downloaded,
-          // and on Apple TV where there's no user file storage).
-          if (!widget.isOffline && !PlatformDetector.isAppleTV())
-            _buildDownloadButton(metadata, actionButtonStyle, tvScale),
-          SizedBox(width: isTv ? 8 * tvScale : 12),
-          // Mark as watched/unwatched toggle (works offline too)
-          _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale),
-          // Three-dots menu button (hidden in offline mode)
-          if (!widget.isOffline) ...[
-            SizedBox(width: isTv ? 8 * tvScale : 12),
-            _buildMoreActionsButton(metadata, actionButtonStyle, tvScale),
-          ],
-        ],
-      ),
     );
   }
 
@@ -231,12 +297,14 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
   Widget _buildMoreActionsButton(
     MediaItem metadata,
     ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding}) actionButtonStyle,
-    double tvScale,
-  ) {
+    double tvScale, {
+    VoidCallback? onPlayTrailer,
+  }) {
     return MediaContextMenu(
       key: _contextMenuKey,
       item: metadata,
       onRefresh: (itemId) => unawaited(_refreshItemInPlace(itemId)),
+      onPlayTrailer: onPlayTrailer,
       child: Builder(
         builder: (buttonContext) => IconButton.filledTonal(
           onPressed: () {
