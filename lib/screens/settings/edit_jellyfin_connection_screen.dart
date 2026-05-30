@@ -115,7 +115,6 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
                     focusNode: _saveFocus,
                     useBackgroundFocus: true,
                     onPressed: busy ? null : _save,
-                    onNavigateUp: () => _urlsFocus.requestFocus(),
                     child: FilledButton.icon(
                       onPressed: busy ? null : _save,
                       icon: busy ? const LoadingIndicatorBox() : const AppIcon(Symbols.save_rounded, fill: 1),

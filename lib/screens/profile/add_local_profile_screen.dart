@@ -115,8 +115,6 @@ class _AddLocalProfileScreenState extends State<AddLocalProfileScreen> with Cont
                   focusNode: _setPinFocus,
                   useBackgroundFocus: true,
                   onPressed: _setPin,
-                  onNavigateUp: () => _nameFocus.requestFocus(),
-                  onNavigateDown: () => _continueFocus.requestFocus(),
                   child: OutlinedButton.icon(
                     onPressed: _setPin,
                     icon: const AppIcon(Symbols.lock_outline_rounded, fill: 1),
@@ -131,7 +129,6 @@ class _AddLocalProfileScreenState extends State<AddLocalProfileScreen> with Cont
                 useBackgroundFocus: true,
                 onPressed: _saving || _nameController.text.trim().isEmpty ? null : _saveAndContinue,
                 onNavigateUp: () => (_pinHash == null ? _setPinFocus : _nameFocus).requestFocus(),
-                onNavigateDown: () => _cancelFocus.requestFocus(),
                 child: FilledButton(
                   onPressed: _saving || _nameController.text.trim().isEmpty ? null : _saveAndContinue,
                   child: Text(t.profiles.continueButton),
@@ -142,7 +139,6 @@ class _AddLocalProfileScreenState extends State<AddLocalProfileScreen> with Cont
                 focusNode: _cancelFocus,
                 useBackgroundFocus: true,
                 onPressed: _saving ? null : () => Navigator.of(context).pop(),
-                onNavigateUp: () => _continueFocus.requestFocus(),
                 child: TextButton(
                   onPressed: _saving ? null : () => Navigator.of(context).pop(),
                   child: Text(t.common.cancel),

@@ -156,6 +156,9 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         onNextEpisode: widget.onNext,
         onPreviousEpisode: widget.onPrevious,
         onScreenshot: _showScreenshotToast,
+        onZoomIn: widget.onZoomIn,
+        onZoomOut: widget.onZoomOut,
+        onZoomReset: widget.onResetVideoZoom,
         currentPositionEpoch: widget.currentPositionEpoch,
         onLiveSeek: widget.onLiveSeek,
       );
@@ -304,12 +307,14 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       onNextEpisode: widget.onNext,
       onPreviousEpisode: widget.onPrevious,
       onScreenshot: _showScreenshotToast,
+      onZoomIn: widget.onZoomIn,
+      onZoomOut: widget.onZoomOut,
+      onZoomReset: widget.onResetVideoZoom,
       currentPositionEpoch: widget.currentPositionEpoch,
       onLiveSeek: widget.onLiveSeek,
       onSeekRequested: widget.onSeekRequested,
     );
-    // Let non-navigation keys (volume, etc.) pass through to the OS.
-    if (!event.logicalKey.isNavigationKey) return KeyEventResult.ignored;
+    if (!event.logicalKey.isNavigationKey) return result;
     // Never return .ignored for navigation keys — prevent leaking to previous routes.
     return result == KeyEventResult.ignored ? KeyEventResult.handled : result;
   }

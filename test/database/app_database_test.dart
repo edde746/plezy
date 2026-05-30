@@ -37,8 +37,8 @@ class _AppDatabaseTestSuite {
     // ============================================================
 
     group('schema', () {
-      test('schemaVersion is 14', () {
-        expect(db.schemaVersion, 14);
+      test('schemaVersion is 15', () {
+        expect(db.schemaVersion, 15);
       });
 
       test('all tables are accessible and start empty', () async {

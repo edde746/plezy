@@ -70,8 +70,23 @@ sealed class SubtitleTrack with _$SubtitleTrack {
     String? uri,
   }) = _SubtitleTrack;
 
-  factory SubtitleTrack.uri(String uri, {String? title, String? language}) =>
-      SubtitleTrack(id: 'external:$uri', title: title, language: language, isExternal: true, uri: uri);
+  factory SubtitleTrack.uri(
+    String uri, {
+    String? title,
+    String? language,
+    String? codec,
+    bool isDefault = false,
+    bool isForced = false,
+  }) => SubtitleTrack(
+    id: 'external:$uri',
+    title: title,
+    language: language,
+    codec: codec,
+    isDefault: isDefault,
+    isForced: isForced,
+    isExternal: true,
+    uri: uri,
+  );
 
   static const auto = SubtitleTrack(id: 'auto', title: 'Auto');
 

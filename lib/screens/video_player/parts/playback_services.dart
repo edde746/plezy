@@ -20,27 +20,28 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   }) {
     final currentPlayer = player;
     if (currentPlayer == null) return;
-    _stoppedProgressFuture = null;
 
-    // Progress tracker — offline mode queues for later sync; online mode
-    // dispatches to the right backend through the neutral client.
-    if (_isOfflinePlayback) {
+    // Progress tracker — local media still reports live when its server is
+    // online; only queue locally when no reporting client is reachable.
+    if (mediaClient != null) {
+      _progressTracker = PlaybackProgressTracker(
+        client: mediaClient,
+        metadata: metadata,
+        player: currentPlayer,
+        offlineWatchService: offlineWatchService,
+        queueOnOnlineFailure: _playbackContext?.shouldQueueOnReportFailure ?? _usesLocalPlaybackSource,
+        playMethod: playMethod ?? (_isTranscoding ? 'Transcode' : 'DirectPlay'),
+        playSessionId: playSessionId,
+        mediaInfo: mediaInfo,
+      );
+      _progressTracker!.startTracking();
+    } else if (_isOfflinePlayback) {
       _progressTracker = PlaybackProgressTracker(
         client: null,
         metadata: metadata,
         player: currentPlayer,
         isOffline: true,
         offlineWatchService: offlineWatchService,
-      );
-      _progressTracker!.startTracking();
-    } else if (mediaClient != null) {
-      _progressTracker = PlaybackProgressTracker(
-        client: mediaClient,
-        metadata: metadata,
-        player: currentPlayer,
-        playMethod: playMethod ?? (_isTranscoding ? 'Transcode' : 'DirectPlay'),
-        playSessionId: playSessionId,
-        mediaInfo: mediaInfo,
       );
       _progressTracker!.startTracking();
     }
@@ -78,10 +79,9 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       return;
     }
 
-    // Get client (null in offline mode). Backend-neutral lookup so Jellyfin
-    // items also wire a [PlaybackProgressTracker]; the tracker dispatches
-    // to the right backend's reporting endpoints internally.
-    final mediaClient = _isOfflinePlayback ? null : _getMediaServerClient(context);
+    // Get a live reporting client when possible. Downloaded/local playback
+    // still uses this path when the server is reachable.
+    final mediaClient = _playbackContext?.reportingClient ?? _getOnlineMediaServerClient(context);
     final offlineWatchService = context.read<OfflineWatchSyncService>();
 
     // Initialize media controls manager (must exist before the per-item
@@ -100,6 +100,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         } else {
           appLogger.d('Media control: $eventLabel ignored while Android TV background-suspended');
         }
+        return;
+      }
+
+      if (_isAppleAudioSessionEvent(event)) {
+        unawaited(_handleAppleAudioSessionEvent(event));
         return;
       }
 
@@ -190,6 +195,10 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
   }
 
   void _onPlayingStateChanged(bool isPlaying) {
+    if (!isPlaying) {
+      _lastPlaybackPauseAt = DateTime.now();
+    }
+
     if (isPlaying && _mediaControlsSuspendedForTvBackground) {
       appLogger.w('Playback started while Android TV background media controls are suspended; pausing');
       Sentry.addBreadcrumb(
@@ -230,6 +239,77 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // Update auto-PiP readiness
     if (_autoPipEnabled) {
       _videoPIPManager?.updateAutoPipState(isPlaying: isPlaying);
+    }
+  }
+
+  bool _isAppleAudioSessionEvent(Object event) =>
+      event is AudioInterruptionBeganEvent ||
+      event is AudioInterruptionEndedEvent ||
+      event is AudioRouteOldDeviceUnavailableEvent ||
+      event is AudioRouteNewDeviceAvailableEvent;
+
+  Future<void> _handleAppleAudioSessionEvent(Object event) async {
+    if (!Platform.isIOS || PlatformDetector.isTV()) return;
+
+    final currentPlayer = player;
+    if (!mounted || currentPlayer == null || !_isPlayerInitialized) return;
+
+    if (event is AudioInterruptionBeganEvent) {
+      await _pauseForAppleAudioSessionEvent(currentPlayer, 'interruption began');
+    } else if (event is AudioRouteOldDeviceUnavailableEvent) {
+      await _pauseForAppleAudioSessionEvent(currentPlayer, 'private audio route disconnected');
+    } else if (event is AudioInterruptionEndedEvent) {
+      if (event.shouldResume) {
+        await _resumeAfterAppleAudioSessionEvent(currentPlayer, 'interruption ended');
+      } else {
+        _resumeAfterAppleAudioSessionPause = false;
+      }
+    } else if (event is AudioRouteNewDeviceAvailableEvent) {
+      await _resumeAfterAppleAudioSessionEvent(currentPlayer, 'private audio route connected');
+    }
+  }
+
+  Future<void> _pauseForAppleAudioSessionEvent(Player currentPlayer, String reason) async {
+    final wasPlayingBeforeEvent = currentPlayer.state.isActive || _wasRecentlyPaused();
+    if (wasPlayingBeforeEvent) {
+      _resumeAfterAppleAudioSessionPause = true;
+    }
+
+    try {
+      await currentPlayer.pause();
+      appLogger.d('Video paused after Apple audio session $reason');
+    } catch (e) {
+      appLogger.w('Failed to pause after Apple audio session $reason', error: e);
+    } finally {
+      _updateMediaControlsPlaybackState();
+    }
+  }
+
+  bool _wasRecentlyPaused() {
+    final pauseAt = _lastPlaybackPauseAt;
+    if (pauseAt == null) return false;
+    return DateTime.now().difference(pauseAt) < const Duration(seconds: 1);
+  }
+
+  Future<void> _resumeAfterAppleAudioSessionEvent(Player expectedPlayer, String reason) async {
+    if (!_resumeAfterAppleAudioSessionPause) return;
+    _resumeAfterAppleAudioSessionPause = false;
+
+    if (!mounted || player != expectedPlayer || !_isPlayerInitialized) return;
+    if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      appLogger.d('Skipped Apple audio session resume after $reason because app is not resumed');
+      return;
+    }
+    if (expectedPlayer.state.isActive) return;
+
+    try {
+      await expectedPlayer.play();
+      _wasPlayingBeforeInactive = false;
+      appLogger.d('Video resumed after Apple audio session $reason');
+    } catch (e) {
+      appLogger.w('Failed to resume after Apple audio session $reason', error: e);
+    } finally {
+      _updateMediaControlsPlaybackState();
     }
   }
 

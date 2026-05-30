@@ -254,6 +254,8 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Vis sesong- og episodenummer på episodekort';
 	@override String get showSeasonPostersOnTabs => 'Vis sesongplakater på faner';
 	@override String get showSeasonPostersOnTabsDescription => 'Vis hver sesongs plakat over fanen';
+	@override String get tvFullCardLayout => 'Fulle TV-kort';
+	@override String get tvFullCardLayoutDescription => 'Bruk bildebaserte TV-kort med skuespillernavn lagt over';
 	@override String get hideSpoilers => 'Skjul spoilere for usette episoder';
 	@override String get hideSpoilersDescription => 'Slør miniatyrbilder og beskrivelser for usette episoder';
 	@override String get playerBackend => 'Spillermotor';
@@ -605,6 +607,7 @@ class _TranslationsVideoControlsNb extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Spiller i bilde-i-bilde';
 	@override String get pipFailed => 'Bilde-i-bilde kunne ikke starte';
 	@override String get screenshotSaved => 'Skjermbilde lagret';
+	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsNb pipErrors = _TranslationsVideoControlsPipErrorsNb._(_root);
 	@override String get chapters => 'Kapitler';
 	@override String get noChaptersAvailable => 'Ingen kapitler tilgjengelig';
@@ -1308,6 +1311,7 @@ class _TranslationsVideoSettingsNb extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Avspillingshastighet';
+	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Søvntimer';
 	@override String get audioSync => 'Lydsynkronisering';
 	@override String get subtitleSync => 'Undertekstsynkronisering';
@@ -1565,6 +1569,9 @@ class _TranslationsHotkeysActionsNb extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => 'Øk hastighet';
 	@override String get speedDecrease => 'Reduser hastighet';
 	@override String get speedReset => 'Tilbakestill hastighet';
+	@override String get zoomIn => 'Zoom inn';
+	@override String get zoomOut => 'Zoom ut';
+	@override String get zoomReset => 'Tilbakestill zoom';
 	@override String get subSeekNext => 'Spol til neste undertekst';
 	@override String get subSeekPrev => 'Spol til forrige undertekst';
 	@override String get shaderToggle => 'Veksle shadere';
@@ -1924,6 +1931,8 @@ extension on TranslationsNb {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Vis sesong- og episodenummer på episodekort',
 			'settings.showSeasonPostersOnTabs' => 'Vis sesongplakater på faner',
 			'settings.showSeasonPostersOnTabsDescription' => 'Vis hver sesongs plakat over fanen',
+			'settings.tvFullCardLayout' => 'Fulle TV-kort',
+			'settings.tvFullCardLayoutDescription' => 'Bruk bildebaserte TV-kort med skuespillernavn lagt over',
 			'settings.hideSpoilers' => 'Skjul spoilere for usette episoder',
 			'settings.hideSpoilersDescription' => 'Slør miniatyrbilder og beskrivelser for usette episoder',
 			'settings.playerBackend' => 'Spillermotor',
@@ -2099,6 +2108,9 @@ extension on TranslationsNb {
 			'hotkeys.actions.speedIncrease' => 'Øk hastighet',
 			'hotkeys.actions.speedDecrease' => 'Reduser hastighet',
 			'hotkeys.actions.speedReset' => 'Tilbakestill hastighet',
+			'hotkeys.actions.zoomIn' => 'Zoom inn',
+			'hotkeys.actions.zoomOut' => 'Zoom ut',
+			'hotkeys.actions.zoomReset' => 'Tilbakestill zoom',
 			'hotkeys.actions.subSeekNext' => 'Spol til neste undertekst',
 			'hotkeys.actions.subSeekPrev' => 'Spol til forrige undertekst',
 			'hotkeys.actions.shaderToggle' => 'Veksle shadere',
@@ -2224,6 +2236,7 @@ extension on TranslationsNb {
 			'videoControls.pipActive' => 'Spiller i bilde-i-bilde',
 			'videoControls.pipFailed' => 'Bilde-i-bilde kunne ikke starte',
 			'videoControls.screenshotSaved' => 'Skjermbilde lagret',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Krever Android 8.0 eller nyere',
 			'videoControls.pipErrors.iosVersion' => 'Krever iOS 15.0 eller nyere',
 			'videoControls.pipErrors.permissionDisabled' => 'Bilde-i-bilde er deaktivert. Slå det på i systeminnstillinger.',
@@ -2314,14 +2327,14 @@ extension on TranslationsNb {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# kommentar',
 			'dialog.confirmAction' => 'Bekreft handling',
 			'profiles.addPlezyProfile' => 'Legg til Plezy-profil',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Bytter profil…',
 			'profiles.deleteThisProfileTitle' => 'Slett denne profilen?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Fjern ${displayName}. Tilkoblinger påvirkes ikke.',
 			'profiles.active' => 'Aktiv',
 			'profiles.manage' => 'Administrer',
 			'profiles.delete' => 'Slett',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signOut' => 'Logg ut',
 			'profiles.signOutPlexTitle' => 'Logge ut av Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Fjerne ${displayName} og alle Plex Home-brukere? Du kan logge inn igjen når som helst.',
@@ -2801,6 +2814,7 @@ extension on TranslationsNb {
 			'companionRemote.remote.audio' => 'Lyd',
 			'companionRemote.remote.searchHint' => 'Søk på stasjonær...',
 			'videoSettings.playbackSpeed' => 'Avspillingshastighet',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Søvntimer',
 			'videoSettings.audioSync' => 'Lydsynkronisering',
 			'videoSettings.subtitleSync' => 'Undertekstsynkronisering',
@@ -2827,6 +2841,8 @@ extension on TranslationsNb {
 			'metadataEdit.editMetadata' => 'Rediger...',
 			'metadataEdit.screenTitle' => 'Rediger metadata',
 			'metadataEdit.basicInfo' => 'Grunnleggende info',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Kunstverk',
 			'metadataEdit.advancedSettings' => 'Avanserte innstillinger',
 			'metadataEdit.title' => 'Tittel',
@@ -2834,8 +2850,6 @@ extension on TranslationsNb {
 			'metadataEdit.originalTitle' => 'Originaltittel',
 			'metadataEdit.releaseDate' => 'Utgivelsesdato',
 			'metadataEdit.contentRating' => 'Innholdsvurdering',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Slagord',
 			'metadataEdit.summary' => 'Sammendrag',

@@ -254,6 +254,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => '에피소드 카드에 시즌 및 에피소드 번호 표시';
 	@override String get showSeasonPostersOnTabs => '탭에 시즌 포스터 표시';
 	@override String get showSeasonPostersOnTabsDescription => '각 시즌 포스터를 탭 위에 표시';
+	@override String get tvFullCardLayout => '전체 TV 카드';
+	@override String get tvFullCardLayoutDescription => 'TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시';
 	@override String get hideSpoilers => '미시청 에피소드 스포일러 숨기기';
 	@override String get hideSpoilersDescription => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리';
 	@override String get playerBackend => '플레이어 백엔드';
@@ -605,6 +607,7 @@ class _TranslationsVideoControlsKo extends TranslationsVideoControlsEn {
 	@override String get pipActive => '화면 속 화면으로 재생 중';
 	@override String get pipFailed => '화면 속 화면 모드를 시작할 수 없습니다';
 	@override String get screenshotSaved => '스크린샷 저장됨';
+	@override String zoomPercent({required Object percent}) => '확대/축소 ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsKo pipErrors = _TranslationsVideoControlsPipErrorsKo._(_root);
 	@override String get chapters => '챕터';
 	@override String get noChaptersAvailable => '사용 가능한 챕터가 없습니다';
@@ -1308,6 +1311,7 @@ class _TranslationsVideoSettingsKo extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => '재생 속도';
+	@override String get zoom => '확대/축소';
 	@override String get sleepTimer => '취침 타이머';
 	@override String get audioSync => '오디오 동기화';
 	@override String get subtitleSync => '자막 동기화';
@@ -1565,6 +1569,9 @@ class _TranslationsHotkeysActionsKo extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => '속도 높이기';
 	@override String get speedDecrease => '속도 낮추기';
 	@override String get speedReset => '속도 초기화';
+	@override String get zoomIn => '확대';
+	@override String get zoomOut => '축소';
+	@override String get zoomReset => '확대/축소 초기화';
 	@override String get subSeekNext => '다음 자막으로 이동';
 	@override String get subSeekPrev => '이전 자막으로 이동';
 	@override String get shaderToggle => '셰이더 전환';
@@ -1924,6 +1931,8 @@ extension on TranslationsKo {
 			'settings.showEpisodeNumberOnCardsDescription' => '에피소드 카드에 시즌 및 에피소드 번호 표시',
 			'settings.showSeasonPostersOnTabs' => '탭에 시즌 포스터 표시',
 			'settings.showSeasonPostersOnTabsDescription' => '각 시즌 포스터를 탭 위에 표시',
+			'settings.tvFullCardLayout' => '전체 TV 카드',
+			'settings.tvFullCardLayoutDescription' => 'TV 카드에 이미지만 표시하고 배우 이름을 오버레이로 표시',
 			'settings.hideSpoilers' => '미시청 에피소드 스포일러 숨기기',
 			'settings.hideSpoilersDescription' => '시청하지 않은 에피소드의 썸네일과 설명을 흐리게 처리',
 			'settings.playerBackend' => '플레이어 백엔드',
@@ -2099,6 +2108,9 @@ extension on TranslationsKo {
 			'hotkeys.actions.speedIncrease' => '속도 높이기',
 			'hotkeys.actions.speedDecrease' => '속도 낮추기',
 			'hotkeys.actions.speedReset' => '속도 초기화',
+			'hotkeys.actions.zoomIn' => '확대',
+			'hotkeys.actions.zoomOut' => '축소',
+			'hotkeys.actions.zoomReset' => '확대/축소 초기화',
 			'hotkeys.actions.subSeekNext' => '다음 자막으로 이동',
 			'hotkeys.actions.subSeekPrev' => '이전 자막으로 이동',
 			'hotkeys.actions.shaderToggle' => '셰이더 전환',
@@ -2224,6 +2236,7 @@ extension on TranslationsKo {
 			'videoControls.pipActive' => '화면 속 화면으로 재생 중',
 			'videoControls.pipFailed' => '화면 속 화면 모드를 시작할 수 없습니다',
 			'videoControls.screenshotSaved' => '스크린샷 저장됨',
+			'videoControls.zoomPercent' => ({required Object percent}) => '확대/축소 ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 이상이 필요합니다',
 			'videoControls.pipErrors.iosVersion' => 'iOS 15.0 이상이 필요합니다',
 			'videoControls.pipErrors.permissionDisabled' => '화면 속 화면이 비활성화되어 있습니다. 시스템 설정에서 활성화하세요.',
@@ -2314,14 +2327,14 @@ extension on TranslationsKo {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '확인',
 			'profiles.addPlezyProfile' => 'Plezy 프로필 추가',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.switchingProfile' => '프로필 전환 중…',
 			'profiles.deleteThisProfileTitle' => '이 프로필을 삭제하시겠습니까?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName}을(를) 제거합니다. 연결에는 영향이 없습니다.',
 			'profiles.active' => '활성',
 			'profiles.manage' => '관리',
 			'profiles.delete' => '삭제',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signOut' => '로그아웃',
 			'profiles.signOutPlexTitle' => 'Plex에서 로그아웃하시겠습니까?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} 및 모든 Plex Home 사용자를 제거할까요? 언제든 다시 로그인할 수 있습니다.',
@@ -2801,6 +2814,7 @@ extension on TranslationsKo {
 			'companionRemote.remote.audio' => '오디오',
 			'companionRemote.remote.searchHint' => '데스크톱에서 검색...',
 			'videoSettings.playbackSpeed' => '재생 속도',
+			'videoSettings.zoom' => '확대/축소',
 			'videoSettings.sleepTimer' => '취침 타이머',
 			'videoSettings.audioSync' => '오디오 동기화',
 			'videoSettings.subtitleSync' => '자막 동기화',
@@ -2827,6 +2841,8 @@ extension on TranslationsKo {
 			'metadataEdit.editMetadata' => '편집...',
 			'metadataEdit.screenTitle' => '메타데이터 편집',
 			'metadataEdit.basicInfo' => '기본 정보',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artwork' => '아트워크',
 			'metadataEdit.advancedSettings' => '고급 설정',
 			'metadataEdit.title' => '제목',
@@ -2834,8 +2850,6 @@ extension on TranslationsKo {
 			'metadataEdit.originalTitle' => '원제',
 			'metadataEdit.releaseDate' => '출시일',
 			'metadataEdit.contentRating' => '콘텐츠 등급',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.studio' => '스튜디오',
 			'metadataEdit.tagline' => '태그라인',
 			'metadataEdit.summary' => '줄거리',

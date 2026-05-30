@@ -254,6 +254,8 @@ class _TranslationsSettingsPl extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Pokazuj numer sezonu i odcinka na kartach odcinków';
 	@override String get showSeasonPostersOnTabs => 'Pokaż plakaty sezonów na zakładkach';
 	@override String get showSeasonPostersOnTabsDescription => 'Pokazuj plakat każdego sezonu nad jego kartą';
+	@override String get tvFullCardLayout => 'Pełne karty TV';
+	@override String get tvFullCardLayoutDescription => 'Używaj kart TV tylko z obrazem i nałożonymi nazwiskami aktorów';
 	@override String get hideSpoilers => 'Ukryj spoilery nieobejrzanych odcinków';
 	@override String get hideSpoilersDescription => 'Rozmywaj miniatury i opisy nieobejrzanych odcinków';
 	@override String get playerBackend => 'Backend odtwarzacza';
@@ -605,6 +607,7 @@ class _TranslationsVideoControlsPl extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Odtwarzanie w trybie obraz w obrazie';
 	@override String get pipFailed => 'Nie udało się uruchomić trybu obraz w obrazie';
 	@override String get screenshotSaved => 'Zrzut ekranu zapisany';
+	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsPl pipErrors = _TranslationsVideoControlsPipErrorsPl._(_root);
 	@override String get chapters => 'Rozdziały';
 	@override String get noChaptersAvailable => 'Brak dostępnych rozdziałów';
@@ -1308,6 +1311,7 @@ class _TranslationsVideoSettingsPl extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Prędkość odtwarzania';
+	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Wyłącznik czasowy';
 	@override String get audioSync => 'Synchronizacja audio';
 	@override String get subtitleSync => 'Synchronizacja napisów';
@@ -1565,6 +1569,9 @@ class _TranslationsHotkeysActionsPl extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => 'Zwiększ prędkość';
 	@override String get speedDecrease => 'Zmniejsz prędkość';
 	@override String get speedReset => 'Zresetuj prędkość';
+	@override String get zoomIn => 'Powiększ';
+	@override String get zoomOut => 'Pomniejsz';
+	@override String get zoomReset => 'Zresetuj zoom';
 	@override String get subSeekNext => 'Przewiń do następnego napisu';
 	@override String get subSeekPrev => 'Przewiń do poprzedniego napisu';
 	@override String get shaderToggle => 'Przełącz shadery';
@@ -1924,6 +1931,8 @@ extension on TranslationsPl {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Pokazuj numer sezonu i odcinka na kartach odcinków',
 			'settings.showSeasonPostersOnTabs' => 'Pokaż plakaty sezonów na zakładkach',
 			'settings.showSeasonPostersOnTabsDescription' => 'Pokazuj plakat każdego sezonu nad jego kartą',
+			'settings.tvFullCardLayout' => 'Pełne karty TV',
+			'settings.tvFullCardLayoutDescription' => 'Używaj kart TV tylko z obrazem i nałożonymi nazwiskami aktorów',
 			'settings.hideSpoilers' => 'Ukryj spoilery nieobejrzanych odcinków',
 			'settings.hideSpoilersDescription' => 'Rozmywaj miniatury i opisy nieobejrzanych odcinków',
 			'settings.playerBackend' => 'Backend odtwarzacza',
@@ -2099,6 +2108,9 @@ extension on TranslationsPl {
 			'hotkeys.actions.speedIncrease' => 'Zwiększ prędkość',
 			'hotkeys.actions.speedDecrease' => 'Zmniejsz prędkość',
 			'hotkeys.actions.speedReset' => 'Zresetuj prędkość',
+			'hotkeys.actions.zoomIn' => 'Powiększ',
+			'hotkeys.actions.zoomOut' => 'Pomniejsz',
+			'hotkeys.actions.zoomReset' => 'Zresetuj zoom',
 			'hotkeys.actions.subSeekNext' => 'Przewiń do następnego napisu',
 			'hotkeys.actions.subSeekPrev' => 'Przewiń do poprzedniego napisu',
 			'hotkeys.actions.shaderToggle' => 'Przełącz shadery',
@@ -2224,6 +2236,7 @@ extension on TranslationsPl {
 			'videoControls.pipActive' => 'Odtwarzanie w trybie obraz w obrazie',
 			'videoControls.pipFailed' => 'Nie udało się uruchomić trybu obraz w obrazie',
 			'videoControls.screenshotSaved' => 'Zrzut ekranu zapisany',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Wymaga Androida 8.0 lub nowszego',
 			'videoControls.pipErrors.iosVersion' => 'Wymaga iOS 15.0 lub nowszego',
 			'videoControls.pipErrors.permissionDisabled' => 'Obraz w obrazie jest wyłączony. Włącz go w ustawieniach systemu.',
@@ -2314,14 +2327,14 @@ extension on TranslationsPl {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Potwierdź działanie',
 			'profiles.addPlezyProfile' => 'Dodaj profil Plezy',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Przełączanie profilu…',
 			'profiles.deleteThisProfileTitle' => 'Usunąć ten profil?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Usuń ${displayName}. Połączenia nie zostaną zmienione.',
 			'profiles.active' => 'Aktywny',
 			'profiles.manage' => 'Zarządzaj',
 			'profiles.delete' => 'Usuń',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signOut' => 'Wyloguj się',
 			'profiles.signOutPlexTitle' => 'Wylogować się z Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Usunąć ${displayName} i wszystkich użytkowników Plex Home? Możesz zalogować się ponownie w każdej chwili.',
@@ -2801,6 +2814,7 @@ extension on TranslationsPl {
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Szukaj na komputerze...',
 			'videoSettings.playbackSpeed' => 'Prędkość odtwarzania',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Wyłącznik czasowy',
 			'videoSettings.audioSync' => 'Synchronizacja audio',
 			'videoSettings.subtitleSync' => 'Synchronizacja napisów',
@@ -2827,6 +2841,8 @@ extension on TranslationsPl {
 			'metadataEdit.editMetadata' => 'Edytuj...',
 			'metadataEdit.screenTitle' => 'Edytuj metadane',
 			'metadataEdit.basicInfo' => 'Podstawowe informacje',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Grafika',
 			'metadataEdit.advancedSettings' => 'Ustawienia zaawansowane',
 			'metadataEdit.title' => 'Tytuł',
@@ -2834,8 +2850,6 @@ extension on TranslationsPl {
 			'metadataEdit.originalTitle' => 'Tytuł oryginalny',
 			'metadataEdit.releaseDate' => 'Data premiery',
 			'metadataEdit.contentRating' => 'Klasyfikacja wiekowa',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Opis',

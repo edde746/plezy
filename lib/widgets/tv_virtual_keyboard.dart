@@ -356,16 +356,21 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
   }
 
   void _moveHorizontal(int delta) {
-    final nextColumn = _nextFocusableColumn(_row, _column + delta, delta);
+    var nextColumn = _nextFocusableColumn(_row, _column + delta, delta);
+    if (nextColumn == null) {
+      final wrapStart = delta > 0 ? 0 : _rows[_row].length - 1;
+      nextColumn = _nextFocusableColumn(_row, wrapStart, delta);
+    }
     if (nextColumn == null) return;
+    final column = nextColumn;
     setState(() {
-      _column = nextColumn;
+      _column = column;
     });
   }
 
   void _moveVertical(int delta) {
     final rows = _rows;
-    final nextRow = (_row + delta).clamp(0, rows.length - 1).toInt();
+    final nextRow = (_row + delta) % rows.length;
     final nextColumn = _nearestFocusableColumn(nextRow, _column);
     setState(() {
       _row = nextRow;

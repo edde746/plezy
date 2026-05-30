@@ -12,6 +12,8 @@ import '../utils/platform_detector.dart';
 import '../utils/player_utils.dart';
 
 class KeyboardShortcutsService extends ChangeNotifier {
+  static const Set<String> _repeatableVideoActions = {'zoom_in', 'zoom_out'};
+
   static KeyboardShortcutsService? _instance;
   late SettingsService _settingsService;
   final List<VoidCallback> _settingsDisposers = [];
@@ -183,13 +185,17 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onNextEpisode,
     VoidCallback? onPreviousEpisode,
     VoidCallback? onScreenshot,
+    VoidCallback? onZoomIn,
+    VoidCallback? onZoomOut,
+    VoidCallback? onZoomReset,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
     Future<void> Function(Duration position)? onSeekRequested,
   }) {
-    if (event is! KeyDownEvent) return KeyEventResult.ignored;
+    final isRepeat = event is KeyRepeatEvent;
+    if (event is! KeyDownEvent && !isRepeat) return KeyEventResult.ignored;
 
-    if (event.logicalKey == LogicalKeyboardKey.escape) {
+    if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
       onBack?.call();
       return KeyEventResult.handled;
     }
@@ -247,6 +253,10 @@ class KeyboardShortcutsService extends ChangeNotifier {
           continue;
         }
 
+        if (isRepeat && !_repeatableVideoActions.contains(action)) {
+          return KeyEventResult.handled;
+        }
+
         _executeAction(
           action,
           player,
@@ -261,6 +271,9 @@ class KeyboardShortcutsService extends ChangeNotifier {
           onNextEpisode: onNextEpisode,
           onPreviousEpisode: onPreviousEpisode,
           onScreenshot: onScreenshot,
+          onZoomIn: onZoomIn,
+          onZoomOut: onZoomOut,
+          onZoomReset: onZoomReset,
           currentPositionEpoch: currentPositionEpoch,
           onLiveSeek: onLiveSeek,
           onSeekRequested: onSeekRequested,
@@ -286,6 +299,9 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onNextEpisode,
     VoidCallback? onPreviousEpisode,
     VoidCallback? onScreenshot,
+    VoidCallback? onZoomIn,
+    VoidCallback? onZoomOut,
+    VoidCallback? onZoomReset,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
     Future<void> Function(Duration position)? onSeekRequested,
@@ -383,6 +399,15 @@ class KeyboardShortcutsService extends ChangeNotifier {
       case 'screenshot':
         unawaited(player.command(['screenshot', 'subtitles']).then((_) => onScreenshot?.call()));
         break;
+      case 'zoom_in':
+        onZoomIn?.call();
+        break;
+      case 'zoom_out':
+        onZoomOut?.call();
+        break;
+      case 'zoom_reset':
+        onZoomReset?.call();
+        break;
     }
   }
 
@@ -436,6 +461,12 @@ class KeyboardShortcutsService extends ChangeNotifier {
         return t.hotkeys.actions.skipMarker;
       case 'screenshot':
         return t.hotkeys.actions.screenshot;
+      case 'zoom_in':
+        return t.hotkeys.actions.zoomIn;
+      case 'zoom_out':
+        return t.hotkeys.actions.zoomOut;
+      case 'zoom_reset':
+        return t.hotkeys.actions.zoomReset;
       default:
         return action;
     }

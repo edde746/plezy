@@ -254,6 +254,8 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Показывать номер сезона и серии на карточках серий';
 	@override String get showSeasonPostersOnTabs => 'Показывать постеры сезонов на вкладках';
 	@override String get showSeasonPostersOnTabsDescription => 'Показывать постер каждого сезона над его вкладкой';
+	@override String get tvFullCardLayout => 'Полные TV-карточки';
+	@override String get tvFullCardLayoutDescription => 'Использовать TV-карточки только с изображением и именами актёров поверх него';
 	@override String get hideSpoilers => 'Скрыть спойлеры непросмотренных эпизодов';
 	@override String get hideSpoilersDescription => 'Размывать миниатюры и описания непросмотренных серий';
 	@override String get playerBackend => 'Бэкенд плеера';
@@ -605,6 +607,7 @@ class _TranslationsVideoControlsRu extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Воспроизводится в режиме «картинка в картинке»';
 	@override String get pipFailed => 'Не удалось запустить режим «картинка в картинке»';
 	@override String get screenshotSaved => 'Снимок экрана сохранён';
+	@override String zoomPercent({required Object percent}) => 'Масштаб ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsRu pipErrors = _TranslationsVideoControlsPipErrorsRu._(_root);
 	@override String get chapters => 'Главы';
 	@override String get noChaptersAvailable => 'Главы недоступны';
@@ -1308,6 +1311,7 @@ class _TranslationsVideoSettingsRu extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Скорость воспроизведения';
+	@override String get zoom => 'Масштаб';
 	@override String get sleepTimer => 'Таймер сна';
 	@override String get audioSync => 'Синхронизация аудио';
 	@override String get subtitleSync => 'Синхронизация субтитров';
@@ -1565,6 +1569,9 @@ class _TranslationsHotkeysActionsRu extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => 'Увеличить скорость';
 	@override String get speedDecrease => 'Уменьшить скорость';
 	@override String get speedReset => 'Сбросить скорость';
+	@override String get zoomIn => 'Увеличить масштаб';
+	@override String get zoomOut => 'Уменьшить масштаб';
+	@override String get zoomReset => 'Сбросить масштаб';
 	@override String get subSeekNext => 'К следующему субтитру';
 	@override String get subSeekPrev => 'К предыдущему субтитру';
 	@override String get shaderToggle => 'Вкл./выкл. шейдеры';
@@ -1924,6 +1931,8 @@ extension on TranslationsRu {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Показывать номер сезона и серии на карточках серий',
 			'settings.showSeasonPostersOnTabs' => 'Показывать постеры сезонов на вкладках',
 			'settings.showSeasonPostersOnTabsDescription' => 'Показывать постер каждого сезона над его вкладкой',
+			'settings.tvFullCardLayout' => 'Полные TV-карточки',
+			'settings.tvFullCardLayoutDescription' => 'Использовать TV-карточки только с изображением и именами актёров поверх него',
 			'settings.hideSpoilers' => 'Скрыть спойлеры непросмотренных эпизодов',
 			'settings.hideSpoilersDescription' => 'Размывать миниатюры и описания непросмотренных серий',
 			'settings.playerBackend' => 'Бэкенд плеера',
@@ -2099,6 +2108,9 @@ extension on TranslationsRu {
 			'hotkeys.actions.speedIncrease' => 'Увеличить скорость',
 			'hotkeys.actions.speedDecrease' => 'Уменьшить скорость',
 			'hotkeys.actions.speedReset' => 'Сбросить скорость',
+			'hotkeys.actions.zoomIn' => 'Увеличить масштаб',
+			'hotkeys.actions.zoomOut' => 'Уменьшить масштаб',
+			'hotkeys.actions.zoomReset' => 'Сбросить масштаб',
 			'hotkeys.actions.subSeekNext' => 'К следующему субтитру',
 			'hotkeys.actions.subSeekPrev' => 'К предыдущему субтитру',
 			'hotkeys.actions.shaderToggle' => 'Вкл./выкл. шейдеры',
@@ -2224,6 +2236,7 @@ extension on TranslationsRu {
 			'videoControls.pipActive' => 'Воспроизводится в режиме «картинка в картинке»',
 			'videoControls.pipFailed' => 'Не удалось запустить режим «картинка в картинке»',
 			'videoControls.screenshotSaved' => 'Снимок экрана сохранён',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Масштаб ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Требуется Android 8.0 или новее',
 			'videoControls.pipErrors.iosVersion' => 'Требуется iOS 15.0 или новее',
 			'videoControls.pipErrors.permissionDisabled' => 'Картинка-в-картинке отключена. Включите ее в системных настройках.',
@@ -2314,14 +2327,14 @@ extension on TranslationsRu {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Подтвердить действие',
 			'profiles.addPlezyProfile' => 'Добавить профиль Plezy',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Переключение профиля…',
 			'profiles.deleteThisProfileTitle' => 'Удалить этот профиль?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Удалить ${displayName}. Подключения не изменятся.',
 			'profiles.active' => 'Активный',
 			'profiles.manage' => 'Управление',
 			'profiles.delete' => 'Удалить',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signOut' => 'Выйти',
 			'profiles.signOutPlexTitle' => 'Выйти из Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Удалить ${displayName} и всех пользователей Plex Home? Вы сможете войти снова в любое время.',
@@ -2801,6 +2814,7 @@ extension on TranslationsRu {
 			'companionRemote.remote.audio' => 'Аудио',
 			'companionRemote.remote.searchHint' => 'Поиск на десктопе...',
 			'videoSettings.playbackSpeed' => 'Скорость воспроизведения',
+			'videoSettings.zoom' => 'Масштаб',
 			'videoSettings.sleepTimer' => 'Таймер сна',
 			'videoSettings.audioSync' => 'Синхронизация аудио',
 			'videoSettings.subtitleSync' => 'Синхронизация субтитров',
@@ -2827,6 +2841,8 @@ extension on TranslationsRu {
 			'metadataEdit.editMetadata' => 'Редактировать...',
 			'metadataEdit.screenTitle' => 'Редактировать метаданные',
 			'metadataEdit.basicInfo' => 'Основная информация',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Обложка',
 			'metadataEdit.advancedSettings' => 'Дополнительные настройки',
 			'metadataEdit.title' => 'Название',
@@ -2834,8 +2850,6 @@ extension on TranslationsRu {
 			'metadataEdit.originalTitle' => 'Оригинальное название',
 			'metadataEdit.releaseDate' => 'Дата выпуска',
 			'metadataEdit.contentRating' => 'Возрастной рейтинг',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.studio' => 'Студия',
 			'metadataEdit.tagline' => 'Слоган',
 			'metadataEdit.summary' => 'Описание',

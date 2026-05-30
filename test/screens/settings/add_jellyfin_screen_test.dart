@@ -1,13 +1,39 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/profiles/profile.dart';
 import 'package:plezy/screens/settings/add_jellyfin_screen.dart';
+import 'package:plezy/services/jellyfin_auth_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
 Profile _profile(String id) =>
     Profile.local(id: id, displayName: id, sortOrder: 0, createdAt: DateTime.fromMillisecondsSinceEpoch(0));
+
+JellyfinConnectionAuthService _jellyfinAuthService({bool quickConnectEnabled = false}) {
+  return JellyfinConnectionAuthService(
+    clientName: 'Plezy',
+    clientVersion: 'test',
+    deviceName: 'TestDevice',
+    testHttpClientFactory: () => MockClient((request) async {
+      switch (request.url.path) {
+        case '/System/Info/Public':
+          return http.Response(
+            jsonEncode({'Id': 'srv-1', 'ServerName': 'Home', 'Version': '10.9.0'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        case '/QuickConnect/Enabled':
+          return http.Response(jsonEncode(quickConnectEnabled), 200, headers: {'content-type': 'application/json'});
+      }
+      return http.Response('', 404);
+    }),
+  );
+}
 
 void main() {
   tearDown(() {
@@ -52,6 +78,30 @@ void main() {
 
     await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
     await tester.pumpAndSettle();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+  });
+
+  testWidgets('D-pad moves from URL to credentials after server is found', (tester) async {
+    await tester.pumpWidget(MaterialApp(home: AddJellyfinScreen(authServiceFactory: () => _jellyfinAuthService())));
+    await tester.pump();
+
+    await tester.enterText(find.byType(TextField).first, 'https://jf.example.com');
+    await tester.testTextInput.receiveAction(TextInputAction.go);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(TextField).first);
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Username');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pump();
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
   });

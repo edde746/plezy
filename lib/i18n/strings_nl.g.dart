@@ -254,6 +254,8 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Toon seizoen- en afleveringsnummer op afleveringskaarten';
 	@override String get showSeasonPostersOnTabs => 'Toon seizoensposters op tabbladen';
 	@override String get showSeasonPostersOnTabsDescription => 'Toon de poster van elk seizoen boven het tabblad';
+	@override String get tvFullCardLayout => 'Volledige tv-kaarten';
+	@override String get tvFullCardLayoutDescription => 'Gebruik tv-kaarten met alleen afbeeldingen en namen van acteurs als overlay';
 	@override String get hideSpoilers => 'Spoilers voor ongekeken afleveringen verbergen';
 	@override String get hideSpoilersDescription => 'Vervaag miniaturen en beschrijvingen voor niet-bekeken afleveringen';
 	@override String get playerBackend => 'Speler backend';
@@ -605,6 +607,7 @@ class _TranslationsVideoControlsNl extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Afspelen in beeld-in-beeld';
 	@override String get pipFailed => 'Beeld-in-beeld kon niet worden gestart';
 	@override String get screenshotSaved => 'Schermafbeelding opgeslagen';
+	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsNl pipErrors = _TranslationsVideoControlsPipErrorsNl._(_root);
 	@override String get chapters => 'Hoofdstukken';
 	@override String get noChaptersAvailable => 'Geen hoofdstukken beschikbaar';
@@ -1308,6 +1311,7 @@ class _TranslationsVideoSettingsNl extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Afspeelsnelheid';
+	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Slaaptimer';
 	@override String get audioSync => 'Audio synchronisatie';
 	@override String get subtitleSync => 'Ondertitel synchronisatie';
@@ -1565,6 +1569,9 @@ class _TranslationsHotkeysActionsNl extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => 'Snelheid verhogen';
 	@override String get speedDecrease => 'Snelheid verlagen';
 	@override String get speedReset => 'Snelheid resetten';
+	@override String get zoomIn => 'Inzoomen';
+	@override String get zoomOut => 'Uitzoomen';
+	@override String get zoomReset => 'Zoom resetten';
 	@override String get subSeekNext => 'Naar volgende ondertitel';
 	@override String get subSeekPrev => 'Naar vorige ondertitel';
 	@override String get shaderToggle => 'Shaders aan/uit';
@@ -1924,6 +1931,8 @@ extension on TranslationsNl {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Toon seizoen- en afleveringsnummer op afleveringskaarten',
 			'settings.showSeasonPostersOnTabs' => 'Toon seizoensposters op tabbladen',
 			'settings.showSeasonPostersOnTabsDescription' => 'Toon de poster van elk seizoen boven het tabblad',
+			'settings.tvFullCardLayout' => 'Volledige tv-kaarten',
+			'settings.tvFullCardLayoutDescription' => 'Gebruik tv-kaarten met alleen afbeeldingen en namen van acteurs als overlay',
 			'settings.hideSpoilers' => 'Spoilers voor ongekeken afleveringen verbergen',
 			'settings.hideSpoilersDescription' => 'Vervaag miniaturen en beschrijvingen voor niet-bekeken afleveringen',
 			'settings.playerBackend' => 'Speler backend',
@@ -2099,6 +2108,9 @@ extension on TranslationsNl {
 			'hotkeys.actions.speedIncrease' => 'Snelheid verhogen',
 			'hotkeys.actions.speedDecrease' => 'Snelheid verlagen',
 			'hotkeys.actions.speedReset' => 'Snelheid resetten',
+			'hotkeys.actions.zoomIn' => 'Inzoomen',
+			'hotkeys.actions.zoomOut' => 'Uitzoomen',
+			'hotkeys.actions.zoomReset' => 'Zoom resetten',
 			'hotkeys.actions.subSeekNext' => 'Naar volgende ondertitel',
 			'hotkeys.actions.subSeekPrev' => 'Naar vorige ondertitel',
 			'hotkeys.actions.shaderToggle' => 'Shaders aan/uit',
@@ -2224,6 +2236,7 @@ extension on TranslationsNl {
 			'videoControls.pipActive' => 'Afspelen in beeld-in-beeld',
 			'videoControls.pipFailed' => 'Beeld-in-beeld kon niet worden gestart',
 			'videoControls.screenshotSaved' => 'Schermafbeelding opgeslagen',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Vereist Android 8.0 of nieuwer',
 			'videoControls.pipErrors.iosVersion' => 'Vereist iOS 15.0 of nieuwer',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture is uitgeschakeld. Schakel het in via systeeminstellingen.',
@@ -2314,14 +2327,14 @@ extension on TranslationsNl {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Bevestig actie',
 			'profiles.addPlezyProfile' => 'Plezy-profiel toevoegen',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Profiel wisselen…',
 			'profiles.deleteThisProfileTitle' => 'Dit profiel verwijderen?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Verwijder ${displayName}. Verbindingen blijven ongewijzigd.',
 			'profiles.active' => 'Actief',
 			'profiles.manage' => 'Beheren',
 			'profiles.delete' => 'Verwijderen',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signOut' => 'Afmelden',
 			'profiles.signOutPlexTitle' => 'Afmelden bij Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} en alle Plex Home-gebruikers verwijderen? Je kunt altijd opnieuw inloggen.',
@@ -2801,6 +2814,7 @@ extension on TranslationsNl {
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Zoeken op desktop...',
 			'videoSettings.playbackSpeed' => 'Afspeelsnelheid',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Slaaptimer',
 			'videoSettings.audioSync' => 'Audio synchronisatie',
 			'videoSettings.subtitleSync' => 'Ondertitel synchronisatie',
@@ -2827,6 +2841,8 @@ extension on TranslationsNl {
 			'metadataEdit.editMetadata' => 'Bewerken...',
 			'metadataEdit.screenTitle' => 'Metadata bewerken',
 			'metadataEdit.basicInfo' => 'Basisinformatie',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Geavanceerde instellingen',
 			'metadataEdit.title' => 'Titel',
@@ -2834,8 +2850,6 @@ extension on TranslationsNl {
 			'metadataEdit.originalTitle' => 'Oorspronkelijke titel',
 			'metadataEdit.releaseDate' => 'Releasedatum',
 			'metadataEdit.contentRating' => 'Leeftijdsclassificatie',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Samenvatting',

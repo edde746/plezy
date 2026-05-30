@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/playback_report_metadata.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/live_session_tracker.dart';
 
@@ -45,6 +46,7 @@ class _FakeJellyfinClient implements JellyfinClient {
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     calls.add('stopped:$itemId:$playSessionId');
   }

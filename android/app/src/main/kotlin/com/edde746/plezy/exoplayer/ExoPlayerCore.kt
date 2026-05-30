@@ -122,6 +122,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var surfaceContainer: FrameLayout? = null
   private var videoAspectContainer: AspectRatioFrameLayout? = null
   private var subtitleView: SubtitleView? = null
+  private var videoZoomScale: Float = 1.0f
   private var assHandler: AssHandler? = null
   private var overlayLayoutListener: ViewTreeObserver.OnGlobalLayoutListener? = null
   private var lastVideoSize: VideoSize? = null
@@ -439,7 +440,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             // encoded audio track when capabilities come back. See androidx/media#2258.
             .setAllowInvalidateSelectionsOnRendererCapabilitiesChange(true)
             .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-            .setPreferredTextLanguage("en")
         )
       }
 
@@ -1193,17 +1193,25 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val containerHeight = contentView.height
     if (containerWidth == 0 || containerHeight == 0) return
 
-    // In cover/stretch modes subtitles stay at container size so they never get
-    // cropped or distorted. In letterbox mode they follow the video rect so they
-    // anchor to the bottom of the video (matching MPV's default sub positioning).
+    // In cover/stretch/zoomed-in modes subtitles stay at container size so they
+    // never get cropped. In letterbox mode they follow the visible video rect.
     val isLetterbox = videoAspectContainer?.resizeMode == AspectRatioFrameLayout.RESIZE_MODE_FIT
     val (subWidth, subHeight) = if (isLetterbox) {
       val videoAspect = (videoWidth * pixelRatio) / videoHeight
       val containerAspect = containerWidth.toFloat() / containerHeight
-      if (videoAspect > containerAspect) {
+      val (baseWidth, baseHeight) = if (videoAspect > containerAspect) {
         containerWidth to (containerWidth / videoAspect).toInt()
       } else {
         (containerHeight * videoAspect).toInt() to containerHeight
+      }
+      if (videoZoomScale < 0.999f) {
+        val zoomedWidth = ((baseWidth * videoZoomScale).toInt()).coerceAtLeast(1)
+        val zoomedHeight = ((baseHeight * videoZoomScale).toInt()).coerceAtLeast(1)
+        zoomedWidth to zoomedHeight
+      } else if (videoZoomScale > 1.001f) {
+        containerWidth to containerHeight
+      } else {
+        baseWidth to baseHeight
       }
     } else {
       containerWidth to containerHeight
@@ -1227,6 +1235,21 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (disposing) return
     activity.runOnUiThread {
       videoAspectContainer?.resizeMode = boxFitModeToResizeMode(mode.coerceIn(0, 2))
+      lastVideoSize?.let { vs ->
+        if (vs.width > 0 && vs.height > 0) {
+          updateSubtitleViewSize(vs.width, vs.height, vs.pixelWidthHeightRatio)
+        }
+      }
+    }
+  }
+
+  fun setVideoZoom(scale: Double) {
+    if (disposing) return
+    val clamped = scale.coerceIn(0.5, 2.0).toFloat()
+    activity.runOnUiThread {
+      videoZoomScale = clamped
+      videoAspectContainer?.scaleX = clamped
+      videoAspectContainer?.scaleY = clamped
       lastVideoSize?.let { vs ->
         if (vs.width > 0 && vs.height > 0) {
           updateSubtitleViewSize(vs.width, vs.height, vs.pixelWidthHeightRatio)
@@ -2255,7 +2278,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     startPositionMs: Long,
     autoPlay: Boolean,
     isLive: Boolean = false,
-    externalSubtitleList: List<Map<String, String?>>? = null
+    externalSubtitleList: List<Map<String, Any?>>? = null
   ) {
     if (!isInitialized) return
 
@@ -2306,12 +2329,22 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     // Build external subtitle configurations (attached to MediaItem before prepare)
     externalSubtitleList?.forEachIndexed { index, sub ->
-      val subUri = sub["uri"] ?: return@forEachIndexed
+      val subUri = sub["uri"] as? String ?: return@forEachIndexed
+      val title = sub["title"] as? String
+      val language = sub["language"] as? String
+      val codec = sub["codec"] as? String
+      val mimeType = sub["mimeType"] as? String
+      val isDefault = sub["isDefault"] as? Boolean ?: false
+      val isForced = sub["isForced"] as? Boolean ?: false
+      val selectionFlags =
+        (if (isDefault) C.SELECTION_FLAG_DEFAULT else 0) or
+          (if (isForced) C.SELECTION_FLAG_FORCED else 0)
       val config = MediaItem.SubtitleConfiguration.Builder(Uri.parse(subUri))
         .setId("external_$index")
-        .setLabel(sub["title"] ?: "External")
-        .setLanguage(sub["language"])
-        .setMimeType(sub["mimeType"] ?: detectSubtitleMimeType(subUri))
+        .setLabel(title ?: "External")
+        .setLanguage(language)
+        .setMimeType(mimeType ?: subtitleMimeTypeForCodec(codec) ?: detectSubtitleMimeType(subUri))
+        .setSelectionFlags(selectionFlags)
         .build()
       externalSubtitles.add(config)
       externalSubtitleUris.add(subUri)
@@ -2327,7 +2360,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       reason = "open",
       forceSelector = true,
       clearAudioOverrides = true,
-      clearTextOverrides = true
+      clearTextOverrides = true,
+      textDisabled = true
     )
     emitSeekable(false, force = true)
 
@@ -2592,6 +2626,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       path.endsWith(".ttml") -> MimeTypes.APPLICATION_TTML
       else -> MimeTypes.APPLICATION_SUBRIP
     }
+  }
+
+  private fun subtitleMimeTypeForCodec(codec: String?): String? = when (codec?.lowercase()) {
+    "srt", "subrip" -> MimeTypes.APPLICATION_SUBRIP
+    "ass", "ssa" -> MimeTypes.TEXT_SSA
+    "webvtt", "vtt" -> MimeTypes.TEXT_VTT
+    "ttml" -> MimeTypes.APPLICATION_TTML
+    else -> null
   }
 
   fun setVisible(visible: Boolean) {

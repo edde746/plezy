@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'plex_client.dart';
 import 'scrub_preview_source.dart';
 import '../utils/app_logger.dart';
+import '../utils/platform_detector.dart';
 
 /// A single BIF thumbnail entry: timestamp in milliseconds + JPEG bytes.
 typedef BifEntry = ({int timestampMs, Uint8List imageBytes});
@@ -66,14 +67,20 @@ List<BifEntry> _parseBifBytes(Uint8List bytes) {
 class BifThumbnailService implements ScrubPreviewSource {
   List<BifEntry>? _entries;
 
+  double? _aspectRatio;
+
   /// Download and parse the BIF file for [partId].
   /// Returns silently on failure (thumbnails simply won't be available).
-  Future<void> load(PlexClient client, int partId) async {
+  Future<void> load(PlexClient client, int partId, {double? aspectRatio}) async {
+    _aspectRatio = aspectRatio;
     _entries = null;
     try {
       final bytes = await client.downloadBifFile(partId);
       if (bytes == null || bytes.isEmpty) return;
-      if (bytes.length > 50 * 1024 * 1024) {
+      const fiftyMb = 50 * 1024 * 1024;
+      const twoHundredMb = 200 * 1024 * 1024;
+      final maxBytes = PlatformDetector.isDesktopOS() ? twoHundredMb : fiftyMb;
+      if (bytes.length > maxBytes) {
         appLogger.w('BIF file too large (${bytes.length} bytes), skipping');
         return;
       }
@@ -91,7 +98,7 @@ class BifThumbnailService implements ScrubPreviewSource {
   ScrubFrame? getFrame(Duration time) {
     final bytes = getThumbnail(time);
     if (bytes == null) return null;
-    return BytesScrubFrame(bytes);
+    return BytesScrubFrame(bytes, aspectRatio: _aspectRatio ?? 16 / 9);
   }
 
   /// Return the JPEG bytes for the thumbnail nearest to [time].

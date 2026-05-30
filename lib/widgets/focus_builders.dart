@@ -73,6 +73,10 @@ class FocusBuilders {
     VoidCallback? onTap,
     VoidCallback? onLongPress,
     double borderRadius = FocusTheme.defaultBorderRadius,
+    double focusScale = FocusTheme.focusScale,
+    double focusBorderStrokeAlign = BorderSide.strokeAlignInside,
+    bool useFocusGlow = false,
+    bool useForegroundFocusDecoration = false,
     required Widget child,
   }) {
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
@@ -93,15 +97,25 @@ class FocusBuilders {
 
     final duration = FocusTheme.getAnimationDuration(context);
     final showFocus = isFocused && isKeyboardMode;
+    final focusDecoration = FocusTheme.focusDecoration(
+      context,
+      isFocused: showFocus,
+      borderRadius: borderRadius,
+      borderStrokeAlign: focusBorderStrokeAlign,
+    );
+    final glowDecoration = useFocusGlow
+        ? FocusTheme.focusGlowDecoration(context, isFocused: showFocus, borderRadius: borderRadius)
+        : null;
 
     final focusedWidget = AnimatedScale(
-      scale: showFocus ? FocusTheme.focusScale : 1.0,
+      scale: showFocus ? focusScale : 1.0,
       duration: duration,
       curve: Curves.easeOutCubic,
       child: AnimatedContainer(
         duration: duration,
         curve: Curves.easeOutCubic,
-        decoration: FocusTheme.focusDecoration(context, isFocused: showFocus, borderRadius: borderRadius),
+        decoration: useForegroundFocusDecoration ? glowDecoration : focusDecoration,
+        foregroundDecoration: useForegroundFocusDecoration ? focusDecoration : null,
         child: child,
       ),
     );
@@ -138,6 +152,10 @@ class FocusBuilders {
     VoidCallback? onTap,
     VoidCallback? onLongPress,
     double borderRadius = FocusTheme.defaultBorderRadius,
+    double focusScale = FocusTheme.focusScale,
+    double focusBorderStrokeAlign = BorderSide.strokeAlignInside,
+    bool useFocusGlow = false,
+    bool useForegroundFocusDecoration = false,
     required Widget child,
   }) {
     return buildFocusableCard(
@@ -148,6 +166,10 @@ class FocusBuilders {
       onTap: onTap,
       onLongPress: onLongPress,
       borderRadius: borderRadius,
+      focusScale: focusScale,
+      focusBorderStrokeAlign: focusBorderStrokeAlign,
+      useFocusGlow: useFocusGlow,
+      useForegroundFocusDecoration: useForegroundFocusDecoration,
       child: child,
     );
   }

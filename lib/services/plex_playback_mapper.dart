@@ -59,6 +59,7 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
             chapters: chapters,
             partId: part['id'] as int?,
             displayCriteria: PlexMappers.displayCriteriaFromJson(media as Map<String, dynamic>?, streams.videoStream),
+            videoAspectRatio: ((media as Map?)?['aspectRatio'] as num?)?.toDouble(),
           );
         }
       }

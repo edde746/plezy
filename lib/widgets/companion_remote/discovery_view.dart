@@ -330,7 +330,6 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
           disableScale: true,
           borderRadius: 8,
           onSelect: () => setState(() => _showManualEntry = !_showManualEntry),
-          onNavigateDown: _showManualEntry ? _hostAddressFocusNode.requestFocus : null,
           child: InkWell(
             canRequestFocus: false,
             borderRadius: const BorderRadius.all(Radius.circular(8)),
@@ -382,13 +381,10 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
                     return null;
                   },
                   enabled: !_isConnecting,
-                  onNavigateUp: _manualToggleFocusNode.requestFocus,
-                  onNavigateDown: _connectFocusNode.requestFocus,
                 ),
                 const SizedBox(height: 16),
                 FocusableButton(
                   focusNode: _connectFocusNode,
-                  onNavigateUp: _hostAddressFocusNode.requestFocus,
                   onPressed: _isConnecting ? null : _submitManualHost,
                   child: FilledButton.icon(
                     onPressed: _isConnecting ? null : _submitManualHost,

@@ -25,6 +25,9 @@ class MediaSourceInfo {
   /// null here and uses [partId] + the BIF service instead.
   final Map<int, TrickplayInfo>? trickplayByWidth;
 
+  /// Display aspect ratio of the video stream (width / height).
+  final double? videoAspectRatio;
+
   MediaSourceInfo({
     required this.videoUrl,
     required this.audioTracks,
@@ -36,6 +39,7 @@ class MediaSourceInfo {
     this.defaultAudioStreamIndex,
     this.defaultSubtitleStreamIndex,
     this.trickplayByWidth,
+    this.videoAspectRatio,
   });
   int? getPartId() => partId;
 }

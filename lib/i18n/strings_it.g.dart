@@ -254,6 +254,8 @@ class _TranslationsSettingsIt extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Mostra stagione ed episodio sulle schede episodio';
 	@override String get showSeasonPostersOnTabs => 'Mostra poster delle stagioni sulle schede';
 	@override String get showSeasonPostersOnTabsDescription => 'Mostra il poster di ogni stagione sopra la sua scheda';
+	@override String get tvFullCardLayout => 'Schede TV piene';
+	@override String get tvFullCardLayoutDescription => 'Usa schede TV solo immagine con i nomi degli attori sovrapposti';
 	@override String get hideSpoilers => 'Nascondi spoiler per episodi non visti';
 	@override String get hideSpoilersDescription => 'Sfoca miniature e descrizioni degli episodi non visti';
 	@override String get playerBackend => 'Motore di riproduzione';
@@ -605,6 +607,7 @@ class _TranslationsVideoControlsIt extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Riproduzione in Picture-in-Picture';
 	@override String get pipFailed => 'Impossibile avviare la modalità Picture-in-Picture';
 	@override String get screenshotSaved => 'Schermata salvata';
+	@override String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsIt pipErrors = _TranslationsVideoControlsPipErrorsIt._(_root);
 	@override String get chapters => 'Capitoli';
 	@override String get noChaptersAvailable => 'Nessun capitolo disponibile';
@@ -1308,6 +1311,7 @@ class _TranslationsVideoSettingsIt extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Velocità di riproduzione';
+	@override String get zoom => 'Zoom';
 	@override String get sleepTimer => 'Timer di spegnimento';
 	@override String get audioSync => 'Sincronizzazione audio';
 	@override String get subtitleSync => 'Sincronizzazione sottotitoli';
@@ -1565,6 +1569,9 @@ class _TranslationsHotkeysActionsIt extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => 'Aumenta velocità';
 	@override String get speedDecrease => 'Diminuisci velocità';
 	@override String get speedReset => 'Ripristina velocità';
+	@override String get zoomIn => 'Aumenta zoom';
+	@override String get zoomOut => 'Riduci zoom';
+	@override String get zoomReset => 'Ripristina zoom';
 	@override String get subSeekNext => 'Vai al sottotitolo successivo';
 	@override String get subSeekPrev => 'Vai al sottotitolo precedente';
 	@override String get shaderToggle => 'Attiva/disattiva shader';
@@ -1924,6 +1931,8 @@ extension on TranslationsIt {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Mostra stagione ed episodio sulle schede episodio',
 			'settings.showSeasonPostersOnTabs' => 'Mostra poster delle stagioni sulle schede',
 			'settings.showSeasonPostersOnTabsDescription' => 'Mostra il poster di ogni stagione sopra la sua scheda',
+			'settings.tvFullCardLayout' => 'Schede TV piene',
+			'settings.tvFullCardLayoutDescription' => 'Usa schede TV solo immagine con i nomi degli attori sovrapposti',
 			'settings.hideSpoilers' => 'Nascondi spoiler per episodi non visti',
 			'settings.hideSpoilersDescription' => 'Sfoca miniature e descrizioni degli episodi non visti',
 			'settings.playerBackend' => 'Motore di riproduzione',
@@ -2099,6 +2108,9 @@ extension on TranslationsIt {
 			'hotkeys.actions.speedIncrease' => 'Aumenta velocità',
 			'hotkeys.actions.speedDecrease' => 'Diminuisci velocità',
 			'hotkeys.actions.speedReset' => 'Ripristina velocità',
+			'hotkeys.actions.zoomIn' => 'Aumenta zoom',
+			'hotkeys.actions.zoomOut' => 'Riduci zoom',
+			'hotkeys.actions.zoomReset' => 'Ripristina zoom',
 			'hotkeys.actions.subSeekNext' => 'Vai al sottotitolo successivo',
 			'hotkeys.actions.subSeekPrev' => 'Vai al sottotitolo precedente',
 			'hotkeys.actions.shaderToggle' => 'Attiva/disattiva shader',
@@ -2224,6 +2236,7 @@ extension on TranslationsIt {
 			'videoControls.pipActive' => 'Riproduzione in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Impossibile avviare la modalità Picture-in-Picture',
 			'videoControls.screenshotSaved' => 'Schermata salvata',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Richiede Android 8.0 o versioni successive',
 			'videoControls.pipErrors.iosVersion' => 'Richiede iOS 15.0 o versioni successive',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture è disattivato. Attivalo nelle impostazioni di sistema.',
@@ -2314,14 +2327,14 @@ extension on TranslationsIt {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Conferma azione',
 			'profiles.addPlezyProfile' => 'Aggiungi profilo Plezy',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Cambio profilo…',
 			'profiles.deleteThisProfileTitle' => 'Eliminare questo profilo?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Rimuovi ${displayName}. Le connessioni non sono interessate.',
 			'profiles.active' => 'Attivo',
 			'profiles.manage' => 'Gestisci',
 			'profiles.delete' => 'Elimina',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signOut' => 'Esci',
 			'profiles.signOutPlexTitle' => 'Uscire da Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Rimuovere ${displayName} e tutti gli utenti Plex Home? Puoi accedere di nuovo quando vuoi.',
@@ -2801,6 +2814,7 @@ extension on TranslationsIt {
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Cerca sul desktop...',
 			'videoSettings.playbackSpeed' => 'Velocità di riproduzione',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Timer di spegnimento',
 			'videoSettings.audioSync' => 'Sincronizzazione audio',
 			'videoSettings.subtitleSync' => 'Sincronizzazione sottotitoli',
@@ -2827,6 +2841,8 @@ extension on TranslationsIt {
 			'metadataEdit.editMetadata' => 'Modifica...',
 			'metadataEdit.screenTitle' => 'Modifica metadati',
 			'metadataEdit.basicInfo' => 'Informazioni di base',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Impostazioni avanzate',
 			'metadataEdit.title' => 'Titolo',
@@ -2834,8 +2850,6 @@ extension on TranslationsIt {
 			'metadataEdit.originalTitle' => 'Titolo originale',
 			'metadataEdit.releaseDate' => 'Data di uscita',
 			'metadataEdit.contentRating' => 'Classificazione',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Trama',

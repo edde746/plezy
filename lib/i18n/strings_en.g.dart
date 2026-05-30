@@ -488,6 +488,12 @@ class TranslationsSettingsEn {
 	/// en: 'Show each season's poster above its tab'
 	String get showSeasonPostersOnTabsDescription => 'Show each season\'s poster above its tab';
 
+	/// en: 'Full TV Cards'
+	String get tvFullCardLayout => 'Full TV Cards';
+
+	/// en: 'Use image-only TV cards with actor names overlaid'
+	String get tvFullCardLayoutDescription => 'Use image-only TV cards with actor names overlaid';
+
 	/// en: 'Hide Spoilers for Unwatched Episodes'
 	String get hideSpoilers => 'Hide Spoilers for Unwatched Episodes';
 
@@ -1395,6 +1401,9 @@ class TranslationsVideoControlsEn {
 
 	/// en: 'Screenshot saved'
 	String get screenshotSaved => 'Screenshot saved';
+
+	/// en: 'Zoom ${percent}%'
+	String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
 
 	late final TranslationsVideoControlsPipErrorsEn pipErrors = TranslationsVideoControlsPipErrorsEn.internal(_root);
 
@@ -3060,6 +3069,9 @@ class TranslationsVideoSettingsEn {
 	/// en: 'Playback Speed'
 	String get playbackSpeed => 'Playback Speed';
 
+	/// en: 'Zoom'
+	String get zoom => 'Zoom';
+
 	/// en: 'Sleep Timer'
 	String get sleepTimer => 'Sleep Timer';
 
@@ -3680,6 +3692,15 @@ class TranslationsHotkeysActionsEn {
 	/// en: 'Reset Speed'
 	String get speedReset => 'Reset Speed';
 
+	/// en: 'Zoom In'
+	String get zoomIn => 'Zoom In';
+
+	/// en: 'Zoom Out'
+	String get zoomOut => 'Zoom Out';
+
+	/// en: 'Reset Zoom'
+	String get zoomReset => 'Reset Zoom';
+
 	/// en: 'Seek to Next Subtitle'
 	String get subSeekNext => 'Seek to Next Subtitle';
 
@@ -4288,6 +4309,8 @@ extension on Translations {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Show season and episode number on episode cards',
 			'settings.showSeasonPostersOnTabs' => 'Show Season Posters on Tabs',
 			'settings.showSeasonPostersOnTabsDescription' => 'Show each season\'s poster above its tab',
+			'settings.tvFullCardLayout' => 'Full TV Cards',
+			'settings.tvFullCardLayoutDescription' => 'Use image-only TV cards with actor names overlaid',
 			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
 			'settings.hideSpoilersDescription' => 'Blur thumbnails and descriptions for unwatched episodes',
 			'settings.playerBackend' => 'Player Backend',
@@ -4463,6 +4486,9 @@ extension on Translations {
 			'hotkeys.actions.speedIncrease' => 'Increase Speed',
 			'hotkeys.actions.speedDecrease' => 'Decrease Speed',
 			'hotkeys.actions.speedReset' => 'Reset Speed',
+			'hotkeys.actions.zoomIn' => 'Zoom In',
+			'hotkeys.actions.zoomOut' => 'Zoom Out',
+			'hotkeys.actions.zoomReset' => 'Reset Zoom',
 			'hotkeys.actions.subSeekNext' => 'Seek to Next Subtitle',
 			'hotkeys.actions.subSeekPrev' => 'Seek to Previous Subtitle',
 			'hotkeys.actions.shaderToggle' => 'Toggle Shaders',
@@ -4588,6 +4614,7 @@ extension on Translations {
 			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
 			'videoControls.screenshotSaved' => 'Screenshot saved',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Requires Android 8.0 or newer',
 			'videoControls.pipErrors.iosVersion' => 'Requires iOS 15.0 or newer',
 			'videoControls.pipErrors.permissionDisabled' => 'Picture-in-picture is disabled. Enable it in system settings.',
@@ -4678,14 +4705,14 @@ extension on Translations {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirm Action',
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Switching profile…',
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
 			'profiles.manage' => 'Manage',
 			'profiles.delete' => 'Delete',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signOut' => 'Sign out',
 			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.',
@@ -5165,6 +5192,7 @@ extension on Translations {
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Search on desktop...',
 			'videoSettings.playbackSpeed' => 'Playback Speed',
+			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',
 			'videoSettings.subtitleSync' => 'Subtitle Sync',
@@ -5191,6 +5219,8 @@ extension on Translations {
 			'metadataEdit.editMetadata' => 'Edit...',
 			'metadataEdit.screenTitle' => 'Edit Metadata',
 			'metadataEdit.basicInfo' => 'Basic Info',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Advanced Settings',
 			'metadataEdit.title' => 'Title',
@@ -5198,8 +5228,6 @@ extension on Translations {
 			'metadataEdit.originalTitle' => 'Original Title',
 			'metadataEdit.releaseDate' => 'Release Date',
 			'metadataEdit.contentRating' => 'Content Rating',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.studio' => 'Studio',
 			'metadataEdit.tagline' => 'Tagline',
 			'metadataEdit.summary' => 'Summary',

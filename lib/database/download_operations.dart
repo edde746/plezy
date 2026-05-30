@@ -85,6 +85,7 @@ extension DownloadDatabaseOperations on AppDatabase {
     String? grandparentRatingKey,
     required int status,
     int mediaIndex = 0,
+    String? mediaSourceId,
   }) async {
     await into(downloadedMedia).insert(
       DownloadedMediaCompanion.insert(
@@ -97,6 +98,7 @@ extension DownloadDatabaseOperations on AppDatabase {
         grandparentRatingKey: Value(grandparentRatingKey),
         status: status,
         mediaIndex: Value(mediaIndex),
+        mediaSourceId: Value(mediaSourceId),
       ),
       mode: InsertMode.insertOrReplace,
     );
@@ -143,6 +145,12 @@ extension DownloadDatabaseOperations on AppDatabase {
     await (update(
       downloadedMedia,
     )..where((t) => t.globalKey.equals(globalKey))).write(DownloadedMediaCompanion(status: Value(status)));
+  }
+
+  Future<void> updateDownloadMediaSource(String globalKey, String? mediaSourceId) async {
+    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
+      DownloadedMediaCompanion(mediaSourceId: Value(mediaSourceId)),
+    );
   }
 
   Future<void> updateDownloadProgress(String globalKey, int progress, int downloadedBytes, int totalBytes) async {

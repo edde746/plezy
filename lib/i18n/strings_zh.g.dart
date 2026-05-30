@@ -254,6 +254,8 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => '在剧集卡片上显示季和集编号';
 	@override String get showSeasonPostersOnTabs => '在选项卡上显示季海报';
 	@override String get showSeasonPostersOnTabsDescription => '在每季标签上方显示该季海报';
+	@override String get tvFullCardLayout => '完整 TV 卡片';
+	@override String get tvFullCardLayoutDescription => '使用仅显示图片的 TV 卡片，并叠加演员姓名';
 	@override String get hideSpoilers => '隐藏未看剧集的剧透内容';
 	@override String get hideSpoilersDescription => '模糊未观看剧集的缩略图和描述';
 	@override String get playerBackend => '播放器引擎';
@@ -605,6 +607,7 @@ class _TranslationsVideoControlsZh extends TranslationsVideoControlsEn {
 	@override String get pipActive => '正在画中画模式中播放';
 	@override String get pipFailed => '画中画启动失败';
 	@override String get screenshotSaved => '截图已保存';
+	@override String zoomPercent({required Object percent}) => '缩放 ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsZh pipErrors = _TranslationsVideoControlsPipErrorsZh._(_root);
 	@override String get chapters => '章节';
 	@override String get noChaptersAvailable => '没有可用的章节';
@@ -1308,6 +1311,7 @@ class _TranslationsVideoSettingsZh extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => '播放速度';
+	@override String get zoom => '缩放';
 	@override String get sleepTimer => '睡眠定时器';
 	@override String get audioSync => '音频同步';
 	@override String get subtitleSync => '字幕同步';
@@ -1565,6 +1569,9 @@ class _TranslationsHotkeysActionsZh extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => '加速';
 	@override String get speedDecrease => '减速';
 	@override String get speedReset => '重置速度';
+	@override String get zoomIn => '放大';
+	@override String get zoomOut => '缩小';
+	@override String get zoomReset => '重置缩放';
 	@override String get subSeekNext => '跳转到下一字幕';
 	@override String get subSeekPrev => '跳转到上一字幕';
 	@override String get shaderToggle => '切换着色器';
@@ -1924,6 +1931,8 @@ extension on TranslationsZh {
 			'settings.showEpisodeNumberOnCardsDescription' => '在剧集卡片上显示季和集编号',
 			'settings.showSeasonPostersOnTabs' => '在选项卡上显示季海报',
 			'settings.showSeasonPostersOnTabsDescription' => '在每季标签上方显示该季海报',
+			'settings.tvFullCardLayout' => '完整 TV 卡片',
+			'settings.tvFullCardLayoutDescription' => '使用仅显示图片的 TV 卡片，并叠加演员姓名',
 			'settings.hideSpoilers' => '隐藏未看剧集的剧透内容',
 			'settings.hideSpoilersDescription' => '模糊未观看剧集的缩略图和描述',
 			'settings.playerBackend' => '播放器引擎',
@@ -2099,6 +2108,9 @@ extension on TranslationsZh {
 			'hotkeys.actions.speedIncrease' => '加速',
 			'hotkeys.actions.speedDecrease' => '减速',
 			'hotkeys.actions.speedReset' => '重置速度',
+			'hotkeys.actions.zoomIn' => '放大',
+			'hotkeys.actions.zoomOut' => '缩小',
+			'hotkeys.actions.zoomReset' => '重置缩放',
 			'hotkeys.actions.subSeekNext' => '跳转到下一字幕',
 			'hotkeys.actions.subSeekPrev' => '跳转到上一字幕',
 			'hotkeys.actions.shaderToggle' => '切换着色器',
@@ -2224,6 +2236,7 @@ extension on TranslationsZh {
 			'videoControls.pipActive' => '正在画中画模式中播放',
 			'videoControls.pipFailed' => '画中画启动失败',
 			'videoControls.screenshotSaved' => '截图已保存',
+			'videoControls.zoomPercent' => ({required Object percent}) => '缩放 ${percent}%',
 			'videoControls.pipErrors.androidVersion' => '需要 Android 8.0 或更高版本',
 			'videoControls.pipErrors.iosVersion' => '需要 iOS 15.0 或更高版本',
 			'videoControls.pipErrors.permissionDisabled' => '画中画已禁用。请在系统设置中启用。',
@@ -2314,14 +2327,14 @@ extension on TranslationsZh {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '确认操作',
 			'profiles.addPlezyProfile' => '添加 Plezy 配置文件',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.switchingProfile' => '切换配置文件中…',
 			'profiles.deleteThisProfileTitle' => '删除此配置文件？',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '移除 ${displayName}。连接不会受影响。',
 			'profiles.active' => '活跃',
 			'profiles.manage' => '管理',
 			'profiles.delete' => '删除',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signOut' => '退出登录',
 			'profiles.signOutPlexTitle' => '退出 Plex 登录？',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '要移除 ${displayName} 和所有 Plex Home 用户吗？可随时重新登录。',
@@ -2801,6 +2814,7 @@ extension on TranslationsZh {
 			'companionRemote.remote.audio' => '音频',
 			'companionRemote.remote.searchHint' => '在桌面上搜索...',
 			'videoSettings.playbackSpeed' => '播放速度',
+			'videoSettings.zoom' => '缩放',
 			'videoSettings.sleepTimer' => '睡眠定时器',
 			'videoSettings.audioSync' => '音频同步',
 			'videoSettings.subtitleSync' => '字幕同步',
@@ -2827,6 +2841,8 @@ extension on TranslationsZh {
 			'metadataEdit.editMetadata' => '编辑...',
 			'metadataEdit.screenTitle' => '编辑元数据',
 			'metadataEdit.basicInfo' => '基本信息',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artwork' => '封面图片',
 			'metadataEdit.advancedSettings' => '高级设置',
 			'metadataEdit.title' => '标题',
@@ -2834,8 +2850,6 @@ extension on TranslationsZh {
 			'metadataEdit.originalTitle' => '原始标题',
 			'metadataEdit.releaseDate' => '上映日期',
 			'metadataEdit.contentRating' => '内容分级',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.studio' => '制片厂',
 			'metadataEdit.tagline' => '标语',
 			'metadataEdit.summary' => '简介',

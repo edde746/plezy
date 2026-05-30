@@ -324,14 +324,12 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
             DialogActionButton(
               focusNode: cancelFocusNode,
               onPressed: () => Navigator.pop(context),
-              onNavigateUp: fieldFocusNode.requestFocus,
               onNavigateRight: saveFocusNode.requestFocus,
               label: t.common.cancel,
             ),
             DialogActionButton(
               focusNode: saveFocusNode,
               onPressed: () => Navigator.pop(context, controller.text),
-              onNavigateUp: fieldFocusNode.requestFocus,
               onNavigateLeft: cancelFocusNode.requestFocus,
               isPrimary: true,
               label: t.common.save,

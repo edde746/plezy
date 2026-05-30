@@ -1,0 +1,81 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/database/app_database.dart';
+import 'package:plezy/services/watch_state_resolver.dart';
+import 'package:plezy/utils/watch_state_notifier.dart';
+
+OfflineWatchProgressItem _action({
+  required String actionType,
+  required int updatedAt,
+  int? viewOffset,
+  int? duration,
+  bool shouldMarkWatched = false,
+}) {
+  return OfflineWatchProgressItem(
+    id: updatedAt,
+    serverId: 'srv',
+    ratingKey: 'item-1',
+    globalKey: 'srv:item-1',
+    actionType: actionType,
+    viewOffset: viewOffset,
+    duration: duration,
+    shouldMarkWatched: shouldMarkWatched,
+    createdAt: updatedAt,
+    updatedAt: updatedAt,
+    syncAttempts: 0,
+  );
+}
+
+void main() {
+  test('newer sub-threshold progress overrides older watched state without watched-plus-resume', () {
+    final snapshot = WatchStateResolver.fromActions([
+      _action(actionType: 'watched', updatedAt: 1),
+      _action(actionType: 'progress', updatedAt: 2, viewOffset: 5000, duration: 100000),
+    ]);
+
+    expect(snapshot.isWatched, isFalse);
+    expect(snapshot.hasViewOffsetMs, isTrue);
+    expect(snapshot.viewOffsetMs, 5000);
+  });
+
+  test('newer watched action clears older progress offset', () {
+    final snapshot = WatchStateResolver.fromActions([
+      _action(actionType: 'progress', updatedAt: 1, viewOffset: 5000, duration: 100000),
+      _action(actionType: 'watched', updatedAt: 2),
+    ]);
+
+    expect(snapshot.isWatched, isTrue);
+    expect(snapshot.hasViewOffsetMs, isTrue);
+    expect(snapshot.viewOffsetMs, 0);
+  });
+
+  test('sub-threshold progress events explicitly clear watched state', () {
+    final snapshot = WatchStateResolver.fromEvent(
+      WatchStateEvent(
+        itemId: 'item-1',
+        serverId: 'srv',
+        changeType: WatchStateChangeType.progressUpdate,
+        parentChain: const [],
+        mediaType: 'movie',
+        viewOffset: 5000,
+        isNowWatched: false,
+      ),
+    );
+
+    expect(snapshot.isWatched, isFalse);
+    expect(snapshot.viewOffsetMs, 5000);
+  });
+
+  test('removed from continue watching is not a watch-state overlay patch', () {
+    final snapshot = WatchStateResolver.fromEvent(
+      WatchStateEvent(
+        itemId: 'item-1',
+        serverId: 'srv',
+        changeType: WatchStateChangeType.removedFromContinueWatching,
+        parentChain: const [],
+        mediaType: 'movie',
+      ),
+    );
+
+    expect(snapshot.isEmpty, isTrue);
+  });
+}

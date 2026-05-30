@@ -33,6 +33,13 @@ class AppearanceSettingsScreen extends StatelessWidget {
         _densitySelector(),
         _viewModeSelector(),
         _episodePosterModeSelector(),
+        if (PlatformDetector.isTV())
+          SettingSwitchTile(
+            pref: SettingsService.tvFullCardLayout,
+            icon: Symbols.image_rounded,
+            title: t.settings.tvFullCardLayout,
+            subtitle: t.settings.tvFullCardLayoutDescription,
+          ),
         SettingSwitchTile(
           pref: SettingsService.showEpisodeNumberOnCards,
           icon: Symbols.tag_rounded,

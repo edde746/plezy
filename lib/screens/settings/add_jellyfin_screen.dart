@@ -61,8 +61,13 @@ class AddJellyfinScreen extends StatefulWidget {
   /// [ProfileConnection] row. When null, falls back to the currently active
   /// profile (typical for the global Connections screen entry point).
   final Profile? targetProfile;
+  final FutureOr<JellyfinConnectionAuthService> Function()? _authServiceFactory;
 
-  const AddJellyfinScreen({super.key, this.targetProfile});
+  const AddJellyfinScreen({
+    super.key,
+    this.targetProfile,
+    @visibleForTesting FutureOr<JellyfinConnectionAuthService> Function()? authServiceFactory,
+  }) : _authServiceFactory = authServiceFactory;
 
   @override
   State<AddJellyfinScreen> createState() => _AddJellyfinScreenState();
@@ -317,6 +322,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   }
 
   Future<JellyfinConnectionAuthService> _buildAuthService() async {
+    final authServiceFactory = widget._authServiceFactory;
+    if (authServiceFactory != null) return await authServiceFactory();
     final pkg = await PackageInfo.fromPlatform();
     final deviceName = await _resolveDeviceName();
     return JellyfinConnectionAuthService(clientName: 'Plezy', clientVersion: pkg.version, deviceName: deviceName);
@@ -379,7 +386,9 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
             _quickConnectEnabled = false;
           });
         },
-        onNavigateDown: _serverInfo == null ? () => _findServerFocus.requestFocus() : null,
+        onNavigateDown: _serverInfo == null
+            ? () => _findServerFocus.requestFocus()
+            : () => _usernameFocus.requestFocus(),
         textInputAction: TextInputAction.go,
         onFieldSubmitted: busy ? null : (_) => _probe(),
         decoration: InputDecoration(
@@ -394,7 +403,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           focusNode: _findServerFocus,
           useBackgroundFocus: true,
           onPressed: busy ? null : _probe,
-          onNavigateUp: () => _urlFocus.requestFocus(),
           child: FilledButton.icon(
             onPressed: busy ? null : _probe,
             icon: busy ? const LoadingIndicatorBox() : const AppIcon(Symbols.travel_explore_rounded, fill: 1),
@@ -411,7 +419,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           autocorrect: false,
           enableSuggestions: false,
           enabled: !busy,
-          onNavigateDown: () => _passwordFocus.requestFocus(),
+          onNavigateUp: () => _urlFocus.requestFocus(),
           textInputAction: TextInputAction.next,
           onFieldSubmitted: busy ? null : (_) => _passwordFocus.requestFocus(),
           decoration: InputDecoration(
@@ -426,8 +434,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           focusNode: _passwordFocus,
           obscureText: true,
           enabled: !busy,
-          onNavigateUp: () => _usernameFocus.requestFocus(),
-          onNavigateDown: () => _signInFocus.requestFocus(),
           textInputAction: TextInputAction.done,
           onFieldSubmitted: busy ? null : (_) => _signIn(),
           decoration: InputDecoration(
@@ -442,8 +448,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           focusNode: _signInFocus,
           useBackgroundFocus: true,
           onPressed: busy ? null : _signIn,
-          onNavigateUp: () => _passwordFocus.requestFocus(),
-          onNavigateDown: _quickConnectEnabled ? () => _quickConnectFocus.requestFocus() : null,
           child: FilledButton.icon(
             onPressed: busy ? null : _signIn,
             icon: busy ? const LoadingIndicatorBox() : const AppIcon(Symbols.login_rounded, fill: 1),
@@ -456,7 +460,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
             focusNode: _quickConnectFocus,
             useBackgroundFocus: true,
             onPressed: busy ? null : _startQuickConnect,
-            onNavigateUp: () => _signInFocus.requestFocus(),
             child: OutlinedButton.icon(
               onPressed: busy ? null : _startQuickConnect,
               icon: const AppIcon(Symbols.tap_and_play_rounded, fill: 1),

@@ -140,6 +140,9 @@ class FocusableActionBarState extends State<FocusableActionBar> {
               : widget.onNavigateRight,
           onDown: widget.onNavigateDown,
           onUp: widget.onNavigateUp,
+          // Consume LEFT/RIGHT at the row's first/last button when no edge
+          // callback is wired, so focus can't fall off the row (#1181).
+          trapHorizontalEdges: true,
         )(node, event);
       },
       child: ClickableCursor(

@@ -254,6 +254,8 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get showEpisodeNumberOnCardsDescription => 'Показвай сезон и номер на епизод върху картите на епизодите';
 	@override String get showSeasonPostersOnTabs => 'Показвай постери на сезоните в табовете';
 	@override String get showSeasonPostersOnTabsDescription => 'Показвай постера на всеки сезон над неговия таб';
+	@override String get tvFullCardLayout => 'Пълни TV карти';
+	@override String get tvFullCardLayoutDescription => 'Използвай TV карти само с изображения, с насложени имена на актьорите';
 	@override String get hideSpoilers => 'Скривай спойлери за негледани епизоди';
 	@override String get hideSpoilersDescription => 'Замазвай миниатюри и описания за негледани епизоди';
 	@override String get playerBackend => 'Енджин на плеъра';
@@ -605,6 +607,7 @@ class _TranslationsVideoControlsBg extends TranslationsVideoControlsEn {
 	@override String get pipActive => 'Възпроизвеждане в режим картина в картината';
 	@override String get pipFailed => 'Режимът картина в картината не успя да стартира';
 	@override String get screenshotSaved => 'Екранната снимка е запазена';
+	@override String zoomPercent({required Object percent}) => 'Мащаб ${percent}%';
 	@override late final _TranslationsVideoControlsPipErrorsBg pipErrors = _TranslationsVideoControlsPipErrorsBg._(_root);
 	@override String get chapters => 'Глави';
 	@override String get noChaptersAvailable => 'Няма налични глави';
@@ -1308,6 +1311,7 @@ class _TranslationsVideoSettingsBg extends TranslationsVideoSettingsEn {
 
 	// Translations
 	@override String get playbackSpeed => 'Скорост на възпроизвеждане';
+	@override String get zoom => 'Мащаб';
 	@override String get sleepTimer => 'Таймер за заспиване';
 	@override String get audioSync => 'Синхронизация на аудио';
 	@override String get subtitleSync => 'Синхронизация на субтитри';
@@ -1565,6 +1569,9 @@ class _TranslationsHotkeysActionsBg extends TranslationsHotkeysActionsEn {
 	@override String get speedIncrease => 'Увеличи скоростта';
 	@override String get speedDecrease => 'Намали скоростта';
 	@override String get speedReset => 'Нулирай скоростта';
+	@override String get zoomIn => 'Увеличи мащаба';
+	@override String get zoomOut => 'Намали мащаба';
+	@override String get zoomReset => 'Нулирай мащаба';
 	@override String get subSeekNext => 'Отиди до следващ субтитър';
 	@override String get subSeekPrev => 'Отиди до предишен субтитър';
 	@override String get shaderToggle => 'Превключи шейдъри';
@@ -1924,6 +1931,8 @@ extension on TranslationsBg {
 			'settings.showEpisodeNumberOnCardsDescription' => 'Показвай сезон и номер на епизод върху картите на епизодите',
 			'settings.showSeasonPostersOnTabs' => 'Показвай постери на сезоните в табовете',
 			'settings.showSeasonPostersOnTabsDescription' => 'Показвай постера на всеки сезон над неговия таб',
+			'settings.tvFullCardLayout' => 'Пълни TV карти',
+			'settings.tvFullCardLayoutDescription' => 'Използвай TV карти само с изображения, с насложени имена на актьорите',
 			'settings.hideSpoilers' => 'Скривай спойлери за негледани епизоди',
 			'settings.hideSpoilersDescription' => 'Замазвай миниатюри и описания за негледани епизоди',
 			'settings.playerBackend' => 'Енджин на плеъра',
@@ -2099,6 +2108,9 @@ extension on TranslationsBg {
 			'hotkeys.actions.speedIncrease' => 'Увеличи скоростта',
 			'hotkeys.actions.speedDecrease' => 'Намали скоростта',
 			'hotkeys.actions.speedReset' => 'Нулирай скоростта',
+			'hotkeys.actions.zoomIn' => 'Увеличи мащаба',
+			'hotkeys.actions.zoomOut' => 'Намали мащаба',
+			'hotkeys.actions.zoomReset' => 'Нулирай мащаба',
 			'hotkeys.actions.subSeekNext' => 'Отиди до следващ субтитър',
 			'hotkeys.actions.subSeekPrev' => 'Отиди до предишен субтитър',
 			'hotkeys.actions.shaderToggle' => 'Превключи шейдъри',
@@ -2224,6 +2236,7 @@ extension on TranslationsBg {
 			'videoControls.pipActive' => 'Възпроизвеждане в режим картина в картината',
 			'videoControls.pipFailed' => 'Режимът картина в картината не успя да стартира',
 			'videoControls.screenshotSaved' => 'Екранната снимка е запазена',
+			'videoControls.zoomPercent' => ({required Object percent}) => 'Мащаб ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Изисква Android 8.0 или по-нова версия',
 			'videoControls.pipErrors.iosVersion' => 'Изисква iOS 15.0 или по-нова версия',
 			'videoControls.pipErrors.permissionDisabled' => 'Режимът картина в картината е изключен. Включете го в системните настройки.',
@@ -2314,14 +2327,14 @@ extension on TranslationsBg {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Потвърждение на действие',
 			'profiles.addPlezyProfile' => 'Добави Plezy профил',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Смяна на профил…',
 			'profiles.deleteThisProfileTitle' => 'Да се изтрие ли този профил?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Премахване на ${displayName}. Връзките не се засягат.',
 			'profiles.active' => 'Активен',
 			'profiles.manage' => 'Управление',
 			'profiles.delete' => 'Изтрий',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signOut' => 'Изход',
 			'profiles.signOutPlexTitle' => 'Изход от Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Премахване на ${displayName} и всички Plex Home потребители? Можете да влезете отново по всяко време.',
@@ -2801,6 +2814,7 @@ extension on TranslationsBg {
 			'companionRemote.remote.audio' => 'Аудио',
 			'companionRemote.remote.searchHint' => 'Търсене на настолен компютър...',
 			'videoSettings.playbackSpeed' => 'Скорост на възпроизвеждане',
+			'videoSettings.zoom' => 'Мащаб',
 			'videoSettings.sleepTimer' => 'Таймер за заспиване',
 			'videoSettings.audioSync' => 'Синхронизация на аудио',
 			'videoSettings.subtitleSync' => 'Синхронизация на субтитри',
@@ -2827,6 +2841,8 @@ extension on TranslationsBg {
 			'metadataEdit.editMetadata' => 'Редактирай...',
 			'metadataEdit.screenTitle' => 'Редактиране на метаданни',
 			'metadataEdit.basicInfo' => 'Основна информация',
+			_ => null,
+		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Обложка',
 			'metadataEdit.advancedSettings' => 'Разширени настройки',
 			'metadataEdit.title' => 'Заглавие',
@@ -2834,8 +2850,6 @@ extension on TranslationsBg {
 			'metadataEdit.originalTitle' => 'Оригинално заглавие',
 			'metadataEdit.releaseDate' => 'Дата на излизане',
 			'metadataEdit.contentRating' => 'Възрастов рейтинг',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.studio' => 'Студио',
 			'metadataEdit.tagline' => 'Слоган',
 			'metadataEdit.summary' => 'Резюме',
