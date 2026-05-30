@@ -16,6 +16,7 @@ import '../services/download_artwork_service.dart';
 import '../services/download_storage_service.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_mode_source.dart';
+import '../services/settings_service.dart';
 import '../services/storage_service.dart';
 import '../services/watch_state_resolver.dart';
 import '../media/media_server_client.dart';
@@ -49,6 +50,29 @@ class DownloadedArtwork {
 class _RelatedMetadataDownloadContext {
   final hydratedMetadataKeys = <String>{};
   final ensuredArtworkKeys = <String>{};
+}
+
+/// Outcome of a global sync-rule reconcile (see [DownloadProvider.syncAllRules]).
+class SyncReconcileSummary {
+  /// Titles of watched downloads that were auto-deleted.
+  final List<String> deletedTitles;
+
+  /// "Title (N)" strings for rules that queued new episodes.
+  final List<String> syncedTitles;
+
+  /// Total episodes queued across all rules.
+  final int queuedCount;
+
+  const SyncReconcileSummary({
+    this.deletedTitles = const [],
+    this.syncedTitles = const [],
+    this.queuedCount = 0,
+  });
+
+  int get deletedCount => deletedTitles.length;
+
+  /// Whether the reconcile actually changed anything.
+  bool get changed => queuedCount > 0 || deletedTitles.isNotEmpty;
 }
 
 /// Provider for managing download state and operations.
@@ -1714,22 +1738,21 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     appLogger.i('Deleted sync rule: $globalKey');
   }
 
-  /// Execute all sync rules: auto-delete watched + queue replacements.
+  /// Execute all enabled sync rules, returning the raw per-rule results.
   ///
   /// Pass [force] `true` from user-initiated triggers (watch-state events,
-  /// offline-sync drains) to bypass the executor's cooldown. Defaults to
-  /// `false` for background probes (e.g. connectivity reconnects).
-  ///
-  /// Returns titles of newly queued items (for snackbar display).
-  Future<List<String>> executeSyncRules(MultiServerManager serverManager, {bool force = false}) async {
-    if (!_downloadManager.downloadsSupported) return [];
+  /// offline-sync drains, the manual "Sync now" button) to bypass the
+  /// executor's cooldown. Defaults to `false` for background probes (e.g.
+  /// connectivity reconnects).
+  Future<List<SyncRuleResult>> _executeSyncRulesRaw(MultiServerManager serverManager, {bool force = false}) async {
+    if (!_downloadManager.downloadsSupported) return const [];
 
     final profileId = _activeProfileId;
-    if (profileId == null || profileId.isEmpty) return [];
-    if (_syncRules.isEmpty) return [];
+    if (profileId == null || profileId.isEmpty) return const [];
+    if (_syncRules.isEmpty) return const [];
 
     final relatedContext = _RelatedMetadataDownloadContext();
-    final results = await _syncRuleExecutor.executeSyncRules(
+    return _syncRuleExecutor.executeSyncRules(
       profileId: profileId,
       serverManager: serverManager,
       downloads: downloads,
@@ -1738,11 +1761,71 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           _queueSingleDownload(episode, client, mediaIndex: mediaIndex, relatedContext: relatedContext),
       force: force,
     );
+  }
 
-    return results.where((r) => r.queuedCount > 0).map((r) {
-      final title = r.title ?? 'Unknown';
-      return '$title (${r.queuedCount})';
-    }).toList();
+  bool _isReconciling = false;
+
+  /// True while a sync-rule reconcile (manual or automatic) is in flight.
+  /// Drives the Downloads screen's "Sync now" spinner and serializes runs so
+  /// manual and automatic syncs never overlap.
+  bool get isReconciling => _isReconciling;
+
+  /// Acquire the reconcile guard. Returns `false` if a reconcile is already
+  /// running (the caller should bail). Always pair a `true` result with
+  /// [endReconcile] in a `finally`.
+  bool beginReconcile() {
+    if (_isReconciling) return false;
+    _isReconciling = true;
+    safeNotifyListeners();
+    return true;
+  }
+
+  /// Release the reconcile guard acquired via [beginReconcile].
+  void endReconcile() {
+    if (!_isReconciling) return;
+    _isReconciling = false;
+    safeNotifyListeners();
+  }
+
+  /// The global reconcile: refresh metadata → delete watched downloads (only
+  /// when the `autoRemoveWatchedDownloads` setting is on) → queue missing
+  /// episodes for every enabled rule. Returns a summary for snackbar display.
+  ///
+  /// Does NOT acquire the reconcile guard — callers must hold it (see
+  /// [beginReconcile] / [reconcileNow]) so this composes with the targeted
+  /// per-watch-event path in `main.dart`.
+  Future<SyncReconcileSummary> syncAllRules(
+    MultiServerManager serverManager, {
+    String? activeId,
+    bool force = false,
+  }) async {
+    await refreshMetadataFromCache();
+
+    final settings = SettingsService.instanceOrNull;
+    final deletedTitles = (settings != null && settings.read(SettingsService.autoRemoveWatchedDownloads))
+        ? await autoDeleteWatchedDownloads(activeId: activeId)
+        : <String>[];
+
+    final results = await _executeSyncRulesRaw(serverManager, force: force);
+    final syncedTitles = results
+        .where((r) => r.queuedCount > 0)
+        .map((r) => '${r.title ?? 'Unknown'} (${r.queuedCount})')
+        .toList();
+    final queuedCount = results.fold<int>(0, (sum, r) => sum + r.queuedCount);
+
+    return SyncReconcileSummary(deletedTitles: deletedTitles, syncedTitles: syncedTitles, queuedCount: queuedCount);
+  }
+
+  /// Guarded global reconcile for the manual "Sync now" button. Always forces
+  /// (bypasses cooldown) since it is an explicit user action. Returns `null`
+  /// if a reconcile is already running.
+  Future<SyncReconcileSummary?> reconcileNow(MultiServerManager serverManager, {String? activeId}) async {
+    if (!beginReconcile()) return null;
+    try {
+      return await syncAllRules(serverManager, activeId: activeId, force: true);
+    } finally {
+      endReconcile();
+    }
   }
 
   /// Execute a single sync rule immediately (eager path for `addToPlaylist` /
