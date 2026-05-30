@@ -565,6 +565,10 @@ class _TranslationsVideoControlsDa extends TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Lås rotation op';
 	@override String get timerActive => 'Timer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Afspilning pauses om ${duration}';
+	@override String get sleepTimerEndOfVideo => 'Slutningen af aktuel video';
+	@override String get sleepTimerStopAtHeader => 'Stop ved';
+	@override String get sleepTimerDurationHeader => 'Timer';
+	@override String get playbackWillPauseAtEnd => 'Afspilning pauses i slutningen af denne video';
 	@override String get stillWatching => 'Ser du stadig?';
 	@override String pausingIn({required Object seconds}) => 'Pauser om ${seconds}s';
 	@override String get continueWatching => 'Fortsæt';
@@ -2194,6 +2198,10 @@ extension on TranslationsDa {
 			'videoControls.unlockRotation' => 'Lås rotation op',
 			'videoControls.timerActive' => 'Timer aktiv',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Afspilning pauses om ${duration}',
+			'videoControls.sleepTimerEndOfVideo' => 'Slutningen af aktuel video',
+			'videoControls.sleepTimerStopAtHeader' => 'Stop ved',
+			'videoControls.sleepTimerDurationHeader' => 'Timer',
+			'videoControls.playbackWillPauseAtEnd' => 'Afspilning pauses i slutningen af denne video',
 			'videoControls.stillWatching' => 'Ser du stadig?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pauser om ${seconds}s',
 			'videoControls.continueWatching' => 'Fortsæt',
@@ -2323,12 +2331,12 @@ extension on TranslationsDa {
 			'mpvConfig.presetSaved' => 'Forudindstilling gemt',
 			'mpvConfig.presetLoaded' => 'Forudindstilling indlæst',
 			'mpvConfig.presetDeleted' => 'Forudindstilling slettet',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => 'Er du sikker på, at du vil slette denne forudindstilling?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Bekræft handling',
 			'profiles.addPlezyProfile' => 'Tilføj Plezy-profil',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Skifter profil…',
 			'profiles.deleteThisProfileTitle' => 'Slet denne profil?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Fjern ${displayName}. Forbindelser påvirkes ikke.',
@@ -2837,12 +2845,12 @@ extension on TranslationsDa {
 			'externalPlayer.off' => 'Fra',
 			'externalPlayer.launchFailed' => 'Kunne ikke åbne ekstern afspiller',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} er ikke installeret',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => 'Afspil i ekstern afspiller',
 			'metadataEdit.editMetadata' => 'Redigér...',
 			'metadataEdit.screenTitle' => 'Redigér metadata',
 			'metadataEdit.basicInfo' => 'Grundlæggende info',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Grafik',
 			'metadataEdit.advancedSettings' => 'Avancerede indstillinger',
 			'metadataEdit.title' => 'Titel',

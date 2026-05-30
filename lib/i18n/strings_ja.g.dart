@@ -565,6 +565,10 @@ class _TranslationsVideoControlsJa extends TranslationsVideoControlsEn {
 	@override String get unlockRotation => '回転のロックを解除';
 	@override String get timerActive => 'タイマー動作中';
 	@override String playbackWillPauseIn({required Object duration}) => '再生は${duration}後に一時停止します';
+	@override String get sleepTimerEndOfVideo => '現在の動画の最後';
+	@override String get sleepTimerStopAtHeader => '停止のタイミング';
+	@override String get sleepTimerDurationHeader => 'タイマー';
+	@override String get playbackWillPauseAtEnd => '再生はこの動画の最後に一時停止します';
 	@override String get stillWatching => 'まだ視聴中ですか？';
 	@override String pausingIn({required Object seconds}) => '${seconds}秒後に一時停止';
 	@override String get continueWatching => '続ける';
@@ -2194,6 +2198,10 @@ extension on TranslationsJa {
 			'videoControls.unlockRotation' => '回転のロックを解除',
 			'videoControls.timerActive' => 'タイマー動作中',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => '再生は${duration}後に一時停止します',
+			'videoControls.sleepTimerEndOfVideo' => '現在の動画の最後',
+			'videoControls.sleepTimerStopAtHeader' => '停止のタイミング',
+			'videoControls.sleepTimerDurationHeader' => 'タイマー',
+			'videoControls.playbackWillPauseAtEnd' => '再生はこの動画の最後に一時停止します',
 			'videoControls.stillWatching' => 'まだ視聴中ですか？',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}秒後に一時停止',
 			'videoControls.continueWatching' => '続ける',
@@ -2323,12 +2331,12 @@ extension on TranslationsJa {
 			'mpvConfig.presetSaved' => 'プリセットを保存しました',
 			'mpvConfig.presetLoaded' => 'プリセットを読み込みました',
 			'mpvConfig.presetDeleted' => 'プリセットを削除しました',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => 'このプリセットを削除してもよろしいですか？',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '操作の確認',
 			'profiles.addPlezyProfile' => 'Plezyプロファイルを追加',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.switchingProfile' => 'プロファイルを切り替え中…',
 			'profiles.deleteThisProfileTitle' => 'このプロファイルを削除しますか？',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '${displayName}を削除します。接続には影響しません。',
@@ -2837,12 +2845,12 @@ extension on TranslationsJa {
 			'externalPlayer.off' => 'オフ',
 			'externalPlayer.launchFailed' => '外部プレーヤーの起動に失敗しました',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}がインストールされていません',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => '外部プレーヤーで再生',
 			'metadataEdit.editMetadata' => '編集...',
 			'metadataEdit.screenTitle' => 'メタデータを編集',
 			'metadataEdit.basicInfo' => '基本情報',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.artwork' => 'アートワーク',
 			'metadataEdit.advancedSettings' => '詳細設定',
 			'metadataEdit.title' => 'タイトル',

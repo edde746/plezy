@@ -565,6 +565,10 @@ class _TranslationsVideoControlsSv extends TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Lås upp rotation';
 	@override String get timerActive => 'Timer aktiv';
 	@override String playbackWillPauseIn({required Object duration}) => 'Uppspelningen pausas om ${duration}';
+	@override String get sleepTimerEndOfVideo => 'Slutet av aktuell video';
+	@override String get sleepTimerStopAtHeader => 'Stoppa vid';
+	@override String get sleepTimerDurationHeader => 'Timer';
+	@override String get playbackWillPauseAtEnd => 'Uppspelningen pausas i slutet av denna video';
 	@override String get stillWatching => 'Tittar du fortfarande?';
 	@override String pausingIn({required Object seconds}) => 'Pausar om ${seconds}s';
 	@override String get continueWatching => 'Fortsätt';
@@ -2194,6 +2198,10 @@ extension on TranslationsSv {
 			'videoControls.unlockRotation' => 'Lås upp rotation',
 			'videoControls.timerActive' => 'Timer aktiv',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Uppspelningen pausas om ${duration}',
+			'videoControls.sleepTimerEndOfVideo' => 'Slutet av aktuell video',
+			'videoControls.sleepTimerStopAtHeader' => 'Stoppa vid',
+			'videoControls.sleepTimerDurationHeader' => 'Timer',
+			'videoControls.playbackWillPauseAtEnd' => 'Uppspelningen pausas i slutet av denna video',
 			'videoControls.stillWatching' => 'Tittar du fortfarande?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausar om ${seconds}s',
 			'videoControls.continueWatching' => 'Fortsätt',
@@ -2323,12 +2331,12 @@ extension on TranslationsSv {
 			'mpvConfig.presetSaved' => 'Förval sparat',
 			'mpvConfig.presetLoaded' => 'Förval laddat',
 			'mpvConfig.presetDeleted' => 'Förval borttaget',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => 'Är du säker på att du vill ta bort detta förval?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Bekräfta åtgärd',
 			'profiles.addPlezyProfile' => 'Lägg till Plezy-profil',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Byter profil…',
 			'profiles.deleteThisProfileTitle' => 'Ta bort denna profil?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Ta bort ${displayName}. Anslutningar påverkas inte.',
@@ -2837,12 +2845,12 @@ extension on TranslationsSv {
 			'externalPlayer.off' => 'Av',
 			'externalPlayer.launchFailed' => 'Kunde inte öppna extern spelare',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} är inte installerad',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => 'Spela i extern spelare',
 			'metadataEdit.editMetadata' => 'Redigera...',
 			'metadataEdit.screenTitle' => 'Redigera metadata',
 			'metadataEdit.basicInfo' => 'Grundläggande info',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Avancerade inställningar',
 			'metadataEdit.title' => 'Titel',

@@ -565,6 +565,10 @@ class _TranslationsVideoControlsZh extends TranslationsVideoControlsEn {
 	@override String get unlockRotation => '解锁旋转';
 	@override String get timerActive => '定时器已激活';
 	@override String playbackWillPauseIn({required Object duration}) => '播放将在 ${duration} 后暂停';
+	@override String get sleepTimerEndOfVideo => '当前视频结束时';
+	@override String get sleepTimerStopAtHeader => '停止于';
+	@override String get sleepTimerDurationHeader => '定时器';
+	@override String get playbackWillPauseAtEnd => '播放将在此视频结束时暂停';
 	@override String get stillWatching => '还在看吗？';
 	@override String pausingIn({required Object seconds}) => '${seconds}秒后暂停';
 	@override String get continueWatching => '继续';
@@ -2194,6 +2198,10 @@ extension on TranslationsZh {
 			'videoControls.unlockRotation' => '解锁旋转',
 			'videoControls.timerActive' => '定时器已激活',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => '播放将在 ${duration} 后暂停',
+			'videoControls.sleepTimerEndOfVideo' => '当前视频结束时',
+			'videoControls.sleepTimerStopAtHeader' => '停止于',
+			'videoControls.sleepTimerDurationHeader' => '定时器',
+			'videoControls.playbackWillPauseAtEnd' => '播放将在此视频结束时暂停',
 			'videoControls.stillWatching' => '还在看吗？',
 			'videoControls.pausingIn' => ({required Object seconds}) => '${seconds}秒后暂停',
 			'videoControls.continueWatching' => '继续',
@@ -2323,12 +2331,12 @@ extension on TranslationsZh {
 			'mpvConfig.presetSaved' => '预设已保存',
 			'mpvConfig.presetLoaded' => '预设已加载',
 			'mpvConfig.presetDeleted' => '预设已删除',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => '确定要删除此预设吗？',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '确认操作',
 			'profiles.addPlezyProfile' => '添加 Plezy 配置文件',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.switchingProfile' => '切换配置文件中…',
 			'profiles.deleteThisProfileTitle' => '删除此配置文件？',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => '移除 ${displayName}。连接不会受影响。',
@@ -2837,12 +2845,12 @@ extension on TranslationsZh {
 			'externalPlayer.off' => '关闭',
 			'externalPlayer.launchFailed' => '无法打开外部播放器',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} 未安装',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => '在外部播放器中播放',
 			'metadataEdit.editMetadata' => '编辑...',
 			'metadataEdit.screenTitle' => '编辑元数据',
 			'metadataEdit.basicInfo' => '基本信息',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.artwork' => '封面图片',
 			'metadataEdit.advancedSettings' => '高级设置',
 			'metadataEdit.title' => '标题',

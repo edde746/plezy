@@ -565,6 +565,10 @@ class _TranslationsVideoControlsEs extends TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Desbloquear rotación';
 	@override String get timerActive => 'Temporizador Activo';
 	@override String playbackWillPauseIn({required Object duration}) => 'La reproducción se pausará en ${duration}';
+	@override String get sleepTimerEndOfVideo => 'Fin del video actual';
+	@override String get sleepTimerStopAtHeader => 'Detener en';
+	@override String get sleepTimerDurationHeader => 'Temporizador';
+	@override String get playbackWillPauseAtEnd => 'La reproducción se pausará al final de este video';
 	@override String get stillWatching => '¿Sigues viendo?';
 	@override String pausingIn({required Object seconds}) => 'Pausa en ${seconds}s';
 	@override String get continueWatching => 'Continuar';
@@ -2194,6 +2198,10 @@ extension on TranslationsEs {
 			'videoControls.unlockRotation' => 'Desbloquear rotación',
 			'videoControls.timerActive' => 'Temporizador Activo',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'La reproducción se pausará en ${duration}',
+			'videoControls.sleepTimerEndOfVideo' => 'Fin del video actual',
+			'videoControls.sleepTimerStopAtHeader' => 'Detener en',
+			'videoControls.sleepTimerDurationHeader' => 'Temporizador',
+			'videoControls.playbackWillPauseAtEnd' => 'La reproducción se pausará al final de este video',
 			'videoControls.stillWatching' => '¿Sigues viendo?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausa en ${seconds}s',
 			'videoControls.continueWatching' => 'Continuar',
@@ -2323,12 +2331,12 @@ extension on TranslationsEs {
 			'mpvConfig.presetSaved' => 'Ajuste guardado',
 			'mpvConfig.presetLoaded' => 'Ajuste cargado',
 			'mpvConfig.presetDeleted' => 'Ajuste eliminado',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => '¿Estás seguro de que quieres eliminar este ajuste?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirmar Acción',
 			'profiles.addPlezyProfile' => 'Añadir perfil de Plezy',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.switchingProfile' => 'Cambiando de perfil…',
 			'profiles.deleteThisProfileTitle' => '¿Eliminar este perfil?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Eliminar ${displayName}. Las conexiones no se verán afectadas.',
@@ -2837,12 +2845,12 @@ extension on TranslationsEs {
 			'externalPlayer.off' => 'Desactivado',
 			'externalPlayer.launchFailed' => 'No se pudo abrir el reproductor externo',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} no está instalado',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => 'Reproducir en reproductor externo',
 			'metadataEdit.editMetadata' => 'Editar...',
 			'metadataEdit.screenTitle' => 'Editar metadatos',
 			'metadataEdit.basicInfo' => 'Información básica',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Ajustes avanzados',
 			'metadataEdit.title' => 'Título',
