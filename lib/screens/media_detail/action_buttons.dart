@@ -531,10 +531,10 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
                 }
               }
             },
-            icon: const AppIcon(Symbols.file_download_done_rounded, fill: 1),
+            icon: const AppIcon(Symbols.download_rounded, fill: 1),
             tooltip: canDownloadMore ? t.downloads.manage : t.downloads.deleteDownload,
             iconSize: iconSize,
-            style: actionButtonStyle(foregroundColor: Colors.green),
+            style: actionButtonStyle(foregroundColor: Colors.orange),
           );
         }
 
