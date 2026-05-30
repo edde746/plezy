@@ -263,6 +263,8 @@
     "forceTvModeDescription": "强制 TV 布局。适用于无法自动检测的设备。需要重启。",
     "startInFullscreen": "以全屏模式启动",
     "startInFullscreenDescription": "启动时以全屏模式打开 Plezy",
+    "exitFullscreenOnPlayerClose": "关闭播放器时退出全屏",
+    "exitFullscreenOnPlayerCloseDescription": "关闭视频播放器时自动退出全屏模式",
     "autoHidePerformanceOverlay": "自动隐藏性能叠加层",
     "autoHidePerformanceOverlayDescription": "性能叠加层随播放控件一起淡入淡出",
     "showNavBarLabels": "显示导航栏标签",

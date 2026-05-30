@@ -14,6 +14,7 @@ import '../media/media_version.dart';
 import '../mixins/controller_disposer_mixin.dart';
 import '../services/plex_client.dart';
 import '../services/media_list_playback_launcher.dart';
+import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
 import '../services/trackers/tracker_coordinator.dart';
 import '../models/transcode_quality_preset.dart';
@@ -1252,19 +1253,31 @@ class MediaContextMenuState extends State<MediaContextMenu> {
 
     // Check if the item is downloaded and use local file path if available
     final downloadProvider = Provider.of<DownloadProvider>(context, listen: false);
+    final offlineWatchService = Provider.of<OfflineWatchSyncService>(context, listen: false);
+    final client = _getMediaClientForItem();
     final globalKey = item.globalKey;
     if (downloadProvider.isDownloaded(globalKey)) {
       final videoPath = await downloadProvider.getVideoFilePath(globalKey);
       if (videoPath != null && context.mounted) {
         final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
-        await ExternalPlayerService.launch(context: context, videoUrl: videoUrl);
+        await ExternalPlayerService.launch(
+          context: context,
+          videoUrl: videoUrl,
+          metadata: item,
+          client: client,
+          offlineWatchService: offlineWatchService,
+        );
         return;
       }
     }
 
-    final client = _getMediaClientForItem();
     if (!context.mounted) return;
-    await ExternalPlayerService.launch(context: context, metadata: item, client: client);
+    await ExternalPlayerService.launch(
+      context: context,
+      metadata: item,
+      client: client,
+      offlineWatchService: offlineWatchService,
+    );
   }
 
   /// Handle download collection action — opens the same sync/one-time dialog

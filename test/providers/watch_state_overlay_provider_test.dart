@@ -1,65 +1,68 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/media/media_backend.dart';
-import 'package:plezy/media/media_item.dart';
-import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/providers/watch_state_overlay_provider.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
 
-MediaItem _item({String id = '1', int? viewOffsetMs, int? viewCount = 0}) {
-  return MediaItem(
-    id: id,
-    backend: MediaBackend.plex,
-    kind: MediaKind.movie,
-    title: 'Movie',
-    serverId: 'server',
-    durationMs: 100000,
-    viewOffsetMs: viewOffsetMs,
-    viewCount: viewCount,
+Future<void> _emit(WatchStateEvent event) async {
+  WatchStateNotifier().notify(event);
+  await Future<void>.delayed(Duration.zero);
+}
+
+WatchStateEvent _event({
+  required WatchStateChangeType changeType,
+  required bool? isNowWatched,
+  String serverId = 'jf-machine',
+  String itemId = 'item-1',
+  String? cacheServerId,
+  int? viewOffset,
+}) {
+  return WatchStateEvent(
+    itemId: itemId,
+    serverId: serverId,
+    cacheServerId: cacheServerId,
+    changeType: changeType,
+    parentChain: const [],
+    mediaType: 'movie',
+    isNowWatched: isNowWatched,
+    viewOffset: viewOffset,
   );
 }
 
-Future<void> _drainEvents() => Future<void>.delayed(Duration.zero);
-
 void main() {
-  group('WatchStateOverlayProvider', () {
-    test('applies watched patches immediately', () async {
-      final provider = WatchStateOverlayProvider();
-      addTearDown(provider.dispose);
-      final item = _item(viewOffsetMs: 40000);
+  test('removed from continue watching does not replace an existing watched patch', () async {
+    final provider = WatchStateOverlayProvider();
+    addTearDown(provider.dispose);
 
-      WatchStateNotifier().notifyWatched(item: item, isNowWatched: true);
-      await _drainEvents();
+    await _emit(_event(changeType: WatchStateChangeType.watched, isNowWatched: true));
+    await _emit(_event(changeType: WatchStateChangeType.removedFromContinueWatching, isNowWatched: null));
 
-      final patched = provider.apply(item);
-      expect(patched.isWatched, isTrue);
-      expect(patched.viewOffsetMs, 0);
-    });
+    final patch = provider.patchForGlobalKey('jf-machine:item-1');
+    expect(patch?.isWatched, isTrue);
+    expect(patch?.viewOffsetMs, 0);
+  });
 
-    test('applies progress patches without changing watched state', () async {
-      final provider = WatchStateOverlayProvider();
-      addTearDown(provider.dispose);
-      final item = _item(viewCount: 1);
+  test('newer unscoped patch wins over older active scoped patch', () async {
+    final provider = WatchStateOverlayProvider();
+    addTearDown(provider.dispose);
+    provider.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
 
-      WatchStateNotifier().notifyProgress(item: item, viewOffset: 30000, duration: 100000);
-      await _drainEvents();
+    await _emit(
+      _event(changeType: WatchStateChangeType.watched, isNowWatched: true, cacheServerId: 'jf-machine/user-a'),
+    );
+    await _emit(_event(changeType: WatchStateChangeType.unwatched, isNowWatched: false));
 
-      final patched = provider.apply(item);
-      expect(patched.isWatched, isTrue);
-      expect(patched.viewOffsetMs, 30000);
-    });
+    expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isFalse);
+  });
 
-    test('clears patches when active profile changes', () async {
-      final provider = WatchStateOverlayProvider();
-      addTearDown(provider.dispose);
-      final item = _item();
+  test('newer active scoped patch wins over older unscoped patch', () async {
+    final provider = WatchStateOverlayProvider();
+    addTearDown(provider.dispose);
+    provider.setActiveClientScopesByServer({'jf-machine': 'jf-machine/user-a'});
 
-      provider.setActiveProfileId('a');
-      WatchStateNotifier().notifyWatched(item: item, isNowWatched: true);
-      await _drainEvents();
-      expect(provider.apply(item).isWatched, isTrue);
+    await _emit(_event(changeType: WatchStateChangeType.unwatched, isNowWatched: false));
+    await _emit(
+      _event(changeType: WatchStateChangeType.watched, isNowWatched: true, cacheServerId: 'jf-machine/user-a'),
+    );
 
-      provider.setActiveProfileId('b');
-      expect(provider.apply(item).isWatched, isFalse);
-    });
+    expect(provider.patchForGlobalKey('jf-machine:item-1')?.isWatched, isTrue);
   });
 }

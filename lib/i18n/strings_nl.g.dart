@@ -391,6 +391,8 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'Forceer TV-indeling. Voor apparaten zonder autodetectie. Herstart vereist.';
 	@override String get startInFullscreen => 'Starten in volledig scherm';
 	@override String get startInFullscreenDescription => 'Open Plezy bij het starten in volledig scherm';
+	@override String get exitFullscreenOnPlayerClose => 'Volledig scherm verlaten bij sluiten speler';
+	@override String get exitFullscreenOnPlayerCloseDescription => 'Verlaat automatisch volledig scherm wanneer de videospeler wordt gesloten';
 	@override String get autoHidePerformanceOverlay => 'Prestatie-overlay automatisch verbergen';
 	@override String get autoHidePerformanceOverlayDescription => 'Laat de prestatie-overlay meevervagen met de afspeelknoppen';
 	@override String get showNavBarLabels => 'Navigatiebalk labels tonen';
@@ -2066,6 +2068,8 @@ extension on TranslationsNl {
 			'settings.forceTvModeDescription' => 'Forceer TV-indeling. Voor apparaten zonder autodetectie. Herstart vereist.',
 			'settings.startInFullscreen' => 'Starten in volledig scherm',
 			'settings.startInFullscreenDescription' => 'Open Plezy bij het starten in volledig scherm',
+			'settings.exitFullscreenOnPlayerClose' => 'Volledig scherm verlaten bij sluiten speler',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'Verlaat automatisch volledig scherm wanneer de videospeler wordt gesloten',
 			'settings.autoHidePerformanceOverlay' => 'Prestatie-overlay automatisch verbergen',
 			'settings.autoHidePerformanceOverlayDescription' => 'Laat de prestatie-overlay meevervagen met de afspeelknoppen',
 			'settings.showNavBarLabels' => 'Navigatiebalk labels tonen',
@@ -2323,10 +2327,10 @@ extension on TranslationsNl {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Bevestig actie',
 			'profiles.addPlezyProfile' => 'Plezy-profiel toevoegen',
-			'profiles.switchingProfile' => 'Profiel wisselen…',
-			'profiles.deleteThisProfileTitle' => 'Dit profiel verwijderen?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.switchingProfile' => 'Profiel wisselen…',
+			'profiles.deleteThisProfileTitle' => 'Dit profiel verwijderen?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Verwijder ${displayName}. Verbindingen blijven ongewijzigd.',
 			'profiles.active' => 'Actief',
 			'profiles.manage' => 'Beheren',
@@ -2837,10 +2841,10 @@ extension on TranslationsNl {
 			'metadataEdit.editMetadata' => 'Bewerken...',
 			'metadataEdit.screenTitle' => 'Metadata bewerken',
 			'metadataEdit.basicInfo' => 'Basisinformatie',
-			'metadataEdit.artwork' => 'Artwork',
-			'metadataEdit.advancedSettings' => 'Geavanceerde instellingen',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artwork' => 'Artwork',
+			'metadataEdit.advancedSettings' => 'Geavanceerde instellingen',
 			'metadataEdit.title' => 'Titel',
 			'metadataEdit.sortTitle' => 'Sorteertitel',
 			'metadataEdit.originalTitle' => 'Oorspronkelijke titel',

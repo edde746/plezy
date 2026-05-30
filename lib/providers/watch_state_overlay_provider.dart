@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import '../media/media_item.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
+import '../services/watch_state_resolver.dart';
+import '../utils/global_key_utils.dart';
 import '../utils/watch_state_notifier.dart';
 
 @immutable
@@ -13,6 +15,12 @@ class WatchStateOverlayPatch {
   final int? viewOffsetMs;
 
   const WatchStateOverlayPatch({this.isWatched, this.hasViewOffsetMs = false, this.viewOffsetMs});
+
+  factory WatchStateOverlayPatch.fromSnapshot(WatchStateSnapshot snapshot) => WatchStateOverlayPatch(
+    isWatched: snapshot.isWatched,
+    hasViewOffsetMs: snapshot.hasViewOffsetMs,
+    viewOffsetMs: snapshot.viewOffsetMs,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -26,6 +34,13 @@ class WatchStateOverlayPatch {
   int get hashCode => Object.hash(isWatched, hasViewOffsetMs, viewOffsetMs);
 }
 
+class _WatchStateOverlayEntry {
+  final WatchStateOverlayPatch patch;
+  final int sequence;
+
+  const _WatchStateOverlayEntry(this.patch, this.sequence);
+}
+
 /// Session-local watch-state overlay for immediate UI freshness.
 ///
 /// Server fetches remain the source of truth; this only patches stale
@@ -36,10 +51,25 @@ class WatchStateOverlayProvider extends ChangeNotifier with DisposableChangeNoti
   }
 
   StreamSubscription<WatchStateEvent>? _subscription;
-  final Map<String, WatchStateOverlayPatch> _patches = {};
+  final Map<String, _WatchStateOverlayEntry> _patches = {};
   String? _activeProfileId;
+  Map<String, String?> _activeClientScopesByServer = const {};
+  int _sequence = 0;
 
-  WatchStateOverlayPatch? patchForGlobalKey(String globalKey) => _patches[globalKey];
+  WatchStateOverlayPatch? patchForGlobalKey(String globalKey) {
+    _WatchStateOverlayEntry? scopedEntry;
+    final parsed = parseGlobalKey(globalKey);
+    if (parsed != null) {
+      final scoped = _activeClientScopesByServer[parsed.serverId];
+      if (scoped != null && scoped.isNotEmpty) {
+        scopedEntry = _patches[buildGlobalKey(scoped, parsed.ratingKey)];
+      }
+    }
+    final unscopedEntry = _patches[globalKey];
+    if (scopedEntry == null) return unscopedEntry?.patch;
+    if (unscopedEntry == null) return scopedEntry.patch;
+    return scopedEntry.sequence >= unscopedEntry.sequence ? scopedEntry.patch : unscopedEntry.patch;
+  }
 
   WatchStateOverlayPatch? patchForItem(MediaItem item) => patchForGlobalKey(item.globalKey);
 
@@ -69,29 +99,26 @@ class WatchStateOverlayProvider extends ChangeNotifier with DisposableChangeNoti
     safeNotifyListeners();
   }
 
-  void _onWatchStateEvent(WatchStateEvent event) {
-    final patch = switch (event.changeType) {
-      WatchStateChangeType.watched => const WatchStateOverlayPatch(
-        isWatched: true,
-        hasViewOffsetMs: true,
-        viewOffsetMs: 0,
-      ),
-      WatchStateChangeType.unwatched => const WatchStateOverlayPatch(
-        isWatched: false,
-        hasViewOffsetMs: true,
-        viewOffsetMs: 0,
-      ),
-      WatchStateChangeType.progressUpdate => WatchStateOverlayPatch(
-        hasViewOffsetMs: event.viewOffset != null,
-        viewOffsetMs: event.viewOffset,
-      ),
-      WatchStateChangeType.removedFromContinueWatching => null,
+  void setActiveClientScopesByServer(Map<String, String?> scopes) {
+    final normalized = <String, String?>{
+      for (final entry in scopes.entries)
+        if (entry.value != null && entry.value!.isNotEmpty && entry.value != entry.key) entry.key: entry.value,
     };
+    if (mapEquals(_activeClientScopesByServer, normalized)) return;
+    _activeClientScopesByServer = Map.unmodifiable(normalized);
+    if (_patches.isNotEmpty) safeNotifyListeners();
+  }
 
-    if (patch == null) return;
+  void _onWatchStateEvent(WatchStateEvent event) {
+    final snapshot = WatchStateResolver.fromEvent(event);
+    if (snapshot.isEmpty) return;
+    final patch = WatchStateOverlayPatch.fromSnapshot(snapshot);
 
-    if (_patches[event.globalKey] == patch) return;
-    _patches[event.globalKey] = patch;
+    final cacheServerId = event.cacheServerId;
+    final key = cacheServerId != null && cacheServerId.isNotEmpty && cacheServerId != event.serverId
+        ? buildGlobalKey(cacheServerId, event.itemId)
+        : event.globalKey;
+    _patches[key] = _WatchStateOverlayEntry(patch, ++_sequence);
     safeNotifyListeners();
   }
 

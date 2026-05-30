@@ -12,6 +12,7 @@ import '../utils/snackbar_helper.dart';
 import '../utils/watch_state_notifier.dart';
 import '../i18n/strings.g.dart';
 import 'settings_service.dart';
+import 'offline_watch_sync_service.dart';
 import 'trackers/tracker_coordinator.dart';
 
 const _externalPlayerChannel = MethodChannel('com.plezy/external_player');
@@ -60,6 +61,7 @@ class ExternalPlayerService {
     required BuildContext context,
     MediaItem? metadata,
     MediaServerClient? client,
+    OfflineWatchSyncService? offlineWatchService,
     int mediaIndex = 0,
     String? mediaSourceId,
     String? videoUrl,
@@ -93,11 +95,12 @@ class ExternalPlayerService {
       // On Android, always use native intent to avoid url_launcher opening in browser
       if (Platform.isAndroid && context.mounted) {
         final launchResult = await _launchAndroidNative(resolvedUrl, player, context, metadata: metadata);
-        if (launchResult.launched && metadata != null && client != null) {
+        if (launchResult.launched && metadata != null) {
           await _reportAndroidExternalProgress(
             launchResult,
             metadata: metadata,
             client: client,
+            offlineWatchService: offlineWatchService,
             mediaSourceId: mediaSourceId,
           );
         }
@@ -147,7 +150,8 @@ class ExternalPlayerService {
   static Future<void> _reportAndroidExternalProgress(
     _ExternalPlayerLaunchResult result, {
     required MediaItem metadata,
-    required MediaServerClient client,
+    required MediaServerClient? client,
+    OfflineWatchSyncService? offlineWatchService,
     String? mediaSourceId,
   }) async {
     if (result.playbackError) {
@@ -162,43 +166,97 @@ class ExternalPlayerService {
     final positionMs = durationMs == null ? reportedPositionMs : reportedPositionMs.clamp(0, durationMs).toInt();
     final position = Duration(milliseconds: positionMs);
     final duration = durationMs == null ? null : Duration(milliseconds: durationMs);
+    if (client == null) {
+      await _queueExternalProgress(metadata, offlineWatchService, position: position, duration: duration);
+      return;
+    }
 
     try {
-      try {
-        await client.reportPlaybackStarted(
-          itemId: metadata.id,
-          position: position,
-          duration: duration,
-          playMethod: 'DirectPlay',
-          mediaSourceId: mediaSourceId,
-        );
-      } catch (e) {
-        appLogger.d('External player progress: started call failed (continuing)', error: e);
-      }
+      await client.reportPlaybackStarted(
+        itemId: metadata.id,
+        position: position,
+        duration: duration,
+        playMethod: 'DirectPlay',
+        mediaSourceId: mediaSourceId,
+      );
+    } catch (e) {
+      appLogger.d('External player progress: started call failed (continuing)', error: e);
+    }
 
+    try {
       await client.reportPlaybackStopped(
         itemId: metadata.id,
         position: position,
         duration: duration,
         mediaSourceId: mediaSourceId,
       );
-
-      if (duration == null) return;
-
-      WatchStateNotifier().notifyProgress(
-        item: metadata,
-        viewOffset: position.inMilliseconds,
-        duration: duration.inMilliseconds,
-        watchedThreshold: client.watchedThreshold,
-      );
-
-      if (position.inMilliseconds / duration.inMilliseconds >= client.watchedThreshold) {
-        await client.markWatched(metadata);
-        unawaited(TrackerCoordinator.instance.markWatched(metadata, client));
-      }
     } catch (e) {
       appLogger.w('Failed to sync external player progress for ${metadata.id}', error: e);
+      await _queueExternalProgress(metadata, offlineWatchService, position: position, duration: duration);
+      return;
     }
+
+    if (duration == null) return;
+
+    WatchStateNotifier().notifyProgress(
+      item: metadata,
+      viewOffset: position.inMilliseconds,
+      duration: duration.inMilliseconds,
+      watchedThreshold: client.watchedThreshold,
+    );
+
+    if (position.inMilliseconds / duration.inMilliseconds >= client.watchedThreshold) {
+      try {
+        await client.markWatched(metadata);
+        unawaited(TrackerCoordinator.instance.markWatched(metadata, client));
+      } catch (e) {
+        appLogger.w('Failed to mark external playback watched for ${metadata.id}', error: e);
+      }
+    }
+  }
+
+  @visibleForTesting
+  static Future<void> reportAndroidExternalProgressForTesting({
+    required int? positionMs,
+    required int? durationMs,
+    bool playbackCompleted = false,
+    bool playbackError = false,
+    required MediaItem metadata,
+    required MediaServerClient? client,
+    OfflineWatchSyncService? offlineWatchService,
+    String? mediaSourceId,
+  }) {
+    return _reportAndroidExternalProgress(
+      _ExternalPlayerLaunchResult(
+        launched: true,
+        positionMs: positionMs,
+        durationMs: durationMs,
+        playbackCompleted: playbackCompleted,
+        playbackError: playbackError,
+      ),
+      metadata: metadata,
+      client: client,
+      offlineWatchService: offlineWatchService,
+      mediaSourceId: mediaSourceId,
+    );
+  }
+
+  static Future<void> _queueExternalProgress(
+    MediaItem metadata,
+    OfflineWatchSyncService? offlineWatchService, {
+    required Duration position,
+    required Duration? duration,
+  }) async {
+    final serverId = metadata.serverId;
+    if (offlineWatchService == null || serverId == null) return;
+    await offlineWatchService.queueProgressUpdate(
+      serverId: serverId,
+      itemId: metadata.id,
+      viewOffset: duration == null
+          ? position.inMilliseconds
+          : position.inMilliseconds.clamp(0, duration.inMilliseconds).toInt(),
+      duration: duration?.inMilliseconds,
+    );
   }
 
   static int? _positive(int? value) => value != null && value > 0 ? value : null;

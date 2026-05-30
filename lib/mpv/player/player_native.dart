@@ -180,6 +180,11 @@ class PlayerNative extends PlayerBase {
       await setProperty('pause', 'yes');
     }
 
+    // Prevent mpv's own default subtitle selection from racing the
+    // server-backed TrackManager decision applied after tracks are discovered.
+    await setProperty('sid', 'no');
+    await setProperty('secondary-sid', 'no');
+
     // Convert content:// URIs to fdclose:// for MPV on Android (SAF SD card downloads)
     var uri = media.uri;
     if (Platform.isAndroid && uri.startsWith('content://')) {

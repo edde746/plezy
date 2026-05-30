@@ -263,6 +263,8 @@
     "forceTvModeDescription": "Forceer TV-indeling. Voor apparaten zonder autodetectie. Herstart vereist.",
     "startInFullscreen": "Starten in volledig scherm",
     "startInFullscreenDescription": "Open Plezy bij het starten in volledig scherm",
+    "exitFullscreenOnPlayerClose": "Volledig scherm verlaten bij sluiten speler",
+    "exitFullscreenOnPlayerCloseDescription": "Verlaat automatisch volledig scherm wanneer de videospeler wordt gesloten",
     "autoHidePerformanceOverlay": "Prestatie-overlay automatisch verbergen",
     "autoHidePerformanceOverlayDescription": "Laat de prestatie-overlay meevervagen met de afspeelknoppen",
     "showNavBarLabels": "Navigatiebalk labels tonen",

@@ -59,6 +59,7 @@ class DownloadedMedia extends Table {
   IntColumn get retryCount => integer().withDefault(const Constant(0))();
   TextColumn get bgTaskId => text().nullable()();
   IntColumn get mediaIndex => integer().withDefault(const Constant(0))();
+  TextColumn get mediaSourceId => text().nullable()();
 }
 
 /// Profile ownership for shared physical downloads.

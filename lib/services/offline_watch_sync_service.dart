@@ -9,6 +9,7 @@ import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
+import '../media/playback_report_metadata.dart';
 import '../utils/app_logger.dart';
 import '../utils/global_key_utils.dart';
 import 'offline_mode_source.dart';
@@ -17,6 +18,7 @@ import 'multi_server_manager.dart';
 import 'plex_client.dart';
 import 'settings_service.dart';
 import 'trackers/tracker_coordinator.dart';
+import 'watch_state_resolver.dart';
 
 /// Service for managing offline watch progress and syncing it back to the
 /// owning server. Backend-neutral over [MediaServerClient] — Plex actions
@@ -215,9 +217,9 @@ class OfflineWatchSyncService extends ChangeNotifier {
     required String serverId,
     required String itemId,
     required int viewOffset,
-    required int duration,
+    required int? duration,
   }) async {
-    final shouldMarkWatched = isWatchedByProgress(viewOffset, duration, serverId: serverId);
+    final shouldMarkWatched = duration != null && isWatchedByProgress(viewOffset, duration, serverId: serverId);
     final clientScopeId = await _clientScopeIdForItem(serverId, itemId);
 
     await _database.upsertProgressAction(
@@ -230,8 +232,12 @@ class OfflineWatchSyncService extends ChangeNotifier {
       shouldMarkWatched: shouldMarkWatched,
     );
 
+    final durationLabel = duration == null ? 'unknown' : '${(duration / 1000).toStringAsFixed(0)}s';
+    final percentLabel = duration == null || duration <= 0
+        ? 'unknown'
+        : '${((viewOffset / duration) * 100).toStringAsFixed(1)}%';
     appLogger.d(
-      'Queued offline progress: $serverId:$itemId at ${(viewOffset / 1000).toStringAsFixed(0)}s / ${(duration / 1000).toStringAsFixed(0)}s (${((viewOffset / duration) * 100).toStringAsFixed(1)}%)',
+      'Queued offline progress: $serverId:$itemId at ${(viewOffset / 1000).toStringAsFixed(0)}s / $durationLabel ($percentLabel)',
     );
 
     notifyListeners();
@@ -275,31 +281,19 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Returns:
   /// - `true` if item was marked as watched locally or progress >= server threshold
   /// - `false` if item was marked as unwatched locally
-  /// - `null` if no local action exists (use cached server data)
+  /// - `null` if no local watched/unwatched action exists (use cached server data)
   Future<bool?> getLocalWatchStatus(String globalKey, {String? clientScopeId}) async {
     await _adoptLegacyWatchActionsForActiveProfile();
     final expectedScope = clientScopeId ?? _activeClientScopeIdForGlobalKey(globalKey);
     final profileId = _activeProfileId;
-    final action = await _database.getLatestWatchAction(
+    final actions = await _database.getWatchActionsForKey(
       globalKey,
       profileId: profileId,
       filterProfile: profileId != null,
       clientScopeId: expectedScope,
       filterClientScope: expectedScope != null,
     );
-    if (action == null) return null;
-
-    switch (action.actionType) {
-      case 'watched':
-        return true;
-      case 'unwatched':
-        return false;
-      case 'progress':
-        // Check if progress exceeds threshold
-        return action.shouldMarkWatched;
-      default:
-        return null;
-    }
+    return WatchStateResolver.fromActions(actions).isWatched;
   }
 
   /// Get local watch statuses for multiple items in a single database query.
@@ -315,7 +309,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
     final scopes = clientScopeIdsByGlobalKey ?? _activeClientScopeIdsForGlobalKeys(globalKeys);
     final profileId = _activeProfileId;
-    final actions = await _database.getLatestWatchActionsForKeys(
+    final actions = await _database.getWatchActionsForKeys(
       globalKeys,
       profileId: profileId,
       filterProfile: profileId != null,
@@ -324,22 +318,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
     final result = <String, bool?>{};
 
     for (final key in globalKeys) {
-      final action = actions[key];
-      if (action == null) {
-        result[key] = null;
-        continue;
-      }
-
-      switch (action.actionType) {
-        case 'watched':
-          result[key] = true;
-        case 'unwatched':
-          result[key] = false;
-        case 'progress':
-          result[key] = action.shouldMarkWatched;
-        default:
-          result[key] = null;
-      }
+      result[key] = WatchStateResolver.fromActions(actions[key] ?? const []).isWatched;
     }
 
     return result;
@@ -347,34 +326,30 @@ class OfflineWatchSyncService extends ChangeNotifier {
 
   /// Get the local view offset (resume position) for a media item.
   ///
-  /// Returns the locally tracked position, or null if none exists.
+  /// Returns the locally tracked position, or null if none exists. Explicit
+  /// watched/unwatched actions clear resume by resolving to a zero offset.
   Future<int?> getLocalViewOffset(String globalKey, {String? clientScopeId}) async {
     await _adoptLegacyWatchActionsForActiveProfile();
     final expectedScope = clientScopeId ?? _activeClientScopeIdForGlobalKey(globalKey);
     final profileId = _activeProfileId;
-    final action = await _database.getLatestWatchAction(
+    final actions = await _database.getWatchActionsForKey(
       globalKey,
       profileId: profileId,
       filterProfile: profileId != null,
       clientScopeId: expectedScope,
       filterClientScope: expectedScope != null,
     );
-    if (action == null) return null;
-
-    // Only return offset for progress actions
-    if (action.actionType == OfflineActionType.progress.id) {
-      return action.viewOffset;
-    }
-
-    return null;
+    final snapshot = WatchStateResolver.fromActions(actions);
+    final offset = snapshot.hasViewOffsetMs ? snapshot.viewOffsetMs : null;
+    return offset != null && offset > 0 ? offset : null;
   }
 
   Future<int> getPendingSyncCount() async {
     await _adoptLegacyWatchActionsForActiveProfile();
     final profileId = _activeProfileId;
     return profileId == null || profileId.isEmpty
-        ? _database.getPendingSyncCount()
-        : _database.getPendingSyncCount(profileId: profileId);
+        ? _database.getPendingSyncCount(maxSyncAttempts: maxSyncAttempts)
+        : _database.getPendingSyncCount(profileId: profileId, maxSyncAttempts: maxSyncAttempts);
   }
 
   /// Sync all pending items to their respective servers.
@@ -578,22 +553,32 @@ class OfflineWatchSyncService extends ChangeNotifier {
         break;
 
       case 'progress':
-        // Push the resume position. Jellyfin's `/Sessions/Playing/Stopped`
-        // ignores events that arrive without an open session row, so we
-        // bracket with a Started call. Plex's `/:/timeline` collapses both
-        // into a single row and treats the second as the canonical state.
-        if (action.viewOffset != null && action.duration != null) {
-          final position = Duration(milliseconds: action.viewOffset!);
-          final duration = Duration(milliseconds: action.duration!);
-          try {
-            await client.reportPlaybackStarted(itemId: action.ratingKey, position: position, duration: duration);
-          } catch (e) {
-            // Plex sometimes 5xxs the start when nothing follows; treat as
-            // best-effort and continue to the stop call which is the one
-            // that actually persists the resume position.
-            appLogger.d('Offline progress: started call failed (continuing)', error: e);
+        // Push resumable progress, or a completed offline playback. Jellyfin's
+        // `/Sessions/Playing/Stopped` ignores events without an open session
+        // row, so non-Plex backends still get a lightweight Started call.
+        if (action.viewOffset != null) {
+          final duration = action.duration == null ? null : Duration(milliseconds: action.duration!);
+          final position = action.shouldMarkWatched && duration != null
+              ? duration
+              : Duration(milliseconds: action.viewOffset!);
+          if (!action.shouldMarkWatched || client.backend != MediaBackend.plex) {
+            try {
+              await client.reportPlaybackStarted(itemId: action.ratingKey, position: position, duration: duration);
+            } catch (e) {
+              // Plex sometimes 5xxs the start when nothing follows; treat as
+              // best-effort and continue to the stop call which is the one
+              // that actually persists the resume position.
+              appLogger.d('Offline progress: started call failed (continuing)', error: e);
+            }
           }
-          await client.reportPlaybackStopped(itemId: action.ratingKey, position: position, duration: duration);
+          await client.reportPlaybackStopped(
+            itemId: action.ratingKey,
+            position: position,
+            duration: duration,
+            report: PlaybackReportMetadata.offlineReplay(
+              recordedAt: DateTime.fromMillisecondsSinceEpoch(action.updatedAt),
+            ),
+          );
         }
 
         // If progress exceeded threshold, also mark as watched.

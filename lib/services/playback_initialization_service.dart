@@ -45,7 +45,12 @@ class PlaybackInitializationService {
   ///
   /// Returns the local file path if the video is downloaded and completed.
   /// Returns null if not available offline or database is not provided.
-  Future<String?> getOfflineVideoPath(String serverId, String ratingKey, {int mediaIndex = 0}) async {
+  Future<String?> getOfflineVideoPath(
+    String serverId,
+    String ratingKey, {
+    int mediaIndex = 0,
+    String? selectedMediaSourceId,
+  }) async {
     if (database == null) {
       return null;
     }
@@ -64,8 +69,23 @@ class PlaybackInitializationService {
         return null;
       }
 
-      // Skip offline file if a different version was requested
-      if (downloadedItem.mediaIndex != mediaIndex) {
+      final downloadedSourceId = downloadedItem.mediaSourceId;
+      final requestedSourceId = selectedMediaSourceId?.trim();
+      final comparedBySourceId =
+          requestedSourceId != null &&
+          requestedSourceId.isNotEmpty &&
+          downloadedSourceId != null &&
+          downloadedSourceId.isNotEmpty;
+      if (comparedBySourceId && downloadedSourceId != requestedSourceId) {
+        appLogger.d(
+          '[VersionTrace] Offline video source is $downloadedSourceId, '
+          'but requested source $requestedSourceId — skipping offline',
+        );
+        return null;
+      }
+
+      // Fall back to index when either side lacks a stable source id.
+      if (!comparedBySourceId && downloadedItem.mediaIndex != mediaIndex) {
         appLogger.d(
           '[VersionTrace] Offline video is version ${downloadedItem.mediaIndex}, '
           'but requested version $mediaIndex — skipping offline',
@@ -121,7 +141,12 @@ class PlaybackInitializationService {
 
     String? offlineVideoPath;
     if (serverId != null && (preferOffline || client == null) && database != null) {
-      offlineVideoPath = await getOfflineVideoPath(serverId, metadata.id, mediaIndex: selectedMediaIndex);
+      offlineVideoPath = await getOfflineVideoPath(
+        serverId,
+        metadata.id,
+        mediaIndex: selectedMediaIndex,
+        selectedMediaSourceId: selectedMediaSourceId,
+      );
     }
 
     // Downloaded playback must not wait on a live server. Cached media info
@@ -191,6 +216,7 @@ class PlaybackInitializationService {
       mediaInfo: mediaInfo,
       externalSubtitles: sidecarSubtitles,
       isOffline: true,
+      playMethod: 'DirectPlay',
     );
   }
 
@@ -244,6 +270,9 @@ class PlaybackInitializationService {
             'file://${entity.path}',
             title: cachedTrack?.displayTitle ?? cachedTrack?.language ?? 'Subtitle $fileName',
             language: cachedTrack?.languageCode,
+            codec: cachedTrack?.codec,
+            isDefault: cachedTrack?.selected ?? false,
+            isForced: cachedTrack?.forced ?? false,
           ),
         );
       }

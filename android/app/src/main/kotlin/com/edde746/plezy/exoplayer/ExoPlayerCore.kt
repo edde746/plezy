@@ -440,7 +440,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
             // encoded audio track when capabilities come back. See androidx/media#2258.
             .setAllowInvalidateSelectionsOnRendererCapabilitiesChange(true)
             .setTrackTypeDisabled(C.TRACK_TYPE_TEXT, false)
-            .setPreferredTextLanguage("en")
         )
       }
 
@@ -2279,7 +2278,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     startPositionMs: Long,
     autoPlay: Boolean,
     isLive: Boolean = false,
-    externalSubtitleList: List<Map<String, String?>>? = null
+    externalSubtitleList: List<Map<String, Any?>>? = null
   ) {
     if (!isInitialized) return
 
@@ -2330,12 +2329,22 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     // Build external subtitle configurations (attached to MediaItem before prepare)
     externalSubtitleList?.forEachIndexed { index, sub ->
-      val subUri = sub["uri"] ?: return@forEachIndexed
+      val subUri = sub["uri"] as? String ?: return@forEachIndexed
+      val title = sub["title"] as? String
+      val language = sub["language"] as? String
+      val codec = sub["codec"] as? String
+      val mimeType = sub["mimeType"] as? String
+      val isDefault = sub["isDefault"] as? Boolean ?: false
+      val isForced = sub["isForced"] as? Boolean ?: false
+      val selectionFlags =
+        (if (isDefault) C.SELECTION_FLAG_DEFAULT else 0) or
+          (if (isForced) C.SELECTION_FLAG_FORCED else 0)
       val config = MediaItem.SubtitleConfiguration.Builder(Uri.parse(subUri))
         .setId("external_$index")
-        .setLabel(sub["title"] ?: "External")
-        .setLanguage(sub["language"])
-        .setMimeType(sub["mimeType"] ?: detectSubtitleMimeType(subUri))
+        .setLabel(title ?: "External")
+        .setLanguage(language)
+        .setMimeType(mimeType ?: subtitleMimeTypeForCodec(codec) ?: detectSubtitleMimeType(subUri))
+        .setSelectionFlags(selectionFlags)
         .build()
       externalSubtitles.add(config)
       externalSubtitleUris.add(subUri)
@@ -2351,7 +2360,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       reason = "open",
       forceSelector = true,
       clearAudioOverrides = true,
-      clearTextOverrides = true
+      clearTextOverrides = true,
+      textDisabled = true
     )
     emitSeekable(false, force = true)
 
@@ -2616,6 +2626,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       path.endsWith(".ttml") -> MimeTypes.APPLICATION_TTML
       else -> MimeTypes.APPLICATION_SUBRIP
     }
+  }
+
+  private fun subtitleMimeTypeForCodec(codec: String?): String? = when (codec?.lowercase()) {
+    "srt", "subrip" -> MimeTypes.APPLICATION_SUBRIP
+    "ass", "ssa" -> MimeTypes.TEXT_SSA
+    "webvtt", "vtt" -> MimeTypes.TEXT_VTT
+    "ttml" -> MimeTypes.APPLICATION_TTML
+    else -> null
   }
 
   fun setVisible(visible: Boolean) {

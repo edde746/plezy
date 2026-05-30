@@ -64,6 +64,17 @@ void main() {
       p.dispose();
     });
 
+    test('getViewOffset returns null for local progress that crossed watched threshold', () async {
+      final p = OfflineWatchProvider(syncService: syncService, downloadProvider: downloadProvider);
+
+      await syncService.queueProgressUpdate(serverId: 'srv', itemId: '42', viewOffset: 95000, duration: 100000);
+
+      expect(await p.isWatched('srv:42'), isTrue);
+      expect(await p.getViewOffset('srv:42'), isNull);
+
+      p.dispose();
+    });
+
     test('getNextUnwatchedEpisode returns null for show with no downloads', () async {
       final p = OfflineWatchProvider(syncService: syncService, downloadProvider: downloadProvider);
       expect(await p.getNextUnwatchedEpisode('show-123'), isNull);

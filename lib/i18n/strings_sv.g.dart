@@ -391,6 +391,8 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'Tvinga TV-layout. För enheter som inte upptäcks automatiskt. Kräver omstart.';
 	@override String get startInFullscreen => 'Starta i helskärm';
 	@override String get startInFullscreenDescription => 'Öppna Plezy i helskärm vid start';
+	@override String get exitFullscreenOnPlayerClose => 'Avsluta helskärm vid stängning av spelare';
+	@override String get exitFullscreenOnPlayerCloseDescription => 'Avslutar automatiskt helskärmsläge när videospelaren stängs';
 	@override String get autoHidePerformanceOverlay => 'Dölj prestandaöverlagring automatiskt';
 	@override String get autoHidePerformanceOverlayDescription => 'Tona prestandaöverlagringen med uppspelningskontrollerna';
 	@override String get showNavBarLabels => 'Visa navigeringsfältets etiketter';
@@ -2066,6 +2068,8 @@ extension on TranslationsSv {
 			'settings.forceTvModeDescription' => 'Tvinga TV-layout. För enheter som inte upptäcks automatiskt. Kräver omstart.',
 			'settings.startInFullscreen' => 'Starta i helskärm',
 			'settings.startInFullscreenDescription' => 'Öppna Plezy i helskärm vid start',
+			'settings.exitFullscreenOnPlayerClose' => 'Avsluta helskärm vid stängning av spelare',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'Avslutar automatiskt helskärmsläge när videospelaren stängs',
 			'settings.autoHidePerformanceOverlay' => 'Dölj prestandaöverlagring automatiskt',
 			'settings.autoHidePerformanceOverlayDescription' => 'Tona prestandaöverlagringen med uppspelningskontrollerna',
 			'settings.showNavBarLabels' => 'Visa navigeringsfältets etiketter',
@@ -2323,10 +2327,10 @@ extension on TranslationsSv {
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Bekräfta åtgärd',
 			'profiles.addPlezyProfile' => 'Lägg till Plezy-profil',
-			'profiles.switchingProfile' => 'Byter profil…',
-			'profiles.deleteThisProfileTitle' => 'Ta bort denna profil?',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.switchingProfile' => 'Byter profil…',
+			'profiles.deleteThisProfileTitle' => 'Ta bort denna profil?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Ta bort ${displayName}. Anslutningar påverkas inte.',
 			'profiles.active' => 'Aktiv',
 			'profiles.manage' => 'Hantera',
@@ -2837,10 +2841,10 @@ extension on TranslationsSv {
 			'metadataEdit.editMetadata' => 'Redigera...',
 			'metadataEdit.screenTitle' => 'Redigera metadata',
 			'metadataEdit.basicInfo' => 'Grundläggande info',
-			'metadataEdit.artwork' => 'Artwork',
-			'metadataEdit.advancedSettings' => 'Avancerade inställningar',
 			_ => null,
 		} ?? switch (path) {
+			'metadataEdit.artwork' => 'Artwork',
+			'metadataEdit.advancedSettings' => 'Avancerade inställningar',
 			'metadataEdit.title' => 'Titel',
 			'metadataEdit.sortTitle' => 'Sorteringstitel',
 			'metadataEdit.originalTitle' => 'Originaltitel',

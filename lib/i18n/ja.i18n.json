@@ -263,6 +263,8 @@
     "forceTvModeDescription": "TVレイアウトを強制します。自動検出しないデバイス向けです。再起動が必要です。",
     "startInFullscreen": "全画面表示で起動",
     "startInFullscreenDescription": "起動時にPlezyを全画面モードで開きます",
+    "exitFullscreenOnPlayerClose": "プレイヤーを閉じたときに全画面を終了",
+    "exitFullscreenOnPlayerCloseDescription": "ビデオプレイヤーを閉じたときに自動的に全画面モードを終了します",
     "autoHidePerformanceOverlay": "パフォーマンスオーバーレイを自動非表示",
     "autoHidePerformanceOverlayDescription": "再生コントロールと一緒にパフォーマンスオーバーレイをフェードする",
     "showNavBarLabels": "ナビゲーションバーラベルを表示",

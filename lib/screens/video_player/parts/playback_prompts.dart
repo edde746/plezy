@@ -12,7 +12,12 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged
     // never fires false.  Normalize all playback-dependent state.
     unawaited(_setWakelock(false));
-    unawaited(_progressTracker?.sendProgress('paused'));
+    final duration = player?.state.duration;
+    unawaited(
+      duration != null && duration.inMilliseconds > 0
+          ? _sendStoppedProgressOnce(positionOverride: duration)
+          : _sendStoppedProgressOnce(),
+    );
     _updateMediaControlsPlaybackState();
     unawaited(DiscordRPCService.instance.pausePlayback());
     unawaited(TraktScrobbleService.instance.pausePlayback());
@@ -92,6 +97,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _cancelAutoPlay() {
     _autoPlayTimer?.cancel();
+    _progressTracker?.resumeAfterStoppedReport();
     _completionTriggered = false; // Reset so it can trigger again if user seeks near end
     _setPlayerState(() {
       _showPlayNextDialog = false;

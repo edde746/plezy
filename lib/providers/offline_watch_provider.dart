@@ -76,6 +76,9 @@ class OfflineWatchProvider extends ChangeNotifier with DisposableChangeNotifierM
       return localOffset;
     }
 
+    final localStatus = await _syncService.getLocalWatchStatus(globalKey);
+    if (localStatus == true) return null;
+
     // Fall back to cached metadata
     final metadata = _downloadProvider.getMetadata(globalKey);
     return metadata?.viewOffsetMs;

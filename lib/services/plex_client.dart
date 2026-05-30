@@ -16,6 +16,7 @@ import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
+import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
 import '../utils/external_ids.dart';
 import 'bif_thumbnail_service.dart';
@@ -1610,6 +1611,7 @@ class PlexClient
     required int time,
     required String state, // 'playing', 'paused', 'stopped', 'buffering'
     int? duration,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     final response = await _http.post(
       '/:/timeline',
@@ -1619,6 +1621,9 @@ class PlexClient
         'time': time,
         'state': state,
         'duration': ?duration,
+        if (report.isOfflineReplay) 'offline': 1,
+        if (report.recordedAt != null) 'updated': report.recordedAt!.millisecondsSinceEpoch ~/ 1000,
+        if (report.willContinue != null) 'continuing': report.willContinue! ? 1 : 0,
       },
     );
     // Surface non-2xx instead of swallowing — progress is the cornerstone
@@ -3432,6 +3437,9 @@ class PlexClient
             url,
             title: plexTrack.displayTitle ?? plexTrack.title ?? plexTrack.language ?? 'Track ${plexTrack.id}',
             language: plexTrack.languageCode,
+            codec: plexTrack.codec,
+            isDefault: plexTrack.selected,
+            isForced: plexTrack.forced,
           ),
         );
       } catch (e) {
@@ -3922,7 +3930,14 @@ class PlexClient
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
-  }) => updateProgress(itemId, time: position.inMilliseconds, state: 'stopped', duration: duration?.inMilliseconds);
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
+  }) => updateProgress(
+    itemId,
+    time: position.inMilliseconds,
+    state: 'stopped',
+    duration: duration?.inMilliseconds,
+    report: report,
+  );
 
   // ── Downloads ────────────────────────────────────────────────────
 
@@ -3955,7 +3970,11 @@ class PlexClient
         );
       }
     }
-    return DownloadResolution(videoUrl: playbackData.videoUrl, externalSubtitles: subtitles);
+    return DownloadResolution(
+      videoUrl: playbackData.videoUrl,
+      mediaSourceId: playbackData.mediaInfo?.mediaSourceId,
+      externalSubtitles: subtitles,
+    );
   }
 
   @override

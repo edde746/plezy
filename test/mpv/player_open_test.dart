@@ -34,6 +34,58 @@ void main() {
       );
     });
 
+    test('ExoPlayer forwards external subtitle metadata at open', () async {
+      final calls = <MethodCall>[];
+
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            await player.open(
+              Media('https://example.test/movie.mkv'),
+              externalSubtitles: const [
+                SubtitleTrack(
+                  id: 'external-sub',
+                  title: 'English Forced',
+                  language: 'eng',
+                  codec: 'srt',
+                  isDefault: true,
+                  isForced: true,
+                  isExternal: true,
+                  uri: 'https://example.test/sub.srt',
+                ),
+              ],
+            );
+
+            final openCall = calls.singleWhere((call) => call.method == 'open');
+            final args = Map<Object?, Object?>.from(openCall.arguments as Map);
+            final external = args['externalSubtitles'] as List;
+            final subtitle = Map<Object?, Object?>.from(external.single as Map);
+
+            expect(subtitle['uri'], 'https://example.test/sub.srt');
+            expect(subtitle['title'], 'English Forced');
+            expect(subtitle['language'], 'eng');
+            expect(subtitle['codec'], 'srt');
+            expect(subtitle['isDefault'], isTrue);
+            expect(subtitle['isForced'], isTrue);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('ExoPlayer applies DV conversion mode changed during in-flight initialization', () async {
       final initialize = Completer<bool>();
       final calls = <MethodCall>[];
@@ -98,6 +150,44 @@ void main() {
             expect(player.state.tracks.subtitle, isEmpty);
             expect(player.state.track.audio, isNull);
             expect(player.state.track.subtitle, isNull);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('MPV disables subtitles before loading media', () async {
+      final calls = <MethodCall>[];
+
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            await player.open(Media('https://example.test/next.mkv'));
+
+            final sidIndex = _setPropertyCallIndex(calls, 'sid');
+            final secondarySidIndex = _setPropertyCallIndex(calls, 'secondary-sid');
+            final loadIndex = _loadfileCallIndex(calls);
+
+            expect(sidIndex, greaterThanOrEqualTo(0));
+            expect(secondarySidIndex, greaterThanOrEqualTo(0));
+            expect(loadIndex, greaterThanOrEqualTo(0));
+            expect(sidIndex, lessThan(loadIndex));
+            expect(secondarySidIndex, lessThan(loadIndex));
+            expect(_setPropertyValue(calls[sidIndex]), 'no');
+            expect(_setPropertyValue(calls[secondarySidIndex]), 'no');
           } finally {
             await player.dispose();
           }
@@ -234,4 +324,20 @@ void _seedTracks(dynamic player) {
     {'type': 'audio', 'id': '2_0', 'title': 'English', 'lang': 'eng', 'selected': true},
     {'type': 'sub', 'id': '3_0', 'title': 'English', 'lang': 'eng', 'selected': true},
   ]);
+}
+
+int _setPropertyCallIndex(List<MethodCall> calls, String name) {
+  return calls.indexWhere((call) => call.method == 'setProperty' && _setPropertyName(call) == name);
+}
+
+String? _setPropertyName(MethodCall call) => Map<Object?, Object?>.from(call.arguments as Map)['name'] as String?;
+
+String? _setPropertyValue(MethodCall call) => Map<Object?, Object?>.from(call.arguments as Map)['value'] as String?;
+
+int _loadfileCallIndex(List<MethodCall> calls) {
+  return calls.indexWhere((call) {
+    if (call.method != 'command') return false;
+    final args = Map<Object?, Object?>.from(call.arguments as Map)['args'] as List;
+    return args.isNotEmpty && args.first == 'loadfile';
+  });
 }

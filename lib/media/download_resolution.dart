@@ -47,7 +47,8 @@ class DownloadArtworkSpec {
 /// version.
 class DownloadResolution {
   final String? videoUrl;
+  final String? mediaSourceId;
   final List<DownloadSubtitleSpec> externalSubtitles;
 
-  const DownloadResolution({required this.videoUrl, this.externalSubtitles = const []});
+  const DownloadResolution({required this.videoUrl, this.mediaSourceId, this.externalSubtitles = const []});
 }

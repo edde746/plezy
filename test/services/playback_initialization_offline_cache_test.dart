@@ -134,6 +134,22 @@ void main() {
     expect(result.mediaInfo?.audioTracks.single.languageCode, 'fre');
   });
 
+  test('offline path falls back to media index when caller has no source id', () async {
+    await _insertDownloaded(
+      db,
+      serverId: 'srv-1',
+      ratingKey: 'movie-1',
+      videoFilePath: 'content://offline/movie-1-v1',
+      mediaIndex: 0,
+      mediaSourceId: 'source-a',
+    );
+
+    final service = PlaybackInitializationService(database: db);
+
+    expect(await service.getOfflineVideoPath('srv-1', 'movie-1', mediaIndex: 1), null);
+    expect(await service.getOfflineVideoPath('srv-1', 'movie-1', mediaIndex: 0), 'content://offline/movie-1-v1');
+  });
+
   test('pure-offline Jellyfin cache works without a connection row', () async {
     await _insertDownloaded(
       db,
@@ -312,6 +328,7 @@ Future<void> _insertDownloaded(
   required String ratingKey,
   required String videoFilePath,
   int mediaIndex = 0,
+  String? mediaSourceId,
 }) async {
   await db
       .into(db.downloadedMedia)
@@ -325,6 +342,7 @@ Future<void> _insertDownloaded(
           status: DownloadStatus.completed.index,
           videoFilePath: Value(videoFilePath),
           mediaIndex: Value(mediaIndex),
+          mediaSourceId: Value(mediaSourceId),
         ),
       );
 }

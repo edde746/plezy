@@ -44,7 +44,9 @@ import '../services/episode_navigation_service.dart';
 import '../services/app_foreground_service.dart';
 import '../services/media_controls_manager.dart';
 import '../services/playback_initialization_service.dart';
+import '../services/playback_context.dart';
 import '../services/playback_progress_tracker.dart';
+import '../services/playback_source_resolver.dart';
 import '../services/offline_watch_sync_service.dart';
 import '../services/display_mode_service.dart';
 import '../services/settings_service.dart';
@@ -274,7 +276,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   // the metadata fetch (and transcode-decision HTTP, if non-original preset)
   // overlaps with MPV property configuration. Awaited inside `_startPlayback`
   // immediately before `player.open()` needs the video URL.
-  Future<PlaybackInitializationResult>? _playbackDataFuture;
+  Future<PlaybackContext>? _playbackDataFuture;
+  PlaybackContext? _playbackContext;
+  int _playbackGeneration = 0;
   // HTTP headers attached to the player's `Media` request — `X-Plex-Token`
   // for Plex, empty for Jellyfin (token rides in the URL there). Sourced
   // from `MediaServerClient.streamHeaders` so the player code path stays
@@ -373,6 +377,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _resumeAfterAppleAudioSessionPause = false;
   DateTime? _lastPlaybackPauseAt;
   bool _autoPipEnabled = false;
+  bool _exitFullscreenOnPlayerClose = false;
   bool _androidAutoPipTransitionInFlight = false;
   bool _pipFiltersPrepared = false;
   VoidCallback? _autoPipEnteringCallback;
@@ -380,7 +385,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   int _rewindOnResume = 0;
   Future<void> _lifecycleTransition = Future<void>.value();
   String _playerBackendLabel = 'unknown';
-  Future<void>? _stoppedProgressFuture;
   Timer? _tvBackgroundMediaControlResumeTimer;
 
   /// Whether to skip lifecycle actions because PiP is active or about to start.
@@ -420,9 +424,28 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     return context.read<MultiServerProvider>().serverManager.getClient(id);
   }
 
+  MediaServerClient? _getOnlineMediaServerClient(BuildContext context) {
+    final id = _currentMetadata.serverId;
+    if (id == null) return null;
+    final manager = context.read<MultiServerProvider>().serverManager;
+    if (!manager.isClientOnline(id)) return null;
+    return manager.getClient(id);
+  }
+
+  bool get _usesLocalPlaybackSource => _effectiveIsOffline;
+
   bool get _isOfflinePlayback => widget.isOffline || _effectiveIsOffline;
 
   ScrubFrame? _getThumbnailData(Duration time) => _scrubPreviewSource?.getFrame(time);
+
+  int _beginPlaybackGeneration({bool isEpisodeSwap = false}) {
+    if (!isEpisodeSwap) _isSwappingEpisode = false;
+    return ++_playbackGeneration;
+  }
+
+  bool _isCurrentPlaybackGeneration(int generation, Player currentPlayer) {
+    return mounted && player == currentPlayer && _playbackGeneration == generation;
+  }
 
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false);
   final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false);
@@ -442,7 +465,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _playbackSessionIdentifier = widget.reusedSessionIdentifier ?? generateSessionIdentifier();
     _playbackTranscodeSessionId = widget.reusedTranscodeSessionId ?? generateSessionIdentifier();
     _selectedAudioStreamId = widget.selectedAudioStreamId;
-    _effectiveIsOffline = widget.isOffline;
+    _effectiveIsOffline = false;
     _selectedQualityPreset = widget.selectedQualityPreset ?? TranscodeQualityPreset.original;
 
     _liveChannelIndex = widget.liveCurrentChannelIndex ?? -1;
@@ -580,6 +603,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (!mounted) return;
       _videoPlayerNavigationEnabled = settingsService.read(SettingsService.videoPlayerNavigationEnabled);
       _autoPipEnabled = settingsService.read(SettingsService.autoPip);
+      _exitFullscreenOnPlayerClose = settingsService.read(SettingsService.exitFullscreenOnPlayerClose);
       _rewindOnResume = settingsService.read(SettingsService.rewindOnResume);
       final bufferSizeMB = settingsService.read(SettingsService.bufferSize);
       final enableHardwareDecoding = settingsService.read(SettingsService.enableHardwareDecoding);
@@ -626,15 +650,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         } else {
           _selectedQualityPreset = widget.selectedQualityPreset!;
         }
-        final playbackService = PlaybackInitializationService(
-          client: genericClient,
+        final playbackResolver = PlaybackSourceResolver(
+          serverManager: context.read<MultiServerProvider>().serverManager,
           database: context.read<AppDatabase>(),
         );
-        _playbackDataFuture = playbackService.getPlaybackData(
+        _playbackDataFuture = playbackResolver.resolve(
           metadata: _currentMetadata,
           selectedMediaIndex: widget.selectedMediaIndex,
           selectedMediaSourceId: widget.selectedMediaSourceId,
-          preferOffline: _selectedQualityPreset.isOriginal,
+          offlineLibraryMode: false,
           qualityPreset: _selectedQualityPreset,
           selectedAudioStreamId: _selectedAudioStreamId,
           sessionIdentifier: _playbackSessionIdentifier,
@@ -1034,6 +1058,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   }
 
   Future<void> _restoreSystemUiAndOrientation() async {
+    if (PlatformDetector.isDesktopOS() && _exitFullscreenOnPlayerClose) {
+      unawaited(FullscreenStateManager().exitFullscreen());
+    }
+
     try {
       await OrientationHelper.restoreSystemUI();
     } catch (e) {
@@ -1258,18 +1286,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   String get playbackSessionIdentifier => _playbackSessionIdentifier;
   String get playbackTranscodeSessionId => _playbackTranscodeSessionId;
 
-  Future<void> _sendStoppedProgressOnce() {
-    final existing = _stoppedProgressFuture;
-    if (existing != null) return existing;
-
+  Future<void> _sendStoppedProgressOnce({Duration? positionOverride}) {
     final tracker = _progressTracker;
     if (tracker == null) return Future<void>.value();
 
-    final future = tracker.sendProgress('stopped').catchError((Object e, StackTrace st) {
+    return tracker.sendStoppedProgressOnce(positionOverride: positionOverride).catchError((Object e, StackTrace st) {
       appLogger.d('Stopped progress flush failed', error: e, stackTrace: st);
     });
-    _stoppedProgressFuture = future;
-    return future;
   }
 
   /// Dispose the player before replacing the video to avoid race conditions

@@ -263,6 +263,8 @@
     "forceTvModeDescription": "Tving TV-layout. Til enheder, der ikke registreres automatisk. Kræver genstart.",
     "startInFullscreen": "Start i fuldskærm",
     "startInFullscreenDescription": "Åbn Plezy i fuldskærmstilstand ved opstart",
+    "exitFullscreenOnPlayerClose": "Forlad fuldskærm ved lukning af afspiller",
+    "exitFullscreenOnPlayerCloseDescription": "Afslut automatisk fuldskærm, når videoafspilleren lukkes",
     "autoHidePerformanceOverlay": "Skjul ydelses-overlay automatisk",
     "autoHidePerformanceOverlayDescription": "Fade ydelses-overlayet med afspilningskontrollerne",
     "showNavBarLabels": "Vis navigationsbarlabels",
