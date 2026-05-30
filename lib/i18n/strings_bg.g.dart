@@ -391,6 +391,8 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'Принуди ТВ оформление. За устройства, които не се разпознават автоматично. Изисква рестарт.';
 	@override String get startInFullscreen => 'Стартирай на цял екран';
 	@override String get startInFullscreenDescription => 'Отваряй Plezy в режим цял екран при стартиране';
+	@override String get exitFullscreenOnPlayerClose => 'Изход от цял екран при затваряне на плейъра';
+	@override String get exitFullscreenOnPlayerCloseDescription => 'Автоматично излиза от режим цял екран при затваряне на видео плейъра';
 	@override String get autoHidePerformanceOverlay => 'Автоматично скриване на оверлея за производителност';
 	@override String get autoHidePerformanceOverlayDescription => 'Скривай постепенно оверлея за производителност заедно с контролите за възпроизвеждане';
 	@override String get showNavBarLabels => 'Показвай етикети в навигационната лента';
@@ -563,6 +565,10 @@ class _TranslationsVideoControlsBg extends TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Отключи ротацията';
 	@override String get timerActive => 'Таймерът е активен';
 	@override String playbackWillPauseIn({required Object duration}) => 'Възпроизвеждането ще спре след ${duration}';
+	@override String get sleepTimerEndOfVideo => 'Край на текущото видео';
+	@override String get sleepTimerStopAtHeader => 'Спиране при';
+	@override String get sleepTimerDurationHeader => 'Таймер';
+	@override String get playbackWillPauseAtEnd => 'Възпроизвеждането ще спре в края на това видео';
 	@override String get stillWatching => 'Още ли гледате?';
 	@override String pausingIn({required Object seconds}) => 'Пауза след ${seconds}сек';
 	@override String get continueWatching => 'Продължи';
@@ -2066,6 +2072,8 @@ extension on TranslationsBg {
 			'settings.forceTvModeDescription' => 'Принуди ТВ оформление. За устройства, които не се разпознават автоматично. Изисква рестарт.',
 			'settings.startInFullscreen' => 'Стартирай на цял екран',
 			'settings.startInFullscreenDescription' => 'Отваряй Plezy в режим цял екран при стартиране',
+			'settings.exitFullscreenOnPlayerClose' => 'Изход от цял екран при затваряне на плейъра',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'Автоматично излиза от режим цял екран при затваряне на видео плейъра',
 			'settings.autoHidePerformanceOverlay' => 'Автоматично скриване на оверлея за производителност',
 			'settings.autoHidePerformanceOverlayDescription' => 'Скривай постепенно оверлея за производителност заедно с контролите за възпроизвеждане',
 			'settings.showNavBarLabels' => 'Показвай етикети в навигационната лента',
@@ -2190,6 +2198,10 @@ extension on TranslationsBg {
 			'videoControls.unlockRotation' => 'Отключи ротацията',
 			'videoControls.timerActive' => 'Таймерът е активен',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Възпроизвеждането ще спре след ${duration}',
+			'videoControls.sleepTimerEndOfVideo' => 'Край на текущото видео',
+			'videoControls.sleepTimerStopAtHeader' => 'Спиране при',
+			'videoControls.sleepTimerDurationHeader' => 'Таймер',
+			'videoControls.playbackWillPauseAtEnd' => 'Възпроизвеждането ще спре в края на това видео',
 			'videoControls.stillWatching' => 'Още ли гледате?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Пауза след ${seconds}сек',
 			'videoControls.continueWatching' => 'Продължи',
@@ -2319,14 +2331,14 @@ extension on TranslationsBg {
 			'mpvConfig.presetSaved' => 'Пресетът е запазен',
 			'mpvConfig.presetLoaded' => 'Пресетът е зареден',
 			'mpvConfig.presetDeleted' => 'Пресетът е изтрит',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => 'Сигурни ли сте, че искате да изтриете този пресет?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Потвърждение на действие',
 			'profiles.addPlezyProfile' => 'Добави Plezy профил',
 			'profiles.switchingProfile' => 'Смяна на профил…',
 			'profiles.deleteThisProfileTitle' => 'Да се изтрие ли този профил?',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Премахване на ${displayName}. Връзките не се засягат.',
 			'profiles.active' => 'Активен',
 			'profiles.manage' => 'Управление',
@@ -2833,14 +2845,14 @@ extension on TranslationsBg {
 			'externalPlayer.off' => 'Изключено',
 			'externalPlayer.launchFailed' => 'Неуспешно отваряне на външен плеър',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} не е инсталиран',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => 'Пусни във външен плеър',
 			'metadataEdit.editMetadata' => 'Редактирай...',
 			'metadataEdit.screenTitle' => 'Редактиране на метаданни',
 			'metadataEdit.basicInfo' => 'Основна информация',
 			'metadataEdit.artwork' => 'Обложка',
 			'metadataEdit.advancedSettings' => 'Разширени настройки',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.title' => 'Заглавие',
 			'metadataEdit.sortTitle' => 'Заглавие за сортиране',
 			'metadataEdit.originalTitle' => 'Оригинално заглавие',

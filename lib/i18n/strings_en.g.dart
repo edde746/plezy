@@ -899,6 +899,12 @@ class TranslationsSettingsEn {
 	/// en: 'Open Plezy in fullscreen mode at launch'
 	String get startInFullscreenDescription => 'Open Plezy in fullscreen mode at launch';
 
+	/// en: 'Exit fullscreen on player close'
+	String get exitFullscreenOnPlayerClose => 'Exit fullscreen on player close';
+
+	/// en: 'Automatically exit fullscreen when closing the video player'
+	String get exitFullscreenOnPlayerCloseDescription => 'Automatically exit fullscreen when closing the video player';
+
 	/// en: 'Auto-Hide Performance Overlay'
 	String get autoHidePerformanceOverlay => 'Auto-Hide Performance Overlay';
 
@@ -1269,6 +1275,18 @@ class TranslationsVideoControlsEn {
 
 	/// en: 'Playback will pause in ${duration}'
 	String playbackWillPauseIn({required Object duration}) => 'Playback will pause in ${duration}';
+
+	/// en: 'End of current video'
+	String get sleepTimerEndOfVideo => 'End of current video';
+
+	/// en: 'Stop at'
+	String get sleepTimerStopAtHeader => 'Stop at';
+
+	/// en: 'Timer'
+	String get sleepTimerDurationHeader => 'Timer';
+
+	/// en: 'Playback will pause at the end of this video'
+	String get playbackWillPauseAtEnd => 'Playback will pause at the end of this video';
 
 	/// en: 'Still watching?'
 	String get stillWatching => 'Still watching?';
@@ -4440,6 +4458,8 @@ extension on Translations {
 			'settings.forceTvModeDescription' => 'Force TV layout. For devices that don\'t auto-detect. Requires restart.',
 			'settings.startInFullscreen' => 'Start in fullscreen',
 			'settings.startInFullscreenDescription' => 'Open Plezy in fullscreen mode at launch',
+			'settings.exitFullscreenOnPlayerClose' => 'Exit fullscreen on player close',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'Automatically exit fullscreen when closing the video player',
 			'settings.autoHidePerformanceOverlay' => 'Auto-Hide Performance Overlay',
 			'settings.autoHidePerformanceOverlayDescription' => 'Fade the performance overlay with the playback controls',
 			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
@@ -4564,6 +4584,10 @@ extension on Translations {
 			'videoControls.unlockRotation' => 'Unlock rotation',
 			'videoControls.timerActive' => 'Timer Active',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'Playback will pause in ${duration}',
+			'videoControls.sleepTimerEndOfVideo' => 'End of current video',
+			'videoControls.sleepTimerStopAtHeader' => 'Stop at',
+			'videoControls.sleepTimerDurationHeader' => 'Timer',
+			'videoControls.playbackWillPauseAtEnd' => 'Playback will pause at the end of this video',
 			'videoControls.stillWatching' => 'Still watching?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausing in ${seconds}s',
 			'videoControls.continueWatching' => 'Continue',
@@ -4693,14 +4717,14 @@ extension on Translations {
 			'mpvConfig.presetSaved' => 'Preset saved',
 			'mpvConfig.presetLoaded' => 'Preset loaded',
 			'mpvConfig.presetDeleted' => 'Preset deleted',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirm Action',
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
 			'profiles.active' => 'Active',
 			'profiles.manage' => 'Manage',
@@ -5207,14 +5231,14 @@ extension on Translations {
 			'externalPlayer.off' => 'Off',
 			'externalPlayer.launchFailed' => 'Failed to open external player',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
 			'metadataEdit.editMetadata' => 'Edit...',
 			'metadataEdit.screenTitle' => 'Edit Metadata',
 			'metadataEdit.basicInfo' => 'Basic Info',
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Advanced Settings',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.title' => 'Title',
 			'metadataEdit.sortTitle' => 'Sort Title',
 			'metadataEdit.originalTitle' => 'Original Title',

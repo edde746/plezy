@@ -391,6 +391,8 @@ class _TranslationsSettingsIt extends TranslationsSettingsEn {
 	@override String get forceTvModeDescription => 'Forza layout TV. Per dispositivi non rilevati automaticamente. Richiede riavvio.';
 	@override String get startInFullscreen => 'Avvia a schermo intero';
 	@override String get startInFullscreenDescription => 'Apri Plezy a schermo intero all\'avvio';
+	@override String get exitFullscreenOnPlayerClose => 'Esci dallo schermo intero alla chiusura del player';
+	@override String get exitFullscreenOnPlayerCloseDescription => 'Esci automaticamente dallo schermo intero quando il lettore video viene chiuso';
 	@override String get autoHidePerformanceOverlay => 'Nascondi automaticamente overlay prestazioni';
 	@override String get autoHidePerformanceOverlayDescription => 'Dissolvi l\'overlay prestazioni con i controlli di riproduzione';
 	@override String get showNavBarLabels => 'Mostra etichette barra di navigazione';
@@ -563,6 +565,10 @@ class _TranslationsVideoControlsIt extends TranslationsVideoControlsEn {
 	@override String get unlockRotation => 'Sblocca rotazione';
 	@override String get timerActive => 'Timer attivo';
 	@override String playbackWillPauseIn({required Object duration}) => 'La riproduzione si interromperà tra ${duration}';
+	@override String get sleepTimerEndOfVideo => 'Fine del video corrente';
+	@override String get sleepTimerStopAtHeader => 'Interrompi a';
+	@override String get sleepTimerDurationHeader => 'Timer';
+	@override String get playbackWillPauseAtEnd => 'La riproduzione si interromperà alla fine di questo video';
 	@override String get stillWatching => 'Stai ancora guardando?';
 	@override String pausingIn({required Object seconds}) => 'Pausa tra ${seconds}s';
 	@override String get continueWatching => 'Continua';
@@ -2066,6 +2072,8 @@ extension on TranslationsIt {
 			'settings.forceTvModeDescription' => 'Forza layout TV. Per dispositivi non rilevati automaticamente. Richiede riavvio.',
 			'settings.startInFullscreen' => 'Avvia a schermo intero',
 			'settings.startInFullscreenDescription' => 'Apri Plezy a schermo intero all\'avvio',
+			'settings.exitFullscreenOnPlayerClose' => 'Esci dallo schermo intero alla chiusura del player',
+			'settings.exitFullscreenOnPlayerCloseDescription' => 'Esci automaticamente dallo schermo intero quando il lettore video viene chiuso',
 			'settings.autoHidePerformanceOverlay' => 'Nascondi automaticamente overlay prestazioni',
 			'settings.autoHidePerformanceOverlayDescription' => 'Dissolvi l\'overlay prestazioni con i controlli di riproduzione',
 			'settings.showNavBarLabels' => 'Mostra etichette barra di navigazione',
@@ -2190,6 +2198,10 @@ extension on TranslationsIt {
 			'videoControls.unlockRotation' => 'Sblocca rotazione',
 			'videoControls.timerActive' => 'Timer attivo',
 			'videoControls.playbackWillPauseIn' => ({required Object duration}) => 'La riproduzione si interromperà tra ${duration}',
+			'videoControls.sleepTimerEndOfVideo' => 'Fine del video corrente',
+			'videoControls.sleepTimerStopAtHeader' => 'Interrompi a',
+			'videoControls.sleepTimerDurationHeader' => 'Timer',
+			'videoControls.playbackWillPauseAtEnd' => 'La riproduzione si interromperà alla fine di questo video',
 			'videoControls.stillWatching' => 'Stai ancora guardando?',
 			'videoControls.pausingIn' => ({required Object seconds}) => 'Pausa tra ${seconds}s',
 			'videoControls.continueWatching' => 'Continua',
@@ -2319,14 +2331,14 @@ extension on TranslationsIt {
 			'mpvConfig.presetSaved' => 'Preset salvato',
 			'mpvConfig.presetLoaded' => 'Preset caricato',
 			'mpvConfig.presetDeleted' => 'Preset eliminato',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => 'Sei sicuro di voler eliminare questo preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Conferma azione',
 			'profiles.addPlezyProfile' => 'Aggiungi profilo Plezy',
 			'profiles.switchingProfile' => 'Cambio profilo…',
 			'profiles.deleteThisProfileTitle' => 'Eliminare questo profilo?',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Rimuovi ${displayName}. Le connessioni non sono interessate.',
 			'profiles.active' => 'Attivo',
 			'profiles.manage' => 'Gestisci',
@@ -2833,14 +2845,14 @@ extension on TranslationsIt {
 			'externalPlayer.off' => 'Disattivato',
 			'externalPlayer.launchFailed' => 'Impossibile aprire il lettore esterno',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} non è installato',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playInExternalPlayer' => 'Riproduci in lettore esterno',
 			'metadataEdit.editMetadata' => 'Modifica...',
 			'metadataEdit.screenTitle' => 'Modifica metadati',
 			'metadataEdit.basicInfo' => 'Informazioni di base',
 			'metadataEdit.artwork' => 'Artwork',
 			'metadataEdit.advancedSettings' => 'Impostazioni avanzate',
-			_ => null,
-		} ?? switch (path) {
 			'metadataEdit.title' => 'Titolo',
 			'metadataEdit.sortTitle' => 'Titolo di ordinamento',
 			'metadataEdit.originalTitle' => 'Titolo originale',

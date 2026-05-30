@@ -15,6 +15,8 @@ class SleepTimerService extends ChangeNotifier {
   Duration? _originalDuration;
   VoidCallback? _onTimerComplete;
   bool _needsRestart = false;
+  bool _restartAsEndOfVideo = false;
+  bool _endOfVideoArmed = false;
   final StreamController<void> _completedController = StreamController<void>.broadcast();
   final StreamController<void> _promptController = StreamController<void>.broadcast();
 
@@ -24,7 +26,11 @@ class SleepTimerService extends ChangeNotifier {
   /// Emits when the timer fires and wants to show a "still watching?" prompt
   Stream<void> get onPrompt => _promptController.stream;
 
-  bool get isActive => _timer != null && _timer!.isActive;
+  bool get isActive => (_timer != null && _timer!.isActive) || _endOfVideoArmed;
+
+  /// Whether the sleep timer is armed to fire at the end of the current video
+  /// rather than after a fixed duration.
+  bool get isEndOfVideoMode => _endOfVideoArmed;
 
   /// The time when the timer will complete
   DateTime? get endTime => _endTime;
@@ -67,9 +73,34 @@ class SleepTimerService extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Arm the sleep timer to fire when the currently playing video reaches its end.
+  /// Unlike [startTimer], no periodic timer runs — playback completion is reported
+  /// externally via [notifyVideoCompleted].
+  void armEndOfVideo(VoidCallback onComplete) {
+    cancelTimer();
+
+    _endOfVideoArmed = true;
+    _onTimerComplete = onComplete;
+
+    appLogger.d('Sleep timer armed: end of current video');
+    notifyListeners();
+  }
+
+  /// Notify the service that the currently playing video has completed.
+  /// If armed via [armEndOfVideo], fires the completion callback and resets the mode.
+  /// Safe to call unconditionally — does nothing when end-of-video mode is not armed.
+  void notifyVideoCompleted() {
+    if (!_endOfVideoArmed) return;
+
+    appLogger.d('Sleep timer (end of video) triggered');
+    _endOfVideoArmed = false;
+    _executeCallback();
+    notifyListeners();
+  }
+
   /// Cancel the active timer (user-initiated, clears everything)
   void cancelTimer() {
-    if (_timer != null || _originalDuration != null) {
+    if (_timer != null || _originalDuration != null || _endOfVideoArmed) {
       appLogger.d('Sleep timer cancelled');
       _timer?.cancel();
       _timer = null;
@@ -77,6 +108,8 @@ class SleepTimerService extends ChangeNotifier {
       _duration = null;
       _originalDuration = null;
       _onTimerComplete = null;
+      _endOfVideoArmed = false;
+      _restartAsEndOfVideo = false;
       notifyListeners();
     }
   }
@@ -99,14 +132,20 @@ class SleepTimerService extends ChangeNotifier {
   void markNeedsRestart() {
     if (isActive || _originalDuration != null) {
       _needsRestart = true;
+      _restartAsEndOfVideo = _endOfVideoArmed;
     }
   }
 
   /// Restart the timer if it was marked for restart (new playback session).
   /// [onComplete] provides the new callback for the fresh session.
   void restartIfNeeded(VoidCallback onComplete) {
-    if (_needsRestart && _originalDuration != null) {
-      _needsRestart = false;
+    if (!_needsRestart) return;
+    _needsRestart = false;
+
+    if (_restartAsEndOfVideo) {
+      _restartAsEndOfVideo = false;
+      armEndOfVideo(onComplete);
+    } else if (_originalDuration != null) {
       startTimer(_originalDuration!, onComplete);
     }
   }
