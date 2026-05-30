@@ -96,80 +96,159 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       );
     }
 
-    return Focus(
-      skipTraversal: true,
-      onFocusChange: (hasFocus) {
-        if (isTv) _setTvDetailActionRowFocus(hasFocus);
-      },
-      onKeyEvent: _handlePlayButtonKeyEvent,
-      child: Row(
-        children: [
-          SizedBox(
-            height: actionSize,
-            child: FilledButton(
-              focusNode: _playButtonFocusNode,
-              autofocus: isKeyboardMode,
-              onPressed: onPlayPressed,
-              style: actionButtonStyle(
-                padding: EdgeInsets.symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
-              ),
-              child: playButtonLabel.isNotEmpty
-                  ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        playButtonIcon,
-                        SizedBox(width: isTv ? 7 * tvScale : 8),
-                        Text(
-                          playButtonLabel,
-                          style: TextStyle(fontSize: isTv ? 17 * tvScale : 16, fontWeight: FontWeight.w700),
-                        ),
-                      ],
-                    )
-                  : playButtonIcon,
-            ),
-          ),
-          SizedBox(width: isTv ? 8 * tvScale : 12),
-          // Trailer button (only if trailer is available)
-          if (primaryTrailer != null) ...[
-            IconButton.filledTonal(
-              onPressed: () async {
-                await navigateToVideoPlayer(context, metadata: primaryTrailer);
-              },
-              icon: const AppIcon(Symbols.theaters_rounded, fill: 1),
-              tooltip: t.tooltips.playTrailer,
-              iconSize: isTv ? 21 * tvScale : 20,
-              style: actionButtonStyle(),
-            ),
-            SizedBox(width: isTv ? 8 * tvScale : 12),
-          ],
-          // Shuffle button (only for shows and seasons)
-          if (metadata.isShow || metadata.isSeason) ...[
-            IconButton.filledTonal(
-              onPressed: () async {
-                await _handleShufflePlayWithQueue(context, metadata);
-              },
-              icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
-              tooltip: t.tooltips.shufflePlay,
-              iconSize: isTv ? 21 * tvScale : 20,
-              style: actionButtonStyle(),
-            ),
-            SizedBox(width: isTv ? 8 * tvScale : 12),
-          ],
-          // Download button (hide in offline mode - already downloaded,
-          // and on Apple TV where there's no user file storage).
-          if (!widget.isOffline && !PlatformDetector.isAppleTV())
-            _buildDownloadButton(metadata, actionButtonStyle, tvScale),
-          SizedBox(width: isTv ? 8 * tvScale : 12),
-          // Mark as watched/unwatched toggle (works offline too)
-          _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale),
-          // Three-dots menu button (hidden in offline mode)
-          if (!widget.isOffline) ...[
-            SizedBox(width: isTv ? 8 * tvScale : 12),
-            _buildMoreActionsButton(metadata, actionButtonStyle, tvScale),
-          ],
-        ],
+    // Plays the resolved trailer. Shared by the row's trailer button and the
+    // ⋮ menu item so the trailer stays reachable when the row hides its button.
+    final VoidCallback? onPlayTrailer = primaryTrailer == null
+        ? null
+        : () => unawaited(navigateToVideoPlayer(context, metadata: primaryTrailer));
+
+    final gap = isTv ? 8.0 * tvScale : 12.0;
+
+    final playButton = SizedBox(
+      height: actionSize,
+      child: FilledButton(
+        focusNode: _playButtonFocusNode,
+        autofocus: isKeyboardMode,
+        onPressed: onPlayPressed,
+        style: actionButtonStyle(
+          padding: EdgeInsets.symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
+        ),
+        child: playButtonLabel.isNotEmpty
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  playButtonIcon,
+                  SizedBox(width: isTv ? 7 * tvScale : 8),
+                  Text(
+                    playButtonLabel,
+                    style: TextStyle(fontSize: isTv ? 17 * tvScale : 16, fontWeight: FontWeight.w700),
+                  ),
+                ],
+              )
+            : playButtonIcon,
       ),
     );
+
+    final trailerButton = primaryTrailer == null
+        ? null
+        : IconButton.filledTonal(
+            onPressed: onPlayTrailer,
+            icon: const AppIcon(Symbols.theaters_rounded, fill: 1),
+            tooltip: t.tooltips.playTrailer,
+            iconSize: isTv ? 21 * tvScale : 20,
+            style: actionButtonStyle(),
+          );
+
+    final shuffleButton = (metadata.isShow || metadata.isSeason)
+        ? IconButton.filledTonal(
+            onPressed: () async {
+              await _handleShufflePlayWithQueue(context, metadata);
+            },
+            icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
+            tooltip: t.tooltips.shufflePlay,
+            iconSize: isTv ? 21 * tvScale : 20,
+            style: actionButtonStyle(),
+          )
+        : null;
+
+    // Each action button paired with its width and drop priority. Lower
+    // dropOrder is dropped first when the row would overflow a small screen;
+    // null means never dropped. The ⋮ menu is the fallback that keeps the
+    // hidden actions reachable, so it and Play are pinned. Offline there is no
+    // ⋮ menu, so Mark Watched is pinned too (per below). Icon buttons are fixed
+    // `actionSize` squares; the Play button's width is measured separately
+    // because its label ("Play"/"Resume"/…) and locale vary.
+    final entries = <({Widget widget, double width, int? dropOrder})>[
+      (widget: playButton, width: _measurePlayButtonWidth(playButtonLabel, isTv, tvScale), dropOrder: null),
+      if (trailerButton != null) (widget: trailerButton, width: actionSize, dropOrder: 1),
+      if (shuffleButton != null) (widget: shuffleButton, width: actionSize, dropOrder: 3),
+      if (!widget.isOffline && !PlatformDetector.isAppleTV())
+        (widget: _buildDownloadButton(metadata, actionButtonStyle, tvScale), width: actionSize, dropOrder: 4),
+      (
+        widget: _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale),
+        width: actionSize,
+        // No ⋮ menu offline, so keep Mark Watched visible (it queues for sync).
+        dropOrder: widget.isOffline ? null : 2,
+      ),
+      if (!widget.isOffline)
+        (
+          widget: _buildMoreActionsButton(metadata, actionButtonStyle, tvScale, onPlayTrailer: onPlayTrailer),
+          width: actionSize,
+          dropOrder: null,
+        ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Decide which buttons to drop so the row fits. Mobile only — TV screens
+        // are wide and D-pad focus could strand on a vanished button. The
+        // LayoutBuilder re-runs on rotation/resize and when the trailer button
+        // appears after Plex extras finish loading.
+        final dropped = <int>{};
+        if (!isTv) {
+          const safetyMargin = 4.0;
+
+          double usedWidth() {
+            var count = 0;
+            var total = 0.0;
+            for (var i = 0; i < entries.length; i++) {
+              if (dropped.contains(i)) continue;
+              total += entries[i].width;
+              count++;
+            }
+            if (count > 1) total += gap * (count - 1);
+            return total;
+          }
+
+          final droppable = [
+            for (var i = 0; i < entries.length; i++)
+              if (entries[i].dropOrder != null) i,
+          ]..sort((a, b) => entries[a].dropOrder!.compareTo(entries[b].dropOrder!));
+
+          for (final i in droppable) {
+            if (usedWidth() + safetyMargin <= constraints.maxWidth) break;
+            dropped.add(i);
+          }
+        }
+
+        final children = <Widget>[];
+        for (var i = 0; i < entries.length; i++) {
+          if (dropped.contains(i)) continue;
+          if (children.isNotEmpty) children.add(SizedBox(width: gap));
+          children.add(entries[i].widget);
+        }
+
+        return Focus(
+          skipTraversal: true,
+          onFocusChange: (hasFocus) {
+            if (isTv) _setTvDetailActionRowFocus(hasFocus);
+          },
+          onKeyEvent: _handlePlayButtonKeyEvent,
+          child: Row(children: children),
+        );
+      },
+    );
+  }
+
+  /// Estimated rendered width of the Play button. Icon buttons are fixed
+  /// squares, but the Play button hugs its dynamic, localized label, so we lay
+  /// the label out with a [TextPainter] and add the icon, inner gap, and
+  /// horizontal padding. Clamped to the [FilledButton] minimum width (64).
+  double _measurePlayButtonWidth(String label, bool isTv, double tvScale) {
+    if (label.isEmpty) return isTv ? _tvDetailActionSize * tvScale : 48.0;
+    final labelPainter = TextPainter(
+      text: TextSpan(
+        text: label,
+        style: TextStyle(fontSize: isTv ? 17 * tvScale : 16, fontWeight: FontWeight.w700),
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final iconWidth = isTv ? 22.0 * tvScale : 20.0;
+    final innerGap = isTv ? 7.0 * tvScale : 8.0;
+    final horizontalPadding = (isTv ? 17.0 * tvScale : 16.0) * 2;
+    final content = horizontalPadding + iconWidth + innerGap + labelPainter.width;
+    return content < 64.0 ? 64.0 : content;
   }
 
   Widget _buildWatchedToggleButton(
@@ -231,12 +310,14 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
   Widget _buildMoreActionsButton(
     MediaItem metadata,
     ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding}) actionButtonStyle,
-    double tvScale,
-  ) {
+    double tvScale, {
+    VoidCallback? onPlayTrailer,
+  }) {
     return MediaContextMenu(
       key: _contextMenuKey,
       item: metadata,
       onRefresh: (itemId) => unawaited(_refreshItemInPlace(itemId)),
+      onPlayTrailer: onPlayTrailer,
       child: Builder(
         builder: (buttonContext) => IconButton.filledTonal(
           onPressed: () {

@@ -94,6 +94,13 @@ class MediaContextMenu extends StatefulWidget {
   final VoidCallback? onRemoveFromContinueWatching;
   final VoidCallback? onListRefresh; // For refreshing list after deletion
   final VoidCallback? onTap;
+
+  /// Plays the item's trailer. When non-null a "Play trailer" item is added to
+  /// the menu. Only the detail screen passes this (it resolves the trailer from
+  /// Plex extras), so the item never appears on card/browse context menus. This
+  /// keeps the trailer reachable even when the detail row hides its trailer
+  /// button to fit a small screen.
+  final VoidCallback? onPlayTrailer;
   final Widget child;
   final bool isInContinueWatching;
   final String? collectionId; // The collection ID if displaying within a collection
@@ -105,6 +112,7 @@ class MediaContextMenu extends StatefulWidget {
     this.onRemoveFromContinueWatching,
     this.onListRefresh,
     this.onTap,
+    this.onPlayTrailer,
     required this.child,
     this.isInContinueWatching = false,
     this.collectionId,
@@ -265,6 +273,14 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (hasActiveProgress) {
         menuActions.add(
           _MenuAction(value: 'play_from_beginning', icon: Symbols.replay_rounded, label: t.mediaMenu.playFromBeginning),
+        );
+      }
+
+      // Trailer playback. The detail row may hide its trailer button on small
+      // screens, so surface it here whenever the screen wires up onPlayTrailer.
+      if (widget.onPlayTrailer != null) {
+        menuActions.add(
+          _MenuAction(value: 'play_trailer', icon: Symbols.theaters_rounded, label: t.tooltips.playTrailer),
         );
       }
 
@@ -546,6 +562,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           if (context.mounted) {
             await navigateToVideoPlayer(context, metadata: mediaItem!.copyWith(viewOffsetMs: 0));
           }
+          break;
+
+        case 'play_trailer':
+          didNavigate = true;
+          widget.onPlayTrailer?.call();
           break;
 
         case 'watch':
