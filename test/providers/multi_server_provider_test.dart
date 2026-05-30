@@ -82,6 +82,26 @@ void main() {
       p.dispose();
     });
 
+    test('invokes onOnlineServersChanged with the visibility-filtered online set', () async {
+      final p = MultiServerProvider(manager, aggregation);
+      final calls = <Set<String>>[];
+      p.onOnlineServersChanged = calls.add;
+
+      manager.updateServerStatus('srv-1', true);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, isNotEmpty);
+      expect(calls.last, {'srv-1'});
+
+      // A server that is online in the manager but outside the active profile's
+      // visibility filter must not appear in the payload.
+      p.setVisibleServerIds({'srv-1'});
+      manager.updateServerStatus('srv-2', true);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls.last, {'srv-1'}, reason: 'srv-2 is online but filtered out');
+
+      p.dispose();
+    });
+
     test('checkServerHealth with no clients completes without error', () async {
       final p = MultiServerProvider(manager, aggregation);
       // Empty clients map → no work, but the call must complete.

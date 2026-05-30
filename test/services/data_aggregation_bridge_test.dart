@@ -51,7 +51,9 @@ void main() {
 
   group('DataAggregationService cross-server aggregation', () {
     test('getMediaLibrariesFromAllServers returns empty when no clients connected', () async {
-      expect(await service.getMediaLibrariesFromAllServers(), isEmpty);
+      final result = await service.getMediaLibrariesFromAllServers();
+      expect(result.libraries, isEmpty);
+      expect(result.succeededServerIds, isEmpty);
     });
 
     test('searchAcrossServers and getOnDeckFromAllServers return empty when no clients', () async {

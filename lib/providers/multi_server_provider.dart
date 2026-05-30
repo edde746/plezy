@@ -40,6 +40,14 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// Previously-seen set of online server IDs, used to detect new servers
   Set<String> _previousOnlineServerIds = {};
 
+  /// Invoked with the current visibility-filtered online server ids whenever
+  /// the manager's status stream fires (a server connects, reconnects, drops,
+  /// or its auth state changes). Lets `LibrariesProvider` reload when the
+  /// online set grows — servers bind in waves and slow ones reconnect after
+  /// the initial load — without coupling the two providers by type. Wired once
+  /// in `main.dart`.
+  void Function(Set<String> onlineServerIds)? onOnlineServersChanged;
+
   /// Visibility filter applied by the active app profile. `null` means
   /// "all servers visible" (no profile restriction); otherwise only server
   /// ids in the set surface through [serverIds] / [onlineServerIds].
@@ -135,6 +143,12 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
       _previousOnlineServerIds = currentOnline;
 
       safeNotifyListeners();
+
+      // Reload libraries when the online set changes. LibrariesProvider owns
+      // the "is anything actually new to me?" decision (its loaded set can
+      // differ from _previousOnlineServerIds after a load error or a profile
+      // switch that cleared it), so notify unconditionally and let it decide.
+      onOnlineServersChanged?.call(currentOnline);
 
       // Only re-check live TV when a new server came online
       if (hasNewServer) {

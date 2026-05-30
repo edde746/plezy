@@ -854,7 +854,17 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (context) => TraktAccountProvider()),
         ChangeNotifierProvider(create: (context) => TrackersProvider()),
         ChangeNotifierProvider(create: (context) => HiddenLibrariesProvider(), lazy: true),
-        ChangeNotifierProvider(create: (context) => LibrariesProvider()),
+        ChangeNotifierProvider(
+          create: (context) {
+            final provider = LibrariesProvider();
+            // Reload libraries when a new server comes online. Servers bind in
+            // waves on sign-in / profile switch and slow ones reconnect after
+            // the initial load; without this they stay missing from the sidebar
+            // until a profile re-switch or restart.
+            context.read<MultiServerProvider>().onOnlineServersChanged = provider.syncToOnlineServers;
+            return provider;
+          },
+        ),
         ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
         ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
         ChangeNotifierProvider(create: (context) => CompanionRemoteProvider()),

@@ -23,23 +23,34 @@ class DataAggregationService {
   DataAggregationService(this._serverManager);
 
   /// Fetch libraries from all online clients regardless of backend, returning
-  /// neutral [MediaLibrary]s.
-  Future<List<MediaLibrary>> getMediaLibrariesFromAllServers() async {
+  /// the merged neutral [MediaLibrary]s alongside the ids of the servers whose
+  /// fetch actually succeeded.
+  ///
+  /// A per-server `fetchLibraries()` failure is swallowed (that server simply
+  /// contributes no libraries) so one unreachable server doesn't sink the whole
+  /// list. [succeededServerIds] lets callers tell a *failed* fetch apart from a
+  /// server that genuinely has no libraries — both contribute nothing, so
+  /// conflating them would let a transient failure be cached as "loaded" and
+  /// never retried.
+  Future<({List<MediaLibrary> libraries, Set<String> succeededServerIds})> getMediaLibrariesFromAllServers() async {
     final clients = _serverManager.onlineClients;
     if (clients.isEmpty) {
       appLogger.w('No online servers available for fetching libraries (neutral)');
-      return [];
+      return (libraries: const <MediaLibrary>[], succeededServerIds: const <String>{});
     }
+    final succeededServerIds = <String>{};
     final futures = clients.entries.map((entry) async {
       try {
-        return await entry.value.fetchLibraries();
+        final libraries = await entry.value.fetchLibraries();
+        succeededServerIds.add(entry.key);
+        return libraries;
       } catch (e, stackTrace) {
         appLogger.e('Failed neutral library fetch from ${entry.key}', error: e, stackTrace: stackTrace);
         return <MediaLibrary>[];
       }
     });
     final results = await Future.wait(futures);
-    return [for (final list in results) ...list];
+    return (libraries: [for (final list in results) ...list], succeededServerIds: succeededServerIds);
   }
 
   /// Fetch "On Deck" (Continue Watching) from all servers and merge by recency.
@@ -243,7 +254,9 @@ class DataAggregationService {
     // Only fallback clients need a library prefetch when home layout is on;
     // rich-hub backends return the intended home rows directly.
     final needsLibraryPrefetch = useGlobalHubs && clients.values.any((client) => !client.capabilities.richHubs);
-    final libraries = needsLibraryPrefetch ? _groupLibrariesByServer(await getMediaLibrariesFromAllServers()) : null;
+    final libraries = needsLibraryPrefetch
+        ? _groupLibrariesByServer((await getMediaLibrariesFromAllServers()).libraries)
+        : null;
 
     final futures = clients.entries.map((entry) async {
       final serverId = entry.key;
