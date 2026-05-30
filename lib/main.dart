@@ -228,10 +228,10 @@ Future<void> _bootstrapApp() async {
 
   FullscreenStateManager().startMonitoring();
 
-  // Apply "start in fullscreen" preference on Windows/Linux. macOS is
-  // excluded — its native fullscreen animation is awkward at launch and
-  // the OS already restores window state.
-  if ((Platform.isWindows || Platform.isLinux) && settings.read(SettingsService.startInFullscreen)) {
+  // Apply "start in fullscreen" preference on desktop. macOS does not restore
+  // fullscreen state on its own (frame autosave only persists windowed geometry),
+  // so it needs the same explicit handling as Windows/Linux.
+  if (PlatformDetector.isDesktopOS() && settings.read(SettingsService.startInFullscreen)) {
     unawaited(FullscreenStateManager().enterFullscreen());
   }
 
