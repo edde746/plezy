@@ -77,6 +77,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     String? expectedMachineId,
     Iterable<String>? baseUrlsToPersist,
     Iterable<String>? baseUrlsToValidate,
+    Iterable<Iterable<String>>? baseUrlValidationGroups,
   }) {
     return _endpointDiscovery.raceEndpoints(
       baseUrls,
@@ -84,6 +85,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
       expectedMachineId: expectedMachineId,
       baseUrlsToPersist: baseUrlsToPersist,
       baseUrlsToValidate: baseUrlsToValidate,
+      baseUrlValidationGroups: baseUrlValidationGroups,
     );
   }
 

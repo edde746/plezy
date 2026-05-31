@@ -132,6 +132,8 @@ void main() {
     await tester.testTextInput.receiveAction(TextInputAction.go);
     await tester.pumpAndSettle();
 
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Username');
+
     await tester.tap(find.byType(TextField).first);
     await tester.pump();
 
@@ -189,6 +191,51 @@ void main() {
     final field = tester.widget<TextField>(find.byType(TextField).first);
     expect(field.controller?.text, contains('http://192.168.1.20:8096'));
     expect(find.text('Jellyfin 10.9.0'), findsOneWidget);
+  });
+
+  testWidgets('D-pad can navigate through discovered Jellyfin servers', (tester) async {
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: MaterialApp(
+          home: AddJellyfinScreen(
+            localDiscoveryFactory: () async => [
+              DiscoveredJellyfinServer(address: 'http://192.168.1.20:8096', id: 'srv-1', name: 'Home'),
+              DiscoveredJellyfinServer(address: 'http://192.168.1.30:8096', id: 'srv-2', name: 'Office'),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Home'), findsOneWidget);
+    expect(find.text('Office'), findsOneWidget);
+    expect(find.byType(OutlinedButton), findsNothing);
+
+    await tester.tap(find.byType(TextField).first);
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Discovered:srv-1');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Discovered:srv-2');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:FindServer');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Discovered:srv-2');
   });
 
   group('Jellyfin profile binding decisions', () {

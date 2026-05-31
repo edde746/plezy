@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import '../utils/app_logger.dart';
+import '../utils/udp_broadcast_sockets.dart';
 import 'jellyfin_endpoint_discovery.dart';
 
 class DiscoveredJellyfinServer {
@@ -17,46 +18,59 @@ class JellyfinLanDiscoveryService {
   static const int discoveryPort = 7359;
   static const String discoveryMessage = 'who is JellyfinServer?';
 
+  /// Sends two discovery packets 350 ms apart, then listens for
+  /// [responseWindow] after the second packet.
   Future<List<DiscoveredJellyfinServer>> discover({
-    Duration timeout = const Duration(seconds: 2),
+    Duration responseWindow = const Duration(seconds: 2),
     InternetAddress? broadcastAddress,
   }) async {
-    RawDatagramSocket? socket;
-    StreamSubscription<RawSocketEvent>? subscription;
+    UdpBroadcastSocketSet? socketSet;
+    final subscriptions = <StreamSubscription<RawSocketEvent>>[];
     final discovered = <String, DiscoveredJellyfinServer>{};
     try {
-      socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
-      socket.broadcastEnabled = true;
-      subscription = socket.listen((event) {
-        if (event != RawSocketEvent.read) return;
-        Datagram? datagram;
-        while ((datagram = socket?.receive()) != null) {
-          final server = parseDiscoveryResponse(datagram!.data);
-          if (server == null) continue;
-          discovered.putIfAbsent(server.id, () => server);
-        }
-      });
+      socketSet = await UdpBroadcastSockets.bind();
+      for (final socket in socketSet.sockets) {
+        subscriptions.add(
+          socket.listen((event) {
+            if (event != RawSocketEvent.read) return;
+            Datagram? datagram;
+            while ((datagram = socket.receive()) != null) {
+              final server = parseDiscoveryResponse(datagram!.data);
+              if (server == null) continue;
+              discovered.putIfAbsent(server.id, () => server);
+            }
+          }),
+        );
+      }
 
       final data = utf8.encode(discoveryMessage);
-      final target = broadcastAddress ?? InternetAddress('255.255.255.255');
-      socket.send(data, target, discoveryPort);
+      final target = broadcastAddress ?? UdpBroadcastSockets.limitedBroadcastAddress;
+      socketSet.send(data, target, discoveryPort);
       await Future<void>.delayed(const Duration(milliseconds: 350));
-      socket.send(data, target, discoveryPort);
-      await Future<void>.delayed(timeout);
+      socketSet.send(data, target, discoveryPort);
+      await Future<void>.delayed(responseWindow);
     } catch (e, st) {
       appLogger.w('Jellyfin LAN discovery failed', error: e, stackTrace: st);
     } finally {
-      await subscription?.cancel();
-      socket?.close();
+      for (final subscription in subscriptions) {
+        await subscription.cancel();
+      }
+      socketSet?.close();
     }
 
-    final servers = discovered.values.toList()
+    return sortDiscoveredServers(discovered.values);
+  }
+
+  static List<DiscoveredJellyfinServer> sortDiscoveredServers(Iterable<DiscoveredJellyfinServer> servers) {
+    final sorted = servers.toList()
       ..sort((a, b) {
         final name = a.name.toLowerCase().compareTo(b.name.toLowerCase());
         if (name != 0) return name;
-        return a.address.compareTo(b.address);
+        final address = a.address.compareTo(b.address);
+        if (address != 0) return address;
+        return a.id.compareTo(b.id);
       });
-    return List.unmodifiable(servers);
+    return List.unmodifiable(sorted);
   }
 
   static DiscoveredJellyfinServer? parseDiscoveryResponse(List<int> data) {

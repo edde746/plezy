@@ -11,6 +11,7 @@ import '../../connection/connection.dart';
 import '../../exceptions/media_server_exceptions.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
+import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../profiles/active_profile_binder.dart';
@@ -135,7 +136,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       final factory = widget._localDiscoveryFactory;
       final servers = factory != null
           ? await factory()
-          : await JellyfinLanDiscoveryService().discover(timeout: const Duration(milliseconds: 1300));
+          : await JellyfinLanDiscoveryService().discover(responseWindow: const Duration(milliseconds: 1300));
       if (!mounted || attemptId != _localDiscoveryAttemptId) return;
       final focusFirstServer =
           servers.isNotEmpty && _urlController.text.trim().isEmpty && _serverInfo == null && PlatformDetector.isTV();
@@ -198,7 +199,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         final endpoint = await auth.raceEndpoints(
           input.probeBaseUrls,
           baseUrlsToPersist: input.explicitBaseUrls,
-          baseUrlsToValidate: input.explicitBaseUrls,
+          baseUrlValidationGroups: input.validationBaseUrlGroups,
         );
         final qcEnabled = await auth.isQuickConnectEnabled(endpoint.activeBaseUrl);
         if (!mounted) return;
@@ -213,6 +214,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         // PlatformDetector.isTV() default in add_plex_account_screen.dart.
         if (qcEnabled && PlatformDetector.isTV()) {
           unawaited(_startQuickConnect());
+        } else {
+          _requestFocusAfterFrame(_usernameFocus);
         }
       },
       errorMapper: (e) =>
@@ -271,6 +274,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         // Show the waiting panel without a spinner — opt-out of busy mid-flow
         // so the user-visible state matches "we're polling, nothing for you to do".
         setState(() => _qcInitiation = initiation);
+        _requestFocusAfterFrame(_cancelQuickConnectFocus);
         setBusy(false);
 
         final connection = await auth.authenticateByQuickConnect(
@@ -314,6 +318,29 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       _qcInitiation = null;
     });
     setBusy(false);
+  }
+
+  void _requestFocusAfterFrame(FocusNode node) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !node.canRequestFocus) return;
+      node.requestFocus();
+    });
+  }
+
+  void _focusFirstDiscoveredServerOrFind() {
+    if (_localServers.isEmpty) {
+      _findServerFocus.requestFocus();
+      return;
+    }
+    _discoveredServerFocusNodes[_localServers.first.id]?.requestFocus();
+  }
+
+  void _focusLastDiscoveredServerOrUrl() {
+    if (_localServers.isEmpty) {
+      _urlFocus.requestFocus();
+      return;
+    }
+    _discoveredServerFocusNodes[_localServers.last.id]?.requestFocus();
   }
 
   List<String> _enteredUrls() {
@@ -445,7 +472,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     }
     return [
       Text(t.addServer.jellyfinUrlsIntro, style: theme.textTheme.bodyMedium),
-      if (_serverInfo == null) ..._buildLocalDiscoverySection(theme),
       const SizedBox(height: 16),
       FocusableTextFormField(
         controller: _urlController,
@@ -463,9 +489,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
             _clearResolvedServer();
           });
         },
-        onNavigateDown: _serverInfo == null
-            ? () => _findServerFocus.requestFocus()
-            : () => _usernameFocus.requestFocus(),
+        onNavigateDown: _serverInfo == null ? _focusFirstDiscoveredServerOrFind : () => _usernameFocus.requestFocus(),
         textInputAction: TextInputAction.go,
         onFieldSubmitted: busy ? null : (_) => _probe(),
         decoration: InputDecoration(
@@ -475,10 +499,12 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         validator: (_) => _enteredUrls().isEmpty ? t.addServer.required : null,
       ),
       if (_serverInfo == null) ...[
+        ..._buildLocalDiscoverySection(theme),
         const SizedBox(height: 16),
         FocusableButton(
           focusNode: _findServerFocus,
           useBackgroundFocus: true,
+          onNavigateUp: _focusLastDiscoveredServerOrUrl,
           onPressed: busy ? null : _probe,
           child: FilledButton.icon(
             onPressed: busy ? null : _probe,
@@ -615,41 +641,26 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       Text(t.addServer.localServers, style: theme.textTheme.titleSmall),
       const SizedBox(height: 8),
       for (final server in _localServers) ...[
-        FocusableButton(
+        _DiscoveredJellyfinServerTile(
+          server: server,
           focusNode: _discoveredServerFocusNodes[server.id],
-          useBackgroundFocus: true,
-          onPressed: busy ? null : () => unawaited(_useDiscoveredServer(server)),
-          child: OutlinedButton(
-            onPressed: busy ? null : () => unawaited(_useDiscoveredServer(server)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  const AppIcon(Symbols.dns_rounded, fill: 1),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(server.name),
-                        Text(
-                          server.address,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const AppIcon(Symbols.chevron_right_rounded),
-                ],
-              ),
-            ),
-          ),
+          onNavigateUp: () {
+            final index = _localServers.indexOf(server);
+            if (index <= 0) {
+              _urlFocus.requestFocus();
+              return;
+            }
+            _discoveredServerFocusNodes[_localServers[index - 1].id]?.requestFocus();
+          },
+          onNavigateDown: () {
+            final index = _localServers.indexOf(server);
+            if (index < 0 || index == _localServers.length - 1) {
+              _findServerFocus.requestFocus();
+              return;
+            }
+            _discoveredServerFocusNodes[_localServers[index + 1].id]?.requestFocus();
+          },
+          onTap: busy ? null : () => unawaited(_useDiscoveredServer(server)),
         ),
         const SizedBox(height: 8),
       ],
@@ -707,5 +718,73 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         ),
       ),
     ];
+  }
+}
+
+class _DiscoveredJellyfinServerTile extends StatelessWidget {
+  final DiscoveredJellyfinServer server;
+  final FocusNode? focusNode;
+  final VoidCallback? onNavigateUp;
+  final VoidCallback? onNavigateDown;
+  final VoidCallback? onTap;
+
+  const _DiscoveredJellyfinServerTile({
+    required this.server,
+    required this.focusNode,
+    required this.onNavigateUp,
+    required this.onNavigateDown,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FocusableWrapper(
+      focusNode: focusNode,
+      disableScale: true,
+      borderRadius: 12,
+      useBackgroundFocus: true,
+      descendantsAreFocusable: false,
+      onSelect: onTap,
+      onNavigateUp: onNavigateUp,
+      onNavigateDown: onNavigateDown,
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                const AppIcon(Symbols.dns_rounded, fill: 1),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(server.name, style: theme.textTheme.titleSmall),
+                      const SizedBox(height: 2),
+                      Text(
+                        server.address,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

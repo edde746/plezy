@@ -58,7 +58,7 @@ void main() {
       final result = await discovery.raceEndpoints(
         input.probeBaseUrls,
         baseUrlsToPersist: input.explicitBaseUrls,
-        baseUrlsToValidate: input.explicitBaseUrls,
+        baseUrlValidationGroups: input.validationBaseUrlGroups,
       );
 
       expect(result.activeBaseUrl, 'http://jf.example.com:8096');
@@ -79,7 +79,7 @@ void main() {
       final result = await discovery.raceEndpoints(
         input.probeBaseUrls,
         baseUrlsToPersist: input.explicitBaseUrls,
-        baseUrlsToValidate: input.explicitBaseUrls,
+        baseUrlValidationGroups: input.validationBaseUrlGroups,
       );
 
       expect(result.baseUrls, ['http://192.168.1.10:8096']);
@@ -102,10 +102,34 @@ void main() {
       final result = await discovery.raceEndpoints(
         input.probeBaseUrls,
         baseUrlsToPersist: input.explicitBaseUrls,
-        baseUrlsToValidate: input.explicitBaseUrls,
+        baseUrlValidationGroups: input.validationBaseUrlGroups,
       );
 
       expect(result.baseUrls, [result.activeBaseUrl]);
+    });
+
+    test('rejects different servers reached from separate shorthand entries', () async {
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () => MockClient((req) async {
+          if (req.url.scheme == 'http' && req.url.host == 'one.example.com' && req.url.port == 8096) {
+            return _info(id: 'srv-1');
+          }
+          if (req.url.scheme == 'http' && req.url.host == 'two.example.com' && req.url.port == 8096) {
+            return _info(id: 'srv-2');
+          }
+          throw TimeoutException('offline');
+        }),
+      );
+      final input = JellyfinEndpointDiscovery.buildUserInputCandidates(['one.example.com', 'two.example.com']);
+
+      await expectLater(
+        discovery.raceEndpoints(
+          input.probeBaseUrls,
+          baseUrlsToPersist: input.explicitBaseUrls,
+          baseUrlValidationGroups: input.validationBaseUrlGroups,
+        ),
+        throwsA(isA<MediaServerUrlException>()),
+      );
     });
 
     test('retains explicit user-entered failover URLs when using input candidates', () async {
@@ -125,7 +149,7 @@ void main() {
       final result = await discovery.raceEndpoints(
         input.probeBaseUrls,
         baseUrlsToPersist: input.explicitBaseUrls,
-        baseUrlsToValidate: input.explicitBaseUrls,
+        baseUrlValidationGroups: input.validationBaseUrlGroups,
       );
 
       expect(result.activeBaseUrl, 'https://jf.example.com');

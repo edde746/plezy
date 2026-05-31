@@ -49,7 +49,7 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
           preferredUrl: widget.connection.baseUrl,
           expectedMachineId: widget.connection.serverMachineId,
           baseUrlsToPersist: input.explicitBaseUrls,
-          baseUrlsToValidate: input.explicitBaseUrls,
+          baseUrlValidationGroups: input.validationBaseUrlGroups,
         );
         final updated = widget.connection.copyWith(
           baseUrl: endpoint.activeBaseUrl,

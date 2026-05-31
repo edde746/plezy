@@ -31,5 +31,15 @@ void main() {
         isNull,
       );
     });
+
+    test('sorts discovered servers deterministically', () {
+      final sorted = JellyfinLanDiscoveryService.sortDiscoveredServers([
+        DiscoveredJellyfinServer(address: 'http://192.168.1.20:8096', id: 'srv-2', name: 'Home'),
+        DiscoveredJellyfinServer(address: 'http://192.168.1.10:8096', id: 'srv-3', name: 'Office'),
+        DiscoveredJellyfinServer(address: 'http://192.168.1.20:8096', id: 'srv-1', name: 'Home'),
+      ]);
+
+      expect(sorted.map((server) => server.id), ['srv-1', 'srv-2', 'srv-3']);
+    });
   });
 }
