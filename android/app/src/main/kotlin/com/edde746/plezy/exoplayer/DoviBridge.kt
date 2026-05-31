@@ -13,6 +13,32 @@ enum class DvConversionMode { DISABLED, DV81, HEVC_STRIP }
 object DoviBridge {
   private const val TAG = "DoviBridge"
 
+  data class DvAutoDecision(
+    val mode: DvConversionMode,
+    val reason: String,
+    val bridgeReady: Boolean,
+    val displayDv: Boolean,
+    val nativeDecoder: Boolean,
+    val advertisedP7: Boolean,
+    val advertisedP8: Boolean,
+    val decoders: String
+  ) {
+    fun logMessage(): String = "AUTO P7 DV decision: mode=$mode; reason=$reason; bridgeReady=$bridgeReady, " +
+      "displayDV=$displayDv, nativeDecoder=$nativeDecoder, advertisedP7=$advertisedP7, " +
+      "advertisedP8=$advertisedP8, decoders=$decoders"
+  }
+
+  data class Dv7FallbackDecision(
+    val mode: DvConversionMode,
+    val reason: String,
+    val bridgeReady: Boolean,
+    val displayDv: Boolean,
+    val advertisedP8: Boolean
+  ) {
+    fun logMessage(): String = "DV7 fallback decision: mode=$mode; reason=$reason; bridgeReady=$bridgeReady, " +
+      "displayDV=$displayDv, advertisedP8=$advertisedP8"
+  }
+
   private val DOLBY_VISION_MIME_TYPES = setOf(
     "video/dolby-vision",
     "video/hevcdv",
@@ -134,7 +160,7 @@ object DoviBridge {
     )
   }
 
-  fun getConversionMode(context: Context): DvConversionMode {
+  fun getConversionDecision(context: Context): DvAutoDecision {
     val bridgeReady = isAvailable()
     val displayDv = displaySupportsDolbyVision(context)
     val nativeDecoder = hasNativeDolbyVisionDecoder
@@ -154,16 +180,24 @@ object DoviBridge {
       !bridgeReady -> "conversion bridge unavailable; stripping DV metadata for HEVC fallback"
       else -> "Dolby Vision output path is unavailable; stripping DV metadata for HEVC fallback"
     }
-    Log.i(
-      TAG,
-      "AUTO DV decision: mode=$mode; reason=$reason; bridgeReady=$bridgeReady, " +
-        "displayDV=$displayDv, nativeDecoder=$nativeDecoder, advertisedP7=$advertisedP7, advertisedP8=$advertisedP8"
+    val decision = DvAutoDecision(
+      mode = mode,
+      reason = reason,
+      bridgeReady = bridgeReady,
+      displayDv = displayDv,
+      nativeDecoder = nativeDecoder,
+      advertisedP7 = advertisedP7,
+      advertisedP8 = advertisedP8,
+      decoders = describeDolbyVisionDecoders()
     )
-    return mode
+    Log.i(TAG, decision.logMessage())
+    return decision
   }
 
+  fun getConversionMode(context: Context): DvConversionMode = getConversionDecision(context).mode
+
   /** Get the fallback mode when native DV7 decoding fails. */
-  fun getDv7FallbackMode(context: Context): DvConversionMode {
+  fun getDv7FallbackDecision(context: Context): Dv7FallbackDecision {
     val bridgeReady = isAvailable()
     val displayDv = displaySupportsDolbyVision(context)
     val advertisedP8 = deviceSupportsDvProfile8
@@ -173,13 +207,18 @@ object DoviBridge {
       !bridgeReady -> "conversion bridge unavailable; stripping DV metadata for HEVC fallback"
       else -> "Dolby Vision output or Profile 8 support is unavailable"
     }
-    Log.i(
-      TAG,
-      "DV7 fallback decision: mode=$mode; reason=$reason; bridgeReady=$bridgeReady, " +
-        "displayDV=$displayDv, advertisedP8=$advertisedP8"
+    val decision = Dv7FallbackDecision(
+      mode = mode,
+      reason = reason,
+      bridgeReady = bridgeReady,
+      displayDv = displayDv,
+      advertisedP8 = advertisedP8
     )
-    return mode
+    Log.i(TAG, decision.logMessage())
+    return decision
   }
+
+  fun getDv7FallbackMode(context: Context): DvConversionMode = getDv7FallbackDecision(context).mode
 
   private fun getCurrentDisplay(context: Context): Display? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
     context.display

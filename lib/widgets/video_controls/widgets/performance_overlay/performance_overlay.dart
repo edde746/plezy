@@ -58,7 +58,9 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
         if (!isMpv) _metric('Tunneling', _stats.tunneledPlaybackFormatted),
         if (_stats.aspectName != null && _stats.aspectName!.isNotEmpty) _metric('Aspect', _stats.aspectName!),
         if (_stats.rotate != null && _stats.rotate != 0) _metric('Rotation', _stats.rotateFormatted),
-        if (_stats.dvConversionActive) _metric('DV', _stats.dvConversionFormatted),
+        if (_stats.dvSourceProfile != null) _metric('DV Source', _stats.dvSourceProfileFormatted),
+        if (_stats.dvPlaybackPath != null) _metric('DV Path', _stats.dvPlaybackPathFormatted),
+        if (_stats.dvConversionActive) _metric('P7 Conv', _stats.dvConversionFormatted),
       ]),
       _buildSection(Symbols.volume_up_rounded, 'Audio', [
         if (_stats.audioCodec != null) _metric('Codec', _stats.audioCodec!),
