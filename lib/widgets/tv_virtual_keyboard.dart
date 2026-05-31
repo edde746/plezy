@@ -261,7 +261,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
     final key = event.logicalKey;
 
     if (key.isBackKey) {
-      if (event is KeyDownEvent) Navigator.of(context).pop();
+      if (event is KeyUpEvent) Navigator.of(context).pop();
       return KeyEventResult.handled;
     }
 

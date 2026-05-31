@@ -644,52 +644,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Future<void> _showRelayUrlDialog() async {
-    final controller = TextEditingController(
-      text: _settingsService.read(settings.SettingsService.customRelayUrl) ?? '',
+    await showDialog<void>(
+      context: context,
+      builder: (_) => _RelayUrlDialog(settingsService: _settingsService),
     );
-    final saveFocusNode = FocusNode();
-    // try/finally guarantees disposal on every dismissal path (button,
-    // back, tap-outside) without depending on `.then` chaining.
-    try {
-      await showDialog<void>(
-        context: context,
-        builder: (BuildContext dialogContext) {
-          return AlertDialog(
-            title: Text(t.settings.watchTogetherRelay),
-            content: FocusableTextField(
-              controller: controller,
-              decoration: InputDecoration(labelText: 'URL', hintText: t.settings.watchTogetherRelayHint),
-              autofocus: true,
-              textInputAction: TextInputAction.done,
-              onEditingComplete: () => saveFocusNode.requestFocus(),
-            ),
-            actions: [
-              DialogActionButton(
-                onPressed: () async {
-                  controller.clear();
-                  await _settingsService.write(settings.SettingsService.customRelayUrl, null);
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                },
-                label: t.settings.resetToDefault,
-              ),
-              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
-              DialogActionButton(
-                focusNode: saveFocusNode,
-                onPressed: () async {
-                  final url = controller.text.trim().isEmpty ? null : controller.text.trim();
-                  await _settingsService.write(settings.SettingsService.customRelayUrl, url);
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                },
-                label: t.common.save,
-              ),
-            ],
-          );
-        },
-      );
-    } finally {
-      controller.dispose();
-      saveFocusNode.dispose();
-    }
   }
 
   Future<void> _showClearCacheDialog() async {
@@ -807,6 +765,66 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     if (updateInfo == null) return;
     unawaited(
       showUpdateAvailableDialog(context, updateInfo, title: t.settings.updateAvailable, dismissLabel: t.common.close),
+    );
+  }
+}
+
+class _RelayUrlDialog extends StatefulWidget {
+  final settings.SettingsService settingsService;
+
+  const _RelayUrlDialog({required this.settingsService});
+
+  @override
+  State<_RelayUrlDialog> createState() => _RelayUrlDialogState();
+}
+
+class _RelayUrlDialogState extends State<_RelayUrlDialog> {
+  late final TextEditingController _controller;
+  final _saveFocusNode = FocusNode(debugLabel: 'WatchTogetherRelaySave');
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.settingsService.read(settings.SettingsService.customRelayUrl) ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _saveFocusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _reset() async {
+    _controller.clear();
+    await widget.settingsService.write(settings.SettingsService.customRelayUrl, null);
+    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _save() async {
+    final trimmed = _controller.text.trim();
+    await widget.settingsService.write(settings.SettingsService.customRelayUrl, trimmed.isEmpty ? null : trimmed);
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(t.settings.watchTogetherRelay),
+      content: FocusableTextField(
+        controller: _controller,
+        decoration: InputDecoration(labelText: 'URL', hintText: t.settings.watchTogetherRelayHint),
+        autofocus: true,
+        textInputAction: TextInputAction.done,
+        onEditingComplete: () => _saveFocusNode.requestFocus(),
+      ),
+      actions: [
+        DialogActionButton(onPressed: _reset, label: t.settings.resetToDefault),
+        DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+        DialogActionButton(focusNode: _saveFocusNode, onPressed: _save, label: t.common.save),
+      ],
     );
   }
 }
