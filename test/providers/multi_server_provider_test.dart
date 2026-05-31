@@ -213,6 +213,28 @@ void main() {
 
         p.dispose();
       });
+
+      test('expected servers become visible when they reconnect', () async {
+        final p = MultiServerProvider(manager, aggregation);
+        final onlineCalls = <Set<String>>[];
+        p.onOnlineServersChanged = onlineCalls.add;
+
+        p.setVisibleServerIds({'srv-1'});
+        p.setExpectedVisibleServerIds({'srv-1', 'srv-2'});
+        manager.updateServerStatus('srv-1', true);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(p.onlineServerIds, ['srv-1']);
+
+        manager.updateServerStatus('srv-2', true);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(p.onlineServerIds, containsAllInOrder(['srv-1', 'srv-2']));
+        expect(p.isServerOnline('srv-2'), isTrue);
+        expect(onlineCalls.last, {'srv-1', 'srv-2'});
+
+        p.dispose();
+      });
     });
 
     test('dispose runs cleanly and cancels the status subscription', () async {

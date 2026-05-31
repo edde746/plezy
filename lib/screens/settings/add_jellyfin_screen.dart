@@ -84,6 +84,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   late final _passwordController = createTextEditingController();
   final _urlFocus = FocusNode(debugLabel: 'AddJellyfin:Url');
   final _findServerFocus = FocusNode(debugLabel: 'AddJellyfin:FindServer');
+  final _changeServerFocus = FocusNode(debugLabel: 'AddJellyfin:ChangeServer');
   final _usernameFocus = FocusNode(debugLabel: 'AddJellyfin:Username');
   // Owned so the username field can advance focus on Enter; mobile keyboards
   // act on `textInputAction: next` automatically but TV remotes / hardware
@@ -119,6 +120,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     _qcAttemptId++;
     _urlFocus.dispose();
     _findServerFocus.dispose();
+    _changeServerFocus.dispose();
     _usernameFocus.dispose();
     _passwordFocus.dispose();
     _signInFocus.dispose();
@@ -481,7 +483,9 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
             _clearResolvedServer();
           });
         },
-        onNavigateDown: _serverInfo == null ? _focusFirstDiscoveredServerOrFind : () => _usernameFocus.requestFocus(),
+        onNavigateDown: _serverInfo == null
+            ? _focusFirstDiscoveredServerOrFind
+            : () => _changeServerFocus.requestFocus(),
         textInputAction: TextInputAction.go,
         onFieldSubmitted: busy ? null : (_) => _probe(),
         decoration: InputDecoration(
@@ -514,7 +518,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           autocorrect: false,
           enableSuggestions: false,
           enabled: !busy,
-          onNavigateUp: () => _urlFocus.requestFocus(),
+          onNavigateUp: () => _changeServerFocus.requestFocus(),
           textInputAction: TextInputAction.next,
           onFieldSubmitted: busy ? null : (_) => _passwordFocus.requestFocus(),
           decoration: InputDecoration(
@@ -593,13 +597,24 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
               ],
             ),
           ),
-          TextButton(
+          FocusableButton(
+            focusNode: _changeServerFocus,
+            useBackgroundFocus: true,
+            onNavigateUp: () => _urlFocus.requestFocus(),
+            onNavigateDown: () => _usernameFocus.requestFocus(),
             onPressed: busy
                 ? null
                 : () => setState(() {
                     _clearResolvedServer();
                   }),
-            child: Text(t.addServer.change),
+            child: TextButton(
+              onPressed: busy
+                  ? null
+                  : () => setState(() {
+                      _clearResolvedServer();
+                    }),
+              child: Text(t.addServer.change),
+            ),
           ),
         ],
       ),

@@ -26,13 +26,13 @@ OfflineWatchProgressItem _action({
 }
 
 void main() {
-  test('newer sub-threshold progress overrides older watched state without watched-plus-resume', () {
+  test('newer sub-threshold progress preserves watched state while updating resume offset', () {
     final snapshot = WatchStateResolver.fromActions([
       _action(actionType: 'watched', updatedAt: 1),
       _action(actionType: 'progress', updatedAt: 2, viewOffset: 5000, duration: 100000),
     ]);
 
-    expect(snapshot.isWatched, isFalse);
+    expect(snapshot.isWatched, isNull);
     expect(snapshot.hasViewOffsetMs, isTrue);
     expect(snapshot.viewOffsetMs, 5000);
   });
@@ -48,7 +48,7 @@ void main() {
     expect(snapshot.viewOffsetMs, 0);
   });
 
-  test('sub-threshold progress events explicitly clear watched state', () {
+  test('sub-threshold progress events only update resume offset', () {
     final snapshot = WatchStateResolver.fromEvent(
       WatchStateEvent(
         itemId: 'item-1',
@@ -61,7 +61,8 @@ void main() {
       ),
     );
 
-    expect(snapshot.isWatched, isFalse);
+    expect(snapshot.isWatched, isNull);
+    expect(snapshot.hasViewOffsetMs, isTrue);
     expect(snapshot.viewOffsetMs, 5000);
   });
 

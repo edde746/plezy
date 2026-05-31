@@ -415,7 +415,10 @@ class PlexClient
       }
 
       if (!_endpointManager.hasFallback) {
-        _endpointManager.resetToFirst();
+        final resetBaseUrl = _endpointManager.resetToFirst();
+        if (resetBaseUrl != null) {
+          await _handleEndpointSwitch(resetBaseUrl, persist: false);
+        }
         _onAllEndpointsExhausted?.call();
         rethrow;
       }
@@ -442,6 +445,13 @@ class PlexClient
         appLogger.i('Endpoint failover retry succeeded', error: {'newEndpoint': nextBaseUrl});
         await _onEndpointChanged?.call(nextBaseUrl);
         return response;
+      } catch (_) {
+        final resetBaseUrl = _endpointManager.resetToFirst();
+        if (resetBaseUrl != null) {
+          await _handleEndpointSwitch(resetBaseUrl, persist: false);
+        }
+        _onAllEndpointsExhausted?.call();
+        rethrow;
       } finally {
         _failoverSwitching = false;
       }

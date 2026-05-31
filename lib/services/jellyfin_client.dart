@@ -427,7 +427,10 @@ class _JellyfinFailoverHttpClient extends MediaServerHttpClient {
     }
 
     if (!manager.hasFallback) {
-      manager.resetToFirst();
+      final resetBaseUrl = manager.resetToFirst();
+      if (resetBaseUrl != null) {
+        await onEndpointSwitch(resetBaseUrl, persist: false);
+      }
       throw MediaServerHttpException(
         type: MediaServerHttpErrorType.connectionError,
         message: 'All Jellyfin endpoints exhausted',
@@ -457,8 +460,24 @@ class _JellyfinFailoverHttpClient extends MediaServerHttpClient {
       if (response.statusCode < 400) {
         appLogger.i('Jellyfin endpoint failover retry succeeded', error: {'newEndpoint': nextBaseUrl});
         await onEndpointSwitch(nextBaseUrl, persist: true);
+      } else if (_shouldAttemptFailover(statusCode: response.statusCode) && !manager.hasFallback) {
+        final resetBaseUrl = manager.resetToFirst();
+        if (resetBaseUrl != null) {
+          await onEndpointSwitch(resetBaseUrl, persist: false);
+        }
+        throw MediaServerHttpException(
+          type: MediaServerHttpErrorType.unknown,
+          statusCode: response.statusCode,
+          message: 'All Jellyfin endpoints exhausted',
+        );
       }
       return response;
+    } catch (_) {
+      final resetBaseUrl = manager.resetToFirst();
+      if (resetBaseUrl != null) {
+        await onEndpointSwitch(resetBaseUrl, persist: false);
+      }
+      rethrow;
     } finally {
       _failoverSwitching = false;
     }

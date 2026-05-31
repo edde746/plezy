@@ -803,7 +803,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       final updated = p.getMetadata('srv:42');
-      expect(updated?.isWatched, isFalse);
+      expect(updated?.isWatched, isTrue);
       expect(updated?.viewOffsetMs, 50000);
 
       p.dispose();

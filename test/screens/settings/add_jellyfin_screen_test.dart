@@ -152,7 +152,7 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Discovered:srv-1');
   });
 
-  testWidgets('D-pad moves from URL to credentials after server is found', (tester) async {
+  testWidgets('D-pad moves from URL through Change to credentials after server is found', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: AddJellyfinScreen(
@@ -177,7 +177,17 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
 
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:ChangeServer');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Username');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:ChangeServer');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pump();

@@ -108,4 +108,34 @@ void main() {
     expect(action.duration, isNull);
     expect(action.shouldMarkWatched, isFalse);
   });
+
+  test('Android external progress ignores missing position without explicit completion', () async {
+    final client = _RecordingClient();
+
+    await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+      positionMs: null,
+      durationMs: 100000,
+      playbackCompleted: false,
+      metadata: _item(durationMs: 100000),
+      client: client,
+    );
+
+    expect(client.started, isEmpty);
+    expect(client.stopped, isEmpty);
+  });
+
+  test('Android external progress reports full duration for explicit completion', () async {
+    final client = _RecordingClient();
+
+    await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+      positionMs: null,
+      durationMs: 100000,
+      playbackCompleted: true,
+      metadata: _item(durationMs: 100000),
+      client: client,
+    );
+
+    expect(client.started, [(positionMs: 100000, durationMs: 100000)]);
+    expect(client.stopped, [(positionMs: 100000, durationMs: 100000)]);
+  });
 }

@@ -164,5 +164,31 @@ void main() {
       expect(client.connection.baseUrl, 'https://fallback.example.com');
       expect(client.connection.baseUrls, ['https://fallback.example.com', 'https://primary.example.com']);
     });
+
+    test('resets live base URL after fallback endpoint is exhausted', () async {
+      final requests = <Uri>[];
+      final client = JellyfinClient.forTesting(
+        connection: _conn(
+          baseUrl: 'https://primary.example.com',
+          baseUrls: const ['https://primary.example.com', 'https://fallback.example.com'],
+        ),
+        httpClient: MockClient((req) async {
+          requests.add(req.url);
+          if (requests.length <= 2) {
+            throw TimeoutException('endpoint down');
+          }
+          return http.Response(jsonEncode({'Id': 'srv-1'}), 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+      addTearDown(client.close);
+
+      await client.getMachineIdentifier();
+
+      expect(requests.map((uri) => uri.host), ['primary.example.com', 'fallback.example.com']);
+      expect(client.connection.baseUrl, 'https://primary.example.com');
+
+      expect(await client.getMachineIdentifier(), 'srv-1');
+      expect(requests.map((uri) => uri.host), ['primary.example.com', 'fallback.example.com', 'primary.example.com']);
+    });
   });
 }

@@ -138,6 +138,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   MultiServerProvider(this._serverManager, this._aggregationService) {
     // Listen to server status changes
     _statusSubscription = _serverManager.statusStream.listen((_) {
+      _promoteOnlineExpectedServers();
       final currentOnline = Set<String>.from(onlineServerIds);
       final hasNewServer = currentOnline.any((id) => !_previousOnlineServerIds.contains(id));
       _previousOnlineServerIds = currentOnline;
@@ -155,6 +156,17 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
         checkLiveTvAvailability();
       }
     });
+  }
+
+  void _promoteOnlineExpectedServers() {
+    final visible = _visibleServerIds;
+    final expected = _expectedVisibleServerIds;
+    if (visible == null || expected == null || expected.isEmpty) return;
+
+    final onlineExpected = _serverManager.onlineServerIds.where(expected.contains).where((id) => !visible.contains(id));
+    if (onlineExpected.isEmpty) return;
+
+    _visibleServerIds = {...visible, ...onlineExpected};
   }
 
   /// Get the multi-server manager

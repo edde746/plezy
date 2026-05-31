@@ -520,7 +520,7 @@ void main() {
       expect(await svc.getLocalWatchStatus('srv:1'), isFalse);
     });
 
-    test('returns true only for progress that crossed the watched threshold', () async {
+    test('returns watched status only for explicit actions or threshold-crossing progress', () async {
       final (svc: svc, db: db, mgr: mgr) = _makeService();
       addTearDown(() async {
         svc.dispose();
@@ -528,9 +528,9 @@ void main() {
         await db.close();
       });
 
-      // Below threshold is explicit local progress, so it overrides stale watched metadata.
+      // Below threshold is resume-only; it must not override stale watched metadata.
       await svc.queueProgressUpdate(serverId: 'srv', itemId: '1', viewOffset: 50, duration: 100);
-      expect(await svc.getLocalWatchStatus('srv:1'), isFalse);
+      expect(await svc.getLocalWatchStatus('srv:1'), isNull);
 
       // Above threshold → shouldMarkWatched=true → status=true.
       await svc.queueProgressUpdate(serverId: 'srv', itemId: '2', viewOffset: 99, duration: 100);
@@ -809,7 +809,7 @@ void main() {
 
       expect(await svc.getLocalWatchStatus('jf-machine:item-1'), isTrue);
       expect(await svc.getLocalViewOffset('jf-machine:item-1'), isNull);
-      expect(await svc.getLocalWatchStatus('jf-machine:item-1', clientScopeId: 'jf-machine/user-a'), isFalse);
+      expect(await svc.getLocalWatchStatus('jf-machine:item-1', clientScopeId: 'jf-machine/user-a'), isNull);
       expect(await svc.getLocalViewOffset('jf-machine:item-1', clientScopeId: 'jf-machine/user-a'), 5000);
     });
 
