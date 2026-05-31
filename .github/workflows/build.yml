@@ -2,6 +2,27 @@ name: Build
 
 on:
   workflow_dispatch:
+    inputs:
+      build_android:
+        description: Build Android
+        default: true
+        type: boolean
+      build_ios:
+        description: Build iOS
+        default: true
+        type: boolean
+      build_macos:
+        description: Build macOS
+        default: true
+        type: boolean
+      build_windows:
+        description: Build Windows
+        default: true
+        type: boolean
+      build_linux:
+        description: Build Linux
+        default: true
+        type: boolean
 
 env:
   SENTRY_DART_DEFINE: ${{ github.repository == 'edde746/plezy' && '--dart-define=ENABLE_SENTRY=true' || '' }}
@@ -19,6 +40,7 @@ env:
 
 jobs:
   build-android:
+    if: ${{ inputs.build_android }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -109,6 +131,7 @@ jobs:
             plezy-android-x86_64.tar.gz
 
   build-ios:
+    if: ${{ inputs.build_ios }}
     runs-on: macos-26
     permissions:
       id-token: write
@@ -174,6 +197,7 @@ jobs:
           path: plezy-ios.ipa
 
   build-macos:
+    if: ${{ inputs.build_macos }}
     runs-on: macos-26
     permissions:
       id-token: write
@@ -345,6 +369,7 @@ jobs:
             macos-dmg-size.txt
 
   build-windows-x64:
+    if: ${{ inputs.build_windows }}
     runs-on: windows-latest
     permissions:
       contents: read
@@ -393,6 +418,7 @@ jobs:
           path: build/windows/x64/runner/Release/
 
   build-windows-arm64:
+    if: ${{ inputs.build_windows }}
     runs-on: windows-11-arm
     permissions:
       contents: read
@@ -449,6 +475,7 @@ jobs:
 
   package-windows:
     needs: [build-windows-x64, build-windows-arm64]
+    if: ${{ inputs.build_windows }}
     runs-on: windows-latest
     permissions:
       id-token: write
@@ -531,6 +558,7 @@ jobs:
             win-installer-size.txt
 
   build-linux-x64:
+    if: ${{ inputs.build_linux }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -657,6 +685,7 @@ jobs:
             plezy-linux-x64.pkg.tar.zst
 
   build-linux-arm64:
+    if: ${{ inputs.build_linux }}
     runs-on: ubuntu-24.04-arm
     permissions:
       id-token: write
@@ -793,7 +822,8 @@ jobs:
             plezy-linux-arm64.pkg.tar.zst
 
   create-release:
-    needs: [build-android, build-ios, build-macos, package-windows, build-linux-x64, build-linux-arm64]
+    needs: [build-android, build-ios, build-macos, build-windows-x64, build-windows-arm64, package-windows, build-linux-x64, build-linux-arm64]
+    if: ${{ always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && (inputs.build_android || inputs.build_ios || inputs.build_macos || inputs.build_windows || inputs.build_linux) }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -804,48 +834,56 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Download Android artifacts
+        if: ${{ inputs.build_android }}
         uses: actions/download-artifact@v4
         with:
           name: android-apk
           path: artifacts/android-apk
 
       - name: Download iOS artifact
+        if: ${{ inputs.build_ios }}
         uses: actions/download-artifact@v4
         with:
           name: ios-ipa
           path: artifacts/ios-ipa
 
       - name: Download macOS artifact
+        if: ${{ inputs.build_macos }}
         uses: actions/download-artifact@v4
         with:
           name: macos-dmg
           path: artifacts/macos-dmg
 
       - name: Download Windows x64 artifact
+        if: ${{ inputs.build_windows }}
         uses: actions/download-artifact@v4
         with:
           name: windows-x64-portable
           path: artifacts/windows-x64-portable
 
       - name: Download Windows arm64 artifact
+        if: ${{ inputs.build_windows }}
         uses: actions/download-artifact@v4
         with:
           name: windows-arm64-portable
           path: artifacts/windows-arm64-portable
 
       - name: Download Windows installer artifact
+        if: ${{ inputs.build_windows }}
         uses: actions/download-artifact@v4
         with:
           name: windows-installer
           path: artifacts/windows-installer
 
       - name: Download Linux x64 artifacts
+        if: ${{ inputs.build_linux }}
         uses: actions/download-artifact@v4
         with:
           name: linux-x64
           path: artifacts/linux-x64
 
       - name: Download Linux arm64 artifacts
+        if: ${{ inputs.build_linux }}
         uses: actions/download-artifact@v4
         with:
           name: linux-arm64
@@ -932,21 +970,39 @@ jobs:
           echo "Generated appcast.xml:"
           cat appcast.xml
 
+      - name: Collect release files
+        id: release-files
+        run: |
+          {
+            echo 'files<<EOF'
+            if [ "${{ inputs.build_android }}" = "true" ]; then
+              echo artifacts/android-apk/plezy-android-arm64-v8a.tar.gz
+              echo artifacts/android-apk/plezy-android-armeabi-v7a.tar.gz
+              echo artifacts/android-apk/plezy-android-x86_64.tar.gz
+            fi
+            if [ "${{ inputs.build_ios }}" = "true" ]; then
+              echo artifacts/ios-ipa/plezy-ios.ipa
+            fi
+            if [ "${{ inputs.build_macos }}" = "true" ]; then
+              echo artifacts/macos-dmg/plezy-macos.dmg
+            fi
+            if [ "${{ inputs.build_windows }}" = "true" ]; then
+              echo artifacts/windows-x64-portable/plezy-windows-x64-portable.7z
+              echo artifacts/windows-arm64-portable/plezy-windows-arm64-portable.7z
+              echo artifacts/windows-installer/plezy-windows-installer.exe
+            fi
+            if [ "${{ inputs.build_linux }}" = "true" ]; then
+              echo 'artifacts/linux-x64/*'
+              echo 'artifacts/linux-arm64/*'
+            fi
+            echo appcast.xml
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            artifacts/android-apk/plezy-android-arm64-v8a.tar.gz
-            artifacts/android-apk/plezy-android-armeabi-v7a.tar.gz
-            artifacts/android-apk/plezy-android-x86_64.tar.gz
-            artifacts/ios-ipa/plezy-ios.ipa
-            artifacts/macos-dmg/plezy-macos.dmg
-            artifacts/windows-x64-portable/plezy-windows-x64-portable.7z
-            artifacts/windows-arm64-portable/plezy-windows-arm64-portable.7z
-            artifacts/windows-installer/plezy-windows-installer.exe
-            artifacts/linux-x64/*
-            artifacts/linux-arm64/*
-            appcast.xml
+          files: ${{ steps.release-files.outputs.files }}
           draft: true
           prerelease: false
           generate_release_notes: true
