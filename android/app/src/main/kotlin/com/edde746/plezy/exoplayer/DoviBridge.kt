@@ -21,11 +21,12 @@ object DoviBridge {
     val nativeDecoder: Boolean,
     val advertisedP7: Boolean,
     val advertisedP8: Boolean,
-    val decoders: String
+    val decoders: String,
+    val displayHdr: String
   ) {
     fun logMessage(): String = "AUTO P7 DV decision: mode=$mode; reason=$reason; bridgeReady=$bridgeReady, " +
       "displayDV=$displayDv, nativeDecoder=$nativeDecoder, advertisedP7=$advertisedP7, " +
-      "advertisedP8=$advertisedP8, decoders=$decoders"
+      "advertisedP8=$advertisedP8, decoders=$decoders, displayHdr=$displayHdr"
   }
 
   data class Dv7FallbackDecision(
@@ -33,10 +34,11 @@ object DoviBridge {
     val reason: String,
     val bridgeReady: Boolean,
     val displayDv: Boolean,
-    val advertisedP8: Boolean
+    val advertisedP8: Boolean,
+    val displayHdr: String
   ) {
     fun logMessage(): String = "DV7 fallback decision: mode=$mode; reason=$reason; bridgeReady=$bridgeReady, " +
-      "displayDV=$displayDv, advertisedP8=$advertisedP8"
+      "displayDV=$displayDv, advertisedP8=$advertisedP8, displayHdr=$displayHdr"
   }
 
   private val DOLBY_VISION_MIME_TYPES = setOf(
@@ -147,8 +149,14 @@ object DoviBridge {
       return false
     }
     val supported = hdrTypes.contains(Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION)
-    Log.i(TAG, "Display Dolby Vision support: $supported; hdrTypes=${describeHdrTypes(hdrTypes)}")
+    Log.i(TAG, "Display Dolby Vision support: $supported; ${describeDisplayHdrCapabilities(display)}")
     return supported
+  }
+
+  fun describeDisplayHdrCapabilities(context: Context): String {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return "HDR capabilities unavailable (API=${Build.VERSION.SDK_INT})"
+    val display = getCurrentDisplay(context) ?: return "HDR capabilities unavailable (no active display)"
+    return describeDisplayHdrCapabilities(display)
   }
 
   fun logSupportSummary(context: Context) {
@@ -156,7 +164,8 @@ object DoviBridge {
       TAG,
       "DV support summary: bridgeReady=${isAvailable()}, displayDV=${displaySupportsDolbyVision(context)}, " +
         "nativeDecoder=$hasNativeDolbyVisionDecoder, advertisedP7=$deviceSupportsDvProfile7, " +
-        "advertisedP8=$deviceSupportsDvProfile8, decoders=${describeDolbyVisionDecoders()}"
+        "advertisedP8=$deviceSupportsDvProfile8, decoders=${describeDolbyVisionDecoders()}, " +
+        "displayHdr=${describeDisplayHdrCapabilities(context)}"
     )
   }
 
@@ -188,7 +197,8 @@ object DoviBridge {
       nativeDecoder = nativeDecoder,
       advertisedP7 = advertisedP7,
       advertisedP8 = advertisedP8,
-      decoders = describeDolbyVisionDecoders()
+      decoders = describeDolbyVisionDecoders(),
+      displayHdr = describeDisplayHdrCapabilities(context)
     )
     Log.i(TAG, decision.logMessage())
     return decision
@@ -212,7 +222,8 @@ object DoviBridge {
       reason = reason,
       bridgeReady = bridgeReady,
       displayDv = displayDv,
-      advertisedP8 = advertisedP8
+      advertisedP8 = advertisedP8,
+      displayHdr = describeDisplayHdrCapabilities(context)
     )
     Log.i(TAG, decision.logMessage())
     return decision
@@ -253,6 +264,31 @@ object DoviBridge {
       }
     }
   }
+
+  private fun describeDisplayHdrCapabilities(display: Display): String {
+    val hdrCapabilities = display.hdrCapabilities
+    val parts = mutableListOf(
+      "display=${display.displayId}:${display.name}",
+      "activeMode=${describeDisplayMode(display.mode)}",
+      "hdrCapabilities=${describeHdrTypes(hdrCapabilities.supportedHdrTypes)}",
+      "desiredLuminance=max=${formatLuminance(hdrCapabilities.desiredMaxLuminance)}, " +
+        "maxAvg=${formatLuminance(hdrCapabilities.desiredMaxAverageLuminance)}, " +
+        "min=${formatLuminance(hdrCapabilities.desiredMinLuminance)}"
+    )
+    parts += "supportedModes=${display.supportedModes.joinToString(prefix = "[", postfix = "]") { describeDisplayMode(it) }}"
+    return parts.joinToString(prefix = "{", postfix = "}")
+  }
+
+  private fun describeDisplayMode(mode: Display.Mode): String {
+    val hdr = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      ", hdr=${describeHdrTypes(mode.supportedHdrTypes)}"
+    } else {
+      ""
+    }
+    return "#${mode.modeId} ${mode.physicalWidth}x${mode.physicalHeight}@${mode.refreshRate}Hz$hdr"
+  }
+
+  private fun formatLuminance(value: Float): String = if (value.isNaN() || value <= 0f) "unknown" else "${value}nits"
 
   private fun describeDvProfile(profile: Int): String = when (profile) {
     MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvavPer -> "P0/DvavPer"
