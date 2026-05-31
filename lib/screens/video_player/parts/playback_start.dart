@@ -187,6 +187,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       }
       _effectiveSelectedMediaIndex = result.selectedMediaIndex;
       _playbackContext = playbackContext;
+      _streamHeaders = streamHeaders;
 
       // Primary refresh-rate path: when metadata provides FPS, Android players
       // can switch before creating decoders. MPV still needs a startup refresh
@@ -447,11 +448,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         if (player == currentPlayer) {
           // Auto-PiP: set up callback for API 26-30 path and initial state
           if (_autoPipEnabled) {
-            final autoPipEnteringCallback = () {
+            void autoPipEnteringCallback() {
               if (!mounted || player != currentPlayer) return;
               _setAndroidAutoPipTransitionInFlight(true, reason: 'native_auto_pip_entering');
               _preparePipFiltersForEntry();
-            };
+            }
+
             _autoPipEnteringCallback = autoPipEnteringCallback;
             PipService.onAutoPipEntering = autoPipEnteringCallback;
             final pipManager = _videoPIPManager;

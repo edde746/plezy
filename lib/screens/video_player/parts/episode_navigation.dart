@@ -197,6 +197,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       _isTranscoding = result.isTranscoding;
       _effectiveIsOffline = result.isOffline;
       _playbackContext = playbackContext;
+      _streamHeaders = streamHeaders;
       _playbackPlaySessionId = result.playSessionId;
       _playbackPlayMethod = result.playMethod;
       _selectedAudioStreamId = result.activeAudioStreamId;

@@ -1,4 +1,5 @@
 import '../database/app_database.dart';
+import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../models/transcode_quality_preset.dart';
@@ -54,8 +55,26 @@ class PlaybackSourceResolver {
       reportingMode: reportingMode,
       reportingClient: reportingClient,
       clientScopeId: scopeId == metadata.serverId ? null : scopeId,
-      streamHeaders: result.usesLocalMedia ? null : reportingClient?.streamHeaders,
+      streamHeaders: _streamHeaders(
+        client: reportingClient,
+        sourceKind: sourceKind,
+        sessionIdentifier: sessionIdentifier,
+      ),
     );
+  }
+
+  Map<String, String>? _streamHeaders({
+    required MediaServerClient? client,
+    required PlaybackSourceKind sourceKind,
+    String? sessionIdentifier,
+  }) {
+    if (client == null || sourceKind == PlaybackSourceKind.localFile) return null;
+
+    final headers = Map<String, String>.from(client.streamHeaders);
+    if (client.backend == MediaBackend.plex && sessionIdentifier != null) {
+      headers['X-Plex-Session-Identifier'] = sessionIdentifier;
+    }
+    return headers;
   }
 
   MediaServerClient? _playbackClient(String? serverId, {required bool offlineLibraryMode}) {

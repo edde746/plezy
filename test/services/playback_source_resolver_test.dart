@@ -12,11 +12,19 @@ import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/playback_source_resolver.dart';
 
 class _PlaybackClient implements MediaServerClient {
+  _PlaybackClient({this.clientBackend = MediaBackend.plex, PlaybackInitializationResult? result})
+    : result =
+          result ??
+          PlaybackInitializationResult(availableVersions: const [], videoUrl: 'https://example.com/video.mp4');
+
+  final MediaBackend clientBackend;
+  final PlaybackInitializationResult result;
+
   @override
   String get serverId => 'srv';
 
   @override
-  MediaBackend get backend => MediaBackend.plex;
+  MediaBackend get backend => clientBackend;
 
   @override
   double get watchedThreshold => 0.9;
@@ -28,9 +36,7 @@ class _PlaybackClient implements MediaServerClient {
   void close() {}
 
   @override
-  Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async {
-    return PlaybackInitializationResult(availableVersions: const [], videoUrl: 'https://example.com/video.mp4');
-  }
+  Future<PlaybackInitializationResult> getPlaybackInitialization(PlaybackInitializationOptions options) async => result;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -58,5 +64,52 @@ void main() {
     expect(context.result.videoUrl, 'https://example.com/video.mp4');
     expect(context.reportingClient, same(client));
     expect(context.reportingMode, PlaybackReportingMode.online);
+  });
+
+  test('plex direct playback adds playback session header to stream headers', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _PlaybackClient();
+    manager.debugRegisterClientForTesting(client, online: true);
+
+    final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
+      metadata: MediaItem(id: 'item-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv'),
+      selectedMediaIndex: 0,
+      offlineLibraryMode: false,
+      qualityPreset: TranscodeQualityPreset.original,
+      sessionIdentifier: 'playback-session-id',
+    );
+
+    expect(context.sourceKind, PlaybackSourceKind.remoteDirect);
+    expect(context.streamHeaders, containsPair('X-Test', 'token'));
+    expect(context.streamHeaders, containsPair('X-Plex-Session-Identifier', 'playback-session-id'));
+  });
+
+  test('non-plex direct playback does not add plex session header', () async {
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final manager = MultiServerManager();
+    addTearDown(() async {
+      manager.dispose();
+      await db.close();
+    });
+
+    final client = _PlaybackClient(clientBackend: MediaBackend.jellyfin);
+    manager.debugRegisterClientForTesting(client, online: true);
+
+    final context = await PlaybackSourceResolver(serverManager: manager, database: db).resolve(
+      metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv'),
+      selectedMediaIndex: 0,
+      offlineLibraryMode: false,
+      qualityPreset: TranscodeQualityPreset.original,
+      sessionIdentifier: 'playback-session-id',
+    );
+
+    expect(context.sourceKind, PlaybackSourceKind.remoteDirect);
+    expect(context.streamHeaders, isNot(contains('X-Plex-Session-Identifier')));
   });
 }
