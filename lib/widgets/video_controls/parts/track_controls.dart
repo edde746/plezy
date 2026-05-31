@@ -44,7 +44,11 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
           .applyPreset(targetPreset)
           .then((_) async {
             if (!mounted) return;
-            await shaderProvider.setPreset(targetPreset);
+            if (targetPreset.isEnabled) {
+              await shaderProvider.setPreset(targetPreset);
+            } else {
+              shaderProvider.setCurrentPreset(targetPreset);
+            }
             if (!mounted) return;
             // ignore: no-empty-block - setState triggers rebuild to reflect shader changes
             _setControlsState(() {});
