@@ -61,7 +61,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
   static const double _absoluteMax = 60000;
   static const double _tapStep = 100; // 100ms per tap
   static const double _longPressStep = 1000; // 1s per long-press tick
-  static const int _sliderDivisions = 240; // 500ms steps for ±60s range
+  static const int _sliderDivisions = 1200; // 100ms steps for ±60s range
 
   late double _currentOffset;
   Timer? _longPressTimer;
@@ -243,22 +243,25 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
                 return KeyEventResult.ignored;
               },
               canRequestFocus: false,
-              child: Slider(
-                focusNode: widget.sliderFocusNode,
-                value: sliderValue,
-                min: _sliderMin,
-                max: _sliderMax,
-                divisions: _sliderDivisions,
-                activeColor: Theme.of(context).colorScheme.primary,
-                inactiveColor: Theme.of(context).colorScheme.outlineVariant,
-                onChanged: (value) {
-                  setState(() {
-                    _currentOffset = value;
-                  });
-                },
-                onChangeEnd: (value) {
-                  _applyOffset(value);
-                },
+              child: SliderTheme(
+                data: SliderTheme.of(context).copyWith(tickMarkShape: SliderTickMarkShape.noTickMark),
+                child: Slider(
+                  focusNode: widget.sliderFocusNode,
+                  value: sliderValue,
+                  min: _sliderMin,
+                  max: _sliderMax,
+                  divisions: _sliderDivisions,
+                  activeColor: Theme.of(context).colorScheme.primary,
+                  inactiveColor: Theme.of(context).colorScheme.outlineVariant,
+                  onChanged: (value) {
+                    setState(() {
+                      _currentOffset = value;
+                    });
+                  },
+                  onChangeEnd: (value) {
+                    _applyOffset(value);
+                  },
+                ),
               ),
             ),
           ),
@@ -333,21 +336,24 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
                 style: TextStyle(color: tokens(context).textMuted),
               ),
               Expanded(
-                child: Slider(
-                  value: sliderValue,
-                  min: _sliderMin,
-                  max: _sliderMax,
-                  divisions: _sliderDivisions,
-                  activeColor: Theme.of(context).colorScheme.primary,
-                  inactiveColor: Theme.of(context).colorScheme.outlineVariant,
-                  onChanged: (value) {
-                    setState(() {
-                      _currentOffset = value;
-                    });
-                  },
-                  onChangeEnd: (value) {
-                    _applyOffset(value);
-                  },
+                child: SliderTheme(
+                  data: SliderTheme.of(context).copyWith(tickMarkShape: SliderTickMarkShape.noTickMark),
+                  child: Slider(
+                    value: sliderValue,
+                    min: _sliderMin,
+                    max: _sliderMax,
+                    divisions: _sliderDivisions,
+                    activeColor: Theme.of(context).colorScheme.primary,
+                    inactiveColor: Theme.of(context).colorScheme.outlineVariant,
+                    onChanged: (value) {
+                      setState(() {
+                        _currentOffset = value;
+                      });
+                    },
+                    onChangeEnd: (value) {
+                      _applyOffset(value);
+                    },
+                  ),
                 ),
               ),
               Text(
