@@ -116,119 +116,119 @@ class _PlayerTile extends StatelessWidget {
   }
 }
 
+typedef _CustomPlayerDialogResult = ({String name, String value, CustomPlayerType type});
+
 Future<void> _showAddCustomPlayerDialog(BuildContext context) async {
-  final nameController = TextEditingController();
-  final valueController = TextEditingController();
-  final valueFocusNode = FocusNode();
-  final saveFocusNode = FocusNode();
-  var selectedType = CustomPlayerType.command;
-  String? playerName;
-  String? playerValue;
-
-  try {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          final isUrlScheme = selectedType == CustomPlayerType.urlScheme;
-          final String fieldLabel;
-          final String fieldHint;
-          if (isUrlScheme) {
-            fieldLabel = t.externalPlayer.playerUrlScheme;
-            fieldHint = 'myplayer://play?url=';
-          } else if (Platform.isAndroid) {
-            fieldLabel = t.externalPlayer.playerPackage;
-            fieldHint = 'com.example.player';
-          } else {
-            fieldLabel = t.externalPlayer.playerCommand;
-            fieldHint = Platform.isMacOS ? 'mpv' : '/usr/bin/player';
-          }
-
-          return AlertDialog(
-            title: Text(t.externalPlayer.addCustomPlayer),
-            content: SizedBox(
-              width: 300,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  FocusableTextField(
-                    controller: nameController,
-                    decoration: InputDecoration(labelText: t.externalPlayer.playerName, hintText: 'My Player'),
-                    autofocus: true,
-                    textInputAction: TextInputAction.next,
-                    onSubmitted: (_) => primaryFocus?.nextFocus(),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    child: SegmentedButton<CustomPlayerType>(
-                      segments: [
-                        ButtonSegment(
-                          value: CustomPlayerType.command,
-                          label: Text(
-                            Platform.isAndroid ? t.externalPlayer.playerPackage : t.externalPlayer.playerCommand,
-                          ),
-                        ),
-                        ButtonSegment(value: CustomPlayerType.urlScheme, label: Text(t.externalPlayer.playerUrlScheme)),
-                      ],
-                      selected: {selectedType},
-                      onSelectionChanged: (value) => setDialogState(() => selectedType = value.first),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  FocusableTextField(
-                    controller: valueController,
-                    focusNode: valueFocusNode,
-                    decoration: InputDecoration(labelText: fieldLabel, hintText: fieldHint),
-                    textInputAction: TextInputAction.done,
-                    onSubmitted: (_) => saveFocusNode.requestFocus(),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              FocusableButton(
-                onPressed: () => Navigator.pop(context),
-                child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-              ),
-              FocusableButton(
-                focusNode: saveFocusNode,
-                onPressed: () {
-                  if (nameController.text.isNotEmpty && valueController.text.isNotEmpty) {
-                    Navigator.pop(context, true);
-                  }
-                },
-                child: FilledButton(
-                  onPressed: () {
-                    if (nameController.text.isNotEmpty && valueController.text.isNotEmpty) {
-                      Navigator.pop(context, true);
-                    }
-                  },
-                  child: Text(t.common.save),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-
-    if (result != true) return;
-    playerName = nameController.text;
-    playerValue = valueController.text;
-  } finally {
-    nameController.dispose();
-    valueController.dispose();
-    valueFocusNode.dispose();
-    saveFocusNode.dispose();
-  }
+  final result = await showDialog<_CustomPlayerDialogResult>(
+    context: context,
+    builder: (_) => const _AddCustomPlayerDialog(),
+  );
+  if (result == null) return;
 
   final id = 'custom_${DateTime.now().millisecondsSinceEpoch}';
-  final newPlayer = ExternalPlayer.custom(id: id, name: playerName, value: playerValue, type: selectedType);
+  final newPlayer = ExternalPlayer.custom(id: id, name: result.name, value: result.value, type: result.type);
 
   final svc = SettingsService.instanceOrNull!;
   await svc.write(SettingsService.customExternalPlayers, [
     ...svc.read(SettingsService.customExternalPlayers),
     newPlayer,
   ]);
+}
+
+class _AddCustomPlayerDialog extends StatefulWidget {
+  const _AddCustomPlayerDialog();
+
+  @override
+  State<_AddCustomPlayerDialog> createState() => _AddCustomPlayerDialogState();
+}
+
+class _AddCustomPlayerDialogState extends State<_AddCustomPlayerDialog> {
+  final _nameController = TextEditingController();
+  final _valueController = TextEditingController();
+  final _valueFocusNode = FocusNode(debugLabel: 'CustomExternalPlayerValue');
+  final _saveFocusNode = FocusNode(debugLabel: 'CustomExternalPlayerSave');
+  CustomPlayerType _selectedType = CustomPlayerType.command;
+
+  @override
+  void dispose() {
+    _valueFocusNode.dispose();
+    _saveFocusNode.dispose();
+    _nameController.dispose();
+    _valueController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _nameController.text.trim();
+    final value = _valueController.text.trim();
+    if (name.isEmpty || value.isEmpty) return;
+    Navigator.pop(context, (name: name, value: value, type: _selectedType));
+  }
+
+  ({String label, String hint}) get _valueFieldInfo {
+    if (_selectedType == CustomPlayerType.urlScheme) {
+      return (label: t.externalPlayer.playerUrlScheme, hint: 'myplayer://play?url=');
+    }
+    if (Platform.isAndroid) {
+      return (label: t.externalPlayer.playerPackage, hint: 'com.example.player');
+    }
+    return (label: t.externalPlayer.playerCommand, hint: Platform.isMacOS ? 'mpv' : '/usr/bin/player');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final (:label, :hint) = _valueFieldInfo;
+    return AlertDialog(
+      title: Text(t.externalPlayer.addCustomPlayer),
+      content: SizedBox(
+        width: 300,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            FocusableTextField(
+              controller: _nameController,
+              decoration: InputDecoration(labelText: t.externalPlayer.playerName, hintText: 'My Player'),
+              autofocus: true,
+              textInputAction: TextInputAction.next,
+              onSubmitted: (_) => _valueFocusNode.requestFocus(),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: SegmentedButton<CustomPlayerType>(
+                segments: [
+                  ButtonSegment(
+                    value: CustomPlayerType.command,
+                    label: Text(Platform.isAndroid ? t.externalPlayer.playerPackage : t.externalPlayer.playerCommand),
+                  ),
+                  ButtonSegment(value: CustomPlayerType.urlScheme, label: Text(t.externalPlayer.playerUrlScheme)),
+                ],
+                selected: {_selectedType},
+                onSelectionChanged: (value) => setState(() => _selectedType = value.first),
+              ),
+            ),
+            const SizedBox(height: 16),
+            FocusableTextField(
+              controller: _valueController,
+              focusNode: _valueFocusNode,
+              decoration: InputDecoration(labelText: label, hintText: hint),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _saveFocusNode.requestFocus(),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        FocusableButton(
+          onPressed: () => Navigator.pop(context),
+          child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
+        ),
+        FocusableButton(
+          focusNode: _saveFocusNode,
+          onPressed: _submit,
+          child: FilledButton(onPressed: _submit, child: Text(t.common.save)),
+        ),
+      ],
+    );
+  }
 }

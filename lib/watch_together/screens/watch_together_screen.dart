@@ -302,47 +302,10 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
   }
 
   Future<void> _renameRoom(RecentRoom room) async {
-    final controller = TextEditingController(text: room.name ?? '');
-    final fieldFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameField');
-    final cancelFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameCancel');
-    final saveFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameSave');
-    String? name;
-    try {
-      name = await showDialog<String>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(t.watchTogether.renameRoom),
-          content: FocusableTextField(
-            controller: controller,
-            focusNode: fieldFocusNode,
-            autofocus: true,
-            decoration: InputDecoration(hintText: room.code),
-            onNavigateDown: saveFocusNode.requestFocus,
-            onSubmitted: (value) => Navigator.pop(context, value),
-          ),
-          actions: [
-            DialogActionButton(
-              focusNode: cancelFocusNode,
-              onPressed: () => Navigator.pop(context),
-              onNavigateRight: saveFocusNode.requestFocus,
-              label: t.common.cancel,
-            ),
-            DialogActionButton(
-              focusNode: saveFocusNode,
-              onPressed: () => Navigator.pop(context, controller.text),
-              onNavigateLeft: cancelFocusNode.requestFocus,
-              isPrimary: true,
-              label: t.common.save,
-            ),
-          ],
-        ),
-      );
-    } finally {
-      controller.dispose();
-      fieldFocusNode.dispose();
-      cancelFocusNode.dispose();
-      saveFocusNode.dispose();
-    }
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => _RenameRoomDialog(room: room),
+    );
     if (name == null || !mounted) return;
 
     await RecentRoomsService.renameRoom(room.code, name.isEmpty ? null : name);
@@ -352,6 +315,65 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
   Future<void> _removeRoom(RecentRoom room) async {
     await RecentRoomsService.removeRoom(room.code);
     setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
+  }
+}
+
+class _RenameRoomDialog extends StatefulWidget {
+  final RecentRoom room;
+
+  const _RenameRoomDialog({required this.room});
+
+  @override
+  State<_RenameRoomDialog> createState() => _RenameRoomDialogState();
+}
+
+class _RenameRoomDialogState extends State<_RenameRoomDialog> {
+  late final _controller = TextEditingController(text: widget.room.name ?? '');
+  final _fieldFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameField');
+  final _cancelFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameCancel');
+  final _saveFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameSave');
+
+  @override
+  void dispose() {
+    _fieldFocusNode.dispose();
+    _cancelFocusNode.dispose();
+    _saveFocusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit(String value) {
+    Navigator.pop(context, value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(t.watchTogether.renameRoom),
+      content: FocusableTextField(
+        controller: _controller,
+        focusNode: _fieldFocusNode,
+        autofocus: true,
+        decoration: InputDecoration(hintText: widget.room.code),
+        onNavigateDown: _saveFocusNode.requestFocus,
+        onSubmitted: _submit,
+      ),
+      actions: [
+        DialogActionButton(
+          focusNode: _cancelFocusNode,
+          onPressed: () => Navigator.pop(context),
+          onNavigateRight: _saveFocusNode.requestFocus,
+          label: t.common.cancel,
+        ),
+        DialogActionButton(
+          focusNode: _saveFocusNode,
+          onPressed: () => _submit(_controller.text),
+          onNavigateLeft: _cancelFocusNode.requestFocus,
+          isPrimary: true,
+          label: t.common.save,
+        ),
+      ],
+    );
   }
 }
 

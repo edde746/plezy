@@ -36,38 +36,64 @@ void _showSettingsInputDialog({
   _SettingsDialogActionsBuilder? leadingActionsBuilder,
   VoidCallback? onDispose,
 }) {
-  final saveFocusNode = FocusNode();
-
-  showDialog(
+  showDialog<void>(
     context: context,
-    builder: (BuildContext dialogContext) {
-      return StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: Text(title),
-            content: contentBuilder(dialogContext, context, setDialogState, saveFocusNode),
-            actions: [
-              ...?leadingActionsBuilder?.call(dialogContext, setDialogState),
-              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
-              DialogActionButton(
-                focusNode: saveFocusNode,
-                onPressed: () async {
-                  final shouldClose = await onSave(dialogContext);
-                  if (shouldClose && dialogContext.mounted) {
-                    Navigator.pop(dialogContext);
-                  }
-                },
-                label: t.common.save,
-              ),
-            ],
-          );
-        },
-      );
-    },
-  ).then((_) {
-    saveFocusNode.dispose();
-    onDispose?.call();
+    builder: (_) => _SettingsInputDialog(
+      title: title,
+      contentBuilder: contentBuilder,
+      onSave: onSave,
+      leadingActionsBuilder: leadingActionsBuilder,
+      onDispose: onDispose,
+    ),
+  );
+}
+
+class _SettingsInputDialog extends StatefulWidget {
+  final String title;
+  final _SettingsDialogContentBuilder contentBuilder;
+  final Future<bool> Function(BuildContext dialogContext) onSave;
+  final _SettingsDialogActionsBuilder? leadingActionsBuilder;
+  final VoidCallback? onDispose;
+
+  const _SettingsInputDialog({
+    required this.title,
+    required this.contentBuilder,
+    required this.onSave,
+    this.leadingActionsBuilder,
+    this.onDispose,
   });
+
+  @override
+  State<_SettingsInputDialog> createState() => _SettingsInputDialogState();
+}
+
+class _SettingsInputDialogState extends State<_SettingsInputDialog> {
+  final _saveFocusNode = FocusNode(debugLabel: 'SettingsInputSave');
+
+  @override
+  void dispose() {
+    _saveFocusNode.dispose();
+    widget.onDispose?.call();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final shouldClose = await widget.onSave(context);
+    if (shouldClose && mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.title),
+      content: widget.contentBuilder(context, context, setState, _saveFocusNode),
+      actions: [
+        ...?widget.leadingActionsBuilder?.call(context, setState),
+        DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+        DialogActionButton(focusNode: _saveFocusNode, onPressed: _save, label: t.common.save),
+      ],
+    );
+  }
 }
 
 /// Shows a selection dialog with focusable rows for dpad/keyboard navigation.
