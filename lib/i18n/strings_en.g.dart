@@ -3560,6 +3560,12 @@ class TranslationsAddServerEn {
 	/// en: 'Find server'
 	String get findServer => 'Find server';
 
+	/// en: 'Looking for local Jellyfin servers...'
+	String get searchingLocalServers => 'Looking for local Jellyfin servers...';
+
+	/// en: 'Local Jellyfin servers'
+	String get localServers => 'Local Jellyfin servers';
+
 	/// en: 'Username'
 	String get username => 'Username';
 
@@ -5371,6 +5377,8 @@ extension on Translations {
 			'addServer.serverUrl' => 'Server URL',
 			'addServer.serverUrls' => 'Server URLs',
 			'addServer.findServer' => 'Find server',
+			'addServer.searchingLocalServers' => 'Looking for local Jellyfin servers...',
+			'addServer.localServers' => 'Local Jellyfin servers',
 			'addServer.username' => 'Username',
 			'addServer.password' => 'Password',
 			'addServer.signIn' => 'Sign in',

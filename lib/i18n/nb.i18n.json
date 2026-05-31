@@ -1276,6 +1276,8 @@
     "serverUrl": "Server-URL",
     "serverUrls": "Server-URL-er",
     "findServer": "Finn server",
+    "searchingLocalServers": "Søker etter lokale Jellyfin-servere...",
+    "localServers": "Lokale Jellyfin-servere",
     "username": "Brukernavn",
     "password": "Passord",
     "signIn": "Logg på",

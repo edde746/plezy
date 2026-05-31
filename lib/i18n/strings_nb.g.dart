@@ -1519,6 +1519,8 @@ class _TranslationsAddServerNb extends TranslationsAddServerEn {
 	@override String get serverUrl => 'Server-URL';
 	@override String get serverUrls => 'Server-URL-er';
 	@override String get findServer => 'Finn server';
+	@override String get searchingLocalServers => 'Søker etter lokale Jellyfin-servere...';
+	@override String get localServers => 'Lokale Jellyfin-servere';
 	@override String get username => 'Brukernavn';
 	@override String get password => 'Passord';
 	@override String get signIn => 'Logg på';
@@ -2985,6 +2987,8 @@ extension on TranslationsNb {
 			'addServer.serverUrl' => 'Server-URL',
 			'addServer.serverUrls' => 'Server-URL-er',
 			'addServer.findServer' => 'Finn server',
+			'addServer.searchingLocalServers' => 'Søker etter lokale Jellyfin-servere...',
+			'addServer.localServers' => 'Lokale Jellyfin-servere',
 			'addServer.username' => 'Brukernavn',
 			'addServer.password' => 'Passord',
 			'addServer.signIn' => 'Logg på',

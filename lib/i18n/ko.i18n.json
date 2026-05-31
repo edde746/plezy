@@ -1276,6 +1276,8 @@
     "serverUrl": "서버 URL",
     "serverUrls": "서버 URL",
     "findServer": "서버 찾기",
+    "searchingLocalServers": "로컬 Jellyfin 서버 검색 중...",
+    "localServers": "로컬 Jellyfin 서버",
     "username": "사용자 이름",
     "password": "비밀번호",
     "signIn": "로그인",

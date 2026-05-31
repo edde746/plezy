@@ -1276,6 +1276,8 @@
     "serverUrl": "Server-URL",
     "serverUrls": "Server-URL'er",
     "findServer": "Find server",
+    "searchingLocalServers": "Søger efter lokale Jellyfin-servere...",
+    "localServers": "Lokale Jellyfin-servere",
     "username": "Brugernavn",
     "password": "Adgangskode",
     "signIn": "Log ind",

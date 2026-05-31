@@ -1276,6 +1276,8 @@
     "serverUrl": "URL сервера",
     "serverUrls": "URL сервера",
     "findServer": "Найти сервер",
+    "searchingLocalServers": "Поиск локальных серверов Jellyfin...",
+    "localServers": "Локальные серверы Jellyfin",
     "username": "Имя пользователя",
     "password": "Пароль",
     "signIn": "Войти",

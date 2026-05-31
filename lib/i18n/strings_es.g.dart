@@ -1519,6 +1519,8 @@ class _TranslationsAddServerEs extends TranslationsAddServerEn {
 	@override String get serverUrl => 'URL del servidor';
 	@override String get serverUrls => 'URL del servidor';
 	@override String get findServer => 'Buscar servidor';
+	@override String get searchingLocalServers => 'Buscando servidores Jellyfin locales...';
+	@override String get localServers => 'Servidores Jellyfin locales';
 	@override String get username => 'Usuario';
 	@override String get password => 'Contraseña';
 	@override String get signIn => 'Iniciar sesión';
@@ -2985,6 +2987,8 @@ extension on TranslationsEs {
 			'addServer.serverUrl' => 'URL del servidor',
 			'addServer.serverUrls' => 'URL del servidor',
 			'addServer.findServer' => 'Buscar servidor',
+			'addServer.searchingLocalServers' => 'Buscando servidores Jellyfin locales...',
+			'addServer.localServers' => 'Servidores Jellyfin locales',
 			'addServer.username' => 'Usuario',
 			'addServer.password' => 'Contraseña',
 			'addServer.signIn' => 'Iniciar sesión',

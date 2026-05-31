@@ -1276,6 +1276,8 @@
     "serverUrl": "服务器 URL",
     "serverUrls": "服务器 URL",
     "findServer": "查找服务器",
+    "searchingLocalServers": "正在查找本地 Jellyfin 服务器...",
+    "localServers": "本地 Jellyfin 服务器",
     "username": "用户名",
     "password": "密码",
     "signIn": "登录",

@@ -1519,6 +1519,8 @@ class _TranslationsAddServerRu extends TranslationsAddServerEn {
 	@override String get serverUrl => 'URL сервера';
 	@override String get serverUrls => 'URL сервера';
 	@override String get findServer => 'Найти сервер';
+	@override String get searchingLocalServers => 'Поиск локальных серверов Jellyfin...';
+	@override String get localServers => 'Локальные серверы Jellyfin';
 	@override String get username => 'Имя пользователя';
 	@override String get password => 'Пароль';
 	@override String get signIn => 'Войти';
@@ -2985,6 +2987,8 @@ extension on TranslationsRu {
 			'addServer.serverUrl' => 'URL сервера',
 			'addServer.serverUrls' => 'URL сервера',
 			'addServer.findServer' => 'Найти сервер',
+			'addServer.searchingLocalServers' => 'Поиск локальных серверов Jellyfin...',
+			'addServer.localServers' => 'Локальные серверы Jellyfin',
 			'addServer.username' => 'Имя пользователя',
 			'addServer.password' => 'Пароль',
 			'addServer.signIn' => 'Войти',

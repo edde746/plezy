@@ -75,8 +75,16 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     Iterable<String> baseUrls, {
     String? preferredUrl,
     String? expectedMachineId,
+    Iterable<String>? baseUrlsToPersist,
+    Iterable<String>? baseUrlsToValidate,
   }) {
-    return _endpointDiscovery.raceEndpoints(baseUrls, preferredUrl: preferredUrl, expectedMachineId: expectedMachineId);
+    return _endpointDiscovery.raceEndpoints(
+      baseUrls,
+      preferredUrl: preferredUrl,
+      expectedMachineId: expectedMachineId,
+      baseUrlsToPersist: baseUrlsToPersist,
+      baseUrlsToValidate: baseUrlsToValidate,
+    );
   }
 
   /// Authenticate against [baseUrl] with [username]/[password] and return a

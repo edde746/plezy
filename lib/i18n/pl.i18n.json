@@ -1276,6 +1276,8 @@
     "serverUrl": "URL serwera",
     "serverUrls": "URL-e serwera",
     "findServer": "Znajdź serwer",
+    "searchingLocalServers": "Szukanie lokalnych serwerów Jellyfin...",
+    "localServers": "Lokalne serwery Jellyfin",
     "username": "Nazwa użytkownika",
     "password": "Hasło",
     "signIn": "Zaloguj się",

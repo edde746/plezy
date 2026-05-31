@@ -1519,6 +1519,8 @@ class _TranslationsAddServerKo extends TranslationsAddServerEn {
 	@override String get serverUrl => '서버 URL';
 	@override String get serverUrls => '서버 URL';
 	@override String get findServer => '서버 찾기';
+	@override String get searchingLocalServers => '로컬 Jellyfin 서버 검색 중...';
+	@override String get localServers => '로컬 Jellyfin 서버';
 	@override String get username => '사용자 이름';
 	@override String get password => '비밀번호';
 	@override String get signIn => '로그인';
@@ -2985,6 +2987,8 @@ extension on TranslationsKo {
 			'addServer.serverUrl' => '서버 URL',
 			'addServer.serverUrls' => '서버 URL',
 			'addServer.findServer' => '서버 찾기',
+			'addServer.searchingLocalServers' => '로컬 Jellyfin 서버 검색 중...',
+			'addServer.localServers' => '로컬 Jellyfin 서버',
 			'addServer.username' => '사용자 이름',
 			'addServer.password' => '비밀번호',
 			'addServer.signIn' => '로그인',

@@ -1276,6 +1276,8 @@
     "serverUrl": "サーバーURL",
     "serverUrls": "サーバーURL",
     "findServer": "サーバーを検索",
+    "searchingLocalServers": "ローカル Jellyfin サーバーを検索中...",
+    "localServers": "ローカル Jellyfin サーバー",
     "username": "ユーザー名",
     "password": "パスワード",
     "signIn": "サインイン",

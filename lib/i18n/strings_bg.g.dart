@@ -1519,6 +1519,8 @@ class _TranslationsAddServerBg extends TranslationsAddServerEn {
 	@override String get serverUrl => 'URL адрес на сървъра';
 	@override String get serverUrls => 'URL адреси на сървъра';
 	@override String get findServer => 'Намери сървър';
+	@override String get searchingLocalServers => 'Търсене на локални Jellyfin сървъри...';
+	@override String get localServers => 'Локални Jellyfin сървъри';
 	@override String get username => 'Потребителско име';
 	@override String get password => 'Парола';
 	@override String get signIn => 'Вход';
@@ -2985,6 +2987,8 @@ extension on TranslationsBg {
 			'addServer.serverUrl' => 'URL адрес на сървъра',
 			'addServer.serverUrls' => 'URL адреси на сървъра',
 			'addServer.findServer' => 'Намери сървър',
+			'addServer.searchingLocalServers' => 'Търсене на локални Jellyfin сървъри...',
+			'addServer.localServers' => 'Локални Jellyfin сървъри',
 			'addServer.username' => 'Потребителско име',
 			'addServer.password' => 'Парола',
 			'addServer.signIn' => 'Вход',
