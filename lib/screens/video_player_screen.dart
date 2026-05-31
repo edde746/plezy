@@ -265,6 +265,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isPhone = false;
   List<MediaVersion> _availableVersions = [];
   MediaSourceInfo? _currentMediaInfo;
+  late int _effectiveSelectedMediaIndex;
 
   // Transcode / quality state
   late TranscodeQualityPreset _selectedQualityPreset;
@@ -459,6 +460,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _currentMetadata = widget.metadata;
     _activeId = widget.metadata.id;
     _activeMediaIndex = widget.selectedMediaIndex;
+    _effectiveSelectedMediaIndex = widget.selectedMediaIndex;
 
     // Reused across quality/version/audio switches so the server-side
     // transcode session is preserved.

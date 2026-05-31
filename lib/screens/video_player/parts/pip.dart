@@ -37,7 +37,7 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
       _videoFilterManager = VideoFilterManager(
         player: currentPlayer,
         availableVersions: _availableVersions,
-        selectedMediaIndex: widget.selectedMediaIndex,
+        selectedMediaIndex: _effectiveSelectedMediaIndex,
         initialBoxFitMode: settings.read(SettingsService.defaultBoxFitMode),
         onBoxFitModeChanged: (mode) => settings.write(SettingsService.defaultBoxFitMode, mode),
       );

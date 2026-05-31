@@ -185,6 +185,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           _selectedQualityPreset = TranscodeQualityPreset.original;
         }
       }
+      _effectiveSelectedMediaIndex = result.selectedMediaIndex;
       _playbackContext = playbackContext;
 
       // Primary refresh-rate path: when metadata provides FPS, Android players

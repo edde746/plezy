@@ -217,6 +217,7 @@ class PlaybackInitializationService {
       externalSubtitles: sidecarSubtitles,
       isOffline: true,
       playMethod: 'DirectPlay',
+      selectedMediaIndex: selectedMediaIndex,
     );
   }
 

@@ -2,6 +2,7 @@ import '../media/media_file_info.dart';
 import '../media/media_source_info.dart';
 import '../media/media_version.dart';
 import '../models/plex/plex_video_playback_data.dart';
+import '../utils/app_logger.dart';
 import '../utils/json_utils.dart';
 import '../utils/plex_url_helper.dart';
 import 'file_info_parser.dart';
@@ -23,6 +24,36 @@ int _firstPlayablePartIndex(MediaVersion version) {
   if (parts.isEmpty) return 0;
   final playable = parts.indexWhere((part) => part.isPlayable);
   return playable >= 0 ? playable : 0;
+}
+
+void _logPartSelection(
+  List<Map> mediaList,
+  List<MediaVersion> versions,
+  int selectedMediaIndex,
+  int selectedPartIndex,
+) {
+  final candidateCount = mediaList.fold<int>(0, (count, media) => count + _mapList(media['Part']).length);
+  if (candidateCount <= 1) return;
+
+  final entries = <String>[];
+  for (var mediaIndex = 0; mediaIndex < mediaList.length; mediaIndex++) {
+    final partList = _mapList(mediaList[mediaIndex]['Part']);
+    for (var partIndex = 0; partIndex < partList.length; partIndex++) {
+      final part = partList[partIndex];
+      final versionPart = mediaIndex < versions.length && partIndex < versions[mediaIndex].parts.length
+          ? versions[mediaIndex].parts[partIndex]
+          : null;
+      final selected = mediaIndex == selectedMediaIndex && partIndex == selectedPartIndex ? ' selected' : '';
+      entries.add(
+        'Media[$mediaIndex].Part[$partIndex] '
+        'id=${part['id']} key=${part['key']} '
+        'exists=${versionPart?.exists} accessible=${versionPart?.accessible} '
+        'playable=${versionPart?.isPlayable}$selected',
+      );
+    }
+  }
+
+  appLogger.d('Plex playback part selection: ${entries.join('; ')}');
 }
 
 PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
@@ -64,6 +95,7 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
       if (partList.isNotEmpty) {
         selectedPartIndex = _firstPlayablePartIndex(availableVersions[mediaIndex]);
         if (selectedPartIndex < 0 || selectedPartIndex >= partList.length) selectedPartIndex = 0;
+        _logPartSelection(mediaList, availableVersions, selectedMediaIndex, selectedPartIndex);
         final part = partList[selectedPartIndex];
         final partKey = part['key']?.toString();
 

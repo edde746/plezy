@@ -259,7 +259,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         onNext: onNext,
                         onPrevious: onPrevious,
                         availableVersions: _availableVersions,
-                        selectedMediaIndex: widget.selectedMediaIndex,
+                        selectedMediaIndex: _effectiveSelectedMediaIndex,
                         selectedMediaSourceId: widget.selectedMediaSourceId,
                         selectedQualityPreset: _selectedQualityPreset,
                         serverSupportsTranscoding: _serverSupportsTranscoding,

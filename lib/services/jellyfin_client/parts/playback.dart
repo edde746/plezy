@@ -244,6 +244,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       activeAudioStreamId: requestedAudioStreamId,
       playSessionId: playSessionId,
       playMethod: playMethod,
+      selectedMediaIndex: bundle.selectedSourceIndex,
     );
   }
 
@@ -384,6 +385,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       chapters: chapters is List ? chapters : const [],
       container: source['Container'] as String?,
       selectedSourceId: source['Id'] as String?,
+      selectedSourceIndex: index,
       trickplay: raw['Trickplay'],
     );
   }

@@ -3284,6 +3284,7 @@ class PlexClient
             isTranscoding: true,
             activeAudioStreamId: resolvedAudioId,
             playMethod: 'Transcode',
+            selectedMediaIndex: data.selectedMediaIndex,
           );
         }
 
@@ -3302,6 +3303,7 @@ class PlexClient
           isTranscoding: false,
           fallbackReason: fallbackReason,
           playMethod: 'DirectPlay',
+          selectedMediaIndex: data.selectedMediaIndex,
         );
       }
 
@@ -3312,6 +3314,7 @@ class PlexClient
         externalSubtitles: _buildExternalSubtitles(data.mediaInfo),
         isOffline: false,
         playMethod: 'DirectPlay',
+        selectedMediaIndex: data.selectedMediaIndex,
       );
     } catch (e) {
       if (e is PlaybackException) rethrow;
