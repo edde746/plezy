@@ -138,19 +138,11 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           ? await factory()
           : await JellyfinLanDiscoveryService().discover(responseWindow: const Duration(milliseconds: 1300));
       if (!mounted || attemptId != _localDiscoveryAttemptId) return;
-      final focusFirstServer =
-          servers.isNotEmpty && _urlController.text.trim().isEmpty && _serverInfo == null && PlatformDetector.isTV();
       setState(() {
         _localServers = servers;
         _isDiscoveringLocalServers = false;
         _syncDiscoveredServerFocusNodes(servers);
       });
-      if (focusFirstServer) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          _discoveredServerFocusNodes[servers.first.id]?.requestFocus();
-        });
-      }
     } catch (e, st) {
       appLogger.w('Add Jellyfin local discovery failed', error: e, stackTrace: st);
       if (!mounted || attemptId != _localDiscoveryAttemptId) return;
@@ -743,7 +735,7 @@ class _DiscoveredJellyfinServerTile extends StatelessWidget {
       focusNode: focusNode,
       disableScale: true,
       borderRadius: 12,
-      useBackgroundFocus: true,
+      useForegroundFocusDecoration: true,
       descendantsAreFocusable: false,
       onSelect: onTap,
       onNavigateUp: onNavigateUp,

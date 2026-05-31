@@ -117,6 +117,41 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
   });
 
+  testWidgets('TV discovery does not steal focus from the URL keyboard', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: MaterialApp(
+          home: AddJellyfinScreen(
+            localDiscoveryFactory: () async => [
+              DiscoveredJellyfinServer(address: 'http://192.168.1.20:8096', id: 'srv-1', name: 'Home'),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Home'), findsOneWidget);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+    await tester.pumpAndSettle();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Discovered:srv-1');
+  });
+
   testWidgets('D-pad moves from URL to credentials after server is found', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
