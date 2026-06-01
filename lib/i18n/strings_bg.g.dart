@@ -1515,7 +1515,7 @@ class _TranslationsAddServerBg extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Добави Jellyfin сървър';
 	@override String get jellyfinUrlIntro => 'Въведете URL адреса на сървъра, напр. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Въведете един или повече URL адреси на сървъра, разделени със запетаи или нови редове. Plezy ще използва достъпния URL адрес с най-ниска латентност.';
+	@override String get jellyfinUrlsIntro => 'Въведете един или повече URL адреси на сървъра, разделени със запетаи. Plezy ще използва достъпния URL адрес с най-ниска латентност.';
 	@override String get serverUrl => 'URL адрес на сървъра';
 	@override String get serverUrls => 'URL адреси на сървъра';
 	@override String get findServer => 'Намери сървър';
@@ -2983,7 +2983,7 @@ extension on TranslationsBg {
 			'trackers.libraryFilter.noLibraries' => 'Няма налични библиотеки',
 			'addServer.addJellyfinTitle' => 'Добави Jellyfin сървър',
 			'addServer.jellyfinUrlIntro' => 'Въведете URL адреса на сървъра, напр. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Въведете един или повече URL адреси на сървъра, разделени със запетаи или нови редове. Plezy ще използва достъпния URL адрес с най-ниска латентност.',
+			'addServer.jellyfinUrlsIntro' => 'Въведете един или повече URL адреси на сървъра, разделени със запетаи. Plezy ще използва достъпния URL адрес с най-ниска латентност.',
 			'addServer.serverUrl' => 'URL адрес на сървъра',
 			'addServer.serverUrls' => 'URL адреси на сървъра',
 			'addServer.findServer' => 'Намери сървър',

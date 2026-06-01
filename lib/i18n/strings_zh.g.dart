@@ -1515,7 +1515,7 @@ class _TranslationsAddServerZh extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => '添加 Jellyfin 服务器';
 	@override String get jellyfinUrlIntro => '输入服务器 URL，例如 `https://jellyfin.example.com`。';
-	@override String get jellyfinUrlsIntro => '输入一个或多个服务器 URL，用逗号或换行分隔。Plezy 会使用可访问且延迟最低的 URL。';
+	@override String get jellyfinUrlsIntro => '输入一个或多个服务器 URL，用逗号分隔。Plezy 会使用可访问且延迟最低的 URL。';
 	@override String get serverUrl => '服务器 URL';
 	@override String get serverUrls => '服务器 URL';
 	@override String get findServer => '查找服务器';
@@ -2983,7 +2983,7 @@ extension on TranslationsZh {
 			'trackers.libraryFilter.noLibraries' => '没有可用的媒体库',
 			'addServer.addJellyfinTitle' => '添加 Jellyfin 服务器',
 			'addServer.jellyfinUrlIntro' => '输入服务器 URL，例如 `https://jellyfin.example.com`。',
-			'addServer.jellyfinUrlsIntro' => '输入一个或多个服务器 URL，用逗号或换行分隔。Plezy 会使用可访问且延迟最低的 URL。',
+			'addServer.jellyfinUrlsIntro' => '输入一个或多个服务器 URL，用逗号分隔。Plezy 会使用可访问且延迟最低的 URL。',
 			'addServer.serverUrl' => '服务器 URL',
 			'addServer.serverUrls' => '服务器 URL',
 			'addServer.findServer' => '查找服务器',

@@ -1515,7 +1515,7 @@ class _TranslationsAddServerIt extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Aggiungi server Jellyfin';
 	@override String get jellyfinUrlIntro => 'Inserisci l\'URL del server, es. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Inserisci uno o più URL del server, separati da virgole o nuove righe. Plezy userà l\'URL raggiungibile con la latenza più bassa.';
+	@override String get jellyfinUrlsIntro => 'Inserisci uno o più URL del server, separati da virgole. Plezy userà l\'URL raggiungibile con la latenza più bassa.';
 	@override String get serverUrl => 'URL del server';
 	@override String get serverUrls => 'URL del server';
 	@override String get findServer => 'Trova server';
@@ -2983,7 +2983,7 @@ extension on TranslationsIt {
 			'trackers.libraryFilter.noLibraries' => 'Nessuna libreria disponibile',
 			'addServer.addJellyfinTitle' => 'Aggiungi server Jellyfin',
 			'addServer.jellyfinUrlIntro' => 'Inserisci l\'URL del server, es. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Inserisci uno o più URL del server, separati da virgole o nuove righe. Plezy userà l\'URL raggiungibile con la latenza più bassa.',
+			'addServer.jellyfinUrlsIntro' => 'Inserisci uno o più URL del server, separati da virgole. Plezy userà l\'URL raggiungibile con la latenza più bassa.',
 			'addServer.serverUrl' => 'URL del server',
 			'addServer.serverUrls' => 'URL del server',
 			'addServer.findServer' => 'Trova server',

@@ -1272,7 +1272,7 @@
   "addServer": {
     "addJellyfinTitle": "添加 Jellyfin 服务器",
     "jellyfinUrlIntro": "输入服务器 URL，例如 `https://jellyfin.example.com`。",
-    "jellyfinUrlsIntro": "输入一个或多个服务器 URL，用逗号或换行分隔。Plezy 会使用可访问且延迟最低的 URL。",
+    "jellyfinUrlsIntro": "输入一个或多个服务器 URL，用逗号分隔。Plezy 会使用可访问且延迟最低的 URL。",
     "serverUrl": "服务器 URL",
     "serverUrls": "服务器 URL",
     "findServer": "查找服务器",

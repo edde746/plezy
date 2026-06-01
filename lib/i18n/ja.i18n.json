@@ -1272,7 +1272,7 @@
   "addServer": {
     "addJellyfinTitle": "Jellyfinサーバーを追加",
     "jellyfinUrlIntro": "サーバーURLを入力してください。例: `https://jellyfin.example.com`。",
-    "jellyfinUrlsIntro": "サーバーURLを1つ以上、カンマまたは改行で区切って入力してください。Plezyは到達可能なURLのうち最も低遅延のものを使用します。",
+    "jellyfinUrlsIntro": "サーバーURLを1つ以上、カンマで区切って入力してください。Plezyは到達可能なURLのうち最も低遅延のものを使用します。",
     "serverUrl": "サーバーURL",
     "serverUrls": "サーバーURL",
     "findServer": "サーバーを検索",

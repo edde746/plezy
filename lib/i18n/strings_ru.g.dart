@@ -1515,7 +1515,7 @@ class _TranslationsAddServerRu extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Добавить сервер Jellyfin';
 	@override String get jellyfinUrlIntro => 'Введите URL сервера, например `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Введите один или несколько URL сервера, разделяя их запятыми или новыми строками. Plezy будет использовать доступный URL с минимальной задержкой.';
+	@override String get jellyfinUrlsIntro => 'Введите один или несколько URL сервера, разделяя их запятыми. Plezy будет использовать доступный URL с минимальной задержкой.';
 	@override String get serverUrl => 'URL сервера';
 	@override String get serverUrls => 'URL сервера';
 	@override String get findServer => 'Найти сервер';
@@ -2983,7 +2983,7 @@ extension on TranslationsRu {
 			'trackers.libraryFilter.noLibraries' => 'Библиотеки недоступны',
 			'addServer.addJellyfinTitle' => 'Добавить сервер Jellyfin',
 			'addServer.jellyfinUrlIntro' => 'Введите URL сервера, например `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Введите один или несколько URL сервера, разделяя их запятыми или новыми строками. Plezy будет использовать доступный URL с минимальной задержкой.',
+			'addServer.jellyfinUrlsIntro' => 'Введите один или несколько URL сервера, разделяя их запятыми. Plezy будет использовать доступный URL с минимальной задержкой.',
 			'addServer.serverUrl' => 'URL сервера',
 			'addServer.serverUrls' => 'URL сервера',
 			'addServer.findServer' => 'Найти сервер',

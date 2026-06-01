@@ -1272,7 +1272,7 @@
   "addServer": {
     "addJellyfinTitle": "Dodaj serwer Jellyfin",
     "jellyfinUrlIntro": "Wpisz URL serwera, np. `https://jellyfin.example.com`.",
-    "jellyfinUrlsIntro": "Wpisz co najmniej jeden URL serwera, oddzielając je przecinkami lub nowymi wierszami. Plezy użyje osiągalnego URL-a o najniższym opóźnieniu.",
+    "jellyfinUrlsIntro": "Wpisz co najmniej jeden URL serwera, oddzielając je przecinkami. Plezy użyje osiągalnego URL-a o najniższym opóźnieniu.",
     "serverUrl": "URL serwera",
     "serverUrls": "URL-e serwera",
     "findServer": "Znajdź serwer",

@@ -1515,7 +1515,7 @@ class _TranslationsAddServerNl extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Jellyfin-server toevoegen';
 	@override String get jellyfinUrlIntro => 'Voer de server-URL in, bijv. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Voer een of meer server-URL\'s in, gescheiden door komma\'s of nieuwe regels. Plezy gebruikt de bereikbare URL met de laagste latentie.';
+	@override String get jellyfinUrlsIntro => 'Voer een of meer server-URL\'s in, gescheiden door komma\'s. Plezy gebruikt de bereikbare URL met de laagste latentie.';
 	@override String get serverUrl => 'Server-URL';
 	@override String get serverUrls => 'Server-URL\'s';
 	@override String get findServer => 'Server zoeken';
@@ -2983,7 +2983,7 @@ extension on TranslationsNl {
 			'trackers.libraryFilter.noLibraries' => 'Geen bibliotheken beschikbaar',
 			'addServer.addJellyfinTitle' => 'Jellyfin-server toevoegen',
 			'addServer.jellyfinUrlIntro' => 'Voer de server-URL in, bijv. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Voer een of meer server-URL\'s in, gescheiden door komma\'s of nieuwe regels. Plezy gebruikt de bereikbare URL met de laagste latentie.',
+			'addServer.jellyfinUrlsIntro' => 'Voer een of meer server-URL\'s in, gescheiden door komma\'s. Plezy gebruikt de bereikbare URL met de laagste latentie.',
 			'addServer.serverUrl' => 'Server-URL',
 			'addServer.serverUrls' => 'Server-URL\'s',
 			'addServer.findServer' => 'Server zoeken',

@@ -1272,7 +1272,7 @@
   "addServer": {
     "addJellyfinTitle": "Jellyfin-Server hinzufügen",
     "jellyfinUrlIntro": "Gib die Server-URL ein, z. B. `https://jellyfin.example.com`.",
-    "jellyfinUrlsIntro": "Gib eine oder mehrere Server-URLs ein, getrennt durch Kommas oder neue Zeilen. Plezy verwendet die erreichbare URL mit der geringsten Latenz.",
+    "jellyfinUrlsIntro": "Gib eine oder mehrere Server-URLs ein, getrennt durch Kommas. Plezy verwendet die erreichbare URL mit der geringsten Latenz.",
     "serverUrl": "Server-URL",
     "serverUrls": "Server-URLs",
     "findServer": "Server finden",

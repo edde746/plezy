@@ -1515,7 +1515,7 @@ class _TranslationsAddServerKo extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Jellyfin 서버 추가';
 	@override String get jellyfinUrlIntro => '서버 URL을 입력하세요. 예: `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => '서버 URL을 하나 이상 쉼표나 줄바꿈으로 구분해 입력하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.';
+	@override String get jellyfinUrlsIntro => '서버 URL을 하나 이상 쉼표로 구분해 입력하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.';
 	@override String get serverUrl => '서버 URL';
 	@override String get serverUrls => '서버 URL';
 	@override String get findServer => '서버 찾기';
@@ -2983,7 +2983,7 @@ extension on TranslationsKo {
 			'trackers.libraryFilter.noLibraries' => '사용 가능한 라이브러리가 없습니다',
 			'addServer.addJellyfinTitle' => 'Jellyfin 서버 추가',
 			'addServer.jellyfinUrlIntro' => '서버 URL을 입력하세요. 예: `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => '서버 URL을 하나 이상 쉼표나 줄바꿈으로 구분해 입력하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.',
+			'addServer.jellyfinUrlsIntro' => '서버 URL을 하나 이상 쉼표로 구분해 입력하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.',
 			'addServer.serverUrl' => '서버 URL',
 			'addServer.serverUrls' => '서버 URL',
 			'addServer.findServer' => '서버 찾기',

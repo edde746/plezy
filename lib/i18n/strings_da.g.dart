@@ -1515,7 +1515,7 @@ class _TranslationsAddServerDa extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Tilføj Jellyfin-server';
 	@override String get jellyfinUrlIntro => 'Indtast server-URL\'en, f.eks. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Indtast en eller flere server-URL\'er, adskilt med kommaer eller nye linjer. Plezy bruger den tilgængelige URL med lavest latenstid.';
+	@override String get jellyfinUrlsIntro => 'Indtast en eller flere server-URL\'er, adskilt med kommaer. Plezy bruger den tilgængelige URL med lavest latenstid.';
 	@override String get serverUrl => 'Server-URL';
 	@override String get serverUrls => 'Server-URL\'er';
 	@override String get findServer => 'Find server';
@@ -2983,7 +2983,7 @@ extension on TranslationsDa {
 			'trackers.libraryFilter.noLibraries' => 'Ingen biblioteker tilgængelige',
 			'addServer.addJellyfinTitle' => 'Tilføj Jellyfin-server',
 			'addServer.jellyfinUrlIntro' => 'Indtast server-URL\'en, f.eks. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Indtast en eller flere server-URL\'er, adskilt med kommaer eller nye linjer. Plezy bruger den tilgængelige URL med lavest latenstid.',
+			'addServer.jellyfinUrlsIntro' => 'Indtast en eller flere server-URL\'er, adskilt med kommaer. Plezy bruger den tilgængelige URL med lavest latenstid.',
 			'addServer.serverUrl' => 'Server-URL',
 			'addServer.serverUrls' => 'Server-URL\'er',
 			'addServer.findServer' => 'Find server',

@@ -1272,7 +1272,7 @@
   "addServer": {
     "addJellyfinTitle": "Добави Jellyfin сървър",
     "jellyfinUrlIntro": "Въведете URL адреса на сървъра, напр. `https://jellyfin.example.com`.",
-    "jellyfinUrlsIntro": "Въведете един или повече URL адреси на сървъра, разделени със запетаи или нови редове. Plezy ще използва достъпния URL адрес с най-ниска латентност.",
+    "jellyfinUrlsIntro": "Въведете един или повече URL адреси на сървъра, разделени със запетаи. Plezy ще използва достъпния URL адрес с най-ниска латентност.",
     "serverUrl": "URL адрес на сървъра",
     "serverUrls": "URL адреси на сървъра",
     "findServer": "Намери сървър",

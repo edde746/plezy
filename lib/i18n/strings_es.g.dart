@@ -1515,7 +1515,7 @@ class _TranslationsAddServerEs extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Añadir servidor Jellyfin';
 	@override String get jellyfinUrlIntro => 'Introduce la URL del servidor, p. ej. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Introduce una o más URL del servidor, separadas por comas o líneas nuevas. Plezy usará la URL accesible con menor latencia.';
+	@override String get jellyfinUrlsIntro => 'Introduce una o más URL del servidor, separadas por comas. Plezy usará la URL accesible con menor latencia.';
 	@override String get serverUrl => 'URL del servidor';
 	@override String get serverUrls => 'URL del servidor';
 	@override String get findServer => 'Buscar servidor';
@@ -2983,7 +2983,7 @@ extension on TranslationsEs {
 			'trackers.libraryFilter.noLibraries' => 'No hay bibliotecas disponibles',
 			'addServer.addJellyfinTitle' => 'Añadir servidor Jellyfin',
 			'addServer.jellyfinUrlIntro' => 'Introduce la URL del servidor, p. ej. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Introduce una o más URL del servidor, separadas por comas o líneas nuevas. Plezy usará la URL accesible con menor latencia.',
+			'addServer.jellyfinUrlsIntro' => 'Introduce una o más URL del servidor, separadas por comas. Plezy usará la URL accesible con menor latencia.',
 			'addServer.serverUrl' => 'URL del servidor',
 			'addServer.serverUrls' => 'URL del servidor',
 			'addServer.findServer' => 'Buscar servidor',
