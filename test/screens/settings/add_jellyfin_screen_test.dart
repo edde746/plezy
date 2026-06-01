@@ -77,7 +77,7 @@ void main() {
     expect(field.autofocus, isTrue);
   });
 
-  testWidgets('TV initial focus opens the server URL keyboard', (tester) async {
+  testWidgets('TV initial focus keeps server URL focused without opening keyboard', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
 
     await tester.pumpWidget(
@@ -87,11 +87,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
   });
 
-  testWidgets('Android TV remote navigation stays with virtual URL keyboard', (tester) async {
+  testWidgets('Android TV D-pad can leave initial URL focus before keyboard opens', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(null);
     await TvDetectionService.getInstance(forceTv: true);
     TvDetectionService.setForceTVSync(true);
@@ -103,21 +103,22 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
-    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:FindServer');
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
     await tester.pumpAndSettle();
 
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
   });
 
-  testWidgets('TV discovery does not steal focus from the URL keyboard', (tester) async {
+  testWidgets('TV discovery keeps initial URL focus and D-pad reaches discovered servers', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
 
     await tester.pumpWidget(
@@ -134,22 +135,19 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Home'), findsOneWidget);
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
-    await tester.pump();
-
-    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
-
-    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
-    await tester.pumpAndSettle();
-
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pump();
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Discovered:srv-1');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+    await tester.pumpAndSettle();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'TvVirtualKeyboard');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
   });
 
   testWidgets('D-pad moves from URL through Change to credentials after server is found', (tester) async {

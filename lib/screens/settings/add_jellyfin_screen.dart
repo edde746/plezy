@@ -471,6 +471,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         controller: _urlController,
         focusNode: _urlFocus,
         autofocus: true,
+        tvKeyboardAutoOpenBehavior: TvKeyboardAutoOpenBehavior.afterFirstFocus,
         keyboardType: TextInputType.url,
         minLines: 1,
         maxLines: 4,
