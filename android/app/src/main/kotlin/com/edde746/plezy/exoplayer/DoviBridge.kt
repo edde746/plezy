@@ -136,15 +136,7 @@ object DoviBridge {
       return false
     }
 
-    val hdrTypes = runCatching {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        display.mode.supportedHdrTypes
-      } else {
-        @Suppress("DEPRECATION")
-        val legacyHdrTypes = display.hdrCapabilities.supportedHdrTypes
-        legacyHdrTypes
-      }
-    }.getOrElse { error ->
+    val hdrTypes = runCatching { getDisplayHdrTypes(display) }.getOrElse { error ->
       Log.w(TAG, "Display Dolby Vision support: false (failed to query HDR types)", error)
       return false
     }
@@ -279,8 +271,15 @@ object DoviBridge {
     return parts.joinToString(prefix = "{", postfix = "}")
   }
 
+  private fun getDisplayHdrTypes(display: Display): IntArray = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+    display.mode.supportedHdrTypes
+  } else {
+    @Suppress("DEPRECATION")
+    display.hdrCapabilities.supportedHdrTypes
+  }
+
   private fun describeDisplayMode(mode: Display.Mode): String {
-    val hdr = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    val hdr = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
       ", hdr=${describeHdrTypes(mode.supportedHdrTypes)}"
     } else {
       ""
