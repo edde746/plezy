@@ -215,15 +215,16 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     super.initState();
     _audioSyncOffset = widget.audioSyncOffset;
     _subtitleSyncOffset = widget.subtitleSyncOffset;
-    _zoomScale = widget.videoZoomScale;
+    _zoomScale = VideoFilterManager.normalizeZoomScale(widget.videoZoomScale);
     _loadDebugDvConversionMode();
   }
 
   @override
   void didUpdateWidget(covariant VideoSettingsSheet oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if ((widget.videoZoomScale - oldWidget.videoZoomScale).abs() > 0.0001) {
-      _zoomScale = widget.videoZoomScale;
+    final nextZoomScale = VideoFilterManager.normalizeZoomScale(widget.videoZoomScale);
+    if (_zoomScale != nextZoomScale) {
+      _zoomScale = nextZoomScale;
     }
   }
 
@@ -392,7 +393,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   String _formatZoomScale(double scale) => '${(scale * 100).round()}%';
 
   void _setZoomScale(double scale) {
-    final next = scale.clamp(VideoFilterManager.minZoomScale, VideoFilterManager.maxZoomScale).toDouble();
+    final next = VideoFilterManager.normalizeZoomScale(scale);
     setState(() {
       _zoomScale = next;
     });

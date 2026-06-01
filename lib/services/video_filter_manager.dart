@@ -78,14 +78,22 @@ class VideoFilterManager {
 
   Size? get playerSize => _playerSize;
 
-  static double videoZoomPropertyForScale(double scale) {
+  static double normalizeZoomScale(double scale) {
     final clamped = scale.clamp(minZoomScale, maxZoomScale).toDouble();
-    return math.log(clamped) / math.ln2;
+    final percent = (clamped * 100).round();
+    if (percent == 100) return 1.0;
+    return percent / 100;
+  }
+
+  static double videoZoomPropertyForScale(double scale) {
+    final normalized = normalizeZoomScale(scale);
+    if (normalized == 1.0) return 0.0;
+    return math.log(normalized) / math.ln2;
   }
 
   double setZoomScale(double scale) {
-    final next = scale.clamp(minZoomScale, maxZoomScale).toDouble();
-    if ((_zoomScale - next).abs() < 0.0001) return _zoomScale;
+    final next = normalizeZoomScale(scale);
+    if (_zoomScale == next) return _zoomScale;
     _zoomScale = next;
     updateVideoFilter();
     return _zoomScale;
@@ -140,7 +148,7 @@ class VideoFilterManager {
       shouldUpdate = true;
     }
     if (_prePipZoomScale != null) {
-      _zoomScale = _prePipZoomScale!;
+      _zoomScale = normalizeZoomScale(_prePipZoomScale!);
       _prePipZoomScale = null;
       shouldUpdate = true;
     }
