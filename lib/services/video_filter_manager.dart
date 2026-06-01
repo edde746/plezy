@@ -59,8 +59,10 @@ class VideoFilterManager {
     required this.availableVersions,
     required this.selectedMediaIndex,
     int initialBoxFitMode = 0,
+    Size? initialPlayerSize,
     this.onBoxFitModeChanged,
-  }) : _boxFitMode = initialBoxFitMode {
+  }) : _boxFitMode = initialBoxFitMode,
+       _playerSize = initialPlayerSize {
     _debouncedUpdateVideoFilter = debounce(
       updateVideoFilter,
       const Duration(milliseconds: 50),
@@ -187,10 +189,13 @@ class VideoFilterManager {
         await player.setProperty('sub-ass-force-margins', 'yes');
       } else if (_boxFitMode == 2) {
         // Fill/stretch mode - override aspect ratio to match player (stretches video)
-        if (_playerSize != null) {
-          final playerAspect = _playerSize!.width / _playerSize!.height;
-          await player.setProperty('video-aspect-override', playerAspect.toString());
-          appLogger.d('Stretch mode: aspect-override=$playerAspect (player: $_playerSize)');
+        final playerSize = _playerSize;
+        if (playerSize != null && playerSize.width > 0 && playerSize.height > 0) {
+          final playerAspect = playerSize.width / playerSize.height;
+          if (playerAspect.isFinite && playerAspect > 0) {
+            await player.setProperty('video-aspect-override', playerAspect.toString());
+            appLogger.d('Stretch mode: aspect-override=$playerAspect (player: $playerSize)');
+          }
         }
       }
 

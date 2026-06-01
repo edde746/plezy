@@ -7,10 +7,10 @@ import '../utils/app_logger.dart';
 
 class VideoPIPManager {
   final Player player;
-
-  VideoPIPManager({required this.player});
-
   Size? _playerSize;
+
+  VideoPIPManager({required this.player, Size? initialPlayerSize}) : _playerSize = initialPlayerSize;
+
   Size? get playerSize => _playerSize;
 
   /// Callback to prepare video filter before entering PiP
