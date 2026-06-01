@@ -2873,6 +2873,137 @@ void main() {
       expect(uri.queryParameters['api_key'], 'tok-abc');
     });
 
+    test('fetchEditableMetadataItem requests full item dto without limited fields', () async {
+      Uri? capturedUri;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          return http.Response(
+            jsonEncode({
+              'Id': 'folder/item #1?x',
+              'Name': 'Movie',
+              'Type': 'Movie',
+              'ProviderIds': {'Tmdb': '1'},
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.close);
+
+      final item = await client.fetchEditableMetadataItem('folder/item #1?x');
+
+      expect(item?['ProviderIds'], {'Tmdb': '1'});
+      expect(capturedUri!.path, '/Users/user-1/Items/folder%2Fitem%20%231%3Fx');
+      expect(capturedUri!.queryParameters.containsKey('Fields'), isFalse);
+    });
+
+    test('updateMetadataItem posts full dto to item update endpoint', () async {
+      Uri? capturedUri;
+      String? capturedBody;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          capturedBody = request.body;
+          return http.Response('', 204);
+        }),
+      );
+      addTearDown(client.close);
+
+      final success = await client.updateMetadataItem('item-1', {
+        'Id': 'item-1',
+        'Name': 'Edited',
+        'Type': 'Movie',
+        'ProviderIds': {'Tmdb': '123'},
+        'Tags': ['Favorite'],
+      });
+
+      expect(success, isTrue);
+      expect(capturedUri!.path, '/Items/item-1');
+      final body = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      expect(body['Name'], 'Edited');
+      expect(body['ProviderIds'], {'Tmdb': '123'});
+      expect(body['Tags'], ['Favorite']);
+    });
+
+    test('remote image search and apply use Jellyfin image endpoints', () async {
+      final requests = <Uri>[];
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          requests.add(request.url);
+          if (request.url.path == '/Items/item-1/RemoteImages') {
+            return http.Response(
+              jsonEncode({
+                'TotalRecordCount': 1,
+                'Providers': ['TheMovieDb'],
+                'Images': [
+                  {'ProviderName': 'TheMovieDb', 'Url': 'https://img.example/poster.jpg', 'Type': 'Primary'},
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('', 204);
+        }),
+      );
+      addTearDown(client.close);
+
+      final result = await client.getRemoteImages(
+        'item-1',
+        imageType: 'Primary',
+        limit: 20,
+        providerName: 'TheMovieDb',
+      );
+      final success = await client.downloadRemoteImage(
+        'item-1',
+        imageType: 'Primary',
+        imageUrl: 'https://img.example/poster.jpg',
+      );
+
+      expect((result['Images'] as List).single['Url'], 'https://img.example/poster.jpg');
+      expect(success, isTrue);
+      expect(requests[0].path, '/Items/item-1/RemoteImages');
+      expect(requests[0].queryParameters['type'], 'Primary');
+      expect(requests[0].queryParameters['limit'], '20');
+      expect(requests[0].queryParameters['providerName'], 'TheMovieDb');
+      expect(requests[1].path, '/Items/item-1/RemoteImages/Download');
+      expect(requests[1].queryParameters['type'], 'Primary');
+      expect(requests[1].queryParameters['imageUrl'], 'https://img.example/poster.jpg');
+    });
+
+    test('uploadItemImage sends base64 image body and image content type', () async {
+      Uri? capturedUri;
+      String? capturedBody;
+      Map<String, String>? capturedHeaders;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          capturedBody = request.body;
+          capturedHeaders = request.headers;
+          return http.Response('', 204);
+        }),
+      );
+      addTearDown(client.close);
+
+      final success = await client.uploadItemImage(
+        'item-1',
+        imageType: 'Primary',
+        bytes: [0xff, 0xd8, 0xff, 0x00],
+        contentType: 'image/jpeg',
+      );
+
+      expect(success, isTrue);
+      expect(capturedUri!.path, '/Items/item-1/Images/Primary');
+      expect(capturedBody, base64Encode([0xff, 0xd8, 0xff, 0x00]));
+      expect(capturedHeaders!['Content-Type'] ?? capturedHeaders!['content-type'], 'image/jpeg');
+    });
+
     test('smart=true returns empty because Jellyfin playlists are normal playlists', () async {
       final client = buildClient();
 

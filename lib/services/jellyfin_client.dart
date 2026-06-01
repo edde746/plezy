@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
@@ -69,6 +70,7 @@ part 'jellyfin_client/parts/collections.dart';
 part 'jellyfin_client/parts/file_info.dart';
 part 'jellyfin_client/parts/live_tv.dart';
 part 'jellyfin_client/parts/images_downloads.dart';
+part 'jellyfin_client/parts/metadata_edit.dart';
 
 /// [MediaServerClient] over a Jellyfin server.
 ///
@@ -86,7 +88,8 @@ class JellyfinClient
         _JellyfinCollectionMethods,
         _JellyfinFileInfoMethods,
         _JellyfinLiveTvMethods,
-        _JellyfinImageDownloadMethods
+        _JellyfinImageDownloadMethods,
+        _JellyfinMetadataEditMethods
     implements MediaServerClient, ScopedMediaServerClient, GracefullyCloseable {
   JellyfinClient._({required this._connection, required this._http, FavoriteChannelsRepository? favoritesRepository})
     : _favoritesRepository = favoritesRepository ?? const SharedPreferencesFavoriteChannelsRepository();

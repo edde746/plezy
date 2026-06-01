@@ -10,6 +10,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
+import '../metadata_edit/metadata_edit_adapters.dart';
 import '../media/media_version.dart';
 import '../mixins/controller_disposer_mixin.dart';
 import '../services/plex_client.dart';
@@ -43,7 +44,7 @@ import '../focus/focusable_text_field.dart';
 import '../focus/dpad_navigator.dart';
 import '../screens/plex_match_screen.dart';
 import '../screens/media_detail_screen.dart';
-import '../screens/plex_metadata_edit_screen.dart';
+import '../screens/metadata_edit_screen.dart';
 import '../utils/smart_deletion_handler.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
@@ -180,8 +181,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
   };
 
   /// Get the correct PlexClient for this item's server. Throws on
-  /// non-Plex backends — Plex-only flows (Add to Collection, metadata
-  /// edit, etc.) call this directly. Backend-neutral flows must use
+  /// non-Plex backends — Plex-only flows (Add to Collection, match,
+  /// unmatch, etc.) call this directly. Backend-neutral flows must use
   /// [_getMediaClientForItem] instead.
   PlexClient _getClientForItem() => context.getPlexClientWithFallback(_itemServerId);
 
@@ -203,7 +204,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final isCollection = mediaKind == MediaKind.collection;
 
     // Backend-aware gate: a few menu items remain Plex-only because the
-    // server-side feature has no Jellyfin equivalent (metadata edit, match).
+    // server-side feature has no Jellyfin equivalent (match/unmatch).
     // No fallback: items without a backend marker show only neutral actions —
     // dispatching a Plex-only action against an unknown-backend item could
     // crash or hit the wrong server.
@@ -237,6 +238,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final mediaClient = _itemServerId != null ? multiServerProvider.getClientForServer(_itemServerId!) : null;
     final canTranscode = mediaClient?.capabilities.videoTranscoding ?? false;
     final canRemoveFromContinueWatching = mediaClient?.capabilities.continueWatchingRemoval ?? false;
+    final canEditMetadata = isAdmin && supportsMetadataEdit(mediaClient, mediaKind);
 
     final menuActions = <_MenuAction>[];
 
@@ -317,15 +319,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         menuActions.add(_MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate));
       }
 
-      // Edit Metadata (for movies, shows, seasons, and episodes) — admin only
-      // Plex-only: opens PlexMetadataEditScreen which talks to Plex's
-      // `/library/metadata/{id}` PUT API; Jellyfin has no equivalent in v1.
-      if (isPlex &&
-          isAdmin &&
-          (mediaKind == MediaKind.movie ||
-              mediaKind == MediaKind.show ||
-              mediaKind == MediaKind.season ||
-              mediaKind == MediaKind.episode)) {
+      // Edit Metadata — admin-only and backend-capability gated.
+      if (canEditMetadata) {
         menuActions.add(
           _MenuAction(value: 'edit_metadata', icon: Symbols.edit_rounded, label: t.metadataEdit.editMetadata),
         );
@@ -655,10 +650,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           didNavigate = true;
           if (context.mounted) {
             final item = mediaItem!;
-            await Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => PlexMetadataEditScreen(metadata: item)),
-            );
+            await Navigator.push(context, MaterialPageRoute(builder: (context) => MetadataEditScreen(metadata: item)));
             _notifyRefresh(item.id);
           }
           break;

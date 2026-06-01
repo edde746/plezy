@@ -31,9 +31,9 @@ import 'server_capabilities.dart';
 ///
 /// ## Naming
 ///
-/// Read methods use a `fetch*` prefix. Plex-only operations that have no
-/// Jellyfin equivalent (DVR tuning, metadata edit, match) live on
-/// [PlexClient] directly under their original `get*` / verb names.
+/// Read methods use a `fetch*` prefix. Backend-specific operations that do not
+/// fit the neutral browsing/playback surface (DVR tuning, match, rich metadata
+/// edit adapters) live on concrete clients or feature modules.
 ///
 /// ## Error contract (write methods)
 ///

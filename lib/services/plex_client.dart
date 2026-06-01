@@ -2160,7 +2160,7 @@ class PlexClient
     String? tagline,
     String? summary,
     Map<String, ({List<String> current, List<String> original})>? tagChanges,
-  }) {
+  }) async {
     final queryParams = <String, dynamic>{'type': typeNumber, 'id': ratingKey};
 
     void addField(String name, String? value) {
@@ -2195,10 +2195,14 @@ class PlexClient
       }
     }
 
-    return _wrapBoolApiCall(
+    final result = await _wrapBoolApiCall(
       () => _http.put('/library/sections/$sectionId/all', queryParameters: queryParams),
       'Failed to update metadata',
     );
+    if (result) {
+      await _deleteMetadataEditCache(ratingKey);
+    }
+    return result;
   }
 
   /// Search for match candidates for a media item.
@@ -2239,7 +2243,7 @@ class PlexClient
       'Failed to apply match',
     );
     if (result) {
-      await _cache.deleteForItem(serverId, ratingKey);
+      await _deleteMetadataEditCache(ratingKey);
     }
     return result;
   }
@@ -2250,7 +2254,7 @@ class PlexClient
       'Failed to unmatch item',
     );
     if (result) {
-      await _cache.deleteForItem(serverId, ratingKey);
+      await _deleteMetadataEditCache(ratingKey);
     }
     return result;
   }
@@ -2271,18 +2275,22 @@ class PlexClient
   }
 
   /// Set artwork from a URL (can be a Plex internal path or external URL)
-  Future<bool> setArtworkFromUrl(String ratingKey, String element, String url) {
+  Future<bool> setArtworkFromUrl(String ratingKey, String element, String url) async {
     final setElement = element.endsWith('s') ? element.substring(0, element.length - 1) : element;
-    return _wrapBoolApiCall(
+    final result = await _wrapBoolApiCall(
       () => _http.put('/library/metadata/$ratingKey/$setElement', queryParameters: {'url': url}),
       'Failed to set artwork from URL',
     );
+    if (result) {
+      await _deleteMetadataEditCache(ratingKey);
+    }
+    return result;
   }
 
   /// Upload artwork from binary data
-  Future<bool> uploadArtwork(String ratingKey, String element, List<int> bytes) {
+  Future<bool> uploadArtwork(String ratingKey, String element, List<int> bytes) async {
     final setElement = element.endsWith('s') ? element.substring(0, element.length - 1) : element;
-    return _wrapBoolApiCall(
+    final result = await _wrapBoolApiCall(
       () => _http.put(
         '/library/metadata/$ratingKey/$setElement',
         body: bytes,
@@ -2290,14 +2298,30 @@ class PlexClient
       ),
       'Failed to upload artwork',
     );
+    if (result) {
+      await _deleteMetadataEditCache(ratingKey);
+    }
+    return result;
   }
 
   /// Update per-media advanced preferences
-  Future<bool> updateMetadataPrefs(String ratingKey, Map<String, String> prefs) {
-    return _wrapBoolApiCall(
+  Future<bool> updateMetadataPrefs(String ratingKey, Map<String, String> prefs) async {
+    final result = await _wrapBoolApiCall(
       () => _http.put('/library/metadata/$ratingKey/prefs', queryParameters: prefs),
       'Failed to update metadata preferences',
     );
+    if (result) {
+      await _deleteMetadataEditCache(ratingKey);
+    }
+    return result;
+  }
+
+  Future<void> _deleteMetadataEditCache(String ratingKey) async {
+    try {
+      await _cache.deleteForItem(serverId, ratingKey);
+    } catch (e, st) {
+      appLogger.w('Plex metadata edit cache invalidation failed', error: e, stackTrace: st);
+    }
   }
 
   /// Get one page of collections for a library section.

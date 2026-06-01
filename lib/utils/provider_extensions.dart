@@ -21,8 +21,8 @@ extension ProviderExtensions on BuildContext {
   /// Internal: resolve a [PlexClient] from a serverId or fall back to the
   /// first online server. Returns null if neither yields a Plex client.
   /// Non-Plex servers (Jellyfin) are skipped — these helpers exist for
-  /// Plex-only flows that have no neutral equivalent (DVR tuning, metadata
-  /// edit, match). Backend-agnostic flows use the [_resolveMediaClient]
+  /// Plex-only flows that have no neutral equivalent (DVR tuning, match).
+  /// Backend-agnostic flows use the [_resolveMediaClient]
   /// helpers below.
   PlexClient? _resolveClient(String? serverId) {
     final provider = Provider.of<MultiServerProvider>(this, listen: false);
@@ -65,8 +65,8 @@ extension ProviderExtensions on BuildContext {
   // These return [MediaServerClient] regardless of backend kind so callers
   // that consume only the [MediaServerClient] surface don't need to type-
   // check the result. Use [getPlexClientForServer] / [getPlexClientForLibrary]
-  // when you specifically need a [PlexClient] (Plex-only flows like Live TV,
-  // metadata editing, etc.).
+  // when you specifically need a [PlexClient] (Plex-only flows like Live TV or
+  // match/fix-match).
 
   MediaServerClient? _resolveMediaClient(String? serverId) {
     final provider = Provider.of<MultiServerProvider>(this, listen: false);
