@@ -299,6 +299,11 @@ jobs:
           APP_PATH="build/macos/Build/Products/Release/Plezy.app"
           echo "Verifying signature..."
           codesign -dvvv "$APP_PATH"
+          echo "Verifying signed entitlements..."
+          codesign -d --entitlements :- "$APP_PATH" > "$RUNNER_TEMP/macos-entitlements.plist"
+          /usr/libexec/PlistBuddy -c "Print" "$RUNNER_TEMP/macos-entitlements.plist"
+          /usr/libexec/PlistBuddy -c "Print :com.apple.security.cs.allow-jit" "$RUNNER_TEMP/macos-entitlements.plist"
+          /usr/libexec/PlistBuddy -c "Print :com.apple.security.cs.allow-unsigned-executable-memory" "$RUNNER_TEMP/macos-entitlements.plist"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
       - name: Notarize Application
