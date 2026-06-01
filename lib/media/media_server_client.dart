@@ -237,6 +237,12 @@ abstract class MediaServerClient {
   /// "More like this" recommendations for [id].
   Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10});
 
+  /// Playable extras attached to [id] (trailers, featurettes, deleted scenes,
+  /// behind-the-scenes clips). Backends return only items that can be opened by
+  /// the normal video playback flow; external/remote trailer URLs are out of
+  /// scope for this neutral surface.
+  Future<List<MediaItem>> fetchExtras(String id);
+
   /// Media featuring a specific person/actor.
   Future<List<MediaItem>> fetchPersonMedia(String personId);
 

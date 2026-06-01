@@ -103,6 +103,75 @@ void main() {
       ]);
     });
 
+    test('fetchExtras combines local trailers and special features as playable videos', () async {
+      const itemId = 'movie/id #1?x';
+      final encodedItemId = Uri.encodeComponent(itemId);
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          requests.add(request.url);
+          if (request.url.path == '/Items/$encodedItemId/LocalTrailers') {
+            return http.Response(
+              jsonEncode([
+                {
+                  'Id': 'trailer-1',
+                  'Name': 'Trailer',
+                  'Type': 'Trailer',
+                  'ExtraType': 'Trailer',
+                  'RunTimeTicks': 900000000,
+                  'ImageTags': {'Primary': 'trailer-tag'},
+                },
+                {'Id': 'theme-song', 'Name': 'Theme Song', 'Type': 'Audio', 'ExtraType': 'ThemeSong'},
+              ]),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (request.url.path == '/Items/$encodedItemId/SpecialFeatures') {
+            return http.Response(
+              jsonEncode([
+                {'Id': 'trailer-1', 'Name': 'Trailer Duplicate', 'Type': 'Trailer', 'ExtraType': 'Trailer'},
+                {
+                  'Id': 'featurette-1',
+                  'Name': 'Making Of',
+                  'Type': 'Video',
+                  'ExtraType': 'Featurette',
+                  'RunTimeTicks': 1800000000,
+                  'BackdropImageTags': ['featurette-backdrop'],
+                },
+              ]),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('unexpected ${request.url}', 500);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final extras = await scoped.fetchExtras(itemId);
+
+      expect(requests.map((uri) => uri.path).toSet(), {
+        '/Items/$encodedItemId/LocalTrailers',
+        '/Items/$encodedItemId/SpecialFeatures',
+      });
+      expect(requests.every((uri) => uri.queryParameters['userId'] == 'user-1'), isTrue);
+      expect(requests.every((uri) => uri.queryParameters['EnableImageTypes'] == 'Primary,Backdrop,Thumb,Logo'), isTrue);
+      expect(requests.every((uri) => uri.queryParameters['ImageTypeLimit'] == '1'), isTrue);
+      expect(extras.map((item) => item.id).toList(), ['trailer-1', 'featurette-1']);
+      expect(extras.every((item) => item.kind.isVideo), isTrue);
+      expect(extras.every((item) => item.serverId == 'srv-1'), isTrue);
+      expect(extras.every((item) => item.serverName == 'Home'), isTrue);
+      expect(extras[0].kind, MediaKind.clip);
+      expect(extras[0].raw?['ExtraType'], 'Trailer');
+      expect(extras[1].kind, MediaKind.clip);
+      expect(extras[1].raw?['ExtraType'], 'Featurette');
+      expect(extras[1].thumbPath, isNull);
+      expect(extras[1].artPath, isNotNull);
+      expect(extras[1].posterThumb(), extras[1].artPath);
+    });
+
     test('reportPlaybackProgress sends media source and stream indexes', () async {
       Uri? capturedUri;
       String? capturedBody;

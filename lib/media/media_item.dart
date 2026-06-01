@@ -431,6 +431,8 @@ sealed class MediaItem with _$MediaItem {
       return artPath ?? thumbPath;
     }
 
+    if (kind == MediaKind.clip) return thumbPath ?? artPath;
+
     return thumbPath;
   }
 

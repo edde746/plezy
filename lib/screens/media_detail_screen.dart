@@ -20,7 +20,6 @@ import '../focus/focusable_wrapper.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
 import '../widgets/focus_builders.dart';
-import '../media/media_backend.dart';
 import '../media/media_hub.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/plex_season_display.dart';
@@ -1852,8 +1851,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     });
   }
 
-  /// Load extras (trailers, behind-the-scenes, etc.). Plex-only — Jellyfin
-  /// has no equivalent of `fetchExtras`.
+  /// Load extras (trailers, featurettes, behind-the-scenes, etc.).
   Future<void> _loadExtras() async {
     void markLoaded() {
       setStateIfMounted(() {
@@ -1873,13 +1871,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return;
     }
 
-    if (_metadata.backend != MediaBackend.plex) {
-      markLoaded();
-      return;
-    }
-
     try {
-      final client = getServerBoundPlexClient(context);
+      final client = getServerBoundMediaClient(context);
       if (client == null) {
         markLoaded();
         return;
@@ -3856,7 +3849,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     );
   }
 
-  /// Get the primary trailer from the extras list
+  /// Get the primary trailer from the extras list.
   MediaItem? _getPrimaryTrailer() {
     if (_extras == null || _extras!.isEmpty) return null;
 
@@ -3872,15 +3865,22 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       }
     }
 
-    // Otherwise, find the first item with subtype 'trailer'. Extras are
-    // always Plex-sourced so the cast is safe; non-Plex backends route
-    // around this method entirely.
     try {
-      return _extras!.firstWhere((extra) => extra is PlexMediaItem && extra.subtype == 'trailer');
+      return _extras!.firstWhere(_isTrailerExtra);
     } catch (_) {
       // No trailer found, return null (button won't appear)
       return null;
     }
+  }
+
+  bool _isTrailerExtra(MediaItem extra) {
+    if (extra case PlexMediaItem(:final subtype?)) {
+      return subtype.toLowerCase() == 'trailer';
+    }
+    final raw = extra.raw;
+    final extraType = raw?['ExtraType'] as String?;
+    final type = raw?['Type'] as String?;
+    return extraType?.toLowerCase() == 'trailer' || type?.toLowerCase() == 'trailer';
   }
 
   /// Build the cast section with locked focus pattern for D-pad navigation

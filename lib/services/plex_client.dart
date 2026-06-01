@@ -3821,6 +3821,7 @@ class PlexClient
   }
 
   /// Plex-specific: extras (trailers, behind-the-scenes) for a media item.
+  @override
   Future<List<MediaItem>> fetchExtras(String ratingKey) async {
     final raw = await _getExtras(ratingKey);
     return raw.map((m) => PlexMappers.mediaItem(m)).toList();

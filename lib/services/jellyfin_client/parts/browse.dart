@@ -1133,6 +1133,40 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     ].where((h) => h.items.isNotEmpty).toList();
   }
 
+  /// Jellyfin exposes local trailers separately from special features. Combine
+  /// both into Plezy's existing extras row, but keep remote/YouTube trailers
+  /// out of scope because they are external URLs, not playable Jellyfin items.
+  @override
+  Future<List<MediaItem>> fetchExtras(String id) async {
+    if (isOfflineMode) return const [];
+
+    final results = await Future.wait([
+      _safeFetchItemsArray('/Items/${_segment(id)}/LocalTrailers', {
+        'userId': connection.userId,
+        ...jellyfinImageQueryParameters,
+      }),
+      _safeFetchItemsArray('/Items/${_segment(id)}/SpecialFeatures', {
+        'userId': connection.userId,
+        ...jellyfinImageQueryParameters,
+      }),
+    ]);
+
+    return _playableExtrasFromRaw(results.expand((items) => items));
+  }
+
+  List<MediaItem> _playableExtrasFromRaw(Iterable<Map<String, dynamic>> rawExtras) {
+    final extras = <MediaItem>[];
+    final seenIds = <String>{};
+
+    for (final raw in rawExtras) {
+      final item = _mapItem(raw);
+      if (item == null || !item.kind.isVideo || !seenIds.add(item.id)) continue;
+      extras.add(item);
+    }
+
+    return extras;
+  }
+
   List<MediaItem> _mergeContinueWatchingAndNextUp({
     required List<MediaItem> resume,
     required List<MediaItem> nextUp,
