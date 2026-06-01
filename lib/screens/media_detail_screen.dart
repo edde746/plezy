@@ -16,6 +16,7 @@ import '../widgets/collapsible_text.dart';
 import '../widgets/rating_bottom_sheet.dart';
 
 import '../focus/dpad_navigator.dart';
+import '../focus/focusable_action_bar.dart';
 import '../focus/focusable_wrapper.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/input_mode_tracker.dart';
@@ -1996,79 +1997,57 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     scrollContextToCenter(key.currentContext);
   }
 
-  /// Intercept DOWN from the play button row to focus the first available section
-  KeyEventResult _handlePlayButtonKeyEvent(FocusNode node, KeyEvent event) {
-    final key = event.logicalKey;
-    if (!event.isActionable) return KeyEventResult.ignored;
-    final isTv = PlatformDetector.isTV();
+  /// Focus the first available section above the primary action row.
+  void _focusAboveActionRow() {
+    if (PlatformDetector.isTV()) return;
+    if (!widget.isOffline) _ratingChipFocusNode.requestFocus();
+  }
 
-    if (isTv && key.isUpKey) {
-      return KeyEventResult.handled;
-    }
-
-    // UP: focus the rating chip if available
-    if (key.isUpKey) {
-      if (!widget.isOffline) {
-        _ratingChipFocusNode.requestFocus();
-        return KeyEventResult.handled;
-      }
-      return KeyEventResult.handled;
-    }
-
-    // LEFT/RIGHT: let the framework move between buttons in the row, but trap
-    // at the row's edges so focus can't fall off into a black hole (#1181).
-    if (key.isLeftKey || key.isRightKey) {
-      final dir = key.isRightKey ? TraversalDirection.right : TraversalDirection.left;
-      return hasHorizontalNeighbor(node, dir) ? KeyEventResult.ignored : KeyEventResult.handled;
-    }
-
-    if (!key.isDownKey) return KeyEventResult.ignored;
-
+  /// Focus the first available section below the primary action row.
+  void _focusBelowActionRow() {
     final metadata = _fullMetadata ?? _metadata;
 
-    if (isTv) {
+    if (PlatformDetector.isTV()) {
       _tvDetailRailKey.currentState?.requestFocus();
-      return KeyEventResult.handled;
+      return;
     }
 
     // DOWN order: overview → seasons → cast → extras
     if (!PlatformDetector.isTV() && metadata.summary != null && metadata.summary!.isNotEmpty) {
       _overviewFocusNode.requestFocus();
       _scrollSectionIntoView(_overviewSectionKey);
-      return KeyEventResult.handled;
+      return;
     }
 
     if (metadata.isShow && !_showEpisodesDirectly && _seasons.isNotEmpty && _seasonTabFocusNodes.isNotEmpty) {
       // Focus the selected season tab chip
       _seasonTabFocusNodes[_selectedSeasonIndex].requestFocus();
       _scrollSectionIntoView(_seasonsSectionKey);
-      return KeyEventResult.handled;
+      return;
     }
 
     if (_episodes.isNotEmpty) {
       _firstEpisodeFocusNode.requestFocus();
       _scrollSectionIntoView(_seasonsSectionKey);
-      return KeyEventResult.handled;
+      return;
     }
 
     if (metadata.roles != null && metadata.roles!.isNotEmpty) {
       _castFocusNode.requestFocus();
       _scrollSectionIntoView(_castSectionKey);
-      return KeyEventResult.handled;
+      return;
     }
 
     if (_extras != null && _extras!.isNotEmpty) {
       _extrasFocusNode.requestFocus();
       _scrollSectionIntoView(_extrasSectionKey);
-      return KeyEventResult.handled;
+      return;
     }
 
     if (_relatedHubs.isNotEmpty) {
       _relatedHubKeys.first.currentState?.requestFocusFromMemory();
-      return KeyEventResult.handled;
+      return;
     }
-
-    return KeyEventResult.handled; // consume to prevent unwanted traversal
   }
 
   /// Get the responsive card width used by seasons/extras/cast rows.

@@ -68,7 +68,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       return null; // default for other states
     });
 
-    ButtonStyle actionButtonStyle({Color? foregroundColor, EdgeInsetsGeometry? padding}) {
+    ButtonStyle actionButtonStyle({Color? foregroundColor, EdgeInsetsGeometry? padding, bool showFocus = false}) {
       if (!isKeyboardMode && !isTv) {
         if (padding != null) {
           return FilledButton.styleFrom(padding: padding);
@@ -79,6 +79,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           foregroundColor: foregroundColor,
         );
       }
+
       return ButtonStyle(
         padding: padding != null ? WidgetStatePropertyAll(padding) : null,
         minimumSize: WidgetStatePropertyAll(padding == null ? Size.square(actionSize) : Size(0, actionSize)),
@@ -87,14 +88,8 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: VisualDensity.compact,
         overlayColor: noOverlay,
-        backgroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.focused)) return focusBg;
-          return idleBg;
-        }),
-        foregroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.focused)) return focusFg;
-          return foregroundColor ?? tonalFg;
-        }),
+        backgroundColor: WidgetStatePropertyAll(showFocus ? focusBg : idleBg),
+        foregroundColor: WidgetStatePropertyAll(showFocus ? focusFg : foregroundColor ?? tonalFg),
       );
     }
 
@@ -106,73 +101,122 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
     final gap = isTv ? 8.0 * tvScale : 12.0;
 
-    final playButton = SizedBox(
-      height: actionSize,
-      child: FilledButton(
-        focusNode: _playButtonFocusNode,
-        autofocus: isKeyboardMode,
-        onPressed: onPlayPressed,
-        style: actionButtonStyle(
-          padding: EdgeInsets.symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
+    Widget playButton(FocusableActionBuildState state) {
+      return SizedBox(
+        height: actionSize,
+        child: FilledButton(
+          onPressed: onPlayPressed,
+          style: actionButtonStyle(
+            showFocus: state.showFocus,
+            padding: EdgeInsets.symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
+          ),
+          child: playButtonLabel.isNotEmpty
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    playButtonIcon,
+                    SizedBox(width: isTv ? 7 * tvScale : 8),
+                    Text(playButtonLabel, style: playTextStyle),
+                  ],
+                )
+              : playButtonIcon,
         ),
-        child: playButtonLabel.isNotEmpty
-            ? Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  playButtonIcon,
-                  SizedBox(width: isTv ? 7 * tvScale : 8),
-                  Text(playButtonLabel, style: playTextStyle),
-                ],
-              )
-            : playButtonIcon,
-      ),
-    );
-
-    final trailerButton = primaryTrailer == null
-        ? null
-        : IconButton.filledTonal(
-            onPressed: onPlayTrailer,
-            icon: const AppIcon(Symbols.theaters_rounded, fill: 1),
-            tooltip: t.tooltips.playTrailer,
-            iconSize: isTv ? 21 * tvScale : 20,
-            style: actionButtonStyle(),
-          );
-
-    final shuffleButton = (metadata.isShow || metadata.isSeason)
-        ? IconButton.filledTonal(
-            onPressed: () async {
-              await _handleShufflePlayWithQueue(context, metadata);
-            },
-            icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
-            tooltip: t.tooltips.shufflePlay,
-            iconSize: isTv ? 21 * tvScale : 20,
-            style: actionButtonStyle(),
-          )
-        : null;
-
-    final downloadButton = !widget.isOffline && !PlatformDetector.isAppleTV()
-        ? _buildDownloadButton(metadata, actionButtonStyle, tvScale)
-        : null;
-    final watchedButton = _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale);
-    final moreActionsButton = widget.isOffline
-        ? null
-        : _buildMoreActionsButton(metadata, actionButtonStyle, tvScale, onPlayTrailer: onPlayTrailer);
-
-    Row actionRow(List<Widget> buttons) {
-      return Row(
-        children: [
-          for (var i = 0; i < buttons.length; i++) ...[if (i > 0) SizedBox(width: gap), buttons[i]],
-        ],
       );
     }
 
-    final allButtons = <Widget>[
-      playButton,
-      if (trailerButton != null) trailerButton,
-      if (shuffleButton != null) shuffleButton,
-      if (downloadButton != null) downloadButton,
-      watchedButton,
-      if (moreActionsButton != null) moreActionsButton,
+    Widget iconActionButton(
+      FocusableActionBuildState state, {
+      required Widget icon,
+      required VoidCallback? onPressed,
+      String? tooltip,
+      Color? foregroundColor,
+    }) {
+      return IconButton.filledTonal(
+        onPressed: onPressed,
+        icon: icon,
+        tooltip: tooltip,
+        iconSize: isTv ? 21 * tvScale : 20,
+        style: actionButtonStyle(foregroundColor: foregroundColor, showFocus: state.showFocus),
+      );
+    }
+
+    final playAction = FocusableAction(
+      debugLabel: 'detail_play',
+      focusNode: _playButtonFocusNode,
+      autofocus: isKeyboardMode,
+      onPressed: onPlayPressed,
+      builder: (context, state) => playButton(state),
+    );
+
+    final trailerAction = primaryTrailer == null
+        ? null
+        : FocusableAction(
+            debugLabel: 'detail_trailer',
+            onPressed: onPlayTrailer,
+            builder: (context, state) => iconActionButton(
+              state,
+              onPressed: onPlayTrailer,
+              icon: const AppIcon(Symbols.theaters_rounded, fill: 1),
+              tooltip: t.tooltips.playTrailer,
+            ),
+          );
+
+    final shuffleAction = (metadata.isShow || metadata.isSeason)
+        ? FocusableAction(
+            debugLabel: 'detail_shuffle',
+            onPressed: () async {
+              await _handleShufflePlayWithQueue(context, metadata);
+            },
+            builder: (context, state) => iconActionButton(
+              state,
+              onPressed: () async {
+                await _handleShufflePlayWithQueue(context, metadata);
+              },
+              icon: const AppIcon(Symbols.shuffle_rounded, fill: 1),
+              tooltip: t.tooltips.shufflePlay,
+            ),
+          )
+        : null;
+
+    final downloadAction = !widget.isOffline && !PlatformDetector.isAppleTV()
+        ? FocusableAction(
+            debugLabel: 'detail_download',
+            onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
+            builder: (context, state) =>
+                _buildDownloadButton(metadata, actionButtonStyle, tvScale, showFocus: state.showFocus),
+          )
+        : null;
+
+    final watchedAction = FocusableAction(
+      debugLabel: 'detail_watched',
+      onPressed: () => unawaited(_handleWatchedTogglePressed(metadata)),
+      builder: (context, state) =>
+          _buildWatchedToggleButton(metadata, actionButtonStyle, tvScale, showFocus: state.showFocus),
+    );
+
+    void showMoreActions() => _contextMenuKey.currentState?.showContextMenu(context);
+
+    final moreActionsAction = widget.isOffline
+        ? null
+        : FocusableAction(
+            debugLabel: 'detail_more',
+            onPressed: showMoreActions,
+            builder: (context, state) => _buildMoreActionsButton(
+              metadata,
+              actionButtonStyle,
+              tvScale,
+              onPlayTrailer: onPlayTrailer,
+              showFocus: state.showFocus,
+            ),
+          );
+
+    final allActions = <FocusableAction>[
+      playAction,
+      if (trailerAction != null) trailerAction,
+      if (shuffleAction != null) shuffleAction,
+      if (downloadAction != null) downloadAction,
+      watchedAction,
+      if (moreActionsAction != null) moreActionsAction,
     ];
 
     double playButtonWidthEstimate() {
@@ -190,115 +234,121 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     }
 
     final estimatedPlayWidth = playButtonWidthEstimate();
-    double estimatedRowWidth(List<Widget> buttons) {
-      if (buttons.isEmpty) return 0;
-      return estimatedPlayWidth + (buttons.length - 1) * actionSize + (buttons.length - 1) * gap;
+    double estimatedRowWidth(List<FocusableAction> actions) {
+      if (actions.isEmpty) return 0;
+      return estimatedPlayWidth + (actions.length - 1) * actionSize + (actions.length - 1) * gap;
     }
 
-    List<Widget> compactButtonsFor(double maxWidth) {
+    List<FocusableAction> compactActionsFor(double maxWidth) {
       if (widget.isOffline) {
-        final compact = <Widget>[playButton, watchedButton];
-        if (maxWidth.isFinite && estimatedRowWidth(compact) > maxWidth) return [playButton];
+        final compact = <FocusableAction>[playAction, watchedAction];
+        if (maxWidth.isFinite && estimatedRowWidth(compact) > maxWidth) return [playAction];
         return compact;
       }
 
-      final medium = <Widget>[
-        playButton,
-        if (downloadButton != null) downloadButton,
-        watchedButton,
-        if (moreActionsButton != null) moreActionsButton,
+      final medium = <FocusableAction>[
+        playAction,
+        if (downloadAction != null) downloadAction,
+        watchedAction,
+        if (moreActionsAction != null) moreActionsAction,
       ];
       if (!maxWidth.isFinite || estimatedRowWidth(medium) <= maxWidth) return medium;
 
-      final compact = <Widget>[playButton, watchedButton, if (moreActionsButton != null) moreActionsButton];
+      final compact = <FocusableAction>[playAction, watchedAction, if (moreActionsAction != null) moreActionsAction];
       if (estimatedRowWidth(compact) <= maxWidth) return compact;
 
-      return [playButton, if (moreActionsButton != null) moreActionsButton];
+      return [playAction, if (moreActionsAction != null) moreActionsAction];
     }
 
-    return Focus(
-      skipTraversal: true,
-      onFocusChange: (hasFocus) {
-        if (isTv) _setTvDetailActionRowFocus(hasFocus);
+    Widget actionBar(List<FocusableAction> actions) {
+      return FocusableActionBar(
+        actions: actions,
+        spacing: gap,
+        onFocusChange: isTv ? _setTvDetailActionRowFocus : null,
+        onNavigateUp: _focusAboveActionRow,
+        onNavigateDown: _focusBelowActionRow,
+      );
+    }
+
+    // TV screens are wide and D-pad focus should see every direct action.
+    // On smaller online screens, hidden actions remain available from ⋮.
+    if (isTv) return actionBar(allActions);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth;
+        if (!maxWidth.isFinite || estimatedRowWidth(allActions) <= maxWidth) {
+          return actionBar(allActions);
+        }
+        return actionBar(compactActionsFor(maxWidth));
       },
-      onKeyEvent: _handlePlayButtonKeyEvent,
-      // TV screens are wide and D-pad focus should see every direct action.
-      // On smaller online screens, hidden actions remain available from ⋮.
-      child: isTv
-          ? actionRow(allButtons)
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                final maxWidth = constraints.maxWidth;
-                if (!maxWidth.isFinite || estimatedRowWidth(allButtons) <= maxWidth) {
-                  return actionRow(allButtons);
-                }
-                return actionRow(compactButtonsFor(maxWidth));
-              },
-            ),
     );
+  }
+
+  Future<void> _handleWatchedTogglePressed(MediaItem metadata) async {
+    try {
+      final isWatched = metadata.isWatched;
+      if (widget.isOffline) {
+        // Offline mode: queue action for later sync
+        final offlineWatch = context.read<OfflineWatchProvider>();
+        if (isWatched) {
+          await offlineWatch.markAsUnwatched(serverId: metadata.serverId!, itemId: metadata.id);
+        } else {
+          await offlineWatch.markAsWatched(serverId: metadata.serverId!, itemId: metadata.id);
+        }
+        if (mounted) {
+          showAppSnackBar(context, isWatched ? t.messages.markedAsUnwatchedOffline : t.messages.markedAsWatchedOffline);
+        }
+      } else {
+        // Online mode: dispatch via the right backend's neutral method so
+        // Jellyfin items hit /UserPlayedItems and Plex items hit /:/scrobble.
+        final serverId = metadata.serverId;
+        if (serverId == null) return;
+        final client = context.tryGetMediaClientForServer(serverId);
+        if (client == null) return;
+
+        if (isWatched) {
+          await client.markUnwatched(metadata);
+          unawaited(TrackerCoordinator.instance.markUnwatched(metadata, client));
+        } else {
+          await client.markWatched(metadata);
+          unawaited(TrackerCoordinator.instance.markWatched(metadata, client));
+        }
+        if (mounted) {
+          _watchStateChanged = true;
+          showSuccessSnackBar(context, isWatched ? t.messages.markedAsUnwatched : t.messages.markedAsWatched);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
+      }
+    }
   }
 
   Widget _buildWatchedToggleButton(
     MediaItem metadata,
-    ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding}) actionButtonStyle,
-    double tvScale,
-  ) {
+    ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding, required bool showFocus})
+    actionButtonStyle,
+    double tvScale, {
+    bool showFocus = false,
+  }) {
     return IconButton.filledTonal(
-      onPressed: () async {
-        try {
-          final isWatched = metadata.isWatched;
-          if (widget.isOffline) {
-            // Offline mode: queue action for later sync
-            final offlineWatch = context.read<OfflineWatchProvider>();
-            if (isWatched) {
-              await offlineWatch.markAsUnwatched(serverId: metadata.serverId!, itemId: metadata.id);
-            } else {
-              await offlineWatch.markAsWatched(serverId: metadata.serverId!, itemId: metadata.id);
-            }
-            if (mounted) {
-              showAppSnackBar(
-                context,
-                isWatched ? t.messages.markedAsUnwatchedOffline : t.messages.markedAsWatchedOffline,
-              );
-            }
-          } else {
-            // Online mode: dispatch via the right backend's neutral method so
-            // Jellyfin items hit /UserPlayedItems and Plex items hit /:/scrobble.
-            final serverId = metadata.serverId;
-            if (serverId == null) return;
-            final client = context.tryGetMediaClientForServer(serverId);
-            if (client == null) return;
-
-            if (isWatched) {
-              await client.markUnwatched(metadata);
-              unawaited(TrackerCoordinator.instance.markUnwatched(metadata, client));
-            } else {
-              await client.markWatched(metadata);
-              unawaited(TrackerCoordinator.instance.markWatched(metadata, client));
-            }
-            if (mounted) {
-              _watchStateChanged = true;
-              showSuccessSnackBar(context, isWatched ? t.messages.markedAsUnwatched : t.messages.markedAsWatched);
-            }
-          }
-        } catch (e) {
-          if (mounted) {
-            showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));
-          }
-        }
-      },
+      onPressed: () => unawaited(_handleWatchedTogglePressed(metadata)),
       icon: AppIcon(metadata.isWatched ? Symbols.remove_done_rounded : Symbols.check_rounded, fill: 1),
       tooltip: metadata.isWatched ? t.tooltips.markAsUnwatched : t.tooltips.markAsWatched,
       iconSize: PlatformDetector.isTV() ? 21 * tvScale : 20,
-      style: actionButtonStyle(),
+      style: actionButtonStyle(showFocus: showFocus),
     );
   }
 
   Widget _buildMoreActionsButton(
     MediaItem metadata,
-    ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding}) actionButtonStyle,
+    ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding, required bool showFocus})
+    actionButtonStyle,
     double tvScale, {
     VoidCallback? onPlayTrailer,
+    bool showFocus = false,
   }) {
     return MediaContextMenu(
       key: _contextMenuKey,
@@ -316,17 +366,166 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           },
           icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
           iconSize: PlatformDetector.isTV() ? 21 * tvScale : 20,
-          style: actionButtonStyle(),
+          style: actionButtonStyle(showFocus: showFocus),
         ),
       ),
     );
   }
 
+  Future<void> _handleDownloadButtonPressed(MediaItem metadata) async {
+    final downloadProvider = context.read<DownloadProvider>();
+    final globalKey = metadata.globalKey;
+    final ruleKey = _syncRuleKeyForMetadata(context, downloadProvider, metadata);
+    final progress = downloadProvider.getProgress(globalKey);
+
+    if (downloadProvider.isQueueing(globalKey) ||
+        progress?.status == DownloadStatus.queued ||
+        progress?.status == DownloadStatus.downloading) {
+      return;
+    }
+
+    if (progress?.status == DownloadStatus.paused) {
+      final client = _getMediaClientForMetadata(context);
+      if (client == null) return;
+      await downloadProvider.resumeDownload(globalKey, client);
+      if (mounted) showAppSnackBar(context, 'Download resumed');
+      return;
+    }
+
+    if (progress?.status == DownloadStatus.failed) {
+      final client = _getMediaClientForMetadata(context);
+      if (client == null) return;
+
+      final versionConfig = await _resolveDownloadVersion(context, metadata, client);
+      if (versionConfig == null || !mounted) return;
+
+      await downloadProvider.deleteDownload(globalKey);
+      try {
+        await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
+        if (mounted) showSuccessSnackBar(context, t.downloads.downloadQueued);
+      } on CellularDownloadBlockedException {
+        if (mounted) showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
+      }
+      return;
+    }
+
+    if (progress?.status == DownloadStatus.cancelled) {
+      final retry = await showConfirmDialog(
+        context,
+        title: 'Cancelled Download',
+        message: 'This download was cancelled. What would you like to do?',
+        cancelText: t.common.delete,
+        confirmText: 'Retry',
+      );
+
+      if (!retry && mounted) {
+        await downloadProvider.deleteDownload(globalKey);
+        if (mounted) showSuccessSnackBar(context, t.downloads.downloadDeleted);
+      } else if (retry && mounted) {
+        final client = _getMediaClientForMetadata(context);
+        if (client == null) return;
+
+        final versionConfig = await _resolveDownloadVersion(context, metadata, client);
+        if (versionConfig == null || !mounted) return;
+
+        await downloadProvider.deleteDownload(globalKey);
+        try {
+          await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
+          if (mounted) showSuccessSnackBar(context, t.downloads.downloadQueued);
+        } on CellularDownloadBlockedException {
+          if (mounted) showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
+        }
+      }
+      return;
+    }
+
+    if (progress?.status == DownloadStatus.partial) {
+      if (downloadProvider.hasSyncRule(ruleKey)) {
+        await _showSyncRuleActions(context, downloadProvider, metadata, ruleKey: ruleKey, downloadGlobalKey: globalKey);
+        return;
+      }
+
+      final client = _getMediaClientForMetadata(context);
+      if (client == null) return;
+
+      final versionConfig = await _resolveDownloadVersion(context, metadata, client);
+      if (versionConfig == null || !mounted) return;
+
+      final count = await downloadProvider.queueMissingEpisodes(metadata, client, versionConfig: versionConfig);
+      if (mounted) {
+        final message = count > 0 ? t.downloads.episodesQueued(count: count) : 'All episodes already downloaded';
+        showAppSnackBar(context, message);
+      }
+      return;
+    }
+
+    if (downloadProvider.isDownloaded(globalKey)) {
+      if (downloadProvider.hasSyncRule(ruleKey)) {
+        await _showSyncRuleActions(context, downloadProvider, metadata, ruleKey: ruleKey, downloadGlobalKey: globalKey);
+        return;
+      }
+
+      final canDownloadMore = metadata.isShow || metadata.isSeason;
+      Future<void> confirmAndDelete() async {
+        final confirmed = await showDeleteConfirmation(
+          context,
+          title: t.downloads.deleteDownload,
+          message: t.downloads.deleteConfirm(title: metadata.displayTitle),
+        );
+        if (confirmed && mounted) {
+          await downloadProvider.deleteDownload(globalKey);
+          if (mounted) showSuccessSnackBar(context, t.downloads.downloadDeleted);
+        }
+      }
+
+      if (!canDownloadMore) {
+        await confirmAndDelete();
+        return;
+      }
+
+      final client = _getMediaClientForMetadata(context);
+      if (client == null) return;
+      try {
+        final result = await showDownloadOptionsAndQueue(
+          context,
+          metadata: metadata,
+          client: client,
+          downloadProvider: downloadProvider,
+          onDelete: confirmAndDelete,
+        );
+        if (result == null || !mounted) return;
+        showSuccessSnackBar(context, result.toSnackBarMessage());
+      } on CellularDownloadBlockedException {
+        if (mounted) showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
+      }
+      return;
+    }
+
+    final client = _getMediaClientForMetadata(context);
+    if (client == null) return;
+
+    try {
+      final result = await showDownloadOptionsAndQueue(
+        context,
+        metadata: metadata,
+        client: client,
+        downloadProvider: downloadProvider,
+      );
+      if (result == null || !mounted) return;
+
+      showSuccessSnackBar(context, result.toSnackBarMessage());
+    } on CellularDownloadBlockedException {
+      if (mounted) showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
+    }
+  }
+
   Widget _buildDownloadButton(
     MediaItem metadata,
-    ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding}) actionButtonStyle,
-    double tvScale,
-  ) {
+    ButtonStyle Function({Color? foregroundColor, EdgeInsetsGeometry? padding, required bool showFocus})
+    actionButtonStyle,
+    double tvScale, {
+    bool showFocus = false,
+  }) {
     return Consumer<DownloadProvider>(
       builder: (context, downloadProvider, _) {
         final iconSize = PlatformDetector.isTV() ? 21.0 * tvScale : 20.0;
@@ -346,7 +545,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             onPressed: null,
             icon: LoadingIndicatorBox(size: iconSize),
             iconSize: iconSize,
-            style: actionButtonStyle(),
+            style: actionButtonStyle(showFocus: showFocus),
           );
         }
 
@@ -362,7 +561,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             tooltip: tooltip,
             icon: const AppIcon(Symbols.schedule_rounded, fill: 1),
             iconSize: iconSize,
-            style: actionButtonStyle(),
+            style: actionButtonStyle(showFocus: showFocus),
           );
         }
 
@@ -379,100 +578,40 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             tooltip: tooltip,
             icon: _buildRadialProgress(progress?.progressPercent),
             iconSize: iconSize,
-            style: actionButtonStyle(),
+            style: actionButtonStyle(showFocus: showFocus),
           );
         }
 
         // State 4: Paused (can resume)
         if (progress?.status == DownloadStatus.paused) {
           return IconButton.filledTonal(
-            onPressed: () async {
-              final client = _getMediaClientForMetadata(context);
-              if (client == null) return;
-              await downloadProvider.resumeDownload(globalKey, client);
-              if (context.mounted) {
-                showAppSnackBar(context, 'Download resumed');
-              }
-            },
+            onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
             icon: const AppIcon(Symbols.pause_circle_outline_rounded, fill: 1),
             tooltip: 'Resume download',
             iconSize: iconSize,
-            style: actionButtonStyle(foregroundColor: Colors.amber),
+            style: actionButtonStyle(foregroundColor: Colors.amber, showFocus: showFocus),
           );
         }
 
         // State 5: Failed (can retry)
         if (progress?.status == DownloadStatus.failed) {
           return IconButton.filledTonal(
-            onPressed: () async {
-              final client = _getMediaClientForMetadata(context);
-              if (client == null) return;
-
-              final versionConfig = await _resolveDownloadVersion(context, metadata, client);
-              if (versionConfig == null || !context.mounted) return;
-
-              await downloadProvider.deleteDownload(globalKey);
-              try {
-                await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
-
-                if (context.mounted) {
-                  showSuccessSnackBar(context, t.downloads.downloadQueued);
-                }
-              } on CellularDownloadBlockedException {
-                if (context.mounted) {
-                  showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-                }
-              }
-            },
+            onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
             icon: const AppIcon(Symbols.error_outline_rounded, fill: 1),
             tooltip: 'Retry download',
             iconSize: iconSize,
-            style: actionButtonStyle(foregroundColor: Colors.red),
+            style: actionButtonStyle(foregroundColor: Colors.red, showFocus: showFocus),
           );
         }
 
         // State 6: Cancelled (can delete or retry)
         if (progress?.status == DownloadStatus.cancelled) {
           return IconButton.filledTonal(
-            onPressed: () async {
-              // Show options: Delete or Retry
-              final retry = await showConfirmDialog(
-                context,
-                title: 'Cancelled Download',
-                message: 'This download was cancelled. What would you like to do?',
-                cancelText: t.common.delete,
-                confirmText: 'Retry',
-              );
-
-              if (!retry && context.mounted) {
-                await downloadProvider.deleteDownload(globalKey);
-                if (context.mounted) {
-                  showSuccessSnackBar(context, t.downloads.downloadDeleted);
-                }
-              } else if (retry && context.mounted) {
-                final client = _getMediaClientForMetadata(context);
-                if (client == null) return;
-
-                final versionConfig = await _resolveDownloadVersion(context, metadata, client);
-                if (versionConfig == null || !context.mounted) return;
-
-                await downloadProvider.deleteDownload(globalKey);
-                try {
-                  await downloadProvider.queueDownload(metadata, client, versionConfig: versionConfig);
-                  if (context.mounted) {
-                    showSuccessSnackBar(context, t.downloads.downloadQueued);
-                  }
-                } on CellularDownloadBlockedException {
-                  if (context.mounted) {
-                    showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-                  }
-                }
-              }
-            },
+            onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
             icon: const AppIcon(Symbols.cancel_rounded, fill: 1),
             tooltip: 'Cancelled download',
             iconSize: iconSize,
-            style: actionButtonStyle(foregroundColor: Colors.grey),
+            style: actionButtonStyle(foregroundColor: Colors.grey, showFocus: showFocus),
           );
         }
 
@@ -490,17 +629,11 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
                 : t.downloads.keepSynced;
 
             return IconButton.filledTonal(
-              onPressed: () => _showSyncRuleActions(
-                context,
-                downloadProvider,
-                metadata,
-                ruleKey: ruleKey,
-                downloadGlobalKey: globalKey,
-              ),
+              onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
               tooltip: tooltip,
               icon: AppIcon(isEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
               iconSize: iconSize,
-              style: actionButtonStyle(foregroundColor: isEnabled ? Colors.teal : Colors.grey),
+              style: actionButtonStyle(foregroundColor: isEnabled ? Colors.teal : Colors.grey, showFocus: showFocus),
             );
           }
 
@@ -509,26 +642,11 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
               : 'Partially downloaded - Click to complete';
 
           return IconButton.filledTonal(
-            onPressed: () async {
-              final client = _getMediaClientForMetadata(context);
-              if (client == null) return;
-
-              final versionConfig = await _resolveDownloadVersion(context, metadata, client);
-              if (versionConfig == null || !context.mounted) return;
-
-              final count = await downloadProvider.queueMissingEpisodes(metadata, client, versionConfig: versionConfig);
-
-              if (context.mounted) {
-                final message = count > 0
-                    ? t.downloads.episodesQueued(count: count)
-                    : 'All episodes already downloaded';
-                showAppSnackBar(context, message);
-              }
-            },
+            onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
             tooltip: tooltip,
             icon: const AppIcon(Symbols.downloading_rounded, fill: 1),
             iconSize: iconSize,
-            style: actionButtonStyle(foregroundColor: Colors.orange),
+            style: actionButtonStyle(foregroundColor: Colors.orange, showFocus: showFocus),
           );
         }
 
@@ -541,97 +659,33 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             final syncRule = downloadProvider.getSyncRule(ruleKey);
             final isEnabled = syncRule?.enabled ?? true;
             return IconButton.filledTonal(
-              onPressed: () => _showSyncRuleActions(
-                context,
-                downloadProvider,
-                metadata,
-                ruleKey: ruleKey,
-                downloadGlobalKey: globalKey,
-              ),
+              onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
               icon: AppIcon(isEnabled ? Symbols.sync_rounded : Symbols.sync_disabled_rounded, fill: 1),
               tooltip: t.downloads.keepNUnwatched(count: syncRule?.episodeCount.toString() ?? '?'),
               iconSize: iconSize,
-              style: actionButtonStyle(foregroundColor: isEnabled ? Colors.teal : Colors.grey),
+              style: actionButtonStyle(foregroundColor: isEnabled ? Colors.teal : Colors.grey, showFocus: showFocus),
             );
           }
 
           // Shows/seasons may have more episodes to fetch; movies/episodes don't.
           final canDownloadMore = metadata.isShow || metadata.isSeason;
 
-          Future<void> confirmAndDelete() async {
-            final confirmed = await showDeleteConfirmation(
-              context,
-              title: t.downloads.deleteDownload,
-              message: t.downloads.deleteConfirm(title: metadata.displayTitle),
-            );
-            if (confirmed && context.mounted) {
-              await downloadProvider.deleteDownload(globalKey);
-              if (context.mounted) {
-                showSuccessSnackBar(context, t.downloads.downloadDeleted);
-              }
-            }
-          }
-
           return IconButton.filledTonal(
-            onPressed: () async {
-              // Movies/episodes: nothing more to download, so delete directly.
-              if (!canDownloadMore) {
-                await confirmAndDelete();
-                return;
-              }
-              // Shows/seasons: reopen the download options menu so the user can
-              // grab more episodes (or switch to sync), with delete as a row.
-              final client = _getMediaClientForMetadata(context);
-              if (client == null) return;
-              try {
-                final result = await showDownloadOptionsAndQueue(
-                  context,
-                  metadata: metadata,
-                  client: client,
-                  downloadProvider: downloadProvider,
-                  onDelete: confirmAndDelete,
-                );
-                if (result == null || !context.mounted) return;
-                showSuccessSnackBar(context, result.toSnackBarMessage());
-              } on CellularDownloadBlockedException {
-                if (context.mounted) {
-                  showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-                }
-              }
-            },
+            onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
             icon: const AppIcon(Symbols.download_rounded, fill: 1),
             tooltip: canDownloadMore ? t.downloads.manage : t.downloads.deleteDownload,
             iconSize: iconSize,
-            style: actionButtonStyle(foregroundColor: Colors.orange),
+            style: actionButtonStyle(foregroundColor: Colors.orange, showFocus: showFocus),
           );
         }
 
         // State 9: Not downloaded (default - can download)
         return IconButton.filledTonal(
-          onPressed: () async {
-            final client = _getMediaClientForMetadata(context);
-            if (client == null) return;
-
-            try {
-              final result = await showDownloadOptionsAndQueue(
-                context,
-                metadata: metadata,
-                client: client,
-                downloadProvider: downloadProvider,
-              );
-              if (result == null || !context.mounted) return;
-
-              showSuccessSnackBar(context, result.toSnackBarMessage());
-            } on CellularDownloadBlockedException {
-              if (context.mounted) {
-                showErrorSnackBar(context, t.settings.cellularDownloadBlocked);
-              }
-            }
-          },
+          onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
           icon: const AppIcon(Symbols.download_rounded, fill: 1),
           tooltip: t.downloads.downloadNow,
           iconSize: iconSize,
-          style: actionButtonStyle(),
+          style: actionButtonStyle(showFocus: showFocus),
         );
       },
     );

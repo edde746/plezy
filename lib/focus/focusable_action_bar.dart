@@ -6,22 +6,49 @@ import 'focus_theme.dart';
 import 'input_mode_tracker.dart';
 import 'key_event_utils.dart';
 
+typedef FocusableActionBuilder = Widget Function(BuildContext context, FocusableActionBuildState state);
+
+class FocusableActionBuildState {
+  final FocusNode focusNode;
+  final bool isFocused;
+  final bool showFocus;
+  final bool isKeyboardMode;
+  final Duration animationDuration;
+
+  const FocusableActionBuildState({
+    required this.focusNode,
+    required this.isFocused,
+    required this.showFocus,
+    required this.isKeyboardMode,
+    required this.animationDuration,
+  });
+}
+
 class FocusableAction {
   final IconData icon;
   final Color? iconColor;
   final double iconFill;
 
+  final String? debugLabel;
+  final FocusNode? focusNode;
+  final bool autofocus;
+
   final String? tooltip;
   final VoidCallback? onPressed;
   final Widget? child;
+  final FocusableActionBuilder? builder;
 
   const FocusableAction({
     this.icon = Icons.circle,
     this.iconColor,
     this.iconFill = 1.0,
+    this.debugLabel,
+    this.focusNode,
+    this.autofocus = false,
     this.tooltip,
     this.onPressed,
     this.child,
+    this.builder,
   });
 }
 
@@ -43,6 +70,12 @@ class FocusableActionBar extends StatefulWidget {
   /// Called when the user presses the back key while an action is focused.
   final VoidCallback? onBack;
 
+  /// Called when any action in the row gains or loses focus.
+  final ValueChanged<bool>? onFocusChange;
+
+  final double spacing;
+  final MainAxisSize mainAxisSize;
+
   const FocusableActionBar({
     super.key,
     required this.actions,
@@ -51,6 +84,9 @@ class FocusableActionBar extends StatefulWidget {
     this.onNavigateLeft,
     this.onNavigateRight,
     this.onBack,
+    this.onFocusChange,
+    this.spacing = 0,
+    this.mainAxisSize = MainAxisSize.min,
   });
 
   @override
@@ -59,7 +95,10 @@ class FocusableActionBar extends StatefulWidget {
 
 class FocusableActionBarState extends State<FocusableActionBar> {
   late List<FocusNode> _focusNodes;
+  late List<bool> _ownsFocusNodes;
+  late List<VoidCallback> _focusListeners;
   late List<bool> _focusStates;
+  bool _hasAnyFocus = false;
 
   FocusNode? getFocusNode(int index) => index >= 0 && index < _focusNodes.length ? _focusNodes[index] : null;
 
@@ -76,29 +115,58 @@ class FocusableActionBarState extends State<FocusableActionBar> {
   @override
   void didUpdateWidget(FocusableActionBar oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.actions.length != widget.actions.length) {
+    if (_shouldRebuildFocusNodes(oldWidget)) {
       _disposeNodes();
       _initNodes();
     }
   }
 
+  bool _shouldRebuildFocusNodes(FocusableActionBar oldWidget) {
+    if (oldWidget.actions.length != widget.actions.length) return true;
+    for (var i = 0; i < widget.actions.length; i++) {
+      if (oldWidget.actions[i].focusNode != widget.actions[i].focusNode) return true;
+      if (oldWidget.actions[i].debugLabel != widget.actions[i].debugLabel) return true;
+    }
+    return false;
+  }
+
   void _initNodes() {
-    _focusNodes = List.generate(widget.actions.length, (i) => FocusNode(debugLabel: 'ActionBar[$i]'));
-    _focusStates = List.filled(widget.actions.length, false);
+    _focusNodes = List.generate(
+      widget.actions.length,
+      (i) => widget.actions[i].focusNode ?? FocusNode(debugLabel: widget.actions[i].debugLabel ?? 'ActionBar[$i]'),
+    );
+    _ownsFocusNodes = List.generate(widget.actions.length, (i) => widget.actions[i].focusNode == null);
+    _focusListeners = [];
+    _focusStates = List.generate(widget.actions.length, (i) => _focusNodes[i].hasFocus);
+    _hasAnyFocus = _focusNodes.any((node) => node.hasFocus);
     for (var i = 0; i < _focusNodes.length; i++) {
       final idx = i;
-      _focusNodes[i].addListener(() {
+      void listener() {
         final hasFocus = _focusNodes[idx].hasFocus;
         if (_focusStates[idx] != hasFocus) {
           setState(() => _focusStates[idx] = hasFocus);
         }
-      });
+        _notifyRowFocusIfChanged();
+      }
+
+      _focusListeners.add(listener);
+      _focusNodes[i].addListener(listener);
     }
   }
 
+  void _notifyRowFocusIfChanged() {
+    final hasAnyFocus = _focusNodes.any((node) => node.hasFocus);
+    if (_hasAnyFocus == hasAnyFocus) return;
+    _hasAnyFocus = hasAnyFocus;
+    widget.onFocusChange?.call(hasAnyFocus);
+  }
+
   void _disposeNodes() {
-    for (final node in _focusNodes) {
-      node.dispose();
+    for (var i = 0; i < _focusNodes.length; i++) {
+      _focusNodes[i].removeListener(_focusListeners[i]);
+      if (_ownsFocusNodes[i]) {
+        _focusNodes[i].dispose();
+      }
     }
   }
 
@@ -114,8 +182,13 @@ class FocusableActionBarState extends State<FocusableActionBar> {
     final duration = FocusTheme.getAnimationDuration(context);
 
     return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [for (var i = 0; i < widget.actions.length; i++) _buildButton(i, isKeyboard, duration)],
+      mainAxisSize: widget.mainAxisSize,
+      children: [
+        for (var i = 0; i < widget.actions.length; i++) ...[
+          if (i > 0 && widget.spacing > 0) SizedBox(width: widget.spacing),
+          _buildButton(i, isKeyboard, duration),
+        ],
+      ],
     );
   }
 
@@ -125,8 +198,19 @@ class FocusableActionBarState extends State<FocusableActionBar> {
     final showFocus = isFocused && isKeyboard;
     final opacity = isKeyboard && !isFocused ? 0.6 : 1.0;
 
+    final buildState = FocusableActionBuildState(
+      focusNode: _focusNodes[index],
+      isFocused: isFocused,
+      showFocus: showFocus,
+      isKeyboardMode: isKeyboard,
+      animationDuration: duration,
+    );
+    final customChild = action.builder?.call(context, buildState);
+
     return Focus(
       focusNode: _focusNodes[index],
+      autofocus: action.autofocus,
+      descendantsAreFocusable: false,
       onKeyEvent: (node, event) {
         if (widget.onBack != null) {
           final backResult = handleBackKeyAction(event, widget.onBack!);
@@ -146,20 +230,22 @@ class FocusableActionBarState extends State<FocusableActionBar> {
         )(node, event);
       },
       child: ClickableCursor(
-        enabled: action.onPressed != null || action.child != null,
+        enabled: action.onPressed != null || action.child != null || customChild != null,
         child: AnimatedOpacity(
           opacity: showFocus ? 1.0 : opacity,
           duration: duration,
-          child: Container(
-            decoration: FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: 20),
-            child:
-                action.child ??
-                IconButton(
-                  icon: AppIcon(action.icon, fill: action.iconFill, color: action.iconColor),
-                  tooltip: action.tooltip,
-                  onPressed: action.onPressed,
-                ),
-          ),
+          child:
+              customChild ??
+              Container(
+                decoration: FocusTheme.focusBackgroundDecoration(isFocused: showFocus, borderRadius: 20),
+                child:
+                    action.child ??
+                    IconButton(
+                      icon: AppIcon(action.icon, fill: action.iconFill, color: action.iconColor),
+                      tooltip: action.tooltip,
+                      onPressed: action.onPressed,
+                    ),
+              ),
         ),
       ),
     );
