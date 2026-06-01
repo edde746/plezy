@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import 'package:flutter/foundation.dart';
 
@@ -98,7 +99,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// connection inline (without a profile switch), so the new server
   /// becomes visible without the binder having to re-run. Initializes the
   /// filter to a one-element set when no filter is currently set.
-  void addToVisibleServerIds(String serverId) {
+  void addToVisibleServerIds(ServerId serverId) {
     final current = _visibleServerIds;
     if (current == null) {
       _visibleServerIds = {serverId};
@@ -176,14 +177,14 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   DataAggregationService get aggregationService => _aggregationService;
 
   /// Get client for specific server.
-  MediaServerClient? getClientForServer(String serverId) {
+  MediaServerClient? getClientForServer(ServerId serverId) {
     return _serverManager.getClient(serverId);
   }
 
   /// Get the [PlexClient] for a server, or `null` if the server is Jellyfin
   /// (or not registered). Use for Plex-only flows that don't yet have a
   /// backend-neutral equivalent.
-  PlexClient? getPlexClientForServer(String serverId) {
+  PlexClient? getPlexClientForServer(ServerId serverId) {
     return _serverManager.getPlexClient(serverId);
   }
 
@@ -212,7 +213,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   }
 
   /// Check if a server is online (and visible under the active profile).
-  bool isServerOnline(String serverId) {
+  bool isServerOnline(ServerId serverId) {
     final filter = _visibleServerIds;
     if (filter != null && !filter.contains(serverId)) return false;
     return _serverManager.isServerOnline(serverId);
@@ -230,7 +231,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// Whether at least one online server is a Plex server. Used to gate
   /// Plex-only chrome (server-activities popover, conflict-resolution
   /// helpers) so they don't render against a Jellyfin-only profile.
-  bool get hasOnlinePlexServers => onlineServerIds.any((id) => _serverManager.getPlexClient(id) != null);
+  bool get hasOnlinePlexServers => onlineServerIds.any((id) => _serverManager.getPlexClient(ServerId(id)) != null);
 
   /// Visibility-filtered server ids whose latest health probe was rejected
   /// with HTTP 401/403 (token expired or revoked). UI uses this to show a
@@ -247,8 +248,10 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
 
   /// Display names for the visible auth-errored servers, in stable order.
   /// Falls back to the server id when the client doesn't expose a name.
-  List<({String serverId, String displayName})> get authErrorServers {
-    return authErrorServerIds.map((id) => (serverId: id, displayName: _serverManager.serverDisplayName(id))).toList();
+  List<({ServerId serverId, String displayName})> get authErrorServers {
+    return authErrorServerIds
+        .map((id) => (serverId: ServerId(id), displayName: _serverManager.serverDisplayName(ServerId(id))))
+        .toList();
   }
 
   /// Clear all server connections
@@ -277,7 +280,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     final newLiveTvServers = <LiveTvServerInfo>[];
 
     for (final serverId in onlineServerIds) {
-      final genericClient = _serverManager.getClient(serverId);
+      final genericClient = _serverManager.getClient(ServerId(serverId));
       if (genericClient == null) continue;
 
       try {

@@ -80,7 +80,7 @@ class BottomSheetHeader extends StatelessWidget {
       resolvedLeading = AppIcon(icon!, fill: 1, color: iconColor);
     }
 
-    final effectiveTitleStyle = titleStyle ?? TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: titleColor);
+    final effectiveTitleStyle = titleStyle ?? TextStyle(fontSize: 18, fontWeight: .bold, color: titleColor);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

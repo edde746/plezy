@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
@@ -208,7 +209,7 @@ class _PagedPlaylistClient implements MediaServerClient {
   _PagedPlaylistClient(this.items);
 
   @override
-  String get serverId => 'server_1';
+  ServerId get serverId => ServerId('server_1');
 
   @override
   String? get serverName => 'Server';

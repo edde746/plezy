@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -100,7 +101,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
       // Defense-in-depth: searchSubtitles is Plex-only. The UI gates this
       // sheet on `subtitleSearchSupported` upstream, but if a future caller
       // reaches us with a Jellyfin server, fail soft instead of throwing.
-      final neutral = context.tryGetMediaClientForServer(widget.serverId);
+      final neutral = context.tryGetMediaClientForServer(ServerId(widget.serverId));
       final client = neutral is PlexClient ? neutral : null;
       if (client == null) {
         if (!mounted) return;
@@ -177,7 +178,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
     try {
       // Same Plex-only guard as in [_search]. Don't throw if a Jellyfin
       // server somehow reaches the download path.
-      final neutral = context.tryGetMediaClientForServer(widget.serverId);
+      final neutral = context.tryGetMediaClientForServer(ServerId(widget.serverId));
       final client = neutral is PlexClient ? neutral : null;
       if (client == null) {
         if (!mounted) return;
@@ -251,7 +252,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisSize: .min,
                           children: [
                             Text(_languageName),
                             const SizedBox(width: 2),
@@ -340,17 +341,17 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
             );
           }
           if (trailingChildren.isNotEmpty) {
-            trailing = Row(mainAxisSize: MainAxisSize.min, spacing: 4, children: trailingChildren);
+            trailing = Row(mainAxisSize: .min, spacing: 4, children: trailingChildren);
           }
         }
 
         return FocusableListTile(
           focusNode: index == 0 ? _firstResultFocusNode : null,
-          title: Text(result.title ?? result.displayTitle ?? 'Unknown', maxLines: 1, overflow: TextOverflow.ellipsis),
+          title: Text(result.title ?? result.displayTitle ?? 'Unknown', maxLines: 1, overflow: .ellipsis),
           subtitle: Text(
             result.displayTitle ?? '',
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            overflow: .ellipsis,
             style: TextStyle(color: colorScheme.onSurfaceVariant),
           ),
           trailing: trailing,

@@ -1,4 +1,5 @@
 import '../media/media_item.dart';
+import '../media/ids.dart';
 import 'app_logger.dart';
 import 'base_notifier.dart';
 import 'global_key_utils.dart';
@@ -16,7 +17,7 @@ class DeletionEvent with HierarchicalEventMixin {
 
   /// Server this item belongs to
   @override
-  final String serverId;
+  final ServerId serverId;
 
   /// Parent chain for hierarchical invalidation
   /// For an episode: [seasonId, showId]
@@ -43,7 +44,7 @@ class DeletionEvent with HierarchicalEventMixin {
     required this.mediaType,
     this.leafCount = 1,
     this.isDownloadOnly = false,
-  }) : globalKey = buildGlobalKey(serverId, itemId);
+  }) : globalKey = buildGlobalKey(ServerId(serverId), itemId);
 
   @override
   String toString() => 'DeletionEvent(deleted: $globalKey, type: $mediaType, parents: $parentChain)';
@@ -60,7 +61,7 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
 
   DeletionNotifier._internal();
 
-  Stream<DeletionEvent> forServer(String serverId) => stream.where((e) => e.serverId == serverId);
+  Stream<DeletionEvent> forServer(ServerId serverId) => stream.where((e) => e.serverId == serverId);
 
   Stream<DeletionEvent> forItem(String itemId) => stream.where((e) => e.affectsItem(itemId));
 
@@ -75,7 +76,7 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
     notify(
       DeletionEvent(
         itemId: item.id,
-        serverId: item.serverId ?? '',
+        serverId: ServerId(item.serverId ?? ''),
         parentChain: item.parentChain,
         mediaType: item.kind.id,
         leafCount: item.leafCount ?? 1,

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../media/ids.dart';
 
 import 'package:uuid/uuid.dart';
 
@@ -86,16 +87,16 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   // Per-Server Endpoint URL (for multi-server connection caching)
-  Future<void> saveServerEndpoint(String serverId, String url) async {
+  Future<void> saveServerEndpoint(ServerId serverId, String url) async {
     await prefs.setString('$_prefixServerEndpoint$serverId', url);
     LogRedactionManager.registerServerUrl(url);
   }
 
-  String? getServerEndpoint(String serverId) {
+  String? getServerEndpoint(ServerId serverId) {
     return prefs.getString('$_prefixServerEndpoint$serverId');
   }
 
-  Future<void> clearServerEndpoint(String serverId) async {
+  Future<void> clearServerEndpoint(ServerId serverId) async {
     await prefs.remove('$_prefixServerEndpoint$serverId');
   }
 

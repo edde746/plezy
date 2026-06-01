@@ -53,7 +53,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       if (watchTogether.isHost && watchTogether.isInSession) {
         watchTogether.setCurrentMedia(
           ratingKey: targetMetadata.id,
-          serverId: targetMetadata.serverId!,
+          serverId: ServerId(targetMetadata.serverId!),
           mediaTitle: targetMetadata.displayTitle,
         );
       }
@@ -77,7 +77,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
 
   /// Handle media switch from host (guest only)
   /// Uses VideoPlayerScreen's context for proper navigation (pushReplacement)
-  Future<void> _handlePlayerMediaSwitch(String ratingKey, String serverId, String title) async {
+  Future<void> _handlePlayerMediaSwitch(String ratingKey, ServerId serverId, String title) async {
     if (!mounted) return;
 
     appLogger.d('WatchTogether: Guest handling media switch to $title');

@@ -82,7 +82,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 const AppIcon(Symbols.error_rounded, color: Colors.white70, size: 44, fill: 1),
                 const SizedBox(height: 16),
@@ -93,7 +93,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                 ),
                 const SizedBox(height: 24),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: .center,
                   children: [
                     FocusableButton(
                       autofocus: true,

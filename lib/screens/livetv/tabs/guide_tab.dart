@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -234,7 +235,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
       for (final serverInfo in liveTvServers) {
         if (!queriedServers.add(serverInfo.serverId)) continue;
         try {
-          final genericClient = multiServer.getClientForServer(serverInfo.serverId);
+          final genericClient = multiServer.getClientForServer(ServerId(serverInfo.serverId));
           if (genericClient == null) continue;
 
           final startEpoch = _gridStart.millisecondsSinceEpoch ~/ 1000;
@@ -246,7 +247,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
           allPrograms.addAll(programs);
           await _addScheduledRecordingKeysForServer(
             client: genericClient,
-            serverId: serverInfo.serverId,
+            serverId: ServerId(serverInfo.serverId),
             keys: scheduledRecordingKeys,
           );
         } catch (e) {
@@ -287,11 +288,11 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
     for (final serverInfo in multiServer.liveTvServers) {
       if (!queriedServers.add(serverInfo.serverId)) continue;
-      final client = multiServer.getClientForServer(serverInfo.serverId);
+      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
       if (client == null) continue;
       await _addScheduledRecordingKeysForServer(
         client: client,
-        serverId: serverInfo.serverId,
+        serverId: ServerId(serverInfo.serverId),
         keys: scheduledRecordingKeys,
       );
     }
@@ -302,14 +303,14 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
   Future<void> _addScheduledRecordingKeysForServer({
     required MediaServerClient client,
-    required String serverId,
+    required ServerId serverId,
     required Set<String> keys,
   }) async {
     if (!client.capabilities.liveTvDvr) return;
     try {
       final grabs = await client.liveTv.fetchScheduledRecordings();
       for (final grab in grabs) {
-        _addRecordingKeysForGrab(grab, serverId: serverId, keys: keys);
+        _addRecordingKeysForGrab(grab, serverId: ServerId(serverId), keys: keys);
       }
     } catch (e) {
       appLogger.d('Failed to load scheduled recordings for $serverId', error: e);
@@ -319,7 +320,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
       final rules = await client.liveTv.fetchRecordingRules(includeGrabs: true, includeStorage: false);
       for (final rule in rules) {
         for (final grab in rule.grabOperations) {
-          _addRecordingKeysForGrab(grab, serverId: serverId, keys: keys);
+          _addRecordingKeysForGrab(grab, serverId: ServerId(serverId), keys: keys);
         }
       }
     } catch (e) {
@@ -327,7 +328,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     }
   }
 
-  void _addRecordingKeysForGrab(MediaGrabOperation grab, {required String serverId, required Set<String> keys}) {
+  void _addRecordingKeysForGrab(MediaGrabOperation grab, {required ServerId serverId, required Set<String> keys}) {
     if (!_isActiveScheduledGrab(grab)) return;
     final program = grab.program;
     if (program == null) return;
@@ -367,7 +368,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     final keys = <String>{};
     void addMediaId(String? value) {
       final normalized = _nonEmpty(value);
-      if (normalized != null) keys.add(_recordingKey(serverId, 'media', normalized));
+      if (normalized != null) keys.add(_recordingKey(ServerId(serverId), 'media', normalized));
     }
 
     addMediaId(program.ratingKey);
@@ -377,13 +378,13 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     final channelIdentifier = _nonEmpty(program.channelIdentifier);
     final beginsAt = program.beginsAt;
     if (channelIdentifier != null && beginsAt != null) {
-      keys.add(_recordingKey(serverId, 'slot', '$channelIdentifier|$beginsAt|${program.endsAt ?? ''}'));
+      keys.add(_recordingKey(ServerId(serverId), 'slot', '$channelIdentifier|$beginsAt|${program.endsAt ?? ''}'));
     }
 
     return keys;
   }
 
-  String _recordingKey(String serverId, String type, String value) => '$serverId\u0000$type\u0000$value';
+  String _recordingKey(ServerId serverId, String type, String value) => '$serverId\u0000$type\u0000$value';
 
   String? _nonEmpty(String? value) {
     final trimmed = value?.trim();
@@ -936,7 +937,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
             children: [
               AppIcon(Symbols.chevron_left_rounded, size: 20, color: theme.colorScheme.onSurface),
               const SizedBox(width: 8),
-              Text(label, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+              Text(label, style: theme.textTheme.titleSmall?.copyWith(fontWeight: .bold)),
             ],
           ),
         ),
@@ -1001,7 +1002,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
           ),
           Expanded(
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: .center,
               children: [
                 _timeNavFocusWrap(
                   index: 1,
@@ -1013,7 +1014,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisSize: .min,
                           children: [
                             Text(dayLabel, style: theme.textTheme.labelLarge),
                             const SizedBox(width: 2),
@@ -1057,7 +1058,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Align(
-              alignment: Alignment.centerLeft,
+              alignment: .centerLeft,
               child: Text(
                 timeStr,
                 style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -1083,15 +1084,12 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
           right: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
         ),
       ),
-      alignment: Alignment.centerLeft,
+      alignment: .centerLeft,
       child: Text(
         label,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w700,
-        ),
+        style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: .w700),
         maxLines: 2,
-        overflow: TextOverflow.ellipsis,
+        overflow: .ellipsis,
       ),
     );
   }
@@ -1111,18 +1109,18 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
             return Transform.translate(offset: Offset(scrollOffset, 0), child: child);
           },
           child: Align(
-            alignment: Alignment.centerLeft,
+            alignment: .centerLeft,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
                 label,
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                  fontWeight: FontWeight.w700,
+                  fontWeight: .w700,
                   letterSpacing: 0.3,
                 ),
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                overflow: .ellipsis,
               ),
             ),
           ),
@@ -1133,7 +1131,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
   Widget _buildChannelCell(LiveTvChannel channel, ThemeData theme, {required int index}) {
     final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(channel.serverId ?? '');
+    final client = multiServer.getClientForServer(ServerId(channel.serverId ?? ''));
 
     final isFocused = _hasFocus && _focusZone == _GuideZone.grid && _gridColumn == 0 && _gridChannelIndex == index;
 
@@ -1154,7 +1152,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
   Widget _buildChannelNameFallback(LiveTvChannel channel, ThemeData theme) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: .center,
       children: [
         if (channel.number != null)
           Text(
@@ -1164,9 +1162,9 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
           ),
         Text(
           channel.displayName,
-          style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+          style: theme.textTheme.bodySmall?.copyWith(fontWeight: .w500),
           maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          overflow: .ellipsis,
           textAlign: TextAlign.center,
         ),
       ],
@@ -1313,10 +1311,10 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
                 final leftInset = (scrollOffset - tileLeft).clamp(0.0, maxInset);
                 return Container(
                   color: isFocused ? null : materialColor,
-                  padding: EdgeInsets.fromLTRB(basePadding + leftInset, 4, basePadding, 4),
+                  padding: .fromLTRB(basePadding + leftInset, 4, basePadding, 4),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: .start,
+                    mainAxisAlignment: .center,
                     children: [
                       Row(
                         children: [
@@ -1327,12 +1325,9 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
                           Expanded(
                             child: Text(
                               program.grandparentTitle ?? program.title,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: titleColor,
-                              ),
+                              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: .w600, color: titleColor),
                               maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              overflow: .ellipsis,
                             ),
                           ),
                         ],
@@ -1342,14 +1337,14 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
                           '${program.parentIndex != null && program.index != null ? 'S${program.parentIndex}E${program.index} · ' : ''}${program.title}',
                           style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
                           maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          overflow: .ellipsis,
                         ),
                       if (program.startTime != null)
                         Text(
-                          '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} · ${formatDurationTextual(program.durationMinutes * 60000)}',
+                          '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} · ${formatDurationTextual(program.durationMinutes * 60_000)}',
                           style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
                           maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          overflow: .ellipsis,
                         ),
                     ],
                   ),
@@ -1364,7 +1359,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
   void _showProgramDetails(LiveTvChannel channel, LiveTvProgram program) {
     final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(channel.serverId ?? '');
+    final client = multiServer.getClientForServer(ServerId(channel.serverId ?? ''));
     String? posterUrl;
     if (program.thumb != null && client != null) {
       posterUrl = MediaImageHelper.getOptimizedImageUrl(
@@ -1472,7 +1467,7 @@ class _ChannelCellState extends State<_ChannelCell> {
                 ),
               ),
               child: Stack(
-                alignment: Alignment.center,
+                alignment: .center,
                 children: [
                   AnimatedOpacity(
                     opacity: showAction ? 0.3 : 1.0,

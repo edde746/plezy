@@ -250,7 +250,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
                     ),
                     // Content strip — slides up from below the bottom edge
                     Align(
-                      alignment: Alignment.bottomCenter,
+                      alignment: .bottomCenter,
                       child: FractionalTranslation(
                         translation: Offset(0, 1 - t),
                         child: IgnorePointer(
@@ -272,7 +272,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
                                 ),
                               ),
                               child: Column(
-                                mainAxisSize: MainAxisSize.min,
+                                mainAxisSize: .min,
                                 children: [
                                   const Icon(Symbols.keyboard_arrow_down_rounded, color: Colors.white38, size: 20),
                                   const SizedBox(height: 4),
@@ -338,7 +338,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
       player: widget.player,
       builder: (context, isPlaying) {
         return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: .center,
           children: [
             if (!widget.isLive) ...[
               // Previous episode button (greyed out when unavailable)
@@ -407,7 +407,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
               decoration: const BoxDecoration(color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(4))),
               child: Text(
                 t.liveTv.live,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                style: const TextStyle(color: Colors.white, fontWeight: .bold, fontSize: 12),
               ),
             ),
           ],

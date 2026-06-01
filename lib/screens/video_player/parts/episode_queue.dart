@@ -21,7 +21,7 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     if (_currentMetadata.backend != MediaBackend.plex) return;
 
     try {
-      final client = context.getPlexClientForServer(_currentMetadata.serverId!);
+      final client = context.getPlexClientForServer(ServerId(_currentMetadata.serverId!));
 
       final playbackState = context.read<PlaybackStateProvider>();
 

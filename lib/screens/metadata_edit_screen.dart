@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import '../media/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -46,7 +47,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
 
   Future<void> _loadMetadata() async {
     try {
-      final client = context.getMediaClientWithFallback(widget.metadata.serverId);
+      final client = context.getMediaClientWithFallback(serverIdOrNull(widget.metadata.serverId));
       final adapter = metadataEditAdapterFor(client);
       if (adapter == null || !adapter.supportsKind(widget.metadata.kind)) {
         if (!mounted) return;
@@ -273,7 +274,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
       title: Text(t.metadataEdit.screenTitle),
       actions: [
         if (_isSaving)
-          const Padding(padding: EdgeInsets.all(12), child: LoadingIndicatorBox(size: 24))
+          const Padding(padding: .all(12), child: LoadingIndicatorBox(size: 24))
         else
           IconButton(onPressed: _hasChanges ? _save : null, icon: const AppIcon(Symbols.check_rounded, fill: 1)),
       ],
@@ -293,14 +294,11 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
   Widget _buildSectionCard(MetadataEditAdapter adapter, MetadataEditDraft draft, MetadataEditSection section) {
     return Card(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Text(
-              section.title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-            ),
+            child: Text(section.title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: .bold)),
           ),
           for (final field in section.fields) _buildField(adapter, draft, field),
         ],
@@ -347,7 +345,7 @@ class _MetadataEditScreenState extends State<MetadataEditScreen> {
       subtitle: Text(
         displayValue,
         maxLines: 2,
-        overflow: TextOverflow.ellipsis,
+        overflow: .ellipsis,
         style: isNotSet
             ? TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5))
             : null,
@@ -491,7 +489,7 @@ class _ArtworkPickerDialogState extends State<ArtworkPickerDialog> {
         child: _isLoading ? const Center(child: CircularProgressIndicator()) : _buildArtworkContent(),
       ),
       actions: [
-        if (_isApplying) const Padding(padding: EdgeInsets.all(8), child: LoadingIndicatorBox(size: 24)),
+        if (_isApplying) const Padding(padding: .all(8), child: LoadingIndicatorBox(size: 24)),
         FocusableButton(
           onPressed: _addFromUrl,
           child: TextButton.icon(

@@ -55,10 +55,10 @@ class SyncOffsetControl extends StatefulWidget {
 
 class _SyncOffsetControlState extends State<SyncOffsetControl> {
   // Range constants
-  static const double _sliderMin = -60000; // ±60s for slider
-  static const double _sliderMax = 60000;
-  static const double _absoluteMin = -60000; // ±60s absolute limit
-  static const double _absoluteMax = 60000;
+  static const double _sliderMin = -60_000; // ±60s for slider
+  static const double _sliderMax = 60_000;
+  static const double _absoluteMin = -60_000; // ±60s absolute limit
+  static const double _absoluteMax = 60_000;
   static const double _tapStep = 100; // 100ms per tap
   static const double _longPressStep = 1000; // 1s per long-press tick
   static const int _sliderDivisions = 1200; // 100ms steps for ±60s range
@@ -275,7 +275,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
             width: 80,
             child: Text(
               formatSyncOffset(_currentOffset),
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 16, fontWeight: .bold),
               textAlign: TextAlign.center,
             ),
           ),
@@ -291,7 +291,7 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
               child: Container(
                 width: 36,
                 height: 36,
-                alignment: Alignment.center,
+                alignment: .center,
                 child: AppIcon(
                   Symbols.restart_alt_rounded,
                   fill: 1,
@@ -313,10 +313,10 @@ class _SyncOffsetControlState extends State<SyncOffsetControl> {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: .center,
         children: [
           // Current offset display
-          Text(formatSyncOffset(_currentOffset), style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold)),
+          Text(formatSyncOffset(_currentOffset), style: const TextStyle(fontSize: 48, fontWeight: .bold)),
           const SizedBox(height: 8),
           Text(_getDescriptionText(), style: TextStyle(color: tokens(context).textMuted, fontSize: 16)),
           const SizedBox(height: 48),

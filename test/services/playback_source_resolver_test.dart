@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -21,7 +22,7 @@ class _PlaybackClient implements MediaServerClient {
   final PlaybackInitializationResult result;
 
   @override
-  String get serverId => 'srv';
+  ServerId get serverId => ServerId('srv');
 
   @override
   MediaBackend get backend => clientBackend;

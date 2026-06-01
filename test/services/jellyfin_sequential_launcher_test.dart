@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -81,7 +82,7 @@ class _RecordingJellyfinClient implements JellyfinClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-MediaItem _ep(String id, {String? serverId = 'srv-jf'}) => MediaItem(
+MediaItem _ep(String id, {ServerId? serverId = const ServerId('srv-jf')}) => MediaItem(
   id: id,
   backend: MediaBackend.jellyfin,
   kind: MediaKind.episode,
@@ -89,13 +90,13 @@ MediaItem _ep(String id, {String? serverId = 'srv-jf'}) => MediaItem(
   serverId: serverId,
 );
 
-MediaItem _movie(String id, {String? serverId = 'srv-jf'}) =>
+MediaItem _movie(String id, {ServerId? serverId = const ServerId('srv-jf')}) =>
     MediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.movie, title: 'Movie $id', serverId: serverId);
 
-MediaItem _clip(String id, {String? serverId = 'srv-jf'}) =>
+MediaItem _clip(String id, {ServerId? serverId = const ServerId('srv-jf')}) =>
     MediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.clip, title: 'Video $id', serverId: serverId);
 
-MediaItem _track(String id, {String? serverId = 'srv-jf'}) =>
+MediaItem _track(String id, {ServerId? serverId = const ServerId('srv-jf')}) =>
     MediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.track, title: 'Track $id', serverId: serverId);
 
 void main() {

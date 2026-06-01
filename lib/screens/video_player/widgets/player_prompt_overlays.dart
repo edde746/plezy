@@ -27,7 +27,7 @@ class VideoPlayerMacPipPlaceholder extends StatelessWidget {
             color: Colors.black,
             child: Center(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: .min,
                 children: [
                   Icon(Symbols.picture_in_picture_alt_rounded, size: 48, color: Colors.white.withValues(alpha: 0.5)),
                   const SizedBox(height: 12),
@@ -115,7 +115,7 @@ class VideoPlayerWatchTogetherOverlays extends StatelessWidget {
                       borderRadius: BorderRadius.all(Radius.circular(20)),
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisSize: .min,
                       children: [
                         if (PlatformDetector.isTV())
                           const Icon(Symbols.sync_rounded, size: 14, color: Colors.white)
@@ -210,8 +210,8 @@ class VideoPlayerPlayNextOverlay extends StatelessWidget {
                   borderRadius: const BorderRadius.all(Radius.circular(12)),
                 ),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .start,
                   children: [
                     _PlayNextEpisodeHeader(episode: episode),
                     const SizedBox(height: 12),
@@ -253,7 +253,7 @@ class VideoPlayerPlayNextOverlay extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisAlignment: .center,
                                 children: [
                                   if (autoPlayCountdown > 0) ...[
                                     Text('$autoPlayCountdown'),
@@ -290,7 +290,7 @@ class _PlayNextEpisodeHeader extends StatelessWidget {
       children: [
         Expanded(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
             children: [
               Consumer<PlaybackStateProvider>(
                 builder: (context, playbackState, child) {
@@ -299,11 +299,7 @@ class _PlayNextEpisodeHeader extends StatelessWidget {
                     children: [
                       Text(
                         'Next Episode',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
                       ),
                       if (isShuffleActive) ...[
                         const SizedBox(width: 4),
@@ -317,16 +313,16 @@ class _PlayNextEpisodeHeader extends StatelessWidget {
               if (episode.parentIndex != null && episode.index != null)
                 Text(
                   'S${episode.parentIndex} E${episode.index} · ${episode.title}',
-                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w600),
                   maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 )
               else
                 Text(
                   episode.title!,
-                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w600),
                   maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 ),
             ],
           ),
@@ -380,21 +376,17 @@ class VideoPlayerStillWatchingOverlay extends StatelessWidget {
                   borderRadius: const BorderRadius.all(Radius.circular(12)),
                 ),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .start,
                   children: [
                     Text(
                       t.videoControls.stillWatching,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       t.videoControls.pausingIn(seconds: '$countdown'),
-                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w600),
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -435,7 +427,7 @@ class VideoPlayerStillWatchingOverlay extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(vertical: 12),
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisAlignment: .center,
                                 children: [
                                   Text('$countdown'),
                                   const SizedBox(width: 4),

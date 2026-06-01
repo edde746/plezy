@@ -1,4 +1,5 @@
 import '../media/media_backend.dart';
+import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -141,7 +142,7 @@ class JellyfinMappers {
   /// `.whereType<MediaItem>()`.
   static MediaItem? mediaItem(
     Map<String, dynamic> item, {
-    required String serverId,
+    required ServerId serverId,
     String? serverName,
     required JellyfinImageAbsolutizer? absolutizer,
   }) {
@@ -228,7 +229,7 @@ class JellyfinMappers {
   /// [MediaLibrary]. The CollectionType field maps onto [MediaKind] roughly.
   /// Returns `null` when the view is missing `Id` — same rationale as
   /// [mediaItem].
-  static MediaLibrary? library(Map<String, dynamic> view, {required String serverId, String? serverName}) {
+  static MediaLibrary? library(Map<String, dynamic> view, {required ServerId serverId, String? serverName}) {
     final id = view['Id'] as String?;
     if (id == null || id.isEmpty) return null;
     final collectionType = view['CollectionType'] as String?;
@@ -259,7 +260,7 @@ class JellyfinMappers {
     required String title,
     required String type,
     required List<Map<String, dynamic>> items,
-    required String serverId,
+    required ServerId serverId,
     String? serverName,
     MediaItem? Function(Map<String, dynamic>)? mapItem,
   }) {

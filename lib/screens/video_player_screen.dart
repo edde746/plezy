@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 import 'dart:io';
 import 'dart:math';
 
@@ -422,15 +423,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   MediaServerClient? _getMediaServerClient(BuildContext context) {
     final id = _currentMetadata.serverId;
     if (id == null) return null;
-    return context.read<MultiServerProvider>().serverManager.getClient(id);
+    return context.read<MultiServerProvider>().serverManager.getClient(ServerId(id));
   }
 
   MediaServerClient? _getOnlineMediaServerClient(BuildContext context) {
     final id = _currentMetadata.serverId;
     if (id == null) return null;
     final manager = context.read<MultiServerProvider>().serverManager;
-    if (!manager.isClientOnline(id)) return null;
-    return manager.getClient(id);
+    if (!manager.isClientOnline(ServerId(id))) return null;
+    return manager.getClient(ServerId(id));
   }
 
   bool get _usesLocalPlaybackSource => _effectiveIsOffline;

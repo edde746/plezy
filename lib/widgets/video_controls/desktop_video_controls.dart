@@ -542,7 +542,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       if (duration.inMilliseconds <= 0) return KeyEventResult.handled;
 
       final baseStepMs = widget.seekTimeSmall * 1000;
-      final stepMs = (baseStepMs * effectiveMultiplier).clamp(500, 120000).toInt();
+      final stepMs = (baseStepMs * effectiveMultiplier).clamp(500, 120_000).toInt();
       final step = Duration(milliseconds: stepMs);
 
       final newPosition = isForward ? position + step : position - step;
@@ -604,7 +604,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       ),
                     ),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisSize: .min,
                       children: [
                         const Icon(Symbols.keyboard_arrow_up_rounded, color: Colors.white38, size: 20),
                         const SizedBox(height: 4),
@@ -655,7 +655,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
   Widget _buildTopBarContent(BuildContext _, double leftPadding) {
     final topBar = Padding(
-      padding: EdgeInsets.only(left: leftPadding, right: 16),
+      padding: .only(left: leftPadding, right: 16),
       child: Row(
         children: [
           Expanded(
@@ -672,7 +672,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               decoration: const BoxDecoration(color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(4))),
               child: Text(
                 t.liveTv.live,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                style: const TextStyle(color: Colors.white, fontWeight: .bold, fontSize: 12),
               ),
             ),
           ],
@@ -890,13 +890,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
                                 return Padding(
                                   padding: const EdgeInsets.only(left: 8),
-                                  child: Text(
-                                    text,
-                                    style: style,
-                                    maxLines: 1,
-                                    softWrap: false,
-                                    overflow: TextOverflow.fade,
-                                  ),
+                                  child: Text(text, style: style, maxLines: 1, softWrap: false, overflow: .fade),
                                 );
                               },
                             );

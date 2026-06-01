@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../media/media_backend.dart';
@@ -40,7 +41,7 @@ class DownloadedArtwork {
   const DownloadedArtwork({this.thumbPath});
 
   /// Get the local file path for this artwork
-  String? getLocalPath(DownloadStorageService storage, String serverId) {
+  String? getLocalPath(DownloadStorageService storage, ServerId serverId) {
     if (thumbPath == null) return null;
     return DownloadArtworkService.localPathSync(storage, serverId, thumbPath);
   }
@@ -315,7 +316,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         // The fallback dispatches by backend.
         final cached =
             allMetadata[item.globalKey] ??
-            await _downloadManager.lookupMetadata(item.serverId, item.ratingKey, preferActiveScope: true);
+            await _downloadManager.lookupMetadata(ServerId(item.serverId), item.ratingKey, preferActiveScope: true);
         if (cached != null) {
           _metadata[item.globalKey] = cached;
 
@@ -324,7 +325,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
             _loadParentMetadataFromMap(
               cached,
               allMetadata,
-              clientScopeId: _downloadManager.activeClientScopeIdForServer(item.serverId) ?? item.clientScopeId,
+              clientScopeId:
+                  _downloadManager.activeClientScopeIdForServer(ServerId(item.serverId)) ?? item.clientScopeId,
             );
           }
         }
@@ -423,16 +425,16 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
     MediaItem? lookupParent(String ratingKey) {
       if (clientScopeId != null && clientScopeId.isNotEmpty) {
-        final scoped = allMetadata[buildGlobalKey(clientScopeId, ratingKey)];
+        final scoped = allMetadata[buildGlobalKey(ServerId(clientScopeId), ratingKey)];
         if (scoped != null) return scoped;
       }
-      return allMetadata[buildGlobalKey(serverId, ratingKey)];
+      return allMetadata[buildGlobalKey(ServerId(serverId), ratingKey)];
     }
 
     // Load show metadata
     final showRatingKey = episode.grandparentId;
     if (showRatingKey != null) {
-      final showGlobalKey = buildGlobalKey(serverId, showRatingKey);
+      final showGlobalKey = buildGlobalKey(ServerId(serverId), showRatingKey);
       if (!_metadata.containsKey(showGlobalKey)) {
         final showMetadata = lookupParent(showRatingKey);
         if (showMetadata != null) {
@@ -447,7 +449,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // Load season metadata
     final seasonRatingKey = episode.parentId;
     if (seasonRatingKey != null) {
-      final seasonGlobalKey = buildGlobalKey(serverId, seasonRatingKey);
+      final seasonGlobalKey = buildGlobalKey(ServerId(serverId), seasonRatingKey);
       if (!_metadata.containsKey(seasonGlobalKey)) {
         final seasonMetadata = lookupParent(seasonRatingKey);
         if (seasonMetadata != null) {
@@ -486,11 +488,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     final snapshot = WatchStateResolver.fromEvent(event);
     if (snapshot.isEmpty) return;
 
-    final globalKey = buildGlobalKey(event.serverId, event.itemId);
+    final globalKey = buildGlobalKey(ServerId(event.serverId), event.itemId);
     final base = _metadata[globalKey];
     if (base == null) return;
     final eventScope = event.cacheServerId;
-    final activeScope = _downloadManager.activeClientScopeIdForServer(event.serverId);
+    final activeScope = _downloadManager.activeClientScopeIdForServer(ServerId(event.serverId));
     if (eventScope != null && eventScope.isNotEmpty && eventScope != event.serverId && eventScope != activeScope) {
       return;
     }
@@ -509,7 +511,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       unawaited(
         ApiCache.forBackend(base.backend)
             .applyWatchState(
-              serverId: event.cacheServerId ?? event.serverId,
+              serverId: ServerId(event.cacheServerId ?? event.serverId),
               itemId: event.itemId,
               isWatched: isWatched,
             )
@@ -547,7 +549,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         final showRatingKey = meta.grandparentId;
         if (showRatingKey != null && !shows.containsKey(showRatingKey)) {
           // Try to get stored show metadata first
-          final showGlobalKey = buildGlobalKey(meta.serverId!, showRatingKey);
+          final showGlobalKey = buildGlobalKey(ServerId(meta.serverId!), showRatingKey);
           final storedShow = _metadata[showGlobalKey];
 
           if (storedShow != null && storedShow.isShow) {
@@ -600,7 +602,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Get local file path for any artwork type (thumb, art, clearLogo, etc.)
   /// Returns null if artwork directory isn't initialized or artworkPath is null
-  String? getArtworkLocalPath(String serverId, String? artworkPath) {
+  String? getArtworkLocalPath(ServerId serverId, String? artworkPath) {
     if (artworkPath == null) return null;
     return DownloadArtworkService.localPathSync(DownloadStorageService.instance, serverId, artworkPath);
   }
@@ -635,7 +637,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Calculate aggregate progress for a show (based on all its episodes)
   /// Returns synthetic DownloadProgress with aggregated values
-  DownloadProgress? getAggregateProgressForShow(String serverId, String showRatingKey) {
+  DownloadProgress? getAggregateProgressForShow(ServerId serverId, String showRatingKey) {
     return _calculateAggregateProgress(
       serverId: serverId,
       ratingKey: showRatingKey,
@@ -646,7 +648,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Calculate aggregate progress for a season (based on all its episodes)
   /// Returns synthetic DownloadProgress with aggregated values
-  DownloadProgress? getAggregateProgressForSeason(String serverId, String seasonRatingKey) {
+  DownloadProgress? getAggregateProgressForSeason(ServerId serverId, String seasonRatingKey) {
     return _calculateAggregateProgress(
       serverId: serverId,
       ratingKey: seasonRatingKey,
@@ -657,12 +659,12 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Shared helper to calculate aggregate download progress for shows/seasons
   DownloadProgress? _calculateAggregateProgress({
-    required String serverId,
+    required ServerId serverId,
     required String ratingKey,
     required List<DownloadProgress> episodes,
     required String entityType,
   }) {
-    final globalKey = buildGlobalKey(serverId, ratingKey);
+    final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
 
     // The progress ring reflects only the episodes the user actually queued for
     // this show/season — not the show's full episode count. _getEpisodeDownloads
@@ -1098,13 +1100,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (serverId == null) return;
 
     await _fetchAndStoreRelatedMetadata(
-      serverId: serverId,
+      serverId: ServerId(serverId),
       ratingKey: episode.grandparentId,
       client: client,
       context: context,
     );
     await _fetchAndStoreRelatedMetadata(
-      serverId: serverId,
+      serverId: ServerId(serverId),
       ratingKey: episode.parentId,
       client: client,
       context: context,
@@ -1113,13 +1115,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Fetch, persist, and download artwork for a related metadata item (show or season).
   Future<void> _fetchAndStoreRelatedMetadata({
-    required String serverId,
+    required ServerId serverId,
     required String? ratingKey,
     required MediaServerClient client,
     required _RelatedMetadataDownloadContext context,
   }) async {
     if (ratingKey == null) return;
-    final globalKey = buildGlobalKey(serverId, ratingKey);
+    final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
 
     MediaItem? metadata = _metadata[globalKey];
     var fetchedFreshMetadata = false;
@@ -1442,7 +1444,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Backend-aware metadata lookup for offline UI. Routes through
   /// [DownloadManagerService] which dispatches to [PlexApiCache] or
   /// [JellyfinApiCache] based on the connection's `kind`.
-  Future<MediaItem?> lookupOfflineMetadata(String serverId, String itemId) =>
+  Future<MediaItem?> lookupOfflineMetadata(ServerId serverId, String itemId) =>
       _downloadManager.lookupMetadata(serverId, itemId);
 
   /// Refresh only metadata from API cache (after watch state sync).
@@ -1560,10 +1562,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// All sync rules for the active profile (profile-scoped globalKey -> SyncRuleItem).
   Map<String, SyncRuleItem> get syncRules => Map.unmodifiable(_syncRules);
 
-  String syncRuleKeyFor(String serverId, String ratingKey, {String? profileId}) {
+  String syncRuleKeyFor(ServerId serverId, String ratingKey, {String? profileId}) {
     final owner = profileId ?? _activeProfileId;
-    if (owner == null || owner.isEmpty) return buildGlobalKey(serverId, ratingKey);
-    return buildProfileScopedGlobalKey(owner, serverId, ratingKey);
+    if (owner == null || owner.isEmpty) return buildGlobalKey(ServerId(serverId), ratingKey);
+    return buildProfileScopedGlobalKey(owner, ServerId(serverId), ratingKey);
   }
 
   String syncRuleKeyForGlobalKey(String globalKey) {
@@ -1576,7 +1578,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return syncRuleKeyFor(parsed.serverId, parsed.ratingKey);
   }
 
-  String syncRuleKeyForClient(MediaServerClient client, String ratingKey, {String? serverId}) {
+  String syncRuleKeyForClient(MediaServerClient client, String ratingKey, {ServerId? serverId}) {
     return syncRuleKeyFor(serverId ?? client.serverId, ratingKey);
   }
 
@@ -1586,7 +1588,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (profileId == null || profileId.isEmpty) return const {};
     final keys = <String>{};
     void add(String ratingKey) {
-      keys.add(syncRuleKeyFor(event.serverId, ratingKey, profileId: profileId));
+      keys.add(syncRuleKeyFor(ServerId(event.serverId), ratingKey, profileId: profileId));
     }
 
     add(event.itemId);
@@ -1609,7 +1611,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// rating key — useful for collection/playlist rules where no underlying
   /// episode download would otherwise populate it.
   Future<void> createSyncRule({
-    required String serverId,
+    required ServerId serverId,
     required String ratingKey,
     required String targetType,
     required int episodeCount,
@@ -1618,8 +1620,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     MediaItem? targetMetadata,
   }) async {
     final profileId = _requireActiveProfileId();
-    final publicGlobalKey = buildGlobalKey(serverId, ratingKey);
-    final scopedGlobalKey = syncRuleKeyFor(serverId, ratingKey, profileId: profileId);
+    final publicGlobalKey = buildGlobalKey(ServerId(serverId), ratingKey);
+    final scopedGlobalKey = syncRuleKeyFor(ServerId(serverId), ratingKey, profileId: profileId);
     await _database.insertSyncRule(
       profileId: profileId,
       serverId: serverId,
@@ -1685,7 +1687,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   Future<void> deleteSyncRule(String globalKey) async {
     _requireActiveProfileId();
     final existing = _syncRules[globalKey] ?? await _database.getSyncRule(globalKey);
-    final publicGlobalKey = existing == null ? globalKey : buildGlobalKey(existing.serverId, existing.ratingKey);
+    final publicGlobalKey = existing == null
+        ? globalKey
+        : buildGlobalKey(ServerId(existing.serverId), existing.ratingKey);
     await _database.deleteSyncRule(globalKey);
     _syncRules.remove(globalKey);
     // createSyncRule may have stashed targetMetadata for collection/playlist

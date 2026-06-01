@@ -14,7 +14,7 @@ class PlayerToastIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Align(
-      alignment: Alignment.topCenter,
+      alignment: .topCenter,
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.8),
         child: Container(
@@ -25,7 +25,7 @@ class PlayerToastIndicator extends StatelessWidget {
             borderRadius: const BorderRadius.all(Radius.circular(20)),
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               AppIcon(icon, fill: 1, color: Colors.white, size: 16),
               const SizedBox(width: 4),
@@ -33,8 +33,8 @@ class PlayerToastIndicator extends StatelessWidget {
                 child: Text(
                   text,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                  overflow: .ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .bold),
                 ),
               ),
             ],

@@ -33,14 +33,14 @@ mixin _JellyfinFileInfoMethods on MediaServerCacheMixin {
     double? aspectRatio;
     if (aspectRatioString != null && aspectRatioString.contains(':')) {
       final parts = aspectRatioString.split(':');
-      final num = double.tryParse(parts[0]);
+      final num = double.tryParse(parts.first);
       final den = double.tryParse(parts[1]);
       if (num != null && den != null && den != 0) aspectRatio = num / den;
     }
     aspectRatio ??= (width != null && height != null && height != 0) ? width / height : null;
 
     final runtimeTicks = source['RunTimeTicks'] as int?;
-    final durationMs = runtimeTicks != null ? (runtimeTicks ~/ 10000) : null;
+    final durationMs = runtimeTicks != null ? (runtimeTicks ~/ 10_000) : null;
 
     final bitrateBps = source['Bitrate'] as int?;
     final videoBitrateBps = videoStream?['BitRate'] as int?;

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,7 +33,7 @@ void main() {
         product: 'Plezy',
         version: 'test',
       ),
-      serverId: 'plex-1',
+      serverId: ServerId('plex-1'),
       serverName: 'Plex',
       httpClient: MockClient(handler),
     );

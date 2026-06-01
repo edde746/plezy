@@ -383,7 +383,7 @@ String? _jellyfinDate(String value, Object? originalIso) {
 
 String _imageContentType(List<int> bytes, String? fileName) {
   if (bytes.length >= 8 &&
-      bytes[0] == 0x89 &&
+      bytes.first == 0x89 &&
       bytes[1] == 0x50 &&
       bytes[2] == 0x4e &&
       bytes[3] == 0x47 &&
@@ -393,7 +393,7 @@ String _imageContentType(List<int> bytes, String? fileName) {
       bytes[7] == 0x0a) {
     return 'image/png';
   }
-  if (bytes.length >= 3 && bytes[0] == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff) {
+  if (bytes.length >= 3 && bytes.first == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff) {
     return 'image/jpeg';
   }
   if (bytes.length >= 6) {
@@ -405,7 +405,7 @@ String _imageContentType(List<int> bytes, String? fileName) {
     final webp = String.fromCharCodes(bytes.skip(8).take(4));
     if (riff == 'RIFF' && webp == 'WEBP') return 'image/webp';
   }
-  if (bytes.length >= 2 && bytes[0] == 0x42 && bytes[1] == 0x4d) return 'image/bmp';
+  if (bytes.length >= 2 && bytes.first == 0x42 && bytes[1] == 0x4d) return 'image/bmp';
 
   final lowerName = fileName?.toLowerCase() ?? '';
   if (lowerName.endsWith('.png')) return 'image/png';

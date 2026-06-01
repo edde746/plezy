@@ -7,7 +7,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     final actionSize = isTv ? _tvDetailActionSize * tvScale : 48.0;
     final playButtonLabel = _getPlayButtonLabel(metadata);
     final playIconSize = isTv ? 22 * tvScale : 20.0;
-    final playTextStyle = TextStyle(fontSize: isTv ? 17 * tvScale : 16, fontWeight: FontWeight.w700);
+    final playTextStyle = TextStyle(fontSize: isTv ? 17 * tvScale : 16, fontWeight: .w700);
     final playButtonIcon = AppIcon(_getPlayButtonIcon(metadata), fill: 1, size: playIconSize);
 
     Future<void> onPlayPressed() async {
@@ -108,11 +108,11 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           onPressed: onPlayPressed,
           style: actionButtonStyle(
             showFocus: state.showFocus,
-            padding: EdgeInsets.symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
+            padding: .symmetric(horizontal: isTv ? 17 * tvScale : 16, vertical: isTv ? 9 * tvScale : 0),
           ),
           child: playButtonLabel.isNotEmpty
               ? Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: .min,
                   children: [
                     playButtonIcon,
                     SizedBox(width: isTv ? 7 * tvScale : 8),
@@ -212,11 +212,11 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
     final allActions = <FocusableAction>[
       playAction,
-      if (trailerAction != null) trailerAction,
-      if (shuffleAction != null) shuffleAction,
-      if (downloadAction != null) downloadAction,
+      ?trailerAction,
+      ?shuffleAction,
+      ?downloadAction,
       watchedAction,
-      if (moreActionsAction != null) moreActionsAction,
+      ?moreActionsAction,
     ];
 
     double playButtonWidthEstimate() {
@@ -246,18 +246,13 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         return compact;
       }
 
-      final medium = <FocusableAction>[
-        playAction,
-        if (downloadAction != null) downloadAction,
-        watchedAction,
-        if (moreActionsAction != null) moreActionsAction,
-      ];
+      final medium = <FocusableAction>[playAction, ?downloadAction, watchedAction, ?moreActionsAction];
       if (!maxWidth.isFinite || estimatedRowWidth(medium) <= maxWidth) return medium;
 
-      final compact = <FocusableAction>[playAction, watchedAction, if (moreActionsAction != null) moreActionsAction];
+      final compact = <FocusableAction>[playAction, watchedAction, ?moreActionsAction];
       if (estimatedRowWidth(compact) <= maxWidth) return compact;
 
-      return [playAction, if (moreActionsAction != null) moreActionsAction];
+      return [playAction, ?moreActionsAction];
     }
 
     Widget actionBar(List<FocusableAction> actions) {
@@ -292,9 +287,9 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         // Offline mode: queue action for later sync
         final offlineWatch = context.read<OfflineWatchProvider>();
         if (isWatched) {
-          await offlineWatch.markAsUnwatched(serverId: metadata.serverId!, itemId: metadata.id);
+          await offlineWatch.markAsUnwatched(serverId: ServerId(metadata.serverId!), itemId: metadata.id);
         } else {
-          await offlineWatch.markAsWatched(serverId: metadata.serverId!, itemId: metadata.id);
+          await offlineWatch.markAsWatched(serverId: ServerId(metadata.serverId!), itemId: metadata.id);
         }
         if (mounted) {
           showAppSnackBar(context, isWatched ? t.messages.markedAsUnwatchedOffline : t.messages.markedAsWatchedOffline);
@@ -304,7 +299,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         // Jellyfin items hit /UserPlayedItems and Plex items hit /:/scrobble.
         final serverId = metadata.serverId;
         if (serverId == null) return;
-        final client = context.tryGetMediaClientForServer(serverId);
+        final client = context.tryGetMediaClientForServer(ServerId(serverId));
         if (client == null) return;
 
         if (isWatched) {

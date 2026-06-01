@@ -112,7 +112,7 @@ Future<T?> showSelectionDialog<T>({
       contentPadding: const EdgeInsets.only(top: 12, bottom: 24),
       content: SingleChildScrollView(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: options.map((option) {
             final selected = option.value == currentValue;
             return FocusableListTile(
@@ -189,7 +189,7 @@ void _showNumericInputDialogTV({
     title: title,
     contentBuilder: (dialogContext, context, setDialogState, saveFocusNode) {
       return Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           TvNumberSpinner(
             value: spinnerValue,

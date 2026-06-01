@@ -1,4 +1,5 @@
 import '../database/app_database.dart';
+import '../media/ids.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
@@ -23,7 +24,7 @@ class PlaybackSourceResolver {
     String? sessionIdentifier,
     String? transcodeSessionId,
   }) async {
-    final reportingClient = _playbackClient(metadata.serverId, offlineLibraryMode: offlineLibraryMode);
+    final reportingClient = _playbackClient(serverIdOrNull(metadata.serverId), offlineLibraryMode: offlineLibraryMode);
     final service = PlaybackInitializationService(client: reportingClient, database: database);
     final result = await service.getPlaybackData(
       metadata: metadata,
@@ -77,7 +78,7 @@ class PlaybackSourceResolver {
     return headers;
   }
 
-  MediaServerClient? _playbackClient(String? serverId, {required bool offlineLibraryMode}) {
+  MediaServerClient? _playbackClient(ServerId? serverId, {required bool offlineLibraryMode}) {
     if (serverId == null) return null;
     final client = serverManager.getClient(serverId);
     if (offlineLibraryMode && !serverManager.isClientOnline(serverId)) return null;

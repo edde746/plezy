@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -78,21 +79,21 @@ void main() {
 
     await db.insertSyncRule(
       profileId: 'profile-a',
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       ratingKey: 'show-1',
       globalKey: 'profile-a|jf-machine:show-1',
       targetType: 'show',
       episodeCount: 1,
     );
     await db.insertWatchAction(
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       clientScopeId: 'jf-machine/user-b',
       ratingKey: 'ep-1',
       actionType: OfflineActionType.watched.id,
     );
     await db.insertWatchAction(
       profileId: 'profile-b',
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       clientScopeId: 'jf-machine/user-a',
       ratingKey: 'ep-1',
       actionType: OfflineActionType.watched.id,
@@ -154,7 +155,7 @@ void main() {
 
     await db.insertSyncRule(
       profileId: 'profile-a',
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       ratingKey: 'show-1',
       globalKey: 'profile-a|jf-machine:show-1',
       targetType: 'show',
@@ -162,7 +163,7 @@ void main() {
     );
     await db.insertWatchAction(
       profileId: 'profile-a',
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       clientScopeId: 'jf-machine/user-a',
       ratingKey: 'ep-1',
       actionType: OfflineActionType.watched.id,
@@ -209,7 +210,7 @@ void main() {
 
     await db.insertSyncRule(
       profileId: 'profile-a',
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       ratingKey: 'show-1',
       globalKey: 'profile-a|jf-machine:show-1',
       targetType: 'show',
@@ -266,7 +267,7 @@ void main() {
 
     await db.insertSyncRule(
       profileId: 'profile-b',
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       ratingKey: 'show-1',
       globalKey: 'profile-b|jf-machine:show-1',
       targetType: 'show',
@@ -316,7 +317,7 @@ void main() {
 
     await db.insertSyncRule(
       profileId: 'profile-a',
-      serverId: 'plex-machine',
+      serverId: ServerId('plex-machine'),
       ratingKey: 'collection-1',
       globalKey: ruleKey,
       targetType: 'collection',
@@ -350,7 +351,7 @@ class _CollectionPagingClient implements MediaServerClient {
   final collectionPageCalls = <({int? start, int? size})>[];
 
   @override
-  String get serverId => 'plex-machine';
+  ServerId get serverId => ServerId('plex-machine');
 
   @override
   String? get serverName => 'Plex';

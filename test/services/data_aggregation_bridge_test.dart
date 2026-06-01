@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -73,7 +74,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'plex-1',
+        serverId: ServerId('plex-1'),
         serverName: 'Plex',
         httpClient: MockClient((req) async {
           plexRequests.add(req.url);
@@ -131,7 +132,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'plex-1',
+        serverId: ServerId('plex-1'),
         serverName: 'Plex',
         httpClient: MockClient((req) async {
           captured.add(req.url);
@@ -175,7 +176,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'plex-1',
+        serverId: ServerId('plex-1'),
         serverName: 'Plex',
         httpClient: MockClient((req) async {
           if (req.url.path == '/hubs') {
@@ -251,7 +252,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'plex-1',
+        serverId: ServerId('plex-1'),
         serverName: 'Plex',
         httpClient: MockClient((req) async {
           if (req.url.path == '/hubs') {
@@ -426,7 +427,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'plex-1',
+        serverId: ServerId('plex-1'),
         serverName: 'Plex',
         promotedHubKey: '/hubs/promoted',
         httpClient: MockClient((req) async {

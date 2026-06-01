@@ -165,7 +165,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       final serverId = widget.metadata.serverId;
       if (serverId == null) return false;
       final manager = context.read<MultiServerProvider>().serverManager;
-      final c = manager.getClient(serverId);
+      final c = manager.getClient(ServerId(serverId));
       return c?.capabilities.externalSubtitleSearch ?? false;
     } catch (_) {
       return false;

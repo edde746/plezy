@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
@@ -191,7 +192,11 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
 
   String _collectionSyncRuleKey() {
     final serverId = widget.collection.serverId ?? mediaClient.serverId;
-    return context.read<DownloadProvider>().syncRuleKeyForClient(mediaClient, widget.collection.id, serverId: serverId);
+    return context.read<DownloadProvider>().syncRuleKeyForClient(
+      mediaClient,
+      widget.collection.id,
+      serverId: ServerId(serverId),
+    );
   }
 
   Future<void> _deleteCollection() async {

@@ -1,4 +1,5 @@
 import 'dart:async' show unawaited;
+import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -235,7 +236,7 @@ class ContentStripState extends State<ContentStrip> {
     return KeyEventResult.ignored;
   }
 
-  MediaServerClient? _tryGetClient(BuildContext context, String? serverId) {
+  MediaServerClient? _tryGetClient(BuildContext context, ServerId? serverId) {
     return context.tryGetMediaClientForServer(serverId);
   }
 
@@ -260,9 +261,9 @@ class ContentStripState extends State<ContentStrip> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: widget.useFocusNavigation ? 0 : 16),
+        padding: .symmetric(horizontal: widget.useFocusNavigation ? 0 : 16),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             // Tab bar only shown in touch mode when both tabs exist
             if (_hasBothTabs && !widget.useFocusNavigation) _buildTabBar(),
@@ -272,7 +273,7 @@ class ContentStripState extends State<ContentStrip> {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
                   _activeTab == _StripTab.chapters ? t.videoControls.chapters : t.videoControls.queue,
-                  style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500),
+                  style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: .w500),
                 ),
               ),
             if (!widget.useFocusNavigation) const SizedBox(height: 8),
@@ -288,7 +289,7 @@ class ContentStripState extends State<ContentStrip> {
 
   Widget _buildTabBar() {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: .center,
       children: [
         _buildTabLabel(t.videoControls.chapters, _StripTab.chapters),
         const SizedBox(width: 24),
@@ -303,7 +304,7 @@ class ContentStripState extends State<ContentStrip> {
       child: GestureDetector(
         onTap: () => setState(() => _activeTab = tab),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             Text(
               label,
@@ -349,13 +350,13 @@ class ContentStripState extends State<ContentStrip> {
           scrollDirection: Axis.horizontal,
           clipBehavior: widget.useFocusNavigation ? Clip.none : Clip.hardEdge,
           itemCount: widget.chapters.length,
-          padding: EdgeInsets.symmetric(horizontal: widget.useFocusNavigation ? 12 : 4),
+          padding: .symmetric(horizontal: widget.useFocusNavigation ? 12 : 4),
           itemBuilder: (context, index) {
             final chapter = widget.chapters[index];
             final isCurrent = currentChapterIndex == index;
 
             final localThumbPath = widget.serverId != null && chapter.thumb != null
-                ? DownloadStorageService.instance.getArtworkPathSync(widget.serverId!, chapter.thumb!)
+                ? DownloadStorageService.instance.getArtworkPathSync(ServerId(widget.serverId!), chapter.thumb!)
                 : null;
 
             void onTap() => unawaited(_handleChapterTap(chapter.startTime));
@@ -365,7 +366,7 @@ class ContentStripState extends State<ContentStrip> {
               isTablet: isTablet,
               thumbnail: chapter.thumb != null
                   ? OptimizedMediaImage.thumb(
-                      client: _tryGetClient(context, widget.serverId),
+                      client: _tryGetClient(context, serverIdOrNull(widget.serverId)),
                       imagePath: chapter.thumb,
                       localFilePath: localThumbPath,
                       width: thumbWidth,
@@ -382,7 +383,7 @@ class ContentStripState extends State<ContentStrip> {
 
             if (widget.useFocusNavigation) {
               return Align(
-                alignment: Alignment.topCenter,
+                alignment: .topCenter,
                 child: FocusableWrapper(
                   focusNode: _chapterFocusNodes[index],
                   onSelect: onTap,
@@ -432,12 +433,14 @@ class ContentStripState extends State<ContentStrip> {
           scrollDirection: Axis.horizontal,
           clipBehavior: widget.useFocusNavigation ? Clip.none : Clip.hardEdge,
           itemCount: items.length,
-          padding: EdgeInsets.symmetric(horizontal: widget.useFocusNavigation ? 12 : 4),
+          padding: .symmetric(horizontal: widget.useFocusNavigation ? 12 : 4),
           itemBuilder: (context, index) {
             final item = items[index];
             final isCurrent = playbackState.playQueueItemIdFor(item) == currentItemID;
 
-            final client = item.serverId != null ? context.tryGetMediaClientForServer(item.serverId) : null;
+            final client = item.serverId != null
+                ? context.tryGetMediaClientForServer(serverIdOrNull(item.serverId))
+                : null;
 
             void onTap() => widget.onQueueItemSelected?.call(item);
 
@@ -462,7 +465,7 @@ class ContentStripState extends State<ContentStrip> {
 
             if (widget.useFocusNavigation) {
               return Align(
-                alignment: Alignment.topCenter,
+                alignment: .topCenter,
                 child: FocusableWrapper(
                   focusNode: _queueFocusNodes[index],
                   onSelect: onTap,
@@ -516,10 +519,10 @@ class ContentStripState extends State<ContentStrip> {
         onTap: onTap,
         child: Container(
           width: itemWidth,
-          margin: EdgeInsets.symmetric(horizontal: 6, vertical: verticalMargin),
+          margin: .symmetric(horizontal: 6, vertical: verticalMargin),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: .min,
+            crossAxisAlignment: .start,
             children: [
               MediaSelectorThumbnail(
                 width: itemWidth,
@@ -538,7 +541,7 @@ class ContentStripState extends State<ContentStrip> {
                   fontWeight: isCurrent ? FontWeight.w600 : FontWeight.normal,
                 ),
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                overflow: .ellipsis,
               ),
               Text(
                 subtitle,
@@ -548,7 +551,7 @@ class ContentStripState extends State<ContentStrip> {
                   fontWeight: isCurrent ? FontWeight.w500 : FontWeight.normal,
                 ),
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                overflow: .ellipsis,
               ),
             ],
           ),

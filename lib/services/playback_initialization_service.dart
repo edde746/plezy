@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../media/ids.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -46,7 +47,7 @@ class PlaybackInitializationService {
   /// Returns the local file path if the video is downloaded and completed.
   /// Returns null if not available offline or database is not provided.
   Future<String?> getOfflineVideoPath(
-    String serverId,
+    ServerId serverId,
     String ratingKey, {
     int mediaIndex = 0,
     String? selectedMediaSourceId,
@@ -60,7 +61,7 @@ class PlaybackInitializationService {
       // makes this an O(log n) lookup. Filtering by (serverId, ratingKey)
       // would only use the serverId index and then linear-scan matching rows.
       final query = database!.select(database!.downloadedMedia)
-        ..where((tbl) => tbl.globalKey.equals(buildGlobalKey(serverId, ratingKey)));
+        ..where((tbl) => tbl.globalKey.equals(buildGlobalKey(ServerId(serverId), ratingKey)));
 
       final downloadedItem = await query.getSingleOrNull();
 
@@ -142,7 +143,7 @@ class PlaybackInitializationService {
     String? offlineVideoPath;
     if (serverId != null && (preferOffline || client == null) && database != null) {
       offlineVideoPath = await getOfflineVideoPath(
-        serverId,
+        ServerId(serverId),
         metadata.id,
         mediaIndex: selectedMediaIndex,
         selectedMediaSourceId: selectedMediaSourceId,
@@ -233,7 +234,7 @@ class PlaybackInitializationService {
     try {
       final row = await (db.select(
         db.downloadedMedia,
-      )..where((tbl) => tbl.globalKey.equals(buildGlobalKey(serverId, metadata.id)))).getSingleOrNull();
+      )..where((tbl) => tbl.globalKey.equals(buildGlobalKey(ServerId(serverId), metadata.id)))).getSingleOrNull();
       return row?.clientScopeId ?? serverId;
     } catch (_) {
       return serverId;
@@ -300,7 +301,7 @@ class PlaybackInitializationService {
     } else if (metadata.isMovie && metadata.title != null) {
       dirs.add(await storage.getMovieSubtitlesDirectory(metadata));
     }
-    dirs.add(await storage.getSubtitlesDirectory(serverId, metadata.id));
+    dirs.add(await storage.getSubtitlesDirectory(ServerId(serverId), metadata.id));
     return dirs;
   }
 }

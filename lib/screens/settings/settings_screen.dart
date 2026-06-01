@@ -255,7 +255,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
         : t.connections.addConnectionSubtitleScoped(displayName: active.displayName);
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         SettingsSectionHeader(t.connections.sectionTitle),
         // Connections are managed per-profile (via the Profiles section
@@ -304,7 +304,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     final isCustom = storageService.isUsingCustomPath();
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         SettingsSectionHeader(t.settings.downloads),
         if (!Platform.isIOS)
@@ -316,7 +316,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                 focusNode: _focusTracker.get(_kDownloadLocation),
                 leading: const AppIcon(Symbols.folder_rounded, fill: 1),
                 title: Text(isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault),
-                subtitle: Text(currentPath, maxLines: 2, overflow: TextOverflow.ellipsis),
+                subtitle: Text(currentPath, maxLines: 2, overflow: .ellipsis),
                 trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                 onTap: () => _showDownloadLocationDialog(),
               );
@@ -344,7 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     if (_keyboardService == null) return const SizedBox.shrink();
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         SettingsSectionHeader(t.settings.keyboardShortcuts),
         SettingNavigationTile(
@@ -372,7 +372,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   Widget _buildAdvancedSection() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         SettingsSectionHeader(t.settings.advanced),
         ListTile(
@@ -448,7 +448,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   Widget _buildBackupSection() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         SettingsSectionHeader(t.settings.backup),
         ListTile(
@@ -482,7 +482,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   Widget _buildUpdateSection() {
     if (UpdateService.useNativeUpdater) {
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           SettingsSectionHeader(t.settings.updates),
           ListTile(
@@ -500,7 +500,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     final hasUpdate = _updateInfo != null && _updateInfo!['hasUpdate'] == true;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         SettingsSectionHeader(t.settings.updates),
         ListTile(
@@ -539,8 +539,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       builder: (dialogContext) => AlertDialog(
         title: Text(t.settings.downloads),
         content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: .min,
+          crossAxisAlignment: .start,
           children: [
             Text(t.settings.downloadLocationDescription),
             const SizedBox(height: 16),

@@ -55,7 +55,7 @@ class SleepTimerContent extends StatelessWidget {
             ],
             Expanded(
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
                 children: [
                   Expanded(
                     child: FocusTraversalGroup(

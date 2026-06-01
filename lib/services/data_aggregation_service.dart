@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
@@ -78,7 +79,7 @@ class DataAggregationService {
     if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
       filteredOnDeck = allOnDeck.where((item) {
         if (item.libraryId == null || item.serverId == null) return true;
-        final globalKey = buildGlobalKey(item.serverId!, item.libraryId!);
+        final globalKey = buildGlobalKey(ServerId(item.serverId!), item.libraryId!);
         return !hiddenLibraryKeys.contains(globalKey);
       }).toList();
     }
@@ -175,11 +176,11 @@ class DataAggregationService {
     final keys = <String>{};
     final serverId = item.serverId;
     final targetId = _continueWatchingIdentityTargetId(item);
-    final client = serverId == null ? null : _serverManager.getClient(serverId);
+    final client = serverId == null ? null : _serverManager.getClient(ServerId(serverId));
 
     if (client != null && targetId != null && targetId.isNotEmpty) {
       try {
-        final cacheKey = buildGlobalKey(serverId!, targetId);
+        final cacheKey = buildGlobalKey(ServerId(serverId!), targetId);
         final externalIds = await externalIdLoads.putIfAbsent(cacheKey, () => client.fetchExternalIds(targetId));
         _addExternalIdentityKeys(keys, scope, externalIds);
       } catch (e, stackTrace) {
@@ -273,7 +274,7 @@ class DataAggregationService {
                 includePlaybackHubs: includePlaybackHubs,
                 libraries: useGlobalHubs ? serverLibraries : null,
               );
-        return _postProcessHubs(hubs, serverId: serverId, hiddenLibraryKeys: hiddenLibraryKeys);
+        return _postProcessHubs(hubs, serverId: ServerId(serverId), hiddenLibraryKeys: hiddenLibraryKeys);
       } catch (e, stackTrace) {
         appLogger.e('Failed to fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
         return <MediaHub>[];
@@ -334,7 +335,7 @@ class DataAggregationService {
   }
 
   /// Filter hidden-library items and drop empty hubs.
-  List<MediaHub> _postProcessHubs(List<MediaHub> hubs, {required String serverId, Set<String>? hiddenLibraryKeys}) {
+  List<MediaHub> _postProcessHubs(List<MediaHub> hubs, {required ServerId serverId, Set<String>? hiddenLibraryKeys}) {
     var filtered = hubs;
     if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
       filtered = filtered
@@ -342,7 +343,7 @@ class DataAggregationService {
             final filteredItems = hub.items.where((item) {
               final libraryId = item.libraryId;
               if (libraryId == null) return true;
-              final globalKey = buildGlobalKey(serverId, libraryId);
+              final globalKey = buildGlobalKey(ServerId(serverId), libraryId);
               return !hiddenLibraryKeys.contains(globalKey);
             }).toList();
             if (filteredItems.isEmpty) return null;

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,7 +32,7 @@ void main() {
         product: 'Plezy',
         version: '1',
       ),
-      serverId: 'server-id',
+      serverId: ServerId('server-id'),
       httpClient: MockClient(handler),
     );
   }

@@ -120,17 +120,17 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
 
   Widget _buildSection(IconData icon, String title, List<_Metric> metrics) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: .start,
+      mainAxisSize: .min,
       children: [
         Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             AppIcon(icon, fill: 1, color: Colors.white70, size: 12),
             const SizedBox(width: 4),
             Text(
               title,
-              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
+              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: .w600),
             ),
           ],
         ),
@@ -144,19 +144,14 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 2),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           Text('${metric.label}: ', style: const TextStyle(color: Colors.white60, fontSize: 10)),
           Flexible(
             child: Text(
               metric.value,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.w500,
-                fontFamily: 'monospace',
-              ),
-              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: .w500, fontFamily: 'monospace'),
+              overflow: .ellipsis,
             ),
           ),
         ],

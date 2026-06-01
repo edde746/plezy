@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import 'package:flutter/foundation.dart';
 
@@ -251,7 +252,7 @@ class ActiveProfileBinder {
       // would leak servers attached to other profiles.
       for (final serverId in serverManager.serverIds.toList()) {
         if (!visibleServerIds.contains(serverId)) {
-          serverManager.removeServer(serverId);
+          serverManager.removeServer(ServerId(serverId));
         }
       }
       multiServerProvider.setExpectedVisibleServerIds(expectedServerIds);
@@ -635,7 +636,7 @@ class ActiveProfileBinder {
 
   void _clearBoundServers() {
     for (final serverId in serverManager.serverIds.toList()) {
-      serverManager.removeServer(serverId);
+      serverManager.removeServer(ServerId(serverId));
     }
     multiServerProvider.setExpectedVisibleServerIds(<String>{});
     multiServerProvider.setVisibleServerIds(<String>{});

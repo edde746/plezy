@@ -6,6 +6,7 @@ import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController, MediaServerResponse;
 import '../utils/external_ids.dart';
 import 'download_resolution.dart';
+import 'ids.dart';
 import 'library_filter_result.dart';
 import 'library_first_character.dart';
 import 'library_query.dart';
@@ -67,7 +68,7 @@ abstract interface class GracefullyCloseable {
 }
 
 abstract class MediaServerClient {
-  String get serverId;
+  ServerId get serverId;
   String? get serverName;
   MediaBackend get backend;
   ServerCapabilities get capabilities;
@@ -587,7 +588,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     bool cacheResponse = true,
   }) async {
     if (isOfflineMode) {
-      final cached = await cache.get(cacheServerId, cacheKey);
+      final cached = await cache.get(ServerId(cacheServerId), cacheKey);
       if (cached != null) return parseCache(cached);
       return null;
     }
@@ -603,7 +604,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
       return parseResponse(response);
     } catch (e) {
       appLogger.w('Network request failed for $cacheKey, trying cache', error: e);
-      final cached = await cache.get(cacheServerId, cacheKey);
+      final cached = await cache.get(ServerId(cacheServerId), cacheKey);
       if (cached != null) return parseCache(cached);
       rethrow;
     }
@@ -620,7 +621,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     required T? Function(MediaServerResponse response) parseResponse,
     bool cacheResponse = true,
   }) async {
-    final cached = await cache.get(cacheServerId, cacheKey);
+    final cached = await cache.get(ServerId(cacheServerId), cacheKey);
     if (cached != null) return parseCache(cached);
     if (isOfflineMode) return null;
     final response = await networkCall();
@@ -636,7 +637,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
 
   Future<void> _putCacheResponse(String cacheKey, dynamic data) async {
     if (data is Map<String, dynamic>) {
-      await cache.put(cacheServerId, cacheKey, data);
+      await cache.put(ServerId(cacheServerId), cacheKey, data);
     } else if (data != null) {
       appLogger.w('Unexpected response type for $cacheKey: ${data.runtimeType}');
     }

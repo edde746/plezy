@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import '../mpv/mpv.dart';
 
@@ -437,7 +438,7 @@ class PlaybackProgressTracker {
     }
 
     await offlineWatchService!.queueProgressUpdate(
-      serverId: serverId,
+      serverId: ServerId(serverId),
       itemId: metadata.id,
       viewOffset: position.inMilliseconds,
       duration: duration.inMilliseconds,

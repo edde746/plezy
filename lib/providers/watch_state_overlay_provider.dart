@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import 'package:flutter/foundation.dart';
 
@@ -62,7 +63,7 @@ class WatchStateOverlayProvider extends ChangeNotifier with DisposableChangeNoti
     if (parsed != null) {
       final scoped = _activeClientScopesByServer[parsed.serverId];
       if (scoped != null && scoped.isNotEmpty) {
-        scopedEntry = _patches[buildGlobalKey(scoped, parsed.ratingKey)];
+        scopedEntry = _patches[buildGlobalKey(ServerId(scoped), parsed.ratingKey)];
       }
     }
     final unscopedEntry = _patches[globalKey];
@@ -116,7 +117,7 @@ class WatchStateOverlayProvider extends ChangeNotifier with DisposableChangeNoti
 
     final cacheServerId = event.cacheServerId;
     final key = cacheServerId != null && cacheServerId.isNotEmpty && cacheServerId != event.serverId
-        ? buildGlobalKey(cacheServerId, event.itemId)
+        ? buildGlobalKey(ServerId(cacheServerId), event.itemId)
         : event.globalKey;
     _patches[key] = _WatchStateOverlayEntry(patch, ++_sequence);
     safeNotifyListeners();

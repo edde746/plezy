@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../media/ids.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
@@ -443,7 +444,7 @@ class SettingsService extends BaseSharedPreferencesService {
     decode: _decodeMpvPresets,
   );
 
-  static IntPref watchedThresholdPref(String serverId) => IntPref('watched_threshold_$serverId', defaultValue: 90);
+  static IntPref watchedThresholdPref(ServerId serverId) => IntPref('watched_threshold_$serverId', defaultValue: 90);
 
   static EnumPref<TrackerLibraryFilterMode> trackerFilterModePref(TrackerService s) => EnumPref(
     'tracker_library_filter_mode_${s.name}',

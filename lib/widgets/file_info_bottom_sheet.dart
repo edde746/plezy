@@ -42,7 +42,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
             padding: const EdgeInsets.all(16),
             children: [
               if (widget.title.isNotEmpty) ...[
-                Text(widget.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                Text(widget.title, style: const TextStyle(fontSize: 16, fontWeight: .w500)),
                 const SizedBox(height: 20),
               ],
 
@@ -109,7 +109,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
   }
 
   Widget _buildSectionHeader(String title) {
-    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+    return Text(title, style: const TextStyle(fontSize: 18, fontWeight: .bold));
   }
 
   Widget _buildInfoRow(String label, String value, {bool isMonospace = false}) {
@@ -158,7 +158,7 @@ class _FocusableInfoRowState extends State<_FocusableInfoRow> {
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           children: [
             SizedBox(
               width: 140,

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -122,7 +123,11 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   String _playlistSyncRuleKey() {
     final serverId = widget.playlist.serverId ?? mediaClient.serverId;
-    return context.read<DownloadProvider>().syncRuleKeyForClient(mediaClient, widget.playlist.id, serverId: serverId);
+    return context.read<DownloadProvider>().syncRuleKeyForClient(
+      mediaClient,
+      widget.playlist.id,
+      serverId: ServerId(serverId),
+    );
   }
 
   Future<void> _managePlaylistSyncRule() =>
@@ -701,12 +706,12 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       slivers: [
         CustomAppBar(
           title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
             children: [
               Text(widget.playlist.title, style: const TextStyle(fontSize: 16)),
               if (widget.playlist.smart)
                 Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: .min,
                   children: [
                     AppIcon(
                       Symbols.auto_awesome_rounded,
@@ -717,11 +722,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
                     const SizedBox(width: 4),
                     Text(
                       t.playlists.smartPlaylist,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.normal,
-                      ),
+                      style: TextStyle(fontSize: 11, color: Theme.of(context).colorScheme.primary, fontWeight: .normal),
                     ),
                   ],
                 ),
@@ -827,7 +828,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
           child: error == null
               ? const CircularProgressIndicator()
               : Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: .min,
                   children: [
                     Text(error, textAlign: TextAlign.center),
                     const SizedBox(height: 8),

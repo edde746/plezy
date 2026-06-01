@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -56,7 +57,7 @@ class TvBrowseRailLayoutMetrics {
 }
 
 class TvBrowseRailLayout {
-  static const double compactTallPosterScale = 0.80;
+  static const double compactTallPosterScale = 0.8;
   static const double compactEpisodeThumbnailScale = compactTallPosterScale;
   static const double fullCardFocusScale = FocusTheme.fullCardFocusScale;
 
@@ -881,7 +882,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
             focusNode: _focusNode,
             onKeyEvent: _handleKeyEvent,
             child: Align(
-              alignment: Alignment.bottomCenter,
+              alignment: .bottomCenter,
               heightFactor: 1,
               child: SizedBox(
                 height: totalHeight,
@@ -894,7 +895,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                       backgroundColor: theme.scaffoldBackgroundColor,
                     ),
                     Padding(
-                      padding: EdgeInsets.fromLTRB(
+                      padding: .fromLTRB(
                         horizontalInset,
                         TvBrowseRailLayout.railTopPaddingForScale(scale),
                         0,
@@ -956,7 +957,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       controller: _verticalController,
       physics: const NeverScrollableScrollPhysics(),
       clipBehavior: Clip.none,
-      padding: EdgeInsets.only(bottom: bottomPadding),
+      padding: .only(bottom: bottomPadding),
       itemExtentBuilder: (index, _) => sectionHeights[index],
       itemCount: widget.hubs.length,
       itemBuilder: (context, hubIndex) {
@@ -969,7 +970,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
           key: _hubSectionKeys.putIfAbsent(hubIndex, () => GlobalKey()),
           height: sectionHeight,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            crossAxisAlignment: .stretch,
             children: [
               _buildHubHeader(context, hub: hub, hubIndex: hubIndex, isActive: isActive, scale: scale),
               SizedBox(height: TvBrowseRailLayout.hubStripGapForScale(scale)),
@@ -1012,7 +1013,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       height: TvBrowseRailLayout.hubStripHeightForScale(scale),
       child: ExcludeFocus(
         child: Align(
-          alignment: Alignment.centerLeft,
+          alignment: .centerLeft,
           child: Row(
             children: [
               AppIcon(widget.iconForHub(hub, hubIndex), fill: 1, size: 20 * scale, color: iconColor),
@@ -1021,7 +1022,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                 child: Text(
                   hub.title,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: titleColor,
                     fontSize: 18 * scale,
@@ -1082,7 +1083,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
               controller: scrollController,
               scrollDirection: Axis.horizontal,
               clipBehavior: Clip.none,
-              padding: EdgeInsets.fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 6 * scale),
+              padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 6 * scale),
               itemExtentBuilder: (itemIndex, _) =>
                   TvBrowseRailLayout.itemExtentForIndex(hub: hub, index: itemIndex, metrics: metrics, scale: scale),
               itemCount: totalCount,
@@ -1090,9 +1091,9 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                 final isFocused = hasFocus && isActiveHub && itemIndex == _itemIndex;
                 if (itemIndex == hub.items.length) {
                   return Padding(
-                    padding: EdgeInsets.only(right: metrics.itemGap),
+                    padding: .only(right: metrics.itemGap),
                     child: Align(
-                      alignment: Alignment.centerLeft,
+                      alignment: .centerLeft,
                       child: _buildViewAllButton(
                         context,
                         isFocused: isFocused,
@@ -1150,10 +1151,10 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                 );
 
                 return Padding(
-                  padding: EdgeInsets.only(right: metrics.itemGap),
+                  padding: .only(right: metrics.itemGap),
                   child: MouseRegion(
                     onEnter: (_) => _setHoveredItem(hub, itemIndex),
-                    child: Align(alignment: Alignment.topLeft, child: focusableCard),
+                    child: Align(alignment: .topLeft, child: focusableCard),
                   ),
                 );
               },
@@ -1185,7 +1186,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
             fit: StackFit.expand,
             children: [
               OptimizedMediaImage(
-                client: context.tryGetMediaClientWithFallback(item.serverId),
+                client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
                 imagePath: item.thumbPath,
                 width: cardWidth,
                 height: imageSize,
@@ -1208,31 +1209,26 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                 right: 10 * scale,
                 bottom: 9 * scale,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .start,
                   children: [
                     Text(
                       item.displayTitle,
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 13 * scale,
-                        height: 1.1,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      overflow: .ellipsis,
+                      style: TextStyle(color: Colors.white, fontSize: 13 * scale, height: 1.1, fontWeight: .w800),
                     ),
                     if (characterName != null && characterName.isNotEmpty) ...[
                       SizedBox(height: 2 * scale),
                       Text(
                         characterName,
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        overflow: .ellipsis,
                         style: TextStyle(
                           color: Colors.white.withValues(alpha: 0.82),
                           fontSize: 11 * scale,
                           height: 1.1,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: .w600,
                         ),
                       ),
                     ],
@@ -1248,15 +1244,15 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     return SizedBox(
       width: cardWidth,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(3 * scale, 3 * scale, 3 * scale, scale),
+        padding: .fromLTRB(3 * scale, 3 * scale, 3 * scale, scale),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: .min,
+          crossAxisAlignment: .start,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(tokens(context).radiusSm),
               child: OptimizedMediaImage(
-                client: context.tryGetMediaClientWithFallback(item.serverId),
+                client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
                 imagePath: item.thumbPath,
                 width: imageSize,
                 height: imageSize,
@@ -1269,12 +1265,12 @@ class TvBrowseRailState extends State<TvBrowseRail> {
             Text(
               item.displayTitle,
               maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              overflow: .ellipsis,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: tokens(context).text,
                 fontSize: 13 * scale,
                 height: 1.1,
-                fontWeight: FontWeight.w700,
+                fontWeight: .w700,
               ),
             ),
             if (characterName != null && characterName.isNotEmpty) ...[
@@ -1282,7 +1278,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
               Text(
                 characterName,
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                overflow: .ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: tokens(context).textMuted,
                   fontSize: 11 * scale,
@@ -1308,7 +1304,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     final height = TvBrowseRailLayout.viewAllPillHeightForScale(scale);
     final foreground = isFocused ? theme.colorScheme.primary : theme.colorScheme.onSurface.withValues(alpha: 0.78);
     final background = isFocused
-        ? theme.colorScheme.primary.withValues(alpha: 0.20)
+        ? theme.colorScheme.primary.withValues(alpha: 0.2)
         : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.42);
 
     return ClickableCursor(
@@ -1323,14 +1319,14 @@ class TvBrowseRailState extends State<TvBrowseRail> {
             curve: Curves.easeOutCubic,
             width: width,
             height: height,
-            padding: EdgeInsets.symmetric(horizontal: (12 * scale).clamp(10, 16).toDouble()),
+            padding: .symmetric(horizontal: (12 * scale).clamp(10, 16).toDouble()),
             decoration: BoxDecoration(
               color: background,
               borderRadius: BorderRadius.circular(height / 2),
               boxShadow: isFocused
                   ? [
                       BoxShadow(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.20),
+                        color: theme.colorScheme.primary.withValues(alpha: 0.2),
                         blurRadius: 18,
                         spreadRadius: 1,
                       ),
@@ -1338,17 +1334,17 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                   : null,
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: .center,
               children: [
                 Flexible(
                   child: Text(
                     t.common.viewAll,
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    overflow: .ellipsis,
                     style: TextStyle(
                       color: foreground,
                       fontSize: (13 * scale).clamp(12, 16).toDouble(),
-                      fontWeight: FontWeight.w800,
+                      fontWeight: .w800,
                       letterSpacing: 0.1,
                     ),
                   ),

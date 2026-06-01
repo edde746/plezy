@@ -34,7 +34,7 @@ class SleepTimerActiveStatus extends StatelessWidget {
         children: [
           Text(
             t.videoControls.timerActive,
-            style: const TextStyle(color: Colors.amber, fontSize: 16, fontWeight: FontWeight.bold),
+            style: const TextStyle(color: Colors.amber, fontSize: 16, fontWeight: .bold),
           ),
           const SizedBox(height: 8),
           Text(
@@ -44,7 +44,7 @@ class SleepTimerActiveStatus extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: .center,
             children: [
               if (!isEndOfVideo) ...[
                 FocusableButton(

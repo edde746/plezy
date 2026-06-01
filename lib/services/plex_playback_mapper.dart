@@ -132,7 +132,7 @@ PlexVideoPlaybackData parsePlexVideoPlaybackDataFromJson(
 MediaFileInfo? parsePlexFileInfoFromJson(Map<String, dynamic>? metadataJson) {
   final mediaList = _mapList(metadataJson?['Media']);
   if (mediaList.isNotEmpty) {
-    final media = mediaList[0];
+    final media = mediaList.first;
     final partList = _mapList(media['Part']);
     final version = PlexMappers.mediaVersionFromJson(Map<String, dynamic>.from(media));
     final partIndex = partList.isEmpty ? 0 : _firstPlayablePartIndex(version).clamp(0, partList.length - 1).toInt();

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,7 +38,7 @@ void main() {
         product: 'Plezy',
         version: '1',
       ),
-      serverId: 'server-id',
+      serverId: ServerId('server-id'),
       httpClient: MockClient(handler),
     );
   }
@@ -166,7 +167,7 @@ void main() {
 
   test('latest server metadata overwrites cached playback media fields', () async {
     final cache = PlexApiCache.instance;
-    await cache.put('server-id', '/library/metadata/42', {
+    await cache.put(ServerId('server-id'), '/library/metadata/42', {
       'MediaContainer': {
         'Metadata': [
           {
@@ -194,7 +195,7 @@ void main() {
       },
     });
 
-    await cache.put('server-id', '/library/metadata/42', {
+    await cache.put(ServerId('server-id'), '/library/metadata/42', {
       'MediaContainer': {
         'Metadata': [
           {
@@ -214,7 +215,7 @@ void main() {
       },
     });
 
-    final cached = await cache.get('server-id', '/library/metadata/42');
+    final cached = await cache.get(ServerId('server-id'), '/library/metadata/42');
     final metadata = (cached!['MediaContainer'] as Map<String, dynamic>)['Metadata'] as List<dynamic>;
     final item = metadata.single as Map<String, dynamic>;
     final media = item['Media'] as List<dynamic>;
@@ -228,7 +229,7 @@ void main() {
   });
 
   test('network failure falls back to lean cached playback metadata', () async {
-    await PlexApiCache.instance.put('server-id', '/library/metadata/42', {
+    await PlexApiCache.instance.put(ServerId('server-id'), '/library/metadata/42', {
       'MediaContainer': {
         'Metadata': [
           {

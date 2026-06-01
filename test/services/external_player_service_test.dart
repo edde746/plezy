@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -18,7 +19,7 @@ class _RecordingClient implements MediaServerClient {
   final stopped = <({int positionMs, int? durationMs})>[];
 
   @override
-  String get serverId => 'srv';
+  ServerId get serverId => ServerId('srv');
 
   @override
   MediaBackend get backend => MediaBackend.plex;

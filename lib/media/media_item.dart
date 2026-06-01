@@ -1,6 +1,7 @@
 // ignore_for_file: invalid_annotation_target
 
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'ids.dart';
 
 import '../services/settings_service.dart' show EpisodePosterMode;
 import '../utils/global_key_utils.dart';
@@ -353,10 +354,11 @@ sealed class MediaItem with _$MediaItem {
 
   /// Global unique identifier across all servers (`serverId:id`). Falls back
   /// to bare [id] if [serverId] is missing.
-  String get globalKey => serverId != null ? buildGlobalKey(serverId!, id) : id;
+  String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), id) : id;
 
   /// Global unique identifier of this item's library section.
-  String? get libraryGlobalKey => serverId != null && libraryId != null ? buildGlobalKey(serverId!, libraryId!) : null;
+  String? get libraryGlobalKey =>
+      serverId != null && libraryId != null ? buildGlobalKey(ServerId(serverId!), libraryId!) : null;
 
   /// Parent rating keys for hierarchical invalidation. For an episode:
   /// `[seasonId, showId]`. For a season: `[showId]`. For a movie: `[]`.

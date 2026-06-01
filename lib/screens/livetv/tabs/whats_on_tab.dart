@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -87,7 +88,7 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
         if (!queriedServers.add(serverInfo.serverId)) continue;
         try {
           // Plex-only: Live TV hubs API is Plex-specific.
-          final client = multiServer.getPlexClientForServer(serverInfo.serverId);
+          final client = multiServer.getPlexClientForServer(ServerId(serverInfo.serverId));
           if (client == null) continue;
 
           final hubs = await client.getLiveTvHubs();
@@ -432,13 +433,13 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> with MountedSetSta
 
   Widget _buildContent(BuildContext context, bool hasFocus, int libraryDensity) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: .start,
+      mainAxisSize: .min,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               const AppIcon(Symbols.live_tv_rounded, fill: 1),
               const SizedBox(width: 8),
@@ -446,7 +447,7 @@ class _LiveTvHubSectionState extends State<_LiveTvHubSection> with MountedSetSta
                 child: Text(
                   widget.hub.title,
                   style: Theme.of(context).textTheme.titleLarge,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                   maxLines: 1,
                 ),
               ),
@@ -542,7 +543,7 @@ class _LiveTvPosterCard extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(8),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
             children: [
               SizedBox(
                 width: double.infinity,
@@ -550,7 +551,7 @@ class _LiveTvPosterCard extends StatelessWidget {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                   child: OptimizedMediaImage.poster(
-                    client: context.tryGetMediaClientWithFallback(metadata.serverId),
+                    client: context.tryGetMediaClientWithFallback(serverIdOrNull(metadata.serverId)),
                     imagePath: posterImage,
                     width: double.infinity,
                     height: double.infinity,
@@ -562,14 +563,14 @@ class _LiveTvPosterCard extends StatelessWidget {
               Text(
                 metadata.displayTitle,
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, height: 1.1),
+                overflow: .ellipsis,
+                style: const TextStyle(fontWeight: .w600, fontSize: 13, height: 1.1),
               ),
               if (metadata.displaySubtitle != null)
                 Text(
                   metadata.displaySubtitle!,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                   style: Theme.of(
                     context,
                   ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1),

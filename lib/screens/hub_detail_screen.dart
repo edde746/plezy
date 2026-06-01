@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -141,7 +142,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
         final sectionId = match.group(1)!;
         appLogger.d('Loading sorts for section: $sectionId');
 
-        final client = context.tryGetMediaClientForServer(serverId);
+        final client = context.tryGetMediaClientForServer(ServerId(serverId));
         final sorts = client == null ? const <MediaSort>[] : await client.fetchSortOptions(sectionId);
 
         appLogger.d('Loaded ${sorts.length} sorts');
@@ -272,7 +273,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
     try {
       final loader = widget.loadItems;
-      final client = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
+      final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
       final List<MediaItem> items;
       int totalCount;
       int loadedCount;
@@ -397,7 +398,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
 
   void _retryHubContinuation() {
     final serverId = widget.hub.serverId;
-    final client = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
+    final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
     if (client == null || _isLoadingMore) return;
     final generation = _loadGeneration;
     if (client.backend == MediaBackend.plex) {
@@ -429,7 +430,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
     if (serverId == null) return;
 
     try {
-      final updated = await context.tryGetMediaClientForServer(serverId)?.fetchItem(ratingKey);
+      final updated = await context.tryGetMediaClientForServer(ServerId(serverId))?.fetchItem(ratingKey);
       if (updated == null || !mounted) return;
       setState(() {
         final currentItemIndex = _items.indexWhere((item) => item.id == ratingKey);
@@ -457,7 +458,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
           child: error == null
               ? const CircularProgressIndicator()
               : Column(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: .min,
                   children: [
                     Text(error, textAlign: TextAlign.center),
                     const SizedBox(height: 8),

@@ -176,7 +176,7 @@ class PerformanceStats {
   /// Format video bitrate in Mbps.
   String get videoBitrateFormatted {
     if (videoBitrate == null || videoBitrate == 0) return 'N/A';
-    final mbps = videoBitrate! / 1000000;
+    final mbps = videoBitrate! / 1_000_000;
     return '${mbps.toStringAsFixed(1)} Mbps';
   }
 

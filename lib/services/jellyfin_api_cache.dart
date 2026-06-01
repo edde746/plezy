@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../media/ids.dart';
 
 import 'package:drift/drift.dart';
 
@@ -39,7 +40,7 @@ class JellyfinApiCache extends ApiCache {
 
   static final RegExp _itemKeyPattern = RegExp(r'/Users/[^/]+/Items/([^/?]+)$');
 
-  String _itemPattern(String serverId, String itemId) => '$serverId:/Users/%/Items/$itemId';
+  String _itemPattern(ServerId serverId, String itemId) => '$serverId:/Users/%/Items/$itemId';
 
   static String mediaSegmentsEndpoint(String itemId) => '/MediaSegments/${Uri.encodeComponent(itemId)}';
 
@@ -47,7 +48,7 @@ class JellyfinApiCache extends ApiCache {
   /// Children-list endpoints are out of scope for v1 — they'll get cleaned up
   /// via [deleteForServer] or [clearAll].
   @override
-  Future<void> deleteForItem(String serverId, String itemId) async {
+  Future<void> deleteForItem(ServerId serverId, String itemId) async {
     final endpoint = mediaSegmentsEndpoint(itemId);
     await (database.delete(
       database.apiCache,
@@ -56,12 +57,12 @@ class JellyfinApiCache extends ApiCache {
 
   /// Pin the metadata row(s) for [itemId] so they survive cache eviction.
   @override
-  Future<void> pinForOffline(String serverId, String itemId) async {
+  Future<void> pinForOffline(ServerId serverId, String itemId) async {
     final endpoint = mediaSegmentsEndpoint(itemId);
     await Future.wait([pinByKeyPattern(_itemPattern(serverId, itemId)), pin(serverId, endpoint)]);
   }
 
-  Future<void> unpinForOffline(String serverId, String itemId) async {
+  Future<void> unpinForOffline(ServerId serverId, String itemId) async {
     final endpoint = mediaSegmentsEndpoint(itemId);
     await Future.wait([unpinByKeyPattern(_itemPattern(serverId, itemId)), unpin(serverId, endpoint)]);
   }
@@ -70,9 +71,9 @@ class JellyfinApiCache extends ApiCache {
   ///
   /// Named `isPinnedItemId` to avoid colliding with the inherited
   /// [ApiCache.isPinned]'s identical Dart signature.
-  Future<bool> isPinnedItemId(String serverId, String itemId) => hasPinnedMatching(_itemPattern(serverId, itemId));
+  Future<bool> isPinnedItemId(ServerId serverId, String itemId) => hasPinnedMatching(_itemPattern(serverId, itemId));
 
-  Future<Set<String>> getPinnedItemIds(String serverId) => extractPinnedIds(serverId, _itemKeyPattern);
+  Future<Set<String>> getPinnedItemIds(ServerId serverId) => extractPinnedIds(serverId, _itemKeyPattern);
 
   /// Fetch and parse a [MediaItem] from cache.
   ///
@@ -90,7 +91,7 @@ class JellyfinApiCache extends ApiCache {
   /// is cheap and matches [PlexApiCache.getMetadata]'s shape. Bulk-load
   /// callers go through [getAllPinnedMetadata] which still parallelises.
   @override
-  Future<MediaItem?> getMetadata(String serverId, String itemId) async {
+  Future<MediaItem?> getMetadata(ServerId serverId, String itemId) async {
     final row = await (database.select(
       database.apiCache,
     )..where((t) => t.cacheKey.like(_itemPattern(serverId, itemId)))).get();
@@ -102,7 +103,12 @@ class JellyfinApiCache extends ApiCache {
     try {
       final data = jsonDecode(row.first.data) as Map<String, dynamic>;
       final absolutizer = JellyfinImageAbsolutizer(baseUrl: ctx.baseUrl, accessToken: ctx.accessToken);
-      return JellyfinMappers.mediaItem(data, serverId: ctx.machineId, serverName: ctx.name, absolutizer: absolutizer);
+      return JellyfinMappers.mediaItem(
+        data,
+        serverId: ServerId(ctx.machineId),
+        serverName: ctx.name,
+        absolutizer: absolutizer,
+      );
     } catch (_) {
       return null;
     }
@@ -122,14 +128,15 @@ class JellyfinApiCache extends ApiCache {
   /// with the Plex caller.
   @override
   Future<void> applyWatchState({
-    required String serverId,
+    required ServerId serverId,
     required String itemId,
     required bool isWatched,
     int? viewOffsetMs,
     int? lastViewedAt,
     int? viewedLeafCount,
   }) async {
-    final query = database.select(database.apiCache)..where((t) => t.cacheKey.like(_itemPattern(serverId, itemId)));
+    final query = database.select(database.apiCache)
+      ..where((t) => t.cacheKey.like(_itemPattern(ServerId(serverId), itemId)));
     final rows = await query.get();
     if (rows.isEmpty) return;
     for (final row in rows) {
@@ -139,7 +146,7 @@ class JellyfinApiCache extends ApiCache {
             ? (data['UserData'] as Map<String, dynamic>)
             : <String, dynamic>{};
         userData['Played'] = isWatched;
-        final positionTicks = viewOffsetMs != null ? viewOffsetMs * 10000 : 0;
+        final positionTicks = viewOffsetMs != null ? viewOffsetMs * 10_000 : 0;
         if (isWatched) {
           final current = (userData['PlayCount'] as num?)?.toInt() ?? 0;
           userData['PlayCount'] = current < 1 ? 1 : current;
@@ -170,7 +177,7 @@ class JellyfinApiCache extends ApiCache {
 
   /// Load all pinned Jellyfin metadata in a single query.
   ///
-  /// Returns a map keyed by `buildGlobalKey(serverId, itemId)` for O(1)
+  /// Returns a map keyed by `buildGlobalKey(ServerId(serverId), itemId)` for O(1)
   /// lookups, mirroring [PlexApiCache.getAllPinnedMetadata] so callers can
   /// spread-merge the two results.
   @override
@@ -202,12 +209,12 @@ class JellyfinApiCache extends ApiCache {
           final data = jsonDecode(entry.data) as Map<String, dynamic>;
           final mapped = JellyfinMappers.mediaItem(
             data,
-            serverId: ctx.machineId,
+            serverId: ServerId(ctx.machineId),
             serverName: ctx.name,
             absolutizer: absolutizer,
           );
           if (mapped != null) {
-            result[buildGlobalKey(entry.serverId, entry.id)] = mapped;
+            result[buildGlobalKey(ServerId(entry.serverId), entry.id)] = mapped;
           }
         } catch (_) {
           // Skip malformed entries
@@ -230,7 +237,9 @@ class JellyfinApiCache extends ApiCache {
   ///
   /// Returns `null` when no row matches or the row carries an empty
   /// `baseUrl` (no honest URL we can build).
-  Future<({String machineId, String name, String baseUrl, String accessToken})?> _serverContext(String serverId) async {
+  Future<({String machineId, String name, String baseUrl, String accessToken})?> _serverContext(
+    ServerId serverId,
+  ) async {
     // Match either the bare machineId (Plex) or the compound
     // `{machineId}/{userId}` (Jellyfin). The compound match uses a
     // [substr]-based prefix check so any `_` / `%` in the runtime

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../media/ids.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -113,7 +114,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
                         color: Colors.transparent,
                         height: 90,
                         padding: const EdgeInsets.only(right: 4),
-                        alignment: Alignment.center,
+                        alignment: .center,
                         child: Container(
                           padding: const EdgeInsets.fromLTRB(2, 8, 6, 8),
                           decoration: isDragHandleFocused
@@ -140,15 +141,15 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
                 // Title and metadata
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: .start,
+                    mainAxisSize: .min,
                     children: [
                       // Title
                       Text(
                         item.displayTitle,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                        style: const TextStyle(fontSize: 15, fontWeight: .w500),
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        overflow: .ellipsis,
                       ),
 
                       const SizedBox(height: 4),
@@ -158,7 +159,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
                         _buildSubtitle(item),
                         style: TextStyle(fontSize: 13, color: Colors.grey[400]),
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        overflow: .ellipsis,
                       ),
 
                       // Progress indicator if partially watched
@@ -216,7 +217,7 @@ class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTap
       child: OptimizedMediaImage.poster(
         // Backend-neutral lookup so Jellyfin items render via their own
         // image transcoder; null falls through to the placeholder below.
-        client: context.tryGetMediaClientWithFallback(item.serverId),
+        client: context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId)),
         imagePath: posterUrl,
         width: 60,
         height: 90,

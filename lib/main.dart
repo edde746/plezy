@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'media/ids.dart';
 import 'dart:io' show Directory, Platform, ProcessInfo;
 import 'dart:ui' show AppExitResponse;
 import 'package:flutter/foundation.dart';
@@ -772,7 +773,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             provider.setActiveProfileId(activeProfile.activeId);
             provider.setActiveClientScopesByServer({
               for (final serverId in multiServer.serverManager.serverIds)
-                serverId: multiServer.serverManager.getClient(serverId)?.cacheServerId,
+                serverId: multiServer.serverManager.getClient(ServerId(serverId))?.cacheServerId,
             });
             return provider;
           },
@@ -957,7 +958,7 @@ class _AppleTvScale extends StatelessWidget {
         // dead margin and zero them out — the UI can use the full surface.
         return Transform.scale(
           scale: _scale,
-          alignment: Alignment.topLeft,
+          alignment: .topLeft,
           transformHitTests: true,
           child: SizedBox(
             width: logicalSize.width,
@@ -966,10 +967,10 @@ class _AppleTvScale extends StatelessWidget {
               data: outerQ.copyWith(
                 size: logicalSize,
                 devicePixelRatio: outerQ.devicePixelRatio * _scale,
-                padding: EdgeInsets.zero,
-                viewPadding: EdgeInsets.zero,
-                viewInsets: EdgeInsets.zero,
-                systemGestureInsets: EdgeInsets.zero,
+                padding: .zero,
+                viewPadding: .zero,
+                viewInsets: .zero,
+                systemGestureInsets: .zero,
               ),
               child: child!,
             ),
@@ -1346,7 +1347,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     const failColor = Color(0xFFEF5350);
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: _serverStatus.entries.map((entry) {
         final (name, connected) = entry.value;
         final Widget statusIcon;
@@ -1365,7 +1366,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
           key: ValueKey(entry.key),
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               statusIcon,
               const SizedBox(width: 8),

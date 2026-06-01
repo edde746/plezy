@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:plezy/media/ids.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -12,7 +13,7 @@ import 'package:plezy/services/storage_service.dart';
 
 import '../test_helpers/prefs.dart';
 
-MediaLibrary _lib(String key, {String type = 'movie', String? serverId, String title = 'L'}) => MediaLibrary(
+MediaLibrary _lib(String key, {String type = 'movie', ServerId? serverId, String title = 'L'}) => MediaLibrary(
   id: key,
   backend: MediaBackend.plex,
   title: title,
@@ -20,7 +21,7 @@ MediaLibrary _lib(String key, {String type = 'movie', String? serverId, String t
   serverId: serverId,
 );
 
-MediaLibrary _serverLib(String serverId, String id, String title) =>
+MediaLibrary _serverLib(ServerId serverId, String id, String title) =>
     MediaLibrary(id: id, backend: MediaBackend.plex, title: title, kind: MediaKind.movie, serverId: serverId);
 
 /// Minimal [MediaServerClient] returning canned libraries; only the surface the
@@ -31,7 +32,7 @@ class _FakeClient implements MediaServerClient {
   _FakeClient({required this.serverId, this.libraries = const [], this.gate});
 
   @override
-  final String serverId;
+  final ServerId serverId;
   @override
   final String serverName = 'Server';
 
@@ -109,9 +110,9 @@ void main() {
       p.addListener(() => notified++);
 
       final libs = [
-        _lib('1', serverId: 'srv', title: 'A'),
-        _lib('2', serverId: 'srv', title: 'B'),
-        _lib('3', serverId: 'srv', title: 'C'),
+        _lib('1', serverId: ServerId('srv'), title: 'A'),
+        _lib('2', serverId: ServerId('srv'), title: 'B'),
+        _lib('3', serverId: ServerId('srv'), title: 'C'),
       ];
 
       await p.updateLibraryOrder(libs);
@@ -128,14 +129,14 @@ void main() {
 
     test('libraries getter returns an unmodifiable list', () async {
       final p = LibrariesProvider();
-      await p.updateLibraryOrder([_lib('1', serverId: 'srv')]);
+      await p.updateLibraryOrder([_lib('1', serverId: ServerId('srv'))]);
       expect(() => p.libraries.add(_lib('mutated')), throwsUnsupportedError);
       p.dispose();
     });
 
     test('clear resets state to initial and notifies', () async {
       final p = LibrariesProvider();
-      await p.updateLibraryOrder([_lib('1', serverId: 'srv'), _lib('2', serverId: 'srv')]);
+      await p.updateLibraryOrder([_lib('1', serverId: ServerId('srv')), _lib('2', serverId: ServerId('srv'))]);
       expect(p.libraries, hasLength(2));
 
       var notified = 0;
@@ -157,14 +158,14 @@ void main() {
       // Post-dispose clear / updateLibraryOrder must not throw — the provider
       // uses `safeNotifyListeners` which swallows post-dispose firings.
       p.clear();
-      await p.updateLibraryOrder([_lib('1', serverId: 'srv')]);
+      await p.updateLibraryOrder([_lib('1', serverId: ServerId('srv'))]);
     });
   });
 
   group('LibrariesProvider.syncToOnlineServers', () {
     test('loads when a server first comes online', () async {
       final manager = MultiServerManager();
-      final clientA = _FakeClient(serverId: 'A', libraries: [_serverLib('A', '1', 'Movies A')]);
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
       manager.debugRegisterClientForTesting(clientA);
       final p = LibrariesProvider()..initialize(DataAggregationService(manager));
 
@@ -180,7 +181,7 @@ void main() {
 
     test('does not reload when the online set is unchanged', () async {
       final manager = MultiServerManager();
-      final clientA = _FakeClient(serverId: 'A', libraries: [_serverLib('A', '1', 'Movies A')]);
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
       manager.debugRegisterClientForTesting(clientA);
       final p = LibrariesProvider()..initialize(DataAggregationService(manager));
 
@@ -198,14 +199,14 @@ void main() {
       // slow server reconnecting after timing out) was never picked up because
       // the load was one-shot.
       final manager = MultiServerManager();
-      final clientA = _FakeClient(serverId: 'A', libraries: [_serverLib('A', '1', 'Movies A')]);
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
       manager.debugRegisterClientForTesting(clientA);
       final p = LibrariesProvider()..initialize(DataAggregationService(manager));
 
       await p.syncToOnlineServers({'A'});
       expect(p.libraries.map((l) => l.title), ['Movies A']);
 
-      final clientB = _FakeClient(serverId: 'B', libraries: [_serverLib('B', '1', 'Shows B')]);
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Shows B')]);
       manager.debugRegisterClientForTesting(clientB);
       await p.syncToOnlineServers({'A', 'B'});
 
@@ -219,7 +220,7 @@ void main() {
 
     test('a background reload over existing data never surfaces a loading state', () async {
       final manager = MultiServerManager();
-      final clientA = _FakeClient(serverId: 'A', libraries: [_serverLib('A', '1', 'Movies A')]);
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
       manager.debugRegisterClientForTesting(clientA);
       final p = LibrariesProvider()..initialize(DataAggregationService(manager));
 
@@ -232,7 +233,7 @@ void main() {
       final sawLoading = <bool>[];
       p.addListener(() => sawLoading.add(p.isLoading));
 
-      final clientB = _FakeClient(serverId: 'B', libraries: [_serverLib('B', '1', 'Shows B')]);
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Shows B')]);
       manager.debugRegisterClientForTesting(clientB);
       await p.syncToOnlineServers({'A', 'B'});
 
@@ -250,8 +251,8 @@ void main() {
       // failed server out of _loadedServerIds so it reloads instead of staying
       // missing until a profile re-switch/restart.
       final manager = MultiServerManager();
-      final clientA = _FakeClient(serverId: 'A', libraries: [_serverLib('A', '1', 'Movies A')]);
-      final clientB = _FakeClient(serverId: 'B', libraries: [_serverLib('B', '1', 'Shows B')])
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Shows B')])
         ..error = Exception('transient');
       manager.debugRegisterClientForTesting(clientA);
       manager.debugRegisterClientForTesting(clientB);
@@ -274,8 +275,8 @@ void main() {
 
     test('does not reload when the online set shrinks', () async {
       final manager = MultiServerManager();
-      final clientA = _FakeClient(serverId: 'A', libraries: [_serverLib('A', '1', 'Movies A')]);
-      final clientB = _FakeClient(serverId: 'B', libraries: [_serverLib('B', '1', 'Shows B')]);
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Shows B')]);
       manager.debugRegisterClientForTesting(clientA);
       manager.debugRegisterClientForTesting(clientB);
       final p = LibrariesProvider()..initialize(DataAggregationService(manager));
@@ -295,7 +296,7 @@ void main() {
 
     test('a zero-library server is marked loaded and does not retrigger', () async {
       final manager = MultiServerManager();
-      final clientC = _FakeClient(serverId: 'C', libraries: const []);
+      final clientC = _FakeClient(serverId: ServerId('C'), libraries: const []);
       manager.debugRegisterClientForTesting(clientC);
       final p = LibrariesProvider()..initialize(DataAggregationService(manager));
 
@@ -317,7 +318,11 @@ void main() {
     test('a server appearing mid-load is still picked up', () async {
       final manager = MultiServerManager();
       final gate = Completer<void>();
-      final clientA = _FakeClient(serverId: 'A', libraries: [_serverLib('A', '1', 'Movies A')], gate: gate.future);
+      final clientA = _FakeClient(
+        serverId: ServerId('A'),
+        libraries: [_serverLib(ServerId('A'), '1', 'Movies A')],
+        gate: gate.future,
+      );
       manager.debugRegisterClientForTesting(clientA);
       final p = LibrariesProvider()..initialize(DataAggregationService(manager));
 
@@ -325,7 +330,7 @@ void main() {
       final inFlight = p.syncToOnlineServers({'A'});
 
       // B comes online before the first load completes.
-      final clientB = _FakeClient(serverId: 'B', libraries: [_serverLib('B', '1', 'Shows B')]);
+      final clientB = _FakeClient(serverId: ServerId('B'), libraries: [_serverLib(ServerId('B'), '1', 'Shows B')]);
       manager.debugRegisterClientForTesting(clientB);
       unawaited(p.syncToOnlineServers({'A', 'B'})); // queued behind the in-flight pass
 
@@ -341,7 +346,7 @@ void main() {
 
     test('clear() resets tracking so the next sync reloads', () async {
       final manager = MultiServerManager();
-      final clientA = _FakeClient(serverId: 'A', libraries: [_serverLib('A', '1', 'Movies A')]);
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
       manager.debugRegisterClientForTesting(clientA);
       final p = LibrariesProvider()..initialize(DataAggregationService(manager));
 
@@ -360,7 +365,7 @@ void main() {
 
     test('is a no-op for an empty set or before initialize', () async {
       final manager = MultiServerManager();
-      final clientA = _FakeClient(serverId: 'A', libraries: [_serverLib('A', '1', 'Movies A')]);
+      final clientA = _FakeClient(serverId: ServerId('A'), libraries: [_serverLib(ServerId('A'), '1', 'Movies A')]);
       manager.debugRegisterClientForTesting(clientA);
 
       // Empty set on an initialized provider.

@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import '../../utils/future_extensions.dart';
@@ -127,7 +128,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               Icon(Symbols.group_rounded, size: 80, color: theme.colorScheme.primary),
               const SizedBox(height: 24),
@@ -187,7 +188,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
               if (_recentRooms.isNotEmpty) ...[
                 const SizedBox(height: 32),
                 Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: .centerLeft,
                   child: Text(t.watchTogether.recentRooms, style: theme.textTheme.titleSmall),
                 ),
                 const SizedBox(height: 8),
@@ -411,7 +412,7 @@ class _RecentRoomTile extends StatelessWidget {
           child: ListTile(
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
             leading: isEntering ? const LoadingIndicatorBox(size: 24) : const Icon(Symbols.meeting_room_rounded),
-            title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+            title: Text(title, maxLines: 1, overflow: .ellipsis),
             subtitle: room.name != null
                 ? Text(
                     room.code,
@@ -431,7 +432,7 @@ class _RecentRoomTile extends StatelessWidget {
       context,
       builder: (context) => SafeArea(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             ListTile(
               leading: const Icon(Symbols.edit_rounded),
@@ -467,13 +468,13 @@ class _ActiveSessionContent extends StatelessWidget {
     final session = watchTogether.session!;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: .stretch,
       children: [
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Row(
                   children: [
@@ -484,7 +485,7 @@ class _ActiveSessionContent extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: .start,
                         children: [
                           Text(
                             watchTogether.isHost ? t.watchTogether.hostingSession : t.watchTogether.inSession,
@@ -528,7 +529,7 @@ class _ActiveSessionContent extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Row(
                   children: [
@@ -650,9 +651,9 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
       await navigateToWatchTogetherPlayback(
         context,
         ratingKey: ratingKey,
-        serverId: serverId,
+        serverId: ServerId(serverId),
         onBeforeNavigate: () {
-          widget.watchTogether.markCurrentPlaybackHandled(ratingKey: ratingKey, serverId: serverId);
+          widget.watchTogether.markCurrentPlaybackHandled(ratingKey: ratingKey, serverId: ServerId(serverId));
         },
       );
     } catch (e, stackTrace) {
@@ -679,7 +680,7 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           children: [
             Row(
               children: [
@@ -687,7 +688,7 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: .start,
                     children: [
                       Text(t.watchTogether.currentPlayback, style: theme.textTheme.titleMedium),
                       const SizedBox(height: 4),
@@ -743,7 +744,7 @@ class _SessionCodeRow extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               Text(
                 '${t.watchTogether.sessionCode}: $sessionId',

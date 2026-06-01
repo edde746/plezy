@@ -233,7 +233,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
     Widget buildSlider(Widget? tooltip) {
       return Stack(
         clipBehavior: Clip.none,
-        alignment: Alignment.center,
+        alignment: .center,
         children: [
           // Buffer range + segmented background track (with chapter gaps)
           Positioned.fill(
@@ -257,7 +257,7 @@ class _TimelineSliderState extends State<TimelineSlider> {
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 8,
                 trackGap: 0,
-                padding: EdgeInsets.zero,
+                padding: .zero,
                 overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
                 tickMarkShape: SliderTickMarkShape.noTickMark,
                 thumbSize: WidgetStatePropertyAll(
@@ -379,7 +379,7 @@ class _ScrubFrameView extends StatelessWidget {
               child: OverflowBox(
                 maxWidth: sheetW,
                 maxHeight: sheetH,
-                alignment: Alignment.topLeft,
+                alignment: .topLeft,
                 child: Transform.translate(
                   offset: Offset(-f.tileColumn * tileW, -f.tileRow * tileH),
                   child: Image(

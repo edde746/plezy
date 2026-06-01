@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../media/ids.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../focus/focusable_action_bar.dart';
@@ -184,7 +185,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                 if (!PlatformDetector.shouldUseSideNavigation(context))
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    alignment: Alignment.centerLeft,
+                    alignment: .centerLeft,
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(
@@ -212,7 +213,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                           // (not a [PlexClient]) for both code paths.
                           getClient(String globalKey) {
                             final serverId = parseGlobalKey(globalKey)?.serverId ?? globalKey;
-                            return serverProvider.serverManager.getClient(serverId);
+                            return serverProvider.serverManager.getClient(ServerId(serverId));
                           }
 
                           return DownloadTreeView(

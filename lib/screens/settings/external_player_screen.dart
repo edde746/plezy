@@ -97,7 +97,7 @@ class _PlayerTile extends StatelessWidget {
       leading: leading,
       title: Text(player.id == 'system_default' ? t.externalPlayer.systemDefault : player.name),
       trailing: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           if (isCustom)
             IconButton(
@@ -183,7 +183,7 @@ class _AddCustomPlayerDialogState extends State<_AddCustomPlayerDialog> {
       content: SizedBox(
         width: 300,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             FocusableTextField(
               controller: _nameController,

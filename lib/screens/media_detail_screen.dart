@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 import 'dart:io';
 
 import 'package:cached_network_image_ce/cached_network_image.dart';
@@ -240,12 +241,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final serverId = serverBoundServerId;
     if (serverId == null) return null;
 
-    final keys = <String>{toServerBoundGlobalKey(_metadata.id, serverId: serverId)};
+    final keys = <String>{toServerBoundGlobalKey(_metadata.id, serverId: ServerId(serverId))};
     for (final season in _seasons) {
-      keys.add(toServerBoundGlobalKey(season.id, serverId: season.serverId ?? serverId));
+      keys.add(toServerBoundGlobalKey(season.id, serverId: ServerId(season.serverId ?? serverId)));
     }
     for (final ep in _episodes) {
-      keys.add(toServerBoundGlobalKey(ep.id, serverId: ep.serverId ?? serverId));
+      keys.add(toServerBoundGlobalKey(ep.id, serverId: ServerId(ep.serverId ?? serverId)));
     }
     return keys;
   }
@@ -561,12 +562,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final serverId = serverBoundServerId;
     if (serverId == null) return null;
 
-    final keys = <String>{toServerBoundGlobalKey(_metadata.id, serverId: serverId)};
+    final keys = <String>{toServerBoundGlobalKey(_metadata.id, serverId: ServerId(serverId))};
     for (final season in _seasons) {
-      keys.add(toServerBoundGlobalKey(season.id, serverId: season.serverId ?? serverId));
+      keys.add(toServerBoundGlobalKey(season.id, serverId: ServerId(season.serverId ?? serverId)));
     }
     for (final ep in _episodes) {
-      keys.add(toServerBoundGlobalKey(ep.id, serverId: ep.serverId ?? serverId));
+      keys.add(toServerBoundGlobalKey(ep.id, serverId: ServerId(ep.serverId ?? serverId)));
     }
     return keys;
   }
@@ -871,7 +872,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       width: size,
       height: size,
       child: Stack(
-        alignment: Alignment.center,
+        alignment: .center,
         children: [
           // Background circle (only show if we have determinate progress)
           if (progressPercent != null && progressPercent > 0)
@@ -898,20 +899,20 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final isTv = PlatformDetector.isTV();
     final textWidget = Text(
       text,
-      style: TextStyle(color: colorScheme.onSecondaryContainer, fontSize: isTv ? 16 : 13, fontWeight: FontWeight.w600),
+      style: TextStyle(color: colorScheme.onSecondaryContainer, fontSize: isTv ? 16 : 13, fontWeight: .w600),
     );
 
     final hasLeading = leading != null || icon != null;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: isTv ? 14 : 12, vertical: isTv ? 8 : 6),
+      padding: .symmetric(horizontal: isTv ? 14 : 12, vertical: isTv ? 8 : 6),
       decoration: BoxDecoration(
         color: colorScheme.secondaryContainer.withValues(alpha: 0.8),
         borderRadius: const BorderRadius.all(Radius.circular(100)),
       ),
       child: hasLeading
           ? Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 if (leading != null)
                   leading
@@ -1026,7 +1027,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(color: bgColor, borderRadius: const BorderRadius.all(Radius.circular(100))),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: .min,
                 children: [
                   AppIcon(
                     iconData,
@@ -1037,7 +1038,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   const SizedBox(width: 4),
                   Text(
                     label,
-                    style: TextStyle(color: fgColor, fontSize: 13, fontWeight: FontWeight.w500),
+                    style: TextStyle(color: fgColor, fontSize: 13, fontWeight: .w500),
                   ),
                 ],
               ),
@@ -1066,7 +1067,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Build a combined RT chip showing critic + audience side by side.
   Widget _buildCombinedRtChip(RatingInfo critic, RatingInfo audience) {
     final colorScheme = Theme.of(context).colorScheme;
-    final textStyle = TextStyle(color: colorScheme.onSecondaryContainer, fontSize: 13, fontWeight: FontWeight.w500);
+    final textStyle = TextStyle(color: colorScheme.onSecondaryContainer, fontSize: 13, fontWeight: .w500);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1075,7 +1076,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         borderRadius: const BorderRadius.all(Radius.circular(100)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           SvgPicture.asset(critic.assetPath, width: 16, height: 16),
           const SizedBox(width: 4),
@@ -1098,7 +1099,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   MediaServerClient? _getArtworkMediaClient(BuildContext context) {
     if (!widget.isOffline) return _getMediaClientForMetadata(context);
-    return context.tryGetMediaClientForServer(_metadata.serverId);
+    return context.tryGetMediaClientForServer(serverIdOrNull(_metadata.serverId));
   }
 
   Widget? _buildOfflineArtworkIfAvailable(
@@ -1131,7 +1132,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   String? _offlineArtworkLocalPath(BuildContext context, String? artworkPath) {
     if (!widget.isOffline || _metadata.serverId == null) return null;
-    final localPath = context.read<DownloadProvider>().getArtworkLocalPath(_metadata.serverId!, artworkPath);
+    final localPath = context.read<DownloadProvider>().getArtworkLocalPath(ServerId(_metadata.serverId!), artworkPath);
     if (localPath == null || !File(localPath).existsSync()) return null;
     return localPath;
   }
@@ -1189,7 +1190,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final serverId = metadata.serverId;
     final client = _getMediaClientForMetadata(context);
     if (client == null || serverId == null) return metadata.globalKey;
-    return downloadProvider.syncRuleKeyForClient(client, metadata.id, serverId: serverId);
+    return downloadProvider.syncRuleKeyForClient(client, metadata.id, serverId: ServerId(serverId));
   }
 
   void _navigateToActorMedia(MediaRole actor) {
@@ -1295,7 +1296,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     // Offline mode: try to load full metadata from cache (has clearLogo, summary, etc.)
     if (widget.isOffline) {
       final cachedMetadata = await context.read<DownloadProvider>().lookupOfflineMetadata(
-        _metadata.serverId ?? '',
+        ServerId(_metadata.serverId ?? ''),
         _metadata.id,
       );
       if (!mounted) return;
@@ -1412,7 +1413,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     });
 
     final serverId = _metadata.serverId;
-    final client = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
+    final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
     if (client == null) {
       setStateIfMounted(() {
         _isLoadingSeasons = false;
@@ -1435,7 +1436,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           : Future.value(<String, dynamic>{});
 
       final results = await Future.wait([seasonsFuture, prefsFuture]);
-      final seasons = results[0] as List<MediaItem>;
+      final seasons = results.first as List<MediaItem>;
       final prefs = results[1] as Map<String, dynamic>;
 
       // Preserve serverId for each season.
@@ -1522,7 +1523,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       final seasonId = firstEp.parentId ?? '';
       final seasonGlobalKey = _metadata.serverId == null || seasonId.isEmpty
           ? null
-          : buildGlobalKey(_metadata.serverId!, seasonId);
+          : buildGlobalKey(ServerId(_metadata.serverId!), seasonId);
       final storedSeason = seasonGlobalKey == null ? null : downloadProvider.getMetadata(seasonGlobalKey);
       if (storedSeason != null && storedSeason.isSeason) {
         return _withFallbackLibrary(
@@ -1683,7 +1684,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         // Resolve the right backend client so Jellyfin (where the typed
         // PlexClient helper returns null) loads episodes too.
         final serverId = _metadata.serverId;
-        final mediaClient = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
+        final mediaClient = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
         if (serverId == null || mediaClient == null) {
           _completeSeasonEpisodesLoad(seasonIndex: seasonIndex, seasonId: seasonId, episodes: const <MediaItem>[]);
           return;
@@ -1730,7 +1731,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (seasonIdsToWarm.isEmpty) return;
 
     final serverId = _metadata.serverId;
-    final client = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
+    final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
     if (serverId == null || client == null) return;
 
     final seasonsById = {for (final season in seasons) season.id: season};
@@ -1751,7 +1752,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         if (!mounted || generation != _tvSeasonEpisodeCacheWarmGeneration) return;
         if (page.items.isEmpty) break;
 
-        final enriched = _enrichPlayableEpisodes(page.items, serverId);
+        final enriched = _enrichPlayableEpisodes(page.items, ServerId(serverId));
         for (final episode in enriched) {
           final seasonId = _seasonIdForEpisode(episode, seasonsById: seasonsById, seasonsByIndex: seasonsByIndex);
           if (seasonId == null || !seasonIdsToWarm.contains(seasonId)) continue;
@@ -1765,7 +1766,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       _completeWarmedTvSeasonEpisodeCaches(seasons, episodesBySeasonId, generation);
     } catch (e, st) {
       appLogger.w('Failed to load TV season episode caches', error: e, stackTrace: st);
-      await _warmTvSeasonEpisodeCachesBySeason(seasons, seasonIdsToWarm, client, serverId, generation);
+      await _warmTvSeasonEpisodeCachesBySeason(seasons, seasonIdsToWarm, client, ServerId(serverId), generation);
     }
   }
 
@@ -1773,7 +1774,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     List<MediaItem> seasons,
     Set<String> seasonIdsToWarm,
     MediaServerClient client,
-    String serverId,
+    ServerId serverId,
     int generation,
   ) async {
     final episodesBySeasonId = <String, List<MediaItem>>{};
@@ -1922,7 +1923,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
 
     final serverId = _metadata.serverId;
-    final client = serverId == null ? null : context.tryGetMediaClientForServer(serverId);
+    final client = serverId == null ? null : context.tryGetMediaClientForServer(ServerId(serverId));
     if (client == null) {
       markLoaded();
       return;
@@ -2479,7 +2480,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   static const Widget _sectionLoading = Center(
-    child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()),
+    child: Padding(padding: .all(32), child: CircularProgressIndicator()),
   );
 
   Widget _sectionEmpty(BuildContext context, String message) {
@@ -2497,12 +2498,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.zero,
+      padding: .zero,
       itemCount: _episodes.length + (_isLoadingAllEpisodes ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == _episodes.length) {
           return const Padding(
-            padding: EdgeInsets.all(24),
+            padding: .all(24),
             child: Center(child: CircularProgressIndicator()),
           );
         }
@@ -2510,7 +2511,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         String? localPosterPath;
         if (widget.isOffline && episode.serverId != null) {
           final artworkRef = context.read<DownloadProvider>().getArtworkPaths(episode.globalKey);
-          localPosterPath = artworkRef?.getLocalPath(DownloadStorageService.instance, episode.serverId!);
+          localPosterPath = artworkRef?.getLocalPath(DownloadStorageService.instance, ServerId(episode.serverId!));
         }
         return EpisodeCard(
           episode: episode,
@@ -2602,7 +2603,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       });
       return;
     }
-    final client = context.tryGetMediaClientForServer(serverId);
+    final client = context.tryGetMediaClientForServer(ServerId(serverId));
     if (client == null) {
       setStateIfMounted(() {
         _isLoadingEpisodes = false;
@@ -2619,7 +2620,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     try {
       final firstPage = await client.fetchPlayableDescendantsPage(_metadata.id, start: 0, size: _episodesPageSize);
       if (!mounted || generation != _episodesLoadGeneration) return;
-      final enriched = _enrichPlayableEpisodes(firstPage.items, serverId);
+      final enriched = _enrichPlayableEpisodes(firstPage.items, ServerId(serverId));
       setStateIfMounted(() {
         _episodes = enriched;
         _isLoadingEpisodes = false;
@@ -2627,7 +2628,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         _hasLoadedEpisodes = true;
       });
       if (firstPage.items.length < firstPage.totalCount) {
-        unawaited(_fetchRemainingEpisodes(client, serverId, generation, firstPage.items.length, firstPage.totalCount));
+        unawaited(
+          _fetchRemainingEpisodes(client, ServerId(serverId), generation, firstPage.items.length, firstPage.totalCount),
+        );
       }
     } catch (e, st) {
       appLogger.w('Failed to load episodes for all seasons', error: e, stackTrace: st);
@@ -2639,7 +2642,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     }
   }
 
-  List<MediaItem> _enrichPlayableEpisodes(List<MediaItem> episodes, String serverId) {
+  List<MediaItem> _enrichPlayableEpisodes(List<MediaItem> episodes, ServerId serverId) {
     // Enrich each episode with serverId/serverName/grandparent fields —
     // Jellyfin's recursive query doesn't always populate them, and the copy is
     // a no-op for Plex where the mapper already does.
@@ -2665,7 +2668,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   Future<void> _fetchRemainingEpisodes(
     MediaServerClient client,
-    String serverId,
+    ServerId serverId,
     int generation,
     int startOffset,
     int totalCount,
@@ -2677,7 +2680,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         final page = await client.fetchPlayableDescendantsPage(_metadata.id, start: offset, size: _episodesPageSize);
         if (!mounted || generation != _episodesLoadGeneration) return;
         if (page.items.isEmpty) break;
-        final enriched = _enrichPlayableEpisodes(page.items, serverId);
+        final enriched = _enrichPlayableEpisodes(page.items, ServerId(serverId));
         setStateIfMounted(() {
           _episodes.addAll(enriched);
         });
@@ -2810,10 +2813,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final isMobile = PlatformDetector.isMobile(context);
     final isTv = PlatformDetector.isTV();
     final theme = Theme.of(context);
-    final sectionTitleStyle = theme.textTheme.titleLarge?.copyWith(
-      fontWeight: FontWeight.bold,
-      fontSize: isTv ? 28 : null,
-    );
+    final sectionTitleStyle = theme.textTheme.titleLarge?.copyWith(fontWeight: .bold, fontSize: isTv ? 28 : null);
 
     // Show loading state while fetching full metadata
     if (_isLoadingMetadata) {
@@ -2863,12 +2863,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                       // Main content
                       SliverToBoxAdapter(
                         child: Padding(
-                          padding: EdgeInsets.symmetric(
+                          padding: .symmetric(
                             horizontal: isTv ? TvLayoutConstants.horizontalInset : 16,
                             vertical: isTv ? 8 : 16,
                           ),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: .start,
                             children: [
                               // Summary
                               if (!isTv && metadata.summary != null && metadata.summary!.isNotEmpty) ...[
@@ -2985,7 +2985,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                                   onKeyEvent: _handleInfoRowsKeyEvent,
                                   child: Column(
                                     key: _infoRowsSectionKey,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment: .start,
                                     children: [
                                       if (metadata.studio != null) ...[
                                         _buildInfoRow(t.discover.studio, metadata.studio!),
@@ -3002,7 +3002,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           ),
                         ),
                       ),
-                      SliverPadding(padding: EdgeInsets.only(bottom: MediaQuery.paddingOf(context).bottom)),
+                      SliverPadding(padding: .only(bottom: MediaQuery.paddingOf(context).bottom)),
                     ],
                   ),
                   // Sticky top bar with fading background
@@ -3220,12 +3220,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           child: SizedBox(
             height: availableHeight,
             child: Align(
-              alignment: Alignment.bottomLeft,
+              alignment: .bottomLeft,
               child: SizedBox(
                 height: contentHeight <= availableHeight ? contentHeight : availableHeight,
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .start,
                   children: [
                     if (showLogo) ...[
                       _buildDetailLogoOrTitle(
@@ -3237,7 +3237,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           context,
                           title,
                           fontSize: 56 * scale,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: .w800,
                           shadowBlur: 12,
                           color: foregroundColor,
                           shadowColor: _tvDetailTitleShadowColor(context),
@@ -3247,10 +3247,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                     ],
                     SizedBox(
                       height: metadataLineHeight,
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: _buildTvDetailMetadataLine(context, metadata, scale),
-                      ),
+                      child: Align(alignment: .centerLeft, child: _buildTvDetailMetadataLine(context, metadata, scale)),
                     ),
                     if (hasDescription && summaryMaxLines > 0) ...[
                       SizedBox(height: summaryGap),
@@ -3259,7 +3256,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                         child: Text(
                           description,
                           maxLines: summaryMaxLines,
-                          overflow: TextOverflow.ellipsis,
+                          overflow: .ellipsis,
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: mutedForegroundColor,
                             fontSize: summaryFontSize,
@@ -3309,7 +3306,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
             context,
             artworkPaths: [metadata.clearLogoPath],
             fit: BoxFit.contain,
-            alignment: Alignment.centerLeft,
+            alignment: .centerLeft,
             imageType: ImageType.logo,
             errorWidget: (context, url, error) => titleFallback(context),
           );
@@ -3334,7 +3331,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
               cacheManager: PlexImageCacheManager.instance,
               filterQuality: FilterQuality.medium,
               fit: BoxFit.contain,
-              alignment: Alignment.centerLeft,
+              alignment: .centerLeft,
               memCacheWidth: (width * dpr).clamp(200, 1000).round(),
               placeholder: (context, url) => const SizedBox.shrink(),
               errorBuilder: (context, error, stackTrace) => titleFallback(context),
@@ -3365,11 +3362,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return Text(
       parts.join('  •  '),
       maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+      overflow: .ellipsis,
       style: TextStyle(
         color: _tvDetailForegroundColor(context),
         fontSize: 18 * scale,
-        fontWeight: FontWeight.w700,
+        fontWeight: .w700,
         letterSpacing: 0.1,
       ),
     );
@@ -3779,14 +3776,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           child: SizedBox(
             height: availableHeight,
             child: Align(
-              alignment: Alignment.bottomLeft,
+              alignment: .bottomLeft,
               child: SizedBox(
                 height: contentHeight.clamp(0.0, availableHeight).toDouble(),
                 child: Align(
-                  alignment: Alignment.bottomLeft,
+                  alignment: .bottomLeft,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: .start,
+                    mainAxisSize: .min,
                     children: [
                       if (showLogo) ...[
                         _buildDetailLogoOrTitle(
@@ -3798,7 +3795,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             context,
                             title,
                             fontSize: titleFontSize,
-                            fontWeight: FontWeight.bold,
+                            fontWeight: .bold,
                             shadowBlur: 8,
                           ),
                         ),
@@ -3809,7 +3806,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                           child: ConstrainedBox(
                             constraints: BoxConstraints(maxHeight: chipHeight),
                             child: Align(
-                              alignment: Alignment.bottomLeft,
+                              alignment: .bottomLeft,
                               heightFactor: 1,
                               child: Wrap(spacing: 8, runSpacing: 8, children: chips),
                             ),
@@ -3879,7 +3876,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final containerHeight = imageSize + innerPadding * 2 + 58 + 10;
 
     final theme = Theme.of(context);
-    final actorNameStyle = theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600);
+    final actorNameStyle = theme.textTheme.bodyMedium?.copyWith(fontWeight: .w600);
     final actorRoleStyle = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
 
     return Focus(
@@ -3916,7 +3913,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                         child: SizedBox(
                           width: cardWidth,
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                            crossAxisAlignment: .start,
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(tokens(context).radiusSm),
@@ -3933,22 +3930,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                               const SizedBox(height: 8),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment: .start,
                                   children: [
-                                    Text(
-                                      actor.tag,
-                                      style: actorNameStyle,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+                                    Text(actor.tag, style: actorNameStyle, maxLines: 2, overflow: .ellipsis),
                                     if (actor.role != null) ...[
                                       const SizedBox(height: 2),
-                                      Text(
-                                        actor.role!,
-                                        style: actorRoleStyle,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                                      Text(actor.role!, style: actorRoleStyle, maxLines: 1, overflow: .ellipsis),
                                     ],
                                   ],
                                 ),
@@ -4031,13 +4018,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   Widget _buildInfoRow(String label, String value) {
     final theme = Theme.of(context);
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         SizedBox(
           width: 120,
           child: Text(
             label,
-            style: TextStyle(fontWeight: FontWeight.w600, color: theme.colorScheme.onSurfaceVariant),
+            style: TextStyle(fontWeight: .w600, color: theme.colorScheme.onSurfaceVariant),
           ),
         ),
         Expanded(child: Text(value, style: theme.textTheme.bodyLarge)),

@@ -460,7 +460,7 @@ class TrackChapterControls extends StatelessWidget {
         }
 
         return IntrinsicHeight(
-          child: Row(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: buttons),
+          child: Row(mainAxisSize: .min, crossAxisAlignment: .stretch, children: buttons),
         );
       },
     );

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/services/watch_state_resolver.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
@@ -52,7 +53,7 @@ void main() {
     final snapshot = WatchStateResolver.fromEvent(
       WatchStateEvent(
         itemId: 'item-1',
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         changeType: WatchStateChangeType.progressUpdate,
         parentChain: const [],
         mediaType: 'movie',
@@ -70,7 +71,7 @@ void main() {
     final snapshot = WatchStateResolver.fromEvent(
       WatchStateEvent(
         itemId: 'item-1',
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         changeType: WatchStateChangeType.removedFromContinueWatching,
         parentChain: const [],
         mediaType: 'movie',

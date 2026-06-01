@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:plezy/media/ids.dart';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
@@ -46,7 +47,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
       );
@@ -81,7 +82,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],
@@ -113,7 +114,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],
@@ -146,7 +147,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         seedTranscoderVideoSupport: true,
@@ -178,7 +179,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         seedTranscoderVideoSupport: true,
@@ -209,7 +210,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
       );
@@ -244,7 +245,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],

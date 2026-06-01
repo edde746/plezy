@@ -78,7 +78,7 @@ mixin _JellyfinMetadataEditMethods on MediaServerCacheMixin {
 
   Future<void> _deleteMetadataEditCache(String itemId) async {
     try {
-      await cache.deleteForItem(cacheServerId, itemId);
+      await cache.deleteForItem(ServerId(cacheServerId), itemId);
     } catch (e, st) {
       appLogger.w('Jellyfin metadata edit cache invalidation failed', error: e, stackTrace: st);
     }

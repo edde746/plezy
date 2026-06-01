@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 import 'dart:io';
 
 import 'package:background_downloader/background_downloader.dart';
@@ -83,7 +84,7 @@ void main() {
           .into(db.downloadedMedia)
           .insert(
             DownloadedMediaCompanion.insert(
-              serverId: 'jf-machine',
+              serverId: ServerId('jf-machine'),
               clientScopeId: const Value('jf-machine/user-a'),
               ratingKey: 'item-1',
               globalKey: 'jf-machine:item-1',
@@ -103,10 +104,13 @@ void main() {
 
       final manager = DownloadManagerService(database: db, storageService: DownloadStorageService.instance)
         ..setClientResolver((serverId, {clientScopeId}) {
-          return _ScopedJellyfinClient(serverId: serverId, scopedServerId: clientScopeId ?? 'jf-machine/user-b');
+          return _ScopedJellyfinClient(
+            serverId: ServerId(serverId),
+            scopedServerId: clientScopeId ?? 'jf-machine/user-b',
+          );
         });
 
-      final item = await manager.lookupMetadata('jf-machine', 'item-1', preferActiveScope: true);
+      final item = await manager.lookupMetadata(ServerId('jf-machine'), 'item-1', preferActiveScope: true);
 
       expect(item?.title, 'Cached for User A');
       expect(item?.serverId, 'jf-machine');
@@ -118,7 +122,7 @@ void main() {
       JellyfinApiCache.initialize(db);
       addTearDown(db.close);
 
-      await PlexApiCache.instance.put('srv-1', '/library/metadata/show-1', {
+      await PlexApiCache.instance.put(ServerId('srv-1'), '/library/metadata/show-1', {
         'MediaContainer': {
           'Metadata': [
             {'ratingKey': 'show-1', 'type': 'show', 'title': 'The Show', 'year': 2008},
@@ -132,7 +136,7 @@ void main() {
           id: 'ep-1',
           backend: MediaBackend.plex,
           kind: MediaKind.episode,
-          serverId: 'srv-1',
+          serverId: ServerId('srv-1'),
           title: 'Episode from 2010',
           year: 2010,
           grandparentId: 'show-1',
@@ -151,25 +155,25 @@ void main() {
       JellyfinApiCache.initialize(db);
       addTearDown(db.close);
 
-      await JellyfinApiCache.instance.put('jf-machine/user-a', '/Users/user-a/Items/item-1', {
+      await JellyfinApiCache.instance.put(ServerId('jf-machine/user-a'), '/Users/user-a/Items/item-1', {
         'Id': 'item-1',
         'Type': 'Episode',
         'Name': 'Episode',
       });
-      await JellyfinApiCache.instance.put('jf-machine/user-a', '/MediaSegments/item-1', {
+      await JellyfinApiCache.instance.put(ServerId('jf-machine/user-a'), '/MediaSegments/item-1', {
         'Items': [
           {'Type': 'Intro', 'StartTicks': 10000000, 'EndTicks': 20000000},
         ],
       });
 
-      await JellyfinApiCache.instance.pinForOffline('jf-machine/user-a', 'item-1');
+      await JellyfinApiCache.instance.pinForOffline(ServerId('jf-machine/user-a'), 'item-1');
 
-      expect(await JellyfinApiCache.instance.isPinned('jf-machine/user-a', '/MediaSegments/item-1'), isTrue);
+      expect(await JellyfinApiCache.instance.isPinned(ServerId('jf-machine/user-a'), '/MediaSegments/item-1'), isTrue);
 
-      await JellyfinApiCache.instance.deleteForItem('jf-machine/user-a', 'item-1');
+      await JellyfinApiCache.instance.deleteForItem(ServerId('jf-machine/user-a'), 'item-1');
 
-      expect(await JellyfinApiCache.instance.get('jf-machine/user-a', '/Users/user-a/Items/item-1'), isNull);
-      expect(await JellyfinApiCache.instance.get('jf-machine/user-a', '/MediaSegments/item-1'), isNull);
+      expect(await JellyfinApiCache.instance.get(ServerId('jf-machine/user-a'), '/Users/user-a/Items/item-1'), isNull);
+      expect(await JellyfinApiCache.instance.get(ServerId('jf-machine/user-a'), '/MediaSegments/item-1'), isNull);
     });
 
     test('artwork repair fetches full parent metadata and backfills thumb path', () async {
@@ -196,7 +200,7 @@ void main() {
           .into(db.downloadedMedia)
           .insert(
             DownloadedMediaCompanion.insert(
-              serverId: 'srv',
+              serverId: ServerId('srv'),
               ratingKey: 'ep-1',
               globalKey: 'srv:ep-1',
               type: 'episode',
@@ -205,7 +209,7 @@ void main() {
               status: DownloadStatus.completed.index,
             ),
           );
-      await PlexApiCache.instance.put('srv', '/library/metadata/ep-1', {
+      await PlexApiCache.instance.put(ServerId('srv'), '/library/metadata/ep-1', {
         'MediaContainer': {
           'Metadata': [
             {
@@ -222,7 +226,7 @@ void main() {
           ],
         },
       });
-      await PlexApiCache.instance.put('srv', '/library/metadata/show-1', {
+      await PlexApiCache.instance.put(ServerId('srv'), '/library/metadata/show-1', {
         'MediaContainer': {
           'Metadata': [
             {'ratingKey': 'show-1', 'type': 'show', 'title': 'Show', 'thumb': '/show-thumb'},
@@ -231,13 +235,13 @@ void main() {
       });
 
       final client = _ArtworkRepairClient(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         items: {
           'show-1': MediaItem(
             id: 'show-1',
             backend: MediaBackend.plex,
             kind: MediaKind.show,
-            serverId: 'srv',
+            serverId: ServerId('srv'),
             title: 'Show',
             thumbPath: '/show-thumb',
             clearLogoPath: '/show-logo',
@@ -256,7 +260,7 @@ void main() {
 
       expect(client.fetchCounts['show-1'], isNotNull);
       expect(client.fetchCounts['show-1']!, greaterThan(0));
-      final logoPath = DownloadArtworkService.localPathSync(storage, 'srv', '/show-logo');
+      final logoPath = DownloadArtworkService.localPathSync(storage, ServerId('srv'), '/show-logo');
       expect(logoPath, isNotNull);
       expect(File(logoPath!).existsSync(), isTrue);
       final row = await db.getDownloadedMedia('srv:ep-1');
@@ -270,7 +274,7 @@ void main() {
       addTearDown(db.close);
       const globalKey = 'srv:item-1';
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: 'item-1',
         globalKey: globalKey,
         type: 'movie',
@@ -305,7 +309,7 @@ void main() {
       addTearDown(db.close);
       const globalKey = 'srv:item-1';
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: 'item-1',
         globalKey: globalKey,
         type: 'movie',
@@ -333,7 +337,7 @@ void main() {
       addTearDown(db.close);
       const globalKey = 'srv:item-1';
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: 'item-1',
         globalKey: globalKey,
         type: 'movie',
@@ -365,7 +369,7 @@ void main() {
       addTearDown(db.close);
       const globalKey = 'srv:item-1';
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: 'item-1',
         globalKey: globalKey,
         type: 'movie',
@@ -398,7 +402,7 @@ void main() {
       addTearDown(db.close);
       const globalKey = 'srv:item-1';
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: 'item-1',
         globalKey: globalKey,
         type: 'movie',
@@ -443,7 +447,7 @@ MediaItem _movie({String? thumbPath}) {
     id: 'item-1',
     backend: MediaBackend.jellyfin,
     kind: MediaKind.movie,
-    serverId: 'jf-machine',
+    serverId: ServerId('jf-machine'),
     thumbPath: thumbPath,
   );
 }
@@ -452,7 +456,7 @@ class _ScopedJellyfinClient implements MediaServerClient, ScopedMediaServerClien
   _ScopedJellyfinClient({required this.serverId, required this.scopedServerId});
 
   @override
-  final String serverId;
+  final ServerId serverId;
 
   @override
   final String scopedServerId;
@@ -504,7 +508,7 @@ class _ArtworkRepairClient implements MediaServerClient {
   _ArtworkRepairClient({required this.serverId, required this.items});
 
   @override
-  final String serverId;
+  final ServerId serverId;
 
   final Map<String, MediaItem> items;
   final fetchCounts = <String, int>{};

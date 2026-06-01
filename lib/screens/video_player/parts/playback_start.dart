@@ -422,7 +422,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // BIF (Plex) or trickplay sprite sheets (Jellyfin) and returns null
         // when the inputs aren't sufficient. Guard against media-change
         // races during the async load.
-        final mediaClient = context.tryGetMediaClientForServer(_currentMetadata.serverId);
+        final mediaClient = context.tryGetMediaClientForServer(serverIdOrNull(_currentMetadata.serverId));
         final mediaInfoAtStart = _currentMediaInfo;
         if (mediaInfoAtStart != null && !_isOfflinePlayback && mediaClient != null) {
           unawaited(

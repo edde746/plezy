@@ -15,6 +15,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_playlist.dart';
+import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
@@ -81,7 +82,7 @@ class _LibraryContentResult {
 /// Top-level function so it can be passed to [Isolate.run].
 List<PlexHubDto> _processHubResponse(
   Map<String, dynamic> decoded,
-  String serverId,
+  ServerId serverId,
   String? serverName, {
   int? librarySectionID,
   String? librarySectionTitle,
@@ -100,7 +101,7 @@ List<PlexHubDto> _processHubResponse(
       final hubSectionID = _librarySectionIdFromJson(hubMap) ?? containerSectionID;
       final hubSectionTitle = _librarySectionTitleFromJson(hubMap) ?? containerSectionTitle;
       final hub = _plexHubWithLibrarySection(
-        PlexHubDto.fromJson(hubMap, serverId: serverId, serverName: serverName),
+        PlexHubDto.fromJson(hubMap, serverId: ServerId(serverId), serverName: serverName),
         librarySectionID: hubSectionID,
         librarySectionTitle: hubSectionTitle,
       );
@@ -214,7 +215,7 @@ class PlexClient
 
   /// Server identifier - all PlexMetadataDto items created by this client are tagged with this
   @override
-  final String serverId;
+  final ServerId serverId;
 
   /// Server name - all PlexMetadataDto items created by this client are tagged with this
   @override
@@ -284,7 +285,7 @@ class PlexClient
   /// Fetches /media/providers to discover libraries (including individually shared items) and EPG providers.
   static Future<PlexClient> create(
     PlexConfig config, {
-    required String serverId,
+    required ServerId serverId,
     String? serverName,
     List<String>? prioritizedEndpoints,
     Future<void> Function(String newBaseUrl)? onEndpointChanged,
@@ -294,7 +295,7 @@ class PlexClient
   }) async {
     final client = PlexClient._(
       config,
-      serverId: serverId,
+      serverId: ServerId(serverId),
       serverName: serverName,
       prioritizedEndpoints: prioritizedEndpoints,
       onEndpointChanged: onEndpointChanged,
@@ -345,7 +346,7 @@ class PlexClient
   @visibleForTesting
   static PlexClient forTesting({
     required PlexConfig config,
-    required String serverId,
+    required ServerId serverId,
     String? serverName,
     required http.Client httpClient,
     List<String>? prioritizedEndpoints,
@@ -356,7 +357,7 @@ class PlexClient
   }) {
     final client = PlexClient._(
       config,
-      serverId: serverId,
+      serverId: ServerId(serverId),
       serverName: serverName,
       httpClient: httpClient,
       prioritizedEndpoints: prioritizedEndpoints,
@@ -2337,13 +2338,12 @@ class PlexClient
       queryParameters: queryParameters,
       abort: abort,
     );
-    final result = _extractLibraryContentResult(
+    return _extractLibraryContentResult(
       response,
       librarySectionID: _librarySectionIdFromString(sectionId),
       start: start,
       requestedSize: size,
     );
-    return result;
   }
 
   /// Get all collections for a library section.

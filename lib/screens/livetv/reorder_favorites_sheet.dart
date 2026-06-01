@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../media/ids.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -220,7 +221,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
     final isKeyboardMode = InputModeTracker.isKeyboardMode(context);
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         BottomSheetHeader(title: t.liveTv.reorderFavorites, icon: Symbols.swap_vert_rounded),
         Expanded(
@@ -268,7 +269,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(channel?.serverId ?? '');
+    final client = multiServer.getClientForServer(ServerId(channel?.serverId ?? ''));
 
     Color? tileColor;
     if (isMoving) {
@@ -285,7 +286,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
       key: key,
       tileColor: tileColor,
       leading: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           ReorderableDragStartListener(
             index: index,
@@ -311,7 +312,7 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
           ),
         ],
       ),
-      title: Text(displayName, maxLines: 1, overflow: TextOverflow.ellipsis),
+      title: Text(displayName, maxLines: 1, overflow: .ellipsis),
       subtitle: channelNumber != null
           ? Text(
               channelNumber,

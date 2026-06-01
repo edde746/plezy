@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../i18n/strings.g.dart';
@@ -139,11 +140,11 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   bool syncRuleUpdated = false;
   if (keepSynced) {
     final syncCount = maxCount ?? 0; // 0 means "all unwatched" for the rule
-    final ruleKey = downloadProvider.syncRuleKeyFor(metadata.serverId ?? client.serverId, metadata.id);
+    final ruleKey = downloadProvider.syncRuleKeyFor(ServerId(metadata.serverId ?? client.serverId), metadata.id);
     syncRuleUpdated = downloadProvider.hasSyncRule(ruleKey);
 
     await downloadProvider.createSyncRule(
-      serverId: metadata.serverId ?? client.serverId,
+      serverId: ServerId(metadata.serverId ?? client.serverId),
       ratingKey: metadata.id,
       targetType: metadata.kind.id.isNotEmpty ? metadata.kind.id : ContentTypes.show,
       episodeCount: syncCount,
@@ -212,13 +213,13 @@ Future<DownloadResult?> showListDownloadOptionsAndQueue(
   bool syncRuleUpdated = false;
 
   if (syncChoice == _SyncChoice.keepSynced) {
-    final ruleKey = downloadProvider.syncRuleKeyFor(serverId, rootMetadata.id);
+    final ruleKey = downloadProvider.syncRuleKeyFor(ServerId(serverId), rootMetadata.id);
     if (downloadProvider.hasSyncRule(ruleKey)) {
       await downloadProvider.updateSyncRuleFilter(ruleKey, filterString);
       syncRuleUpdated = true;
     } else {
       await downloadProvider.createSyncRule(
-        serverId: serverId,
+        serverId: ServerId(serverId),
         ratingKey: rootMetadata.id,
         targetType: targetType,
         episodeCount: 0,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/mixins/watch_state_aware.dart';
 import 'package:plezy/utils/watch_state_notifier.dart';
@@ -52,7 +53,7 @@ class _ProbeState extends State<_Probe> with WatchStateAware {
 }
 
 WatchStateEvent _ev({
-  required String serverId,
+  required ServerId serverId,
   required String itemId,
   List<String> parentChain = const [],
   WatchStateChangeType type = WatchStateChangeType.watched,
@@ -70,7 +71,7 @@ void main() {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s, itemIdsOverride: const {'42'}));
 
-      final hit = _ev(serverId: 's1', itemId: '42');
+      final hit = _ev(serverId: ServerId('s1'), itemId: '42');
       WatchStateNotifier().notify(hit);
       await _settle(tester);
 
@@ -82,7 +83,7 @@ void main() {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s, itemIdsOverride: const {'42'}));
 
-      WatchStateNotifier().notify(_ev(serverId: 's1', itemId: '999'));
+      WatchStateNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '999'));
       await _settle(tester);
 
       expect(state.events, isEmpty);
@@ -94,7 +95,7 @@ void main() {
 
       // Episode whose parent chain contains the show this screen tracks.
       WatchStateNotifier().notify(
-        _ev(serverId: 's1', itemId: 'episode456', parentChain: const ['season789', 'show123']),
+        _ev(serverId: ServerId('s1'), itemId: 'episode456', parentChain: const ['season789', 'show123']),
       );
       await _settle(tester);
 
@@ -106,11 +107,11 @@ void main() {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s, serverIdOverride: 's1', itemIdsOverride: const {'42'}));
 
-      WatchStateNotifier().notify(_ev(serverId: 's2', itemId: '42'));
+      WatchStateNotifier().notify(_ev(serverId: ServerId('s2'), itemId: '42'));
       await _settle(tester);
       expect(state.events, isEmpty);
 
-      WatchStateNotifier().notify(_ev(serverId: 's1', itemId: '42'));
+      WatchStateNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '42'));
       await _settle(tester);
       expect(state.events, hasLength(1));
     });
@@ -122,11 +123,11 @@ void main() {
       );
 
       // itemId 5 matches the itemIds set, but globalKeys is the active filter.
-      WatchStateNotifier().notify(_ev(serverId: 's1', itemId: '5'));
+      WatchStateNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '5'));
       await _settle(tester);
       expect(state.events, isEmpty);
 
-      WatchStateNotifier().notify(_ev(serverId: 's1', itemId: '99'));
+      WatchStateNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '99'));
       await _settle(tester);
       expect(state.events, hasLength(1));
       expect(state.events.first.itemId, '99');
@@ -136,8 +137,8 @@ void main() {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s, itemIdsOverride: const <String>{}));
 
-      WatchStateNotifier().notify(_ev(serverId: 's1', itemId: '1'));
-      WatchStateNotifier().notify(_ev(serverId: 's2', itemId: '2'));
+      WatchStateNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '1'));
+      WatchStateNotifier().notify(_ev(serverId: ServerId('s2'), itemId: '2'));
       await _settle(tester);
 
       expect(state.events, isEmpty);
@@ -147,14 +148,14 @@ void main() {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s, itemIdsOverride: const {'42'}));
 
-      WatchStateNotifier().notify(_ev(serverId: 's1', itemId: '42'));
+      WatchStateNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '42'));
       await _settle(tester);
       expect(state.events, hasLength(1));
 
       // Replace the tree to dispose the probe.
       await tester.pumpWidget(const SizedBox.shrink());
 
-      WatchStateNotifier().notify(_ev(serverId: 's1', itemId: '42'));
+      WatchStateNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '42'));
       await tester.pump(Duration.zero);
 
       // No second delivery — subscription cancelled.

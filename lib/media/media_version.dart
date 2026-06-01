@@ -121,7 +121,7 @@ class MediaVersion {
     for (final sig in acceptedSignatures) {
       final parts = sig.split(':');
       if (parts.length != 3) continue;
-      final targetRes = parts[0];
+      final targetRes = parts.first;
       final targetCodec = parts[1];
 
       for (int i = 0; i < versions.length; i++) {

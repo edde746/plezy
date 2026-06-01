@@ -22,7 +22,7 @@ class PinStatusRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(color: theme.colorScheme.primaryContainer, borderRadius: BorderRadius.circular(8)),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               AppIcon(Symbols.lock_rounded, fill: 1, color: theme.colorScheme.onPrimaryContainer, size: 18),
               const SizedBox(width: 6),

@@ -28,9 +28,9 @@ class KeyboardShortcutsScreen extends StatelessWidget {
           slivers: [
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                padding: const EdgeInsets.only(left: 16, top: 16, right: 16),
                 child: Align(
-                  alignment: Alignment.centerRight,
+                  alignment: .centerRight,
                   child: FocusableButton(
                     onPressed: () => _resetShortcuts(context),
                     child: TextButton(onPressed: () => _resetShortcuts(context), child: Text(t.common.reset)),

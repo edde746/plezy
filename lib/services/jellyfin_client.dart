@@ -21,6 +21,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_playlist.dart';
+import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
@@ -223,7 +224,7 @@ class JellyfinClient
       items.map(_mapItem).whereType<MediaItem>().toList();
 
   @override
-  String get serverId => connection.serverMachineId;
+  ServerId get serverId => ServerId(connection.serverMachineId);
 
   @override
   String get scopedServerId => connection.id;

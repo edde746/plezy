@@ -78,7 +78,7 @@ class DesktopAppBarHelper {
         final leftPadding = isFullscreen ? DesktopWindowPadding.macOSLeftFullscreen : DesktopWindowPadding.macOSLeft;
 
         final paddedWidget = Padding(
-          padding: EdgeInsets.only(left: leftPadding),
+          padding: .only(left: leftPadding),
           child: leading,
         );
 
@@ -167,7 +167,7 @@ class DesktopTitleBarPadding extends StatelessWidget {
         return child;
       }
       return Padding(
-        padding: EdgeInsets.only(right: right),
+        padding: .only(right: right),
         child: child,
       );
     }
@@ -186,7 +186,7 @@ class DesktopTitleBarPadding extends StatelessWidget {
         }
 
         return Padding(
-          padding: EdgeInsets.only(left: left, right: right),
+          padding: .only(left: left, right: right),
           child: child,
         );
       },

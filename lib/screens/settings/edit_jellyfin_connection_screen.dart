@@ -84,12 +84,12 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
       title: Text(t.connections.editJellyfinTitle),
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.all(16),
           sliver: SliverToBoxAdapter(
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: .stretch,
                 children: [
                   Text(
                     t.connections.editJellyfinIntro(serverName: widget.connection.serverName),

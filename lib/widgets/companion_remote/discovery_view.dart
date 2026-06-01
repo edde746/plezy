@@ -201,7 +201,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: .stretch,
         children: [
           Text(
             t.companionRemote.pairing.discoveryDescription,
@@ -301,7 +301,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         Text(t.companionRemote.pairing.availableDevices, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
@@ -322,7 +322,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
 
   Widget _buildManualEntrySection() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         FocusableWrapper(
           focusNode: _manualToggleFocusNode,
@@ -359,7 +359,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
           Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: .stretch,
               children: [
                 FocusableTextFormField(
                   controller: _hostAddressController,

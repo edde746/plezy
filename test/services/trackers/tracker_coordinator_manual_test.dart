@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -22,7 +23,7 @@ import 'package:plezy/utils/external_ids.dart';
 
 class _FakeMediaServerClient implements MediaServerClient {
   @override
-  final String serverId;
+  final ServerId serverId;
   @override
   String? get serverName => null;
 
@@ -35,7 +36,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   final double watchedThreshold;
 
   _FakeMediaServerClient({
-    this.serverId = 'server-1',
+    this.serverId = const ServerId('server-1'),
     required this.externalIdsByItem,
     required this.descendantsByParent,
     this.watchedThreshold = 0.9,
@@ -91,7 +92,7 @@ MediaItem _season() => MediaItem(
   backend: MediaBackend.plex,
   kind: MediaKind.season,
   title: 'Season 1',
-  serverId: 'server-1',
+  serverId: ServerId('server-1'),
   libraryId: 'lib-1',
   index: 1,
   parentId: 'show-1',
@@ -102,7 +103,7 @@ MediaItem _episode(int number, {int season = 1}) => MediaItem(
   backend: MediaBackend.plex,
   kind: MediaKind.episode,
   title: 'Episode $number',
-  serverId: 'server-1',
+  serverId: ServerId('server-1'),
   libraryId: 'lib-1',
   parentIndex: season,
   index: number,
@@ -113,7 +114,7 @@ MediaItem _show() => MediaItem(
   backend: MediaBackend.plex,
   kind: MediaKind.show,
   title: 'Show 1',
-  serverId: 'server-1',
+  serverId: ServerId('server-1'),
   libraryId: 'lib-1',
 );
 
@@ -122,7 +123,7 @@ MediaItem _movie() => MediaItem(
   backend: MediaBackend.plex,
   kind: MediaKind.movie,
   title: 'Movie 1',
-  serverId: 'server-1',
+  serverId: ServerId('server-1'),
   libraryId: 'lib-1',
 );
 
@@ -490,17 +491,21 @@ void main() {
       );
 
       final firstClient = _FakeMediaServerClient(
-        serverId: 'server-a',
+        serverId: ServerId('server-a'),
         externalIdsByItem: {'show-a': const ExternalIds(tvdb: 111)},
         descendantsByParent: const {},
       );
       final secondClient = _FakeMediaServerClient(
-        serverId: 'server-b',
+        serverId: ServerId('server-b'),
         externalIdsByItem: {'show-b': const ExternalIds(tvdb: 222)},
         descendantsByParent: const {},
       );
-      final firstEpisode = _episode(1).copyWith(id: 'episode-a', serverId: 'server-a', grandparentId: 'show-a');
-      final secondEpisode = _episode(1).copyWith(id: 'episode-b', serverId: 'server-b', grandparentId: 'show-b');
+      final firstEpisode = _episode(
+        1,
+      ).copyWith(id: 'episode-a', serverId: ServerId('server-a'), grandparentId: 'show-a');
+      final secondEpisode = _episode(
+        1,
+      ).copyWith(id: 'episode-b', serverId: ServerId('server-b'), grandparentId: 'show-b');
 
       await coordinator.startPlayback(firstEpisode, firstClient);
       await coordinator.startPlayback(secondEpisode, secondClient);

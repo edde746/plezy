@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -122,13 +123,13 @@ class NavigationRailItem extends StatelessWidget {
             ),
             clipBehavior: Clip.hardEdge,
             child: UnconstrainedBox(
-              alignment: Alignment.centerLeft,
+              alignment: .centerLeft,
               constrainedAxis: Axis.vertical,
               clipBehavior: Clip.hardEdge,
               child: SizedBox(
                 width: SideNavigationRailState.expandedWidth - 24,
                 child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12, horizontal: horizontalPadding),
+                  padding: .symmetric(vertical: 12, horizontal: horizontalPadding),
                   child: Row(
                     children: [
                       AppIcon(
@@ -344,16 +345,16 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     _focusTracker.restoreFocus(fallbackKey: _kHome);
   }
 
-  String _serverHeaderFocusKey(_LibraryNavSection section, String serverId) =>
+  String _serverHeaderFocusKey(_LibraryNavSection section, ServerId serverId) =>
       '$_kServerHeaderPrefix:${section.name}:$serverId';
 
   String _libraryItemFocusKey(_LibraryNavSection section, MediaLibrary library) =>
       '$_kLibraryItemPrefix:${section.name}:${library.globalKey}';
 
-  String _serverGroupStateKey(_LibraryNavSection section, String serverId) => '${section.name}:$serverId';
+  String _serverGroupStateKey(_LibraryNavSection section, ServerId serverId) => '${section.name}:$serverId';
 
   String _focusKeyForLibraryRow(_LibraryNavRow row) => switch (row) {
-    _LibraryServerHeaderRow(:final section, :final serverId) => _serverHeaderFocusKey(section, serverId),
+    _LibraryServerHeaderRow(:final section, :final serverId) => _serverHeaderFocusKey(section, ServerId(serverId)),
     _LibraryItemRow(:final section, :final library) => _libraryItemFocusKey(section, library),
   };
 
@@ -411,7 +412,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           ),
         );
       }
-      if (serverKey.isEmpty || !_collapsedServerGroupKeys.contains(_serverGroupStateKey(section, serverKey))) {
+      if (serverKey.isEmpty ||
+          !_collapsedServerGroupKeys.contains(_serverGroupStateKey(section, ServerId(serverKey)))) {
         for (final lib in bucket) {
           result.add(_LibraryItemRow(section: section, library: lib));
         }
@@ -429,9 +431,9 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
 
     return {
       for (final lib in visibleLibraries)
-        if (lib.serverId != null) _serverGroupStateKey(_LibraryNavSection.visible, lib.serverId!),
+        if (lib.serverId != null) _serverGroupStateKey(_LibraryNavSection.visible, ServerId(lib.serverId!)),
       for (final lib in hiddenLibraries)
-        if (lib.serverId != null) _serverGroupStateKey(_LibraryNavSection.hidden, lib.serverId!),
+        if (lib.serverId != null) _serverGroupStateKey(_LibraryNavSection.hidden, ServerId(lib.serverId!)),
     };
   }
 
@@ -660,7 +662,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                             SizedBox(height: _getTopPadding(context)),
                             Expanded(
                               child: ListView(
-                                padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
+                                padding: .symmetric(horizontal: horizontalPadding),
                                 clipBehavior: Clip.hardEdge,
                                 children: [
                                   if (widget.isOfflineMode && widget.onReconnect != null) ...[
@@ -743,7 +745,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                             ),
                             if (_showFullscreenToggle)
                               Padding(
-                                padding: EdgeInsets.fromLTRB(horizontalPadding, 0, horizontalPadding, 12),
+                                padding: .fromLTRB(horizontalPadding, 0, horizontalPadding, 12),
                                 child: _buildFullscreenItem(isCollapsed: isCollapsed),
                               ),
                           ],
@@ -784,7 +786,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           color: isSelected ? t.text : t.textMuted,
         ),
-        overflow: TextOverflow.ellipsis,
+        overflow: .ellipsis,
         maxLines: 1,
       ),
       isSelected: isSelected,
@@ -810,8 +812,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: t.text))
           : Text(
               Translations.of(context).common.reconnect,
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: t.textMuted),
-              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 14, fontWeight: .w400, color: t.textMuted),
+              overflow: .ellipsis,
               maxLines: 1,
             ),
       isSelected: false,
@@ -835,8 +837,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       icon: isFullscreen ? Symbols.fullscreen_exit_rounded : Symbols.fullscreen_rounded,
       label: Text(
         isFullscreen ? Translations.of(context).common.exitFullscreen : Translations.of(context).common.fullscreen,
-        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400, color: t.textMuted),
-        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 14, fontWeight: .w400, color: t.textMuted),
+        overflow: .ellipsis,
         maxLines: 1,
       ),
       isSelected: false,
@@ -865,7 +867,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final allEmpty = visibleRows.isEmpty && hiddenLibraryCount == 0;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         Focus(
           focusNode: _focusTracker.get(_kLibraries),
@@ -906,13 +908,13 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                 ),
                 clipBehavior: Clip.hardEdge,
                 child: UnconstrainedBox(
-                  alignment: Alignment.centerLeft,
+                  alignment: .centerLeft,
                   constrainedAxis: Axis.vertical,
                   clipBehavior: Clip.hardEdge,
                   child: SizedBox(
                     width: expandedWidth - 24,
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: itemHorizontalPadding),
+                      padding: .symmetric(vertical: 12, horizontal: itemHorizontalPadding),
                       child: Row(
                         children: [
                           AppIcon(
@@ -964,14 +966,14 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           curve: Curves.easeOutCubic,
           builder: (context, value, child) {
             return ClipRect(
-              child: Align(alignment: Alignment.topCenter, heightFactor: value, child: child),
+              child: Align(alignment: .topCenter, heightFactor: value, child: child),
             );
           },
           child: ExcludeFocus(
             excluding: !_librariesExpanded || isCollapsed,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: .min,
+              crossAxisAlignment: .start,
               children: [
                 const SizedBox(height: 4),
                 if (isLoading)
@@ -1019,12 +1021,12 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
 
   Widget _buildLibraryGroupedColumn(List<_LibraryNavRow> rows, dynamic t) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: rows.map((row) {
         return switch (row) {
           _LibraryServerHeaderRow(:final section, :final serverId, :final serverName) => _buildServerHeader(
             section,
-            serverId,
+            ServerId(serverId),
             serverName,
             t,
           ),
@@ -1039,7 +1041,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     );
   }
 
-  Widget _buildServerHeader(_LibraryNavSection section, String serverId, String serverName, dynamic t) {
+  Widget _buildServerHeader(_LibraryNavSection section, ServerId serverId, String serverName, dynamic t) {
     // Resolve backend per server so the badge matches the brand. Falls back
     // to the generic `dns` icon if the client isn't registered yet (rare —
     // can happen during a profile switch before the manager rehydrates).
@@ -1050,7 +1052,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       iconSize: 14,
       leading: backend == null ? null : BackendBadge(backend: backend, size: 14, color: t.textMuted),
       label: serverName,
-      labelStyle: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.4, color: t.textMuted),
+      labelStyle: TextStyle(fontSize: 11, fontWeight: .w600, letterSpacing: 0.4, color: t.textMuted),
       verticalPadding: 6,
       isExpanded: !_collapsedServerGroupKeys.contains(_serverGroupStateKey(section, serverId)),
       onToggle: () => _toggleServerCollapse(section, serverId),
@@ -1058,7 +1060,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     );
   }
 
-  void _toggleServerCollapse(_LibraryNavSection section, String serverId) {
+  void _toggleServerCollapse(_LibraryNavSection section, ServerId serverId) {
     final groupKey = _serverGroupStateKey(section, serverId);
     setState(() {
       if (!_collapsedServerGroupKeys.add(groupKey)) {
@@ -1073,7 +1075,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       icon: Symbols.visibility_off_rounded,
       iconSize: 16,
       label: Translations.of(context).libraries.hiddenLibrariesCount(count: count),
-      labelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: t.textMuted),
+      labelStyle: TextStyle(fontSize: 12, fontWeight: .w500, color: t.textMuted),
       verticalPadding: 8,
       isExpanded: _hiddenLibrariesExpanded,
       onToggle: () => setState(() => _hiddenLibrariesExpanded = !_hiddenLibrariesExpanded),
@@ -1122,19 +1124,19 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
               decoration: BoxDecoration(color: isFocused ? t.text.withValues(alpha: 0.08) : null, borderRadius: radius),
               clipBehavior: Clip.hardEdge,
               child: UnconstrainedBox(
-                alignment: Alignment.centerLeft,
+                alignment: .centerLeft,
                 constrainedAxis: Axis.vertical,
                 clipBehavior: Clip.hardEdge,
                 child: SizedBox(
                   width: expandedWidth - 24,
                   child: Padding(
-                    padding: EdgeInsets.symmetric(vertical: verticalPadding, horizontal: 17),
+                    padding: .symmetric(vertical: verticalPadding, horizontal: 17),
                     child: Row(
                       children: [
                         leading ?? AppIcon(icon, fill: 1, size: iconSize, color: t.textMuted),
                         const SizedBox(width: 11),
                         Expanded(
-                          child: Text(label, style: labelStyle, overflow: TextOverflow.ellipsis),
+                          child: Text(label, style: labelStyle, overflow: .ellipsis),
                         ),
                         AppIcon(
                           isExpanded ? Symbols.expand_less_rounded : Symbols.expand_more_rounded,
@@ -1167,8 +1169,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         icon: _getLibraryIcon(library.kind.id),
         selectedIcon: _getLibraryIcon(library.kind.id),
         label: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: .start,
+          mainAxisSize: .min,
           children: [
             Text(
               library.title,
@@ -1177,13 +1179,13 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 color: isSelected ? t.text : t.textMuted,
               ),
-              overflow: TextOverflow.ellipsis,
+              overflow: .ellipsis,
             ),
             if (showServerName)
               Text(
                 library.serverName!,
                 style: TextStyle(fontSize: 9, color: t.textMuted.withValues(alpha: 0.4)),
-                overflow: TextOverflow.ellipsis,
+                overflow: .ellipsis,
               ),
           ],
         ),
