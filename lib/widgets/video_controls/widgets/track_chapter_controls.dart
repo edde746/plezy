@@ -18,7 +18,6 @@ import '../sheets/queue_sheet.dart';
 import '../sheets/track_sheet.dart';
 import '../sheets/video_settings_sheet.dart';
 import '../../../services/shader_service.dart';
-import '../helpers/track_filter_helper.dart';
 import '../video_control_button.dart';
 
 /// Row of track and chapter control buttons for the video player
@@ -86,9 +85,6 @@ class TrackChapterControls extends StatelessWidget {
   VoidCallback? get onToggleFullscreen => trackControlsState.onToggleFullscreen;
   VoidCallback? get onToggleAlwaysOnTop => trackControlsState.onToggleAlwaysOnTop;
   Function(int)? get onSwitchVersion => trackControlsState.onSwitchVersion;
-  Function(AudioTrack)? get onAudioTrackChanged => trackControlsState.onAudioTrackChanged;
-  Function(SubtitleTrack)? get onSubtitleTrackChanged => trackControlsState.onSubtitleTrackChanged;
-  Function(SubtitleTrack)? get onSecondarySubtitleTrackChanged => trackControlsState.onSecondarySubtitleTrackChanged;
   VoidCallback? get onLoadSeekTimes => trackControlsState.onLoadSeekTimes;
   VoidCallback? get onCancelAutoHide => trackControlsState.onCancelAutoHide;
   VoidCallback? get onStartAutoHide => trackControlsState.onStartAutoHide;
@@ -103,9 +99,6 @@ class TrackChapterControls extends StatelessWidget {
   bool get subtitlesVisible => trackControlsState.subtitlesVisible;
   bool get showQueueButton => trackControlsState.showQueueButton;
   Function(MediaItem)? get onQueueItemSelected => trackControlsState.onQueueItemSelected;
-  String get ratingKey => trackControlsState.ratingKey;
-  String? get mediaTitle => trackControlsState.mediaTitle;
-  Future<void> Function()? get onSubtitleDownloaded => trackControlsState.onSubtitleDownloaded;
 
   /// Handle key event for button navigation
   KeyEventResult _handleButtonKeyEvent(FocusNode _, KeyEvent event, int index, int totalButtons) {
@@ -257,13 +250,11 @@ class TrackChapterControls extends StatelessWidget {
         // Combined audio & subtitles button
         {
           final currentIndex = buttonIndex;
-          final hasSourceSubs =
-              trackControlsState.sourceSubtitleTracks.isNotEmpty && trackControlsState.onSwitchSubtitleStreamId != null;
-          final hasSubs = _hasSubtitles(tracks) || hasSourceSubs;
+          final hasSubtitleControls = trackControlsState.hasSubtitleControls(tracks);
           final selectedSub = player.state.track.subtitle;
           final hasActiveSubtitle = selectedSub != null && selectedSub.id != 'no';
-          final isHidden = hasSubs && hasActiveSubtitle && !subtitlesVisible;
-          final icon = hasSubs
+          final isHidden = hasSubtitleControls && hasActiveSubtitle && !subtitlesVisible;
+          final icon = hasSubtitleControls
               ? (isHidden ? Symbols.subtitles_off_rounded : Symbols.subtitles_rounded)
               : Symbols.audiotrack_rounded;
           buttons.add(
@@ -278,24 +269,7 @@ class TrackChapterControls extends StatelessWidget {
                 onCancelAutoHide?.call();
                 OverlaySheetController.of(context)
                     .show(
-                      builder: (_) => TrackSheet(
-                        player: player,
-                        ratingKey: ratingKey,
-                        serverId: serverId,
-                        mediaTitle: mediaTitle,
-                        onSubtitleDownloaded: onSubtitleDownloaded,
-                        onAudioTrackChanged: onAudioTrackChanged,
-                        onSubtitleTrackChanged: onSubtitleTrackChanged,
-                        onSecondarySubtitleTrackChanged: onSecondarySubtitleTrackChanged,
-                        isTranscoding: trackControlsState.isTranscoding,
-                        sourceAudioTracks: trackControlsState.sourceAudioTracks,
-                        selectedAudioStreamId: trackControlsState.selectedAudioStreamId,
-                        onSwitchAudioStreamId: trackControlsState.onSwitchAudioStreamId,
-                        sourceSubtitleTracks: trackControlsState.sourceSubtitleTracks,
-                        selectedSubtitleStreamId: trackControlsState.selectedSubtitleStreamId,
-                        onSwitchSubtitleStreamId: trackControlsState.onSwitchSubtitleStreamId,
-                        subtitleSearchSupported: trackControlsState.subtitleSearchSupported,
-                      ),
+                      builder: (_) => TrackSheet(player: player, trackControlsState: trackControlsState),
                     )
                     .whenComplete(() => onStartAutoHide?.call());
               },
@@ -478,11 +452,6 @@ class TrackChapterControls extends StatelessWidget {
     if (isDesktop && onToggleAlwaysOnTop != null) count++; // Always on top
     if (isDesktop) count++; // Fullscreen
     return count;
-  }
-
-  bool _hasSubtitles(Tracks? tracks) {
-    if (tracks == null) return false;
-    return TrackFilterHelper.hasTracks<SubtitleTrack>(tracks.subtitle);
   }
 
   IconData _getBoxFitIcon(int mode) {

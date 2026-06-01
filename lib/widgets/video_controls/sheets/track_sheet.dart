@@ -12,55 +12,16 @@ import '../../../widgets/overlay_sheet.dart';
 import 'base_video_control_sheet.dart';
 import 'sheet_column_header.dart';
 import 'subtitle_search_sheet.dart';
+import '../models/track_controls_state.dart';
 import '../helpers/track_filter_helper.dart';
 import '../helpers/track_selection_helper.dart';
 
 /// Combined bottom sheet for selecting audio and subtitle tracks side-by-side.
 class TrackSheet extends StatelessWidget {
   final Player player;
-  final String ratingKey;
-  final String serverId;
-  final String? mediaTitle;
-  final Future<void> Function()? onSubtitleDownloaded;
-  final Function(AudioTrack)? onAudioTrackChanged;
-  final Function(SubtitleTrack)? onSubtitleTrackChanged;
-  final Function(SubtitleTrack)? onSecondarySubtitleTrackChanged;
+  final TrackControlsState trackControlsState;
 
-  /// When true, or when a Jellyfin source has external audio, the audio column
-  /// renders [sourceAudioTracks] and taps are routed to [onSwitchAudioStreamId]
-  /// instead of using the player's in-stream audio selection.
-  final bool isTranscoding;
-  final List<MediaAudioTrack> sourceAudioTracks;
-  final int? selectedAudioStreamId;
-  final ValueChanged<int>? onSwitchAudioStreamId;
-  final List<MediaSubtitleTrack> sourceSubtitleTracks;
-  final int? selectedSubtitleStreamId;
-  final ValueChanged<int>? onSwitchSubtitleStreamId;
-
-  /// Whether OpenSubtitles search is supported by the active server. Plex
-  /// proxies the OpenSubtitles plugin; Jellyfin doesn't expose an
-  /// equivalent today.
-  final bool subtitleSearchSupported;
-
-  const TrackSheet({
-    super.key,
-    required this.player,
-    this.ratingKey = '',
-    this.serverId = '',
-    this.mediaTitle,
-    this.onSubtitleDownloaded,
-    this.onAudioTrackChanged,
-    this.onSubtitleTrackChanged,
-    this.onSecondarySubtitleTrackChanged,
-    this.isTranscoding = false,
-    this.sourceAudioTracks = const [],
-    this.selectedAudioStreamId,
-    this.onSwitchAudioStreamId,
-    this.sourceSubtitleTracks = const [],
-    this.selectedSubtitleStreamId,
-    this.onSwitchSubtitleStreamId,
-    this.subtitleSearchSupported = true,
-  });
+  const TrackSheet({super.key, required this.player, required this.trackControlsState});
 
   @override
   Widget build(BuildContext context) {
@@ -75,12 +36,15 @@ class TrackSheet extends StatelessWidget {
           (t) => t?.subtitle ?? [],
         );
 
-        final hasExternalSourceAudio = sourceAudioTracks.any((track) => track.isExternal);
+        final state = trackControlsState;
+        final hasExternalSourceAudio = state.sourceAudioTracks.any((track) => track.isExternal);
         final useSourceAudio =
-            (isTranscoding || hasExternalSourceAudio) && sourceAudioTracks.length > 1 && onSwitchAudioStreamId != null;
-        final useSourceSubtitles = isTranscoding && sourceSubtitleTracks.isNotEmpty && onSwitchSubtitleStreamId != null;
+            (state.isTranscoding || hasExternalSourceAudio) &&
+            state.sourceAudioTracks.length > 1 &&
+            state.onSwitchAudioStreamId != null;
+        final useSourceSubtitles = state.canUseSourceSubtitles;
         final showAudio = useSourceAudio || playerAudioTracks.length > 1;
-        final showSubtitles = useSourceSubtitles || subtitleTracks.isNotEmpty;
+        final showSubtitles = state.hasSubtitleControls(tracks);
 
         final String title;
         final IconData icon;
@@ -109,9 +73,9 @@ class TrackSheet extends StatelessWidget {
               Widget audioColumnFor(TrackSelection sel, bool showHeader) {
                 if (useSourceAudio) {
                   return _SourceAudioColumn(
-                    tracks: sourceAudioTracks,
-                    selectedStreamId: selectedAudioStreamId,
-                    onSelected: onSwitchAudioStreamId!,
+                    tracks: state.sourceAudioTracks,
+                    selectedStreamId: state.selectedAudioStreamId,
+                    onSelected: state.onSwitchAudioStreamId!,
                     showHeader: showHeader,
                   );
                 }
@@ -119,7 +83,7 @@ class TrackSheet extends StatelessWidget {
                   tracks: playerAudioTracks,
                   selection: sel,
                   player: player,
-                  onTrackChanged: onAudioTrackChanged,
+                  onTrackChanged: state.onAudioTrackChanged,
                   showHeader: showHeader,
                 );
               }
@@ -127,30 +91,18 @@ class TrackSheet extends StatelessWidget {
               Widget subtitleColumnFor(TrackSelection sel, bool showHeader) {
                 if (useSourceSubtitles) {
                   return _SourceSubtitleColumn(
-                    tracks: sourceSubtitleTracks,
-                    selectedStreamId: selectedSubtitleStreamId,
-                    onSelected: onSwitchSubtitleStreamId!,
-                    ratingKey: ratingKey,
-                    serverId: serverId,
-                    mediaTitle: mediaTitle,
-                    onSubtitleDownloaded: onSubtitleDownloaded,
+                    tracks: state.sourceSubtitleTracks,
+                    trackControlsState: state,
                     showHeader: showHeader,
-                    subtitleSearchSupported: subtitleSearchSupported,
                   );
                 }
                 return _SubtitleColumn(
                   tracks: subtitleTracks,
                   selection: sel,
                   player: player,
-                  ratingKey: ratingKey,
-                  serverId: serverId,
-                  mediaTitle: mediaTitle,
-                  onSubtitleDownloaded: onSubtitleDownloaded,
-                  onTrackChanged: onSubtitleTrackChanged,
-                  onSecondaryTrackChanged: onSecondarySubtitleTrackChanged,
                   supportsSecondary: supportsSecondary,
                   showHeader: showHeader,
-                  subtitleSearchSupported: subtitleSearchSupported,
+                  trackControlsState: state,
                 );
               }
 
@@ -249,26 +201,10 @@ class _SourceAudioColumnState extends State<_SourceAudioColumn> {
 
 class _SourceSubtitleColumn extends StatefulWidget {
   final List<MediaSubtitleTrack> tracks;
-  final int? selectedStreamId;
-  final ValueChanged<int> onSelected;
-  final String ratingKey;
-  final String serverId;
-  final String? mediaTitle;
-  final Future<void> Function()? onSubtitleDownloaded;
+  final TrackControlsState trackControlsState;
   final bool showHeader;
-  final bool subtitleSearchSupported;
 
-  const _SourceSubtitleColumn({
-    required this.tracks,
-    required this.selectedStreamId,
-    required this.onSelected,
-    this.ratingKey = '',
-    this.serverId = '',
-    this.mediaTitle,
-    this.onSubtitleDownloaded,
-    required this.showHeader,
-    this.subtitleSearchSupported = true,
-  });
+  const _SourceSubtitleColumn({required this.tracks, required this.trackControlsState, required this.showHeader});
 
   @override
   State<_SourceSubtitleColumn> createState() => _SourceSubtitleColumnState();
@@ -304,7 +240,7 @@ class _SourceSubtitleColumnState extends State<_SourceSubtitleColumn> {
                   isSelected: selectedId == 0,
                   onTap: () {
                     OverlaySheetController.of(context).close();
-                    widget.onSelected(0);
+                    widget.trackControlsState.onSwitchSubtitleStreamId!(0);
                   },
                 );
               }
@@ -316,35 +252,19 @@ class _SourceSubtitleColumnState extends State<_SourceSubtitleColumn> {
                 isSelected: track.id == selectedId,
                 onTap: () {
                   OverlaySheetController.of(context).close();
-                  widget.onSelected(track.id);
+                  widget.trackControlsState.onSwitchSubtitleStreamId!(track.id);
                 },
               );
             },
           ),
         ),
-        if (widget.ratingKey.isNotEmpty && widget.subtitleSearchSupported) ...[
-          Divider(height: 1, color: Theme.of(context).dividerColor),
-          FocusableListTile(
-            leading: const AppIcon(Symbols.search_rounded),
-            title: Text(t.videoControls.searchSubtitles),
-            onTap: () {
-              OverlaySheetController.of(context).push(
-                builder: (_) => SubtitleSearchSheet(
-                  ratingKey: widget.ratingKey,
-                  serverId: widget.serverId,
-                  mediaTitle: widget.mediaTitle,
-                  onSubtitleDownloaded: widget.onSubtitleDownloaded,
-                ),
-              );
-            },
-          ),
-        ],
+        ..._buildSubtitleSearchFooter(context, widget.trackControlsState),
       ],
     );
   }
 
   int _effectiveSelectedStreamId() {
-    final explicit = widget.selectedStreamId;
+    final explicit = widget.trackControlsState.selectedSubtitleStreamId;
     if (explicit != null && (explicit == 0 || widget.tracks.any((track) => track.id == explicit))) return explicit;
     for (final track in widget.tracks) {
       if (track.selected) return track.id;
@@ -426,29 +346,17 @@ class _SubtitleColumn extends StatefulWidget {
   final List<SubtitleTrack> tracks;
   final TrackSelection selection;
   final Player player;
-  final String ratingKey;
-  final String serverId;
-  final String? mediaTitle;
-  final Future<void> Function()? onSubtitleDownloaded;
-  final Function(SubtitleTrack)? onTrackChanged;
-  final Function(SubtitleTrack)? onSecondaryTrackChanged;
   final bool supportsSecondary;
   final bool showHeader;
-  final bool subtitleSearchSupported;
+  final TrackControlsState trackControlsState;
 
   const _SubtitleColumn({
     required this.tracks,
     required this.selection,
     required this.player,
-    this.ratingKey = '',
-    this.serverId = '',
-    this.mediaTitle,
-    this.onSubtitleDownloaded,
-    this.onTrackChanged,
-    this.onSecondaryTrackChanged,
     this.supportsSecondary = false,
     required this.showHeader,
-    this.subtitleSearchSupported = true,
+    required this.trackControlsState,
   });
 
   @override
@@ -494,22 +402,22 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
                     // Turning off primary also clears secondary
                     if (hasSecondary) {
                       widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                      widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
+                      widget.trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
                     }
                     widget.player.selectSubtitleTrack(SubtitleTrack.off);
-                    widget.onTrackChanged?.call(SubtitleTrack.off);
+                    widget.trackControlsState.onSubtitleTrackChanged?.call(SubtitleTrack.off);
                     OverlaySheetController.of(context).close();
                   },
                   onLongPress: widget.supportsSecondary && hasSecondary
                       ? () {
                           widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                          widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
+                          widget.trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
                         }
                       : null,
                   onSecondaryTap: widget.supportsSecondary && hasSecondary
                       ? () {
                           widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                          widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
+                          widget.trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
                         }
                       : null,
                 );
@@ -543,10 +451,10 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
                   // If tapping a track that is currently the secondary, clear secondary first
                   if (isSecondary) {
                     widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                    widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
+                    widget.trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
                   }
                   widget.player.selectSubtitleTrack(track);
-                  widget.onTrackChanged?.call(track);
+                  widget.trackControlsState.onSubtitleTrackChanged?.call(track);
                   OverlaySheetController.of(context).close();
                 },
                 onLongPress: widget.supportsSecondary
@@ -554,11 +462,11 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
                         if (isSecondary) {
                           // Already secondary — clear it
                           widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                          widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
+                          widget.trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
                         } else if (!isPrimary) {
                           // Set as secondary (don't close sheet so user sees badge update)
                           widget.player.selectSecondarySubtitleTrack(track);
-                          widget.onSecondaryTrackChanged?.call(track);
+                          widget.trackControlsState.onSecondarySubtitleTrackChanged?.call(track);
                         }
                       }
                     : null,
@@ -566,10 +474,10 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
                     ? () {
                         if (isSecondary) {
                           widget.player.selectSecondarySubtitleTrack(SubtitleTrack.off);
-                          widget.onSecondaryTrackChanged?.call(SubtitleTrack.off);
+                          widget.trackControlsState.onSecondarySubtitleTrackChanged?.call(SubtitleTrack.off);
                         } else if (!isPrimary) {
                           widget.player.selectSecondarySubtitleTrack(track);
-                          widget.onSecondaryTrackChanged?.call(track);
+                          widget.trackControlsState.onSecondarySubtitleTrackChanged?.call(track);
                         }
                       }
                     : null,
@@ -577,24 +485,30 @@ class _SubtitleColumnState extends State<_SubtitleColumn> {
             },
           ),
         ),
-        if (widget.ratingKey.isNotEmpty && widget.subtitleSearchSupported) ...[
-          Divider(height: 1, color: Theme.of(context).dividerColor),
-          FocusableListTile(
-            leading: const AppIcon(Symbols.search_rounded),
-            title: Text(t.videoControls.searchSubtitles),
-            onTap: () {
-              OverlaySheetController.of(context).push(
-                builder: (_) => SubtitleSearchSheet(
-                  ratingKey: widget.ratingKey,
-                  serverId: widget.serverId,
-                  mediaTitle: widget.mediaTitle,
-                  onSubtitleDownloaded: widget.onSubtitleDownloaded,
-                ),
-              );
-            },
-          ),
-        ],
+        ..._buildSubtitleSearchFooter(context, widget.trackControlsState),
       ],
     );
   }
+}
+
+List<Widget> _buildSubtitleSearchFooter(BuildContext context, TrackControlsState state) {
+  if (!state.canSearchSubtitles) return const [];
+
+  return [
+    Divider(height: 1, color: Theme.of(context).dividerColor),
+    FocusableListTile(
+      leading: const AppIcon(Symbols.search_rounded),
+      title: Text(t.videoControls.searchSubtitles),
+      onTap: () {
+        OverlaySheetController.of(context).push(
+          builder: (_) => SubtitleSearchSheet(
+            ratingKey: state.ratingKey,
+            serverId: state.serverId,
+            mediaTitle: state.mediaTitle,
+            onSubtitleDownloaded: state.onSubtitleDownloaded,
+          ),
+        );
+      },
+    ),
+  ];
 }
