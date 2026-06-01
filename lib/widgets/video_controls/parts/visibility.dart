@@ -70,11 +70,15 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   /// Shared hide logic: hides controls, notifies parent, updates traffic lights, restores focus.
   void _hideControls() {
     if (!mounted || !_showControls || _forceShowControls) return;
+    // On TV, keep the skip button visible after controls hide so center still skips.
+    // On other platforms, dismiss with controls (auto-skip off → also covered by the 7 s timer).
+    // Skip the keepSkipButton path if the button is already dismissed (the 7 s timer
+    // fired earlier with controls hidden) — otherwise we'd hand focus to an unmounted node.
+    final keepSkipButton = _currentMarker != null && !_skipButtonDismissed && PlatformDetector.isTV();
     _setControlsState(() {
       _showControls = false;
       _isContentStripVisible = false;
-      // Dismiss skip button with controls — after this it only re-appears with controls
-      if (_currentMarker != null) {
+      if (_currentMarker != null && !keepSkipButton) {
         _skipButtonDismissed = true;
       }
     });
@@ -89,15 +93,17 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     // sheet navigation (e.g. the compact sync bar).
     final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
     if (!sheetOpen) {
-      // Always request primary focus on _focusNode — not just when hasFocus is
-      // false. hasFocus is true when a descendant (e.g. play/pause) has focus,
-      // but we need _focusNode itself to hold primary focus so its onKeyEvent
-      // fires for the next d-pad press (otherwise focus escapes to the screen-
-      // level self-heal handler which shows controls with play/pause focus).
-      _focusNode.requestFocus();
+      // On TV with an active skip marker, hand focus to the skip button so the
+      // center key skips without having to show controls first.
+      // Otherwise, always reclaim _focusNode primary focus so its onKeyEvent
+      // fires for the next d-pad press (prevents focus escaping to the
+      // screen-level self-heal handler which would show controls with
+      // play/pause focus instead).
+      final focusTarget = keepSkipButton ? _skipMarkerFocusNode : _focusNode;
+      focusTarget.requestFocus();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_focusNode.hasPrimaryFocus) {
-          _focusNode.requestFocus();
+        if (mounted && !focusTarget.hasPrimaryFocus) {
+          focusTarget.requestFocus();
         }
       });
     }

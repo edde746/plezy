@@ -3,11 +3,12 @@ import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../focus/focusable_wrapper.dart';
+import '../../../focus/input_mode_tracker.dart';
 import '../../../media/media_source_info.dart';
 import '../../../theme/mono_tokens.dart';
 import '../../app_icon.dart';
 
-class SkipMarkerButton extends StatelessWidget {
+class SkipMarkerButton extends StatefulWidget {
   final MediaMarker marker;
   final Duration playerDuration;
   final bool hasNextEpisode;
@@ -36,11 +37,50 @@ class SkipMarkerButton extends StatelessWidget {
   });
 
   @override
+  State<SkipMarkerButton> createState() => _SkipMarkerButtonState();
+}
+
+class _SkipMarkerButtonState extends State<SkipMarkerButton> {
+  bool _isFocused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isFocused = widget.focusNode.hasFocus;
+    widget.focusNode.addListener(_onFocusChanged);
+  }
+
+  @override
+  void didUpdateWidget(SkipMarkerButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.focusNode != oldWidget.focusNode) {
+      oldWidget.focusNode.removeListener(_onFocusChanged);
+      _isFocused = widget.focusNode.hasFocus;
+      widget.focusNode.addListener(_onFocusChanged);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.focusNode.removeListener(_onFocusChanged);
+    super.dispose();
+  }
+
+  void _onFocusChanged() {
+    final hasFocus = widget.focusNode.hasFocus;
+    if (hasFocus != _isFocused) {
+      setState(() => _isFocused = hasFocus);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isCredits = marker.isCredits;
+    final isCredits = widget.marker.isCredits;
     final creditsAtEnd =
-        isCredits && playerDuration > Duration.zero && (playerDuration - marker.endTime).inMilliseconds <= 1000;
-    final showNextEpisode = creditsAtEnd && hasNextEpisode;
+        isCredits &&
+        widget.playerDuration > Duration.zero &&
+        (widget.playerDuration - widget.marker.endTime).inMilliseconds <= 1000;
+    final showNextEpisode = creditsAtEnd && widget.hasNextEpisode;
     String baseButtonText;
     if (showNextEpisode) {
       baseButtonText = 'Next Episode';
@@ -50,24 +90,33 @@ class SkipMarkerButton extends StatelessWidget {
       baseButtonText = 'Skip Intro';
     }
 
-    final remainingSeconds = isAutoSkipActive && shouldShowAutoSkip
-        ? (autoSkipDelay - (autoSkipProgress * autoSkipDelay)).ceil().clamp(0, autoSkipDelay)
+    final remainingSeconds = widget.isAutoSkipActive && widget.shouldShowAutoSkip
+        ? (widget.autoSkipDelay - (widget.autoSkipProgress * widget.autoSkipDelay)).ceil().clamp(
+            0,
+            widget.autoSkipDelay,
+          )
         : 0;
 
-    final buttonText = isAutoSkipActive && shouldShowAutoSkip && remainingSeconds > 0
+    final buttonText = widget.isAutoSkipActive && widget.shouldShowAutoSkip && remainingSeconds > 0
         ? '$baseButtonText ($remainingSeconds)'
         : baseButtonText;
     final buttonIcon = showNextEpisode ? Symbols.skip_next_rounded : Symbols.fast_forward_rounded;
 
+    final showFocused = _isFocused && InputModeTracker.isKeyboardMode(context);
+    final primary = Theme.of(context).colorScheme.primary;
+    final buttonBgColor = showFocused ? primary : Colors.white.withValues(alpha: 0.9);
+    final contentColor = showFocused ? Colors.white : Colors.black;
+
     return FocusableWrapper(
-      focusNode: focusNode,
+      focusNode: widget.focusNode,
       onSelect: _activate,
       borderRadius: tokens(context).radiusSm,
-      useBackgroundFocus: true,
+      useBackgroundFocus: false,
+      disableScale: true,
       autoScroll: false,
       onKeyEvent: (node, event) {
         if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.arrowDown) {
-          onFocusDown();
+          widget.onFocusDown();
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
@@ -79,10 +128,11 @@ class SkipMarkerButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(tokens(context).radiusSm),
           child: Stack(
             children: [
-              Container(
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
+                  color: buttonBgColor,
                   borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                   boxShadow: [
                     BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2)),
@@ -93,30 +143,31 @@ class SkipMarkerButton extends StatelessWidget {
                   children: [
                     Text(
                       buttonText,
-                      style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: contentColor, fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(width: 8),
-                    AppIcon(buttonIcon, fill: 1, color: Colors.black, size: 20),
+                    AppIcon(buttonIcon, fill: 1, color: contentColor, size: 20),
                   ],
                 ),
               ),
-              if (isAutoSkipActive && shouldShowAutoSkip)
+              if (widget.isAutoSkipActive && widget.shouldShowAutoSkip)
                 Positioned.fill(
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                     child: Row(
                       children: [
                         Expanded(
-                          flex: (autoSkipProgress * 100).round(),
-                          child: Container(
+                          flex: (widget.autoSkipProgress * 100).round(),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
                             decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                              color: (showFocused ? Colors.white : primary).withValues(alpha: 0.25),
                               borderRadius: BorderRadius.circular(tokens(context).radiusSm),
                             ),
                           ),
                         ),
                         Expanded(
-                          flex: ((1.0 - autoSkipProgress) * 100).round(),
+                          flex: ((1.0 - widget.autoSkipProgress) * 100).round(),
                           child: Container(decoration: const BoxDecoration(color: Colors.transparent)),
                         ),
                       ],
@@ -131,9 +182,9 @@ class SkipMarkerButton extends StatelessWidget {
   }
 
   void _activate() {
-    if (isAutoSkipActive) {
-      onCancelAutoSkip();
+    if (widget.isAutoSkipActive) {
+      widget.onCancelAutoSkip();
     }
-    onPerformAutoSkip();
+    widget.onPerformAutoSkip();
   }
 }
