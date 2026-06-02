@@ -48,16 +48,11 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         serverId: widget.metadata.serverId,
         showQueueTab: playbackState.isQueueActive,
         onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
-        onCancelAutoHide: () => _hideTimer?.cancel(),
+        onCancelAutoHide: widget.chromeController.cancelAutoHide,
         onStartAutoHide: _startHideTimer,
         onSeekCompleted: widget.onSeekCompleted,
         onContentStripVisibilityChanged: (visible) {
-          _setControlsState(() => _isContentStripVisible = visible);
-          if (visible) {
-            _hideTimer?.cancel();
-          } else {
-            _restartHideTimerIfPlaying();
-          }
+          widget.chromeController.setContentStripVisible(visible);
         },
       ),
     );

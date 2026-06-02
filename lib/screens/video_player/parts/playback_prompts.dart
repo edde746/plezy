@@ -97,6 +97,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _cancelAutoPlay() {
     _autoPlayTimer?.cancel();
+    _unfocusPlayNextPrompt();
     _progressTracker?.resumeAfterStoppedReport();
     _completionTriggered = false; // Reset so it can trigger again if user seeks near end
     _setPlayerState(() {
@@ -138,6 +139,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   }
 
   void _onStillWatchingTimeout() {
+    _unfocusStillWatchingPrompt();
     player?.pause();
     _setPlayerState(() {
       _showStillWatchingPrompt = false;
@@ -146,6 +148,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _onStillWatchingContinue() {
     _stillWatchingTimer?.cancel();
+    _unfocusStillWatchingPrompt();
     SleepTimerService().restartTimer();
     _setPlayerState(() {
       _showStillWatchingPrompt = false;
@@ -154,6 +157,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _onStillWatchingPause() {
     _stillWatchingTimer?.cancel();
+    _unfocusStillWatchingPrompt();
     player?.pause();
     _setPlayerState(() {
       _showStillWatchingPrompt = false;
@@ -163,9 +167,20 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   void _dismissStillWatching() {
     _stillWatchingTimer?.cancel();
     if (_showStillWatchingPrompt) {
+      _unfocusStillWatchingPrompt();
       _setPlayerState(() {
         _showStillWatchingPrompt = false;
       });
     }
+  }
+
+  void _unfocusPlayNextPrompt() {
+    _playNextCancelFocusNode.unfocus();
+    _playNextConfirmFocusNode.unfocus();
+  }
+
+  void _unfocusStillWatchingPrompt() {
+    _stillWatchingPauseFocusNode.unfocus();
+    _stillWatchingContinueFocusNode.unfocus();
   }
 }

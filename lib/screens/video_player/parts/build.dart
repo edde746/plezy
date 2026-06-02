@@ -158,6 +158,7 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
   Widget _buildVideoPlayer(BuildContext context) {
     // Cache platform detection to avoid multiple calls
     final isMobile = PlatformDetector.isMobile(context);
+    final hideChromeOnMouseExit = !(isMobile && !PlatformDetector.isTV());
 
     return PopScope(
       canPop: false, // Disable swipe-back gesture to prevent interference with timeline scrubbing
@@ -212,141 +213,145 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
             _clearMobileZoomGesture();
             _setPlayerState(() {});
           },
-          child: Stack(
-            children: [
-              // macOS PiP placeholder — video is in PiP window, show background with icon
-              // Placed before Video so controls render on top
-              if (Platform.isMacOS) const VideoPlayerMacPipPlaceholder(),
-              Center(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final newSize = Size(constraints.maxWidth, constraints.maxHeight);
-                    _scheduleVideoLayoutUpdate(newSize);
+          child: PlayerChromeInteractionRegion(
+            controller: _chromeController,
+            hideOnExit: hideChromeOnMouseExit,
+            child: Stack(
+              children: [
+                // macOS PiP placeholder — video is in PiP window, show background with icon
+                // Placed before Video so controls render on top
+                if (Platform.isMacOS) const VideoPlayerMacPipPlaceholder(),
+                Center(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final newSize = Size(constraints.maxWidth, constraints.maxHeight);
+                      _scheduleVideoLayoutUpdate(newSize);
 
-                    // Compute canControl from Watch Together provider (reactive)
-                    bool canControl = true;
-                    try {
-                      canControl = context.select<WatchTogetherProvider, bool>(
-                        (wt) => wt.isInSession ? wt.canControl() : true,
-                      );
-                    } catch (e) {
-                      // Watch Together not available, default to can control
-                    }
+                      // Compute canControl from Watch Together provider (reactive)
+                      bool canControl = true;
+                      try {
+                        canControl = context.select<WatchTogetherProvider, bool>(
+                          (wt) => wt.isInSession ? wt.canControl() : true,
+                        );
+                      } catch (e) {
+                        // Watch Together not available, default to can control
+                      }
 
-                    VoidCallback? onNext;
-                    if (widget.isLive) {
-                      onNext = _hasNextChannel ? () => _switchLiveChannel(1) : null;
-                    } else {
-                      onNext = (_nextEpisode != null && _canNavigateEpisodes()) ? _playNext : null;
-                    }
+                      VoidCallback? onNext;
+                      if (widget.isLive) {
+                        onNext = _hasNextChannel ? () => _switchLiveChannel(1) : null;
+                      } else {
+                        onNext = (_nextEpisode != null && _canNavigateEpisodes()) ? _playNext : null;
+                      }
 
-                    VoidCallback? onPrevious;
-                    if (widget.isLive) {
-                      onPrevious = _hasPreviousChannel ? () => _switchLiveChannel(-1) : null;
-                    } else {
-                      final canRestartOrPrevious = _currentMetadata.isEpisode || _previousEpisode != null;
-                      onPrevious = (canRestartOrPrevious && _canNavigateEpisodes()) ? _restartOrPlayPrevious : null;
-                    }
+                      VoidCallback? onPrevious;
+                      if (widget.isLive) {
+                        onPrevious = _hasPreviousChannel ? () => _switchLiveChannel(-1) : null;
+                      } else {
+                        final canRestartOrPrevious = _currentMetadata.isEpisode || _previousEpisode != null;
+                        onPrevious = (canRestartOrPrevious && _canNavigateEpisodes()) ? _restartOrPlayPrevious : null;
+                      }
 
-                    final sourceAudioTracks = _currentMediaInfo?.audioTracks ?? const <MediaAudioTrack>[];
-                    final sourceSubtitleTracks = _sourceSubtitleTracksForControls();
+                      final sourceAudioTracks = _currentMediaInfo?.audioTracks ?? const <MediaAudioTrack>[];
+                      final sourceSubtitleTracks = _sourceSubtitleTracksForControls();
 
-                    return Video(
-                      player: player!,
-                      controls: (context) => PlexVideoControls(
+                      return Video(
                         player: player!,
-                        metadata: _currentMetadata,
-                        onNext: onNext,
-                        onPrevious: onPrevious,
-                        availableVersions: _availableVersions,
-                        selectedMediaIndex: _effectiveSelectedMediaIndex,
-                        selectedMediaSourceId: widget.selectedMediaSourceId,
-                        selectedQualityPreset: _selectedQualityPreset,
-                        serverSupportsTranscoding: _serverSupportsTranscoding,
-                        isTranscoding: _isTranscoding,
-                        isOfflinePlayback: _isOfflinePlayback,
-                        sourceAudioTracks: sourceAudioTracks,
-                        selectedAudioStreamId: _selectedAudioStreamId,
-                        sourceSubtitleTracks: sourceSubtitleTracks,
-                        selectedSubtitleStreamId: _selectedSourceSubtitleStreamId(sourceSubtitleTracks),
-                        sourcePartId: _currentMediaInfo?.partId,
-                        onTogglePIPMode: _togglePIPMode,
-                        boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
-                        videoZoomScale: _videoFilterManager?.zoomScale ?? 1.0,
-                        onCycleBoxFitMode: _cycleBoxFitMode,
-                        onVideoZoomChanged: _setVideoZoom,
-                        onZoomIn: _zoomVideoIn,
-                        onZoomOut: _zoomVideoOut,
-                        onResetVideoZoom: _resetVideoZoom,
-                        onCycleAudioTrack: _cycleAudioTrack,
-                        onCycleSubtitleTrack: _cycleSubtitleTrack,
-                        onAudioTrackChanged: _onAudioTrackChanged,
-                        onSubtitleTrackChanged: _onSubtitleTrackChanged,
-                        onSecondarySubtitleTrackChanged: _onSecondarySubtitleTrackChanged,
-                        onSeekRequested: _seekPlayback,
-                        onSeekCompleted: _notifyWatchTogetherSeek,
-                        onBack: _handleBackButton,
-                        onReachedEnd: ({skipAutoPlayCountdown = false}) =>
-                            _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown),
-                        canControl: canControl,
-                        hasFirstFrame: _hasFirstFrame,
-                        playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
-                        controlsVisible: _controlsVisible,
-                        shaderService: _shaderService,
-                        // ignore: no-empty-block - state update triggers rebuild to reflect shader change
-                        onShaderChanged: () => _setPlayerState(() {}),
-                        thumbnailDataBuilder: _scrubPreviewSource?.isAvailable == true ? _getThumbnailData : null,
-                        isLive: widget.isLive,
-                        liveChannelName: _liveChannelName,
-                        captureBuffer: _captureBuffer,
-                        isAtLiveEdge: _isAtLiveEdge,
-                        streamStartEpoch: _streamStartEpoch,
-                        currentPositionEpoch: widget.isLive ? _currentPositionEpoch : null,
-                        onLiveSeek: _captureBuffer != null ? _seekLivePosition : null,
-                        onJumpToLive: _captureBuffer != null && !_isAtLiveEdge ? _jumpToLiveEdge : null,
-                        isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
-                        onToggleAmbientLighting: _ambientLightingService?.isSupported == true
-                            ? _toggleAmbientLighting
-                            : null,
-                        toastController: _toastController,
-                      ),
-                    );
-                  },
+                        controls: (context) => PlexVideoControls(
+                          player: player!,
+                          metadata: _currentMetadata,
+                          onNext: onNext,
+                          onPrevious: onPrevious,
+                          availableVersions: _availableVersions,
+                          selectedMediaIndex: _effectiveSelectedMediaIndex,
+                          selectedMediaSourceId: widget.selectedMediaSourceId,
+                          selectedQualityPreset: _selectedQualityPreset,
+                          serverSupportsTranscoding: _serverSupportsTranscoding,
+                          isTranscoding: _isTranscoding,
+                          isOfflinePlayback: _isOfflinePlayback,
+                          sourceAudioTracks: sourceAudioTracks,
+                          selectedAudioStreamId: _selectedAudioStreamId,
+                          sourceSubtitleTracks: sourceSubtitleTracks,
+                          selectedSubtitleStreamId: _selectedSourceSubtitleStreamId(sourceSubtitleTracks),
+                          sourcePartId: _currentMediaInfo?.partId,
+                          onTogglePIPMode: _togglePIPMode,
+                          boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
+                          videoZoomScale: _videoFilterManager?.zoomScale ?? 1.0,
+                          onCycleBoxFitMode: _cycleBoxFitMode,
+                          onVideoZoomChanged: _setVideoZoom,
+                          onZoomIn: _zoomVideoIn,
+                          onZoomOut: _zoomVideoOut,
+                          onResetVideoZoom: _resetVideoZoom,
+                          onCycleAudioTrack: _cycleAudioTrack,
+                          onCycleSubtitleTrack: _cycleSubtitleTrack,
+                          onAudioTrackChanged: _onAudioTrackChanged,
+                          onSubtitleTrackChanged: _onSubtitleTrackChanged,
+                          onSecondarySubtitleTrackChanged: _onSecondarySubtitleTrackChanged,
+                          onSeekRequested: _seekPlayback,
+                          onSeekCompleted: _notifyWatchTogetherSeek,
+                          onBack: _handleBackButton,
+                          onReachedEnd: ({skipAutoPlayCountdown = false}) =>
+                              _onVideoCompleted(true, skipAutoPlayCountdown: skipAutoPlayCountdown),
+                          canControl: canControl,
+                          hasFirstFrame: _hasFirstFrame,
+                          playNextFocusNode: _showPlayNextDialog ? _playNextConfirmFocusNode : null,
+                          chromeController: _chromeController,
+                          shaderService: _shaderService,
+                          // ignore: no-empty-block - state update triggers rebuild to reflect shader change
+                          onShaderChanged: () => _setPlayerState(() {}),
+                          thumbnailDataBuilder: _scrubPreviewSource?.isAvailable == true ? _getThumbnailData : null,
+                          isLive: widget.isLive,
+                          liveChannelName: _liveChannelName,
+                          captureBuffer: _captureBuffer,
+                          isAtLiveEdge: _isAtLiveEdge,
+                          streamStartEpoch: _streamStartEpoch,
+                          currentPositionEpoch: widget.isLive ? _currentPositionEpoch : null,
+                          onLiveSeek: _captureBuffer != null ? _seekLivePosition : null,
+                          onJumpToLive: _captureBuffer != null && !_isAtLiveEdge ? _jumpToLiveEdge : null,
+                          isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
+                          onToggleAmbientLighting: _ambientLightingService?.isSupported == true
+                              ? _toggleAmbientLighting
+                              : null,
+                          toastController: _toastController,
+                        ),
+                      );
+                    },
+                  ),
                 ),
-              ),
-              // Netflix-style auto-play overlay (hidden in PiP mode)
-              VideoPlayerPlayNextOverlay(
-                visible: _showPlayNextDialog,
-                nextEpisode: _nextEpisode,
-                autoPlayCountdown: _autoPlayCountdown,
-                cancelFocusNode: _playNextCancelFocusNode,
-                confirmFocusNode: _playNextConfirmFocusNode,
-                controlsVisible: _controlsVisible,
-                onCancel: _cancelAutoPlay,
-                onPlayNext: _playNext,
-              ),
-              // "Still watching?" overlay (hidden in PiP mode)
-              VideoPlayerStillWatchingOverlay(
-                visible: _showStillWatchingPrompt,
-                countdown: _stillWatchingCountdown,
-                pauseFocusNode: _stillWatchingPauseFocusNode,
-                continueFocusNode: _stillWatchingContinueFocusNode,
-                controlsVisible: _controlsVisible,
-                onPause: _onStillWatchingPause,
-                onContinue: _onStillWatchingContinue,
-              ),
-              // Buffering indicator (also shows during initial load, but not when exiting)
-              // Hidden in PiP mode
-              VideoPlayerBufferingOverlay(
-                isBuffering: _isBuffering,
-                hasFirstFrame: _hasFirstFrame,
-                isExiting: _isExiting,
-              ),
-              // Watch Together overlays (isolated from video surface repaints)
-              const VideoPlayerWatchTogetherOverlays(),
-              // Black overlay during exit (no spinner - just covers transparency)
-              VideoPlayerExitOverlay(isExiting: _isExiting),
-            ],
+                // Netflix-style auto-play overlay (hidden in PiP mode)
+                VideoPlayerPlayNextOverlay(
+                  visible: _showPlayNextDialog,
+                  nextEpisode: _nextEpisode,
+                  autoPlayCountdown: _autoPlayCountdown,
+                  cancelFocusNode: _playNextCancelFocusNode,
+                  confirmFocusNode: _playNextConfirmFocusNode,
+                  chromeController: _chromeController,
+                  onCancel: _cancelAutoPlay,
+                  onPlayNext: _playNext,
+                ),
+                // "Still watching?" overlay (hidden in PiP mode)
+                VideoPlayerStillWatchingOverlay(
+                  visible: _showStillWatchingPrompt,
+                  countdown: _stillWatchingCountdown,
+                  pauseFocusNode: _stillWatchingPauseFocusNode,
+                  continueFocusNode: _stillWatchingContinueFocusNode,
+                  chromeController: _chromeController,
+                  onPause: _onStillWatchingPause,
+                  onContinue: _onStillWatchingContinue,
+                ),
+                // Buffering indicator (also shows during initial load, but not when exiting)
+                // Hidden in PiP mode
+                VideoPlayerBufferingOverlay(
+                  isBuffering: _isBuffering,
+                  hasFirstFrame: _hasFirstFrame,
+                  isExiting: _isExiting,
+                ),
+                // Watch Together overlays (isolated from video surface repaints)
+                const VideoPlayerWatchTogetherOverlays(),
+                // Black overlay during exit (no spinner - just covers transparency)
+                VideoPlayerExitOverlay(isExiting: _isExiting),
+              ],
+            ),
           ),
         ),
       ),

@@ -118,6 +118,70 @@ void main() {
     });
   });
 
+  group('shouldShowSkipMarkerButton', () {
+    test('does not show before the first frame is rendered', () {
+      expect(
+        shouldShowSkipMarkerButton(
+          hasFirstFrame: false,
+          hasMarker: true,
+          hasPlayNextPrompt: false,
+          skipButtonDismissed: false,
+          controlsVisible: true,
+        ),
+        isFalse,
+      );
+    });
+
+    test('shows after first frame when marker is active and not dismissed', () {
+      expect(
+        shouldShowSkipMarkerButton(
+          hasFirstFrame: true,
+          hasMarker: true,
+          hasPlayNextPrompt: false,
+          skipButtonDismissed: false,
+          controlsVisible: false,
+        ),
+        isTrue,
+      );
+    });
+
+    test('does not show when dismissed until controls are visible again', () {
+      expect(
+        shouldShowSkipMarkerButton(
+          hasFirstFrame: true,
+          hasMarker: true,
+          hasPlayNextPrompt: false,
+          skipButtonDismissed: true,
+          controlsVisible: false,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldShowSkipMarkerButton(
+          hasFirstFrame: true,
+          hasMarker: true,
+          hasPlayNextPrompt: false,
+          skipButtonDismissed: true,
+          controlsVisible: true,
+        ),
+        isTrue,
+      );
+    });
+
+    test('does not show while play next prompt is active', () {
+      expect(
+        shouldShowSkipMarkerButton(
+          hasFirstFrame: true,
+          hasMarker: true,
+          hasPlayNextPrompt: true,
+          skipButtonDismissed: false,
+          controlsVisible: true,
+        ),
+        isFalse,
+      );
+    });
+  });
+
   group('mobileSkipZoneForTap', () {
     const size = Size(1000, 600);
 

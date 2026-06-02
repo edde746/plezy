@@ -43,7 +43,7 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
 
     appLogger.d('Restarting Plex transcode at ${target.inSeconds}s');
     _isRestartingTranscodeSeek = true;
-    _controlsVisible.value = true;
+    _chromeController.show();
 
     final currentPlayer = player;
     if (currentPlayer == null) {

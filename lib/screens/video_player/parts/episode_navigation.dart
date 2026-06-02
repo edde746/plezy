@@ -6,6 +6,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     if (_nextEpisode == null || _isLoadingNext) return;
 
     _autoPlayTimer?.cancel();
+    _unfocusPlayNextPrompt();
     _dismissStillWatching();
 
     _notifyWatchTogetherMediaChange(metadata: _nextEpisode);
@@ -40,6 +41,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     }
 
     _autoPlayTimer?.cancel();
+    _unfocusPlayNextPrompt();
     _dismissStillWatching();
 
     _setPlayerState(() {
@@ -167,6 +169,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     _currentMetadata = episodeMetadata;
     VideoPlayerScreenState._activeId = episodeMetadata.id;
     VideoPlayerScreenState._activeMediaIndex = requestedMediaIndex;
+    _unfocusPlayNextPrompt();
     _showPlayNextDialog = false;
     _autoPlayTimer?.cancel();
     _hasFirstFrame.value = false;

@@ -74,6 +74,7 @@ import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import 'video_player/widgets/player_prompt_overlays.dart';
 import '../widgets/overlay_sheet.dart';
+import '../widgets/video_controls/player_chrome_controller.dart';
 import '../widgets/video_controls/video_controls.dart';
 import '../widgets/video_controls/widgets/player_toast_indicator.dart';
 import '../focus/focusable_button.dart';
@@ -452,7 +453,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false);
   final ValueNotifier<bool> _hasFirstFrame = ValueNotifier<bool>(false);
   final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false);
-  final ValueNotifier<bool> _controlsVisible = ValueNotifier<bool>(true);
+  final PlayerChromeController _chromeController = PlayerChromeController();
 
   @override
   void initState() {
@@ -1112,7 +1113,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _isBuffering.dispose();
     _hasFirstFrame.dispose();
     _isExiting.dispose();
-    _controlsVisible.dispose();
+    _chromeController.dispose();
     _toastController.dispose();
 
     // Stop progress tracking and send final state. Normal back navigation
@@ -1360,11 +1361,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         // focused, e.g. after controls auto-hide), redirect to first descendant.
         if (node.hasPrimaryFocus) {
           if (event.isActionable) {
-            _controlsVisible.value = true;
-            final descendants = node.traversalDescendants;
-            if (descendants.isNotEmpty) {
-              descendants.first.requestFocus();
-            }
+            _chromeController.show(focusTarget: PlayerChromeFocusTarget.playPause);
           }
           return event.logicalKey.isNavigationKey ? KeyEventResult.handled : KeyEventResult.ignored;
         }

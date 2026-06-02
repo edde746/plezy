@@ -33,5 +33,6 @@ extension _PlexVideoControlsPlaybackExtrasMethods on _PlexVideoControlsState {
       _chaptersLoaded = true;
       _markersLoaded = true;
     });
+    _syncCurrentMarkerForCurrentPosition();
   }
 }

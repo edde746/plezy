@@ -89,9 +89,9 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         final backResult = handleBackKeyAction(event, () {
           if (PlatformDetector.isTV()) {
             if (_showControls) {
-              if (_isContentStripVisible) {
+              if (widget.chromeController.contentStripVisible) {
                 _desktopControlsKey.currentState?.dismissContentStrip();
-                _setControlsState(() => _isContentStripVisible = false);
+                widget.chromeController.setContentStripVisible(false);
                 _restartHideTimerIfPlaying();
                 return;
               }
@@ -190,9 +190,9 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     final backResult = handleBackKeyAction(event, () {
       if (PlatformDetector.isTV()) {
         if (_showControls) {
-          if (_isContentStripVisible) {
+          if (widget.chromeController.contentStripVisible) {
             _desktopControlsKey.currentState?.dismissContentStrip();
-            _setControlsState(() => _isContentStripVisible = false);
+            widget.chromeController.setContentStripVisible(false);
             _restartHideTimerIfPlaying();
             return;
           }

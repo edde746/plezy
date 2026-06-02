@@ -58,6 +58,7 @@ import '../../theme/mono_tokens.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import 'icons.dart';
+import 'player_chrome_controller.dart';
 import 'playback_extras_loader.dart';
 import 'widgets/player_toast_indicator.dart';
 import '../../utils/app_logger.dart';
@@ -144,6 +145,17 @@ effectiveVersionQualityControls({
   );
 }
 
+@visibleForTesting
+bool shouldShowSkipMarkerButton({
+  required bool hasFirstFrame,
+  required bool hasMarker,
+  required bool hasPlayNextPrompt,
+  required bool skipButtonDismissed,
+  required bool controlsVisible,
+}) {
+  return hasFirstFrame && hasMarker && !hasPlayNextPrompt && (!skipButtonDismissed || controlsVisible);
+}
+
 class PlexVideoControls extends StatefulWidget {
   final Player player;
   final MediaItem metadata;
@@ -199,8 +211,8 @@ class PlexVideoControls extends StatefulWidget {
   /// Optional focus node for Play Next dialog button (for TV navigation from timeline)
   final FocusNode? playNextFocusNode;
 
-  /// Notifier to report controls visibility to parent (for popup positioning)
-  final ValueNotifier<bool>? controlsVisible;
+  /// Shared controller for player chrome visibility, auto-hide, and layout state.
+  final PlayerChromeController chromeController;
 
   /// Optional shader service for MPV shader control
   final ShaderService? shaderService;
@@ -283,7 +295,7 @@ class PlexVideoControls extends StatefulWidget {
     this.canControl = true,
     this.hasFirstFrame,
     this.playNextFocusNode,
-    this.controlsVisible,
+    required this.chromeController,
     this.shaderService,
     this.onShaderChanged,
     this.thumbnailDataBuilder,
@@ -305,12 +317,13 @@ class PlexVideoControls extends StatefulWidget {
 
 class _PlexVideoControlsState extends State<PlexVideoControls>
     with WindowListener, SettingsEffectMixin, MountedSetStateMixin {
-  bool _showControls = true;
-  bool _forceShowControls = false;
+  bool get _showControls => widget.chromeController.controlsVisible;
+  bool get _hasRenderedFirstFrame => widget.hasFirstFrame?.value ?? true;
+
+  late bool _lastControlsVisible;
   bool _isLoadingExtras = false;
   List<MediaChapter> _chapters = [];
   bool _chaptersLoaded = false;
-  Timer? _hideTimer;
   bool _isFullscreen = false;
   bool _isAlwaysOnTop = false;
   late final FocusNode _focusNode;
@@ -329,7 +342,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   Timer? _lockIconTimer;
   bool get _clickVideoTogglesPlayback => _settings.read(SettingsService.clickVideoTogglesPlayback);
   bool get _showChapterMarkersOnTimeline => _settings.read(SettingsService.showChapterMarkersOnTimeline);
-  bool _isContentStripVisible = false; // Whether the swipe-up content strip is showing
   int _trafficLightVisibilityGeneration = 0;
 
   // GlobalKey to access DesktopVideoControls state for focus management
@@ -381,8 +393,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Skip marker button focus node (for TV D-pad navigation)
   late final FocusNode _skipMarkerFocusNode;
   final ValueNotifier<bool> _fallbackHasFirstFrame = ValueNotifier<bool>(true);
-  final Stopwatch _pointerActivityStopwatch = Stopwatch()..start();
-  int _lastPointerActivityMs = -1000;
   double? _rateBeforeLongPress;
   bool _showSpeedIndicator = false;
   StreamSubscription<double>? _rateSubscription;
@@ -398,6 +408,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   void initState() {
     super.initState();
+    _lastControlsVisible = widget.chromeController.controlsVisible;
     _focusNode = FocusNode();
     _skipMarkerFocusNode = FocusNode(debugLabel: 'SkipMarkerButton');
     _seekThrottle = throttle(
@@ -412,6 +423,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     // so init wiring (orientation, focus) lives in one place.
     bindEffect<bool>(SettingsService.rotationLocked, _applyRotationLock);
     bindEffect<bool>(SettingsService.videoPlayerNavigationEnabled, (enabled) {
+      _configureChromeController();
       if (enabled && _showControls) _focusPlayPauseIfKeyboardMode();
     }, fireImmediately: false);
     // Rebuild on any setting that affects build output (seek labels, skip
@@ -431,7 +443,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       SettingsService.clickVideoTogglesPlayback,
       SettingsService.showChapterMarkersOnTimeline,
     ]);
-    _startHideTimer();
+    widget.chromeController.addListener(_onChromeChanged);
+    _configureChromeController();
+    widget.chromeController.setPlaying(widget.player.state.playing);
     _initKeyboardService();
     _listenToPosition();
     _listenToPlayingState();
@@ -451,8 +465,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
     // Listen for first frame to start auto-hide timer
     widget.hasFirstFrame?.addListener(_onFirstFrameReady);
-    // Listen for external requests to show controls (e.g. screen-level focus recovery)
-    widget.controlsVisible?.addListener(_onControlsVisibleExternal);
     // On macOS, show controls and disable auto-hide when PiP activates
     if (Platform.isMacOS) {
       _pipService.isPipActive.addListener(_onMacPipChanged);
@@ -472,12 +484,26 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   void _setControlsState(VoidCallback fn) => setStateIfMounted(fn);
 
+  void _configureChromeController() {
+    widget.chromeController.configure(hideDelay: _hideDelay, hasFirstFrame: widget.hasFirstFrame?.value ?? true);
+  }
+
+  @override
+  void didUpdateWidget(PlexVideoControls oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.chromeController != widget.chromeController) {
+      oldWidget.chromeController.removeListener(_onChromeChanged);
+      _lastControlsVisible = widget.chromeController.controlsVisible;
+      widget.chromeController.addListener(_onChromeChanged);
+    }
+    _configureChromeController();
+  }
+
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleGlobalKeyEvent);
-    widget.controlsVisible?.removeListener(_onControlsVisibleExternal);
+    widget.chromeController.removeListener(_onChromeChanged);
     widget.hasFirstFrame?.removeListener(_onFirstFrameReady);
-    _hideTimer?.cancel();
     _feedbackTimer?.cancel();
     _lockIconTimer?.cancel();
     _autoSkipTimer?.cancel();
@@ -583,9 +609,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
             onPointerCancel: isMobile ? _handleTouchPointerCancel : null,
             onPointerSignal: _handlePointerSignal,
             child: MouseRegion(
-              cursor: (_showControls || _forceShowControls) ? SystemMouseCursors.basic : SystemMouseCursors.none,
               onHover: (_) => _showControlsFromPointerActivity(),
-              onExit: (_) => _hideControlsFromPointerExit(),
               child: Stack(
                 children: [
                   // Keep-alive: 1px widget that continuously repaints to prevent
@@ -618,9 +642,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       ignoring: !_showControls,
                       child: FocusScope(
                         // Prevent focus from entering controls when hidden
-                        canRequestFocus: _showControls || _forceShowControls,
+                        canRequestFocus: _showControls,
                         child: AnimatedOpacity(
-                          opacity: (_showControls || _forceShowControls) ? 1.0 : 0.0,
+                          opacity: _showControls ? 1.0 : 0.0,
                           duration: const Duration(milliseconds: 200),
                           child: Builder(
                             builder: (context) {
@@ -658,7 +682,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                       ? Listener(
                                           behavior: HitTestBehavior.translucent,
                                           onPointerDown: (_) {
-                                            if (!_isContentStripVisible) _restartHideTimerIfPlaying();
+                                            if (!widget.chromeController.contentStripVisible) {
+                                              _restartHideTimerIfPlaying();
+                                            }
                                           },
                                           child: Builder(
                                             builder: (context) {
@@ -681,8 +707,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                 onSeekCompleted: widget.onSeekCompleted,
                                                 // ignore: no-empty-block - play/pause handled by parent VideoControlsState
                                                 onPlayPause: () {},
-                                                onCancelAutoHide: () => _hideTimer?.cancel(),
-                                                onStartAutoHide: _startHideTimer,
+                                                onCancelAutoHide: widget.chromeController.cancelAutoHide,
+                                                onStartAutoHide: widget.chromeController.startAutoHide,
                                                 onBack: widget.onBack,
                                                 onNext: widget.onNext,
                                                 onPrevious: widget.onPrevious,
@@ -700,13 +726,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                 onQueueItemSelected: playbackState.isQueueActive
                                                     ? _onQueueItemSelected
                                                     : null,
-                                                controlsVisible: widget.controlsVisible,
+                                                chromeController: widget.chromeController,
                                                 onStripVisibilityChanged: (visible) {
-                                                  setState(() => _isContentStripVisible = visible);
                                                   if (visible) {
-                                                    _hideTimer?.cancel();
+                                                    widget.chromeController.setContentStripVisible(true);
                                                   } else {
-                                                    _restartHideTimerIfPlaying();
+                                                    widget.chromeController.setContentStripVisible(false);
                                                   }
                                                 },
                                               );
@@ -759,16 +784,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                     ),
                   ),
                   // Skip intro/credits button (auto-dismisses after 7s, then only shows with controls)
-                  if (_currentMarker != null &&
-                      widget.playNextFocusNode == null &&
-                      (!_skipButtonDismissed || _showControls))
+                  if (shouldShowSkipMarkerButton(
+                    hasFirstFrame: _hasRenderedFirstFrame,
+                    hasMarker: _currentMarker != null,
+                    hasPlayNextPrompt: widget.playNextFocusNode != null,
+                    skipButtonDismissed: _skipButtonDismissed,
+                    controlsVisible: _showControls,
+                  ))
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInOut,
                       right: 24,
                       bottom: () {
                         if (!_showControls) return 24.0;
-                        if (_isContentStripVisible) return 180.0;
+                        if (widget.chromeController.contentStripVisible) return 180.0;
                         return isMobile ? 80.0 : 115.0;
                       }(),
                       child: AnimatedOpacity(
@@ -784,7 +813,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       top: _showControls ? (isMobile ? 100.0 : 60.0) : 16.0,
                       left: 16,
                       child: AnimatedOpacity(
-                        opacity: (!_autoHidePerformanceOverlay || _showControls || _forceShowControls) ? 1.0 : 0.0,
+                        opacity: (!_autoHidePerformanceOverlay || _showControls) ? 1.0 : 0.0,
                         duration: const Duration(milliseconds: 200),
                         child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
                       ),
