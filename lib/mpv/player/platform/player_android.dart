@@ -103,9 +103,12 @@ class PlayerAndroid extends PlayerBase {
     if (disposed) return;
     await _ensureInitialized();
     final startPosition = media.start ?? Duration.zero;
-    configureTimeline(offset: timelineOffset, duration: timelineDuration);
+    // ExoPlayer reports Plex copyts transcodes in source-time coordinates,
+    // unlike mpv which rebases them to zero. Do not add the timeline offset
+    // again on Android ExoPlayer or seeks/progress jump to roughly 2x (#1221).
+    configureTimeline(offset: Duration.zero, duration: timelineDuration);
     clearTracks();
-    resetPlaybackProgress(startPosition);
+    resetPlaybackProgress(media.start ?? timelineOffset);
     setSeekable(false);
 
     // Show the video layer

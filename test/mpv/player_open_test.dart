@@ -133,6 +133,56 @@ void main() {
       );
     });
 
+    test('ExoPlayer maps copyts transcode streams as absolute timeline positions', () async {
+      final calls = <MethodCall>[];
+
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/exo_player',
+        eventChannelName: 'com.plezy/exo_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerAndroid();
+          try {
+            const timelineStart = Duration(seconds: 2058); // 34:18
+            const timelineDuration = Duration(seconds: 2903); // 48:23
+            await player.open(
+              Media('https://example.test/transcode.mkv'),
+              timelineOffset: timelineStart,
+              timelineDuration: timelineDuration,
+            );
+
+            expect(player.state.position, timelineStart);
+            expect(player.state.duration, timelineDuration);
+
+            final openCall = calls.singleWhere((call) => call.method == 'open');
+            final openArgs = Map<Object?, Object?>.from(openCall.arguments as Map);
+            expect(openArgs['startPositionMs'], 0);
+
+            await Future<void>.delayed(const Duration(milliseconds: 260));
+            player.handlePropertyChange('time-pos', 2058.0);
+            expect(player.state.position, timelineStart);
+
+            await player.seek(const Duration(minutes: 40));
+
+            final seekCall = calls.lastWhere((call) => call.method == 'seek');
+            final seekArgs = Map<Object?, Object?>.from(seekCall.arguments as Map);
+            expect(seekArgs['positionMs'], const Duration(minutes: 40).inMilliseconds);
+            expect(player.state.position, const Duration(minutes: 40));
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('MPV clears stale Dart track state before opening new media', () async {
       await _withMockChannels(
         methodChannelName: 'com.plezy/mpv_player',
