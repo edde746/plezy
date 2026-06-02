@@ -88,9 +88,7 @@ class ServerCapabilities {
   /// uses Plex-shaped session/metadata.
   final bool discordRpc;
 
-  /// Server exposes a metadata edit endpoint (Plex
-  /// `/library/metadata/{id}` PUT). Hides the "Manage" affordances when
-  /// false.
+  /// Server exposes metadata edit endpoints. Hides edit affordances when false.
   final bool richMetadataEdit;
 
   /// How the alpha-jump bar should behave for this backend's libraries.
@@ -176,7 +174,7 @@ class ServerCapabilities {
     endpointFailover: true,
     offlineWatchQueue: false,
     discordRpc: false,
-    richMetadataEdit: false,
+    richMetadataEdit: true,
     alphaBar: AlphaBarMode.nameStartsWithFilter,
     scrubThumbnails: true,
     folderGrouping: true,

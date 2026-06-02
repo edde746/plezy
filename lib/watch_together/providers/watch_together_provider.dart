@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../media/ids.dart';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -12,7 +13,7 @@ import '../services/watch_together_peer_service.dart';
 import '../services/watch_together_sync_manager.dart';
 
 /// Callback type for when media switches (for guest navigation)
-typedef MediaSwitchCallback = void Function(String ratingKey, String serverId, String mediaTitle);
+typedef MediaSwitchCallback = void Function(String ratingKey, ServerId serverId, String mediaTitle);
 
 /// Provider for Watch Together functionality
 ///
@@ -111,14 +112,14 @@ class WatchTogetherProvider with ChangeNotifier {
     _displayName = name;
   }
 
-  String? _buildPlaybackKey(String? ratingKey, String? serverId) {
+  String? _buildPlaybackKey(String? ratingKey, ServerId? serverId) {
     if (ratingKey == null || serverId == null) return null;
     return '$serverId:$ratingKey';
   }
 
   void _updateCurrentPlaybackSnapshot({
     required String ratingKey,
-    required String serverId,
+    required ServerId serverId,
     required String mediaTitle,
   }) {
     _session = _session?.copyWith(mediaRatingKey: ratingKey, mediaServerId: serverId, mediaTitle: mediaTitle);
@@ -141,7 +142,7 @@ class WatchTogetherProvider with ChangeNotifier {
 
   void _dispatchCurrentPlayback({
     required String ratingKey,
-    required String serverId,
+    required ServerId serverId,
     required String mediaTitle,
     required String source,
   }) {
@@ -151,12 +152,12 @@ class WatchTogetherProvider with ChangeNotifier {
       return;
     }
 
-    _lastHandledCurrentPlaybackKey = _buildPlaybackKey(ratingKey, serverId);
+    _lastHandledCurrentPlaybackKey = _buildPlaybackKey(ratingKey, ServerId(serverId));
     appLogger.d('WatchTogether: Dispatching current playback from $source: $mediaTitle');
-    callback(ratingKey, serverId, mediaTitle);
+    callback(ratingKey, ServerId(serverId), mediaTitle);
   }
 
-  void markCurrentPlaybackHandled({required String ratingKey, required String serverId}) {
+  void markCurrentPlaybackHandled({required String ratingKey, required ServerId serverId}) {
     _lastHandledCurrentPlaybackKey = _buildPlaybackKey(ratingKey, serverId);
   }
 
@@ -612,12 +613,12 @@ class WatchTogetherProvider with ChangeNotifier {
     }
 
     if (message.ratingKey != null && message.serverId != null && message.mediaTitle != null) {
-      final playbackKey = _buildPlaybackKey(message.ratingKey, message.serverId);
+      final playbackKey = _buildPlaybackKey(message.ratingKey, serverIdOrNull(message.serverId));
       final shouldDispatch = playbackKey != _lastHandledCurrentPlaybackKey;
 
       _updateCurrentPlaybackSnapshot(
         ratingKey: message.ratingKey!,
-        serverId: message.serverId!,
+        serverId: ServerId(message.serverId!),
         mediaTitle: message.mediaTitle!,
       );
       notifyListeners();
@@ -625,7 +626,7 @@ class WatchTogetherProvider with ChangeNotifier {
       if (shouldDispatch) {
         _dispatchCurrentPlayback(
           ratingKey: message.ratingKey!,
-          serverId: message.serverId!,
+          serverId: ServerId(message.serverId!),
           mediaTitle: message.mediaTitle!,
           source: 'session config',
         );
@@ -649,7 +650,7 @@ class WatchTogetherProvider with ChangeNotifier {
   ///
   /// Call this when the host starts playing new content.
   /// Guests will receive a media switch notification and should navigate.
-  void setCurrentMedia({required String ratingKey, required String serverId, required String mediaTitle}) {
+  void setCurrentMedia({required String ratingKey, required ServerId serverId, required String mediaTitle}) {
     if (!isHost || _session == null || _peerService == null) {
       appLogger.w('WatchTogether: Cannot set media - not host or not in session');
       return;
@@ -682,12 +683,12 @@ class WatchTogetherProvider with ChangeNotifier {
       return;
     }
 
-    final playbackKey = _buildPlaybackKey(message.ratingKey, message.serverId);
+    final playbackKey = _buildPlaybackKey(message.ratingKey, serverIdOrNull(message.serverId));
     final shouldDispatch = playbackKey != _lastHandledCurrentPlaybackKey;
 
     _updateCurrentPlaybackSnapshot(
       ratingKey: message.ratingKey!,
-      serverId: message.serverId!,
+      serverId: ServerId(message.serverId!),
       mediaTitle: message.mediaTitle!,
     );
     notifyListeners();
@@ -700,7 +701,7 @@ class WatchTogetherProvider with ChangeNotifier {
     appLogger.d('WatchTogether: Received media switch: ${message.mediaTitle}');
     _dispatchCurrentPlayback(
       ratingKey: message.ratingKey!,
-      serverId: message.serverId!,
+      serverId: ServerId(message.serverId!),
       mediaTitle: message.mediaTitle!,
       source: 'media switch',
     );

@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import '../media/ids.dart';
 
 import 'package:flutter/services.dart';
 
@@ -56,7 +57,7 @@ class WatchNextService {
   /// Sync On Deck items to Watch Next row.
   Future<bool> syncFromOnDeck(
     List<MediaItem> onDeckItems,
-    MediaServerClient Function(String serverId) getClientForServerId, {
+    MediaServerClient Function(ServerId serverId) getClientForServerId, {
     bool hideSpoilers = false,
   }) async {
     if (!Platform.isAndroid) return false;
@@ -88,7 +89,7 @@ class WatchNextService {
   }
 
   /// Remove a single item from Watch Next.
-  Future<bool> removeItem(String serverId, String ratingKey) async {
+  Future<bool> removeItem(ServerId serverId, String ratingKey) async {
     if (!Platform.isAndroid) return false;
     try {
       final contentId = _buildContentId(serverId, ratingKey);
@@ -100,29 +101,29 @@ class WatchNextService {
   }
 
   /// Build a content ID. Format: plezy_{serverId}_{ratingKey}
-  static String _buildContentId(String? serverId, String ratingKey) {
+  static String _buildContentId(ServerId? serverId, String ratingKey) {
     return 'plezy_${serverId ?? 'unknown'}_$ratingKey';
   }
 
   /// Parse a content ID back to (serverId, ratingKey), or null if invalid.
-  static (String serverId, String ratingKey)? parseContentId(String contentId) {
+  static (ServerId serverId, String ratingKey)? parseContentId(String contentId) {
     if (!contentId.startsWith('plezy_')) return null;
     final parts = contentId.substring(6).split('_');
     if (parts.length < 2) return null;
-    return (parts.first, parts.sublist(1).join('_'));
+    return (ServerId(parts.first), parts.sublist(1).join('_'));
   }
 
   Map<String, dynamic> _convertToWatchNextItem(
     MediaItem item,
-    MediaServerClient Function(String serverId) getClientForServerId, {
+    MediaServerClient Function(ServerId serverId) getClientForServerId, {
     bool hideSpoilers = false,
   }) {
-    final contentId = _buildContentId(item.serverId, item.id);
+    final contentId = _buildContentId(serverIdOrNull(item.serverId), item.id);
 
     String? posterUri;
     try {
       if (item.serverId != null) {
-        final client = getClientForServerId(item.serverId!);
+        final client = getClientForServerId(ServerId(item.serverId!));
         String? thumbPath;
         if (hideSpoilers && item.shouldHideSpoiler) {
           thumbPath = item.spoilerSafeArt;

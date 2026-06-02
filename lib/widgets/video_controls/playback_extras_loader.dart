@@ -1,4 +1,5 @@
 import '../../database/app_database.dart';
+import '../../media/ids.dart';
 import '../../media/media_item.dart';
 import '../../media/media_server_client.dart';
 import '../../media/media_source_info.dart';
@@ -80,7 +81,7 @@ class VideoControlsPlaybackExtrasLoader {
     try {
       final row = await (database.select(
         database.downloadedMedia,
-      )..where((tbl) => tbl.globalKey.equals(buildGlobalKey(serverId, metadata.id)))).getSingleOrNull();
+      )..where((tbl) => tbl.globalKey.equals(buildGlobalKey(ServerId(serverId), metadata.id)))).getSingleOrNull();
       return row?.clientScopeId ?? serverId;
     } catch (_) {
       return serverId;

@@ -1515,10 +1515,12 @@ class _TranslationsAddServerJa extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Jellyfinサーバーを追加';
 	@override String get jellyfinUrlIntro => 'サーバーURLを入力してください。例: `https://jellyfin.example.com`。';
-	@override String get jellyfinUrlsIntro => 'サーバーURLを1つ以上、カンマまたは改行で区切って入力してください。Plezyは到達可能なURLのうち最も低遅延のものを使用します。';
+	@override String get jellyfinUrlsIntro => 'サーバーURLを1つ以上、カンマで区切って入力してください。Plezyは到達可能なURLのうち最も低遅延のものを使用します。';
 	@override String get serverUrl => 'サーバーURL';
 	@override String get serverUrls => 'サーバーURL';
 	@override String get findServer => 'サーバーを検索';
+	@override String get searchingLocalServers => 'ローカル Jellyfin サーバーを検索中...';
+	@override String get localServers => 'ローカル Jellyfin サーバー';
 	@override String get username => 'ユーザー名';
 	@override String get password => 'パスワード';
 	@override String get signIn => 'サインイン';
@@ -2981,10 +2983,12 @@ extension on TranslationsJa {
 			'trackers.libraryFilter.noLibraries' => '利用できるライブラリがありません',
 			'addServer.addJellyfinTitle' => 'Jellyfinサーバーを追加',
 			'addServer.jellyfinUrlIntro' => 'サーバーURLを入力してください。例: `https://jellyfin.example.com`。',
-			'addServer.jellyfinUrlsIntro' => 'サーバーURLを1つ以上、カンマまたは改行で区切って入力してください。Plezyは到達可能なURLのうち最も低遅延のものを使用します。',
+			'addServer.jellyfinUrlsIntro' => 'サーバーURLを1つ以上、カンマで区切って入力してください。Plezyは到達可能なURLのうち最も低遅延のものを使用します。',
 			'addServer.serverUrl' => 'サーバーURL',
 			'addServer.serverUrls' => 'サーバーURL',
 			'addServer.findServer' => 'サーバーを検索',
+			'addServer.searchingLocalServers' => 'ローカル Jellyfin サーバーを検索中...',
+			'addServer.localServers' => 'ローカル Jellyfin サーバー',
 			'addServer.username' => 'ユーザー名',
 			'addServer.password' => 'パスワード',
 			'addServer.signIn' => 'サインイン',

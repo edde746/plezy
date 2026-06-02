@@ -153,7 +153,7 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
       borderRadius: hasImage ? 12 : 20,
       child: hasImage
           ? Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 ClipRRect(borderRadius: BorderRadius.circular(6), child: widget.topImage!),
                 const SizedBox(height: 6),

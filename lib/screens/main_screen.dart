@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 import 'dart:io' show Platform, exit;
 
 import 'package:flutter/material.dart';
@@ -501,7 +502,7 @@ class _MainScreenState extends State<MainScreen>
   void _resumeQueuedDownloadsIfPossible(MultiServerProvider mp) {
     if (_downloadResumeFired || !mounted) return;
     for (final serverId in mp.onlineServerIds) {
-      final onlineClient = mp.getClientForServer(serverId);
+      final onlineClient = mp.getClientForServer(ServerId(serverId));
       if (onlineClient == null) continue;
       _downloadResumeFired = true;
       unawaited(
@@ -699,7 +700,7 @@ class _MainScreenState extends State<MainScreen>
   }
 
   /// Navigate to media when host switches content in Watch Together session
-  Future<void> _navigateToWatchTogetherMedia(String ratingKey, String serverId) async {
+  Future<void> _navigateToWatchTogetherMedia(String ratingKey, ServerId serverId) async {
     if (!mounted) return; // Check before any context usage
 
     try {
@@ -1659,7 +1660,7 @@ class _MainScreenState extends State<MainScreen>
           child: Scaffold(
             body: _buildTickerAwareStack(),
             bottomNavigationBar: Column(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 // Reconnect bar when offline
                 if (_isOffline)
@@ -1670,7 +1671,7 @@ class _MainScreenState extends State<MainScreen>
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisAlignment: .center,
                           children: [
                             if (_isReconnecting)
                               SizedBox(
@@ -1688,7 +1689,7 @@ class _MainScreenState extends State<MainScreen>
                               t.common.reconnect,
                               style: TextStyle(
                                 fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: .w500,
                                 color: Theme.of(context).colorScheme.primary,
                               ),
                             ),

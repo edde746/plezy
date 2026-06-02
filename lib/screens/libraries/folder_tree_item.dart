@@ -1,4 +1,5 @@
 import 'dart:ui';
+import '../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -123,7 +124,7 @@ class FolderTreeItem extends StatelessWidget {
     final expandIcon = isExpanded ? Symbols.keyboard_arrow_down_rounded : Symbols.keyboard_arrow_right_rounded;
 
     return Container(
-      padding: EdgeInsets.only(left: 16.0 + indentation, right: 8.0, top: 8.0, bottom: 8.0),
+      padding: .only(left: 16.0 + indentation, right: 8.0, top: 8.0, bottom: 8.0),
       child: Row(
         children: [
           SizedBox(
@@ -136,9 +137,9 @@ class FolderTreeItem extends StatelessWidget {
           Expanded(
             child: Text(
               _rowTitle(),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              style: const TextStyle(fontSize: 14, fontWeight: .w500),
               maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              overflow: .ellipsis,
             ),
           ),
         ],
@@ -161,9 +162,9 @@ class FolderTreeItem extends StatelessWidget {
     final metadataLine = _buildMetadataLine();
 
     return Container(
-      padding: EdgeInsets.only(left: 16.0 + indentation, right: 16.0, top: 6.0, bottom: 6.0),
+      padding: .only(left: 16.0 + indentation, right: 16.0, top: 6.0, bottom: 6.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: .center,
         children: [
           // Thumbnail with progress overlay
           SizedBox(
@@ -186,14 +187,14 @@ class FolderTreeItem extends StatelessWidget {
           // Metadata column
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: .start,
+              mainAxisSize: .min,
               children: [
                 Text(
                   _rowTitle(),
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, height: 1.2),
+                  style: const TextStyle(fontSize: 13, fontWeight: .w500, height: 1.2),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
@@ -205,7 +206,7 @@ class FolderTreeItem extends StatelessWidget {
                       height: 1.2,
                     ),
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    overflow: .ellipsis,
                   ),
                 ],
                 if (metadataLine.isNotEmpty) ...[
@@ -218,7 +219,7 @@ class FolderTreeItem extends StatelessWidget {
                       height: 1.2,
                     ),
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    overflow: .ellipsis,
                   ),
                 ],
               ],
@@ -238,7 +239,7 @@ class FolderTreeItem extends StatelessWidget {
   ) {
     final posterUrl = item.posterThumb(mode: episodePosterMode);
     // Backend-neutral so Jellyfin items render via Jellyfin's transcoder.
-    final client = context.tryGetMediaClientWithFallback(serverId);
+    final client = context.tryGetMediaClientWithFallback(serverIdOrNull(serverId));
     final shouldBlur =
         hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
 
@@ -305,10 +306,10 @@ class FolderTreeItem extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
               ),
-              alignment: Alignment.center,
+              alignment: .center,
               child: Text(
                 '${item.leafCount! - item.viewedLeafCount!}',
-                style: TextStyle(color: tokens(context).bg, fontSize: 10, fontWeight: FontWeight.bold),
+                style: TextStyle(color: tokens(context).bg, fontSize: 10, fontWeight: .bold),
               ),
             ),
           ),
@@ -389,7 +390,7 @@ class FolderTreeItem extends StatelessWidget {
               tooltip: t.common.play,
               iconSize: 18,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              padding: EdgeInsets.zero,
+              padding: .zero,
               visualDensity: VisualDensity.compact,
             ),
           ),
@@ -409,7 +410,7 @@ class FolderTreeItem extends StatelessWidget {
               tooltip: t.common.shuffle,
               iconSize: 18,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              padding: EdgeInsets.zero,
+              padding: .zero,
               visualDensity: VisualDensity.compact,
             ),
           ),

@@ -65,7 +65,7 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
       final playbackService = PlaybackInitializationService(client: mediaClient, database: context.read<AppDatabase>());
       final result = await playbackService.getPlaybackData(
         metadata: replacementMetadata,
-        selectedMediaIndex: widget.selectedMediaIndex,
+        selectedMediaIndex: _effectiveSelectedMediaIndex,
         selectedMediaSourceId: widget.selectedMediaSourceId,
         preferOffline: false,
         qualityPreset: _selectedQualityPreset,
@@ -84,6 +84,7 @@ extension _VideoPlayerSeekingMethods on VideoPlayerScreenState {
       _playbackPlaySessionId = result.playSessionId;
       _playbackPlayMethod = result.playMethod;
       _selectedAudioStreamId = result.activeAudioStreamId;
+      _effectiveSelectedMediaIndex = result.selectedMediaIndex;
       _availableVersions = result.availableVersions;
       _currentMediaInfo = result.mediaInfo;
 

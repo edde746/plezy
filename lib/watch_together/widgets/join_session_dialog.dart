@@ -42,8 +42,8 @@ class _JoinSessionDialogState extends State<JoinSessionDialog> with ControllerDi
           child: Form(
             key: _formKey,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: .min,
+              crossAxisAlignment: .stretch,
               children: [
                 Row(
                   children: [

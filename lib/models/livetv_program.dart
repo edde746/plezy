@@ -1,4 +1,5 @@
 import '../utils/json_utils.dart';
+import '../media/ids.dart';
 
 /// Represents an EPG program entry (what's on a channel at a given time)
 class LiveTvProgram {
@@ -96,7 +97,7 @@ class LiveTvProgram {
     );
   }
 
-  LiveTvProgram copyWith({String? serverId, String? serverName, String? liveDvrKey, String? providerIdentifier}) {
+  LiveTvProgram copyWith({ServerId? serverId, String? serverName, String? liveDvrKey, String? providerIdentifier}) {
     return LiveTvProgram(
       key: key,
       ratingKey: ratingKey,

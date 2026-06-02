@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../media/ids.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/livetv_channel.dart';
@@ -51,7 +52,7 @@ mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
     required String posterServerId,
   }) {
     final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(posterServerId);
+    final client = multiServer.getClientForServer(ServerId(posterServerId));
     String? posterUrl;
     if (posterThumb != null && client != null) {
       posterUrl = MediaImageHelper.getOptimizedImageUrl(

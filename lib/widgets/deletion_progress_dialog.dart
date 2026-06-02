@@ -15,7 +15,7 @@ class DeletionProgressDialog extends StatelessWidget {
       canPop: false, // Prevent back button dismissal
       child: AlertDialog(
         content: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             const SizedBox(width: 48, height: 48, child: CircularProgressIndicator()),
 

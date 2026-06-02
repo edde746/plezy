@@ -277,11 +277,11 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: .min,
+        crossAxisAlignment: .start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
             children: [
               if (widget.posterUrl != null) ...[
                 ClipRRect(
@@ -302,7 +302,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
               ],
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     Row(
                       children: [
@@ -316,7 +316,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
                             ),
                             child: Text(
                               t.liveTv.live,
-                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                              style: const TextStyle(color: Colors.white, fontWeight: .bold, fontSize: 11),
                             ),
                           ),
                       ],
@@ -327,7 +327,7 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
                         if (channel != null) channel.displayName,
                         if (program.startTime != null && program.endTime != null)
                           '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} - ${formatClockTime(program.endTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))}',
-                        if (program.durationMinutes > 0) formatDurationTextual(program.durationMinutes * 60000),
+                        if (program.durationMinutes > 0) formatDurationTextual(program.durationMinutes * 60_000),
                       ].join(' · '),
                       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),

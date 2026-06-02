@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -263,13 +264,14 @@ class _DelayedStartClient extends _FakePlexClient {
   }
 }
 
-MediaItem _meta({String ratingKey = '42', String? serverId = 'srv', String? type = 'movie'}) => MediaItem(
-  id: ratingKey,
-  backend: MediaBackend.plex,
-  kind: MediaKind.fromString(type),
-  title: 'Test Item',
-  serverId: serverId,
-);
+MediaItem _meta({String ratingKey = '42', ServerId? serverId = const ServerId('srv'), String? type = 'movie'}) =>
+    MediaItem(
+      id: ratingKey,
+      backend: MediaBackend.plex,
+      kind: MediaKind.fromString(type),
+      title: 'Test Item',
+      serverId: serverId,
+    );
 
 void main() {
   setUp(resetSharedPreferencesForTest);
@@ -747,7 +749,7 @@ void main() {
       final player = _FakePlayer(position: const Duration(seconds: 12), duration: const Duration(seconds: 60));
       final tracker = PlaybackProgressTracker(
         client: null,
-        metadata: _meta(ratingKey: '42', serverId: 'srv'),
+        metadata: _meta(ratingKey: '42', serverId: ServerId('srv')),
         player: player,
         isOffline: true,
         offlineWatchService: svc,
@@ -798,7 +800,7 @@ void main() {
       final player = _FakePlayer(position: const Duration(seconds: 10), duration: const Duration(seconds: 100));
       final tracker = PlaybackProgressTracker(
         client: client,
-        metadata: _meta(ratingKey: '42', serverId: 'srv'),
+        metadata: _meta(ratingKey: '42', serverId: ServerId('srv')),
         player: player,
         isOffline: false,
         offlineWatchService: svc,
@@ -825,7 +827,7 @@ void main() {
       final player = _FakePlayer(position: const Duration(seconds: 30), duration: const Duration(seconds: 100));
       final tracker = PlaybackProgressTracker(
         client: client,
-        metadata: _meta(ratingKey: '42', serverId: 'srv'),
+        metadata: _meta(ratingKey: '42', serverId: ServerId('srv')),
         player: player,
         isOffline: false,
       );
@@ -851,7 +853,7 @@ void main() {
       final player = _FakePlayer(position: Duration.zero, duration: const Duration(seconds: 100));
       final tracker = PlaybackProgressTracker(
         client: client,
-        metadata: _meta(ratingKey: 'no-watch', serverId: 'srv'),
+        metadata: _meta(ratingKey: 'no-watch', serverId: ServerId('srv')),
         player: player,
         isOffline: false,
       );
@@ -875,7 +877,7 @@ void main() {
       final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
       final tracker = PlaybackProgressTracker(
         client: client,
-        metadata: _meta(ratingKey: 'scrobbler', serverId: 'srv'),
+        metadata: _meta(ratingKey: 'scrobbler', serverId: ServerId('srv')),
         player: player,
         isOffline: false,
       );

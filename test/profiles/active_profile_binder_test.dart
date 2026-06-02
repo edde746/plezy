@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:plezy/media/ids.dart';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
@@ -471,7 +472,7 @@ class _FailingPlexMultiServerManager extends MultiServerManager {
   }) async {
     refreshCalls++;
     for (final server in connection.servers) {
-      updateServerStatus(server.clientIdentifier, false);
+      updateServerStatus(ServerId(server.clientIdentifier), false);
     }
     return const {};
   }
@@ -490,7 +491,7 @@ class _BlockingMixedMultiServerManager extends MultiServerManager {
     if (!plexStarted.isCompleted) plexStarted.complete();
     await releasePlex.future;
     for (final server in connection.servers) {
-      updateServerStatus(server.clientIdentifier, false);
+      updateServerStatus(ServerId(server.clientIdentifier), false);
     }
     return const {};
   }
@@ -498,7 +499,7 @@ class _BlockingMixedMultiServerManager extends MultiServerManager {
   @override
   Future<bool> addJellyfinConnection(JellyfinConnection connection) async {
     if (!jellyfinStarted.isCompleted) jellyfinStarted.complete();
-    updateServerStatus(connection.serverMachineId, true);
+    updateServerStatus(ServerId(connection.serverMachineId), true);
     return true;
   }
 }

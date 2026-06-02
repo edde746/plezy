@@ -110,7 +110,7 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
     final currentColor = _currentColor();
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         Container(
           height: 64,
@@ -311,7 +311,7 @@ class _ColorChannelRowState extends State<_ColorChannelRow> with KeyRepeatHelper
           children: [
             SizedBox(
               width: 24,
-              child: Text(widget.label, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              child: Text(widget.label, style: theme.textTheme.titleMedium?.copyWith(fontWeight: .bold)),
             ),
             const SizedBox(width: 8),
             _ChannelButton(
@@ -322,7 +322,7 @@ class _ColorChannelRowState extends State<_ColorChannelRow> with KeyRepeatHelper
             const SizedBox(width: 8),
             Container(
               constraints: const BoxConstraints(minWidth: 56),
-              alignment: Alignment.center,
+              alignment: .center,
               child: Text('${widget.value}${widget.suffix}', style: theme.textTheme.titleMedium),
             ),
             const SizedBox(width: 8),

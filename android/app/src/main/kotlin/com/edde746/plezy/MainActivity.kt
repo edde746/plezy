@@ -55,9 +55,6 @@ class MainActivity : FlutterActivity() {
     private const val API_MX_TITLE = "title"
     private const val API_MX_FILENAME = "filename"
     private const val API_MX_SECURE_URI = "secure_uri"
-
-    private const val API_MPV_RESULT_ID = "is.xyz.mpv.MPVActivity.result"
-
     private const val API_VLC_RESULT_POSITION = "extra_position"
     private const val API_VLC_RESULT_DURATION = "extra_duration"
 
@@ -302,7 +299,6 @@ class MainActivity : FlutterActivity() {
     val action = data?.action
     val playbackCompleted = when (action) {
       API_MX_RESULT_ID -> extras?.getString(API_MX_RESULT_END_BY) == API_MX_RESULT_END_BY_PLAYBACK_COMPLETION
-      API_MPV_RESULT_ID -> endPosition == null
       API_VIMU_RESULT_ID -> resultCode == API_VIMU_RESULT_PLAYBACK_COMPLETED
       else -> false
     }

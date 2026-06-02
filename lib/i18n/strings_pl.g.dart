@@ -1515,10 +1515,12 @@ class _TranslationsAddServerPl extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Dodaj serwer Jellyfin';
 	@override String get jellyfinUrlIntro => 'Wpisz URL serwera, np. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Wpisz co najmniej jeden URL serwera, oddzielając je przecinkami lub nowymi wierszami. Plezy użyje osiągalnego URL-a o najniższym opóźnieniu.';
+	@override String get jellyfinUrlsIntro => 'Wpisz co najmniej jeden URL serwera, oddzielając je przecinkami. Plezy użyje osiągalnego URL-a o najniższym opóźnieniu.';
 	@override String get serverUrl => 'URL serwera';
 	@override String get serverUrls => 'URL-e serwera';
 	@override String get findServer => 'Znajdź serwer';
+	@override String get searchingLocalServers => 'Szukanie lokalnych serwerów Jellyfin...';
+	@override String get localServers => 'Lokalne serwery Jellyfin';
 	@override String get username => 'Nazwa użytkownika';
 	@override String get password => 'Hasło';
 	@override String get signIn => 'Zaloguj się';
@@ -2981,10 +2983,12 @@ extension on TranslationsPl {
 			'trackers.libraryFilter.noLibraries' => 'Brak dostępnych bibliotek',
 			'addServer.addJellyfinTitle' => 'Dodaj serwer Jellyfin',
 			'addServer.jellyfinUrlIntro' => 'Wpisz URL serwera, np. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Wpisz co najmniej jeden URL serwera, oddzielając je przecinkami lub nowymi wierszami. Plezy użyje osiągalnego URL-a o najniższym opóźnieniu.',
+			'addServer.jellyfinUrlsIntro' => 'Wpisz co najmniej jeden URL serwera, oddzielając je przecinkami. Plezy użyje osiągalnego URL-a o najniższym opóźnieniu.',
 			'addServer.serverUrl' => 'URL serwera',
 			'addServer.serverUrls' => 'URL-e serwera',
 			'addServer.findServer' => 'Znajdź serwer',
+			'addServer.searchingLocalServers' => 'Szukanie lokalnych serwerów Jellyfin...',
+			'addServer.localServers' => 'Lokalne serwery Jellyfin',
 			'addServer.username' => 'Nazwa użytkownika',
 			'addServer.password' => 'Hasło',
 			'addServer.signIn' => 'Zaloguj się',

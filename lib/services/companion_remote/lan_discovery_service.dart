@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import '../../utils/app_logger.dart';
+import '../../utils/udp_broadcast_sockets.dart';
 import 'remote_auth_context.dart';
 import 'remote_auth_service.dart';
 
@@ -40,7 +41,7 @@ class LanDiscoveryService {
   static const int _beaconVersion = 1;
 
   // Broadcaster state (host)
-  RawDatagramSocket? _broadcastSocket;
+  UdpBroadcastSocketSet? _broadcastSockets;
   Timer? _broadcastTimer;
 
   // Listener state (client)
@@ -97,8 +98,8 @@ class LanDiscoveryService {
     if (contexts.isEmpty) return;
 
     try {
-      _broadcastSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
-      _broadcastSocket!.broadcastEnabled = true;
+      _broadcastSockets = await UdpBroadcastSockets.bind();
+      if (_broadcastSockets!.isEmpty) return;
 
       appLogger.d('LanDiscovery: Broadcasting started on port $discoveryPort');
 
@@ -118,7 +119,8 @@ class LanDiscoveryService {
   }
 
   void _sendBeacon(RemoteAuthContext context, String deviceName, String platform, int wsPort, List<String> ips) {
-    if (_broadcastSocket == null) return;
+    final broadcastSockets = _broadcastSockets;
+    if (broadcastSockets == null || broadcastSockets.isEmpty) return;
 
     try {
       final auth = RemoteAuthService.instance;
@@ -150,7 +152,7 @@ class LanDiscoveryService {
       });
 
       final data = utf8.encode(packet);
-      _broadcastSocket!.send(data, InternetAddress('255.255.255.255'), discoveryPort);
+      broadcastSockets.send(data, UdpBroadcastSockets.limitedBroadcastAddress, discoveryPort);
     } catch (e) {
       appLogger.e('LanDiscovery: Failed to send beacon', error: e);
     }
@@ -159,8 +161,8 @@ class LanDiscoveryService {
   Future<void> stopBroadcasting() async {
     _broadcastTimer?.cancel();
     _broadcastTimer = null;
-    _broadcastSocket?.close();
-    _broadcastSocket = null;
+    _broadcastSockets?.close();
+    _broadcastSockets = null;
     appLogger.d('LanDiscovery: Broadcasting stopped');
   }
 

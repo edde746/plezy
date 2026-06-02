@@ -156,7 +156,7 @@ class TrackSheet extends StatelessWidget {
 
               if (showAudio && showSubtitles) {
                 return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     Expanded(child: FocusTraversalGroup(child: audioColumnFor(selection, true))),
                     VerticalDivider(width: 1, color: Theme.of(context).dividerColor),

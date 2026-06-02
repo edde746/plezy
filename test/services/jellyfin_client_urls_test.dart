@@ -103,6 +103,75 @@ void main() {
       ]);
     });
 
+    test('fetchExtras combines local trailers and special features as playable videos', () async {
+      const itemId = 'movie/id #1?x';
+      final encodedItemId = Uri.encodeComponent(itemId);
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          requests.add(request.url);
+          if (request.url.path == '/Items/$encodedItemId/LocalTrailers') {
+            return http.Response(
+              jsonEncode([
+                {
+                  'Id': 'trailer-1',
+                  'Name': 'Trailer',
+                  'Type': 'Trailer',
+                  'ExtraType': 'Trailer',
+                  'RunTimeTicks': 900000000,
+                  'ImageTags': {'Primary': 'trailer-tag'},
+                },
+                {'Id': 'theme-song', 'Name': 'Theme Song', 'Type': 'Audio', 'ExtraType': 'ThemeSong'},
+              ]),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (request.url.path == '/Items/$encodedItemId/SpecialFeatures') {
+            return http.Response(
+              jsonEncode([
+                {'Id': 'trailer-1', 'Name': 'Trailer Duplicate', 'Type': 'Trailer', 'ExtraType': 'Trailer'},
+                {
+                  'Id': 'featurette-1',
+                  'Name': 'Making Of',
+                  'Type': 'Video',
+                  'ExtraType': 'Featurette',
+                  'RunTimeTicks': 1800000000,
+                  'BackdropImageTags': ['featurette-backdrop'],
+                },
+              ]),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('unexpected ${request.url}', 500);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final extras = await scoped.fetchExtras(itemId);
+
+      expect(requests.map((uri) => uri.path).toSet(), {
+        '/Items/$encodedItemId/LocalTrailers',
+        '/Items/$encodedItemId/SpecialFeatures',
+      });
+      expect(requests.every((uri) => uri.queryParameters['userId'] == 'user-1'), isTrue);
+      expect(requests.every((uri) => uri.queryParameters['EnableImageTypes'] == 'Primary,Backdrop,Thumb,Logo'), isTrue);
+      expect(requests.every((uri) => uri.queryParameters['ImageTypeLimit'] == '1'), isTrue);
+      expect(extras.map((item) => item.id).toList(), ['trailer-1', 'featurette-1']);
+      expect(extras.every((item) => item.kind.isVideo), isTrue);
+      expect(extras.every((item) => item.serverId == 'srv-1'), isTrue);
+      expect(extras.every((item) => item.serverName == 'Home'), isTrue);
+      expect(extras[0].kind, MediaKind.clip);
+      expect(extras[0].raw?['ExtraType'], 'Trailer');
+      expect(extras[1].kind, MediaKind.clip);
+      expect(extras[1].raw?['ExtraType'], 'Featurette');
+      expect(extras[1].thumbPath, isNull);
+      expect(extras[1].artPath, isNotNull);
+      expect(extras[1].posterThumb(), extras[1].artPath);
+    });
+
     test('reportPlaybackProgress sends media source and stream indexes', () async {
       Uri? capturedUri;
       String? capturedBody;
@@ -2802,6 +2871,137 @@ void main() {
       expect(uri.path, '/jellyfin/Items/video-1/Images/Primary');
       expect(uri.queryParameters['tag'], 'tag 1');
       expect(uri.queryParameters['api_key'], 'tok-abc');
+    });
+
+    test('fetchEditableMetadataItem requests full item dto without limited fields', () async {
+      Uri? capturedUri;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          return http.Response(
+            jsonEncode({
+              'Id': 'folder/item #1?x',
+              'Name': 'Movie',
+              'Type': 'Movie',
+              'ProviderIds': {'Tmdb': '1'},
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.close);
+
+      final item = await client.fetchEditableMetadataItem('folder/item #1?x');
+
+      expect(item?['ProviderIds'], {'Tmdb': '1'});
+      expect(capturedUri!.path, '/Users/user-1/Items/folder%2Fitem%20%231%3Fx');
+      expect(capturedUri!.queryParameters.containsKey('Fields'), isFalse);
+    });
+
+    test('updateMetadataItem posts full dto to item update endpoint', () async {
+      Uri? capturedUri;
+      String? capturedBody;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          capturedBody = request.body;
+          return http.Response('', 204);
+        }),
+      );
+      addTearDown(client.close);
+
+      final success = await client.updateMetadataItem('item-1', {
+        'Id': 'item-1',
+        'Name': 'Edited',
+        'Type': 'Movie',
+        'ProviderIds': {'Tmdb': '123'},
+        'Tags': ['Favorite'],
+      });
+
+      expect(success, isTrue);
+      expect(capturedUri!.path, '/Items/item-1');
+      final body = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      expect(body['Name'], 'Edited');
+      expect(body['ProviderIds'], {'Tmdb': '123'});
+      expect(body['Tags'], ['Favorite']);
+    });
+
+    test('remote image search and apply use Jellyfin image endpoints', () async {
+      final requests = <Uri>[];
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          requests.add(request.url);
+          if (request.url.path == '/Items/item-1/RemoteImages') {
+            return http.Response(
+              jsonEncode({
+                'TotalRecordCount': 1,
+                'Providers': ['TheMovieDb'],
+                'Images': [
+                  {'ProviderName': 'TheMovieDb', 'Url': 'https://img.example/poster.jpg', 'Type': 'Primary'},
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('', 204);
+        }),
+      );
+      addTearDown(client.close);
+
+      final result = await client.getRemoteImages(
+        'item-1',
+        imageType: 'Primary',
+        limit: 20,
+        providerName: 'TheMovieDb',
+      );
+      final success = await client.downloadRemoteImage(
+        'item-1',
+        imageType: 'Primary',
+        imageUrl: 'https://img.example/poster.jpg',
+      );
+
+      expect((result['Images'] as List).single['Url'], 'https://img.example/poster.jpg');
+      expect(success, isTrue);
+      expect(requests[0].path, '/Items/item-1/RemoteImages');
+      expect(requests[0].queryParameters['type'], 'Primary');
+      expect(requests[0].queryParameters['limit'], '20');
+      expect(requests[0].queryParameters['providerName'], 'TheMovieDb');
+      expect(requests[1].path, '/Items/item-1/RemoteImages/Download');
+      expect(requests[1].queryParameters['type'], 'Primary');
+      expect(requests[1].queryParameters['imageUrl'], 'https://img.example/poster.jpg');
+    });
+
+    test('uploadItemImage sends base64 image body and image content type', () async {
+      Uri? capturedUri;
+      String? capturedBody;
+      Map<String, String>? capturedHeaders;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          capturedBody = request.body;
+          capturedHeaders = request.headers;
+          return http.Response('', 204);
+        }),
+      );
+      addTearDown(client.close);
+
+      final success = await client.uploadItemImage(
+        'item-1',
+        imageType: 'Primary',
+        bytes: [0xff, 0xd8, 0xff, 0x00],
+        contentType: 'image/jpeg',
+      );
+
+      expect(success, isTrue);
+      expect(capturedUri!.path, '/Items/item-1/Images/Primary');
+      expect(capturedBody, base64Encode([0xff, 0xd8, 0xff, 0x00]));
+      expect(capturedHeaders!['Content-Type'] ?? capturedHeaders!['content-type'], 'image/jpeg');
     });
 
     test('smart=true returns empty because Jellyfin playlists are normal playlists', () async {

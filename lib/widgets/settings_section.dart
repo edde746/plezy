@@ -13,9 +13,7 @@ class SettingsSectionHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
       child: Text(
         title,
-        style: Theme.of(
-          context,
-        ).textTheme.labelLarge?.copyWith(color: tokens(context).textMuted, fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(color: tokens(context).textMuted, fontWeight: .w600),
       ),
     );
   }
@@ -44,7 +42,7 @@ class SegmentedSetting<T> extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           Row(
             children: [

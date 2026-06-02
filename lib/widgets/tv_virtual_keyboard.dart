@@ -27,7 +27,7 @@ Future<void> showTvVirtualKeyboard({
   return showDialog<void>(
     context: context,
     barrierDismissible: true,
-    barrierColor: Colors.black.withValues(alpha: 0.10),
+    barrierColor: Colors.black.withValues(alpha: 0.1),
     useSafeArea: false,
     builder: (context) => _TvVirtualKeyboardDialog(
       controller: controller,
@@ -261,7 +261,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
     final key = event.logicalKey;
 
     if (key.isBackKey) {
-      if (event is KeyDownEvent) Navigator.of(context).pop();
+      if (event is KeyUpEvent) Navigator.of(context).pop();
       return KeyEventResult.handled;
     }
 
@@ -569,8 +569,8 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
 
     return Dialog(
       key: const Key('tv_virtual_keyboard_dialog'),
-      alignment: Alignment.bottomCenter,
-      insetPadding: EdgeInsets.only(
+      alignment: .bottomCenter,
+      insetPadding: .only(
         left: metrics.edgeInset,
         right: metrics.edgeInset,
         top: media.padding.top + 48,
@@ -584,7 +584,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
         child: Container(
           key: const Key('tv_virtual_keyboard_panel'),
           constraints: BoxConstraints(maxWidth: metrics.panelWidth),
-          padding: EdgeInsets.all(metrics.panelPadding),
+          padding: .all(metrics.panelPadding),
           decoration: BoxDecoration(
             color: colorScheme.surface.withValues(alpha: 0.96),
             borderRadius: BorderRadius.circular(metrics.panelRadius),
@@ -592,8 +592,8 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
           child: SizedBox(
             width: metrics.gridWidth,
             child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: .min,
+              crossAxisAlignment: .stretch,
               children: [
                 _buildPreview(context, text, metrics),
                 SizedBox(height: metrics.previewGap),
@@ -656,8 +656,8 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
 
     return Container(
       height: metrics.previewHeight,
-      alignment: Alignment.centerLeft,
-      padding: EdgeInsets.symmetric(horizontal: metrics.keySize * 0.30),
+      alignment: .centerLeft,
+      padding: .symmetric(horizontal: metrics.keySize * 0.3),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.7),
         borderRadius: BorderRadius.circular(metrics.previewRadius),
@@ -674,7 +674,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
 
   Widget _buildRow(BuildContext context, int row, _TvKeyboardMetrics metrics) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: .center,
       children: [
         for (var column = 0; column < _rows[row].length; column++) ...[
           _buildKey(context, _rows[row][column], row, column, metrics),
@@ -716,10 +716,10 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
           duration: const Duration(milliseconds: 120),
           width: metrics.keySize,
           height: metrics.keySize,
-          alignment: Alignment.center,
+          alignment: .center,
           decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(metrics.keyRadius)),
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: metrics.keySize * 0.04),
+            padding: .symmetric(horizontal: metrics.keySize * 0.04),
             child: _buildKeyContent(context, key, foreground, metrics),
           ),
         ),
@@ -744,7 +744,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> with
         maxLines: 1,
         style: Theme.of(
           context,
-        ).textTheme.titleLarge?.copyWith(color: foreground, fontSize: metrics.keyFontSize, fontWeight: FontWeight.w800),
+        ).textTheme.titleLarge?.copyWith(color: foreground, fontSize: metrics.keyFontSize, fontWeight: .w800),
       ),
     );
   }

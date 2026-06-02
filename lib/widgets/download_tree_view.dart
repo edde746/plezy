@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../focus/focusable_wrapper.dart';
@@ -111,7 +112,7 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
     }
 
     return ListView.builder(
-      padding: EdgeInsets.zero,
+      padding: .zero,
       itemCount: flattenedNodes.length,
       itemBuilder: (context, index) {
         final item = flattenedNodes[index];
@@ -454,11 +455,11 @@ String? resolveDownloadContainerGlobalKey(DownloadTreeNode node, Map<String, Med
     case DownloadNodeType.show:
       final showRatingKey = firstLeafMeta!.grandparentId;
       if (showRatingKey == null) return null;
-      return buildGlobalKey(serverId, showRatingKey);
+      return buildGlobalKey(ServerId(serverId), showRatingKey);
     case DownloadNodeType.season:
       final seasonRatingKey = firstLeafMeta!.parentId;
       if (seasonRatingKey == null) return null;
-      return buildGlobalKey(serverId, seasonRatingKey);
+      return buildGlobalKey(ServerId(serverId), seasonRatingKey);
     case DownloadNodeType.episode:
     case DownloadNodeType.movie:
       return null;
@@ -638,7 +639,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     final hasActions = _buttonFocusNodes.isNotEmpty;
 
     return Padding(
-      padding: EdgeInsets.only(left: widget.depth * 16.0),
+      padding: .only(left: widget.depth * 16.0),
       child: FocusableWrapper(
         focusNode: _rowFocusNode,
         autofocus: widget.autofocus,
@@ -688,8 +689,8 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
         // Title and info
         Expanded(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: .start,
+            mainAxisSize: .min,
             children: [
               Text(
                 widget.node.title,
@@ -697,7 +698,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
                   fontWeight: canExpand ? FontWeight.w600 : FontWeight.normal,
                 ),
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                overflow: .ellipsis,
               ),
 
               if (canExpand) ...[
@@ -742,7 +743,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
                   widget.node.downloadProgress!.errorMessage!,
                   style: theme.textTheme.bodySmall?.copyWith(color: Colors.red.withValues(alpha: 0.8)),
                   maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 ),
               ],
             ],
@@ -767,7 +768,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
 
     final actions = isContainer ? _buildContainerActions() : _buildItemActions();
 
-    return Row(mainAxisSize: MainAxisSize.min, children: actions);
+    return Row(mainAxisSize: .min, children: actions);
   }
 
   List<Widget> _buildItemActions() {

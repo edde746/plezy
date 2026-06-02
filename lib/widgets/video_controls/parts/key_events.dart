@@ -64,6 +64,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
   /// Global key event handler for focus-independent shortcuts (desktop only)
   bool _handleGlobalKeyEvent(KeyEvent event) {
     if (!mounted) return false;
+    if (ModalRoute.of(context)?.isCurrent != true) return false;
 
     // When an overlay sheet is open (e.g. subtitle search with text fields),
     // don't consume key events — let text input work normally.
@@ -168,7 +169,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       }
     }
 
-    return true; // Consume all events while video player is active
+    return false;
   }
 
   KeyEventResult _handleControlsKeyEvent(KeyEvent event, bool isMobile) {
@@ -290,7 +291,9 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     }
 
     // Pass other events to the keyboard shortcuts service.
-    if (_keyboardService == null) return KeyEventResult.handled;
+    if (_keyboardService == null) {
+      return event.logicalKey.isNavigationKey ? KeyEventResult.handled : KeyEventResult.ignored;
+    }
 
     final result = _keyboardService!.handleVideoPlayerKeyEvent(
       event,

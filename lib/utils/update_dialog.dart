@@ -21,8 +21,8 @@ Future<void> showUpdateAvailableDialog(
       return AlertDialog(
         title: Text(title),
         content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: .min,
+          crossAxisAlignment: .start,
           children: [
             Text(
               t.update.versionAvailable(version: latestVersion),

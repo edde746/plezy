@@ -410,7 +410,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     //   - Pure transport errors (no HTTP response) → fall back to cached row
     //     when present, otherwise rethrow.
     if (isOfflineMode) {
-      final cached = await cache.get(cacheServerId, endpoint);
+      final cached = await cache.get(ServerId(cacheServerId), endpoint);
       if (cached is Map<String, dynamic>) return _mapItem(cached);
       return null;
     }
@@ -420,7 +420,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       final data = response.data;
       if (data is! Map<String, dynamic>) return null;
       try {
-        await cache.put(cacheServerId, endpoint, data);
+        await cache.put(ServerId(cacheServerId), endpoint, data);
       } catch (e, st) {
         appLogger.w('JellyfinClient.fetchItem cache write failed', error: e, stackTrace: st);
       }
@@ -432,7 +432,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       // Transport-layer failure: socket error, DNS, TLS, etc. Try cache.
       appLogger.w('JellyfinClient.fetchItem network call failed', error: e);
       try {
-        final cached = await cache.get(cacheServerId, endpoint);
+        final cached = await cache.get(ServerId(cacheServerId), endpoint);
         if (cached is Map<String, dynamic>) return _mapItem(cached);
       } catch (cacheError, st) {
         appLogger.w('JellyfinClient.fetchItem cache fallback failed', error: cacheError, stackTrace: st);
@@ -449,12 +449,12 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     final childrenKey = '/Items?ParentId=$parentId&userId=${connection.userId}';
 
     if (isOfflineMode) {
-      final cachedSeasons = await cache.get(cacheServerId, seasonsKey);
+      final cachedSeasons = await cache.get(ServerId(cacheServerId), seasonsKey);
       if (cachedSeasons != null) {
         final items = _itemsArray(cachedSeasons);
         if (items.isNotEmpty) return _mapItems(items);
       }
-      final cachedChildren = await cache.get(cacheServerId, childrenKey);
+      final cachedChildren = await cache.get(ServerId(cacheServerId), childrenKey);
       if (cachedChildren != null) {
         return _mapItems(_itemsArray(cachedChildren));
       }
@@ -474,7 +474,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         final data = seasons.data;
         final items = _itemsArray(data);
         if (items.isNotEmpty && data is Map<String, dynamic>) {
-          await cache.put(cacheServerId, seasonsKey, data);
+          await cache.put(ServerId(cacheServerId), seasonsKey, data);
           return _mapItems(items);
         }
       }
@@ -511,7 +511,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       startIndex += page.length;
     }
     try {
-      await cache.put(cacheServerId, childrenKey, {'Items': allRaw, 'TotalRecordCount': allRaw.length});
+      await cache.put(ServerId(cacheServerId), childrenKey, {'Items': allRaw, 'TotalRecordCount': allRaw.length});
     } catch (e, st) {
       appLogger.w('JellyfinClient.fetchChildren cache write failed', error: e, stackTrace: st);
     }
@@ -531,7 +531,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   Future<List<MediaItem>> _fetchFolderChildren(String parentId) async {
     final cacheKey = '/Items?ParentId=$parentId&Recursive=false&userId=${connection.userId}';
     if (isOfflineMode) {
-      final cached = await cache.get(cacheServerId, cacheKey);
+      final cached = await cache.get(ServerId(cacheServerId), cacheKey);
       return cached == null ? const [] : _mapItems(_itemsArray(cached));
     }
 
@@ -573,7 +573,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     });
 
     try {
-      await cache.put(cacheServerId, cacheKey, {'Items': allRaw, 'TotalRecordCount': allRaw.length});
+      await cache.put(ServerId(cacheServerId), cacheKey, {'Items': allRaw, 'TotalRecordCount': allRaw.length});
     } catch (e, st) {
       appLogger.w('JellyfinClient.fetchFolderChildren cache write failed', error: e, stackTrace: st);
     }
@@ -804,7 +804,11 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       }),
     ]);
 
-    return _mergeContinueWatchingAndNextUp(resume: _mapItems(results[0]), nextUp: _mapItems(results[1]), limit: count);
+    return _mergeContinueWatchingAndNextUp(
+      resume: _mapItems(results.first),
+      nextUp: _mapItems(results[1]),
+      limit: count,
+    );
   }
 
   @override
@@ -879,7 +883,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         identifier: 'home.recent',
         title: t.discover.recentlyAdded,
         type: 'mixed',
-        items: results[0],
+        items: results.first,
         serverId: serverId,
         serverName: serverName,
       ),
@@ -972,7 +976,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         identifier: 'library.$libraryId.recent',
         title: t.discover.recentlyAddedIn(library: libraryName),
         type: 'mixed',
-        items: results[0],
+        items: results.first,
         serverId: serverId,
         serverName: serverName,
       ),
@@ -1131,6 +1135,40 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         serverName: serverName,
       ),
     ].where((h) => h.items.isNotEmpty).toList();
+  }
+
+  /// Jellyfin exposes local trailers separately from special features. Combine
+  /// both into Plezy's existing extras row, but keep remote/YouTube trailers
+  /// out of scope because they are external URLs, not playable Jellyfin items.
+  @override
+  Future<List<MediaItem>> fetchExtras(String id) async {
+    if (isOfflineMode) return const [];
+
+    final results = await Future.wait([
+      _safeFetchItemsArray('/Items/${_segment(id)}/LocalTrailers', {
+        'userId': connection.userId,
+        ...jellyfinImageQueryParameters,
+      }),
+      _safeFetchItemsArray('/Items/${_segment(id)}/SpecialFeatures', {
+        'userId': connection.userId,
+        ...jellyfinImageQueryParameters,
+      }),
+    ]);
+
+    return _playableExtrasFromRaw(results.expand((items) => items));
+  }
+
+  List<MediaItem> _playableExtrasFromRaw(Iterable<Map<String, dynamic>> rawExtras) {
+    final extras = <MediaItem>[];
+    final seenIds = <String>{};
+
+    for (final raw in rawExtras) {
+      final item = _mapItem(raw);
+      if (item == null || !item.kind.isVideo || !seenIds.add(item.id)) continue;
+      extras.add(item);
+    }
+
+    return extras;
   }
 
   List<MediaItem> _mergeContinueWatchingAndNextUp({

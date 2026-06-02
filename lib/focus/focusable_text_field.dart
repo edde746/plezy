@@ -13,6 +13,19 @@ bool _usesTvKeyboard(bool enableTvKeyboard) => enableTvKeyboard && PlatformDetec
 
 String? _keyboardHint(InputDecoration? decoration) => decoration?.hintText ?? decoration?.labelText;
 
+enum TvKeyboardAutoOpenBehavior {
+  /// Open the TV virtual keyboard whenever the field receives focus.
+  onFocus,
+
+  /// Keep initial focus on the field without opening the keyboard, then open
+  /// automatically on later focus entries. Explicit tap/select still opens it.
+  afterFirstFocus,
+
+  /// Never auto-open the TV virtual keyboard on focus. Explicit tap/select
+  /// still opens it.
+  never,
+}
+
 String _describeTextInputKey(KeyEvent event) {
   return 'type=${event.runtimeType} logical=${event.logicalKey.keyLabel}/${event.logicalKey.keyId} '
       'physical=${event.physicalKey.usbHidUsage} deviceType=${event.deviceType} character=${event.character}';
@@ -513,6 +526,7 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
   final bool autofocus;
   final bool enabled;
   final bool enableTvKeyboard;
+  final TvKeyboardAutoOpenBehavior tvKeyboardAutoOpenBehavior;
   final bool obscureText;
   final bool autocorrect;
   final bool enableSuggestions;
@@ -545,6 +559,7 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     this.autofocus = false,
     this.enabled = true,
     this.enableTvKeyboard = true,
+    this.tvKeyboardAutoOpenBehavior = TvKeyboardAutoOpenBehavior.onFocus,
     this.obscureText = false,
     this.autocorrect = true,
     this.enableSuggestions = true,
@@ -654,6 +669,8 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
   bool _tvKeyboardOpen = false;
   bool _tvKeyboardOpenScheduled = false;
   bool _suppressTvKeyboardAutoOpen = false;
+  bool _hasSeenTvKeyboardFocus = false;
+  bool _suppressTvKeyboardForCurrentFocus = false;
 
   FocusNode get _effectiveFocusNode =>
       widget.input.focusNode ?? (_ownedFocusNode ??= FocusNode(debugLabel: 'FocusableTextInput'));
@@ -665,6 +682,8 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
       _restoreInstalledHandler();
       _suppressTvKeyboardAutoOpen = false;
       _tvKeyboardOpenScheduled = false;
+      _hasSeenTvKeyboardFocus = false;
+      _suppressTvKeyboardForCurrentFocus = false;
     }
     _handleFocusChanged();
   }
@@ -696,12 +715,15 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     final visible = _canShowTvKeyboard;
     _logTvTextInput(
       'Host.syncTvKeyboardAutoOpen focused=$focused open=$_tvKeyboardOpen scheduled=$_tvKeyboardOpenScheduled '
-      'suppressed=$_suppressTvKeyboardAutoOpen installed=${_installedFocusNode?.debugLabel} '
+      'suppressed=$_suppressTvKeyboardAutoOpen behavior=${widget.input.tvKeyboardAutoOpenBehavior} '
+      'seenFocus=$_hasSeenTvKeyboardFocus suppressCurrent=$_suppressTvKeyboardForCurrentFocus '
+      'installed=${_installedFocusNode?.debugLabel} '
       'hasFocus=${_installedFocusNode?.hasFocus} enabled=${widget.input.enabled} '
       'usesTvKeyboard=${widget.input._hasTvKeyboard} visible=$visible',
     );
 
     if (!focused) {
+      _suppressTvKeyboardForCurrentFocus = false;
       if (!_tvKeyboardOpen && !_tvKeyboardOpenScheduled) {
         _suppressTvKeyboardAutoOpen = false;
       }
@@ -709,6 +731,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     }
 
     if (!visible) return;
+    if (!_shouldAutoOpenTvKeyboardForCurrentFocus()) return;
     if (_suppressTvKeyboardAutoOpen || _tvKeyboardOpen || _tvKeyboardOpenScheduled) return;
 
     _tvKeyboardOpenScheduled = true;
@@ -726,6 +749,22 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     return TickerMode.valuesOf(context).enabled && (route?.isCurrent ?? true);
   }
 
+  bool _shouldAutoOpenTvKeyboardForCurrentFocus() {
+    switch (widget.input.tvKeyboardAutoOpenBehavior) {
+      case TvKeyboardAutoOpenBehavior.onFocus:
+        return true;
+      case TvKeyboardAutoOpenBehavior.afterFirstFocus:
+        if (!_hasSeenTvKeyboardFocus) {
+          _hasSeenTvKeyboardFocus = true;
+          _suppressTvKeyboardForCurrentFocus = true;
+          return false;
+        }
+        return !_suppressTvKeyboardForCurrentFocus;
+      case TvKeyboardAutoOpenBehavior.never:
+        return false;
+    }
+  }
+
   void _openTvKeyboard() {
     if (!mounted || !widget.input.enabled || !widget.input._hasTvKeyboard || !_canShowTvKeyboard || _tvKeyboardOpen) {
       return;
@@ -733,6 +772,8 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
 
     _tvKeyboardOpenScheduled = false;
     _tvKeyboardOpen = true;
+    _hasSeenTvKeyboardFocus = true;
+    _suppressTvKeyboardForCurrentFocus = false;
     _suppressTvKeyboardAutoOpen = true;
     _logTvTextInput('Host.openTvKeyboard node=${_installedFocusNode?.debugLabel}');
     unawaited(
@@ -838,6 +879,7 @@ class FocusableTextField extends _FocusableTextInputBase {
     super.autofocus,
     super.enabled,
     super.enableTvKeyboard,
+    super.tvKeyboardAutoOpenBehavior,
     super.obscureText,
     super.autocorrect,
     super.enableSuggestions,
@@ -913,6 +955,7 @@ class FocusableTextFormField extends _FocusableTextInputBase {
     super.autofocus,
     super.enabled,
     super.enableTvKeyboard,
+    super.tvKeyboardAutoOpenBehavior,
     super.obscureText,
     super.autocorrect,
     super.enableSuggestions,

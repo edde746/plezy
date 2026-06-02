@@ -1,4 +1,5 @@
 import 'global_key_utils.dart';
+import '../media/ids.dart';
 
 /// Mixin providing hierarchical event matching methods.
 ///
@@ -11,7 +12,7 @@ mixin HierarchicalEventMixin {
 
   String get globalKey;
 
-  String get serverId;
+  ServerId get serverId;
 
   /// Parent chain for hierarchical matching.
   /// For an episode: [seasonId, showId]

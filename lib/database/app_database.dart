@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../media/ids.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/foundation.dart';
@@ -265,7 +266,7 @@ class AppDatabase extends _$AppDatabase {
   }
 
   /// Get pending watch actions for a specific server
-  Future<List<OfflineWatchProgressItem>> getPendingWatchActionsForServer(String serverId, {String? profileId}) {
+  Future<List<OfflineWatchProgressItem>> getPendingWatchActionsForServer(ServerId serverId, {String? profileId}) {
     return (select(offlineWatchProgress)
           ..where(
             (t) =>
@@ -388,14 +389,14 @@ class AppDatabase extends _$AppDatabase {
   /// Insert or update a progress action (merges with existing).
   Future<void> upsertProgressAction({
     String? profileId,
-    required String serverId,
+    required ServerId serverId,
     String? clientScopeId,
     required String ratingKey,
     required int viewOffset,
     required int? duration,
     required bool shouldMarkWatched,
   }) async {
-    final globalKey = buildGlobalKey(serverId, ratingKey);
+    final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
     final now = DateTime.now().millisecondsSinceEpoch;
 
     await transaction(() async {
@@ -451,12 +452,12 @@ class AppDatabase extends _$AppDatabase {
   /// Removes conflicting actions for the same item.
   Future<void> insertWatchAction({
     String? profileId,
-    required String serverId,
+    required ServerId serverId,
     String? clientScopeId,
     required String ratingKey,
     required String actionType, // 'watched' or 'unwatched'
   }) async {
-    final globalKey = buildGlobalKey(serverId, ratingKey);
+    final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
     final now = DateTime.now().millisecondsSinceEpoch;
 
     // Remove conflicting actions (opposite action type and progress)
@@ -531,7 +532,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> insertSyncRule({
     String profileId = '',
-    required String serverId,
+    required ServerId serverId,
     required String ratingKey,
     required String globalKey,
     required String targetType,
@@ -580,7 +581,7 @@ class AppDatabase extends _$AppDatabase {
     if (profileId.isEmpty) return;
     final legacyRules = await (select(syncRules)..where((t) => t.profileId.equals(''))).get();
     for (final rule in legacyRules) {
-      final scopedKey = buildProfileScopedGlobalKey(profileId, rule.serverId, rule.ratingKey);
+      final scopedKey = buildProfileScopedGlobalKey(profileId, ServerId(rule.serverId), rule.ratingKey);
       final duplicate = await getSyncRule(scopedKey);
       if (duplicate != null) {
         await (delete(syncRules)..where((t) => t.id.equals(rule.id))).go();

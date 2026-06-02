@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -250,7 +251,7 @@ class ExternalPlayerService {
     final serverId = metadata.serverId;
     if (offlineWatchService == null || serverId == null) return;
     await offlineWatchService.queueProgressUpdate(
-      serverId: serverId,
+      serverId: ServerId(serverId),
       itemId: metadata.id,
       viewOffset: duration == null
           ? position.inMilliseconds

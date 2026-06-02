@@ -1,14 +1,19 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
+import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_client.dart';
 
@@ -33,7 +38,7 @@ void main() {
         product: 'Plezy',
         version: '1',
       ),
-      serverId: 'server-id',
+      serverId: ServerId('server-id'),
       httpClient: MockClient(handler),
     );
   }
@@ -107,9 +112,209 @@ void main() {
 
     expect(requests, hasLength(1));
     expect(requests.single.queryParameters['includeStreams'], '1');
+    expect(requests.single.queryParameters['checkFiles'], '1');
+    expect(requests.single.queryParameters.containsKey('checkFileAvailability'), isFalse);
     expect(data.mediaInfo?.subtitleTracks, hasLength(1));
     expect(data.mediaInfo?.subtitleTracks.single.id, 401);
     expect(data.mediaInfo?.subtitleTracks.single.selected, isTrue);
+  });
+
+  test('playback uses metadata availability flags without probing part URLs', () async {
+    final requests = <http.Request>[];
+    final client = makeClient((request) async {
+      requests.add(request);
+      if (request.url.path != '/library/metadata/42') {
+        return http.Response('unexpected request', 500);
+      }
+
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'Metadata': [
+              {
+                'ratingKey': '42',
+                'type': 'movie',
+                'title': 'Movie',
+                'Media': [
+                  {
+                    'id': 7,
+                    'container': 'mkv',
+                    'Part': [
+                      {'id': 10, 'key': '/library/parts/10/file.mkv', 'exists': 0, 'accessible': 1},
+                      {'id': 20, 'key': '/library/parts/20/file.mkv', 'exists': 1, 'accessible': 1},
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final data = await client.getVideoPlaybackData('42');
+
+    expect(requests, hasLength(1));
+    expect(requests.single.url.queryParameters['checkFiles'], '1');
+    expect(requests.single.url.queryParameters.containsKey('checkFileAvailability'), isFalse);
+    expect(data.videoUrl, 'https://plex.example.com/library/parts/20/file.mkv?X-Plex-Token=token');
+    expect(data.selectedMediaIndex, 0);
+    expect(data.selectedPartIndex, 1);
+  });
+
+  test('latest server metadata overwrites cached playback media fields', () async {
+    final cache = PlexApiCache.instance;
+    await cache.put(ServerId('server-id'), '/library/metadata/42', {
+      'MediaContainer': {
+        'Metadata': [
+          {
+            'ratingKey': '42',
+            'type': 'movie',
+            'title': 'Playback title',
+            'Media': [
+              {
+                'id': 7,
+                'Part': [
+                  {
+                    'id': 99,
+                    'key': '/library/parts/99/file.mkv',
+                    'exists': true,
+                    'accessible': true,
+                    'Stream': [
+                      {'streamType': 1, 'id': 300, 'codec': 'h264'},
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    await cache.put(ServerId('server-id'), '/library/metadata/42', {
+      'MediaContainer': {
+        'Metadata': [
+          {
+            'ratingKey': '42',
+            'type': 'movie',
+            'title': 'Detail title',
+            'Media': [
+              {
+                'id': 7,
+                'Part': [
+                  {'id': 99, 'key': '/library/parts/99/weak.mkv'},
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    final cached = await cache.get(ServerId('server-id'), '/library/metadata/42');
+    final metadata = (cached!['MediaContainer'] as Map<String, dynamic>)['Metadata'] as List<dynamic>;
+    final item = metadata.single as Map<String, dynamic>;
+    final media = item['Media'] as List<dynamic>;
+    final part = ((media.single as Map<String, dynamic>)['Part'] as List<dynamic>).single as Map<String, dynamic>;
+
+    expect(item['title'], 'Detail title');
+    expect(part['key'], '/library/parts/99/weak.mkv');
+    expect(part.containsKey('exists'), isFalse);
+    expect(part.containsKey('accessible'), isFalse);
+    expect(part.containsKey('Stream'), isFalse);
+  });
+
+  test('network failure falls back to lean cached playback metadata', () async {
+    await PlexApiCache.instance.put(ServerId('server-id'), '/library/metadata/42', {
+      'MediaContainer': {
+        'Metadata': [
+          {
+            'ratingKey': '42',
+            'type': 'movie',
+            'title': 'Movie',
+            'Media': [
+              {
+                'id': 7,
+                'Part': [
+                  {'id': 10, 'key': '/library/parts/10/stale.mkv'},
+                ],
+              },
+              {
+                'id': 8,
+                'Part': [
+                  {'id': 20, 'key': '/library/parts/20/current.mkv'},
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+    final requests = <http.Request>[];
+    final client = makeClient((request) async {
+      requests.add(request);
+      throw Exception('offline');
+    });
+    addTearDown(client.close);
+
+    final data = await client.getVideoPlaybackData('42');
+
+    expect(requests, hasLength(1));
+    expect(data.videoUrl, 'https://plex.example.com/library/parts/10/stale.mkv?X-Plex-Token=token');
+    expect(data.availableVersions, hasLength(2));
+  });
+
+  test('playback initialization exposes effective selected media index', () async {
+    final client = makeClient((request) async {
+      if (request.url.path != '/library/metadata/42') {
+        return http.Response('unexpected request', 500);
+      }
+
+      return http.Response(
+        jsonEncode({
+          'MediaContainer': {
+            'Metadata': [
+              {
+                'ratingKey': '42',
+                'type': 'movie',
+                'title': 'Movie',
+                'Media': [
+                  {
+                    'id': 7,
+                    'Part': [
+                      {'id': 10, 'key': '/library/parts/10/stale.mkv', 'exists': false, 'accessible': false},
+                    ],
+                  },
+                  {
+                    'id': 8,
+                    'Part': [
+                      {'id': 20, 'key': '/library/parts/20/current.mkv', 'exists': true, 'accessible': true},
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    addTearDown(client.close);
+
+    final result = await client.getPlaybackInitialization(
+      PlaybackInitializationOptions(
+        metadata: MediaItem(id: '42', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'server-id'),
+        selectedMediaIndex: 0,
+      ),
+    );
+
+    expect(result.videoUrl, 'https://plex.example.com/library/parts/20/current.mkv?X-Plex-Token=token');
+    expect(result.selectedMediaIndex, 1);
   });
 
   test('transcode subtitle sidecars only use real Plex stream keys', () {
@@ -218,6 +423,23 @@ void main() {
     expect(startPath, contains('protocol=http'));
     expect(startPath, contains('offset=90'));
     expect(startPath, isNot(contains('X-Plex-Token')));
+  });
+
+  test('transcode params preserve resolved media and part indices', () {
+    final client = makeClient((_) async => http.Response('not used', 500));
+    addTearDown(client.close);
+
+    final params = client.buildTranscodeParamsForTesting(
+      ratingKey: '42',
+      mediaIndex: 1,
+      partIndex: 2,
+      preset: TranscodeQualityPreset.p720_3mbps,
+      sessionIdentifier: 'session-id',
+      transcodeSessionId: 'transcode-id',
+    );
+
+    expect(params['mediaIndex'], '1');
+    expect(params['partIndex'], '2');
   });
 
   test('unsupported embedded subtitles keep main transcode subtitles disabled', () {

@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -18,7 +19,7 @@ class _RecordingClient implements MediaServerClient {
   final stopped = <({int positionMs, int? durationMs})>[];
 
   @override
-  String get serverId => 'srv';
+  ServerId get serverId => ServerId('srv');
 
   @override
   MediaBackend get backend => MediaBackend.plex;
@@ -107,5 +108,35 @@ void main() {
     expect(action!.viewOffset, 5000);
     expect(action.duration, isNull);
     expect(action.shouldMarkWatched, isFalse);
+  });
+
+  test('Android external progress ignores missing position without explicit completion', () async {
+    final client = _RecordingClient();
+
+    await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+      positionMs: null,
+      durationMs: 100000,
+      playbackCompleted: false,
+      metadata: _item(durationMs: 100000),
+      client: client,
+    );
+
+    expect(client.started, isEmpty);
+    expect(client.stopped, isEmpty);
+  });
+
+  test('Android external progress reports full duration for explicit completion', () async {
+    final client = _RecordingClient();
+
+    await ExternalPlayerService.reportAndroidExternalProgressForTesting(
+      positionMs: null,
+      durationMs: 100000,
+      playbackCompleted: true,
+      metadata: _item(durationMs: 100000),
+      client: client,
+    );
+
+    expect(client.started, [(positionMs: 100000, durationMs: 100000)]);
+    expect(client.stopped, [(positionMs: 100000, durationMs: 100000)]);
   });
 }

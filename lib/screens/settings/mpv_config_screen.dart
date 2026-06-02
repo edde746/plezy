@@ -194,13 +194,13 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
       pref: SettingsService.mpvPresets,
       builder: (context, presets, _) => Card(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
                 t.mpvConfig.presets,
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: .bold),
               ),
             ),
             ListTile(

@@ -1272,10 +1272,12 @@
   "addServer": {
     "addJellyfinTitle": "Lägg till Jellyfin-server",
     "jellyfinUrlIntro": "Ange server-URL, t.ex. `https://jellyfin.example.com`.",
-    "jellyfinUrlsIntro": "Ange en eller flera server-URL:er, separerade med kommatecken eller nya rader. Plezy använder den nåbara URL:en med lägst latens.",
+    "jellyfinUrlsIntro": "Ange en eller flera server-URL:er, separerade med kommatecken. Plezy använder den nåbara URL:en med lägst latens.",
     "serverUrl": "Server-URL",
     "serverUrls": "Server-URL:er",
     "findServer": "Hitta server",
+    "searchingLocalServers": "Söker efter lokala Jellyfin-servrar...",
+    "localServers": "Lokala Jellyfin-servrar",
     "username": "Användarnamn",
     "password": "Lösenord",
     "signIn": "Logga in",

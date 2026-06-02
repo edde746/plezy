@@ -591,7 +591,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     Widget sheetContent;
     if (showHandle) {
       sheetContent = Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           // M3 drag handle: 32x4, rounded, with 12dp top / 4dp bottom margin
           Container(

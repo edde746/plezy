@@ -147,8 +147,8 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
           ),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: .min,
+          mainAxisAlignment: .center,
           children: [
             _SpinnerButton(
               icon: Symbols.remove_rounded,
@@ -160,10 +160,10 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
             const SizedBox(width: 16),
             Container(
               constraints: const BoxConstraints(minWidth: 60),
-              alignment: Alignment.center,
+              alignment: .center,
               child: Text(
                 widget.suffix != null ? '${widget.value}${widget.suffix}' : '${widget.value}',
-                style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.headlineMedium?.copyWith(fontWeight: .bold),
               ),
             ),
             const SizedBox(width: 16),

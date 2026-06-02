@@ -1515,10 +1515,12 @@ class _TranslationsAddServerSv extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Lägg till Jellyfin-server';
 	@override String get jellyfinUrlIntro => 'Ange server-URL, t.ex. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Ange en eller flera server-URL:er, separerade med kommatecken eller nya rader. Plezy använder den nåbara URL:en med lägst latens.';
+	@override String get jellyfinUrlsIntro => 'Ange en eller flera server-URL:er, separerade med kommatecken. Plezy använder den nåbara URL:en med lägst latens.';
 	@override String get serverUrl => 'Server-URL';
 	@override String get serverUrls => 'Server-URL:er';
 	@override String get findServer => 'Hitta server';
+	@override String get searchingLocalServers => 'Söker efter lokala Jellyfin-servrar...';
+	@override String get localServers => 'Lokala Jellyfin-servrar';
 	@override String get username => 'Användarnamn';
 	@override String get password => 'Lösenord';
 	@override String get signIn => 'Logga in';
@@ -2981,10 +2983,12 @@ extension on TranslationsSv {
 			'trackers.libraryFilter.noLibraries' => 'Inga bibliotek tillgängliga',
 			'addServer.addJellyfinTitle' => 'Lägg till Jellyfin-server',
 			'addServer.jellyfinUrlIntro' => 'Ange server-URL, t.ex. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Ange en eller flera server-URL:er, separerade med kommatecken eller nya rader. Plezy använder den nåbara URL:en med lägst latens.',
+			'addServer.jellyfinUrlsIntro' => 'Ange en eller flera server-URL:er, separerade med kommatecken. Plezy använder den nåbara URL:en med lägst latens.',
 			'addServer.serverUrl' => 'Server-URL',
 			'addServer.serverUrls' => 'Server-URL:er',
 			'addServer.findServer' => 'Hitta server',
+			'addServer.searchingLocalServers' => 'Söker efter lokala Jellyfin-servrar...',
+			'addServer.localServers' => 'Lokala Jellyfin-servrar',
 			'addServer.username' => 'Användarnamn',
 			'addServer.password' => 'Lösenord',
 			'addServer.signIn' => 'Logga in',

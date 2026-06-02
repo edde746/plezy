@@ -1515,10 +1515,12 @@ class _TranslationsAddServerNb extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Legg til Jellyfin-server';
 	@override String get jellyfinUrlIntro => 'Skriv inn server-URL-en, f.eks. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Skriv inn én eller flere server-URL-er, adskilt med kommaer eller nye linjer. Plezy bruker den tilgjengelige URL-en med lavest forsinkelse.';
+	@override String get jellyfinUrlsIntro => 'Skriv inn én eller flere server-URL-er, adskilt med kommaer. Plezy bruker den tilgjengelige URL-en med lavest forsinkelse.';
 	@override String get serverUrl => 'Server-URL';
 	@override String get serverUrls => 'Server-URL-er';
 	@override String get findServer => 'Finn server';
+	@override String get searchingLocalServers => 'Søker etter lokale Jellyfin-servere...';
+	@override String get localServers => 'Lokale Jellyfin-servere';
 	@override String get username => 'Brukernavn';
 	@override String get password => 'Passord';
 	@override String get signIn => 'Logg på';
@@ -2981,10 +2983,12 @@ extension on TranslationsNb {
 			'trackers.libraryFilter.noLibraries' => 'Ingen biblioteker tilgjengelige',
 			'addServer.addJellyfinTitle' => 'Legg til Jellyfin-server',
 			'addServer.jellyfinUrlIntro' => 'Skriv inn server-URL-en, f.eks. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Skriv inn én eller flere server-URL-er, adskilt med kommaer eller nye linjer. Plezy bruker den tilgjengelige URL-en med lavest forsinkelse.',
+			'addServer.jellyfinUrlsIntro' => 'Skriv inn én eller flere server-URL-er, adskilt med kommaer. Plezy bruker den tilgjengelige URL-en med lavest forsinkelse.',
 			'addServer.serverUrl' => 'Server-URL',
 			'addServer.serverUrls' => 'Server-URL-er',
 			'addServer.findServer' => 'Finn server',
+			'addServer.searchingLocalServers' => 'Søker etter lokale Jellyfin-servere...',
+			'addServer.localServers' => 'Lokale Jellyfin-servere',
 			'addServer.username' => 'Brukernavn',
 			'addServer.password' => 'Passord',
 			'addServer.signIn' => 'Logg på',

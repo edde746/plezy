@@ -87,10 +87,10 @@ class TrackSelectionHelper {
       width: 18,
       height: 18,
       decoration: BoxDecoration(color: colorScheme.primary, borderRadius: BorderRadius.circular(4)),
-      alignment: Alignment.center,
+      alignment: .center,
       child: Text(
         number.toString(),
-        style: TextStyle(color: colorScheme.onPrimary, fontSize: 11, fontWeight: FontWeight.bold),
+        style: TextStyle(color: colorScheme.onPrimary, fontSize: 11, fontWeight: .bold),
       ),
     );
   }

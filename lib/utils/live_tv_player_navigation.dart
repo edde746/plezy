@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
 
@@ -92,7 +93,7 @@ Future<void> tuneAndNavigateToLiveTv(
     return;
   }
 
-  final genericClient = multiServer.getClientForServer(serverInfo.serverId);
+  final genericClient = multiServer.getClientForServer(ServerId(serverInfo.serverId));
   if (genericClient == null) {
     showErrorSnackBar(context, 'Live TV server is not connected.');
     return;
@@ -112,7 +113,7 @@ Future<void> tuneAndNavigateToLiveTv(
     return;
   }
 
-  final plexClient = multiServer.getPlexClientForServer(serverInfo.serverId);
+  final plexClient = multiServer.getPlexClientForServer(ServerId(serverInfo.serverId));
   if (plexClient == null) {
     appLogger.w('Failed to resolve live stream URL for ${channel.displayName} on ${genericClient.backend.id}');
     showErrorSnackBar(context, 'Unable to start this live TV channel.');

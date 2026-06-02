@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:plezy/media/ids.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -119,7 +120,7 @@ void main() {
     const tokenized = 'https://jf/Items/1/Images/Logo?tag=abc&api_key=secret';
     const sanitized = 'https://jf/Items/1/Images/Logo?tag=abc';
 
-    expect(await service.localPath('srv', tokenized), await service.localPath('srv', sanitized));
+    expect(await service.localPath(ServerId('srv'), tokenized), await service.localPath(ServerId('srv'), sanitized));
   });
 
   test('downloadFile rejects non-success responses without leaving final files', () async {
@@ -146,16 +147,16 @@ void main() {
     );
 
     const rawPath = 'https://jf/Items/1/Images/Logo?tag=abc&api_key=secret';
-    final filePath = await service.localPath('srv', rawPath);
+    final filePath = await service.localPath(ServerId('srv'), rawPath);
     await File(filePath).writeAsString('<html>not an image</html>');
 
     await service.downloadSingleArtwork(
-      'srv',
+      ServerId('srv'),
       DownloadArtworkSpec(localKey: artworkStorageKey(rawPath), url: 'https://example.test/logo.png'),
     );
 
     expect(await File(filePath).readAsBytes(), body);
-    expect(await service.existsUsable('srv', rawPath), isTrue);
+    expect(await service.existsUsable(ServerId('srv'), rawPath), isTrue);
   });
 
   test('downloadSingleArtwork serializes duplicate writes to the same local file', () async {
@@ -170,15 +171,15 @@ void main() {
     const rawPath = 'https://jf/Items/1/Images/Logo?tag=abc&api_key=secret';
     final spec = DownloadArtworkSpec(localKey: artworkStorageKey(rawPath), url: 'https://example.test/logo.png');
 
-    final first = service.downloadSingleArtwork('srv', spec);
+    final first = service.downloadSingleArtwork(ServerId('srv'), spec);
     await Future<void>.delayed(Duration.zero);
-    final second = service.downloadSingleArtwork('srv', spec);
+    final second = service.downloadSingleArtwork(ServerId('srv'), spec);
     await Future<void>.delayed(Duration.zero);
     httpClient.release.complete();
 
     await Future.wait([first, second]);
 
     expect(httpClient.sends, 1);
-    expect(await service.existsUsable('srv', rawPath), isTrue);
+    expect(await service.existsUsable(ServerId('srv'), rawPath), isTrue);
   });
 }

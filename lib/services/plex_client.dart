@@ -15,6 +15,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_playlist.dart';
+import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../media/playback_report_metadata.dart';
 import '../media/server_capabilities.dart';
@@ -81,7 +82,7 @@ class _LibraryContentResult {
 /// Top-level function so it can be passed to [Isolate.run].
 List<PlexHubDto> _processHubResponse(
   Map<String, dynamic> decoded,
-  String serverId,
+  ServerId serverId,
   String? serverName, {
   int? librarySectionID,
   String? librarySectionTitle,
@@ -100,7 +101,7 @@ List<PlexHubDto> _processHubResponse(
       final hubSectionID = _librarySectionIdFromJson(hubMap) ?? containerSectionID;
       final hubSectionTitle = _librarySectionTitleFromJson(hubMap) ?? containerSectionTitle;
       final hub = _plexHubWithLibrarySection(
-        PlexHubDto.fromJson(hubMap, serverId: serverId, serverName: serverName),
+        PlexHubDto.fromJson(hubMap, serverId: ServerId(serverId), serverName: serverName),
         librarySectionID: hubSectionID,
         librarySectionTitle: hubSectionTitle,
       );
@@ -214,7 +215,7 @@ class PlexClient
 
   /// Server identifier - all PlexMetadataDto items created by this client are tagged with this
   @override
-  final String serverId;
+  final ServerId serverId;
 
   /// Server name - all PlexMetadataDto items created by this client are tagged with this
   @override
@@ -284,7 +285,7 @@ class PlexClient
   /// Fetches /media/providers to discover libraries (including individually shared items) and EPG providers.
   static Future<PlexClient> create(
     PlexConfig config, {
-    required String serverId,
+    required ServerId serverId,
     String? serverName,
     List<String>? prioritizedEndpoints,
     Future<void> Function(String newBaseUrl)? onEndpointChanged,
@@ -294,7 +295,7 @@ class PlexClient
   }) async {
     final client = PlexClient._(
       config,
-      serverId: serverId,
+      serverId: ServerId(serverId),
       serverName: serverName,
       prioritizedEndpoints: prioritizedEndpoints,
       onEndpointChanged: onEndpointChanged,
@@ -345,7 +346,7 @@ class PlexClient
   @visibleForTesting
   static PlexClient forTesting({
     required PlexConfig config,
-    required String serverId,
+    required ServerId serverId,
     String? serverName,
     required http.Client httpClient,
     List<String>? prioritizedEndpoints,
@@ -356,7 +357,7 @@ class PlexClient
   }) {
     final client = PlexClient._(
       config,
-      serverId: serverId,
+      serverId: ServerId(serverId),
       serverName: serverName,
       httpClient: httpClient,
       prioritizedEndpoints: prioritizedEndpoints,
@@ -415,7 +416,10 @@ class PlexClient
       }
 
       if (!_endpointManager.hasFallback) {
-        _endpointManager.resetToFirst();
+        final resetBaseUrl = _endpointManager.resetToFirst();
+        if (resetBaseUrl != null) {
+          await _handleEndpointSwitch(resetBaseUrl, persist: false);
+        }
         _onAllEndpointsExhausted?.call();
         rethrow;
       }
@@ -442,6 +446,13 @@ class PlexClient
         appLogger.i('Endpoint failover retry succeeded', error: {'newEndpoint': nextBaseUrl});
         await _onEndpointChanged?.call(nextBaseUrl);
         return response;
+      } catch (_) {
+        final resetBaseUrl = _endpointManager.resetToFirst();
+        if (resetBaseUrl != null) {
+          await _handleEndpointSwitch(resetBaseUrl, persist: false);
+        }
+        _onAllEndpointsExhausted?.call();
+        rethrow;
       } finally {
         _failoverSwitching = false;
       }
@@ -2150,7 +2161,7 @@ class PlexClient
     String? tagline,
     String? summary,
     Map<String, ({List<String> current, List<String> original})>? tagChanges,
-  }) {
+  }) async {
     final queryParams = <String, dynamic>{'type': typeNumber, 'id': ratingKey};
 
     void addField(String name, String? value) {
@@ -2185,10 +2196,14 @@ class PlexClient
       }
     }
 
-    return _wrapBoolApiCall(
+    final result = await _wrapBoolApiCall(
       () => _http.put('/library/sections/$sectionId/all', queryParameters: queryParams),
       'Failed to update metadata',
     );
+    if (result) {
+      await _deleteMetadataEditCache(ratingKey);
+    }
+    return result;
   }
 
   /// Search for match candidates for a media item.
@@ -2229,7 +2244,7 @@ class PlexClient
       'Failed to apply match',
     );
     if (result) {
-      await _cache.deleteForItem(serverId, ratingKey);
+      await _deleteMetadataEditCache(ratingKey);
     }
     return result;
   }
@@ -2240,7 +2255,7 @@ class PlexClient
       'Failed to unmatch item',
     );
     if (result) {
-      await _cache.deleteForItem(serverId, ratingKey);
+      await _deleteMetadataEditCache(ratingKey);
     }
     return result;
   }
@@ -2261,18 +2276,22 @@ class PlexClient
   }
 
   /// Set artwork from a URL (can be a Plex internal path or external URL)
-  Future<bool> setArtworkFromUrl(String ratingKey, String element, String url) {
+  Future<bool> setArtworkFromUrl(String ratingKey, String element, String url) async {
     final setElement = element.endsWith('s') ? element.substring(0, element.length - 1) : element;
-    return _wrapBoolApiCall(
+    final result = await _wrapBoolApiCall(
       () => _http.put('/library/metadata/$ratingKey/$setElement', queryParameters: {'url': url}),
       'Failed to set artwork from URL',
     );
+    if (result) {
+      await _deleteMetadataEditCache(ratingKey);
+    }
+    return result;
   }
 
   /// Upload artwork from binary data
-  Future<bool> uploadArtwork(String ratingKey, String element, List<int> bytes) {
+  Future<bool> uploadArtwork(String ratingKey, String element, List<int> bytes) async {
     final setElement = element.endsWith('s') ? element.substring(0, element.length - 1) : element;
-    return _wrapBoolApiCall(
+    final result = await _wrapBoolApiCall(
       () => _http.put(
         '/library/metadata/$ratingKey/$setElement',
         body: bytes,
@@ -2280,14 +2299,30 @@ class PlexClient
       ),
       'Failed to upload artwork',
     );
+    if (result) {
+      await _deleteMetadataEditCache(ratingKey);
+    }
+    return result;
   }
 
   /// Update per-media advanced preferences
-  Future<bool> updateMetadataPrefs(String ratingKey, Map<String, String> prefs) {
-    return _wrapBoolApiCall(
+  Future<bool> updateMetadataPrefs(String ratingKey, Map<String, String> prefs) async {
+    final result = await _wrapBoolApiCall(
       () => _http.put('/library/metadata/$ratingKey/prefs', queryParameters: prefs),
       'Failed to update metadata preferences',
     );
+    if (result) {
+      await _deleteMetadataEditCache(ratingKey);
+    }
+    return result;
+  }
+
+  Future<void> _deleteMetadataEditCache(String ratingKey) async {
+    try {
+      await _cache.deleteForItem(serverId, ratingKey);
+    } catch (e, st) {
+      appLogger.w('Plex metadata edit cache invalidation failed', error: e, stackTrace: st);
+    }
   }
 
   /// Get one page of collections for a library section.
@@ -2303,13 +2338,12 @@ class PlexClient
       queryParameters: queryParameters,
       abort: abort,
     );
-    final result = _extractLibraryContentResult(
+    return _extractLibraryContentResult(
       response,
       librarySectionID: _librarySectionIdFromString(sectionId),
       start: start,
       requestedSize: size,
     );
-    return result;
   }
 
   /// Get all collections for a library section.
@@ -2877,6 +2911,7 @@ class PlexClient
   Future<({String? startPath, TranscodeDecisionOutcome outcome})> buildTranscodeStartPath({
     required String ratingKey,
     required int mediaIndex,
+    int partIndex = 0,
     required TranscodeQualityPreset preset,
     required String sessionIdentifier,
     required String transcodeSessionId,
@@ -2888,6 +2923,7 @@ class PlexClient
       final allParams = _buildTranscodeParams(
         ratingKey: ratingKey,
         mediaIndex: mediaIndex,
+        partIndex: partIndex,
         preset: preset,
         sessionIdentifier: sessionIdentifier,
         transcodeSessionId: transcodeSessionId,
@@ -2947,6 +2983,7 @@ class PlexClient
   Map<String, String> _buildTranscodeParams({
     required String ratingKey,
     required int mediaIndex,
+    int partIndex = 0,
     required TranscodeQualityPreset preset,
     required String sessionIdentifier,
     required String transcodeSessionId,
@@ -2997,7 +3034,7 @@ class PlexClient
       'hasMDE': '1',
       'path': '/library/metadata/$ratingKey',
       'mediaIndex': mediaIndex.toString(),
-      'partIndex': '0',
+      'partIndex': partIndex.toString(),
       'protocol': 'http',
       'fastSeek': '1',
       'directPlay': isOriginal ? '1' : '0',
@@ -3047,6 +3084,7 @@ class PlexClient
   Map<String, String> buildTranscodeParamsForTesting({
     required String ratingKey,
     required int mediaIndex,
+    int partIndex = 0,
     required TranscodeQualityPreset preset,
     required String sessionIdentifier,
     required String transcodeSessionId,
@@ -3057,6 +3095,7 @@ class PlexClient
     return _buildTranscodeParams(
       ratingKey: ratingKey,
       mediaIndex: mediaIndex,
+      partIndex: partIndex,
       preset: preset,
       sessionIdentifier: sessionIdentifier,
       transcodeSessionId: transcodeSessionId,
@@ -3257,7 +3296,8 @@ class PlexClient
         final selectedSubtitleTrack = _selectedSubtitleTrack(data.mediaInfo);
         final result = await buildTranscodeStartPath(
           ratingKey: options.metadata.id,
-          mediaIndex: options.selectedMediaIndex,
+          mediaIndex: data.selectedMediaIndex,
+          partIndex: data.selectedPartIndex,
           preset: options.qualityPreset,
           sessionIdentifier: options.sessionIdentifier!,
           transcodeSessionId: options.transcodeSessionId!,
@@ -3278,6 +3318,7 @@ class PlexClient
             isTranscoding: true,
             activeAudioStreamId: resolvedAudioId,
             playMethod: 'Transcode',
+            selectedMediaIndex: data.selectedMediaIndex,
           );
         }
 
@@ -3296,6 +3337,7 @@ class PlexClient
           isTranscoding: false,
           fallbackReason: fallbackReason,
           playMethod: 'DirectPlay',
+          selectedMediaIndex: data.selectedMediaIndex,
         );
       }
 
@@ -3306,6 +3348,7 @@ class PlexClient
         externalSubtitles: _buildExternalSubtitles(data.mediaInfo),
         isOffline: false,
         playMethod: 'DirectPlay',
+        selectedMediaIndex: data.selectedMediaIndex,
       );
     } catch (e) {
       if (e is PlaybackException) rethrow;
@@ -3802,6 +3845,7 @@ class PlexClient
   }
 
   /// Plex-specific: extras (trailers, behind-the-scenes) for a media item.
+  @override
   Future<List<MediaItem>> fetchExtras(String ratingKey) async {
     final raw = await _getExtras(ratingKey);
     return raw.map((m) => PlexMappers.mediaItem(m)).toList();

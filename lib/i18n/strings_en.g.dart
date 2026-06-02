@@ -3554,8 +3554,8 @@ class TranslationsAddServerEn {
 	/// en: 'Enter the server URL, e.g. `https://jellyfin.example.com`.'
 	String get jellyfinUrlIntro => 'Enter the server URL, e.g. `https://jellyfin.example.com`.';
 
-	/// en: 'Enter one or more server URLs, separated by commas or new lines. Plezy will use the reachable URL with the lowest latency.'
-	String get jellyfinUrlsIntro => 'Enter one or more server URLs, separated by commas or new lines. Plezy will use the reachable URL with the lowest latency.';
+	/// en: 'Enter one or more server URLs, separated by commas. Plezy will use the reachable URL with the lowest latency.'
+	String get jellyfinUrlsIntro => 'Enter one or more server URLs, separated by commas. Plezy will use the reachable URL with the lowest latency.';
 
 	/// en: 'Server URL'
 	String get serverUrl => 'Server URL';
@@ -3565,6 +3565,12 @@ class TranslationsAddServerEn {
 
 	/// en: 'Find server'
 	String get findServer => 'Find server';
+
+	/// en: 'Looking for local Jellyfin servers...'
+	String get searchingLocalServers => 'Looking for local Jellyfin servers...';
+
+	/// en: 'Local Jellyfin servers'
+	String get localServers => 'Local Jellyfin servers';
 
 	/// en: 'Username'
 	String get username => 'Username';
@@ -5375,10 +5381,12 @@ extension on Translations {
 			'trackers.libraryFilter.noLibraries' => 'No libraries available',
 			'addServer.addJellyfinTitle' => 'Add Jellyfin server',
 			'addServer.jellyfinUrlIntro' => 'Enter the server URL, e.g. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Enter one or more server URLs, separated by commas or new lines. Plezy will use the reachable URL with the lowest latency.',
+			'addServer.jellyfinUrlsIntro' => 'Enter one or more server URLs, separated by commas. Plezy will use the reachable URL with the lowest latency.',
 			'addServer.serverUrl' => 'Server URL',
 			'addServer.serverUrls' => 'Server URLs',
 			'addServer.findServer' => 'Find server',
+			'addServer.searchingLocalServers' => 'Looking for local Jellyfin servers...',
+			'addServer.localServers' => 'Local Jellyfin servers',
 			'addServer.username' => 'Username',
 			'addServer.password' => 'Password',
 			'addServer.signIn' => 'Sign in',

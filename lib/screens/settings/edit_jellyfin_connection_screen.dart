@@ -43,10 +43,13 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
     if (!(_formKey.currentState?.validate() ?? false)) return;
     await runAsync<void>(
       () async {
+        final input = JellyfinEndpointDiscovery.buildUserInputCandidates(_enteredUrls());
         final endpoint = await JellyfinEndpointDiscovery().raceEndpoints(
-          _enteredUrls(),
+          input.probeBaseUrls,
           preferredUrl: widget.connection.baseUrl,
           expectedMachineId: widget.connection.serverMachineId,
+          baseUrlsToPersist: input.explicitBaseUrls,
+          baseUrlValidationGroups: input.validationBaseUrlGroups,
         );
         final updated = widget.connection.copyWith(
           baseUrl: endpoint.activeBaseUrl,
@@ -69,7 +72,7 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
   List<String> _enteredUrls() {
     return _urlsController.text
         .split(RegExp(r'[\n,]+'))
-        .map(JellyfinEndpointDiscovery.normalizeBaseUrl)
+        .map((url) => url.trim())
         .where((url) => url.isNotEmpty)
         .toList(growable: false);
   }
@@ -81,12 +84,12 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
       title: Text(t.connections.editJellyfinTitle),
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.all(16),
           sliver: SliverToBoxAdapter(
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                crossAxisAlignment: .stretch,
                 children: [
                   Text(
                     t.connections.editJellyfinIntro(serverName: widget.connection.serverName),

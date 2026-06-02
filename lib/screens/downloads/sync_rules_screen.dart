@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../media/ids.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../../connection/connection.dart';
@@ -134,7 +135,7 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
   }
 
   _RuleServerInfo _serverLabelForRule() {
-    final activeName = multiServerProvider.getClientForServer(rule.serverId)?.serverName;
+    final activeName = multiServerProvider.getClientForServer(ServerId(rule.serverId))?.serverName;
     if (activeName != null && activeName.isNotEmpty) {
       return _RuleServerInfo(label: activeName, isKnown: true);
     }
@@ -168,7 +169,7 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
     if (!serverInfo.isKnown) return t.downloads.syncRuleUnknownServer;
     if (multiServerProvider.authErrorServerIds.contains(rule.serverId)) return t.downloads.syncRuleSignInRequired;
     if (!multiServerProvider.serverIds.contains(rule.serverId)) return t.downloads.syncRuleNotAvailableForProfile;
-    return multiServerProvider.isServerOnline(rule.serverId)
+    return multiServerProvider.isServerOnline(ServerId(rule.serverId))
         ? t.downloads.syncRuleAvailable
         : t.downloads.syncRuleOffline;
   }
@@ -235,13 +236,13 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
               visualDensity: const VisualDensity(vertical: -3),
               shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
               leading: Icon(_leadingIcon(), color: rule.enabled ? Colors.teal : null, size: 20),
-              title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+              title: Text(title, maxLines: 1, overflow: .ellipsis),
               subtitle: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: .start,
+                mainAxisSize: .min,
                 children: [
-                  Text(_subtitle(), maxLines: 1, overflow: TextOverflow.ellipsis),
-                  Text(serverLine, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(_subtitle(), maxLines: 1, overflow: .ellipsis),
+                  Text(serverLine, maxLines: 1, overflow: .ellipsis),
                 ],
               ),
               trailing: FocusableWrapper(
@@ -303,7 +304,7 @@ class _SwipeRevealDeleteActionState extends State<_SwipeRevealDeleteAction> {
             Positioned.fill(
               right: 8,
               child: Align(
-                alignment: Alignment.centerRight,
+                alignment: .centerRight,
                 child: SizedBox(
                   width: _deleteWidth,
                   child: ExcludeFocus(
@@ -319,7 +320,7 @@ class _SwipeRevealDeleteActionState extends State<_SwipeRevealDeleteAction> {
                           child: Tooltip(
                             message: t.downloads.removeSyncRule,
                             child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisAlignment: .center,
                               children: [
                                 Icon(Symbols.delete_rounded, color: colorScheme.onError, size: 20),
                                 const SizedBox(height: 2),
@@ -327,7 +328,7 @@ class _SwipeRevealDeleteActionState extends State<_SwipeRevealDeleteAction> {
                                   t.common.delete,
                                   style: theme.textTheme.labelSmall?.copyWith(
                                     color: colorScheme.onError,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: .w600,
                                   ),
                                 ),
                               ],

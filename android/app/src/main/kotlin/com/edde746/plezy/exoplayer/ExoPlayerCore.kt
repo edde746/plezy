@@ -100,6 +100,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private const val MAX_AUDIO_RECOVERY_ATTEMPTS = 2
     private const val FPS_SAMPLE_COUNT = 8
     private const val TS_TIMESTAMP_SEARCH_PACKETS = 1800
+    private val DV_CODEC_PROFILE_REGEX = Regex("""(?:^|,)\s*dvh[1e]\.(\d{2})""")
 
     // Codec capability caches — codec support doesn't change at runtime
     private val hwAudioDecoderCache = HashMap<String, Boolean>()
@@ -236,6 +237,13 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val score: Int
   )
 
+  private data class DvPlaybackInfo(
+    val sourceProfile: Int,
+    val path: String,
+    val reason: String,
+    val decoder: String
+  )
+
   private fun emitLog(level: String, prefix: String, message: String) {
     when (level) {
       "error" -> Log.e(TAG, "[$prefix] $message")
@@ -314,12 +322,21 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private var currentVideoFormat: Format? = null
   private var loggedNativeDvSelectionKey: String? = null
   private var loggedNativeDvFirstFrame = false
+  private var loggedDvPlaybackPathKey: String? = null
+  private var lastDvPlaybackInfo: DvPlaybackInfo? = null
 
   @Volatile private var activeDoviMkvWrapper: DoviExtractorWrapper? = null
 
   @Volatile private var activeDoviMp4Wrapper: DoviExtractorWrapper? = null
 
-  private fun getConfiguredDvMode(): DvConversionMode = debugDvModeOverride ?: DoviBridge.getConversionMode(activity)
+  private fun getConfiguredDvMode(): DvConversionMode {
+    val override = debugDvModeOverride
+    if (override != null) return override
+
+    val decision = DoviBridge.getConversionDecision(activity)
+    emitLog("info", "dv-auto", decision.logMessage())
+    return decision.mode
+  }
 
   fun initialize(bufferSizeBytes: Int? = null, tunnelingEnabled: Boolean = true): Boolean {
     if (isInitialized) {
@@ -909,6 +926,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       } ?: ""
       emitLog("info", "tracks", "Video: ${vf.codecs} ${vf.width}x${vf.height}$hdr")
       logNativeDvSelectionIfNeeded(vf)
+      logDolbyVisionPlaybackPathIfNeeded()
     } else {
       currentVideoFormat = null
     }
@@ -1075,9 +1093,60 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     return true
   }
 
-  private fun isDvProfile7Format(format: Format): Boolean {
-    val codecs = format.codecs?.lowercase() ?: return false
-    return codecs.startsWith("dvhe.07") || codecs.startsWith("dvh1.07")
+  private fun activeDoviTrackOutput(): DoviConvertingTrackOutput? = activeDoviMkvWrapper?.doviTrackOutput ?: activeDoviMp4Wrapper?.doviTrackOutput
+
+  private fun dolbyVisionProfile(format: Format?): Int? {
+    val codecs = format?.codecs?.lowercase() ?: return null
+    return DV_CODEC_PROFILE_REGEX.find(codecs)?.groupValues?.getOrNull(1)?.toIntOrNull()
+  }
+
+  private fun isDvProfile7Format(format: Format): Boolean = dolbyVisionProfile(format) == 7
+
+  private fun buildDvPlaybackInfo(format: Format?, decoderName: String?): DvPlaybackInfo? {
+    val doviTrack = activeDoviTrackOutput()
+    val conversionActive = doviTrack?.conversionActive == true
+    val sourceProfile = if (conversionActive) 7 else (dolbyVisionProfile(format) ?: return null)
+    val decoder = decoderName ?: decoderInitName ?: getVideoDecoderInfo(format) ?: "unknown"
+    val mimeType = format?.sampleMimeType
+
+    val (path, reason) = when {
+      sourceProfile == 7 && dvMode == DvConversionMode.DV81 ->
+        "P7 -> P8.1" to "Profile 7 conversion is active; RPU metadata is converted to Profile 8.1"
+      sourceProfile == 7 && dvMode == DvConversionMode.HEVC_STRIP ->
+        "P7 -> HEVC" to "Profile 7 HEVC strip is active; DV RPU/EL metadata is removed"
+      sourceProfile == 7 ->
+        "Native DV P7" to "Profile 7 conversion is disabled; trying native Dolby Vision decode"
+      sourceProfile == 8 && mimeType != MimeTypes.VIDEO_DOLBY_VISION ->
+        "HDR fallback" to "Profile 8 is being decoded through the HEVC/HDR10-compatible path"
+      sourceProfile == 8 ->
+        "DV P8 passthrough" to "Profile 8 is being passed through the native Dolby Vision-capable path"
+      else ->
+        "Native DV P$sourceProfile" to "Dolby Vision profile $sourceProfile is being sent to the native decoder path"
+    }
+
+    return DvPlaybackInfo(
+      sourceProfile = sourceProfile,
+      path = path,
+      reason = reason,
+      decoder = decoder
+    )
+  }
+
+  private fun logDolbyVisionPlaybackPathIfNeeded(decoderName: String? = decoderInitName) {
+    val format = currentVideoFormat ?: exoPlayer?.videoFormat ?: return
+    val info = buildDvPlaybackInfo(format, decoderName) ?: return
+    lastDvPlaybackInfo = info
+    val key = "${info.sourceProfile}|${format.sampleMimeType}|${format.codecs}|${info.decoder}|${info.path}|$dvMode"
+    if (loggedDvPlaybackPathKey == key) return
+    loggedDvPlaybackPathKey = key
+    emitLog(
+      "info",
+      "dv-playback",
+      "DV source: profile=${info.sourceProfile}, path=${info.path}, reason=${info.reason}, " +
+        "mime=${format.sampleMimeType}, codecs=${format.codecs}, decoder=${info.decoder}, p7Mode=$dvMode, " +
+        "displayDV=${DoviBridge.displaySupportsDolbyVision(activity)}, " +
+        "advertisedP7=${DoviBridge.deviceSupportsDvProfile7}, advertisedP8=${DoviBridge.deviceSupportsDvProfile8}"
+    )
   }
 
   private fun findDv7VideoFormat(): Format? {
@@ -1151,9 +1220,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     dv7RetryAttempted = true
-    val newMode = DoviBridge.getDv7FallbackMode(activity)
+    val fallbackDecision = DoviBridge.getDv7FallbackDecision(activity)
+    val newMode = fallbackDecision.mode
     dvMode = newMode
     Log.i(TAG, "Native DV7 playback failed ($reason, ${describeVideoFormat(dv7Format)}), retrying with $newMode")
+    emitLog("info", "dv-fallback", "${fallbackDecision.logMessage()}; trigger=$reason")
     emitLog("info", "dv-fallback", "DV7 native failed ($reason), retrying as $newMode")
 
     return reloadCurrentMediaForDvMode()
@@ -2052,6 +2123,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       decoderInitName = decoderName
       firstFrameRendered = false
       emitLog("debug", "decoder-hang", "Decoder initialized: $decoderName (${initializationDurationMs}ms)")
+      logDolbyVisionPlaybackPathIfNeeded(decoderName)
       startDecoderHangCheck(decoderName)
     }
 
@@ -2156,6 +2228,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       cancelDecoderHangCheck()
       emitLog("debug", "decoder-hang", "First frame rendered — decoder OK")
       logNativeDvFirstFrameIfNeeded()
+      logDolbyVisionPlaybackPathIfNeeded()
       // STATE_READY fires when the player has enough buffered to start, but
       // the first frame may not be on screen yet (decoder init + keyframe
       // decode). The MPV-parity `playback-restart` event consumers (Dart
@@ -2306,6 +2379,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     currentVideoFormat = null
     loggedNativeDvSelectionKey = null
     loggedNativeDvFirstFrame = false
+    loggedDvPlaybackPathKey = null
+    lastDvPlaybackInfo = null
     loggedDecodedTrueHdTunnelingGuard = false
     updateAudioDecoderPolicy("open")
     currentMediaUri = uri
@@ -2422,7 +2497,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     activeDoviMkvWrapper = null
     activeDoviMp4Wrapper = null
     val debugMode = override?.name ?: "AUTO"
-    emitLog("info", "dv-debug", "Debug DV conversion mode set to $debugMode (active=$dvMode)")
+    emitLog("info", "dv-debug", "P7 DV conversion mode set to $debugMode (active=$dvMode)")
     reloadCurrentMediaForDvMode()
     return true
   }
@@ -2452,6 +2527,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     currentVideoFormat = null
     loggedNativeDvSelectionKey = null
     loggedNativeDvFirstFrame = false
+    loggedDvPlaybackPathKey = null
+    lastDvPlaybackInfo = null
     activeDoviMkvWrapper = null
     activeDoviMp4Wrapper = null
     stopFrameWatchdog()
@@ -2812,6 +2889,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
     // Get decoder info from the format's codecs field and check if hardware accelerated
     val videoDecoderInfo = getVideoDecoderInfo(videoFormat)
+    val videoDecoderName = decoderInitName ?: videoDecoderInfo
+    val dvPlaybackInfo = buildDvPlaybackInfo(videoFormat, videoDecoderName) ?: lastDvPlaybackInfo
 
     return mapOf(
       // Video metrics
@@ -2821,7 +2900,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       "videoHeight" to videoFormat?.height,
       "videoFps" to (videoFormat?.frameRate?.takeIf { it > 0 } ?: detectedFrameRate.takeIf { it > 0 }),
       "videoBitrate" to videoFormat?.bitrate,
-      "videoDecoderName" to (decoderInitName ?: videoDecoderInfo),
+      "videoDecoderName" to videoDecoderName,
       "videoDroppedFrames" to player.videoDecoderCounters?.droppedBufferCount,
       "videoRenderedFrames" to player.videoDecoderCounters?.renderedOutputBufferCount,
       // Color info
@@ -2867,6 +2946,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
           "dvConversionActive" to (dovi?.conversionActive == true),
           "dvConversionMode" to dvMode.name,
           "dvConversionDebugMode" to (debugDvModeOverride?.name ?: "AUTO"),
+          "dvSourceProfile" to dvPlaybackInfo?.sourceProfile,
+          "dvPlaybackPath" to dvPlaybackInfo?.path,
+          "dvPlaybackReason" to dvPlaybackInfo?.reason,
           "dvStrippedInitNals" to (dovi?.strippedInitNalCount ?: 0L),
           "dvStrippedNals" to (dovi?.strippedNalCount ?: 0L),
           "dvStrippedRpuNals" to (dovi?.strippedRpuNalCount ?: 0L),

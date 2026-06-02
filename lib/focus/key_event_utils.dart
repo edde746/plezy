@@ -187,21 +187,6 @@ FocusOnKeyEventCallback dpadKeyHandler({
   };
 }
 
-/// Whether [container] has another focusable descendant beyond the currently
-/// focused one in [direction]. Lets a row's key handler move between interior
-/// items (true) but trap at the row's edge (false) so focus can't escape into
-/// an off-screen "black hole" (#1181). Horizontal only.
-///
-/// Relies on [FocusNode.traversalDescendants] being in reading (left→right)
-/// order, which holds for a flat [Row].
-bool hasHorizontalNeighbor(FocusNode container, TraversalDirection direction) {
-  assert(direction == TraversalDirection.left || direction == TraversalDirection.right);
-  final items = container.traversalDescendants.toList();
-  final index = items.indexWhere((node) => node.hasPrimaryFocus);
-  if (index < 0) return false;
-  return direction == TraversalDirection.right ? index < items.length - 1 : index > 0;
-}
-
 /// Navigator observer that automatically suppresses stray back KeyUp events
 /// after any route pop caused by a back key press.
 ///

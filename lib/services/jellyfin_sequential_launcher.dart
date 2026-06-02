@@ -1,4 +1,5 @@
 import 'dart:math';
+import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -67,7 +68,7 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
       showLoading: showLoadingIndicator,
       actionLabel: shuffle ? t.common.shuffle : t.common.play,
       execute: (dismissLoading) async {
-        final client = clientForTesting ?? _resolveClient(serverId);
+        final client = clientForTesting ?? _resolveClient(ServerId(serverId));
         if (client == null) {
           await dismissLoading();
           if (context.mounted) {
@@ -142,7 +143,7 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
       showLoading: showLoadingIndicator,
       actionLabel: shuffle ? t.common.shuffle : t.common.play,
       execute: (dismissLoading) async {
-        final client = clientForTesting ?? _resolveClient(serverId);
+        final client = clientForTesting ?? _resolveClient(ServerId(serverId));
         if (client == null) {
           await dismissLoading();
           if (context.mounted) {
@@ -218,7 +219,7 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
       showLoading: showLoadingIndicator,
       actionLabel: t.common.shuffle,
       execute: (dismissLoading) async {
-        final client = clientForTesting ?? _resolveClient(serverId);
+        final client = clientForTesting ?? _resolveClient(ServerId(serverId));
         if (client == null) {
           await dismissLoading();
           if (context.mounted) {
@@ -261,7 +262,7 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
   /// Resolve the [MediaServerClient] for [serverId] through
   /// [MultiServerProvider]. Returns null when the server isn't online or
   /// the provider isn't in scope.
-  MediaServerClient? _resolveClient(String serverId) {
+  MediaServerClient? _resolveClient(ServerId serverId) {
     final provider = Provider.of<MultiServerProvider>(context, listen: false);
     return provider.serverManager.getClient(serverId);
   }

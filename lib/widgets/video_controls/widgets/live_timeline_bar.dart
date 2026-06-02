@@ -111,7 +111,7 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
           _buildSlider(displayPos),
           const SizedBox(height: 4),
           Align(
-            alignment: Alignment.centerLeft,
+            alignment: .centerLeft,
             child: Text(
               _formatEpochTime(context, displayPos),
               style: const TextStyle(color: Colors.white70, fontSize: 12, fontFeatures: [FontFeature.tabularFigures()]),

@@ -36,7 +36,7 @@ class LibraryFilterSortLoader {
       client.fetchLibraryFiltersWithValues(library.id),
       client.fetchSortOptions(library.id, libraryType: library.kind.id),
     ]);
-    final filterResult = results[0] as LibraryFilterResult;
+    final filterResult = results.first as LibraryFilterResult;
     final sorts = results[1] as List<MediaSort>;
     return LoadedFiltersAndSorts(filters: filterResult.filters, sorts: sorts, cachedValues: filterResult.cachedValues);
   }

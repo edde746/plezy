@@ -8,7 +8,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
   MediaServerHttpClient get _http;
 
   @override
-  String get serverId;
+  ServerId get serverId;
 
   @override
   String? get serverName;

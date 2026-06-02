@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -84,7 +85,7 @@ PlexClient _makeClient(Map<String, dynamic> rootContainer) {
       product: 'Plezy',
       version: 'test',
     ),
-    serverId: 'server-id',
+    serverId: ServerId('server-id'),
     httpClient: MockClient((request) async {
       expect(request.url.path, '/');
       return http.Response(

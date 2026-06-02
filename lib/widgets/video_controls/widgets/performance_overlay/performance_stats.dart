@@ -61,6 +61,9 @@ class PerformanceStats {
   final int? dvRpuOutputTooSmall;
   final int? dvAvgRpuConversionUs;
   final int? dvAvgSampleProcessingUs;
+  final int? dvSourceProfile;
+  final String? dvPlaybackPath;
+  final String? dvPlaybackReason;
 
   // App metrics
   final int? appMemoryBytes;
@@ -108,6 +111,9 @@ class PerformanceStats {
     this.dvRpuOutputTooSmall,
     this.dvAvgRpuConversionUs,
     this.dvAvgSampleProcessingUs,
+    this.dvSourceProfile,
+    this.dvPlaybackPath,
+    this.dvPlaybackReason,
     this.appMemoryBytes,
     this.uiFps,
   });
@@ -155,6 +161,9 @@ class PerformanceStats {
       dvRpuOutputTooSmall = null,
       dvAvgRpuConversionUs = null,
       dvAvgSampleProcessingUs = null,
+      dvSourceProfile = null,
+      dvPlaybackPath = null,
+      dvPlaybackReason = null,
       appMemoryBytes = null,
       uiFps = null;
 
@@ -167,7 +176,7 @@ class PerformanceStats {
   /// Format video bitrate in Mbps.
   String get videoBitrateFormatted {
     if (videoBitrate == null || videoBitrate == 0) return 'N/A';
-    final mbps = videoBitrate! / 1000000;
+    final mbps = videoBitrate! / 1_000_000;
     return '${mbps.toStringAsFixed(1)} Mbps';
   }
 
@@ -272,6 +281,12 @@ class PerformanceStats {
 
   /// Format DV conversion mode for display.
   String get dvConversionFormatted => dvConversionMode == 'DV81' ? '7→8.1' : '7→HEVC';
+
+  /// Format Dolby Vision source profile.
+  String get dvSourceProfileFormatted => dvSourceProfile == null ? 'N/A' : 'P$dvSourceProfile';
+
+  /// Format Dolby Vision playback path.
+  String get dvPlaybackPathFormatted => dvPlaybackPath ?? 'N/A';
 
   /// Format DV RPU conversion totals.
   String get dvRpuCountFormatted {

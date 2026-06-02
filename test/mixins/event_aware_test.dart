@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:plezy/media/ids.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/mixins/event_aware.dart';
@@ -10,7 +11,7 @@ class _FakeEvent with HierarchicalEventMixin {
   _FakeEvent({required this.serverId, required this.itemId, this.parentChain = const []});
 
   @override
-  final String serverId;
+  final ServerId serverId;
 
   @override
   final String itemId;
@@ -49,7 +50,7 @@ void main() {
         onEvent: received.add,
       );
 
-      final ev = _FakeEvent(serverId: 's1', itemId: '42');
+      final ev = _FakeEvent(serverId: ServerId('s1'), itemId: '42');
       notifier.notify(ev);
       await _settle();
 
@@ -68,13 +69,13 @@ void main() {
         onEvent: received.add,
       );
 
-      notifier.notify(_FakeEvent(serverId: 's1', itemId: '42'));
+      notifier.notify(_FakeEvent(serverId: ServerId('s1'), itemId: '42'));
       await _settle();
       expect(received, isEmpty);
 
       // Once mounted, future events flow.
       mounted = true;
-      final ev = _FakeEvent(serverId: 's1', itemId: '99');
+      final ev = _FakeEvent(serverId: ServerId('s1'), itemId: '99');
       notifier.notify(ev);
       await _settle();
       expect(received, [ev]);
@@ -92,8 +93,8 @@ void main() {
         onEvent: received.add,
       );
 
-      final keep = _FakeEvent(serverId: 's1', itemId: '1');
-      final drop = _FakeEvent(serverId: 's2', itemId: '1');
+      final keep = _FakeEvent(serverId: ServerId('s1'), itemId: '1');
+      final drop = _FakeEvent(serverId: ServerId('s2'), itemId: '1');
       notifier.notify(drop);
       notifier.notify(keep);
       await _settle();
@@ -103,7 +104,7 @@ void main() {
     });
 
     test('globalKeys filter delivers events matching any global key', () async {
-      final keys = {buildGlobalKey('s1', '42'), buildGlobalKey('s1', '7')};
+      final keys = {buildGlobalKey(ServerId('s1'), '42'), buildGlobalKey(ServerId('s1'), '7')};
       final sub = subscribeToHierarchicalEvents<_FakeEvent>(
         notifier: notifier,
         mounted: () => true,
@@ -113,8 +114,8 @@ void main() {
         onEvent: received.add,
       );
 
-      final hit = _FakeEvent(serverId: 's1', itemId: '42');
-      final miss = _FakeEvent(serverId: 's1', itemId: '9999');
+      final hit = _FakeEvent(serverId: ServerId('s1'), itemId: '42');
+      final miss = _FakeEvent(serverId: ServerId('s1'), itemId: '9999');
       notifier.notify(hit);
       notifier.notify(miss);
       await _settle();
@@ -126,7 +127,7 @@ void main() {
     test('globalKeys filter takes precedence over itemIds', () async {
       // Even though itemIds would match '5', globalKeys path returns early
       // and short-circuits the itemIds check.
-      final globalKeys = {buildGlobalKey('s1', '99')};
+      final globalKeys = {buildGlobalKey(ServerId('s1'), '99')};
       final itemIds = {'5'};
       final sub = subscribeToHierarchicalEvents<_FakeEvent>(
         notifier: notifier,
@@ -138,12 +139,12 @@ void main() {
       );
 
       // itemId 5 matches the itemIds set but not the globalKeys set.
-      notifier.notify(_FakeEvent(serverId: 's1', itemId: '5'));
+      notifier.notify(_FakeEvent(serverId: ServerId('s1'), itemId: '5'));
       await _settle();
       expect(received, isEmpty);
 
       // Now an event matching the globalKeys set comes through.
-      final hit = _FakeEvent(serverId: 's1', itemId: '99');
+      final hit = _FakeEvent(serverId: ServerId('s1'), itemId: '99');
       notifier.notify(hit);
       await _settle();
       expect(received, [hit]);
@@ -161,8 +162,8 @@ void main() {
         onEvent: received.add,
       );
 
-      final a = _FakeEvent(serverId: 's1', itemId: '1');
-      final b = _FakeEvent(serverId: 's2', itemId: '2');
+      final a = _FakeEvent(serverId: ServerId('s1'), itemId: '1');
+      final b = _FakeEvent(serverId: ServerId('s2'), itemId: '2');
       notifier.notify(a);
       notifier.notify(b);
       await _settle();
@@ -181,8 +182,8 @@ void main() {
         onEvent: received.add,
       );
 
-      notifier.notify(_FakeEvent(serverId: 's1', itemId: '1'));
-      notifier.notify(_FakeEvent(serverId: 's2', itemId: '2'));
+      notifier.notify(_FakeEvent(serverId: ServerId('s1'), itemId: '1'));
+      notifier.notify(_FakeEvent(serverId: ServerId('s2'), itemId: '2'));
       await _settle();
 
       expect(received, isEmpty);
@@ -199,8 +200,8 @@ void main() {
         onEvent: received.add,
       );
 
-      final hit = _FakeEvent(serverId: 's1', itemId: '42');
-      final miss = _FakeEvent(serverId: 's1', itemId: '99');
+      final hit = _FakeEvent(serverId: ServerId('s1'), itemId: '42');
+      final miss = _FakeEvent(serverId: ServerId('s1'), itemId: '99');
       notifier.notify(hit);
       notifier.notify(miss);
       await _settle();
@@ -221,7 +222,7 @@ void main() {
         onEvent: received.add,
       );
 
-      final episode = _FakeEvent(serverId: 's1', itemId: 'episode456', parentChain: ['season789', 'show123']);
+      final episode = _FakeEvent(serverId: ServerId('s1'), itemId: 'episode456', parentChain: ['season789', 'show123']);
       notifier.notify(episode);
       await _settle();
 
@@ -240,15 +241,15 @@ void main() {
         onEvent: received.add,
       );
 
-      notifier.notify(_FakeEvent(serverId: 's1', itemId: '1'));
-      notifier.notify(_FakeEvent(serverId: 's1', itemId: '2'));
+      notifier.notify(_FakeEvent(serverId: ServerId('s1'), itemId: '1'));
+      notifier.notify(_FakeEvent(serverId: ServerId('s1'), itemId: '2'));
       await _settle();
       expect(received.map((e) => e.itemId).toList(), ['1']);
 
       // Change the filter set; the next event should be evaluated against it.
       ids = {'2'};
-      notifier.notify(_FakeEvent(serverId: 's1', itemId: '1'));
-      notifier.notify(_FakeEvent(serverId: 's1', itemId: '2'));
+      notifier.notify(_FakeEvent(serverId: ServerId('s1'), itemId: '1'));
+      notifier.notify(_FakeEvent(serverId: ServerId('s1'), itemId: '2'));
       await _settle();
       expect(received.map((e) => e.itemId).toList(), ['1', '2']);
 
@@ -265,12 +266,12 @@ void main() {
         onEvent: received.add,
       );
 
-      notifier.notify(_FakeEvent(serverId: 's1', itemId: '1'));
+      notifier.notify(_FakeEvent(serverId: ServerId('s1'), itemId: '1'));
       await _settle();
       expect(received, hasLength(1));
 
       await sub.cancel();
-      notifier.notify(_FakeEvent(serverId: 's1', itemId: '2'));
+      notifier.notify(_FakeEvent(serverId: ServerId('s1'), itemId: '2'));
       await _settle();
       expect(received, hasLength(1));
     });

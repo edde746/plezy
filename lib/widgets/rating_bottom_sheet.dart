@@ -103,7 +103,7 @@ class _RatingBottomSheetState extends State<RatingBottomSheet> {
         return ConstrainedBox(
           constraints: BoxConstraints(maxHeight: maxHeight),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               BottomSheetHeader(title: t.rateSheet.title, icon: Symbols.star_rounded),
               Flexible(
@@ -742,15 +742,15 @@ class _RatingRow extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .start,
                   children: [
-                    Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                    Text(title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: .w700)),
                     Text(
                       statusText,
                       style: theme.textTheme.bodySmall?.copyWith(color: statusColor),
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      overflow: .ellipsis,
                     ),
                   ],
                 ),
@@ -835,7 +835,7 @@ class _StarRatingControlState extends State<_StarRatingControl> {
             child: SizedBox(
               height: 34,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: .end,
                 children: List.generate(5, (i) {
                   final threshold = (i + 1) * 2;
                   final filled = widget.value >= threshold;
@@ -938,8 +938,8 @@ class _StepperPill extends StatelessWidget {
                   child: Text(
                     label,
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w700),
+                    overflow: .ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(fontWeight: .w700),
                   ),
                 ),
               ),

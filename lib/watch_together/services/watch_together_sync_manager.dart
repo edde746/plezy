@@ -379,7 +379,7 @@ class WatchTogetherSyncManager {
     final t3 = DateTime.now().millisecondsSinceEpoch;
 
     final rtt = t3 - t1;
-    if (rtt < 0 || rtt > 10000) {
+    if (rtt < 0 || rtt > 10_000) {
       appLogger.w('WatchTogether: Discarding clock sample with RTT=${rtt}ms');
       return;
     }

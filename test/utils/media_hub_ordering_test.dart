@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
@@ -6,7 +7,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_library.dart';
 import 'package:plezy/utils/media_hub_ordering.dart';
 
-MediaLibrary _library(String id, {String serverId = 'server'}) {
+MediaLibrary _library(String id, {ServerId serverId = const ServerId('server')}) {
   return MediaLibrary(
     id: id,
     backend: MediaBackend.plex,
@@ -16,11 +17,16 @@ MediaLibrary _library(String id, {String serverId = 'server'}) {
   );
 }
 
-MediaItem _item(String id, {String? libraryId, String? serverId = 'server'}) {
+MediaItem _item(String id, {String? libraryId, ServerId? serverId = const ServerId('server')}) {
   return MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie, libraryId: libraryId, serverId: serverId);
 }
 
-MediaHub _hub(String id, {String? libraryId, String? serverId = 'server', List<MediaItem> items = const []}) {
+MediaHub _hub(
+  String id, {
+  String? libraryId,
+  ServerId? serverId = const ServerId('server'),
+  List<MediaItem> items = const [],
+}) {
   return MediaHub(id: id, title: id, type: 'movie', libraryId: libraryId, serverId: serverId, items: items);
 }
 

@@ -37,11 +37,7 @@ class WatchStateResolver {
       WatchStateChangeType.progressUpdate =>
         event.isNowWatched == true
             ? const WatchStateSnapshot(isWatched: true, hasViewOffsetMs: true, viewOffsetMs: 0)
-            : WatchStateSnapshot(
-                isWatched: false,
-                hasViewOffsetMs: event.viewOffset != null,
-                viewOffsetMs: event.viewOffset,
-              ),
+            : WatchStateSnapshot(hasViewOffsetMs: event.viewOffset != null, viewOffsetMs: event.viewOffset),
       WatchStateChangeType.removedFromContinueWatching => const WatchStateSnapshot(),
     };
   }
@@ -62,11 +58,7 @@ class WatchStateResolver {
       'progress' =>
         latest!.shouldMarkWatched
             ? const WatchStateSnapshot(isWatched: true, hasViewOffsetMs: true, viewOffsetMs: 0)
-            : WatchStateSnapshot(
-                isWatched: false,
-                hasViewOffsetMs: latest.viewOffset != null,
-                viewOffsetMs: latest.viewOffset,
-              ),
+            : WatchStateSnapshot(hasViewOffsetMs: latest.viewOffset != null, viewOffsetMs: latest.viewOffset),
       _ => const WatchStateSnapshot(),
     };
   }

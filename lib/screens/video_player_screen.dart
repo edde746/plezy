@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 import 'dart:io';
 import 'dart:math';
 
@@ -265,6 +266,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   bool _isPhone = false;
   List<MediaVersion> _availableVersions = [];
   MediaSourceInfo? _currentMediaInfo;
+  late int _effectiveSelectedMediaIndex;
 
   // Transcode / quality state
   late TranscodeQualityPreset _selectedQualityPreset;
@@ -421,15 +423,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   MediaServerClient? _getMediaServerClient(BuildContext context) {
     final id = _currentMetadata.serverId;
     if (id == null) return null;
-    return context.read<MultiServerProvider>().serverManager.getClient(id);
+    return context.read<MultiServerProvider>().serverManager.getClient(ServerId(id));
   }
 
   MediaServerClient? _getOnlineMediaServerClient(BuildContext context) {
     final id = _currentMetadata.serverId;
     if (id == null) return null;
     final manager = context.read<MultiServerProvider>().serverManager;
-    if (!manager.isClientOnline(id)) return null;
-    return manager.getClient(id);
+    if (!manager.isClientOnline(ServerId(id))) return null;
+    return manager.getClient(ServerId(id));
   }
 
   bool get _usesLocalPlaybackSource => _effectiveIsOffline;
@@ -459,6 +461,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _currentMetadata = widget.metadata;
     _activeId = widget.metadata.id;
     _activeMediaIndex = widget.selectedMediaIndex;
+    _effectiveSelectedMediaIndex = widget.selectedMediaIndex;
 
     // Reused across quality/version/audio switches so the server-side
     // transcode session is preserved.
@@ -622,6 +625,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       final currentPlayer = Player(useExoPlayer: useExoPlayer);
       player = currentPlayer;
       _playerBackendLabel = currentPlayer.playerType;
+      if (Platform.isAndroid && useExoPlayer) {
+        await currentPlayer.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
+        if (!mounted || player != currentPlayer) return;
+      }
 
       // Kick off getPlaybackData() in parallel with the rest of MPV setup.
       // The network/DB work has no dependency on the player — it just needs

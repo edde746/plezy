@@ -212,8 +212,8 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
 
     final builder = widget.initialButtonsBuilder ?? _defaultInitialButtons;
     return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: .min,
+      crossAxisAlignment: .stretch,
       children: [
         builder(context, () => _start(useQr: false), () => _start(useQr: true), _authService == null),
         if (_errorMessage != null) ...[
@@ -230,8 +230,8 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
 
   Widget _defaultInitialButtons(BuildContext context, VoidCallback browser, VoidCallback qr, bool busy) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: .min,
+      crossAxisAlignment: .stretch,
       children: [
         FocusableButton(
           onPressed: busy ? null : browser,
@@ -248,7 +248,7 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
 
   Widget _buildQr(ThemeData theme, double qrSize) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         Text(
           t.auth.scanQRToSignIn,
@@ -290,7 +290,7 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
 
   Widget _buildBrowserWaiting(ThemeData theme) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         const Center(child: CircularProgressIndicator()),
         const SizedBox(height: 16),

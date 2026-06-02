@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../media/ids.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -71,7 +72,7 @@ class _QueueSheetState extends State<QueueSheet> {
                     fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
                   ),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 ),
                 subtitle: Text(
                   _buildSubtitle(item),
@@ -80,7 +81,7 @@ class _QueueSheetState extends State<QueueSheet> {
                     fontSize: 12,
                   ),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 ),
                 trailing: isCurrent ? AppIcon(Symbols.play_circle_rounded, fill: 1, color: primaryColor) : null,
                 onTap: () {
@@ -101,7 +102,7 @@ class _QueueSheetState extends State<QueueSheet> {
     if (item.thumbPath == null) return null;
 
     // Try to get client for thumbnails, may fail in offline mode
-    final client = context.tryGetMediaClientForServer(item.serverId);
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(item.serverId));
 
     return MediaSelectorThumbnail(
       width: _kThumbWidth,

@@ -56,7 +56,7 @@ class FocusTheme {
           spreadRadius: focusGlowSpreadRadius,
         ),
         BoxShadow(
-          color: isFocused ? focusColor.withValues(alpha: 0.20) : Colors.transparent,
+          color: isFocused ? focusColor.withValues(alpha: 0.2) : Colors.transparent,
           blurRadius: focusGlowOuterBlurRadius,
         ),
       ],

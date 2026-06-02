@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:plezy/media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -429,7 +430,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   });
 
   @override
-  String get serverId => 'server_1';
+  ServerId get serverId => ServerId('server_1');
 
   @override
   String? get serverName => 'Server';

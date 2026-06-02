@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -119,7 +120,7 @@ class RecordingsTabState extends State<RecordingsTab> {
 
     for (final serverInfo in multiServer.liveTvServers) {
       if (!seenServers.add(serverInfo.serverId)) continue;
-      final client = multiServer.getClientForServer(serverInfo.serverId);
+      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
       if (client == null) continue;
       if (!client.capabilities.liveTvDvr) continue;
       try {
@@ -270,7 +271,7 @@ class _EmptyMessage extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           AppIcon(Symbols.fiber_manual_record_rounded, size: 40, color: theme.colorScheme.onSurfaceVariant),
           const SizedBox(height: 12),
@@ -354,13 +355,13 @@ class _GrabTile extends StatelessWidget {
             children: [
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     Text(
                       title,
-                      style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+                      style: theme.textTheme.bodyLarge?.copyWith(fontWeight: .w500),
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      overflow: .ellipsis,
                     ),
                     if (subtitle.isNotEmpty) ...[
                       const SizedBox(height: 2),
@@ -368,7 +369,7 @@ class _GrabTile extends StatelessWidget {
                         subtitle,
                         style: theme.textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
                         maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        overflow: .ellipsis,
                       ),
                     ],
                   ],
@@ -441,13 +442,13 @@ class _RuleTile extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
             children: [
               Text(
                 title,
-                style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+                style: theme.textTheme.bodyLarge?.copyWith(fontWeight: .w500),
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                overflow: .ellipsis,
               ),
               if (subtitleParts.isNotEmpty) ...[
                 const SizedBox(height: 2),
@@ -455,7 +456,7 @@ class _RuleTile extends StatelessWidget {
                   subtitleParts.join(' · '),
                   style: theme.textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 ),
               ],
             ],
@@ -479,7 +480,7 @@ class _StatusBadge extends StatelessWidget {
       decoration: BoxDecoration(color: color, borderRadius: const BorderRadius.all(Radius.circular(4))),
       child: Text(
         label,
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+        style: const TextStyle(color: Colors.white, fontWeight: .bold, fontSize: 11),
       ),
     );
   }

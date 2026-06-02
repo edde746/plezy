@@ -1,7 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:plezy/connection/connection.dart';
 import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/metadata_edit/metadata_edit_adapters.dart';
 import 'package:plezy/models/plex/plex_home_user.dart';
 import 'package:plezy/profiles/profile.dart';
+import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/widgets/media_context_menu.dart';
 
 void main() {
@@ -37,6 +43,20 @@ void main() {
       );
     });
   });
+
+  group('supportsMetadataEdit', () {
+    test('allows Jellyfin video metadata edit through capability gate', () {
+      final client = JellyfinClient.forTesting(
+        connection: _jellyfinConnection(),
+        httpClient: MockClient((_) async => http.Response('', 204)),
+      );
+      addTearDown(client.close);
+
+      expect(supportsMetadataEdit(client, MediaKind.movie), isTrue);
+      expect(supportsMetadataEdit(client, MediaKind.show), isTrue);
+      expect(supportsMetadataEdit(client, MediaKind.track), isFalse);
+    });
+  });
 }
 
 PlexHomeUser _homeUser({required bool admin}) {
@@ -54,5 +74,20 @@ PlexHomeUser _homeUser({required bool admin}) {
     admin: admin,
     guest: false,
     protected: false,
+  );
+}
+
+JellyfinConnection _jellyfinConnection() {
+  return JellyfinConnection(
+    id: 'srv-1/user-1',
+    baseUrl: 'https://jf.example.com',
+    serverName: 'Home',
+    serverMachineId: 'srv-1',
+    userId: 'user-1',
+    userName: 'edde',
+    accessToken: 'tok',
+    deviceId: 'dev',
+    isAdministrator: true,
+    createdAt: DateTime.fromMillisecondsSinceEpoch(0),
   );
 }

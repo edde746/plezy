@@ -413,24 +413,20 @@ class _ProfileTile extends StatelessWidget {
       onTap: isActive ? null : onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+        padding: const EdgeInsets.all(12),
         child: Row(
           children: [
             ProfileAvatar(profile: profile, size: 44),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: .start,
+                mainAxisSize: .min,
                 children: [
                   Row(
                     children: [
                       Flexible(
-                        child: Text(
-                          profile.displayName,
-                          style: theme.textTheme.titleMedium,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                        child: Text(profile.displayName, style: theme.textTheme.titleMedium, overflow: .ellipsis),
                       ),
                       if (isActive) ...[
                         const SizedBox(width: 8),
@@ -466,7 +462,7 @@ class _ProfileTile extends StatelessWidget {
                 ],
               )
             else if (!isActive)
-              const Padding(padding: EdgeInsets.only(left: 8), child: AppIcon(Symbols.chevron_right_rounded, fill: 1)),
+              const Padding(padding: .only(left: 8), child: AppIcon(Symbols.chevron_right_rounded, fill: 1)),
           ],
         ),
       ),
@@ -555,7 +551,7 @@ class _ConnectionChips extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 BackendBadge(backend: c.backend, size: 12),
                 const SizedBox(width: 4),

@@ -85,7 +85,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
         if (episode.userRating != null && episode.userRating! > 0) ...[
           dot,
           const Padding(
-            padding: EdgeInsets.only(top: 2),
+            padding: .only(top: 2),
             child: Icon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber),
           ),
           const SizedBox(width: 2),
@@ -153,7 +153,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
               ),
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
               child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
                 children: [
                   SizedBox(
                     width: 160,
@@ -242,7 +242,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
 
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: .start,
                       children: [
                         Selector<DownloadProvider, _DownloadSlice>(
                           selector: (_, p) =>
@@ -284,7 +284,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                                       style: TextStyle(
                                         color: Theme.of(context).colorScheme.onPrimaryContainer,
                                         fontSize: 11,
-                                        fontWeight: FontWeight.w600,
+                                        fontWeight: .w600,
                                       ),
                                     ),
                                   ),
@@ -293,11 +293,9 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                                 Expanded(
                                   child: Text(
                                     episode.title!,
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: .bold),
                                     maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+                                    overflow: .ellipsis,
                                   ),
                                 ),
                               ],
@@ -314,7 +312,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                                 context,
                               ).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, height: 1.3),
                               maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
+                              overflow: .ellipsis,
                             )
                           else
                             CollapsibleText(

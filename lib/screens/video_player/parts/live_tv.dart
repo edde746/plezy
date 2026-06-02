@@ -254,7 +254,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
 
       if (serverInfo == null) return;
 
-      final genericClient = multiServer.getClientForServer(serverInfo.serverId);
+      final genericClient = multiServer.getClientForServer(ServerId(serverInfo.serverId));
       final resolution = await genericClient?.liveTv.resolveStreamUrl(channel.key, dvrKey: serverInfo.dvrKey);
       if (resolution != null) {
         // Jellyfin: pre-resolved negotiated URL.
@@ -283,7 +283,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       }
 
       // Plex-only: DVR tune flow (Jellyfin Live TV uses pre-resolved URLs).
-      final client = multiServer.getPlexClientForServer(serverInfo.serverId);
+      final client = multiServer.getPlexClientForServer(ServerId(serverInfo.serverId));
       if (client == null) return;
 
       final tuneResult = await client.tuneChannel(serverInfo.dvrKey, channel.key);

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../media/ids.dart';
 
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
@@ -46,7 +47,7 @@ Future<bool> persistAndBindConnection({
 
   final mp = context.read<MultiServerProvider>();
   if (visibleServerId != null) {
-    mp.addToVisibleServerIds(visibleServerId);
+    mp.addToVisibleServerIds(ServerId(visibleServerId));
   }
   unawaited(context.read<LibrariesProvider>().loadLibraries());
   return true;
