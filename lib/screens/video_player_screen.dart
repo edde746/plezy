@@ -352,6 +352,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   int _autoPlayCountdown = 5;
   bool _completionTriggered = false;
 
+  // End-of-video Play Next thresholds. Fire the prompt within _kPlayNextTriggerMs
+  // of the end; re-arm (allow it to fire again) only once playback is more than
+  // _kPlayNextRearmMs from the end. The gap is hysteresis so a position parked at
+  // the boundary can't oscillate between firing and re-arming.
+  static const int _kPlayNextTriggerMs = 1000;
+  static const int _kPlayNextRearmMs = 2000;
+
   late final FocusNode _playNextCancelFocusNode;
   late final FocusNode _playNextConfirmFocusNode;
 
@@ -881,13 +888,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
       _playingSubscription = currentPlayer.streams.playing.listen(_onPlayingStateChanged);
 
-      // Listen to completion. When mpv emits completed=false (file-loaded after a
-      // reconnect-seek or fresh open), clear a stale _completionTriggered so the
-      // real end-of-file can still show Play Next. Guarded against clobbering an
-      // active dialog or running auto-play countdown.
       _completedSubscription = currentPlayer.streams.completed.listen((done) {
-        if (!done && _completionTriggered && !_showPlayNextDialog && _autoPlayTimer?.isActive != true) {
-          _completionTriggered = false;
+        // completed=false means a file (re)loaded after a reconnect-seek or fresh
+        // open — re-arm the end-of-video latch so the real EOF can still show Play
+        // Next. But only when playback is clear of the end region: a stray
+        // completed=false while parked at EOF must NOT re-arm, or the position
+        // listener would immediately re-fire the Play Next prompt.
+        if (!done) {
+          final durMs = currentPlayer.state.duration.inMilliseconds;
+          final posMs = currentPlayer.state.position.inMilliseconds;
+          if (durMs <= 0 || posMs < durMs - _kPlayNextRearmMs) {
+            _rearmCompletionLatch();
+          }
         }
         _onVideoCompleted(done);
       });
@@ -973,11 +985,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         }
 
         final duration = activePlayer.state.duration;
-        if (duration.inMilliseconds > 0 &&
-            position.inMilliseconds >= duration.inMilliseconds - 1000 &&
-            !_showPlayNextDialog &&
-            !_completionTriggered) {
-          _onVideoCompleted(true);
+        if (duration.inMilliseconds > 0) {
+          if (position.inMilliseconds >= duration.inMilliseconds - _kPlayNextTriggerMs &&
+              !_showPlayNextDialog &&
+              !_completionTriggered) {
+            _onVideoCompleted(true);
+          } else if (position.inMilliseconds < duration.inMilliseconds - _kPlayNextRearmMs) {
+            // Seeked back out of the end region after dismissing Play Next — re-arm
+            // so the prompt can fire again if the user returns to the end.
+            _rearmCompletionLatch();
+          }
         }
       });
 

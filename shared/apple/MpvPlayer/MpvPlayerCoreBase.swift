@@ -708,6 +708,9 @@ class MpvPlayerCoreBase: NSObject {
     checkError(mpv_set_option_string(mpv, "hwdec-codecs", "all"))
     checkError(mpv_set_option_string(mpv, "hwdec-software-fallback", "yes"))
     checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "auto"))
+    // Pause on the last frame at EOF instead of unloading the file, so seeking
+    // back after the video ends still works (matches Linux/Windows).
+    checkError(mpv_set_option_string(mpv, "keep-open", "yes"))
   }
 
   #if os(macOS)

@@ -323,9 +323,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     appLogger.i('Network restored while buffering, forcing stream reconnect at ${pos.inSeconds}s');
     // Clear any stale completion latch caused by a spurious EOF during the drop,
     // so the real end-of-file can trigger Play Next after we recover.
-    if (_completionTriggered && !_showPlayNextDialog && _autoPlayTimer?.isActive != true) {
-      _completionTriggered = false;
-    }
+    _rearmCompletionLatch();
     unawaited(_seekPlayback(pos));
   }
 }
