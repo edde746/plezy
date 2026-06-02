@@ -74,7 +74,7 @@ class TrackersProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       anilistAccountStore.load(_activeUserUuid),
       simklAccountStore.load(_activeUserUuid),
     ]);
-    _mal = results[0] as MalSession?;
+    _mal = results.first as MalSession?;
     _anilist = results[1] as AnilistSession?;
     _simkl = results[2] as SimklSession?;
     _rebindAll();

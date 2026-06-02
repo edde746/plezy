@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
@@ -53,7 +54,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// 2. Jellyfin's fixed [MediaServerClient.watchedThreshold] (0.9)
   /// 3. Cached value in SettingsService
   /// 4. Default 90%
-  double getWatchedThreshold(String serverId) {
+  double getWatchedThreshold(ServerId serverId) {
     final client = _serverManager.getClient(serverId);
     if (client is PlexClient && client.serverPrefs.isNotEmpty) {
       return client.watchedThresholdPercent / 100.0;
@@ -214,13 +215,14 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// preserved as the on-disk column name; the in-memory parameter renamed
   /// here is just the API-level identifier.
   Future<String?> queueProgressUpdate({
-    required String serverId,
+    required ServerId serverId,
     required String itemId,
     required int viewOffset,
     required int? duration,
   }) async {
-    final shouldMarkWatched = duration != null && isWatchedByProgress(viewOffset, duration, serverId: serverId);
-    final clientScopeId = await _clientScopeIdForItem(serverId, itemId);
+    final shouldMarkWatched =
+        duration != null && isWatchedByProgress(viewOffset, duration, serverId: ServerId(serverId));
+    final clientScopeId = await _clientScopeIdForItem(ServerId(serverId), itemId);
 
     await _database.upsertProgressAction(
       profileId: _activeProfileId,
@@ -244,18 +246,18 @@ class OfflineWatchSyncService extends ChangeNotifier {
     return clientScopeId;
   }
 
-  Future<String?> queueMarkWatched({required String serverId, required String itemId}) =>
+  Future<String?> queueMarkWatched({required ServerId serverId, required String itemId}) =>
       _queueWatchStatusAction(serverId: serverId, itemId: itemId, actionType: OfflineActionType.watched.id);
 
-  Future<String?> queueMarkUnwatched({required String serverId, required String itemId}) =>
+  Future<String?> queueMarkUnwatched({required ServerId serverId, required String itemId}) =>
       _queueWatchStatusAction(serverId: serverId, itemId: itemId, actionType: OfflineActionType.unwatched.id);
 
   Future<String?> _queueWatchStatusAction({
-    required String serverId,
+    required ServerId serverId,
     required String itemId,
     required String actionType,
   }) async {
-    final clientScopeId = await _clientScopeIdForItem(serverId, itemId);
+    final clientScopeId = await _clientScopeIdForItem(ServerId(serverId), itemId);
     await _database.insertWatchAction(
       profileId: _activeProfileId,
       serverId: serverId,
@@ -270,7 +272,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   }
 
   /// Check if an item should be considered watched based on progress percentage.
-  bool isWatchedByProgress(int viewOffset, int duration, {String? serverId}) {
+  bool isWatchedByProgress(int viewOffset, int duration, {ServerId? serverId}) {
     if (duration == 0) return false;
     final threshold = serverId != null ? getWatchedThreshold(serverId) : 0.9;
     return (viewOffset / duration) >= threshold;
@@ -409,7 +411,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
     }
   }
 
-  Future<String?> _clientScopeIdForItem(String serverId, String itemId) async {
+  Future<String?> _clientScopeIdForItem(ServerId serverId, String itemId) async {
     // A downloaded row's clientScopeId is a cache/source hint, not an owner.
     // Offline watch actions are user-owned, so a new local action follows the
     // currently active scoped Jellyfin client. Once queued, _clientForAction
@@ -419,7 +421,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
       final scopeId = client.cacheServerId;
       if (scopeId != serverId) return scopeId;
     }
-    final download = await _database.getDownloadedMedia(buildGlobalKey(serverId, itemId));
+    final download = await _database.getDownloadedMedia(buildGlobalKey(ServerId(serverId), itemId));
     final downloadedScopeId = download?.clientScopeId;
     if (downloadedScopeId != null && downloadedScopeId.isNotEmpty) return downloadedScopeId;
     return null;
@@ -431,7 +433,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
       final scoped = _serverManager.getJellyfinClientByCompoundId(scopeId);
       if (scoped != null) return (client: scoped, clientScopeId: scopeId);
     }
-    final client = _serverManager.getClient(action.serverId);
+    final client = _serverManager.getClient(ServerId(action.serverId));
     if (client == null) return null;
     if (client.backend == MediaBackend.jellyfin && client.cacheServerId != action.serverId) {
       appLogger.w(
@@ -453,7 +455,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
       return false;
     }
 
-    if (!_serverManager.isClientOnline(action.serverId, clientScopeId: resolved.clientScopeId)) {
+    if (!_serverManager.isClientOnline(ServerId(action.serverId), clientScopeId: resolved.clientScopeId)) {
       appLogger.d('Server ${action.serverId} scope ${resolved.clientScopeId} is offline, skipping');
       return false;
     }
@@ -477,14 +479,14 @@ class OfflineWatchSyncService extends ChangeNotifier {
     return _activeClientScopeIdForServer(parsed.serverId);
   }
 
-  String? _activeClientScopeIdForServer(String serverId) {
+  String? _activeClientScopeIdForServer(ServerId serverId) {
     final client = _serverManager.getClient(serverId);
     if (client == null) return null;
     final scopeId = client.cacheServerId;
     return scopeId == serverId ? null : scopeId;
   }
 
-  Future<MediaServerClient?> _clientForDownloadScope(String serverId, String? clientScopeId) async {
+  Future<MediaServerClient?> _clientForDownloadScope(ServerId serverId, String? clientScopeId) async {
     if (clientScopeId != null && clientScopeId.isNotEmpty) {
       final scoped = _serverManager.getJellyfinClientByCompoundId(clientScopeId);
       if (scoped != null) return scoped;
@@ -493,17 +495,17 @@ class OfflineWatchSyncService extends ChangeNotifier {
   }
 
   Future<T?> _withOnlineClientForDownloadScope<T>(
-    String serverId,
+    ServerId serverId,
     String? clientScopeId,
     Future<T> Function(MediaServerClient client) callback,
   ) async {
-    final client = await _clientForDownloadScope(serverId, clientScopeId);
+    final client = await _clientForDownloadScope(ServerId(serverId), clientScopeId);
     if (client == null) {
       appLogger.d('No client for server $serverId scope $clientScopeId, skipping');
       return null;
     }
 
-    if (!_serverManager.isClientOnline(serverId, clientScopeId: clientScopeId)) {
+    if (!_serverManager.isClientOnline(ServerId(serverId), clientScopeId: clientScopeId)) {
       appLogger.d('Server $serverId scope $clientScopeId is offline, skipping');
       return null;
     }
@@ -595,7 +597,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
   /// Returns the number of episodes synced, or -1 on failure.
   Future<int> _syncSeasonEpisodes(
     MediaServerClient client,
-    String serverId,
+    ServerId serverId,
     String seasonRatingKey,
     Set<String> downloadedEpisodeKeys,
   ) async {
@@ -607,7 +609,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
         if (!downloadedEpisodeKeys.contains(episode.id)) continue;
 
         final cacheServerId = client.cacheServerId;
-        final prior = await client.cache.getMetadata(cacheServerId, episode.id);
+        final prior = await client.cache.getMetadata(ServerId(cacheServerId), episode.id);
         final isWatched = (episode.viewCount ?? 0) > 0;
 
         if (prior != null) {
@@ -615,7 +617,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
           // fields without disturbing Media/Chapter blobs.
           final wasWatched = (prior.viewCount ?? 0) > 0;
           await client.cache.applyWatchState(
-            serverId: cacheServerId,
+            serverId: ServerId(cacheServerId),
             itemId: episode.id,
             isWatched: isWatched,
             viewOffsetMs: episode.viewOffsetMs,
@@ -638,7 +640,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
           try {
             await client.fetchItem(episode.id);
             await client.cache.applyWatchState(
-              serverId: cacheServerId,
+              serverId: ServerId(cacheServerId),
               itemId: episode.id,
               isWatched: isWatched,
               viewOffsetMs: episode.viewOffsetMs,
@@ -698,12 +700,15 @@ class OfflineWatchSyncService extends ChangeNotifier {
       // etc.), using the active scoped client for user-owned Jellyfin watch
       // state. Downloads are shared, but server watch state is per user.
       // Structure: (serverId, clientScopeId) -> seasonRatingKey -> Set<episodeRatingKey>
-      final episodesByScopeAndSeason = <({String serverId, String? clientScopeId}), Map<String, Set<String>>>{};
+      final episodesByScopeAndSeason = <({ServerId serverId, String? clientScopeId}), Map<String, Set<String>>>{};
       // Structure: (serverId, clientScopeId) -> List<ratingKey>
-      final nonEpisodeItems = <({String serverId, String? clientScopeId}), List<String>>{};
+      final nonEpisodeItems = <({ServerId serverId, String? clientScopeId}), List<String>>{};
 
       for (final item in downloadedItems) {
-        final scope = (serverId: item.serverId, clientScopeId: _activeClientScopeIdForServer(item.serverId));
+        final scope = (
+          serverId: ServerId(item.serverId),
+          clientScopeId: _activeClientScopeIdForServer(ServerId(item.serverId)),
+        );
         if (item.type == 'episode' && item.parentRatingKey != null) {
           // Group episodes by server and season for batch fetching
           episodesByScopeAndSeason
@@ -745,7 +750,7 @@ class OfflineWatchSyncService extends ChangeNotifier {
             try {
               // Snapshot prior viewCount through the neutral cache so we
               // can detect a watched-status change from another device.
-              final prior = await client.cache.getMetadata(client.cacheServerId, ratingKey);
+              final prior = await client.cache.getMetadata(ServerId(client.cacheServerId), ratingKey);
               final wasWatched = (prior?.viewCount ?? 0) > 0;
 
               // fetchItem already caches the full API response (with

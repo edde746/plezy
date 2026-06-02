@@ -394,10 +394,10 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
     ).textTheme.titleLarge?.copyWith(fontSize: isTv ? 26 : null, fontWeight: isTv ? FontWeight.w700 : null);
 
     return Padding(
-      padding: EdgeInsets.only(bottom: isTv && !widget.inset ? TvLayoutConstants.shelfVerticalGap : 0),
+      padding: .only(bottom: isTv && !widget.inset ? TvLayoutConstants.shelfVerticalGap : 0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: .start,
+        mainAxisSize: .min,
         children: [
           // Hub header (NOT focusable - titles should not be focusable)
           Padding(
@@ -414,12 +414,12 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
                       ? const EdgeInsets.symmetric(vertical: 2)
                       : const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisSize: .min,
                     children: [
                       AppIcon(widget.icon, fill: 1, size: isTv ? 28 : null),
                       SizedBox(width: isTv ? 12 : 8),
                       Flexible(
-                        child: Text(widget.hub.title, style: titleStyle, overflow: TextOverflow.ellipsis, maxLines: 1),
+                        child: Text(widget.hub.title, style: titleStyle, overflow: .ellipsis, maxLines: 1),
                       ),
                       if (widget.showServerName && widget.hub.serverName != null) ...[
                         const SizedBox(width: 8),
@@ -523,7 +523,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin {
                                     height: containerHeight - 10,
                                     child: Center(
                                       child: Column(
-                                        mainAxisSize: MainAxisSize.min,
+                                        mainAxisSize: .min,
                                         children: [
                                           Icon(
                                             Symbols.arrow_forward_rounded,

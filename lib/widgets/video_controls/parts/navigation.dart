@@ -80,7 +80,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     if (serverId == null) return;
 
     try {
-      final client = context.getPlexClientForServer(serverId);
+      final client = context.getPlexClientForServer(ServerId(serverId));
       final token = client.config.token;
       if (token == null) return;
 
@@ -187,7 +187,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         if (serverId == null || partId == null || effectiveSubtitleStreamId == null) {
           throw StateError('No Plex part available for subtitle stream selection');
         }
-        final client = context.getPlexClientForServer(serverId);
+        final client = context.getPlexClientForServer(ServerId(serverId));
         final saved = await client.selectStreams(partId, subtitleStreamID: effectiveSubtitleStreamId, allParts: true);
         if (!saved) {
           throw StateError('Failed to select subtitle stream');

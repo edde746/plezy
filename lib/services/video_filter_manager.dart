@@ -59,8 +59,10 @@ class VideoFilterManager {
     required this.availableVersions,
     required this.selectedMediaIndex,
     int initialBoxFitMode = 0,
+    Size? initialPlayerSize,
     this.onBoxFitModeChanged,
-  }) : _boxFitMode = initialBoxFitMode {
+  }) : _boxFitMode = initialBoxFitMode,
+       _playerSize = initialPlayerSize {
     _debouncedUpdateVideoFilter = debounce(
       updateVideoFilter,
       const Duration(milliseconds: 50),
@@ -76,14 +78,22 @@ class VideoFilterManager {
 
   Size? get playerSize => _playerSize;
 
-  static double videoZoomPropertyForScale(double scale) {
+  static double normalizeZoomScale(double scale) {
     final clamped = scale.clamp(minZoomScale, maxZoomScale).toDouble();
-    return math.log(clamped) / math.ln2;
+    final percent = (clamped * 100).round();
+    if (percent == 100) return 1.0;
+    return percent / 100;
+  }
+
+  static double videoZoomPropertyForScale(double scale) {
+    final normalized = normalizeZoomScale(scale);
+    if (normalized == 1.0) return 0.0;
+    return math.log(normalized) / math.ln2;
   }
 
   double setZoomScale(double scale) {
-    final next = scale.clamp(minZoomScale, maxZoomScale).toDouble();
-    if ((_zoomScale - next).abs() < 0.0001) return _zoomScale;
+    final next = normalizeZoomScale(scale);
+    if (_zoomScale == next) return _zoomScale;
     _zoomScale = next;
     updateVideoFilter();
     return _zoomScale;
@@ -138,7 +148,7 @@ class VideoFilterManager {
       shouldUpdate = true;
     }
     if (_prePipZoomScale != null) {
-      _zoomScale = _prePipZoomScale!;
+      _zoomScale = normalizeZoomScale(_prePipZoomScale!);
       _prePipZoomScale = null;
       shouldUpdate = true;
     }
@@ -187,10 +197,13 @@ class VideoFilterManager {
         await player.setProperty('sub-ass-force-margins', 'yes');
       } else if (_boxFitMode == 2) {
         // Fill/stretch mode - override aspect ratio to match player (stretches video)
-        if (_playerSize != null) {
-          final playerAspect = _playerSize!.width / _playerSize!.height;
-          await player.setProperty('video-aspect-override', playerAspect.toString());
-          appLogger.d('Stretch mode: aspect-override=$playerAspect (player: $_playerSize)');
+        final playerSize = _playerSize;
+        if (playerSize != null && playerSize.width > 0 && playerSize.height > 0) {
+          final playerAspect = playerSize.width / playerSize.height;
+          if (playerAspect.isFinite && playerAspect > 0) {
+            await player.setProperty('video-aspect-override', playerAspect.toString());
+            appLogger.d('Stretch mode: aspect-override=$playerAspect (player: $playerSize)');
+          }
         }
       }
 

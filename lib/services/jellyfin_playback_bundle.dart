@@ -30,6 +30,9 @@ class JellyfinPlaybackBundle {
   /// falls back to its first sorted source instead of the selected version.
   final String? selectedSourceId;
 
+  /// Effective source index after source-id matching and range clamping.
+  final int selectedSourceIndex;
+
   /// Item-level `Trickplay` manifest (raw JSON object). `null` when the
   /// server hasn't run trickplay extraction for this item.
   final Object? trickplay;
@@ -40,6 +43,7 @@ class JellyfinPlaybackBundle {
     required this.chapters,
     this.container,
     this.selectedSourceId,
+    this.selectedSourceIndex = 0,
     this.trickplay,
   });
 

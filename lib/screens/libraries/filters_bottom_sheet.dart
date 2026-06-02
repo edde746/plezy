@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../media/ids.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_button.dart';
@@ -99,7 +100,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       if (cached != null) {
         values = cached;
       } else {
-        final client = context.tryGetMediaClientForServer(widget.serverId);
+        final client = context.tryGetMediaClientForServer(ServerId(widget.serverId));
         if (client is PlexClient) {
           values = await client.getFilterValues(filter.key);
         } else {
@@ -295,14 +296,14 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
           autofocus: index == 0 && autofocusFirst,
           title: Text(filter.title),
           trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               if (displayValue != null)
                 Flexible(
                   child: Text(
                     displayValue,
-                    style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: .w500),
+                    overflow: .ellipsis,
                   ),
                 ),
               if (displayValue != null) const SizedBox(width: 8),

@@ -58,7 +58,7 @@ class StateMessageWidget extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(24.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: .center,
           children: [
             if (icon != null) ...[
               AppIcon(

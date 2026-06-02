@@ -1,6 +1,8 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:io' show Platform;
 
+import '../../media/ids.dart';
+
 import 'package:flutter/gestures.dart'
     show
         PointerCancelEvent,
@@ -807,17 +809,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                 borderRadius: const BorderRadius.all(Radius.circular(28)),
                               ),
                               child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                                mainAxisSize: .min,
                                 children: [
                                   const AppIcon(Symbols.lock_rounded, fill: 1, color: Colors.white, size: 20),
                                   const SizedBox(width: 8),
                                   Text(
                                     t.videoControls.longPressToUnlock,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w500),
                                   ),
                                 ],
                               ),

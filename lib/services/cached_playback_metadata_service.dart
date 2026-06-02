@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../media/ids.dart';
 
 import 'package:drift/drift.dart';
 
@@ -22,7 +23,7 @@ class CachedPlaybackMetadataService {
   }) async {
     try {
       return switch (backend) {
-        MediaBackend.plex => _fetchPlexMediaSourceInfo(cacheServerId, itemId, mediaIndex: mediaIndex),
+        MediaBackend.plex => _fetchPlexMediaSourceInfo(ServerId(cacheServerId), itemId, mediaIndex: mediaIndex),
         MediaBackend.jellyfin => _fetchJellyfinMediaSourceInfo(cacheServerId, itemId, mediaIndex: mediaIndex),
       };
     } catch (e) {
@@ -42,7 +43,7 @@ class CachedPlaybackMetadataService {
     try {
       return switch (backend) {
         MediaBackend.plex => _fetchPlexPlaybackExtras(
-          cacheServerId,
+          ServerId(cacheServerId),
           itemId,
           introPattern: introPattern,
           creditsPattern: creditsPattern,
@@ -63,22 +64,22 @@ class CachedPlaybackMetadataService {
   }
 
   static Future<MediaSourceInfo?> _fetchPlexMediaSourceInfo(
-    String serverId,
+    ServerId serverId,
     String itemId, {
     required int mediaIndex,
   }) async {
-    final metadata = await _plexMetadata(serverId, itemId);
+    final metadata = await _plexMetadata(ServerId(serverId), itemId);
     return metadata == null ? null : plexMediaSourceInfoFromCacheJson(metadata, mediaIndex: mediaIndex);
   }
 
   static Future<PlaybackExtras?> _fetchPlexPlaybackExtras(
-    String serverId,
+    ServerId serverId,
     String itemId, {
     String? introPattern,
     String? creditsPattern,
     bool forceChapterFallback = false,
   }) async {
-    final metadata = await _plexMetadata(serverId, itemId);
+    final metadata = await _plexMetadata(ServerId(serverId), itemId);
     if (metadata == null) return null;
     return plexPlaybackExtrasFromCacheJson(
       metadata,
@@ -88,7 +89,7 @@ class CachedPlaybackMetadataService {
     );
   }
 
-  static Future<Map<String, dynamic>?> _plexMetadata(String serverId, String itemId) async {
+  static Future<Map<String, dynamic>?> _plexMetadata(ServerId serverId, String itemId) async {
     final cached = await ApiCache.forBackend(MediaBackend.plex).get(serverId, '/library/metadata/$itemId');
     return PlexCacheParser.extractFirstMetadata(cached);
   }
@@ -129,7 +130,7 @@ class CachedPlaybackMetadataService {
     try {
       final raw = await ApiCache.forBackend(
         MediaBackend.jellyfin,
-      ).get(cacheServerId, JellyfinApiCache.mediaSegmentsEndpoint(itemId));
+      ).get(ServerId(cacheServerId), JellyfinApiCache.mediaSegmentsEndpoint(itemId));
       return jellyfinMediaSegmentsToMarkers(raw);
     } catch (e) {
       appLogger.d('Cached Jellyfin media segments unavailable for $cacheServerId:$itemId', error: e);

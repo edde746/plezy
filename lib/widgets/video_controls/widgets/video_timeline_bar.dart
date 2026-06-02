@@ -122,7 +122,7 @@ class VideoTimelineBar extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: .spaceBetween,
             children: [_buildTimestamp(position), _buildRemainingTimestamp(remaining)],
           ),
         ),

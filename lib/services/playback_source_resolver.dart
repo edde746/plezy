@@ -1,4 +1,6 @@
 import '../database/app_database.dart';
+import '../media/ids.dart';
+import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../models/transcode_quality_preset.dart';
@@ -22,7 +24,7 @@ class PlaybackSourceResolver {
     String? sessionIdentifier,
     String? transcodeSessionId,
   }) async {
-    final reportingClient = _playbackClient(metadata.serverId, offlineLibraryMode: offlineLibraryMode);
+    final reportingClient = _playbackClient(serverIdOrNull(metadata.serverId), offlineLibraryMode: offlineLibraryMode);
     final service = PlaybackInitializationService(client: reportingClient, database: database);
     final result = await service.getPlaybackData(
       metadata: metadata,
@@ -54,11 +56,29 @@ class PlaybackSourceResolver {
       reportingMode: reportingMode,
       reportingClient: reportingClient,
       clientScopeId: scopeId == metadata.serverId ? null : scopeId,
-      streamHeaders: result.usesLocalMedia ? null : reportingClient?.streamHeaders,
+      streamHeaders: _streamHeaders(
+        client: reportingClient,
+        sourceKind: sourceKind,
+        sessionIdentifier: sessionIdentifier,
+      ),
     );
   }
 
-  MediaServerClient? _playbackClient(String? serverId, {required bool offlineLibraryMode}) {
+  Map<String, String>? _streamHeaders({
+    required MediaServerClient? client,
+    required PlaybackSourceKind sourceKind,
+    String? sessionIdentifier,
+  }) {
+    if (client == null || sourceKind == PlaybackSourceKind.localFile) return null;
+
+    final headers = Map<String, String>.from(client.streamHeaders);
+    if (client.backend == MediaBackend.plex && sessionIdentifier != null) {
+      headers['X-Plex-Session-Identifier'] = sessionIdentifier;
+    }
+    return headers;
+  }
+
+  MediaServerClient? _playbackClient(ServerId? serverId, {required bool offlineLibraryMode}) {
     if (serverId == null) return null;
     final client = serverManager.getClient(serverId);
     if (offlineLibraryMode && !serverManager.isClientOnline(serverId)) return null;

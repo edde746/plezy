@@ -1515,10 +1515,12 @@ class _TranslationsAddServerFr extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Ajouter un serveur Jellyfin';
 	@override String get jellyfinUrlIntro => 'Saisissez l\'URL du serveur, par ex. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Saisissez une ou plusieurs URL de serveur, séparées par des virgules ou des retours à la ligne. Plezy utilisera l\'URL joignable avec la latence la plus faible.';
+	@override String get jellyfinUrlsIntro => 'Saisissez une ou plusieurs URL de serveur, séparées par des virgules. Plezy utilisera l\'URL joignable avec la latence la plus faible.';
 	@override String get serverUrl => 'URL du serveur';
 	@override String get serverUrls => 'URL du serveur';
 	@override String get findServer => 'Rechercher un serveur';
+	@override String get searchingLocalServers => 'Recherche de serveurs Jellyfin locaux...';
+	@override String get localServers => 'Serveurs Jellyfin locaux';
 	@override String get username => 'Nom d\'utilisateur';
 	@override String get password => 'Mot de passe';
 	@override String get signIn => 'Se connecter';
@@ -2981,10 +2983,12 @@ extension on TranslationsFr {
 			'trackers.libraryFilter.noLibraries' => 'Aucune bibliothèque disponible',
 			'addServer.addJellyfinTitle' => 'Ajouter un serveur Jellyfin',
 			'addServer.jellyfinUrlIntro' => 'Saisissez l\'URL du serveur, par ex. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Saisissez une ou plusieurs URL de serveur, séparées par des virgules ou des retours à la ligne. Plezy utilisera l\'URL joignable avec la latence la plus faible.',
+			'addServer.jellyfinUrlsIntro' => 'Saisissez une ou plusieurs URL de serveur, séparées par des virgules. Plezy utilisera l\'URL joignable avec la latence la plus faible.',
 			'addServer.serverUrl' => 'URL du serveur',
 			'addServer.serverUrls' => 'URL du serveur',
 			'addServer.findServer' => 'Rechercher un serveur',
+			'addServer.searchingLocalServers' => 'Recherche de serveurs Jellyfin locaux...',
+			'addServer.localServers' => 'Serveurs Jellyfin locaux',
 			'addServer.username' => 'Nom d\'utilisateur',
 			'addServer.password' => 'Mot de passe',
 			'addServer.signIn' => 'Se connecter',

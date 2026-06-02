@@ -101,7 +101,7 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         BottomSheetHeader(
           title: t.libraries.sortBy,

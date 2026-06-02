@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../media/ids.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../media/media_backend.dart';
 import '../../media/media_item.dart';
@@ -82,7 +83,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
     });
 
     try {
-      final client = context.getMediaClientForServer(widget.serverId!);
+      final client = context.getMediaClientForServer(ServerId(widget.serverId!));
       final folders = await _fetchRootFolders(client);
 
       if (!mounted) return;
@@ -123,7 +124,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
     });
 
     try {
-      final client = context.getMediaClientForServer(widget.serverId!);
+      final client = context.getMediaClientForServer(ServerId(widget.serverId!));
       final children = await _fetchFolderChildren(client, folder);
 
       if (!mounted) return;
@@ -184,7 +185,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
 
     final folderKey = _folderKey(folder);
     if (folderKey == null) return;
-    final client = context.getPlexClientForServer(widget.serverId!);
+    final client = context.getPlexClientForServer(ServerId(widget.serverId!));
     final launcher = PlexPlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
     await launcher.launchFromFolder(
       folderKey: folderKey,
@@ -203,7 +204,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
 
     final folderKey = _folderKey(folder);
     if (folderKey == null) return;
-    final client = context.getPlexClientForServer(widget.serverId!);
+    final client = context.getPlexClientForServer(ServerId(widget.serverId!));
     final launcher = PlexPlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
     await launcher.launchFromFolder(
       folderKey: folderKey,

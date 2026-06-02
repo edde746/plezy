@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -120,7 +121,7 @@ class EpisodeNavigationService {
     }
     var allEpisodes = _readSeriesCache(seriesId);
     if (allEpisodes == null) {
-      final client = serverManager.getClient(metadata.serverId!);
+      final client = serverManager.getClient(ServerId(metadata.serverId!));
       if (client == null) return;
       try {
         allEpisodes = await client.fetchClientSideEpisodeQueue(seriesId);

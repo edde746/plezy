@@ -73,7 +73,7 @@ class _BorrowConnectionScreenState extends State<BorrowConnectionScreen> {
       profileRegistry.list(),
       StorageService.getInstance(),
     ]);
-    final allPcs = results[0] as List<ProfileConnection>;
+    final allPcs = results.first as List<ProfileConnection>;
     final allConns = results[1] as List<Connection>;
     final localProfiles = results[2] as List<Profile>;
     final storage = results[3] as StorageService;
@@ -377,18 +377,18 @@ class _BorrowTile extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+        padding: const EdgeInsets.all(12),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           children: [
             BackendBadge(backend: candidate.connection.backend, size: 28),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: .start,
+                mainAxisSize: .min,
                 children: [
-                  Text(candidate.connectionLabel, style: theme.textTheme.titleMedium, overflow: TextOverflow.ellipsis),
+                  Text(candidate.connectionLabel, style: theme.textTheme.titleMedium, overflow: .ellipsis),
                   const SizedBox(height: 2),
                   Row(
                     children: [
@@ -413,7 +413,7 @@ class _BorrowTile extends StatelessWidget {
                 ],
               ),
             ),
-            const Padding(padding: EdgeInsets.only(left: 8, top: 4), child: AppIcon(Symbols.add_rounded, fill: 1)),
+            const Padding(padding: .only(left: 8, top: 4), child: AppIcon(Symbols.add_rounded, fill: 1)),
           ],
         ),
       ),

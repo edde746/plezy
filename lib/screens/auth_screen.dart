@@ -214,18 +214,18 @@ class _AuthScreenState extends State<AuthScreen> {
             padding: const EdgeInsets.all(24),
             child: isDesktop
                 ? Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: .center,
                     children: [
                       Expanded(
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: .center,
+                          crossAxisAlignment: .center,
                           children: [
                             Image.asset('assets/plezy.png', width: 120, height: 120),
                             const SizedBox(height: 24),
                             Text(
                               t.app.title,
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: .bold),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -236,8 +236,8 @@ class _AuthScreenState extends State<AuthScreen> {
                         child: Center(
                           child: SingleChildScrollView(
                             child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              mainAxisSize: .min,
+                              crossAxisAlignment: .stretch,
                               children: [_buildAuthBody()],
                             ),
                           ),
@@ -247,14 +247,14 @@ class _AuthScreenState extends State<AuthScreen> {
                   )
                 : SingleChildScrollView(
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      mainAxisSize: .min,
+                      crossAxisAlignment: .stretch,
                       children: [
                         Image.asset('assets/plezy.png', width: 120, height: 120),
                         const SizedBox(height: 24),
                         Text(
                           t.app.title,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: .bold),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 48),
@@ -271,7 +271,7 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget _buildAuthBody() {
     if (_isAuthenticating) {
       return Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           const Center(child: CircularProgressIndicator()),
           const SizedBox(height: 16),
@@ -294,8 +294,8 @@ class _AuthScreenState extends State<AuthScreen> {
     final isTV = PlatformDetector.isTV();
     final isAppleTV = PlatformDetector.isAppleTV();
     return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: .min,
+      crossAxisAlignment: .stretch,
       children: [
         if (isTV) ...[
           FocusableButton(
@@ -305,8 +305,8 @@ class _AuthScreenState extends State<AuthScreen> {
               onPressed: busy ? null : startQr,
               style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: .center,
+                mainAxisSize: .min,
                 children: [
                   const BackendBadge(backend: MediaBackend.plex, size: 18),
                   const SizedBox(width: 8),
@@ -487,7 +487,7 @@ class _DebugTokenDialogState extends State<_DebugTokenDialog> with ControllerDis
     return AlertDialog(
       title: const Text('Debug: Enter Plex Token'),
       content: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           FocusableTextFormField(
             controller: _tokenController,

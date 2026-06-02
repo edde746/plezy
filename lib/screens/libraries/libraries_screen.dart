@@ -817,9 +817,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final serverName = library.serverName ?? fallbackServerName;
     if (serverName == null || serverName.isEmpty) return const SizedBox.shrink();
 
-    final text = Text(serverName, style: style, overflow: TextOverflow.ellipsis);
+    final text = Text(serverName, style: style, overflow: .ellipsis);
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         BackendBadge(backend: library.backend, size: badgeSize, color: style?.color),
         const SizedBox(width: 4),
@@ -830,7 +830,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
   PopupMenuItem<String> _buildLibraryServerHeaderMenuItem(MediaLibrary library, String serverKey) {
     final style = Theme.of(context).textTheme.labelSmall?.copyWith(
-      fontWeight: FontWeight.w600,
+      fontWeight: .w600,
       letterSpacing: 0.4,
       color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.65),
     );
@@ -862,8 +862,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: .start,
+              mainAxisSize: .min,
               children: [
                 Text(
                   library.title,
@@ -931,7 +931,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     // On desktop/TV with side nav, show tabs in app bar (library name is in side nav)
     if (PlatformDetector.shouldUseSideNavigation(context)) {
       return Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           for (int i = 0; i < _visibleTabs.length; i++) ...[
             if (i > 0) const SizedBox(width: 8),
@@ -969,14 +969,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             AppIcon(ContentTypeHelper.getLibraryIcon(selectedLibrary.kind.id), fill: 1, size: 20),
             const SizedBox(width: 8),
             if (_hasMultipleServers(visibleLibraries) && selectedLibrary.serverName != null)
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: .start,
+                mainAxisSize: .min,
                 children: [
                   Text(selectedLibrary.title, style: Theme.of(context).textTheme.titleMedium),
                   _buildLibraryServerLabel(
@@ -1445,11 +1445,11 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       builder: (context) => SafeArea(
         top: false,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text(library.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              child: Text(library.title, style: const TextStyle(fontSize: 16, fontWeight: .w600)),
             ),
             ...menuItems.indexed.map(
               (entry) => ListTile(
@@ -1537,10 +1537,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                   const AppIcon(Symbols.edit_rounded, fill: 1),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      t.libraries.manageLibraries,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
+                    child: Text(t.libraries.manageLibraries, style: const TextStyle(fontSize: 20, fontWeight: .bold)),
                   ),
                   IconButton(
                     icon: const AppIcon(Symbols.close_rounded, fill: 1),
@@ -1656,7 +1653,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       child: ListTile(
         tileColor: tileColor,
         leading: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             ReorderableDragStartListener(
               index: index,
@@ -1681,7 +1678,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
               )
             : null,
         trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             Container(
               decoration: FocusTheme.focusBackgroundDecoration(isFocused: isVisibilityButtonFocused, borderRadius: 20),

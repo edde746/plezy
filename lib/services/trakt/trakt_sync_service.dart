@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../media/ids.dart';
 import 'dart:collection';
 
 import '../../media/media_item.dart';
@@ -97,7 +98,7 @@ class TraktSyncService {
 
   bool get _canPush => _isEnabled && _client != null;
 
-  TrackerIdResolver? _resolverFor(String serverId) {
+  TrackerIdResolver? _resolverFor(ServerId serverId) {
     final cached = _resolvers[serverId];
     if (cached != null) return cached;
 
@@ -112,7 +113,7 @@ class TraktSyncService {
     return resolver;
   }
 
-  MediaServerClient? _clientFor(String serverId) => _serverManager?.getClient(serverId);
+  MediaServerClient? _clientFor(ServerId serverId) => _serverManager?.getClient(serverId);
 
   Future<void> _onWatchStateEvent(WatchStateEvent event) async {
     if (!_canPush) return;
@@ -131,7 +132,7 @@ class TraktSyncService {
         await _push(
           op: op,
           ratingKey: event.itemId,
-          serverId: event.serverId,
+          serverId: ServerId(event.serverId),
           libraryGlobalKey: event.librarySectionGlobalKey,
           kind: TraktMediaKind.movie,
           watchedAtIso: watchedAtIso,
@@ -140,7 +141,7 @@ class TraktSyncService {
         await _push(
           op: op,
           ratingKey: event.itemId,
-          serverId: event.serverId,
+          serverId: ServerId(event.serverId),
           libraryGlobalKey: event.librarySectionGlobalKey,
           kind: TraktMediaKind.episode,
           watchedAtIso: watchedAtIso,
@@ -155,7 +156,7 @@ class TraktSyncService {
     required WatchStateEvent event,
     required String watchedAtIso,
   }) async {
-    final mediaClient = _clientFor(event.serverId);
+    final mediaClient = _clientFor(ServerId(event.serverId));
     if (mediaClient == null) {
       appLogger.d('Trakt sync: no client registered for server ${event.serverId}, skipping ${event.mediaType}');
       return;
@@ -188,7 +189,7 @@ class TraktSyncService {
       await _push(
         op: op,
         ratingKey: episode.id,
-        serverId: event.serverId,
+        serverId: ServerId(event.serverId),
         libraryGlobalKey: episode.libraryGlobalKey ?? event.librarySectionGlobalKey,
         kind: TraktMediaKind.episode,
         watchedAtIso: watchedAtIso,
@@ -200,13 +201,13 @@ class TraktSyncService {
   Future<void> _push({
     required TraktSyncOp op,
     required String ratingKey,
-    required String serverId,
+    required ServerId serverId,
     required String? libraryGlobalKey,
     required TraktMediaKind kind,
     required String watchedAtIso,
     MediaItem? episodeMeta,
   }) async {
-    final resolver = _resolverFor(serverId);
+    final resolver = _resolverFor(ServerId(serverId));
     if (resolver == null) {
       appLogger.d('Trakt sync: no client registered for server $serverId, skipping');
       return;
@@ -223,7 +224,7 @@ class TraktSyncService {
       // doesn't carry the index, so fetch episode metadata via the neutral
       // MediaServerClient surface (Plex `/library/metadata`, Jellyfin
       // `/Users/{id}/Items/{id}`).
-      final mediaClient = _clientFor(serverId);
+      final mediaClient = _clientFor(ServerId(serverId));
       if (mediaClient == null) return;
       final metadata = episodeMeta ?? await mediaClient.fetchItem(ratingKey);
       if (metadata == null) return;

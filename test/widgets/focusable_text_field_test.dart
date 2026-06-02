@@ -325,6 +325,86 @@ void main() {
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
   });
 
+  testWidgets('Android TV after-first-focus skips initial auto-open and opens on refocus', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(null);
+    await TvDetectionService.getInstance(forceTv: true);
+    TvDetectionService.setForceTVSync(true);
+    await _setTvSurfaceSize(tester);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'server_url_field');
+    final otherFocusNode = FocusNode(debugLabel: 'find_server_button');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+    addTearDown(otherFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Column(
+            children: [
+              FocusableTextFormField(
+                controller: controller,
+                focusNode: fieldFocusNode,
+                tvKeyboardAutoOpenBehavior: TvKeyboardAutoOpenBehavior.afterFirstFocus,
+              ),
+              Focus(focusNode: otherFocusNode, child: const SizedBox(width: 1, height: 1)),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(fieldFocusNode.hasPrimaryFocus, isTrue);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+
+    otherFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(otherFocusNode.hasPrimaryFocus, isTrue);
+
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+  });
+
+  testWidgets('Android TV after-first-focus opens on explicit select', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(null);
+    await TvDetectionService.getInstance(forceTv: true);
+    TvDetectionService.setForceTVSync(true);
+    await _setTvSurfaceSize(tester);
+    final controller = TextEditingController();
+    final fieldFocusNode = FocusNode(debugLabel: 'server_url_field');
+    addTearDown(controller.dispose);
+    addTearDown(fieldFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: FocusableTextFormField(
+            controller: controller,
+            focusNode: fieldFocusNode,
+            tvKeyboardAutoOpenBehavior: TvKeyboardAutoOpenBehavior.afterFirstFocus,
+          ),
+        ),
+      ),
+    );
+
+    fieldFocusNode.requestFocus();
+    await tester.pumpAndSettle();
+
+    expect(fieldFocusNode.hasPrimaryFocus, isTrue);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsOneWidget);
+  });
+
   testWidgets('Android TV remote keys are passed to native text input', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(null);
     await TvDetectionService.getInstance(forceTv: true);

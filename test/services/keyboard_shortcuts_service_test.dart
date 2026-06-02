@@ -222,6 +222,63 @@ void main() {
     expect(resetCount, 1);
   });
 
+  testWidgets('command-modified keys are not treated as video hotkeys', (tester) async {
+    final service = await KeyboardShortcutsService.getInstance();
+    addTearDown(service.dispose);
+    final player = _FakePlayer();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+
+    final commandMResult = service.handleVideoPlayerKeyEvent(
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.keyM,
+        logicalKey: LogicalKeyboardKey.keyM,
+        timeStamp: Duration.zero,
+      ),
+      player,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    );
+    final commandQResult = service.handleVideoPlayerKeyEvent(
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.keyQ,
+        logicalKey: LogicalKeyboardKey.keyQ,
+        timeStamp: Duration(milliseconds: 1),
+      ),
+      player,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    );
+    final commandCommaResult = service.handleVideoPlayerKeyEvent(
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.comma,
+        logicalKey: LogicalKeyboardKey.comma,
+        timeStamp: Duration(milliseconds: 2),
+      ),
+      player,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+    );
+
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
+
+    expect(commandMResult, KeyEventResult.ignored);
+    expect(commandQResult, KeyEventResult.ignored);
+    expect(commandCommaResult, KeyEventResult.ignored);
+  });
+
   test('video zoom scale maps to mpv logarithmic property', () {
     expect(VideoFilterManager.videoZoomPropertyForScale(1.0), closeTo(0.0, 0.0001));
     expect(VideoFilterManager.videoZoomPropertyForScale(2.0), closeTo(1.0, 0.0001));

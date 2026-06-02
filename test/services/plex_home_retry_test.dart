@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:plezy/media/ids.dart';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
@@ -46,7 +47,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
       );
@@ -81,7 +82,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],
@@ -93,6 +94,40 @@ void main() {
       expect(hubs, hasLength(1));
       expect(client.config.baseUrl, primary);
       expect(httpClient.requests.map((r) => r.url.origin), everyElement(primary));
+    });
+
+    test('resets live base URL after fallback endpoint is exhausted', () async {
+      const primary = 'http://primary:32400';
+      const fallback = 'http://fallback:32400';
+      final httpClient = _SequenceClient([
+        (_) async => throw TimeoutException('primary down'),
+        (_) async => throw TimeoutException('fallback down'),
+        (_) async => _jsonResponse({
+          'MediaContainer': {'machineIdentifier': 'server-id'},
+        }),
+      ]);
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: primary,
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Plezy',
+          version: 'test',
+        ),
+        serverId: ServerId('server-id'),
+        serverName: 'Server',
+        httpClient: httpClient,
+        prioritizedEndpoints: const [primary, fallback],
+      );
+      addTearDown(client.close);
+
+      await expectLater(client.getServerIdentity(), throwsA(isA<Object>()));
+
+      expect(client.config.baseUrl, primary);
+      expect(httpClient.requests.map((r) => r.url.origin), [primary, fallback]);
+
+      await client.getServerIdentity();
+      expect(httpClient.requests.map((r) => r.url.origin), [primary, fallback, primary]);
     });
 
     test('fetchGlobalHubs uses promoted hub endpoint advertised by media providers', () async {
@@ -112,7 +147,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         seedTranscoderVideoSupport: true,
@@ -144,7 +179,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         seedTranscoderVideoSupport: true,
@@ -175,7 +210,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
       );
@@ -210,7 +245,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],

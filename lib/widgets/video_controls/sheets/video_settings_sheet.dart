@@ -79,7 +79,7 @@ class _SettingsMenuItem extends StatelessWidget {
       leading: AppIcon(icon, fill: 1, color: isHighlighted ? Colors.amber : t.textMuted),
       title: Text(title),
       trailing: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           if (allowValueOverflow) Flexible(child: valueWidget) else valueWidget,
           const SizedBox(width: 8),
@@ -215,15 +215,16 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     super.initState();
     _audioSyncOffset = widget.audioSyncOffset;
     _subtitleSyncOffset = widget.subtitleSyncOffset;
-    _zoomScale = widget.videoZoomScale;
+    _zoomScale = VideoFilterManager.normalizeZoomScale(widget.videoZoomScale);
     _loadDebugDvConversionMode();
   }
 
   @override
   void didUpdateWidget(covariant VideoSettingsSheet oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if ((widget.videoZoomScale - oldWidget.videoZoomScale).abs() > 0.0001) {
-      _zoomScale = widget.videoZoomScale;
+    final nextZoomScale = VideoFilterManager.normalizeZoomScale(widget.videoZoomScale);
+    if (_zoomScale != nextZoomScale) {
+      _zoomScale = nextZoomScale;
     }
   }
 
@@ -276,7 +277,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     // whenComplete in track_chapter_controls). Cancel it again here.
     controller
         .show(
-          alignment: Alignment.topCenter,
+          alignment: .topCenter,
           constraints: const BoxConstraints(maxHeight: 80, maxWidth: 900),
           initialFocusNode: sliderFocusNode,
           builder: (_) => _CompactSyncBar(
@@ -392,7 +393,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   String _formatZoomScale(double scale) => '${(scale * 100).round()}%';
 
   void _setZoomScale(double scale) {
-    final next = scale.clamp(VideoFilterManager.minZoomScale, VideoFilterManager.maxZoomScale).toDouble();
+    final next = VideoFilterManager.normalizeZoomScale(scale);
     setState(() {
       _zoomScale = next;
     });
@@ -809,7 +810,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                     child: Text(
                       _formatBackend(entry.key),
-                      style: TextStyle(color: tokens(context).textMuted, fontSize: 12, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: tokens(context).textMuted, fontSize: 12, fontWeight: .w600),
                     ),
                   ),
                   for (final d in entry.value) _buildDeviceTile(d, currentDevice),
@@ -874,7 +875,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
                   ? Text(_getShaderSubtitle(preset)!, style: TextStyle(color: tokens(context).textMuted, fontSize: 12))
                   : null,
               trailing: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: .min,
                 children: [
                   if (isSelected) const AppIcon(Symbols.check_rounded, fill: 1, color: Colors.amber),
                   if (isCustom) ...[
@@ -1067,7 +1068,7 @@ class _CompactSyncBarState extends State<_CompactSyncBar> {
         const SizedBox(width: 16),
         AppIcon(widget.icon, fill: 1, color: tokens(context).textMuted, size: 20),
         const SizedBox(width: 8),
-        Text(widget.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+        Text(widget.title, style: const TextStyle(fontWeight: .w600, fontSize: 14)),
         Expanded(
           child: SyncOffsetControl(
             player: widget.player,
@@ -1094,7 +1095,7 @@ class _CompactSyncBarState extends State<_CompactSyncBar> {
             child: Container(
               width: 36,
               height: 36,
-              alignment: Alignment.center,
+              alignment: .center,
               child: AppIcon(Symbols.close_rounded, fill: 1, color: tokens(context).textMuted, size: 22),
             ),
           ),

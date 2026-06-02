@@ -36,7 +36,7 @@ class ProfileAvatar extends StatelessWidget {
               child: Container(
                 width: lockBadgeSize,
                 height: lockBadgeSize,
-                alignment: Alignment.center,
+                alignment: .center,
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface,
                   shape: BoxShape.circle,
@@ -75,10 +75,10 @@ class ProfileAvatar extends StatelessWidget {
   Widget _initialFallback(ThemeData theme, Profile p) {
     return Container(
       color: colorForName(p.displayName, theme),
-      alignment: Alignment.center,
+      alignment: .center,
       child: Text(
         initialOf(p.displayName),
-        style: TextStyle(color: Colors.white, fontSize: size * 0.42, fontWeight: FontWeight.w600, height: 1.0),
+        style: TextStyle(color: Colors.white, fontSize: size * 0.42, fontWeight: .w600, height: 1.0),
       ),
     );
   }

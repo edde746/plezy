@@ -1272,10 +1272,12 @@
   "addServer": {
     "addJellyfinTitle": "Aggiungi server Jellyfin",
     "jellyfinUrlIntro": "Inserisci l'URL del server, es. `https://jellyfin.example.com`.",
-    "jellyfinUrlsIntro": "Inserisci uno o più URL del server, separati da virgole o nuove righe. Plezy userà l'URL raggiungibile con la latenza più bassa.",
+    "jellyfinUrlsIntro": "Inserisci uno o più URL del server, separati da virgole. Plezy userà l'URL raggiungibile con la latenza più bassa.",
     "serverUrl": "URL del server",
     "serverUrls": "URL del server",
     "findServer": "Trova server",
+    "searchingLocalServers": "Ricerca server Jellyfin locali...",
+    "localServers": "Server Jellyfin locali",
     "username": "Nome utente",
     "password": "Password",
     "signIn": "Accedi",

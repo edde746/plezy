@@ -1,15 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_version.dart';
 import 'package:plezy/models/shader_preset.dart';
+import 'package:plezy/mpv/mpv.dart';
+import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/painters/buffer_range_painter.dart';
 import 'package:plezy/widgets/video_controls/widgets/mobile_skip_zones.dart';
+import 'package:plezy/widgets/video_controls/widgets/sync_offset_control.dart';
 import 'package:plezy/widgets/video_controls/widgets/timeline_slider.dart';
 
+const _testTokens = MonoTokens(
+  radiusSm: 8,
+  radiusMd: 12,
+  space: 8,
+  fast: Duration(milliseconds: 1),
+  normal: Duration(milliseconds: 1),
+  slow: Duration(milliseconds: 1),
+  bg: Colors.black,
+  surface: Colors.black,
+  outline: Colors.white24,
+  text: Colors.white,
+  textMuted: Colors.white70,
+  splashFactory: NoSplash.splashFactory,
+);
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('resolveShaderTogglePreset', () {
     test('turns shaders off when a shader is currently active', () {
       final result = resolveShaderTogglePreset(
@@ -234,4 +255,51 @@ void main() {
       expect(slider.max, 0.0);
     });
   });
+
+  group('SyncOffsetControl', () {
+    testWidgets('uses 100ms slider steps without rendering tick marks', (tester) async {
+      LocaleSettings.setLocaleSync(AppLocale.en);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: ThemeData(extensions: const [_testTokens]),
+          home: Scaffold(
+            body: SizedBox(
+              width: 700,
+              child: SyncOffsetControl(
+                player: _FakeSyncPlayer(),
+                propertyName: 'sub-delay',
+                initialOffset: 0,
+                labelText: 'Subtitles',
+                onOffsetChanged: (_) async {},
+                compact: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final slider = tester.widget<Slider>(find.byType(Slider));
+      final sliderTheme = tester.widget<SliderTheme>(
+        find.ancestor(of: find.byType(Slider), matching: find.byType(SliderTheme)).first,
+      );
+
+      expect(slider.min, -60000);
+      expect(slider.max, 60000);
+      expect(slider.divisions, 1200);
+      expect((slider.max - slider.min) / slider.divisions!, 100);
+      expect(sliderTheme.data.tickMarkShape, same(SliderTickMarkShape.noTickMark));
+    });
+  });
+}
+
+class _FakeSyncPlayer implements Player {
+  @override
+  PlayerState get state => PlayerState();
+
+  @override
+  Future<void> setProperty(String name, String value) async {}
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

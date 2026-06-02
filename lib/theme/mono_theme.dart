@@ -86,20 +86,20 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       scrolledUnderElevation: 0,
       centerTitle: false,
       foregroundColor: c.text,
-      titleTextStyle: TextStyle(color: c.text, fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: -0.2),
+      titleTextStyle: TextStyle(color: c.text, fontSize: 18, fontWeight: .w700, letterSpacing: -0.2),
     ),
     textTheme: Typography.englishLike2021
         .apply(bodyColor: c.text, displayColor: c.text)
         .copyWith(
-          displayLarge: const TextStyle(fontWeight: FontWeight.w700, letterSpacing: -0.5),
-          titleMedium: const TextStyle(fontWeight: FontWeight.w600),
+          displayLarge: const TextStyle(fontWeight: .w700, letterSpacing: -0.5),
+          titleMedium: const TextStyle(fontWeight: .w600),
           bodyMedium: TextStyle(color: c.text),
           bodySmall: TextStyle(color: c.textMuted),
         ),
     cardTheme: CardThemeData(
       color: c.surface,
       elevation: 0,
-      margin: EdgeInsets.zero,
+      margin: .zero,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(14))),
     ),
     inputDecorationTheme: _inputDecorationTheme(c.text, c.textMuted),
@@ -145,7 +145,7 @@ ThemeData monoTheme({required bool dark, bool oled = false}) {
       actionTextColor: c.text,
       elevation: 6,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      insetPadding: const EdgeInsets.all(16),
     ),
   );
 

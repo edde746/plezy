@@ -163,8 +163,10 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
 
     if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
 
+    final requestedMediaIndex = _effectiveSelectedMediaIndex;
     _currentMetadata = episodeMetadata;
     VideoPlayerScreenState._activeId = episodeMetadata.id;
+    VideoPlayerScreenState._activeMediaIndex = requestedMediaIndex;
     _showPlayNextDialog = false;
     _autoPlayTimer?.cancel();
     _hasFirstFrame.value = false;
@@ -173,7 +175,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       final playbackResolver = PlaybackSourceResolver(serverManager: serverManager, database: database);
       final playbackContext = await playbackResolver.resolve(
         metadata: episodeMetadata,
-        selectedMediaIndex: widget.selectedMediaIndex,
+        selectedMediaIndex: requestedMediaIndex,
         selectedMediaSourceId: widget.selectedMediaSourceId,
         offlineLibraryMode: widget.isOffline,
         qualityPreset: _selectedQualityPreset,
@@ -195,9 +197,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       _isTranscoding = result.isTranscoding;
       _effectiveIsOffline = result.isOffline;
       _playbackContext = playbackContext;
+      _streamHeaders = streamHeaders;
       _playbackPlaySessionId = result.playSessionId;
       _playbackPlayMethod = result.playMethod;
       _selectedAudioStreamId = result.activeAudioStreamId;
+      _effectiveSelectedMediaIndex = result.selectedMediaIndex;
       if (result.fallbackReason != null && !_selectedQualityPreset.isOriginal) {
         if (mounted) {
           showErrorSnackBar(context, t.videoControls.transcodeUnavailableFallback);

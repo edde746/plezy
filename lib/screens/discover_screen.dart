@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -99,7 +100,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     try {
       final serverId = _serverIdForItem(itemId);
       if (serverId == null) return;
-      final updated = await context.tryGetMediaClientForServer(serverId)?.fetchItem(itemId);
+      final updated = await context.tryGetMediaClientForServer(ServerId(serverId))?.fetchItem(itemId);
       if (updated == null || !mounted) return;
       setState(() {
         updateItemInLists(itemId, updated);
@@ -167,12 +168,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       final serverId = item.serverId;
       if (serverId == null) return null;
 
-      keys.add(buildGlobalKey(serverId, item.id));
+      keys.add(buildGlobalKey(ServerId(serverId), item.id));
       if (item.parentId != null) {
-        keys.add(buildGlobalKey(serverId, item.parentId!));
+        keys.add(buildGlobalKey(ServerId(serverId), item.parentId!));
       }
       if (item.grandparentId != null) {
-        keys.add(buildGlobalKey(serverId, item.grandparentId!));
+        keys.add(buildGlobalKey(ServerId(serverId), item.grandparentId!));
       }
     }
     return keys;
@@ -217,7 +218,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (serverId == null) {
       return context.tryGetMediaClientForServer(null);
     }
-    return context.tryGetMediaClientForServer(serverId);
+    return context.tryGetMediaClientForServer(ServerId(serverId));
   }
 
   /// Update hub keys when hubs list changes — reuse existing keys to avoid
@@ -1132,7 +1133,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             children: [
               ProfileAvatar(profile: p, size: 24),
               const SizedBox(width: 12),
-              Expanded(child: Text(p.displayName, overflow: TextOverflow.ellipsis)),
+              Expanded(child: Text(p.displayName, overflow: .ellipsis)),
               if (p.isPinProtected) ...[
                 const SizedBox(width: 8),
                 AppIcon(Symbols.lock_rounded, fill: 1, size: 14, color: theme.colorScheme.onSurfaceVariant),
@@ -1235,7 +1236,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         ),
       ),
       child: Padding(
-        padding: EdgeInsets.only(top: statusBarHeight, left: 16, right: 16, bottom: 8),
+        padding: .only(top: statusBarHeight, left: 16, right: 16, bottom: 8),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
@@ -1243,9 +1244,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               if (!PlatformDetector.isTV())
                 Text(
                   t.discover.title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(color: foregroundColor, fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foregroundColor, fontWeight: .bold),
                 ),
               const Spacer(),
               Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
@@ -1292,11 +1291,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   ),
                                   child: Text(
                                     '${watchTogether.participantCount}',
-                                    style: TextStyle(
-                                      color: colorScheme.onPrimary,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
                                   ),
                                 ),
                               ),
@@ -1469,7 +1464,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: .start,
                           children: [
                             Container(
                               width: 200,
@@ -1506,7 +1501,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   SliverFillRemaining(
                     child: Center(
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: .center,
                         children: [
                           const AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
                           const SizedBox(height: 16),
@@ -1592,7 +1587,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           if (_errorMessage != null)
             Center(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: .min,
                 children: [
                   const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
@@ -1605,7 +1600,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           if (!_isLoading && _errorMessage == null && browseHubs.isEmpty && !_areHubsLoading)
             Center(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: .center,
                 children: [
                   const AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
@@ -1690,7 +1685,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   left: -26,
                   right: 0,
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: .center,
                     children: [
                       // Pause/Play button
                       ClickableCursor(
@@ -1736,7 +1731,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                         borderRadius: BorderRadius.circular(dotSize / 2),
                                       ),
                                       child: Align(
-                                        alignment: Alignment.centerLeft,
+                                        alignment: .centerLeft,
                                         child: Container(
                                           width: fillWidth,
                                           height: dotSize,
@@ -1787,7 +1782,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final heroLogoHeight = isTv ? TvLayoutConstants.heroLogoHeight : 120.0;
     final heroTitleStyle = theme.textTheme.displaySmall?.copyWith(
       color: colorScheme.onSurface,
-      fontWeight: FontWeight.bold,
+      fontWeight: .bold,
       fontSize: isTv ? 52 : null,
       shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
     );
@@ -1920,7 +1915,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     ? 200
                     : 0,
                 child: Padding(
-                  padding: EdgeInsets.symmetric(
+                  padding: .symmetric(
                     horizontal: isTv
                         ? TvLayoutConstants.horizontalInset
                         : isLargeScreen
@@ -1935,7 +1930,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       ),
                       child: Column(
                         crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
+                        mainAxisSize: .min,
                         children: [
                           // Show logo or name/title
                           if (heroItem.clearLogoPath != null)
@@ -2004,7 +1999,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               style: TextStyle(
                                 color: colorScheme.onSurface,
                                 fontSize: isTv ? 18 : 14,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: .w600,
                               ),
                               textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                             ),
@@ -2018,7 +2013,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             const SizedBox(height: 12),
                             RichText(
                               maxLines: isTv ? 3 : 2,
-                              overflow: TextOverflow.ellipsis,
+                              overflow: .ellipsis,
                               textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                               text: TextSpan(
                                 style: TextStyle(
@@ -2030,7 +2025,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
                                     TextSpan(
                                       text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
-                                      style: TextStyle(fontWeight: FontWeight.bold, color: colorScheme.onSurface),
+                                      style: TextStyle(fontWeight: .bold, color: colorScheme.onSurface),
                                     ),
                                   TextSpan(
                                     text: heroItem.summary?.isNotEmpty == true
@@ -2048,7 +2043,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             Text(
                               'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
                               maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                              overflow: .ellipsis,
                               textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                               style: TextStyle(
                                 color: colorScheme.onSurface.withValues(alpha: 0.7),
@@ -2077,7 +2072,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final hasProgress = heroItem.hasActiveProgress;
     final isTv = PlatformDetector.isTV();
 
-    final minutesLeft = hasProgress ? ((heroItem.durationMs! - heroItem.viewOffsetMs!) / 60000).round() : 0;
+    final minutesLeft = hasProgress ? ((heroItem.durationMs! - heroItem.viewOffsetMs!) / 60_000).round() : 0;
 
     final progress = hasProgress ? heroItem.viewOffsetMs! / heroItem.durationMs! : 0.0;
 
@@ -2097,7 +2092,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             curve: Curves.easeOutCubic,
-            padding: EdgeInsets.symmetric(horizontal: isTv ? 34 : 24, vertical: isTv ? 16 : 12),
+            padding: .symmetric(horizontal: isTv ? 34 : 24, vertical: isTv ? 16 : 12),
             decoration: BoxDecoration(
               color: backgroundColor,
               borderRadius: BorderRadius.all(Radius.circular(isTv ? 32 : 24)),
@@ -2106,7 +2101,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   : null,
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 AppIcon(Symbols.play_arrow_rounded, fill: 1, size: isTv ? 28 : 20, color: foregroundColor),
                 SizedBox(width: isTv ? 12 : 8),
@@ -2120,7 +2115,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       borderRadius: BorderRadius.all(Radius.circular(isTv ? 4 : 3)),
                     ),
                     child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
+                      alignment: .centerLeft,
                       widthFactor: progress,
                       child: Container(
                         decoration: BoxDecoration(

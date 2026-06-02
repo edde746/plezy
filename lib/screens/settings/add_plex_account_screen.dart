@@ -163,18 +163,18 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
       title: Text(t.addServer.addPlexTitle),
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          padding: const EdgeInsets.all(24),
           sliver: SliverToBoxAdapter(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: .stretch,
               children: [
                 Text(t.addServer.plexAuthIntro, style: theme.textTheme.bodyMedium),
                 const SizedBox(height: 24),
                 PlexPinAuthFlow(
                   onTokenReceived: _onTokenReceived,
                   initialButtonsBuilder: (context, browser, qr, busy) => Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: .min,
+                    crossAxisAlignment: .stretch,
                     children: [
                       FocusableButton(
                         useBackgroundFocus: true,

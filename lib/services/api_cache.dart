@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../media/ids.dart';
 
 import 'package:drift/drift.dart';
 
@@ -62,11 +63,11 @@ abstract class ApiCache {
   /// joins on adjacent tables).
   AppDatabase get database => _db;
 
-  String _buildKey(String serverId, String endpoint) {
+  String _buildKey(ServerId serverId, String endpoint) {
     return '$serverId:$endpoint';
   }
 
-  Future<Map<String, dynamic>?> get(String serverId, String endpoint) async {
+  Future<Map<String, dynamic>?> get(ServerId serverId, String endpoint) async {
     final key = _buildKey(serverId, endpoint);
     final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
     if (result != null) {
@@ -75,7 +76,7 @@ abstract class ApiCache {
     return null;
   }
 
-  Future<void> put(String serverId, String endpoint, Map<String, dynamic> data) async {
+  Future<void> put(ServerId serverId, String endpoint, Map<String, dynamic> data) async {
     final key = _buildKey(serverId, endpoint);
     final encoded = await tryIsolateRun(() => jsonEncode(data));
     await _db
@@ -85,26 +86,26 @@ abstract class ApiCache {
         );
   }
 
-  Future<void> deleteForServer(String serverId) async {
+  Future<void> deleteForServer(ServerId serverId) async {
     await (_db.delete(_db.apiCache)..where((t) => t.cacheKey.like('$serverId:%'))).go();
   }
 
   /// Pin an endpoint's response so the row survives cache eviction.
-  Future<void> pin(String serverId, String endpoint) async {
+  Future<void> pin(ServerId serverId, String endpoint) async {
     final key = _buildKey(serverId, endpoint);
     await (_db.update(
       _db.apiCache,
     )..where((t) => t.cacheKey.equals(key))).write(const ApiCacheCompanion(pinned: Value(true)));
   }
 
-  Future<void> unpin(String serverId, String endpoint) async {
+  Future<void> unpin(ServerId serverId, String endpoint) async {
     final key = _buildKey(serverId, endpoint);
     await (_db.update(
       _db.apiCache,
     )..where((t) => t.cacheKey.equals(key))).write(const ApiCacheCompanion(pinned: Value(false)));
   }
 
-  Future<bool> isPinned(String serverId, String endpoint) async {
+  Future<bool> isPinned(ServerId serverId, String endpoint) async {
     final key = _buildKey(serverId, endpoint);
     final result = await (_db.select(_db.apiCache)..where((t) => t.cacheKey.equals(key))).getSingleOrNull();
     return result?.pinned ?? false;
@@ -145,7 +146,7 @@ abstract class ApiCache {
   /// [keyPattern] from each `cacheKey`. Returns the unique set of captured
   /// ids — backend subclasses use this to enumerate their pinned items
   /// (Plex ratingKeys, Jellyfin item ids).
-  Future<Set<String>> extractPinnedIds(String serverId, RegExp keyPattern) async {
+  Future<Set<String>> extractPinnedIds(ServerId serverId, RegExp keyPattern) async {
     final rows = await (_db.select(
       _db.apiCache,
     )..where((t) => t.cacheKey.like('$serverId:%') & t.pinned.equals(true))).get();
@@ -162,29 +163,29 @@ abstract class ApiCache {
   /// from the prefix before the first colon. Backend subclasses use this to
   /// batch-load all pinned metadata into their own model type without
   /// re-implementing the row walker.
-  Future<List<({String serverId, String id, String data})>> listPinnedRowsByPattern(RegExp keyPattern) async {
+  Future<List<({ServerId serverId, String id, String data})>> listPinnedRowsByPattern(RegExp keyPattern) async {
     final rows = await (_db.select(_db.apiCache)..where((t) => t.pinned.equals(true))).get();
-    final out = <({String serverId, String id, String data})>[];
+    final out = <({ServerId serverId, String id, String data})>[];
     for (final row in rows) {
       final colon = row.cacheKey.indexOf(':');
       if (colon < 0) continue;
       final match = keyPattern.firstMatch(row.cacheKey);
       if (match == null) continue;
-      out.add((serverId: row.cacheKey.substring(0, colon), id: match.group(1)!, data: row.data));
+      out.add((serverId: ServerId(row.cacheKey.substring(0, colon)), id: match.group(1)!, data: row.data));
     }
     return out;
   }
 
   /// Fetch and parse cached [MediaItem] for [itemId] on [serverId]. Returns
   /// `null` when the item isn't cached.
-  Future<MediaItem?> getMetadata(String serverId, String itemId);
+  Future<MediaItem?> getMetadata(ServerId serverId, String itemId);
 
   /// Pin the cached metadata row(s) for [itemId] so they survive cache
   /// eviction (used by the offline-download pipeline).
-  Future<void> pinForOffline(String serverId, String itemId);
+  Future<void> pinForOffline(ServerId serverId, String itemId);
 
   /// Delete cached metadata for [itemId] (used when removing a download).
-  Future<void> deleteForItem(String serverId, String itemId);
+  Future<void> deleteForItem(ServerId serverId, String itemId);
 
   /// Persist a watched/unwatched flip into the cached metadata JSON for
   /// [itemId] so reloads (`getMetadata` / `getAllPinnedMetadata`) reflect the
@@ -207,7 +208,7 @@ abstract class ApiCache {
   /// The mutations are too short (~3 lines per backend) for a shared
   /// adapter to be a net win, so they live duplicated by design.
   Future<void> applyWatchState({
-    required String serverId,
+    required ServerId serverId,
     required String itemId,
     required bool isWatched,
     int? viewOffsetMs,
@@ -216,7 +217,7 @@ abstract class ApiCache {
   });
 
   /// Bulk-load every pinned metadata row into a [MediaItem] map keyed by
-  /// `buildGlobalKey(serverId, itemId)`. Used by [DownloadManagerService] on
+  /// `buildGlobalKey(ServerId(serverId), itemId)`. Used by [DownloadManagerService] on
   /// cold start to hydrate offline state in a single query per backend.
   Future<Map<String, MediaItem>> getAllPinnedMetadata();
 }

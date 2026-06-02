@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
 
@@ -65,8 +66,8 @@ Future<bool?> navigateToVideoPlayer(
   final manager = context.read<MultiServerProvider>().serverManager;
   final offlineWatchService = context.read<OfflineWatchSyncService>();
   final serverId = metadata.serverId ?? '';
-  final mediaClient = serverId.isNotEmpty && (!isOffline || manager.isClientOnline(serverId))
-      ? manager.getClient(serverId)
+  final mediaClient = serverId.isNotEmpty && (!isOffline || manager.isClientOnline(ServerId(serverId)))
+      ? manager.getClient(ServerId(serverId))
       : null;
 
   int mediaIndex = selectedMediaIndex ?? 0;
@@ -203,11 +204,11 @@ Future<bool?> navigateToVideoPlayerWithRefresh(
 Future<void> navigateToWatchTogetherPlayback(
   BuildContext context, {
   required String ratingKey,
-  required String serverId,
+  required ServerId serverId,
   VoidCallback? onBeforeNavigate,
 }) async {
   final multiServer = context.read<MultiServerProvider>();
-  final client = multiServer.getClientForServer(serverId);
+  final client = multiServer.getClientForServer(ServerId(serverId));
 
   if (client == null) {
     throw const WatchTogetherPlaybackNavigationException('Watch Together server is unavailable');

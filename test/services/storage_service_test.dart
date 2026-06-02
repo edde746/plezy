@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
@@ -78,21 +79,21 @@ void main() {
   group('ServerEndpoint', () {
     test('round-trip per server id', () async {
       final s = await StorageService.getInstance();
-      await s.saveServerEndpoint('srv-1', 'http://192.0.2.1:32400');
-      await s.saveServerEndpoint('srv-2', 'http://198.51.100.5:32400');
+      await s.saveServerEndpoint(ServerId('srv-1'), 'http://192.0.2.1:32400');
+      await s.saveServerEndpoint(ServerId('srv-2'), 'http://198.51.100.5:32400');
 
-      expect(s.getServerEndpoint('srv-1'), 'http://192.0.2.1:32400');
-      expect(s.getServerEndpoint('srv-2'), 'http://198.51.100.5:32400');
-      expect(s.getServerEndpoint('missing'), isNull);
+      expect(s.getServerEndpoint(ServerId('srv-1')), 'http://192.0.2.1:32400');
+      expect(s.getServerEndpoint(ServerId('srv-2')), 'http://198.51.100.5:32400');
+      expect(s.getServerEndpoint(ServerId('missing')), isNull);
     });
 
     test('clearServerEndpoint removes only the targeted id', () async {
       final s = await StorageService.getInstance();
-      await s.saveServerEndpoint('srv-1', 'http://example.test');
-      await s.saveServerEndpoint('srv-2', 'http://other.test');
-      await s.clearServerEndpoint('srv-1');
-      expect(s.getServerEndpoint('srv-1'), isNull);
-      expect(s.getServerEndpoint('srv-2'), 'http://other.test');
+      await s.saveServerEndpoint(ServerId('srv-1'), 'http://example.test');
+      await s.saveServerEndpoint(ServerId('srv-2'), 'http://other.test');
+      await s.clearServerEndpoint(ServerId('srv-1'));
+      expect(s.getServerEndpoint(ServerId('srv-1')), isNull);
+      expect(s.getServerEndpoint(ServerId('srv-2')), 'http://other.test');
     });
   });
 
@@ -123,16 +124,16 @@ void main() {
       // Write legacy values directly — the setters are gone.
       await s.prefs.setString('servers_list', '[{"x":1}]');
       await s.prefs.setString('server_order', json.encode(['a', 'b']));
-      await s.saveServerEndpoint('a', 'http://foo.test');
-      await s.saveServerEndpoint('b', 'http://bar.test');
+      await s.saveServerEndpoint(ServerId('a'), 'http://foo.test');
+      await s.saveServerEndpoint(ServerId('b'), 'http://bar.test');
 
       await s.clearMultiServerData();
 
       // ignore: deprecated_member_use_from_same_package
       expect(s.getServersListJson(), isNull);
       expect(s.prefs.getString('server_order'), isNull);
-      expect(s.getServerEndpoint('a'), isNull);
-      expect(s.getServerEndpoint('b'), isNull);
+      expect(s.getServerEndpoint(ServerId('a')), isNull);
+      expect(s.getServerEndpoint(ServerId('b')), isNull);
     });
   });
 
@@ -404,7 +405,7 @@ void main() {
       await s.prefs.setString('client_identifier', 'client-x');
       await s.prefs.setString('servers_list', '[{"x":1}]');
       await s.prefs.setString('server_order', json.encode(['a']));
-      await s.saveServerEndpoint('a', 'http://foo.test');
+      await s.saveServerEndpoint(ServerId('a'), 'http://foo.test');
 
       // Library prefs and unrelated counters: write WITHOUT an active profile id
       // so they land on the legacy unscoped key.
@@ -427,7 +428,7 @@ void main() {
       // ignore: deprecated_member_use_from_same_package
       expect(s.getServersListJson(), isNull);
       expect(s.prefs.getString('server_order'), isNull);
-      expect(s.getServerEndpoint('a'), isNull);
+      expect(s.getServerEndpoint(ServerId('a')), isNull);
 
       // Library prefs and unrelated state untouched (no scope active, so
       // the scoped read falls through to the same legacy key it was written to).

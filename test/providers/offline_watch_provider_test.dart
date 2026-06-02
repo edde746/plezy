@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/providers/download_provider.dart';
@@ -67,7 +68,12 @@ void main() {
     test('getViewOffset returns null for local progress that crossed watched threshold', () async {
       final p = OfflineWatchProvider(syncService: syncService, downloadProvider: downloadProvider);
 
-      await syncService.queueProgressUpdate(serverId: 'srv', itemId: '42', viewOffset: 95000, duration: 100000);
+      await syncService.queueProgressUpdate(
+        serverId: ServerId('srv'),
+        itemId: '42',
+        viewOffset: 95000,
+        duration: 100000,
+      );
 
       expect(await p.isWatched('srv:42'), isTrue);
       expect(await p.getViewOffset('srv:42'), isNull);
@@ -95,7 +101,7 @@ void main() {
 
       // queueMarkWatched on the sync service notifies its listeners; the
       // provider's internal listener forwards via safeNotifyListeners.
-      await syncService.queueMarkWatched(serverId: 'srv', itemId: '42');
+      await syncService.queueMarkWatched(serverId: ServerId('srv'), itemId: '42');
       expect(notified, greaterThanOrEqualTo(1));
 
       p.dispose();
@@ -107,7 +113,7 @@ void main() {
       var notified = 0;
       p.addListener(() => notified++);
 
-      await p.markAsWatched(serverId: 'srv', itemId: '50');
+      await p.markAsWatched(serverId: ServerId('srv'), itemId: '50');
 
       // The local watch status now reads as true via the sync service.
       expect(await p.isWatched('srv:50'), isTrue);
@@ -121,7 +127,7 @@ void main() {
     test('markAsUnwatched queues an offline action and notifies', () async {
       final p = OfflineWatchProvider(syncService: syncService, downloadProvider: downloadProvider);
 
-      await p.markAsUnwatched(serverId: 'srv', itemId: '60');
+      await p.markAsUnwatched(serverId: ServerId('srv'), itemId: '60');
       expect(await p.isWatched('srv:60'), isFalse);
 
       p.dispose();
@@ -134,7 +140,7 @@ void main() {
       p.addListener(() => notified++);
 
       // Sanity: listener is registered
-      await syncService.queueMarkWatched(serverId: 'srv', itemId: '70');
+      await syncService.queueMarkWatched(serverId: ServerId('srv'), itemId: '70');
       final preDisposeNotifies = notified;
       expect(preDisposeNotifies, greaterThanOrEqualTo(1));
 
@@ -143,7 +149,7 @@ void main() {
       // After dispose, sync service notifications should not call our
       // listener (provider unsubscribed). Mutating the sync service post-
       // dispose must not throw on the provider side.
-      await syncService.queueMarkUnwatched(serverId: 'srv', itemId: '70');
+      await syncService.queueMarkUnwatched(serverId: ServerId('srv'), itemId: '70');
       expect(notified, preDisposeNotifies);
     });
   });

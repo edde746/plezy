@@ -44,7 +44,11 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
           .applyPreset(targetPreset)
           .then((_) async {
             if (!mounted) return;
-            await shaderProvider.setPreset(targetPreset);
+            if (targetPreset.isEnabled) {
+              await shaderProvider.setPreset(targetPreset);
+            } else {
+              shaderProvider.setCurrentPreset(targetPreset);
+            }
             if (!mounted) return;
             // ignore: no-empty-block - setState triggers rebuild to reflect shader changes
             _setControlsState(() {});
@@ -161,7 +165,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       final serverId = widget.metadata.serverId;
       if (serverId == null) return false;
       final manager = context.read<MultiServerProvider>().serverManager;
-      final c = manager.getClient(serverId);
+      final c = manager.getClient(ServerId(serverId));
       return c?.capabilities.externalSubtitleSearch ?? false;
     } catch (_) {
       return false;

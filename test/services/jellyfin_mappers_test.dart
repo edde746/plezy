@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_stream.dart';
@@ -43,7 +44,12 @@ void main() {
         'BackdropImageTags': ['backtag'],
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, serverName: 'Home', absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(
+        json,
+        serverId: ServerId(_serverId),
+        serverName: 'Home',
+        absolutizer: null,
+      )!;
 
       expect(item.id, 'abc123');
       expect(item.backend, MediaBackend.jellyfin);
@@ -88,7 +94,7 @@ void main() {
         'UserData': {'PlayCount': 1, 'Played': false},
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
 
       expect(item.viewCount, 0);
       expect(item.isWatched, isFalse);
@@ -97,12 +103,12 @@ void main() {
     test('maps generic Jellyfin video types to playable clips', () {
       final video = JellyfinMappers.mediaItem(
         {'Id': 'home-video', 'Name': 'Home Video', 'Type': 'Video'},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       final musicVideo = JellyfinMappers.mediaItem(
         {'Id': 'music-video', 'Name': 'Music Video', 'Type': 'MusicVideo'},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
 
@@ -128,7 +134,7 @@ void main() {
         'UserData': {'UnplayedItemCount': 0},
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
 
       expect(item.kind, MediaKind.episode);
       expect(item.index, 1);
@@ -154,7 +160,7 @@ void main() {
         'SeasonName': 'Season 1',
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
 
       expect(item.parentThumbPath, '/Items/season-1/Images/Primary');
       expect(item.grandparentThumbPath, '/Items/series-1/Images/Primary?tag=seriesPrimary');
@@ -175,7 +181,7 @@ void main() {
         'UserData': {'UnplayedItemCount': 4},
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
 
       expect(item.leafCount, 12);
       expect(item.viewedLeafCount, 8);
@@ -198,7 +204,7 @@ void main() {
             {'Type': 'Actor', 'Name': 'Actor', 'Id': 'person/id #1?x', 'PrimaryImageTag': 'person/tag ?x'},
           ],
         },
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
 
@@ -222,7 +228,7 @@ void main() {
         'UserData': {'UnplayedItemCount': 7},
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
 
       expect(item.leafCount, 50);
       expect(item.viewedLeafCount, 43);
@@ -273,7 +279,7 @@ void main() {
         ],
       };
 
-      final item = JellyfinMappers.mediaItem(json, serverId: _serverId, absolutizer: null)!;
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
       expect(item.mediaVersions, isNotNull);
       final v = item.mediaVersions!.single;
       expect(v.id, 'src-1');
@@ -323,7 +329,7 @@ void main() {
           'Id': 'view-${entry.key}',
           'Name': 'Library',
           'CollectionType': entry.key,
-        }, serverId: _serverId)!;
+        }, serverId: ServerId(_serverId))!;
         expect(lib.kind, entry.value, reason: 'CollectionType ${entry.key}');
         expect(lib.backend, MediaBackend.jellyfin);
       }
@@ -334,7 +340,7 @@ void main() {
         'Id': 'view-x',
         'Name': 'Mixed',
         'CollectionType': 'mixed',
-      }, serverId: _serverId)!;
+      }, serverId: ServerId(_serverId))!;
       expect(lib.kind, MediaKind.unknown);
     });
   });
@@ -347,7 +353,7 @@ void main() {
     test('minimal payload (just Id + Type) yields a MediaItem with sane defaults', () {
       final item = JellyfinMappers.mediaItem(
         {'Id': 'bare-1', 'Type': 'Movie'},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         serverName: 'Home',
         absolutizer: null,
       )!;
@@ -364,7 +370,7 @@ void main() {
     test('missing UserData leaves watch state nullable without throwing', () {
       final item = JellyfinMappers.mediaItem(
         {'Id': 'i', 'Type': 'Movie', 'Name': 'X'},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       // Either 0 or null is acceptable as long as we don't crash.
@@ -376,7 +382,7 @@ void main() {
     test('null People array does not crash', () {
       final item = JellyfinMappers.mediaItem(
         {'Id': 'i', 'Type': 'Movie', 'Name': 'X', 'People': null},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       expect(item.directors, anyOf(isNull, isEmpty));
@@ -387,7 +393,7 @@ void main() {
     test('null Genres / Studios / ProductionLocations degrade gracefully', () {
       final item = JellyfinMappers.mediaItem(
         {'Id': 'i', 'Type': 'Movie', 'Name': 'X', 'Genres': null, 'Studios': null, 'ProductionLocations': null},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       expect(item.genres, anyOf(isNull, isEmpty));
@@ -398,7 +404,7 @@ void main() {
     test('malformed RunTimeTicks does not throw — duration left null', () {
       final item = JellyfinMappers.mediaItem(
         {'Id': 'i', 'Type': 'Movie', 'Name': 'X', 'RunTimeTicks': 'not-a-number'},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       expect(item.durationMs, isNull);
@@ -407,7 +413,7 @@ void main() {
     test('null MediaSources does not crash', () {
       final item = JellyfinMappers.mediaItem(
         {'Id': 'i', 'Type': 'Movie', 'Name': 'X', 'MediaSources': null},
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       expect(item.mediaVersions, anyOf(isNull, isEmpty));
@@ -417,7 +423,7 @@ void main() {
   group('JellyfinMappers.mediaItem missing-Id rejection', () {
     test('returns null when Id is absent', () {
       expect(
-        JellyfinMappers.mediaItem({'Type': 'Movie', 'Name': 'noId'}, serverId: _serverId, absolutizer: null),
+        JellyfinMappers.mediaItem({'Type': 'Movie', 'Name': 'noId'}, serverId: ServerId(_serverId), absolutizer: null),
         isNull,
       );
     });
@@ -426,7 +432,7 @@ void main() {
       expect(
         JellyfinMappers.mediaItem(
           {'Id': '', 'Type': 'Movie', 'Name': 'emptyId'},
-          serverId: _serverId,
+          serverId: ServerId(_serverId),
           absolutizer: null,
         ),
         isNull,
@@ -443,7 +449,7 @@ void main() {
             {'Id': 'src-ok', 'Container': 'mp4', 'Bitrate': 4000000, 'MediaStreams': []},
           ],
         },
-        serverId: _serverId,
+        serverId: ServerId(_serverId),
         absolutizer: null,
       )!;
       expect(item.mediaVersions!.length, 1);
@@ -453,7 +459,10 @@ void main() {
 
   group('JellyfinMappers.library missing-Id rejection', () {
     test('returns null when Id is absent', () {
-      expect(JellyfinMappers.library({'Name': 'Library', 'CollectionType': 'movies'}, serverId: _serverId), isNull);
+      expect(
+        JellyfinMappers.library({'Name': 'Library', 'CollectionType': 'movies'}, serverId: ServerId(_serverId)),
+        isNull,
+      );
     });
   });
 }

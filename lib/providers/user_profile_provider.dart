@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import 'package:flutter/foundation.dart';
 
@@ -181,7 +182,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
   JellyfinClient? _resolveJellyfinClient(JellyfinConnection conn) {
     final manager = _serverManager;
     if (manager == null) return null;
-    final client = manager.getClient(conn.serverMachineId);
+    final client = manager.getClient(ServerId(conn.serverMachineId));
     return client is JellyfinClient ? client : null;
   }
 

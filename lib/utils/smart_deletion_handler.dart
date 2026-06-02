@@ -45,7 +45,7 @@ class SmartDeletionHandler {
           if (progress == null) {
             return AlertDialog(
               content: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: .min,
                 children: [const CircularProgressIndicator(), const SizedBox(width: 20), Text(t.downloads.deleting)],
               ),
             );

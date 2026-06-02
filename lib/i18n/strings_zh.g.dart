@@ -1515,10 +1515,12 @@ class _TranslationsAddServerZh extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => '添加 Jellyfin 服务器';
 	@override String get jellyfinUrlIntro => '输入服务器 URL，例如 `https://jellyfin.example.com`。';
-	@override String get jellyfinUrlsIntro => '输入一个或多个服务器 URL，用逗号或换行分隔。Plezy 会使用可访问且延迟最低的 URL。';
+	@override String get jellyfinUrlsIntro => '输入一个或多个服务器 URL，用逗号分隔。Plezy 会使用可访问且延迟最低的 URL。';
 	@override String get serverUrl => '服务器 URL';
 	@override String get serverUrls => '服务器 URL';
 	@override String get findServer => '查找服务器';
+	@override String get searchingLocalServers => '正在查找本地 Jellyfin 服务器...';
+	@override String get localServers => '本地 Jellyfin 服务器';
 	@override String get username => '用户名';
 	@override String get password => '密码';
 	@override String get signIn => '登录';
@@ -2981,10 +2983,12 @@ extension on TranslationsZh {
 			'trackers.libraryFilter.noLibraries' => '没有可用的媒体库',
 			'addServer.addJellyfinTitle' => '添加 Jellyfin 服务器',
 			'addServer.jellyfinUrlIntro' => '输入服务器 URL，例如 `https://jellyfin.example.com`。',
-			'addServer.jellyfinUrlsIntro' => '输入一个或多个服务器 URL，用逗号或换行分隔。Plezy 会使用可访问且延迟最低的 URL。',
+			'addServer.jellyfinUrlsIntro' => '输入一个或多个服务器 URL，用逗号分隔。Plezy 会使用可访问且延迟最低的 URL。',
 			'addServer.serverUrl' => '服务器 URL',
 			'addServer.serverUrls' => '服务器 URL',
 			'addServer.findServer' => '查找服务器',
+			'addServer.searchingLocalServers' => '正在查找本地 Jellyfin 服务器...',
+			'addServer.localServers' => '本地 Jellyfin 服务器',
 			'addServer.username' => '用户名',
 			'addServer.password' => '密码',
 			'addServer.signIn' => '登录',

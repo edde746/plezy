@@ -891,7 +891,7 @@ class PlexServer {
   static bool _isPrivateOrLocalAddress(InternetAddress address) {
     final bytes = address.rawAddress;
     if (address.type == InternetAddressType.IPv4 && bytes.length == 4) {
-      final a = bytes[0];
+      final a = bytes.first;
       final b = bytes[1];
       return a == 0 ||
           a == 10 ||
@@ -903,7 +903,7 @@ class PlexServer {
     }
 
     if (address.type == InternetAddressType.IPv6 && bytes.length == 16) {
-      final first = bytes[0];
+      final first = bytes.first;
       final second = bytes[1];
       final isLoopback = bytes.take(15).every((b) => b == 0) && bytes[15] == 1;
       final isUnspecified = bytes.every((b) => b == 0);

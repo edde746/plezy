@@ -12,11 +12,17 @@ class PlexVideoPlaybackData {
 
   final List<MediaMarker> markers;
 
+  final int selectedMediaIndex;
+
+  final int selectedPartIndex;
+
   PlexVideoPlaybackData({
     required this.videoUrl,
     required this.mediaInfo,
     required this.availableVersions,
     this.markers = const [],
+    this.selectedMediaIndex = 0,
+    this.selectedPartIndex = 0,
   });
 
   bool get hasValidVideoUrl => videoUrl != null && videoUrl!.isNotEmpty;

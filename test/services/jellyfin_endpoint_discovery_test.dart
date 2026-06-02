@@ -25,6 +25,135 @@ void main() {
         ]),
         ['https://jf.example.com', 'https://jf.lan:8096'],
       );
+      expect(JellyfinEndpointDiscovery.normalizeBaseUrl('jf.example.com/'), 'jf.example.com');
+    });
+
+    test('expands bare host input into Jellyfin URL candidates', () {
+      expect(JellyfinEndpointDiscovery.expandInputToBaseUrls('jf.example.com'), [
+        'http://jf.example.com:8096',
+        'https://jf.example.com',
+        'https://jf.example.com:8096',
+        'http://jf.example.com',
+      ]);
+    });
+
+    test('expands host and port input without changing the port', () {
+      expect(JellyfinEndpointDiscovery.expandInputToBaseUrls('192.168.1.10:8096'), [
+        'http://192.168.1.10:8096',
+        'https://192.168.1.10:8096',
+      ]);
+    });
+
+    test('races expanded bare host candidates', () async {
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () => MockClient((req) async {
+          if (req.url.scheme == 'http' && req.url.host == 'jf.example.com' && req.url.port == 8096) {
+            return _info(id: 'srv-1');
+          }
+          throw TimeoutException('offline');
+        }),
+      );
+      final input = JellyfinEndpointDiscovery.buildUserInputCandidates(['jf.example.com']);
+
+      final result = await discovery.raceEndpoints(
+        input.probeBaseUrls,
+        baseUrlsToPersist: input.explicitBaseUrls,
+        baseUrlValidationGroups: input.validationBaseUrlGroups,
+      );
+
+      expect(result.activeBaseUrl, 'http://jf.example.com:8096');
+      expect(result.baseUrls, ['http://jf.example.com:8096']);
+    });
+
+    test('does not persist failed shorthand guesses as failover URLs', () async {
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () => MockClient((req) async {
+          if (req.url.scheme == 'http' && req.url.host == '192.168.1.10' && req.url.port == 8096) {
+            return _info(id: 'srv-1');
+          }
+          throw TimeoutException('offline');
+        }),
+      );
+      final input = JellyfinEndpointDiscovery.buildUserInputCandidates(['192.168.1.10']);
+
+      final result = await discovery.raceEndpoints(
+        input.probeBaseUrls,
+        baseUrlsToPersist: input.explicitBaseUrls,
+        baseUrlValidationGroups: input.validationBaseUrlGroups,
+      );
+
+      expect(result.baseUrls, ['http://192.168.1.10:8096']);
+    });
+
+    test('does not reject different servers found only through shorthand guesses', () async {
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () => MockClient((req) async {
+          if (req.url.scheme == 'http' && req.url.host == 'jf.example.com' && req.url.port == 8096) {
+            return _info(id: 'srv-1');
+          }
+          if (req.url.scheme == 'https' && req.url.host == 'jf.example.com' && !req.url.hasPort) {
+            return _info(id: 'srv-2');
+          }
+          throw TimeoutException('offline');
+        }),
+      );
+      final input = JellyfinEndpointDiscovery.buildUserInputCandidates(['jf.example.com']);
+
+      final result = await discovery.raceEndpoints(
+        input.probeBaseUrls,
+        baseUrlsToPersist: input.explicitBaseUrls,
+        baseUrlValidationGroups: input.validationBaseUrlGroups,
+      );
+
+      expect(result.baseUrls, [result.activeBaseUrl]);
+    });
+
+    test('rejects different servers reached from separate shorthand entries', () async {
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () => MockClient((req) async {
+          if (req.url.scheme == 'http' && req.url.host == 'one.example.com' && req.url.port == 8096) {
+            return _info(id: 'srv-1');
+          }
+          if (req.url.scheme == 'http' && req.url.host == 'two.example.com' && req.url.port == 8096) {
+            return _info(id: 'srv-2');
+          }
+          throw TimeoutException('offline');
+        }),
+      );
+      final input = JellyfinEndpointDiscovery.buildUserInputCandidates(['one.example.com', 'two.example.com']);
+
+      await expectLater(
+        discovery.raceEndpoints(
+          input.probeBaseUrls,
+          baseUrlsToPersist: input.explicitBaseUrls,
+          baseUrlValidationGroups: input.validationBaseUrlGroups,
+        ),
+        throwsA(isA<MediaServerUrlException>()),
+      );
+    });
+
+    test('retains explicit user-entered failover URLs when using input candidates', () async {
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () => MockClient((req) async {
+          if (req.url.host == 'offline.example.com') {
+            throw TimeoutException('offline');
+          }
+          return _info(id: 'srv-1');
+        }),
+      );
+      final input = JellyfinEndpointDiscovery.buildUserInputCandidates([
+        'https://offline.example.com',
+        'https://jf.example.com',
+      ]);
+
+      final result = await discovery.raceEndpoints(
+        input.probeBaseUrls,
+        baseUrlsToPersist: input.explicitBaseUrls,
+        baseUrlValidationGroups: input.validationBaseUrlGroups,
+      );
+
+      expect(result.activeBaseUrl, 'https://jf.example.com');
+      expect(result.baseUrls, ['https://jf.example.com', 'https://offline.example.com']);
     });
 
     test('races URLs and selects the lowest-latency reachable endpoint', () async {

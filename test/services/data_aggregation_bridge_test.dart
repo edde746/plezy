@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -51,7 +52,9 @@ void main() {
 
   group('DataAggregationService cross-server aggregation', () {
     test('getMediaLibrariesFromAllServers returns empty when no clients connected', () async {
-      expect(await service.getMediaLibrariesFromAllServers(), isEmpty);
+      final result = await service.getMediaLibrariesFromAllServers();
+      expect(result.libraries, isEmpty);
+      expect(result.succeededServerIds, isEmpty);
     });
 
     test('searchAcrossServers and getOnDeckFromAllServers return empty when no clients', () async {
@@ -71,7 +74,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'plex-1',
+        serverId: ServerId('plex-1'),
         serverName: 'Plex',
         httpClient: MockClient((req) async {
           plexRequests.add(req.url);
@@ -129,7 +132,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'plex-1',
+        serverId: ServerId('plex-1'),
         serverName: 'Plex',
         httpClient: MockClient((req) async {
           captured.add(req.url);
@@ -173,7 +176,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'plex-1',
+        serverId: ServerId('plex-1'),
         serverName: 'Plex',
         httpClient: MockClient((req) async {
           if (req.url.path == '/hubs') {
@@ -249,7 +252,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'plex-1',
+        serverId: ServerId('plex-1'),
         serverName: 'Plex',
         httpClient: MockClient((req) async {
           if (req.url.path == '/hubs') {
@@ -424,7 +427,7 @@ void main() {
           product: 'Plezy',
           version: 'test',
         ),
-        serverId: 'plex-1',
+        serverId: ServerId('plex-1'),
         serverName: 'Plex',
         promotedHubKey: '/hubs/promoted',
         httpClient: MockClient((req) async {

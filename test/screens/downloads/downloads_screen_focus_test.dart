@@ -8,6 +8,7 @@ import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/providers/download_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/providers/offline_mode_provider.dart';
 import 'package:plezy/screens/downloads/downloads_screen.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
@@ -34,6 +35,7 @@ void main() {
   late DownloadProvider downloadProvider;
   late MultiServerProvider multiServerProvider;
   late MultiServerManager serverManager;
+  late OfflineModeProvider offlineModeProvider;
 
   setUp(() async {
     resetSharedPreferencesForTest();
@@ -50,9 +52,11 @@ void main() {
 
     serverManager = MultiServerManager();
     multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
+    offlineModeProvider = OfflineModeProvider(serverManager, multiServerProvider: multiServerProvider);
   });
 
   tearDown(() async {
+    offlineModeProvider.dispose();
     downloadProvider.dispose();
     multiServerProvider.dispose();
     await db.close();
@@ -68,6 +72,7 @@ void main() {
             Provider<ConnectionRegistry>.value(value: _FakeConnectionRegistry(db)),
             ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<OfflineModeProvider>.value(value: offlineModeProvider),
           ],
           child: MaterialApp(
             theme: ThemeData(platform: TargetPlatform.macOS),

@@ -12,6 +12,7 @@
 // resolution and server-tagging.
 
 import 'package:json_annotation/json_annotation.dart';
+import '../media/ids.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import '../media/media_backend.dart';
@@ -48,10 +49,17 @@ Map<String, dynamic> _obfuscatePlaylistJson(Map<String, dynamic> json) {
 int _flexibleIntOrZero(Object? v) => flexibleInt(v) ?? 0;
 
 Map? _firstPartMap(Object? raw) {
+  final parts = _partMaps(raw);
+  return parts.isEmpty ? null : parts.first;
+}
+
+List<Map> _partMaps(Object? raw) {
   final parts = flexibleList(raw);
-  if (parts == null || parts.isEmpty) return null;
-  final part = parts.first;
-  return part is Map ? part : null;
+  if (parts == null || parts.isEmpty) return const [];
+  return [
+    for (final part in parts)
+      if (part is Map) part,
+  ];
 }
 
 String _partKeyFromJson(Object? raw) => _firstPartMap(raw)?['key']?.toString() ?? '';
@@ -59,6 +67,31 @@ String _partKeyFromJson(Object? raw) => _firstPartMap(raw)?['key']?.toString() ?
 bool? _partAccessibleFromJson(Object? raw) => flexibleBoolNullable(_firstPartMap(raw)?['accessible']);
 
 bool? _partExistsFromJson(Object? raw) => flexibleBoolNullable(_firstPartMap(raw)?['exists']);
+
+MediaPart _mediaPartFromMap(Map json, {required String fallbackId, String? fallbackContainer}) {
+  return MediaPart(
+    id: (json['id'] ?? fallbackId).toString(),
+    streamPath: json['key']?.toString(),
+    sizeBytes: flexibleInt(json['size']),
+    container: json['container']?.toString() ?? fallbackContainer,
+    durationMs: flexibleInt(json['duration']),
+    accessible: flexibleBoolNullable(json['accessible']),
+    exists: flexibleBoolNullable(json['exists']),
+  );
+}
+
+List<MediaPart> _mediaPartsFromJson(Object? raw, {required String fallbackId, String? fallbackContainer}) {
+  final partMaps = _partMaps(raw);
+  if (partMaps.isEmpty) return const [];
+  return [
+    for (var i = 0; i < partMaps.length; i++)
+      _mediaPartFromMap(
+        partMaps[i],
+        fallbackId: i == 0 ? fallbackId : '$fallbackId:$i',
+        fallbackContainer: fallbackContainer,
+      ),
+  ];
+}
 
 Object? _readPartKey(Map json, String _) => _partKeyFromJson(json['Part']);
 
@@ -215,7 +248,7 @@ class PlexLibraryDto {
 
   factory PlexLibraryDto.fromJson(Map<String, dynamic> json) => _$PlexLibraryDtoFromJson(json);
 
-  PlexLibraryDto copyWith({String? serverId, String? serverName, bool? isShared}) {
+  PlexLibraryDto copyWith({ServerId? serverId, String? serverName, bool? isShared}) {
     return PlexLibraryDto(
       key: key,
       title: title,
@@ -233,7 +266,7 @@ class PlexLibraryDto {
     );
   }
 
-  String get globalKey => serverId != null ? buildGlobalKey(serverId!, key) : key;
+  String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), key) : key;
 }
 
 @JsonSerializable(createToJson: false)
@@ -297,7 +330,7 @@ class PlexPlaylistDto {
   factory PlexPlaylistDto.fromJson(Map<String, dynamic> json) =>
       _$PlexPlaylistDtoFromJson(kBlurArtwork ? _obfuscatePlaylistJson(json) : json);
 
-  PlexPlaylistDto copyWith({String? serverId, String? serverName}) {
+  PlexPlaylistDto copyWith({ServerId? serverId, String? serverName}) {
     return PlexPlaylistDto(
       ratingKey: ratingKey,
       key: key,
@@ -354,7 +387,7 @@ class PlexHubDto {
     this.serverName,
   });
 
-  factory PlexHubDto.fromJson(Map<String, dynamic> json, {String? serverId, String? serverName}) {
+  factory PlexHubDto.fromJson(Map<String, dynamic> json, {ServerId? serverId, String? serverName}) {
     final parsed = _$PlexHubDtoFromJson(json);
     final items = serverId == null && serverName == null
         ? parsed.items
@@ -597,7 +630,7 @@ class PlexMetadataDto {
     return copy;
   }
 
-  String get globalKey => serverId != null ? buildGlobalKey(serverId!, ratingKey) : ratingKey;
+  String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), ratingKey) : ratingKey;
 
   bool get isLibrarySection => key != null && key!.startsWith('/library/sections/');
 
@@ -670,7 +703,7 @@ class PlexMetadataDto {
     String? subtype,
     int? extraType,
     String? primaryExtraKey,
-    String? serverId,
+    ServerId? serverId,
     String? serverName,
     String? clearLogo,
     String? backgroundSquare,
@@ -775,7 +808,7 @@ class PlexMappers {
   PlexMappers._();
 
   /// Map a Plex `Metadata` JSON entry directly into a [PlexMediaItem].
-  static PlexMediaItem mediaItemFromJson(Map<String, dynamic> json, {String? serverId, String? serverName}) {
+  static PlexMediaItem mediaItemFromJson(Map<String, dynamic> json, {ServerId? serverId, String? serverName}) {
     final dto = PlexMetadataDto.fromJsonWithImages(json).copyWith(serverId: serverId, serverName: serverName);
     return mediaItem(dto);
   }
@@ -783,7 +816,7 @@ class PlexMappers {
   /// Parse a Plex `/library/metadata/{id}` JSON object into a neutral
   /// [MediaItem]. Used by the offline cache layer to convert persisted Plex
   /// JSON back into MediaItem without depending on the Plex client surface.
-  static MediaItem mediaItemFromCacheJson(Map<String, dynamic> json, {required String serverId}) {
+  static MediaItem mediaItemFromCacheJson(Map<String, dynamic> json, {required ServerId serverId}) {
     final dto = PlexMetadataDto.fromJsonWithImages(json).copyWith(serverId: serverId);
     return mediaItem(dto);
   }
@@ -886,7 +919,19 @@ class PlexMappers {
 
   /// Map a Plex Media JSON entry directly into a [MediaVersion].
   static MediaVersion mediaVersionFromJson(Map<String, dynamic> json) {
-    return mediaVersion(PlexMediaVersionDto.fromJson(json));
+    final dto = PlexMediaVersionDto.fromJson(json);
+    final parts = _mediaPartsFromJson(json['Part'], fallbackId: dto.id.toString(), fallbackContainer: dto.container);
+    if (parts.isEmpty) return mediaVersion(dto);
+    return MediaVersion(
+      id: dto.id.toString(),
+      width: dto.width,
+      height: dto.height,
+      videoResolution: dto.videoResolution,
+      videoCodec: dto.videoCodec,
+      bitrate: dto.bitrate,
+      container: dto.container,
+      parts: parts,
+    );
   }
 
   static MediaDisplayCriteria? displayCriteriaFromJson(Map<String, dynamic>? media, Map<String, dynamic>? videoStream) {
@@ -964,11 +1009,13 @@ class PlexMappers {
   /// Map a Plex `/library/sections` Directory entry into a [MediaLibrary].
   static MediaLibrary mediaLibraryFromJson(
     Map<String, dynamic> json, {
-    String? serverId,
+    ServerId? serverId,
     String? serverName,
     bool isShared = false,
   }) {
-    final dto = PlexLibraryDto.fromJson(json).copyWith(serverId: serverId, serverName: serverName, isShared: isShared);
+    final dto = PlexLibraryDto.fromJson(
+      json,
+    ).copyWith(serverId: serverIdOrNull(serverId), serverName: serverName, isShared: isShared);
     return mediaLibrary(dto);
   }
 
@@ -988,7 +1035,7 @@ class PlexMappers {
   }
 
   /// Map a Plex `/hubs` Hub JSON entry directly into a [MediaHub].
-  static MediaHub mediaHubFromJson(Map<String, dynamic> json, {String? serverId, String? serverName}) {
+  static MediaHub mediaHubFromJson(Map<String, dynamic> json, {ServerId? serverId, String? serverName}) {
     return mediaHub(PlexHubDto.fromJson(json, serverId: serverId, serverName: serverName));
   }
 
@@ -1016,7 +1063,7 @@ class PlexMappers {
   }
 
   /// Map a Plex `/playlists` Metadata entry directly into a [MediaPlaylist].
-  static MediaPlaylist mediaPlaylistFromJson(Map<String, dynamic> json, {String? serverId, String? serverName}) {
+  static MediaPlaylist mediaPlaylistFromJson(Map<String, dynamic> json, {ServerId? serverId, String? serverName}) {
     final dto = PlexPlaylistDto.fromJson(json).copyWith(serverId: serverId, serverName: serverName);
     return mediaPlaylist(dto);
   }

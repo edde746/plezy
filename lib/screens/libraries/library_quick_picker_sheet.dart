@@ -69,7 +69,7 @@ class LibraryQuickPickerSheet extends StatelessWidget {
   Widget _buildServerHeader(BuildContext context, MediaLibrary library, String fallbackServerName) {
     final theme = Theme.of(context);
     final labelStyle = theme.textTheme.labelSmall?.copyWith(
-      fontWeight: FontWeight.w600,
+      fontWeight: .w600,
       letterSpacing: 0.4,
       color: theme.textTheme.bodySmall?.color?.withValues(alpha: 0.65),
     );
@@ -80,12 +80,7 @@ class LibraryQuickPickerSheet extends StatelessWidget {
           BackendBadge(backend: library.backend, size: 12, color: labelStyle?.color),
           const SizedBox(width: 6),
           Expanded(
-            child: Text(
-              library.serverName ?? fallbackServerName,
-              style: labelStyle,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+            child: Text(library.serverName ?? fallbackServerName, style: labelStyle, maxLines: 1, overflow: .ellipsis),
           ),
         ],
       ),
@@ -97,12 +92,12 @@ class LibraryQuickPickerSheet extends StatelessWidget {
       context,
     ).textTheme.bodySmall?.copyWith(color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6));
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         BackendBadge(backend: library.backend, size: 10, color: style?.color),
         const SizedBox(width: 4),
         Flexible(
-          child: Text(library.serverName!, style: style, maxLines: 1, overflow: TextOverflow.ellipsis),
+          child: Text(library.serverName!, style: style, maxLines: 1, overflow: .ellipsis),
         ),
       ],
     );
@@ -123,7 +118,7 @@ class LibraryQuickPickerSheet extends StatelessWidget {
       title: Text(
         library.title,
         maxLines: 1,
-        overflow: TextOverflow.ellipsis,
+        overflow: .ellipsis,
         style: TextStyle(fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400, color: foregroundColor),
       ),
       subtitle: showServerName ? _buildServerSubtitle(context, library) : null,
@@ -137,17 +132,17 @@ class LibraryQuickPickerSheet extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
           child: Align(
-            alignment: Alignment.centerLeft,
+            alignment: .centerLeft,
             child: Text(t.libraries.selectLibrary, style: theme.textTheme.titleMedium),
           ),
         ),
         if (isLoading && libraries.isEmpty)
-          const Padding(padding: EdgeInsets.symmetric(vertical: 32), child: CircularProgressIndicator())
+          const Padding(padding: .symmetric(vertical: 32), child: CircularProgressIndicator())
         else if (libraries.isEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),

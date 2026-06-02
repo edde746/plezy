@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -23,7 +24,7 @@ class AuthErrorBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final entries = context.select<MultiServerProvider, List<({String serverId, String displayName})>>(
+    final entries = context.select<MultiServerProvider, List<({ServerId serverId, String displayName})>>(
       (p) => p.authErrorServers,
     );
     if (entries.isEmpty) return const SizedBox.shrink();
@@ -47,10 +48,7 @@ class AuthErrorBanner extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: scheme.onErrorContainer,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onErrorContainer, fontWeight: .w500),
                 ),
               ),
               const SizedBox(width: 8),

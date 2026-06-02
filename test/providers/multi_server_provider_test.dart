@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -39,8 +40,8 @@ void main() {
 
     test('isServerOnline / getClientForServer return defaults for unknown ids', () {
       final p = MultiServerProvider(manager, aggregation);
-      expect(p.isServerOnline('nope'), isFalse);
-      expect(p.getClientForServer('nope'), isNull);
+      expect(p.isServerOnline(ServerId('nope')), isFalse);
+      expect(p.getClientForServer(ServerId('nope')), isNull);
       p.dispose();
     });
 
@@ -73,11 +74,31 @@ void main() {
       p.addListener(() => notified++);
 
       // Push a status change through the manager's public API.
-      manager.updateServerStatus('srv-1', true);
+      manager.updateServerStatus(ServerId('srv-1'), true);
       // Give the broadcast stream microtask time to deliver.
       await Future<void>.delayed(Duration.zero);
 
       expect(notified, greaterThanOrEqualTo(1));
+
+      p.dispose();
+    });
+
+    test('invokes onOnlineServersChanged with the visibility-filtered online set', () async {
+      final p = MultiServerProvider(manager, aggregation);
+      final calls = <Set<String>>[];
+      p.onOnlineServersChanged = calls.add;
+
+      manager.updateServerStatus(ServerId('srv-1'), true);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls, isNotEmpty);
+      expect(calls.last, {'srv-1'});
+
+      // A server that is online in the manager but outside the active profile's
+      // visibility filter must not appear in the payload.
+      p.setVisibleServerIds({'srv-1'});
+      manager.updateServerStatus(ServerId('srv-2'), true);
+      await Future<void>.delayed(Duration.zero);
+      expect(calls.last, {'srv-1'}, reason: 'srv-2 is online but filtered out');
 
       p.dispose();
     });
@@ -126,15 +147,15 @@ void main() {
         p.addListener(() => notified++);
 
         // No prior filter — first add seeds it as a one-element set.
-        p.addToVisibleServerIds('srv-1');
+        p.addToVisibleServerIds(ServerId('srv-1'));
         expect(notified, 1);
 
         // Build up incrementally.
-        p.addToVisibleServerIds('srv-2');
+        p.addToVisibleServerIds(ServerId('srv-2'));
         expect(notified, 2);
 
         // Idempotent on already-present ids.
-        p.addToVisibleServerIds('srv-1');
+        p.addToVisibleServerIds(ServerId('srv-1'));
         expect(notified, 2);
 
         p.dispose();
@@ -147,16 +168,16 @@ void main() {
         // status). The serverIds list requires actual server registration
         // which goes through addPlexAccount/addJellyfinConnection — beyond
         // what this unit test needs to cover.
-        manager.updateServerStatus('srv-1', true);
-        manager.updateServerStatus('srv-2', true);
-        manager.updateServerStatus('srv-3', false);
+        manager.updateServerStatus(ServerId('srv-1'), true);
+        manager.updateServerStatus(ServerId('srv-2'), true);
+        manager.updateServerStatus(ServerId('srv-3'), false);
 
         // No filter — every online id passes through.
         expect(p.onlineServerIds, containsAll({'srv-1', 'srv-2'}));
 
         p.setVisibleServerIds({'srv-1'});
         expect(p.onlineServerIds, ['srv-1']);
-        expect(p.isServerOnline('srv-2'), isFalse, reason: 'filtered out even when manager reports online');
+        expect(p.isServerOnline(ServerId('srv-2')), isFalse, reason: 'filtered out even when manager reports online');
 
         // Empty filter blocks everything — covers the "no connections" path
         // for a freshly-created profile that hasn't borrowed anything yet.
@@ -193,6 +214,28 @@ void main() {
 
         p.dispose();
       });
+
+      test('expected servers become visible when they reconnect', () async {
+        final p = MultiServerProvider(manager, aggregation);
+        final onlineCalls = <Set<String>>[];
+        p.onOnlineServersChanged = onlineCalls.add;
+
+        p.setVisibleServerIds({'srv-1'});
+        p.setExpectedVisibleServerIds({'srv-1', 'srv-2'});
+        manager.updateServerStatus(ServerId('srv-1'), true);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(p.onlineServerIds, ['srv-1']);
+
+        manager.updateServerStatus(ServerId('srv-2'), true);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(p.onlineServerIds, containsAllInOrder(['srv-1', 'srv-2']));
+        expect(p.isServerOnline(ServerId('srv-2')), isTrue);
+        expect(onlineCalls.last, {'srv-1', 'srv-2'});
+
+        p.dispose();
+      });
     });
 
     test('dispose runs cleanly and cancels the status subscription', () async {
@@ -202,7 +245,7 @@ void main() {
       p.addListener(() => notifyCount++);
 
       // Sanity: subscription works pre-dispose.
-      manager.updateServerStatus('a', true);
+      manager.updateServerStatus(ServerId('a'), true);
       await Future<void>.delayed(Duration.zero);
       expect(notifyCount, greaterThanOrEqualTo(1));
 

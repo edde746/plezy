@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:plezy/watch_together/models/watch_session.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
 
@@ -74,7 +75,7 @@ void main() {
       var notified = 0;
       p.addListener(() => notified++);
       // Without a session, setCurrentMedia logs a warning and bails — no notify.
-      p.setCurrentMedia(ratingKey: 'rk1', serverId: 's1', mediaTitle: 't1');
+      p.setCurrentMedia(ratingKey: 'rk1', serverId: ServerId('s1'), mediaTitle: 't1');
       expect(notified, 0);
       expect(p.currentMediaRatingKey, isNull);
       p.dispose();
@@ -93,7 +94,7 @@ void main() {
 
     test('markCurrentPlaybackHandled does not throw on a fresh provider', () {
       final p = WatchTogetherProvider();
-      expect(() => p.markCurrentPlaybackHandled(ratingKey: 'rk1', serverId: 's1'), returnsNormally);
+      expect(() => p.markCurrentPlaybackHandled(ratingKey: 'rk1', serverId: ServerId('s1')), returnsNormally);
       p.dispose();
     });
 

@@ -114,7 +114,7 @@ String formatSyncOffset(double offsetMs) {
   final absMs = offsetMs.abs().round();
   final durationLocale = _getDurationLocale();
 
-  if (absMs >= 10000) {
+  if (absMs >= 10_000) {
     final seconds = (offsetMs.abs() / 1000).toStringAsFixed(1);
     final unit = durationLocale.second(1, true);
     return '$sign$seconds$unit';

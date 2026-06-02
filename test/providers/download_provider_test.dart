@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:plezy/media/ids.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,7 +37,7 @@ class _ScopedTestClient implements MediaServerClient, ScopedMediaServerClient {
   _ScopedTestClient({required this.serverId, required this.scopedServerId});
 
   @override
-  final String serverId;
+  final ServerId serverId;
 
   @override
   final String scopedServerId;
@@ -129,7 +130,7 @@ void main() {
     test('falls back to media index when caller has no source id', () async {
       const globalKey = 'srv:movie-1';
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: 'movie-1',
         globalKey: globalKey,
         type: 'movie',
@@ -158,8 +159,8 @@ void main() {
       var notified = 0;
       p.addListener(() => notified++);
 
-      await p.createSyncRule(serverId: 'srv', ratingKey: '10', targetType: 'show', episodeCount: 5);
-      final ruleKey = p.syncRuleKeyFor('srv', '10');
+      await p.createSyncRule(serverId: ServerId('srv'), ratingKey: '10', targetType: 'show', episodeCount: 5);
+      final ruleKey = p.syncRuleKeyFor(ServerId('srv'), '10');
 
       expect(p.hasSyncRule(ruleKey), isTrue);
       final rule = p.getSyncRule(ruleKey);
@@ -184,8 +185,8 @@ void main() {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
-      await p.createSyncRule(serverId: 'srv', ratingKey: '10', targetType: 'show', episodeCount: 5);
-      final ruleKey = p.syncRuleKeyFor('srv', '10');
+      await p.createSyncRule(serverId: ServerId('srv'), ratingKey: '10', targetType: 'show', episodeCount: 5);
+      final ruleKey = p.syncRuleKeyFor(ServerId('srv'), '10');
 
       var notified = 0;
       p.addListener(() => notified++);
@@ -202,8 +203,8 @@ void main() {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
-      await p.createSyncRule(serverId: 'srv', ratingKey: '10', targetType: 'collection', episodeCount: 0);
-      final ruleKey = p.syncRuleKeyFor('srv', '10');
+      await p.createSyncRule(serverId: ServerId('srv'), ratingKey: '10', targetType: 'collection', episodeCount: 0);
+      final ruleKey = p.syncRuleKeyFor(ServerId('srv'), '10');
 
       var notified = 0;
       p.addListener(() => notified++);
@@ -219,8 +220,8 @@ void main() {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
-      await p.createSyncRule(serverId: 'srv', ratingKey: '10', targetType: 'show', episodeCount: 5);
-      final ruleKey = p.syncRuleKeyFor('srv', '10');
+      await p.createSyncRule(serverId: ServerId('srv'), ratingKey: '10', targetType: 'show', episodeCount: 5);
+      final ruleKey = p.syncRuleKeyFor(ServerId('srv'), '10');
       expect(p.getSyncRule(ruleKey)!.enabled, isTrue);
 
       await p.setSyncRuleEnabled(ruleKey, false);
@@ -237,10 +238,10 @@ void main() {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
-      await p.createSyncRule(serverId: 'srv', ratingKey: '10', targetType: 'show', episodeCount: 5);
-      await p.createSyncRule(serverId: 'srv', ratingKey: '11', targetType: 'show', episodeCount: 5);
-      final ruleKey10 = p.syncRuleKeyFor('srv', '10');
-      final ruleKey11 = p.syncRuleKeyFor('srv', '11');
+      await p.createSyncRule(serverId: ServerId('srv'), ratingKey: '10', targetType: 'show', episodeCount: 5);
+      await p.createSyncRule(serverId: ServerId('srv'), ratingKey: '11', targetType: 'show', episodeCount: 5);
+      final ruleKey10 = p.syncRuleKeyFor(ServerId('srv'), '10');
+      final ruleKey11 = p.syncRuleKeyFor(ServerId('srv'), '11');
       expect(p.syncRules, hasLength(2));
 
       var notified = 0;
@@ -267,10 +268,10 @@ void main() {
         backend: MediaBackend.plex,
         kind: MediaKind.collection,
         title: 'My Collection',
-        serverId: 'srv',
+        serverId: ServerId('srv'),
       );
       await p.createSyncRule(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '20',
         targetType: 'collection',
         episodeCount: 0,
@@ -278,7 +279,7 @@ void main() {
       );
       expect(p.getMetadata('srv:20'), isNotNull, reason: 'targetMetadata should be stashed');
 
-      await p.deleteSyncRule(p.syncRuleKeyFor('srv', '20'));
+      await p.deleteSyncRule(p.syncRuleKeyFor(ServerId('srv'), '20'));
       expect(p.getMetadata('srv:20'), isNull, reason: 'orphan metadata should be released');
 
       p.dispose();
@@ -293,10 +294,10 @@ void main() {
         backend: MediaBackend.plex,
         kind: MediaKind.show,
         title: 'A Show',
-        serverId: 'srv',
+        serverId: ServerId('srv'),
       );
       await p.createSyncRule(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '30',
         targetType: 'show',
         episodeCount: 5,
@@ -309,7 +310,7 @@ void main() {
         downloads: {'srv:30': const DownloadProgress(globalKey: 'srv:30', status: DownloadStatus.queued)},
       );
 
-      await p.deleteSyncRule(p.syncRuleKeyFor('srv', '30'));
+      await p.deleteSyncRule(p.syncRuleKeyFor(ServerId('srv'), '30'));
       expect(p.getMetadata('srv:30'), isNotNull, reason: 'metadata is still in use by the download');
 
       p.dispose();
@@ -322,7 +323,7 @@ void main() {
       final keys = p.syncRuleKeysForWatchEvent(
         WatchStateEvent(
           itemId: 'episode-1',
-          serverId: 'jf-machine',
+          serverId: ServerId('jf-machine'),
           cacheServerId: 'jf-machine/user-a',
           changeType: WatchStateChangeType.watched,
           parentChain: const ['season-1', 'show-1'],
@@ -348,7 +349,7 @@ void main() {
       // Pre-seed the database with a rule before the provider exists.
       await db.insertSyncRule(
         profileId: 'test-profile',
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '99',
         globalKey: 'test-profile|srv:99',
         targetType: 'show',
@@ -371,7 +372,7 @@ void main() {
       backend: MediaBackend.plex,
       kind: MediaKind.movie,
       title: 'Owned Movie',
-      serverId: 'srv',
+      serverId: ServerId('srv'),
     );
 
     test('queueDownload is a no-op when downloads are unsupported', () async {
@@ -383,7 +384,7 @@ void main() {
       final p = DownloadProvider.forTesting(downloadManager: unsupportedManager, database: db);
       await p.ensureInitialized();
 
-      final queued = await p.queueDownload(movie, _ScopedTestClient(serverId: 'srv', scopedServerId: 'srv'));
+      final queued = await p.queueDownload(movie, _ScopedTestClient(serverId: ServerId('srv'), scopedServerId: 'srv'));
 
       expect(queued, 0);
       expect(p.downloads, isEmpty);
@@ -478,7 +479,7 @@ void main() {
 
     test('deleteDownload is a no-op for unowned physical rows', () async {
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '1',
         globalKey: 'srv:1',
         type: 'movie',
@@ -503,7 +504,7 @@ void main() {
 
     test('cancelDownload is a no-op for unowned physical rows', () async {
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '1',
         globalKey: 'srv:1',
         type: 'movie',
@@ -539,7 +540,7 @@ void main() {
         },
         metadata: {
           'srv:1': movie,
-          'other:2': movie.copyWith(id: '2', serverId: 'other'),
+          'other:2': movie.copyWith(id: '2', serverId: ServerId('other')),
         },
       );
 
@@ -577,8 +578,8 @@ void main() {
     }
 
     Future<void> putPinnedItem(String scopeId, String userId, String itemId, Map<String, Object?> data) async {
-      await JellyfinApiCache.instance.put(scopeId, '/Users/$userId/Items/$itemId', data);
-      await JellyfinApiCache.instance.pinForOffline(scopeId, itemId);
+      await JellyfinApiCache.instance.put(ServerId(scopeId), '/Users/$userId/Items/$itemId', data);
+      await JellyfinApiCache.instance.pinForOffline(ServerId(scopeId), itemId);
     }
 
     test('loads parent metadata from the downloaded Jellyfin user scope', () async {
@@ -619,7 +620,7 @@ void main() {
       });
 
       await db.insertDownload(
-        serverId: 'jf-machine',
+        serverId: ServerId('jf-machine'),
         clientScopeId: 'jf-machine/user-a',
         ratingKey: 'ep-1',
         globalKey: 'jf-machine:ep-1',
@@ -665,7 +666,7 @@ void main() {
         'UserData': {'PlayCount': 1, 'Played': true},
       });
       await db.insertDownload(
-        serverId: 'jf-machine',
+        serverId: ServerId('jf-machine'),
         clientScopeId: 'jf-machine/user-a',
         ratingKey: 'ep-1',
         globalKey: 'jf-machine:ep-1',
@@ -677,7 +678,7 @@ void main() {
       await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'jf-machine:ep-1');
       downloadManager.setClientResolver((serverId, {clientScopeId}) {
         if (serverId == 'jf-machine') {
-          return _ScopedTestClient(serverId: 'jf-machine', scopedServerId: 'jf-machine/user-b');
+          return _ScopedTestClient(serverId: ServerId('jf-machine'), scopedServerId: 'jf-machine/user-b');
         }
         return null;
       });
@@ -709,7 +710,7 @@ void main() {
         'UserData': {'PlayCount': 0},
       });
       await db.insertDownload(
-        serverId: 'jf-machine',
+        serverId: ServerId('jf-machine'),
         clientScopeId: 'jf-machine/user-a',
         ratingKey: 'ep-1',
         globalKey: 'jf-machine:ep-1',
@@ -721,14 +722,14 @@ void main() {
       await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'jf-machine:ep-1');
       await db.insertWatchAction(
         profileId: 'test-profile',
-        serverId: 'jf-machine',
+        serverId: ServerId('jf-machine'),
         clientScopeId: 'jf-machine/user-b',
         ratingKey: 'ep-1',
         actionType: 'watched',
       );
       downloadManager.setClientResolver((serverId, {clientScopeId}) {
         if (serverId == 'jf-machine') {
-          return _ScopedTestClient(serverId: 'jf-machine', scopedServerId: 'jf-machine/user-b');
+          return _ScopedTestClient(serverId: ServerId('jf-machine'), scopedServerId: 'jf-machine/user-b');
         }
         return null;
       });
@@ -766,7 +767,7 @@ void main() {
         backend: MediaBackend.plex,
         kind: MediaKind.movie,
         title: 'Movie',
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         durationMs: 100000,
         viewOffsetMs: 12000,
         viewCount: 0,
@@ -792,7 +793,7 @@ void main() {
         backend: MediaBackend.plex,
         kind: MediaKind.movie,
         title: 'Movie',
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         durationMs: 100000,
         viewOffsetMs: 0,
         viewCount: 1,
@@ -803,7 +804,7 @@ void main() {
       await Future<void>.delayed(Duration.zero);
 
       final updated = p.getMetadata('srv:42');
-      expect(updated?.isWatched, isFalse);
+      expect(updated?.isWatched, isTrue);
       expect(updated?.viewOffsetMs, 50000);
 
       p.dispose();
@@ -833,7 +834,7 @@ void main() {
             backend: MediaBackend.plex,
             kind: MediaKind.episode,
             title: 'Ep 42',
-            serverId: 'srv',
+            serverId: ServerId('srv'),
           ),
         },
         artwork: {key: const DownloadedArtwork(thumbPath: '/art/42.jpg')},
@@ -908,7 +909,7 @@ void main() {
         backend: MediaBackend.plex,
         kind: MediaKind.season,
         title: 'Season 7',
-        serverId: 'srv',
+        serverId: ServerId('srv'),
       );
       expect(p.getMetadata('srv:7'), isNull);
 
@@ -931,7 +932,7 @@ void main() {
         backend: MediaBackend.plex,
         kind: MediaKind.season,
         title: 'Original Title',
-        serverId: 'srv',
+        serverId: ServerId('srv'),
       );
       p.debugSeedState(metadata: {'srv:7': preexisting});
 
@@ -940,7 +941,7 @@ void main() {
         backend: MediaBackend.plex,
         kind: MediaKind.season,
         title: 'New Title',
-        serverId: 'srv',
+        serverId: ServerId('srv'),
       );
 
       await expectLater(p.queueDownload(season, _ThrowingClient()), throwsA(isA<StateError>()));

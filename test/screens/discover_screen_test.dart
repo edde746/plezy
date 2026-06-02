@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -225,7 +226,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   _FakeMediaServerClient({required this.hubs});
 
   @override
-  String get serverId => 'server_1';
+  ServerId get serverId => ServerId('server_1');
 
   @override
   String? get serverName => 'Server';

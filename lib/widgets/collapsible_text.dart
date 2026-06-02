@@ -161,7 +161,7 @@ class _CollapsibleTextState extends State<CollapsibleText> {
     final isSmall = widget.small;
     return Container(
       margin: const EdgeInsets.only(left: 6),
-      padding: EdgeInsets.symmetric(horizontal: isSmall ? 6 : 8, vertical: isSmall ? 0 : 2),
+      padding: .symmetric(horizontal: isSmall ? 6 : 8, vertical: isSmall ? 0 : 2),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12),
         borderRadius: BorderRadius.all(Radius.circular(isSmall ? 8 : 10)),
@@ -170,7 +170,7 @@ class _CollapsibleTextState extends State<CollapsibleText> {
         '\u00B7\u00B7\u00B7',
         style: TextStyle(
           fontSize: isSmall ? 10 : 12,
-          fontWeight: FontWeight.bold,
+          fontWeight: .bold,
           color: Theme.of(context).colorScheme.onSurfaceVariant,
           letterSpacing: isSmall ? 1.5 : 2,
         ),

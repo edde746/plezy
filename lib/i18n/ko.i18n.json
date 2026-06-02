@@ -1272,10 +1272,12 @@
   "addServer": {
     "addJellyfinTitle": "Jellyfin 서버 추가",
     "jellyfinUrlIntro": "서버 URL을 입력하세요. 예: `https://jellyfin.example.com`.",
-    "jellyfinUrlsIntro": "서버 URL을 하나 이상 쉼표나 줄바꿈으로 구분해 입력하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.",
+    "jellyfinUrlsIntro": "서버 URL을 하나 이상 쉼표로 구분해 입력하세요. Plezy는 연결 가능한 URL 중 지연 시간이 가장 낮은 URL을 사용합니다.",
     "serverUrl": "서버 URL",
     "serverUrls": "서버 URL",
     "findServer": "서버 찾기",
+    "searchingLocalServers": "로컬 Jellyfin 서버 검색 중...",
+    "localServers": "로컬 Jellyfin 서버",
     "username": "사용자 이름",
     "password": "비밀번호",
     "signIn": "로그인",

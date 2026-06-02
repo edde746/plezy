@@ -6,6 +6,7 @@ import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController, MediaServerResponse;
 import '../utils/external_ids.dart';
 import 'download_resolution.dart';
+import 'ids.dart';
 import 'library_filter_result.dart';
 import 'library_first_character.dart';
 import 'library_query.dart';
@@ -31,9 +32,9 @@ import 'server_capabilities.dart';
 ///
 /// ## Naming
 ///
-/// Read methods use a `fetch*` prefix. Plex-only operations that have no
-/// Jellyfin equivalent (DVR tuning, metadata edit, match) live on
-/// [PlexClient] directly under their original `get*` / verb names.
+/// Read methods use a `fetch*` prefix. Backend-specific operations that do not
+/// fit the neutral browsing/playback surface (DVR tuning, match, rich metadata
+/// edit adapters) live on concrete clients or feature modules.
 ///
 /// ## Error contract (write methods)
 ///
@@ -67,7 +68,7 @@ abstract interface class GracefullyCloseable {
 }
 
 abstract class MediaServerClient {
-  String get serverId;
+  ServerId get serverId;
   String? get serverName;
   MediaBackend get backend;
   ServerCapabilities get capabilities;
@@ -236,6 +237,12 @@ abstract class MediaServerClient {
 
   /// "More like this" recommendations for [id].
   Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10});
+
+  /// Playable extras attached to [id] (trailers, featurettes, deleted scenes,
+  /// behind-the-scenes clips). Backends return only items that can be opened by
+  /// the normal video playback flow; external/remote trailer URLs are out of
+  /// scope for this neutral surface.
+  Future<List<MediaItem>> fetchExtras(String id);
 
   /// Media featuring a specific person/actor.
   Future<List<MediaItem>> fetchPersonMedia(String personId);
@@ -581,7 +588,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     bool cacheResponse = true,
   }) async {
     if (isOfflineMode) {
-      final cached = await cache.get(cacheServerId, cacheKey);
+      final cached = await cache.get(ServerId(cacheServerId), cacheKey);
       if (cached != null) return parseCache(cached);
       return null;
     }
@@ -597,7 +604,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
       return parseResponse(response);
     } catch (e) {
       appLogger.w('Network request failed for $cacheKey, trying cache', error: e);
-      final cached = await cache.get(cacheServerId, cacheKey);
+      final cached = await cache.get(ServerId(cacheServerId), cacheKey);
       if (cached != null) return parseCache(cached);
       rethrow;
     }
@@ -614,7 +621,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     required T? Function(MediaServerResponse response) parseResponse,
     bool cacheResponse = true,
   }) async {
-    final cached = await cache.get(cacheServerId, cacheKey);
+    final cached = await cache.get(ServerId(cacheServerId), cacheKey);
     if (cached != null) return parseCache(cached);
     if (isOfflineMode) return null;
     final response = await networkCall();
@@ -630,7 +637,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
 
   Future<void> _putCacheResponse(String cacheKey, dynamic data) async {
     if (data is Map<String, dynamic>) {
-      await cache.put(cacheServerId, cacheKey, data);
+      await cache.put(ServerId(cacheServerId), cacheKey, data);
     } else if (data != null) {
       appLogger.w('Unexpected response type for $cacheKey: ${data.runtimeType}');
     }

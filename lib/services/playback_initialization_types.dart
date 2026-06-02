@@ -77,6 +77,9 @@ class PlaybackInitializationResult {
   /// expects one of `DirectPlay`, `DirectStream`, or `Transcode`.
   final String? playMethod;
 
+  /// Effective media version after backend clamping/fallback.
+  final int selectedMediaIndex;
+
   /// True when [videoUrl] points at a downloaded/local copy. This is a media
   /// source detail, not a statement about whether server reporting is possible.
   bool get usesLocalMedia => isOffline;
@@ -92,6 +95,7 @@ class PlaybackInitializationResult {
     this.activeAudioStreamId,
     this.playSessionId,
     this.playMethod,
+    this.selectedMediaIndex = 0,
   });
 }
 

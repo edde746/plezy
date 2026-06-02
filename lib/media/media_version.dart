@@ -65,7 +65,7 @@ class MediaVersion {
 
   /// Defaults to true when file-access fields are absent. Plex only populates
   /// them when metadata is fetched with `checkFiles=1`.
-  bool get isPlayable => parts.isEmpty || parts.first.isPlayable;
+  bool get isPlayable => parts.isEmpty || parts.any((part) => part.isPlayable);
 
   /// Display label with detailed information: "1080p H.264 MKV (8.5 Mbps)".
   /// When [name] is set, it prefixes the technical label so a user can tell
@@ -121,7 +121,7 @@ class MediaVersion {
     for (final sig in acceptedSignatures) {
       final parts = sig.split(':');
       if (parts.length != 3) continue;
-      final targetRes = parts[0];
+      final targetRes = parts.first;
       final targetCodec = parts[1];
 
       for (int i = 0; i < versions.length; i++) {

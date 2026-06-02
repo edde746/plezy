@@ -1515,10 +1515,12 @@ class _TranslationsAddServerEs extends TranslationsAddServerEn {
 	// Translations
 	@override String get addJellyfinTitle => 'Añadir servidor Jellyfin';
 	@override String get jellyfinUrlIntro => 'Introduce la URL del servidor, p. ej. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Introduce una o más URL del servidor, separadas por comas o líneas nuevas. Plezy usará la URL accesible con menor latencia.';
+	@override String get jellyfinUrlsIntro => 'Introduce una o más URL del servidor, separadas por comas. Plezy usará la URL accesible con menor latencia.';
 	@override String get serverUrl => 'URL del servidor';
 	@override String get serverUrls => 'URL del servidor';
 	@override String get findServer => 'Buscar servidor';
+	@override String get searchingLocalServers => 'Buscando servidores Jellyfin locales...';
+	@override String get localServers => 'Servidores Jellyfin locales';
 	@override String get username => 'Usuario';
 	@override String get password => 'Contraseña';
 	@override String get signIn => 'Iniciar sesión';
@@ -2981,10 +2983,12 @@ extension on TranslationsEs {
 			'trackers.libraryFilter.noLibraries' => 'No hay bibliotecas disponibles',
 			'addServer.addJellyfinTitle' => 'Añadir servidor Jellyfin',
 			'addServer.jellyfinUrlIntro' => 'Introduce la URL del servidor, p. ej. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Introduce una o más URL del servidor, separadas por comas o líneas nuevas. Plezy usará la URL accesible con menor latencia.',
+			'addServer.jellyfinUrlsIntro' => 'Introduce una o más URL del servidor, separadas por comas. Plezy usará la URL accesible con menor latencia.',
 			'addServer.serverUrl' => 'URL del servidor',
 			'addServer.serverUrls' => 'URL del servidor',
 			'addServer.findServer' => 'Buscar servidor',
+			'addServer.searchingLocalServers' => 'Buscando servidores Jellyfin locales...',
+			'addServer.localServers' => 'Servidores Jellyfin locales',
 			'addServer.username' => 'Usuario',
 			'addServer.password' => 'Contraseña',
 			'addServer.signIn' => 'Iniciar sesión',

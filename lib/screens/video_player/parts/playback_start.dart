@@ -185,11 +185,13 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           _selectedQualityPreset = TranscodeQualityPreset.original;
         }
       }
+      _effectiveSelectedMediaIndex = result.selectedMediaIndex;
       _playbackContext = playbackContext;
+      _streamHeaders = streamHeaders;
 
-      // Primary refresh-rate path: when metadata provides FPS, Android MPV can
-      // switch before `loadfile`; ExoPlayer and MPV fallback cases still open
-      // paused and switch before visible playback starts.
+      // Primary refresh-rate path: when metadata provides FPS, Android players
+      // can switch before creating decoders. MPV still needs a startup refresh
+      // when MediaCodec has already produced its first paused frame.
       final settingsService = await SettingsService.getInstance();
       if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
       final displayCriteria = result.mediaInfo?.displayCriteria;
@@ -201,12 +203,29 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           preKnownFps > 0;
       final isExoPlayer = currentPlayer is PlayerAndroid;
       final isAndroidMpv = Platform.isAndroid && !isExoPlayer;
+      final needsExoPlayerFrameRateStartup = willAutoSwitch && isExoPlayer && result.videoUrl != null;
       final needsAndroidMpvFrameRateStartup = willAutoSwitch && isAndroidMpv && result.videoUrl != null;
       var didPreLoadFrameRateSwitch = false;
-      var needsPostOpenFrameRateSwitch = willAutoSwitch && !needsAndroidMpvFrameRateStartup;
+      var didPreOpenExoFrameRateSwitch = false;
+      var preOpenExoFrameRateHandled = false;
+      var needsPostOpenFrameRateSwitch =
+          willAutoSwitch && !needsAndroidMpvFrameRateStartup && !needsExoPlayerFrameRateStartup;
       var needsAndroidMpvStartupRefresh = false;
       final hasExternalSubs = result.externalSubtitles.isNotEmpty;
       Future<bool>? androidMpvStartupReady;
+      var audioFocusReady = false;
+
+      Future<void> ensureAudioFocus() async {
+        if (audioFocusReady) return;
+        final focusFuture = _audioFocusFuture;
+        if (focusFuture != null) {
+          await focusFuture;
+          _audioFocusFuture = null;
+        } else {
+          await currentPlayer.requestAudioFocus();
+        }
+        audioFocusReady = true;
+      }
 
       // MPV on Android can decode and present its first paused frame before a
       // post-open display switch settles. Switch first when metadata already
@@ -245,6 +264,41 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         }
       }
 
+      // ExoPlayer prepares AudioTrack during open() even when opened paused.
+      // On Shield/AVR chains, switching HDMI refresh rate after that can break
+      // direct passthrough, so switch before ExoPlayer creates renderers.
+      if (needsExoPlayerFrameRateStartup) {
+        final delaySec = settingsService.read(SettingsService.displaySwitchDelay);
+        final durationMs = _currentMetadata.durationMs ?? currentPlayer.state.duration.inMilliseconds;
+        _suppressMediaPauseDuringFrameRateSwitch = true;
+        Future.delayed(Duration(seconds: 2 + delaySec + 1), () {
+          _suppressMediaPauseDuringFrameRateSwitch = false;
+        });
+        try {
+          await ensureAudioFocus();
+          if (!mounted || player != currentPlayer) return;
+          appLogger.d(
+            'Frame rate matching: pre-open ExoPlayer switch to ${preKnownFps}fps '
+            '(duration: ${durationMs}ms, delay=${delaySec}s)',
+          );
+          didPreOpenExoFrameRateSwitch = await currentPlayer.setVideoFrameRate(
+            preKnownFps,
+            durationMs,
+            extraDelayMs: delaySec * 1000,
+          );
+          if (!mounted || player != currentPlayer) return;
+          preOpenExoFrameRateHandled = true;
+          appLogger.d(
+            'Frame rate matching: pre-open ExoPlayer switch complete '
+            '(switched=$didPreOpenExoFrameRateSwitch, delay=${delaySec}s)',
+          );
+        } catch (e) {
+          appLogger.w('Failed to apply pre-open ExoPlayer frame rate matching', error: e);
+          needsPostOpenFrameRateSwitch = true;
+          preOpenExoFrameRateHandled = false;
+        }
+      }
+
       final shouldHoldPlaybackStart = needsPostOpenFrameRateSwitch || needsAndroidMpvStartupRefresh;
       Duration? resumePosition;
 
@@ -254,7 +308,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         _hasFirstFrame.value = false;
         _frameRateRetries = 0;
         _frameRateMatchingApplied = false;
-        if (didPreLoadFrameRateSwitch || needsAndroidMpvFrameRateStartup) {
+        if (didPreLoadFrameRateSwitch || needsAndroidMpvFrameRateStartup || preOpenExoFrameRateHandled) {
           _frameRateMatchingApplied = true;
         }
 
@@ -262,12 +316,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // This causes other media apps (Spotify, podcasts, etc.) to pause.
         // Fired in parallel with MPV setup in `_initializePlayer`; we await
         // the in-flight future here (usually already resolved).
-        if (_audioFocusFuture != null) {
-          await _audioFocusFuture;
-          _audioFocusFuture = null;
-        } else {
-          await currentPlayer.requestAudioFocus();
-        }
+        await ensureAudioFocus();
         if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
 
         // Pass resume position if available.
@@ -373,7 +422,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // BIF (Plex) or trickplay sprite sheets (Jellyfin) and returns null
         // when the inputs aren't sufficient. Guard against media-change
         // races during the async load.
-        final mediaClient = context.tryGetMediaClientForServer(_currentMetadata.serverId);
+        final mediaClient = context.tryGetMediaClientForServer(serverIdOrNull(_currentMetadata.serverId));
         final mediaInfoAtStart = _currentMediaInfo;
         if (mediaInfoAtStart != null && !_isOfflinePlayback && mediaClient != null) {
           unawaited(
@@ -399,11 +448,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         if (player == currentPlayer) {
           // Auto-PiP: set up callback for API 26-30 path and initial state
           if (_autoPipEnabled) {
-            final autoPipEnteringCallback = () {
+            void autoPipEnteringCallback() {
               if (!mounted || player != currentPlayer) return;
               _setAndroidAutoPipTransitionInFlight(true, reason: 'native_auto_pip_entering');
               _preparePipFiltersForEntry();
-            };
+            }
+
             _autoPipEnteringCallback = autoPipEnteringCallback;
             PipService.onAutoPipEntering = autoPipEnteringCallback;
             final pipManager = _videoPIPManager;

@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -95,8 +96,8 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   @override
   String? get itemServerId => widget.library.serverId;
 
-  String _toGlobalKey(String ratingKey, {String? serverId}) =>
-      buildGlobalKey(serverId ?? widget.library.serverId ?? '', ratingKey);
+  String _toGlobalKey(String ratingKey, {ServerId? serverId}) =>
+      buildGlobalKey(ServerId(serverId ?? widget.library.serverId ?? ''), ratingKey);
 
   @override
   String? get deletionServerId => widget.library.serverId;
@@ -115,7 +116,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     for (final item in loadedItems.values) {
       final serverId = item.serverId ?? widget.library.serverId;
       if (serverId == null) return null;
-      keys.add(_toGlobalKey(item.id, serverId: serverId));
+      keys.add(_toGlobalKey(item.id, serverId: ServerId(serverId)));
     }
     return keys;
   }
@@ -131,7 +132,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     for (final item in loadedItems.values) {
       final serverId = item.serverId ?? widget.library.serverId;
       if (serverId == null) return null;
-      keys.add(_toGlobalKey(item.id, serverId: serverId));
+      keys.add(_toGlobalKey(item.id, serverId: ServerId(serverId)));
     }
     return keys;
   }
@@ -279,7 +280,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       // only constructed when the library's backend is Plex — the bang is safe.
       plexClientProvider: () {
         final manager = context.read<MultiServerProvider>().serverManager;
-        return manager.getPlexClient(library.serverId ?? '')!;
+        return manager.getPlexClient(ServerId(library.serverId ?? ''))!;
       },
       libraryKey: library.id,
       isShared: library.isShared,
@@ -698,7 +699,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     final type = widget.library.kind.id.toLowerCase();
     // Folder browsing is gated by backend capability: Plex uses its section
     // folder API, while Jellyfin uses direct non-recursive Items queries.
-    final canFolder = context.tryGetMediaClientForServer(widget.library.serverId)?.capabilities.folderGrouping ?? false;
+    final canFolder =
+        context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId))?.capabilities.folderGrouping ??
+        false;
     if (type == 'show') {
       return ['shows', 'seasons', 'episodes', if (canFolder) 'folders'];
     } else if (type == 'movie') {
@@ -742,7 +745,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
         .show<String>(
           showDragHandle: true,
           builder: (sheetContext) => Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -750,13 +753,13 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
                   t.libraries.groupings.title,
                   style: Theme.of(sheetContext).textTheme.titleMedium,
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 ),
               ),
               Flexible(
                 child: SingleChildScrollView(
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisSize: .min,
                     children: options.map((grouping) {
                       final isSelected = _selectedGrouping == grouping;
                       return FocusableListTile(
@@ -1434,9 +1437,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      alignment: Alignment.centerLeft,
+      alignment: .centerLeft,
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           // Grouping chip
           FocusableFilterChip(
@@ -1592,7 +1595,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
     if (viewMode == ViewMode.list) {
       // In list view, all items are in a single column (first column)
       return SliverPadding(
-        padding: EdgeInsets.fromLTRB(8, topPadding, rightPadding, 8),
+        padding: .fromLTRB(8, topPadding, rightPadding, 8),
         sliver: SliverLayoutBuilder(
           builder: (context, _) {
             _setListScrollMetrics(density: libraryDensity, usesWideAspectRatio: useWideRatio);
@@ -1621,7 +1624,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       final effectiveMaxExtent = useWideRatio ? baseMaxExtent * 1.8 : baseMaxExtent;
       final hasAlphaBarReservation = rightPadding > 8.0;
       return SliverPadding(
-        padding: EdgeInsets.fromLTRB(8, topPadding, rightPadding, 8),
+        padding: .fromLTRB(8, topPadding, rightPadding, 8),
         sliver: SliverLayoutBuilder(
           builder: (context, constraints) {
             final gridSpacing = MediaGridDelegate.spacingFor(context: context, fullBleedImage: fullCardLayout);

@@ -35,7 +35,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     String? creditsPattern,
     bool forceChapterFallback = false,
   }) async {
-    final item = await cache.getMetadata(cacheServerId, itemId);
+    final item = await cache.getMetadata(ServerId(cacheServerId), itemId);
     if (item == null) return null;
     final markers = await _fetchCachedMediaSegmentMarkers(itemId);
     return jellyfinPlaybackExtrasFromRaw(
@@ -50,7 +50,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
 
   @override
   Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(String itemId) async {
-    final item = await cache.getMetadata(cacheServerId, itemId);
+    final item = await cache.getMetadata(ServerId(cacheServerId), itemId);
     final raw = item?.raw;
     if (raw is! Map<String, dynamic>) return null;
     final sources = raw['MediaSources'];
@@ -106,7 +106,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
 
   Future<List<MediaMarker>> _fetchCachedMediaSegmentMarkers(String itemId) async {
     try {
-      final data = await cache.get(cacheServerId, JellyfinApiCache.mediaSegmentsEndpoint(itemId));
+      final data = await cache.get(ServerId(cacheServerId), JellyfinApiCache.mediaSegmentsEndpoint(itemId));
       return jellyfinMediaSegmentsToMarkers(data);
     } catch (e) {
       appLogger.d('JellyfinClient.fetchPlaybackExtras cached media segments unavailable', error: e);
@@ -160,7 +160,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
 
     final preset = options.qualityPreset;
     final requestedAudioStreamId = _validJellyfinAudioStreamId(options.selectedAudioStreamId, mediaInfo);
-    final int? maxStreamingBitrate = preset.isOriginal ? null : (preset.videoBitrateKbps ?? 100000) * 1000;
+    final int? maxStreamingBitrate = preset.isOriginal ? null : (preset.videoBitrateKbps ?? 100_000) * 1000;
     final resumeOffsetMs = metadata.viewOffsetMs;
     final int? transcodeStartTimeTicks = !preset.isOriginal && resumeOffsetMs != null && resumeOffsetMs > 0
         ? msToJellyfinTicks(resumeOffsetMs)
@@ -244,6 +244,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       activeAudioStreamId: requestedAudioStreamId,
       playSessionId: playSessionId,
       playMethod: playMethod,
+      selectedMediaIndex: bundle.selectedSourceIndex,
     );
   }
 
@@ -384,6 +385,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       chapters: chapters is List ? chapters : const [],
       container: source['Container'] as String?,
       selectedSourceId: source['Id'] as String?,
+      selectedSourceIndex: index,
       trickplay: raw['Trickplay'],
     );
   }
@@ -452,7 +454,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   /// when picking codec compatibility).
   Future<Map<String, dynamic>?> getPlaybackInfo(
     String itemId, {
-    int? maxStreamingBitrate = 100000000,
+    int? maxStreamingBitrate = 100_000_000,
     String? mediaSourceId,
     String? liveStreamId,
     int? startTimeTicks,

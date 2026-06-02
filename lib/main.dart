@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'media/ids.dart';
 import 'dart:io' show Directory, Platform, ProcessInfo;
 import 'dart:ui' show AppExitResponse;
 import 'package:flutter/foundation.dart';
@@ -228,10 +229,10 @@ Future<void> _bootstrapApp() async {
 
   FullscreenStateManager().startMonitoring();
 
-  // Apply "start in fullscreen" preference on Windows/Linux. macOS is
-  // excluded — its native fullscreen animation is awkward at launch and
-  // the OS already restores window state.
-  if ((Platform.isWindows || Platform.isLinux) && settings.read(SettingsService.startInFullscreen)) {
+  // Apply "start in fullscreen" preference on desktop. macOS does not restore
+  // fullscreen state on its own (frame autosave only persists windowed geometry),
+  // so it needs the same explicit handling as Windows/Linux.
+  if (PlatformDetector.isDesktopOS() && settings.read(SettingsService.startInFullscreen)) {
     unawaited(FullscreenStateManager().enterFullscreen());
   }
 
@@ -784,7 +785,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             provider.setActiveProfileId(activeProfile.activeId);
             provider.setActiveClientScopesByServer({
               for (final serverId in multiServer.serverManager.serverIds)
-                serverId: multiServer.serverManager.getClient(serverId)?.cacheServerId,
+                serverId: multiServer.serverManager.getClient(ServerId(serverId))?.cacheServerId,
             });
             return provider;
           },
@@ -866,7 +867,17 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (context) => TraktAccountProvider()),
         ChangeNotifierProvider(create: (context) => TrackersProvider()),
         ChangeNotifierProvider(create: (context) => HiddenLibrariesProvider(), lazy: true),
-        ChangeNotifierProvider(create: (context) => LibrariesProvider()),
+        ChangeNotifierProvider(
+          create: (context) {
+            final provider = LibrariesProvider();
+            // Reload libraries when a new server comes online. Servers bind in
+            // waves on sign-in / profile switch and slow ones reconnect after
+            // the initial load; without this they stay missing from the sidebar
+            // until a profile re-switch or restart.
+            context.read<MultiServerProvider>().onOnlineServersChanged = provider.syncToOnlineServers;
+            return provider;
+          },
+        ),
         ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
         ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
         ChangeNotifierProvider(create: (context) => CompanionRemoteProvider()),
@@ -959,7 +970,7 @@ class _AppleTvScale extends StatelessWidget {
         // dead margin and zero them out — the UI can use the full surface.
         return Transform.scale(
           scale: _scale,
-          alignment: Alignment.topLeft,
+          alignment: .topLeft,
           transformHitTests: true,
           child: SizedBox(
             width: logicalSize.width,
@@ -968,10 +979,10 @@ class _AppleTvScale extends StatelessWidget {
               data: outerQ.copyWith(
                 size: logicalSize,
                 devicePixelRatio: outerQ.devicePixelRatio * _scale,
-                padding: EdgeInsets.zero,
-                viewPadding: EdgeInsets.zero,
-                viewInsets: EdgeInsets.zero,
-                systemGestureInsets: EdgeInsets.zero,
+                padding: .zero,
+                viewPadding: .zero,
+                viewInsets: .zero,
+                systemGestureInsets: .zero,
               ),
               child: child!,
             ),
@@ -1348,7 +1359,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     const failColor = Color(0xFFEF5350);
 
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: _serverStatus.entries.map((entry) {
         final (name, connected) = entry.value;
         final Widget statusIcon;
@@ -1367,7 +1378,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
           key: ValueKey(entry.key),
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               statusIcon,
               const SizedBox(width: 8),

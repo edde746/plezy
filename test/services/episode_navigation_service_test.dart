@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:plezy/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
@@ -32,7 +33,7 @@ import 'package:provider/provider.dart';
 MediaItem _meta(String id, {String? title}) =>
     MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.episode, title: title ?? 'Episode $id');
 
-MediaItem _jfEpisode(String id, {required String seriesId, String serverId = 'srv-jf'}) => MediaItem(
+MediaItem _jfEpisode(String id, {required String seriesId, ServerId serverId = const ServerId('srv-jf')}) => MediaItem(
   id: id,
   backend: MediaBackend.jellyfin,
   kind: MediaKind.episode,

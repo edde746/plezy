@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import '../../utils/future_extensions.dart';
@@ -127,7 +128,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               Icon(Symbols.group_rounded, size: 80, color: theme.colorScheme.primary),
               const SizedBox(height: 24),
@@ -187,7 +188,7 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
               if (_recentRooms.isNotEmpty) ...[
                 const SizedBox(height: 32),
                 Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: .centerLeft,
                   child: Text(t.watchTogether.recentRooms, style: theme.textTheme.titleSmall),
                 ),
                 const SizedBox(height: 8),
@@ -302,47 +303,10 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
   }
 
   Future<void> _renameRoom(RecentRoom room) async {
-    final controller = TextEditingController(text: room.name ?? '');
-    final fieldFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameField');
-    final cancelFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameCancel');
-    final saveFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameSave');
-    String? name;
-    try {
-      name = await showDialog<String>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text(t.watchTogether.renameRoom),
-          content: FocusableTextField(
-            controller: controller,
-            focusNode: fieldFocusNode,
-            autofocus: true,
-            decoration: InputDecoration(hintText: room.code),
-            onNavigateDown: saveFocusNode.requestFocus,
-            onSubmitted: (value) => Navigator.pop(context, value),
-          ),
-          actions: [
-            DialogActionButton(
-              focusNode: cancelFocusNode,
-              onPressed: () => Navigator.pop(context),
-              onNavigateRight: saveFocusNode.requestFocus,
-              label: t.common.cancel,
-            ),
-            DialogActionButton(
-              focusNode: saveFocusNode,
-              onPressed: () => Navigator.pop(context, controller.text),
-              onNavigateLeft: cancelFocusNode.requestFocus,
-              isPrimary: true,
-              label: t.common.save,
-            ),
-          ],
-        ),
-      );
-    } finally {
-      controller.dispose();
-      fieldFocusNode.dispose();
-      cancelFocusNode.dispose();
-      saveFocusNode.dispose();
-    }
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => _RenameRoomDialog(room: room),
+    );
     if (name == null || !mounted) return;
 
     await RecentRoomsService.renameRoom(room.code, name.isEmpty ? null : name);
@@ -352,6 +316,65 @@ class _NotInSessionViewState extends State<_NotInSessionView> with MountedSetSta
   Future<void> _removeRoom(RecentRoom room) async {
     await RecentRoomsService.removeRoom(room.code);
     setStateIfMounted(() => _recentRooms = RecentRoomsService.getRecentRooms());
+  }
+}
+
+class _RenameRoomDialog extends StatefulWidget {
+  final RecentRoom room;
+
+  const _RenameRoomDialog({required this.room});
+
+  @override
+  State<_RenameRoomDialog> createState() => _RenameRoomDialogState();
+}
+
+class _RenameRoomDialogState extends State<_RenameRoomDialog> {
+  late final _controller = TextEditingController(text: widget.room.name ?? '');
+  final _fieldFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameField');
+  final _cancelFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameCancel');
+  final _saveFocusNode = FocusNode(debugLabel: 'WatchTogetherRenameSave');
+
+  @override
+  void dispose() {
+    _fieldFocusNode.dispose();
+    _cancelFocusNode.dispose();
+    _saveFocusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit(String value) {
+    Navigator.pop(context, value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(t.watchTogether.renameRoom),
+      content: FocusableTextField(
+        controller: _controller,
+        focusNode: _fieldFocusNode,
+        autofocus: true,
+        decoration: InputDecoration(hintText: widget.room.code),
+        onNavigateDown: _saveFocusNode.requestFocus,
+        onSubmitted: _submit,
+      ),
+      actions: [
+        DialogActionButton(
+          focusNode: _cancelFocusNode,
+          onPressed: () => Navigator.pop(context),
+          onNavigateRight: _saveFocusNode.requestFocus,
+          label: t.common.cancel,
+        ),
+        DialogActionButton(
+          focusNode: _saveFocusNode,
+          onPressed: () => _submit(_controller.text),
+          onNavigateLeft: _cancelFocusNode.requestFocus,
+          isPrimary: true,
+          label: t.common.save,
+        ),
+      ],
+    );
   }
 }
 
@@ -389,7 +412,7 @@ class _RecentRoomTile extends StatelessWidget {
           child: ListTile(
             shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
             leading: isEntering ? const LoadingIndicatorBox(size: 24) : const Icon(Symbols.meeting_room_rounded),
-            title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+            title: Text(title, maxLines: 1, overflow: .ellipsis),
             subtitle: room.name != null
                 ? Text(
                     room.code,
@@ -409,7 +432,7 @@ class _RecentRoomTile extends StatelessWidget {
       context,
       builder: (context) => SafeArea(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             ListTile(
               leading: const Icon(Symbols.edit_rounded),
@@ -445,13 +468,13 @@ class _ActiveSessionContent extends StatelessWidget {
     final session = watchTogether.session!;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: .stretch,
       children: [
         Card(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Row(
                   children: [
@@ -462,7 +485,7 @@ class _ActiveSessionContent extends StatelessWidget {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: .start,
                         children: [
                           Text(
                             watchTogether.isHost ? t.watchTogether.hostingSession : t.watchTogether.inSession,
@@ -506,7 +529,7 @@ class _ActiveSessionContent extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Row(
                   children: [
@@ -628,9 +651,9 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
       await navigateToWatchTogetherPlayback(
         context,
         ratingKey: ratingKey,
-        serverId: serverId,
+        serverId: ServerId(serverId),
         onBeforeNavigate: () {
-          widget.watchTogether.markCurrentPlaybackHandled(ratingKey: ratingKey, serverId: serverId);
+          widget.watchTogether.markCurrentPlaybackHandled(ratingKey: ratingKey, serverId: ServerId(serverId));
         },
       );
     } catch (e, stackTrace) {
@@ -657,7 +680,7 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           children: [
             Row(
               children: [
@@ -665,7 +688,7 @@ class _JoinCurrentPlaybackCardState extends State<_JoinCurrentPlaybackCard> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: .start,
                     children: [
                       Text(t.watchTogether.currentPlayback, style: theme.textTheme.titleMedium),
                       const SizedBox(height: 4),
@@ -721,7 +744,7 @@ class _SessionCodeRow extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               Text(
                 '${t.watchTogether.sessionCode}: $sessionId',

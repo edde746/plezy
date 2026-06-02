@@ -74,9 +74,10 @@ class ShaderProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
   Future<void> setPreset(ShaderPreset preset) async {
     final service = _settingsService ?? await SettingsService.getInstance();
     await service.write(SettingsService.globalShaderPreset, preset.id);
-    if (_savedPresetListenable == null) {
-      _savedPreset = preset;
-      _currentPreset = preset;
+    final changed = _savedPreset.id != preset.id || _currentPreset.id != preset.id;
+    _savedPreset = preset;
+    _currentPreset = preset;
+    if (changed || _savedPresetListenable == null) {
       safeNotifyListeners();
     }
   }

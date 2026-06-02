@@ -241,7 +241,7 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
                   borderRadius: const BorderRadius.all(Radius.circular(10)),
                 ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  mainAxisAlignment: .spaceEvenly,
                   children: List.generate(_displayed.length, (i) {
                     final letter = _displayed[i];
                     final isCurrent = letter == currentLetter && !_hasFocus;
@@ -273,7 +273,7 @@ class _AlphaJumpBarState extends State<AlphaJumpBar> {
                           width: markerSize,
                           height: markerSize,
                           decoration: decoration,
-                          alignment: Alignment.center,
+                          alignment: .center,
                           child: Text(
                             letter,
                             style: TextStyle(
