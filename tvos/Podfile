@@ -70,6 +70,12 @@ post_install do |installer|
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       is_debug = config.name.downcase.include?('debug')
+      # Clang dependency scanning (Xcode 26) doesn't always resolve
+      # [sdk=...] conditionals, so pass -F explicitly to C compiler flags.
+      flutter_fwk = is_debug ? simulator_engine : release_device_engine
+      fwk_flag = "-F#{flutter_fwk}"
+      config.build_settings['OTHER_CFLAGS'] = [config.build_settings['OTHER_CFLAGS'], fwk_flag].compact.flatten
+      config.build_settings['OTHER_LDFLAGS'] = [config.build_settings['OTHER_LDFLAGS'], fwk_flag].compact.flatten
       config.build_settings['FRAMEWORK_SEARCH_PATHS[sdk=appletvsimulator*]'] = [
         '$(inherited)',
         simulator_engine,

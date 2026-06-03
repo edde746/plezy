@@ -91,8 +91,8 @@ SyncRunnerVersion() {
   fi
 
   if [[ ! -f "$plist" ]]; then
-    echo " └─ERROR: Runner Info.plist not found for version sync"
-    return 1
+    echo " └─WARNING: Runner Info.plist not found for version sync (will be synced later by Xcode)"
+    return 0
   fi
 
   echo " └─Syncing Runner version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"

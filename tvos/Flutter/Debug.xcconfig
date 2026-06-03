@@ -4,5 +4,6 @@
 // AVKit owns UIWindow.avDisplayManager (used for native Dolby Vision
 // trigger). Swift autolink doesn't reliably emit -framework AVKit for
 // ObjC category access, so link it explicitly.
-OTHER_LDFLAGS = $(inherited) -framework AVKit
+OTHER_LDFLAGS = $(inherited) -framework AVKit -F $(FLUTTER_LOCAL_ENGINE)/out/tvos_debug_sim_unopt_arm64
+FRAMEWORK_SEARCH_PATHS = $(inherited) $(FLUTTER_LOCAL_ENGINE)/out/tvos_debug_sim_unopt_arm64
 EXCLUDED_ARCHS[sdk=appletvsimulator*] = x86_64
