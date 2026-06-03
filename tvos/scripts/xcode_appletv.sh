@@ -100,16 +100,35 @@ SyncRunnerVersion() {
   SetPlistString "$plist" CFBundleVersion "$FLUTTER_BUILD_NUMBER"
 }
 
+EngineOutputExists() {
+  local variant="$1"
+  [[ -d "$FLUTTER_LOCAL_ENGINE/out/$variant" ]]
+}
+
+ResolveEngineOutput() {
+  local variant
+  for variant in "$@"; do
+    local candidate="$FLUTTER_LOCAL_ENGINE/out/$variant"
+    if [[ -d "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  echo " └─ERROR: none of these Flutter engine outputs exist: $*" >&2
+  return 1
+}
+
 BuildAppDebug() {
   # Host tools (frontend_server, patched SDK, dartaotruntime) ship in
   # host_release for both debug and release consumers — the frontend_server
   # compiles debug kernels regardless of the host build flavor.
   HOST_TOOLS=$FLUTTER_LOCAL_ENGINE/out/host_release
   if [[ "$debug_sim" == "true" ]]; then
-    DEVICE_TOOLS=$FLUTTER_LOCAL_ENGINE/out/tvos_debug_sim_unopt$TARGET_POSTFIX
+    DEVICE_TOOLS=$(ResolveEngineOutput "tvos_debug_sim_unopt$TARGET_POSTFIX" "tvos_debug_sim_unopt_arm64" "tvos_debug_sim_unopt") || return 1
   else
     # Device build is always arm64; gn outputs `tvos_debug_unopt` without suffix.
-    DEVICE_TOOLS=$FLUTTER_LOCAL_ENGINE/out/tvos_debug_unopt
+    DEVICE_TOOLS=$(ResolveEngineOutput "tvos_debug_unopt") || return 1
   fi
 
   ROOTDIR=$(dirname "$PROJECT_DIR")
@@ -420,11 +439,19 @@ BuildApp() {
   echo " └─engine $FLUTTER_LOCAL_ENGINE"
 
 
-  if [[ "$PLATFORM_NAME" == "appletvsimulator" && "$build_mode" =~ "debug" ]]; then
+  if [[ "$PLATFORM_NAME" == "appletvsimulator" ]]; then
     debug_sim="true"
+    if [[ ! "$build_mode" =~ "debug" ]]; then
+      echo " └─simulator builds use the debug simulator engine"
+    fi
     BuildAppDebug
   elif [[ "$build_mode" =~ "debug" ]]; then
-    BuildAppDebug
+    if EngineOutputExists "tvos_debug_unopt"; then
+      BuildAppDebug
+    else
+      echo " └─debug tvOS device engine not found; building release Flutter app"
+      BuildAppRelease
+    fi
   elif [[ "$build_mode" =~ "release" ]]; then
     # release/archive   (archive: build mode == "release" && ${ACTION} == "install")
     BuildAppRelease

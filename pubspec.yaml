@@ -34,8 +34,8 @@ dependencies:
       path: packages/connectivity_plus/connectivity_plus
   os_media_controls:
     git:
-      url: https://github.com/edde746/os-media-controls
-      ref: d5c1885
+      url: https://github.com/edde746/media_controls
+      ref: f51c805ebc15bf7a2f49a74174aeb470d3c4c78e
   rate_limiter: ^1.0.0
   wakelock_plus:
     git:

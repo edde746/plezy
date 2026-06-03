@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -6,6 +8,13 @@ import '../utils/key_event_simulator.dart' as key_sim;
 import 'gamepad_service.dart';
 
 enum _SwipeAxis { horizontal, vertical }
+
+class AppleTvRemotePlayPauseAction {
+  final String source;
+  final String? detail;
+
+  const AppleTvRemotePlayPauseAction({required this.source, this.detail});
+}
 
 /// Bridges tvOS touch-surface events from Apple's iOS Remote app into the
 /// focus-tree key events Plezy already handles for D-pad navigation.
@@ -25,6 +34,8 @@ class AppleTvRemoteTouchService {
   final VoidCallback _scheduleFrame;
   final DateTime Function() _now;
   final GamepadDuplicateInputGuard _duplicateInputGuard;
+  final StreamController<AppleTvRemotePlayPauseAction> _playPauseController =
+      StreamController<AppleTvRemotePlayPauseAction>.broadcast();
   final double swipeThreshold;
   final double axisSwitchDominanceRatio;
   final Duration swipeRepeatInterval;
@@ -66,6 +77,8 @@ class AppleTvRemoteTouchService {
        _duplicateInputGuard =
            duplicateInputGuard ?? GamepadDuplicateInputGuard(now: now, suppressionWindow: duplicateSuppressionWindow);
 
+  Stream<AppleTvRemotePlayPauseAction> get playPauseActions => _playPauseController.stream;
+
   void start() {
     if (_listening) return;
     _channel.setMessageHandler(handleMessage);
@@ -86,6 +99,10 @@ class AppleTvRemoteTouchService {
 
   bool handleNativeKeyEvent(KeyEvent event) {
     _log('native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)}');
+    if (_isMediaPlaybackKey(event.logicalKey)) {
+      _log('consume native media key reason=direct-playback-action');
+      return true;
+    }
     if (event is KeyDownEvent && _isDirectionalKey(event.logicalKey)) {
       _lastDirectionalInputAt = _now();
     }
@@ -128,6 +145,11 @@ class AppleTvRemoteTouchService {
         _releaseSelectFromClick(source: 'click_e');
       case 'click_s':
         _pressSelectFromClick();
+      case 'play_pause':
+        final source = arguments['source'] is String ? arguments['source'] as String : 'native';
+        final detail = arguments['detail'] is String ? arguments['detail'] as String : null;
+        _log('emit action=play_pause source=$source${detail == null ? '' : ' detail=$detail'}');
+        _playPauseController.add(AppleTvRemotePlayPauseAction(source: source, detail: detail));
       case 'loc':
         break;
       default:
@@ -333,6 +355,9 @@ class AppleTvRemoteTouchService {
     if (key == LogicalKeyboardKey.select) return 'select';
     if (key == LogicalKeyboardKey.gameButtonA) return 'gameButtonA';
     if (key == LogicalKeyboardKey.escape) return 'escape';
+    if (key == LogicalKeyboardKey.mediaPlay) return 'mediaPlay';
+    if (key == LogicalKeyboardKey.mediaPause) return 'mediaPause';
+    if (key == LogicalKeyboardKey.mediaPlayPause) return 'mediaPlayPause';
     return '0x${key.keyId.toRadixString(16)}';
   }
 
@@ -341,6 +366,12 @@ class AppleTvRemoteTouchService {
         key == LogicalKeyboardKey.arrowDown ||
         key == LogicalKeyboardKey.arrowLeft ||
         key == LogicalKeyboardKey.arrowRight;
+  }
+
+  bool _isMediaPlaybackKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.mediaPlayPause ||
+        key == LogicalKeyboardKey.mediaPlay ||
+        key == LogicalKeyboardKey.mediaPause;
   }
 
   String _formatDouble(double? value) {

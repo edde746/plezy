@@ -768,11 +768,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: d5c1885
-      resolved-ref: d5c18857ada19896cf456b832c143da435a7155d
-      url: "https://github.com/edde746/os-media-controls"
+      ref: f51c805ebc15bf7a2f49a74174aeb470d3c4c78e
+      resolved-ref: f51c805ebc15bf7a2f49a74174aeb470d3c4c78e
+      url: "https://github.com/edde746/media_controls"
     source: git
-    version: "0.2.1"
+    version: "0.2.4"
   package_config:
     dependency: transitive
     description:

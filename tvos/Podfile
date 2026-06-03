@@ -33,6 +33,25 @@ def tvos_flutter_engine_path
   raise "tvos/Podfile: FLUTTER_LOCAL_ENGINE missing from Flutter/Generated.xcconfig"
 end
 
+def tvos_engine_output(engine, *variants)
+  variants.each do |variant|
+    candidate = File.join(engine, 'out', variant)
+    return candidate if Dir.exist?(candidate)
+  end
+
+  raise "tvos/Podfile: none of these Flutter engine outputs exist: #{variants.join(', ')}"
+end
+
+def tvos_depends_on_flutter?(target, visited = {})
+  return false if visited[target.uuid]
+
+  visited[target.uuid] = true
+  target.dependencies.any? do |dependency|
+    dependency.name == 'Flutter' ||
+      (dependency.respond_to?(:target) && dependency.target && tvos_depends_on_flutter?(dependency.target, visited))
+  end
+end
+
 target 'Runner' do
   use_frameworks!
   pod 'Flutter', :path => 'Flutter'
@@ -45,22 +64,24 @@ end
 
 post_install do |installer|
   engine = tvos_flutter_engine_path
+  simulator_engine = tvos_engine_output(engine, 'tvos_debug_sim_unopt_arm64', 'tvos_debug_sim_unopt')
+  debug_device_engine = tvos_engine_output(engine, 'tvos_debug_unopt', 'tvos_release')
+  release_device_engine = tvos_engine_output(engine, 'tvos_release')
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       is_debug = config.name.downcase.include?('debug')
-      sim_variant = is_debug ? 'tvos_debug_sim_unopt_arm64' : 'tvos_release'
-      dev_variant = is_debug ? 'tvos_debug_unopt' : 'tvos_release'
       config.build_settings['FRAMEWORK_SEARCH_PATHS[sdk=appletvsimulator*]'] = [
         '$(inherited)',
-        File.join(engine, 'out', sim_variant),
+        simulator_engine,
       ]
       config.build_settings['FRAMEWORK_SEARCH_PATHS[sdk=appletvos*]'] = [
         '$(inherited)',
-        File.join(engine, 'out', dev_variant),
+        is_debug ? debug_device_engine : release_device_engine,
       ]
       # Engine Flutter.framework ships arm64-only for simulator; exclude x86_64
       # so the link step doesn't look for a slice that doesn't exist.
       config.build_settings['EXCLUDED_ARCHS[sdk=appletvsimulator*]'] = 'x86_64'
+      config.build_settings['OTHER_LDFLAGS'] = '$(inherited) -framework Flutter' if tvos_depends_on_flutter?(target)
     end
   end
 end

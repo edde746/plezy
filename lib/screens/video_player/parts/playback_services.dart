@@ -108,6 +108,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         return;
       }
 
+      if (PlatformDetector.isAppleTV() && _isPlaybackMediaControlEvent(event)) {
+        appLogger.d('Media control: ${event.runtimeType} ignored on Apple TV; using native remote bridge');
+        return;
+      }
+
       if (activePlayer == null && event is! NextTrackEvent && event is! PreviousTrackEvent) return;
 
       if (event is PlayEvent) {
@@ -247,6 +252,9 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       event is AudioInterruptionEndedEvent ||
       event is AudioRouteOldDeviceUnavailableEvent ||
       event is AudioRouteNewDeviceAvailableEvent;
+
+  bool _isPlaybackMediaControlEvent(Object event) =>
+      event is PlayEvent || event is PauseEvent || event is TogglePlayPauseEvent;
 
   Future<void> _handleAppleAudioSessionEvent(Object event) async {
     if (!Platform.isIOS || PlatformDetector.isTV()) return;

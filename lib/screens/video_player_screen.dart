@@ -43,6 +43,7 @@ import '../services/trackers/tracker_coordinator.dart';
 import '../services/trakt/trakt_scrobble_service.dart';
 import '../services/episode_navigation_service.dart';
 import '../services/app_foreground_service.dart';
+import '../services/apple_tv_remote_touch_service.dart';
 import '../services/media_controls_manager.dart';
 import '../services/playback_initialization_service.dart';
 import '../services/playback_context.dart';
@@ -300,6 +301,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   StreamSubscription<bool>? _playingSubscription;
   StreamSubscription<bool>? _completedSubscription;
   StreamSubscription<dynamic>? _mediaControlSubscription;
+  StreamSubscription<AppleTvRemotePlayPauseAction>? _appleTvPlayPauseSubscription;
   StreamSubscription<bool>? _bufferingSubscription;
   StreamSubscription<Duration>? _positionSubscription;
   StreamSubscription<void>? _playbackRestartSubscription;
@@ -541,6 +543,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     WidgetsBinding.instance.addObserver(this);
 
     _setupCompanionRemoteCallbacks();
+    _setupAppleTvRemotePlaybackActions();
 
     _sleepTimerSubscription = SleepTimerService().onPrompt.listen((_) {
       if (mounted) _showStillWatchingDialog();
@@ -1161,6 +1164,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _completedSubscription?.cancel();
     _errorSubscription?.cancel();
     _mediaControlSubscription?.cancel();
+    _appleTvPlayPauseSubscription?.cancel();
     _bufferingSubscription?.cancel();
     _trackManager?.dispose();
     _positionSubscription?.cancel();
@@ -1249,6 +1253,53 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
           _screenFocusNode.requestFocus();
         }
       });
+    }
+  }
+
+  void _setupAppleTvRemotePlaybackActions() {
+    if (!PlatformDetector.isAppleTV()) return;
+
+    _appleTvPlayPauseSubscription = AppleTvRemoteTouchService.instance.playPauseActions.listen((action) {
+      unawaited(_handleAppleTvRemotePlayPause(action));
+    });
+  }
+
+  Future<void> _handleAppleTvRemotePlayPause(AppleTvRemotePlayPauseAction action) async {
+    if (!mounted || ModalRoute.of(context)?.isCurrent != true) return;
+
+    final currentPlayer = player;
+    if (!_isPlayerInitialized || currentPlayer == null) {
+      appLogger.d('Apple TV remote play/pause ignored: player not ready');
+      return;
+    }
+
+    if (!_canControlPlaybackFromRemote()) {
+      appLogger.d('Apple TV remote play/pause ignored: playback control unavailable');
+      return;
+    }
+
+    appLogger.d(
+      'Apple TV remote play/pause received source=${action.source}'
+      '${action.detail == null ? '' : ' detail=${action.detail}'}',
+    );
+
+    try {
+      if (!currentPlayer.state.playing) {
+        await _seekBackForRewind(currentPlayer);
+        if (!mounted || player != currentPlayer) return;
+      }
+      await currentPlayer.playOrPause();
+    } catch (e, st) {
+      appLogger.w('Apple TV remote play/pause failed', error: e, stackTrace: st);
+    }
+  }
+
+  bool _canControlPlaybackFromRemote() {
+    try {
+      final watchTogether = _watchTogetherProvider ?? context.read<WatchTogetherProvider>();
+      return !watchTogether.isInSession || watchTogether.canControl();
+    } catch (e) {
+      return true;
     }
   }
 
