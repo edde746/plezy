@@ -52,6 +52,10 @@ class AppleTvRemoteTouchService {
   DateTime? _lastSwipeAt;
   DateTime? _lastDirectionalInputAt;
   DateTime? _lastSyntheticSelectAt;
+  DateTime? _lastAcceptedNativeSelectDownAt;
+  DateTime? _lastAcceptedNativeSelectUpAt;
+  int _suppressedNativeSelectDowns = 0;
+  bool _nativeSelectPressed = false;
   bool _selectPressedFromClick = false;
 
   AppleTvRemoteTouchService({
@@ -92,6 +96,7 @@ class AppleTvRemoteTouchService {
     _channel.setMessageHandler(null);
     _unregisterNativeKeyHandler();
     _duplicateInputGuard.clear();
+    _resetNativeSelectBurstState();
     _releaseSelectFromClick(source: 'stop');
     _resetTouch();
     _listening = false;
@@ -101,6 +106,9 @@ class AppleTvRemoteTouchService {
     _log('native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)}');
     if (_isMediaPlaybackKey(event.logicalKey)) {
       _log('consume native media key reason=direct-playback-action');
+      return true;
+    }
+    if (_shouldConsumeNativeSelectDuplicate(event)) {
       return true;
     }
     if (event is KeyDownEvent && _isDirectionalKey(event.logicalKey)) {
@@ -287,6 +295,103 @@ class AppleTvRemoteTouchService {
     _simulateKeyUp(LogicalKeyboardKey.enter);
   }
 
+  bool _shouldConsumeNativeSelectDuplicate(KeyEvent event) {
+    if (!_isSelectKey(event.logicalKey)) return false;
+
+    final now = _now();
+    if (_selectPressedFromClick) {
+      _log(
+        'consume native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)} '
+        'reason=synthetic-select-in-flight',
+      );
+      if (event is KeyUpEvent) {
+        _releaseSelectFromClick(source: 'native_select');
+      }
+      return true;
+    }
+
+    final lastSyntheticSelectAt = _lastSyntheticSelectAt;
+    if (lastSyntheticSelectAt != null && now.difference(lastSyntheticSelectAt).abs() <= duplicateSuppressionWindow) {
+      final age = now.difference(lastSyntheticSelectAt).abs().inMilliseconds;
+      _log(
+        'consume native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)} '
+        'reason=recent-synthetic-select age=${age}ms',
+      );
+      return true;
+    }
+
+    if (event is KeyDownEvent) {
+      final lastAcceptedNativeSelectUpAt = _lastAcceptedNativeSelectUpAt;
+      final duplicateCompletedPress =
+          lastAcceptedNativeSelectUpAt != null &&
+          now.difference(lastAcceptedNativeSelectUpAt).abs() <= duplicateSuppressionWindow;
+      if (_nativeSelectPressed || duplicateCompletedPress) {
+        _suppressedNativeSelectDowns++;
+        final reason = _nativeSelectPressed ? 'native-select-already-down' : 'recent-native-select';
+        _log(
+          'consume native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)} '
+          'reason=$reason',
+        );
+        return true;
+      }
+
+      _nativeSelectPressed = true;
+      _lastAcceptedNativeSelectDownAt = now;
+      return false;
+    }
+
+    if (event is KeyRepeatEvent) {
+      if (_nativeSelectPressed) return false;
+      final lastAcceptedNativeSelectDownAt = _lastAcceptedNativeSelectDownAt;
+      if (lastAcceptedNativeSelectDownAt != null &&
+          now.difference(lastAcceptedNativeSelectDownAt).abs() <= duplicateSuppressionWindow) {
+        _log(
+          'consume native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)} '
+          'reason=recent-native-select',
+        );
+        return true;
+      }
+      return false;
+    }
+
+    if (event is KeyUpEvent) {
+      if (_suppressedNativeSelectDowns > 0) {
+        _suppressedNativeSelectDowns--;
+        _log(
+          'consume native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)} '
+          'reason=suppressed-native-select-down',
+        );
+        return true;
+      }
+
+      if (!_nativeSelectPressed) {
+        final lastAcceptedNativeSelectUpAt = _lastAcceptedNativeSelectUpAt;
+        if (lastAcceptedNativeSelectUpAt != null &&
+            now.difference(lastAcceptedNativeSelectUpAt).abs() <= duplicateSuppressionWindow) {
+          _log(
+            'consume native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)} '
+            'reason=recent-native-select-up',
+          );
+          return true;
+        }
+        return false;
+      }
+
+      _nativeSelectPressed = false;
+      _lastAcceptedNativeSelectUpAt = now;
+      return false;
+    }
+
+    return false;
+  }
+
+  void _resetNativeSelectBurstState() {
+    _lastAcceptedNativeSelectDownAt = null;
+    _lastAcceptedNativeSelectUpAt = null;
+    _suppressedNativeSelectDowns = 0;
+    _nativeSelectPressed = false;
+  }
+
   bool _emitKey(LogicalKeyboardKey logicalKey, {required String source, String? detail}) {
     if (_duplicateInputGuard.shouldSuppressSyntheticKey(logicalKey)) {
       _log('suppress key=${_keyName(logicalKey)} source=$source reason=recent-native');
@@ -352,6 +457,8 @@ class AppleTvRemoteTouchService {
     if (key == LogicalKeyboardKey.arrowLeft) return 'arrowLeft';
     if (key == LogicalKeyboardKey.arrowRight) return 'arrowRight';
     if (key == LogicalKeyboardKey.enter) return 'enter';
+    if (key.keyId == 0x0d) return 'rawEnter';
+    if (key == LogicalKeyboardKey.numpadEnter) return 'numpadEnter';
     if (key == LogicalKeyboardKey.select) return 'select';
     if (key == LogicalKeyboardKey.gameButtonA) return 'gameButtonA';
     if (key == LogicalKeyboardKey.escape) return 'escape';
@@ -366,6 +473,14 @@ class AppleTvRemoteTouchService {
         key == LogicalKeyboardKey.arrowDown ||
         key == LogicalKeyboardKey.arrowLeft ||
         key == LogicalKeyboardKey.arrowRight;
+  }
+
+  bool _isSelectKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.enter ||
+        key.keyId == 0x0d ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.select ||
+        key == LogicalKeyboardKey.gameButtonA;
   }
 
   bool _isMediaPlaybackKey(LogicalKeyboardKey key) {

@@ -334,6 +334,7 @@ class TvBrowseRail extends StatefulWidget {
 
 class TvBrowseRailState extends State<TvBrowseRail> {
   static const _longPressDuration = Duration(milliseconds: 500);
+  static const _selectSuppressionTimeout = Duration(milliseconds: 220);
   static const _navigationScrollDuration = Duration(milliseconds: 130);
   static const _repeatNavigationScrollDuration = Duration(milliseconds: 65);
   static const _scrollCatchUpViewportDistance = 2.5;
@@ -352,8 +353,10 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   List<double> _sectionOffsets = const [];
   double _sectionMaxScrollExtent = 0;
   Timer? _longPressTimer;
+  Timer? _selectSuppressionTimer;
   bool _isSelectKeyDown = false;
   bool _longPressTriggered = false;
+  bool _suppressSelectUntilKeyUp = false;
   bool _hasUserChangedHub = false;
   bool _hasUserChangedItem = false;
 
@@ -362,6 +365,15 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   void requestFocus() {
     _notifyFocusedItem();
     _focusNode.requestFocus();
+  }
+
+  void suppressSelectUntilKeyUp() {
+    _resetLongPressState();
+    _suppressSelectUntilKeyUp = true;
+    _selectSuppressionTimer?.cancel();
+    _selectSuppressionTimer = Timer(_selectSuppressionTimeout, () {
+      _suppressSelectUntilKeyUp = false;
+    });
   }
 
   @override
@@ -452,6 +464,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
   @override
   void dispose() {
     _longPressTimer?.cancel();
+    _selectSuppressionTimer?.cancel();
     _focusNode.removeListener(_handleFocusChange);
     _focusNode.dispose();
     for (final controller in _scrollControllers.values) {
@@ -471,6 +484,12 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     _longPressTimer?.cancel();
     _isSelectKeyDown = false;
     _longPressTriggered = false;
+  }
+
+  void _clearSelectSuppression() {
+    _selectSuppressionTimer?.cancel();
+    _selectSuppressionTimer = null;
+    _suppressSelectUntilKeyUp = false;
   }
 
   int _totalItemCount(MediaHub hub) => hub.items.length + (hub.more ? 1 : 0);
@@ -517,6 +536,11 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     final key = event.logicalKey;
 
     if (key.isSelectKey) {
+      if (_suppressSelectUntilKeyUp) {
+        if (event is KeyUpEvent) _clearSelectSuppression();
+        return KeyEventResult.handled;
+      }
+
       if (event is KeyDownEvent) {
         if (!_isSelectKeyDown) {
           _isSelectKeyDown = true;

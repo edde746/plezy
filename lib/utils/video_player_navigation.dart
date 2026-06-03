@@ -18,6 +18,64 @@ import 'app_logger.dart';
 
 const String kVideoPlayerRouteName = '/video_player';
 
+class VideoPlayerNavigationInFlightGuard {
+  final Set<String> _keys = <String>{};
+
+  bool tryStart(
+    MediaItem metadata, {
+    required int mediaIndex,
+    required String? selectedMediaSourceId,
+    required TranscodeQualityPreset? selectedQualityPreset,
+    required bool isOffline,
+  }) {
+    return _keys.add(
+      _keyFor(
+        metadata,
+        mediaIndex: mediaIndex,
+        selectedMediaSourceId: selectedMediaSourceId,
+        selectedQualityPreset: selectedQualityPreset,
+        isOffline: isOffline,
+      ),
+    );
+  }
+
+  void finish(
+    MediaItem metadata, {
+    required int mediaIndex,
+    required String? selectedMediaSourceId,
+    required TranscodeQualityPreset? selectedQualityPreset,
+    required bool isOffline,
+  }) {
+    _keys.remove(
+      _keyFor(
+        metadata,
+        mediaIndex: mediaIndex,
+        selectedMediaSourceId: selectedMediaSourceId,
+        selectedQualityPreset: selectedQualityPreset,
+        isOffline: isOffline,
+      ),
+    );
+  }
+
+  String _keyFor(
+    MediaItem metadata, {
+    required int mediaIndex,
+    required String? selectedMediaSourceId,
+    required TranscodeQualityPreset? selectedQualityPreset,
+    required bool isOffline,
+  }) {
+    return [
+      metadata.globalKey,
+      mediaIndex,
+      selectedMediaSourceId ?? '',
+      selectedQualityPreset?.name ?? 'auto',
+      isOffline,
+    ].join('|');
+  }
+}
+
+final _videoPlayerNavigationInFlightGuard = VideoPlayerNavigationInFlightGuard();
+
 class WatchTogetherPlaybackNavigationException implements Exception {
   final String message;
 
@@ -82,24 +140,53 @@ Future<bool?> navigateToVideoPlayer(
     } catch (_) {}
   }
 
-  // Check if external player is enabled
-  try {
-    final settingsService = await SettingsService.getInstance();
-    if (settingsService.read(SettingsService.useExternalPlayer)) {
-      bool launched = false;
+  var markedInFlight = false;
+  if (!usePushReplacement) {
+    markedInFlight = _videoPlayerNavigationInFlightGuard.tryStart(
+      metadata,
+      mediaIndex: mediaIndex,
+      selectedMediaSourceId: selectedMediaSourceId,
+      selectedQualityPreset: selectedQualityPreset,
+      isOffline: isOffline,
+    );
+    if (!markedInFlight) {
+      appLogger.d(
+        'Video player navigation already in flight for ${metadata.id} (mediaIndex=$mediaIndex), '
+        'skipping duplicate navigation',
+      );
+      return null;
+    }
+  }
 
-      if (isOffline) {
-        final globalKey = metadata.globalKey;
-        final videoPath = await downloadProvider.getVideoFilePath(
-          globalKey,
-          mediaIndex: mediaIndex,
-          mediaSourceId: selectedMediaSourceId,
-        );
-        if (videoPath != null && context.mounted) {
-          final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
+  try {
+    // Check if external player is enabled
+    try {
+      final settingsService = await SettingsService.getInstance();
+      if (settingsService.read(SettingsService.useExternalPlayer)) {
+        bool launched = false;
+
+        if (isOffline) {
+          final globalKey = metadata.globalKey;
+          final videoPath = await downloadProvider.getVideoFilePath(
+            globalKey,
+            mediaIndex: mediaIndex,
+            mediaSourceId: selectedMediaSourceId,
+          );
+          if (videoPath != null && context.mounted) {
+            final videoUrl = videoPath.contains('://') ? videoPath : 'file://$videoPath';
+            launched = await ExternalPlayerService.launch(
+              context: context,
+              videoUrl: videoUrl,
+              metadata: metadata,
+              client: mediaClient,
+              offlineWatchService: offlineWatchService,
+              mediaIndex: mediaIndex,
+              mediaSourceId: selectedMediaSourceId,
+            );
+          }
+        } else if (context.mounted) {
           launched = await ExternalPlayerService.launch(
             context: context,
-            videoUrl: videoUrl,
             metadata: metadata,
             client: mediaClient,
             offlineWatchService: offlineWatchService,
@@ -107,50 +194,51 @@ Future<bool?> navigateToVideoPlayer(
             mediaSourceId: selectedMediaSourceId,
           );
         }
-      } else if (context.mounted) {
-        launched = await ExternalPlayerService.launch(
-          context: context,
-          metadata: metadata,
-          client: mediaClient,
-          offlineWatchService: offlineWatchService,
-          mediaIndex: mediaIndex,
-          mediaSourceId: selectedMediaSourceId,
-        );
+
+        if (launched) return null;
       }
-
-      if (launched) return null;
+    } catch (e) {
+      appLogger.w('External player launch failed, falling back to built-in player', error: e);
     }
-  } catch (e) {
-    appLogger.w('External player launch failed, falling back to built-in player', error: e);
-  }
 
-  // Prevent stacking an identical video player when already active
-  if (!usePushReplacement &&
-      VideoPlayerScreenState.activeId == metadata.id &&
-      VideoPlayerScreenState.activeMediaIndex == mediaIndex) {
-    appLogger.d(
-      'Video player already active for ${metadata.id} (mediaIndex=$mediaIndex), skipping duplicate navigation',
+    // Prevent stacking an identical video player when already active
+    if (!usePushReplacement &&
+        VideoPlayerScreenState.activeId == metadata.id &&
+        VideoPlayerScreenState.activeMediaIndex == mediaIndex) {
+      appLogger.d(
+        'Video player already active for ${metadata.id} (mediaIndex=$mediaIndex), skipping duplicate navigation',
+      );
+      return null;
+    }
+
+    final route = PageRouteBuilder<bool>(
+      settings: const RouteSettings(name: kVideoPlayerRouteName),
+      pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
+        metadata: metadata,
+        preferredAudioTrack: preferredAudioTrack,
+        preferredSubtitleTrack: preferredSubtitleTrack,
+        preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
+        selectedMediaIndex: mediaIndex,
+        selectedMediaSourceId: selectedMediaSourceId,
+        selectedQualityPreset: selectedQualityPreset,
+        isOffline: isOffline,
+      ),
+      transitionDuration: Duration.zero,
+      reverseTransitionDuration: Duration.zero,
     );
-    return null;
+
+    return usePushReplacement ? navigator.pushReplacement<bool, bool>(route) : navigator.push<bool>(route);
+  } finally {
+    if (markedInFlight) {
+      _videoPlayerNavigationInFlightGuard.finish(
+        metadata,
+        mediaIndex: mediaIndex,
+        selectedMediaSourceId: selectedMediaSourceId,
+        selectedQualityPreset: selectedQualityPreset,
+        isOffline: isOffline,
+      );
+    }
   }
-
-  final route = PageRouteBuilder<bool>(
-    settings: const RouteSettings(name: kVideoPlayerRouteName),
-    pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
-      metadata: metadata,
-      preferredAudioTrack: preferredAudioTrack,
-      preferredSubtitleTrack: preferredSubtitleTrack,
-      preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
-      selectedMediaIndex: mediaIndex,
-      selectedMediaSourceId: selectedMediaSourceId,
-      selectedQualityPreset: selectedQualityPreset,
-      isOffline: isOffline,
-    ),
-    transitionDuration: Duration.zero,
-    reverseTransitionDuration: Duration.zero,
-  );
-
-  return usePushReplacement ? navigator.pushReplacement<bool, bool>(route) : navigator.push<bool>(route);
 }
 
 /// Navigates to the video player and optionally refreshes content when returning.

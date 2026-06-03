@@ -3,6 +3,7 @@ import '../media/ids.dart';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HardwareKeyboard, LogicalKeyboardKey;
 import 'package:plezy/widgets/app_icon.dart';
 import '../widgets/server_activities_button.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -337,6 +338,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _focusTvBrowseRailWhenReady({bool immediate = false}) {
     if (!PlatformDetector.isTV()) return;
+    final suppressSelectUntilKeyUp = _isSelectKeyPressed;
     if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
       _pendingTvBrowseRailFocus = false;
       return;
@@ -348,6 +350,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       if (rail != null) {
         _pendingTvBrowseRailFocus = false;
         rail.requestFocus();
+        if (suppressSelectUntilKeyUp) rail.suppressSelectUntilKeyUp();
         return;
       }
     }
@@ -363,7 +366,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       if (rail == null) return;
       _pendingTvBrowseRailFocus = false;
       rail.requestFocus();
+      if (suppressSelectUntilKeyUp) rail.suppressSelectUntilKeyUp();
     });
+  }
+
+  bool get _isSelectKeyPressed {
+    return HardwareKeyboard.instance.logicalKeysPressed.any(
+      (key) =>
+          key == LogicalKeyboardKey.enter ||
+          key.keyId == 0x0d ||
+          key == LogicalKeyboardKey.numpadEnter ||
+          key == LogicalKeyboardKey.select ||
+          key == LogicalKeyboardKey.gameButtonA,
+    );
   }
 
   void _applyPendingTvBrowseRailFocus() {

@@ -35,6 +35,7 @@ void _logGamepadDiag(String message) {
 /// equivalent native key event, which happens with Steam Input on Windows.
 class GamepadDuplicateInputGuard {
   static const defaultSuppressionWindow = Duration(milliseconds: 120);
+  static const LogicalKeyboardKey _rawEnterKey = LogicalKeyboardKey(0x0d);
 
   static final Map<LogicalKeyboardKey, Set<LogicalKeyboardKey>> _nativeAliasesBySyntheticKey = {
     LogicalKeyboardKey.arrowUp: {LogicalKeyboardKey.arrowUp},
@@ -43,6 +44,7 @@ class GamepadDuplicateInputGuard {
     LogicalKeyboardKey.arrowRight: {LogicalKeyboardKey.arrowRight},
     LogicalKeyboardKey.enter: {
       LogicalKeyboardKey.enter,
+      _rawEnterKey,
       LogicalKeyboardKey.numpadEnter,
       LogicalKeyboardKey.select,
       LogicalKeyboardKey.gameButtonA,
@@ -68,9 +70,10 @@ class GamepadDuplicateInputGuard {
 
   GamepadDuplicateInputGuard({
     DateTime Function()? now,
-    this._enabled,
+    bool Function()? enabled,
     this.suppressionWindow = defaultSuppressionWindow,
-  }) : _now = now ?? DateTime.now;
+  }) : _now = now ?? DateTime.now,
+       _enabled = enabled;
 
   bool get _isEnabled => _enabled?.call() ?? true;
 
@@ -164,6 +167,7 @@ class GamepadService with WindowListener {
   // Track button states to prevent repeated events from button holds
   final Set<GamepadButton> _pressedButtons = {};
   final Set<GamepadButton> _suppressedButtons = {};
+  final Map<LogicalKeyboardKey, FocusNode> _heldFocusNodes = {};
 
   // Whether the app window is currently focused — ignore gamepad input when false
   bool _windowFocused = true;
@@ -225,6 +229,7 @@ class GamepadService with WindowListener {
     _subscription = null;
     _duplicateInputGuard.clear();
     _suppressedButtons.clear();
+    _heldFocusNodes.clear();
     if (_isDesktop) {
       windowManager.removeListener(this);
     }
@@ -253,6 +258,7 @@ class GamepadService with WindowListener {
     }
     _pressedButtons.clear();
     _suppressedButtons.clear();
+    _heldFocusNodes.clear();
     _duplicateInputGuard.clear();
 
     // Reset analog stick state so re-focus doesn't inherit stale direction
@@ -294,6 +300,7 @@ class GamepadService with WindowListener {
       _stopDirectionRepeat();
       _pressedButtons.clear();
       _suppressedButtons.clear();
+      _heldFocusNodes.clear();
       _duplicateInputGuard.clear();
     }
 
@@ -527,6 +534,13 @@ class GamepadService with WindowListener {
   }
 
   void _dispatchKeyDown(LogicalKeyboardKey logicalKey) {
+    final focusNode = FocusManager.instance.primaryFocus;
+    if (focusNode == null) {
+      _logGamepadDiag('dispatchKeyDown dropped reason=no-focus logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
+      return;
+    }
+
+    _heldFocusNodes[logicalKey] = focusNode;
     _logGamepadDiag('dispatchKeyDown logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
     _dispatchKeyEvent(
       KeyDownEvent(
@@ -535,10 +549,24 @@ class GamepadService with WindowListener {
         timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
         deviceType: ui.KeyEventDeviceType.gamepad,
       ),
+      startNode: focusNode,
     );
   }
 
   void _dispatchKeyUp(LogicalKeyboardKey logicalKey) {
+    final heldFocusNode = _heldFocusNodes.remove(logicalKey);
+    final focusNode = heldFocusNode ?? FocusManager.instance.primaryFocus;
+    if (focusNode == null) {
+      _logGamepadDiag('dispatchKeyUp dropped reason=no-focus logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
+      return;
+    }
+    if (heldFocusNode != null && heldFocusNode.context == null) {
+      _logGamepadDiag(
+        'dispatchKeyUp dropped reason=held-focus-detached logical=${logicalKey.keyLabel}/${logicalKey.keyId}',
+      );
+      return;
+    }
+
     _logGamepadDiag('dispatchKeyUp logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
     _dispatchKeyEvent(
       KeyUpEvent(
@@ -547,11 +575,12 @@ class GamepadService with WindowListener {
         timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
         deviceType: ui.KeyEventDeviceType.gamepad,
       ),
+      startNode: focusNode,
     );
   }
 
-  void _dispatchKeyEvent(KeyEvent event) {
-    FocusNode? node = FocusManager.instance.primaryFocus;
+  void _dispatchKeyEvent(KeyEvent event, {FocusNode? startNode}) {
+    FocusNode? node = startNode ?? FocusManager.instance.primaryFocus;
     _logGamepadDiag('dispatch start focus=${node?.debugLabel} key=(${_describeGamepadKeyEvent(event)})');
     while (node != null) {
       if (node.onKeyEvent != null) {
