@@ -3,42 +3,30 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		13FE2E7D6F7AA3DBB5CACB80 /* PackageInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE99744066203E822E032A5F /* PackageInfoPlusPlugin.swift */; };
-		2EE48733C2448B774310A870 /* ConnectivityPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 979F592F26A752431B59D0E8 /* ConnectivityPlusPlugin.swift */; };
+		055E465F9095D0B6E9B91D46 /* PathProviderPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41AA251EF365516E2AC5287 /* PathProviderPlugin.swift */; };
+		35DB0C8FEF635A3BCA0B722A /* PackageInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9426EFA282CDA8E0E98EEE9 /* PackageInfoPlusPlugin.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
-		55BE896107A737EEB5B477D8 /* SharedPreferencesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A8CAFB4DDCBF2EE3A6154F67 /* SharedPreferencesPlugin.swift */; };
 		5C71F5F7B33075F2B007825B /* MpvPlayerPluginShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73645904F226A24585A092CE /* MpvPlayerPluginShared.swift */; };
-		5EE8203CFE64B453744058BE /* ConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9841EFD3B6A212DBD03A2EA6 /* ConnectivityProvider.swift */; };
-		67764704D6B6CBC628714DB3 /* PathProviderPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E080EAF7EEAC58557CD2D29 /* PathProviderPlugin.swift */; };
 		691577F0EB3F4EB1A5160280 /* MpvPlayerCoreBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = D52A3BDA46E79969EA1DF3AC /* MpvPlayerCoreBase.swift */; };
 		6F3C0DD6F2F8DA14E7E2F386 /* MpvPlayerCore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12B8610AE5D580077264851 /* MpvPlayerCore.swift */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
-		78133A36C0D088D05E790551 /* messages.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = 752ACF73D717CE5B14C1E2FC /* messages.g.swift */; };
-		7B4D786561E4757B57D9F1FB /* PathMonitorConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D062FC1E5AB095984B1CA43C /* PathMonitorConnectivityProvider.swift */; };
+		81325C1CD13794375A81AC02 /* messages.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34CD411CCD84E381C4BF4C1B /* messages.g.swift */; };
+		81F08E404EBEB19B00FF148D /* ConnectivityPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C3193A50DFDECE2B92D075 /* ConnectivityPlusPlugin.swift */; };
 		8E5EED3DDAC9455D4DAA9776 /* MpvPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D7A998830EDC8F77BF521D1 /* MpvPlayerPlugin.swift */; };
-		94ED0B5E544C177E66D72501 /* DeviceInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D3E1E89E53E27D86A0EA621 /* DeviceInfoPlusPlugin.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		A7596F780E93AF0BE3838A26 /* ConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCA7E80F3A99D8759F2E59F /* ConnectivityProvider.swift */; };
 		AA34E3E5872B3792D6959EAA /* MpvPipController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2635E12EB9322B151EE5127 /* MpvPipController.swift */; };
-		B354A4242FD088980064CFC9 /* TVServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B354A4232FD088980064CFC9 /* TVServices.framework */; };
-		B354A42B2FD088980064CFC9 /* TopShelfExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B354A4222FD088980064CFC9 /* TopShelfExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C6A15611158B29B0FF43A960 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 824D2C68D1F1206932E118C2 /* Pods_Runner.framework */; };
+		CD1C0534948840272E58248E /* PathMonitorConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEF79DFBD1D80F00AB39CDA /* PathMonitorConnectivityProvider.swift */; };
+		E3DEAD2AAFC347A2E55AC0F7 /* SharedPreferencesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0455EBA0EF4A61D3B71D2D7 /* SharedPreferencesPlugin.swift */; };
+		E79A4474D308631AFA59CAE7 /* DeviceInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1F41676FEF1AB57076F8B9 /* DeviceInfoPlusPlugin.swift */; };
 /* End PBXBuildFile section */
-
-/* Begin PBXContainerItemProxy section */
-		B354A4292FD088980064CFC9 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = B354A4212FD088980064CFC9;
-			remoteInfo = TopShelfExtension;
-		};
-/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		9705A1C41CF9048500538489 /* Embed Frameworks */ = {
@@ -51,76 +39,38 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B354A42C2FD088980064CFC9 /* Embed Foundation Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				B354A42B2FD088980064CFC9 /* TopShelfExtension.appex in Embed Foundation Extensions */,
-			);
-			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		04DD35536DEE7C27FFA53862 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
 		0C25F4F2367A30B47E945AD6 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
-		1D3E1E89E53E27D86A0EA621 /* DeviceInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeviceInfoPlusPlugin.swift; sourceTree = "<group>"; };
+		34CD411CCD84E381C4BF4C1B /* messages.g.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = messages.g.swift; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
+		3CCA7E80F3A99D8759F2E59F /* ConnectivityProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityProvider.swift; sourceTree = "<group>"; };
 		420881FB6A648A2AFD39FFF2 /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
+		5E1F41676FEF1AB57076F8B9 /* DeviceInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeviceInfoPlusPlugin.swift; sourceTree = "<group>"; };
+		67C3193A50DFDECE2B92D075 /* ConnectivityPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityPlusPlugin.swift; sourceTree = "<group>"; };
+		6AEF79DFBD1D80F00AB39CDA /* PathMonitorConnectivityProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PathMonitorConnectivityProvider.swift; sourceTree = "<group>"; };
 		73645904F226A24585A092CE /* MpvPlayerPluginShared.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerPluginShared.swift; path = ../shared/apple/MpvPlayer/MpvPlayerPluginShared.swift; sourceTree = "<source_root>"; };
 		74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Runner-Bridging-Header.h"; sourceTree = "<group>"; };
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		752ACF73D717CE5B14C1E2FC /* messages.g.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = messages.g.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
-		7E080EAF7EEAC58557CD2D29 /* PathProviderPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PathProviderPlugin.swift; sourceTree = "<group>"; };
 		824D2C68D1F1206932E118C2 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
-		979F592F26A752431B59D0E8 /* ConnectivityPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityPlusPlugin.swift; sourceTree = "<group>"; };
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		97C146FB1CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		97C146FD1CF9000F007C117D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		97C147001CF9000F007C117D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		9841EFD3B6A212DBD03A2EA6 /* ConnectivityProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityProvider.swift; sourceTree = "<group>"; };
 		9D7A998830EDC8F77BF521D1 /* MpvPlayerPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerPlugin.swift; path = ../ios/Runner/MpvPlayer/MpvPlayerPlugin.swift; sourceTree = "<source_root>"; };
 		A12B8610AE5D580077264851 /* MpvPlayerCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerCore.swift; path = ../ios/Runner/MpvPlayer/MpvPlayerCore.swift; sourceTree = "<source_root>"; };
 		A2635E12EB9322B151EE5127 /* MpvPipController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPipController.swift; path = ../ios/Runner/MpvPlayer/MpvPipController.swift; sourceTree = "<source_root>"; };
-		A8CAFB4DDCBF2EE3A6154F67 /* SharedPreferencesPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedPreferencesPlugin.swift; sourceTree = "<group>"; };
-		AE99744066203E822E032A5F /* PackageInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PackageInfoPlusPlugin.swift; sourceTree = "<group>"; };
-		B354A4222FD088980064CFC9 /* TopShelfExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = TopShelfExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		B354A4232FD088980064CFC9 /* TVServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = TVServices.framework; path = System/Library/Frameworks/TVServices.framework; sourceTree = SDKROOT; };
-		D062FC1E5AB095984B1CA43C /* PathMonitorConnectivityProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PathMonitorConnectivityProvider.swift; sourceTree = "<group>"; };
+		C0455EBA0EF4A61D3B71D2D7 /* SharedPreferencesPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedPreferencesPlugin.swift; sourceTree = "<group>"; };
+		D41AA251EF365516E2AC5287 /* PathProviderPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PathProviderPlugin.swift; sourceTree = "<group>"; };
 		D52A3BDA46E79969EA1DF3AC /* MpvPlayerCoreBase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerCoreBase.swift; path = ../shared/apple/MpvPlayer/MpvPlayerCoreBase.swift; sourceTree = "<source_root>"; };
+		F9426EFA282CDA8E0E98EEE9 /* PackageInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PackageInfoPlusPlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		B354A4302FD088980064CFC9 /* Exceptions for "TopShelfExtension" folder in "TopShelfExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = B354A4212FD088980064CFC9 /* TopShelfExtension */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		B354A4252FD088980064CFC9 /* TopShelfExtension */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				B354A4302FD088980064CFC9 /* Exceptions for "TopShelfExtension" folder in "TopShelfExtension" target */,
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = TopShelfExtension;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		97C146EB1CF9000F007C117D /* Frameworks */ = {
@@ -131,48 +81,37 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		B354A41F2FD088980064CFC9 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				B354A4242FD088980064CFC9 /* TVServices.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		09FE09B4CF7538C22A7EF17B /* connectivity_plus */ = {
+		02A6A190E05475F583874D9C /* package_info_plus */ = {
 			isa = PBXGroup;
 			children = (
-				979F592F26A752431B59D0E8 /* ConnectivityPlusPlugin.swift */,
-				9841EFD3B6A212DBD03A2EA6 /* ConnectivityProvider.swift */,
-				D062FC1E5AB095984B1CA43C /* PathMonitorConnectivityProvider.swift */,
-			);
-			name = connectivity_plus;
-			path = connectivity_plus;
-			sourceTree = "<group>";
-		};
-		215754A4D74723C8A8F41960 /* Plugins */ = {
-			isa = PBXGroup;
-			children = (
-				CDC90C6654838A92F719D688 /* shared_preferences_foundation */,
-				3867699CA247D8D81EECE7E3 /* package_info_plus */,
-				60C115D3440A8D68E0C10F87 /* path_provider */,
-				D371C6D5F022308260505782 /* device_info_plus */,
-				09FE09B4CF7538C22A7EF17B /* connectivity_plus */,
-			);
-			name = Plugins;
-			path = Plugins;
-			sourceTree = "<group>";
-		};
-		3867699CA247D8D81EECE7E3 /* package_info_plus */ = {
-			isa = PBXGroup;
-			children = (
-				AE99744066203E822E032A5F /* PackageInfoPlusPlugin.swift */,
+				F9426EFA282CDA8E0E98EEE9 /* PackageInfoPlusPlugin.swift */,
 			);
 			name = package_info_plus;
 			path = package_info_plus;
+			sourceTree = "<group>";
+		};
+		24CE237B5ECBF841DDDAD2D1 /* shared_preferences_foundation */ = {
+			isa = PBXGroup;
+			children = (
+				C0455EBA0EF4A61D3B71D2D7 /* SharedPreferencesPlugin.swift */,
+				34CD411CCD84E381C4BF4C1B /* messages.g.swift */,
+			);
+			name = shared_preferences_foundation;
+			path = shared_preferences_foundation;
+			sourceTree = "<group>";
+		};
+		25FB49FF35E9FB1E7A2040EF /* connectivity_plus */ = {
+			isa = PBXGroup;
+			children = (
+				67C3193A50DFDECE2B92D075 /* ConnectivityPlusPlugin.swift */,
+				3CCA7E80F3A99D8759F2E59F /* ConnectivityProvider.swift */,
+				6AEF79DFBD1D80F00AB39CDA /* PathMonitorConnectivityProvider.swift */,
+			);
+			name = connectivity_plus;
+			path = connectivity_plus;
 			sourceTree = "<group>";
 		};
 		53CDD29681161166962B9FA5 /* Pods */ = {
@@ -189,18 +128,17 @@
 			isa = PBXGroup;
 			children = (
 				824D2C68D1F1206932E118C2 /* Pods_Runner.framework */,
-				B354A4232FD088980064CFC9 /* TVServices.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		60C115D3440A8D68E0C10F87 /* path_provider */ = {
+		6B0884FDB3DBCBC1E7F0CBAD /* device_info_plus */ = {
 			isa = PBXGroup;
 			children = (
-				7E080EAF7EEAC58557CD2D29 /* PathProviderPlugin.swift */,
+				5E1F41676FEF1AB57076F8B9 /* DeviceInfoPlusPlugin.swift */,
 			);
-			name = path_provider;
-			path = path_provider;
+			name = device_info_plus;
+			path = device_info_plus;
 			sourceTree = "<group>";
 		};
 		9740EEB11CF90186004384FC /* Flutter */ = {
@@ -219,7 +157,6 @@
 			children = (
 				9740EEB11CF90186004384FC /* Flutter */,
 				97C146F01CF9000F007C117D /* Runner */,
-				B354A4252FD088980064CFC9 /* TopShelfExtension */,
 				97C146EF1CF9000F007C117D /* Products */,
 				53CDD29681161166962B9FA5 /* Pods */,
 				5833EC5B503BBB4E370BA1B7 /* Frameworks */,
@@ -230,7 +167,6 @@
 			isa = PBXGroup;
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
-				B354A4222FD088980064CFC9 /* TopShelfExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -245,7 +181,7 @@
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				BF0B7DFE378943E9D7865D18 /* MpvPlayer */,
-				215754A4D74723C8A8F41960 /* Plugins */,
+				D58B788B11920D95BC7D750C /* Plugins */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -263,23 +199,26 @@
 			path = Runner/MpvPlayer;
 			sourceTree = "<group>";
 		};
-		CDC90C6654838A92F719D688 /* shared_preferences_foundation */ = {
+		D58B788B11920D95BC7D750C /* Plugins */ = {
 			isa = PBXGroup;
 			children = (
-				A8CAFB4DDCBF2EE3A6154F67 /* SharedPreferencesPlugin.swift */,
-				752ACF73D717CE5B14C1E2FC /* messages.g.swift */,
+				24CE237B5ECBF841DDDAD2D1 /* shared_preferences_foundation */,
+				02A6A190E05475F583874D9C /* package_info_plus */,
+				DF39F6BC85D449736C737F18 /* path_provider */,
+				6B0884FDB3DBCBC1E7F0CBAD /* device_info_plus */,
+				25FB49FF35E9FB1E7A2040EF /* connectivity_plus */,
 			);
-			name = shared_preferences_foundation;
-			path = shared_preferences_foundation;
+			name = Plugins;
+			path = Plugins;
 			sourceTree = "<group>";
 		};
-		D371C6D5F022308260505782 /* device_info_plus */ = {
+		DF39F6BC85D449736C737F18 /* path_provider */ = {
 			isa = PBXGroup;
 			children = (
-				1D3E1E89E53E27D86A0EA621 /* DeviceInfoPlusPlugin.swift */,
+				D41AA251EF365516E2AC5287 /* PathProviderPlugin.swift */,
 			);
-			name = device_info_plus;
-			path = device_info_plus;
+			name = path_provider;
+			path = path_provider;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -290,18 +229,17 @@
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
 			buildPhases = (
 				570D41C54A87D72AB27F6F15 /* [CP] Check Pods Manifest.lock */,
+				9740EEB61CF901F6004384FC /* Run Script */,
 				97C146EA1CF9000F007C117D /* Sources */,
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				7C33FC680D67B3859BF9AE6C /* [CP] Embed Pods Frameworks */,
-				B354A42C2FD088980064CFC9 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				B354A42A2FD088980064CFC9 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			packageProductDependencies = (
@@ -311,43 +249,18 @@
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
 		};
-		B354A4212FD088980064CFC9 /* TopShelfExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = B354A4312FD088980064CFC9 /* Build configuration list for PBXNativeTarget "TopShelfExtension" */;
-			buildPhases = (
-				B354A41E2FD088980064CFC9 /* Sources */,
-				B354A41F2FD088980064CFC9 /* Frameworks */,
-				B354A4202FD088980064CFC9 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				B354A4252FD088980064CFC9 /* TopShelfExtension */,
-			);
-			name = TopShelfExtension;
-			productName = TopShelfExtension;
-			productReference = B354A4222FD088980064CFC9 /* TopShelfExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		97C146E61CF9000F007C117D /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				BuildIndependentTargetsInParallel = YES;
-				LastSwiftUpdateCheck = 2650;
-				LastUpgradeCheck = 2650;
+				LastUpgradeCheck = 1020;
 				ORGANIZATIONNAME = "";
 				TargetAttributes = {
 					97C146ED1CF9000F007C117D = {
 						CreatedOnToolsVersion = 7.3.1;
 						LastSwiftMigration = 1100;
-					};
-					B354A4212FD088980064CFC9 = {
-						CreatedOnToolsVersion = 26.5;
 					};
 				};
 			};
@@ -368,7 +281,6 @@
 			projectRoot = "";
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
-				B354A4212FD088980064CFC9 /* TopShelfExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -382,13 +294,6 @@
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		B354A4202FD088980064CFC9 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -448,6 +353,20 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		9740EEB61CF901F6004384FC /* Run Script */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Run Script";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "#/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" build\n/bin/bash \"$SOURCE_ROOT/scripts/xcode_appletv.sh\" build\n";
+		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -461,33 +380,18 @@
 				6F3C0DD6F2F8DA14E7E2F386 /* MpvPlayerCore.swift in Sources */,
 				8E5EED3DDAC9455D4DAA9776 /* MpvPlayerPlugin.swift in Sources */,
 				AA34E3E5872B3792D6959EAA /* MpvPipController.swift in Sources */,
-				55BE896107A737EEB5B477D8 /* SharedPreferencesPlugin.swift in Sources */,
-				78133A36C0D088D05E790551 /* messages.g.swift in Sources */,
-				13FE2E7D6F7AA3DBB5CACB80 /* PackageInfoPlusPlugin.swift in Sources */,
-				67764704D6B6CBC628714DB3 /* PathProviderPlugin.swift in Sources */,
-				94ED0B5E544C177E66D72501 /* DeviceInfoPlusPlugin.swift in Sources */,
-				2EE48733C2448B774310A870 /* ConnectivityPlusPlugin.swift in Sources */,
-				5EE8203CFE64B453744058BE /* ConnectivityProvider.swift in Sources */,
-				7B4D786561E4757B57D9F1FB /* PathMonitorConnectivityProvider.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		B354A41E2FD088980064CFC9 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
+				E3DEAD2AAFC347A2E55AC0F7 /* SharedPreferencesPlugin.swift in Sources */,
+				81325C1CD13794375A81AC02 /* messages.g.swift in Sources */,
+				35DB0C8FEF635A3BCA0B722A /* PackageInfoPlusPlugin.swift in Sources */,
+				055E465F9095D0B6E9B91D46 /* PathProviderPlugin.swift in Sources */,
+				E79A4474D308631AFA59CAE7 /* DeviceInfoPlusPlugin.swift in Sources */,
+				81F08E404EBEB19B00FF148D /* ConnectivityPlusPlugin.swift in Sources */,
+				A7596F780E93AF0BE3838A26 /* ConnectivityProvider.swift in Sources */,
+				CD1C0534948840272E58248E /* PathMonitorConnectivityProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXTargetDependency section */
-		B354A42A2FD088980064CFC9 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = B354A4212FD088980064CFC9 /* TopShelfExtension */;
-			targetProxy = B354A4292FD088980064CFC9 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		97C146FA1CF9000F007C117D /* Main.storyboard */ = {
@@ -532,7 +436,6 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -541,7 +444,6 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = G88U5B5783;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -555,7 +457,6 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = appletvos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
 				TARGETED_DEVICE_FAMILY = 3;
 				TVOS_DEPLOYMENT_TARGET = 13.0;
@@ -595,7 +496,6 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
-				TVOS_DEPLOYMENT_TARGET = 15.6;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Profile;
@@ -623,7 +523,6 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -632,7 +531,6 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_TEAM = G88U5B5783;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -652,7 +550,6 @@
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = appletvos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				TARGETED_DEVICE_FAMILY = 3;
 				TVOS_DEPLOYMENT_TARGET = 13.0;
 			};
@@ -681,7 +578,6 @@
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
 				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
 				CLANG_WARN_STRICT_PROTOTYPES = YES;
 				CLANG_WARN_SUSPICIOUS_MOVE = YES;
@@ -690,7 +586,6 @@
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_TEAM = G88U5B5783;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
@@ -704,7 +599,6 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = appletvos;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
@@ -747,7 +641,6 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TVOS_DEPLOYMENT_TARGET = 15.6;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Debug;
@@ -784,133 +677,9 @@
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
-				TVOS_DEPLOYMENT_TARGET = 15.6;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
-		};
-		B354A42D2FD088980064CFC9 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = TopShelfExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = TopShelfExtension;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.TopShelfExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 15.6;
-			};
-			name = Debug;
-		};
-		B354A42E2FD088980064CFC9 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = TopShelfExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = TopShelfExtension;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
-				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.TopShelfExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 15.6;
-			};
-			name = Release;
-		};
-		B354A42F2FD088980064CFC9 /* Profile */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = TopShelfExtension/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = TopShelfExtension;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
-				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.TopShelfExtension;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 3;
-				TVOS_DEPLOYMENT_TARGET = 15.6;
-			};
-			name = Profile;
 		};
 /* End XCBuildConfiguration section */
 
@@ -931,16 +700,6 @@
 				97C147061CF9000F007C117D /* Debug */,
 				97C147071CF9000F007C117D /* Release */,
 				249021D4217E4FDB00AE95B9 /* Profile */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		B354A4312FD088980064CFC9 /* Build configuration list for PBXNativeTarget "TopShelfExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				B354A42D2FD088980064CFC9 /* Debug */,
-				B354A42E2FD088980064CFC9 /* Release */,
-				B354A42F2FD088980064CFC9 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
