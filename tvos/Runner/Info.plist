@@ -47,5 +47,16 @@
 	<array>
 		<string>arm64</string>
 	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.plezy</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>plezy</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

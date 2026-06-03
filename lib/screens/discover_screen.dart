@@ -60,6 +60,7 @@ import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
 import '../theme/mono_tokens.dart';
+import '../services/top_shelf_service.dart';
 import '../services/watch_next_service.dart';
 import 'auth_screen.dart';
 import 'libraries/content_state_builder.dart';
@@ -886,16 +887,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
-  /// Sync On Deck items to Android TV Watch Next row.
+  /// Sync On Deck items to Android TV Watch Next row and tvOS Top Shelf.
   Future<void> _syncWatchNext(List<MediaItem> onDeck) async {
+    final getClient = (ServerId serverId) => context.getMediaClientWithFallback(serverId);
+    final hideSpoilers = context.settingsRead(SettingsService.hideSpoilers);
     try {
-      await WatchNextService().syncFromOnDeck(
-        onDeck,
-        (serverId) => context.getMediaClientWithFallback(serverId),
-        hideSpoilers: context.settingsRead(SettingsService.hideSpoilers),
-      );
+      await WatchNextService().syncFromOnDeck(onDeck, getClient, hideSpoilers: hideSpoilers);
     } catch (e) {
       appLogger.w('Failed to sync Watch Next', error: e);
+    }
+    try {
+      await TopShelfService().syncFromOnDeck(onDeck, getClient, hideSpoilers: hideSpoilers);
+    } catch (e) {
+      appLogger.w('Failed to sync Top Shelf', error: e);
     }
   }
 

@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import AVFoundation
+import TVServices
 import universal_gamepad
 import os_media_controls
 import wakelock_plus
@@ -114,6 +115,13 @@ import wakelock_plus
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
+  private static let topShelfChannel = "com.plezy/top_shelf"
+  private static let appGroupId = "group.com.plezy"
+  private static let topShelfItemsKey = "topShelfItems"
+
+  private var pendingDeepLink: String?
+  private var topShelfMethodChannel: FlutterMethodChannel?
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -156,6 +164,66 @@ import wakelock_plus
       WakelockPlusPlugin.register(with: r)
     }
 
+    let controller = window?.rootViewController as? FlutterViewController
+    if let messenger = controller?.binaryMessenger {
+      let channel = FlutterMethodChannel(name: AppDelegate.topShelfChannel, binaryMessenger: messenger)
+      topShelfMethodChannel = channel
+      channel.setMethodCallHandler { [weak self] call, result in
+        self?.handleTopShelfCall(call, result: result)
+      }
+    }
+
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    guard url.scheme == "plezy", let contentId = extractContentId(from: url) else {
+      return super.application(app, open: url, options: options)
+    }
+
+    if let channel = topShelfMethodChannel {
+      channel.invokeMethod("onTopShelfTap", arguments: ["contentId": contentId])
+    } else {
+      pendingDeepLink = contentId
+    }
+    return true
+  }
+
+  private func handleTopShelfCall(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    switch call.method {
+    case "sync":
+      guard
+        let args = call.arguments as? [String: Any],
+        let items = args["items"] as? [[String: Any]],
+        let data = try? JSONSerialization.data(withJSONObject: items),
+        let defaults = UserDefaults(suiteName: AppDelegate.appGroupId)
+      else {
+        result(false)
+        return
+      }
+      defaults.set(data, forKey: AppDelegate.topShelfItemsKey)
+      TVTopShelfContentProvider.current.invalidateContent()
+      result(true)
+
+    case "clear":
+      UserDefaults(suiteName: AppDelegate.appGroupId)?.removeObject(forKey: AppDelegate.topShelfItemsKey)
+      TVTopShelfContentProvider.current.invalidateContent()
+      result(true)
+
+    case "getInitialDeepLink":
+      let link = pendingDeepLink
+      pendingDeepLink = nil
+      result(link)
+
+    default:
+      result(FlutterMethodNotImplemented)
+    }
+  }
+
+  private func extractContentId(from url: URL) -> String? {
+    URLComponents(url: url, resolvingAgainstBaseURL: false)?
+      .queryItems?
+      .first(where: { $0.name == "content_id" })?
+      .value
   }
 }

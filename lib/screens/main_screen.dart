@@ -55,6 +55,7 @@ import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
 import 'profile/profile_switch_screen.dart';
+import '../services/top_shelf_service.dart';
 import '../services/watch_next_service.dart';
 import '../watch_together/watch_together.dart';
 
@@ -335,6 +336,7 @@ class _MainScreenState extends State<MainScreen>
     if (!_isOffline) {
       _setupWatchTogetherCallback();
       _setupWatchNextDeepLink();
+      _setupTopShelfDeepLink();
     }
 
     // Wire profile binder + tracker bootstrap (skip in offline mode)
@@ -663,6 +665,26 @@ class _MainScreenState extends State<MainScreen>
       final contentId = await watchNext.getInitialDeepLink();
       if (contentId != null && mounted) {
         appLogger.d('Watch Next initial deep link: $contentId');
+        unawaited(_handleWatchNextContentId(contentId));
+      }
+    });
+  }
+
+  /// Set up Top Shelf deep link handling for tvOS Home Screen taps
+  void _setupTopShelfDeepLink() {
+    if (!PlatformDetector.isAppleTV()) return;
+
+    final topShelf = TopShelfService();
+
+    topShelf.onTopShelfTap = (contentId) {
+      appLogger.d('Top Shelf tap: $contentId');
+      _handleWatchNextContentId(contentId);
+    };
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final contentId = await topShelf.getInitialDeepLink();
+      if (contentId != null && mounted) {
+        appLogger.d('Top Shelf initial deep link: $contentId');
         unawaited(_handleWatchNextContentId(contentId));
       }
     });
