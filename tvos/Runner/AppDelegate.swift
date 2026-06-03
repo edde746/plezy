@@ -202,12 +202,12 @@ import wakelock_plus
         return
       }
       defaults.set(data, forKey: AppDelegate.topShelfItemsKey)
-      TVTopShelfContentProvider.current.invalidateContent()
+      TVTopShelfContentProvider.topShelfContentDidChange()
       result(true)
 
     case "clear":
       UserDefaults(suiteName: AppDelegate.appGroupId)?.removeObject(forKey: AppDelegate.topShelfItemsKey)
-      TVTopShelfContentProvider.current.invalidateContent()
+      TVTopShelfContentProvider.topShelfContentDidChange()
       result(true)
 
     case "getInitialDeepLink":

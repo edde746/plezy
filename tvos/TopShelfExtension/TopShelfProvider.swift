@@ -4,8 +4,6 @@ private let appGroupId = "group.com.edde746.plezy"
 private let itemsKey = "topShelfItems"
 
 class TopShelfProvider: TVTopShelfContentProvider {
-  override var topShelfStyle: TVTopShelfContentStyle { .inset }
-
   override func loadTopShelfContent(completionHandler: @escaping (TVTopShelfContent?) -> Void) {
     let items = loadItems()
     let content = TVTopShelfInsetContent(items: items)
@@ -39,7 +37,9 @@ class TopShelfProvider: TVTopShelfContentProvider {
     components.scheme = "plezy"
     components.host = "play"
     components.queryItems = [URLQueryItem(name: "content_id", value: contentId)]
-    item.displayURL = components.url
+    if let url = components.url {
+      item.playAction = TVTopShelfAction(url: url)
+    }
 
     return item
   }
