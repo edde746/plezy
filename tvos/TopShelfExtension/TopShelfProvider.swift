@@ -1,6 +1,6 @@
 import TVServices
 
-private let appGroupId = "group.com.plezy"
+private let appGroupId = "group.com.edde746.plezy"
 private let itemsKey = "topShelfItems"
 
 class TopShelfProvider: TVTopShelfContentProvider {

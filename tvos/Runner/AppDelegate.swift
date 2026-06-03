@@ -116,7 +116,7 @@ import wakelock_plus
 @main
 @objc class AppDelegate: FlutterAppDelegate {
   private static let topShelfChannel = "com.plezy/top_shelf"
-  private static let appGroupId = "group.com.plezy"
+  private static let appGroupId = "group.com.edde746.plezy"
   private static let topShelfItemsKey = "topShelfItems"
 
   private var pendingDeepLink: String?
