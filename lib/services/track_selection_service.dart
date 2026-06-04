@@ -624,7 +624,7 @@ class TrackSelectionService {
 
   /// Select the best audio track based on priority:
   /// Priority 1: Preferred track from navigation
-  /// Priority 2: Plex-selected track from media info
+  /// Priority 2: Server-selected track from media info
   /// Priority 3: Per-media language preference
   /// Priority 4: User profile preferences
   /// Priority 5: Default or first track
@@ -644,8 +644,26 @@ class TrackSelectionService {
       }
     }
 
-    // Priority 2: Check Plex-selected track from media info
+    // Priority 2: Check server-selected track from media info
     if (plexMediaInfo != null && availableTracks.isNotEmpty) {
+      if (metadata.backend == MediaBackend.jellyfin && plexMediaInfo!.defaultAudioStreamIndex != null) {
+        // Jellyfin exposes its selected audio track via defaultAudioStreamIndex
+        final index = plexMediaInfo!.defaultAudioStreamIndex;
+
+        final jellyfinSelectedTrack = plexMediaInfo!.audioTracks.where((t) => t.index == index).firstOrNull;
+        if (jellyfinSelectedTrack != null) {
+          final matchedMpvTrack = findMpvTrackForPlexAudio(
+            jellyfinSelectedTrack,
+            availableTracks,
+            allPlexTracks: plexMediaInfo!.audioTracks,
+          );
+
+          if (matchedMpvTrack != null) {
+            return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
+          }
+        }
+      }
+
       final plexSelectedTrack = plexMediaInfo!.audioTracks.where((t) => t.selected).firstOrNull;
 
       if (plexSelectedTrack != null) {
@@ -709,9 +727,35 @@ class TrackSelectionService {
     }
 
     // Priority 2: Trust the server's selected track. Plex computes this from
-    // account/show/per-item prefs; Jellyfin exposes DefaultSubtitleStreamIndex.
+    // account/show/per-item prefs;
     final info = plexMediaInfo;
     if (info != null) {
+      if (metadata.backend == MediaBackend.jellyfin && info.defaultSubtitleStreamIndex != null) {
+        // Jellyfin exposes its selected subtitle track via defaultSubtitleStreamIndex
+        final index = info.defaultSubtitleStreamIndex;
+
+        // An index of -1 indicates not to show subtitles
+        if (index == -1) {
+          return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
+        }
+
+        final jellyfinSelectedTrack = availableTracks.isNotEmpty
+            ? info.subtitleTracks.where((track) => track.index == index).firstOrNull
+            : null;
+
+        if (jellyfinSelectedTrack != null) {
+          final matchedMpvTrack = findMpvTrackForPlexSubtitle(
+            jellyfinSelectedTrack,
+            availableTracks,
+            allPlexTracks: info.subtitleTracks,
+          );
+
+          if (matchedMpvTrack != null) {
+            return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
+          }
+        }
+      }
+
       final serverSelectedTrack = availableTracks.isNotEmpty
           ? info.subtitleTracks.where((track) => track.selected).firstOrNull
           : null;
@@ -726,8 +770,6 @@ class TrackSelectionService {
         if (matchedMpvTrack != null) {
           return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
         }
-      } else if (metadata.backend == MediaBackend.jellyfin && info.defaultSubtitleStreamIndex == -1) {
-        return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
       } else if (metadata.backend == MediaBackend.plex && info.subtitleTracks.isNotEmpty) {
         // Server has subtitle tracks but none selected — trust that decision
         return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
