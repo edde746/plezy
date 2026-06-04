@@ -111,7 +111,7 @@ class _LibraryPlaylistsTabState extends BaseLibraryTabState<MediaPlaylist, Libra
     return SettingsBuilder(
       prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
       builder: (context) {
-        final settings = SettingsService.instanceOrNull!;
+        final settings = SettingsService.instance;
         final viewMode = settings.read(SettingsService.viewMode);
         final density = settings.read(SettingsService.libraryDensity);
         final fullCardLayout = PlatformDetector.isTV() && settings.read(SettingsService.tvFullCardLayout);

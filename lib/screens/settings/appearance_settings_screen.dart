@@ -191,7 +191,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
           currentValue: LocaleSettings.currentLocale,
         );
         if (value != null) {
-          await SettingsService.instanceOrNull!.write(SettingsService.appLocale, value);
+          await SettingsService.instance.write(SettingsService.appLocale, value);
           unawaited(LocaleSettings.setLocale(value));
           if (context.mounted) _restartApp(context);
         }
@@ -215,7 +215,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 min: 1,
                 max: 5,
                 divisions: 4,
-                onChanged: (v) => SettingsService.instanceOrNull!.write(SettingsService.libraryDensity, v.round()),
+                onChanged: (v) => SettingsService.instance.write(SettingsService.libraryDensity, v.round()),
               ),
             ),
             Text(t.settings.comfortable, style: const TextStyle(fontSize: 12, color: Colors.grey)),

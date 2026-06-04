@@ -25,7 +25,7 @@ class MpvConfigScreen extends StatefulWidget {
 }
 
 class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMixin, ControllerDisposerMixin {
-  SettingsService get _settingsService => SettingsService.instanceOrNull!;
+  SettingsService get _settingsService => SettingsService.instance;
 
   late final TextEditingController _textController = createTextEditingController(
     text: _settingsService.read(SettingsService.mpvConfigText),

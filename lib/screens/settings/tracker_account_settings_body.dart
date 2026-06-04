@@ -69,7 +69,7 @@ class TrackerAccountSettingsBody extends StatelessWidget {
         SettingsBuilder(
           prefs: [SettingsService.trackerFilterModePref(service), SettingsService.trackerFilterIdsPref(service)],
           builder: (context) {
-            final settings = SettingsService.instanceOrNull!;
+            final settings = SettingsService.instance;
             return ListTile(
               leading: const AppIcon(Symbols.filter_list_rounded, fill: 1),
               title: Text(t.trackers.libraryFilter.title),

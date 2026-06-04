@@ -503,7 +503,7 @@ List<Widget> _buildSubtitleSearchFooter(BuildContext context, TrackControlsState
         OverlaySheetController.of(context).push(
           builder: (_) => SubtitleSearchSheet(
             ratingKey: state.ratingKey,
-            serverId: state.serverId,
+            serverId: state.serverId!,
             mediaTitle: state.mediaTitle,
             onSubtitleDownloaded: state.onSubtitleDownloaded,
           ),

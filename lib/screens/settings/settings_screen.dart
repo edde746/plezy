@@ -132,7 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     return KeyEventResult.ignored;
   }
 
-  settings.SettingsService get _settingsService => settings.SettingsService.instanceOrNull!;
+  settings.SettingsService get _settingsService => settings.SettingsService.instance;
 
   @override
   Widget build(BuildContext context) {

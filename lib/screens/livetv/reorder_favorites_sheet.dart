@@ -269,7 +269,8 @@ class _ReorderFavoritesSheetState extends State<ReorderFavoritesSheet> {
   }) {
     final colorScheme = Theme.of(context).colorScheme;
     final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(ServerId(channel?.serverId ?? ''));
+    final serverId = serverIdOrNull(channel?.serverId);
+    final client = serverId == null ? null : multiServer.getClientForServer(serverId);
 
     Color? tileColor;
     if (isMoving) {

@@ -226,7 +226,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     } else if (widget.forceGridMode) {
       viewMode = ViewMode.grid;
     } else {
-      viewMode = SettingsService.instanceOrNull!.read(SettingsService.viewMode);
+      viewMode = SettingsService.instance.read(SettingsService.viewMode);
     }
 
     final semanticLabel = _buildSemanticLabel(item);
@@ -242,7 +242,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             onLongPress: showContextMenuFromTap,
             onSecondaryTapDown: storeTapPosition,
             onSecondaryTap: showContextMenuFromTap,
-            density: SettingsService.instanceOrNull!.read(SettingsService.libraryDensity),
+            density: SettingsService.instance.read(SettingsService.libraryDensity),
             isOffline: widget.isOffline,
             localPosterPath: localPosterPath,
             showServerName: widget.showServerName,
@@ -449,7 +449,7 @@ class _MediaCardList extends StatelessWidget {
   bool _usesWideAspectRatio() {
     if (item is! MediaItem) return false;
     final EpisodePosterMode mode =
-        episodePosterModeOverride ?? SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
+        episodePosterModeOverride ?? SettingsService.instance.read(SettingsService.episodePosterMode);
     return (item as MediaItem).usesWideAspectRatio(mode);
   }
 
@@ -536,7 +536,7 @@ class _MediaCardList extends StatelessWidget {
       final mi = item as MediaItem;
 
       if (mi.parentIndex != null && mi.index != null) {
-        final showEp = SettingsService.instanceOrNull!.read(SettingsService.showEpisodeNumberOnCards);
+        final showEp = SettingsService.instance.read(SettingsService.showEpisodeNumberOnCards);
         return showEp ? 'S${mi.parentIndex} E${mi.index}' : 'S${mi.parentIndex}';
       }
 
@@ -571,7 +571,7 @@ class _MediaCardList extends StatelessWidget {
       fontSize: _subtitleFontSize,
     );
     final episodeTitle = mi.displaySubtitle ?? mi.displayTitle;
-    final showEp = SettingsService.instanceOrNull!.read(SettingsService.showEpisodeNumberOnCards);
+    final showEp = SettingsService.instance.read(SettingsService.showEpisodeNumberOnCards);
     final episodeNum = (showEp && mi.index != null) ? ' E${mi.index}' : '';
     return Row(
       children: [
@@ -678,7 +678,7 @@ class _MediaCardList extends StatelessWidget {
                     const SizedBox(height: 4),
                   ],
                   if (!(item is MediaItem &&
-                          SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers) &&
+                          SettingsService.instance.read(SettingsService.hideSpoilers) &&
                           (item as MediaItem).shouldHideSpoiler) &&
                       _summary() != null) ...[
                     Text(
@@ -761,8 +761,8 @@ Widget _buildPosterImage(
     );
   } else if (item is MediaItem) {
     final EpisodePosterMode episodePosterMode =
-        episodePosterModeOverride ?? SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
-    final hideSpoilers = SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers);
+        episodePosterModeOverride ?? SettingsService.instance.read(SettingsService.episodePosterMode);
+    final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final shouldBlur =
         hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
     final primaryPosterUrl = item.posterThumb(mode: episodePosterMode, mixedHubContext: mixedHubContext);
@@ -863,7 +863,7 @@ class _MediaCardHelpers {
     // For episodes, show "S# · Episode Title" with clickable season link
     if (mi.isEpisode && mi.parentIndex != null) {
       final episodeTitle = mi.displaySubtitle ?? mi.displayTitle;
-      final showEp = SettingsService.instanceOrNull!.read(SettingsService.showEpisodeNumberOnCards);
+      final showEp = SettingsService.instance.read(SettingsService.showEpisodeNumberOnCards);
       final episodeSuffix = (showEp && mi.index != null) ? ' E${mi.index}' : '';
       if (mi.parentId != null) {
         return Row(
@@ -908,7 +908,7 @@ class _MediaCardHelpers {
 
   /// Builds watch progress overlay (checkmark for watched, progress bar for in-progress)
   static Widget buildWatchProgress(BuildContext context, MediaItem mi) {
-    final showUnwatchedCount = SettingsService.instanceOrNull!.read(SettingsService.showUnwatchedCount);
+    final showUnwatchedCount = SettingsService.instance.read(SettingsService.showUnwatchedCount);
 
     final hasActiveProgress =
         mi.viewOffsetMs != null && mi.durationMs != null && mi.viewOffsetMs! > 0 && mi.viewOffsetMs! < mi.durationMs!;

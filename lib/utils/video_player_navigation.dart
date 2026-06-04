@@ -123,9 +123,9 @@ Future<bool?> navigateToVideoPlayer(
   // Plex-only client. The player branches on the returned type internally.
   final manager = context.read<MultiServerProvider>().serverManager;
   final offlineWatchService = context.read<OfflineWatchSyncService>();
-  final serverId = metadata.serverId ?? '';
-  final mediaClient = serverId.isNotEmpty && (!isOffline || manager.isClientOnline(ServerId(serverId)))
-      ? manager.getClient(ServerId(serverId))
+  final serverId = serverIdOrNull(metadata.serverId);
+  final mediaClient = serverId != null && (!isOffline || manager.isClientOnline(serverId))
+      ? manager.getClient(serverId)
       : null;
 
   int mediaIndex = selectedMediaIndex ?? 0;
@@ -296,7 +296,7 @@ Future<void> navigateToWatchTogetherPlayback(
   VoidCallback? onBeforeNavigate,
 }) async {
   final multiServer = context.read<MultiServerProvider>();
-  final client = multiServer.getClientForServer(ServerId(serverId));
+  final client = multiServer.getClientForServer(serverId);
 
   if (client == null) {
     throw const WatchTogetherPlaybackNavigationException('Watch Together server is unavailable');

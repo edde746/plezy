@@ -467,6 +467,15 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Synchronous access to the singleton, or null if not yet initialized.
   static SettingsService? get instanceOrNull => _cachedInstance;
 
+  /// Synchronous access to the bootstrapped singleton.
+  static SettingsService get instance {
+    final instance = _cachedInstance;
+    if (instance == null) {
+      throw StateError('SettingsService has not been initialized. Call SettingsService.getInstance() first.');
+    }
+    return instance;
+  }
+
   /// Drop the cached singleton so the next [getInstance] call rebuilds against
   /// the current SharedPreferences state. Test-only — pair with
   /// [BaseSharedPreferencesService.resetForTesting].

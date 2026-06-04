@@ -82,22 +82,37 @@ class _RecordingJellyfinClient implements JellyfinClient {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-MediaItem _ep(String id, {ServerId? serverId = const ServerId('srv-jf')}) => MediaItem(
+MediaItem _ep(String id, {ServerId? serverId}) => MediaItem(
   id: id,
   backend: MediaBackend.jellyfin,
   kind: MediaKind.episode,
   title: 'Episode $id',
-  serverId: serverId,
+  serverId: serverId ?? ServerId('srv-jf'),
 );
 
-MediaItem _movie(String id, {ServerId? serverId = const ServerId('srv-jf')}) =>
-    MediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.movie, title: 'Movie $id', serverId: serverId);
+MediaItem _movie(String id, {ServerId? serverId}) => MediaItem(
+  id: id,
+  backend: MediaBackend.jellyfin,
+  kind: MediaKind.movie,
+  title: 'Movie $id',
+  serverId: serverId ?? ServerId('srv-jf'),
+);
 
-MediaItem _clip(String id, {ServerId? serverId = const ServerId('srv-jf')}) =>
-    MediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.clip, title: 'Video $id', serverId: serverId);
+MediaItem _clip(String id, {ServerId? serverId}) => MediaItem(
+  id: id,
+  backend: MediaBackend.jellyfin,
+  kind: MediaKind.clip,
+  title: 'Video $id',
+  serverId: serverId ?? ServerId('srv-jf'),
+);
 
-MediaItem _track(String id, {ServerId? serverId = const ServerId('srv-jf')}) =>
-    MediaItem(id: id, backend: MediaBackend.jellyfin, kind: MediaKind.track, title: 'Track $id', serverId: serverId);
+MediaItem _track(String id, {ServerId? serverId}) => MediaItem(
+  id: id,
+  backend: MediaBackend.jellyfin,
+  kind: MediaKind.track,
+  title: 'Track $id',
+  serverId: serverId ?? ServerId('srv-jf'),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

@@ -14,7 +14,7 @@ import 'settings_section.dart';
 /// surround every settings row.
 
 class _TileBase {
-  static SettingsService get _svc => SettingsService.instanceOrNull!;
+  static SettingsService get _svc => SettingsService.instance;
 }
 
 /// SwitchListTile bound to a [Pref<bool>].

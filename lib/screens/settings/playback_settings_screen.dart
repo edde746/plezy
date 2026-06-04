@@ -226,7 +226,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
   Widget _externalPlayerTile() => SettingsBuilder(
     prefs: [SettingsService.useExternalPlayer, SettingsService.selectedExternalPlayer],
     builder: (context) {
-      final svc = SettingsService.instanceOrNull!;
+      final svc = SettingsService.instance;
       final useExt = svc.read(SettingsService.useExternalPlayer);
       final player = svc.read(SettingsService.selectedExternalPlayer);
       return SettingNavigationTile(
@@ -280,7 +280,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       SettingsService.matchContentFrameRate,
     ],
     builder: (context) {
-      final svc = SettingsService.instanceOrNull!;
+      final svc = SettingsService.instance;
       final shouldShow =
           (Platform.isWindows &&
               (svc.read(SettingsService.matchRefreshRate) || svc.read(SettingsService.matchDynamicRange))) ||

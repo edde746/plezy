@@ -1296,10 +1296,10 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     // Offline mode: try to load full metadata from cache (has clearLogo, summary, etc.)
     if (widget.isOffline) {
-      final cachedMetadata = await context.read<DownloadProvider>().lookupOfflineMetadata(
-        ServerId(_metadata.serverId ?? ''),
-        _metadata.id,
-      );
+      final serverId = serverIdOrNull(_metadata.serverId);
+      final cachedMetadata = serverId == null
+          ? null
+          : await context.read<DownloadProvider>().lookupOfflineMetadata(serverId, _metadata.id);
       if (!mounted) return;
       setState(() {
         _fullMetadata = _applyLocalProgress(cachedMetadata ?? _metadata);
@@ -2055,7 +2055,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Get the responsive card width used by seasons/extras/cast rows.
   /// Uses the shared grid size calculator for consistency with library grids.
   double _getResponsiveCardWidth() {
-    final density = SettingsService.instanceOrNull!.read(SettingsService.libraryDensity);
+    final density = SettingsService.instance.read(SettingsService.libraryDensity);
     final availableWidth = MediaQuery.sizeOf(context).width;
     return GridSizeCalculator.getCellWidth(availableWidth, context, density);
   }
@@ -3078,7 +3078,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   ) {
     final size = MediaQuery.sizeOf(context);
     final detailHubs = _tvDetailHubs(metadata);
-    final hideSpoilers = SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers);
+    final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final detailScale = TvLayoutConstants.scaleForSize(size);
     final spotlightTop = (size.height * 0.08).clamp(44.0 * detailScale, 110.0 * detailScale).toDouble();
     final rawRailHeight = _estimateTvDetailRailHeight(size, detailHubs);
@@ -3419,7 +3419,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   double _estimateTvBrowseRailHeight(Size size, List<MediaHub> hubs) {
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
     return TvBrowseRailLayout.estimateHeight(
       size: size,
       hubs: hubs,
@@ -3439,7 +3439,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   double _estimateTvDetailEmptyRailReserveHeight(Size size) {
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
     final scale = TvBrowseRailLayout.scaleForSize(size);
     final availableWidth = size.width - TvBrowseRailLayout.horizontalInsetForScale(scale);
     if (availableWidth <= 0) return 0;
@@ -3471,7 +3471,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
   EpisodePosterMode _tvDetailEpisodePosterModeForHub(MediaHub hub) {
     if (_isTvDetailEpisodeHub(hub)) return EpisodePosterMode.episodeThumbnail;
-    return SettingsService.instanceOrNull!.read(SettingsService.episodePosterMode);
+    return SettingsService.instance.read(SettingsService.episodePosterMode);
   }
 
   double _tvDetailWidePosterScaleForHub(MediaHub hub) {

@@ -96,8 +96,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
   @override
   String? get itemServerId => widget.library.serverId;
 
-  String _toGlobalKey(String ratingKey, {ServerId? serverId}) =>
-      buildGlobalKey(ServerId(serverId ?? widget.library.serverId ?? ''), ratingKey);
+  String _toGlobalKey(String ratingKey, {required ServerId serverId}) => buildGlobalKey(serverId, ratingKey);
 
   @override
   String? get deletionServerId => widget.library.serverId;
@@ -114,9 +113,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
     final keys = <String>{};
     for (final item in loadedItems.values) {
-      final serverId = item.serverId ?? widget.library.serverId;
+      final serverId = serverIdOrNull(item.serverId ?? widget.library.serverId);
       if (serverId == null) return null;
-      keys.add(_toGlobalKey(item.id, serverId: ServerId(serverId)));
+      keys.add(_toGlobalKey(item.id, serverId: serverId));
     }
     return keys;
   }
@@ -130,9 +129,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
     final keys = <String>{};
     for (final item in loadedItems.values) {
-      final serverId = item.serverId ?? widget.library.serverId;
+      final serverId = serverIdOrNull(item.serverId ?? widget.library.serverId);
       if (serverId == null) return null;
-      keys.add(_toGlobalKey(item.id, serverId: ServerId(serverId)));
+      keys.add(_toGlobalKey(item.id, serverId: serverId));
     }
     return keys;
   }
@@ -280,7 +279,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
       // only constructed when the library's backend is Plex — the bang is safe.
       plexClientProvider: () {
         final manager = context.read<MultiServerProvider>().serverManager;
-        return manager.getPlexClient(ServerId(library.serverId ?? ''))!;
+        final serverId = serverIdOrNull(library.serverId);
+        if (serverId == null) throw StateError('Plex library ${library.id} is missing a serverId');
+        return manager.getPlexClient(serverId)!;
       },
       libraryKey: library.id,
       isShared: library.isShared,
@@ -1579,7 +1580,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   /// Builds either a sliver list or sliver grid based on the view mode
   Widget _buildItemsSliver(BuildContext context) {
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
     final viewMode = svc.read(SettingsService.viewMode);
     final libraryDensity = svc.read(SettingsService.libraryDensity);
     final episodePosterMode = svc.read(SettingsService.episodePosterMode);

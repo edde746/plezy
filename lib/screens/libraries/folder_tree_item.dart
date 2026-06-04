@@ -149,7 +149,7 @@ class FolderTreeItem extends StatelessWidget {
 
   Widget _buildMediaRow(BuildContext context) {
     final indentation = depth * 24.0;
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
     final episodePosterMode = svc.read(SettingsService.episodePosterMode);
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
     final showUnwatchedCount = svc.read(SettingsService.showUnwatchedCount);

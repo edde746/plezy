@@ -839,7 +839,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       ],
       builder: (context) => LayoutBuilder(
         builder: (context, constraints) {
-          final svc = SettingsService.instanceOrNull!;
+          final svc = SettingsService.instance;
           final hasFocus = _focusNode.hasFocus;
           final theme = Theme.of(context);
           final scale = _scale(context);

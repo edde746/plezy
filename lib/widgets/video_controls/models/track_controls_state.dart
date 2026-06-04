@@ -51,7 +51,7 @@ class TrackControlsState {
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
   final void Function(String propertyName, int offset)? onSyncOffsetChanged;
-  final String serverId;
+  final String? serverId;
   final ShaderService? shaderService;
   final VoidCallback? onShaderChanged;
   final bool isAmbientLightingEnabled;
@@ -110,7 +110,7 @@ class TrackControlsState {
     this.onCancelAutoHide,
     this.onStartAutoHide,
     this.onSyncOffsetChanged,
-    this.serverId = '',
+    this.serverId,
     this.shaderService,
     this.onShaderChanged,
     this.isAmbientLightingEnabled = false,
@@ -133,7 +133,8 @@ class TrackControlsState {
 
   /// External subtitle search needs both a searchable media item and a server
   /// that can proxy the OpenSubtitles request.
-  bool get canSearchSubtitles => ratingKey.isNotEmpty && serverId.isNotEmpty && subtitleSearchSupported;
+  bool get canSearchSubtitles =>
+      ratingKey.isNotEmpty && serverId != null && serverId!.isNotEmpty && subtitleSearchSupported;
 
   /// Whether the track sheet should expose subtitle controls at all. This is
   /// the single source of truth shared by the toolbar icon and the sheet layout.

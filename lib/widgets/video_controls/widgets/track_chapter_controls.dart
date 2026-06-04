@@ -89,7 +89,7 @@ class TrackChapterControls extends StatelessWidget {
   VoidCallback? get onCancelAutoHide => trackControlsState.onCancelAutoHide;
   VoidCallback? get onStartAutoHide => trackControlsState.onStartAutoHide;
   void Function(String propertyName, int offset)? get onSyncOffsetChanged => trackControlsState.onSyncOffsetChanged;
-  String get serverId => trackControlsState.serverId;
+  String? get serverId => trackControlsState.serverId;
   ShaderService? get shaderService => trackControlsState.shaderService;
   VoidCallback? get onShaderChanged => trackControlsState.onShaderChanged;
   bool get isAmbientLightingEnabled => trackControlsState.isAmbientLightingEnabled;

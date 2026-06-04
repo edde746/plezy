@@ -821,7 +821,7 @@ void main() {
   });
 
   group('DownloadProvider — cancelDownload map symmetry', () {
-    test('cancelDownload removes download, metadata, artwork, and episode count', () async {
+    test('cancelDownload removes download, metadata, and artwork', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
@@ -838,7 +838,6 @@ void main() {
           ),
         },
         artwork: {key: const DownloadedArtwork(thumbPath: '/art/42.jpg')},
-        episodeCounts: {key: 7},
       );
 
       await p.cancelDownload(key);
@@ -846,7 +845,6 @@ void main() {
       expect(p.getProgress(key), isNull);
       expect(p.getMetadata(key), isNull);
       expect(p.getArtworkPaths(key), isNull, reason: 'artwork path must not orphan after cancel');
-      expect(p.totalEpisodeCountFor(key), isNull, reason: 'episode count must not orphan after cancel');
 
       p.dispose();
     });

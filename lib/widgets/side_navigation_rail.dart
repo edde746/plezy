@@ -587,11 +587,11 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     return ListenableBuilder(
       listenable: Listenable.merge([
         FullscreenStateManager(),
-        SettingsService.instanceOrNull!.listenable(SettingsService.groupLibrariesByServer),
+        SettingsService.instance.listenable(SettingsService.groupLibrariesByServer),
       ]),
       builder: (context, _) {
         // Server grouping: only when multi-server AND the user-facing toggle is on.
-        final groupByServerSetting = SettingsService.instanceOrNull!.read(SettingsService.groupLibrariesByServer);
+        final groupByServerSetting = SettingsService.instance.read(SettingsService.groupLibrariesByServer);
         final showServerHeaders = serverIds.length > 1 && groupByServerSetting;
         _collapsedServerGroupKeys.retainAll(
           _buildServerGroupStateKeys(visibleLibraries, hiddenLibraries, showServerHeaders: showServerHeaders),

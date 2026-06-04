@@ -1131,7 +1131,8 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
   Widget _buildChannelCell(LiveTvChannel channel, ThemeData theme, {required int index}) {
     final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(ServerId(channel.serverId ?? ''));
+    final serverId = serverIdOrNull(channel.serverId);
+    final client = serverId == null ? null : multiServer.getClientForServer(serverId);
 
     final isFocused = _hasFocus && _focusZone == _GuideZone.grid && _gridColumn == 0 && _gridChannelIndex == index;
 
@@ -1359,7 +1360,8 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
   void _showProgramDetails(LiveTvChannel channel, LiveTvProgram program) {
     final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(ServerId(channel.serverId ?? ''));
+    final serverId = serverIdOrNull(channel.serverId);
+    final client = serverId == null ? null : multiServer.getClientForServer(serverId);
     String? posterUrl;
     if (program.thumb != null && client != null) {
       posterUrl = MediaImageHelper.getOptimizedImageUrl(

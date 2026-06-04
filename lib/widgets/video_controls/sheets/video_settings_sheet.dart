@@ -101,7 +101,7 @@ class _SettingsToggleItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settings = SettingsService.instanceOrNull!;
+    final settings = SettingsService.instance;
     return ValueListenableBuilder<bool>(
       valueListenable: settings.listenable(pref),
       builder: (context, value, _) {
@@ -288,7 +288,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             initialOffset: initialOffset,
             sliderFocusNode: sliderFocusNode,
             onOffsetChanged: (offset) async {
-              final settings = SettingsService.instanceOrNull!;
+              final settings = SettingsService.instance;
               if (isSubtitle) {
                 await settings.write(SettingsService.subtitleSyncOffset, offset);
               } else {
@@ -685,7 +685,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               onTap: () async {
                 await widget.player.setRate(speed);
                 // Save as default playback speed
-                await SettingsService.instanceOrNull!.write(SettingsService.defaultPlaybackSpeed, speed);
+                await SettingsService.instance.write(SettingsService.defaultPlaybackSpeed, speed);
                 if (context.mounted) {
                   OverlaySheetController.of(context).close(); // Close sheet after selection
                 }

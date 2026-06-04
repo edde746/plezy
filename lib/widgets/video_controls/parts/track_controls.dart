@@ -136,7 +136,7 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       // to SettingsService and the parent re-reads via `_audioSyncOffset` /
       // `_subtitleSyncOffset` getters. Callback kept for sheet API compat.
       onSyncOffsetChanged: null,
-      serverId: widget.metadata.serverId ?? '',
+      serverId: widget.metadata.serverId,
       shaderService: widget.shaderService,
       onShaderChanged: widget.onShaderChanged,
       isAmbientLightingEnabled: widget.isAmbientLightingEnabled,

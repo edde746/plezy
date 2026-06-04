@@ -331,7 +331,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Live settings — read through the service so a change anywhere in the app
   // reflects here without a manual reload. UI rebuilds are wired via
   // [bindRebuild] in [initState]; side effects (rotation, sync) via [bindEffect].
-  SettingsService get _settings => SettingsService.instanceOrNull!;
+  SettingsService get _settings => SettingsService.instance;
   int get _seekTimeSmall => _settings.read(SettingsService.seekTimeSmall);
   int get _rewindOnResume => _settings.read(SettingsService.rewindOnResume);
   int get _audioSyncOffset => _settings.read(SettingsService.audioSyncOffset);

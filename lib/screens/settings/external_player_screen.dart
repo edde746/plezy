@@ -37,7 +37,7 @@ class ExternalPlayerScreen extends StatelessWidget {
             SettingsService.customExternalPlayers,
           ],
           builder: (context) {
-            final svc = SettingsService.instanceOrNull!;
+            final svc = SettingsService.instance;
             if (!svc.read(SettingsService.useExternalPlayer)) return const SizedBox.shrink();
             final selected = svc.read(SettingsService.selectedExternalPlayer);
             final custom = svc.read(SettingsService.customExternalPlayers);
@@ -72,7 +72,7 @@ class _PlayerTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isSelected = selectedId == player.id;
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
 
     Widget leading;
     if (player.iconAsset != null) {
@@ -128,7 +128,7 @@ Future<void> _showAddCustomPlayerDialog(BuildContext context) async {
   final id = 'custom_${DateTime.now().millisecondsSinceEpoch}';
   final newPlayer = ExternalPlayer.custom(id: id, name: result.name, value: result.value, type: result.type);
 
-  final svc = SettingsService.instanceOrNull!;
+  final svc = SettingsService.instance;
   await svc.write(SettingsService.customExternalPlayers, [
     ...svc.read(SettingsService.customExternalPlayers),
     newPlayer,

@@ -300,7 +300,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     final spotlight = _effectiveSpotlightItem;
     final size = MediaQuery.sizeOf(context);
     final theme = Theme.of(context);
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
     final client = context.tryGetMediaClientForServer(serverIdOrNull(spotlight?.serverId ?? widget.library.serverId));
     final scale = TvLayoutConstants.scaleForSize(size);
     final sidebarBleed = MainScreenFocusScope.sideNavigationBleedOf(

@@ -264,14 +264,15 @@ class _DelayedStartClient extends _FakePlexClient {
   }
 }
 
-MediaItem _meta({String ratingKey = '42', ServerId? serverId = const ServerId('srv'), String? type = 'movie'}) =>
-    MediaItem(
-      id: ratingKey,
-      backend: MediaBackend.plex,
-      kind: MediaKind.fromString(type),
-      title: 'Test Item',
-      serverId: serverId,
-    );
+const Object _defaultServerId = Object();
+
+MediaItem _meta({String ratingKey = '42', Object? serverId = _defaultServerId, String? type = 'movie'}) => MediaItem(
+  id: ratingKey,
+  backend: MediaBackend.plex,
+  kind: MediaKind.fromString(type),
+  title: 'Test Item',
+  serverId: identical(serverId, _defaultServerId) ? ServerId('srv') : serverId as ServerId?,
+);
 
 void main() {
   setUp(resetSharedPreferencesForTest);

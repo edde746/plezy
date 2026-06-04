@@ -321,7 +321,7 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent> {
         return SettingsBuilder(
           prefs: const [SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
           builder: (context) {
-            final settings = SettingsService.instanceOrNull!;
+            final settings = SettingsService.instance;
             final density = settings.read(SettingsService.libraryDensity);
             final fullCardLayout = PlatformDetector.isTV() && settings.read(SettingsService.tvFullCardLayout);
             final maxCrossAxisExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, density);

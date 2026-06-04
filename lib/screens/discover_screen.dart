@@ -1397,7 +1397,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Widget _buildContent(BuildContext context) {
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
     final showHeroSection = svc.read(SettingsService.showHeroSection);
 
     if (PlatformDetector.isTV()) {
@@ -1546,7 +1546,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final size = MediaQuery.sizeOf(context);
     final theme = Theme.of(context);
     final spotlight = _effectiveSpotlightItem;
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
     final browseHubs = _tvBrowseHubs;
     final scale = TvLayoutConstants.scaleForSize(size);
@@ -1806,7 +1806,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
 
     // Spoiler protection
-    final hideSpoilers = SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers);
+    final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final shouldHideSpoiler = hideSpoilers && heroItem.shouldHideSpoiler;
 
     // Build semantic label for hero item

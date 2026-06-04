@@ -357,41 +357,6 @@ void main() {
   });
 
   // ============================================================
-  // Episode count persistence (prefix-based)
-  // ============================================================
-
-  group('Episode counts', () {
-    test('per-key round-trip', () async {
-      final s = await StorageService.getInstance();
-      await s.saveTotalEpisodeCount('srv:show-1', 12);
-      await s.saveTotalEpisodeCount('srv:show-2', 24);
-      expect(s.getTotalEpisodeCount('srv:show-1'), 12);
-      expect(s.getTotalEpisodeCount('srv:show-2'), 24);
-      expect(s.getTotalEpisodeCount('srv:missing'), isNull);
-    });
-
-    test('loadAllEpisodeCounts returns every persisted entry', () async {
-      final s = await StorageService.getInstance();
-      await s.saveTotalEpisodeCount('srv:s1', 1);
-      await s.saveTotalEpisodeCount('srv:s2', 2);
-      // Unrelated keys must not bleed in.
-      await s.prefs.setString('plex_token', 'tok');
-
-      final counts = s.loadAllEpisodeCounts();
-      expect(counts, {'srv:s1': 1, 'srv:s2': 2});
-    });
-
-    test('removeEpisodeCount deletes only the targeted entry', () async {
-      final s = await StorageService.getInstance();
-      await s.saveTotalEpisodeCount('srv:s1', 1);
-      await s.saveTotalEpisodeCount('srv:s2', 2);
-      await s.removeEpisodeCount('srv:s1');
-      expect(s.getTotalEpisodeCount('srv:s1'), isNull);
-      expect(s.getTotalEpisodeCount('srv:s2'), 2);
-    });
-  });
-
-  // ============================================================
   // clearCredentials
   // ============================================================
 
@@ -407,10 +372,9 @@ void main() {
       await s.prefs.setString('server_order', json.encode(['a']));
       await s.saveServerEndpoint(ServerId('a'), 'http://foo.test');
 
-      // Library prefs and unrelated counters: write WITHOUT an active profile id
+      // Library prefs: write WITHOUT an active profile id
       // so they land on the legacy unscoped key.
       await s.saveLibraryOrder(['lib-1']);
-      await s.saveTotalEpisodeCount('srv:s1', 7);
 
       // Now seed current_user_uuid — clearCredentials should remove this.
       await s.prefs.setString('current_user_uuid', 'u-x');
@@ -433,7 +397,6 @@ void main() {
       // Library prefs and unrelated state untouched (no scope active, so
       // the scoped read falls through to the same legacy key it was written to).
       expect(s.getLibraryOrder(), ['lib-1']);
-      expect(s.getTotalEpisodeCount('srv:s1'), 7);
     });
   });
 

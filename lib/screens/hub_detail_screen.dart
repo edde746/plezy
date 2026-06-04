@@ -514,7 +514,7 @@ class _HubDetailScreenState extends State<HubDetailScreen>
                         SettingsService.tvFullCardLayout,
                       ],
                       builder: (context) {
-                        final svc = SettingsService.instanceOrNull!;
+                        final svc = SettingsService.instance;
                         final isListMode = svc.read(SettingsService.viewMode) == ViewMode.list;
                         final episodePosterMode = svc.read(SettingsService.episodePosterMode);
                         final libraryDensity = svc.read(SettingsService.libraryDensity);

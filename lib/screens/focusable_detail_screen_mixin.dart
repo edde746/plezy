@@ -171,7 +171,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     return SettingsBuilder(
       prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
       builder: (context) {
-        final svc = SettingsService.instanceOrNull!;
+        final svc = SettingsService.instance;
         final isListMode = svc.read(SettingsService.viewMode) == ViewMode.list;
         final libraryDensity = svc.read(SettingsService.libraryDensity);
         final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
@@ -261,7 +261,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     return SettingsBuilder(
       prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
       builder: (context) {
-        final svc = SettingsService.instanceOrNull!;
+        final svc = SettingsService.instance;
         final isListMode = svc.read(SettingsService.viewMode) == ViewMode.list;
         final libraryDensity = svc.read(SettingsService.libraryDensity);
         final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);

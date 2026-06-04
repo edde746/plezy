@@ -18,7 +18,7 @@ String buildProfileScopedGlobalKey(String profileId, ServerId serverId, String r
 /// Uses [indexOf] so ratingKeys containing colons are handled correctly.
 ({ServerId serverId, String ratingKey})? parseGlobalKey(String globalKey) {
   final idx = globalKey.indexOf(':');
-  if (idx < 0) return null;
+  if (idx <= 0) return null;
   return (serverId: ServerId(globalKey.substring(0, idx)), ratingKey: globalKey.substring(idx + 1));
 }
 
