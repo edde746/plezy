@@ -102,6 +102,7 @@ SubtitleTrack _sub(
 
 MediaAudioTrack _plexAudio(
   int id, {
+  int? index,
   String? language,
   String? languageCode,
   String? title,
@@ -111,6 +112,7 @@ MediaAudioTrack _plexAudio(
 }) {
   return MediaAudioTrack(
     id: id,
+    index: index,
     language: language,
     languageCode: languageCode ?? language,
     title: title,
@@ -122,6 +124,7 @@ MediaAudioTrack _plexAudio(
 
 MediaSubtitleTrack _plexSub(
   int id, {
+  int? index,
   String? language,
   String? languageCode,
   String? title,
@@ -131,6 +134,7 @@ MediaSubtitleTrack _plexSub(
 }) {
   return MediaSubtitleTrack(
     id: id,
+    index: index,
     language: language,
     languageCode: languageCode ?? language,
     title: title,
@@ -143,12 +147,14 @@ MediaSubtitleTrack _plexSub(
 MediaSourceInfo _info({
   List<MediaAudioTrack>? audio,
   List<MediaSubtitleTrack>? subs,
+  int? defaultAudioStreamIndex,
   int? defaultSubtitleStreamIndex,
 }) => MediaSourceInfo(
   videoUrl: '',
   audioTracks: audio ?? const [],
   subtitleTracks: subs ?? const [],
   chapters: const [],
+  defaultAudioStreamIndex: defaultAudioStreamIndex,
   defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
 );
 
@@ -345,6 +351,42 @@ void main() {
       expect(result.track.language, 'fre');
     });
 
+    test('Jellyfin selected audio stream wins over DefaultAudioStreamIndex', () {
+      final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
+      final info = _info(
+        defaultAudioStreamIndex: 1,
+        audio: [
+          _plexAudio(1, index: 1, language: 'eng', languageCode: 'eng'),
+          _plexAudio(2, index: 2, language: 'fre', languageCode: 'fre', selected: true),
+        ],
+      );
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        info: info,
+      ).selectAudioTrack(tracks, null);
+      expect(result, isNotNull);
+      expect(result!.priority, TrackSelectionPriority.serverSelected);
+      expect(result.track.language, 'fre');
+    });
+
+    test('Jellyfin DefaultAudioStreamIndex selects audio when selected flag is missing', () {
+      final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
+      final info = _info(
+        defaultAudioStreamIndex: 2,
+        audio: [
+          _plexAudio(1, index: 1, language: 'eng', languageCode: 'eng'),
+          _plexAudio(2, index: 2, language: 'fre', languageCode: 'fre'),
+        ],
+      );
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        info: info,
+      ).selectAudioTrack(tracks, null);
+      expect(result, isNotNull);
+      expect(result!.priority, TrackSelectionPriority.serverSelected);
+      expect(result.track.language, 'fre');
+    });
+
     test('Priority 3: per-media audioLanguage from metadata', () {
       final tracks = [_audio('A', lang: 'eng'), _audio('B', lang: 'fre')];
       final result = _svc(metadata: _meta(audioLanguage: 'fre')).selectAudioTrack(tracks, null);
@@ -420,6 +462,23 @@ void main() {
       expect(result.track.language, 'fre');
     });
 
+    test('Jellyfin selected subtitle stream wins over DefaultSubtitleStreamIndex', () {
+      final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'fre')];
+      final info = _info(
+        defaultSubtitleStreamIndex: 10,
+        subs: [
+          _plexSub(10, index: 10, language: 'eng', languageCode: 'eng'),
+          _plexSub(11, index: 11, language: 'fre', languageCode: 'fre', selected: true),
+        ],
+      );
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        info: info,
+      ).selectSubtitleTrack(tracks, null, null);
+      expect(result.priority, TrackSelectionPriority.serverSelected);
+      expect(result.track.language, 'fre');
+    });
+
     test('Priority 2: Plex media info has subs but none selected → off', () {
       // Server's explicit decision: there ARE subs but the user opted out.
       final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'fre')];
@@ -448,6 +507,23 @@ void main() {
       ).selectSubtitleTrack(tracks, null, null);
       expect(result.priority, TrackSelectionPriority.defaultTrack);
       expect(result.track.id, '2');
+    });
+
+    test('Jellyfin DefaultSubtitleStreamIndex selects subtitle when selected flag is missing', () {
+      final tracks = [_sub('1', lang: 'eng'), _sub('2', lang: 'fre')];
+      final info = _info(
+        defaultSubtitleStreamIndex: 11,
+        subs: [
+          _plexSub(10, index: 10, language: 'eng', languageCode: 'eng'),
+          _plexSub(11, index: 11, language: 'fre', languageCode: 'fre'),
+        ],
+      );
+      final result = _svc(
+        metadata: _meta(backend: MediaBackend.jellyfin),
+        info: info,
+      ).selectSubtitleTrack(tracks, null, null);
+      expect(result.priority, TrackSelectionPriority.serverSelected);
+      expect(result.track.language, 'fre');
     });
 
     test('Jellyfin explicit DefaultSubtitleStreamIndex=-1 forces subtitles off', () {
