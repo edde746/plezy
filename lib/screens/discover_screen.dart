@@ -66,6 +66,7 @@ import '../services/system_shelf_service.dart';
 import 'auth_screen.dart';
 import 'libraries/content_state_builder.dart';
 import 'main_screen.dart';
+import 'settings/settings_screen.dart';
 import '../watch_together/watch_together.dart';
 import '../providers/companion_remote_provider.dart';
 import '../widgets/companion_remote/remote_session_dialog.dart';
@@ -1101,6 +1102,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileSwitchScreen()));
   }
 
+  void _handleOpenSettings(BuildContext context) {
+    final mainScope = MainScreenFocusScope.of(context, listen: false);
+    if (mainScope != null) {
+      mainScope.openSettings?.call();
+      return;
+    }
+
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+  }
+
   /// Build the [FocusableAction] wrapping the user menu.
   /// Pulls live state from [ActiveProfileProvider]; the menu reuses
   /// [_userMenuItems] for the menu contents so d-pad and tap paths
@@ -1146,6 +1157,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         ),
       if (switchable.isNotEmpty) const AppMenuDivider(),
       AppMenuItem<String>(value: 'manage_profiles', icon: Symbols.group_rounded, label: t.profiles.sectionTitle),
+      AppMenuItem<String>(value: 'settings', icon: Symbols.settings_rounded, label: t.common.settings),
       AppMenuItem<String>(value: 'logout', icon: Symbols.logout_rounded, label: t.common.logout),
     ];
   }
@@ -1158,6 +1170,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
     if (value == 'manage_profiles') {
       _handleSwitchProfile(context);
+      return;
+    }
+    if (value == 'settings') {
+      _handleOpenSettings(context);
       return;
     }
     if (value.startsWith('profile:')) {

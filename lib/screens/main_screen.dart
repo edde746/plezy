@@ -69,6 +69,7 @@ class MainScreenFocusScope extends InheritedWidget {
   final double? foregroundWidth;
   final double? viewportWidth;
   final void Function(String libraryGlobalKey)? selectLibrary;
+  final VoidCallback? openSettings;
 
   const MainScreenFocusScope({
     super.key,
@@ -81,6 +82,7 @@ class MainScreenFocusScope extends InheritedWidget {
     this.foregroundWidth,
     this.viewportWidth,
     this.selectLibrary,
+    this.openSettings,
     required super.child,
   });
 
@@ -1405,6 +1407,16 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
+  void _openSettings() {
+    if (PlatformDetector.shouldUseSideNavigation(context)) {
+      _selectTab(NavigationTabId.settings);
+      _focusContent(restorePreviousFocus: false);
+      return;
+    }
+
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+  }
+
   void _handleLibrariesScreenSelected(String libraryGlobalKey) {
     if (_selectedLibraryGlobalKey == libraryGlobalKey) return;
     setState(() => _selectedLibraryGlobalKey = libraryGlobalKey);
@@ -1472,6 +1484,12 @@ class _MainScreenState extends State<MainScreen>
     return NavigationTab.getVisibleTabs(isOffline: isOffline, hasLiveTv: _hasLiveTv);
   }
 
+  List<NavigationTab> _getBottomNavigationTabs(BuildContext context) {
+    final tabs = _getVisibleTabs(_isOffline);
+    if (!PlatformDetector.isMobile(context)) return tabs;
+    return tabs.where((tab) => tab.id != NavigationTabId.settings).toList();
+  }
+
   /// Get the GlobalKey for a given tab.
   GlobalKey? _screenKeyFor(NavigationTabId tab) {
     return switch (tab) {
@@ -1485,9 +1503,10 @@ class _MainScreenState extends State<MainScreen>
   }
 
   Widget _buildBottomNavigationBar(BuildContext context, {required bool hideLabels}) {
-    final tabs = _getVisibleTabs(_isOffline);
+    final tabs = _getBottomNavigationTabs(context);
+    final selectedIndex = tabs.indexWhere((tab) => tab.id == _currentTab);
     final navigationBar = NavigationBar(
-      selectedIndex: _currentIndex,
+      selectedIndex: selectedIndex >= 0 ? selectedIndex : 0,
       onDestinationSelected: (i) {
         if (i >= 0 && i < tabs.length) _selectTab(tabs[i].id);
       },
@@ -1592,6 +1611,7 @@ class _MainScreenState extends State<MainScreen>
                           foregroundWidth: contentLayout.width,
                           viewportWidth: viewportWidth,
                           selectLibrary: _selectLibrary,
+                          openSettings: _openSettings,
                           child: SideNavigationScope(
                             child: Stack(
                               clipBehavior: Clip.hardEdge,
