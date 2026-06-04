@@ -33,6 +33,7 @@ import '../widgets/media_card.dart';
 import '../i18n/strings.g.dart';
 import '../widgets/optimized_media_image.dart';
 import '../utils/media_image_helper.dart';
+import '../utils/media_quality_labels.dart';
 import '../services/plex_client.dart';
 import '../media/media_server_client.dart';
 import '../services/media_list_playback_launcher.dart';
@@ -3347,6 +3348,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   Widget _buildTvDetailMetadataLine(BuildContext context, MediaItem metadata, double scale) {
     final lineMetadata = _tvDetailFocusedEpisode ?? metadata;
     final episodeLabel = formatSeasonEpisodeLabel(lineMetadata.parentIndex, lineMetadata.index);
+    final qualityLabels = buildMediaQualityLabels(lineMetadata);
     final parts = [
       if (lineMetadata.isEpisode && episodeLabel != null) episodeLabel,
       if (lineMetadata.isMovie) t.discover.movie else if (lineMetadata.isShow) t.discover.tvShow,
@@ -3357,6 +3359,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         formatFullDate(lineMetadata.originallyAvailableAt!)
       else if (lineMetadata.year != null)
         lineMetadata.year.toString(),
+      ...qualityLabels,
     ];
 
     return Text(
@@ -3749,6 +3752,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           if (metadata case PlexMediaItem(:final editionTitle?)) _buildMetadataChip(editionTitle),
           if (metadata.contentRating != null) _buildMetadataChip(formatContentRating(metadata.contentRating!)),
           if (metadata.durationMs != null) _buildMetadataChip(formatDurationTextual(metadata.durationMs!)),
+          for (final label in buildMediaQualityLabels(metadata)) _buildMetadataChip(label),
           ..._buildRatingChips(metadata),
         ];
 

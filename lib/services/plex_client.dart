@@ -955,8 +955,13 @@ class PlexClient
     AbortController? abort,
     int? librarySectionID,
     String? librarySectionTitle,
+    Map<String, dynamic>? queryParameters,
   }) async {
-    final response = await _getWithFailover(path, queryParameters: _buildPaginationParams(start, size), abort: abort);
+    final response = await _getWithFailover(
+      path,
+      queryParameters: {...?queryParameters, ..._buildPaginationParams(start, size)},
+      abort: abort,
+    );
     return _extractLibraryContentResult(
       response,
       librarySectionID: librarySectionID,
@@ -1037,7 +1042,13 @@ class PlexClient
           cacheKey: cacheKey,
           networkCall: () => _http.get(
             '/library/metadata/$ratingKey',
-            queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'includeOnDeck': 1},
+            queryParameters: {
+              'includeChapters': 1,
+              'includeMarkers': 1,
+              'includeOnDeck': 1,
+              'checkFiles': 1,
+              'includeStreams': 1,
+            },
           ),
           parseCache: (cachedData) {
             final metadata = _parseMetadataWithImagesFromCachedResponse(cachedData);
@@ -1092,8 +1103,10 @@ class PlexClient
 
     return fetchWithCacheFallback<PlexMetadataDto>(
       cacheKey: cacheKey,
-      networkCall: () =>
-          _http.get('/library/metadata/$ratingKey', queryParameters: {'includeChapters': 1, 'includeMarkers': 1}),
+      networkCall: () => _http.get(
+        '/library/metadata/$ratingKey',
+        queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'checkFiles': 1, 'includeStreams': 1},
+      ),
       parseCache: (cachedData) => _parseMetadataWithImagesFromCachedResponse(cachedData),
       parseResponse: (response) {
         final container = _getMediaContainer(response);
@@ -1406,7 +1419,7 @@ class PlexClient
 
     return await fetchWithCacheFallback<List<PlexMetadataDto>>(
           cacheKey: endpoint,
-          networkCall: () => _http.get(endpoint),
+          networkCall: () => _http.get(endpoint, queryParameters: {'includeStreams': 1}),
           parseCache: (cachedData) => _parseMetadataListFromCachedResponse(cachedData),
           parseResponse: (response) => _extractMetadataList(response),
         ) ??
@@ -1421,7 +1434,13 @@ class PlexClient
     int? start,
     int? size,
     AbortController? abort,
-  }) => _fetchPaginatedList('/library/metadata/$ratingKey/grandchildren', start: start, size: size, abort: abort);
+  }) => _fetchPaginatedList(
+    '/library/metadata/$ratingKey/grandchildren',
+    start: start,
+    size: size,
+    abort: abort,
+    queryParameters: {'includeStreams': 1},
+  );
 
   /// Get extras for a metadata item (trailers, behind-the-scenes, etc.)
   /// Uses cache when offline or as fallback on network error
