@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		055E465F9095D0B6E9B91D46 /* PathProviderPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41AA251EF365516E2AC5287 /* PathProviderPlugin.swift */; };
+		1C6B234E223CDFFE5BF3FC0B /* TVServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 25B7925EFD8A2C1C7EB667D5 /* TVServices.framework */; };
+		28DB4404B17342F46BC2B0A1 /* TopShelfProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F829B3F190657106F66379 /* TopShelfProvider.swift */; };
 		35DB0C8FEF635A3BCA0B722A /* PackageInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9426EFA282CDA8E0E98EEE9 /* PackageInfoPlusPlugin.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
 		5C71F5F7B33075F2B007825B /* MpvPlayerPluginShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73645904F226A24585A092CE /* MpvPlayerPluginShared.swift */; };
@@ -22,11 +24,23 @@
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		A7596F780E93AF0BE3838A26 /* ConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCA7E80F3A99D8759F2E59F /* ConnectivityProvider.swift */; };
 		AA34E3E5872B3792D6959EAA /* MpvPipController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2635E12EB9322B151EE5127 /* MpvPipController.swift */; };
+		BDD87DA7F5C435F9DBB8F9BE /* TopShelfExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 035F0D5A5E54BE7AD9AFA23C /* TopShelfExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C6A15611158B29B0FF43A960 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 824D2C68D1F1206932E118C2 /* Pods_Runner.framework */; };
 		CD1C0534948840272E58248E /* PathMonitorConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEF79DFBD1D80F00AB39CDA /* PathMonitorConnectivityProvider.swift */; };
+		D2A548D9DE1A0F319B30B74C /* SystemShelfPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */; };
 		E3DEAD2AAFC347A2E55AC0F7 /* SharedPreferencesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0455EBA0EF4A61D3B71D2D7 /* SharedPreferencesPlugin.swift */; };
 		E79A4474D308631AFA59CAE7 /* DeviceInfoPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5E1F41676FEF1AB57076F8B9 /* DeviceInfoPlusPlugin.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		3E4E59C5E29F44BA64BEB559 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 63C63C245D7F38BFF091CEC3;
+			remoteInfo = TopShelfExtension;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
 		9705A1C41CF9048500538489 /* Embed Frameworks */ = {
@@ -39,11 +53,25 @@
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AE0235548DB8213618795857 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BDD87DA7F5C435F9DBB8F9BE /* TopShelfExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		035F0D5A5E54BE7AD9AFA23C /* TopShelfExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = TopShelfExtension.appex; path = TopShelfExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		04DD35536DEE7C27FFA53862 /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
+		0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SystemShelfPlugin.swift; sourceTree = "<group>"; };
 		0C25F4F2367A30B47E945AD6 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
+		25B7925EFD8A2C1C7EB667D5 /* TVServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = TVServices.framework; path = System/Library/Frameworks/TVServices.framework; sourceTree = SDKROOT; };
 		34CD411CCD84E381C4BF4C1B /* messages.g.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = messages.g.swift; sourceTree = "<group>"; };
 		3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = AppFrameworkInfo.plist; path = Flutter/AppFrameworkInfo.plist; sourceTree = "<group>"; };
 		3CCA7E80F3A99D8759F2E59F /* ConnectivityProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityProvider.swift; sourceTree = "<group>"; };
@@ -56,6 +84,8 @@
 		74858FAE1ED2DC5600515810 /* AppDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
 		824D2C68D1F1206932E118C2 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		9165AF55B967D8845D042FE7 /* TopShelfExtension.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = TopShelfExtension.entitlements; sourceTree = "<group>"; };
+		937C0D45D6114EF1E957F5F6 /* Runner.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -66,13 +96,23 @@
 		9D7A998830EDC8F77BF521D1 /* MpvPlayerPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerPlugin.swift; path = ../ios/Runner/MpvPlayer/MpvPlayerPlugin.swift; sourceTree = "<source_root>"; };
 		A12B8610AE5D580077264851 /* MpvPlayerCore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerCore.swift; path = ../ios/Runner/MpvPlayer/MpvPlayerCore.swift; sourceTree = "<source_root>"; };
 		A2635E12EB9322B151EE5127 /* MpvPipController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPipController.swift; path = ../ios/Runner/MpvPlayer/MpvPipController.swift; sourceTree = "<source_root>"; };
+		BBCB49C8AE9E90DEF97A87CA /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C0455EBA0EF4A61D3B71D2D7 /* SharedPreferencesPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedPreferencesPlugin.swift; sourceTree = "<group>"; };
 		D41AA251EF365516E2AC5287 /* PathProviderPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PathProviderPlugin.swift; sourceTree = "<group>"; };
 		D52A3BDA46E79969EA1DF3AC /* MpvPlayerCoreBase.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerCoreBase.swift; path = ../shared/apple/MpvPlayer/MpvPlayerCoreBase.swift; sourceTree = "<source_root>"; };
+		F2F829B3F190657106F66379 /* TopShelfProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TopShelfProvider.swift; sourceTree = "<group>"; };
 		F9426EFA282CDA8E0E98EEE9 /* PackageInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PackageInfoPlusPlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		43E2EE359822E384AD7E8A2E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1C6B234E223CDFFE5BF3FC0B /* TVServices.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		97C146EB1CF9000F007C117D /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -114,6 +154,17 @@
 			path = connectivity_plus;
 			sourceTree = "<group>";
 		};
+		47C2D3F50A23DE33DE92F592 /* TopShelfExtension */ = {
+			isa = PBXGroup;
+			children = (
+				F2F829B3F190657106F66379 /* TopShelfProvider.swift */,
+				BBCB49C8AE9E90DEF97A87CA /* Info.plist */,
+				9165AF55B967D8845D042FE7 /* TopShelfExtension.entitlements */,
+			);
+			name = TopShelfExtension;
+			path = TopShelfExtension;
+			sourceTree = "<group>";
+		};
 		53CDD29681161166962B9FA5 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
@@ -128,6 +179,7 @@
 			isa = PBXGroup;
 			children = (
 				824D2C68D1F1206932E118C2 /* Pods_Runner.framework */,
+				25B7925EFD8A2C1C7EB667D5 /* TVServices.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -160,6 +212,7 @@
 				97C146EF1CF9000F007C117D /* Products */,
 				53CDD29681161166962B9FA5 /* Pods */,
 				5833EC5B503BBB4E370BA1B7 /* Frameworks */,
+				47C2D3F50A23DE33DE92F592 /* TopShelfExtension */,
 			);
 			sourceTree = "<group>";
 		};
@@ -167,6 +220,7 @@
 			isa = PBXGroup;
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
+				035F0D5A5E54BE7AD9AFA23C /* TopShelfExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -182,6 +236,8 @@
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 				BF0B7DFE378943E9D7865D18 /* MpvPlayer */,
 				D58B788B11920D95BC7D750C /* Plugins */,
+				0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */,
+				937C0D45D6114EF1E957F5F6 /* Runner.entitlements */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -224,6 +280,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		63C63C245D7F38BFF091CEC3 /* TopShelfExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C995F7A5B711B6DB7E97B000 /* Build configuration list for PBXNativeTarget "TopShelfExtension" */;
+			buildPhases = (
+				B1C48839AB6C24EF099DDFA3 /* Sources */,
+				43E2EE359822E384AD7E8A2E /* Frameworks */,
+				64CEA7DE6B9394CE88783302 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TopShelfExtension;
+			productName = TopShelfExtension;
+			productReference = 035F0D5A5E54BE7AD9AFA23C /* TopShelfExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		97C146ED1CF9000F007C117D /* Runner */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 97C147051CF9000F007C117D /* Build configuration list for PBXNativeTarget "Runner" */;
@@ -234,12 +307,14 @@
 				97C146EB1CF9000F007C117D /* Frameworks */,
 				97C146EC1CF9000F007C117D /* Resources */,
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
+				AE0235548DB8213618795857 /* Embed App Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				7C33FC680D67B3859BF9AE6C /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				F0399FC35D3A6ED67E74810D /* PBXTargetDependency */,
 			);
 			name = Runner;
 			packageProductDependencies = (
@@ -281,11 +356,19 @@
 			projectRoot = "";
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
+				63C63C245D7F38BFF091CEC3 /* TopShelfExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		64CEA7DE6B9394CE88783302 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		97C146EC1CF9000F007C117D /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -388,10 +471,28 @@
 				81F08E404EBEB19B00FF148D /* ConnectivityPlusPlugin.swift in Sources */,
 				A7596F780E93AF0BE3838A26 /* ConnectivityProvider.swift in Sources */,
 				CD1C0534948840272E58248E /* PathMonitorConnectivityProvider.swift in Sources */,
+				D2A548D9DE1A0F319B30B74C /* SystemShelfPlugin.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B1C48839AB6C24EF099DDFA3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				28DB4404B17342F46BC2B0A1 /* TopShelfProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F0399FC35D3A6ED67E74810D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = TopShelfExtension;
+			target = 63C63C245D7F38BFF091CEC3 /* TopShelfExtension */;
+			targetProxy = 3E4E59C5E29F44BA64BEB559 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		97C146FA1CF9000F007C117D /* Main.storyboard */ = {
@@ -470,6 +571,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -499,6 +601,98 @@
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Profile;
+		};
+		37D721B4A1E3E0EDC16D1456 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9740EEB31CF90195004384FC /* Generated.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = TopShelfExtension/TopShelfExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = G88U5B5783;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = TopShelfExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.TopShelfExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 14.0;
+			};
+			name = Debug;
+		};
+		4A02CC70113C79647D6EEB12 /* Profile */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9740EEB31CF90195004384FC /* Generated.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = TopShelfExtension/TopShelfExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = G88U5B5783;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = TopShelfExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.TopShelfExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 14.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Profile;
+		};
+		65F6020FE0DF48006BADE49C /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9740EEB31CF90195004384FC /* Generated.xcconfig */;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = TopShelfExtension/TopShelfExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
+				DEVELOPMENT_TEAM = G88U5B5783;
+				ENABLE_BITCODE = NO;
+				INFOPLIST_FILE = TopShelfExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = "$(FLUTTER_BUILD_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.edde746.plezy.TopShelfExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = appletvos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 14.0;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
 		};
 		97C147031CF9000F007C117D /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -614,6 +808,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -651,6 +846,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_ENTITLEMENTS = Runner/Runner.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
@@ -700,6 +896,16 @@
 				97C147061CF9000F007C117D /* Debug */,
 				97C147071CF9000F007C117D /* Release */,
 				249021D4217E4FDB00AE95B9 /* Profile */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		C995F7A5B711B6DB7E97B000 /* Build configuration list for PBXNativeTarget "TopShelfExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				65F6020FE0DF48006BADE49C /* Release */,
+				37D721B4A1E3E0EDC16D1456 /* Debug */,
+				4A02CC70113C79647D6EEB12 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

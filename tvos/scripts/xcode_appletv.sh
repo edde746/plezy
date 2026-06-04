@@ -21,6 +21,12 @@ else
 fi
 
 ReadPubspecVersion() {
+  if [[ -n "${FLUTTER_BUILD_NAME:-}" && -n "${FLUTTER_BUILD_NUMBER:-}" ]]; then
+    export FLUTTER_BUILD_NAME
+    export FLUTTER_BUILD_NUMBER
+    return 0
+  fi
+
   local app_path="${FLUTTER_APPLICATION_PATH:-}"
   if [[ -z "$app_path" ]]; then
     if [[ -n "${PROJECT_DIR:-}" ]]; then
@@ -98,6 +104,13 @@ SyncRunnerVersion() {
   echo " └─Syncing Runner version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
   SetPlistString "$plist" CFBundleShortVersionString "$FLUTTER_BUILD_NAME"
   SetPlistString "$plist" CFBundleVersion "$FLUTTER_BUILD_NUMBER"
+
+  local top_shelf_plist="$TARGET_BUILD_DIR/$WRAPPER_NAME/PlugIns/TopShelfExtension.appex/Info.plist"
+  if [[ -f "$top_shelf_plist" ]]; then
+    echo " └─Syncing TopShelfExtension version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
+    SetPlistString "$top_shelf_plist" CFBundleShortVersionString "$FLUTTER_BUILD_NAME"
+    SetPlistString "$top_shelf_plist" CFBundleVersion "$FLUTTER_BUILD_NUMBER"
+  fi
 }
 
 EngineOutputExists() {

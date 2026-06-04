@@ -61,7 +61,7 @@ import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
 import '../theme/mono_tokens.dart';
-import '../services/watch_next_service.dart';
+import '../services/system_shelf_service.dart';
 import 'auth_screen.dart';
 import 'libraries/content_state_builder.dart';
 import 'main_screen.dart';
@@ -769,10 +769,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         _heroFocusNode.requestFocus();
       }
 
-      // Sync to Android TV Watch Next row
-      if (Platform.isAndroid) {
-        unawaited(_syncWatchNext(onDeck));
-      }
+      unawaited(_syncSystemShelf(onDeck));
 
       // Sync PageController to first page after OnDeck loads
       if (_heroController.hasClients && onDeck.isNotEmpty) {
@@ -875,10 +872,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           }
         });
 
-        // Sync to Android TV Watch Next row
-        if (Platform.isAndroid) {
-          unawaited(_syncWatchNext(onDeck));
-        }
+        unawaited(_syncSystemShelf(onDeck));
 
         appLogger.d('Continue Watching refreshed successfully');
       }
@@ -901,16 +895,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
-  /// Sync On Deck items to Android TV Watch Next row.
-  Future<void> _syncWatchNext(List<MediaItem> onDeck) async {
+  /// Sync Continue Watching items to the platform launcher shelf.
+  Future<void> _syncSystemShelf(List<MediaItem> onDeck) async {
     try {
-      await WatchNextService().syncFromOnDeck(
+      await SystemShelfService().syncFromContinueWatching(
         onDeck,
         (serverId) => context.getMediaClientWithFallback(serverId),
         hideSpoilers: context.settingsRead(SettingsService.hideSpoilers),
       );
     } catch (e) {
-      appLogger.w('Failed to sync Watch Next', error: e);
+      appLogger.w('Failed to sync system shelf', error: e);
     }
   }
 

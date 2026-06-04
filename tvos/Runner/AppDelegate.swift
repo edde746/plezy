@@ -128,6 +128,10 @@ import wakelock_plus
 
     application.beginReceivingRemoteControlEvents()
 
+    if let url = launchOptions?[UIApplication.LaunchOptionsKey.url] as? URL {
+      _ = SystemShelfPlugin.handleOpenURL(url)
+    }
+
     if let r = self.registrar(forPlugin: "SharedPreferencesPlugin") {
       SharedPreferencesPlugin.register(with: r)
     }
@@ -155,7 +159,21 @@ import wakelock_plus
     if let r = self.registrar(forPlugin: "WakelockPlusPlugin") {
       WakelockPlusPlugin.register(with: r)
     }
+    if let r = self.registrar(forPlugin: "SystemShelfPlugin") {
+      SystemShelfPlugin.register(with: r)
+    }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  override func application(
+    _ application: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    if SystemShelfPlugin.handleOpenURL(url) {
+      return true
+    }
+    return super.application(application, open: url, options: options)
   }
 }

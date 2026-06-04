@@ -55,7 +55,7 @@ import 'search_screen.dart';
 import 'downloads/downloads_screen.dart';
 import 'settings/settings_screen.dart';
 import 'profile/profile_switch_screen.dart';
-import '../services/watch_next_service.dart';
+import '../services/system_shelf_service.dart';
 import '../watch_together/watch_together.dart';
 
 /// Provides access to the main screen's focus control.
@@ -334,7 +334,7 @@ class _MainScreenState extends State<MainScreen>
     // Set up Watch Together callbacks immediately (must be synchronous to catch early messages)
     if (!_isOffline) {
       _setupWatchTogetherCallback();
-      _setupWatchNextDeepLink();
+      _setupSystemShelfDeepLink();
     }
 
     // Wire profile binder + tracker bootstrap (skip in offline mode)
@@ -646,35 +646,35 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
-  /// Set up Watch Next deep link handling for Android TV launcher taps
-  void _setupWatchNextDeepLink() {
-    if (!Platform.isAndroid) return;
+  /// Set up launcher shelf deep link handling for Android TV and tvOS taps.
+  void _setupSystemShelfDeepLink() {
+    if (!Platform.isAndroid && !PlatformDetector.isAppleTV()) return;
 
-    final watchNext = WatchNextService();
+    final systemShelf = SystemShelfService();
 
     // Listen for deep links when app is already running (warm start)
-    watchNext.onWatchNextTap = (contentId) {
-      appLogger.d('Watch Next tap: $contentId');
-      _handleWatchNextContentId(contentId);
+    systemShelf.onShelfItemTap = (contentId) {
+      appLogger.d('System shelf tap: $contentId');
+      _handleShelfContentId(contentId);
     };
 
     // Check for pending deep link from cold start
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final contentId = await watchNext.getInitialDeepLink();
+      final contentId = await systemShelf.getInitialDeepLink();
       if (contentId != null && mounted) {
-        appLogger.d('Watch Next initial deep link: $contentId');
-        unawaited(_handleWatchNextContentId(contentId));
+        appLogger.d('System shelf initial deep link: $contentId');
+        unawaited(_handleShelfContentId(contentId));
       }
     });
   }
 
-  /// Handle a Watch Next content ID by fetching metadata and starting playback
-  Future<void> _handleWatchNextContentId(String contentId) async {
+  /// Handle a launcher shelf content ID by fetching metadata and starting playback.
+  Future<void> _handleShelfContentId(String contentId) async {
     if (!mounted) return;
 
-    final parsed = WatchNextService.parseContentId(contentId);
+    final parsed = SystemShelfService.parseContentId(contentId);
     if (parsed == null) {
-      appLogger.w('Watch Next: invalid content ID: $contentId');
+      appLogger.w('System shelf: invalid content ID: $contentId');
       return;
     }
 
@@ -685,7 +685,7 @@ class _MainScreenState extends State<MainScreen>
       final client = multiServer.getClientForServer(serverId);
 
       if (client == null) {
-        appLogger.w('Watch Next: server $serverId not available');
+        appLogger.w('System shelf: server $serverId not available');
         return;
       }
 
@@ -695,7 +695,7 @@ class _MainScreenState extends State<MainScreen>
 
       unawaited(navigateToVideoPlayer(context, metadata: metadata));
     } catch (e) {
-      appLogger.e('Watch Next: failed to navigate to media', error: e);
+      appLogger.e('System shelf: failed to navigate to media', error: e);
     }
   }
 

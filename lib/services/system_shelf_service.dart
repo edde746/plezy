@@ -1,101 +1,119 @@
 import 'dart:io' show Platform;
-import '../media/ids.dart';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../utils/app_logger.dart';
+import '../utils/platform_detector.dart';
 import 'settings_service.dart' show EpisodePosterMode;
 
-/// Service for syncing On Deck / Continue Watching content to Android TV's Watch Next row.
-class WatchNextService {
-  static const MethodChannel _channel = MethodChannel('com.plezy/watch_next');
+/// Syncs Continue Watching content to platform launcher surfaces.
+///
+/// Android uses the Watch Next row. tvOS uses the app's Top Shelf extension.
+class SystemShelfService {
+  static const MethodChannel _androidChannel = MethodChannel('com.plezy/watch_next');
+  static const MethodChannel _tvosChannel = MethodChannel('com.plezy/system_shelf');
 
-  static final WatchNextService _instance = WatchNextService._internal();
-  factory WatchNextService() => _instance;
+  static final SystemShelfService _instance = SystemShelfService._internal();
+  factory SystemShelfService() => _instance;
 
-  WatchNextService._internal() {
-    _channel.setMethodCallHandler(_handleMethodCall);
+  SystemShelfService._internal() {
+    _androidChannel.setMethodCallHandler(_handleMethodCall);
+    _tvosChannel.setMethodCallHandler(_handleMethodCall);
   }
 
-  /// Callback for when a Watch Next item is tapped (warm start deep link).
-  ValueChanged<String>? onWatchNextTap;
+  /// Callback for warm-start launcher surface taps.
+  ValueChanged<String>? onShelfItemTap;
+
+  MethodChannel? get _channel {
+    if (Platform.isAndroid) return _androidChannel;
+    if (Platform.isIOS && PlatformDetector.isAppleTV()) return _tvosChannel;
+    return null;
+  }
 
   Future<dynamic> _handleMethodCall(MethodCall call) async {
-    if (call.method == 'onWatchNextTap') {
-      final contentId = call.arguments['contentId'] as String?;
+    if (call.method == 'onWatchNextTap' || call.method == 'onShelfItemTap') {
+      final args = call.arguments;
+      final contentId = args is Map ? args['contentId'] as String? : null;
       if (contentId != null) {
-        onWatchNextTap?.call(contentId);
+        onShelfItemTap?.call(contentId);
       }
     }
   }
 
   /// Get a pending deep link from cold start (consumed on first call).
   Future<String?> getInitialDeepLink() async {
-    if (!Platform.isAndroid) return null;
+    final channel = _channel;
+    if (channel == null) return null;
     try {
-      return await _channel.invokeMethod<String>('getInitialDeepLink');
+      return await channel.invokeMethod<String>('getInitialDeepLink');
     } catch (e) {
-      appLogger.w('Failed to get initial deep link', error: e);
+      appLogger.w('Failed to get system shelf initial deep link', error: e);
       return null;
     }
   }
 
-  /// Check if Watch Next is supported (Android TV only).
+  /// Check whether the current platform has a launcher shelf integration.
   Future<bool> isSupported() async {
-    if (!Platform.isAndroid) return false;
+    final channel = _channel;
+    if (channel == null) return false;
     try {
-      return await _channel.invokeMethod<bool>('isSupported') ?? false;
-    } catch (e) {
+      return await channel.invokeMethod<bool>('isSupported') ?? false;
+    } catch (_) {
       return false;
     }
   }
 
-  /// Sync On Deck items to Watch Next row.
-  Future<bool> syncFromOnDeck(
-    List<MediaItem> onDeckItems,
+  /// Sync Continue Watching items to the current platform's launcher shelf.
+  Future<bool> syncFromContinueWatching(
+    List<MediaItem> continueWatchingItems,
     MediaServerClient Function(ServerId serverId) getClientForServerId, {
     bool hideSpoilers = false,
   }) async {
-    if (!Platform.isAndroid) return false;
+    final channel = _channel;
+    if (channel == null) return false;
 
     try {
       final supported = await isSupported();
       if (!supported) return false;
 
-      final items = onDeckItems.map((item) {
-        return _convertToWatchNextItem(item, getClientForServerId, hideSpoilers: hideSpoilers);
+      final items = continueWatchingItems.map((item) {
+        return _convertToShelfItem(item, getClientForServerId, hideSpoilers: hideSpoilers);
       }).toList();
 
-      return await _channel.invokeMethod<bool>('sync', {'items': items}) ?? false;
+      return await channel.invokeMethod<bool>('sync', {'items': items}) ?? false;
     } catch (e) {
-      appLogger.e('Failed to sync Watch Next', error: e);
+      appLogger.e('Failed to sync system shelf', error: e);
       return false;
     }
   }
 
-  /// Clear all Watch Next entries.
+  /// Clear all launcher shelf entries owned by the app.
   Future<bool> clear() async {
-    if (!Platform.isAndroid) return false;
+    final channel = _channel;
+    if (channel == null) return false;
     try {
-      return await _channel.invokeMethod<bool>('clear') ?? false;
+      return await channel.invokeMethod<bool>('clear') ?? false;
     } catch (e) {
-      appLogger.e('Failed to clear Watch Next', error: e);
+      appLogger.e('Failed to clear system shelf', error: e);
       return false;
     }
   }
 
-  /// Remove a single item from Watch Next.
+  /// Remove a single launcher shelf item.
   Future<bool> removeItem(ServerId serverId, String ratingKey) async {
-    if (!Platform.isAndroid) return false;
+    final channel = _channel;
+    if (channel == null) return false;
     try {
       final contentId = _buildContentId(serverId, ratingKey);
-      return await _channel.invokeMethod<bool>('remove', {'contentId': contentId}) ?? false;
+      return await channel.invokeMethod<bool>('remove', {'contentId': contentId}) ?? false;
     } catch (e) {
-      appLogger.e('Failed to remove Watch Next item', error: e);
+      appLogger.e('Failed to remove system shelf item', error: e);
       return false;
     }
   }
@@ -113,7 +131,7 @@ class WatchNextService {
     return (ServerId(parts.first), parts.sublist(1).join('_'));
   }
 
-  Map<String, dynamic> _convertToWatchNextItem(
+  Map<String, dynamic> _convertToShelfItem(
     MediaItem item,
     MediaServerClient Function(ServerId serverId) getClientForServerId, {
     bool hideSpoilers = false,
@@ -134,7 +152,7 @@ class WatchNextService {
         }
       }
     } catch (e) {
-      appLogger.w('Failed to get poster URL for Watch Next: ${item.title}', error: e);
+      appLogger.w('Failed to get shelf poster URL for ${item.title}', error: e);
     }
 
     final String title;
