@@ -20,6 +20,7 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../utils/video_player_navigation.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/app_menu.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
@@ -430,28 +431,23 @@ class _RecentRoomTile extends StatelessWidget {
   void _showActions(BuildContext context) {
     OverlaySheetController.showAdaptive(
       context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: .min,
-          children: [
-            ListTile(
-              leading: const Icon(Symbols.edit_rounded),
-              title: Text(t.watchTogether.renameRoom),
-              onTap: () {
-                OverlaySheetController.closeAdaptive(context);
-                onRename();
-              },
-            ),
-            ListTile(
-              leading: Icon(Symbols.delete_rounded, color: Theme.of(context).colorScheme.error),
-              title: Text(t.watchTogether.removeRoom, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-              onTap: () {
-                OverlaySheetController.closeAdaptive(context);
-                onRemove();
-              },
-            ),
-          ],
-        ),
+      builder: (context) => AppMenuSheet<String>(
+        entries: [
+          AppMenuItem(value: 'rename', icon: Symbols.edit_rounded, label: t.watchTogether.renameRoom),
+          AppMenuItem(
+            value: 'remove',
+            icon: Symbols.delete_rounded,
+            label: t.watchTogether.removeRoom,
+            destructive: true,
+          ),
+        ],
+        onSelected: (value) {
+          if (value == 'rename') {
+            onRename();
+          } else if (value == 'remove') {
+            onRemove();
+          }
+        },
       ),
     );
   }

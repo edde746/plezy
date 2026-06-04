@@ -13,6 +13,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../mixins/settings_effect_mixin.dart';
 import '../../services/settings_service.dart';
+import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/settings_builder.dart';
@@ -226,8 +227,8 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with SettingsEffectMi
                       }
                     },
                     itemBuilder: (context) => [
-                      PopupMenuItem(value: 'load', child: Text(t.mpvConfig.loadPreset)),
-                      PopupMenuItem(value: 'delete', child: Text(t.mpvConfig.deletePreset)),
+                      AppMenuItem(value: 'load', label: t.mpvConfig.loadPreset),
+                      AppMenuItem(value: 'delete', label: t.mpvConfig.deletePreset),
                     ],
                   ),
                   onTap: () => _loadPreset(preset),

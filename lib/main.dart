@@ -913,7 +913,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                         // Siri Remote select + gamepad A report as
                         // LogicalKeyboardKey.{select,gameButtonA} which aren't
                         // in Flutter's default shortcut set — Material-level
-                        // widgets (PopupMenuItem, showModalBottomSheet actions)
+                        // widgets (menu items, showModalBottomSheet actions)
                         // ignore them. Map both to ActivateIntent so tapping
                         // select on tvOS activates the focused widget.
                         shortcuts: <ShortcutActivator, Intent>{

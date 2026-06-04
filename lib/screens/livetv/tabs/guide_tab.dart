@@ -24,6 +24,7 @@ import '../../../utils/live_tv_matching.dart';
 import '../../../utils/media_image_helper.dart';
 import '../../../utils/live_tv_player_navigation.dart';
 import '../../../widgets/app_icon.dart';
+import '../../../widgets/app_menu.dart';
 import '../../../widgets/clickable_cursor.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../widgets/optimized_media_image.dart';
@@ -857,114 +858,90 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     (t.liveTv.lateNight, 22),
   ];
 
-  RelativeRect _menuPosition() {
+  Rect? _menuAnchorRect() {
     final renderBox = _dayPickerKey.currentContext?.findRenderObject() as RenderBox?;
-    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
-    if (renderBox == null || overlay == null) return RelativeRect.fill;
+    if (renderBox == null) return null;
 
     final buttonPos = renderBox.localToGlobal(Offset.zero);
     final buttonSize = renderBox.size;
-    return RelativeRect.fromRect(
-      Rect.fromLTWH(buttonPos.dx, buttonPos.dy + buttonSize.height, buttonSize.width, 0),
-      Offset.zero & overlay.size,
-    );
+    return Rect.fromLTWH(buttonPos.dx, buttonPos.dy, buttonSize.width, buttonSize.height);
   }
 
-  void _showDayPicker() {
+  Future<void> _showDayPicker() async {
+    final anchorRect = _menuAnchorRect();
+    if (anchorRect == null) return;
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final gridDay = DateTime(_gridStart.year, _gridStart.month, _gridStart.day);
-    final theme = Theme.of(context);
 
     final days = <DateTime>[];
     for (var i = 0; i < 8; i++) {
       days.add(today.add(Duration(days: i)));
     }
 
-    showMenu<Object>(
-      context: context,
-      position: _menuPosition(),
-      items: [
-        PopupMenuItem<String>(
-          value: 'now',
-          child: Text(t.liveTv.now, style: theme.textTheme.bodyMedium),
-        ),
+    final value = await showAppMenu<Object>(
+      context,
+      anchorRect: anchorRect,
+      focusFirstItem: InputModeTracker.isKeyboardMode(context),
+      entries: [
+        AppMenuItem<Object>(value: 'now', label: t.liveTv.now),
         ...days.map((day) {
           final isSelected = day == gridDay;
           final label = _dayLabel(day);
-          return PopupMenuItem<DateTime>(
-            value: day,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    label,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: isSelected ? theme.colorScheme.primary : null),
-                  ),
-                ),
-                if (isSelected) AppIcon(Symbols.check_rounded, size: 18, color: theme.colorScheme.primary),
-              ],
-            ),
-          );
+          return AppMenuItem<Object>(value: day, label: label, selected: isSelected);
         }),
       ],
-    ).then((value) {
-      if (!mounted) return;
-      if (value == null) {
-        _guideFocusNode.requestFocus();
-        return;
-      }
-      if (value is String && value == 'now') {
-        _jumpToNow();
-        _guideFocusNode.requestFocus();
-      } else if (value is DateTime) {
-        _showTimeSlotPicker(value);
-      }
-    });
+    );
+    if (!mounted) return;
+    if (value == null) {
+      _guideFocusNode.requestFocus();
+      return;
+    }
+    if (value is String && value == 'now') {
+      _jumpToNow();
+      _guideFocusNode.requestFocus();
+    } else if (value is DateTime) {
+      await _showTimeSlotPicker(value);
+    }
   }
 
-  void _showTimeSlotPicker(DateTime day) {
-    final theme = Theme.of(context);
+  Future<void> _showTimeSlotPicker(DateTime day) async {
+    final anchorRect = _menuAnchorRect();
+    if (anchorRect == null) return;
+
     final label = _dayLabel(day).toUpperCase();
 
-    showMenu<int>(
-      context: context,
-      position: _menuPosition(),
-      items: [
-        PopupMenuItem<int>(
+    final value = await showAppMenu<int>(
+      context,
+      anchorRect: anchorRect,
+      focusFirstItem: InputModeTracker.isKeyboardMode(context),
+      entries: [
+        AppMenuItem<int>(
           value: -1,
-          child: Row(
-            children: [
-              AppIcon(Symbols.chevron_left_rounded, size: 20, color: theme.colorScheme.onSurface),
-              const SizedBox(width: 8),
-              Text(label, style: theme.textTheme.titleSmall?.copyWith(fontWeight: .bold)),
-            ],
-          ),
+          icon: Symbols.chevron_left_rounded,
+          child: Text(label, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: .bold)),
         ),
-        const PopupMenuDivider(),
+        const AppMenuDivider<int>(),
         ..._timeSlots.map((slot) {
-          return PopupMenuItem<int>(
-            value: slot.$2,
-            child: Text(slot.$1, style: theme.textTheme.bodyMedium),
-          );
+          return AppMenuItem<int>(value: slot.$2, label: slot.$1);
         }),
       ],
-    ).then((value) {
-      if (value == null) {
-        _guideFocusNode.requestFocus();
-        return;
-      }
-      if (value == -1) {
-        _showDayPicker();
-        return;
-      }
-      setState(() {
-        _gridStart = DateTime(day.year, day.month, day.day, value);
-        _gridEnd = _gridStart.add(const Duration(hours: 6));
-      });
-      _loadPrograms();
+    );
+    if (value == null) {
       _guideFocusNode.requestFocus();
+      return;
+    }
+    if (value == -1) {
+      await _showDayPicker();
+      return;
+    }
+    setState(() {
+      _gridStart = DateTime(day.year, day.month, day.day, value);
+      _gridEnd = _gridStart.add(const Duration(hours: 6));
     });
+    _loadPrograms();
+    _guideFocusNode.requestFocus();
   }
 
   Widget _timeNavFocusWrap({required Widget child, required int index, required ThemeData theme}) {

@@ -1,7 +1,6 @@
 import 'dart:async';
 import '../media/ids.dart';
 import 'dart:io';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -38,18 +37,16 @@ import '../utils/media_server_http_client.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/dialogs.dart';
-import '../utils/focus_utils.dart';
 import '../services/external_player_service.dart';
 import '../focus/focusable_button.dart';
 import '../focus/focusable_text_field.dart';
-import '../focus/dpad_navigator.dart';
 import '../screens/plex_match_screen.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/metadata_edit_screen.dart';
 import '../utils/smart_deletion_handler.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
-import '../theme/mono_tokens.dart';
+import '../widgets/app_menu.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import 'pill_input_decoration.dart';
 import '../widgets/focusable_list_tile.dart';
@@ -61,18 +58,9 @@ class _MenuAction {
   final String value;
   final IconData icon;
   final String label;
-  final Color? hoverColor;
-  final Color? foregroundColor;
+  final bool destructive;
 
-  _MenuAction({required this.value, required this.icon, required this.label, this.hoverColor, this.foregroundColor});
-}
-
-Color _destructiveMenuForeground(BuildContext context) {
-  final colorScheme = Theme.of(context).colorScheme;
-  if (colorScheme.brightness != Brightness.dark) return colorScheme.error;
-
-  final error = HSLColor.fromColor(colorScheme.error);
-  return error.withLightness(error.lightness < 0.72 ? 0.72 : error.lightness).toColor();
+  _MenuAction({required this.value, required this.icon, required this.label, this.destructive = false});
 }
 
 bool isAdminActionAllowedForMediaItem({
@@ -272,7 +260,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         }
       }
 
-      menuActions.add(_MenuAction(value: 'delete', icon: Symbols.delete_rounded, label: t.common.delete));
+      menuActions.add(
+        _MenuAction(value: 'delete', icon: Symbols.delete_rounded, label: t.common.delete, destructive: true),
+      );
     } else {
       if (hasActiveProgress) {
         menuActions.add(
@@ -441,12 +431,22 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           );
           if (hasAnyDownload) {
             menuActions.add(
-              _MenuAction(value: 'delete_download', icon: Symbols.delete_rounded, label: t.downloads.deleteDownload),
+              _MenuAction(
+                value: 'delete_download',
+                icon: Symbols.delete_rounded,
+                label: t.downloads.deleteDownload,
+                destructive: true,
+              ),
             );
           }
         } else if (hasAnyDownload) {
           menuActions.add(
-            _MenuAction(value: 'delete_download', icon: Symbols.delete_rounded, label: t.downloads.deleteDownload),
+            _MenuAction(
+              value: 'delete_download',
+              icon: Symbols.delete_rounded,
+              label: t.downloads.deleteDownload,
+              destructive: true,
+            ),
           );
         } else {
           menuActions.add(
@@ -480,8 +480,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
             value: 'delete_media',
             icon: Symbols.delete_forever_rounded,
             label: t.mediaMenu.deleteFromServer,
-            hoverColor: Theme.of(context).colorScheme.error,
-            foregroundColor: _destructiveMenuForeground(context),
+            destructive: true,
           ),
         );
       }
@@ -496,57 +495,27 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       selected = await OverlaySheetController.showAdaptive<String>(
         context,
         showDragHandle: true,
-        builder: (context) => _FocusableContextMenuSheet(
+        builder: (context) => AppMenuSheet<String>(
           title: _itemDisplayTitle(),
-          actions: menuActions,
+          entries: _menuEntries(menuActions),
           focusFirstItem: openedFromKeyboard,
         ),
       );
     } else {
-      final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
-
       Offset position;
       if (_tapPosition != null) {
         position = _tapPosition!;
       } else {
+        final RenderBox? overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
         final RenderBox renderBox = context.findRenderObject() as RenderBox;
         position = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
       }
 
-      selected = await showGeneralDialog<String>(
-        context: context,
-        barrierDismissible: true,
-        barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
-        barrierColor: Colors.transparent,
-        transitionDuration: const Duration(milliseconds: 120),
-        pageBuilder: (dialogContext, _, _) =>
-            _FocusablePopupMenu(actions: menuActions, position: position, focusFirstItem: openedFromKeyboard),
-        transitionBuilder: (dialogContext, animation, _, child) {
-          final curved = CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic,
-            reverseCurve: Curves.easeInCubic,
-          );
-          final screenSize = MediaQuery.sizeOf(dialogContext);
-          final alignment = Alignment(
-            screenSize.width <= 0 ? 0 : ((position.dx / screenSize.width) * 2 - 1).clamp(-1.0, 1.0).toDouble(),
-            screenSize.height <= 0 ? 0 : ((position.dy / screenSize.height) * 2 - 1).clamp(-1.0, 1.0).toDouble(),
-          );
-
-          return FadeTransition(
-            opacity: curved,
-            child: AnimatedBuilder(
-              animation: curved,
-              child: child,
-              builder: (context, child) => Transform.scale(
-                scale: 0.96 + curved.value * 0.04,
-                alignment: alignment,
-                transformHitTests: false,
-                child: child,
-              ),
-            ),
-          );
-        },
+      selected = await showAppMenu<String>(
+        context,
+        entries: _menuEntries(menuActions),
+        position: position,
+        focusFirstItem: openedFromKeyboard,
       );
     }
 
@@ -770,6 +739,18 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         });
       }
     }
+  }
+
+  List<AppMenuEntry<String>> _menuEntries(List<_MenuAction> actions) {
+    return [
+      for (final action in actions)
+        AppMenuItem<String>(
+          value: action.value,
+          icon: action.icon,
+          label: action.label,
+          destructive: action.destructive,
+        ),
+    ];
   }
 
   /// Execute an action with error handling and refresh
@@ -1873,199 +1854,6 @@ class _CollectionSelectionDialogState extends State<_CollectionSelectionDialog> 
           child: TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
         ),
       ],
-    );
-  }
-}
-
-/// Focusable context menu sheet for keyboard/gamepad navigation (mobile)
-class _FocusableContextMenuSheet extends StatefulWidget {
-  final String title;
-  final List<_MenuAction> actions;
-  final bool focusFirstItem;
-
-  const _FocusableContextMenuSheet({required this.title, required this.actions, this.focusFirstItem = false});
-
-  @override
-  State<_FocusableContextMenuSheet> createState() => _FocusableContextMenuSheetState();
-}
-
-class _FocusableContextMenuSheetState extends State<_FocusableContextMenuSheet> {
-  late final FocusNode _initialFocusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _initialFocusNode = FocusNode(debugLabel: 'ContextMenuSheetInitialFocus');
-  }
-
-  @override
-  void dispose() {
-    _initialFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: .min,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          child: Text(widget.title, style: Theme.of(context).textTheme.titleMedium, maxLines: 1, overflow: .ellipsis),
-        ),
-        Flexible(
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: .min,
-              children: [
-                ...widget.actions.asMap().entries.map((entry) {
-                  final index = entry.key;
-                  final action = entry.value;
-                  return FocusableListTile(
-                    key: ValueKey(action.value),
-                    focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
-                    leading: AppIcon(action.icon, fill: 1),
-                    title: Text(action.label),
-                    onTap: () => OverlaySheetController.closeAdaptive(context, action.value),
-                    hoverColor: action.hoverColor,
-                    textColor: action.foregroundColor,
-                    iconColor: action.foregroundColor,
-                  );
-                }),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// Focusable popup menu for keyboard/gamepad navigation (desktop)
-class _FocusablePopupMenu extends StatefulWidget {
-  final List<_MenuAction> actions;
-  final Offset position;
-  final bool focusFirstItem;
-
-  const _FocusablePopupMenu({required this.actions, required this.position, this.focusFirstItem = false});
-
-  @override
-  State<_FocusablePopupMenu> createState() => _FocusablePopupMenuState();
-}
-
-class _FocusablePopupMenuState extends State<_FocusablePopupMenu> {
-  late final FocusNode _initialFocusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _initialFocusNode = FocusNode(debugLabel: 'PopupMenuInitialFocus');
-    if (widget.focusFirstItem) {
-      FocusUtils.requestFocusAfterBuild(this, _initialFocusNode);
-    }
-  }
-
-  @override
-  void dispose() {
-    _initialFocusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final screenSize = MediaQuery.sizeOf(context);
-    const menuWidth = 220.0;
-
-    // Treat the requested origin as the menu center, then clamp to screen bounds.
-    const edgePadding = 8.0;
-    final estimatedHeight = widget.actions.length * 48.0 + 16;
-    final maxLeft = screenSize.width - menuWidth - edgePadding;
-    final left = (widget.position.dx - menuWidth / 2)
-        .clamp(edgePadding, maxLeft < edgePadding ? edgePadding : maxLeft)
-        .toDouble();
-
-    final availableHeight = screenSize.height - edgePadding * 2;
-    final menuHeight = availableHeight <= 0 ? 0.0 : estimatedHeight.clamp(0.0, availableHeight).toDouble();
-    final maxTop = screenSize.height - menuHeight - edgePadding;
-    final top = (widget.position.dy - menuHeight / 2)
-        .clamp(edgePadding, maxTop < edgePadding ? edgePadding : maxTop)
-        .toDouble();
-    final maxHeight = menuHeight;
-
-    return FocusScope(
-      // When opened via mouse, don't autofocus any item — let hover handle highlights.
-      // When opened via keyboard/dpad, autofocus is handled by _initialFocusNode.
-      autofocus: false,
-      child: Focus(
-        canRequestFocus: false,
-        skipTraversal: true,
-        onKeyEvent: (node, event) {
-          if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
-            return KeyEventResult.handled;
-          }
-          if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
-            return KeyEventResult.handled;
-          }
-          return KeyEventResult.ignored;
-        },
-        child: Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: (event) {
-            if ((event.buttons & kSecondaryMouseButton) != 0) {
-              Navigator.pop(context);
-            }
-          },
-          child: Stack(
-            children: [
-              // Barrier to close menu when clicking outside
-              Positioned.fill(
-                child: GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  behavior: HitTestBehavior.opaque,
-                  child: const ColoredBox(color: Colors.transparent),
-                ),
-              ),
-              // Menu
-              Positioned(
-                left: left,
-                top: top,
-                child: Material(
-                  elevation: 8,
-                  color: Color.alphaBlend(
-                    Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
-                    Theme.of(context).colorScheme.surface,
-                  ),
-                  borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                  clipBehavior: Clip.antiAlias,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth, maxHeight: maxHeight),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        mainAxisSize: .min,
-                        crossAxisAlignment: .stretch,
-                        children: widget.actions.asMap().entries.map((entry) {
-                          final index = entry.key;
-                          final action = entry.value;
-                          return FocusableListTile(
-                            key: ValueKey(action.value),
-                            focusNode: index == 0 && widget.focusFirstItem ? _initialFocusNode : null,
-                            leading: AppIcon(action.icon, fill: 1, size: 20),
-                            title: Text(action.label),
-                            onTap: () => Navigator.pop(context, action.value),
-                            hoverColor: action.hoverColor,
-                            textColor: action.foregroundColor,
-                            iconColor: action.foregroundColor,
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

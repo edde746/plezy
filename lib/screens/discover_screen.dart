@@ -27,6 +27,7 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../widgets/hub_section.dart';
+import '../widgets/app_menu.dart';
 import '../widgets/clickable_cursor.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/profile_switching_overlay.dart';
@@ -210,6 +211,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // Hero and app bar focus
   late FocusNode _heroFocusNode;
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
+  final _userMenuKey = GlobalKey<AppMenuButtonState<String>>();
 
   /// Backend-neutral hero client lookup. Returns the actual
   /// [MediaServerClient] for the item's server (Plex or Jellyfin) so
@@ -1099,7 +1101,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileSwitchScreen()));
   }
 
-  /// Build the [FocusableAction] wrapping the user-menu PopupMenuButton.
+  /// Build the [FocusableAction] wrapping the user menu.
   /// Pulls live state from [ActiveProfileProvider]; the menu reuses
   /// [_userMenuItems] for the menu contents so d-pad and tap paths
   /// stay in sync.
@@ -1109,60 +1111,42 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final profiles = activeProvider.profiles;
 
     return FocusableAction(
-      onPressed: _switchingProfile ? null : () => _showUserMenu(context),
-      child: PopupMenuButton<String>(
+      onPressed: _switchingProfile ? null : () => _userMenuKey.currentState?.showButtonMenu(focusFirstItem: true),
+      child: AppMenuButton<String>(
+        key: _userMenuKey,
         enabled: !_switchingProfile,
         icon: active != null
             ? ProfileAvatar(profile: active, size: 32)
             : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32, color: Colors.white),
-        itemBuilder: (context) => _userMenuItems(context, activeProfile: active, profiles: profiles),
+        tooltip: t.profiles.sectionTitle,
+        anchorAlignment: AppMenuAnchorAlignment.end,
+        onSelected: (value) => unawaited(_handleUserMenuAction(context, value)),
+        entriesBuilder: (context) => _userMenuItems(context, activeProfile: active, profiles: profiles),
       ),
     );
   }
 
-  List<PopupMenuEntry<String>> _userMenuItems(
+  List<AppMenuEntry<String>> _userMenuItems(
     BuildContext context, {
     required Profile? activeProfile,
     required List<Profile> profiles,
   }) {
     final theme = Theme.of(context);
     final switchable = profiles.where((p) => p.id != activeProfile?.id).toList();
-    void deferAction(String value) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) _handleUserMenuAction(context, value);
-      });
-    }
 
     return [
       for (final p in switchable)
-        PopupMenuItem<String>(
+        AppMenuItem<String>(
           value: 'profile:${p.id}',
-          onTap: () => deferAction('profile:${p.id}'),
-          child: Row(
-            children: [
-              ProfileAvatar(profile: p, size: 24),
-              const SizedBox(width: 12),
-              Expanded(child: Text(p.displayName, overflow: .ellipsis)),
-              if (p.isPinProtected) ...[
-                const SizedBox(width: 8),
-                AppIcon(Symbols.lock_rounded, fill: 1, size: 14, color: theme.colorScheme.onSurfaceVariant),
-              ],
-            ],
-          ),
+          leading: ProfileAvatar(profile: p, size: 24),
+          label: p.displayName,
+          trailing: p.isPinProtected
+              ? AppIcon(Symbols.lock_rounded, fill: 1, size: 14, color: theme.colorScheme.onSurfaceVariant)
+              : null,
         ),
-      if (switchable.isNotEmpty) const PopupMenuDivider(),
-      PopupMenuItem<String>(
-        value: 'manage_profiles',
-        onTap: () => deferAction('manage_profiles'),
-        child: const Row(children: [AppIcon(Symbols.group_rounded, fill: 1), SizedBox(width: 8), Text('Profiles')]),
-      ),
-      PopupMenuItem<String>(
-        value: 'logout',
-        onTap: () => deferAction('logout'),
-        child: Row(
-          children: [const AppIcon(Symbols.logout_rounded, fill: 1), const SizedBox(width: 8), Text(t.common.logout)],
-        ),
-      ),
+      if (switchable.isNotEmpty) const AppMenuDivider(),
+      AppMenuItem<String>(value: 'manage_profiles', icon: Symbols.group_rounded, label: t.profiles.sectionTitle),
+      AppMenuItem<String>(value: 'logout', icon: Symbols.logout_rounded, label: t.common.logout),
     ];
   }
 
@@ -1195,34 +1179,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         setState(() => _switchingProfile = false);
       }
     }
-  }
-
-  /// Show user menu programmatically (for D-pad select)
-  void _showUserMenu(BuildContext context) {
-    if (_switchingProfile) return;
-    final actionBar = _actionBarKey.currentState;
-    if (actionBar == null) return;
-    final lastNode = actionBar.getFocusNode(actionBar.widget.actions.length - 1);
-    final RenderBox? button = lastNode?.context?.findRenderObject() as RenderBox?;
-    if (button == null) return;
-
-    final RenderBox overlay = Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
-    final position = RelativeRect.fromRect(
-      Rect.fromPoints(
-        button.localToGlobal(Offset.zero, ancestor: overlay),
-        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
-      ),
-      Offset.zero & overlay.size,
-    );
-
-    final activeProvider = context.read<ActiveProfileProvider>();
-    unawaited(
-      showMenu<String>(
-        context: context,
-        position: position,
-        items: _userMenuItems(context, activeProfile: activeProvider.active, profiles: activeProvider.profiles),
-      ),
-    );
   }
 
   Widget _buildOverlaidAppBar() {

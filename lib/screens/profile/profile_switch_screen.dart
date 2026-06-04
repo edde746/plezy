@@ -25,6 +25,7 @@ import '../../utils/app_logger.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/app_menu.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
@@ -54,7 +55,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
   bool _allowPop = false;
   final Map<String, FocusNode> _profileFocusNodes = {};
   final Map<String, FocusNode> _profileMenuFocusNodes = {};
-  final Map<String, GlobalKey<PopupMenuButtonState<_TileAction>>> _profileMenuKeys = {};
+  final Map<String, GlobalKey<AppMenuButtonState<_TileAction>>> _profileMenuKeys = {};
   bool _focusRequested = false;
   bool _switching = false;
   Stream<ProfilesView>? _viewStream;
@@ -171,8 +172,8 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     return _profileMenuFocusNodes.putIfAbsent(profile.id, () => FocusNode(debugLabel: 'ProfileActions:${profile.id}'));
   }
 
-  GlobalKey<PopupMenuButtonState<_TileAction>> _profileMenuKey(Profile profile) {
-    return _profileMenuKeys.putIfAbsent(profile.id, () => GlobalKey<PopupMenuButtonState<_TileAction>>());
+  GlobalKey<AppMenuButtonState<_TileAction>> _profileMenuKey(Profile profile) {
+    return _profileMenuKeys.putIfAbsent(profile.id, () => GlobalKey<AppMenuButtonState<_TileAction>>());
   }
 
   void _pruneProfileFocusResources(Set<String> activeIds) {
@@ -389,7 +390,7 @@ class _ProfileTile extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onSignOut;
   final FocusNode menuFocusNode;
-  final GlobalKey<PopupMenuButtonState<_TileAction>> menuKey;
+  final GlobalKey<AppMenuButtonState<_TileAction>> menuKey;
   final VoidCallback onMenuNavigateLeft;
 
   const _ProfileTile({
@@ -487,7 +488,7 @@ class _ProfileTile extends StatelessWidget {
 }
 
 class _ProfileActionsButton extends StatelessWidget {
-  final GlobalKey<PopupMenuButtonState<_TileAction>> menuKey;
+  final GlobalKey<AppMenuButtonState<_TileAction>> menuKey;
   final FocusNode focusNode;
   final VoidCallback onNavigateLeft;
   final ValueChanged<_TileAction> onSelected;
@@ -511,7 +512,7 @@ class _ProfileActionsButton extends StatelessWidget {
       icon: const AppIcon(Symbols.more_vert_rounded, fill: 1),
       tooltip: t.profiles.manage,
       onSelected: onSelected,
-      itemBuilder: (_) => [for (final action in actions) PopupMenuItem(value: action, child: Text(action.label))],
+      itemBuilder: (_) => [for (final action in actions) AppMenuItem(value: action, label: action.label)],
     );
   }
 }
