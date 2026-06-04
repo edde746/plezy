@@ -313,6 +313,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     };
   }
 
+  void _showBrowseOptionsForCurrentTab() {
+    if (_visibleTabs.isEmpty) return;
+    final index = tabController.index.clamp(0, _visibleTabs.length - 1).toInt();
+    if (_visibleTabs[index] != LibraryTabType.browse) return;
+    final tabState = _browseTabKey.currentState;
+    if (tabState == null) return;
+    (tabState as dynamic).showBrowseOptionsSheet();
+  }
+
   /// Handle when a tab's data has finished loading
   void _handleTabDataLoaded(int tabIndex) {
     // Track that this tab has loaded
@@ -1003,6 +1012,24 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final currentTabIndex = _visibleTabs.isEmpty ? 0 : tabController.index.clamp(0, _visibleTabs.length - 1).toInt();
     final currentTabType = _visibleTabs.isEmpty ? null : _visibleTabs[currentTabIndex];
     final useTvRecommendedBackdrop = PlatformDetector.isTV() && currentTabType == LibraryTabType.recommended;
+    final showBrowseOptionsAction =
+        selectedLibrary != null && PlatformDetector.isMobile(context) && currentTabType == LibraryTabType.browse;
+
+    List<FocusableAction> appBarActions() => [
+      if (allLibraries.isNotEmpty)
+        FocusableAction(
+          icon: Symbols.edit_rounded,
+          tooltip: t.libraries.manageLibraries,
+          onPressed: _showLibraryManagementSheet,
+        ),
+      if (showBrowseOptionsAction)
+        FocusableAction(
+          icon: Symbols.tune_rounded,
+          tooltip: t.libraries.libraryOptions,
+          onPressed: _showBrowseOptionsForCurrentTab,
+        ),
+      FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: _refreshSelectedLibraryTabs),
+    ];
 
     Widget appBar({required bool floating}) => DesktopSliverAppBar(
       title: _buildAppBarTitle(visibleLibraries, selectedLibrary, groupByServer: groupByServerSetting),
@@ -1021,19 +1048,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           key: _actionBarKey,
           onNavigateLeft: () => getTabChipFocusNode(_visibleTabs.length - 1).requestFocus(),
           onNavigateDown: _focusCurrentTab,
-          actions: [
-            if (allLibraries.isNotEmpty)
-              FocusableAction(
-                icon: Symbols.edit_rounded,
-                tooltip: t.libraries.manageLibraries,
-                onPressed: _showLibraryManagementSheet,
-              ),
-            FocusableAction(
-              icon: Symbols.refresh_rounded,
-              tooltip: t.common.refresh,
-              onPressed: _refreshSelectedLibraryTabs,
-            ),
-          ],
+          actions: appBarActions(),
         ),
       ],
     );
@@ -1064,19 +1079,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               key: _actionBarKey,
               onNavigateLeft: () => getTabChipFocusNode(_visibleTabs.length - 1).requestFocus(),
               onNavigateDown: _focusCurrentTab,
-              actions: [
-                if (allLibraries.isNotEmpty)
-                  FocusableAction(
-                    icon: Symbols.edit_rounded,
-                    tooltip: t.libraries.manageLibraries,
-                    onPressed: _showLibraryManagementSheet,
-                  ),
-                FocusableAction(
-                  icon: Symbols.refresh_rounded,
-                  tooltip: t.common.refresh,
-                  onPressed: _refreshSelectedLibraryTabs,
-                ),
-              ],
+              actions: appBarActions(),
             ),
           ],
         ),

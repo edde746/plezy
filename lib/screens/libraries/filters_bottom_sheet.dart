@@ -19,6 +19,7 @@ class FiltersBottomSheet extends StatefulWidget {
   final Function(Map<String, String>) onFiltersChanged;
   final String serverId;
   final String libraryKey;
+  final VoidCallback? onBack;
 
   /// Optional pre-fetched values per filter name. When non-null the sheet
   /// reads from this instead of calling `client.getFilterValues` — used
@@ -33,6 +34,7 @@ class FiltersBottomSheet extends StatefulWidget {
     required this.onFiltersChanged,
     required this.serverId,
     required this.libraryKey,
+    this.onBack,
     this.cachedValues,
   });
 
@@ -182,7 +184,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     return BottomSheetPageScaffold(
       title: currentFilter?.title ?? t.libraries.filters,
       icon: Symbols.filter_alt_rounded,
-      onBack: currentFilter != null ? _goBack : null,
+      onBack: currentFilter != null ? _goBack : widget.onBack,
       action: currentFilter == null && _tempSelectedFilters.isNotEmpty
           ? FocusableButton(
               onPressed: _clearFilters,
