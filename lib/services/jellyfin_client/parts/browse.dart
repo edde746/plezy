@@ -28,6 +28,11 @@ List<Map<String, dynamic>> _itemsArray(Object? data) {
 /// they added seconds to large-library pages on small home servers.
 const _browseFields = 'RecursiveItemCount,ChildCount,UserData,PremiereDate,OriginalTitle,SortName,Overview';
 
+/// Existing episode-row requests can show Plex-style quality labels when the
+/// response includes `MediaSources`. Keep this off broad library/search/latest
+/// queries because it is the heaviest item field Jellyfin returns.
+const _episodeRowFields = '$_browseFields,MediaSources';
+
 /// Even slimmer set used by [fetchClientSideEpisodeQueue]. Queue rows
 /// only need title, thumbnail (`ImageTags['Primary']`), season/episode
 /// index, and watched state. Title + indices come back without any
@@ -389,7 +394,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       'seriesId': id,
       'userId': connection.userId,
       'Limit': '1',
-      'Fields': _browseFields,
+      'Fields': _episodeRowFields,
       ...jellyfinImageQueryParameters,
     });
     final onDeckEpisode = nextUp.isEmpty ? null : _mapItem(nextUp.first);
@@ -493,7 +498,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         queryParameters: {
           'userId': connection.userId,
           'ParentId': parentId,
-          'Fields': _browseFields,
+          'Fields': _episodeRowFields,
           'StartIndex': '$startIndex',
           'Limit': '$_childrenPageSize',
           ...jellyfinImageQueryParameters,
@@ -651,7 +656,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         'IncludeItemTypes': includeItemTypes,
         'StartIndex': offset.toString(),
         'Limit': pageSize.toString(),
-        'Fields': _browseFields,
+        'Fields': _episodeRowFields,
         ...jellyfinImageQueryParameters,
       },
       abort: abort,

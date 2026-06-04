@@ -12,6 +12,7 @@ import '../utils/jellyfin_time.dart';
 import '../utils/json_utils.dart';
 import '../utils/resolution_label.dart';
 import 'file_info_parser.dart';
+import 'jellyfin_display_metadata.dart';
 
 // Re-export so existing callers that pulled `resolutionLabelFromHeight`
 // from this file keep compiling without a bulk import rewrite.
@@ -382,7 +383,7 @@ class JellyfinMappers {
       if (src is! Map<String, dynamic>) continue;
       final id = src['Id'] as String?;
       if (id == null || id.isEmpty) continue;
-      final streams = _mediaStreams(src['MediaStreams']);
+      final streams = _mediaStreams(src['MediaStreams'], source: src);
       result.add(
         jellyfinMediaSourceToVersion(
           src,
@@ -399,9 +400,11 @@ class JellyfinMappers {
     return nullIfEmptyList(result);
   }
 
-  static List<MediaStream> _mediaStreams(Object? raw) {
+  static List<MediaStream> _mediaStreams(Object? raw, {Map<String, dynamic>? source}) {
     if (raw is! List) return const [];
     final result = <MediaStream>[];
+    final defaultAudioStreamIndex = flexibleInt(source?['DefaultAudioStreamIndex']);
+    final defaultSubtitleStreamIndex = flexibleInt(source?['DefaultSubtitleStreamIndex']);
     for (final s in raw) {
       if (s is! Map<String, dynamic>) continue;
       final f = parseJellyfinStreamFields(s, fallbackIndex: result.length);
@@ -411,6 +414,8 @@ class JellyfinMappers {
         'subtitle' => MediaStreamKind.subtitle,
         _ => MediaStreamKind.unknown,
       };
+      final isVideo = kind == MediaStreamKind.video;
+      final isDolbyVision = isVideo && jellyfinVideoStreamIsDolbyVision(s);
       result.add(
         MediaStream(
           id: '${f.index}',
@@ -421,15 +426,36 @@ class JellyfinMappers {
           languageCode: f.languageCode,
           title: f.title,
           displayTitle: f.displayTitle,
-          selected: f.isDefault,
+          selected: _jellyfinStreamSelected(
+            kind,
+            f,
+            defaultAudioStreamIndex: defaultAudioStreamIndex,
+            defaultSubtitleStreamIndex: defaultSubtitleStreamIndex,
+          ),
           channels: f.channels,
           frameRate: f.frameRate,
+          hdr: isVideo && jellyfinVideoStreamIsHdr(source ?? const <String, dynamic>{}, s),
+          dolbyVision: isDolbyVision,
+          dolbyVisionProfile: isDolbyVision ? jellyfinDolbyVisionProfile(s) : null,
           forced: f.isForced,
           sidecarPath: f.isExternalFile ? f.deliveryUrl : null,
         ),
       );
     }
     return result;
+  }
+
+  static bool _jellyfinStreamSelected(
+    MediaStreamKind kind,
+    JellyfinStreamFields stream, {
+    int? defaultAudioStreamIndex,
+    int? defaultSubtitleStreamIndex,
+  }) {
+    return switch (kind) {
+      MediaStreamKind.audio when defaultAudioStreamIndex != null => stream.index == defaultAudioStreamIndex,
+      MediaStreamKind.subtitle when defaultSubtitleStreamIndex != null => stream.index == defaultSubtitleStreamIndex,
+      _ => stream.isDefault,
+    };
   }
 
   static String? _selfImagePath(String id, Map<String, dynamic> item, String type) {

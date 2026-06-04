@@ -6,6 +6,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_part.dart';
 import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/media/media_version.dart';
+import 'package:plezy/services/jellyfin_mappers.dart';
 import 'package:plezy/services/plex_mappers.dart';
 import 'package:plezy/utils/media_quality_labels.dart';
 
@@ -149,6 +150,41 @@ void main() {
       }, serverId: ServerId('plex'));
 
       expect(buildMediaQualityLabels(item), ['4K', 'DV P8', 'EAC3 5.1']);
+    });
+
+    test('formats Jellyfin stream metadata from MediaSources', () {
+      final item = JellyfinMappers.mediaItem(
+        {
+          'Id': 'movie-1',
+          'Name': 'Movie',
+          'Type': 'Movie',
+          'MediaSources': [
+            {
+              'Id': 'source-1',
+              'DefaultAudioStreamIndex': 2,
+              'MediaStreams': [
+                {
+                  'Index': 0,
+                  'Type': 'Video',
+                  'Codec': 'hevc',
+                  'Width': 3840,
+                  'Height': 2160,
+                  'VideoRangeType': 'DOVI',
+                  'VideoDoViTitle': 'Dolby Vision Profile 8',
+                  'DvProfile': 8,
+                  'DvBlSignalCompatibilityId': 1,
+                },
+                {'Index': 1, 'Type': 'Audio', 'Codec': 'eac3', 'Channels': 6, 'IsDefault': true},
+                {'Index': 2, 'Type': 'Audio', 'Codec': 'aac', 'Channels': 2},
+              ],
+            },
+          ],
+        },
+        serverId: ServerId('jellyfin'),
+        absolutizer: null,
+      )!;
+
+      expect(buildMediaQualityLabels(item), ['4K', 'DV P8', 'AAC Stereo']);
     });
 
     test('uses selected audio stream and stereo label', () {

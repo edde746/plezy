@@ -172,6 +172,46 @@ void main() {
       expect(extras[1].posterThumb(), extras[1].artPath);
     });
 
+    test('fetchChildren requests media sources for episode-row quality labels', () async {
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          requests.add(request.url);
+          if (request.url.path == '/Shows/season-1/Seasons') {
+            return http.Response('not found', 404);
+          }
+          if (request.url.path == '/Items') {
+            return http.Response(jsonEncode({'Items': <Object>[], 'TotalRecordCount': 0}), 200);
+          }
+          return http.Response('unexpected ${request.url}', 500);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.fetchChildren('season-1');
+
+      final directChildrenRequest = requests.firstWhere((uri) => uri.path == '/Items');
+      expect(directChildrenRequest.queryParameters['Fields']!.split(','), contains('MediaSources'));
+    });
+
+    test('fetchPlayableDescendantsPage requests media sources for episode-row quality labels', () async {
+      Uri? capturedUri;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          return http.Response(jsonEncode({'Items': <Object>[], 'TotalRecordCount': 0}), 200);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.fetchPlayableDescendantsPage('show-1');
+
+      expect(capturedUri!.path, '/Items');
+      expect(capturedUri!.queryParameters['Fields']!.split(','), contains('MediaSources'));
+    });
+
     test('reportPlaybackProgress sends media source and stream indexes', () async {
       Uri? capturedUri;
       String? capturedBody;
