@@ -42,7 +42,7 @@ end
 
 # Swift Package: MPVKit.
 pkg_url = 'https://github.com/edde746/MPVKit'
-pkg_revision = 'af7092b2cd57ac32e1f2bcba8cf49073c7e6a541'
+pkg_revision = '9d9b6181266429ba761af831f29311805a40f593'
 existing_pkg = project.root_object.package_references.find do |p|
   p.repositoryURL == pkg_url rescue false
 end
