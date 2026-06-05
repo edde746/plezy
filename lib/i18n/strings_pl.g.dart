@@ -672,8 +672,10 @@ class _TranslationsMessagesPl extends TranslationsMessagesEn {
 	@override String metadataRefreshFailed({required Object error}) => 'Nie udało się odświeżyć metadanych: ${error}';
 	@override String get logoutConfirm => 'Czy na pewno chcesz się wylogować?';
 	@override String get noSeasonsFound => 'Nie znaleziono sezonów';
+	@override String get seasonsLoadFailed => 'Nie udało się załadować sezonów';
 	@override String get noEpisodesFound => 'Nie znaleziono odcinków w pierwszym sezonie';
 	@override String get noEpisodesFoundGeneral => 'Nie znaleziono odcinków';
+	@override String get episodesLoadFailed => 'Nie udało się załadować odcinków';
 	@override String get noResultsFound => 'Nie znaleziono wyników';
 	@override String sleepTimerSet({required Object label}) => 'Wyłącznik czasowy ustawiony na ${label}';
 	@override String get noItemsAvailable => 'Brak dostępnych elementów';
@@ -2295,8 +2297,10 @@ extension on TranslationsPl {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Nie udało się odświeżyć metadanych: ${error}',
 			'messages.logoutConfirm' => 'Czy na pewno chcesz się wylogować?',
 			'messages.noSeasonsFound' => 'Nie znaleziono sezonów',
+			'messages.seasonsLoadFailed' => 'Nie udało się załadować sezonów',
 			'messages.noEpisodesFound' => 'Nie znaleziono odcinków w pierwszym sezonie',
 			'messages.noEpisodesFoundGeneral' => 'Nie znaleziono odcinków',
+			'messages.episodesLoadFailed' => 'Nie udało się załadować odcinków',
 			'messages.noResultsFound' => 'Nie znaleziono wyników',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Wyłącznik czasowy ustawiony na ${label}',
 			'messages.noItemsAvailable' => 'Brak dostępnych elementów',
@@ -2331,10 +2335,10 @@ extension on TranslationsPl {
 			'mpvConfig.loadPreset' => 'Załaduj',
 			'mpvConfig.deletePreset' => 'Usuń',
 			'mpvConfig.presetSaved' => 'Preset zapisany',
-			'mpvConfig.presetLoaded' => 'Preset załadowany',
-			'mpvConfig.presetDeleted' => 'Preset usunięty',
 			_ => null,
 		} ?? switch (path) {
+			'mpvConfig.presetLoaded' => 'Preset załadowany',
+			'mpvConfig.presetDeleted' => 'Preset usunięty',
 			'mpvConfig.confirmDeletePreset' => 'Czy na pewno chcesz usunąć ten preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Potwierdź działanie',
@@ -2845,10 +2849,10 @@ extension on TranslationsPl {
 			'externalPlayer.playerPackage' => 'Nazwa pakietu',
 			'externalPlayer.playerUrlScheme' => 'Schemat URL',
 			'externalPlayer.off' => 'Wyłączony',
-			'externalPlayer.launchFailed' => 'Nie udało się otworzyć zewnętrznego odtwarzacza',
-			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} nie jest zainstalowany',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.launchFailed' => 'Nie udało się otworzyć zewnętrznego odtwarzacza',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} nie jest zainstalowany',
 			'externalPlayer.playInExternalPlayer' => 'Odtwórz w zewnętrznym odtwarzaczu',
 			'metadataEdit.editMetadata' => 'Edytuj...',
 			'metadataEdit.screenTitle' => 'Edytuj metadane',

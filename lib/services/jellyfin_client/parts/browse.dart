@@ -523,6 +523,82 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     return _mapItems(allRaw);
   }
 
+  @override
+  Future<LibraryPage<MediaItem>> fetchChildrenPage(
+    String parentId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    final offset = start ?? 0;
+    final pageSize = size ?? _pagedListPageSize;
+    final seasonsKey = '/Shows/$parentId/Seasons?userId=${connection.userId}';
+    final childrenKey = '/Items?ParentId=$parentId&userId=${connection.userId}';
+
+    if (isOfflineMode) {
+      final cachedSeasons = await cache.get(ServerId(cacheServerId), seasonsKey);
+      if (cachedSeasons != null) {
+        final allSeasons = _mapItems(_itemsArray(cachedSeasons));
+        if (allSeasons.isNotEmpty) {
+          final safeOffset = offset.clamp(0, allSeasons.length).toInt();
+          final end = (safeOffset + pageSize).clamp(0, allSeasons.length).toInt();
+          return LibraryPage<MediaItem>(
+            items: allSeasons.sublist(safeOffset, end),
+            totalCount: allSeasons.length,
+            offset: offset,
+          );
+        }
+      }
+      final cached = await cache.get(ServerId(cacheServerId), childrenKey);
+      final all = cached == null ? const <MediaItem>[] : _mapItems(_itemsArray(cached));
+      final safeOffset = offset.clamp(0, all.length).toInt();
+      final end = (safeOffset + pageSize).clamp(0, all.length).toInt();
+      final pageItems = all.sublist(safeOffset, end);
+      return LibraryPage<MediaItem>(items: pageItems, totalCount: all.length, offset: offset);
+    }
+
+    try {
+      final seasons = await _http.get(
+        '/Shows/${_segment(parentId)}/Seasons',
+        queryParameters: {
+          'userId': connection.userId,
+          'StartIndex': offset.toString(),
+          'Limit': pageSize.toString(),
+          'EnableTotalRecordCount': 'true',
+          'Fields': _browseFields,
+          ...jellyfinImageQueryParameters,
+        },
+        abort: abort,
+      );
+      if (seasons.statusCode == 200) {
+        final data = seasons.data;
+        final items = _itemsArray(data);
+        final rawTotal = data is Map<String, dynamic> ? data['TotalRecordCount'] : null;
+        if (items.isNotEmpty || (rawTotal is int && rawTotal > 0)) {
+          return _pagedMediaItems(data, offset: offset, requestedSize: pageSize);
+        }
+      }
+    } on MediaServerHttpException {
+      // Not a series — fall through to the generic ParentId query.
+    }
+
+    final response = await _http.get(
+      '/Items',
+      queryParameters: {
+        'userId': connection.userId,
+        'ParentId': parentId,
+        'StartIndex': offset.toString(),
+        'Limit': pageSize.toString(),
+        'EnableTotalRecordCount': 'true',
+        'Fields': _episodeRowFields,
+        ...jellyfinImageQueryParameters,
+      },
+      abort: abort,
+    );
+    throwIfHttpError(response);
+    return _pagedMediaItems(response.data, offset: offset, requestedSize: pageSize);
+  }
+
   /// Jellyfin folder browsing mirrors Jellyfin Web/Findroid/Swiftfin: query
   /// direct children of the library/folder with `Recursive=false`. This is
   /// distinct from [fetchLibraryContent], which intentionally recurses through

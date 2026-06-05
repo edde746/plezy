@@ -1206,6 +1206,56 @@ class PlexClient
     return all;
   }
 
+  /// Walk every page of [path] and return a single synthesized response whose
+  /// `MediaContainer.Metadata` concatenates all pages. Lets a caller (and its
+  /// cache layer) treat a large, server-paginated collection as one complete
+  /// response while each network request stays small. Raw-response analog of
+  /// [_fetchAllPages]; errors propagate.
+  Future<MediaServerResponse> _getAllPagesResponse(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    AbortController? abort,
+  }) async {
+    MediaServerResponse? firstResponse;
+    Map<String, dynamic>? firstContainer;
+    final allMetadata = <dynamic>[];
+    var start = 0;
+    while (true) {
+      final response = await _getWithFailover(
+        path,
+        queryParameters: {...?queryParameters, ..._buildPaginationParams(start, _fetchAllPageSize)},
+        abort: abort,
+      );
+      final container = _getMediaContainer(response);
+      final metadata = container?['Metadata'];
+      final pageItems = metadata is List ? metadata : const [];
+      firstResponse ??= response;
+      firstContainer ??= container;
+      allMetadata.addAll(pageItems);
+      final total = _responseTotalSize(
+        response,
+        itemCount: pageItems.length,
+        start: start,
+        requestedSize: _fetchAllPageSize,
+      );
+      start += pageItems.length;
+      if (pageItems.isEmpty || start >= total) break;
+    }
+    return MediaServerResponse(
+      statusCode: firstResponse.statusCode,
+      data: {
+        'MediaContainer': {
+          ...?firstContainer,
+          'Metadata': allMetadata,
+          'size': allMetadata.length,
+          'totalSize': allMetadata.length,
+        },
+      },
+      headers: firstResponse.headers,
+      requestUri: firstResponse.requestUri,
+    );
+  }
+
   /// Set per-media language preferences (audio and subtitle)
   /// For TV shows, use grandparentRatingKey to set preference for the entire series
   /// For movies, use the movie's ratingKey
@@ -1412,19 +1462,34 @@ class PlexClient
     return result;
   }
 
-  /// Get children of a metadata item (e.g., seasons for a show, episodes for a season)
-  /// Uses cache when offline or as fallback on network error
+  /// Get children of a metadata item (e.g., seasons for a show, episodes for a season).
+  /// Walks every page so large shows (many seasons) aren't truncated by a
+  /// server-forced container limit; uses cache when offline or as fallback on
+  /// network error. (Large *episode* lists load lazily via [fetchChildrenPage];
+  /// this full-fetch is for the seasons list and other complete-list callers.)
   Future<List<PlexMetadataDto>> _getChildren(String ratingKey) async {
     final endpoint = '/library/metadata/$ratingKey/children';
 
     return await fetchWithCacheFallback<List<PlexMetadataDto>>(
           cacheKey: endpoint,
-          networkCall: () => _http.get(endpoint, queryParameters: {'includeStreams': 1}),
+          networkCall: () => _getAllPagesResponse(endpoint, queryParameters: {'includeStreams': 1}),
           parseCache: (cachedData) => _parseMetadataListFromCachedResponse(cachedData),
           parseResponse: (response) => _extractMetadataList(response),
         ) ??
         [];
   }
+
+  /// Page through direct children of a metadata item (e.g. episodes of a
+  /// season). This uses `/children`; playable descendant paging uses
+  /// `/grandchildren` and intentionally has different semantics.
+  Future<_LibraryContentResult> _getChildrenPage(String ratingKey, {int? start, int? size, AbortController? abort}) =>
+      _fetchPaginatedList(
+        '/library/metadata/$ratingKey/children',
+        start: start,
+        size: size,
+        abort: abort,
+        queryParameters: {'includeStreams': 1},
+      );
 
   /// Page through playable episodes beneath a show or season. Uses
   /// `/grandchildren` rather than `/allLeaves` because the live server returns
@@ -3262,6 +3327,21 @@ class PlexClient
   Future<List<MediaItem>> fetchChildren(String parentId) async {
     final children = await _getChildren(parentId);
     return children.map((m) => PlexMappers.mediaItem(m)).toList();
+  }
+
+  @override
+  Future<LibraryPage<MediaItem>> fetchChildrenPage(
+    String parentId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    final result = await _getChildrenPage(parentId, start: start, size: size, abort: abort);
+    return LibraryPage<MediaItem>(
+      items: result.items.map((m) => PlexMappers.mediaItem(m)).toList(),
+      totalCount: result.totalSize,
+      offset: start ?? 0,
+    );
   }
 
   @override

@@ -672,8 +672,10 @@ class _TranslationsMessagesZh extends TranslationsMessagesEn {
 	@override String metadataRefreshFailed({required Object error}) => '无法刷新元数据: ${error}';
 	@override String get logoutConfirm => '你确定要登出吗？';
 	@override String get noSeasonsFound => '未找到季';
+	@override String get seasonsLoadFailed => '无法加载季';
 	@override String get noEpisodesFound => '在第一季中未找到剧集';
 	@override String get noEpisodesFoundGeneral => '未找到剧集';
+	@override String get episodesLoadFailed => '无法加载剧集';
 	@override String get noResultsFound => '未找到结果';
 	@override String sleepTimerSet({required Object label}) => '睡眠定时器已设置为 ${label}';
 	@override String get noItemsAvailable => '没有可用的项目';
@@ -2295,8 +2297,10 @@ extension on TranslationsZh {
 			'messages.metadataRefreshFailed' => ({required Object error}) => '无法刷新元数据: ${error}',
 			'messages.logoutConfirm' => '你确定要登出吗？',
 			'messages.noSeasonsFound' => '未找到季',
+			'messages.seasonsLoadFailed' => '无法加载季',
 			'messages.noEpisodesFound' => '在第一季中未找到剧集',
 			'messages.noEpisodesFoundGeneral' => '未找到剧集',
+			'messages.episodesLoadFailed' => '无法加载剧集',
 			'messages.noResultsFound' => '未找到结果',
 			'messages.sleepTimerSet' => ({required Object label}) => '睡眠定时器已设置为 ${label}',
 			'messages.noItemsAvailable' => '没有可用的项目',
@@ -2331,10 +2335,10 @@ extension on TranslationsZh {
 			'mpvConfig.loadPreset' => '加载',
 			'mpvConfig.deletePreset' => '删除',
 			'mpvConfig.presetSaved' => '预设已保存',
-			'mpvConfig.presetLoaded' => '预设已加载',
-			'mpvConfig.presetDeleted' => '预设已删除',
 			_ => null,
 		} ?? switch (path) {
+			'mpvConfig.presetLoaded' => '预设已加载',
+			'mpvConfig.presetDeleted' => '预设已删除',
 			'mpvConfig.confirmDeletePreset' => '确定要删除此预设吗？',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '确认操作',
@@ -2845,10 +2849,10 @@ extension on TranslationsZh {
 			'externalPlayer.playerPackage' => '包名',
 			'externalPlayer.playerUrlScheme' => 'URL 方案',
 			'externalPlayer.off' => '关闭',
-			'externalPlayer.launchFailed' => '无法打开外部播放器',
-			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} 未安装',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.launchFailed' => '无法打开外部播放器',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} 未安装',
 			'externalPlayer.playInExternalPlayer' => '在外部播放器中播放',
 			'metadataEdit.editMetadata' => '编辑...',
 			'metadataEdit.screenTitle' => '编辑元数据',

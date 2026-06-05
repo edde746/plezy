@@ -672,8 +672,10 @@ class _TranslationsMessagesRu extends TranslationsMessagesEn {
 	@override String metadataRefreshFailed({required Object error}) => 'Не удалось обновить метаданные: ${error}';
 	@override String get logoutConfirm => 'Вы уверены, что хотите выйти?';
 	@override String get noSeasonsFound => 'Сезоны не найдены';
+	@override String get seasonsLoadFailed => 'Не удалось загрузить сезоны';
 	@override String get noEpisodesFound => 'Эпизоды в первом сезоне не найдены';
 	@override String get noEpisodesFoundGeneral => 'Эпизоды не найдены';
+	@override String get episodesLoadFailed => 'Не удалось загрузить эпизоды';
 	@override String get noResultsFound => 'Результаты не найдены';
 	@override String sleepTimerSet({required Object label}) => 'Таймер сна установлен на ${label}';
 	@override String get noItemsAvailable => 'Нет доступных элементов';
@@ -2295,8 +2297,10 @@ extension on TranslationsRu {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Не удалось обновить метаданные: ${error}',
 			'messages.logoutConfirm' => 'Вы уверены, что хотите выйти?',
 			'messages.noSeasonsFound' => 'Сезоны не найдены',
+			'messages.seasonsLoadFailed' => 'Не удалось загрузить сезоны',
 			'messages.noEpisodesFound' => 'Эпизоды в первом сезоне не найдены',
 			'messages.noEpisodesFoundGeneral' => 'Эпизоды не найдены',
+			'messages.episodesLoadFailed' => 'Не удалось загрузить эпизоды',
 			'messages.noResultsFound' => 'Результаты не найдены',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Таймер сна установлен на ${label}',
 			'messages.noItemsAvailable' => 'Нет доступных элементов',
@@ -2331,10 +2335,10 @@ extension on TranslationsRu {
 			'mpvConfig.loadPreset' => 'Загрузить',
 			'mpvConfig.deletePreset' => 'Удалить',
 			'mpvConfig.presetSaved' => 'Пресет сохранён',
-			'mpvConfig.presetLoaded' => 'Пресет загружен',
-			'mpvConfig.presetDeleted' => 'Пресет удалён',
 			_ => null,
 		} ?? switch (path) {
+			'mpvConfig.presetLoaded' => 'Пресет загружен',
+			'mpvConfig.presetDeleted' => 'Пресет удалён',
 			'mpvConfig.confirmDeletePreset' => 'Вы уверены, что хотите удалить этот пресет?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Подтвердить действие',
@@ -2845,10 +2849,10 @@ extension on TranslationsRu {
 			'externalPlayer.playerPackage' => 'Имя пакета',
 			'externalPlayer.playerUrlScheme' => 'URL-схема',
 			'externalPlayer.off' => 'Выкл.',
-			'externalPlayer.launchFailed' => 'Не удалось открыть внешний плеер',
-			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} не установлен',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.launchFailed' => 'Не удалось открыть внешний плеер',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} не установлен',
 			'externalPlayer.playInExternalPlayer' => 'Воспроизвести во внешнем плеере',
 			'metadataEdit.editMetadata' => 'Редактировать...',
 			'metadataEdit.screenTitle' => 'Редактировать метаданные',

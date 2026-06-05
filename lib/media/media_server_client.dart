@@ -169,9 +169,15 @@ abstract class MediaServerClient {
   /// show, tracks of an album, items of a collection.
   Future<List<MediaItem>> fetchChildren(String parentId);
 
-  /// Page through playable descendants of [parentId]. Used by large show /
-  /// season detail views so episodes can render before the full list has
-  /// loaded. [fetchPlayableDescendants] remains the complete-list helper for
+  /// Page through direct children of [parentId]. Unlike
+  /// [fetchPlayableDescendantsPage], this preserves container shape and is used
+  /// for large season episode lists where the children endpoint is the correct
+  /// backend primitive.
+  Future<LibraryPage<MediaItem>> fetchChildrenPage(String parentId, {int? start, int? size, AbortController? abort});
+
+  /// Page through playable descendants of [parentId]. Used by flattened show /
+  /// season detail views so episodes can render before the full list has loaded.
+  /// [fetchPlayableDescendants] remains the complete-list helper for
   /// playback/download/sync paths.
   Future<LibraryPage<MediaItem>> fetchPlayableDescendantsPage(
     String parentId, {

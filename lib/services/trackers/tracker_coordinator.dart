@@ -5,7 +5,7 @@ import '../../media/media_kind.dart';
 import '../../media/media_server_client.dart';
 import '../../models/trackers/tracker_context.dart';
 import '../../utils/app_logger.dart';
-import '../../utils/episode_collection.dart';
+import '../../media/episode_collection.dart';
 import 'anime_episode_progress_resolver.dart';
 import 'anime_lists_mapping_store.dart';
 import 'anilist/anilist_tracker.dart';

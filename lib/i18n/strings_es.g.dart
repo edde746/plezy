@@ -672,8 +672,10 @@ class _TranslationsMessagesEs extends TranslationsMessagesEn {
 	@override String metadataRefreshFailed({required Object error}) => 'Error al actualizar metadatos: ${error}';
 	@override String get logoutConfirm => '¿Estás seguro de que quieres cerrar sesión?';
 	@override String get noSeasonsFound => 'No se encontraron temporadas';
+	@override String get seasonsLoadFailed => 'No se pudieron cargar las temporadas';
 	@override String get noEpisodesFound => 'No se encontraron episodios en la primera temporada';
 	@override String get noEpisodesFoundGeneral => 'No se encontraron episodios';
+	@override String get episodesLoadFailed => 'No se pudieron cargar los episodios';
 	@override String get noResultsFound => 'No se encontraron resultados';
 	@override String sleepTimerSet({required Object label}) => 'Temporizador establecido en ${label}';
 	@override String get noItemsAvailable => 'No hay elementos disponibles';
@@ -2295,8 +2297,10 @@ extension on TranslationsEs {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Error al actualizar metadatos: ${error}',
 			'messages.logoutConfirm' => '¿Estás seguro de que quieres cerrar sesión?',
 			'messages.noSeasonsFound' => 'No se encontraron temporadas',
+			'messages.seasonsLoadFailed' => 'No se pudieron cargar las temporadas',
 			'messages.noEpisodesFound' => 'No se encontraron episodios en la primera temporada',
 			'messages.noEpisodesFoundGeneral' => 'No se encontraron episodios',
+			'messages.episodesLoadFailed' => 'No se pudieron cargar los episodios',
 			'messages.noResultsFound' => 'No se encontraron resultados',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Temporizador establecido en ${label}',
 			'messages.noItemsAvailable' => 'No hay elementos disponibles',
@@ -2331,10 +2335,10 @@ extension on TranslationsEs {
 			'mpvConfig.loadPreset' => 'Cargar',
 			'mpvConfig.deletePreset' => 'Eliminar',
 			'mpvConfig.presetSaved' => 'Ajuste guardado',
-			'mpvConfig.presetLoaded' => 'Ajuste cargado',
-			'mpvConfig.presetDeleted' => 'Ajuste eliminado',
 			_ => null,
 		} ?? switch (path) {
+			'mpvConfig.presetLoaded' => 'Ajuste cargado',
+			'mpvConfig.presetDeleted' => 'Ajuste eliminado',
 			'mpvConfig.confirmDeletePreset' => '¿Estás seguro de que quieres eliminar este ajuste?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirmar Acción',
@@ -2845,10 +2849,10 @@ extension on TranslationsEs {
 			'externalPlayer.playerPackage' => 'Nombre del paquete',
 			'externalPlayer.playerUrlScheme' => 'Esquema URL',
 			'externalPlayer.off' => 'Desactivado',
-			'externalPlayer.launchFailed' => 'No se pudo abrir el reproductor externo',
-			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} no está instalado',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.launchFailed' => 'No se pudo abrir el reproductor externo',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} no está instalado',
 			'externalPlayer.playInExternalPlayer' => 'Reproducir en reproductor externo',
 			'metadataEdit.editMetadata' => 'Editar...',
 			'metadataEdit.screenTitle' => 'Editar metadatos',

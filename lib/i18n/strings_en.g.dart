@@ -1560,11 +1560,17 @@ class TranslationsMessagesEn {
 	/// en: 'No seasons found'
 	String get noSeasonsFound => 'No seasons found';
 
+	/// en: 'Couldn't load seasons'
+	String get seasonsLoadFailed => 'Couldn\'t load seasons';
+
 	/// en: 'No episodes found in first season'
 	String get noEpisodesFound => 'No episodes found in first season';
 
 	/// en: 'No episodes found'
 	String get noEpisodesFoundGeneral => 'No episodes found';
+
+	/// en: 'Couldn't load episodes'
+	String get episodesLoadFailed => 'Couldn\'t load episodes';
 
 	/// en: 'No results found'
 	String get noResultsFound => 'No results found';
@@ -4685,8 +4691,10 @@ extension on Translations {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Failed to refresh metadata: ${error}',
 			'messages.logoutConfirm' => 'Are you sure you want to logout?',
 			'messages.noSeasonsFound' => 'No seasons found',
+			'messages.seasonsLoadFailed' => 'Couldn\'t load seasons',
 			'messages.noEpisodesFound' => 'No episodes found in first season',
 			'messages.noEpisodesFoundGeneral' => 'No episodes found',
+			'messages.episodesLoadFailed' => 'Couldn\'t load episodes',
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
 			'messages.noItemsAvailable' => 'No items available',
@@ -4721,10 +4729,10 @@ extension on Translations {
 			'mpvConfig.loadPreset' => 'Load',
 			'mpvConfig.deletePreset' => 'Delete',
 			'mpvConfig.presetSaved' => 'Preset saved',
-			'mpvConfig.presetLoaded' => 'Preset loaded',
-			'mpvConfig.presetDeleted' => 'Preset deleted',
 			_ => null,
 		} ?? switch (path) {
+			'mpvConfig.presetLoaded' => 'Preset loaded',
+			'mpvConfig.presetDeleted' => 'Preset deleted',
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirm Action',
@@ -5235,10 +5243,10 @@ extension on Translations {
 			'externalPlayer.playerPackage' => 'Package Name',
 			'externalPlayer.playerUrlScheme' => 'URL Scheme',
 			'externalPlayer.off' => 'Off',
-			'externalPlayer.launchFailed' => 'Failed to open external player',
-			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.launchFailed' => 'Failed to open external player',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',
 			'metadataEdit.editMetadata' => 'Edit...',
 			'metadataEdit.screenTitle' => 'Edit Metadata',

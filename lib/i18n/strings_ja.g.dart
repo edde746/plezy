@@ -672,8 +672,10 @@ class _TranslationsMessagesJa extends TranslationsMessagesEn {
 	@override String metadataRefreshFailed({required Object error}) => 'メタデータの更新に失敗しました: ${error}';
 	@override String get logoutConfirm => 'ログアウトしてもよろしいですか？';
 	@override String get noSeasonsFound => 'シーズンが見つかりません';
+	@override String get seasonsLoadFailed => 'シーズンを読み込めませんでした';
 	@override String get noEpisodesFound => '最初のシーズンにエピソードが見つかりません';
 	@override String get noEpisodesFoundGeneral => 'エピソードが見つかりません';
+	@override String get episodesLoadFailed => 'エピソードを読み込めませんでした';
 	@override String get noResultsFound => '結果が見つかりません';
 	@override String sleepTimerSet({required Object label}) => 'スリープタイマーを${label}に設定しました';
 	@override String get noItemsAvailable => 'アイテムがありません';
@@ -2295,8 +2297,10 @@ extension on TranslationsJa {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'メタデータの更新に失敗しました: ${error}',
 			'messages.logoutConfirm' => 'ログアウトしてもよろしいですか？',
 			'messages.noSeasonsFound' => 'シーズンが見つかりません',
+			'messages.seasonsLoadFailed' => 'シーズンを読み込めませんでした',
 			'messages.noEpisodesFound' => '最初のシーズンにエピソードが見つかりません',
 			'messages.noEpisodesFoundGeneral' => 'エピソードが見つかりません',
+			'messages.episodesLoadFailed' => 'エピソードを読み込めませんでした',
 			'messages.noResultsFound' => '結果が見つかりません',
 			'messages.sleepTimerSet' => ({required Object label}) => 'スリープタイマーを${label}に設定しました',
 			'messages.noItemsAvailable' => 'アイテムがありません',
@@ -2331,10 +2335,10 @@ extension on TranslationsJa {
 			'mpvConfig.loadPreset' => '読み込み',
 			'mpvConfig.deletePreset' => '削除',
 			'mpvConfig.presetSaved' => 'プリセットを保存しました',
-			'mpvConfig.presetLoaded' => 'プリセットを読み込みました',
-			'mpvConfig.presetDeleted' => 'プリセットを削除しました',
 			_ => null,
 		} ?? switch (path) {
+			'mpvConfig.presetLoaded' => 'プリセットを読み込みました',
+			'mpvConfig.presetDeleted' => 'プリセットを削除しました',
 			'mpvConfig.confirmDeletePreset' => 'このプリセットを削除してもよろしいですか？',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '操作の確認',
@@ -2845,10 +2849,10 @@ extension on TranslationsJa {
 			'externalPlayer.playerPackage' => 'パッケージ名',
 			'externalPlayer.playerUrlScheme' => 'URLスキーム',
 			'externalPlayer.off' => 'オフ',
-			'externalPlayer.launchFailed' => '外部プレーヤーの起動に失敗しました',
-			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}がインストールされていません',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.launchFailed' => '外部プレーヤーの起動に失敗しました',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}がインストールされていません',
 			'externalPlayer.playInExternalPlayer' => '外部プレーヤーで再生',
 			'metadataEdit.editMetadata' => '編集...',
 			'metadataEdit.screenTitle' => 'メタデータを編集',

@@ -672,8 +672,10 @@ class _TranslationsMessagesNb extends TranslationsMessagesEn {
 	@override String metadataRefreshFailed({required Object error}) => 'Kunne ikke oppdatere metadata: ${error}';
 	@override String get logoutConfirm => 'Er du sikker på at du vil logge ut?';
 	@override String get noSeasonsFound => 'Ingen sesonger funnet';
+	@override String get seasonsLoadFailed => 'Kunne ikke laste sesonger';
 	@override String get noEpisodesFound => 'Ingen episoder funnet i første sesong';
 	@override String get noEpisodesFoundGeneral => 'Ingen episoder funnet';
+	@override String get episodesLoadFailed => 'Kunne ikke laste episoder';
 	@override String get noResultsFound => 'Ingen resultater funnet';
 	@override String sleepTimerSet({required Object label}) => 'Søvntimer satt til ${label}';
 	@override String get noItemsAvailable => 'Ingen elementer tilgjengelig';
@@ -2295,8 +2297,10 @@ extension on TranslationsNb {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Kunne ikke oppdatere metadata: ${error}',
 			'messages.logoutConfirm' => 'Er du sikker på at du vil logge ut?',
 			'messages.noSeasonsFound' => 'Ingen sesonger funnet',
+			'messages.seasonsLoadFailed' => 'Kunne ikke laste sesonger',
 			'messages.noEpisodesFound' => 'Ingen episoder funnet i første sesong',
 			'messages.noEpisodesFoundGeneral' => 'Ingen episoder funnet',
+			'messages.episodesLoadFailed' => 'Kunne ikke laste episoder',
 			'messages.noResultsFound' => 'Ingen resultater funnet',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Søvntimer satt til ${label}',
 			'messages.noItemsAvailable' => 'Ingen elementer tilgjengelig',
@@ -2331,10 +2335,10 @@ extension on TranslationsNb {
 			'mpvConfig.loadPreset' => 'Last inn',
 			'mpvConfig.deletePreset' => 'Slett',
 			'mpvConfig.presetSaved' => 'Forhåndsinnstilling lagret',
-			'mpvConfig.presetLoaded' => 'Forhåndsinnstilling lastet inn',
-			'mpvConfig.presetDeleted' => 'Forhåndsinnstilling slettet',
 			_ => null,
 		} ?? switch (path) {
+			'mpvConfig.presetLoaded' => 'Forhåndsinnstilling lastet inn',
+			'mpvConfig.presetDeleted' => 'Forhåndsinnstilling slettet',
 			'mpvConfig.confirmDeletePreset' => 'Er du sikker på at du vil slette denne forhåndsinnstillingen?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# kommentar',
 			'dialog.confirmAction' => 'Bekreft handling',
@@ -2845,10 +2849,10 @@ extension on TranslationsNb {
 			'externalPlayer.playerPackage' => 'Pakkenavn',
 			'externalPlayer.playerUrlScheme' => 'URL-skjema',
 			'externalPlayer.off' => 'Av',
-			'externalPlayer.launchFailed' => 'Kunne ikke åpne ekstern spiller',
-			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} er ikke installert',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.launchFailed' => 'Kunne ikke åpne ekstern spiller',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} er ikke installert',
 			'externalPlayer.playInExternalPlayer' => 'Spill av i ekstern spiller',
 			'metadataEdit.editMetadata' => 'Rediger...',
 			'metadataEdit.screenTitle' => 'Rediger metadata',

@@ -672,8 +672,10 @@ class _TranslationsMessagesSv extends TranslationsMessagesEn {
 	@override String metadataRefreshFailed({required Object error}) => 'Misslyckades att uppdatera metadata: ${error}';
 	@override String get logoutConfirm => 'Är du säker på att du vill logga ut?';
 	@override String get noSeasonsFound => 'Inga säsonger hittades';
+	@override String get seasonsLoadFailed => 'Det gick inte att läsa in säsonger';
 	@override String get noEpisodesFound => 'Inga avsnitt hittades i första säsongen';
 	@override String get noEpisodesFoundGeneral => 'Inga avsnitt hittades';
+	@override String get episodesLoadFailed => 'Det gick inte att läsa in avsnitt';
 	@override String get noResultsFound => 'Inga resultat hittades';
 	@override String sleepTimerSet({required Object label}) => 'Sovtimer inställd för ${label}';
 	@override String get noItemsAvailable => 'Inga objekt tillgängliga';
@@ -2295,8 +2297,10 @@ extension on TranslationsSv {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Misslyckades att uppdatera metadata: ${error}',
 			'messages.logoutConfirm' => 'Är du säker på att du vill logga ut?',
 			'messages.noSeasonsFound' => 'Inga säsonger hittades',
+			'messages.seasonsLoadFailed' => 'Det gick inte att läsa in säsonger',
 			'messages.noEpisodesFound' => 'Inga avsnitt hittades i första säsongen',
 			'messages.noEpisodesFoundGeneral' => 'Inga avsnitt hittades',
+			'messages.episodesLoadFailed' => 'Det gick inte att läsa in avsnitt',
 			'messages.noResultsFound' => 'Inga resultat hittades',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sovtimer inställd för ${label}',
 			'messages.noItemsAvailable' => 'Inga objekt tillgängliga',
@@ -2331,10 +2335,10 @@ extension on TranslationsSv {
 			'mpvConfig.loadPreset' => 'Ladda',
 			'mpvConfig.deletePreset' => 'Ta bort',
 			'mpvConfig.presetSaved' => 'Förval sparat',
-			'mpvConfig.presetLoaded' => 'Förval laddat',
-			'mpvConfig.presetDeleted' => 'Förval borttaget',
 			_ => null,
 		} ?? switch (path) {
+			'mpvConfig.presetLoaded' => 'Förval laddat',
+			'mpvConfig.presetDeleted' => 'Förval borttaget',
 			'mpvConfig.confirmDeletePreset' => 'Är du säker på att du vill ta bort detta förval?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Bekräfta åtgärd',
@@ -2845,10 +2849,10 @@ extension on TranslationsSv {
 			'externalPlayer.playerPackage' => 'Paketnamn',
 			'externalPlayer.playerUrlScheme' => 'URL-schema',
 			'externalPlayer.off' => 'Av',
-			'externalPlayer.launchFailed' => 'Kunde inte öppna extern spelare',
-			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} är inte installerad',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.launchFailed' => 'Kunde inte öppna extern spelare',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} är inte installerad',
 			'externalPlayer.playInExternalPlayer' => 'Spela i extern spelare',
 			'metadataEdit.editMetadata' => 'Redigera...',
 			'metadataEdit.screenTitle' => 'Redigera metadata',

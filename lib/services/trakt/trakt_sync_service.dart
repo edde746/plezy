@@ -8,7 +8,7 @@ import '../../media/media_server_client.dart';
 import '../../models/trakt/trakt_ids.dart';
 import '../../models/trakt/trakt_scrobble_request.dart';
 import '../../utils/app_logger.dart';
-import '../../utils/episode_collection.dart';
+import '../../media/episode_collection.dart';
 import '../../utils/watch_state_notifier.dart';
 import '../multi_server_manager.dart';
 import '../settings_service.dart';

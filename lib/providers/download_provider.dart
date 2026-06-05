@@ -22,7 +22,7 @@ import '../media/media_server_client.dart';
 import '../services/sync_rule_executor.dart';
 import '../utils/app_logger.dart';
 import '../utils/deletion_notifier.dart';
-import '../utils/episode_collection.dart';
+import '../media/episode_collection.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/watch_state_notifier.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';

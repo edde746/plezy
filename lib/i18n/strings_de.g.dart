@@ -672,8 +672,10 @@ class _TranslationsMessagesDe extends TranslationsMessagesEn {
 	@override String metadataRefreshFailed({required Object error}) => 'Metadaten konnten nicht aktualisiert werden: ${error}';
 	@override String get logoutConfirm => 'Abmeldung wirklich durchführen?';
 	@override String get noSeasonsFound => 'Keine Staffeln gefunden';
+	@override String get seasonsLoadFailed => 'Staffeln konnten nicht geladen werden';
 	@override String get noEpisodesFound => 'Keine Episoden in der ersten Staffel gefunden';
 	@override String get noEpisodesFoundGeneral => 'Keine Episoden gefunden';
+	@override String get episodesLoadFailed => 'Episoden konnten nicht geladen werden';
 	@override String get noResultsFound => 'Keine Ergebnisse gefunden';
 	@override String sleepTimerSet({required Object label}) => 'Sleep-Timer gesetzt auf ${label}';
 	@override String get noItemsAvailable => 'Keine Elemente verfügbar';
@@ -2295,8 +2297,10 @@ extension on TranslationsDe {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Metadaten konnten nicht aktualisiert werden: ${error}',
 			'messages.logoutConfirm' => 'Abmeldung wirklich durchführen?',
 			'messages.noSeasonsFound' => 'Keine Staffeln gefunden',
+			'messages.seasonsLoadFailed' => 'Staffeln konnten nicht geladen werden',
 			'messages.noEpisodesFound' => 'Keine Episoden in der ersten Staffel gefunden',
 			'messages.noEpisodesFoundGeneral' => 'Keine Episoden gefunden',
+			'messages.episodesLoadFailed' => 'Episoden konnten nicht geladen werden',
 			'messages.noResultsFound' => 'Keine Ergebnisse gefunden',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep-Timer gesetzt auf ${label}',
 			'messages.noItemsAvailable' => 'Keine Elemente verfügbar',
@@ -2331,10 +2335,10 @@ extension on TranslationsDe {
 			'mpvConfig.loadPreset' => 'Laden',
 			'mpvConfig.deletePreset' => 'Löschen',
 			'mpvConfig.presetSaved' => 'Voreinstellung gespeichert',
-			'mpvConfig.presetLoaded' => 'Voreinstellung geladen',
-			'mpvConfig.presetDeleted' => 'Voreinstellung gelöscht',
 			_ => null,
 		} ?? switch (path) {
+			'mpvConfig.presetLoaded' => 'Voreinstellung geladen',
+			'mpvConfig.presetDeleted' => 'Voreinstellung gelöscht',
 			'mpvConfig.confirmDeletePreset' => 'Möchten Sie diese Voreinstellung wirklich löschen?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Aktion bestätigen',
@@ -2845,10 +2849,10 @@ extension on TranslationsDe {
 			'externalPlayer.playerPackage' => 'Paketname',
 			'externalPlayer.playerUrlScheme' => 'URL-Schema',
 			'externalPlayer.off' => 'Aus',
-			'externalPlayer.launchFailed' => 'Externer Player konnte nicht geöffnet werden',
-			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} ist nicht installiert',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.launchFailed' => 'Externer Player konnte nicht geöffnet werden',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} ist nicht installiert',
 			'externalPlayer.playInExternalPlayer' => 'In externem Player abspielen',
 			'metadataEdit.editMetadata' => 'Bearbeiten...',
 			'metadataEdit.screenTitle' => 'Metadaten bearbeiten',

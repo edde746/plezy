@@ -8,7 +8,7 @@ import '../media/media_server_client.dart';
 import '../models/download_models.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_utils.dart';
-import '../utils/episode_collection.dart';
+import '../media/episode_collection.dart';
 import '../utils/global_key_utils.dart';
 import 'download_manager_service.dart';
 import 'multi_server_manager.dart';

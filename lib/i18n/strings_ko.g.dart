@@ -672,8 +672,10 @@ class _TranslationsMessagesKo extends TranslationsMessagesEn {
 	@override String metadataRefreshFailed({required Object error}) => '메타데이터 새로고침 실패: ${error}';
 	@override String get logoutConfirm => '로그아웃 하시겠습니까?';
 	@override String get noSeasonsFound => '시즌을 찾을 수 없음';
+	@override String get seasonsLoadFailed => '시즌을 불러오지 못했습니다';
 	@override String get noEpisodesFound => '시즌 1에서 에피소드를 찾을 수 없습니다';
 	@override String get noEpisodesFoundGeneral => '에피소드를 찾을 수 없습니다';
+	@override String get episodesLoadFailed => '에피소드를 불러오지 못했습니다';
 	@override String get noResultsFound => '결과를 찾을 수 없습니다';
 	@override String sleepTimerSet({required Object label}) => '수면 타이머가 ${label}로 설정 되었습니다';
 	@override String get noItemsAvailable => '사용 가능한 항목이 없습니다';
@@ -2295,8 +2297,10 @@ extension on TranslationsKo {
 			'messages.metadataRefreshFailed' => ({required Object error}) => '메타데이터 새로고침 실패: ${error}',
 			'messages.logoutConfirm' => '로그아웃 하시겠습니까?',
 			'messages.noSeasonsFound' => '시즌을 찾을 수 없음',
+			'messages.seasonsLoadFailed' => '시즌을 불러오지 못했습니다',
 			'messages.noEpisodesFound' => '시즌 1에서 에피소드를 찾을 수 없습니다',
 			'messages.noEpisodesFoundGeneral' => '에피소드를 찾을 수 없습니다',
+			'messages.episodesLoadFailed' => '에피소드를 불러오지 못했습니다',
 			'messages.noResultsFound' => '결과를 찾을 수 없습니다',
 			'messages.sleepTimerSet' => ({required Object label}) => '수면 타이머가 ${label}로 설정 되었습니다',
 			'messages.noItemsAvailable' => '사용 가능한 항목이 없습니다',
@@ -2331,10 +2335,10 @@ extension on TranslationsKo {
 			'mpvConfig.loadPreset' => '로드',
 			'mpvConfig.deletePreset' => '삭제',
 			'mpvConfig.presetSaved' => '프리셋이 저장 되었습니다',
-			'mpvConfig.presetLoaded' => '프리셋이 로드 되었습니다',
-			'mpvConfig.presetDeleted' => '프리셋이 삭제 되었습니다',
 			_ => null,
 		} ?? switch (path) {
+			'mpvConfig.presetLoaded' => '프리셋이 로드 되었습니다',
+			'mpvConfig.presetDeleted' => '프리셋이 삭제 되었습니다',
 			'mpvConfig.confirmDeletePreset' => '이 프리셋을 삭제 하시겠습니까?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => '확인',
@@ -2845,10 +2849,10 @@ extension on TranslationsKo {
 			'externalPlayer.playerPackage' => '패키지 이름',
 			'externalPlayer.playerUrlScheme' => 'URL 스킴',
 			'externalPlayer.off' => '꺼짐',
-			'externalPlayer.launchFailed' => '외부 플레이어를 열 수 없습니다',
-			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}이(가) 설치되어 있지 않습니다',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.launchFailed' => '외부 플레이어를 열 수 없습니다',
+			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name}이(가) 설치되어 있지 않습니다',
 			'externalPlayer.playInExternalPlayer' => '외부 플레이어에서 재생',
 			'metadataEdit.editMetadata' => '편집...',
 			'metadataEdit.screenTitle' => '메타데이터 편집',
