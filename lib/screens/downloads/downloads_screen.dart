@@ -14,7 +14,6 @@ import '../../mixins/refreshable.dart';
 import '../../utils/grid_size_calculator.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/desktop_app_bar.dart';
-import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/focusable_media_card.dart';
 import '../../widgets/media_grid_delegate.dart';
 import '../../widgets/download_tree_view.dart';
@@ -87,45 +86,12 @@ class DownloadsScreenState extends State<DownloadsScreen>
   }
 
   Widget _buildTabChip(String label, int index) {
-    final isSelected = tabController.index == index;
-
-    return FocusableTabChip(
-      label: label,
-      isSelected: isSelected,
-      focusNode: getTabChipFocusNode(index),
-      onSelect: () {
-        if (isSelected) {
-          // Already selected - navigate to tab content
-          _focusCurrentTab();
-        } else {
-          // Switch to this tab
-          setState(() {
-            tabController.index = index;
-          });
-        }
-      },
-      onNavigateLeft: index > 0
-          ? () {
-              final newIndex = index - 1;
-              setState(() {
-                suppressAutoFocus = true;
-                tabController.index = newIndex;
-              });
-              getTabChipFocusNode(newIndex).requestFocus();
-            }
-          : onTabBarBack,
-      onNavigateRight: index < tabCount - 1
-          ? () {
-              final newIndex = index + 1;
-              setState(() {
-                suppressAutoFocus = true;
-                tabController.index = newIndex;
-              });
-              getTabChipFocusNode(newIndex).requestFocus();
-            }
-          : () => _actionBarKey.currentState?.requestFocusOnFirst(),
+    return buildTabChip(
+      label,
+      index,
+      onSelectWhenActive: _focusCurrentTab,
       onNavigateDown: _focusCurrentTab,
-      onBack: onTabBarBack,
+      onNavigateToActions: () => _actionBarKey.currentState?.requestFocusOnFirst(),
     );
   }
 

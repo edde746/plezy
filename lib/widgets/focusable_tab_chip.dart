@@ -31,6 +31,9 @@ class FocusableTabChip extends StatefulWidget {
   /// Called when the user presses DOWN from this chip.
   final VoidCallback? onNavigateDown;
 
+  /// Called when the user presses UP from this chip.
+  final VoidCallback? onNavigateUp;
+
   /// Called when the user presses BACK from this chip.
   final VoidCallback? onBack;
 
@@ -50,6 +53,7 @@ class FocusableTabChip extends StatefulWidget {
     this.onNavigateLeft,
     this.onNavigateRight,
     this.onNavigateDown,
+    this.onNavigateUp,
     this.onBack,
     this.onLongPress,
     this.topImage,
@@ -94,6 +98,7 @@ class _FocusableTabChipState extends State<FocusableTabChip> with FocusableChipS
         onNavigateLeft: widget.onNavigateLeft,
         onNavigateRight: widget.onNavigateRight,
         onNavigateDown: widget.onNavigateDown,
+        onNavigateUp: widget.onNavigateUp,
         onBack: widget.onBack,
       ),
     );
