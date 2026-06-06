@@ -97,6 +97,7 @@ class MpvPlayerCoreBase: NSObject {
   private var cachedVideoPrimaries: String?
   private var cachedVideoColorMatrix: String?
   private var serverDisplayCriteriaActive = false
+  private var lastServerCriteria: ServerDisplayCriteria?
   private var cachedDvConversionMode = "auto"
   private var cachedDvConversionLogEnabled = false
   var hdrEnabled: Bool {
@@ -231,6 +232,7 @@ class MpvPlayerCoreBase: NSObject {
   func setServerDisplayCriteria(_ criteria: ServerDisplayCriteria?) {
     cacheLock.lock()
     serverDisplayCriteriaActive = criteria != nil
+    lastServerCriteria = criteria
     cacheLock.unlock()
 
     let apply = { [weak self] in
@@ -275,6 +277,21 @@ class MpvPlayerCoreBase: NSObject {
       apply()
     } else {
       DispatchQueue.main.async(execute: apply)
+    }
+  }
+
+  /// Re-evaluate the tvOS HDMI display mode using the most recent criteria.
+  /// On tvOS the HDR toggle only reaches the display through this path, so the
+  /// runtime toggle calls this to switch DV/HDR ⇄ SDR without reloading.
+  func reapplyDisplayCriteria() {
+    cacheLock.lock()
+    let criteria = lastServerCriteria
+    cacheLock.unlock()
+
+    if let criteria {
+      setServerDisplayCriteria(criteria)
+    } else {
+      scheduleDisplayCriteriaUpdate()
     }
   }
 
@@ -509,6 +526,15 @@ class MpvPlayerCoreBase: NSObject {
     DispatchQueue.main.async {
       self.updateEDRMode(sigPeak: sigPeak)
     }
+
+    // On tvOS the toggle only takes effect through the HDMI display-mode path
+    // (target-colorspace-hint is inert in the avfoundation VO and EDR is
+    // iOS-only), so re-evaluate the display criteria with the new flag.
+    #if os(tvOS)
+      DispatchQueue.main.async {
+        self.reapplyDisplayCriteria()
+      }
+    #endif
   }
 
   /// PiP presents the AVSampleBufferDisplayLayer directly, so subtitles must

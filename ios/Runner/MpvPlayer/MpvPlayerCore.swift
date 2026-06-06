@@ -268,10 +268,19 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         doviCompatibilityId: doviCompatibilityId
       )
       let sourceRange: DisplayDynamicRange = sourceHasDolbyVision ? .dolbyVision : sourceBaseRange
-      var displayRange: DisplayDynamicRange =
-        sourceHasDolbyVision
-        ? .dolbyVision
-        : Self.supportedDisplayDynamicRange(for: sourceBaseRange)
+      // The HDR toggle (`hdrEnabled`) is authoritative on tvOS: when it's off,
+      // drive the HDMI link in SDR regardless of the source — Dolby Vision
+      // included — so turning HDR off actually leaves DV mode (issue #1262).
+      // This is the only path that gates the HDMI mode on tvOS;
+      // target-colorspace-hint is inert in the avfoundation VO and EDR is iOS.
+      var displayRange: DisplayDynamicRange
+      if !hdrEnabled {
+        displayRange = .sdr
+      } else if sourceHasDolbyVision {
+        displayRange = .dolbyVision
+      } else {
+        displayRange = Self.supportedDisplayDynamicRange(for: sourceBaseRange)
+      }
       guard displayManager.isDisplayCriteriaMatchingEnabled else {
         clearDisplayCriteria(displayManager, reason: "matching disabled")
         return false
@@ -288,7 +297,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
         doviProfile: doviProfile,
         doviLevel: doviLevel,
         doviCompatibilityId: doviCompatibilityId)
-      if formatDescription == nil, sourceHasDolbyVision {
+      if formatDescription == nil, sourceHasDolbyVision, hdrEnabled {
         displayRange = sourceBaseRange
         formatDescription = Self.makeDisplayFormatDescription(
           dynamicRange: displayRange,
