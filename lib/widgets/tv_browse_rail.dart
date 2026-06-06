@@ -79,15 +79,6 @@ class TvBrowseRailLayout {
 
   static double viewAllPillHeightForScale(double scale) => (44 * scale).clamp(36, 54).toDouble();
 
-  static double fullCardFocusPaintOverflowForScale(double scale) {
-    return (FocusTheme.focusGlowOuterBlurRadius +
-            FocusTheme.focusGlowSpreadRadius +
-            FocusTheme.focusBorderWidth +
-            (10 * scale))
-        .clamp(42, 64)
-        .toDouble();
-  }
-
   static double hubStripHeightForScale(double scale) => 36 * scale;
 
   static double hubStripGapForScale(double _) => 0;
@@ -979,9 +970,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
               TvBrowseRailLayout.railTopPaddingForScale(scale) +
               viewportHeight +
               TvBrowseRailLayout.railBottomPaddingForScale(scale);
-          final paintOverflow = fullCardLayout && hasFocus
-              ? TvBrowseRailLayout.fullCardFocusPaintOverflowForScale(scale)
-              : 0.0;
           return Focus(
             focusNode: _focusNode,
             onKeyEvent: _handleKeyEvent,
@@ -1010,12 +998,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                         duration: FocusTheme.getAnimationDuration(context),
                         curve: Curves.easeOutCubic,
                         child: ClipRect(
-                          clipper: _RailClipper(
-                            leftOverflow: horizontalInset,
-                            rightOverflow: paintOverflow,
-                            topOverflow: 0,
-                            bottomOverflow: paintOverflow,
-                          ),
+                          clipper: _RailClipper(leftOverflow: horizontalInset, rightOverflow: 0),
                           child: SizedBox(
                             height: viewportHeight,
                             child: _buildHubSectionList(
@@ -1164,9 +1147,6 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     final inactiveIndex = HubFocusMemory.getForHubOnly(hub.id, totalCount);
     final focusedIndex = isActiveHub ? _itemIndex : inactiveIndex;
     final scrollController = _scrollControllerForHub(hub, metrics, railViewportWidth, scale, focusedIndex);
-    final paintOverflow = fullCardLayout && hasFocus && isActiveHub
-        ? TvBrowseRailLayout.fullCardFocusPaintOverflowForScale(scale)
-        : 0.0;
     _metricsByHub[hub.id] = metrics;
     _scaleByHub[hub.id] = scale;
 
@@ -1178,8 +1158,8 @@ class TvBrowseRailState extends State<TvBrowseRail> {
         child: ClipRect(
           clipper: _RailClipper(
             leftOverflow: leftOverflow,
-            rightOverflow: metrics.railEdgePadding + metrics.cardWidth + metrics.itemGap + paintOverflow,
-            verticalOverflow: fullCardLayout ? math.max(metrics.focusExtra, paintOverflow) : metrics.focusExtra,
+            rightOverflow: metrics.railEdgePadding + metrics.cardWidth + metrics.itemGap,
+            verticalOverflow: metrics.focusExtra,
           ),
           child: HorizontalScrollWithArrows(
             controller: scrollController,
@@ -1217,6 +1197,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
                   focusBorderStrokeAlign: fullCardLayout ? BorderSide.strokeAlignOutside : BorderSide.strokeAlignInside,
                   useFocusGlow: fullCardLayout,
                   useForegroundFocusDecoration: fullCardLayout,
+                  glowSize: fullCardLayout ? Size(metrics.cardWidth, metrics.posterHeight) : null,
                   onTap: () {
                     _selectHubItem(hub, hubIndex, itemIndex);
                     unawaited(_activateCurrentItem());

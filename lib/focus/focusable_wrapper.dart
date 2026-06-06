@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../widgets/clickable_cursor.dart';
 import '../utils/text_input_diagnostics.dart';
 import 'dpad_navigator.dart';
+import 'focus_glow_overlay.dart';
 import 'focus_theme.dart';
 import 'input_mode_tracker.dart';
 import 'key_event_utils.dart';
@@ -480,15 +481,6 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
             color: widget.focusColor,
             borderStrokeAlign: widget.focusBorderStrokeAlign,
           );
-    final glowDecoration = widget.useFocusGlow
-        ? FocusTheme.focusGlowDecoration(
-            context,
-            isFocused: showFocus,
-            borderRadius: widget.borderRadius,
-            color: widget.focusColor,
-          )
-        : null;
-
     Widget result = Focus(
       focusNode: _focusNode,
       autofocus: widget.autofocus,
@@ -499,16 +491,24 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
         animation: _scaleAnimation,
         builder: (context, child) {
           final shouldScale = showFocus && !widget.disableScale;
-          return Transform.scale(
-            scale: shouldScale ? _scaleAnimation.value : 1.0,
-            child: AnimatedContainer(
-              duration: duration,
-              curve: Curves.easeOutCubic,
-              decoration: widget.useForegroundFocusDecoration ? glowDecoration : focusDecoration,
-              foregroundDecoration: widget.useForegroundFocusDecoration ? focusDecoration : null,
-              child: widget.child,
-            ),
+          // The glow (full-bleed cards) is drawn in an overlay above siblings so
+          // it stays symmetric; the in-card decoration only carries the border.
+          Widget card = AnimatedContainer(
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            decoration: widget.useForegroundFocusDecoration ? null : focusDecoration,
+            foregroundDecoration: widget.useForegroundFocusDecoration ? focusDecoration : null,
+            child: widget.child,
           );
+          if (widget.useFocusGlow) {
+            card = FocusGlowOverlay(
+              isFocused: showFocus,
+              borderRadius: widget.borderRadius,
+              color: widget.focusColor ?? FocusTheme.getFocusBorderColor(context),
+              child: card,
+            );
+          }
+          return Transform.scale(scale: shouldScale ? _scaleAnimation.value : 1.0, child: card);
         },
       ),
     );
