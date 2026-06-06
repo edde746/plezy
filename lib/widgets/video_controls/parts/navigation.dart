@@ -43,6 +43,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         streamStartEpoch: widget.streamStartEpoch,
         currentPositionEpoch: widget.currentPositionEpoch,
         onLiveSeek: widget.onLiveSeek,
+        onLiveSeekBy: widget.onLiveSeekBy,
         onJumpToLive: widget.onJumpToLive,
         useDpadNavigation: useDpad,
         serverId: widget.metadata.serverId,

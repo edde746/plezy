@@ -306,7 +306,8 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                           isAtLiveEdge: _isAtLiveEdge,
                           streamStartEpoch: _streamStartEpoch,
                           currentPositionEpoch: widget.isLive ? _currentPositionEpoch : null,
-                          onLiveSeek: _captureBuffer != null ? _seekLivePosition : null,
+                          onLiveSeek: _captureBuffer != null ? _seekLiveToEpoch : null,
+                          onLiveSeekBy: _captureBuffer != null ? _liveSeek.seekBy : null,
                           onJumpToLive: _captureBuffer != null && !_isAtLiveEdge ? _jumpToLiveEdge : null,
                           isAmbientLightingEnabled: _ambientLightingService?.isEnabled ?? false,
                           onToggleAmbientLighting: _ambientLightingService?.isSupported == true

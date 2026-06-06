@@ -241,8 +241,13 @@ class PlexVideoControls extends StatefulWidget {
   /// Current playback position as absolute epoch seconds (for live TV)
   final int? currentPositionEpoch;
 
-  /// Seek callback for live TV time-shift (epoch seconds)
+  /// Seek callback for live TV time-shift (absolute epoch seconds; scrubber)
   final ValueChanged<int>? onLiveSeek;
+
+  /// Relative live-TV skip callback (delta seconds). The owning screen
+  /// accumulates rapid presses and debounces the transcode re-open, so skip
+  /// buttons/dpad/remote keys must use this rather than `onLiveSeek` (#1253).
+  final ValueChanged<int>? onLiveSeekBy;
 
   /// Jump to live edge callback
   final VoidCallback? onJumpToLive;
@@ -306,6 +311,7 @@ class PlexVideoControls extends StatefulWidget {
     this.streamStartEpoch = 0,
     this.currentPositionEpoch,
     this.onLiveSeek,
+    this.onLiveSeekBy,
     this.onJumpToLive,
     this.isAmbientLightingEnabled = false,
     this.onToggleAmbientLighting,

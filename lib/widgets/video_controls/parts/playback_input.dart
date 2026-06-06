@@ -63,9 +63,11 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   }
 
   Future<void> _seekByOffset(Duration delta, {bool notifyCompletion = true}) async {
-    // Route through live seek callback for time-shifted live TV
-    if (widget.isLive && widget.onLiveSeek != null && widget.currentPositionEpoch != null) {
-      widget.onLiveSeek!(widget.currentPositionEpoch! + delta.inSeconds);
+    // Route relative live-TV skips through the parent accumulator, which
+    // coalesces a rapid burst into a single transcode re-open and computes the
+    // target from a stable base rather than the laggy live epoch (#1253).
+    if (widget.isLive && widget.onLiveSeekBy != null) {
+      widget.onLiveSeekBy!(delta.inSeconds);
       return;
     }
     final target = widget.player.state.position + delta;

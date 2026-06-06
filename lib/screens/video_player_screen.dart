@@ -21,6 +21,7 @@ import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../services/jellyfin_client.dart';
+import '../services/live_seek_accumulator.dart';
 import '../services/live_session_tracker.dart';
 import '../services/plex_client.dart';
 import '../utils/session_identifier.dart';
@@ -344,6 +345,17 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
   double _streamStartEpoch = 0;
   bool _isAtLiveEdge = true;
   String? _transcodeSessionId;
+
+  /// Coalesces rapid relative live-TV skips into a single transcode re-open so
+  /// mashing skip-forward can't compound into an overshoot to live (#1253).
+  /// Lazily built; its closures read the current live state on each call.
+  late final LiveSeekAccumulator _liveSeek = LiveSeekAccumulator(
+    seek: _runLiveSeek,
+    currentEpoch: () => _rawPositionEpoch,
+    positionSeconds: () => player?.state.position.inSeconds ?? 0,
+    bounds: _liveSeekBounds,
+    onChanged: _onLiveSeekTargetChanged,
+  );
 
   /// Fallback level for live TV stream errors (mirrors Plex web client behavior).
   /// 0 = directStream+directStreamAudio, 1 = no directStream, 2 = no DS + no DS audio.
@@ -1182,6 +1194,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
     _tvBackgroundMediaControlResumeTimer?.cancel();
 
     _stillWatchingTimer?.cancel();
+
+    _liveSeek.dispose();
 
     _playNextCancelFocusNode.dispose();
     _playNextConfirmFocusNode.dispose();

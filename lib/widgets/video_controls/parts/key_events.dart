@@ -162,6 +162,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         onZoomReset: widget.onResetVideoZoom,
         currentPositionEpoch: widget.currentPositionEpoch,
         onLiveSeek: widget.onLiveSeek,
+        onLiveSeekBy: widget.onLiveSeekBy,
       );
       if (result == KeyEventResult.handled) {
         _focusNode.requestFocus(); // self-heal focus
@@ -315,6 +316,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       onZoomReset: widget.onResetVideoZoom,
       currentPositionEpoch: widget.currentPositionEpoch,
       onLiveSeek: widget.onLiveSeek,
+      onLiveSeekBy: widget.onLiveSeekBy,
       onSeekRequested: widget.onSeekRequested,
     );
     if (!event.logicalKey.isNavigationKey) return result;
