@@ -1060,9 +1060,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       if (_watchTogetherProvider != null && _watchTogetherProvider!.isInSession && !_watchTogetherProvider!.isHost) {
         final confirmed = await showConfirmDialog(
           context,
-          title: 'Leave Session?',
-          message: 'You will be removed from the session.',
-          confirmText: 'Leave',
+          title: t.watchTogether.leaveSessionQuestion,
+          message: t.watchTogether.leaveSessionConfirm,
+          confirmText: t.watchTogether.leave,
           isDestructive: true,
         );
 

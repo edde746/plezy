@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../../utils/future_extensions.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
+import '../../i18n/strings.g.dart';
 import '../../services/base_peer_service.dart';
 import '../../utils/app_logger.dart';
 import '../models/sync_message.dart';
@@ -214,7 +215,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
 
         case 'error':
           final code = msg['code'] as String? ?? 'unknown';
-          final message = msg['message'] as String? ?? 'Unknown error';
+          final message = msg['message'] as String? ?? t.common.unknown;
           appLogger.e('WatchTogether: Server error: $code - $message');
           final error = PeerError(type: PeerErrorType.serverError, message: '$code: $message', serverCode: code);
           _safeAdd(_errorController, error);
@@ -400,7 +401,7 @@ class WatchTogetherPeerService with KeepaliveMixin {
       await completer.future.timeout(
         const Duration(seconds: 10),
         onTimeout: () {
-          throw const PeerError(type: PeerErrorType.timeout, message: 'Timed out joining session');
+          throw PeerError(type: PeerErrorType.timeout, message: t.watchTogether.failedToJoin);
         },
       );
 

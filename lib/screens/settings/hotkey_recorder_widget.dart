@@ -43,7 +43,10 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
             mainAxisSize: .min,
             crossAxisAlignment: .start,
             children: [
-              Text('Current shortcut:', style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: .bold)),
+              Text(
+                t.hotkeys.currentShortcut,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: .bold),
+              ),
               const SizedBox(height: 6),
               Container(
                 width: double.infinity,

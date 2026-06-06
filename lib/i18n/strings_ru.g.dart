@@ -77,6 +77,7 @@ class TranslationsRu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsShadersRu shaders = _TranslationsShadersRu._(_root);
 	@override late final _TranslationsCompanionRemoteRu companionRemote = _TranslationsCompanionRemoteRu._(_root);
 	@override late final _TranslationsVideoSettingsRu videoSettings = _TranslationsVideoSettingsRu._(_root);
+	@override late final _TranslationsPerformanceOverlayRu performanceOverlay = _TranslationsPerformanceOverlayRu._(_root);
 	@override late final _TranslationsExternalPlayerRu externalPlayer = _TranslationsExternalPlayerRu._(_root);
 	@override late final _TranslationsMetadataEditRu metadataEdit = _TranslationsMetadataEditRu._(_root);
 	@override late final _TranslationsMatchScreenRu matchScreen = _TranslationsMatchScreenRu._(_root);
@@ -159,6 +160,9 @@ class _TranslationsCommonRu extends TranslationsCommonEn {
 	@override String get settings => 'Настройки';
 	@override String get mute => 'Без звука';
 	@override String get ok => 'OK';
+	@override String get off => 'Выкл.';
+	@override String seasonNumber({required Object number}) => 'Сезон ${number}';
+	@override String chapterNumber({required Object number}) => 'Глава ${number}';
 	@override String get reconnect => 'Переподключить';
 	@override String get exit => 'Выход';
 	@override String get viewAll => 'Показать все';
@@ -385,6 +389,10 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get dvConversionNative => 'Нативно / отключено';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
 	@override String get dvConversionHevcStrip => 'P7 → HEVC';
+	@override String get dvConversionAutoDescription => 'Использовать определение возможностей устройства и обычное резервное поведение';
+	@override String get dvConversionNativeDescription => 'Принудительно использовать нативный DV7 и не повторять DV-конвертацию';
+	@override String get dvConversionDv81Description => 'Принудительно выполнять inline-конвертацию RPU в Dolby Vision профиль 8.1';
+	@override String get dvConversionHevcStripDescription => 'Удалять слои Dolby Vision RPU/EL и передавать обычный HEVC';
 	@override String get requireProfileSelectionOnOpen => 'Запрашивать профиль при запуске';
 	@override String get requireProfileSelectionOnOpenDescription => 'Показывать выбор профиля при каждом открытии приложения';
 	@override String get forceTvMode => 'Принудительный режим ТВ';
@@ -432,6 +440,8 @@ class _TranslationsHotkeysRu extends TranslationsHotkeysEn {
 	// Translations
 	@override String setShortcutFor({required Object actionName}) => 'Назначить клавишу для ${actionName}';
 	@override String get clearShortcut => 'Очистить клавишу';
+	@override String get noShortcutSet => 'Сочетание не задано';
+	@override String get currentShortcut => 'Текущее сочетание:';
 	@override late final _TranslationsHotkeysActionsRu actions = _TranslationsHotkeysActionsRu._(_root);
 }
 
@@ -482,6 +492,7 @@ class _TranslationsMediaMenuRu extends TranslationsMediaMenuEn {
 	@override String get goToSeries => 'Перейти к сериалу';
 	@override String get goToSeason => 'Перейти к сезону';
 	@override String get shufflePlay => 'Случайное воспроизведение';
+	@override String get shuffleNotAvailableOffline => 'Перемешивание недоступно офлайн';
 	@override String get fileInfo => 'Информация о файле';
 	@override String get deleteFromServer => 'Удалить с сервера';
 	@override String get confirmDelete => 'Удалить это медиа и его файлы с сервера?';
@@ -620,6 +631,10 @@ class _TranslationsVideoControlsRu extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => 'Поиск субтитров';
 	@override String get language => 'Язык';
 	@override String get noSubtitlesFound => 'Субтитры не найдены';
+	@override String get downloadedSubtitle => 'Загружено';
+	@override String get noSubtitlesAvailable => 'Нет доступных субтитров';
+	@override String get noAudioTracksAvailable => 'Нет доступных аудиодорожек';
+	@override String get noTracksAvailable => 'Нет доступных дорожек';
 	@override String get subtitleDownloaded => 'Субтитры загружены';
 	@override String get subtitleDownloadFailed => 'Не удалось загрузить субтитры';
 	@override String get searchLanguages => 'Поиск языков...';
@@ -808,6 +823,7 @@ class _TranslationsProfilesRu extends TranslationsProfilesEn {
 	@override String get pinExplain => 'Для переключения профилей нужен 4-значный PIN.';
 	@override String get continueButton => 'Продолжить';
 	@override String get pinsDontMatch => 'PIN-коды не совпадают';
+	@override String get initializeServicesFailed => 'Не удалось инициализировать службы профиля';
 }
 
 // Path: connections
@@ -854,6 +870,7 @@ class _TranslationsDiscoverRu extends TranslationsDiscoverEn {
 	@override String get movie => 'Фильм';
 	@override String get tvShow => 'Сериал';
 	@override String minutesLeft({required Object minutes}) => 'Осталось ${minutes} мин';
+	@override String get moreLikeThis => 'Похожее';
 }
 
 // Path: errors
@@ -886,6 +903,7 @@ class _TranslationsLibrariesRu extends TranslationsLibrariesEn {
 
 	// Translations
 	@override String get title => 'Библиотеки';
+	@override String get fallbackTitle => 'Библиотека';
 	@override String get scanLibraryFiles => 'Сканировать файлы библиотеки';
 	@override String get scanLibrary => 'Сканировать библиотеку';
 	@override String get analyze => 'Анализировать';
@@ -1018,6 +1036,12 @@ class _TranslationsLiveTvRu extends TranslationsLiveTvEn {
 	@override String get noChannels => 'Нет доступных каналов';
 	@override String get noDvr => 'DVR не настроен ни на одном сервере';
 	@override String get noPrograms => 'Нет данных о программах';
+	@override String get liveStreamFailed => 'Не удалось запустить прямой эфир';
+	@override String get unknownProgram => 'Неизвестная программа';
+	@override String get unknownHub => 'Неизвестно';
+	@override String get unknownError => 'Неизвестная ошибка';
+	@override String channelNumber({required Object number}) => 'Канал ${number}';
+	@override String get unknownChannel => 'Неизвестный канал';
 	@override String get live => 'ЭФИР';
 	@override String get reloadGuide => 'Перезагрузить программу';
 	@override String get now => 'Сейчас';
@@ -1224,12 +1248,21 @@ class _TranslationsDownloadsRu extends TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Удалить загрузку';
 	@override String get retryDownload => 'Повторить загрузку';
 	@override String get downloadQueued => 'Загрузка поставлена в очередь';
+	@override String get downloadResumed => 'Загрузка возобновлена';
 	@override String get serverErrorBitrate => 'Ошибка сервера: файл может превышать удаленный лимит bitrate';
 	@override String episodesQueued({required Object count}) => '${count} эпизодов поставлено в очередь загрузки';
 	@override String get downloadDeleted => 'Загрузка удалена';
 	@override String deleteConfirm({required Object title}) => 'Удалить "${title}" с этого устройства?';
-	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Удаление ${title}... (${current} из ${total})';
+	@override String get cancelledDownloadTitle => 'Загрузка отменена';
+	@override String get cancelledDownloadMessage => 'Эта загрузка была отменена. Что вы хотите сделать?';
+	@override String get allEpisodesAlreadyDownloaded => 'Все эпизоды уже загружены';
+	@override String get resumeDownload => 'Возобновить загрузку';
+	@override String get cancelledDownload => 'Загрузка отменена';
+	@override String syncingFile({required Object file, required Object status}) => '${file} (синхронизация ${status})';
+	@override String downloadedFileClickToComplete({required Object file}) => '${file} загружен — нажмите, чтобы завершить';
+	@override String get partialDownloadClickToComplete => 'Частично загружено — нажмите, чтобы завершить';
 	@override String get deleting => 'Удаление...';
+	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Удаление ${title}... (${current} из ${total})';
 	@override String get queuedTooltip => 'В очереди';
 	@override String queuedFilesTooltip({required Object files}) => 'В очереди: ${files}';
 	@override String get downloadingTooltip => 'Загрузка...';
@@ -1304,9 +1337,11 @@ class _TranslationsCompanionRemoteRu extends TranslationsCompanionRemoteEn {
 	// Translations
 	@override String get title => 'Пульт управления';
 	@override String connectedTo({required Object name}) => 'Подключено к ${name}';
+	@override String get unknownDevice => 'Неизвестное устройство';
 	@override late final _TranslationsCompanionRemoteSessionRu session = _TranslationsCompanionRemoteSessionRu._(_root);
 	@override late final _TranslationsCompanionRemotePairingRu pairing = _TranslationsCompanionRemotePairingRu._(_root);
 	@override late final _TranslationsCompanionRemoteRemoteRu remote = _TranslationsCompanionRemoteRemoteRu._(_root);
+	@override late final _TranslationsCompanionRemoteErrorsRu errors = _TranslationsCompanionRemoteErrorsRu._(_root);
 }
 
 // Path: videoSettings
@@ -1328,6 +1363,49 @@ class _TranslationsVideoSettingsRu extends TranslationsVideoSettingsEn {
 	@override String get audioNormalization => 'Нормализация громкости';
 }
 
+// Path: performanceOverlay
+class _TranslationsPerformanceOverlayRu extends TranslationsPerformanceOverlayEn {
+	_TranslationsPerformanceOverlayRu._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get color => 'Цвет';
+	@override String get performance => 'Производительность';
+	@override String get buffer => 'Буфер';
+	@override String get app => 'Приложение';
+	@override String get decoder => 'Декодер';
+	@override String get rawDecoder => 'Raw-декодер';
+	@override String get tunneling => 'Туннелирование';
+	@override String get aspect => 'Соотношение';
+	@override String get rotation => 'Поворот';
+	@override String get dvSource => 'Источник DV';
+	@override String get dvPath => 'Путь DV';
+	@override String get p7Conversion => 'Конв. P7';
+	@override String get sampleRate => 'Частота дискр.';
+	@override String get pixelFormat => 'Формат пикселей';
+	@override String get hwFormat => 'Формат HW';
+	@override String get matrix => 'Матрица';
+	@override String get primaries => 'Основные цвета';
+	@override String get transfer => 'Передача';
+	@override String get renderFps => 'FPS рендера';
+	@override String get displayFps => 'FPS дисплея';
+	@override String get avSync => 'A/V синхр.';
+	@override String get dropped => 'Пропущено';
+	@override String get dvRpus => 'DV RPU';
+	@override String get dvRpuAverage => 'Сред. DV RPU';
+	@override String get dvSampleAverage => 'Сред. сэмпл DV';
+	@override String get maxLuma => 'Макс. яркость';
+	@override String get minLuma => 'Мин. яркость';
+	@override String get maxCll => 'MaxCLL';
+	@override String get maxFall => 'MaxFALL';
+	@override String get cacheUsed => 'Кэш использован';
+	@override String get speed => 'Скорость';
+	@override String get player => 'Плеер';
+	@override String get memory => 'Память';
+	@override String get uiFps => 'UI FPS';
+}
+
 // Path: externalPlayer
 class _TranslationsExternalPlayerRu extends TranslationsExternalPlayerEn {
 	_TranslationsExternalPlayerRu._(TranslationsRu root) : this._root = root, super.internal(root);
@@ -1343,6 +1421,7 @@ class _TranslationsExternalPlayerRu extends TranslationsExternalPlayerEn {
 	@override String get systemDefault => 'Системный по умолчанию';
 	@override String get addCustomPlayer => 'Добавить свой плеер';
 	@override String get playerName => 'Название плеера';
+	@override String get playerNameHint => 'Мой плеер';
 	@override String get playerCommand => 'Команда';
 	@override String get playerPackage => 'Имя пакета';
 	@override String get playerUrlScheme => 'URL-схема';
@@ -1755,6 +1834,21 @@ class _TranslationsCompanionRemoteRemoteRu extends TranslationsCompanionRemoteRe
 	@override String get searchHint => 'Поиск на десктопе...';
 }
 
+// Path: companionRemote.errors
+class _TranslationsCompanionRemoteErrorsRu extends TranslationsCompanionRemoteErrorsEn {
+	_TranslationsCompanionRemoteErrorsRu._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get noNetworkInterface => 'Сетевой интерфейс не найден';
+	@override String get authenticationFailed => 'Ошибка аутентификации';
+	@override String get joinTimedOut => 'Время подключения к сеансу истекло';
+	@override String get failedToConnectAnyAddress => 'Не удалось подключиться ни к одному адресу';
+	@override String connectionLostAfterAttempts({required Object attempts}) => 'Соединение потеряно после ${attempts} попыток';
+	@override String get connectionLost => 'Соединение потеряно';
+}
+
 // Path: trackers.services
 class _TranslationsTrackersServicesRu extends TranslationsTrackersServicesEn {
 	_TranslationsTrackersServicesRu._(TranslationsRu root) : this._root = root, super.internal(root);
@@ -1871,6 +1965,9 @@ extension on TranslationsRu {
 			'common.settings' => 'Настройки',
 			'common.mute' => 'Без звука',
 			'common.ok' => 'OK',
+			'common.off' => 'Выкл.',
+			'common.seasonNumber' => ({required Object number}) => 'Сезон ${number}',
+			'common.chapterNumber' => ({required Object number}) => 'Глава ${number}',
 			'common.reconnect' => 'Переподключить',
 			'common.exit' => 'Выход',
 			'common.viewAll' => 'Показать все',
@@ -2070,6 +2167,10 @@ extension on TranslationsRu {
 			'settings.dvConversionNative' => 'Нативно / отключено',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
 			'settings.dvConversionHevcStrip' => 'P7 → HEVC',
+			'settings.dvConversionAutoDescription' => 'Использовать определение возможностей устройства и обычное резервное поведение',
+			'settings.dvConversionNativeDescription' => 'Принудительно использовать нативный DV7 и не повторять DV-конвертацию',
+			'settings.dvConversionDv81Description' => 'Принудительно выполнять inline-конвертацию RPU в Dolby Vision профиль 8.1',
+			'settings.dvConversionHevcStripDescription' => 'Удалять слои Dolby Vision RPU/EL и передавать обычный HEVC',
 			'settings.requireProfileSelectionOnOpen' => 'Запрашивать профиль при запуске',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Показывать выбор профиля при каждом открытии приложения',
 			'settings.forceTvMode' => 'Принудительный режим ТВ',
@@ -2099,6 +2200,8 @@ extension on TranslationsRu {
 			'search.enterTitleActorOrKeyword' => 'Введите название, актёра или ключевое слово',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Назначить клавишу для ${actionName}',
 			'hotkeys.clearShortcut' => 'Очистить клавишу',
+			'hotkeys.noShortcutSet' => 'Сочетание не задано',
+			'hotkeys.currentShortcut' => 'Текущее сочетание:',
 			'hotkeys.actions.playPause' => 'Воспроизведение/Пауза',
 			'hotkeys.actions.volumeUp' => 'Громкость выше',
 			'hotkeys.actions.volumeDown' => 'Громкость ниже',
@@ -2155,6 +2258,7 @@ extension on TranslationsRu {
 			'mediaMenu.goToSeries' => 'Перейти к сериалу',
 			'mediaMenu.goToSeason' => 'Перейти к сезону',
 			'mediaMenu.shufflePlay' => 'Случайное воспроизведение',
+			'mediaMenu.shuffleNotAvailableOffline' => 'Перемешивание недоступно офлайн',
 			'mediaMenu.fileInfo' => 'Информация о файле',
 			'mediaMenu.deleteFromServer' => 'Удалить с сервера',
 			'mediaMenu.confirmDelete' => 'Удалить это медиа и его файлы с сервера?',
@@ -2263,6 +2367,10 @@ extension on TranslationsRu {
 			'videoControls.searchSubtitles' => 'Поиск субтитров',
 			'videoControls.language' => 'Язык',
 			'videoControls.noSubtitlesFound' => 'Субтитры не найдены',
+			'videoControls.downloadedSubtitle' => 'Загружено',
+			'videoControls.noSubtitlesAvailable' => 'Нет доступных субтитров',
+			'videoControls.noAudioTracksAvailable' => 'Нет доступных аудиодорожек',
+			'videoControls.noTracksAvailable' => 'Нет доступных дорожек',
 			'videoControls.subtitleDownloaded' => 'Субтитры загружены',
 			'videoControls.subtitleDownloadFailed' => 'Не удалось загрузить субтитры',
 			'videoControls.searchLanguages' => 'Поиск языков...',
@@ -2321,6 +2429,8 @@ extension on TranslationsRu {
 			'subtitlingStyling.borderColor' => 'Цвет обводки',
 			'subtitlingStyling.backgroundOpacity' => 'Прозрачность фона',
 			'subtitlingStyling.backgroundColor' => 'Цвет фона',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.position' => 'Позиция',
 			'subtitlingStyling.assOverride' => 'Переопределение ASS',
 			'subtitlingStyling.bold' => 'Жирный',
@@ -2335,8 +2445,6 @@ extension on TranslationsRu {
 			'mpvConfig.loadPreset' => 'Загрузить',
 			'mpvConfig.deletePreset' => 'Удалить',
 			'mpvConfig.presetSaved' => 'Пресет сохранён',
-			_ => null,
-		} ?? switch (path) {
 			'mpvConfig.presetLoaded' => 'Пресет загружен',
 			'mpvConfig.presetDeleted' => 'Пресет удалён',
 			'mpvConfig.confirmDeletePreset' => 'Вы уверены, что хотите удалить этот пресет?',
@@ -2399,6 +2507,7 @@ extension on TranslationsRu {
 			'profiles.pinExplain' => 'Для переключения профилей нужен 4-значный PIN.',
 			'profiles.continueButton' => 'Продолжить',
 			'profiles.pinsDontMatch' => 'PIN-коды не совпадают',
+			'profiles.initializeServicesFailed' => 'Не удалось инициализировать службы профиля',
 			'connections.sectionTitle' => 'Подключения',
 			'connections.addConnection' => 'Добавить подключение',
 			'connections.addConnectionSubtitleNoProfile' => 'Войдите через Plex или подключите сервер Jellyfin',
@@ -2427,6 +2536,7 @@ extension on TranslationsRu {
 			'discover.movie' => 'Фильм',
 			'discover.tvShow' => 'Сериал',
 			'discover.minutesLeft' => ({required Object minutes}) => 'Осталось ${minutes} мин',
+			'discover.moreLikeThis' => 'Похожее',
 			'errors.searchFailed' => ({required Object error}) => 'Ошибка поиска: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Таймаут подключения при загрузке ${context}',
 			'errors.connectionFailed' => 'Не удалось подключиться к медиасерверу',
@@ -2441,6 +2551,7 @@ extension on TranslationsRu {
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Не удалось удалить ${displayName}',
 			'errors.failedToRate' => 'Не удалось обновить оценку',
 			'libraries.title' => 'Библиотеки',
+			'libraries.fallbackTitle' => 'Библиотека',
 			'libraries.scanLibraryFiles' => 'Сканировать файлы библиотеки',
 			'libraries.scanLibrary' => 'Сканировать библиотеку',
 			'libraries.analyze' => 'Анализировать',
@@ -2541,6 +2652,12 @@ extension on TranslationsRu {
 			'liveTv.noChannels' => 'Нет доступных каналов',
 			'liveTv.noDvr' => 'DVR не настроен ни на одном сервере',
 			'liveTv.noPrograms' => 'Нет данных о программах',
+			'liveTv.liveStreamFailed' => 'Не удалось запустить прямой эфир',
+			'liveTv.unknownProgram' => 'Неизвестная программа',
+			'liveTv.unknownHub' => 'Неизвестно',
+			'liveTv.unknownError' => 'Неизвестная ошибка',
+			'liveTv.channelNumber' => ({required Object number}) => 'Канал ${number}',
+			'liveTv.unknownChannel' => 'Неизвестный канал',
 			'liveTv.live' => 'ЭФИР',
 			'liveTv.reloadGuide' => 'Перезагрузить программу',
 			'liveTv.now' => 'Сейчас',
@@ -2711,12 +2828,21 @@ extension on TranslationsRu {
 			'downloads.deleteDownload' => 'Удалить загрузку',
 			'downloads.retryDownload' => 'Повторить загрузку',
 			'downloads.downloadQueued' => 'Загрузка поставлена в очередь',
+			'downloads.downloadResumed' => 'Загрузка возобновлена',
 			'downloads.serverErrorBitrate' => 'Ошибка сервера: файл может превышать удаленный лимит bitrate',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} эпизодов поставлено в очередь загрузки',
 			'downloads.downloadDeleted' => 'Загрузка удалена',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Удалить "${title}" с этого устройства?',
-			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Удаление ${title}... (${current} из ${total})',
+			'downloads.cancelledDownloadTitle' => 'Загрузка отменена',
+			'downloads.cancelledDownloadMessage' => 'Эта загрузка была отменена. Что вы хотите сделать?',
+			'downloads.allEpisodesAlreadyDownloaded' => 'Все эпизоды уже загружены',
+			'downloads.resumeDownload' => 'Возобновить загрузку',
+			'downloads.cancelledDownload' => 'Загрузка отменена',
+			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизация ${status})',
+			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} загружен — нажмите, чтобы завершить',
+			'downloads.partialDownloadClickToComplete' => 'Частично загружено — нажмите, чтобы завершить',
 			'downloads.deleting' => 'Удаление...',
+			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Удаление ${title}... (${current} из ${total})',
 			'downloads.queuedTooltip' => 'В очереди',
 			'downloads.queuedFilesTooltip' => ({required Object files}) => 'В очереди: ${files}',
 			'downloads.downloadingTooltip' => 'Загрузка...',
@@ -2773,6 +2899,7 @@ extension on TranslationsRu {
 			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Удалить "${name}"?',
 			'companionRemote.title' => 'Пульт управления',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Подключено к ${name}',
+			'companionRemote.unknownDevice' => 'Неизвестное устройство',
 			'companionRemote.session.startingServer' => 'Запуск удалённого сервера...',
 			'companionRemote.session.failedToCreate' => 'Не удалось запустить удалённый сервер:',
 			'companionRemote.session.hostAddress' => 'Адрес хоста',
@@ -2816,6 +2943,8 @@ extension on TranslationsRu {
 			'companionRemote.remote.tabSettings' => 'Настройки',
 			'companionRemote.remote.previous' => 'Предыдущий',
 			'companionRemote.remote.playPause' => 'Воспроизведение/Пауза',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.next' => 'Следующий',
 			'companionRemote.remote.seekBack' => 'Назад',
 			'companionRemote.remote.stop' => 'Стоп',
@@ -2827,6 +2956,12 @@ extension on TranslationsRu {
 			'companionRemote.remote.subtitles' => 'Субтитры',
 			'companionRemote.remote.audio' => 'Аудио',
 			'companionRemote.remote.searchHint' => 'Поиск на десктопе...',
+			'companionRemote.errors.noNetworkInterface' => 'Сетевой интерфейс не найден',
+			'companionRemote.errors.authenticationFailed' => 'Ошибка аутентификации',
+			'companionRemote.errors.joinTimedOut' => 'Время подключения к сеансу истекло',
+			'companionRemote.errors.failedToConnectAnyAddress' => 'Не удалось подключиться ни к одному адресу',
+			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Соединение потеряно после ${attempts} попыток',
+			'companionRemote.errors.connectionLost' => 'Соединение потеряно',
 			'videoSettings.playbackSpeed' => 'Скорость воспроизведения',
 			'videoSettings.zoom' => 'Масштаб',
 			'videoSettings.sleepTimer' => 'Таймер сна',
@@ -2837,6 +2972,40 @@ extension on TranslationsRu {
 			'videoSettings.performanceOverlay' => 'Оверлей производительности',
 			'videoSettings.audioPassthrough' => 'Сквозной вывод аудио',
 			'videoSettings.audioNormalization' => 'Нормализация громкости',
+			'performanceOverlay.color' => 'Цвет',
+			'performanceOverlay.performance' => 'Производительность',
+			'performanceOverlay.buffer' => 'Буфер',
+			'performanceOverlay.app' => 'Приложение',
+			'performanceOverlay.decoder' => 'Декодер',
+			'performanceOverlay.rawDecoder' => 'Raw-декодер',
+			'performanceOverlay.tunneling' => 'Туннелирование',
+			'performanceOverlay.aspect' => 'Соотношение',
+			'performanceOverlay.rotation' => 'Поворот',
+			'performanceOverlay.dvSource' => 'Источник DV',
+			'performanceOverlay.dvPath' => 'Путь DV',
+			'performanceOverlay.p7Conversion' => 'Конв. P7',
+			'performanceOverlay.sampleRate' => 'Частота дискр.',
+			'performanceOverlay.pixelFormat' => 'Формат пикселей',
+			'performanceOverlay.hwFormat' => 'Формат HW',
+			'performanceOverlay.matrix' => 'Матрица',
+			'performanceOverlay.primaries' => 'Основные цвета',
+			'performanceOverlay.transfer' => 'Передача',
+			'performanceOverlay.renderFps' => 'FPS рендера',
+			'performanceOverlay.displayFps' => 'FPS дисплея',
+			'performanceOverlay.avSync' => 'A/V синхр.',
+			'performanceOverlay.dropped' => 'Пропущено',
+			'performanceOverlay.dvRpus' => 'DV RPU',
+			'performanceOverlay.dvRpuAverage' => 'Сред. DV RPU',
+			'performanceOverlay.dvSampleAverage' => 'Сред. сэмпл DV',
+			'performanceOverlay.maxLuma' => 'Макс. яркость',
+			'performanceOverlay.minLuma' => 'Мин. яркость',
+			'performanceOverlay.maxCll' => 'MaxCLL',
+			'performanceOverlay.maxFall' => 'MaxFALL',
+			'performanceOverlay.cacheUsed' => 'Кэш использован',
+			'performanceOverlay.speed' => 'Скорость',
+			'performanceOverlay.player' => 'Плеер',
+			'performanceOverlay.memory' => 'Память',
+			'performanceOverlay.uiFps' => 'UI FPS',
 			'externalPlayer.title' => 'Внешний плеер',
 			'externalPlayer.useExternalPlayer' => 'Использовать внешний плеер',
 			'externalPlayer.useExternalPlayerDescription' => 'Открывать видео в другом приложении',
@@ -2845,12 +3014,11 @@ extension on TranslationsRu {
 			'externalPlayer.systemDefault' => 'Системный по умолчанию',
 			'externalPlayer.addCustomPlayer' => 'Добавить свой плеер',
 			'externalPlayer.playerName' => 'Название плеера',
+			'externalPlayer.playerNameHint' => 'Мой плеер',
 			'externalPlayer.playerCommand' => 'Команда',
 			'externalPlayer.playerPackage' => 'Имя пакета',
 			'externalPlayer.playerUrlScheme' => 'URL-схема',
 			'externalPlayer.off' => 'Выкл.',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Не удалось открыть внешний плеер',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} не установлен',
 			'externalPlayer.playInExternalPlayer' => 'Воспроизвести во внешнем плеере',

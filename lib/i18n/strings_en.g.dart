@@ -78,6 +78,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsShadersEn shaders = TranslationsShadersEn.internal(_root);
 	late final TranslationsCompanionRemoteEn companionRemote = TranslationsCompanionRemoteEn.internal(_root);
 	late final TranslationsVideoSettingsEn videoSettings = TranslationsVideoSettingsEn.internal(_root);
+	late final TranslationsPerformanceOverlayEn performanceOverlay = TranslationsPerformanceOverlayEn.internal(_root);
 	late final TranslationsExternalPlayerEn externalPlayer = TranslationsExternalPlayerEn.internal(_root);
 	late final TranslationsMetadataEditEn metadataEdit = TranslationsMetadataEditEn.internal(_root);
 	late final TranslationsMatchScreenEn matchScreen = TranslationsMatchScreenEn.internal(_root);
@@ -256,6 +257,15 @@ class TranslationsCommonEn {
 
 	/// en: 'OK'
 	String get ok => 'OK';
+
+	/// en: 'Off'
+	String get off => 'Off';
+
+	/// en: 'Season ${number}'
+	String seasonNumber({required Object number}) => 'Season ${number}';
+
+	/// en: 'Chapter ${number}'
+	String chapterNumber({required Object number}) => 'Chapter ${number}';
 
 	/// en: 'Reconnect'
 	String get reconnect => 'Reconnect';
@@ -881,6 +891,18 @@ class TranslationsSettingsEn {
 	/// en: 'P7 → HEVC'
 	String get dvConversionHevcStrip => 'P7 → HEVC';
 
+	/// en: 'Use device capability detection and normal fallback behavior'
+	String get dvConversionAutoDescription => 'Use device capability detection and normal fallback behavior';
+
+	/// en: 'Force native DV7 and suppress DV conversion retry'
+	String get dvConversionNativeDescription => 'Force native DV7 and suppress DV conversion retry';
+
+	/// en: 'Force inline RPU conversion to Dolby Vision profile 8.1'
+	String get dvConversionDv81Description => 'Force inline RPU conversion to Dolby Vision profile 8.1';
+
+	/// en: 'Strip Dolby Vision RPU/EL layers and present plain HEVC'
+	String get dvConversionHevcStripDescription => 'Strip Dolby Vision RPU/EL layers and present plain HEVC';
+
 	/// en: 'Ask for profile on app open'
 	String get requireProfileSelectionOnOpen => 'Ask for profile on app open';
 
@@ -985,6 +1007,12 @@ class TranslationsHotkeysEn {
 
 	/// en: 'Clear shortcut'
 	String get clearShortcut => 'Clear shortcut';
+
+	/// en: 'No shortcut set'
+	String get noShortcutSet => 'No shortcut set';
+
+	/// en: 'Current shortcut:'
+	String get currentShortcut => 'Current shortcut:';
 
 	late final TranslationsHotkeysActionsEn actions = TranslationsHotkeysActionsEn.internal(_root);
 }
@@ -1098,6 +1126,9 @@ class TranslationsMediaMenuEn {
 
 	/// en: 'Shuffle Play'
 	String get shufflePlay => 'Shuffle Play';
+
+	/// en: 'Shuffle not available offline'
+	String get shuffleNotAvailableOffline => 'Shuffle not available offline';
 
 	/// en: 'File Info'
 	String get fileInfo => 'File Info';
@@ -1439,6 +1470,18 @@ class TranslationsVideoControlsEn {
 
 	/// en: 'No subtitles found'
 	String get noSubtitlesFound => 'No subtitles found';
+
+	/// en: 'Downloaded'
+	String get downloadedSubtitle => 'Downloaded';
+
+	/// en: 'No subtitles available'
+	String get noSubtitlesAvailable => 'No subtitles available';
+
+	/// en: 'No audio tracks available'
+	String get noAudioTracksAvailable => 'No audio tracks available';
+
+	/// en: 'No tracks available'
+	String get noTracksAvailable => 'No tracks available';
 
 	/// en: 'Subtitle downloaded'
 	String get subtitleDownloaded => 'Subtitle downloaded';
@@ -1895,6 +1938,9 @@ class TranslationsProfilesEn {
 
 	/// en: 'PINs don't match'
 	String get pinsDontMatch => 'PINs don\'t match';
+
+	/// en: 'Failed to initialize profile services'
+	String get initializeServicesFailed => 'Failed to initialize profile services';
 }
 
 // Path: connections
@@ -1997,6 +2043,9 @@ class TranslationsDiscoverEn {
 
 	/// en: '${minutes} min left'
 	String minutesLeft({required Object minutes}) => '${minutes} min left';
+
+	/// en: 'More Like This'
+	String get moreLikeThis => 'More Like This';
 }
 
 // Path: errors
@@ -2057,6 +2106,9 @@ class TranslationsLibrariesEn {
 
 	/// en: 'Libraries'
 	String get title => 'Libraries';
+
+	/// en: 'Library'
+	String get fallbackTitle => 'Library';
 
 	/// en: 'Scan Library Files'
 	String get scanLibraryFiles => 'Scan Library Files';
@@ -2320,6 +2372,24 @@ class TranslationsLiveTvEn {
 
 	/// en: 'No program data available'
 	String get noPrograms => 'No program data available';
+
+	/// en: 'Live stream failed'
+	String get liveStreamFailed => 'Live stream failed';
+
+	/// en: 'Unknown Program'
+	String get unknownProgram => 'Unknown Program';
+
+	/// en: 'Unknown'
+	String get unknownHub => 'Unknown';
+
+	/// en: 'Unknown error'
+	String get unknownError => 'Unknown error';
+
+	/// en: 'Channel ${number}'
+	String channelNumber({required Object number}) => 'Channel ${number}';
+
+	/// en: 'Unknown channel'
+	String get unknownChannel => 'Unknown channel';
 
 	/// en: 'LIVE'
 	String get live => 'LIVE';
@@ -2867,6 +2937,9 @@ class TranslationsDownloadsEn {
 	/// en: 'Download queued'
 	String get downloadQueued => 'Download queued';
 
+	/// en: 'Download resumed'
+	String get downloadResumed => 'Download resumed';
+
 	/// en: 'Server error: file may exceed the remote bitrate limit'
 	String get serverErrorBitrate => 'Server error: file may exceed the remote bitrate limit';
 
@@ -2878,6 +2951,30 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Delete "${title}" from this device?'
 	String deleteConfirm({required Object title}) => 'Delete "${title}" from this device?';
+
+	/// en: 'Cancelled Download'
+	String get cancelledDownloadTitle => 'Cancelled Download';
+
+	/// en: 'This download was cancelled. What would you like to do?'
+	String get cancelledDownloadMessage => 'This download was cancelled. What would you like to do?';
+
+	/// en: 'All episodes already downloaded'
+	String get allEpisodesAlreadyDownloaded => 'All episodes already downloaded';
+
+	/// en: 'Resume download'
+	String get resumeDownload => 'Resume download';
+
+	/// en: 'Cancelled download'
+	String get cancelledDownload => 'Cancelled download';
+
+	/// en: '${file} (syncing ${status})'
+	String syncingFile({required Object file, required Object status}) => '${file} (syncing ${status})';
+
+	/// en: 'Downloaded ${file} - Click to complete'
+	String downloadedFileClickToComplete({required Object file}) => 'Downloaded ${file} - Click to complete';
+
+	/// en: 'Partially downloaded - Click to complete'
+	String get partialDownloadClickToComplete => 'Partially downloaded - Click to complete';
 
 	/// en: 'Deleting...'
 	String get deleting => 'Deleting...';
@@ -3071,9 +3168,13 @@ class TranslationsCompanionRemoteEn {
 	/// en: 'Connected to ${name}'
 	String connectedTo({required Object name}) => 'Connected to ${name}';
 
+	/// en: 'Unknown Device'
+	String get unknownDevice => 'Unknown Device';
+
 	late final TranslationsCompanionRemoteSessionEn session = TranslationsCompanionRemoteSessionEn.internal(_root);
 	late final TranslationsCompanionRemotePairingEn pairing = TranslationsCompanionRemotePairingEn.internal(_root);
 	late final TranslationsCompanionRemoteRemoteEn remote = TranslationsCompanionRemoteRemoteEn.internal(_root);
+	late final TranslationsCompanionRemoteErrorsEn errors = TranslationsCompanionRemoteErrorsEn.internal(_root);
 }
 
 // Path: videoSettings
@@ -3115,6 +3216,117 @@ class TranslationsVideoSettingsEn {
 	String get audioNormalization => 'Normalize Loudness';
 }
 
+// Path: performanceOverlay
+class TranslationsPerformanceOverlayEn {
+	TranslationsPerformanceOverlayEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Color'
+	String get color => 'Color';
+
+	/// en: 'Performance'
+	String get performance => 'Performance';
+
+	/// en: 'Buffer'
+	String get buffer => 'Buffer';
+
+	/// en: 'App'
+	String get app => 'App';
+
+	/// en: 'Decoder'
+	String get decoder => 'Decoder';
+
+	/// en: 'Raw Decoder'
+	String get rawDecoder => 'Raw Decoder';
+
+	/// en: 'Tunneling'
+	String get tunneling => 'Tunneling';
+
+	/// en: 'Aspect'
+	String get aspect => 'Aspect';
+
+	/// en: 'Rotation'
+	String get rotation => 'Rotation';
+
+	/// en: 'DV Source'
+	String get dvSource => 'DV Source';
+
+	/// en: 'DV Path'
+	String get dvPath => 'DV Path';
+
+	/// en: 'P7 Conv'
+	String get p7Conversion => 'P7 Conv';
+
+	/// en: 'Sample Rate'
+	String get sampleRate => 'Sample Rate';
+
+	/// en: 'Pixel Fmt'
+	String get pixelFormat => 'Pixel Fmt';
+
+	/// en: 'HW Fmt'
+	String get hwFormat => 'HW Fmt';
+
+	/// en: 'Matrix'
+	String get matrix => 'Matrix';
+
+	/// en: 'Primaries'
+	String get primaries => 'Primaries';
+
+	/// en: 'Transfer'
+	String get transfer => 'Transfer';
+
+	/// en: 'Render FPS'
+	String get renderFps => 'Render FPS';
+
+	/// en: 'Display FPS'
+	String get displayFps => 'Display FPS';
+
+	/// en: 'A/V Sync'
+	String get avSync => 'A/V Sync';
+
+	/// en: 'Dropped'
+	String get dropped => 'Dropped';
+
+	/// en: 'DV RPUs'
+	String get dvRpus => 'DV RPUs';
+
+	/// en: 'DV RPU Avg'
+	String get dvRpuAverage => 'DV RPU Avg';
+
+	/// en: 'DV Sample Avg'
+	String get dvSampleAverage => 'DV Sample Avg';
+
+	/// en: 'Max Luma'
+	String get maxLuma => 'Max Luma';
+
+	/// en: 'Min Luma'
+	String get minLuma => 'Min Luma';
+
+	/// en: 'MaxCLL'
+	String get maxCll => 'MaxCLL';
+
+	/// en: 'MaxFALL'
+	String get maxFall => 'MaxFALL';
+
+	/// en: 'Cache Used'
+	String get cacheUsed => 'Cache Used';
+
+	/// en: 'Speed'
+	String get speed => 'Speed';
+
+	/// en: 'Player'
+	String get player => 'Player';
+
+	/// en: 'Memory'
+	String get memory => 'Memory';
+
+	/// en: 'UI FPS'
+	String get uiFps => 'UI FPS';
+}
+
 // Path: externalPlayer
 class TranslationsExternalPlayerEn {
 	TranslationsExternalPlayerEn.internal(this._root);
@@ -3146,6 +3358,9 @@ class TranslationsExternalPlayerEn {
 
 	/// en: 'Player Name'
 	String get playerName => 'Player Name';
+
+	/// en: 'My Player'
+	String get playerNameHint => 'My Player';
 
 	/// en: 'Command'
 	String get playerCommand => 'Command';
@@ -4101,6 +4316,33 @@ class TranslationsCompanionRemoteRemoteEn {
 	String get searchHint => 'Search on desktop...';
 }
 
+// Path: companionRemote.errors
+class TranslationsCompanionRemoteErrorsEn {
+	TranslationsCompanionRemoteErrorsEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'No network interface found'
+	String get noNetworkInterface => 'No network interface found';
+
+	/// en: 'Authentication failed'
+	String get authenticationFailed => 'Authentication failed';
+
+	/// en: 'Timed out joining session'
+	String get joinTimedOut => 'Timed out joining session';
+
+	/// en: 'Failed to connect to any address'
+	String get failedToConnectAnyAddress => 'Failed to connect to any address';
+
+	/// en: 'Connection lost after ${attempts} attempts'
+	String connectionLostAfterAttempts({required Object attempts}) => 'Connection lost after ${attempts} attempts';
+
+	/// en: 'Connection lost'
+	String get connectionLost => 'Connection lost';
+}
+
 // Path: trackers.services
 class TranslationsTrackersServicesEn {
 	TranslationsTrackersServicesEn.internal(this._root);
@@ -4265,6 +4507,9 @@ extension on Translations {
 			'common.settings' => 'Settings',
 			'common.mute' => 'Mute',
 			'common.ok' => 'OK',
+			'common.off' => 'Off',
+			'common.seasonNumber' => ({required Object number}) => 'Season ${number}',
+			'common.chapterNumber' => ({required Object number}) => 'Chapter ${number}',
 			'common.reconnect' => 'Reconnect',
 			'common.exit' => 'Exit',
 			'common.viewAll' => 'View All',
@@ -4464,6 +4709,10 @@ extension on Translations {
 			'settings.dvConversionNative' => 'Native / Disabled',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
 			'settings.dvConversionHevcStrip' => 'P7 → HEVC',
+			'settings.dvConversionAutoDescription' => 'Use device capability detection and normal fallback behavior',
+			'settings.dvConversionNativeDescription' => 'Force native DV7 and suppress DV conversion retry',
+			'settings.dvConversionDv81Description' => 'Force inline RPU conversion to Dolby Vision profile 8.1',
+			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL layers and present plain HEVC',
 			'settings.requireProfileSelectionOnOpen' => 'Ask for profile on app open',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'settings.forceTvMode' => 'Force TV mode',
@@ -4493,6 +4742,8 @@ extension on Translations {
 			'search.enterTitleActorOrKeyword' => 'Enter a title, actor, or keyword',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Set Shortcut for ${actionName}',
 			'hotkeys.clearShortcut' => 'Clear shortcut',
+			'hotkeys.noShortcutSet' => 'No shortcut set',
+			'hotkeys.currentShortcut' => 'Current shortcut:',
 			'hotkeys.actions.playPause' => 'Play/Pause',
 			'hotkeys.actions.volumeUp' => 'Volume Up',
 			'hotkeys.actions.volumeDown' => 'Volume Down',
@@ -4549,6 +4800,7 @@ extension on Translations {
 			'mediaMenu.goToSeries' => 'Go to series',
 			'mediaMenu.goToSeason' => 'Go to season',
 			'mediaMenu.shufflePlay' => 'Shuffle Play',
+			'mediaMenu.shuffleNotAvailableOffline' => 'Shuffle not available offline',
 			'mediaMenu.fileInfo' => 'File Info',
 			'mediaMenu.deleteFromServer' => 'Delete from server',
 			'mediaMenu.confirmDelete' => 'Delete this media and its files from your server?',
@@ -4657,6 +4909,10 @@ extension on Translations {
 			'videoControls.searchSubtitles' => 'Search Subtitles',
 			'videoControls.language' => 'Language',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
+			'videoControls.downloadedSubtitle' => 'Downloaded',
+			'videoControls.noSubtitlesAvailable' => 'No subtitles available',
+			'videoControls.noAudioTracksAvailable' => 'No audio tracks available',
+			'videoControls.noTracksAvailable' => 'No tracks available',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
 			'videoControls.subtitleDownloadFailed' => 'Failed to download subtitle',
 			'videoControls.searchLanguages' => 'Search languages...',
@@ -4715,6 +4971,8 @@ extension on Translations {
 			'subtitlingStyling.borderColor' => 'Border Color',
 			'subtitlingStyling.backgroundOpacity' => 'Background Opacity',
 			'subtitlingStyling.backgroundColor' => 'Background Color',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.position' => 'Position',
 			'subtitlingStyling.assOverride' => 'ASS Override',
 			'subtitlingStyling.bold' => 'Bold',
@@ -4729,8 +4987,6 @@ extension on Translations {
 			'mpvConfig.loadPreset' => 'Load',
 			'mpvConfig.deletePreset' => 'Delete',
 			'mpvConfig.presetSaved' => 'Preset saved',
-			_ => null,
-		} ?? switch (path) {
 			'mpvConfig.presetLoaded' => 'Preset loaded',
 			'mpvConfig.presetDeleted' => 'Preset deleted',
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
@@ -4793,6 +5049,7 @@ extension on Translations {
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
+			'profiles.initializeServicesFailed' => 'Failed to initialize profile services',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin server',
@@ -4821,6 +5078,7 @@ extension on Translations {
 			'discover.movie' => 'Movie',
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
+			'discover.moreLikeThis' => 'More Like This',
 			'errors.searchFailed' => ({required Object error}) => 'Search failed: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
 			'errors.connectionFailed' => 'Unable to connect to media server',
@@ -4835,6 +5093,7 @@ extension on Translations {
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
 			'errors.failedToRate' => 'Couldn\'t update rating',
 			'libraries.title' => 'Libraries',
+			'libraries.fallbackTitle' => 'Library',
 			'libraries.scanLibraryFiles' => 'Scan Library Files',
 			'libraries.scanLibrary' => 'Scan Library',
 			'libraries.analyze' => 'Analyze',
@@ -4935,6 +5194,12 @@ extension on Translations {
 			'liveTv.noChannels' => 'No channels available',
 			'liveTv.noDvr' => 'No DVR configured on any server',
 			'liveTv.noPrograms' => 'No program data available',
+			'liveTv.liveStreamFailed' => 'Live stream failed',
+			'liveTv.unknownProgram' => 'Unknown Program',
+			'liveTv.unknownHub' => 'Unknown',
+			'liveTv.unknownError' => 'Unknown error',
+			'liveTv.channelNumber' => ({required Object number}) => 'Channel ${number}',
+			'liveTv.unknownChannel' => 'Unknown channel',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.now' => 'Now',
@@ -5105,10 +5370,19 @@ extension on Translations {
 			'downloads.deleteDownload' => 'Delete download',
 			'downloads.retryDownload' => 'Retry download',
 			'downloads.downloadQueued' => 'Download queued',
+			'downloads.downloadResumed' => 'Download resumed',
 			'downloads.serverErrorBitrate' => 'Server error: file may exceed the remote bitrate limit',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodes queued for download',
 			'downloads.downloadDeleted' => 'Download deleted',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Delete "${title}" from this device?',
+			'downloads.cancelledDownloadTitle' => 'Cancelled Download',
+			'downloads.cancelledDownloadMessage' => 'This download was cancelled. What would you like to do?',
+			'downloads.allEpisodesAlreadyDownloaded' => 'All episodes already downloaded',
+			'downloads.resumeDownload' => 'Resume download',
+			'downloads.cancelledDownload' => 'Cancelled download',
+			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
+			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
+			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
 			'downloads.deleting' => 'Deleting...',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})',
 			'downloads.queuedTooltip' => 'Queued',
@@ -5167,6 +5441,7 @@ extension on Translations {
 			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Connected to ${name}',
+			'companionRemote.unknownDevice' => 'Unknown Device',
 			'companionRemote.session.startingServer' => 'Starting remote server...',
 			'companionRemote.session.failedToCreate' => 'Failed to start remote server:',
 			'companionRemote.session.hostAddress' => 'Host Address',
@@ -5210,6 +5485,8 @@ extension on Translations {
 			'companionRemote.remote.tabSettings' => 'Settings',
 			'companionRemote.remote.previous' => 'Previous',
 			'companionRemote.remote.playPause' => 'Play/Pause',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.next' => 'Next',
 			'companionRemote.remote.seekBack' => 'Seek Back',
 			'companionRemote.remote.stop' => 'Stop',
@@ -5221,6 +5498,12 @@ extension on Translations {
 			'companionRemote.remote.subtitles' => 'Subtitles',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Search on desktop...',
+			'companionRemote.errors.noNetworkInterface' => 'No network interface found',
+			'companionRemote.errors.authenticationFailed' => 'Authentication failed',
+			'companionRemote.errors.joinTimedOut' => 'Timed out joining session',
+			'companionRemote.errors.failedToConnectAnyAddress' => 'Failed to connect to any address',
+			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Connection lost after ${attempts} attempts',
+			'companionRemote.errors.connectionLost' => 'Connection lost',
 			'videoSettings.playbackSpeed' => 'Playback Speed',
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
@@ -5231,6 +5514,40 @@ extension on Translations {
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioPassthrough' => 'Audio Passthrough',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
+			'performanceOverlay.color' => 'Color',
+			'performanceOverlay.performance' => 'Performance',
+			'performanceOverlay.buffer' => 'Buffer',
+			'performanceOverlay.app' => 'App',
+			'performanceOverlay.decoder' => 'Decoder',
+			'performanceOverlay.rawDecoder' => 'Raw Decoder',
+			'performanceOverlay.tunneling' => 'Tunneling',
+			'performanceOverlay.aspect' => 'Aspect',
+			'performanceOverlay.rotation' => 'Rotation',
+			'performanceOverlay.dvSource' => 'DV Source',
+			'performanceOverlay.dvPath' => 'DV Path',
+			'performanceOverlay.p7Conversion' => 'P7 Conv',
+			'performanceOverlay.sampleRate' => 'Sample Rate',
+			'performanceOverlay.pixelFormat' => 'Pixel Fmt',
+			'performanceOverlay.hwFormat' => 'HW Fmt',
+			'performanceOverlay.matrix' => 'Matrix',
+			'performanceOverlay.primaries' => 'Primaries',
+			'performanceOverlay.transfer' => 'Transfer',
+			'performanceOverlay.renderFps' => 'Render FPS',
+			'performanceOverlay.displayFps' => 'Display FPS',
+			'performanceOverlay.avSync' => 'A/V Sync',
+			'performanceOverlay.dropped' => 'Dropped',
+			'performanceOverlay.dvRpus' => 'DV RPUs',
+			'performanceOverlay.dvRpuAverage' => 'DV RPU Avg',
+			'performanceOverlay.dvSampleAverage' => 'DV Sample Avg',
+			'performanceOverlay.maxLuma' => 'Max Luma',
+			'performanceOverlay.minLuma' => 'Min Luma',
+			'performanceOverlay.maxCll' => 'MaxCLL',
+			'performanceOverlay.maxFall' => 'MaxFALL',
+			'performanceOverlay.cacheUsed' => 'Cache Used',
+			'performanceOverlay.speed' => 'Speed',
+			'performanceOverlay.player' => 'Player',
+			'performanceOverlay.memory' => 'Memory',
+			'performanceOverlay.uiFps' => 'UI FPS',
 			'externalPlayer.title' => 'External Player',
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in another app',
@@ -5239,12 +5556,11 @@ extension on Translations {
 			'externalPlayer.systemDefault' => 'System Default',
 			'externalPlayer.addCustomPlayer' => 'Add Custom Player',
 			'externalPlayer.playerName' => 'Player Name',
+			'externalPlayer.playerNameHint' => 'My Player',
 			'externalPlayer.playerCommand' => 'Command',
 			'externalPlayer.playerPackage' => 'Package Name',
 			'externalPlayer.playerUrlScheme' => 'URL Scheme',
 			'externalPlayer.off' => 'Off',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Failed to open external player',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
 			'externalPlayer.playInExternalPlayer' => 'Play in External Player',

@@ -187,7 +187,10 @@ class _AddCustomPlayerDialogState extends State<_AddCustomPlayerDialog> {
           children: [
             FocusableTextField(
               controller: _nameController,
-              decoration: InputDecoration(labelText: t.externalPlayer.playerName, hintText: 'My Player'),
+              decoration: InputDecoration(
+                labelText: t.externalPlayer.playerName,
+                hintText: t.externalPlayer.playerNameHint,
+              ),
               autofocus: true,
               textInputAction: TextInputAction.next,
               onSubmitted: (_) => _valueFocusNode.requestFocus(),

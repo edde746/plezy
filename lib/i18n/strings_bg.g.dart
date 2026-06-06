@@ -77,6 +77,7 @@ class TranslationsBg extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsShadersBg shaders = _TranslationsShadersBg._(_root);
 	@override late final _TranslationsCompanionRemoteBg companionRemote = _TranslationsCompanionRemoteBg._(_root);
 	@override late final _TranslationsVideoSettingsBg videoSettings = _TranslationsVideoSettingsBg._(_root);
+	@override late final _TranslationsPerformanceOverlayBg performanceOverlay = _TranslationsPerformanceOverlayBg._(_root);
 	@override late final _TranslationsExternalPlayerBg externalPlayer = _TranslationsExternalPlayerBg._(_root);
 	@override late final _TranslationsMetadataEditBg metadataEdit = _TranslationsMetadataEditBg._(_root);
 	@override late final _TranslationsMatchScreenBg matchScreen = _TranslationsMatchScreenBg._(_root);
@@ -159,6 +160,9 @@ class _TranslationsCommonBg extends TranslationsCommonEn {
 	@override String get settings => 'Настройки';
 	@override String get mute => 'Заглуши';
 	@override String get ok => 'OK';
+	@override String get off => 'Изкл.';
+	@override String seasonNumber({required Object number}) => 'Сезон ${number}';
+	@override String chapterNumber({required Object number}) => 'Глава ${number}';
 	@override String get reconnect => 'Свържи отново';
 	@override String get exit => 'Изход';
 	@override String get viewAll => 'Виж всички';
@@ -385,6 +389,10 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get dvConversionNative => 'Нативно / изключено';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
 	@override String get dvConversionHevcStrip => 'P7 → HEVC';
+	@override String get dvConversionAutoDescription => 'Използва засичане на възможностите на устройството и нормално fallback поведение';
+	@override String get dvConversionNativeDescription => 'Принуждава нативен DV7 и спира повторния опит за DV конвертиране';
+	@override String get dvConversionDv81Description => 'Принуждава inline RPU конвертиране към Dolby Vision профил 8.1';
+	@override String get dvConversionHevcStripDescription => 'Премахва Dolby Vision RPU/EL слоевете и подава обикновен HEVC';
 	@override String get requireProfileSelectionOnOpen => 'Питай за профил при отваряне на приложението';
 	@override String get requireProfileSelectionOnOpenDescription => 'Показвай избор на профил всеки път при отваряне на приложението';
 	@override String get forceTvMode => 'Принуди TV режим';
@@ -432,6 +440,8 @@ class _TranslationsHotkeysBg extends TranslationsHotkeysEn {
 	// Translations
 	@override String setShortcutFor({required Object actionName}) => 'Задай клавишна комбинация за ${actionName}';
 	@override String get clearShortcut => 'Изчисти клавишната комбинация';
+	@override String get noShortcutSet => 'Няма зададена клавишна комбинация';
+	@override String get currentShortcut => 'Текуща комбинация:';
 	@override late final _TranslationsHotkeysActionsBg actions = _TranslationsHotkeysActionsBg._(_root);
 }
 
@@ -482,6 +492,7 @@ class _TranslationsMediaMenuBg extends TranslationsMediaMenuEn {
 	@override String get goToSeries => 'Към сериала';
 	@override String get goToSeason => 'Към сезона';
 	@override String get shufflePlay => 'Разбъркано възпроизвеждане';
+	@override String get shuffleNotAvailableOffline => 'Разбърканото възпроизвеждане не е налично офлайн';
 	@override String get fileInfo => 'Информация за файла';
 	@override String get deleteFromServer => 'Изтрий от сървъра';
 	@override String get confirmDelete => 'Да се изтрие ли тази медия и файловете ѝ от вашия сървър?';
@@ -620,6 +631,10 @@ class _TranslationsVideoControlsBg extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => 'Търсене на субтитри';
 	@override String get language => 'Език';
 	@override String get noSubtitlesFound => 'Не са намерени субтитри';
+	@override String get downloadedSubtitle => 'Изтеглени субтитри';
+	@override String get noSubtitlesAvailable => 'Няма налични субтитри';
+	@override String get noAudioTracksAvailable => 'Няма налични аудио писти';
+	@override String get noTracksAvailable => 'Няма налични писти';
 	@override String get subtitleDownloaded => 'Субтитърът е изтеглен';
 	@override String get subtitleDownloadFailed => 'Неуспешно изтегляне на субтитър';
 	@override String get searchLanguages => 'Търсене на езици...';
@@ -808,6 +823,7 @@ class _TranslationsProfilesBg extends TranslationsProfilesEn {
 	@override String get pinExplain => 'Изисква се 4-цифрен PIN за смяна на профили.';
 	@override String get continueButton => 'Продължи';
 	@override String get pinsDontMatch => 'PIN кодовете не съвпадат';
+	@override String get initializeServicesFailed => 'Неуспешно инициализиране на услугите за профили';
 }
 
 // Path: connections
@@ -854,6 +870,7 @@ class _TranslationsDiscoverBg extends TranslationsDiscoverEn {
 	@override String get movie => 'Филм';
 	@override String get tvShow => 'ТВ сериал';
 	@override String minutesLeft({required Object minutes}) => 'Остават ${minutes} мин';
+	@override String get moreLikeThis => 'Подобно на това';
 }
 
 // Path: errors
@@ -886,6 +903,7 @@ class _TranslationsLibrariesBg extends TranslationsLibrariesEn {
 
 	// Translations
 	@override String get title => 'Библиотеки';
+	@override String get fallbackTitle => 'Библиотека';
 	@override String get scanLibraryFiles => 'Сканирай файловете на библиотеката';
 	@override String get scanLibrary => 'Сканирай библиотеката';
 	@override String get analyze => 'Анализирай';
@@ -1018,6 +1036,12 @@ class _TranslationsLiveTvBg extends TranslationsLiveTvEn {
 	@override String get noChannels => 'Няма налични канали';
 	@override String get noDvr => 'Няма конфигуриран DVR на нито един сървър';
 	@override String get noPrograms => 'Няма налични програмни данни';
+	@override String get liveStreamFailed => 'Потокът на живо се провали';
+	@override String get unknownProgram => 'Неизвестна програма';
+	@override String get unknownHub => 'Неизвестно';
+	@override String get unknownError => 'Неизвестна грешка';
+	@override String channelNumber({required Object number}) => 'Канал ${number}';
+	@override String get unknownChannel => 'Неизвестен канал';
 	@override String get live => 'НА ЖИВО';
 	@override String get reloadGuide => 'Презареди ТВ програмата';
 	@override String get now => 'Сега';
@@ -1224,10 +1248,19 @@ class _TranslationsDownloadsBg extends TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Изтрий изтегляне';
 	@override String get retryDownload => 'Опитай изтеглянето отново';
 	@override String get downloadQueued => 'Изтеглянето е добавено в опашката';
+	@override String get downloadResumed => 'Изтеглянето е възобновено';
 	@override String get serverErrorBitrate => 'Грешка на сървъра: файлът може да надвишава лимита за отдалечен битрейт';
 	@override String episodesQueued({required Object count}) => '${count} епизода са добавени в опашката за изтегляне';
 	@override String get downloadDeleted => 'Изтеглянето е изтрито';
 	@override String deleteConfirm({required Object title}) => 'Да се изтрие ли "${title}" от това устройство?';
+	@override String get cancelledDownloadTitle => 'Отменено изтегляне';
+	@override String get cancelledDownloadMessage => 'Това изтегляне беше отменено. Какво искате да направите?';
+	@override String get allEpisodesAlreadyDownloaded => 'Всички епизоди вече са изтеглени';
+	@override String get resumeDownload => 'Възобнови изтеглянето';
+	@override String get cancelledDownload => 'Отменено изтегляне';
+	@override String syncingFile({required Object file, required Object status}) => '${file} (синхронизира се ${status})';
+	@override String downloadedFileClickToComplete({required Object file}) => 'Изтеглен ${file} — щракнете за довършване';
+	@override String get partialDownloadClickToComplete => 'Частично изтеглено — щракнете за довършване';
 	@override String get deleting => 'Изтриване...';
 	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Изтриване на ${title}... (${current} от ${total})';
 	@override String get queuedTooltip => 'В опашката';
@@ -1304,9 +1337,11 @@ class _TranslationsCompanionRemoteBg extends TranslationsCompanionRemoteEn {
 	// Translations
 	@override String get title => 'Дистанционно управление';
 	@override String connectedTo({required Object name}) => 'Свързан към ${name}';
+	@override String get unknownDevice => 'Непознато устройство';
 	@override late final _TranslationsCompanionRemoteSessionBg session = _TranslationsCompanionRemoteSessionBg._(_root);
 	@override late final _TranslationsCompanionRemotePairingBg pairing = _TranslationsCompanionRemotePairingBg._(_root);
 	@override late final _TranslationsCompanionRemoteRemoteBg remote = _TranslationsCompanionRemoteRemoteBg._(_root);
+	@override late final _TranslationsCompanionRemoteErrorsBg errors = _TranslationsCompanionRemoteErrorsBg._(_root);
 }
 
 // Path: videoSettings
@@ -1328,6 +1363,49 @@ class _TranslationsVideoSettingsBg extends TranslationsVideoSettingsEn {
 	@override String get audioNormalization => 'Нормализиране на силата на звука';
 }
 
+// Path: performanceOverlay
+class _TranslationsPerformanceOverlayBg extends TranslationsPerformanceOverlayEn {
+	_TranslationsPerformanceOverlayBg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get color => 'Цвят';
+	@override String get performance => 'Производителност';
+	@override String get buffer => 'Буфер';
+	@override String get app => 'Приложение';
+	@override String get decoder => 'Декодер';
+	@override String get rawDecoder => 'Суров декодер';
+	@override String get tunneling => 'Тунелиране';
+	@override String get aspect => 'Съотношение';
+	@override String get rotation => 'Завъртане';
+	@override String get dvSource => 'DV източник';
+	@override String get dvPath => 'DV път';
+	@override String get p7Conversion => 'P7 конв.';
+	@override String get sampleRate => 'Честота';
+	@override String get pixelFormat => 'Пикселен формат';
+	@override String get hwFormat => 'HW формат';
+	@override String get matrix => 'Матрица';
+	@override String get primaries => 'Основни цветове';
+	@override String get transfer => 'Трансфер';
+	@override String get renderFps => 'Render FPS';
+	@override String get displayFps => 'Display FPS';
+	@override String get avSync => 'A/V синхр.';
+	@override String get dropped => 'Изпуснати';
+	@override String get dvRpus => 'DV RPU';
+	@override String get dvRpuAverage => 'Средно DV RPU';
+	@override String get dvSampleAverage => 'Средно DV семпл';
+	@override String get maxLuma => 'Макс. яркост';
+	@override String get minLuma => 'Мин. яркост';
+	@override String get maxCll => 'MaxCLL';
+	@override String get maxFall => 'MaxFALL';
+	@override String get cacheUsed => 'Използван кеш';
+	@override String get speed => 'Скорост';
+	@override String get player => 'Плеър';
+	@override String get memory => 'Памет';
+	@override String get uiFps => 'UI FPS';
+}
+
 // Path: externalPlayer
 class _TranslationsExternalPlayerBg extends TranslationsExternalPlayerEn {
 	_TranslationsExternalPlayerBg._(TranslationsBg root) : this._root = root, super.internal(root);
@@ -1343,6 +1421,7 @@ class _TranslationsExternalPlayerBg extends TranslationsExternalPlayerEn {
 	@override String get systemDefault => 'Системен по подразбиране';
 	@override String get addCustomPlayer => 'Добави персонален плейър';
 	@override String get playerName => 'Име на плейъра';
+	@override String get playerNameHint => 'Моят плеър';
 	@override String get playerCommand => 'Команда';
 	@override String get playerPackage => 'Име на пакет';
 	@override String get playerUrlScheme => 'URL схема';
@@ -1755,6 +1834,21 @@ class _TranslationsCompanionRemoteRemoteBg extends TranslationsCompanionRemoteRe
 	@override String get searchHint => 'Търсене на настолен компютър...';
 }
 
+// Path: companionRemote.errors
+class _TranslationsCompanionRemoteErrorsBg extends TranslationsCompanionRemoteErrorsEn {
+	_TranslationsCompanionRemoteErrorsBg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get noNetworkInterface => 'Не е намерен мрежов интерфейс';
+	@override String get authenticationFailed => 'Неуспешно удостоверяване';
+	@override String get joinTimedOut => 'Времето за присъединяване към сесията изтече';
+	@override String get failedToConnectAnyAddress => 'Неуспешно свързване към който и да е адрес';
+	@override String connectionLostAfterAttempts({required Object attempts}) => 'Връзката е загубена след ${attempts} опита';
+	@override String get connectionLost => 'Връзката е загубена';
+}
+
 // Path: trackers.services
 class _TranslationsTrackersServicesBg extends TranslationsTrackersServicesEn {
 	_TranslationsTrackersServicesBg._(TranslationsBg root) : this._root = root, super.internal(root);
@@ -1871,6 +1965,9 @@ extension on TranslationsBg {
 			'common.settings' => 'Настройки',
 			'common.mute' => 'Заглуши',
 			'common.ok' => 'OK',
+			'common.off' => 'Изкл.',
+			'common.seasonNumber' => ({required Object number}) => 'Сезон ${number}',
+			'common.chapterNumber' => ({required Object number}) => 'Глава ${number}',
 			'common.reconnect' => 'Свържи отново',
 			'common.exit' => 'Изход',
 			'common.viewAll' => 'Виж всички',
@@ -2070,6 +2167,10 @@ extension on TranslationsBg {
 			'settings.dvConversionNative' => 'Нативно / изключено',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
 			'settings.dvConversionHevcStrip' => 'P7 → HEVC',
+			'settings.dvConversionAutoDescription' => 'Използва засичане на възможностите на устройството и нормално fallback поведение',
+			'settings.dvConversionNativeDescription' => 'Принуждава нативен DV7 и спира повторния опит за DV конвертиране',
+			'settings.dvConversionDv81Description' => 'Принуждава inline RPU конвертиране към Dolby Vision профил 8.1',
+			'settings.dvConversionHevcStripDescription' => 'Премахва Dolby Vision RPU/EL слоевете и подава обикновен HEVC',
 			'settings.requireProfileSelectionOnOpen' => 'Питай за профил при отваряне на приложението',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Показвай избор на профил всеки път при отваряне на приложението',
 			'settings.forceTvMode' => 'Принуди TV режим',
@@ -2099,6 +2200,8 @@ extension on TranslationsBg {
 			'search.enterTitleActorOrKeyword' => 'Въведете заглавие, актьор или ключова дума',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Задай клавишна комбинация за ${actionName}',
 			'hotkeys.clearShortcut' => 'Изчисти клавишната комбинация',
+			'hotkeys.noShortcutSet' => 'Няма зададена клавишна комбинация',
+			'hotkeys.currentShortcut' => 'Текуща комбинация:',
 			'hotkeys.actions.playPause' => 'Пускане/пауза',
 			'hotkeys.actions.volumeUp' => 'Увеличи звука',
 			'hotkeys.actions.volumeDown' => 'Намали звука',
@@ -2155,6 +2258,7 @@ extension on TranslationsBg {
 			'mediaMenu.goToSeries' => 'Към сериала',
 			'mediaMenu.goToSeason' => 'Към сезона',
 			'mediaMenu.shufflePlay' => 'Разбъркано възпроизвеждане',
+			'mediaMenu.shuffleNotAvailableOffline' => 'Разбърканото възпроизвеждане не е налично офлайн',
 			'mediaMenu.fileInfo' => 'Информация за файла',
 			'mediaMenu.deleteFromServer' => 'Изтрий от сървъра',
 			'mediaMenu.confirmDelete' => 'Да се изтрие ли тази медия и файловете ѝ от вашия сървър?',
@@ -2263,6 +2367,10 @@ extension on TranslationsBg {
 			'videoControls.searchSubtitles' => 'Търсене на субтитри',
 			'videoControls.language' => 'Език',
 			'videoControls.noSubtitlesFound' => 'Не са намерени субтитри',
+			'videoControls.downloadedSubtitle' => 'Изтеглени субтитри',
+			'videoControls.noSubtitlesAvailable' => 'Няма налични субтитри',
+			'videoControls.noAudioTracksAvailable' => 'Няма налични аудио писти',
+			'videoControls.noTracksAvailable' => 'Няма налични писти',
 			'videoControls.subtitleDownloaded' => 'Субтитърът е изтеглен',
 			'videoControls.subtitleDownloadFailed' => 'Неуспешно изтегляне на субтитър',
 			'videoControls.searchLanguages' => 'Търсене на езици...',
@@ -2321,6 +2429,8 @@ extension on TranslationsBg {
 			'subtitlingStyling.borderColor' => 'Цвят на рамката',
 			'subtitlingStyling.backgroundOpacity' => 'Прозрачност на фона',
 			'subtitlingStyling.backgroundColor' => 'Цвят на фона',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.position' => 'Позиция',
 			'subtitlingStyling.assOverride' => 'ASS презаписване',
 			'subtitlingStyling.bold' => 'Получер',
@@ -2335,8 +2445,6 @@ extension on TranslationsBg {
 			'mpvConfig.loadPreset' => 'Зареди',
 			'mpvConfig.deletePreset' => 'Изтрий',
 			'mpvConfig.presetSaved' => 'Пресетът е запазен',
-			_ => null,
-		} ?? switch (path) {
 			'mpvConfig.presetLoaded' => 'Пресетът е зареден',
 			'mpvConfig.presetDeleted' => 'Пресетът е изтрит',
 			'mpvConfig.confirmDeletePreset' => 'Сигурни ли сте, че искате да изтриете този пресет?',
@@ -2399,6 +2507,7 @@ extension on TranslationsBg {
 			'profiles.pinExplain' => 'Изисква се 4-цифрен PIN за смяна на профили.',
 			'profiles.continueButton' => 'Продължи',
 			'profiles.pinsDontMatch' => 'PIN кодовете не съвпадат',
+			'profiles.initializeServicesFailed' => 'Неуспешно инициализиране на услугите за профили',
 			'connections.sectionTitle' => 'Връзки',
 			'connections.addConnection' => 'Добави връзка',
 			'connections.addConnectionSubtitleNoProfile' => 'Влезте с Plex или свържете Jellyfin сървър',
@@ -2427,6 +2536,7 @@ extension on TranslationsBg {
 			'discover.movie' => 'Филм',
 			'discover.tvShow' => 'ТВ сериал',
 			'discover.minutesLeft' => ({required Object minutes}) => 'Остават ${minutes} мин',
+			'discover.moreLikeThis' => 'Подобно на това',
 			'errors.searchFailed' => ({required Object error}) => 'Търсенето е неуспешно: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Изтече времето за връзка при зареждане на ${context}',
 			'errors.connectionFailed' => 'Не може да се осъществи връзка с медиен сървър',
@@ -2441,6 +2551,7 @@ extension on TranslationsBg {
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Неуспешно изтриване на ${displayName}',
 			'errors.failedToRate' => 'Оценката не можа да бъде обновена',
 			'libraries.title' => 'Библиотеки',
+			'libraries.fallbackTitle' => 'Библиотека',
 			'libraries.scanLibraryFiles' => 'Сканирай файловете на библиотеката',
 			'libraries.scanLibrary' => 'Сканирай библиотеката',
 			'libraries.analyze' => 'Анализирай',
@@ -2541,6 +2652,12 @@ extension on TranslationsBg {
 			'liveTv.noChannels' => 'Няма налични канали',
 			'liveTv.noDvr' => 'Няма конфигуриран DVR на нито един сървър',
 			'liveTv.noPrograms' => 'Няма налични програмни данни',
+			'liveTv.liveStreamFailed' => 'Потокът на живо се провали',
+			'liveTv.unknownProgram' => 'Неизвестна програма',
+			'liveTv.unknownHub' => 'Неизвестно',
+			'liveTv.unknownError' => 'Неизвестна грешка',
+			'liveTv.channelNumber' => ({required Object number}) => 'Канал ${number}',
+			'liveTv.unknownChannel' => 'Неизвестен канал',
 			'liveTv.live' => 'НА ЖИВО',
 			'liveTv.reloadGuide' => 'Презареди ТВ програмата',
 			'liveTv.now' => 'Сега',
@@ -2711,10 +2828,19 @@ extension on TranslationsBg {
 			'downloads.deleteDownload' => 'Изтрий изтегляне',
 			'downloads.retryDownload' => 'Опитай изтеглянето отново',
 			'downloads.downloadQueued' => 'Изтеглянето е добавено в опашката',
+			'downloads.downloadResumed' => 'Изтеглянето е възобновено',
 			'downloads.serverErrorBitrate' => 'Грешка на сървъра: файлът може да надвишава лимита за отдалечен битрейт',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} епизода са добавени в опашката за изтегляне',
 			'downloads.downloadDeleted' => 'Изтеглянето е изтрито',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Да се изтрие ли "${title}" от това устройство?',
+			'downloads.cancelledDownloadTitle' => 'Отменено изтегляне',
+			'downloads.cancelledDownloadMessage' => 'Това изтегляне беше отменено. Какво искате да направите?',
+			'downloads.allEpisodesAlreadyDownloaded' => 'Всички епизоди вече са изтеглени',
+			'downloads.resumeDownload' => 'Възобнови изтеглянето',
+			'downloads.cancelledDownload' => 'Отменено изтегляне',
+			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизира се ${status})',
+			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Изтеглен ${file} — щракнете за довършване',
+			'downloads.partialDownloadClickToComplete' => 'Частично изтеглено — щракнете за довършване',
 			'downloads.deleting' => 'Изтриване...',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Изтриване на ${title}... (${current} от ${total})',
 			'downloads.queuedTooltip' => 'В опашката',
@@ -2773,6 +2899,7 @@ extension on TranslationsBg {
 			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Да се изтрие ли "${name}"?',
 			'companionRemote.title' => 'Дистанционно управление',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Свързан към ${name}',
+			'companionRemote.unknownDevice' => 'Непознато устройство',
 			'companionRemote.session.startingServer' => 'Стартиране на сървър за дистанционно управление...',
 			'companionRemote.session.failedToCreate' => 'Неуспешно стартиране на сървър за дистанционно управление:',
 			'companionRemote.session.hostAddress' => 'Адрес на хоста',
@@ -2816,6 +2943,8 @@ extension on TranslationsBg {
 			'companionRemote.remote.tabSettings' => 'Настройки',
 			'companionRemote.remote.previous' => 'Предишен',
 			'companionRemote.remote.playPause' => 'Пускане/пауза',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.next' => 'Следващ',
 			'companionRemote.remote.seekBack' => 'Назад',
 			'companionRemote.remote.stop' => 'Стоп',
@@ -2827,6 +2956,12 @@ extension on TranslationsBg {
 			'companionRemote.remote.subtitles' => 'Субтитри',
 			'companionRemote.remote.audio' => 'Аудио',
 			'companionRemote.remote.searchHint' => 'Търсене на настолен компютър...',
+			'companionRemote.errors.noNetworkInterface' => 'Не е намерен мрежов интерфейс',
+			'companionRemote.errors.authenticationFailed' => 'Неуспешно удостоверяване',
+			'companionRemote.errors.joinTimedOut' => 'Времето за присъединяване към сесията изтече',
+			'companionRemote.errors.failedToConnectAnyAddress' => 'Неуспешно свързване към който и да е адрес',
+			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Връзката е загубена след ${attempts} опита',
+			'companionRemote.errors.connectionLost' => 'Връзката е загубена',
 			'videoSettings.playbackSpeed' => 'Скорост на възпроизвеждане',
 			'videoSettings.zoom' => 'Мащаб',
 			'videoSettings.sleepTimer' => 'Таймер за заспиване',
@@ -2837,6 +2972,40 @@ extension on TranslationsBg {
 			'videoSettings.performanceOverlay' => 'Оверлей за производителност',
 			'videoSettings.audioPassthrough' => 'Аудио passthrough',
 			'videoSettings.audioNormalization' => 'Нормализиране на силата на звука',
+			'performanceOverlay.color' => 'Цвят',
+			'performanceOverlay.performance' => 'Производителност',
+			'performanceOverlay.buffer' => 'Буфер',
+			'performanceOverlay.app' => 'Приложение',
+			'performanceOverlay.decoder' => 'Декодер',
+			'performanceOverlay.rawDecoder' => 'Суров декодер',
+			'performanceOverlay.tunneling' => 'Тунелиране',
+			'performanceOverlay.aspect' => 'Съотношение',
+			'performanceOverlay.rotation' => 'Завъртане',
+			'performanceOverlay.dvSource' => 'DV източник',
+			'performanceOverlay.dvPath' => 'DV път',
+			'performanceOverlay.p7Conversion' => 'P7 конв.',
+			'performanceOverlay.sampleRate' => 'Честота',
+			'performanceOverlay.pixelFormat' => 'Пикселен формат',
+			'performanceOverlay.hwFormat' => 'HW формат',
+			'performanceOverlay.matrix' => 'Матрица',
+			'performanceOverlay.primaries' => 'Основни цветове',
+			'performanceOverlay.transfer' => 'Трансфер',
+			'performanceOverlay.renderFps' => 'Render FPS',
+			'performanceOverlay.displayFps' => 'Display FPS',
+			'performanceOverlay.avSync' => 'A/V синхр.',
+			'performanceOverlay.dropped' => 'Изпуснати',
+			'performanceOverlay.dvRpus' => 'DV RPU',
+			'performanceOverlay.dvRpuAverage' => 'Средно DV RPU',
+			'performanceOverlay.dvSampleAverage' => 'Средно DV семпл',
+			'performanceOverlay.maxLuma' => 'Макс. яркост',
+			'performanceOverlay.minLuma' => 'Мин. яркост',
+			'performanceOverlay.maxCll' => 'MaxCLL',
+			'performanceOverlay.maxFall' => 'MaxFALL',
+			'performanceOverlay.cacheUsed' => 'Използван кеш',
+			'performanceOverlay.speed' => 'Скорост',
+			'performanceOverlay.player' => 'Плеър',
+			'performanceOverlay.memory' => 'Памет',
+			'performanceOverlay.uiFps' => 'UI FPS',
 			'externalPlayer.title' => 'Външен плеър',
 			'externalPlayer.useExternalPlayer' => 'Използвай външен плеър',
 			'externalPlayer.useExternalPlayerDescription' => 'Отваряй видеата в друго приложение',
@@ -2845,12 +3014,11 @@ extension on TranslationsBg {
 			'externalPlayer.systemDefault' => 'Системен по подразбиране',
 			'externalPlayer.addCustomPlayer' => 'Добави персонален плейър',
 			'externalPlayer.playerName' => 'Име на плейъра',
+			'externalPlayer.playerNameHint' => 'Моят плеър',
 			'externalPlayer.playerCommand' => 'Команда',
 			'externalPlayer.playerPackage' => 'Име на пакет',
 			'externalPlayer.playerUrlScheme' => 'URL схема',
 			'externalPlayer.off' => 'Изключено',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Неуспешно отваряне на външен плеър',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} не е инсталиран',
 			'externalPlayer.playInExternalPlayer' => 'Пусни във външен плеър',

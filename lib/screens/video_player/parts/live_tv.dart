@@ -99,7 +99,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       final dvrKey = _liveDvrKey;
       if (channels == null || channelIndex < 0 || channelIndex >= channels.length || dvrKey == null) {
         appLogger.w('Cannot retry live stream — missing session info');
-        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? 'Live stream failed'));
+        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? t.liveTv.liveStreamFailed));
         unawaited(_handleBackButton());
         return;
       }
@@ -109,7 +109,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       // Re-tune to get a fresh capture session — the previous one is dead.
       final tuneResult = await client.tuneChannel(dvrKey, channel.key);
       if (tuneResult == null || !mounted) {
-        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? 'Live stream failed'));
+        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? t.liveTv.liveStreamFailed));
         unawaited(_handleBackButton());
         return;
       }
@@ -126,7 +126,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         directStreamAudio: dsa,
       );
       if (streamPath == null || !mounted) {
-        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? 'Live stream failed'));
+        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? t.liveTv.liveStreamFailed));
         unawaited(_handleBackButton());
         return;
       }
@@ -154,7 +154,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     }
 
     appLogger.w('Cannot retry live stream — no compatible client/URL available');
-    showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? 'Live stream failed'));
+    showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? t.liveTv.liveStreamFailed));
     unawaited(_handleBackButton());
   }
 

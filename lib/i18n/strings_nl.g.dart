@@ -77,6 +77,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _TranslationsShadersNl shaders = _TranslationsShadersNl._(_root);
 	@override late final _TranslationsCompanionRemoteNl companionRemote = _TranslationsCompanionRemoteNl._(_root);
 	@override late final _TranslationsVideoSettingsNl videoSettings = _TranslationsVideoSettingsNl._(_root);
+	@override late final _TranslationsPerformanceOverlayNl performanceOverlay = _TranslationsPerformanceOverlayNl._(_root);
 	@override late final _TranslationsExternalPlayerNl externalPlayer = _TranslationsExternalPlayerNl._(_root);
 	@override late final _TranslationsMetadataEditNl metadataEdit = _TranslationsMetadataEditNl._(_root);
 	@override late final _TranslationsMatchScreenNl matchScreen = _TranslationsMatchScreenNl._(_root);
@@ -159,6 +160,9 @@ class _TranslationsCommonNl extends TranslationsCommonEn {
 	@override String get settings => 'Opties';
 	@override String get mute => 'Dempen';
 	@override String get ok => 'OK';
+	@override String get off => 'Uit';
+	@override String seasonNumber({required Object number}) => 'Seizoen ${number}';
+	@override String chapterNumber({required Object number}) => 'Hoofdstuk ${number}';
 	@override String get reconnect => 'Opnieuw verbinden';
 	@override String get exit => 'Afsluiten';
 	@override String get viewAll => 'Alles weergeven';
@@ -385,6 +389,10 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get dvConversionNative => 'Native / uitgeschakeld';
 	@override String get dvConversionDv81 => 'P7 → P8.1';
 	@override String get dvConversionHevcStrip => 'P7 → HEVC';
+	@override String get dvConversionAutoDescription => 'Gebruik apparaatdetectie en normaal fallbackgedrag';
+	@override String get dvConversionNativeDescription => 'Forceer native DV7 en onderdruk DV-conversie opnieuw proberen';
+	@override String get dvConversionDv81Description => 'Forceer inline RPU-conversie naar Dolby Vision-profiel 8.1';
+	@override String get dvConversionHevcStripDescription => 'Strip Dolby Vision RPU/EL-lagen en presenteer gewone HEVC';
 	@override String get requireProfileSelectionOnOpen => 'Vraag om profiel bij openen';
 	@override String get requireProfileSelectionOnOpenDescription => 'Toon profielselectie telkens wanneer de app wordt geopend';
 	@override String get forceTvMode => 'TV-modus forceren';
@@ -432,6 +440,8 @@ class _TranslationsHotkeysNl extends TranslationsHotkeysEn {
 	// Translations
 	@override String setShortcutFor({required Object actionName}) => 'Stel sneltoets in voor ${actionName}';
 	@override String get clearShortcut => 'Wis sneltoets';
+	@override String get noShortcutSet => 'Geen sneltoets ingesteld';
+	@override String get currentShortcut => 'Huidige sneltoets:';
 	@override late final _TranslationsHotkeysActionsNl actions = _TranslationsHotkeysActionsNl._(_root);
 }
 
@@ -482,6 +492,7 @@ class _TranslationsMediaMenuNl extends TranslationsMediaMenuEn {
 	@override String get goToSeries => 'Ga naar serie';
 	@override String get goToSeason => 'Ga naar seizoen';
 	@override String get shufflePlay => 'Willekeurig afspelen';
+	@override String get shuffleNotAvailableOffline => 'Shuffle is offline niet beschikbaar';
 	@override String get fileInfo => 'Bestand info';
 	@override String get deleteFromServer => 'Verwijderen van server';
 	@override String get confirmDelete => 'Deze media en bestanden van je server verwijderen?';
@@ -620,6 +631,10 @@ class _TranslationsVideoControlsNl extends TranslationsVideoControlsEn {
 	@override String get searchSubtitles => 'Ondertitels zoeken';
 	@override String get language => 'Taal';
 	@override String get noSubtitlesFound => 'Geen ondertitels gevonden';
+	@override String get downloadedSubtitle => 'Gedownload';
+	@override String get noSubtitlesAvailable => 'Geen ondertitels beschikbaar';
+	@override String get noAudioTracksAvailable => 'Geen audiotracks beschikbaar';
+	@override String get noTracksAvailable => 'Geen tracks beschikbaar';
 	@override String get subtitleDownloaded => 'Ondertitel gedownload';
 	@override String get subtitleDownloadFailed => 'Ondertitel downloaden mislukt';
 	@override String get searchLanguages => 'Talen zoeken...';
@@ -808,6 +823,7 @@ class _TranslationsProfilesNl extends TranslationsProfilesEn {
 	@override String get pinExplain => '4-cijferige PIN vereist om profielen te wisselen.';
 	@override String get continueButton => 'Doorgaan';
 	@override String get pinsDontMatch => 'PIN-codes komen niet overeen';
+	@override String get initializeServicesFailed => 'Kan profielservices niet initialiseren';
 }
 
 // Path: connections
@@ -854,6 +870,7 @@ class _TranslationsDiscoverNl extends TranslationsDiscoverEn {
 	@override String get movie => 'Film';
 	@override String get tvShow => 'TV Serie';
 	@override String minutesLeft({required Object minutes}) => '${minutes} min over';
+	@override String get moreLikeThis => 'Meer zoals dit';
 }
 
 // Path: errors
@@ -886,6 +903,7 @@ class _TranslationsLibrariesNl extends TranslationsLibrariesEn {
 
 	// Translations
 	@override String get title => 'Bibliotheken';
+	@override String get fallbackTitle => 'Bibliotheek';
 	@override String get scanLibraryFiles => 'Scan bibliotheek bestanden';
 	@override String get scanLibrary => 'Scan bibliotheek';
 	@override String get analyze => 'Analyseren';
@@ -1018,6 +1036,12 @@ class _TranslationsLiveTvNl extends TranslationsLiveTvEn {
 	@override String get noChannels => 'Geen zenders beschikbaar';
 	@override String get noDvr => 'Geen DVR geconfigureerd op een server';
 	@override String get noPrograms => 'Geen programmagegevens beschikbaar';
+	@override String get liveStreamFailed => 'Livestream mislukt';
+	@override String get unknownProgram => 'Onbekend programma';
+	@override String get unknownHub => 'Onbekend';
+	@override String get unknownError => 'Onbekende fout';
+	@override String channelNumber({required Object number}) => 'Kanaal ${number}';
+	@override String get unknownChannel => 'Onbekend kanaal';
 	@override String get live => 'LIVE';
 	@override String get reloadGuide => 'Gids herladen';
 	@override String get now => 'Nu';
@@ -1224,12 +1248,21 @@ class _TranslationsDownloadsNl extends TranslationsDownloadsEn {
 	@override String get deleteDownload => 'Download verwijderen';
 	@override String get retryDownload => 'Download opnieuw proberen';
 	@override String get downloadQueued => 'Download in wachtrij';
+	@override String get downloadResumed => 'Download hervat';
 	@override String get serverErrorBitrate => 'Serverfout: bestand overschrijdt mogelijk de externe bitrate-limiet';
 	@override String episodesQueued({required Object count}) => '${count} afleveringen in wachtrij voor download';
 	@override String get downloadDeleted => 'Download verwijderd';
 	@override String deleteConfirm({required Object title}) => '"${title}" van dit apparaat verwijderen?';
-	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Verwijderen van ${title}... (${current} van ${total})';
+	@override String get cancelledDownloadTitle => 'Geannuleerde download';
+	@override String get cancelledDownloadMessage => 'Deze download is geannuleerd. Wat wil je doen?';
+	@override String get allEpisodesAlreadyDownloaded => 'Alle afleveringen zijn al gedownload';
+	@override String get resumeDownload => 'Download hervatten';
+	@override String get cancelledDownload => 'Geannuleerde download';
+	@override String syncingFile({required Object file, required Object status}) => '${file} (${status} synchroniseren)';
+	@override String downloadedFileClickToComplete({required Object file}) => '${file} gedownload — klik om te voltooien';
+	@override String get partialDownloadClickToComplete => 'Gedeeltelijk gedownload — klik om te voltooien';
 	@override String get deleting => 'Verwijderen...';
+	@override String deletingWithProgress({required Object title, required Object current, required Object total}) => 'Verwijderen van ${title}... (${current} van ${total})';
 	@override String get queuedTooltip => 'In wachtrij';
 	@override String queuedFilesTooltip({required Object files}) => 'In wachtrij: ${files}';
 	@override String get downloadingTooltip => 'Downloaden...';
@@ -1304,9 +1337,11 @@ class _TranslationsCompanionRemoteNl extends TranslationsCompanionRemoteEn {
 	// Translations
 	@override String get title => 'Afstandsbediening';
 	@override String connectedTo({required Object name}) => 'Verbonden met ${name}';
+	@override String get unknownDevice => 'Onbekend apparaat';
 	@override late final _TranslationsCompanionRemoteSessionNl session = _TranslationsCompanionRemoteSessionNl._(_root);
 	@override late final _TranslationsCompanionRemotePairingNl pairing = _TranslationsCompanionRemotePairingNl._(_root);
 	@override late final _TranslationsCompanionRemoteRemoteNl remote = _TranslationsCompanionRemoteRemoteNl._(_root);
+	@override late final _TranslationsCompanionRemoteErrorsNl errors = _TranslationsCompanionRemoteErrorsNl._(_root);
 }
 
 // Path: videoSettings
@@ -1328,6 +1363,49 @@ class _TranslationsVideoSettingsNl extends TranslationsVideoSettingsEn {
 	@override String get audioNormalization => 'Volume normaliseren';
 }
 
+// Path: performanceOverlay
+class _TranslationsPerformanceOverlayNl extends TranslationsPerformanceOverlayEn {
+	_TranslationsPerformanceOverlayNl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get color => 'Kleur';
+	@override String get performance => 'Prestaties';
+	@override String get buffer => 'Buffer';
+	@override String get app => 'App';
+	@override String get decoder => 'Decoder';
+	@override String get rawDecoder => 'Raw decoder';
+	@override String get tunneling => 'Tunneling';
+	@override String get aspect => 'Verhouding';
+	@override String get rotation => 'Rotatie';
+	@override String get dvSource => 'DV-bron';
+	@override String get dvPath => 'DV-pad';
+	@override String get p7Conversion => 'P7-conv.';
+	@override String get sampleRate => 'Samplefrequentie';
+	@override String get pixelFormat => 'Pixelformaat';
+	@override String get hwFormat => 'HW-formaat';
+	@override String get matrix => 'Matrix';
+	@override String get primaries => 'Primaire kleuren';
+	@override String get transfer => 'Transfer';
+	@override String get renderFps => 'Render-FPS';
+	@override String get displayFps => 'Scherm-FPS';
+	@override String get avSync => 'A/V-sync';
+	@override String get dropped => 'Gedropt';
+	@override String get dvRpus => 'DV RPU’s';
+	@override String get dvRpuAverage => 'DV RPU gem.';
+	@override String get dvSampleAverage => 'DV-sample gem.';
+	@override String get maxLuma => 'Max luma';
+	@override String get minLuma => 'Min luma';
+	@override String get maxCll => 'MaxCLL';
+	@override String get maxFall => 'MaxFALL';
+	@override String get cacheUsed => 'Cache gebruikt';
+	@override String get speed => 'Snelheid';
+	@override String get player => 'Speler';
+	@override String get memory => 'Geheugen';
+	@override String get uiFps => 'UI FPS';
+}
+
 // Path: externalPlayer
 class _TranslationsExternalPlayerNl extends TranslationsExternalPlayerEn {
 	_TranslationsExternalPlayerNl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -1343,6 +1421,7 @@ class _TranslationsExternalPlayerNl extends TranslationsExternalPlayerEn {
 	@override String get systemDefault => 'Systeemstandaard';
 	@override String get addCustomPlayer => 'Aangepaste speler toevoegen';
 	@override String get playerName => 'Spelernaam';
+	@override String get playerNameHint => 'Mijn speler';
 	@override String get playerCommand => 'Commando';
 	@override String get playerPackage => 'Pakketnaam';
 	@override String get playerUrlScheme => 'URL-schema';
@@ -1755,6 +1834,21 @@ class _TranslationsCompanionRemoteRemoteNl extends TranslationsCompanionRemoteRe
 	@override String get searchHint => 'Zoeken op desktop...';
 }
 
+// Path: companionRemote.errors
+class _TranslationsCompanionRemoteErrorsNl extends TranslationsCompanionRemoteErrorsEn {
+	_TranslationsCompanionRemoteErrorsNl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get noNetworkInterface => 'Geen netwerkinterface gevonden';
+	@override String get authenticationFailed => 'Authenticatie mislukt';
+	@override String get joinTimedOut => 'Time-out bij deelnemen aan sessie';
+	@override String get failedToConnectAnyAddress => 'Kan met geen enkel adres verbinden';
+	@override String connectionLostAfterAttempts({required Object attempts}) => 'Verbinding verloren na ${attempts} pogingen';
+	@override String get connectionLost => 'Verbinding verloren';
+}
+
 // Path: trackers.services
 class _TranslationsTrackersServicesNl extends TranslationsTrackersServicesEn {
 	_TranslationsTrackersServicesNl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -1871,6 +1965,9 @@ extension on TranslationsNl {
 			'common.settings' => 'Opties',
 			'common.mute' => 'Dempen',
 			'common.ok' => 'OK',
+			'common.off' => 'Uit',
+			'common.seasonNumber' => ({required Object number}) => 'Seizoen ${number}',
+			'common.chapterNumber' => ({required Object number}) => 'Hoofdstuk ${number}',
 			'common.reconnect' => 'Opnieuw verbinden',
 			'common.exit' => 'Afsluiten',
 			'common.viewAll' => 'Alles weergeven',
@@ -2070,6 +2167,10 @@ extension on TranslationsNl {
 			'settings.dvConversionNative' => 'Native / uitgeschakeld',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
 			'settings.dvConversionHevcStrip' => 'P7 → HEVC',
+			'settings.dvConversionAutoDescription' => 'Gebruik apparaatdetectie en normaal fallbackgedrag',
+			'settings.dvConversionNativeDescription' => 'Forceer native DV7 en onderdruk DV-conversie opnieuw proberen',
+			'settings.dvConversionDv81Description' => 'Forceer inline RPU-conversie naar Dolby Vision-profiel 8.1',
+			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL-lagen en presenteer gewone HEVC',
 			'settings.requireProfileSelectionOnOpen' => 'Vraag om profiel bij openen',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Toon profielselectie telkens wanneer de app wordt geopend',
 			'settings.forceTvMode' => 'TV-modus forceren',
@@ -2099,6 +2200,8 @@ extension on TranslationsNl {
 			'search.enterTitleActorOrKeyword' => 'Voer een titel, acteur of trefwoord in',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Stel sneltoets in voor ${actionName}',
 			'hotkeys.clearShortcut' => 'Wis sneltoets',
+			'hotkeys.noShortcutSet' => 'Geen sneltoets ingesteld',
+			'hotkeys.currentShortcut' => 'Huidige sneltoets:',
 			'hotkeys.actions.playPause' => 'Afspelen/Pauzeren',
 			'hotkeys.actions.volumeUp' => 'Volume omhoog',
 			'hotkeys.actions.volumeDown' => 'Volume omlaag',
@@ -2155,6 +2258,7 @@ extension on TranslationsNl {
 			'mediaMenu.goToSeries' => 'Ga naar serie',
 			'mediaMenu.goToSeason' => 'Ga naar seizoen',
 			'mediaMenu.shufflePlay' => 'Willekeurig afspelen',
+			'mediaMenu.shuffleNotAvailableOffline' => 'Shuffle is offline niet beschikbaar',
 			'mediaMenu.fileInfo' => 'Bestand info',
 			'mediaMenu.deleteFromServer' => 'Verwijderen van server',
 			'mediaMenu.confirmDelete' => 'Deze media en bestanden van je server verwijderen?',
@@ -2263,6 +2367,10 @@ extension on TranslationsNl {
 			'videoControls.searchSubtitles' => 'Ondertitels zoeken',
 			'videoControls.language' => 'Taal',
 			'videoControls.noSubtitlesFound' => 'Geen ondertitels gevonden',
+			'videoControls.downloadedSubtitle' => 'Gedownload',
+			'videoControls.noSubtitlesAvailable' => 'Geen ondertitels beschikbaar',
+			'videoControls.noAudioTracksAvailable' => 'Geen audiotracks beschikbaar',
+			'videoControls.noTracksAvailable' => 'Geen tracks beschikbaar',
 			'videoControls.subtitleDownloaded' => 'Ondertitel gedownload',
 			'videoControls.subtitleDownloadFailed' => 'Ondertitel downloaden mislukt',
 			'videoControls.searchLanguages' => 'Talen zoeken...',
@@ -2321,6 +2429,8 @@ extension on TranslationsNl {
 			'subtitlingStyling.borderColor' => 'Randkleur',
 			'subtitlingStyling.backgroundOpacity' => 'Achtergrond transparantie',
 			'subtitlingStyling.backgroundColor' => 'Achtergrondkleur',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.position' => 'Positie',
 			'subtitlingStyling.assOverride' => 'ASS-overschrijving',
 			'subtitlingStyling.bold' => 'Vet',
@@ -2335,8 +2445,6 @@ extension on TranslationsNl {
 			'mpvConfig.loadPreset' => 'Laden',
 			'mpvConfig.deletePreset' => 'Verwijderen',
 			'mpvConfig.presetSaved' => 'Voorinstelling opgeslagen',
-			_ => null,
-		} ?? switch (path) {
 			'mpvConfig.presetLoaded' => 'Voorinstelling geladen',
 			'mpvConfig.presetDeleted' => 'Voorinstelling verwijderd',
 			'mpvConfig.confirmDeletePreset' => 'Weet je zeker dat je deze voorinstelling wilt verwijderen?',
@@ -2399,6 +2507,7 @@ extension on TranslationsNl {
 			'profiles.pinExplain' => '4-cijferige PIN vereist om profielen te wisselen.',
 			'profiles.continueButton' => 'Doorgaan',
 			'profiles.pinsDontMatch' => 'PIN-codes komen niet overeen',
+			'profiles.initializeServicesFailed' => 'Kan profielservices niet initialiseren',
 			'connections.sectionTitle' => 'Verbindingen',
 			'connections.addConnection' => 'Verbinding toevoegen',
 			'connections.addConnectionSubtitleNoProfile' => 'Meld je aan met Plex of verbind een Jellyfin-server',
@@ -2427,6 +2536,7 @@ extension on TranslationsNl {
 			'discover.movie' => 'Film',
 			'discover.tvShow' => 'TV Serie',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min over',
+			'discover.moreLikeThis' => 'Meer zoals dit',
 			'errors.searchFailed' => ({required Object error}) => 'Zoeken mislukt: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Verbinding time-out tijdens laden ${context}',
 			'errors.connectionFailed' => 'Kan geen verbinding maken met mediaserver',
@@ -2441,6 +2551,7 @@ extension on TranslationsNl {
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Kon ${displayName} niet verwijderen',
 			'errors.failedToRate' => 'Beoordeling kon niet worden bijgewerkt',
 			'libraries.title' => 'Bibliotheken',
+			'libraries.fallbackTitle' => 'Bibliotheek',
 			'libraries.scanLibraryFiles' => 'Scan bibliotheek bestanden',
 			'libraries.scanLibrary' => 'Scan bibliotheek',
 			'libraries.analyze' => 'Analyseren',
@@ -2541,6 +2652,12 @@ extension on TranslationsNl {
 			'liveTv.noChannels' => 'Geen zenders beschikbaar',
 			'liveTv.noDvr' => 'Geen DVR geconfigureerd op een server',
 			'liveTv.noPrograms' => 'Geen programmagegevens beschikbaar',
+			'liveTv.liveStreamFailed' => 'Livestream mislukt',
+			'liveTv.unknownProgram' => 'Onbekend programma',
+			'liveTv.unknownHub' => 'Onbekend',
+			'liveTv.unknownError' => 'Onbekende fout',
+			'liveTv.channelNumber' => ({required Object number}) => 'Kanaal ${number}',
+			'liveTv.unknownChannel' => 'Onbekend kanaal',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Gids herladen',
 			'liveTv.now' => 'Nu',
@@ -2711,12 +2828,21 @@ extension on TranslationsNl {
 			'downloads.deleteDownload' => 'Download verwijderen',
 			'downloads.retryDownload' => 'Download opnieuw proberen',
 			'downloads.downloadQueued' => 'Download in wachtrij',
+			'downloads.downloadResumed' => 'Download hervat',
 			'downloads.serverErrorBitrate' => 'Serverfout: bestand overschrijdt mogelijk de externe bitrate-limiet',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} afleveringen in wachtrij voor download',
 			'downloads.downloadDeleted' => 'Download verwijderd',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" van dit apparaat verwijderen?',
-			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Verwijderen van ${title}... (${current} van ${total})',
+			'downloads.cancelledDownloadTitle' => 'Geannuleerde download',
+			'downloads.cancelledDownloadMessage' => 'Deze download is geannuleerd. Wat wil je doen?',
+			'downloads.allEpisodesAlreadyDownloaded' => 'Alle afleveringen zijn al gedownload',
+			'downloads.resumeDownload' => 'Download hervatten',
+			'downloads.cancelledDownload' => 'Geannuleerde download',
+			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} synchroniseren)',
+			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} gedownload — klik om te voltooien',
+			'downloads.partialDownloadClickToComplete' => 'Gedeeltelijk gedownload — klik om te voltooien',
 			'downloads.deleting' => 'Verwijderen...',
+			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Verwijderen van ${title}... (${current} van ${total})',
 			'downloads.queuedTooltip' => 'In wachtrij',
 			'downloads.queuedFilesTooltip' => ({required Object files}) => 'In wachtrij: ${files}',
 			'downloads.downloadingTooltip' => 'Downloaden...',
@@ -2773,6 +2899,7 @@ extension on TranslationsNl {
 			'shaders.deleteShaderConfirm' => ({required Object name}) => '"${name}" verwijderen?',
 			'companionRemote.title' => 'Afstandsbediening',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Verbonden met ${name}',
+			'companionRemote.unknownDevice' => 'Onbekend apparaat',
 			'companionRemote.session.startingServer' => 'Externe server starten...',
 			'companionRemote.session.failedToCreate' => 'Kan externe server niet starten:',
 			'companionRemote.session.hostAddress' => 'Hostadres',
@@ -2816,6 +2943,8 @@ extension on TranslationsNl {
 			'companionRemote.remote.tabSettings' => 'Instellingen',
 			'companionRemote.remote.previous' => 'Vorige',
 			'companionRemote.remote.playPause' => 'Afspelen/Pauzeren',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.next' => 'Volgende',
 			'companionRemote.remote.seekBack' => 'Terugspoelen',
 			'companionRemote.remote.stop' => 'Stoppen',
@@ -2827,6 +2956,12 @@ extension on TranslationsNl {
 			'companionRemote.remote.subtitles' => 'Ondertitels',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Zoeken op desktop...',
+			'companionRemote.errors.noNetworkInterface' => 'Geen netwerkinterface gevonden',
+			'companionRemote.errors.authenticationFailed' => 'Authenticatie mislukt',
+			'companionRemote.errors.joinTimedOut' => 'Time-out bij deelnemen aan sessie',
+			'companionRemote.errors.failedToConnectAnyAddress' => 'Kan met geen enkel adres verbinden',
+			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Verbinding verloren na ${attempts} pogingen',
+			'companionRemote.errors.connectionLost' => 'Verbinding verloren',
 			'videoSettings.playbackSpeed' => 'Afspeelsnelheid',
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Slaaptimer',
@@ -2837,6 +2972,40 @@ extension on TranslationsNl {
 			'videoSettings.performanceOverlay' => 'Prestatie-overlay',
 			'videoSettings.audioPassthrough' => 'Audio-doorvoer',
 			'videoSettings.audioNormalization' => 'Volume normaliseren',
+			'performanceOverlay.color' => 'Kleur',
+			'performanceOverlay.performance' => 'Prestaties',
+			'performanceOverlay.buffer' => 'Buffer',
+			'performanceOverlay.app' => 'App',
+			'performanceOverlay.decoder' => 'Decoder',
+			'performanceOverlay.rawDecoder' => 'Raw decoder',
+			'performanceOverlay.tunneling' => 'Tunneling',
+			'performanceOverlay.aspect' => 'Verhouding',
+			'performanceOverlay.rotation' => 'Rotatie',
+			'performanceOverlay.dvSource' => 'DV-bron',
+			'performanceOverlay.dvPath' => 'DV-pad',
+			'performanceOverlay.p7Conversion' => 'P7-conv.',
+			'performanceOverlay.sampleRate' => 'Samplefrequentie',
+			'performanceOverlay.pixelFormat' => 'Pixelformaat',
+			'performanceOverlay.hwFormat' => 'HW-formaat',
+			'performanceOverlay.matrix' => 'Matrix',
+			'performanceOverlay.primaries' => 'Primaire kleuren',
+			'performanceOverlay.transfer' => 'Transfer',
+			'performanceOverlay.renderFps' => 'Render-FPS',
+			'performanceOverlay.displayFps' => 'Scherm-FPS',
+			'performanceOverlay.avSync' => 'A/V-sync',
+			'performanceOverlay.dropped' => 'Gedropt',
+			'performanceOverlay.dvRpus' => 'DV RPU’s',
+			'performanceOverlay.dvRpuAverage' => 'DV RPU gem.',
+			'performanceOverlay.dvSampleAverage' => 'DV-sample gem.',
+			'performanceOverlay.maxLuma' => 'Max luma',
+			'performanceOverlay.minLuma' => 'Min luma',
+			'performanceOverlay.maxCll' => 'MaxCLL',
+			'performanceOverlay.maxFall' => 'MaxFALL',
+			'performanceOverlay.cacheUsed' => 'Cache gebruikt',
+			'performanceOverlay.speed' => 'Snelheid',
+			'performanceOverlay.player' => 'Speler',
+			'performanceOverlay.memory' => 'Geheugen',
+			'performanceOverlay.uiFps' => 'UI FPS',
 			'externalPlayer.title' => 'Externe speler',
 			'externalPlayer.useExternalPlayer' => 'Externe speler gebruiken',
 			'externalPlayer.useExternalPlayerDescription' => 'Open video\'s in een andere app',
@@ -2845,12 +3014,11 @@ extension on TranslationsNl {
 			'externalPlayer.systemDefault' => 'Systeemstandaard',
 			'externalPlayer.addCustomPlayer' => 'Aangepaste speler toevoegen',
 			'externalPlayer.playerName' => 'Spelernaam',
+			'externalPlayer.playerNameHint' => 'Mijn speler',
 			'externalPlayer.playerCommand' => 'Commando',
 			'externalPlayer.playerPackage' => 'Pakketnaam',
 			'externalPlayer.playerUrlScheme' => 'URL-schema',
 			'externalPlayer.off' => 'Uit',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.launchFailed' => 'Kan externe speler niet openen',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is niet geïnstalleerd',
 			'externalPlayer.playInExternalPlayer' => 'Afspelen in externe speler',

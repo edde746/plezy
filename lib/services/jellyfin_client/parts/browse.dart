@@ -1209,7 +1209,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       JellyfinMappers.syntheticHub(
         mapItem: _mapItem,
         identifier: 'item.$id.similar',
-        title: 'More Like This',
+        title: t.discover.moreLikeThis,
         type: 'mixed',
         items: _itemsArray(response.data),
         serverId: serverId,

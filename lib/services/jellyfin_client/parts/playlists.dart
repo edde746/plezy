@@ -94,7 +94,7 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     return MediaPlaylist(
       id: item.id,
       backend: MediaBackend.jellyfin,
-      title: item.title ?? 'Playlist',
+      title: item.title ?? t.playlists.playlist,
       summary: item.summary,
       smart: false,
       playlistType: _playlistMediaType(item),
@@ -230,7 +230,7 @@ mixin _JellyfinPlaylistMethods on MediaServerCacheMixin {
     return MediaPlaylist(
       id: id,
       backend: MediaBackend.jellyfin,
-      title: json['Name'] as String? ?? 'Playlist',
+      title: json['Name'] as String? ?? t.playlists.playlist,
       summary: json['Overview'] as String?,
       smart: false,
       playlistType: (json['MediaType'] as String?)?.toLowerCase() ?? 'video',

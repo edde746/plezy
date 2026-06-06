@@ -1666,7 +1666,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         id: seasonId,
         backend: _metadata.backend,
         kind: MediaKind.season,
-        title: firstEp.parentTitle ?? 'Season ${entry.key}',
+        title: firstEp.parentTitle ?? t.common.seasonNumber(number: entry.key),
         index: entry.key,
         leafCount: entry.value.length,
         thumbPath: firstEp.parentThumbPath,
@@ -3010,7 +3010,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   Future<void> _handleShufflePlayWithQueue(BuildContext context, MediaItem metadata) async {
     if (widget.isOffline) {
       if (context.mounted) {
-        showErrorSnackBar(context, 'Shuffle not available offline');
+        showErrorSnackBar(context, t.mediaMenu.shuffleNotAvailableOffline);
       }
       return;
     }

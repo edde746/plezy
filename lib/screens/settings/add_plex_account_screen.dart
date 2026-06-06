@@ -136,7 +136,7 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
       },
     );
     if (mounted && completed != true) {
-      throw StateError(errorText ?? t.addServer.failedToRegisterAccount(error: 'Unknown error'));
+      throw StateError(errorText ?? t.addServer.failedToRegisterAccount(error: t.common.unknown));
     }
   }
 

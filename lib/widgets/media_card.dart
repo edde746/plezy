@@ -1017,7 +1017,7 @@ void _navigateToSeason(BuildContext context, MediaItem episode, {bool isOffline 
       id: episode.parentId!,
       backend: episode.backend,
       kind: MediaKind.season,
-      title: episode.parentTitle ?? 'Season ${episode.parentIndex ?? ''}',
+      title: episode.parentTitle ?? t.common.seasonNumber(number: episode.parentIndex ?? ''),
       index: episode.parentIndex,
       parentId: episode.grandparentId,
       thumbPath: episode.parentThumbPath,

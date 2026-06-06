@@ -121,7 +121,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
 
       await widget.player.addSubtitleTrack(
         uri: newUrl,
-        title: newTrack.displayTitle ?? newTrack.language ?? 'Downloaded',
+        title: newTrack.displayTitle ?? newTrack.language ?? t.videoControls.downloadedSubtitle,
         language: newTrack.languageCode,
         select: true,
       );

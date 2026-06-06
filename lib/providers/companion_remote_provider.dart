@@ -6,6 +6,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
+import '../i18n/strings.g.dart';
 import '../models/companion_remote/remote_command.dart';
 import '../models/companion_remote/remote_session.dart';
 import '../models/plex/plex_home.dart';
@@ -29,7 +30,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   RemoteSession? _session;
   CompanionRemotePeerService? _peerService;
   LanDiscoveryService? _discoveryService;
-  String _deviceName = 'Unknown Device';
+  String _deviceName = t.companionRemote.unknownDevice;
   String _platform = 'unknown';
   bool _isPlayerActive = false;
 
@@ -99,7 +100,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       }
     } catch (e) {
       appLogger.e('CompanionRemote: Failed to get device info', error: e);
-      _deviceName = 'Unknown Device';
+      _deviceName = t.companionRemote.unknownDevice;
       _platform = Platform.operatingSystem;
     }
 
@@ -724,7 +725,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       appLogger.w('CompanionRemote: Max reconnect attempts reached');
       _session = _session?.copyWith(
         status: RemoteSessionStatus.error,
-        errorMessage: 'Connection lost after $_maxReconnectAttempts attempts',
+        errorMessage: t.companionRemote.errors.connectionLostAfterAttempts(attempts: _maxReconnectAttempts),
       );
       _reconnectAttempts = 0;
       safeNotifyListeners();
@@ -742,7 +743,10 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   Future<void> _attemptReconnect() async {
     if (_lastHostAddresses == null || !isCryptoReady) {
       appLogger.w('CompanionRemote: No stored context for reconnect');
-      _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: 'Connection lost');
+      _session = _session?.copyWith(
+        status: RemoteSessionStatus.error,
+        errorMessage: t.companionRemote.errors.connectionLost,
+      );
       safeNotifyListeners();
       return;
     }

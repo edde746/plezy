@@ -833,7 +833,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       appLogger.e('Failed to load discover content', error: e);
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Failed to load content: $e';
+        _errorMessage = t.errors.failedToLoad(context: t.discover.title, error: e.toString());
         _isLoading = false;
         _areHubsLoading = false;
       });
@@ -1258,7 +1258,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 context,
                                 MaterialPageRoute(builder: (_) => const WatchTogetherScreen()),
                               ),
-                              tooltip: 'Watch Together',
+                              tooltip: t.watchTogether.title,
                             ),
                             if (watchTogether.isInSession && watchTogether.participantCount > 1)
                               Positioned(

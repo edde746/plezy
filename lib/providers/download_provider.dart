@@ -2,6 +2,7 @@ import 'dart:async';
 import '../media/ids.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import '../i18n/strings.g.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
@@ -527,7 +528,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
               id: showRatingKey,
               backend: meta.backend,
               kind: MediaKind.show,
-              title: meta.grandparentTitle ?? 'Unknown Show',
+              title: meta.grandparentTitle ?? t.common.unknown,
               thumbPath: meta.grandparentThumbPath,
               artPath: meta.grandparentArtPath,
               serverId: meta.serverId,
@@ -1721,7 +1722,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
 /// Exception thrown when download is blocked due to cellular-only setting
 class CellularDownloadBlockedException implements Exception {
-  final String message = 'Downloads are disabled on cellular data';
+  String get message => t.settings.cellularDownloadBlocked;
 
   @override
   String toString() => message;

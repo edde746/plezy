@@ -8,6 +8,7 @@ import '../media/media_part.dart';
 import '../media/media_role.dart';
 import '../media/media_stream.dart';
 import '../media/media_version.dart';
+import '../i18n/strings.g.dart';
 import '../utils/jellyfin_time.dart';
 import '../utils/json_utils.dart';
 import '../utils/resolution_label.dart';
@@ -237,7 +238,7 @@ class JellyfinMappers {
     return MediaLibrary(
       id: id,
       backend: MediaBackend.jellyfin,
-      title: view['Name'] as String? ?? 'Library',
+      title: view['Name'] as String? ?? t.libraries.fallbackTitle,
       kind: _libraryKindFromCollectionType(collectionType, view['Type'] as String?),
       updatedAt: jellyfinIsoToEpochSeconds(view['DateLastSaved'] as String? ?? view['DateModified'] as String?),
       createdAt: jellyfinIsoToEpochSeconds(view['DateCreated'] as String?),

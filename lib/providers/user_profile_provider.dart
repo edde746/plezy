@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 
 import '../connection/connection.dart';
 import '../connection/connection_registry.dart';
+import '../i18n/strings.g.dart';
 import '../media/media_server_user_profile.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../profiles/active_profile_provider.dart';
@@ -133,7 +134,7 @@ class UserProfileProvider extends ChangeNotifier with DisposableChangeNotifierMi
       _isInitialized = true;
     } catch (e) {
       appLogger.e('UserProfileProvider: critical initialization failure', error: e);
-      _setError('Failed to initialize profile services');
+      _setError(t.profiles.initializeServicesFailed);
       _authService = null;
       _storageService = null;
       _isInitialized = false;

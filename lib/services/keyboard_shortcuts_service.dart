@@ -135,7 +135,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
   }
 
   String formatHotkey(HotKey? hotKey) {
-    if (hotKey == null) return 'No shortcut set';
+    if (hotKey == null) return t.hotkeys.noShortcutSet;
 
     final isMac = Platform.isMacOS;
 
