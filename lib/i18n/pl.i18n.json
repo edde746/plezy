@@ -276,6 +276,8 @@
     "autoHidePerformanceOverlayDescription": "Wygaszaj nakładkę wydajności wraz z kontrolkami odtwarzania",
     "showNavBarLabels": "Pokaż etykiety paska nawigacji",
     "showNavBarLabelsDescription": "Wyświetl tekstowe etykiety pod ikonami paska nawigacji",
+    "startupSection": "Sekcja startowa",
+    "startupSectionDescription": "Wybierz, którą sekcję Plezy otwiera przy uruchomieniu",
     "liveTvDefaultFavorites": "Domyślnie ulubione kanały",
     "liveTvDefaultFavoritesDescription": "Pokaż tylko ulubione kanały po otwarciu telewizji na żywo",
     "display": "Ekran",

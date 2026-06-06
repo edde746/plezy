@@ -276,6 +276,8 @@
     "autoHidePerformanceOverlayDescription": "Faire apparaître/disparaître la superposition avec les contrôles de lecture",
     "showNavBarLabels": "Afficher les libellés de la barre de navigation",
     "showNavBarLabelsDescription": "Afficher les libellés sous les icônes de la barre de navigation",
+    "startupSection": "Section de démarrage",
+    "startupSectionDescription": "Choisissez la section que Plezy ouvre au démarrage",
     "liveTvDefaultFavorites": "Chaînes favorites par défaut",
     "liveTvDefaultFavoritesDescription": "Afficher uniquement les chaînes favorites à l'ouverture de la TV en direct",
     "display": "Affichage",

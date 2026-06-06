@@ -939,6 +939,12 @@ class TranslationsSettingsEn {
 	/// en: 'Display text labels under navigation bar icons'
 	String get showNavBarLabelsDescription => 'Display text labels under navigation bar icons';
 
+	/// en: 'Startup Section'
+	String get startupSection => 'Startup Section';
+
+	/// en: 'Choose which section Plezy opens to when it starts'
+	String get startupSectionDescription => 'Choose which section Plezy opens to when it starts';
+
 	/// en: 'Default to Favorite Channels'
 	String get liveTvDefaultFavorites => 'Default to Favorite Channels';
 
@@ -4725,6 +4731,8 @@ extension on Translations {
 			'settings.autoHidePerformanceOverlayDescription' => 'Fade the performance overlay with the playback controls',
 			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
 			'settings.showNavBarLabelsDescription' => 'Display text labels under navigation bar icons',
+			'settings.startupSection' => 'Startup Section',
+			'settings.startupSectionDescription' => 'Choose which section Plezy opens to when it starts',
 			'settings.liveTvDefaultFavorites' => 'Default to Favorite Channels',
 			'settings.liveTvDefaultFavoritesDescription' => 'Show only favorite channels when opening Live TV',
 			'settings.display' => 'Display',
@@ -4969,10 +4977,10 @@ extension on Translations {
 			'subtitlingStyling.textColor' => 'Text Color',
 			'subtitlingStyling.borderSize' => 'Border Size',
 			'subtitlingStyling.borderColor' => 'Border Color',
-			'subtitlingStyling.backgroundOpacity' => 'Background Opacity',
-			'subtitlingStyling.backgroundColor' => 'Background Color',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.backgroundOpacity' => 'Background Opacity',
+			'subtitlingStyling.backgroundColor' => 'Background Color',
 			'subtitlingStyling.position' => 'Position',
 			'subtitlingStyling.assOverride' => 'ASS Override',
 			'subtitlingStyling.bold' => 'Bold',
@@ -5483,10 +5491,10 @@ extension on Translations {
 			'companionRemote.remote.tabSearch' => 'Search',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Settings',
-			'companionRemote.remote.previous' => 'Previous',
-			'companionRemote.remote.playPause' => 'Play/Pause',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.previous' => 'Previous',
+			'companionRemote.remote.playPause' => 'Play/Pause',
 			'companionRemote.remote.next' => 'Next',
 			'companionRemote.remote.seekBack' => 'Seek Back',
 			'companionRemote.remote.stop' => 'Stop',

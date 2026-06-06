@@ -14,6 +14,7 @@ import 'base_shared_preferences_service.dart';
 export 'base_shared_preferences_service.dart'
     show Pref, BoolPref, IntPref, DoublePref, StringPref, NullableStringPref, StringListPref, EnumPref, JsonPref;
 import '../models/transcode_quality_preset.dart';
+import '../navigation/navigation_tabs.dart';
 import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
 
@@ -344,6 +345,11 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
   static const useExoPlayer = BoolPref('use_exoplayer', defaultValue: true);
+  static const startupSection = EnumPref<NavigationTabId>(
+    'startup_section',
+    values: NavigationTabId.values,
+    defaultValue: NavigationTabId.discover,
+  );
   static const alwaysKeepSidebarOpen = BoolPref('always_keep_sidebar_open');
   static const showUnwatchedCount = BoolPref('show_unwatched_count', defaultValue: true);
   static const showEpisodeNumberOnCards = BoolPref('show_episode_number_on_cards', defaultValue: true);
@@ -729,6 +735,7 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultBoxFitMode,
     autoPlayNextEpisode,
     useExoPlayer,
+    startupSection,
     alwaysKeepSidebarOpen,
     showUnwatchedCount,
     showEpisodeNumberOnCards,

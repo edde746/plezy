@@ -405,6 +405,8 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get autoHidePerformanceOverlayDescription => '性能叠加层随播放控件一起淡入淡出';
 	@override String get showNavBarLabels => '显示导航栏标签';
 	@override String get showNavBarLabelsDescription => '在导航栏图标下方显示文字标签';
+	@override String get startupSection => '启动页面';
+	@override String get startupSectionDescription => '选择 Plezy 启动时打开的页面';
 	@override String get liveTvDefaultFavorites => '默认显示收藏频道';
 	@override String get liveTvDefaultFavoritesDescription => '打开直播电视时仅显示收藏频道';
 	@override String get display => '显示';
@@ -2183,6 +2185,8 @@ extension on TranslationsZh {
 			'settings.autoHidePerformanceOverlayDescription' => '性能叠加层随播放控件一起淡入淡出',
 			'settings.showNavBarLabels' => '显示导航栏标签',
 			'settings.showNavBarLabelsDescription' => '在导航栏图标下方显示文字标签',
+			'settings.startupSection' => '启动页面',
+			'settings.startupSectionDescription' => '选择 Plezy 启动时打开的页面',
 			'settings.liveTvDefaultFavorites' => '默认显示收藏频道',
 			'settings.liveTvDefaultFavoritesDescription' => '打开直播电视时仅显示收藏频道',
 			'settings.display' => '显示',
@@ -2427,10 +2431,10 @@ extension on TranslationsZh {
 			'subtitlingStyling.textColor' => '文本颜色',
 			'subtitlingStyling.borderSize' => '边框大小',
 			'subtitlingStyling.borderColor' => '边框颜色',
-			'subtitlingStyling.backgroundOpacity' => '背景不透明度',
-			'subtitlingStyling.backgroundColor' => '背景颜色',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.backgroundOpacity' => '背景不透明度',
+			'subtitlingStyling.backgroundColor' => '背景颜色',
 			'subtitlingStyling.position' => '位置',
 			'subtitlingStyling.assOverride' => 'ASS 样式覆盖',
 			'subtitlingStyling.bold' => '粗体',
@@ -2941,10 +2945,10 @@ extension on TranslationsZh {
 			'companionRemote.remote.tabSearch' => '搜索',
 			'companionRemote.remote.tabDownloads' => '下载',
 			'companionRemote.remote.tabSettings' => '设置',
-			'companionRemote.remote.previous' => '上一个',
-			'companionRemote.remote.playPause' => '播放/暂停',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.previous' => '上一个',
+			'companionRemote.remote.playPause' => '播放/暂停',
 			'companionRemote.remote.next' => '下一个',
 			'companionRemote.remote.seekBack' => '后退',
 			'companionRemote.remote.stop' => '停止',

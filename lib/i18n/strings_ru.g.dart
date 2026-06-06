@@ -405,6 +405,8 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get autoHidePerformanceOverlayDescription => 'Скрывать оверлей производительности вместе с элементами управления воспроизведением';
 	@override String get showNavBarLabels => 'Показывать подписи панели навигации';
 	@override String get showNavBarLabelsDescription => 'Отображать текстовые подписи под иконками панели навигации';
+	@override String get startupSection => 'Начальный раздел';
+	@override String get startupSectionDescription => 'Выберите, какой раздел Plezy открывает при запуске';
 	@override String get liveTvDefaultFavorites => 'Избранные каналы по умолчанию';
 	@override String get liveTvDefaultFavoritesDescription => 'Показывать только избранные каналы при открытии ТВ';
 	@override String get display => 'Экран';
@@ -2183,6 +2185,8 @@ extension on TranslationsRu {
 			'settings.autoHidePerformanceOverlayDescription' => 'Скрывать оверлей производительности вместе с элементами управления воспроизведением',
 			'settings.showNavBarLabels' => 'Показывать подписи панели навигации',
 			'settings.showNavBarLabelsDescription' => 'Отображать текстовые подписи под иконками панели навигации',
+			'settings.startupSection' => 'Начальный раздел',
+			'settings.startupSectionDescription' => 'Выберите, какой раздел Plezy открывает при запуске',
 			'settings.liveTvDefaultFavorites' => 'Избранные каналы по умолчанию',
 			'settings.liveTvDefaultFavoritesDescription' => 'Показывать только избранные каналы при открытии ТВ',
 			'settings.display' => 'Экран',
@@ -2427,10 +2431,10 @@ extension on TranslationsRu {
 			'subtitlingStyling.textColor' => 'Цвет текста',
 			'subtitlingStyling.borderSize' => 'Размер обводки',
 			'subtitlingStyling.borderColor' => 'Цвет обводки',
-			'subtitlingStyling.backgroundOpacity' => 'Прозрачность фона',
-			'subtitlingStyling.backgroundColor' => 'Цвет фона',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.backgroundOpacity' => 'Прозрачность фона',
+			'subtitlingStyling.backgroundColor' => 'Цвет фона',
 			'subtitlingStyling.position' => 'Позиция',
 			'subtitlingStyling.assOverride' => 'Переопределение ASS',
 			'subtitlingStyling.bold' => 'Жирный',
@@ -2941,10 +2945,10 @@ extension on TranslationsRu {
 			'companionRemote.remote.tabSearch' => 'Поиск',
 			'companionRemote.remote.tabDownloads' => 'Загрузки',
 			'companionRemote.remote.tabSettings' => 'Настройки',
-			'companionRemote.remote.previous' => 'Предыдущий',
-			'companionRemote.remote.playPause' => 'Воспроизведение/Пауза',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.previous' => 'Предыдущий',
+			'companionRemote.remote.playPause' => 'Воспроизведение/Пауза',
 			'companionRemote.remote.next' => 'Следующий',
 			'companionRemote.remote.seekBack' => 'Назад',
 			'companionRemote.remote.stop' => 'Стоп',

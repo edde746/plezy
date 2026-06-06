@@ -405,6 +405,8 @@ class _TranslationsSettingsJa extends TranslationsSettingsEn {
 	@override String get autoHidePerformanceOverlayDescription => '再生コントロールと一緒にパフォーマンスオーバーレイをフェードする';
 	@override String get showNavBarLabels => 'ナビゲーションバーラベルを表示';
 	@override String get showNavBarLabelsDescription => 'ナビゲーションバーアイコンの下にテキストラベルを表示';
+	@override String get startupSection => '起動時のセクション';
+	@override String get startupSectionDescription => '起動時に Plezy が開くセクションを選択します';
 	@override String get liveTvDefaultFavorites => 'お気に入りチャンネルをデフォルトに';
 	@override String get liveTvDefaultFavoritesDescription => 'ライブTV を開いたときにお気に入りチャンネルのみ表示';
 	@override String get display => 'ディスプレイ';
@@ -2183,6 +2185,8 @@ extension on TranslationsJa {
 			'settings.autoHidePerformanceOverlayDescription' => '再生コントロールと一緒にパフォーマンスオーバーレイをフェードする',
 			'settings.showNavBarLabels' => 'ナビゲーションバーラベルを表示',
 			'settings.showNavBarLabelsDescription' => 'ナビゲーションバーアイコンの下にテキストラベルを表示',
+			'settings.startupSection' => '起動時のセクション',
+			'settings.startupSectionDescription' => '起動時に Plezy が開くセクションを選択します',
 			'settings.liveTvDefaultFavorites' => 'お気に入りチャンネルをデフォルトに',
 			'settings.liveTvDefaultFavoritesDescription' => 'ライブTV を開いたときにお気に入りチャンネルのみ表示',
 			'settings.display' => 'ディスプレイ',
@@ -2427,10 +2431,10 @@ extension on TranslationsJa {
 			'subtitlingStyling.textColor' => 'テキストの色',
 			'subtitlingStyling.borderSize' => '枠線サイズ',
 			'subtitlingStyling.borderColor' => '枠線の色',
-			'subtitlingStyling.backgroundOpacity' => '背景の不透明度',
-			'subtitlingStyling.backgroundColor' => '背景色',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.backgroundOpacity' => '背景の不透明度',
+			'subtitlingStyling.backgroundColor' => '背景色',
 			'subtitlingStyling.position' => '位置',
 			'subtitlingStyling.assOverride' => 'ASSオーバーライド',
 			'subtitlingStyling.bold' => '太字',
@@ -2941,10 +2945,10 @@ extension on TranslationsJa {
 			'companionRemote.remote.tabSearch' => '検索',
 			'companionRemote.remote.tabDownloads' => 'ダウンロード',
 			'companionRemote.remote.tabSettings' => '設定',
-			'companionRemote.remote.previous' => '前へ',
-			'companionRemote.remote.playPause' => '再生/一時停止',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.previous' => '前へ',
+			'companionRemote.remote.playPause' => '再生/一時停止',
 			'companionRemote.remote.next' => '次へ',
 			'companionRemote.remote.seekBack' => '巻き戻し',
 			'companionRemote.remote.stop' => '停止',

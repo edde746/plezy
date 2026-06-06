@@ -276,6 +276,8 @@
     "autoHidePerformanceOverlayDescription": "Fade the performance overlay with the playback controls",
     "showNavBarLabels": "Show Navigation Bar Labels",
     "showNavBarLabelsDescription": "Display text labels under navigation bar icons",
+    "startupSection": "Startup Section",
+    "startupSectionDescription": "Choose which section Plezy opens to when it starts",
     "liveTvDefaultFavorites": "Default to Favorite Channels",
     "liveTvDefaultFavoritesDescription": "Show only favorite channels when opening Live TV",
     "display": "Display",

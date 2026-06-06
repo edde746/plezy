@@ -405,6 +405,8 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get autoHidePerformanceOverlayDescription => '재생 컨트롤과 함께 성능 오버레이를 페이드 처리';
 	@override String get showNavBarLabels => '내비게이션 바 라벨 표시';
 	@override String get showNavBarLabelsDescription => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다';
+	@override String get startupSection => '시작 섹션';
+	@override String get startupSectionDescription => 'Plezy 실행 시 열릴 섹션을 선택합니다';
 	@override String get liveTvDefaultFavorites => '즐겨찾기 채널 기본 설정';
 	@override String get liveTvDefaultFavoritesDescription => '라이브 TV를 열 때 즐겨찾기 채널만 표시';
 	@override String get display => '디스플레이';
@@ -2183,6 +2185,8 @@ extension on TranslationsKo {
 			'settings.autoHidePerformanceOverlayDescription' => '재생 컨트롤과 함께 성능 오버레이를 페이드 처리',
 			'settings.showNavBarLabels' => '내비게이션 바 라벨 표시',
 			'settings.showNavBarLabelsDescription' => '내비게이션 바 아이콘 아래에 텍스트 라벨을 표시합니다',
+			'settings.startupSection' => '시작 섹션',
+			'settings.startupSectionDescription' => 'Plezy 실행 시 열릴 섹션을 선택합니다',
 			'settings.liveTvDefaultFavorites' => '즐겨찾기 채널 기본 설정',
 			'settings.liveTvDefaultFavoritesDescription' => '라이브 TV를 열 때 즐겨찾기 채널만 표시',
 			'settings.display' => '디스플레이',
@@ -2427,10 +2431,10 @@ extension on TranslationsKo {
 			'subtitlingStyling.textColor' => '텍스트 색상',
 			'subtitlingStyling.borderSize' => '테두리 크기',
 			'subtitlingStyling.borderColor' => '테두리 색상',
-			'subtitlingStyling.backgroundOpacity' => '배경 불투명도',
-			'subtitlingStyling.backgroundColor' => '배경색',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.backgroundOpacity' => '배경 불투명도',
+			'subtitlingStyling.backgroundColor' => '배경색',
 			'subtitlingStyling.position' => '위치',
 			'subtitlingStyling.assOverride' => 'ASS 오버라이드',
 			'subtitlingStyling.bold' => '굵게',
@@ -2941,10 +2945,10 @@ extension on TranslationsKo {
 			'companionRemote.remote.tabSearch' => '검색',
 			'companionRemote.remote.tabDownloads' => '다운로드',
 			'companionRemote.remote.tabSettings' => '설정',
-			'companionRemote.remote.previous' => '이전',
-			'companionRemote.remote.playPause' => '재생/일시정지',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.previous' => '이전',
+			'companionRemote.remote.playPause' => '재생/일시정지',
 			'companionRemote.remote.next' => '다음',
 			'companionRemote.remote.seekBack' => '되감기',
 			'companionRemote.remote.stop' => '정지',

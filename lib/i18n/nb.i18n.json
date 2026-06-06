@@ -276,6 +276,8 @@
     "autoHidePerformanceOverlayDescription": "Fade ytelsesoverlegget med avspillingskontrollene",
     "showNavBarLabels": "Vis navigasjonsfeltlabeler",
     "showNavBarLabelsDescription": "Vis tekstlabeler under navigasjonsfeltikoner",
+    "startupSection": "Oppstartsseksjon",
+    "startupSectionDescription": "Velg hvilken seksjon Plezy åpner ved oppstart",
     "liveTvDefaultFavorites": "Standard til favorittkanaler",
     "liveTvDefaultFavoritesDescription": "Vis kun favorittkanaler når du åpner Live TV",
     "display": "Skjerm",

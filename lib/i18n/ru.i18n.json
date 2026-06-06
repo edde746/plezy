@@ -276,6 +276,8 @@
     "autoHidePerformanceOverlayDescription": "Скрывать оверлей производительности вместе с элементами управления воспроизведением",
     "showNavBarLabels": "Показывать подписи панели навигации",
     "showNavBarLabelsDescription": "Отображать текстовые подписи под иконками панели навигации",
+    "startupSection": "Начальный раздел",
+    "startupSectionDescription": "Выберите, какой раздел Plezy открывает при запуске",
     "liveTvDefaultFavorites": "Избранные каналы по умолчанию",
     "liveTvDefaultFavoritesDescription": "Показывать только избранные каналы при открытии ТВ",
     "display": "Экран",

@@ -276,6 +276,8 @@
     "autoHidePerformanceOverlayDescription": "Leistungsoverlay mit den Wiedergabesteuerungen ein-/ausblenden",
     "showNavBarLabels": "Navigationsleisten-Beschriftungen anzeigen",
     "showNavBarLabelsDescription": "Textbeschriftungen unter den Symbolen der Navigationsleiste anzeigen",
+    "startupSection": "Startbereich",
+    "startupSectionDescription": "Legt fest, welchen Bereich Plezy beim Start öffnet",
     "liveTvDefaultFavorites": "Standardmäßig Favoritenkanäle",
     "liveTvDefaultFavoritesDescription": "Beim Öffnen von Live TV nur Favoritenkanäle anzeigen",
     "display": "Anzeige",

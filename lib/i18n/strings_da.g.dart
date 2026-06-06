@@ -405,6 +405,8 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get autoHidePerformanceOverlayDescription => 'Fade ydelses-overlayet med afspilningskontrollerne';
 	@override String get showNavBarLabels => 'Vis navigationsbarlabels';
 	@override String get showNavBarLabelsDescription => 'Vis tekstlabels under navigationsbarikoner';
+	@override String get startupSection => 'Startsektion';
+	@override String get startupSectionDescription => 'Vælg hvilken sektion Plezy åbner ved start';
 	@override String get liveTvDefaultFavorites => 'Standard til favoritkanaler';
 	@override String get liveTvDefaultFavoritesDescription => 'Vis kun favoritkanaler ved åbning af Live TV';
 	@override String get display => 'Skærm';
@@ -2183,6 +2185,8 @@ extension on TranslationsDa {
 			'settings.autoHidePerformanceOverlayDescription' => 'Fade ydelses-overlayet med afspilningskontrollerne',
 			'settings.showNavBarLabels' => 'Vis navigationsbarlabels',
 			'settings.showNavBarLabelsDescription' => 'Vis tekstlabels under navigationsbarikoner',
+			'settings.startupSection' => 'Startsektion',
+			'settings.startupSectionDescription' => 'Vælg hvilken sektion Plezy åbner ved start',
 			'settings.liveTvDefaultFavorites' => 'Standard til favoritkanaler',
 			'settings.liveTvDefaultFavoritesDescription' => 'Vis kun favoritkanaler ved åbning af Live TV',
 			'settings.display' => 'Skærm',
@@ -2427,10 +2431,10 @@ extension on TranslationsDa {
 			'subtitlingStyling.textColor' => 'Tekstfarve',
 			'subtitlingStyling.borderSize' => 'Kantstørrelse',
 			'subtitlingStyling.borderColor' => 'Kantfarve',
-			'subtitlingStyling.backgroundOpacity' => 'Baggrundsgennemsigtighed',
-			'subtitlingStyling.backgroundColor' => 'Baggrundsfarve',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.backgroundOpacity' => 'Baggrundsgennemsigtighed',
+			'subtitlingStyling.backgroundColor' => 'Baggrundsfarve',
 			'subtitlingStyling.position' => 'Position',
 			'subtitlingStyling.assOverride' => 'ASS-tilsidesættelse',
 			'subtitlingStyling.bold' => 'Fed',
@@ -2941,10 +2945,10 @@ extension on TranslationsDa {
 			'companionRemote.remote.tabSearch' => 'Søg',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Indstillinger',
-			'companionRemote.remote.previous' => 'Forrige',
-			'companionRemote.remote.playPause' => 'Afspil/Pause',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.previous' => 'Forrige',
+			'companionRemote.remote.playPause' => 'Afspil/Pause',
 			'companionRemote.remote.next' => 'Næste',
 			'companionRemote.remote.seekBack' => 'Spol tilbage',
 			'companionRemote.remote.stop' => 'Stop',

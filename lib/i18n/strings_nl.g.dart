@@ -405,6 +405,8 @@ class _TranslationsSettingsNl extends TranslationsSettingsEn {
 	@override String get autoHidePerformanceOverlayDescription => 'Laat de prestatie-overlay meevervagen met de afspeelknoppen';
 	@override String get showNavBarLabels => 'Navigatiebalk labels tonen';
 	@override String get showNavBarLabelsDescription => 'Tekstlabels onder de pictogrammen van de navigatiebalk weergeven';
+	@override String get startupSection => 'Opstartsectie';
+	@override String get startupSectionDescription => 'Kies welke sectie Plezy opent bij het opstarten';
 	@override String get liveTvDefaultFavorites => 'Standaard favoriete zenders';
 	@override String get liveTvDefaultFavoritesDescription => 'Toon alleen favoriete zenders bij het openen van Live TV';
 	@override String get display => 'Weergave';
@@ -2183,6 +2185,8 @@ extension on TranslationsNl {
 			'settings.autoHidePerformanceOverlayDescription' => 'Laat de prestatie-overlay meevervagen met de afspeelknoppen',
 			'settings.showNavBarLabels' => 'Navigatiebalk labels tonen',
 			'settings.showNavBarLabelsDescription' => 'Tekstlabels onder de pictogrammen van de navigatiebalk weergeven',
+			'settings.startupSection' => 'Opstartsectie',
+			'settings.startupSectionDescription' => 'Kies welke sectie Plezy opent bij het opstarten',
 			'settings.liveTvDefaultFavorites' => 'Standaard favoriete zenders',
 			'settings.liveTvDefaultFavoritesDescription' => 'Toon alleen favoriete zenders bij het openen van Live TV',
 			'settings.display' => 'Weergave',
@@ -2427,10 +2431,10 @@ extension on TranslationsNl {
 			'subtitlingStyling.textColor' => 'Tekstkleur',
 			'subtitlingStyling.borderSize' => 'Rand grootte',
 			'subtitlingStyling.borderColor' => 'Randkleur',
-			'subtitlingStyling.backgroundOpacity' => 'Achtergrond transparantie',
-			'subtitlingStyling.backgroundColor' => 'Achtergrondkleur',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.backgroundOpacity' => 'Achtergrond transparantie',
+			'subtitlingStyling.backgroundColor' => 'Achtergrondkleur',
 			'subtitlingStyling.position' => 'Positie',
 			'subtitlingStyling.assOverride' => 'ASS-overschrijving',
 			'subtitlingStyling.bold' => 'Vet',
@@ -2941,10 +2945,10 @@ extension on TranslationsNl {
 			'companionRemote.remote.tabSearch' => 'Zoeken',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Instellingen',
-			'companionRemote.remote.previous' => 'Vorige',
-			'companionRemote.remote.playPause' => 'Afspelen/Pauzeren',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.previous' => 'Vorige',
+			'companionRemote.remote.playPause' => 'Afspelen/Pauzeren',
 			'companionRemote.remote.next' => 'Volgende',
 			'companionRemote.remote.seekBack' => 'Terugspoelen',
 			'companionRemote.remote.stop' => 'Stoppen',

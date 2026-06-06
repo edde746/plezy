@@ -276,6 +276,8 @@
     "autoHidePerformanceOverlayDescription": "Laat de prestatie-overlay meevervagen met de afspeelknoppen",
     "showNavBarLabels": "Navigatiebalk labels tonen",
     "showNavBarLabelsDescription": "Tekstlabels onder de pictogrammen van de navigatiebalk weergeven",
+    "startupSection": "Opstartsectie",
+    "startupSectionDescription": "Kies welke sectie Plezy opent bij het opstarten",
     "liveTvDefaultFavorites": "Standaard favoriete zenders",
     "liveTvDefaultFavoritesDescription": "Toon alleen favoriete zenders bij het openen van Live TV",
     "display": "Weergave",

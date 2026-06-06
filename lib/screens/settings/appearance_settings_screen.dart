@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/theme_provider.dart';
 import '../../profiles/active_profile_provider.dart';
+import '../../navigation/navigation_tabs.dart';
 import '../../services/settings_service.dart' hide ThemeMode;
 import '../../services/settings_service.dart' as settings show ThemeMode;
 import '../../focus/focusable_slider.dart';
@@ -76,6 +77,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
         ),
 
         SettingsSectionHeader(t.settings.navigation),
+        _startupSectionSelector(),
         if (Platform.isAndroid)
           SettingSwitchTile(
             pref: SettingsService.forceTvMode,
@@ -246,6 +248,27 @@ class AppearanceSettingsScreen extends StatelessWidget {
       ButtonSegment(value: EpisodePosterMode.seasonPoster, label: Text(t.settings.seasonPoster)),
       ButtonSegment(value: EpisodePosterMode.episodeThumbnail, label: Text(t.settings.episodeThumbnail)),
     ],
+    decode: (v) => v,
+    encode: (v) => v,
+  );
+
+  // Sections offered as a startup destination, in display order. Live TV is
+  // always listed; if no server provides it, startup falls back to Home.
+  static const _startupSectionOptions = [
+    NavigationTabId.discover,
+    NavigationTabId.libraries,
+    NavigationTabId.liveTv,
+    NavigationTabId.search,
+  ];
+
+  String _startupSectionLabel(NavigationTabId id) => allNavigationTabs.firstWhere((t) => t.id == id).getLabel();
+
+  Widget _startupSectionSelector() => SettingSelectionTile<NavigationTabId, NavigationTabId>(
+    pref: SettingsService.startupSection,
+    icon: Symbols.start_rounded,
+    title: t.settings.startupSection,
+    subtitleBuilder: _startupSectionLabel,
+    options: _startupSectionOptions.map((id) => DialogOption(value: id, title: _startupSectionLabel(id))).toList(),
     decode: (v) => v,
     encode: (v) => v,
   );

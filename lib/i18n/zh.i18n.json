@@ -276,6 +276,8 @@
     "autoHidePerformanceOverlayDescription": "性能叠加层随播放控件一起淡入淡出",
     "showNavBarLabels": "显示导航栏标签",
     "showNavBarLabelsDescription": "在导航栏图标下方显示文字标签",
+    "startupSection": "启动页面",
+    "startupSectionDescription": "选择 Plezy 启动时打开的页面",
     "liveTvDefaultFavorites": "默认显示收藏频道",
     "liveTvDefaultFavoritesDescription": "打开直播电视时仅显示收藏频道",
     "display": "显示",

@@ -276,6 +276,8 @@
     "autoHidePerformanceOverlayDescription": "Tona prestandaöverlagringen med uppspelningskontrollerna",
     "showNavBarLabels": "Visa navigeringsfältets etiketter",
     "showNavBarLabelsDescription": "Visa textetiketter under navigeringsfältets ikoner",
+    "startupSection": "Startsektion",
+    "startupSectionDescription": "Välj vilken sektion Plezy öppnar vid start",
     "liveTvDefaultFavorites": "Standard till favoritkanaler",
     "liveTvDefaultFavoritesDescription": "Visa bara favoritkanaler när du öppnar Live TV",
     "display": "Skärm",

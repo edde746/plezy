@@ -405,6 +405,8 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get autoHidePerformanceOverlayDescription => 'Leistungsoverlay mit den Wiedergabesteuerungen ein-/ausblenden';
 	@override String get showNavBarLabels => 'Navigationsleisten-Beschriftungen anzeigen';
 	@override String get showNavBarLabelsDescription => 'Textbeschriftungen unter den Symbolen der Navigationsleiste anzeigen';
+	@override String get startupSection => 'Startbereich';
+	@override String get startupSectionDescription => 'Legt fest, welchen Bereich Plezy beim Start öffnet';
 	@override String get liveTvDefaultFavorites => 'Standardmäßig Favoritenkanäle';
 	@override String get liveTvDefaultFavoritesDescription => 'Beim Öffnen von Live TV nur Favoritenkanäle anzeigen';
 	@override String get display => 'Anzeige';
@@ -2183,6 +2185,8 @@ extension on TranslationsDe {
 			'settings.autoHidePerformanceOverlayDescription' => 'Leistungsoverlay mit den Wiedergabesteuerungen ein-/ausblenden',
 			'settings.showNavBarLabels' => 'Navigationsleisten-Beschriftungen anzeigen',
 			'settings.showNavBarLabelsDescription' => 'Textbeschriftungen unter den Symbolen der Navigationsleiste anzeigen',
+			'settings.startupSection' => 'Startbereich',
+			'settings.startupSectionDescription' => 'Legt fest, welchen Bereich Plezy beim Start öffnet',
 			'settings.liveTvDefaultFavorites' => 'Standardmäßig Favoritenkanäle',
 			'settings.liveTvDefaultFavoritesDescription' => 'Beim Öffnen von Live TV nur Favoritenkanäle anzeigen',
 			'settings.display' => 'Anzeige',
@@ -2427,10 +2431,10 @@ extension on TranslationsDe {
 			'subtitlingStyling.textColor' => 'Textfarbe',
 			'subtitlingStyling.borderSize' => 'Rahmengröße',
 			'subtitlingStyling.borderColor' => 'Rahmenfarbe',
-			'subtitlingStyling.backgroundOpacity' => 'Hintergrunddeckkraft',
-			'subtitlingStyling.backgroundColor' => 'Hintergrundfarbe',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.backgroundOpacity' => 'Hintergrunddeckkraft',
+			'subtitlingStyling.backgroundColor' => 'Hintergrundfarbe',
 			'subtitlingStyling.position' => 'Position',
 			'subtitlingStyling.assOverride' => 'ASS-Überschreibung',
 			'subtitlingStyling.bold' => 'Fett',
@@ -2941,10 +2945,10 @@ extension on TranslationsDe {
 			'companionRemote.remote.tabSearch' => 'Suche',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Einstellungen',
-			'companionRemote.remote.previous' => 'Zurück',
-			'companionRemote.remote.playPause' => 'Wiedergabe/Pause',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.previous' => 'Zurück',
+			'companionRemote.remote.playPause' => 'Wiedergabe/Pause',
 			'companionRemote.remote.next' => 'Weiter',
 			'companionRemote.remote.seekBack' => 'Zurückspulen',
 			'companionRemote.remote.stop' => 'Stopp',

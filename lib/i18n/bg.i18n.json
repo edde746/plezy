@@ -276,6 +276,8 @@
     "autoHidePerformanceOverlayDescription": "Скривай постепенно оверлея за производителност заедно с контролите за възпроизвеждане",
     "showNavBarLabels": "Показвай етикети в навигационната лента",
     "showNavBarLabelsDescription": "Показвай текстови етикети под иконите в навигационната лента",
+    "startupSection": "Начален раздел",
+    "startupSectionDescription": "Изберете кой раздел да отваря Plezy при стартиране",
     "liveTvDefaultFavorites": "По подразбиране към любими канали",
     "liveTvDefaultFavoritesDescription": "Показвай само любими канали при отваряне на телевизия на живо",
     "display": "Дисплей",

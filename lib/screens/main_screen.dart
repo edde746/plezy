@@ -233,6 +233,11 @@ class _MainScreenState extends State<MainScreen>
   /// Last selected online tab (restored when coming back online after an offline fallback)
   NavigationTabId? _lastOnlineTabId;
 
+  /// A preferred startup section (e.g. Live TV) that wasn't visible yet at cold
+  /// start because servers bind asynchronously. Applied once it becomes
+  /// available (see [_handleLiveTvChanged]); cleared on any explicit selection.
+  NavigationTabId? _pendingStartupTab;
+
   /// Whether we auto-switched to Downloads because the previous tab was unavailable offline
   bool _autoSwitchedToDownloads = false;
 
@@ -331,6 +336,12 @@ class _MainScreenState extends State<MainScreen>
     _currentTab = _defaultTabForMode(_isOffline);
     _lastOnlineTabId = _isOffline ? null : NavigationTabId.discover;
     _autoSwitchedToDownloads = _isOffline && _currentTab == NavigationTabId.downloads;
+    // If the preferred startup section isn't visible yet (e.g. Live TV before
+    // servers finish binding), remember it and switch once it becomes available.
+    final preferredStartup = SettingsService.instanceOrNull?.read(SettingsService.startupSection);
+    _pendingStartupTab = (!_isOffline && preferredStartup != null && preferredStartup != _currentTab)
+        ? preferredStartup
+        : null;
     _screens = _buildScreens(_isOffline);
 
     // Set up Watch Together callbacks immediately (must be synchronous to catch early messages)
@@ -917,14 +928,11 @@ class _MainScreenState extends State<MainScreen>
     return _defaultTabForMode(isOffline);
   }
 
-  NavigationTabId _defaultTabForMode(bool isOffline) {
-    final tabs = _getVisibleTabs(isOffline);
-    if (isOffline) {
-      final downloads = tabs.where((t) => t.id == NavigationTabId.downloads).firstOrNull;
-      if (downloads != null) return downloads.id;
-    }
-    return tabs.first.id;
-  }
+  NavigationTabId _defaultTabForMode(bool isOffline) => NavigationTab.resolveDefaultTab(
+    isOffline: isOffline,
+    hasLiveTv: _hasLiveTv,
+    preferredStartup: SettingsService.instanceOrNull?.read(SettingsService.startupSection),
+  );
 
   void _triggerReconnect() {
     if (_isReconnecting) return;
@@ -971,6 +979,14 @@ class _MainScreenState extends State<MainScreen>
       _currentTab = _normalizeTabForMode(_currentTab, _isOffline);
     });
     _updateTvosMenuPassthrough();
+
+    // A preferred startup section (only Live TV can be deferred) just became
+    // available — switch to it via _selectTab so it gets the usual visibility
+    // and focus handling. _selectTab clears _pendingStartupTab.
+    final pending = _pendingStartupTab;
+    if (pending != null && _getVisibleTabs(_isOffline).any((t) => t.id == pending)) {
+      _selectTab(pending);
+    }
   }
 
   void _handleOfflineStatusChanged() {
@@ -1355,6 +1371,8 @@ class _MainScreenState extends State<MainScreen>
     final previousTab = _currentTab;
     setState(() {
       _currentTab = tab;
+      // An explicit selection cancels any deferred startup-section switch.
+      _pendingStartupTab = null;
       if (!_isOffline) {
         _lastOnlineTabId = tab;
       } else if (previousTab != tab) {

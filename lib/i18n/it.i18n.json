@@ -276,6 +276,8 @@
     "autoHidePerformanceOverlayDescription": "Dissolvi l'overlay prestazioni con i controlli di riproduzione",
     "showNavBarLabels": "Mostra etichette barra di navigazione",
     "showNavBarLabelsDescription": "Mostra le etichette sotto le icone della barra di navigazione",
+    "startupSection": "Sezione di avvio",
+    "startupSectionDescription": "Scegli quale sezione apre Plezy all'avvio",
     "liveTvDefaultFavorites": "Canali preferiti predefiniti",
     "liveTvDefaultFavoritesDescription": "Mostra solo i canali preferiti all'apertura della TV dal vivo",
     "display": "Schermo",
