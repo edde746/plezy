@@ -19,6 +19,7 @@ import '../services/companion_remote/lan_discovery_service.dart';
 import '../services/companion_remote/remote_auth_context.dart';
 import '../services/companion_remote/remote_auth_service.dart';
 import '../utils/app_logger.dart';
+import '../utils/platform_detector.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 
 export '../services/companion_remote/lan_discovery_service.dart' show DiscoveredHost;
@@ -79,7 +80,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     try {
       if (Platform.isAndroid) {
         final androidInfo = await deviceInfo.androidInfo;
-        _deviceName = '${androidInfo.brand} ${androidInfo.model}';
+        final osName = await TvDetectionService.getAndroidDeviceName();
+        _deviceName = osName ?? '${androidInfo.brand} ${androidInfo.model}';
         _platform = 'Android';
       } else if (Platform.isIOS) {
         final iosInfo = await deviceInfo.iosInfo;
@@ -94,8 +96,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
         _deviceName = windowsInfo.computerName;
         _platform = 'Windows';
       } else if (Platform.isLinux) {
-        final linuxInfo = await deviceInfo.linuxInfo;
-        _deviceName = linuxInfo.name;
+        final host = Platform.localHostname.trim();
+        _deviceName = (host.isNotEmpty && host != 'localhost') ? host : (await deviceInfo.linuxInfo).name;
         _platform = 'Linux';
       }
     } catch (e) {
