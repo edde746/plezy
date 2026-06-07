@@ -10,6 +10,7 @@ import 'media_backend.dart';
 import 'media_kind.dart';
 import 'media_role.dart';
 import 'media_version.dart';
+import 'season_title.dart';
 
 part 'media_item.freezed.dart';
 part 'media_item.g.dart';
@@ -401,8 +402,14 @@ sealed class MediaItem with _$MediaItem {
 
   /// Subtitle line shown below [displayTitle] for episodes/seasons.
   String? get displaySubtitle {
-    if (kind == MediaKind.episode || kind == MediaKind.season) {
-      if (grandparentTitle != null || (kind == MediaKind.season && parentTitle != null)) {
+    if (kind == MediaKind.season) {
+      if (grandparentTitle != null || parentTitle != null) {
+        // Re-localize a server's generic English "Season N" (see #1271).
+        final label = localizedSeasonLabel(title: title, index: index);
+        return label.isNotEmpty ? label : title;
+      }
+    } else if (kind == MediaKind.episode) {
+      if (grandparentTitle != null) {
         return title;
       }
     }

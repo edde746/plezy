@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../focus/input_mode_tracker.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
+import '../media/season_title.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../mixins/context_menu_tap_mixin.dart';
@@ -133,7 +134,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
         final episodeInfo = item.parentIndex != null && item.index != null ? 'S${item.parentIndex} E${item.index}' : '';
         baseLabel = t.accessibility.mediaCardEpisode(title: item.displayTitle, episodeInfo: episodeInfo);
       case MediaKind.season:
-        final seasonInfo = item.parentIndex != null ? 'Season ${item.parentIndex}' : '';
+        final seasonInfo = localizedSeasonLabel(title: item.title, index: item.index);
         baseLabel = t.accessibility.mediaCardSeason(title: item.displayTitle, seasonInfo: seasonInfo);
       case MediaKind.movie:
         baseLabel = t.accessibility.mediaCardMovie(title: item.displayTitle);

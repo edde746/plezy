@@ -26,6 +26,7 @@ import '../media/media_hub.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/plex_season_display.dart';
 import '../media/media_item.dart';
+import '../media/season_title.dart';
 import '../media/episode_collection.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
@@ -1669,7 +1670,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         id: seasonId,
         backend: _metadata.backend,
         kind: MediaKind.season,
-        title: firstEp.parentTitle ?? t.common.seasonNumber(number: entry.key),
+        title: localizedSeasonLabel(title: firstEp.parentTitle, index: entry.key),
         index: entry.key,
         leafCount: entry.value.length,
         thumbPath: firstEp.parentThumbPath,
@@ -2335,7 +2336,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   onSecondaryTapDown: (details) => tapPosition = details.globalPosition,
                   onSecondaryTap: () => _showSeasonTabContextMenu(index, position: tapPosition),
                   child: FocusableTabChip(
-                    label: season.title!,
+                    label: season.localizedSeasonTitle,
                     isSelected: index == _selectedSeasonIndex,
                     topImage: topImage,
                     focusNode: _seasonTabFocusNodes.length > index ? _seasonTabFocusNodes[index] : null,
@@ -3739,7 +3740,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         hubs.add(
           MediaHub(
             id: '$_tvDetailSeasonHubIdPrefix$i',
-            title: season.title?.isNotEmpty == true ? season.title! : (season.displaySubtitle ?? season.displayTitle),
+            title: season.localizedSeasonTitle,
             type: 'episode',
             items: episodes,
             size: total,
