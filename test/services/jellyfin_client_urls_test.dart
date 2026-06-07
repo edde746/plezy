@@ -3016,15 +3016,15 @@ void main() {
       expect(requests[1].queryParameters['imageUrl'], 'https://img.example/poster.jpg');
     });
 
-    test('uploadItemImage sends base64 image body and image content type', () async {
+    test('uploadItemImage sends binary image body and image content type', () async {
       Uri? capturedUri;
-      String? capturedBody;
+      List<int>? capturedBody;
       Map<String, String>? capturedHeaders;
       final client = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((request) async {
           capturedUri = request.url;
-          capturedBody = request.body;
+          capturedBody = request.bodyBytes;
           capturedHeaders = request.headers;
           return http.Response('', 204);
         }),
@@ -3040,7 +3040,7 @@ void main() {
 
       expect(success, isTrue);
       expect(capturedUri!.path, '/Items/item-1/Images/Primary');
-      expect(capturedBody, base64Encode([0xff, 0xd8, 0xff, 0x00]));
+      expect(capturedBody, [0xff, 0xd8, 0xff, 0x00]);
       expect(capturedHeaders!['Content-Type'] ?? capturedHeaders!['content-type'], 'image/jpeg');
     });
 

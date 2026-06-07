@@ -68,7 +68,7 @@ mixin _JellyfinMetadataEditMethods on MediaServerCacheMixin {
   }) async {
     final response = await _http.post(
       '/Items/${_segment(itemId)}/Images/${_segment(imageType)}',
-      body: base64Encode(bytes),
+      body: bytes,
       headers: {'Content-Type': contentType},
     );
     throwIfHttpError(response);
