@@ -84,12 +84,10 @@ class DataAggregationService {
       }).toList();
     }
 
-    // Sort by most recently viewed, falling back to addedAt for unwatched items
-    filteredOnDeck.sort((a, b) {
-      final aTime = a.lastViewedAt ?? a.addedAt ?? 0;
-      final bTime = b.lastViewedAt ?? b.addedAt ?? 0;
-      return bTime.compareTo(aTime); // Descending (most recent first)
-    });
+    // Sort by most recently viewed, falling back to addedAt for unwatched items.
+    // Same key as JellyfinClient's continue-watching merge (MediaItem.recencySortKey)
+    // so per-server and cross-server ordering can't drift apart.
+    filteredOnDeck.sort((a, b) => b.recencySortKey.compareTo(a.recencySortKey));
 
     filteredOnDeck = await _deduplicateContinueWatching(filteredOnDeck);
 

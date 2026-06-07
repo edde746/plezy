@@ -45,6 +45,12 @@ const _queueFields = 'UserData';
 /// bounded while still returning the full series queue.
 const _episodeQueuePageSize = 200;
 
+/// How many recently played episodes to scan when stamping `/Shows/NextUp`
+/// rows with their series' last-watched date (see [_attachSeriesLastPlayed]).
+/// Mirrors [_episodeQueuePageSize]; covers far more distinct series than the
+/// Next Up list ever returns, while keeping the response bounded.
+const _continueWatchingSeriesLookback = 200;
+
 const _childrenPageSize = 500;
 const _pagedListPageSize = 200;
 const _playableDescendantTypes = 'Movie,Episode';
@@ -887,7 +893,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
 
     return _mergeContinueWatchingAndNextUp(
       resume: _mapItems(results.first),
-      nextUp: _mapItems(results[1]),
+      nextUp: await _attachSeriesLastPlayed(_mapItems(results[1])),
       limit: count,
     );
   }
@@ -1252,6 +1258,67 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     return extras;
   }
 
+  /// Jellyfin's `/Shows/NextUp` returns the *next* (unwatched) episode for each
+  /// series, so those rows have no `LastPlayedDate` of their own and a Series DTO
+  /// doesn't expose an aggregated one. To let the Continue Watching shelf
+  /// interleave Next Up with resume items by recency, stamp each Next Up episode
+  /// with its series' last-watched date, read from the most recently played
+  /// episode of that series.
+  Future<List<MediaItem>> _attachSeriesLastPlayed(List<MediaItem> nextUp) async {
+    final pendingSeriesIds = <String>{
+      for (final item in nextUp)
+        if (item.kind == MediaKind.episode && item.lastViewedAt == null && item.grandparentId != null)
+          item.grandparentId!,
+    };
+    if (pendingSeriesIds.isEmpty) return nextUp;
+
+    // One lightweight pass over the most recently played episodes server-wide,
+    // ordered DatePlayed-descending so the first time we see a series is its
+    // newest play. We deliberately do NOT filter on the Played flag: Jellyfin's
+    // own NextUp ranks series by MAX(LastPlayedDate) across every episode, and an
+    // episode can carry a LastPlayedDate while Played==false (started but not
+    // finished, or later marked unwatched). Filtering to IsPlayed would miss
+    // those and leave such series un-dated. Null dates sort last, so the limit
+    // still captures the genuinely-recent episodes; a series whose last play
+    // falls beyond the window keeps a null date and degrades to its addedAt in
+    // the sort — it would rank near the bottom anyway, being least-recent.
+    final rawPlayed = await _safeFetchItemsArray('/Items', {
+      'userId': connection.userId,
+      'IncludeItemTypes': 'Episode',
+      'Recursive': 'true',
+      'SortBy': 'DatePlayed',
+      'SortOrder': 'Descending',
+      'Fields': _queueFields,
+      'Limit': _continueWatchingSeriesLookback.toString(),
+      'EnableImages': 'false',
+      'EnableTotalRecordCount': 'false',
+    });
+
+    final lastPlayedBySeries = <String, int>{};
+    for (final episode in _mapItems(rawPlayed)) {
+      final seriesId = episode.grandparentId;
+      final playedAt = episode.lastViewedAt;
+      if (seriesId == null || playedAt == null) continue;
+      if (!pendingSeriesIds.contains(seriesId)) continue;
+      lastPlayedBySeries.putIfAbsent(seriesId, () => playedAt);
+    }
+    if (lastPlayedBySeries.isEmpty) return nextUp;
+
+    return [
+      for (final item in nextUp)
+        if (item.lastViewedAt == null && lastPlayedBySeries[item.grandparentId] != null)
+          item.copyWith(lastViewedAt: lastPlayedBySeries[item.grandparentId])
+        else
+          item,
+    ];
+  }
+
+  /// Merge Jellyfin's two continue-watching sources into one recency-ordered
+  /// shelf. Resume items are deduped first so an in-progress episode wins over
+  /// the same series' Next Up entry, then the combined list is ordered by
+  /// [MediaItem.recencySortKey] (matching `DataAggregationService`) before the
+  /// limit is applied — so a recent Next Up episode is never starved by a long
+  /// run of older resume items.
   List<MediaItem> _mergeContinueWatchingAndNextUp({
     required List<MediaItem> resume,
     required List<MediaItem> nextUp,
@@ -1259,25 +1326,29 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }) {
     if (limit != null && limit <= 0) return const [];
 
-    final result = <MediaItem>[];
+    final merged = <MediaItem>[];
     final seenIds = <String>{};
     final seenSeriesIds = <String>{};
 
-    void add(MediaItem item) {
-      if (!seenIds.add(item.id)) return;
+    // Resume first: first-wins dedup makes an in-progress episode beat the same
+    // series' Next Up entry.
+    for (final item in [...resume, ...nextUp]) {
+      if (!seenIds.add(item.id)) continue;
       final seriesId = item.kind == MediaKind.episode ? item.grandparentId : null;
-      if (seriesId != null && !seenSeriesIds.add(seriesId)) return;
-      result.add(item);
+      if (seriesId != null && !seenSeriesIds.add(seriesId)) continue;
+      merged.add(item);
     }
 
-    for (final item in resume) {
-      add(item);
-      if (limit != null && result.length >= limit) return result;
-    }
-    for (final item in nextUp) {
-      add(item);
-      if (limit != null && result.length >= limit) return result;
-    }
+    // Stable sort by recency: Dart's List.sort isn't stable, so break ties on the
+    // insertion index to keep ordering deterministic across refreshes.
+    final ordered = [for (var i = 0; i < merged.length; i++) (item: merged[i], index: i)];
+    ordered.sort((a, b) {
+      final byRecency = b.item.recencySortKey.compareTo(a.item.recencySortKey);
+      return byRecency != 0 ? byRecency : a.index.compareTo(b.index);
+    });
+    final result = [for (final entry in ordered) entry.item];
+
+    if (limit != null && result.length > limit) return result.sublist(0, limit);
     return result;
   }
 
