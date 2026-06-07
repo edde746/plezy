@@ -265,6 +265,7 @@ class JellyfinMappers {
     required ServerId serverId,
     String? serverName,
     MediaItem? Function(Map<String, dynamic>)? mapItem,
+    int? previewLimit,
   }) {
     final mapper = mapItem ?? ((it) => mediaItem(it, serverId: serverId, serverName: serverName, absolutizer: null));
     final mappedItems = items.map(mapper).whereType<MediaItem>().toList();
@@ -275,7 +276,7 @@ class JellyfinMappers {
       type: type,
       items: mappedItems,
       size: mappedItems.length,
-      more: items.length >= 20,
+      more: previewLimit != null && items.length >= previewLimit,
       serverId: serverId,
       serverName: serverName,
     );

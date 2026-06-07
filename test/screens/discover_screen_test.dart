@@ -241,7 +241,8 @@ class _FakeMediaServerClient implements MediaServerClient {
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async => const [];
 
   @override
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10, bool includePlaybackHubs = true}) async => hubs;
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true}) async =>
+      hubs;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

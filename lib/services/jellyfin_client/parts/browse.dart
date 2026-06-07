@@ -899,7 +899,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }
 
   @override
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10, bool includePlaybackHubs = true}) async {
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true}) async {
     // Jellyfin doesn't expose a single "hubs" endpoint, so we synthesise the
     // home rows from Latest plus optional playback rows. The richer Plex Discover surface
     // is intentionally left untranslated — see ServerCapabilities.richHubs.
@@ -919,6 +919,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           title: t.discover.recentlyAdded,
           type: 'mixed',
           items: latest,
+          previewLimit: limit,
           serverId: serverId,
           serverName: serverName,
         ),
@@ -953,6 +954,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         title: t.discover.continueWatching,
         type: 'mixed',
         items: results[1],
+        previewLimit: limit,
         serverId: serverId,
         serverName: serverName,
       ),
@@ -962,6 +964,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         title: t.discover.nextUp,
         type: 'episode',
         items: results[2],
+        previewLimit: limit,
         serverId: serverId,
         serverName: serverName,
       ),
@@ -971,6 +974,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         title: t.discover.recentlyAdded,
         type: 'mixed',
         items: results.first,
+        previewLimit: limit,
         serverId: serverId,
         serverName: serverName,
       ),
@@ -981,7 +985,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   Future<List<MediaHub>> fetchLibraryHubs(
     String libraryId, {
     required String libraryName,
-    int limit = 10,
+    int limit = defaultHubPreviewLimit,
     bool includePlaybackHubs = true,
     MediaKind? libraryKind,
   }) async {
@@ -1007,6 +1011,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           title: t.discover.recentlyAddedIn(library: libraryName),
           type: 'mixed',
           items: latest,
+          previewLimit: limit,
           serverId: serverId,
           serverName: serverName,
         ),
@@ -1046,6 +1051,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         title: t.discover.continueWatchingIn(library: libraryName),
         type: 'mixed',
         items: results[1],
+        previewLimit: limit,
         serverId: serverId,
         serverName: serverName,
       ),
@@ -1055,6 +1061,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         title: t.discover.nextUpIn(library: libraryName),
         type: 'episode',
         items: results[2],
+        previewLimit: limit,
         serverId: serverId,
         serverName: serverName,
       ),
@@ -1064,6 +1071,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
         title: t.discover.recentlyAddedIn(library: libraryName),
         type: 'mixed',
         items: results.first,
+        previewLimit: limit,
         serverId: serverId,
         serverName: serverName,
       ),

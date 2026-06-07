@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:plezy/connection/connection.dart';
 import 'package:plezy/database/app_database.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/plex/plex_config.dart';
 import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_client.dart';
@@ -366,6 +367,10 @@ void main() {
         captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['ParentId']),
         ['lib-1', 'lib-2', 'lib-3', 'lib-4'],
       );
+      expect(
+        captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['Limit']),
+        everyElement(defaultHubPreviewLimit.toString()),
+      );
     });
 
     test('global home layout falls back to per-library hubs for Jellyfin', () async {
@@ -413,6 +418,10 @@ void main() {
       expect(
         captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['ParentId']),
         ['movies', 'shows'],
+      );
+      expect(
+        captured.where((uri) => uri.path == '/Users/user-1/Items/Latest').map((uri) => uri.queryParameters['Limit']),
+        everyElement(defaultHubPreviewLimit.toString()),
       );
     });
 
@@ -472,6 +481,7 @@ void main() {
       expect(hubs.single.libraryId, isNull);
       expect(hubs.single.items, hasLength(7));
       expect(captured.map((uri) => uri.path), ['/hubs/promoted']);
+      expect(captured.single.queryParameters['count'], defaultHubPreviewLimit.toString());
     });
   });
 }

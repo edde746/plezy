@@ -22,6 +22,9 @@ import 'media_playlist.dart';
 import 'playback_report_metadata.dart';
 import 'server_capabilities.dart';
 
+/// Default number of items requested for horizontal hub previews.
+const int defaultHubPreviewLimit = 20;
+
 /// Backend-neutral client for a single media server (Plex or Jellyfin).
 ///
 /// Each implementation wraps the per-backend HTTP layer and exposes the same
@@ -225,7 +228,7 @@ abstract class MediaServerClient {
 
   /// Curated home-screen hubs across all libraries (Plex Discover; Jellyfin
   /// synthesizes `Latest` plus optional `Resume` + `NextUp`).
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10, bool includePlaybackHubs = true});
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true});
 
   /// Hubs scoped to a single library section. [libraryName] is baked into
   /// the title of synthetic hubs (Jellyfin) so per-library "Recently Added"
@@ -236,7 +239,7 @@ abstract class MediaServerClient {
   Future<List<MediaHub>> fetchLibraryHubs(
     String libraryId, {
     required String libraryName,
-    int limit = 10,
+    int limit = defaultHubPreviewLimit,
     bool includePlaybackHubs = true,
     MediaKind? libraryKind,
   });

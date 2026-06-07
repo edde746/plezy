@@ -7,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_hub.dart';
 import '../../../media/media_item.dart';
+import '../../../media/media_server_client.dart';
 import '../../../mixins/item_updatable.dart';
 import '../../../mixins/watch_state_aware.dart';
 import '../../../services/settings_service.dart';
@@ -185,7 +186,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
             await client.fetchLibraryHubs(
               widget.library.id,
               libraryName: widget.library.title,
-              limit: 12,
+              limit: defaultHubPreviewLimit,
               libraryKind: widget.library.kind,
             ),
           );

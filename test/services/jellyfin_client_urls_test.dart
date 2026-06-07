@@ -8,6 +8,7 @@ import 'package:plezy/media/library_query.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/playback_initialization_types.dart';
@@ -2162,6 +2163,30 @@ void main() {
     }
 
     Uri capturedNextUpRequest() => captured.singleWhere((uri) => uri.path == '/Shows/NextUp');
+
+    test('global preview defaults to shared limit and marks filled previews as more', () async {
+      captured = [];
+      final mock = MockClient((req) async {
+        captured.add(req.url);
+        return http.Response(
+          jsonEncode({
+            'Items': [
+              for (var i = 0; i < defaultHubPreviewLimit; i++) {'Id': 'movie-$i', 'Type': 'Movie', 'Name': 'Movie $i'},
+            ],
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final hubs = await client.fetchGlobalHubs(includePlaybackHubs: false);
+
+      expect(captured.single.queryParameters['Limit'], defaultHubPreviewLimit.toString());
+      expect(hubs.single.items, hasLength(defaultHubPreviewLimit));
+      expect(hubs.single.more, isTrue);
+    });
 
     test('global Next Up excludes resumable episodes without date cutoff', () async {
       final client = buildClient();

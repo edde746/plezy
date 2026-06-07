@@ -1888,7 +1888,11 @@ class PlexClient
 
   /// Get library hubs (recommendations for a specific library section)
   /// Returns a list of recommendation hubs like "Trending Movies", "Top in Genre", etc.
-  Future<List<PlexHubDto>> _getLibraryHubs(String sectionId, {int limit = 10, String? libraryName}) async {
+  Future<List<PlexHubDto>> _getLibraryHubs(
+    String sectionId, {
+    int limit = defaultHubPreviewLimit,
+    String? libraryName,
+  }) async {
     try {
       final response = await retryTransientMediaServerCall(
         operation: 'Plex library hubs',
@@ -1922,7 +1926,7 @@ class PlexClient
   /// Get global hubs (home page recommendations)
   /// Returns actual home page hubs like "Recently Added Movies", "Recently Added TV", etc.
   /// This matches the official Plex client's home page layout.
-  Future<List<PlexHubDto>> _getGlobalHubs({int limit = 10}) async {
+  Future<List<PlexHubDto>> _getGlobalHubs({int limit = defaultHubPreviewLimit}) async {
     try {
       final hubKey = _providerPromotedHubKey ?? _providerHomeHubKey ?? '/hubs';
       final response = await retryTransientMediaServerCall(
@@ -3714,7 +3718,7 @@ class PlexClient
   }
 
   @override
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10, bool includePlaybackHubs = true}) async {
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true}) async {
     final hubs = await _getGlobalHubs(limit: limit);
     return hubs.map((h) => PlexMappers.mediaHub(h)).toList();
   }
@@ -3723,7 +3727,7 @@ class PlexClient
   Future<List<MediaHub>> fetchLibraryHubs(
     String libraryId, {
     required String libraryName,
-    int limit = 10,
+    int limit = defaultHubPreviewLimit,
     bool includePlaybackHubs = true,
     MediaKind? libraryKind,
   }) async {

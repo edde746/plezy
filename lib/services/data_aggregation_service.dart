@@ -263,11 +263,12 @@ class DataAggregationService {
       try {
         final serverLibraries = libraries?[serverId];
         final shouldUseGlobalHubs = useGlobalHubs && client.capabilities.richHubs;
+        final hubItemLimit = limit ?? defaultHubPreviewLimit;
         final hubs = shouldUseGlobalHubs
-            ? await client.fetchGlobalHubs(limit: limit ?? 10, includePlaybackHubs: includePlaybackHubs)
+            ? await client.fetchGlobalHubs(limit: hubItemLimit, includePlaybackHubs: includePlaybackHubs)
             : await _fetchLibraryHubsForClient(
                 client,
-                limit: limit ?? 10,
+                limit: hubItemLimit,
                 hiddenLibraryKeys: hiddenLibraryKeys,
                 includePlaybackHubs: includePlaybackHubs,
                 libraries: useGlobalHubs ? serverLibraries : null,
