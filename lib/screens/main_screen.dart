@@ -1588,96 +1588,103 @@ class _MainScreenState extends State<MainScreen>
 
           return OverlaySheetHost(
             onOpenChanged: _handleOverlaySheetOpenChanged,
-            child: PopScope(
-              canPop: false, // Prevent system back from popping on Android TV
-              // ignore: no-empty-block - required callback, back navigation handled by _handleBackKey
-              onPopInvokedWithResult: (didPop, result) {},
-              child: Focus(
-                onKeyEvent: (node, event) {
-                  final fullscreenResult = _handleFullscreenShortcut(event);
-                  if (fullscreenResult == KeyEventResult.handled) return fullscreenResult;
-                  final searchResult = _handleSearchShortcut(event);
-                  if (searchResult == KeyEventResult.handled) return searchResult;
-                  return _handleBackKey(event);
-                },
-                child: TweenAnimationBuilder<double>(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeOutCubic,
-                  tween: Tween<double>(end: targetContentOffset),
-                  child: FocusScope(
-                    node: _contentFocusScope,
-                    // No autofocus - we control focus programmatically to prevent
-                    // autofocus from stealing focus back after setState() rebuilds
-                    child: _buildTickerAwareStack(),
-                  ),
-                  builder: (context, contentLeftPadding, contentChild) {
-                    return LayoutBuilder(
-                      builder: (context, constraints) {
-                        final viewportWidth = constraints.maxWidth;
-                        final contentLayout = mainScreenSideNavigationContentLayout(
-                          viewportWidth: viewportWidth,
-                          currentSideNavigationWidth: contentLeftPadding,
-                          reservedSideNavigationWidth: reservedContentOffset,
-                        );
-                        return MainScreenFocusScope(
-                          focusSidebar: _focusSidebar,
-                          focusContent: _focusContent,
-                          isSidebarFocused: _isSidebarFocused,
-                          sideNavigationWidth: targetContentOffset,
-                          reservedSideNavigationWidth: reservedContentOffset,
-                          foregroundLeft: contentLayout.left,
-                          foregroundWidth: contentLayout.width,
-                          viewportWidth: viewportWidth,
-                          selectLibrary: _selectLibrary,
-                          openSettings: _openSettings,
-                          child: SideNavigationScope(
-                            child: Stack(
-                              clipBehavior: Clip.hardEdge,
-                              children: [
-                                Positioned(
-                                  top: 0,
-                                  bottom: 0,
-                                  left: contentLayout.left,
-                                  width: contentLayout.width,
-                                  child: contentChild!,
-                                ),
-                                Positioned(
-                                  top: 0,
-                                  bottom: 0,
-                                  left: 0,
-                                  child: FocusScope(
-                                    node: _sidebarFocusScope,
-                                    child: SideNavigationRail(
-                                      key: _sideNavKey,
-                                      selectedTab: _currentTab,
-                                      selectedLibraryKey: _selectedLibraryGlobalKey,
-                                      isOfflineMode: _isOffline,
-                                      isSidebarFocused: _isSidebarFocused,
-                                      alwaysExpanded: alwaysExpanded,
-                                      isReconnecting: _isReconnecting,
-                                      onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
-                                      onDestinationSelected: (tab) {
-                                        final restorePreviousFocus = tab == _currentTab;
-                                        _selectTab(tab);
-                                        _focusContent(restorePreviousFocus: restorePreviousFocus);
-                                      },
-                                      onLibrarySelected: (key) {
-                                        _selectLibrary(key);
-                                        _focusContent(restorePreviousFocus: false);
-                                      },
-                                      onNavigateToContent: _focusContent,
-                                      onReconnect: _triggerReconnect,
-                                    ),
+            // The host owns sheet + system back. canPop:false because the dpad
+            // back is handled by the key path below; onSystemBack mirrors it for
+            // a pure popRoute (focus sidebar first, otherwise home/exit).
+            canPop: false,
+            onSystemBack: () {
+              if (BackKeyCoordinator.consumeIfHandled()) return;
+              if (!_isSidebarFocused) {
+                _focusSidebar();
+                return;
+              }
+              _handleMainBack();
+            },
+            child: Focus(
+              onKeyEvent: (node, event) {
+                final fullscreenResult = _handleFullscreenShortcut(event);
+                if (fullscreenResult == KeyEventResult.handled) return fullscreenResult;
+                final searchResult = _handleSearchShortcut(event);
+                if (searchResult == KeyEventResult.handled) return searchResult;
+                return _handleBackKey(event);
+              },
+              child: TweenAnimationBuilder<double>(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOutCubic,
+                tween: Tween<double>(end: targetContentOffset),
+                child: FocusScope(
+                  node: _contentFocusScope,
+                  // No autofocus - we control focus programmatically to prevent
+                  // autofocus from stealing focus back after setState() rebuilds
+                  child: _buildTickerAwareStack(),
+                ),
+                builder: (context, contentLeftPadding, contentChild) {
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      final viewportWidth = constraints.maxWidth;
+                      final contentLayout = mainScreenSideNavigationContentLayout(
+                        viewportWidth: viewportWidth,
+                        currentSideNavigationWidth: contentLeftPadding,
+                        reservedSideNavigationWidth: reservedContentOffset,
+                      );
+                      return MainScreenFocusScope(
+                        focusSidebar: _focusSidebar,
+                        focusContent: _focusContent,
+                        isSidebarFocused: _isSidebarFocused,
+                        sideNavigationWidth: targetContentOffset,
+                        reservedSideNavigationWidth: reservedContentOffset,
+                        foregroundLeft: contentLayout.left,
+                        foregroundWidth: contentLayout.width,
+                        viewportWidth: viewportWidth,
+                        selectLibrary: _selectLibrary,
+                        openSettings: _openSettings,
+                        child: SideNavigationScope(
+                          child: Stack(
+                            clipBehavior: Clip.hardEdge,
+                            children: [
+                              Positioned(
+                                top: 0,
+                                bottom: 0,
+                                left: contentLayout.left,
+                                width: contentLayout.width,
+                                child: contentChild!,
+                              ),
+                              Positioned(
+                                top: 0,
+                                bottom: 0,
+                                left: 0,
+                                child: FocusScope(
+                                  node: _sidebarFocusScope,
+                                  child: SideNavigationRail(
+                                    key: _sideNavKey,
+                                    selectedTab: _currentTab,
+                                    selectedLibraryKey: _selectedLibraryGlobalKey,
+                                    isOfflineMode: _isOffline,
+                                    isSidebarFocused: _isSidebarFocused,
+                                    alwaysExpanded: alwaysExpanded,
+                                    isReconnecting: _isReconnecting,
+                                    onInteractionExpandedChanged: _handleSidebarInteractionExpandedChanged,
+                                    onDestinationSelected: (tab) {
+                                      final restorePreviousFocus = tab == _currentTab;
+                                      _selectTab(tab);
+                                      _focusContent(restorePreviousFocus: restorePreviousFocus);
+                                    },
+                                    onLibrarySelected: (key) {
+                                      _selectLibrary(key);
+                                      _focusContent(restorePreviousFocus: false);
+                                    },
+                                    onNavigateToContent: _focusContent,
+                                    onReconnect: _triggerReconnect,
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
-                        );
-                      },
-                    );
-                  },
-                ),
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
             ),
           );
@@ -1685,69 +1692,69 @@ class _MainScreenState extends State<MainScreen>
       );
     }
 
-    return PopScope(
+    return OverlaySheetHost(
+      onOpenChanged: _handleOverlaySheetOpenChanged,
+      // Host owns sheet + system back; onSystemBack mirrors the old PopScope
+      // (go to home tab, then press-back-twice to exit).
       canPop: false,
-      onPopInvokedWithResult: (didPop, result) {
-        if (didPop) return;
+      onSystemBack: () {
+        if (BackKeyCoordinator.consumeIfHandled()) return;
         _handleMainBack();
       },
-      child: OverlaySheetHost(
-        onOpenChanged: _handleOverlaySheetOpenChanged,
-        child: ScaffoldMessenger(
-          key: mainScaffoldMessengerKey,
-          child: Scaffold(
-            body: _buildTickerAwareStack(),
-            bottomNavigationBar: Column(
-              mainAxisSize: .min,
-              children: [
-                // Reconnect bar when offline
-                if (_isOffline)
-                  Material(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: InkWell(
-                      onTap: _isReconnecting ? null : _triggerReconnect,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        child: Row(
-                          mainAxisAlignment: .center,
-                          children: [
-                            if (_isReconnecting)
-                              SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              )
-                            else
-                              Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
-                            const SizedBox(width: 8),
-                            Text(
-                              t.common.reconnect,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: .w500,
+      child: ScaffoldMessenger(
+        key: mainScaffoldMessengerKey,
+        child: Scaffold(
+          body: _buildTickerAwareStack(),
+          bottomNavigationBar: Column(
+            mainAxisSize: .min,
+            children: [
+              // Reconnect bar when offline
+              if (_isOffline)
+                Material(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: InkWell(
+                    onTap: _isReconnecting ? null : _triggerReconnect,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      child: Row(
+                        mainAxisAlignment: .center,
+                        children: [
+                          if (_isReconnecting)
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
                                 color: Theme.of(context).colorScheme.primary,
                               ),
+                            )
+                          else
+                            Icon(Symbols.wifi_rounded, size: 18, color: Theme.of(context).colorScheme.primary),
+                          const SizedBox(width: 8),
+                          Text(
+                            t.common.reconnect,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: .w500,
+                              color: Theme.of(context).colorScheme.primary,
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                SettingValueBuilder<bool>(
-                  pref: SettingsService.showNavBarLabels,
-                  builder: (context, showNavBarLabels, _) {
-                    final hideLabels = !showNavBarLabels;
-                    return NavigationBarTheme(
-                      data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
-                      child: _buildBottomNavigationBar(context, hideLabels: hideLabels),
-                    );
-                  },
                 ),
-              ],
-            ),
+              SettingValueBuilder<bool>(
+                pref: SettingsService.showNavBarLabels,
+                builder: (context, showNavBarLabels, _) {
+                  final hideLabels = !showNavBarLabels;
+                  return NavigationBarTheme(
+                    data: NavigationBarTheme.of(context).copyWith(height: hideLabels ? 56 : null),
+                    child: _buildBottomNavigationBar(context, hideLabels: hideLabels),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),
