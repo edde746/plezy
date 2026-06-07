@@ -1588,18 +1588,12 @@ class _MainScreenState extends State<MainScreen>
 
           return OverlaySheetHost(
             onOpenChanged: _handleOverlaySheetOpenChanged,
-            // The host owns sheet + system back. canPop:false because the dpad
-            // back is handled by the key path below; onSystemBack mirrors it for
-            // a pure popRoute (focus sidebar first, otherwise home/exit).
+            // canPop:false blocks the system route-pop (matching the old inert
+            // PopScope). The dpad/key back chain (content → top tabs → sidebar →
+            // home) is owned entirely by the key path below; there is NO
+            // onSystemBack because a pure popRoute must not short-circuit that
+            // chain to home. The host still closes an open sheet on system back.
             canPop: false,
-            onSystemBack: () {
-              if (BackKeyCoordinator.consumeIfHandled()) return;
-              if (!_isSidebarFocused) {
-                _focusSidebar();
-                return;
-              }
-              _handleMainBack();
-            },
             child: Focus(
               onKeyEvent: (node, event) {
                 final fullscreenResult = _handleFullscreenShortcut(event);
