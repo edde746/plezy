@@ -3061,11 +3061,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return _buildTvDetailScreen(context, metadata, _handleMediaDetailBackKey);
     }
 
+    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
     final content = PrimaryScrollController(
       controller: _scrollController,
       child: IosStatusBarTapScrollToTop(
         controller: _scrollController,
         child: OverlaySheetHost(
+          // blockSystemBack keeps the route from double-popping on Android
+          // keyboard/TV (the key handler owns dpad back); elsewhere canPop:true
+          // keeps the iOS swipe-back. The host also closes an open sheet on back.
+          canPop: !blockSystemBack,
           child: Focus(
             onKeyEvent: _handleMediaDetailBackKey,
             child: Scaffold(
@@ -3283,17 +3288,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       ),
     );
 
-    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
-    if (!blockSystemBack) {
-      return content;
-    }
-
-    return PopScope(
-      canPop: false, // Prevent system back from double-popping on Android keyboard/TV
-      // ignore: no-empty-block - required callback, blocks system back on Android TV
-      onPopInvokedWithResult: (didPop, result) {},
-      child: content,
-    );
+    return content;
   }
 
   Widget _buildTvDetailScreen(
@@ -3364,7 +3359,11 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       ],
     );
 
+    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
     final content = OverlaySheetHost(
+      // blockSystemBack keeps the route from double-popping on Android keyboard/
+      // TV (the key handler owns dpad back); the host also closes an open sheet.
+      canPop: !blockSystemBack,
       child: Focus(
         onKeyEvent: handleBack,
         child: Scaffold(
@@ -3383,14 +3382,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       ),
     );
 
-    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
-    if (!blockSystemBack) return content;
-    return PopScope(
-      canPop: false,
-      // ignore: no-empty-block - required callback, blocks system back on Android TV
-      onPopInvokedWithResult: (didPop, result) {},
-      child: content,
-    );
+    return content;
   }
 
   Widget _buildTvDetailForeground(
