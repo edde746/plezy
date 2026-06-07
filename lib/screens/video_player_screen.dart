@@ -1452,6 +1452,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
         return KeyEventResult.ignored;
       },
       child: OverlaySheetHost(
+        // Host owns sheet + system back: a back with a sheet open closes it;
+        // with no sheet, exit the player. canPop:false keeps swipe-back disabled
+        // so it doesn't fight timeline scrubbing.
+        canPop: false,
+        onSystemBack: () {
+          if (BackKeyCoordinator.consumeIfHandled()) return;
+          BackKeyCoordinator.markHandled();
+          _handleBackButton();
+        },
         child: Builder(
           builder: (sheetContext) => _isPlayerInitialized && player != null
               ? _buildVideoPlayer(sheetContext)

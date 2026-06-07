@@ -12,7 +12,6 @@ import '../../mixins/mounted_set_state_mixin.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
-import '../../focus/key_event_utils.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
@@ -38,41 +37,18 @@ class WatchTogetherScreen extends StatelessWidget {
     return Consumer<WatchTogetherProvider>(
       builder: (context, watchTogether, child) {
         final canGoBack = watchTogether.isHost || !watchTogether.isInSession;
-        // Host the actions sheet so it uses the overlay system (focus + back
-        // handling) instead of the showModalBottomSheet fallback, which on
-        // TV/dpad leaks the select-key suppressor. The PopScope sits *below* the
-        // host (via Builder) so that on a system/gesture back it can see the open
-        // sheet and close it instead of popping the screen — mirrors the
-        // video_player_screen pattern and the OverlaySheetHost contract.
+        // The host owns sheet + system back: a back with the actions sheet open
+        // closes it; otherwise the route pops only when [canGoBack] (a guest in
+        // an active session can't leave). canGoBack==true also preserves the iOS
+        // interactive swipe-back.
         return OverlaySheetHost(
-          child: Builder(
-            builder: (context) => PopScope(
-              canPop: false,
-              onPopInvokedWithResult: (didPop, result) {
-                if (didPop) return;
-                final sheet = OverlaySheetController.maybeOf(context);
-                if (sheet != null && sheet.isOpen) {
-                  sheet.pop();
-                  return;
-                }
-                if (BackKeyCoordinator.consumeIfHandled()) return;
-                if (!canGoBack) return;
-                BackKeyCoordinator.markHandled();
-                Navigator.pop(context);
-              },
-              child: FocusedScrollScaffold(
-                title: Text(t.watchTogether.title),
-                automaticallyImplyLeading: canGoBack,
-                slivers: watchTogether.isInSession
-                    ? _buildActiveSessionSlivers(watchTogether)
-                    : [
-                        SliverFillRemaining(
-                          hasScrollBody: false,
-                          child: _NotInSessionView(watchTogether: watchTogether),
-                        ),
-                      ],
-              ),
-            ),
+          canPop: canGoBack,
+          child: FocusedScrollScaffold(
+            title: Text(t.watchTogether.title),
+            automaticallyImplyLeading: canGoBack,
+            slivers: watchTogether.isInSession
+                ? _buildActiveSessionSlivers(watchTogether)
+                : [SliverFillRemaining(hasScrollBody: false, child: _NotInSessionView(watchTogether: watchTogether))],
           ),
         );
       },
