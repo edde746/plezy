@@ -12,6 +12,7 @@ import '../../mixins/mounted_set_state_mixin.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_wrapper.dart';
+import '../../focus/key_event_utils.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
@@ -37,14 +38,41 @@ class WatchTogetherScreen extends StatelessWidget {
     return Consumer<WatchTogetherProvider>(
       builder: (context, watchTogether, child) {
         final canGoBack = watchTogether.isHost || !watchTogether.isInSession;
-        return PopScope(
-          canPop: canGoBack,
-          child: FocusedScrollScaffold(
-            title: Text(t.watchTogether.title),
-            automaticallyImplyLeading: canGoBack,
-            slivers: watchTogether.isInSession
-                ? _buildActiveSessionSlivers(watchTogether)
-                : [SliverFillRemaining(hasScrollBody: false, child: _NotInSessionView(watchTogether: watchTogether))],
+        // Host the actions sheet so it uses the overlay system (focus + back
+        // handling) instead of the showModalBottomSheet fallback, which on
+        // TV/dpad leaks the select-key suppressor. The PopScope sits *below* the
+        // host (via Builder) so that on a system/gesture back it can see the open
+        // sheet and close it instead of popping the screen — mirrors the
+        // video_player_screen pattern and the OverlaySheetHost contract.
+        return OverlaySheetHost(
+          child: Builder(
+            builder: (context) => PopScope(
+              canPop: false,
+              onPopInvokedWithResult: (didPop, result) {
+                if (didPop) return;
+                final sheet = OverlaySheetController.maybeOf(context);
+                if (sheet != null && sheet.isOpen) {
+                  sheet.pop();
+                  return;
+                }
+                if (BackKeyCoordinator.consumeIfHandled()) return;
+                if (!canGoBack) return;
+                BackKeyCoordinator.markHandled();
+                Navigator.pop(context);
+              },
+              child: FocusedScrollScaffold(
+                title: Text(t.watchTogether.title),
+                automaticallyImplyLeading: canGoBack,
+                slivers: watchTogether.isInSession
+                    ? _buildActiveSessionSlivers(watchTogether)
+                    : [
+                        SliverFillRemaining(
+                          hasScrollBody: false,
+                          child: _NotInSessionView(watchTogether: watchTogether),
+                        ),
+                      ],
+              ),
+            ),
           ),
         );
       },
@@ -406,6 +434,11 @@ class _RecentRoomTile extends StatelessWidget {
       child: FocusableWrapper(
         useBackgroundFocus: true,
         borderRadius: 12,
+        // Hold SELECT/OK to open the rename/remove menu on TV/dpad (matches media cards).
+        enableLongPress: true,
+        // The wrapper owns key handling; the ListTile's InkWell and the trailing
+        // more_vert IconButton must not steal focus from the long-press handler.
+        descendantsAreFocusable: false,
         onSelect: isBusy ? null : onTap,
         onLongPress: () => _showActions(context),
         child: Material(
