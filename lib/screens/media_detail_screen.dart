@@ -1604,13 +1604,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
       if (shouldShowEpisodesDirectly) {
         await _fetchAllEpisodes();
+        _ensureFallbackOnDeckEpisode();
       } else if (seasonsWithServerId.isNotEmpty) {
         // Load only the on-deck season's first page; other seasons load lazily
-        // when focused (strict on-demand — no whole-show pre-warm).
+        // when focused (strict on-demand — no whole-show pre-warm). Once the
+        // on-deck season is loaded, synthesize on-deck if the backend omitted it.
+        final fetchOnDeckSeason = _fetchSeasonEpisodes(onDeckSeasonIndex).then((_) => _ensureFallbackOnDeckEpisode());
         if (PlatformDetector.isTV()) {
-          await _fetchSeasonEpisodes(onDeckSeasonIndex);
+          await fetchOnDeckSeason;
         } else {
-          unawaited(_fetchSeasonEpisodes(onDeckSeasonIndex));
+          unawaited(fetchOnDeckSeason);
         }
       }
     } catch (e, st) {
@@ -2927,6 +2930,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (nextEpisode != null) {
       appLogger.d('Offline OnDeck: S${nextEpisode.parentIndex}E${nextEpisode.index} - ${nextEpisode.title}');
     }
+  }
+
+  /// Online counterpart to [_loadOfflineOnDeckEpisode]: when the backend
+  /// omitted an on-deck episode (e.g. the show was removed from Continue
+  /// Watching) synthesize one from the on-deck season's already-loaded episodes
+  /// so the next unwatched episode is highlighted/focused and the Play button
+  /// resumes it. No-op once a backend on-deck episode exists, or when every
+  /// loaded episode is watched (keep the default S1E1 for a rewatch).
+  void _ensureFallbackOnDeckEpisode() {
+    if (_onDeckEpisode != null) return;
+    final next = firstUnwatchedEpisode(_episodes);
+    if (next == null) return;
+    setStateIfMounted(() {
+      _onDeckEpisode = _applyLocalProgress(next);
+    });
   }
 
   Future<void> _playFirstEpisode() async {

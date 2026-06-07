@@ -65,8 +65,40 @@ MediaItem? defaultPlaybackSeason(List<MediaItem> seasons) {
   return season.kind == MediaKind.season ? season : null;
 }
 
+/// Index of the first season that still has unwatched episodes, preferring
+/// regular seasons over specials (mirrors [defaultPlaybackSeasonIndex]). Uses
+/// leafCount/viewedLeafCount, so no episodes need to be fetched. Returns null
+/// when every season is fully watched (or counts are unavailable).
+int? firstUnwatchedSeasonIndex(List<MediaItem> seasons) {
+  int? firstSpecial;
+  for (var i = 0; i < seasons.length; i++) {
+    final season = seasons[i];
+    if (season.kind != MediaKind.season) continue;
+    final leaf = season.leafCount;
+    if (leaf == null || leaf <= 0) continue;
+    if ((season.viewedLeafCount ?? 0) >= leaf) continue; // fully watched
+    if ((season.index ?? 0) > 0) return i; // first regular season with unwatched
+    firstSpecial ??= i; // specials only count as a last resort
+  }
+  return firstSpecial;
+}
+
+/// First episode that is unwatched or still in progress, in list order.
+/// Same predicate as [_collectPlayable]'s `unwatchedOnly` filter, returned in
+/// the order the episodes are displayed so the highlight matches the list.
+MediaItem? firstUnwatchedEpisode(List<MediaItem> episodes) {
+  for (final episode in episodes) {
+    if (episode.kind != MediaKind.episode) continue;
+    if (episode.isWatched && !episode.hasActiveProgress) continue;
+    return episode;
+  }
+  return null;
+}
+
 /// Find the season index matching an explicit navigation target or on-deck
-/// episode, then fall back to [defaultPlaybackSeasonIndex].
+/// episode. With neither, fall back to the first season that still has
+/// unwatched episodes (so a partially-watched show removed from Continue
+/// Watching still opens on the right season), then [defaultPlaybackSeasonIndex].
 int preferredSeasonIndex(List<MediaItem> seasons, {int? initialSeasonIndex, MediaItem? onDeckEpisode}) {
   if (seasons.isEmpty) return 0;
   if (initialSeasonIndex != null) {
@@ -87,6 +119,9 @@ int preferredSeasonIndex(List<MediaItem> seasons, {int? initialSeasonIndex, Medi
       if (idx != -1) return idx;
     }
   }
+
+  final unwatched = firstUnwatchedSeasonIndex(seasons);
+  if (unwatched != null) return unwatched;
 
   return defaultPlaybackSeasonIndex(seasons);
 }
