@@ -18,6 +18,7 @@ import '../../../services/download_storage_service.dart';
 import '../../../utils/formatters.dart';
 import '../../../utils/player_utils.dart';
 import '../../../utils/provider_extensions.dart';
+import '../../../utils/scroll_utils.dart';
 import '../../app_icon.dart';
 import '../../clickable_cursor.dart';
 import '../../optimized_media_image.dart';
@@ -69,8 +70,11 @@ class ContentStripState extends State<ContentStrip> {
   late _StripTab _activeTab;
   final ScrollController _chapterScrollController = ScrollController();
   final ScrollController _queueScrollController = ScrollController();
-  bool _hasAutoScrolledChapters = false;
-  bool _hasAutoScrolledQueue = false;
+  int? _lastAutoScrolledChapterIndex;
+  int? _lastAutoScrolledQueueItemID;
+  int? _lastAutoScrolledQueueIndex;
+  final Map<int, GlobalKey> _chapterItemKeys = {};
+  final Map<int, GlobalKey> _queueItemKeys = {};
 
   // Focus nodes for focus navigation mode
   final List<FocusNode> _chapterFocusNodes = [];
@@ -172,6 +176,18 @@ class ContentStripState extends State<ContentStrip> {
     });
   }
 
+  void _selectTab(_StripTab tab) {
+    setState(() {
+      _activeTab = tab;
+      if (tab == _StripTab.chapters) {
+        _lastAutoScrolledChapterIndex = null;
+      } else {
+        _lastAutoScrolledQueueItemID = null;
+        _lastAutoScrolledQueueIndex = null;
+      }
+    });
+  }
+
   KeyEventResult _handleFocusItemKeyEvent(KeyEvent event, int index, int totalItems, _StripTab page) {
     if (!event.isActionable) return KeyEventResult.ignored;
 
@@ -200,7 +216,10 @@ class ContentStripState extends State<ContentStrip> {
     if (key == LogicalKeyboardKey.arrowUp) {
       if (page == _StripTab.queue && _hasChapters) {
         // Switch to chapters page and focus current chapter
-        setState(() => _activeTab = _StripTab.chapters);
+        setState(() {
+          _activeTab = _StripTab.chapters;
+          _lastAutoScrolledChapterIndex = null;
+        });
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && _chapterFocusNodes.isNotEmpty) {
             final idx = (_getCurrentChapterIndex() ?? 0).clamp(0, _chapterFocusNodes.length - 1);
@@ -219,7 +238,11 @@ class ContentStripState extends State<ContentStrip> {
     if (key == LogicalKeyboardKey.arrowDown) {
       if (page == _StripTab.chapters && _hasQueue) {
         // Switch to queue page and focus current queue item
-        setState(() => _activeTab = _StripTab.queue);
+        setState(() {
+          _activeTab = _StripTab.queue;
+          _lastAutoScrolledQueueItemID = null;
+          _lastAutoScrolledQueueIndex = null;
+        });
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted && _queueFocusNodes.isNotEmpty) {
             final idx = (_getCurrentQueueIndex() ?? 0).clamp(0, _queueFocusNodes.length - 1);
@@ -242,13 +265,47 @@ class ContentStripState extends State<ContentStrip> {
 
   double _itemWidth(bool isTablet) => isTablet ? 212.0 : 132.0; // thumb + 12 padding
 
-  void _autoScrollTo(ScrollController controller, int index, {bool force = false, bool isTablet = false}) {
-    if (!controller.hasClients) return;
-    final itemWidth = _itemWidth(isTablet);
-    final target = (index * itemWidth - 60).clamp(0.0, controller.position.maxScrollExtent);
-    if (force || (target - controller.offset).abs() > itemWidth) {
-      controller.jumpTo(target);
-    }
+  GlobalKey _itemKeyFor(Map<int, GlobalKey> keys, int index) {
+    return keys.putIfAbsent(index, GlobalKey.new);
+  }
+
+  void _trimItemKeys(Map<int, GlobalKey> keys, int count) {
+    keys.removeWhere((index, _) => index >= count);
+  }
+
+  void _autoScrollTo(
+    ScrollController controller,
+    Map<int, GlobalKey> keys,
+    int index, {
+    required bool isTablet,
+    required bool Function() isCurrent,
+    int attempt = 0,
+  }) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !isCurrent()) return;
+
+      if (controller.positions.length != 1 || !controller.position.hasContentDimensions) {
+        if (attempt < 3) {
+          _autoScrollTo(controller, keys, index, isTablet: isTablet, isCurrent: isCurrent, attempt: attempt + 1);
+        }
+        return;
+      }
+
+      scrollListToIndex(
+        controller,
+        index,
+        itemExtent: _itemWidth(isTablet),
+        leadingPadding: widget.useFocusNavigation ? 12 : 4,
+        animate: false,
+      );
+      scrollKeyedChildToHorizontalCenter(
+        controller,
+        _itemKeyFor(keys, index),
+        animate: false,
+        maxAttempts: 4,
+        isCurrent: isCurrent,
+      );
+    });
   }
 
   @override
@@ -302,7 +359,7 @@ class ContentStripState extends State<ContentStrip> {
     final isActive = _activeTab == tab;
     return ClickableCursor(
       child: GestureDetector(
-        onTap: () => setState(() => _activeTab = tab),
+        onTap: () => _selectTab(tab),
         child: Column(
           mainAxisSize: .min,
           children: [
@@ -333,12 +390,17 @@ class ContentStripState extends State<ContentStrip> {
         final currentPosition = positionSnapshot.data ?? Duration.zero;
         final currentChapterIndex = MediaChapter.indexAtPosition(currentPosition, widget.chapters);
 
-        // Auto-scroll to current chapter on first build
-        if (!_hasAutoScrolledChapters && currentChapterIndex != null) {
-          _hasAutoScrolledChapters = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _autoScrollTo(_chapterScrollController, currentChapterIndex, isTablet: isTablet);
-          });
+        _trimItemKeys(_chapterItemKeys, widget.chapters.length);
+
+        if (currentChapterIndex != null && _lastAutoScrolledChapterIndex != currentChapterIndex) {
+          _lastAutoScrolledChapterIndex = currentChapterIndex;
+          _autoScrollTo(
+            _chapterScrollController,
+            _chapterItemKeys,
+            currentChapterIndex,
+            isTablet: isTablet,
+            isCurrent: () => _lastAutoScrolledChapterIndex == currentChapterIndex,
+          );
         }
 
         if (widget.useFocusNavigation) {
@@ -361,7 +423,9 @@ class ContentStripState extends State<ContentStrip> {
 
             void onTap() => unawaited(_handleChapterTap(chapter.startTime));
 
+            final itemKey = _itemKeyFor(_chapterItemKeys, index);
             final item = _buildStripItem(
+              key: itemKey,
               isCurrent: isCurrent,
               isTablet: isTablet,
               thumbnail: chapter.thumb != null
@@ -415,13 +479,24 @@ class ContentStripState extends State<ContentStrip> {
       builder: (context, playbackState, _) {
         final items = playbackState.loadedItems;
         final currentItemID = playbackState.currentPlayQueueItemID;
-        final currentIndex = items.indexWhere((item) => playbackState.playQueueItemIdFor(item) == currentItemID);
+        final currentIndex = currentItemID == null
+            ? -1
+            : items.indexWhere((item) => playbackState.playQueueItemIdFor(item) == currentItemID);
 
-        if (!_hasAutoScrolledQueue && currentIndex >= 0) {
-          _hasAutoScrolledQueue = true;
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            _autoScrollTo(_queueScrollController, currentIndex, isTablet: isTablet);
-          });
+        _trimItemKeys(_queueItemKeys, items.length);
+
+        if (currentIndex >= 0 &&
+            (_lastAutoScrolledQueueItemID != currentItemID || _lastAutoScrolledQueueIndex != currentIndex)) {
+          _lastAutoScrolledQueueItemID = currentItemID;
+          _lastAutoScrolledQueueIndex = currentIndex;
+          _autoScrollTo(
+            _queueScrollController,
+            _queueItemKeys,
+            currentIndex,
+            isTablet: isTablet,
+            isCurrent: () =>
+                _lastAutoScrolledQueueItemID == currentItemID && _lastAutoScrolledQueueIndex == currentIndex,
+          );
         }
 
         if (widget.useFocusNavigation) {
@@ -444,7 +519,9 @@ class ContentStripState extends State<ContentStrip> {
 
             void onTap() => widget.onQueueItemSelected?.call(item);
 
+            final itemKey = _itemKeyFor(_queueItemKeys, index);
             final stripItem = _buildStripItem(
+              key: itemKey,
               isCurrent: isCurrent,
               isTablet: isTablet,
               thumbnail: item.thumbPath != null
@@ -501,6 +578,7 @@ class ContentStripState extends State<ContentStrip> {
   }
 
   Widget _buildStripItem({
+    Key? key,
     required bool isCurrent,
     required Widget? thumbnail,
     required String title,
@@ -518,6 +596,7 @@ class ContentStripState extends State<ContentStrip> {
       child: GestureDetector(
         onTap: onTap,
         child: Container(
+          key: key,
           width: itemWidth,
           margin: .symmetric(horizontal: 6, vertical: verticalMargin),
           child: Column(
