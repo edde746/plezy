@@ -1740,6 +1740,7 @@ class _TranslationsLibrariesSortLabelsSv extends TranslationsLibrariesSortLabels
 	@override String get rating => 'Betyg';
 	@override String get communityRating => 'Användarbetyg';
 	@override String get criticRating => 'Kritikerbetyg';
+	@override String get userRating => 'Användarbetyg';
 	@override String get lastPlayed => 'Senast spelad';
 	@override String get datePlayed => 'Speldatum';
 	@override String get playCount => 'Antal spelningar';
@@ -2615,6 +2616,7 @@ extension on TranslationsSv {
 			'libraries.sortLabels.rating' => 'Betyg',
 			'libraries.sortLabels.communityRating' => 'Användarbetyg',
 			'libraries.sortLabels.criticRating' => 'Kritikerbetyg',
+			'libraries.sortLabels.userRating' => 'Användarbetyg',
 			'libraries.sortLabels.lastPlayed' => 'Senast spelad',
 			'libraries.sortLabels.datePlayed' => 'Speldatum',
 			'libraries.sortLabels.playCount' => 'Antal spelningar',
@@ -2944,9 +2946,9 @@ extension on TranslationsSv {
 			'companionRemote.remote.tabLibraries' => 'Bibliotek',
 			'companionRemote.remote.tabSearch' => 'Sök',
 			'companionRemote.remote.tabDownloads' => 'Nedladdningar',
-			'companionRemote.remote.tabSettings' => 'Inställningar',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabSettings' => 'Inställningar',
 			'companionRemote.remote.previous' => 'Föregående',
 			'companionRemote.remote.playPause' => 'Spela/Pausa',
 			'companionRemote.remote.next' => 'Nästa',

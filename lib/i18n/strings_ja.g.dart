@@ -1740,6 +1740,7 @@ class _TranslationsLibrariesSortLabelsJa extends TranslationsLibrariesSortLabels
 	@override String get rating => '評価';
 	@override String get communityRating => 'コミュニティ評価';
 	@override String get criticRating => '批評家評価';
+	@override String get userRating => 'ユーザー評価';
 	@override String get lastPlayed => '最終再生';
 	@override String get datePlayed => '再生日';
 	@override String get playCount => '再生回数';
@@ -2615,6 +2616,7 @@ extension on TranslationsJa {
 			'libraries.sortLabels.rating' => '評価',
 			'libraries.sortLabels.communityRating' => 'コミュニティ評価',
 			'libraries.sortLabels.criticRating' => '批評家評価',
+			'libraries.sortLabels.userRating' => 'ユーザー評価',
 			'libraries.sortLabels.lastPlayed' => '最終再生',
 			'libraries.sortLabels.datePlayed' => '再生日',
 			'libraries.sortLabels.playCount' => '再生回数',
@@ -2944,9 +2946,9 @@ extension on TranslationsJa {
 			'companionRemote.remote.tabLibraries' => 'ライブラリ',
 			'companionRemote.remote.tabSearch' => '検索',
 			'companionRemote.remote.tabDownloads' => 'ダウンロード',
-			'companionRemote.remote.tabSettings' => '設定',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabSettings' => '設定',
 			'companionRemote.remote.previous' => '前へ',
 			'companionRemote.remote.playPause' => '再生/一時停止',
 			'companionRemote.remote.next' => '次へ',

@@ -1740,6 +1740,7 @@ class _TranslationsLibrariesSortLabelsNb extends TranslationsLibrariesSortLabels
 	@override String get rating => 'Vurdering';
 	@override String get communityRating => 'Fellesskapsvurdering';
 	@override String get criticRating => 'Kritikervurdering';
+	@override String get userRating => 'Brukervurdering';
 	@override String get lastPlayed => 'Sist spilt';
 	@override String get datePlayed => 'Avspillingsdato';
 	@override String get playCount => 'Avspillinger';
@@ -2615,6 +2616,7 @@ extension on TranslationsNb {
 			'libraries.sortLabels.rating' => 'Vurdering',
 			'libraries.sortLabels.communityRating' => 'Fellesskapsvurdering',
 			'libraries.sortLabels.criticRating' => 'Kritikervurdering',
+			'libraries.sortLabels.userRating' => 'Brukervurdering',
 			'libraries.sortLabels.lastPlayed' => 'Sist spilt',
 			'libraries.sortLabels.datePlayed' => 'Avspillingsdato',
 			'libraries.sortLabels.playCount' => 'Avspillinger',
@@ -2944,9 +2946,9 @@ extension on TranslationsNb {
 			'companionRemote.remote.tabLibraries' => 'Biblioteker',
 			'companionRemote.remote.tabSearch' => 'Søk',
 			'companionRemote.remote.tabDownloads' => 'Nedlastinger',
-			'companionRemote.remote.tabSettings' => 'Innstillinger',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabSettings' => 'Innstillinger',
 			'companionRemote.remote.previous' => 'Forrige',
 			'companionRemote.remote.playPause' => 'Spill av/Pause',
 			'companionRemote.remote.next' => 'Neste',

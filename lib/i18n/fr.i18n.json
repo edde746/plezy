@@ -751,6 +751,7 @@
       "rating": "Note",
       "communityRating": "Note communautaire",
       "criticRating": "Note critique",
+      "userRating": "Note utilisateur",
       "lastPlayed": "Dernière lecture",
       "datePlayed": "Date de lecture",
       "playCount": "Lectures",

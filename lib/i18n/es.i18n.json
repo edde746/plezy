@@ -751,6 +751,7 @@
       "rating": "Valoración",
       "communityRating": "Calificación de comunidad",
       "criticRating": "Calificación de crítica",
+      "userRating": "Calificación del usuario",
       "lastPlayed": "Última reproducción",
       "datePlayed": "Fecha de reproducción",
       "playCount": "Reproducciones",

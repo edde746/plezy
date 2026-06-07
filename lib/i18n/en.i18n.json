@@ -751,6 +751,7 @@
       "rating": "Rating",
       "communityRating": "Community Rating",
       "criticRating": "Critic Rating",
+      "userRating": "User Rating",
       "lastPlayed": "Last Played",
       "datePlayed": "Date Played",
       "playCount": "Play Count",

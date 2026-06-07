@@ -751,6 +751,7 @@
       "rating": "Betyg",
       "communityRating": "Användarbetyg",
       "criticRating": "Kritikerbetyg",
+      "userRating": "Användarbetyg",
       "lastPlayed": "Senast spelad",
       "datePlayed": "Speldatum",
       "playCount": "Antal spelningar",

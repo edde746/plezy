@@ -1740,6 +1740,7 @@ class _TranslationsLibrariesSortLabelsZh extends TranslationsLibrariesSortLabels
 	@override String get rating => '评分';
 	@override String get communityRating => '社区评分';
 	@override String get criticRating => '影评人评分';
+	@override String get userRating => '用户评分';
 	@override String get lastPlayed => '最近播放';
 	@override String get datePlayed => '播放日期';
 	@override String get playCount => '播放次数';
@@ -2615,6 +2616,7 @@ extension on TranslationsZh {
 			'libraries.sortLabels.rating' => '评分',
 			'libraries.sortLabels.communityRating' => '社区评分',
 			'libraries.sortLabels.criticRating' => '影评人评分',
+			'libraries.sortLabels.userRating' => '用户评分',
 			'libraries.sortLabels.lastPlayed' => '最近播放',
 			'libraries.sortLabels.datePlayed' => '播放日期',
 			'libraries.sortLabels.playCount' => '播放次数',
@@ -2944,9 +2946,9 @@ extension on TranslationsZh {
 			'companionRemote.remote.tabLibraries' => '媒体库',
 			'companionRemote.remote.tabSearch' => '搜索',
 			'companionRemote.remote.tabDownloads' => '下载',
-			'companionRemote.remote.tabSettings' => '设置',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabSettings' => '设置',
 			'companionRemote.remote.previous' => '上一个',
 			'companionRemote.remote.playPause' => '播放/暂停',
 			'companionRemote.remote.next' => '下一个',

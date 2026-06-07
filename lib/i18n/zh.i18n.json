@@ -751,6 +751,7 @@
       "rating": "评分",
       "communityRating": "社区评分",
       "criticRating": "影评人评分",
+      "userRating": "用户评分",
       "lastPlayed": "最近播放",
       "datePlayed": "播放日期",
       "playCount": "播放次数",

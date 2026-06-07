@@ -751,6 +751,7 @@
       "rating": "Beoordeling",
       "communityRating": "Communitybeoordeling",
       "criticRating": "Criticusbeoordeling",
+      "userRating": "Gebruikersbeoordeling",
       "lastPlayed": "Laatst afgespeeld",
       "datePlayed": "Afspeeldatum",
       "playCount": "Aantal afspelingen",

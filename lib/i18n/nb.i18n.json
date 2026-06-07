@@ -751,6 +751,7 @@
       "rating": "Vurdering",
       "communityRating": "Fellesskapsvurdering",
       "criticRating": "Kritikervurdering",
+      "userRating": "Brukervurdering",
       "lastPlayed": "Sist spilt",
       "datePlayed": "Avspillingsdato",
       "playCount": "Avspillinger",

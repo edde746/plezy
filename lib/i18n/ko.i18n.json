@@ -751,6 +751,7 @@
       "rating": "평점",
       "communityRating": "커뮤니티 평점",
       "criticRating": "평론가 평점",
+      "userRating": "사용자 평점",
       "lastPlayed": "마지막 재생",
       "datePlayed": "재생일",
       "playCount": "재생 횟수",

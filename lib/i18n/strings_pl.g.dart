@@ -1740,6 +1740,7 @@ class _TranslationsLibrariesSortLabelsPl extends TranslationsLibrariesSortLabels
 	@override String get rating => 'Ocena';
 	@override String get communityRating => 'Ocena społeczności';
 	@override String get criticRating => 'Ocena krytyków';
+	@override String get userRating => 'Ocena użytkownika';
 	@override String get lastPlayed => 'Ostatnio odtwarzane';
 	@override String get datePlayed => 'Data odtworzenia';
 	@override String get playCount => 'Liczba odtworzeń';
@@ -2615,6 +2616,7 @@ extension on TranslationsPl {
 			'libraries.sortLabels.rating' => 'Ocena',
 			'libraries.sortLabels.communityRating' => 'Ocena społeczności',
 			'libraries.sortLabels.criticRating' => 'Ocena krytyków',
+			'libraries.sortLabels.userRating' => 'Ocena użytkownika',
 			'libraries.sortLabels.lastPlayed' => 'Ostatnio odtwarzane',
 			'libraries.sortLabels.datePlayed' => 'Data odtworzenia',
 			'libraries.sortLabels.playCount' => 'Liczba odtworzeń',
@@ -2944,9 +2946,9 @@ extension on TranslationsPl {
 			'companionRemote.remote.tabLibraries' => 'Biblioteki',
 			'companionRemote.remote.tabSearch' => 'Szukaj',
 			'companionRemote.remote.tabDownloads' => 'Pobrania',
-			'companionRemote.remote.tabSettings' => 'Ustawienia',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabSettings' => 'Ustawienia',
 			'companionRemote.remote.previous' => 'Poprzedni',
 			'companionRemote.remote.playPause' => 'Odtwórz/Pauza',
 			'companionRemote.remote.next' => 'Następny',

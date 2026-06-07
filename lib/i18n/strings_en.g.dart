@@ -4093,6 +4093,9 @@ class TranslationsLibrariesSortLabelsEn {
 	/// en: 'Critic Rating'
 	String get criticRating => 'Critic Rating';
 
+	/// en: 'User Rating'
+	String get userRating => 'User Rating';
+
 	/// en: 'Last Played'
 	String get lastPlayed => 'Last Played';
 
@@ -5161,6 +5164,7 @@ extension on Translations {
 			'libraries.sortLabels.rating' => 'Rating',
 			'libraries.sortLabels.communityRating' => 'Community Rating',
 			'libraries.sortLabels.criticRating' => 'Critic Rating',
+			'libraries.sortLabels.userRating' => 'User Rating',
 			'libraries.sortLabels.lastPlayed' => 'Last Played',
 			'libraries.sortLabels.datePlayed' => 'Date Played',
 			'libraries.sortLabels.playCount' => 'Play Count',
@@ -5490,9 +5494,9 @@ extension on Translations {
 			'companionRemote.remote.tabLibraries' => 'Libraries',
 			'companionRemote.remote.tabSearch' => 'Search',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
-			'companionRemote.remote.tabSettings' => 'Settings',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabSettings' => 'Settings',
 			'companionRemote.remote.previous' => 'Previous',
 			'companionRemote.remote.playPause' => 'Play/Pause',
 			'companionRemote.remote.next' => 'Next',

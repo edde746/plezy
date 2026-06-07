@@ -1740,6 +1740,7 @@ class _TranslationsLibrariesSortLabelsBg extends TranslationsLibrariesSortLabels
 	@override String get rating => 'Рейтинг';
 	@override String get communityRating => 'Оценка от общността';
 	@override String get criticRating => 'Оценка от критиците';
+	@override String get userRating => 'Потребителска оценка';
 	@override String get lastPlayed => 'Последно възпроизведено';
 	@override String get datePlayed => 'Дата на възпроизвеждане';
 	@override String get playCount => 'Брой възпроизвеждания';
@@ -2615,6 +2616,7 @@ extension on TranslationsBg {
 			'libraries.sortLabels.rating' => 'Рейтинг',
 			'libraries.sortLabels.communityRating' => 'Оценка от общността',
 			'libraries.sortLabels.criticRating' => 'Оценка от критиците',
+			'libraries.sortLabels.userRating' => 'Потребителска оценка',
 			'libraries.sortLabels.lastPlayed' => 'Последно възпроизведено',
 			'libraries.sortLabels.datePlayed' => 'Дата на възпроизвеждане',
 			'libraries.sortLabels.playCount' => 'Брой възпроизвеждания',
@@ -2944,9 +2946,9 @@ extension on TranslationsBg {
 			'companionRemote.remote.tabLibraries' => 'Библиотеки',
 			'companionRemote.remote.tabSearch' => 'Търсене',
 			'companionRemote.remote.tabDownloads' => 'Изтегляния',
-			'companionRemote.remote.tabSettings' => 'Настройки',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabSettings' => 'Настройки',
 			'companionRemote.remote.previous' => 'Предишен',
 			'companionRemote.remote.playPause' => 'Пускане/пауза',
 			'companionRemote.remote.next' => 'Следващ',

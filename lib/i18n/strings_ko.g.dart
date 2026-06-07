@@ -1740,6 +1740,7 @@ class _TranslationsLibrariesSortLabelsKo extends TranslationsLibrariesSortLabels
 	@override String get rating => '평점';
 	@override String get communityRating => '커뮤니티 평점';
 	@override String get criticRating => '평론가 평점';
+	@override String get userRating => '사용자 평점';
 	@override String get lastPlayed => '마지막 재생';
 	@override String get datePlayed => '재생일';
 	@override String get playCount => '재생 횟수';
@@ -2615,6 +2616,7 @@ extension on TranslationsKo {
 			'libraries.sortLabels.rating' => '평점',
 			'libraries.sortLabels.communityRating' => '커뮤니티 평점',
 			'libraries.sortLabels.criticRating' => '평론가 평점',
+			'libraries.sortLabels.userRating' => '사용자 평점',
 			'libraries.sortLabels.lastPlayed' => '마지막 재생',
 			'libraries.sortLabels.datePlayed' => '재생일',
 			'libraries.sortLabels.playCount' => '재생 횟수',
@@ -2944,9 +2946,9 @@ extension on TranslationsKo {
 			'companionRemote.remote.tabLibraries' => '미디어 라이브러리',
 			'companionRemote.remote.tabSearch' => '검색',
 			'companionRemote.remote.tabDownloads' => '다운로드',
-			'companionRemote.remote.tabSettings' => '설정',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabSettings' => '설정',
 			'companionRemote.remote.previous' => '이전',
 			'companionRemote.remote.playPause' => '재생/일시정지',
 			'companionRemote.remote.next' => '다음',

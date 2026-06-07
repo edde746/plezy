@@ -1834,17 +1834,44 @@ class PlexClient
       final response = await _getWithFailover('/library/sections/$sectionId/sorts');
       final sorts = _extractDirectoryList(response, MediaSort.fromJson);
 
-      if (sorts.isNotEmpty) {
-        return sorts;
-      }
-
       // Fallback: return common sort options if API doesn't provide them
-      return _getFallbackSorts(libraryType);
+      final base = sorts.isNotEmpty ? sorts : _getFallbackSorts(libraryType);
+      return _withExtraSorts(base, libraryType);
     } catch (e) {
       appLogger.e('Failed to get library sorts: $e');
       // Return fallback sort options on error
-      return _getFallbackSorts(libraryType);
+      return _withExtraSorts(_getFallbackSorts(libraryType), libraryType);
     }
+  }
+
+  /// Append sort options that Plex honors via the `sort=` parameter but does not
+  /// advertise in `/library/sections/{id}/sorts`.
+  ///
+  /// Plays (`viewCount`) and the signed-in user's rating (`userRating`) both
+  /// sort correctly on movie/show libraries, so we surface them client-side
+  /// (mirroring how the Jellyfin sort list is built). De-duped by key so we
+  /// never double up if a future Plex version starts advertising them.
+  List<MediaSort> _withExtraSorts(List<MediaSort> base, String? libraryType) {
+    final type = libraryType?.toLowerCase();
+    if (type != 'movie' && type != 'show') return base;
+
+    final keys = base.map((s) => s.key).toSet();
+    final extras = [
+      MediaSort(
+        key: 'viewCount',
+        descKey: 'viewCount:desc',
+        title: t.libraries.sortLabels.playCount,
+        defaultDirection: 'desc',
+      ),
+      MediaSort(
+        key: 'userRating',
+        descKey: 'userRating:desc',
+        title: t.libraries.sortLabels.userRating,
+        defaultDirection: 'desc',
+      ),
+    ].where((s) => !keys.contains(s.key));
+
+    return [...base, ...extras];
   }
 
   /// Build fallback sort options based on library type.
