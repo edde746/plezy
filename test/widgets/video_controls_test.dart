@@ -10,6 +10,7 @@ import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/painters/buffer_range_painter.dart';
 import 'package:plezy/widgets/video_controls/widgets/mobile_skip_zones.dart';
+import 'package:plezy/widgets/video_controls/widgets/skip_marker_button.dart';
 import 'package:plezy/widgets/video_controls/widgets/sync_offset_control.dart';
 import 'package:plezy/widgets/video_controls/widgets/timeline_slider.dart';
 
@@ -179,6 +180,105 @@ void main() {
         ),
         isFalse,
       );
+    });
+  });
+
+  group('SkipMarkerButton', () {
+    testWidgets('tap cancels active auto-skip and performs skip', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      var cancelCount = 0;
+      var skipCount = 0;
+
+      await _pumpSkipMarkerButton(
+        tester,
+        focusNode: focusNode,
+        isAutoSkipActive: true,
+        onCancelAutoSkip: () => cancelCount++,
+        onPerformAutoSkip: () => skipCount++,
+      );
+
+      expect(find.text('Skip Intro (3)'), findsOneWidget);
+
+      await tester.tap(find.byType(InkWell));
+      await tester.pump();
+
+      expect(cancelCount, 1);
+      expect(skipCount, 1);
+    });
+
+    testWidgets('select cancels active auto-skip and performs skip', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      var cancelCount = 0;
+      var skipCount = 0;
+
+      await _pumpSkipMarkerButton(
+        tester,
+        focusNode: focusNode,
+        isAutoSkipActive: true,
+        onCancelAutoSkip: () => cancelCount++,
+        onPerformAutoSkip: () => skipCount++,
+      );
+
+      focusNode.requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pump();
+
+      expect(cancelCount, 1);
+      expect(skipCount, 1);
+    });
+
+    testWidgets('d-pad down moves focus; auto-skip cancellation is handled centrally', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      var cancelCount = 0;
+      var skipCount = 0;
+      var focusDownCount = 0;
+
+      await _pumpSkipMarkerButton(
+        tester,
+        focusNode: focusNode,
+        isAutoSkipActive: true,
+        onCancelAutoSkip: () => cancelCount++,
+        onPerformAutoSkip: () => skipCount++,
+        onFocusDown: () => focusDownCount++,
+      );
+
+      focusNode.requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+
+      // The button no longer cancels auto-skip itself — the player's central
+      // input handler cancels on any key. Arrow-down only moves focus.
+      expect(cancelCount, 0);
+      expect(skipCount, 0);
+      expect(focusDownCount, 1);
+    });
+
+    testWidgets('tap performs manual skip when auto-skip is inactive', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      var cancelCount = 0;
+      var skipCount = 0;
+
+      await _pumpSkipMarkerButton(
+        tester,
+        focusNode: focusNode,
+        isAutoSkipActive: false,
+        onCancelAutoSkip: () => cancelCount++,
+        onPerformAutoSkip: () => skipCount++,
+      );
+
+      expect(find.text('Skip Intro'), findsOneWidget);
+
+      await tester.tap(find.byType(InkWell));
+      await tester.pump();
+
+      expect(cancelCount, 0);
+      expect(skipCount, 1);
     });
   });
 
@@ -355,6 +455,38 @@ void main() {
       expect(sliderTheme.data.tickMarkShape, same(SliderTickMarkShape.noTickMark));
     });
   });
+}
+
+Future<void> _pumpSkipMarkerButton(
+  WidgetTester tester, {
+  required FocusNode focusNode,
+  required bool isAutoSkipActive,
+  required VoidCallback onCancelAutoSkip,
+  required VoidCallback onPerformAutoSkip,
+  VoidCallback? onFocusDown,
+}) {
+  return tester.pumpWidget(
+    MaterialApp(
+      theme: ThemeData(extensions: const [_testTokens]),
+      home: Scaffold(
+        body: Center(
+          child: SkipMarkerButton(
+            marker: MediaMarker(id: 1, type: 'intro', startTimeOffset: 10000, endTimeOffset: 45000),
+            playerDuration: const Duration(minutes: 20),
+            hasNextEpisode: false,
+            isAutoSkipActive: isAutoSkipActive,
+            shouldShowAutoSkip: true,
+            autoSkipDelay: 5,
+            autoSkipProgress: 0.4,
+            focusNode: focusNode,
+            onCancelAutoSkip: onCancelAutoSkip,
+            onPerformAutoSkip: onPerformAutoSkip,
+            onFocusDown: onFocusDown ?? () {},
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class _FakeSyncPlayer implements Player {

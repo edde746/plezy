@@ -156,6 +156,17 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
     }
   }
 
+  bool _cancelAutoSkipFromUserInteraction() {
+    final hadActiveTimer = _autoSkipTimer?.isActive ?? false;
+    if (!hadActiveTimer) return false;
+
+    _cancelAutoSkipTimer();
+    if (_currentMarker != null && !_skipButtonDismissed) {
+      _startSkipButtonDismissTimer();
+    }
+    return true;
+  }
+
   /// Starts/restarts the skip button dismiss timer. When it fires, hides the
   /// button and cancels any active auto-skip countdown.
   void _startSkipButtonDismissTimer() {

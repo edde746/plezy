@@ -609,11 +609,21 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           onKeyEvent: (node, event) => _handleControlsKeyEvent(event, isMobile),
           child: Listener(
             behavior: HitTestBehavior.translucent,
-            onPointerDown: isMobile ? _handleTouchPointerDown : null,
+            // Any pointer input cancels an in-progress auto-skip countdown. This
+            // root Listener observes every pointer event over the player without
+            // consuming it, so it's the single cancel point for clicks, touches,
+            // mouse moves, scroll, and trackpad. Keys are handled the same way in
+            // _handleGlobalKeyEvent.
+            onPointerDown: (event) {
+              _cancelAutoSkipFromUserInteraction();
+              if (isMobile) _handleTouchPointerDown(event);
+            },
+            onPointerHover: (_) => _cancelAutoSkipFromUserInteraction(),
             onPointerMove: isMobile ? _handleTouchPointerMove : null,
             onPointerUp: isMobile ? _handleTouchPointerUp : null,
             onPointerCancel: isMobile ? _handleTouchPointerCancel : null,
             onPointerSignal: _handlePointerSignal,
+            onPointerPanZoomStart: (_) => _cancelAutoSkipFromUserInteraction(),
             child: MouseRegion(
               onHover: (_) => _showControlsFromPointerActivity(),
               child: Stack(

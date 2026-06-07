@@ -66,6 +66,11 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     if (!mounted) return false;
     if (ModalRoute.of(context)?.isCurrent != true) return false;
 
+    // Any actionable key (keyboard / dpad / controller) cancels an in-progress
+    // auto-skip countdown. Non-consuming — we fall through so the key still
+    // performs its normal action. Single cancel point for keys.
+    if (event.isActionable) _cancelAutoSkipFromUserInteraction();
+
     // When an overlay sheet is open (e.g. subtitle search with text fields),
     // don't consume key events — let text input work normally.
     if (OverlaySheetController.maybeOf(context)?.isOpen ?? false) {

@@ -54,7 +54,8 @@ class SkipMarkerButton extends StatelessWidget {
         ? (autoSkipDelay - (autoSkipProgress * autoSkipDelay)).ceil().clamp(0, autoSkipDelay)
         : 0;
 
-    final buttonText = isAutoSkipActive && shouldShowAutoSkip && remainingSeconds > 0
+    final showAutoSkipCountdown = isAutoSkipActive && shouldShowAutoSkip;
+    final buttonText = showAutoSkipCountdown && remainingSeconds > 0
         ? '$baseButtonText ($remainingSeconds)'
         : baseButtonText;
     final buttonIcon = showNextEpisode ? Symbols.skip_next_rounded : Symbols.fast_forward_rounded;
