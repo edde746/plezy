@@ -21,11 +21,8 @@ else
 fi
 
 ReadPubspecVersion() {
-  if [[ -n "${FLUTTER_BUILD_NAME:-}" && -n "${FLUTTER_BUILD_NUMBER:-}" ]]; then
-    export FLUTTER_BUILD_NAME
-    export FLUTTER_BUILD_NUMBER
-    return 0
-  fi
+  local fallback_build_name="${FLUTTER_BUILD_NAME:-}"
+  local fallback_build_number="${FLUTTER_BUILD_NUMBER:-}"
 
   local app_path="${FLUTTER_APPLICATION_PATH:-}"
   if [[ -z "$app_path" ]]; then
@@ -65,8 +62,8 @@ ReadPubspecVersion() {
       FLUTTER_BUILD_NUMBER="1"
     fi
   else
-    FLUTTER_BUILD_NAME="${FLUTTER_BUILD_NAME:-1.0.0}"
-    FLUTTER_BUILD_NUMBER="${FLUTTER_BUILD_NUMBER:-1}"
+    FLUTTER_BUILD_NAME="${fallback_build_name:-1.0.0}"
+    FLUTTER_BUILD_NUMBER="${fallback_build_number:-1}"
   fi
 
   export FLUTTER_BUILD_NAME
@@ -78,10 +75,28 @@ SetPlistString() {
   local key="$2"
   local value="$3"
 
-  if /usr/libexec/PlistBuddy -c "Print :$key" "$plist" >/dev/null 2>&1; then
-    /usr/libexec/PlistBuddy -c "Set :$key $value" "$plist"
+  local current=""
+  if current="$(/usr/libexec/PlistBuddy -c "Print :$key" "$plist" 2>/dev/null)"; then
+    if [[ "$current" != "$value" ]]; then
+      /usr/libexec/PlistBuddy -c "Set :$key $value" "$plist"
+    fi
   else
     /usr/libexec/PlistBuddy -c "Add :$key string $value" "$plist"
+  fi
+}
+
+ValidatePlistVersion() {
+  local plist="$1"
+  local label="$2"
+  local build_name=""
+  local build_number=""
+
+  build_name="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$plist" 2>/dev/null || true)"
+  build_number="$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$plist" 2>/dev/null || true)"
+
+  if [[ "$build_name" != "$FLUTTER_BUILD_NAME" || "$build_number" != "$FLUTTER_BUILD_NUMBER" ]]; then
+    echo " └─ERROR: $label Info.plist version is $build_name ($build_number), expected $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
+    return 1
   fi
 }
 
@@ -101,15 +116,18 @@ SyncRunnerVersion() {
     return 1
   fi
 
-  echo " └─Syncing Runner version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
+  local bundle_label="${TARGET_NAME:-Runner}"
+  echo " └─Syncing $bundle_label version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
   SetPlistString "$plist" CFBundleShortVersionString "$FLUTTER_BUILD_NAME"
   SetPlistString "$plist" CFBundleVersion "$FLUTTER_BUILD_NUMBER"
+  ValidatePlistVersion "$plist" "$bundle_label"
 
   local top_shelf_plist="$TARGET_BUILD_DIR/$WRAPPER_NAME/PlugIns/TopShelfExtension.appex/Info.plist"
   if [[ -f "$top_shelf_plist" ]]; then
     echo " └─Syncing TopShelfExtension version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
     SetPlistString "$top_shelf_plist" CFBundleShortVersionString "$FLUTTER_BUILD_NAME"
     SetPlistString "$top_shelf_plist" CFBundleVersion "$FLUTTER_BUILD_NUMBER"
+    ValidatePlistVersion "$top_shelf_plist" "TopShelfExtension"
   fi
 }
 

@@ -51,6 +51,17 @@ def ensure_framework(target, file_ref)
   phase.add_file_reference(file_ref, true)
 end
 
+def ensure_shell_script(target, name, script)
+  phase = target.shell_script_build_phases.find { |p| p.name == name }
+  unless phase
+    phase = target.new_shell_script_build_phase(name)
+  end
+
+  phase.shell_path = '/bin/sh'
+  phase.shell_script = script
+  phase
+end
+
 system_shelf_ref = ensure_file(runner_group, 'SystemShelfPlugin.swift')
 ensure_source(runner, system_shelf_ref)
 ensure_file(runner_group, 'Runner.entitlements')
@@ -140,6 +151,12 @@ extension_target.build_configurations.each do |config|
   settings['TARGETED_DEVICE_FAMILY'] = '3'
   settings['TVOS_DEPLOYMENT_TARGET'] = '14.0'
 end
+
+ensure_shell_script(
+  extension_target,
+  'Sync Version',
+  '/bin/bash "$SOURCE_ROOT/scripts/xcode_appletv.sh" sync_version' + "\n"
+)
 
 project.save
 puts 'Saved Top Shelf wiring'

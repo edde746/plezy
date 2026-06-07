@@ -287,6 +287,7 @@
 				B1C48839AB6C24EF099DDFA3 /* Sources */,
 				43E2EE359822E384AD7E8A2E /* Frameworks */,
 				64CEA7DE6B9394CE88783302 /* Resources */,
+				E2B5A6D75C9F4D1B9E8C7A63 /* Sync Version */,
 			);
 			buildRules = (
 			);
@@ -435,6 +436,20 @@
 			shellPath = /bin/sh;
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		E2B5A6D75C9F4D1B9E8C7A63 /* Sync Version */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Sync Version";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "/bin/bash \"$SOURCE_ROOT/scripts/xcode_appletv.sh\" sync_version\n";
 		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
