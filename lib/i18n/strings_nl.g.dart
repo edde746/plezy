@@ -162,6 +162,7 @@ class _TranslationsCommonNl extends TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get off => 'Uit';
 	@override String seasonNumber({required Object number}) => 'Seizoen ${number}';
+	@override String episodeNumberTitle({required Object number, required Object title}) => 'Aflevering ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Hoofdstuk ${number}';
 	@override String get reconnect => 'Opnieuw verbinden';
 	@override String get exit => 'Afsluiten';
@@ -1970,6 +1971,7 @@ extension on TranslationsNl {
 			'common.ok' => 'OK',
 			'common.off' => 'Uit',
 			'common.seasonNumber' => ({required Object number}) => 'Seizoen ${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Aflevering ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Hoofdstuk ${number}',
 			'common.reconnect' => 'Opnieuw verbinden',
 			'common.exit' => 'Afsluiten',
@@ -2431,9 +2433,9 @@ extension on TranslationsNl {
 			'subtitlingStyling.fontSize' => 'Lettergrootte',
 			'subtitlingStyling.textColor' => 'Tekstkleur',
 			'subtitlingStyling.borderSize' => 'Rand grootte',
-			'subtitlingStyling.borderColor' => 'Randkleur',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => 'Randkleur',
 			'subtitlingStyling.backgroundOpacity' => 'Achtergrond transparantie',
 			'subtitlingStyling.backgroundColor' => 'Achtergrondkleur',
 			'subtitlingStyling.position' => 'Positie',
@@ -2945,9 +2947,9 @@ extension on TranslationsNl {
 			'companionRemote.remote.tabDiscover' => 'Ontdekken',
 			'companionRemote.remote.tabLibraries' => 'Bibliotheken',
 			'companionRemote.remote.tabSearch' => 'Zoeken',
-			'companionRemote.remote.tabDownloads' => 'Downloads',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Instellingen',
 			'companionRemote.remote.previous' => 'Vorige',
 			'companionRemote.remote.playPause' => 'Afspelen/Pauzeren',

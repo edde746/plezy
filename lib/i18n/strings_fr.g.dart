@@ -162,6 +162,7 @@ class _TranslationsCommonFr extends TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get off => 'Désactivé';
 	@override String seasonNumber({required Object number}) => 'Saison ${number}';
+	@override String episodeNumberTitle({required Object number, required Object title}) => 'Épisode ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Chapitre ${number}';
 	@override String get reconnect => 'Reconnecter';
 	@override String get exit => 'Quitter';
@@ -1970,6 +1971,7 @@ extension on TranslationsFr {
 			'common.ok' => 'OK',
 			'common.off' => 'Désactivé',
 			'common.seasonNumber' => ({required Object number}) => 'Saison ${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Épisode ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Chapitre ${number}',
 			'common.reconnect' => 'Reconnecter',
 			'common.exit' => 'Quitter',
@@ -2431,9 +2433,9 @@ extension on TranslationsFr {
 			'subtitlingStyling.fontSize' => 'Taille de la police',
 			'subtitlingStyling.textColor' => 'Couleur du texte',
 			'subtitlingStyling.borderSize' => 'Taille de la bordure',
-			'subtitlingStyling.borderColor' => 'Couleur de la bordure',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => 'Couleur de la bordure',
 			'subtitlingStyling.backgroundOpacity' => 'Opacité d\'arrière-plan',
 			'subtitlingStyling.backgroundColor' => 'Couleur d\'arrière-plan',
 			'subtitlingStyling.position' => 'Position',
@@ -2945,9 +2947,9 @@ extension on TranslationsFr {
 			'companionRemote.remote.tabDiscover' => 'Découvrir',
 			'companionRemote.remote.tabLibraries' => 'Bibliothèques',
 			'companionRemote.remote.tabSearch' => 'Rechercher',
-			'companionRemote.remote.tabDownloads' => 'Téléchargements',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => 'Téléchargements',
 			'companionRemote.remote.tabSettings' => 'Paramètres',
 			'companionRemote.remote.previous' => 'Précédent',
 			'companionRemote.remote.playPause' => 'Lecture/Pause',

@@ -162,6 +162,7 @@ class _TranslationsCommonDa extends TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get off => 'Fra';
 	@override String seasonNumber({required Object number}) => 'Sæson ${number}';
+	@override String episodeNumberTitle({required Object number, required Object title}) => 'Episode ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Kapitel ${number}';
 	@override String get reconnect => 'Genopret forbindelse';
 	@override String get exit => 'Afslut';
@@ -1970,6 +1971,7 @@ extension on TranslationsDa {
 			'common.ok' => 'OK',
 			'common.off' => 'Fra',
 			'common.seasonNumber' => ({required Object number}) => 'Sæson ${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Episode ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Kapitel ${number}',
 			'common.reconnect' => 'Genopret forbindelse',
 			'common.exit' => 'Afslut',
@@ -2431,9 +2433,9 @@ extension on TranslationsDa {
 			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
 			'subtitlingStyling.textColor' => 'Tekstfarve',
 			'subtitlingStyling.borderSize' => 'Kantstørrelse',
-			'subtitlingStyling.borderColor' => 'Kantfarve',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => 'Kantfarve',
 			'subtitlingStyling.backgroundOpacity' => 'Baggrundsgennemsigtighed',
 			'subtitlingStyling.backgroundColor' => 'Baggrundsfarve',
 			'subtitlingStyling.position' => 'Position',
@@ -2945,9 +2947,9 @@ extension on TranslationsDa {
 			'companionRemote.remote.tabDiscover' => 'Opdag',
 			'companionRemote.remote.tabLibraries' => 'Biblioteker',
 			'companionRemote.remote.tabSearch' => 'Søg',
-			'companionRemote.remote.tabDownloads' => 'Downloads',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Indstillinger',
 			'companionRemote.remote.previous' => 'Forrige',
 			'companionRemote.remote.playPause' => 'Afspil/Pause',

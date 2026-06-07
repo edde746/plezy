@@ -54,6 +54,7 @@
     "ok": "OK",
     "off": "Av",
     "seasonNumber": "Sesong ${number}",
+    "episodeNumberTitle": "Episode ${number} - ${title}",
     "chapterNumber": "Kapittel ${number}",
     "reconnect": "Koble til på nytt",
     "exit": "Avslutt",

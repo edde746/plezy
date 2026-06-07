@@ -264,6 +264,9 @@ class TranslationsCommonEn {
 	/// en: 'Season ${number}'
 	String seasonNumber({required Object number}) => 'Season ${number}';
 
+	/// en: 'Episode ${number} - ${title}'
+	String episodeNumberTitle({required Object number, required Object title}) => 'Episode ${number} - ${title}';
+
 	/// en: 'Chapter ${number}'
 	String chapterNumber({required Object number}) => 'Chapter ${number}';
 
@@ -4518,6 +4521,7 @@ extension on Translations {
 			'common.ok' => 'OK',
 			'common.off' => 'Off',
 			'common.seasonNumber' => ({required Object number}) => 'Season ${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Episode ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Chapter ${number}',
 			'common.reconnect' => 'Reconnect',
 			'common.exit' => 'Exit',
@@ -4979,9 +4983,9 @@ extension on Translations {
 			'subtitlingStyling.fontSize' => 'Font Size',
 			'subtitlingStyling.textColor' => 'Text Color',
 			'subtitlingStyling.borderSize' => 'Border Size',
-			'subtitlingStyling.borderColor' => 'Border Color',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => 'Border Color',
 			'subtitlingStyling.backgroundOpacity' => 'Background Opacity',
 			'subtitlingStyling.backgroundColor' => 'Background Color',
 			'subtitlingStyling.position' => 'Position',
@@ -5493,9 +5497,9 @@ extension on Translations {
 			'companionRemote.remote.tabDiscover' => 'Discover',
 			'companionRemote.remote.tabLibraries' => 'Libraries',
 			'companionRemote.remote.tabSearch' => 'Search',
-			'companionRemote.remote.tabDownloads' => 'Downloads',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Settings',
 			'companionRemote.remote.previous' => 'Previous',
 			'companionRemote.remote.playPause' => 'Play/Pause',

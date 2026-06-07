@@ -54,6 +54,7 @@
     "ok": "确定",
     "off": "关闭",
     "seasonNumber": "第${number}季",
+    "episodeNumberTitle": "第${number}集 - ${title}",
     "chapterNumber": "章节 ${number}",
     "reconnect": "重新连接",
     "exit": "退出",

@@ -162,6 +162,7 @@ class _TranslationsCommonPt extends TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get off => 'Desativado';
 	@override String seasonNumber({required Object number}) => 'Temporada ${number}';
+	@override String episodeNumberTitle({required Object number, required Object title}) => 'Episódio ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Capítulo ${number}';
 	@override String get reconnect => 'Reconectar';
 	@override String get exit => 'Sair';
@@ -1970,6 +1971,7 @@ extension on TranslationsPt {
 			'common.ok' => 'OK',
 			'common.off' => 'Desativado',
 			'common.seasonNumber' => ({required Object number}) => 'Temporada ${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Episódio ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Capítulo ${number}',
 			'common.reconnect' => 'Reconectar',
 			'common.exit' => 'Sair',
@@ -2431,9 +2433,9 @@ extension on TranslationsPt {
 			'subtitlingStyling.fontSize' => 'Tamanho da Fonte',
 			'subtitlingStyling.textColor' => 'Cor do Texto',
 			'subtitlingStyling.borderSize' => 'Tamanho da Borda',
-			'subtitlingStyling.borderColor' => 'Cor da Borda',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => 'Cor da Borda',
 			'subtitlingStyling.backgroundOpacity' => 'Opacidade do Fundo',
 			'subtitlingStyling.backgroundColor' => 'Cor de Fundo',
 			'subtitlingStyling.position' => 'Posição',
@@ -2945,9 +2947,9 @@ extension on TranslationsPt {
 			'companionRemote.remote.tabDiscover' => 'Descobrir',
 			'companionRemote.remote.tabLibraries' => 'Bibliotecas',
 			'companionRemote.remote.tabSearch' => 'Buscar',
-			'companionRemote.remote.tabDownloads' => 'Downloads',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Configurações',
 			'companionRemote.remote.previous' => 'Anterior',
 			'companionRemote.remote.playPause' => 'Reproduzir/Pausar',

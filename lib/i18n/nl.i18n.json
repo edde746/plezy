@@ -54,6 +54,7 @@
     "ok": "OK",
     "off": "Uit",
     "seasonNumber": "Seizoen ${number}",
+    "episodeNumberTitle": "Aflevering ${number} - ${title}",
     "chapterNumber": "Hoofdstuk ${number}",
     "reconnect": "Opnieuw verbinden",
     "exit": "Afsluiten",

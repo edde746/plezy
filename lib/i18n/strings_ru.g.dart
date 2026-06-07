@@ -162,6 +162,7 @@ class _TranslationsCommonRu extends TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get off => 'Выкл.';
 	@override String seasonNumber({required Object number}) => 'Сезон ${number}';
+	@override String episodeNumberTitle({required Object number, required Object title}) => 'Эпизод ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Глава ${number}';
 	@override String get reconnect => 'Переподключить';
 	@override String get exit => 'Выход';
@@ -1970,6 +1971,7 @@ extension on TranslationsRu {
 			'common.ok' => 'OK',
 			'common.off' => 'Выкл.',
 			'common.seasonNumber' => ({required Object number}) => 'Сезон ${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Эпизод ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Глава ${number}',
 			'common.reconnect' => 'Переподключить',
 			'common.exit' => 'Выход',
@@ -2431,9 +2433,9 @@ extension on TranslationsRu {
 			'subtitlingStyling.fontSize' => 'Размер шрифта',
 			'subtitlingStyling.textColor' => 'Цвет текста',
 			'subtitlingStyling.borderSize' => 'Размер обводки',
-			'subtitlingStyling.borderColor' => 'Цвет обводки',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => 'Цвет обводки',
 			'subtitlingStyling.backgroundOpacity' => 'Прозрачность фона',
 			'subtitlingStyling.backgroundColor' => 'Цвет фона',
 			'subtitlingStyling.position' => 'Позиция',
@@ -2945,9 +2947,9 @@ extension on TranslationsRu {
 			'companionRemote.remote.tabDiscover' => 'Обзор',
 			'companionRemote.remote.tabLibraries' => 'Библиотеки',
 			'companionRemote.remote.tabSearch' => 'Поиск',
-			'companionRemote.remote.tabDownloads' => 'Загрузки',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => 'Загрузки',
 			'companionRemote.remote.tabSettings' => 'Настройки',
 			'companionRemote.remote.previous' => 'Предыдущий',
 			'companionRemote.remote.playPause' => 'Воспроизведение/Пауза',

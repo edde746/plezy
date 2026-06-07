@@ -54,6 +54,7 @@
     "ok": "OK",
     "off": "Fra",
     "seasonNumber": "Sæson ${number}",
+    "episodeNumberTitle": "Episode ${number} - ${title}",
     "chapterNumber": "Kapitel ${number}",
     "reconnect": "Genopret forbindelse",
     "exit": "Afslut",

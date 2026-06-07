@@ -162,6 +162,7 @@ class _TranslationsCommonNb extends TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get off => 'Av';
 	@override String seasonNumber({required Object number}) => 'Sesong ${number}';
+	@override String episodeNumberTitle({required Object number, required Object title}) => 'Episode ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Kapittel ${number}';
 	@override String get reconnect => 'Koble til på nytt';
 	@override String get exit => 'Avslutt';
@@ -1970,6 +1971,7 @@ extension on TranslationsNb {
 			'common.ok' => 'OK',
 			'common.off' => 'Av',
 			'common.seasonNumber' => ({required Object number}) => 'Sesong ${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Episode ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Kapittel ${number}',
 			'common.reconnect' => 'Koble til på nytt',
 			'common.exit' => 'Avslutt',
@@ -2431,9 +2433,9 @@ extension on TranslationsNb {
 			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
 			'subtitlingStyling.textColor' => 'Tekstfarge',
 			'subtitlingStyling.borderSize' => 'Kantstørrelse',
-			'subtitlingStyling.borderColor' => 'Kantfarge',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => 'Kantfarge',
 			'subtitlingStyling.backgroundOpacity' => 'Bakgrunnsopasitet',
 			'subtitlingStyling.backgroundColor' => 'Bakgrunnsfarge',
 			'subtitlingStyling.position' => 'Posisjon',
@@ -2945,9 +2947,9 @@ extension on TranslationsNb {
 			'companionRemote.remote.tabDiscover' => 'Oppdag',
 			'companionRemote.remote.tabLibraries' => 'Biblioteker',
 			'companionRemote.remote.tabSearch' => 'Søk',
-			'companionRemote.remote.tabDownloads' => 'Nedlastinger',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => 'Nedlastinger',
 			'companionRemote.remote.tabSettings' => 'Innstillinger',
 			'companionRemote.remote.previous' => 'Forrige',
 			'companionRemote.remote.playPause' => 'Spill av/Pause',

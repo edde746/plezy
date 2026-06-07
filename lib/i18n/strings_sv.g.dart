@@ -162,6 +162,7 @@ class _TranslationsCommonSv extends TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get off => 'Av';
 	@override String seasonNumber({required Object number}) => 'Säsong ${number}';
+	@override String episodeNumberTitle({required Object number, required Object title}) => 'Avsnitt ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Kapitel ${number}';
 	@override String get reconnect => 'Återanslut';
 	@override String get exit => 'Avsluta';
@@ -1970,6 +1971,7 @@ extension on TranslationsSv {
 			'common.ok' => 'OK',
 			'common.off' => 'Av',
 			'common.seasonNumber' => ({required Object number}) => 'Säsong ${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Avsnitt ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Kapitel ${number}',
 			'common.reconnect' => 'Återanslut',
 			'common.exit' => 'Avsluta',
@@ -2431,9 +2433,9 @@ extension on TranslationsSv {
 			'subtitlingStyling.fontSize' => 'Teckenstorlek',
 			'subtitlingStyling.textColor' => 'Textfärg',
 			'subtitlingStyling.borderSize' => 'Kantstorlek',
-			'subtitlingStyling.borderColor' => 'Kantfärg',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => 'Kantfärg',
 			'subtitlingStyling.backgroundOpacity' => 'Bakgrundsopacitet',
 			'subtitlingStyling.backgroundColor' => 'Bakgrundsfärg',
 			'subtitlingStyling.position' => 'Position',
@@ -2945,9 +2947,9 @@ extension on TranslationsSv {
 			'companionRemote.remote.tabDiscover' => 'Upptäck',
 			'companionRemote.remote.tabLibraries' => 'Bibliotek',
 			'companionRemote.remote.tabSearch' => 'Sök',
-			'companionRemote.remote.tabDownloads' => 'Nedladdningar',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => 'Nedladdningar',
 			'companionRemote.remote.tabSettings' => 'Inställningar',
 			'companionRemote.remote.previous' => 'Föregående',
 			'companionRemote.remote.playPause' => 'Spela/Pausa',

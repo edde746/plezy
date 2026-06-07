@@ -54,6 +54,7 @@
     "ok": "확인",
     "off": "끔",
     "seasonNumber": "시즌 ${number}",
+    "episodeNumberTitle": "${number}화 - ${title}",
     "chapterNumber": "챕터 ${number}",
     "reconnect": "다시 연결",
     "exit": "종료",

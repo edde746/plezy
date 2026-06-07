@@ -54,6 +54,7 @@
     "ok": "OK",
     "off": "オフ",
     "seasonNumber": "シーズン${number}",
+    "episodeNumberTitle": "エピソード${number} - ${title}",
     "chapterNumber": "チャプター${number}",
     "reconnect": "再接続",
     "exit": "終了",

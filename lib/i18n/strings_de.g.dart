@@ -162,6 +162,7 @@ class _TranslationsCommonDe extends TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get off => 'Aus';
 	@override String seasonNumber({required Object number}) => 'Staffel ${number}';
+	@override String episodeNumberTitle({required Object number, required Object title}) => 'Episode ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Kapitel ${number}';
 	@override String get reconnect => 'Erneut verbinden';
 	@override String get exit => 'Beenden';
@@ -1970,6 +1971,7 @@ extension on TranslationsDe {
 			'common.ok' => 'OK',
 			'common.off' => 'Aus',
 			'common.seasonNumber' => ({required Object number}) => 'Staffel ${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Episode ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Kapitel ${number}',
 			'common.reconnect' => 'Erneut verbinden',
 			'common.exit' => 'Beenden',
@@ -2431,9 +2433,9 @@ extension on TranslationsDe {
 			'subtitlingStyling.fontSize' => 'Schriftgröße',
 			'subtitlingStyling.textColor' => 'Textfarbe',
 			'subtitlingStyling.borderSize' => 'Rahmengröße',
-			'subtitlingStyling.borderColor' => 'Rahmenfarbe',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => 'Rahmenfarbe',
 			'subtitlingStyling.backgroundOpacity' => 'Hintergrunddeckkraft',
 			'subtitlingStyling.backgroundColor' => 'Hintergrundfarbe',
 			'subtitlingStyling.position' => 'Position',
@@ -2945,9 +2947,9 @@ extension on TranslationsDe {
 			'companionRemote.remote.tabDiscover' => 'Entdecken',
 			'companionRemote.remote.tabLibraries' => 'Mediatheken',
 			'companionRemote.remote.tabSearch' => 'Suche',
-			'companionRemote.remote.tabDownloads' => 'Downloads',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Einstellungen',
 			'companionRemote.remote.previous' => 'Zurück',
 			'companionRemote.remote.playPause' => 'Wiedergabe/Pause',

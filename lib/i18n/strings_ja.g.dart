@@ -162,6 +162,7 @@ class _TranslationsCommonJa extends TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get off => 'オフ';
 	@override String seasonNumber({required Object number}) => 'シーズン${number}';
+	@override String episodeNumberTitle({required Object number, required Object title}) => 'エピソード${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'チャプター${number}';
 	@override String get reconnect => '再接続';
 	@override String get exit => '終了';
@@ -1970,6 +1971,7 @@ extension on TranslationsJa {
 			'common.ok' => 'OK',
 			'common.off' => 'オフ',
 			'common.seasonNumber' => ({required Object number}) => 'シーズン${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'エピソード${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'チャプター${number}',
 			'common.reconnect' => '再接続',
 			'common.exit' => '終了',
@@ -2431,9 +2433,9 @@ extension on TranslationsJa {
 			'subtitlingStyling.fontSize' => 'フォントサイズ',
 			'subtitlingStyling.textColor' => 'テキストの色',
 			'subtitlingStyling.borderSize' => '枠線サイズ',
-			'subtitlingStyling.borderColor' => '枠線の色',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => '枠線の色',
 			'subtitlingStyling.backgroundOpacity' => '背景の不透明度',
 			'subtitlingStyling.backgroundColor' => '背景色',
 			'subtitlingStyling.position' => '位置',
@@ -2945,9 +2947,9 @@ extension on TranslationsJa {
 			'companionRemote.remote.tabDiscover' => '探す',
 			'companionRemote.remote.tabLibraries' => 'ライブラリ',
 			'companionRemote.remote.tabSearch' => '検索',
-			'companionRemote.remote.tabDownloads' => 'ダウンロード',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => 'ダウンロード',
 			'companionRemote.remote.tabSettings' => '設定',
 			'companionRemote.remote.previous' => '前へ',
 			'companionRemote.remote.playPause' => '再生/一時停止',

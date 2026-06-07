@@ -162,6 +162,7 @@ class _TranslationsCommonKo extends TranslationsCommonEn {
 	@override String get ok => '확인';
 	@override String get off => '끔';
 	@override String seasonNumber({required Object number}) => '시즌 ${number}';
+	@override String episodeNumberTitle({required Object number, required Object title}) => '${number}화 - ${title}';
 	@override String chapterNumber({required Object number}) => '챕터 ${number}';
 	@override String get reconnect => '다시 연결';
 	@override String get exit => '종료';
@@ -1970,6 +1971,7 @@ extension on TranslationsKo {
 			'common.ok' => '확인',
 			'common.off' => '끔',
 			'common.seasonNumber' => ({required Object number}) => '시즌 ${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => '${number}화 - ${title}',
 			'common.chapterNumber' => ({required Object number}) => '챕터 ${number}',
 			'common.reconnect' => '다시 연결',
 			'common.exit' => '종료',
@@ -2431,9 +2433,9 @@ extension on TranslationsKo {
 			'subtitlingStyling.fontSize' => '글자 크기',
 			'subtitlingStyling.textColor' => '텍스트 색상',
 			'subtitlingStyling.borderSize' => '테두리 크기',
-			'subtitlingStyling.borderColor' => '테두리 색상',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => '테두리 색상',
 			'subtitlingStyling.backgroundOpacity' => '배경 불투명도',
 			'subtitlingStyling.backgroundColor' => '배경색',
 			'subtitlingStyling.position' => '위치',
@@ -2945,9 +2947,9 @@ extension on TranslationsKo {
 			'companionRemote.remote.tabDiscover' => '발견',
 			'companionRemote.remote.tabLibraries' => '미디어 라이브러리',
 			'companionRemote.remote.tabSearch' => '검색',
-			'companionRemote.remote.tabDownloads' => '다운로드',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => '다운로드',
 			'companionRemote.remote.tabSettings' => '설정',
 			'companionRemote.remote.previous' => '이전',
 			'companionRemote.remote.playPause' => '재생/일시정지',

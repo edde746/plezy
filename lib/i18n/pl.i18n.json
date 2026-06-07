@@ -54,6 +54,7 @@
     "ok": "OK",
     "off": "Wył.",
     "seasonNumber": "Sezon ${number}",
+    "episodeNumberTitle": "Odcinek ${number} - ${title}",
     "chapterNumber": "Rozdział ${number}",
     "reconnect": "Połącz ponownie",
     "exit": "Wyjdź",

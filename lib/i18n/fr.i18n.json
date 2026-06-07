@@ -54,6 +54,7 @@
     "ok": "OK",
     "off": "Désactivé",
     "seasonNumber": "Saison ${number}",
+    "episodeNumberTitle": "Épisode ${number} - ${title}",
     "chapterNumber": "Chapitre ${number}",
     "reconnect": "Reconnecter",
     "exit": "Quitter",

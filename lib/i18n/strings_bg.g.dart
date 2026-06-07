@@ -162,6 +162,7 @@ class _TranslationsCommonBg extends TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get off => 'Изкл.';
 	@override String seasonNumber({required Object number}) => 'Сезон ${number}';
+	@override String episodeNumberTitle({required Object number, required Object title}) => 'Епизод ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Глава ${number}';
 	@override String get reconnect => 'Свържи отново';
 	@override String get exit => 'Изход';
@@ -1970,6 +1971,7 @@ extension on TranslationsBg {
 			'common.ok' => 'OK',
 			'common.off' => 'Изкл.',
 			'common.seasonNumber' => ({required Object number}) => 'Сезон ${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Епизод ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Глава ${number}',
 			'common.reconnect' => 'Свържи отново',
 			'common.exit' => 'Изход',
@@ -2431,9 +2433,9 @@ extension on TranslationsBg {
 			'subtitlingStyling.fontSize' => 'Размер на шрифта',
 			'subtitlingStyling.textColor' => 'Цвят на текста',
 			'subtitlingStyling.borderSize' => 'Размер на рамката',
-			'subtitlingStyling.borderColor' => 'Цвят на рамката',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => 'Цвят на рамката',
 			'subtitlingStyling.backgroundOpacity' => 'Прозрачност на фона',
 			'subtitlingStyling.backgroundColor' => 'Цвят на фона',
 			'subtitlingStyling.position' => 'Позиция',
@@ -2945,9 +2947,9 @@ extension on TranslationsBg {
 			'companionRemote.remote.tabDiscover' => 'Открий',
 			'companionRemote.remote.tabLibraries' => 'Библиотеки',
 			'companionRemote.remote.tabSearch' => 'Търсене',
-			'companionRemote.remote.tabDownloads' => 'Изтегляния',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => 'Изтегляния',
 			'companionRemote.remote.tabSettings' => 'Настройки',
 			'companionRemote.remote.previous' => 'Предишен',
 			'companionRemote.remote.playPause' => 'Пускане/пауза',

@@ -162,6 +162,7 @@ class _TranslationsCommonIt extends TranslationsCommonEn {
 	@override String get ok => 'OK';
 	@override String get off => 'Disattivato';
 	@override String seasonNumber({required Object number}) => 'Stagione ${number}';
+	@override String episodeNumberTitle({required Object number, required Object title}) => 'Episodio ${number} - ${title}';
 	@override String chapterNumber({required Object number}) => 'Capitolo ${number}';
 	@override String get reconnect => 'Riconnetti';
 	@override String get exit => 'Esci';
@@ -1970,6 +1971,7 @@ extension on TranslationsIt {
 			'common.ok' => 'OK',
 			'common.off' => 'Disattivato',
 			'common.seasonNumber' => ({required Object number}) => 'Stagione ${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Episodio ${number} - ${title}',
 			'common.chapterNumber' => ({required Object number}) => 'Capitolo ${number}',
 			'common.reconnect' => 'Riconnetti',
 			'common.exit' => 'Esci',
@@ -2431,9 +2433,9 @@ extension on TranslationsIt {
 			'subtitlingStyling.fontSize' => 'Dimensione',
 			'subtitlingStyling.textColor' => 'Colore testo',
 			'subtitlingStyling.borderSize' => 'Dimensione bordo',
-			'subtitlingStyling.borderColor' => 'Colore bordo',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => 'Colore bordo',
 			'subtitlingStyling.backgroundOpacity' => 'Opacità sfondo',
 			'subtitlingStyling.backgroundColor' => 'Colore sfondo',
 			'subtitlingStyling.position' => 'Posizione',
@@ -2945,9 +2947,9 @@ extension on TranslationsIt {
 			'companionRemote.remote.tabDiscover' => 'Esplora',
 			'companionRemote.remote.tabLibraries' => 'Librerie',
 			'companionRemote.remote.tabSearch' => 'Cerca',
-			'companionRemote.remote.tabDownloads' => 'Download',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => 'Download',
 			'companionRemote.remote.tabSettings' => 'Impostazioni',
 			'companionRemote.remote.previous' => 'Precedente',
 			'companionRemote.remote.playPause' => 'Riproduci/Pausa',

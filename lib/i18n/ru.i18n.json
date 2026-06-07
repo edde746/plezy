@@ -54,6 +54,7 @@
     "ok": "OK",
     "off": "Выкл.",
     "seasonNumber": "Сезон ${number}",
+    "episodeNumberTitle": "Эпизод ${number} - ${title}",
     "chapterNumber": "Глава ${number}",
     "reconnect": "Переподключить",
     "exit": "Выход",

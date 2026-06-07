@@ -162,6 +162,7 @@ class _TranslationsCommonZh extends TranslationsCommonEn {
 	@override String get ok => '确定';
 	@override String get off => '关闭';
 	@override String seasonNumber({required Object number}) => '第${number}季';
+	@override String episodeNumberTitle({required Object number, required Object title}) => '第${number}集 - ${title}';
 	@override String chapterNumber({required Object number}) => '章节 ${number}';
 	@override String get reconnect => '重新连接';
 	@override String get exit => '退出';
@@ -1970,6 +1971,7 @@ extension on TranslationsZh {
 			'common.ok' => '确定',
 			'common.off' => '关闭',
 			'common.seasonNumber' => ({required Object number}) => '第${number}季',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => '第${number}集 - ${title}',
 			'common.chapterNumber' => ({required Object number}) => '章节 ${number}',
 			'common.reconnect' => '重新连接',
 			'common.exit' => '退出',
@@ -2431,9 +2433,9 @@ extension on TranslationsZh {
 			'subtitlingStyling.fontSize' => '字号',
 			'subtitlingStyling.textColor' => '文本颜色',
 			'subtitlingStyling.borderSize' => '边框大小',
-			'subtitlingStyling.borderColor' => '边框颜色',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.borderColor' => '边框颜色',
 			'subtitlingStyling.backgroundOpacity' => '背景不透明度',
 			'subtitlingStyling.backgroundColor' => '背景颜色',
 			'subtitlingStyling.position' => '位置',
@@ -2945,9 +2947,9 @@ extension on TranslationsZh {
 			'companionRemote.remote.tabDiscover' => '发现',
 			'companionRemote.remote.tabLibraries' => '媒体库',
 			'companionRemote.remote.tabSearch' => '搜索',
-			'companionRemote.remote.tabDownloads' => '下载',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabDownloads' => '下载',
 			'companionRemote.remote.tabSettings' => '设置',
 			'companionRemote.remote.previous' => '上一个',
 			'companionRemote.remote.playPause' => '播放/暂停',
