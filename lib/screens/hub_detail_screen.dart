@@ -14,6 +14,7 @@ import '../widgets/settings_builder.dart';
 import '../utils/app_logger.dart';
 import '../utils/grid_size_calculator.dart';
 import '../utils/platform_detector.dart';
+import '../utils/plex_library_section_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/ios_status_bar_tap_scroll_to_top.dart';
@@ -130,20 +131,18 @@ class _HubDetailScreenState extends State<HubDetailScreen>
       // Hub ids can have various formats:
       // - /hubs/sections/1/... (Plex)
       // - /library/sections/1/all?... (Plex)
+      // - /hubs/home/recentlyAdded?type=2&sectionID=1 (Plex home hubs — id in query)
       // - home.recent / library.<id>.continue (Jellyfin synthesized)
       final hubKey = widget.hub.id;
       appLogger.d('Hub key: $hubKey');
 
-      RegExpMatch? match = RegExp(r'/hubs/sections/(\d+)').firstMatch(hubKey);
-      match ??= RegExp(r'/library/sections/(\d+)').firstMatch(hubKey);
-      match ??= RegExp(r'sections/(\d+)').firstMatch(hubKey);
+      final sectionId = plexLibrarySectionIdFromString(hubKey);
 
-      if (match != null) {
-        final sectionId = match.group(1)!;
+      if (sectionId != null) {
         appLogger.d('Loading sorts for section: $sectionId');
 
         final client = context.tryGetMediaClientForServer(ServerId(serverId));
-        final sorts = client == null ? const <MediaSort>[] : await client.fetchSortOptions(sectionId);
+        final sorts = client == null ? const <MediaSort>[] : await client.fetchSortOptions('$sectionId');
 
         appLogger.d('Loaded ${sorts.length} sorts');
 
