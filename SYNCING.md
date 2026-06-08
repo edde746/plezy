@@ -16,16 +16,20 @@ git fetch upstream
 ## The sync cycle
 
 ```bash
-git checkout main
+git fetch origin                       # local main is often stale — origin/main is authoritative
 git fetch upstream
-git checkout -b sync-upstream-<plezy-version>
+git checkout -b sync-upstream-<plezy-version> origin/main   # branch off origin/main, NOT local main
 git merge upstream/main
 # resolve conflicts (see expected zones below)
-# build + smoke-test
+# rebrand upstream's NEW files (see "New files upstream adds")
+flutter pub get && dart run slang && dart run build_runner build --delete-conflicting-outputs
+# flutter analyze && flutter test   (smoke-test)
 git checkout main
 git merge --ff-only sync-upstream-<plezy-version>
 git push origin main
 ```
+
+> **Branch off `origin/main`, not local `main`.** Past syncs ran on other machines, so local `main` can be dozens of commits behind `origin/main` (and the previous `sync-upstream-*` branch may be unmerged/stale). `git fetch origin` and confirm `origin/main`'s `pubspec.yaml` version before starting.
 
 ## Expected conflict zones
 
@@ -66,6 +70,52 @@ These are the files where this fork diverges from upstream. Conflicts here are n
 | `ios/fastlane/Fastfile` | ipa filename `Runner.ipa` | Keep. |
 | `scripts/generate_android_icons.sh` | `SVG_SOURCE="assets/vibe_stream.svg"` | Keep. |
 
+## Resolving conflicts efficiently
+
+For the vast majority of conflicts the fork's *only* divergence from upstream is branding. Classify first: for each conflicted file, diff merge-base→`origin/main`; if every changed line is branding (`package:plezy/` imports, app-name strings, bundle-id literals), the safe resolution is **take upstream's version, then re-apply the rebrand** — no hand-merge needed:
+
+```bash
+git checkout --theirs -- "$f"
+sed -i '' -e 's|package:plezy/|package:vibe_stream/|g' -e 's/Plezy/Vibe/g' "$f"   # Dart/test
+git add -- "$f"
+```
+
+This is correct for nearly all `lib/**` and `test/**` Dart conflicts (last 2.2.1→2.5.0 sync: 35 of them). Only files with genuine functional fork divergence (`MainActivity.kt`, and renamed files like `Casks/*.rb`) need a real 3-way merge. Notes:
+
+- **i18n JSON**: `s/Plezy/Vibe/g` rebrands the string *values*, but it also corrupts the key `addPlezyProfile` — restore it with `s/"addVibeProfile"/"addPlezyProfile"/`. Brand names aren't translated, so each locale has the same 15 `Plezy` occurrences (14 values + 1 key).
+- **Generated `*.g.dart`**: don't hand-merge. Resolve the `.i18n.json` source, `git checkout --theirs` the `.g.dart` to clear markers, then regenerate with `dart run slang` (authoritative).
+- **`Package.resolved`**: usually auto-merges cleanly (it keeps the `MazeDev7/MPVKitAM` location and takes upstream's new revision) — verify it's valid JSON with one `mpvkitam` pin rather than assuming a conflict.
+- **modify/delete**: upstream sometimes deletes a file the fork only rebranded (e.g. a refactor removed `sleep_timer_duration_list.dart`). Confirm nothing references it in `upstream/main`, then `git rm`.
+
+## New files upstream adds (NOT conflicts — scan separately)
+
+The conflict list misses files upstream *adds*; they merge cleanly but arrive with `plezy` branding. After resolving conflicts, always:
+
+```bash
+# new Dart files importing the old package (last sync: 60 files):
+grep -rl 'package:plezy/' lib/ test/ | while read f; do sed -i '' 's|package:plezy/|package:vibe_stream/|g' "$f"; done
+# new files under the OLD kotlin path (must be relocated + repackaged to com/amaze/vibestream):
+git ls-files | grep 'com/edde746/plezy'
+# new locales: a new lib/i18n/<xx>.i18n.json needs the JSON rebrand above, then `dart run slang`
+# then audit everything that's left:
+grep -rnE '[Pp]lezy' lib/ test/   # review each against the preserve list below
+```
+
+Git's rename detection usually relocates upstream's `com/edde746/plezy/**.kt` onto the fork's `com/amaze/vibestream/**` automatically — verify with `grep -rl com.edde746 android/`. Test fixtures that set `product:`/`clientName:`/`Client=`/`Device=` to `'Plezy'` must become `'Vibe'` (the app reports `'Vibe'`), or those tests fail.
+
+## Identifiers to preserve (keep as `plezy`, do NOT rebrand)
+
+Beyond the bundle-id/display-name table above, these lowercase `plezy` tokens are wire/persistence/infra identifiers — rebranding them breaks compatibility or paired native↔Dart contracts:
+
+- **Method channels**: `com.plezy/mpv_player`, `com.plezy/exo_player`, `com.plezy/theme`, `com.plezy/device`, `com.plezy/text_input`, `com.plezy/watch_next`, `com.plezy/system_shelf`, `plezy/window` (paired with native; renaming needs both sides).
+- **i18n key** `addPlezyProfile` (the value rebrands, the key doesn't).
+- **Crypto/protocol constants**: `plezy-remote-v1`, `plezy-session-v1`, `plezy-auth-v1|`, profile PIN salt `plezy-app-profile-pin-v1`.
+- **Persistence**: DB file `plezy_downloads.db`, prefs flag `plezy_legacy_prefs_migrated_v1`, settings-export filename prefix `plezy-settings-`, system-shelf content-id prefix `plezy_`.
+- **Plezy-operated service URLs**: `bugs.plezy.app` (Sentry), `ice.plezy.app` (relay/posters/logs/OAuth), the `github.repository == 'edde746/plezy'` CI gates, and the appcast `edde746/plezy` repo paths — see "Known caveats". (In `build.yml` the artifact-name token `plezy-` *does* rebrand to `vibe_stream-`, even inside appcast enclosure URLs; only the `edde746/plezy` repo path stays.)
+- **Internal class** `PlezyRenderersFactory` (kotlin) — intentionally not renamed.
+
+The app's own product/client identity is `'Vibe'` (`lib/services/plex_auth_service.dart` `_appName = 'Vibe'`).
+
 ## Untouched by syncs (zero conflicts expected)
 
 - `tvos/**` (Plezy's Flutter tvOS) — left as-is in this fork. Syncs flow through cleanly.
@@ -80,13 +130,20 @@ Before pushing to `main`:
 
 ## MPVKitAM sync responsibility
 
-`MazeDev7/MPVKitAM` is maintained as a fork of `edde746/MPVKit`. When upstream Plezy bumps their `edde746/MPVKit` pin, the workflow is:
+`MazeDev7/MPVKitAM` is maintained as a fork of `edde746/MPVKit`. When upstream Plezy bumps their `edde746/MPVKit` pin (compare the `mpvkit` revision in `upstream/main`'s vs the merge-base's `Package.resolved`), the workflow is:
 
-1. In `MazeDev7/MPVKitAM`: sync from `edde746/MPVKit` upstream to get the matching commit.
+1. In `MazeDev7/MPVKitAM`: advance `main` to the matching `edde746/MPVKit` commit.
 2. Note the new MPVKitAM commit SHA.
-3. In `alflix` sync branch: update the four iOS/macOS `Package.resolved` files to that SHA.
+3. In `alflix` sync branch: ensure the four iOS/macOS `Package.resolved` files pin that SHA (the merge often already does this — just verify).
 
 Skipping step 1 means `Package.resolved` will pin to a MPVKitAM SHA that does not include Plezy's new MPV features, producing build or runtime mismatches between the Flutter code and MPVKitAM.
+
+Practical notes (from the 2.2.1→2.5.0 sync):
+
+- **Advancing `MazeDev7/MPVKitAM` is often a clean fast-forward**, not a force-push: when the fork's own patches have been upstreamed into `edde746/MPVKit`, MPVKitAM's current HEAD is an *ancestor* of the new target. Verify with `git merge-base --is-ancestor <MPVKitAM-HEAD> <target>` → if true, `git merge --ff-only <target> && git push origin main`. Nothing is orphaned.
+- **A `GET /repos/MazeDev7/MPVKitAM/commits/<sha>` returning 200 does NOT mean the SHA is on MPVKitAM's `main`** — GitHub forks share an object store, so the API resolves any SHA in the network. SPM pins by *revision* and can only fetch a SHA that's reachable from a ref in the repo, so step 1 (getting it onto `main`) is still required.
+- **Verify the pin actually resolves** without a full iOS build: `xcodebuild -resolvePackageDependencies -workspace ios/Runner.xcworkspace -scheme Runner` (exit 0, lists `MPVKit`).
+- The fork's MPVKitAM patches and the alflix iOS code track AVFoundation/Dolby-Vision work; the bump's commit messages (e.g. "AVFoundation PiP subtitles", "DV7→P8.1") line up with alflix `fix(ios)`/`fix(android)` commits in the same window.
 
 ## Known caveats inherited from upstream Plezy
 

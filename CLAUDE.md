@@ -4,9 +4,9 @@ This repo is a fork of [`edde746/plezy`](https://github.com/edde746/plezy) with 
 
 ## For upstream Plezy sync sessions
 
-**Read `SYNCING.md` first.** It contains the sync cycle commands, the expected conflict zone table with resolutions, MPVKitAM sync responsibility, and known caveats inherited from upstream Plezy. Don't try to derive the resolutions from scratch — the table catalogs every divergence.
+**Read `SYNCING.md` first.** It contains the sync cycle commands, the expected conflict zone table with resolutions, the efficient "take-theirs + rebrand" conflict pattern, how to handle upstream's new files, the identifiers-to-preserve list, MPVKitAM sync responsibility, and known caveats. Don't try to derive the resolutions from scratch.
 
-Typical flow: `git fetch upstream && git checkout -b sync-upstream-<plezy-version> && git merge upstream/main` → resolve per SYNCING.md → push branch → verify Flutter builds on macOS → FF main → push.
+Typical flow: `git fetch origin && git fetch upstream && git checkout -b sync-upstream-<plezy-version> origin/main && git merge upstream/main` → resolve per SYNCING.md → **also rebrand upstream's newly-added files** (cleanly-merged files still carry `package:plezy/` etc.) → `flutter pub get && dart run slang && dart run build_runner build` → `flutter analyze && flutter test` → push branch → FF main → push. Branch off `origin/main` (local `main` is usually stale).
 
 ## Sibling repos
 
@@ -34,6 +34,7 @@ Typical flow: `git fetch upstream && git checkout -b sync-upstream-<plezy-versio
 
 - **Don't reintroduce `apple-tv/`** here — that code lives in `MazeDev7/vibe-tvos`. If a merge from upstream creates it, delete it.
 - **Don't rename method channel strings** (`com.plezy/mpv_player`, `plezy/window`, etc.) — they're paired Dart↔native identifiers, breaking them requires coordinated changes on both sides.
+- **Don't rebrand wire/persistence/crypto `plezy` identifiers** — DB file `plezy_downloads.db`, prefs flag `plezy_legacy_prefs_migrated_v1`, PIN salt `plezy-app-profile-pin-v1`, companion-remote constants `plezy-remote-v1`/`plezy-session-v1`/`plezy-auth-v1`, the i18n key `addPlezyProfile` (value rebrands, key doesn't). Full list: SYNCING.md "Identifiers to preserve."
 - **Don't strip the `bugs.plezy.app` Sentry URL or the `edde746/plezy` upstream credit in README** — both intentional. See SYNCING.md "Known caveats inherited from upstream Plezy."
 
 ## Known unresolved items (full detail in SYNCING.md)
