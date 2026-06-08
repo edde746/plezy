@@ -36,6 +36,26 @@ class NavigationTab {
       return true;
     }).toList();
   }
+
+  /// Resolve which tab the app should open to on launch.
+  ///
+  /// Offline mode prefers Downloads when available. Online, honours the user's
+  /// [preferredStartup] section when it is currently visible, otherwise falls
+  /// back to the first visible tab (Home).
+  static NavigationTabId resolveDefaultTab({
+    required bool isOffline,
+    required bool hasLiveTv,
+    required NavigationTabId? preferredStartup,
+  }) {
+    final tabs = getVisibleTabs(isOffline: isOffline, hasLiveTv: hasLiveTv);
+    if (isOffline && tabs.any((t) => t.id == NavigationTabId.downloads)) {
+      return NavigationTabId.downloads;
+    }
+    if (preferredStartup != null && tabs.any((t) => t.id == preferredStartup)) {
+      return preferredStartup;
+    }
+    return tabs.first.id;
+  }
 }
 
 // Label getters (must be top-level for const constructor)

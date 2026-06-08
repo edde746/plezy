@@ -1,4 +1,5 @@
 import 'dart:ui' show PointerDeviceKind;
+import 'package:vibe_stream/media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -40,7 +41,7 @@ const _testTokens = MonoTokens(
 MediaLibrary _library({
   required String id,
   required String title,
-  required String serverId,
+  required ServerId serverId,
   required String serverName,
 }) {
   return MediaLibrary(
@@ -374,19 +375,19 @@ void main() {
     final visibleServerALibrary = _library(
       id: '1',
       title: 'Visible Server A',
-      serverId: 'server-a',
+      serverId: ServerId('server-a'),
       serverName: 'Server A',
     );
     final hiddenServerALibrary = _library(
       id: '2',
       title: 'Hidden Server A',
-      serverId: 'server-a',
+      serverId: ServerId('server-a'),
       serverName: 'Server A',
     );
     final visibleServerBLibrary = _library(
       id: '1',
       title: 'Visible Server B',
-      serverId: 'server-b',
+      serverId: ServerId('server-b'),
       serverName: 'Server B',
     );
 

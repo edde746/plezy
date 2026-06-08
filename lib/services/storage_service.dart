@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../media/ids.dart';
 
 import 'package:uuid/uuid.dart';
 
@@ -86,16 +87,16 @@ class StorageService extends BaseSharedPreferencesService {
   }
 
   // Per-Server Endpoint URL (for multi-server connection caching)
-  Future<void> saveServerEndpoint(String serverId, String url) async {
+  Future<void> saveServerEndpoint(ServerId serverId, String url) async {
     await prefs.setString('$_prefixServerEndpoint$serverId', url);
     LogRedactionManager.registerServerUrl(url);
   }
 
-  String? getServerEndpoint(String serverId) {
+  String? getServerEndpoint(ServerId serverId) {
     return prefs.getString('$_prefixServerEndpoint$serverId');
   }
 
-  Future<void> clearServerEndpoint(String serverId) async {
+  Future<void> clearServerEndpoint(ServerId serverId) async {
     await prefs.remove('$_prefixServerEndpoint$serverId');
   }
 
@@ -371,41 +372,6 @@ class StorageService extends BaseSharedPreferencesService {
 
   Future<void> clearAllProfileLastUsed() async {
     await _clearKeysWithPrefix(_prefixProfileLastUsed);
-  }
-
-  // Episode Count Persistence (for partial download detection)
-
-  static const String _prefixEpisodeCount = 'episode_count_';
-
-  /// Save the total episode count for a show/season
-  Future<void> saveTotalEpisodeCount(String globalKey, int count) async {
-    await prefs.setInt('$_prefixEpisodeCount$globalKey', count);
-  }
-
-  /// Get the total episode count for a show/season
-  int? getTotalEpisodeCount(String globalKey) {
-    return prefs.getInt('$_prefixEpisodeCount$globalKey');
-  }
-
-  /// Load all persisted episode counts
-  Map<String, int> loadAllEpisodeCounts() {
-    final counts = <String, int>{};
-    final keys = prefs.keys.where((k) => k.startsWith(_prefixEpisodeCount));
-
-    for (final key in keys) {
-      final globalKey = key.replaceFirst(_prefixEpisodeCount, '');
-      final count = prefs.getInt(key);
-      if (count != null) {
-        counts[globalKey] = count;
-      }
-    }
-
-    return counts;
-  }
-
-  /// Remove the episode count for a specific show/season
-  Future<void> removeEpisodeCount(String globalKey) async {
-    await prefs.remove('$_prefixEpisodeCount$globalKey');
   }
 
   // Private helper methods

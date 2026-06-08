@@ -5,7 +5,6 @@ import android.media.AudioDeviceInfo
 import android.os.Build
 import androidx.annotation.OptIn
 import androidx.media3.common.Format
-import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.util.Clock
 import androidx.media3.common.util.UnstableApi
@@ -29,8 +28,8 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
   /** Audio delay in microseconds. Shared with PositionFixAudioSink for live updates. */
   val audioDelayUs = AtomicLong(0L)
 
-  /** Returns whether direct TrueHD output should be hidden so decoded PCM output can be selected. */
-  var shouldBlockDirectTrueHd: ((Format) -> Boolean)? = null
+  /** Returns whether direct encoded output should be hidden so decoded PCM output can be selected. */
+  var shouldBlockDirectAudioOutput: ((Format) -> Boolean)? = null
 
   /** Called before Media3 reacts to an audio route/capability change. */
   var onAudioCapabilitiesChanged: (() -> Unit)? = null
@@ -68,7 +67,7 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
       defaultSink,
       rawPositionUs,
       audioDelayUs,
-      shouldBlockDirectTrueHd,
+      shouldBlockDirectAudioOutput,
       onAudioCapabilitiesChanged,
       audioDiagnosticsLogger
     )
@@ -101,7 +100,7 @@ private class PositionFixAudioSink(
   sink: AudioSink,
   private val rawPositionUs: AtomicLong,
   private val audioDelayUs: AtomicLong,
-  private val shouldBlockDirectTrueHd: ((Format) -> Boolean)?,
+  private val shouldBlockDirectAudioOutput: ((Format) -> Boolean)?,
   private val onAudioCapabilitiesChanged: (() -> Unit)?,
   private val log: ((String, String, String) -> Unit)?
 ) : ForwardingAudioSink(sink) {
@@ -117,27 +116,27 @@ private class PositionFixAudioSink(
   // Transient counter-offset: after seek/flush, ramp offset from 0 to full
   // over recoveryDurationUs to prevent video frame drops.
   private var recoveryDurationUs = 0L
-  private var loggedTrueHdDirectBlock = false
+  private val loggedDirectBlockMimeTypes = mutableSetOf<String>()
   private var loggedFirstBuffer = false
 
   override fun supportsFormat(format: Format): Boolean {
-    if (blocksDirectTrueHd(format)) return false
+    if (blocksDirectAudioOutput(format)) return false
     return super.supportsFormat(format)
   }
 
   override fun getFormatSupport(format: Format): Int {
-    if (blocksDirectTrueHd(format)) return AudioSink.SINK_FORMAT_UNSUPPORTED
+    if (blocksDirectAudioOutput(format)) return AudioSink.SINK_FORMAT_UNSUPPORTED
     return super.getFormatSupport(format)
   }
 
-  private fun blocksDirectTrueHd(format: Format): Boolean {
-    if (format.sampleMimeType != MimeTypes.AUDIO_TRUEHD || shouldBlockDirectTrueHd?.invoke(format) != true) return false
-    if (!loggedTrueHdDirectBlock) {
-      loggedTrueHdDirectBlock = true
+  private fun blocksDirectAudioOutput(format: Format): Boolean {
+    if (shouldBlockDirectAudioOutput?.invoke(format) != true) return false
+    val mimeType = format.sampleMimeType ?: "unknown"
+    if (loggedDirectBlockMimeTypes.add(mimeType)) {
       log?.invoke(
         "info",
         "audio",
-        "Blocking direct TrueHD output; route does not report TrueHD bitstream support, decoded PCM output will be preferred"
+        "Blocking direct $mimeType output; decoded PCM output will be preferred"
       )
     }
     return true
@@ -349,6 +348,7 @@ private class RawPositionAudioOutput(
   private var loggedFirstWrite = false
   private var writeCount = 0L
   private var writtenBytes = 0L
+  private var failed = false
 
   override fun getPositionUs(): Long {
     val pos = delegate.getPositionUs()
@@ -362,7 +362,14 @@ private class RawPositionAudioOutput(
   @Throws(AudioOutput.WriteException::class)
   override fun write(buffer: ByteBuffer, size: Int, presentationTimeUs: Long): Boolean {
     val before = buffer.position()
-    val handled = delegate.write(buffer, size, presentationTimeUs)
+    val handled = try {
+      delegate.write(buffer, size, presentationTimeUs)
+    } catch (e: AudioOutput.WriteException) {
+      failed = true
+      rawPositionUs.set(Long.MIN_VALUE)
+      log?.invoke("warn", "audio-output", "Write failed; AudioTrack will not be reused: ${e.message}")
+      throw e
+    }
     val written = buffer.position() - before
     if (written > 0) {
       writeCount++
@@ -391,6 +398,10 @@ private class RawPositionAudioOutput(
 
   override fun release() {
     rawPositionUs.set(Long.MIN_VALUE)
+    if (failed) {
+      delegate.release()
+      return
+    }
     if (Build.VERSION.SDK_INT >= 25) {
       delegate.stop()
       delegate.flush()

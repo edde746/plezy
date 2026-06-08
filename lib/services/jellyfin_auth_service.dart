@@ -12,21 +12,8 @@ import '../utils/media_server_http_client.dart';
 import '../utils/media_server_timeouts.dart';
 import '../utils/log_redaction_manager.dart';
 import '../utils/poll_with_backoff.dart';
-import '../utils/url_utils.dart';
 import 'jellyfin_auth_header.dart';
-
-/// Result of a successful Jellyfin URL probe (`/System/Info/Public`).
-class JellyfinServerInfo {
-  final String serverName;
-
-  /// Server's `Id` field — Jellyfin's machine identifier (UUID hex).
-  final String machineId;
-
-  /// Server's reported version string.
-  final String version;
-
-  const JellyfinServerInfo({required this.serverName, required this.machineId, required this.version});
-}
+import 'jellyfin_endpoint_discovery.dart';
 
 /// Result of `POST /QuickConnect/Initiate`. The [code] is shown to the user
 /// and entered in their Jellyfin web UI to approve sign-in; the [secret] is
@@ -52,7 +39,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     required this.clientVersion,
     required this.deviceName,
     @visibleForTesting this._testHttpClientFactory,
-  });
+  }) : _endpointDiscovery = JellyfinEndpointDiscovery(testHttpClientFactory: _testHttpClientFactory);
 
   /// App identity sent in the `MediaBrowser` Authorization header. Jellyfin
   /// uses `Client`/`Device`/`DeviceId`/`Version` to populate the device list
@@ -69,6 +56,8 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
   /// underlying client on `close()`.
   final http.Client Function()? _testHttpClientFactory;
 
+  final JellyfinEndpointDiscovery _endpointDiscovery;
+
   MediaServerHttpClient _buildHttpClient({required String baseUrl, Map<String, String> headers = const {}}) {
     LogRedactionManager.registerServerUrl(baseUrl);
     return MediaServerHttpClient(baseUrl: baseUrl, defaultHeaders: headers, client: _testHttpClientFactory?.call());
@@ -79,37 +68,25 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
   /// before asking for credentials. Throws [MediaServerUrlException] when the
   /// URL is unreachable or doesn't look like a Jellyfin server.
   Future<JellyfinServerInfo> probe(String baseUrl) async {
-    final normalised = _normaliseBaseUrl(baseUrl);
-    final client = _buildHttpClient(baseUrl: normalised);
-    try {
-      final response = await client.get('/System/Info/Public', timeout: MediaServerTimeouts.jellyfinProbe);
-      throwIfHttpError(response);
-      final data = response.data;
-      if (data is! Map<String, dynamic>) {
-        throw MediaServerUrlException('Server response was not JSON');
-      }
-      final id = data['Id'];
-      final name = data['ServerName'] ?? data['LocalAddress'];
-      if (id is! String || name is! String) {
-        throw MediaServerUrlException('Server response missing Id/ServerName — not a Jellyfin server?');
-      }
-      return JellyfinServerInfo(serverName: name, machineId: id, version: data['Version'] as String? ?? '');
-    } on MediaServerUrlException {
-      // Already the right shape — propagate without re-wrapping.
-      rethrow;
-    } on MediaServerHttpException catch (e) {
-      throw MediaServerUrlException('Server probe failed: ${e.message}');
-    } on TimeoutException {
-      // Defensive: most request timeouts are wrapped by MediaServerHttpClient,
-      // but keep raw timeouts surfaced uniformly if one escapes.
-      throw MediaServerUrlException('Server did not respond in time');
-    } catch (e) {
-      // Catch-all for transport errors that bypass the http client wrap
-      // (DNS failures, TLS handshake errors, etc.).
-      throw MediaServerUrlException('Server probe failed: $e');
-    } finally {
-      client.close();
-    }
+    return _endpointDiscovery.probe(baseUrl);
+  }
+
+  Future<JellyfinEndpointRaceResult> raceEndpoints(
+    Iterable<String> baseUrls, {
+    String? preferredUrl,
+    String? expectedMachineId,
+    Iterable<String>? baseUrlsToPersist,
+    Iterable<String>? baseUrlsToValidate,
+    Iterable<Iterable<String>>? baseUrlValidationGroups,
+  }) {
+    return _endpointDiscovery.raceEndpoints(
+      baseUrls,
+      preferredUrl: preferredUrl,
+      expectedMachineId: expectedMachineId,
+      baseUrlsToPersist: baseUrlsToPersist,
+      baseUrlsToValidate: baseUrlsToValidate,
+      baseUrlValidationGroups: baseUrlValidationGroups,
+    );
   }
 
   /// Authenticate against [baseUrl] with [username]/[password] and return a
@@ -117,6 +94,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
   /// 401/403 responses; other transport errors propagate.
   Future<JellyfinConnection> authenticateByName({
     required String baseUrl,
+    List<String>? baseUrls,
     required String username,
     required String password,
     required String deviceId,
@@ -167,6 +145,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
       return _buildConnection(
         info: info,
         normalisedBaseUrl: normalised,
+        baseUrls: baseUrls,
         userId: userId,
         userName: userName,
         accessToken: accessToken,
@@ -259,6 +238,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
   /// [MediaServerAuthException] on auth failures (401/403).
   Future<JellyfinConnection?> authenticateByQuickConnect({
     required String baseUrl,
+    List<String>? baseUrls,
     required String secret,
     required String deviceId,
     JellyfinServerInfo? serverInfo,
@@ -355,6 +335,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
       return _buildConnection(
         info: info,
         normalisedBaseUrl: normalised,
+        baseUrls: baseUrls,
         userId: userId,
         userName: userName,
         accessToken: accessToken,
@@ -429,7 +410,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
 
   /// Strip any trailing slash so subsequent path joins (`/Users/...`) don't
   /// produce double slashes. Delegates to the shared [stripTrailingSlash].
-  static String _normaliseBaseUrl(String input) => stripTrailingSlash(input);
+  static String _normaliseBaseUrl(String input) => JellyfinEndpointDiscovery.normalizeBaseUrl(input);
 
   /// Build a [JellyfinConnection] from a successful auth/exchange response.
   /// Connection id is derived from `(machineId, userId)` so each user on a
@@ -437,6 +418,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
   static JellyfinConnection _buildConnection({
     required JellyfinServerInfo info,
     required String normalisedBaseUrl,
+    List<String>? baseUrls,
     required String userId,
     required String userName,
     required String accessToken,
@@ -447,6 +429,7 @@ class JellyfinConnectionAuthService implements ConnectionAuthService {
     return JellyfinConnection(
       id: '${info.machineId}/$userId',
       baseUrl: normalisedBaseUrl,
+      baseUrls: baseUrls,
       serverName: info.serverName,
       serverMachineId: info.machineId,
       userId: userId,

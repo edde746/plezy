@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../media/ids.dart';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -164,7 +165,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     final multiServer = context.read<MultiServerProvider>();
     final futures = <Future<void>>[];
     for (final serverInfo in multiServer.liveTvServers) {
-      final client = multiServer.getClientForServer(serverInfo.serverId);
+      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
       if (client == null || !client.capabilities.liveTvDvr) continue;
       futures.add(_reloadGuideSafe(client, serverInfo.dvrKey));
     }
@@ -188,7 +189,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     final multiServer = context.read<MultiServerProvider>();
     final futures = <Future<void>>[];
     for (final serverInfo in multiServer.liveTvServers) {
-      final client = multiServer.getClientForServer(serverInfo.serverId);
+      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
       if (client == null || !client.capabilities.liveTvDvr) continue;
       futures.add(_processRulesSafe(client));
     }
@@ -212,7 +213,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
   /// libraries-screen pattern at libraries_screen.dart:365).
   void _refreshVisibleTabs(MultiServerProvider multiServer) {
     final hasDvr = multiServer.liveTvServers.any((s) {
-      final c = multiServer.getClientForServer(s.serverId);
+      final c = multiServer.getClientForServer(ServerId(s.serverId));
       return c != null && c.capabilities.liveTvDvr;
     });
     final newTabs = [LiveTvTab.guide, LiveTvTab.whatsOn, if (hasDvr) LiveTvTab.recordings];
@@ -305,7 +306,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
 
       for (final serverInfo in liveTvServers) {
         try {
-          final genericClient = multiServer.getClientForServer(serverInfo.serverId);
+          final genericClient = multiServer.getClientForServer(ServerId(serverInfo.serverId));
           if (genericClient == null) continue;
 
           final liveTv = genericClient.liveTv;
@@ -391,7 +392,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
       final fetchedStores = <String>{};
       final seenFavorites = <String>{};
       for (final serverInfo in multiServer.liveTvServers) {
-        final client = multiServer.getClientForServer(serverInfo.serverId);
+        final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
         if (client == null) continue;
         final liveTv = client.liveTv;
         final source = await liveTv.buildFavoriteChannelSource(lineup: serverInfo.lineup);
@@ -481,7 +482,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     }
     final writtenStores = <String>{};
     for (final serverInfo in multiServer.liveTvServers) {
-      final client = multiServer.getClientForServer(serverInfo.serverId);
+      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
       if (client == null) continue;
       final liveServerKey = _liveServerScopeKey(serverInfo);
       final storeKey = _favoriteStoreByLiveServer[liveServerKey];
@@ -534,7 +535,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           i,
           onSelectWhenActive: _focusCurrentTab,
           onNavigateDown: _focusCurrentTab,
-          onNavigateRightFromLast: () => _actionBarKey.currentState?.requestFocusOnFirst(),
+          onNavigateToActions: () => _actionBarKey.currentState?.requestFocusOnFirst(),
         ),
       ],
     ];
@@ -614,7 +615,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
     if (_error != null) {
       return Center(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             AppIcon(Symbols.error_rounded, size: 48, color: theme.colorScheme.error),
             const SizedBox(height: 16),
@@ -644,7 +645,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
         if (!useSideNav)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            alignment: Alignment.centerLeft,
+            alignment: .centerLeft,
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(children: _buildTabChipItems()),

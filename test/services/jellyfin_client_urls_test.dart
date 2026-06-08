@@ -8,6 +8,7 @@ import 'package:vibe_stream/media/library_query.dart';
 import 'package:vibe_stream/media/media_backend.dart';
 import 'package:vibe_stream/media/media_item.dart';
 import 'package:vibe_stream/media/media_kind.dart';
+import 'package:vibe_stream/media/media_server_client.dart';
 import 'package:vibe_stream/models/transcode_quality_preset.dart';
 import 'package:vibe_stream/services/jellyfin_client.dart';
 import 'package:vibe_stream/services/playback_initialization_types.dart';
@@ -103,6 +104,115 @@ void main() {
       ]);
     });
 
+    test('fetchExtras combines local trailers and special features as playable videos', () async {
+      const itemId = 'movie/id #1?x';
+      final encodedItemId = Uri.encodeComponent(itemId);
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          requests.add(request.url);
+          if (request.url.path == '/Items/$encodedItemId/LocalTrailers') {
+            return http.Response(
+              jsonEncode([
+                {
+                  'Id': 'trailer-1',
+                  'Name': 'Trailer',
+                  'Type': 'Trailer',
+                  'ExtraType': 'Trailer',
+                  'RunTimeTicks': 900000000,
+                  'ImageTags': {'Primary': 'trailer-tag'},
+                },
+                {'Id': 'theme-song', 'Name': 'Theme Song', 'Type': 'Audio', 'ExtraType': 'ThemeSong'},
+              ]),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (request.url.path == '/Items/$encodedItemId/SpecialFeatures') {
+            return http.Response(
+              jsonEncode([
+                {'Id': 'trailer-1', 'Name': 'Trailer Duplicate', 'Type': 'Trailer', 'ExtraType': 'Trailer'},
+                {
+                  'Id': 'featurette-1',
+                  'Name': 'Making Of',
+                  'Type': 'Video',
+                  'ExtraType': 'Featurette',
+                  'RunTimeTicks': 1800000000,
+                  'BackdropImageTags': ['featurette-backdrop'],
+                },
+              ]),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('unexpected ${request.url}', 500);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final extras = await scoped.fetchExtras(itemId);
+
+      expect(requests.map((uri) => uri.path).toSet(), {
+        '/Items/$encodedItemId/LocalTrailers',
+        '/Items/$encodedItemId/SpecialFeatures',
+      });
+      expect(requests.every((uri) => uri.queryParameters['userId'] == 'user-1'), isTrue);
+      expect(requests.every((uri) => uri.queryParameters['EnableImageTypes'] == 'Primary,Backdrop,Thumb,Logo'), isTrue);
+      expect(requests.every((uri) => uri.queryParameters['ImageTypeLimit'] == '1'), isTrue);
+      expect(extras.map((item) => item.id).toList(), ['trailer-1', 'featurette-1']);
+      expect(extras.every((item) => item.kind.isVideo), isTrue);
+      expect(extras.every((item) => item.serverId == 'srv-1'), isTrue);
+      expect(extras.every((item) => item.serverName == 'Home'), isTrue);
+      expect(extras[0].kind, MediaKind.clip);
+      expect(extras[0].raw?['ExtraType'], 'Trailer');
+      expect(extras[1].kind, MediaKind.clip);
+      expect(extras[1].raw?['ExtraType'], 'Featurette');
+      expect(extras[1].thumbPath, isNull);
+      expect(extras[1].artPath, isNotNull);
+      expect(extras[1].posterThumb(), extras[1].artPath);
+    });
+
+    test('fetchChildren requests media sources for episode-row quality labels', () async {
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          requests.add(request.url);
+          if (request.url.path == '/Shows/season-1/Seasons') {
+            return http.Response('not found', 404);
+          }
+          if (request.url.path == '/Items') {
+            return http.Response(jsonEncode({'Items': <Object>[], 'TotalRecordCount': 0}), 200);
+          }
+          return http.Response('unexpected ${request.url}', 500);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.fetchChildren('season-1');
+
+      final directChildrenRequest = requests.firstWhere((uri) => uri.path == '/Items');
+      expect(directChildrenRequest.queryParameters['Fields']!.split(','), contains('MediaSources'));
+    });
+
+    test('fetchPlayableDescendantsPage requests media sources for episode-row quality labels', () async {
+      Uri? capturedUri;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          return http.Response(jsonEncode({'Items': <Object>[], 'TotalRecordCount': 0}), 200);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      await scoped.fetchPlayableDescendantsPage('show-1');
+
+      expect(capturedUri!.path, '/Items');
+      expect(capturedUri!.queryParameters['Fields']!.split(','), contains('MediaSources'));
+    });
+
     test('reportPlaybackProgress sends media source and stream indexes', () async {
       Uri? capturedUri;
       String? capturedBody;
@@ -177,8 +287,19 @@ void main() {
                         'Language': 'eng',
                         'DisplayLanguage': 'English',
                         'DisplayTitle': 'English - SRT',
+                        'IsExternal': true,
                         'DeliveryMethod': 'External',
                         'DeliveryUrl': '/Videos/item-1/src-2/Subtitles/3/Stream.srt',
+                      },
+                      {
+                        'Index': 4,
+                        'Type': 'Subtitle',
+                        'Codec': 'srt',
+                        'Language': 'fra',
+                        'DisplayLanguage': 'French',
+                        'DisplayTitle': 'French - SRT',
+                        'DeliveryMethod': 'External',
+                        'DeliveryUrl': '/Videos/item-1/src-2/Subtitles/4/Stream.srt',
                       },
                     ],
                   },
@@ -332,6 +453,8 @@ void main() {
       expect(uri.queryParameters['api_key'], 'tok-abc');
       expect(uri.queryParameters.containsKey('StartTimeTicks'), isFalse);
       expect(result.mediaInfo!.subtitleTracks, hasLength(1));
+      expect(result.mediaInfo!.subtitleTracks.single.isExternalFile, isFalse);
+      expect(result.mediaInfo!.subtitleTracks.single.usesExternalDelivery, isTrue);
       expect(result.externalSubtitles, hasLength(1));
       expect(result.externalSubtitles.single.title, 'English');
       expect(result.externalSubtitles.single.language, 'eng');
@@ -444,6 +567,7 @@ void main() {
                         'Codec': 'srt',
                         'Language': 'eng',
                         'DisplayTitle': 'English - SRT',
+                        'IsExternal': true,
                         'DeliveryMethod': 'External',
                         'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/3/Stream.srt',
                       },
@@ -493,6 +617,85 @@ void main() {
       final subtitleUri = Uri.parse(result.externalSubtitles.single.uri!);
       expect(subtitleUri.path, '/Videos/item-1/src-1/Subtitles/3/Stream.srt');
       expect(subtitleUri.queryParameters['api_key'], 'tok-abc');
+    });
+
+    test('getPlaybackInitialization skips negotiated subtitle delivery for original playback', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return http.Response(
+              jsonEncode({
+                'Id': 'item-1',
+                'Type': 'Movie',
+                'Name': 'Movie',
+                'MediaSources': [
+                  {
+                    'Id': 'src-1',
+                    'Container': 'mkv',
+                    'MediaStreams': [
+                      {'Index': 0, 'Type': 'Video'},
+                    ],
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            return http.Response(
+              jsonEncode({
+                'PlaySessionId': 'play-session-direct',
+                'MediaSources': [
+                  {
+                    'Id': 'src-1',
+                    'Container': 'mkv',
+                    'DirectStreamUrl': '/Videos/item-1/stream?MediaSourceId=src-1&PlaySessionId=play-session-direct',
+                    'MediaStreams': [
+                      {'Index': 0, 'Type': 'Video'},
+                      {
+                        'Index': 3,
+                        'Type': 'Subtitle',
+                        'Codec': 'srt',
+                        'Language': 'eng',
+                        'DisplayTitle': 'English - SRT',
+                        'DeliveryMethod': 'External',
+                        'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/3/Stream.srt',
+                      },
+                      {
+                        'Index': 4,
+                        'Type': 'Subtitle',
+                        'Codec': 'srt',
+                        'Language': 'fra',
+                        'DisplayTitle': 'French - SRT',
+                        'DeliveryMethod': 'External',
+                        'DeliveryUrl': '/Videos/item-1/src-1/Subtitles/4/Stream.srt',
+                      },
+                    ],
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'srv-1'),
+          selectedMediaIndex: 0,
+        ),
+      );
+
+      expect(result.playMethod, 'DirectStream');
+      expect(result.mediaInfo!.subtitleTracks, hasLength(2));
+      expect(result.mediaInfo!.subtitleTracks.every((track) => track.usesExternalDelivery), isTrue);
+      expect(result.externalSubtitles, isEmpty);
     });
 
     test('getPlaybackInitialization ignores TranscodingUrl for original playback static fallback', () async {
@@ -1343,6 +1546,41 @@ void main() {
       expect(captured!.queryParameters['ImageTypeLimit'], '1');
     });
 
+    test('fetchLibraryFiltersWithValues adds unwatched boolean filter', () async {
+      Uri? captured;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          captured = req.url;
+          return http.Response(
+            jsonEncode({
+              'Genres': ['Drama', 'Action'],
+              'OfficialRatings': ['PG-13'],
+              'Tags': ['Holiday'],
+              'Years': [2024, 1999],
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final result = await scoped.fetchLibraryFiltersWithValues('lib-1');
+
+      expect(captured, isNotNull);
+      expect(captured!.path, '/Items/Filters');
+      expect(captured!.queryParameters['ParentId'], 'lib-1');
+      expect(captured!.queryParameters['userId'], 'user-1');
+      expect(result.filters.map((filter) => filter.filter), ['unwatched', 'genre', 'year', 'contentRating', 'tag']);
+      expect(result.filters.first.filterType, 'boolean');
+      expect(result.filters.first.key, 'jellyfin:unwatched');
+      expect(result.filters.first.title, 'Unwatched');
+      expect(result.cachedValues.containsKey('unwatched'), isFalse);
+      expect(result.cachedValues['genre']!.map((value) => value.key), ['Action', 'Drama']);
+      expect(result.cachedValues['year']!.map((value) => value.key), ['2024', '1999']);
+    });
+
     test('fetchLibraryContent uses sentinel total fallback when server omits total', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
@@ -1399,6 +1637,75 @@ void main() {
 
       expect(captured.first.queryParameters['IncludeItemTypes'], 'Series');
       expect(captured[1].queryParameters['IncludeItemTypes'], 'Episode');
+    });
+
+    test('fetchLibraryFolders uses direct non-recursive Items query and orders folders first', () async {
+      Uri? captured;
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          captured = req.url;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'track-z', 'Type': 'Audio', 'Name': 'Z Track', 'IsFolder': false},
+                {'Id': 'series-a', 'Type': 'Series', 'Name': 'A Show', 'IsFolder': true},
+                {'Id': 'folder-z', 'Type': 'Folder', 'Name': 'Z Folder', 'IsFolder': true},
+                {'Id': 'movie-m', 'Type': 'Movie', 'Name': 'Movie', 'IsFolder': false},
+              ],
+              'TotalRecordCount': 4,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchLibraryFolders('lib-1');
+
+      expect(captured, isNotNull);
+      expect(captured!.path, '/Items');
+      expect(captured!.queryParameters['ParentId'], 'lib-1');
+      expect(captured!.queryParameters['Recursive'], 'false');
+      expect(captured!.queryParameters['EnableTotalRecordCount'], 'true');
+      expect(captured!.queryParameters['SortBy'], 'IsFolder,SortName');
+      expect(captured!.queryParameters['SortOrder'], 'Ascending');
+      expect(captured!.queryParameters['Fields'], isNot(contains('MediaSources')));
+      expect(items.map((item) => item.id), ['folder-z', 'series-a', 'movie-m', 'track-z']);
+      expect(items.first.kind, MediaKind.unknown);
+      expect(items.first.raw?['IsFolder'], isTrue);
+      expect(items[1].kind, MediaKind.show);
+    });
+
+    test('fetchFolderChildren pages direct folder contents', () async {
+      final starts = <String?>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          starts.add(req.url.queryParameters['StartIndex']);
+          final start = int.parse(req.url.queryParameters['StartIndex'] ?? '0');
+          const total = 501;
+          final end = start == 0 ? 500 : total;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                for (var i = start; i < end; i++)
+                  {'Id': 'child-$i', 'Type': 'Movie', 'Name': 'Child $i', 'IsFolder': false},
+              ],
+              'TotalRecordCount': total,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchFolderChildren('folder-1');
+
+      expect(starts, ['0', '500']);
+      expect(items, hasLength(501));
     });
 
     test('fetchClientSideEpisodeQueue pages past the first 200 episodes', () async {
@@ -1633,6 +1940,143 @@ void main() {
       expect(nextUp.queryParameters.containsKey('NextUpDateCutoff'), isFalse);
     });
 
+    test('fetchContinueWatching orders a recently watched series Next Up above an older resume item', () async {
+      final requests = <Uri>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          requests.add(req.url);
+          if (req.url.path == '/UserItems/Resume') {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {
+                    'Id': 'resume-old',
+                    'Type': 'Movie',
+                    'Name': 'Old Movie',
+                    'UserData': {'LastPlayedDate': '2020-01-01T00:00:00.0000000Z'},
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (req.url.path == '/Shows/NextUp') {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {'Id': 'next-recent', 'Type': 'Episode', 'Name': 'Next Recent', 'SeriesId': 'show-recent'},
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (req.url.path == '/Items') {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {
+                    'Id': 'ep-played',
+                    'Type': 'Episode',
+                    'SeriesId': 'show-recent',
+                    'UserData': {'LastPlayedDate': '2026-06-01T00:00:00.0000000Z'},
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchContinueWatching(count: 10);
+
+      // The Next Up episode inherits its series' recent last-played date, so it
+      // sorts above the older resume item (issue #1266).
+      expect(items.map((item) => item.id), ['next-recent', 'resume-old']);
+
+      final lookup = requests.singleWhere((uri) => uri.path == '/Items');
+      expect(lookup.queryParameters['userId'], 'user-1');
+      expect(lookup.queryParameters['IncludeItemTypes'], 'Episode');
+      expect(lookup.queryParameters['Recursive'], 'true');
+      expect(lookup.queryParameters['SortBy'], 'DatePlayed');
+      expect(lookup.queryParameters['SortOrder'], 'Descending');
+      expect(lookup.queryParameters['Limit'], '200');
+      // No Filters=IsPlayed: a series' newest engagement can sit on an episode
+      // with a LastPlayedDate but Played==false (see _attachSeriesLastPlayed).
+      expect(lookup.queryParameters.containsKey('Filters'), isFalse);
+    });
+
+    test('fetchContinueWatching does not let resume items starve Next Up under the limit', () async {
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path == '/UserItems/Resume') {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {
+                    'Id': 'resume-old-1',
+                    'Type': 'Movie',
+                    'Name': 'Old Movie 1',
+                    'UserData': {'LastPlayedDate': '2021-01-01T00:00:00.0000000Z'},
+                  },
+                  {
+                    'Id': 'resume-old-2',
+                    'Type': 'Movie',
+                    'Name': 'Old Movie 2',
+                    'UserData': {'LastPlayedDate': '2022-01-01T00:00:00.0000000Z'},
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (req.url.path == '/Shows/NextUp') {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {'Id': 'next-recent', 'Type': 'Episode', 'Name': 'Next Recent', 'SeriesId': 'show-recent'},
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          if (req.url.path == '/Items') {
+            return http.Response(
+              jsonEncode({
+                'Items': [
+                  {
+                    'Id': 'ep-played',
+                    'Type': 'Episode',
+                    'SeriesId': 'show-recent',
+                    'UserData': {'LastPlayedDate': '2026-06-01T00:00:00.0000000Z'},
+                  },
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('not found', 404);
+        }),
+      );
+      addTearDown(scoped.close);
+
+      // count equals the number of resume items: the old resume-first merge would
+      // have filled the limit and dropped Next Up entirely.
+      final items = await scoped.fetchContinueWatching(count: 2);
+
+      expect(items.map((item) => item.id), ['next-recent', 'resume-old-2']);
+    });
+
     test('fetchContinueWatching keeps resume items when Next Up fails', () async {
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
@@ -1719,6 +2163,30 @@ void main() {
     }
 
     Uri capturedNextUpRequest() => captured.singleWhere((uri) => uri.path == '/Shows/NextUp');
+
+    test('global preview defaults to shared limit and marks filled previews as more', () async {
+      captured = [];
+      final mock = MockClient((req) async {
+        captured.add(req.url);
+        return http.Response(
+          jsonEncode({
+            'Items': [
+              for (var i = 0; i < defaultHubPreviewLimit; i++) {'Id': 'movie-$i', 'Type': 'Movie', 'Name': 'Movie $i'},
+            ],
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final hubs = await client.fetchGlobalHubs(includePlaybackHubs: false);
+
+      expect(captured.single.queryParameters['Limit'], defaultHubPreviewLimit.toString());
+      expect(hubs.single.items, hasLength(defaultHubPreviewLimit));
+      expect(hubs.single.more, isTrue);
+    });
 
     test('global Next Up excludes resumable episodes without date cutoff', () async {
       final client = buildClient();
@@ -2353,6 +2821,37 @@ void main() {
       expect(requestUri!.queryParameters['Limit'], '10');
     });
 
+    test('fetchPlayableFolderDescendants includes generic video but excludes audio', () async {
+      Uri? requestUri;
+      final mock = MockClient((req) async {
+        if (req.url.path == '/Items') {
+          requestUri = req.url;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                {'Id': 'video-1', 'Name': 'Home Video', 'Type': 'Video'},
+              ],
+              'TotalRecordCount': 1,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }
+        return http.Response('not found', 404);
+      });
+      final client = JellyfinClient.forTesting(connection: _conn(), httpClient: mock);
+      addTearDown(client.close);
+
+      final items = await client.fetchPlayableFolderDescendants('folder-1');
+
+      expect(items.single.kind, MediaKind.clip);
+      expect(requestUri, isNotNull);
+      expect(requestUri!.queryParameters['ParentId'], 'folder-1');
+      expect(requestUri!.queryParameters['Recursive'], 'true');
+      expect(requestUri!.queryParameters['IncludeItemTypes'], 'Movie,Episode,Video,MusicVideo');
+      expect(requestUri!.queryParameters['IncludeItemTypes'], isNot(contains('Audio')));
+    });
+
     test('fetchChildren walks generic children pages', () async {
       final itemRequests = <Uri>[];
       final mock = MockClient((req) async {
@@ -2574,6 +3073,137 @@ void main() {
       expect(uri.path, '/jellyfin/Items/video-1/Images/Primary');
       expect(uri.queryParameters['tag'], 'tag 1');
       expect(uri.queryParameters['api_key'], 'tok-abc');
+    });
+
+    test('fetchEditableMetadataItem requests full item dto without limited fields', () async {
+      Uri? capturedUri;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          return http.Response(
+            jsonEncode({
+              'Id': 'folder/item #1?x',
+              'Name': 'Movie',
+              'Type': 'Movie',
+              'ProviderIds': {'Tmdb': '1'},
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.close);
+
+      final item = await client.fetchEditableMetadataItem('folder/item #1?x');
+
+      expect(item?['ProviderIds'], {'Tmdb': '1'});
+      expect(capturedUri!.path, '/Users/user-1/Items/folder%2Fitem%20%231%3Fx');
+      expect(capturedUri!.queryParameters.containsKey('Fields'), isFalse);
+    });
+
+    test('updateMetadataItem posts full dto to item update endpoint', () async {
+      Uri? capturedUri;
+      String? capturedBody;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          capturedBody = request.body;
+          return http.Response('', 204);
+        }),
+      );
+      addTearDown(client.close);
+
+      final success = await client.updateMetadataItem('item-1', {
+        'Id': 'item-1',
+        'Name': 'Edited',
+        'Type': 'Movie',
+        'ProviderIds': {'Tmdb': '123'},
+        'Tags': ['Favorite'],
+      });
+
+      expect(success, isTrue);
+      expect(capturedUri!.path, '/Items/item-1');
+      final body = jsonDecode(capturedBody!) as Map<String, dynamic>;
+      expect(body['Name'], 'Edited');
+      expect(body['ProviderIds'], {'Tmdb': '123'});
+      expect(body['Tags'], ['Favorite']);
+    });
+
+    test('remote image search and apply use Jellyfin image endpoints', () async {
+      final requests = <Uri>[];
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          requests.add(request.url);
+          if (request.url.path == '/Items/item-1/RemoteImages') {
+            return http.Response(
+              jsonEncode({
+                'TotalRecordCount': 1,
+                'Providers': ['TheMovieDb'],
+                'Images': [
+                  {'ProviderName': 'TheMovieDb', 'Url': 'https://img.example/poster.jpg', 'Type': 'Primary'},
+                ],
+              }),
+              200,
+              headers: {'content-type': 'application/json'},
+            );
+          }
+          return http.Response('', 204);
+        }),
+      );
+      addTearDown(client.close);
+
+      final result = await client.getRemoteImages(
+        'item-1',
+        imageType: 'Primary',
+        limit: 20,
+        providerName: 'TheMovieDb',
+      );
+      final success = await client.downloadRemoteImage(
+        'item-1',
+        imageType: 'Primary',
+        imageUrl: 'https://img.example/poster.jpg',
+      );
+
+      expect((result['Images'] as List).single['Url'], 'https://img.example/poster.jpg');
+      expect(success, isTrue);
+      expect(requests[0].path, '/Items/item-1/RemoteImages');
+      expect(requests[0].queryParameters['type'], 'Primary');
+      expect(requests[0].queryParameters['limit'], '20');
+      expect(requests[0].queryParameters['providerName'], 'TheMovieDb');
+      expect(requests[1].path, '/Items/item-1/RemoteImages/Download');
+      expect(requests[1].queryParameters['type'], 'Primary');
+      expect(requests[1].queryParameters['imageUrl'], 'https://img.example/poster.jpg');
+    });
+
+    test('uploadItemImage sends binary image body and image content type', () async {
+      Uri? capturedUri;
+      List<int>? capturedBody;
+      Map<String, String>? capturedHeaders;
+      final client = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((request) async {
+          capturedUri = request.url;
+          capturedBody = request.bodyBytes;
+          capturedHeaders = request.headers;
+          return http.Response('', 204);
+        }),
+      );
+      addTearDown(client.close);
+
+      final success = await client.uploadItemImage(
+        'item-1',
+        imageType: 'Primary',
+        bytes: [0xff, 0xd8, 0xff, 0x00],
+        contentType: 'image/jpeg',
+      );
+
+      expect(success, isTrue);
+      expect(capturedUri!.path, '/Items/item-1/Images/Primary');
+      expect(capturedBody, [0xff, 0xd8, 0xff, 0x00]);
+      expect(capturedHeaders!['Content-Type'] ?? capturedHeaders!['content-type'], 'image/jpeg');
     });
 
     test('smart=true returns empty because Jellyfin playlists are normal playlists', () async {

@@ -54,7 +54,7 @@ class VideoControlsHeader extends StatelessWidget {
           selector: (_, p) => p.isInSession,
           builder: (context, inSession, child) {
             if (!inSession) return const SizedBox.shrink();
-            return const Padding(padding: EdgeInsets.only(right: 8), child: WatchTogetherSessionIndicator());
+            return const Padding(padding: .only(right: 8), child: WatchTogetherSessionIndicator());
           },
         ),
         ?trailing,
@@ -75,9 +75,9 @@ class VideoControlsHeader extends StatelessWidget {
 
     return Text(
       toBulletedString(parts),
-      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w500),
+      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: .w500),
       maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+      overflow: .ellipsis,
     );
   }
 
@@ -95,20 +95,20 @@ class VideoControlsHeader extends StatelessWidget {
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         Text(
           metadata.grandparentTitle ?? metadata.title!,
-          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: .bold),
           maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          overflow: .ellipsis,
         ),
         if (secondLineParts.isNotEmpty)
           Text(
             toBulletedString(secondLineParts),
             style: const TextStyle(color: Colors.white70, fontSize: 14),
             maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            overflow: .ellipsis,
           ),
       ],
     );

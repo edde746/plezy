@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_initializing_formals
 
 import 'dart:async';
+import '../media/ids.dart';
 import 'dart:io';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -31,7 +32,9 @@ import '../utils/codec_utils.dart';
 import '../utils/global_key_utils.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
-typedef MediaClientResolver = MediaServerClient? Function(String serverId, {String? clientScopeId});
+typedef MediaClientResolver = MediaServerClient? Function(ServerId serverId, {String? clientScopeId});
+typedef _NativeTaskForId = Future<Task?> Function(String taskId);
+typedef _NativeResumeTask = Future<bool> Function(DownloadTask task);
 
 const bool _tvosBuild = bool.fromEnvironment('TVOS_BUILD');
 
@@ -189,7 +192,7 @@ class DownloadManagerService {
 
   /// Look up the correct client for [serverId].
   /// Returns null if the server is offline — callers should skip/defer the work.
-  MediaServerClient? _getClient(String? serverId, {String? clientScopeId}) {
+  MediaServerClient? _getClient(ServerId? serverId, {String? clientScopeId}) {
     if (serverId != null && _clientResolver != null) {
       return _clientResolver!(serverId, clientScopeId: clientScopeId);
     }
@@ -203,7 +206,7 @@ class DownloadManagerService {
     return _getClient(parsed.serverId, clientScopeId: record?.clientScopeId);
   }
 
-  String? activeClientScopeIdForServer(String serverId) {
+  String? activeClientScopeIdForServer(ServerId serverId) {
     final client = _getClient(serverId);
     final scopeId = client?.cacheServerId;
     if (scopeId == null || scopeId == serverId || scopeId.isEmpty) return null;
@@ -211,22 +214,22 @@ class DownloadManagerService {
   }
 
   /// Bulk-load every backend's pinned metadata into one map keyed by
-  /// `buildGlobalKey(serverId, itemId)`. Plex and Jellyfin entries never
+  /// `buildGlobalKey(ServerId(serverId), itemId)`. Plex and Jellyfin entries never
   /// collide because `serverId` is globally unique across backends.
   Future<Map<String, MediaItem>> getAllPinnedMetadata({bool preferActiveScope = false}) async {
     final results = await Future.wait(MediaBackend.values.map((b) => ApiCache.forBackend(b).getAllPinnedMetadata()));
     final merged = {for (final r in results) ...r};
 
     for (final item in await _database.getAllDownloadedMetadata()) {
-      final client = _getClient(item.serverId, clientScopeId: item.clientScopeId);
-      final backend = client?.backend ?? await _backendForServer(item.serverId);
+      final client = _getClient(ServerId(item.serverId), clientScopeId: item.clientScopeId);
+      final backend = client?.backend ?? await _backendForServer(ServerId(item.serverId));
       if (backend == null) continue;
       for (final scopeId in _metadataScopeCandidates(
-        item.serverId,
+        ServerId(item.serverId),
         downloadedClientScopeId: item.clientScopeId,
         preferActiveScope: preferActiveScope,
       )) {
-        final scoped = await ApiCache.forBackend(backend).getMetadata(scopeId, item.ratingKey);
+        final scoped = await ApiCache.forBackend(backend).getMetadata(ServerId(scopeId), item.ratingKey);
         if (scoped != null) {
           merged[item.globalKey] = scoped;
           break;
@@ -239,8 +242,8 @@ class DownloadManagerService {
 
   /// Public mirror of [_lookupMetadata] for callers that hydrate offline
   /// state outside the manager (e.g. [DownloadProvider]).
-  Future<MediaItem?> lookupMetadata(String serverId, String itemId, {bool preferActiveScope = false}) async {
-    final download = await _database.getDownloadedMedia(buildGlobalKey(serverId, itemId));
+  Future<MediaItem?> lookupMetadata(ServerId serverId, String itemId, {bool preferActiveScope = false}) async {
+    final download = await _database.getDownloadedMedia(buildGlobalKey(ServerId(serverId), itemId));
     for (final scopeId in _metadataScopeCandidates(
       serverId,
       downloadedClientScopeId: download?.clientScopeId,
@@ -253,14 +256,14 @@ class DownloadManagerService {
   }
 
   List<String> _metadataScopeCandidates(
-    String serverId, {
+    ServerId serverId, {
     String? downloadedClientScopeId,
     required bool preferActiveScope,
   }) {
     final candidates = <String>[
-      if (preferActiveScope) ?activeClientScopeIdForServer(serverId),
+      if (preferActiveScope) ?activeClientScopeIdForServer(ServerId(serverId)),
       ?downloadedClientScopeId,
-      ?_getClient(serverId, clientScopeId: downloadedClientScopeId)?.cacheServerId,
+      ?_getClient(ServerId(serverId), clientScopeId: downloadedClientScopeId)?.cacheServerId,
       serverId,
     ];
     return <String>{
@@ -279,8 +282,8 @@ class DownloadManagerService {
   /// data, schema reset, etc.) — without it, downloaded items render with
   /// no title and sync rules show their rating key instead of the show
   /// name.
-  Future<MediaItem?> fetchAndPinMetadata(String serverId, String itemId, {bool preferActiveScope = false}) async {
-    final download = await _database.getDownloadedMedia(buildGlobalKey(serverId, itemId));
+  Future<MediaItem?> fetchAndPinMetadata(ServerId serverId, String itemId, {bool preferActiveScope = false}) async {
+    final download = await _database.getDownloadedMedia(buildGlobalKey(ServerId(serverId), itemId));
     final clientScopeId = preferActiveScope
         ? activeClientScopeIdForServer(serverId) ?? download?.clientScopeId
         : download?.clientScopeId;
@@ -289,7 +292,7 @@ class DownloadManagerService {
     try {
       final metadata = await client.fetchItem(itemId);
       if (metadata == null) return null;
-      await ApiCache.forBackend(client.backend).pinForOffline(client.cacheServerId, itemId);
+      await ApiCache.forBackend(client.backend).pinForOffline(ServerId(client.cacheServerId), itemId);
       return metadata;
     } catch (e) {
       appLogger.d('fetchAndPinMetadata failed for $serverId:$itemId', error: e);
@@ -307,7 +310,7 @@ class DownloadManagerService {
   /// (mirrors [JellyfinApiCache._serverContext]) so any `_` / `%` chars in
   /// [serverId] are treated literally; `LIKE '$serverId/%'` would interpret
   /// them as wildcards.
-  Future<MediaBackend?> _backendForServer(String serverId) async {
+  Future<MediaBackend?> _backendForServer(ServerId serverId) async {
     // Prefer a live client — `MediaServerClient.backend` is in memory.
     final live = _getClient(serverId);
     if (live != null) return live.backend;
@@ -334,16 +337,18 @@ class DownloadManagerService {
   /// download rows still reference it), fan out to every registered backend
   /// cache instead of silently defaulting to Plex. Otherwise Jellyfin items
   /// would render with blank metadata after a connection is severed.
-  Future<MediaItem?> _lookupMetadata(String serverId, String itemId, {String? clientScopeId}) async {
+  Future<MediaItem?> _lookupMetadata(ServerId serverId, String itemId, {String? clientScopeId}) async {
     final backend = await _backendForServer(serverId);
     final live = _getClient(serverId, clientScopeId: clientScopeId);
     if (backend != null) {
-      return ApiCache.forBackend(backend).getMetadata(clientScopeId ?? live?.cacheServerId ?? serverId, itemId);
+      return ApiCache.forBackend(
+        backend,
+      ).getMetadata(ServerId(clientScopeId ?? live?.cacheServerId ?? serverId), itemId);
     }
     appLogger.w('Cache lookup for $serverId:$itemId — backend unresolved; trying all registered backends');
     for (final candidate in MediaBackend.values) {
       if (clientScopeId != null && clientScopeId.isNotEmpty) {
-        final scopedHit = await ApiCache.forBackend(candidate).getMetadata(clientScopeId, itemId);
+        final scopedHit = await ApiCache.forBackend(candidate).getMetadata(ServerId(clientScopeId), itemId);
         if (scopedHit != null) return scopedHit;
       }
       final hit = await ApiCache.forBackend(candidate).getMetadata(serverId, itemId);
@@ -375,14 +380,16 @@ class DownloadManagerService {
         appLogger.w('fetchItem failed during offline-pin for ${metadata.globalKey}', error: e);
       }
     }
-    await ApiCache.forBackend(client.backend).pinForOffline(client.cacheServerId, metadata.id);
+    await ApiCache.forBackend(client.backend).pinForOffline(ServerId(client.cacheServerId), metadata.id);
   }
 
-  Future<void> _deleteForItemByServer(String serverId, String itemId, {String? clientScopeId}) async {
+  Future<void> _deleteForItemByServer(ServerId serverId, String itemId, {String? clientScopeId}) async {
     final backend = await _backendForServer(serverId);
     final live = _getClient(serverId, clientScopeId: clientScopeId);
     if (backend != null) {
-      await ApiCache.forBackend(backend).deleteForItem(clientScopeId ?? live?.cacheServerId ?? serverId, itemId);
+      await ApiCache.forBackend(
+        backend,
+      ).deleteForItem(ServerId(clientScopeId ?? live?.cacheServerId ?? serverId), itemId);
       return;
     }
     // Backend unresolved — purge from every registered backend so a stale
@@ -391,7 +398,7 @@ class DownloadManagerService {
     appLogger.w('Cache delete for $serverId:$itemId — backend unresolved; clearing all registered backends');
     for (final candidate in MediaBackend.values) {
       if (clientScopeId != null && clientScopeId.isNotEmpty) {
-        await ApiCache.forBackend(candidate).deleteForItem(clientScopeId, itemId);
+        await ApiCache.forBackend(candidate).deleteForItem(ServerId(clientScopeId), itemId);
       }
       await ApiCache.forBackend(candidate).deleteForItem(serverId, itemId);
     }
@@ -448,6 +455,8 @@ class DownloadManagerService {
       if (rescheduled.isNotEmpty) {
         appLogger.i('Rescheduled ${rescheduled.length} killed download task(s)');
       }
+
+      await _reconcileNativeDownloadTasks();
 
       // One-time migration: normalize stored file paths that may contain a
       // doubled base-dir prefix from an earlier bug in the recovery callback.
@@ -528,6 +537,156 @@ class DownloadManagerService {
     }
   }
 
+  Future<void> _reconcileNativeDownloadTasks() async {
+    if (!downloadsSupported || !_fileDownloaderInitialized) return;
+
+    final List<Task> nativeTasks;
+    try {
+      nativeTasks = await FileDownloader().allTasks(group: _downloadGroup);
+    } catch (e) {
+      appLogger.w('Failed to enumerate native download tasks during recovery', error: e);
+      return;
+    }
+    if (nativeTasks.isEmpty) return;
+
+    final tasksByGlobalKey = <String, List<Task>>{};
+    for (final task in nativeTasks) {
+      final globalKey = task.metaData;
+      if (globalKey.isEmpty) continue;
+      (tasksByGlobalKey[globalKey] ??= []).add(task);
+    }
+    if (tasksByGlobalKey.isEmpty) return;
+
+    final rows = await _database.select(_database.downloadedMedia).get();
+    final rowsByGlobalKey = {for (final row in rows) row.globalKey: row};
+
+    for (final entry in tasksByGlobalKey.entries) {
+      final globalKey = entry.key;
+      final tasks = entry.value;
+      final row = rowsByGlobalKey[globalKey];
+      if (row == null) {
+        await _cancelNativeTaskIds(
+          globalKey,
+          tasks.map((task) => task.taskId),
+          reason: 'no download row during recovery',
+        );
+        continue;
+      }
+
+      switch (DownloadStatus.values[row.status]) {
+        case DownloadStatus.downloading:
+          await _reconcileDownloadingNativeTasks(row, tasks);
+        case DownloadStatus.paused:
+          await _reconcilePausedNativeTasks(row, tasks);
+        case DownloadStatus.queued:
+          await _cancelNativeTaskIds(
+            globalKey,
+            tasks.map((task) => task.taskId),
+            reason: 'queued download during recovery',
+          );
+          await _database.addToQueue(mediaGlobalKey: globalKey);
+        case DownloadStatus.completed:
+        case DownloadStatus.failed:
+        case DownloadStatus.cancelled:
+        case DownloadStatus.partial:
+          await _cancelNativeTaskIds(
+            globalKey,
+            tasks.map((task) => task.taskId),
+            reason: 'download status ${DownloadStatus.values[row.status]} during recovery',
+          );
+      }
+    }
+  }
+
+  Future<void> _reconcileDownloadingNativeTasks(DownloadedMediaItem row, List<Task> tasks) async {
+    final currentTaskId = row.bgTaskId;
+    final matchingCurrentTasks = currentTaskId == null
+        ? const <Task>[]
+        : tasks.where((task) => task.taskId == currentTaskId).toList(growable: false);
+    if (matchingCurrentTasks.length == 1) {
+      await _cancelNativeTaskIds(
+        row.globalKey,
+        tasks.where((task) => task.taskId != currentTaskId).map((task) => task.taskId),
+        reason: 'duplicate downloading task during recovery',
+      );
+      return;
+    }
+
+    if (matchingCurrentTasks.length > 1) {
+      appLogger.w('Multiple native tasks share current task id $currentTaskId for ${row.globalKey}; re-queueing');
+      await _cancelNativeTaskIds(
+        row.globalKey,
+        tasks.map((task) => task.taskId),
+        reason: 'duplicate current task id during recovery',
+      );
+      await _database.updateBgTaskId(row.globalKey, null);
+      await _database.updateDownloadProgress(row.globalKey, 0, 0, 0);
+      await _transitionStatus(row.globalKey, DownloadStatus.queued);
+      await _database.addToQueue(mediaGlobalKey: row.globalKey);
+      return;
+    }
+
+    if (tasks.length == 1) {
+      final taskId = tasks.single.taskId;
+      appLogger.i('Adopting recovered native task $taskId for ${row.globalKey}');
+      await _database.updateBgTaskId(row.globalKey, taskId);
+      return;
+    }
+
+    await _cancelNativeTaskIds(
+      row.globalKey,
+      tasks.map((task) => task.taskId),
+      reason: 'ambiguous downloading tasks during recovery',
+    );
+    await _database.updateBgTaskId(row.globalKey, null);
+    await _database.updateDownloadProgress(row.globalKey, 0, 0, 0);
+    await _transitionStatus(row.globalKey, DownloadStatus.queued);
+    await _database.addToQueue(mediaGlobalKey: row.globalKey);
+  }
+
+  Future<void> _reconcilePausedNativeTasks(DownloadedMediaItem row, List<Task> tasks) async {
+    final currentTaskId = row.bgTaskId;
+    final matchingCurrentTasks = currentTaskId == null
+        ? const <Task>[]
+        : tasks.where((task) => task.taskId == currentTaskId).toList(growable: false);
+    if (matchingCurrentTasks.length == 1) {
+      await _cancelNativeTaskIds(
+        row.globalKey,
+        tasks.where((task) => task.taskId != currentTaskId).map((task) => task.taskId),
+        reason: 'duplicate paused task during recovery',
+      );
+      return;
+    }
+
+    if (matchingCurrentTasks.length > 1) {
+      appLogger.w(
+        'Multiple paused native tasks share current task id $currentTaskId for ${row.globalKey}; clearing task',
+      );
+    }
+
+    await _cancelNativeTaskIds(
+      row.globalKey,
+      tasks.map((task) => task.taskId),
+      reason: 'unexpected paused native tasks during recovery',
+    );
+    await _database.updateBgTaskId(row.globalKey, null);
+  }
+
+  Future<void> _cancelNativeTaskIds(String globalKey, Iterable<String> taskIds, {required String reason}) async {
+    if (!downloadsSupported) return;
+    final ids = taskIds.where((id) => id.isNotEmpty).toSet();
+    if (ids.isEmpty) return;
+
+    try {
+      final cancelled = await FileDownloader().cancelTasksWithIds(ids);
+      if (cancelled) {
+        appLogger.d('Cancelled ${ids.length} native task(s) for $globalKey ($reason): ${ids.join(', ')}');
+      }
+    } catch (e) {
+      appLogger.w('Failed to cancel native tasks for $globalKey ($reason): ${ids.join(', ')}', error: e);
+    }
+  }
+
   /// Resume queued downloads that have no active processing.
   /// Call after a [MediaServerClient] becomes available (e.g. after server connect on launch).
   void resumeQueuedDownloads(MediaServerClient client) {
@@ -573,22 +732,22 @@ class DownloadManagerService {
         final client = await _getClientForDownloadKey(row.globalKey);
         if (client == null) continue;
 
-        final metadata = await _lookupMetadata(row.serverId, row.ratingKey, clientScopeId: row.clientScopeId);
+        final metadata = await _lookupMetadata(ServerId(row.serverId), row.ratingKey, clientScopeId: row.clientScopeId);
         if (metadata == null) continue;
-        final withServer = _repairMetadataWithServer(metadata, row.serverId);
+        final withServer = _repairMetadataWithServer(metadata, ServerId(row.serverId));
         await _artworkService.ensureArtworkForMetadata(withServer, client);
         await _backfillArtworkPath(row, withServer);
 
         if (!withServer.isEpisode) continue;
         await _repairParentArtwork(
-          row.serverId,
+          ServerId(row.serverId),
           withServer.grandparentId,
           client,
           ensuredParentKeys,
           clientScopeId: row.clientScopeId,
         );
         await _repairParentArtwork(
-          row.serverId,
+          ServerId(row.serverId),
           withServer.parentId,
           client,
           ensuredParentKeys,
@@ -603,39 +762,39 @@ class DownloadManagerService {
   }
 
   Future<void> _repairParentArtwork(
-    String serverId,
+    ServerId serverId,
     String? ratingKey,
     MediaServerClient client,
     Set<String> ensuredKeys, {
     String? clientScopeId,
   }) async {
     if (ratingKey == null || ratingKey.isEmpty) return;
-    final globalKey = buildGlobalKey(serverId, ratingKey);
+    final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
     if (!ensuredKeys.add(globalKey)) return;
-    final cached = await _lookupMetadata(serverId, ratingKey, clientScopeId: clientScopeId);
+    final cached = await _lookupMetadata(ServerId(serverId), ratingKey, clientScopeId: clientScopeId);
     var metadata = cached;
     if (!_isOffline) {
       try {
         final fetched = await client.fetchItem(ratingKey);
         if (fetched != null) {
           metadata = _mergeFetchedRepairMetadata(serverId: serverId, cached: cached, fetched: fetched);
-          await ApiCache.forBackend(client.backend).pinForOffline(client.cacheServerId, metadata.id);
+          await ApiCache.forBackend(client.backend).pinForOffline(ServerId(client.cacheServerId), metadata.id);
         }
       } catch (e) {
         appLogger.d('Artwork repair parent metadata fetch failed for $globalKey', error: e);
       }
     }
     if (metadata == null) return;
-    final withServer = _repairMetadataWithServer(metadata, serverId);
+    final withServer = _repairMetadataWithServer(metadata, ServerId(serverId));
     await _artworkService.ensureArtworkForMetadata(withServer, client);
   }
 
-  MediaItem _repairMetadataWithServer(MediaItem metadata, String serverId) {
+  MediaItem _repairMetadataWithServer(MediaItem metadata, ServerId serverId) {
     return metadata.serverId == null ? metadata.copyWith(serverId: serverId) : metadata;
   }
 
   MediaItem _mergeFetchedRepairMetadata({
-    required String serverId,
+    required ServerId serverId,
     required MediaItem? cached,
     required MediaItem fetched,
   }) {
@@ -706,7 +865,7 @@ class DownloadManagerService {
         }
 
         await _downloadArtwork(globalKey, metadata, itemClient);
-        await _downloadChapterThumbnails(metadata.serverId!, metadata.id, itemClient);
+        await _downloadChapterThumbnails(ServerId(metadata.serverId!), metadata.id, itemClient);
 
         // Attempt subtitles
         try {
@@ -841,14 +1000,28 @@ class DownloadManagerService {
     final globalKey = metadata.globalKey;
 
     final existing = await _database.getDownloadedMedia(globalKey);
-    if (existing != null &&
-        (existing.status == DownloadStatus.downloading.index || existing.status == DownloadStatus.completed.index)) {
-      appLogger.i('Download already exists for $globalKey with status ${existing.status}');
-      return;
+    if (existing != null) {
+      if (existing.status == DownloadStatus.queued.index) {
+        await _database.addToQueue(
+          mediaGlobalKey: globalKey,
+          priority: priority,
+          downloadSubtitles: downloadSubtitles,
+          downloadArtwork: downloadArtwork,
+        );
+        _emitProgress(globalKey, DownloadStatus.queued, 0);
+        unawaited(_processQueue(client));
+        return;
+      }
+      if (existing.status == DownloadStatus.downloading.index ||
+          existing.status == DownloadStatus.paused.index ||
+          existing.status == DownloadStatus.completed.index) {
+        appLogger.i('Download already exists for $globalKey with status ${existing.status}');
+        return;
+      }
     }
 
     await _database.insertDownload(
-      serverId: metadata.serverId!,
+      serverId: ServerId(metadata.serverId!),
       clientScopeId: client.cacheServerId == metadata.serverId ? null : client.cacheServerId,
       ratingKey: metadata.id,
       globalKey: globalKey,
@@ -857,6 +1030,7 @@ class DownloadManagerService {
       grandparentRatingKey: metadata.grandparentId,
       status: DownloadStatus.queued.index,
       mediaIndex: mediaIndex,
+      mediaSourceId: _mediaSourceIdForIndex(metadata, mediaIndex),
     );
 
     // Populate the offline cache via the read path and pin so the row
@@ -874,6 +1048,13 @@ class DownloadManagerService {
     _emitProgress(globalKey, DownloadStatus.queued, 0);
 
     unawaited(_processQueue(client));
+  }
+
+  String? _mediaSourceIdForIndex(MediaItem metadata, int mediaIndex) {
+    final versions = metadata.mediaVersions;
+    if (versions == null || mediaIndex < 0 || mediaIndex >= versions.length) return null;
+    final id = versions[mediaIndex].id.trim();
+    return id.isEmpty ? null : id;
   }
 
   /// Process the download queue — prepares and enqueues items with background_downloader.
@@ -917,14 +1098,83 @@ class DownloadManagerService {
   /// Cancel any lingering background task and reset progress before re-enqueuing.
   Future<void> _cleanupStaleDownload(String globalKey) async {
     final existingTaskId = await _database.getBgTaskId(globalKey);
-    if (existingTaskId != null) {
-      if (downloadsSupported) {
-        await FileDownloader().cancelTaskWithId(existingTaskId);
-      }
-      await _database.updateBgTaskId(globalKey, null);
-      appLogger.d('Cancelled stale bg task $existingTaskId for $globalKey');
-    }
+    await _database.updateBgTaskId(globalKey, null);
+    _pendingDownloadContext.remove(globalKey);
+    await _cancelNativeTasksForGlobalKey(
+      globalKey,
+      includeTaskId: existingTaskId,
+      reason: 'stale task before re-download',
+    );
     await _database.updateDownloadProgress(globalKey, 0, 0, 0);
+  }
+
+  Future<void> _cancelNativeTask(String globalKey, String taskId, {required String reason}) async {
+    if (!downloadsSupported || taskId.isEmpty) return;
+    try {
+      final cancelled = await FileDownloader().cancelTaskWithId(taskId);
+      if (cancelled) {
+        appLogger.d('Cancelled native task $taskId for $globalKey ($reason)');
+      }
+    } catch (e) {
+      appLogger.w('Failed to cancel native task $taskId for $globalKey ($reason)', error: e);
+    }
+  }
+
+  Future<void> _cancelNativeTasksForGlobalKey(
+    String globalKey, {
+    String? includeTaskId,
+    String? exceptTaskId,
+    required String reason,
+  }) async {
+    if (!downloadsSupported) return;
+    final taskIds = <String>{};
+    if (includeTaskId != null && includeTaskId != exceptTaskId) taskIds.add(includeTaskId);
+
+    if (!_fileDownloaderInitialized && taskIds.isEmpty) return;
+
+    try {
+      final nativeTasks = await FileDownloader().allTasks(group: _downloadGroup);
+      for (final task in nativeTasks) {
+        if (task.metaData == globalKey && task.taskId != exceptTaskId) taskIds.add(task.taskId);
+      }
+    } catch (e) {
+      appLogger.w('Failed to enumerate native tasks for $globalKey ($reason)', error: e);
+    }
+
+    if (taskIds.isEmpty) return;
+
+    try {
+      final cancelled = await FileDownloader().cancelTasksWithIds(taskIds);
+      if (cancelled) {
+        appLogger.d('Cancelled ${taskIds.length} native task(s) for $globalKey ($reason): ${taskIds.join(', ')}');
+      }
+    } catch (e) {
+      appLogger.w('Failed to cancel native tasks for $globalKey ($reason): ${taskIds.join(', ')}', error: e);
+    }
+  }
+
+  Future<DownloadedMediaItem?> _downloadForCurrentTaskSession(
+    String globalKey,
+    String taskId, {
+    required String event,
+    bool cancelStale = false,
+  }) async {
+    final existing = await _database.getDownloadedMedia(globalKey);
+    final currentTaskId = existing?.bgTaskId;
+    if (existing != null && currentTaskId == taskId) return existing;
+
+    appLogger.d(
+      'Ignoring stale download $event for $globalKey from task $taskId '
+      '(current task: ${currentTaskId ?? 'none'})',
+    );
+    if (cancelStale) {
+      await _cancelNativeTask(globalKey, taskId, reason: 'stale $event');
+    }
+    return null;
+  }
+
+  bool _isNativeTaskActiveStatus(TaskStatus status) {
+    return status == TaskStatus.enqueued || status == TaskStatus.running || status == TaskStatus.waitingToRetry;
   }
 
   Future<bool> _isInactiveForEnqueue(String globalKey) async {
@@ -975,7 +1225,7 @@ class DownloadManagerService {
       }
 
       appLogger.i('Preparing download for $globalKey');
-      if (existing.bgTaskId != null) await _cleanupStaleDownload(globalKey);
+      await _cleanupStaleDownload(globalKey);
       if (await _isInactiveForEnqueue(globalKey)) {
         appLogger.d('Skipping enqueue for $globalKey: inactive before transition');
         await _database.removeFromQueue(globalKey);
@@ -1012,6 +1262,9 @@ class DownloadManagerService {
         if (fetched != null) metadata = fetched.copyWith(serverId: serverId);
         resolution = await client.resolveDownload(metadata, mediaIndex: selectedMediaIndex);
         if (resolution.videoUrl == null) throw Exception('Could not get video URL for $globalKey');
+      }
+      if (resolution.mediaSourceId != null && resolution.mediaSourceId != existing.mediaSourceId) {
+        await _database.updateDownloadMediaSource(globalKey, resolution.mediaSourceId);
       }
 
       if (await _isCancelledOrDeleted(globalKey)) {
@@ -1068,7 +1321,7 @@ class DownloadManagerService {
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
           retries: _nativeRetries,
-          allowPause: true,
+          allowPause: false,
           metaData: globalKey,
           displayName: displayName,
         );
@@ -1158,16 +1411,41 @@ class DownloadManagerService {
   /// Callback: background_downloader progress update
   void _onTaskProgress(TaskProgressUpdate update) {
     if (_disposed) return;
+    unawaited(
+      _handleTaskProgress(update).catchError((Object e, StackTrace st) {
+        appLogger.e('Error handling download progress for ${update.task.metaData}', error: e, stackTrace: st);
+      }),
+    );
+  }
+
+  @visibleForTesting
+  Future<void> debugHandleTaskProgress(TaskProgressUpdate update) => _handleTaskProgress(update);
+
+  Future<void> _handleTaskProgress(TaskProgressUpdate update) async {
+    if (_disposed) return;
     final globalKey = update.task.metaData;
     if (globalKey.isEmpty || update.progress < 0) return;
 
+    final existing = await _downloadForCurrentTaskSession(
+      globalKey,
+      update.task.taskId,
+      event: 'progress',
+      cancelStale: true,
+    );
+    if (existing == null) return;
+    if (existing.status != DownloadStatus.downloading.index) {
+      appLogger.d('Ignoring progress for inactive download $globalKey from task ${update.task.taskId}');
+      await _cancelNativeTask(globalKey, update.task.taskId, reason: 'progress for inactive download');
+      return;
+    }
+
     // If this item is being paused, the holding queue promoted it — cancel it
     if (_pausingKeys.contains(globalKey)) {
-      if (downloadsSupported) FileDownloader().cancelTaskWithId(update.task.taskId);
+      await _cancelNativeTask(globalKey, update.task.taskId, reason: 'pause in progress');
       return;
     }
     if (_cancellingKeys.contains(globalKey)) {
-      if (downloadsSupported) FileDownloader().cancelTaskWithId(update.task.taskId);
+      await _cancelNativeTask(globalKey, update.task.taskId, reason: 'cancellation in progress');
       return;
     }
 
@@ -1203,22 +1481,50 @@ class DownloadManagerService {
   /// Callback: background_downloader status change
   void _onTaskStatusChanged(TaskStatusUpdate update) {
     if (_disposed) return;
+    unawaited(
+      _handleTaskStatusChanged(update).catchError((Object e, StackTrace st) {
+        appLogger.e('Error handling download status for ${update.task.metaData}', error: e, stackTrace: st);
+      }),
+    );
+  }
+
+  @visibleForTesting
+  Future<void> debugHandleTaskStatus(TaskStatusUpdate update) => _handleTaskStatusChanged(update);
+
+  Future<void> _handleTaskStatusChanged(TaskStatusUpdate update) async {
+    if (_disposed) return;
     final globalKey = update.task.metaData;
     if (globalKey.isEmpty) return;
 
-    appLogger.d('Background task status: ${update.status} for $globalKey');
+    appLogger.d('Background task status: ${update.status} for $globalKey (task ${update.task.taskId})');
+
+    final existing = await _downloadForCurrentTaskSession(
+      globalKey,
+      update.task.taskId,
+      event: 'status ${update.status}',
+      cancelStale: _isNativeTaskActiveStatus(update.status),
+    );
+    if (existing == null) return;
+
+    if (existing.status != DownloadStatus.downloading.index) {
+      appLogger.d('Ignoring ${update.status} for inactive download $globalKey from task ${update.task.taskId}');
+      if (_isNativeTaskActiveStatus(update.status)) {
+        await _cancelNativeTask(globalKey, update.task.taskId, reason: 'status for inactive download');
+      }
+      return;
+    }
 
     try {
       switch (update.status) {
         case TaskStatus.complete:
-          _onDownloadComplete(globalKey, update.task);
+          await _onDownloadComplete(globalKey, update.task);
         case TaskStatus.failed:
-          _onDownloadFailed(globalKey, update.exception?.description ?? 'Download failed');
+          await _onDownloadFailed(globalKey, update.task.taskId, update.exception?.description ?? 'Download failed');
         case TaskStatus.notFound:
-          _onDownloadPermanentlyFailed(globalKey, 'File not found (404)');
+          await _onDownloadPermanentlyFailed(globalKey, update.task.taskId, 'File not found (404)');
         case TaskStatus.canceled:
           if (_pausingKeys.contains(globalKey) || _cancellingKeys.contains(globalKey)) break;
-          _onDownloadCanceled(globalKey);
+          await _onDownloadCanceled(globalKey, update.task.taskId);
         case TaskStatus.paused:
           appLogger.d('Download paused by system for $globalKey');
         case TaskStatus.waitingToRetry:
@@ -1227,10 +1533,10 @@ class DownloadManagerService {
         case TaskStatus.running:
           // If this item is being paused, the holding queue promoted it — cancel it
           if (_pausingKeys.contains(globalKey)) {
-            if (downloadsSupported) FileDownloader().cancelTaskWithId(update.task.taskId);
+            await _cancelNativeTask(globalKey, update.task.taskId, reason: 'pause in progress');
           }
           if (_cancellingKeys.contains(globalKey)) {
-            if (downloadsSupported) FileDownloader().cancelTaskWithId(update.task.taskId);
+            await _cancelNativeTask(globalKey, update.task.taskId, reason: 'cancellation in progress');
           }
           break;
       }
@@ -1240,18 +1546,20 @@ class DownloadManagerService {
   }
 
   /// Handle a system-initiated cancel — re-queue unless already completed.
-  Future<void> _onDownloadCanceled(String globalKey) async {
-    _cancelDownloadTimers(globalKey);
-    final ctx = _pendingDownloadContext.remove(globalKey);
-    if (ctx == null) return;
+  Future<void> _onDownloadCanceled(String globalKey, String taskId) async {
     if (_completingKeys.contains(globalKey)) return;
 
     final existing = await _database.getDownloadedMedia(globalKey);
     if (existing == null ||
+        existing.bgTaskId != taskId ||
+        existing.status != DownloadStatus.downloading.index ||
         existing.status == DownloadStatus.completed.index ||
         existing.status == DownloadStatus.cancelled.index) {
       return;
     }
+
+    _cancelDownloadTimers(globalKey);
+    _pendingDownloadContext.remove(globalKey);
 
     appLogger.w('Download cancelled by system for $globalKey, re-queuing');
     await _database.updateBgTaskId(globalKey, null);
@@ -1263,7 +1571,7 @@ class DownloadManagerService {
 
   /// Handle a failed download — auto-retry if retries remain, otherwise permanently fail.
   /// Native retries (Range-based resume) are already exhausted at this point.
-  Future<void> _onDownloadFailed(String globalKey, String errorMessage) async {
+  Future<void> _onDownloadFailed(String globalKey, String taskId, String errorMessage) async {
     if (_cancellingKeys.contains(globalKey)) {
       appLogger.d('Ignoring failure for $globalKey: cancellation in progress');
       return;
@@ -1272,16 +1580,18 @@ class DownloadManagerService {
       appLogger.d('Ignoring failure event for $globalKey: completion in progress');
       return;
     }
-    _cancelDownloadTimers(globalKey);
-    _pendingDownloadContext.remove(globalKey);
 
     final existing = await _database.getDownloadedMedia(globalKey);
     if (existing == null ||
+        existing.bgTaskId != taskId ||
+        existing.status != DownloadStatus.downloading.index ||
         existing.status == DownloadStatus.completed.index ||
         existing.status == DownloadStatus.cancelled.index) {
       appLogger.d('Ignoring stale failure for inactive download $globalKey');
       return;
     }
+    _cancelDownloadTimers(globalKey);
+    _pendingDownloadContext.remove(globalKey);
     final retryCount = existing.retryCount;
 
     // DNS/connection errors fail instantly and exhaust native retries in milliseconds,
@@ -1318,12 +1628,12 @@ class DownloadManagerService {
         appLogger.w('Network error for $globalKey, failing permanently (no auto-retry): $errorMessage');
       }
       final userMessage = isServerError ? t.downloads.serverErrorBitrate : errorMessage;
-      await _onDownloadPermanentlyFailed(globalKey, userMessage);
+      await _onDownloadPermanentlyFailed(globalKey, taskId, userMessage);
     }
   }
 
   /// Handle a non-retryable failure (e.g. 404) — fail immediately without auto-retry.
-  Future<void> _onDownloadPermanentlyFailed(String globalKey, String errorMessage) async {
+  Future<void> _onDownloadPermanentlyFailed(String globalKey, String taskId, String errorMessage) async {
     if (_cancellingKeys.contains(globalKey)) {
       appLogger.d('Ignoring permanent failure for $globalKey: cancellation in progress');
       return;
@@ -1332,16 +1642,19 @@ class DownloadManagerService {
       appLogger.d('Ignoring permanent failure event for $globalKey: completion in progress');
       return;
     }
-    _cancelDownloadTimers(globalKey);
-    _pendingDownloadContext.remove(globalKey);
 
     final existing = await _database.getDownloadedMedia(globalKey);
     if (existing == null ||
+        existing.bgTaskId != taskId ||
+        existing.status != DownloadStatus.downloading.index ||
         existing.status == DownloadStatus.completed.index ||
         existing.status == DownloadStatus.cancelled.index) {
       appLogger.d('Ignoring stale permanent failure for inactive download $globalKey');
       return;
     }
+
+    _cancelDownloadTimers(globalKey);
+    _pendingDownloadContext.remove(globalKey);
 
     appLogger.e('Download permanently failed for $globalKey: $errorMessage');
     await _transitionStatus(globalKey, DownloadStatus.failed, errorMessage: errorMessage);
@@ -1368,7 +1681,7 @@ class DownloadManagerService {
     }
 
     appLogger.i('Auto-retrying download for $globalKey');
-    await _database.updateBgTaskId(globalKey, null);
+    await _cleanupStaleDownload(globalKey);
     await _transitionStatus(globalKey, DownloadStatus.queued);
     await _database.addToQueue(mediaGlobalKey: globalKey);
     unawaited(_processQueue(client));
@@ -1384,24 +1697,22 @@ class DownloadManagerService {
     }
     _completingKeys.add(globalKey);
     try {
-      // Flush any pending debounced progress write + cancel any scheduled retry
-      _cancelDownloadTimers(globalKey);
-
       // Fresh DB check — bail if already completed (guards against race with orphan scan)
       final existingCheck = await _database.getDownloadedMedia(globalKey);
       if (_cancellingKeys.contains(globalKey) || existingCheck == null) {
         appLogger.d('Download no longer active for $globalKey, skipping completion');
         return;
       }
-      if (existingCheck.status == DownloadStatus.completed.index) {
-        appLogger.d('Download already completed for $globalKey, skipping');
-        return;
-      }
-      if (existingCheck.status == DownloadStatus.cancelled.index) {
-        appLogger.d('Download cancelled for $globalKey, skipping completion');
+      if (existingCheck.bgTaskId != task.taskId || existingCheck.status != DownloadStatus.downloading.index) {
+        appLogger.d(
+          'Ignoring stale completion for $globalKey from task ${task.taskId} '
+          '(current task: ${existingCheck.bgTaskId ?? 'none'}, status: ${existingCheck.status})',
+        );
         return;
       }
 
+      // Flush any pending debounced progress write + cancel any scheduled retry.
+      _cancelDownloadTimers(globalKey);
       final ctx = _pendingDownloadContext.remove(globalKey);
 
       // ── Phase 1 (critical): resolve and store the video file path ──
@@ -1470,7 +1781,7 @@ class DownloadManagerService {
         if (metadata != null && client != null) {
           if (downloadArtwork) {
             await _downloadArtwork(globalKey, metadata, client);
-            await _downloadChapterThumbnails(metadata.serverId!, metadata.id, client);
+            await _downloadChapterThumbnails(ServerId(metadata.serverId!), metadata.id, client);
           }
           if (downloadSubtitles) {
             var subtitles = ctx?.subtitles;
@@ -1515,7 +1826,7 @@ class DownloadManagerService {
   }
 
   /// Look up the year of the parent show for an episode (used for folder naming).
-  Future<int?> _fetchShowYear(String serverId, String? grandparentRatingKey, {String? clientScopeId}) async {
+  Future<int?> _fetchShowYear(ServerId serverId, String? grandparentRatingKey, {String? clientScopeId}) async {
     if (grandparentRatingKey == null) return null;
     return (await _lookupMetadata(serverId, grandparentRatingKey, clientScopeId: clientScopeId))?.year;
   }
@@ -1558,7 +1869,7 @@ class DownloadManagerService {
   Future<int?> _resolveSafRecoveryShowYear(MediaItem metadata, {String? clientScopeId}) async {
     final serverId = metadata.serverId;
     if (!metadata.isEpisode || serverId == null) return null;
-    return _fetchShowYear(serverId, metadata.grandparentId, clientScopeId: clientScopeId);
+    return _fetchShowYear(ServerId(serverId), metadata.grandparentId, clientScopeId: clientScopeId);
   }
 
   Future<void> _downloadArtwork(String globalKey, MediaItem metadata, MediaServerClient client) async {
@@ -1569,7 +1880,7 @@ class DownloadManagerService {
 
       final serverId = metadata.serverId!;
       final specs = client.resolveDownloadArtwork(metadata);
-      await _artworkService.ensureArtworkSpecs(serverId, specs);
+      await _artworkService.ensureArtworkSpecs(ServerId(serverId), specs);
 
       final storedThumbPath = metadata.thumbPath == null ? null : artworkStorageKey(metadata.thumbPath!);
       await _database.updateArtworkPaths(globalKey: globalKey, thumbPath: storedThumbPath);
@@ -1585,7 +1896,7 @@ class DownloadManagerService {
   /// Download a single artwork blob if not already on disk. The [spec] carries
   /// both the storage key (used to hash the local filename) and the absolute
   /// URL to fetch.
-  Future<void> _downloadSingleArtwork(String serverId, DownloadArtworkSpec spec) async {
+  Future<void> _downloadSingleArtwork(ServerId serverId, DownloadArtworkSpec spec) async {
     await _artworkService.downloadSingleArtwork(serverId, spec);
   }
 
@@ -1594,14 +1905,14 @@ class DownloadManagerService {
   Future<void> downloadArtworkForMetadata(MediaItem metadata, MediaServerClient client) async {
     if (metadata.serverId == null) return;
     final serverId = metadata.serverId!;
-    await _artworkService.ensureArtworkSpecs(serverId, client.resolveDownloadArtwork(metadata));
+    await _artworkService.ensureArtworkSpecs(ServerId(serverId), client.resolveDownloadArtwork(metadata));
   }
 
   /// Download chapter thumbnail images for a media item. Works for any
   /// backend whose [MediaServerClient.fetchPlaybackExtras] returns chapters
   /// with a `thumb` path — Plex's `/library/parts/X/indexes/sd/Y` and
   /// Jellyfin's `/Items/X/Images/Chapter/N?tag=Y` both pass through.
-  Future<void> _downloadChapterThumbnails(String serverId, String ratingKey, MediaServerClient client) async {
+  Future<void> _downloadChapterThumbnails(ServerId serverId, String ratingKey, MediaServerClient client) async {
     try {
       final extras = await client.fetchPlaybackExtras(ratingKey);
 
@@ -1640,7 +1951,12 @@ class DownloadManagerService {
         // Get user-friendly subtitle path based on media type
         final String subtitlePath;
         if (_storageService.isUsingSaf) {
-          subtitlePath = await _storageService.getSubtitlePath(metadata.serverId!, metadata.id, subtitle.id, extension);
+          subtitlePath = await _storageService.getSubtitlePath(
+            ServerId(metadata.serverId!),
+            metadata.id,
+            subtitle.id,
+            extension,
+          );
         } else if (metadata.isEpisode) {
           subtitlePath = await _storageService.getEpisodeSubtitlePath(
             metadata,
@@ -1652,7 +1968,12 @@ class DownloadManagerService {
           subtitlePath = await _storageService.getMovieSubtitlePath(metadata, subtitle.id, extension);
         } else {
           // Fallback to old structure
-          subtitlePath = await _storageService.getSubtitlePath(metadata.serverId!, metadata.id, subtitle.id, extension);
+          subtitlePath = await _storageService.getSubtitlePath(
+            ServerId(metadata.serverId!),
+            metadata.id,
+            subtitle.id,
+            extension,
+          );
         }
 
         // Download subtitle file
@@ -1732,6 +2053,7 @@ class DownloadManagerService {
     try {
       _cancelDownloadTimers(globalKey);
       final bgTaskId = await _database.getBgTaskId(globalKey);
+      await _cancelNativeTasksForGlobalKey(globalKey, exceptTaskId: bgTaskId, reason: 'duplicate task before pause');
       if (bgTaskId != null && downloadsSupported) {
         final task = await FileDownloader().taskForId(bgTaskId);
         if (task != null && task is DownloadTask) {
@@ -1759,26 +2081,51 @@ class DownloadManagerService {
     final bgTaskId = await _database.getBgTaskId(globalKey);
 
     // Try native resume first (only works for normal-mode DownloadTask that was paused)
-    if (bgTaskId != null) {
-      final task = await FileDownloader().taskForId(bgTaskId);
-      if (task != null && task is DownloadTask) {
-        final resumed = await FileDownloader().resume(task);
-        if (resumed) {
-          appLogger.i('Resumed download via background_downloader for $globalKey');
-          await _database.updateDownloadStatus(globalKey, DownloadStatus.downloading.index);
-          _emitProgress(globalKey, DownloadStatus.downloading, 0);
-          return;
-        }
-      }
-    }
+    if (bgTaskId != null && await _tryResumeNativeTask(globalKey, bgTaskId)) return;
 
     // Native resume failed or not supported (SAF mode) — re-enqueue from scratch
-    await _database.updateBgTaskId(globalKey, null);
-    await _database.updateDownloadProgress(globalKey, 0, 0, 0);
+    await _cleanupStaleDownload(globalKey);
     await _transitionStatus(globalKey, DownloadStatus.queued);
     await _database.addToQueue(mediaGlobalKey: globalKey);
     final resolvedClient = await _getClientForDownloadKey(globalKey) ?? client;
     unawaited(_processQueue(resolvedClient));
+  }
+
+  Future<bool> _tryResumeNativeTask(
+    String globalKey,
+    String bgTaskId, {
+    _NativeTaskForId? taskForId,
+    _NativeResumeTask? resumeTask,
+  }) async {
+    await _cancelNativeTasksForGlobalKey(globalKey, exceptTaskId: bgTaskId, reason: 'duplicate task before resume');
+
+    try {
+      final task = await (taskForId ?? FileDownloader().taskForId)(bgTaskId);
+      if (task == null || task is! DownloadTask) return false;
+
+      final resumed = await (resumeTask ?? FileDownloader().resume)(task);
+      if (!resumed) {
+        appLogger.w('Native resume returned false for $globalKey; re-enqueuing from scratch');
+        return false;
+      }
+
+      await _transitionStatus(globalKey, DownloadStatus.downloading);
+      appLogger.i('Resumed download via background_downloader for $globalKey');
+      return true;
+    } catch (e) {
+      appLogger.w('Native resume failed for $globalKey; re-enqueuing from scratch', error: e);
+      return false;
+    }
+  }
+
+  @visibleForTesting
+  Future<bool> debugTryResumeNativeTask(
+    String globalKey,
+    String bgTaskId, {
+    required Future<Task?> Function(String taskId) taskForId,
+    required Future<bool> Function(DownloadTask task) resumeTask,
+  }) {
+    return _tryResumeNativeTask(globalKey, bgTaskId, taskForId: taskForId, resumeTask: resumeTask);
   }
 
   /// Retry a failed download
@@ -1786,9 +2133,8 @@ class DownloadManagerService {
     if (_skipDownloadsUnsupported('download retry')) return;
 
     _autoRetryTimers.remove(globalKey)?.cancel();
+    await _cleanupStaleDownload(globalKey);
     await _database.clearDownloadError(globalKey);
-    await _database.updateBgTaskId(globalKey, null);
-    await _database.updateDownloadProgress(globalKey, 0, 0, 0);
     await _transitionStatus(globalKey, DownloadStatus.queued);
     await _database.addToQueue(mediaGlobalKey: globalKey);
     final resolvedClient = await _getClientForDownloadKey(globalKey) ?? client;
@@ -1801,12 +2147,8 @@ class DownloadManagerService {
     try {
       _cancelDownloadTimers(globalKey);
       final bgTaskId = await _database.getBgTaskId(globalKey);
-      if (bgTaskId != null) {
-        if (downloadsSupported) {
-          await FileDownloader().cancelTaskWithId(bgTaskId);
-        }
-        await _database.updateBgTaskId(globalKey, null);
-      }
+      await _database.updateBgTaskId(globalKey, null);
+      await _cancelNativeTasksForGlobalKey(globalKey, includeTaskId: bgTaskId, reason: 'user cancellation');
       _pendingDownloadContext.remove(globalKey);
       await _transitionStatus(globalKey, DownloadStatus.cancelled);
       await _database.removeFromQueue(globalKey);
@@ -1816,56 +2158,62 @@ class DownloadManagerService {
   }
 
   Future<void> deleteDownload(String globalKey) async {
-    _cancelDownloadTimers(globalKey);
-    final bgTaskId = await _database.getBgTaskId(globalKey);
-    if (bgTaskId != null) {
-      if (downloadsSupported) {
-        await FileDownloader().cancelTaskWithId(bgTaskId);
-      }
+    _cancellingKeys.add(globalKey);
+    try {
+      _cancelDownloadTimers(globalKey);
+      final bgTaskId = await _database.getBgTaskId(globalKey);
       await _database.updateBgTaskId(globalKey, null);
-    }
-    _pendingDownloadContext.remove(globalKey);
+      await _cancelNativeTasksForGlobalKey(globalKey, includeTaskId: bgTaskId, reason: 'delete download');
+      _pendingDownloadContext.remove(globalKey);
 
-    final parsed = parseGlobalKey(globalKey);
-    if (parsed == null) {
-      await _database.deleteDownload(globalKey);
-      return;
-    }
+      final parsed = parseGlobalKey(globalKey);
+      if (parsed == null) {
+        await _database.deleteDownload(globalKey);
+        return;
+      }
 
-    final serverId = parsed.serverId;
-    final ratingKey = parsed.ratingKey;
-    final downloadRecord = await _database.getDownloadedMedia(globalKey);
-    final clientScopeId = downloadRecord?.clientScopeId;
-    final metadata = await _lookupMetadata(serverId, ratingKey, clientScopeId: clientScopeId);
+      final serverId = parsed.serverId;
+      final ratingKey = parsed.ratingKey;
+      final downloadRecord = await _database.getDownloadedMedia(globalKey);
+      final clientScopeId = downloadRecord?.clientScopeId;
+      final metadata = await _lookupMetadata(serverId, ratingKey, clientScopeId: clientScopeId);
 
-    if (metadata == null) {
-      // Fallback deletion without progress
+      if (metadata == null) {
+        // Fallback deletion without progress
+        await _deleteMediaFilesWithMetadata(serverId, ratingKey, clientScopeId: clientScopeId);
+        await _deleteForItemByServer(serverId, ratingKey, clientScopeId: clientScopeId);
+        await _database.deleteDownload(globalKey);
+        return;
+      }
+
+      final totalItems = await _getTotalItemsToDelete(metadata, serverId, clientScopeId: clientScopeId);
+
+      _emitDeletionProgress(
+        DeletionProgress(
+          globalKey: globalKey,
+          itemTitle: metadata.displayTitle,
+          currentItem: 0,
+          totalItems: totalItems,
+        ),
+      );
+
       await _deleteMediaFilesWithMetadata(serverId, ratingKey, clientScopeId: clientScopeId);
+
       await _deleteForItemByServer(serverId, ratingKey, clientScopeId: clientScopeId);
+
       await _database.deleteDownload(globalKey);
-      return;
+
+      _emitDeletionProgress(
+        DeletionProgress(
+          globalKey: globalKey,
+          itemTitle: metadata.displayTitle,
+          currentItem: totalItems,
+          totalItems: totalItems,
+        ),
+      );
+    } finally {
+      _cancellingKeys.remove(globalKey);
     }
-
-    final totalItems = await _getTotalItemsToDelete(metadata, serverId, clientScopeId: clientScopeId);
-
-    _emitDeletionProgress(
-      DeletionProgress(globalKey: globalKey, itemTitle: metadata.displayTitle, currentItem: 0, totalItems: totalItems),
-    );
-
-    await _deleteMediaFilesWithMetadata(serverId, ratingKey, clientScopeId: clientScopeId);
-
-    await _deleteForItemByServer(serverId, ratingKey, clientScopeId: clientScopeId);
-
-    await _database.deleteDownload(globalKey);
-
-    _emitDeletionProgress(
-      DeletionProgress(
-        globalKey: globalKey,
-        itemTitle: metadata.displayTitle,
-        currentItem: totalItems,
-        totalItems: totalItems,
-      ),
-    );
   }
 
   void _emitDeletionProgress(DeletionProgress progress) {
@@ -1874,7 +2222,7 @@ class DownloadManagerService {
   }
 
   /// Calculate total items to delete (for progress tracking)
-  Future<int> _getTotalItemsToDelete(MediaItem metadata, String serverId, {String? clientScopeId}) async {
+  Future<int> _getTotalItemsToDelete(MediaItem metadata, ServerId serverId, {String? clientScopeId}) async {
     switch (metadata.kind) {
       case MediaKind.episode:
       case MediaKind.movie:
@@ -1890,9 +2238,9 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _deleteMediaFilesWithMetadata(String serverId, String ratingKey, {String? clientScopeId}) async {
+  Future<void> _deleteMediaFilesWithMetadata(ServerId serverId, String ratingKey, {String? clientScopeId}) async {
     try {
-      final gk = buildGlobalKey(serverId, ratingKey);
+      final gk = buildGlobalKey(ServerId(serverId), ratingKey);
       final downloadRecord = await _database.getDownloadedMedia(gk);
       final scopeId = clientScopeId ?? downloadRecord?.clientScopeId;
       final metadata = await _lookupMetadata(serverId, ratingKey, clientScopeId: scopeId);
@@ -1946,7 +2294,7 @@ class DownloadManagerService {
   /// `fetchPlaybackExtras` consults each backend's cache first, so this
   /// stays cheap during deletion (no network round-trip when the metadata
   /// is already cached, which it always is for downloaded items).
-  Future<List<String>> _getChapterThumbPaths(String serverId, String ratingKey, {String? clientScopeId}) async {
+  Future<List<String>> _getChapterThumbPaths(ServerId serverId, String ratingKey, {String? clientScopeId}) async {
     try {
       final client = _getClient(serverId, clientScopeId: clientScopeId);
       if (client == null) return [];
@@ -1967,9 +2315,9 @@ class DownloadManagerService {
   /// Pre-loads all chapter paths for other items on the same server in one pass,
   /// then checks membership in a Set — O(items * chapters) instead of
   /// O(thumbs * items * chapters) with repeated DB queries.
-  Future<void> _deleteChapterThumbnails(String serverId, String ratingKey, {String? clientScopeId}) async {
+  Future<void> _deleteChapterThumbnails(ServerId serverId, String ratingKey, {String? clientScopeId}) async {
     try {
-      final record = await _database.getDownloadedMedia(buildGlobalKey(serverId, ratingKey));
+      final record = await _database.getDownloadedMedia(buildGlobalKey(ServerId(serverId), ratingKey));
       final scopeId = clientScopeId ?? record?.clientScopeId;
       final thumbPaths = await _getChapterThumbPaths(serverId, ratingKey, clientScopeId: scopeId);
 
@@ -2018,7 +2366,7 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _deleteEpisodeFiles(MediaItem episode, String serverId, {String? clientScopeId}) async {
+  Future<void> _deleteEpisodeFiles(MediaItem episode, ServerId serverId, {String? clientScopeId}) async {
     try {
       final parentMetadata = episode.grandparentId != null
           ? await _lookupMetadata(serverId, episode.grandparentId!, clientScopeId: clientScopeId)
@@ -2054,7 +2402,7 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _deleteSeasonFiles(MediaItem season, String serverId, {String? clientScopeId}) async {
+  Future<void> _deleteSeasonFiles(MediaItem season, ServerId serverId, {String? clientScopeId}) async {
     try {
       final parentMetadata = season.parentId != null
           ? await _lookupMetadata(serverId, season.parentId!, clientScopeId: clientScopeId)
@@ -2089,7 +2437,7 @@ class DownloadManagerService {
   /// and parent directories are wiped in one recursive call by the caller.
   Future<void> _deleteEpisodesInCollection({
     required List<DownloadedMediaItem> episodes,
-    required String serverId,
+    required ServerId serverId,
     String? clientScopeId,
     required String parentKey,
     required String parentTitle,
@@ -2097,11 +2445,11 @@ class DownloadManagerService {
     final isSaf = _storageService.isUsingSaf;
     for (int i = 0; i < episodes.length; i++) {
       final episode = episodes[i];
-      final episodeGlobalKey = buildGlobalKey(serverId, episode.ratingKey);
+      final episodeGlobalKey = buildGlobalKey(ServerId(serverId), episode.ratingKey);
 
       _emitDeletionProgress(
         DeletionProgress(
-          globalKey: buildGlobalKey(serverId, parentKey),
+          globalKey: buildGlobalKey(ServerId(serverId), parentKey),
           itemTitle: parentTitle,
           currentItem: i + 1,
           totalItems: episodes.length,
@@ -2111,7 +2459,11 @@ class DownloadManagerService {
 
       if (isSaf) {
         final episodeScopeId = episode.clientScopeId ?? clientScopeId;
-        final episodeMetadata = await _lookupMetadata(serverId, episode.ratingKey, clientScopeId: episodeScopeId);
+        final episodeMetadata = await _lookupMetadata(
+          ServerId(serverId),
+          episode.ratingKey,
+          clientScopeId: episodeScopeId,
+        );
         if (episodeMetadata != null) {
           await _deleteEpisodeFilesSaf(
             episodeMetadata,
@@ -2120,24 +2472,28 @@ class DownloadManagerService {
             skipSafVideoAndParents: true,
           );
         } else {
-          await _deleteChapterThumbnails(serverId, episode.ratingKey, clientScopeId: episodeScopeId);
+          await _deleteChapterThumbnails(ServerId(serverId), episode.ratingKey, clientScopeId: episodeScopeId);
           await _deleteByFilePath(episode);
         }
       } else {
         await _deleteChapterThumbnails(
-          serverId,
+          ServerId(serverId),
           episode.ratingKey,
           clientScopeId: episode.clientScopeId ?? clientScopeId,
         );
         await _deleteByFilePath(episode);
       }
 
-      await _deleteForItemByServer(serverId, episode.ratingKey, clientScopeId: episode.clientScopeId ?? clientScopeId);
+      await _deleteForItemByServer(
+        ServerId(serverId),
+        episode.ratingKey,
+        clientScopeId: episode.clientScopeId ?? clientScopeId,
+      );
       await _database.deleteDownload(episodeGlobalKey);
     }
   }
 
-  Future<void> _deleteShowFiles(MediaItem show, String serverId, {String? clientScopeId}) async {
+  Future<void> _deleteShowFiles(MediaItem show, ServerId serverId, {String? clientScopeId}) async {
     try {
       final episodesInShow = await _database.getEpisodesByShow(show.id, serverId: serverId);
 
@@ -2160,7 +2516,7 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _deleteMovieFiles(MediaItem movie, String serverId, {String? clientScopeId}) async {
+  Future<void> _deleteMovieFiles(MediaItem movie, ServerId serverId, {String? clientScopeId}) async {
     try {
       final movieDir = await _storageService.getMovieDirectory(movie);
       if (await movieDir.exists()) {
@@ -2177,7 +2533,7 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _deleteMovieFilesSaf(MediaItem movie, String serverId, {String? clientScopeId}) async {
+  Future<void> _deleteMovieFilesSaf(MediaItem movie, ServerId serverId, {String? clientScopeId}) async {
     try {
       final safBaseUri = _storageService.safBaseUri;
       if (safBaseUri != null) {
@@ -2200,13 +2556,13 @@ class DownloadManagerService {
   /// dir — so we skip the SAF video delete and parent walk-up here.
   Future<void> _deleteEpisodeFilesSaf(
     MediaItem episode,
-    String serverId, {
+    ServerId serverId, {
     String? clientScopeId,
     bool skipSafVideoAndParents = false,
   }) async {
     try {
       final parentMetadata = episode.grandparentId != null
-          ? await _lookupMetadata(serverId, episode.grandparentId!, clientScopeId: clientScopeId)
+          ? await _lookupMetadata(ServerId(serverId), episode.grandparentId!, clientScopeId: clientScopeId)
           : null;
       final showYear = parentMetadata?.year;
 
@@ -2220,7 +2576,7 @@ class DownloadManagerService {
           saf.getChild(safBaseUri, _storageService.getEpisodeSafPathComponents(episode, showYear: showYear)),
           saf.getChild(safBaseUri, _storageService.getShowSafPathComponents(episode, showYear: showYear)),
         ]);
-        seasonDirUri = resolved[0]?.uri;
+        seasonDirUri = resolved.first?.uri;
         showDirUri = resolved[1]?.uri;
 
         if (seasonDirUri != null) {
@@ -2244,18 +2600,18 @@ class DownloadManagerService {
         appLogger.i('Deleted episode subtitles: ${subsDir.path}');
       }
 
-      await _deleteChapterThumbnails(serverId, episode.id, clientScopeId: clientScopeId);
+      await _deleteChapterThumbnails(ServerId(serverId), episode.id, clientScopeId: clientScopeId);
 
       if (!skipSafVideoAndParents) {
         await _deleteEmptySafDirsInOrder([seasonDirUri, showDirUri]);
-        await _ensureDbFileDeleted(serverId, episode.id);
+        await _ensureDbFileDeleted(ServerId(serverId), episode.id);
       }
     } catch (e, stack) {
       appLogger.e('Error deleting SAF episode files', error: e, stackTrace: stack);
     }
   }
 
-  Future<void> _deleteSeasonFilesSaf(MediaItem season, String serverId, {String? clientScopeId}) async {
+  Future<void> _deleteSeasonFilesSaf(MediaItem season, ServerId serverId, {String? clientScopeId}) async {
     try {
       final parentMetadata = season.parentId != null
           ? await _lookupMetadata(serverId, season.parentId!, clientScopeId: clientScopeId)
@@ -2295,7 +2651,7 @@ class DownloadManagerService {
     }
   }
 
-  Future<void> _deleteShowFilesSaf(MediaItem show, String serverId, {String? clientScopeId}) async {
+  Future<void> _deleteShowFilesSaf(MediaItem show, ServerId serverId, {String? clientScopeId}) async {
     try {
       final episodesInShow = await _database.getEpisodesByShow(show.id, serverId: serverId);
       appLogger.d('Deleting ${episodesInShow.length} episodes in show ${show.id} (SAF)');
@@ -2324,9 +2680,9 @@ class DownloadManagerService {
 
   /// Safety net: after metadata-based deletion, verify the actual DB-recorded
   /// video file is gone. If not, delete it and clean up parent directories.
-  Future<void> _ensureDbFileDeleted(String serverId, String ratingKey) async {
+  Future<void> _ensureDbFileDeleted(ServerId serverId, String ratingKey) async {
     try {
-      final globalKey = buildGlobalKey(serverId, ratingKey);
+      final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
       final record = await _database.getDownloadedMedia(globalKey);
       if (record?.videoFilePath == null) return;
 

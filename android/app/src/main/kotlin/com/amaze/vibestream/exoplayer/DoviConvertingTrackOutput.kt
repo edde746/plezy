@@ -11,9 +11,10 @@ import androidx.media3.extractor.TrackOutput
 /**
  * TrackOutput wrapper that processes DV Profile 7 HEVC samples based on conversion mode:
  *
- * - DV81: Convert RPU NALs via libdovi to Profile 8.1, present as video/dolby-vision
- *   with dvhe.08.XX codec string. Preserves dynamic tone mapping metadata.
- * - HEVC_STRIP: Strip all DV enhancement layers, present as plain video/hevc.
+ * - DV81: Convert RPU NALs via libdovi mode 2 to Profile 8.1, present as
+ *   video/dolby-vision with dvhe.08.XX codec string. Conversion failures drop
+ *   that RPU instead of forwarding Profile 7 metadata into a Profile 8.1 stream.
+ * - HEVC_STRIP: Strip DV RPU/EL NALs, present as plain video/hevc.
  *
  * Two modes of NAL framing (auto-detected):
  * - Annex B (MKV path): MatroskaExtractor outputs 00 00 00 01 start codes
@@ -22,8 +23,7 @@ import androidx.media3.extractor.TrackOutput
  * NAL processing:
  * - Type 62 (UNSPEC62): DV RPU → convert (DV81) or strip (HEVC_STRIP)
  * - Type 63 (UNSPEC63): DV Enhancement Layer → strip
- * - nuh_layer_id > 0: Enhancement layer NAL → strip
- * - All retained NALs: normalize nuh_layer_id to 0
+ * - All other NALs: pass through unchanged, matching Kodi's compatibility path
  *
  * All buffers are reused across samples to minimize GC pressure on the hot path.
  */
@@ -46,6 +46,10 @@ class DoviConvertingTrackOutput(
   var conversionActive = false
     private set
   var strippedNalCount = 0L
+    private set
+  var strippedRpuNalCount = 0L
+    private set
+  var strippedElNalCount = 0L
     private set
   var strippedInitNalCount = 0L
     private set
@@ -79,11 +83,17 @@ class DoviConvertingTrackOutput(
   override fun format(format: Format) {
     if (!conversionActive) {
       val codecs = format.codecs
-      if (codecs != null && codecs.startsWith("dvhe.07")) {
+      if (isDvProfile7Codec(codecs)) {
+        val codecString = codecs ?: ""
         conversionActive = true
-        logInfo("DV Profile 7 detected ($codecs), mode=$dvMode")
+        logInfo("DV Profile 7 detected ($codecString), mode=$dvMode")
+        when (dvMode) {
+          DvConversionMode.DV81 -> logInfo("DV81: Kodi-style libdovi conversion (convert RPU type 62, drop EL type 63)")
+          DvConversionMode.HEVC_STRIP -> logInfo("HEVC_STRIP: Kodi-compatible strip (drop RPU type 62 and EL type 63 only)")
+          else -> Unit
+        }
         logInfo(
-          "Original format: mime=${format.sampleMimeType}, codecs=$codecs, " +
+          "Original format: mime=${format.sampleMimeType}, codecs=$codecString, " +
             "initData=${format.initializationData.size} entries " +
             "(${format.initializationData.mapIndexed { i, d -> "$i:${d.size}B" }.joinToString()})"
         )
@@ -92,7 +102,7 @@ class DoviConvertingTrackOutput(
         val newFormat = when (dvMode) {
           DvConversionMode.DV81 -> {
             // Parse DV level from codec string: "dvhe.07.06" → 6
-            val level = codecs.split('.').getOrNull(2)?.toIntOrNull() ?: 6
+            val level = codecString.split('.').getOrNull(2)?.toIntOrNull() ?: 6
             val newCodecs = "dvhe.08.%02d".format(level)
             val dvConfigRecord = buildDv81ConfigRecord(level)
             logInfo("DV81: rewriting to $newCodecs, config=${dvConfigRecord.size}B")
@@ -360,7 +370,6 @@ class DoviConvertingTrackOutput(
           System.arraycopy(ANNEX_B_START_CODE, 0, outputBuf, outputLen, 4)
           outputLen += 4
           System.arraycopy(sampleBuf, nalStart, outputBuf, outputLen, nalLen)
-          normalizeLayerId(outputBuf, outputLen)
           outputLen += nalLen
           kept++
         } else if (action == NalAction.CONVERT) {
@@ -368,16 +377,15 @@ class DoviConvertingTrackOutput(
           if (convertedLen >= 0) {
             System.arraycopy(ANNEX_B_START_CODE, 0, outputBuf, outputLen, 4)
             outputLen += 4
-            normalizeLayerId(outputBuf, outputLen)
             outputLen += convertedLen
             convertedRpuCount++
             kept++
           } else {
-            strippedNalCount++
+            recordStrippedNal(action)
             stripped++
           }
         } else {
-          strippedNalCount++
+          recordStrippedNal(action)
           stripped++
         }
       }
@@ -428,7 +436,6 @@ class DoviConvertingTrackOutput(
         writeInt32BE(outputBuf, outputLen, nalLen)
         outputLen += 4
         System.arraycopy(sampleBuf, nalStart, outputBuf, outputLen, nalLen)
-        normalizeLayerId(outputBuf, outputLen)
         outputLen += nalLen
         kept++
       } else if (action == NalAction.CONVERT) {
@@ -436,16 +443,15 @@ class DoviConvertingTrackOutput(
         if (convertedLen >= 0) {
           writeInt32BE(outputBuf, outputLen, convertedLen)
           outputLen += 4
-          normalizeLayerId(outputBuf, outputLen)
           outputLen += convertedLen
           convertedRpuCount++
           kept++
         } else {
-          strippedNalCount++
+          recordStrippedNal(action)
           stripped++
         }
       } else {
-        strippedNalCount++
+        recordStrippedNal(action)
         stripped++
       }
 
@@ -461,7 +467,17 @@ class DoviConvertingTrackOutput(
     }
   }
 
-  private enum class NalAction { KEEP, STRIP, CONVERT }
+  private enum class NalAction { KEEP, STRIP_RPU, STRIP_EL, CONVERT }
+
+  private fun recordStrippedNal(action: NalAction) {
+    strippedNalCount++
+    // CONVERT reaches here only after conversion fails; raw P7 RPUs are not safe in P8.1 output.
+    when (action) {
+      NalAction.STRIP_RPU, NalAction.CONVERT -> strippedRpuNalCount++
+      NalAction.STRIP_EL -> strippedElNalCount++
+      NalAction.KEEP -> Unit
+    }
+  }
 
   private fun convertRpuIntoOutput(nalStart: Int, nalLen: Int, outputOffset: Int): Int {
     ensureOutputCapacity(outputOffset + MAX_CONVERTED_RPU_SIZE)
@@ -565,7 +581,6 @@ class DoviConvertingTrackOutput(
             System.arraycopy(ANNEX_B_START_CODE, 0, outputBuf, outputLen, 4)
             outputLen += 4
             System.arraycopy(data, nalStart, outputBuf, outputLen, nalLen)
-            normalizeLayerId(outputBuf, outputLen)
             outputLen += nalLen
             kept++
           }
@@ -617,22 +632,19 @@ class DoviConvertingTrackOutput(
   /** Classify a NAL at sampleBuf[offset..offset+len) without copying. */
   private fun processNalInline(offset: Int, len: Int): NalAction = classifyNal(sampleBuf, offset, len, convertRpu = dvMode == DvConversionMode.DV81)
 
+  private fun isDvProfile7Codec(codecs: String?): Boolean {
+    val normalized = codecs?.lowercase() ?: return false
+    return normalized.startsWith("dvhe.07") || normalized.startsWith("dvh1.07")
+  }
+
   private fun classifyNal(data: ByteArray, offset: Int, len: Int, convertRpu: Boolean): NalAction {
     if (len < 2) return NalAction.KEEP
     val nalType = (data[offset].toInt() ushr 1) and 0x3F
-    val nuhLayerId = ((data[offset].toInt() and 1) shl 5) or
-      ((data[offset + 1].toInt() ushr 3) and 0x1F)
     return when {
       nalType == NAL_TYPE_UNSPEC62 && convertRpu -> NalAction.CONVERT
-      nalType == NAL_TYPE_UNSPEC62 || nalType == NAL_TYPE_UNSPEC63 || nuhLayerId > 0 -> NalAction.STRIP
+      nalType == NAL_TYPE_UNSPEC62 -> NalAction.STRIP_RPU
+      nalType == NAL_TYPE_UNSPEC63 -> NalAction.STRIP_EL
       else -> NalAction.KEEP
-    }
-  }
-
-  private fun normalizeLayerId(data: ByteArray, offset: Int) {
-    if (data.size - offset >= 2) {
-      data[offset] = (data[offset].toInt() and 0xFE).toByte()
-      data[offset + 1] = (data[offset + 1].toInt() and 0x07).toByte()
     }
   }
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
@@ -6,6 +8,13 @@ import '../utils/key_event_simulator.dart' as key_sim;
 import 'gamepad_service.dart';
 
 enum _SwipeAxis { horizontal, vertical }
+
+class AppleTvRemotePlayPauseAction {
+  final String source;
+  final String? detail;
+
+  const AppleTvRemotePlayPauseAction({required this.source, this.detail});
+}
 
 /// Bridges tvOS touch-surface events from Apple's iOS Remote app into the
 /// focus-tree key events Plezy already handles for D-pad navigation.
@@ -25,6 +34,8 @@ class AppleTvRemoteTouchService {
   final VoidCallback _scheduleFrame;
   final DateTime Function() _now;
   final GamepadDuplicateInputGuard _duplicateInputGuard;
+  final StreamController<AppleTvRemotePlayPauseAction> _playPauseController =
+      StreamController<AppleTvRemotePlayPauseAction>.broadcast();
   final double swipeThreshold;
   final double axisSwitchDominanceRatio;
   final Duration swipeRepeatInterval;
@@ -41,6 +52,10 @@ class AppleTvRemoteTouchService {
   DateTime? _lastSwipeAt;
   DateTime? _lastDirectionalInputAt;
   DateTime? _lastSyntheticSelectAt;
+  DateTime? _lastAcceptedNativeSelectDownAt;
+  DateTime? _lastAcceptedNativeSelectUpAt;
+  int _suppressedNativeSelectDowns = 0;
+  bool _nativeSelectPressed = false;
   bool _selectPressedFromClick = false;
 
   AppleTvRemoteTouchService({
@@ -66,6 +81,8 @@ class AppleTvRemoteTouchService {
        _duplicateInputGuard =
            duplicateInputGuard ?? GamepadDuplicateInputGuard(now: now, suppressionWindow: duplicateSuppressionWindow);
 
+  Stream<AppleTvRemotePlayPauseAction> get playPauseActions => _playPauseController.stream;
+
   void start() {
     if (_listening) return;
     _channel.setMessageHandler(handleMessage);
@@ -79,6 +96,7 @@ class AppleTvRemoteTouchService {
     _channel.setMessageHandler(null);
     _unregisterNativeKeyHandler();
     _duplicateInputGuard.clear();
+    _resetNativeSelectBurstState();
     _releaseSelectFromClick(source: 'stop');
     _resetTouch();
     _listening = false;
@@ -86,6 +104,13 @@ class AppleTvRemoteTouchService {
 
   bool handleNativeKeyEvent(KeyEvent event) {
     _log('native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)}');
+    if (_isMediaPlaybackKey(event.logicalKey)) {
+      _log('consume native media key reason=direct-playback-action');
+      return true;
+    }
+    if (_shouldConsumeNativeSelectDuplicate(event)) {
+      return true;
+    }
     if (event is KeyDownEvent && _isDirectionalKey(event.logicalKey)) {
       _lastDirectionalInputAt = _now();
     }
@@ -128,6 +153,11 @@ class AppleTvRemoteTouchService {
         _releaseSelectFromClick(source: 'click_e');
       case 'click_s':
         _pressSelectFromClick();
+      case 'play_pause':
+        final source = arguments['source'] is String ? arguments['source'] as String : 'native';
+        final detail = arguments['detail'] is String ? arguments['detail'] as String : null;
+        _log('emit action=play_pause source=$source${detail == null ? '' : ' detail=$detail'}');
+        _playPauseController.add(AppleTvRemotePlayPauseAction(source: source, detail: detail));
       case 'loc':
         break;
       default:
@@ -265,6 +295,103 @@ class AppleTvRemoteTouchService {
     _simulateKeyUp(LogicalKeyboardKey.enter);
   }
 
+  bool _shouldConsumeNativeSelectDuplicate(KeyEvent event) {
+    if (!_isSelectKey(event.logicalKey)) return false;
+
+    final now = _now();
+    if (_selectPressedFromClick) {
+      _log(
+        'consume native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)} '
+        'reason=synthetic-select-in-flight',
+      );
+      if (event is KeyUpEvent) {
+        _releaseSelectFromClick(source: 'native_select');
+      }
+      return true;
+    }
+
+    final lastSyntheticSelectAt = _lastSyntheticSelectAt;
+    if (lastSyntheticSelectAt != null && now.difference(lastSyntheticSelectAt).abs() <= duplicateSuppressionWindow) {
+      final age = now.difference(lastSyntheticSelectAt).abs().inMilliseconds;
+      _log(
+        'consume native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)} '
+        'reason=recent-synthetic-select age=${age}ms',
+      );
+      return true;
+    }
+
+    if (event is KeyDownEvent) {
+      final lastAcceptedNativeSelectUpAt = _lastAcceptedNativeSelectUpAt;
+      final duplicateCompletedPress =
+          lastAcceptedNativeSelectUpAt != null &&
+          now.difference(lastAcceptedNativeSelectUpAt).abs() <= duplicateSuppressionWindow;
+      if (_nativeSelectPressed || duplicateCompletedPress) {
+        _suppressedNativeSelectDowns++;
+        final reason = _nativeSelectPressed ? 'native-select-already-down' : 'recent-native-select';
+        _log(
+          'consume native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)} '
+          'reason=$reason',
+        );
+        return true;
+      }
+
+      _nativeSelectPressed = true;
+      _lastAcceptedNativeSelectDownAt = now;
+      return false;
+    }
+
+    if (event is KeyRepeatEvent) {
+      if (_nativeSelectPressed) return false;
+      final lastAcceptedNativeSelectDownAt = _lastAcceptedNativeSelectDownAt;
+      if (lastAcceptedNativeSelectDownAt != null &&
+          now.difference(lastAcceptedNativeSelectDownAt).abs() <= duplicateSuppressionWindow) {
+        _log(
+          'consume native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)} '
+          'reason=recent-native-select',
+        );
+        return true;
+      }
+      return false;
+    }
+
+    if (event is KeyUpEvent) {
+      if (_suppressedNativeSelectDowns > 0) {
+        _suppressedNativeSelectDowns--;
+        _log(
+          'consume native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)} '
+          'reason=suppressed-native-select-down',
+        );
+        return true;
+      }
+
+      if (!_nativeSelectPressed) {
+        final lastAcceptedNativeSelectUpAt = _lastAcceptedNativeSelectUpAt;
+        if (lastAcceptedNativeSelectUpAt != null &&
+            now.difference(lastAcceptedNativeSelectUpAt).abs() <= duplicateSuppressionWindow) {
+          _log(
+            'consume native ${_eventTypeName(event)} logical=${_keyName(event.logicalKey)} '
+            'reason=recent-native-select-up',
+          );
+          return true;
+        }
+        return false;
+      }
+
+      _nativeSelectPressed = false;
+      _lastAcceptedNativeSelectUpAt = now;
+      return false;
+    }
+
+    return false;
+  }
+
+  void _resetNativeSelectBurstState() {
+    _lastAcceptedNativeSelectDownAt = null;
+    _lastAcceptedNativeSelectUpAt = null;
+    _suppressedNativeSelectDowns = 0;
+    _nativeSelectPressed = false;
+  }
+
   bool _emitKey(LogicalKeyboardKey logicalKey, {required String source, String? detail}) {
     if (_duplicateInputGuard.shouldSuppressSyntheticKey(logicalKey)) {
       _log('suppress key=${_keyName(logicalKey)} source=$source reason=recent-native');
@@ -330,9 +457,14 @@ class AppleTvRemoteTouchService {
     if (key == LogicalKeyboardKey.arrowLeft) return 'arrowLeft';
     if (key == LogicalKeyboardKey.arrowRight) return 'arrowRight';
     if (key == LogicalKeyboardKey.enter) return 'enter';
+    if (key.keyId == 0x0d) return 'rawEnter';
+    if (key == LogicalKeyboardKey.numpadEnter) return 'numpadEnter';
     if (key == LogicalKeyboardKey.select) return 'select';
     if (key == LogicalKeyboardKey.gameButtonA) return 'gameButtonA';
     if (key == LogicalKeyboardKey.escape) return 'escape';
+    if (key == LogicalKeyboardKey.mediaPlay) return 'mediaPlay';
+    if (key == LogicalKeyboardKey.mediaPause) return 'mediaPause';
+    if (key == LogicalKeyboardKey.mediaPlayPause) return 'mediaPlayPause';
     return '0x${key.keyId.toRadixString(16)}';
   }
 
@@ -341,6 +473,20 @@ class AppleTvRemoteTouchService {
         key == LogicalKeyboardKey.arrowDown ||
         key == LogicalKeyboardKey.arrowLeft ||
         key == LogicalKeyboardKey.arrowRight;
+  }
+
+  bool _isSelectKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.enter ||
+        key.keyId == 0x0d ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.select ||
+        key == LogicalKeyboardKey.gameButtonA;
+  }
+
+  bool _isMediaPlaybackKey(LogicalKeyboardKey key) {
+    return key == LogicalKeyboardKey.mediaPlayPause ||
+        key == LogicalKeyboardKey.mediaPlay ||
+        key == LogicalKeyboardKey.mediaPause;
   }
 
   String _formatDouble(double? value) {

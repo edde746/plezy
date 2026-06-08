@@ -1,6 +1,7 @@
 // ignore_for_file: invalid_annotation_target
 
 import 'package:freezed_annotation/freezed_annotation.dart';
+import 'ids.dart';
 
 import '../services/settings_service.dart' show EpisodePosterMode;
 import '../utils/global_key_utils.dart';
@@ -9,6 +10,7 @@ import 'media_backend.dart';
 import 'media_kind.dart';
 import 'media_role.dart';
 import 'media_version.dart';
+import 'season_title.dart';
 
 part 'media_item.freezed.dart';
 part 'media_item.g.dart';
@@ -353,14 +355,20 @@ sealed class MediaItem with _$MediaItem {
 
   /// Global unique identifier across all servers (`serverId:id`). Falls back
   /// to bare [id] if [serverId] is missing.
-  String get globalKey => serverId != null ? buildGlobalKey(serverId!, id) : id;
+  String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), id) : id;
 
   /// Global unique identifier of this item's library section.
-  String? get libraryGlobalKey => serverId != null && libraryId != null ? buildGlobalKey(serverId!, libraryId!) : null;
+  String? get libraryGlobalKey =>
+      serverId != null && libraryId != null ? buildGlobalKey(ServerId(serverId!), libraryId!) : null;
 
   /// Parent rating keys for hierarchical invalidation. For an episode:
   /// `[seasonId, showId]`. For a season: `[showId]`. For a movie: `[]`.
   List<String> get parentChain => [?parentId, ?grandparentId];
+
+  /// Recency used to order the Continue Watching / On Deck shelf: when the item
+  /// was last watched, falling back to when it was added for never-watched rows.
+  /// Shared by the per-client merge and the cross-server sort so they agree.
+  int get recencySortKey => lastViewedAt ?? addedAt ?? 0;
 
   /// Whether this item has started but not finished playback.
   bool get hasActiveProgress {
@@ -394,8 +402,14 @@ sealed class MediaItem with _$MediaItem {
 
   /// Subtitle line shown below [displayTitle] for episodes/seasons.
   String? get displaySubtitle {
-    if (kind == MediaKind.episode || kind == MediaKind.season) {
-      if (grandparentTitle != null || (kind == MediaKind.season && parentTitle != null)) {
+    if (kind == MediaKind.season) {
+      if (grandparentTitle != null || parentTitle != null) {
+        // Re-localize a server's generic English "Season N" (see #1271).
+        final label = localizedSeasonLabel(title: title, index: index);
+        return label.isNotEmpty ? label : title;
+      }
+    } else if (kind == MediaKind.episode) {
+      if (grandparentTitle != null) {
         return title;
       }
     }
@@ -431,6 +445,8 @@ sealed class MediaItem with _$MediaItem {
       return artPath ?? thumbPath;
     }
 
+    if (kind == MediaKind.clip) return thumbPath ?? artPath;
+
     return thumbPath;
   }
 
@@ -465,7 +481,12 @@ sealed class MediaItem with _$MediaItem {
 
   /// Returns hero art candidates in display-preference order.
   List<String> heroArtCandidates({required double containerAspectRatio}) {
-    final preferred = containerAspectRatio < 1.39 ? [backgroundSquarePath, artPath] : [artPath, backgroundSquarePath];
+    final preferred = switch (kind) {
+      MediaKind.episode when containerAspectRatio < 1.39 => [backgroundSquarePath, grandparentArtPath, artPath],
+      MediaKind.episode => [grandparentArtPath, artPath, backgroundSquarePath],
+      _ when containerAspectRatio < 1.39 => [backgroundSquarePath, artPath],
+      _ => [artPath, backgroundSquarePath],
+    };
 
     final candidates = <String>[];
     for (final path in preferred) {

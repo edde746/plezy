@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:vibe_stream/media/ids.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -22,7 +23,7 @@ import 'package:vibe_stream/utils/external_ids.dart';
 
 class _FakeMediaServerClient implements MediaServerClient {
   @override
-  final String serverId;
+  final ServerId serverId;
   @override
   String? get serverName => null;
 
@@ -31,11 +32,15 @@ class _FakeMediaServerClient implements MediaServerClient {
   final List<String> externalIdCalls = [];
   final List<String> descendantCalls = [];
 
+  @override
+  final double watchedThreshold;
+
   _FakeMediaServerClient({
-    this.serverId = 'server-1',
+    ServerId? serverId,
     required this.externalIdsByItem,
     required this.descendantsByParent,
-  });
+    this.watchedThreshold = 0.9,
+  }) : serverId = serverId ?? ServerId('server-1');
 
   @override
   MediaBackend get backend => MediaBackend.plex;
@@ -87,7 +92,7 @@ MediaItem _season() => MediaItem(
   backend: MediaBackend.plex,
   kind: MediaKind.season,
   title: 'Season 1',
-  serverId: 'server-1',
+  serverId: ServerId('server-1'),
   libraryId: 'lib-1',
   index: 1,
   parentId: 'show-1',
@@ -98,7 +103,7 @@ MediaItem _episode(int number, {int season = 1}) => MediaItem(
   backend: MediaBackend.plex,
   kind: MediaKind.episode,
   title: 'Episode $number',
-  serverId: 'server-1',
+  serverId: ServerId('server-1'),
   libraryId: 'lib-1',
   parentIndex: season,
   index: number,
@@ -109,7 +114,16 @@ MediaItem _show() => MediaItem(
   backend: MediaBackend.plex,
   kind: MediaKind.show,
   title: 'Show 1',
-  serverId: 'server-1',
+  serverId: ServerId('server-1'),
+  libraryId: 'lib-1',
+);
+
+MediaItem _movie() => MediaItem(
+  id: 'movie-1',
+  backend: MediaBackend.plex,
+  kind: MediaKind.movie,
+  title: 'Movie 1',
+  serverId: ServerId('server-1'),
   libraryId: 'lib-1',
 );
 
@@ -477,23 +491,82 @@ void main() {
       );
 
       final firstClient = _FakeMediaServerClient(
-        serverId: 'server-a',
+        serverId: ServerId('server-a'),
         externalIdsByItem: {'show-a': const ExternalIds(tvdb: 111)},
         descendantsByParent: const {},
       );
       final secondClient = _FakeMediaServerClient(
-        serverId: 'server-b',
+        serverId: ServerId('server-b'),
         externalIdsByItem: {'show-b': const ExternalIds(tvdb: 222)},
         descendantsByParent: const {},
       );
-      final firstEpisode = _episode(1).copyWith(id: 'episode-a', serverId: 'server-a', grandparentId: 'show-a');
-      final secondEpisode = _episode(1).copyWith(id: 'episode-b', serverId: 'server-b', grandparentId: 'show-b');
+      final firstEpisode = _episode(
+        1,
+      ).copyWith(id: 'episode-a', serverId: ServerId('server-a'), grandparentId: 'show-a');
+      final secondEpisode = _episode(
+        1,
+      ).copyWith(id: 'episode-b', serverId: ServerId('server-b'), grandparentId: 'show-b');
 
       await coordinator.startPlayback(firstEpisode, firstClient);
       await coordinator.startPlayback(secondEpisode, secondClient);
 
       expect(firstClient.externalIdCalls, ['show-a']);
       expect(secondClient.externalIdCalls, ['show-b']);
+    });
+  });
+
+  group('TrackerCoordinator playback threshold', () {
+    final coordinator = TrackerCoordinator.instance;
+    final simkl = SimklTracker.instance;
+    final mal = MalTracker.instance;
+    final anilist = AnilistTracker.instance;
+
+    setUp(() async {
+      await mal.setEnabled(false);
+      await anilist.setEnabled(false);
+      await simkl.setEnabled(true);
+    });
+
+    tearDown(() async {
+      coordinator.cancelInFlight();
+      coordinator.debugUseResolverDependencies();
+      simkl.rebindSession(null, onSessionInvalidated: () {});
+      await simkl.setEnabled(false);
+    });
+
+    test('marks watched at the server threshold, not the tracker default', () async {
+      final posts = <Map<String, dynamic>>[];
+      final httpClient = MockClient((request) async {
+        expect(request.method, 'POST');
+        expect(request.url.path, '/sync/history');
+        posts.add((json.decode(request.body) as Map).cast<String, dynamic>());
+        return http.Response('{}', 200);
+      });
+      simkl.rebindSession(_simklSession(), onSessionInvalidated: () {}, httpClient: httpClient);
+
+      final client = _FakeMediaServerClient(
+        externalIdsByItem: {'movie-1': const ExternalIds(tmdb: 603)},
+        descendantsByParent: const {},
+        watchedThreshold: 0.95,
+      );
+
+      await coordinator.startPlayback(_movie(), client);
+      coordinator.updateDuration(const Duration(seconds: 100));
+
+      // 90% — past the old hardcoded 80% tracker default but below the server's 95%.
+      coordinator.updatePosition(const Duration(seconds: 90));
+      await pumpEventQueue();
+      expect(posts, isEmpty);
+
+      // 95% — crosses the server threshold; fires exactly once.
+      coordinator.updatePosition(const Duration(seconds: 95));
+      await pumpEventQueue();
+      expect(posts, hasLength(1));
+      expect(posts.single['movies'], [
+        {
+          'ids': {'tmdb': 603},
+        },
+      ]);
     });
   });
 }

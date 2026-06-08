@@ -2,15 +2,45 @@ name: Build
 
 on:
   workflow_dispatch:
+    inputs:
+      build_android:
+        description: Build Android
+        default: true
+        type: boolean
+      build_ios:
+        description: Build iOS
+        default: true
+        type: boolean
+      build_macos:
+        description: Build macOS
+        default: true
+        type: boolean
+      build_windows:
+        description: Build Windows
+        default: true
+        type: boolean
+      build_linux:
+        description: Build Linux
+        default: true
+        type: boolean
 
 env:
   SENTRY_DART_DEFINE: ${{ github.repository == 'edde746/plezy' && '--dart-define=ENABLE_SENTRY=true' || '' }}
   GIT_COMMIT_DART_DEFINE: --dart-define=GIT_COMMIT=${{ github.sha }}
   SENTRY_ENV_DART_DEFINE: --dart-define=SENTRY_ENVIRONMENT=github
   DONATIONS_DART_DEFINE: --dart-define=ENABLE_DONATIONS=true
+  LINUX_APT_PACKAGES: >
+    clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev
+    libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev
+    libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev
+    libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev
+    libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev
+    libgbm-dev libwayland-dev wayland-protocols liblcms2-dev libmujs-dev liblua5.2-dev
+    ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick libcurl4-openssl-dev
 
 jobs:
   build-android:
+    if: ${{ inputs.build_android }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -101,6 +131,7 @@ jobs:
             vibe_stream-android-x86_64.tar.gz
 
   build-ios:
+    if: ${{ inputs.build_ios }}
     runs-on: macos-26
     permissions:
       id-token: write
@@ -166,6 +197,7 @@ jobs:
           path: vibe_stream-ios.ipa
 
   build-macos:
+    if: ${{ inputs.build_macos }}
     runs-on: macos-26
     permissions:
       id-token: write
@@ -267,6 +299,11 @@ jobs:
           APP_PATH="build/macos/Build/Products/Release/Vibe.app"
           echo "Verifying signature..."
           codesign -dvvv "$APP_PATH"
+          echo "Verifying signed entitlements..."
+          codesign -d --entitlements :- "$APP_PATH" > "$RUNNER_TEMP/macos-entitlements.plist"
+          /usr/libexec/PlistBuddy -c "Print" "$RUNNER_TEMP/macos-entitlements.plist"
+          /usr/libexec/PlistBuddy -c "Print :com.apple.security.cs.allow-jit" "$RUNNER_TEMP/macos-entitlements.plist"
+          /usr/libexec/PlistBuddy -c "Print :com.apple.security.cs.allow-unsigned-executable-memory" "$RUNNER_TEMP/macos-entitlements.plist"
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
       - name: Notarize Application
@@ -337,6 +374,7 @@ jobs:
             macos-dmg-size.txt
 
   build-windows-x64:
+    if: ${{ inputs.build_windows }}
     runs-on: windows-latest
     permissions:
       contents: read
@@ -385,6 +423,7 @@ jobs:
           path: build/windows/x64/runner/Release/
 
   build-windows-arm64:
+    if: ${{ inputs.build_windows }}
     runs-on: windows-11-arm
     permissions:
       contents: read
@@ -441,6 +480,7 @@ jobs:
 
   package-windows:
     needs: [build-windows-x64, build-windows-arm64]
+    if: ${{ inputs.build_windows }}
     runs-on: windows-latest
     permissions:
       id-token: write
@@ -523,6 +563,7 @@ jobs:
             win-installer-size.txt
 
   build-linux-x64:
+    if: ${{ inputs.build_linux }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -549,20 +590,12 @@ jobs:
       - name: Cache APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick libcurl4-openssl-dev
+          packages: ${{ env.LINUX_APT_PACKAGES }}
           version: 1.1
 
       - name: Install Linux dependencies
         run: |
-          packages=(
-            clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev
-            libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev
-            libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev
-            libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev
-            libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev
-            libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems
-            build-essential rpm libarchive-tools imagemagick libcurl4-openssl-dev
-          )
+          read -r -a packages <<< "$LINUX_APT_PACKAGES"
 
           for attempt in 1 2 3; do
             if sudo apt-get update -o Acquire::Retries=3 && sudo apt-get install -y -o Acquire::Retries=3 "${packages[@]}"; then
@@ -619,12 +652,12 @@ jobs:
         run: bash linux/packaging/bundle-libs.sh build/linux/x64/release/bundle
 
       - name: Copy wrapper script into bundle
-        run: cp linux/packaging/vibe_stream.sh build/linux/x64/release/bundle/vibe_stream.sh
+        run: cp linux/packaging/plezy.sh build/linux/x64/release/bundle/plezy.sh
 
       - name: Verify no missing dependencies
         run: |
           cd build/linux/x64/release/bundle
-          MISSING=$(LD_LIBRARY_PATH=lib ldd ./vibe_stream 2>&1 | grep "not found" || true)
+          MISSING=$(LD_LIBRARY_PATH=lib ldd ./plezy 2>&1 | grep "not found" || true)
           if [[ -n "$MISSING" ]]; then
             echo "ERROR: Unresolved dependencies found:" >&2
             echo "$MISSING" >&2
@@ -657,6 +690,7 @@ jobs:
             vibe_stream-linux-x64.pkg.tar.zst
 
   build-linux-arm64:
+    if: ${{ inputs.build_linux }}
     runs-on: ubuntu-24.04-arm
     permissions:
       id-token: write
@@ -683,20 +717,12 @@ jobs:
       - name: Cache APT packages
         uses: awalsh128/cache-apt-pkgs-action@latest
         with:
-          packages: clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems build-essential rpm libarchive-tools imagemagick libcurl4-openssl-dev
+          packages: ${{ env.LINUX_APT_PACKAGES }}
           version: 1.1
 
       - name: Install Linux dependencies
         run: |
-          packages=(
-            clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev
-            libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev
-            libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev
-            libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev
-            libxss-dev libxpresent-dev libxkbcommon-dev libpulse-dev libdbus-1-dev libdrm-dev
-            libgbm-dev libwayland-dev wayland-protocols liblcms2-dev ruby ruby-dev rubygems
-            build-essential rpm libarchive-tools imagemagick libcurl4-openssl-dev
-          )
+          read -r -a packages <<< "$LINUX_APT_PACKAGES"
 
           for attempt in 1 2 3; do
             if sudo apt-get update -o Acquire::Retries=3 && sudo apt-get install -y -o Acquire::Retries=3 "${packages[@]}"; then
@@ -763,12 +789,12 @@ jobs:
         run: bash linux/packaging/bundle-libs.sh ${{ steps.find-bundle.outputs.bundle_dir }}
 
       - name: Copy wrapper script into bundle
-        run: cp linux/packaging/vibe_stream.sh ${{ steps.find-bundle.outputs.bundle_dir }}/vibe_stream.sh
+        run: cp linux/packaging/plezy.sh ${{ steps.find-bundle.outputs.bundle_dir }}/plezy.sh
 
       - name: Verify no missing dependencies
         run: |
           cd ${{ steps.find-bundle.outputs.bundle_dir }}
-          MISSING=$(LD_LIBRARY_PATH=lib ldd ./vibe_stream 2>&1 | grep "not found" || true)
+          MISSING=$(LD_LIBRARY_PATH=lib ldd ./plezy 2>&1 | grep "not found" || true)
           if [[ -n "$MISSING" ]]; then
             echo "ERROR: Unresolved dependencies found:" >&2
             echo "$MISSING" >&2
@@ -801,7 +827,8 @@ jobs:
             vibe_stream-linux-arm64.pkg.tar.zst
 
   create-release:
-    needs: [build-android, build-ios, build-macos, package-windows, build-linux-x64, build-linux-arm64]
+    needs: [build-android, build-ios, build-macos, build-windows-x64, build-windows-arm64, package-windows, build-linux-x64, build-linux-arm64]
+    if: ${{ always() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && (inputs.build_android || inputs.build_ios || inputs.build_macos || inputs.build_windows || inputs.build_linux) }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -812,48 +839,56 @@ jobs:
           sparse-checkout-cone-mode: false
 
       - name: Download Android artifacts
+        if: ${{ inputs.build_android }}
         uses: actions/download-artifact@v4
         with:
           name: android-apk
           path: artifacts/android-apk
 
       - name: Download iOS artifact
+        if: ${{ inputs.build_ios }}
         uses: actions/download-artifact@v4
         with:
           name: ios-ipa
           path: artifacts/ios-ipa
 
       - name: Download macOS artifact
+        if: ${{ inputs.build_macos }}
         uses: actions/download-artifact@v4
         with:
           name: macos-dmg
           path: artifacts/macos-dmg
 
       - name: Download Windows x64 artifact
+        if: ${{ inputs.build_windows }}
         uses: actions/download-artifact@v4
         with:
           name: windows-x64-portable
           path: artifacts/windows-x64-portable
 
       - name: Download Windows arm64 artifact
+        if: ${{ inputs.build_windows }}
         uses: actions/download-artifact@v4
         with:
           name: windows-arm64-portable
           path: artifacts/windows-arm64-portable
 
       - name: Download Windows installer artifact
+        if: ${{ inputs.build_windows }}
         uses: actions/download-artifact@v4
         with:
           name: windows-installer
           path: artifacts/windows-installer
 
       - name: Download Linux x64 artifacts
+        if: ${{ inputs.build_linux }}
         uses: actions/download-artifact@v4
         with:
           name: linux-x64
           path: artifacts/linux-x64
 
       - name: Download Linux arm64 artifacts
+        if: ${{ inputs.build_linux }}
         uses: actions/download-artifact@v4
         with:
           name: linux-arm64
@@ -940,21 +975,39 @@ jobs:
           echo "Generated appcast.xml:"
           cat appcast.xml
 
+      - name: Collect release files
+        id: release-files
+        run: |
+          {
+            echo 'files<<EOF'
+            if [ "${{ inputs.build_android }}" = "true" ]; then
+              echo artifacts/android-apk/vibe_stream-android-arm64-v8a.tar.gz
+              echo artifacts/android-apk/vibe_stream-android-armeabi-v7a.tar.gz
+              echo artifacts/android-apk/vibe_stream-android-x86_64.tar.gz
+            fi
+            if [ "${{ inputs.build_ios }}" = "true" ]; then
+              echo artifacts/ios-ipa/vibe_stream-ios.ipa
+            fi
+            if [ "${{ inputs.build_macos }}" = "true" ]; then
+              echo artifacts/macos-dmg/vibe_stream-macos.dmg
+            fi
+            if [ "${{ inputs.build_windows }}" = "true" ]; then
+              echo artifacts/windows-x64-portable/vibe_stream-windows-x64-portable.7z
+              echo artifacts/windows-arm64-portable/vibe_stream-windows-arm64-portable.7z
+              echo artifacts/windows-installer/vibe_stream-windows-installer.exe
+            fi
+            if [ "${{ inputs.build_linux }}" = "true" ]; then
+              echo 'artifacts/linux-x64/*'
+              echo 'artifacts/linux-arm64/*'
+            fi
+            echo appcast.xml
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            artifacts/android-apk/vibe_stream-android-arm64-v8a.tar.gz
-            artifacts/android-apk/vibe_stream-android-armeabi-v7a.tar.gz
-            artifacts/android-apk/vibe_stream-android-x86_64.tar.gz
-            artifacts/ios-ipa/vibe_stream-ios.ipa
-            artifacts/macos-dmg/vibe_stream-macos.dmg
-            artifacts/windows-x64-portable/vibe_stream-windows-x64-portable.7z
-            artifacts/windows-arm64-portable/vibe_stream-windows-arm64-portable.7z
-            artifacts/windows-installer/vibe_stream-windows-installer.exe
-            artifacts/linux-x64/*
-            artifacts/linux-arm64/*
-            appcast.xml
+          files: ${{ steps.release-files.outputs.files }}
           draft: true
           prerelease: false
           generate_release_notes: true

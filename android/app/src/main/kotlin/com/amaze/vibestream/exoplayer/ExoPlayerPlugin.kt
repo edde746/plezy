@@ -148,6 +148,7 @@ class ExoPlayerPlugin :
       }
       "setSubtitleStyle" -> handleSetSubtitleStyle(call, result)
       "setBoxFitMode" -> handleSetBoxFitMode(call, result)
+      "setVideoZoom" -> handleSetVideoZoom(call, result)
       "setDvConversionMode" -> handleSetDvConversionMode(call, result)
       "observeProperty" -> handleObserveProperty(call, result)
       "setMpvProperty" -> handleSetMpvProperty(call, result)
@@ -239,7 +240,7 @@ class ExoPlayerPlugin :
     val startPositionMs = call.argument<Number>("startPositionMs")?.toLong() ?: 0L
     val autoPlay = call.argument<Boolean>("autoPlay") ?: true
     val isLive = call.argument<Boolean>("isLive") ?: false
-    val externalSubtitles = call.argument<List<Map<String, String?>>>("externalSubtitles")
+    val externalSubtitles = call.argument<List<Map<String, Any?>>>("externalSubtitles")
 
     if (uri == null) {
       result.error("INVALID_ARGS", "Missing 'uri'", null)
@@ -259,6 +260,8 @@ class ExoPlayerPlugin :
         val options = mutableListOf<String>()
         options.add("start=$startSeconds")
         if (!autoPlay) options.add("pause=yes")
+        options.add("sid=no")
+        options.add("secondary-sid=no")
         headers?.forEach { (key, value) ->
           options.add("http-header-fields-append=$key: $value")
         }
@@ -546,6 +549,22 @@ class ExoPlayerPlugin :
     }
     activity?.runOnUiThread {
       playerCore?.setBoxFitMode(mode)
+      result.success(null)
+    } ?: result.success(null)
+  }
+
+  private fun handleSetVideoZoom(call: MethodCall, result: MethodChannel.Result) {
+    val scale = call.argument<Number>("scale")?.toDouble()
+    if (scale == null) {
+      result.error("INVALID_ARGS", "Missing 'scale'", null)
+      return
+    }
+    if (usingMpvFallback) {
+      result.success(null)
+      return
+    }
+    activity?.runOnUiThread {
+      playerCore?.setVideoZoom(scale)
       result.success(null)
     } ?: result.success(null)
   }

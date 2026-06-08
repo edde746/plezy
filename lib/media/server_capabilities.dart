@@ -75,9 +75,9 @@ class ServerCapabilities {
   /// still works but choices don't follow the user across devices.
   final bool trackPreferencePersistence;
 
-  /// Multi-endpoint connection model with relay/local/remote racing
-  /// (Plex `findBestWorkingConnection`). Jellyfin servers expose a single
-  /// URL, so this is false there.
+  /// Multi-endpoint connection model with endpoint racing/failover. Plex gets
+  /// local/remote/relay candidates from plex.tv; Jellyfin uses user-entered
+  /// URLs for the same server.
   final bool endpointFailover;
 
   /// Watch progress can be queued offline and replayed when reconnected
@@ -88,9 +88,7 @@ class ServerCapabilities {
   /// uses Plex-shaped session/metadata.
   final bool discordRpc;
 
-  /// Server exposes a metadata edit endpoint (Plex
-  /// `/library/metadata/{id}` PUT). Hides the "Manage" affordances when
-  /// false.
+  /// Server exposes metadata edit endpoints. Hides edit affordances when false.
   final bool richMetadataEdit;
 
   /// How the alpha-jump bar should behave for this backend's libraries.
@@ -102,9 +100,9 @@ class ServerCapabilities {
   /// gates whether the player attempts the load at all.
   final bool scrubThumbnails;
 
-  /// Library section exposes a folder hierarchy (Plex
-  /// `/library/sections/{id}/folders`). Jellyfin has no equivalent endpoint,
-  /// so the "Folders" grouping option is hidden when this is false.
+  /// Library section exposes a folder hierarchy. Plex uses
+  /// `/library/sections/{id}/folders`; Jellyfin uses direct-child
+  /// `/Items?ParentId=...&Recursive=false` queries.
   final bool folderGrouping;
 
   const ServerCapabilities({
@@ -173,12 +171,13 @@ class ServerCapabilities {
     numericUserRating: false,
     externalSubtitleSearch: false,
     trackPreferencePersistence: true,
-    endpointFailover: false,
+    endpointFailover: true,
     offlineWatchQueue: false,
     discordRpc: false,
-    richMetadataEdit: false,
+    richMetadataEdit: true,
     alphaBar: AlphaBarMode.nameStartsWithFilter,
     scrubThumbnails: true,
+    folderGrouping: true,
   );
 
   ServerCapabilities copyWith({

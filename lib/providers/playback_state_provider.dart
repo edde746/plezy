@@ -173,7 +173,7 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
         _playQueueTotalCount = response.playQueueTotalCount ?? response.size ?? response.items!.length;
         _playQueueShuffled = response.playQueueShuffled;
         safeNotifyListeners();
-        return true;
+        return _findLoadedIndex(targetPlayQueueItemID) != -1;
       }
     } catch (e) {
       // Failed to load items
@@ -228,6 +228,11 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
     return -1;
   }
 
+  MediaItem? _findLoadedItem(int playQueueItemId) {
+    final index = _findLoadedIndex(playQueueItemId);
+    return index == -1 ? null : _loadedItems[index];
+  }
+
   /// Gets the next item in the playback queue.
   /// Returns null if queue is exhausted or current item is not in queue.
   /// [loopQueue] - If true, restart from beginning when queue is exhausted
@@ -277,11 +282,9 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
       final last = _loadedItems.last;
       final nextItemID = last is PlexMediaItem ? last.playQueueItemId : null;
       if (nextItemID != null) {
-        final loaded = await _ensureItemsLoaded(nextItemID + 1);
-        if (loaded) {
-          // Try again with newly loaded items
-          return getNextEpisode(currentItemKey, loopQueue: loopQueue);
-        }
+        final targetPlayQueueItemID = nextItemID + 1;
+        final loaded = await _ensureItemsLoaded(targetPlayQueueItemID);
+        if (loaded) return _findLoadedItem(targetPlayQueueItemID);
       }
     }
 
@@ -316,10 +319,9 @@ class PlaybackStateProvider with ChangeNotifier, DisposableChangeNotifierMixin {
       final first = _loadedItems.first;
       final prevItemID = first is PlexMediaItem ? first.playQueueItemId : null;
       if (prevItemID != null && prevItemID > 0) {
-        final loaded = await _ensureItemsLoaded(prevItemID - 1);
-        if (loaded) {
-          return getPreviousEpisode(currentItemKey);
-        }
+        final targetPlayQueueItemID = prevItemID - 1;
+        final loaded = await _ensureItemsLoaded(targetPlayQueueItemID);
+        if (loaded) return _findLoadedItem(targetPlayQueueItemID);
       }
     }
 

@@ -3,13 +3,14 @@ import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
 
 /// Shared grid delegate configuration for media item grids
-/// Maintains consistent spacing (2/3.3 aspect ratio, 0 spacing) across all media grids
+/// Maintains consistent aspect ratio and spacing across all media grids.
 class MediaGridDelegate {
   /// Creates a standard grid delegate for media items
   ///
   /// Uses [GridSizeCalculator.getMaxCrossAxisExtent] by default.
   /// Set [usePaddingAware] to true to use [GridSizeCalculator.getMaxCrossAxisExtentWithPadding] instead.
   /// Set [useWideAspectRatio] to true to use 16:9 aspect ratio for episode thumbnails.
+  /// Set [fullBleedImage] to true when the card is image-only and should not reserve text height.
   /// Pass [maxCrossAxisExtentOverride] to bypass the calculator and the wide-aspect multiplier —
   /// the caller is then responsible for providing a fully-resolved per-cell width.
   static SliverGridDelegateWithMaxCrossAxisExtent createDelegate({
@@ -18,11 +19,11 @@ class MediaGridDelegate {
     bool usePaddingAware = false,
     double horizontalPadding = 16,
     bool useWideAspectRatio = false,
+    bool fullBleedImage = false,
     double? maxCrossAxisExtentOverride,
   }) {
-    final aspectRatio = useWideAspectRatio
-        ? GridLayoutConstants.episodeGridCellAspectRatio
-        : GridLayoutConstants.posterAspectRatio;
+    final aspectRatio = aspectRatioFor(useWideAspectRatio: useWideAspectRatio, fullBleedImage: fullBleedImage);
+    final spacing = spacingFor(context: context, fullBleedImage: fullBleedImage);
 
     double maxCrossAxisExtent;
     if (maxCrossAxisExtentOverride != null) {
@@ -42,8 +43,23 @@ class MediaGridDelegate {
     return SliverGridDelegateWithMaxCrossAxisExtent(
       maxCrossAxisExtent: maxCrossAxisExtent,
       childAspectRatio: aspectRatio,
-      crossAxisSpacing: GridLayoutConstants.crossAxisSpacing,
-      mainAxisSpacing: GridLayoutConstants.mainAxisSpacing,
+      crossAxisSpacing: spacing,
+      mainAxisSpacing: spacing,
     );
+  }
+
+  static double spacingFor({required BuildContext context, bool fullBleedImage = false}) {
+    if (!fullBleedImage) return GridLayoutConstants.crossAxisSpacing;
+    return GridLayoutConstants.fullCardGridSpacingForScale(TvLayoutConstants.scaleOf(context));
+  }
+
+  static double aspectRatioFor({bool useWideAspectRatio = false, bool fullBleedImage = false}) {
+    if (fullBleedImage) {
+      return useWideAspectRatio
+          ? GridLayoutConstants.episodeThumbnailAspectRatio
+          : GridLayoutConstants.fullCardPosterAspectRatio;
+    }
+
+    return useWideAspectRatio ? GridLayoutConstants.episodeGridCellAspectRatio : GridLayoutConstants.posterAspectRatio;
   }
 }

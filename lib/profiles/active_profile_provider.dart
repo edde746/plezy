@@ -22,7 +22,12 @@ import 'profile_registry.dart';
 /// local profiles first, then live home users; if neither matches we fall
 /// back to the first profile in the merged list.
 class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  ActiveProfileProvider({required this._registry, required this._plexHome, required this._connections, this._storage});
+  ActiveProfileProvider({
+    required this._registry,
+    required this._plexHome,
+    required this._connections,
+    StorageService? storage,
+  }) : _storage = storage;
 
   final ProfileRegistry _registry;
   final PlexHomeService _plexHome;
@@ -223,7 +228,9 @@ class ActiveProfileProvider extends ChangeNotifier with DisposableChangeNotifier
     await storage.setActiveProfileId(profile.id);
     final now = DateTime.now();
     await storage.markProfileUsed(profile.id, now);
-    _active = profile.copyWith(lastUsedAt: now);
+    final activated = profile.copyWith(lastUsedAt: now);
+    _active = activated;
+    _profiles = sortProfilesByLastUsed([for (final p in _profiles) p.id == profile.id ? activated : p]);
     safeNotifyListeners();
     appLogger.i('ActiveProfileProvider: activated ${profile.displayName} (${profile.id})');
     if (profile.isLocal) {

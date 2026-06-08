@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
@@ -6,6 +7,7 @@ import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_server_client.dart';
 import '../utils/app_logger.dart';
+import '../utils/external_ids.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/search_relevance.dart';
 import 'multi_server_manager.dart';
@@ -22,23 +24,34 @@ class DataAggregationService {
   DataAggregationService(this._serverManager);
 
   /// Fetch libraries from all online clients regardless of backend, returning
-  /// neutral [MediaLibrary]s.
-  Future<List<MediaLibrary>> getMediaLibrariesFromAllServers() async {
+  /// the merged neutral [MediaLibrary]s alongside the ids of the servers whose
+  /// fetch actually succeeded.
+  ///
+  /// A per-server `fetchLibraries()` failure is swallowed (that server simply
+  /// contributes no libraries) so one unreachable server doesn't sink the whole
+  /// list. [succeededServerIds] lets callers tell a *failed* fetch apart from a
+  /// server that genuinely has no libraries — both contribute nothing, so
+  /// conflating them would let a transient failure be cached as "loaded" and
+  /// never retried.
+  Future<({List<MediaLibrary> libraries, Set<String> succeededServerIds})> getMediaLibrariesFromAllServers() async {
     final clients = _serverManager.onlineClients;
     if (clients.isEmpty) {
       appLogger.w('No online servers available for fetching libraries (neutral)');
-      return [];
+      return (libraries: const <MediaLibrary>[], succeededServerIds: const <String>{});
     }
+    final succeededServerIds = <String>{};
     final futures = clients.entries.map((entry) async {
       try {
-        return await entry.value.fetchLibraries();
+        final libraries = await entry.value.fetchLibraries();
+        succeededServerIds.add(entry.key);
+        return libraries;
       } catch (e, stackTrace) {
         appLogger.e('Failed neutral library fetch from ${entry.key}', error: e, stackTrace: stackTrace);
         return <MediaLibrary>[];
       }
     });
     final results = await Future.wait(futures);
-    return [for (final list in results) ...list];
+    return (libraries: [for (final list in results) ...list], succeededServerIds: succeededServerIds);
   }
 
   /// Fetch "On Deck" (Continue Watching) from all servers and merge by recency.
@@ -66,17 +79,17 @@ class DataAggregationService {
     if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
       filteredOnDeck = allOnDeck.where((item) {
         if (item.libraryId == null || item.serverId == null) return true;
-        final globalKey = buildGlobalKey(item.serverId!, item.libraryId!);
+        final globalKey = buildGlobalKey(ServerId(item.serverId!), item.libraryId!);
         return !hiddenLibraryKeys.contains(globalKey);
       }).toList();
     }
 
-    // Sort by most recently viewed, falling back to addedAt for unwatched items
-    filteredOnDeck.sort((a, b) {
-      final aTime = a.lastViewedAt ?? a.addedAt ?? 0;
-      final bTime = b.lastViewedAt ?? b.addedAt ?? 0;
-      return bTime.compareTo(aTime); // Descending (most recent first)
-    });
+    // Sort by most recently viewed, falling back to addedAt for unwatched items.
+    // Same key as JellyfinClient's continue-watching merge (MediaItem.recencySortKey)
+    // so per-server and cross-server ordering can't drift apart.
+    filteredOnDeck.sort((a, b) => b.recencySortKey.compareTo(a.recencySortKey));
+
+    filteredOnDeck = await _deduplicateContinueWatching(filteredOnDeck);
 
     // Apply limit if specified
     final result = limit != null && limit < filteredOnDeck.length ? filteredOnDeck.sublist(0, limit) : filteredOnDeck;
@@ -84,6 +97,140 @@ class DataAggregationService {
     appLogger.i('Fetched ${result.length} on deck items from all servers');
 
     return result;
+  }
+
+  Future<List<MediaItem>> _deduplicateContinueWatching(List<MediaItem> items) async {
+    if (items.length < 2) return items;
+
+    final bucketCounts = <String, int>{};
+    for (final item in items) {
+      final bucket = _continueWatchingTitleBucket(item);
+      if (bucket == null) continue;
+      bucketCounts[bucket] = (bucketCounts[bucket] ?? 0) + 1;
+    }
+
+    final duplicateBuckets = {
+      for (final entry in bucketCounts.entries)
+        if (entry.value > 1) entry.key,
+    };
+    if (duplicateBuckets.isEmpty) return items;
+
+    final externalIdLoads = <String, Future<ExternalIds>>{};
+    final identityKeysByIndex = <int, Set<String>>{};
+    final identityKeyLoads = <Future<void>>[];
+    for (var i = 0; i < items.length; i++) {
+      if (!duplicateBuckets.contains(_continueWatchingTitleBucket(items[i]))) continue;
+      final index = i;
+      identityKeyLoads.add(
+        _continueWatchingIdentityKeys(items[index], externalIdLoads).then((keys) => identityKeysByIndex[index] = keys),
+      );
+    }
+    await Future.wait(identityKeyLoads);
+
+    final seenKeys = <String>{};
+    final result = <MediaItem>[];
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      if (!duplicateBuckets.contains(_continueWatchingTitleBucket(item))) {
+        result.add(item);
+        continue;
+      }
+
+      final identityKeys = identityKeysByIndex[i] ?? const <String>{};
+      if (identityKeys.isEmpty) {
+        result.add(item);
+        continue;
+      }
+
+      if (identityKeys.any(seenKeys.contains)) continue;
+
+      seenKeys.addAll(identityKeys);
+      result.add(item);
+    }
+
+    return result;
+  }
+
+  String? _continueWatchingTitleBucket(MediaItem item) {
+    final scope = _continueWatchingIdentityScope(item);
+    if (scope == null) return null;
+
+    final title = switch (item.kind) {
+      MediaKind.episode || MediaKind.season => item.grandparentTitle ?? item.parentTitle ?? item.title,
+      _ => item.title,
+    };
+    final normalized = title?.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+    if (normalized == null || normalized.isEmpty) return null;
+    return '$scope:$normalized';
+  }
+
+  Future<Set<String>> _continueWatchingIdentityKeys(
+    MediaItem item,
+    Map<String, Future<ExternalIds>> externalIdLoads,
+  ) async {
+    final scope = _continueWatchingIdentityScope(item);
+    if (scope == null) return const {};
+
+    final keys = <String>{};
+    final serverId = item.serverId;
+    final targetId = _continueWatchingIdentityTargetId(item);
+    final client = serverId == null ? null : _serverManager.getClient(ServerId(serverId));
+
+    if (client != null && targetId != null && targetId.isNotEmpty) {
+      try {
+        final cacheKey = buildGlobalKey(ServerId(serverId!), targetId);
+        final externalIds = await externalIdLoads.putIfAbsent(cacheKey, () => client.fetchExternalIds(targetId));
+        _addExternalIdentityKeys(keys, scope, externalIds);
+      } catch (e, stackTrace) {
+        appLogger.d(
+          'Failed to resolve Continue Watching identity for ${item.globalKey}',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
+    }
+
+    final stableGuid = _stableMediaGuid(item.guid);
+    if (stableGuid != null) {
+      final guidScope = item.kind == MediaKind.episode ? 'episode' : scope;
+      keys.add('$guidScope:guid:$stableGuid');
+    }
+
+    return keys;
+  }
+
+  String? _continueWatchingIdentityScope(MediaItem item) {
+    return switch (item.kind) {
+      MediaKind.episode || MediaKind.season || MediaKind.show => 'show',
+      MediaKind.movie => 'movie',
+      _ => null,
+    };
+  }
+
+  String? _continueWatchingIdentityTargetId(MediaItem item) {
+    return switch (item.kind) {
+      MediaKind.episode => item.grandparentId,
+      MediaKind.season => item.grandparentId ?? item.parentId,
+      MediaKind.show || MediaKind.movie => item.id,
+      _ => null,
+    };
+  }
+
+  void _addExternalIdentityKeys(Set<String> keys, String scope, ExternalIds externalIds) {
+    final imdb = externalIds.imdb?.trim().toLowerCase();
+    if (imdb != null && imdb.isNotEmpty) keys.add('$scope:imdb:$imdb');
+    final tmdb = externalIds.tmdb;
+    if (tmdb != null) keys.add('$scope:tmdb:$tmdb');
+    final tvdb = externalIds.tvdb;
+    if (tvdb != null) keys.add('$scope:tvdb:$tvdb');
+  }
+
+  String? _stableMediaGuid(String? guid) {
+    final value = guid?.trim();
+    if (value == null || value.isEmpty) return null;
+    if (!value.contains('://')) return null;
+    if (value.contains('agents.none://')) return null;
+    return value.toLowerCase();
   }
 
   /// Fetch recommendation hubs from all servers as neutral [MediaHub]s.
@@ -106,7 +253,9 @@ class DataAggregationService {
     // Only fallback clients need a library prefetch when home layout is on;
     // rich-hub backends return the intended home rows directly.
     final needsLibraryPrefetch = useGlobalHubs && clients.values.any((client) => !client.capabilities.richHubs);
-    final libraries = needsLibraryPrefetch ? _groupLibrariesByServer(await getMediaLibrariesFromAllServers()) : null;
+    final libraries = needsLibraryPrefetch
+        ? _groupLibrariesByServer((await getMediaLibrariesFromAllServers()).libraries)
+        : null;
 
     final futures = clients.entries.map((entry) async {
       final serverId = entry.key;
@@ -114,16 +263,17 @@ class DataAggregationService {
       try {
         final serverLibraries = libraries?[serverId];
         final shouldUseGlobalHubs = useGlobalHubs && client.capabilities.richHubs;
+        final hubItemLimit = limit ?? defaultHubPreviewLimit;
         final hubs = shouldUseGlobalHubs
-            ? await client.fetchGlobalHubs(limit: limit ?? 10, includePlaybackHubs: includePlaybackHubs)
+            ? await client.fetchGlobalHubs(limit: hubItemLimit, includePlaybackHubs: includePlaybackHubs)
             : await _fetchLibraryHubsForClient(
                 client,
-                limit: limit ?? 10,
+                limit: hubItemLimit,
                 hiddenLibraryKeys: hiddenLibraryKeys,
                 includePlaybackHubs: includePlaybackHubs,
                 libraries: useGlobalHubs ? serverLibraries : null,
               );
-        return _postProcessHubs(hubs, serverId: serverId, hiddenLibraryKeys: hiddenLibraryKeys);
+        return _postProcessHubs(hubs, serverId: ServerId(serverId), hiddenLibraryKeys: hiddenLibraryKeys);
       } catch (e, stackTrace) {
         appLogger.e('Failed to fetch hubs from server $serverId', error: e, stackTrace: stackTrace);
         return <MediaHub>[];
@@ -184,7 +334,7 @@ class DataAggregationService {
   }
 
   /// Filter hidden-library items and drop empty hubs.
-  List<MediaHub> _postProcessHubs(List<MediaHub> hubs, {required String serverId, Set<String>? hiddenLibraryKeys}) {
+  List<MediaHub> _postProcessHubs(List<MediaHub> hubs, {required ServerId serverId, Set<String>? hiddenLibraryKeys}) {
     var filtered = hubs;
     if (hiddenLibraryKeys != null && hiddenLibraryKeys.isNotEmpty) {
       filtered = filtered
@@ -192,7 +342,7 @@ class DataAggregationService {
             final filteredItems = hub.items.where((item) {
               final libraryId = item.libraryId;
               if (libraryId == null) return true;
-              final globalKey = buildGlobalKey(serverId, libraryId);
+              final globalKey = buildGlobalKey(ServerId(serverId), libraryId);
               return !hiddenLibraryKeys.contains(globalKey);
             }).toList();
             if (filteredItems.isEmpty) return null;

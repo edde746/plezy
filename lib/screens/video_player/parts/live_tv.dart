@@ -88,6 +88,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
   /// channel directly with a session-less URL, so retry is just re-opening
   /// that URL — degradation knobs apply only to the Plex transcoder branch.
   Future<void> _retryLiveStream() async {
+    _liveSeek.cancel();
     final client = _liveClient;
     final ds = _liveStreamFallbackLevel < 1;
     final dsa = _liveStreamFallbackLevel < 2;
@@ -98,7 +99,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       final dvrKey = _liveDvrKey;
       if (channels == null || channelIndex < 0 || channelIndex >= channels.length || dvrKey == null) {
         appLogger.w('Cannot retry live stream — missing session info');
-        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? 'Live stream failed'));
+        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? t.liveTv.liveStreamFailed));
         unawaited(_handleBackButton());
         return;
       }
@@ -108,7 +109,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       // Re-tune to get a fresh capture session — the previous one is dead.
       final tuneResult = await client.tuneChannel(dvrKey, channel.key);
       if (tuneResult == null || !mounted) {
-        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? 'Live stream failed'));
+        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? t.liveTv.liveStreamFailed));
         unawaited(_handleBackButton());
         return;
       }
@@ -125,7 +126,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
         directStreamAudio: dsa,
       );
       if (streamPath == null || !mounted) {
-        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? 'Live stream failed'));
+        showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? t.liveTv.liveStreamFailed));
         unawaited(_handleBackButton());
         return;
       }
@@ -153,7 +154,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     }
 
     appLogger.w('Cannot retry live stream — no compatible client/URL available');
-    showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? 'Live stream failed'));
+    showGlobalErrorSnackBar(_redactPlayerError(_lastLogError ?? t.liveTv.liveStreamFailed));
     unawaited(_handleBackButton());
   }
 
@@ -164,8 +165,19 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     await player!.setProperty('force-seekable', 'no');
   }
 
+  /// The raw live playback position as an absolute epoch second
+  /// (`_streamStartEpoch + player position`).
+  int get _rawPositionEpoch => (_streamStartEpoch + (player?.state.position.inSeconds ?? 0)).round();
+
   /// The current playback position as an absolute epoch second (for live TV time-shift).
-  int get _currentPositionEpoch => (_streamStartEpoch + (player?.state.position.inSeconds ?? 0)).round();
+  ///
+  /// While a relative skip is pending/settling, this returns the accumulator's
+  /// target rather than the raw sum. During a live re-open `_streamStartEpoch`
+  /// is advanced to the target before the new stream's position resets to ~0,
+  /// so the raw sum transiently overshoots; pinning to the pending target keeps
+  /// seek accumulation and the live-edge heartbeat ([_sendLiveTimeline]) correct
+  /// (close #1253).
+  int get _currentPositionEpoch => _liveSeek.pendingEpoch ?? _rawPositionEpoch;
 
   /// Show "Watch from Start" / "Watch Live" dialog.
   /// Returns true if user chose "Watch from start", false for "Watch Live", null if dismissed.
@@ -221,10 +233,54 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     if (mounted) _setPlayerState(() {});
   }
 
+  /// Current seekable epoch window for [_liveSeek], or null when there is no
+  /// live capture buffer.
+  LiveSeekBounds? _liveSeekBounds() {
+    final buffer = _captureBuffer;
+    if (buffer == null) return null;
+    return (start: buffer.seekableStartEpoch, end: buffer.seekableEndEpoch);
+  }
+
+  /// Rebuild and refresh live-edge state when [_liveSeek]'s pending target
+  /// changes (a skip was accumulated, or the post-seek pin was released).
+  void _onLiveSeekTargetChanged() {
+    if (!mounted) return;
+    final pending = _liveSeek.pendingEpoch;
+    final buffer = _captureBuffer;
+    _setPlayerState(() {
+      if (pending != null && buffer != null) {
+        _isAtLiveEdge = pending >= buffer.seekableEndEpoch - VideoPlayerScreenState._liveEdgeThresholdSeconds;
+      }
+    });
+  }
+
+  /// Re-open the live stream at [targetEpochSeconds], logging (rather than
+  /// throwing) on failure. A throw is rethrown so [_liveSeek] releases its
+  /// pending pin; direct callers catch it.
+  Future<void> _runLiveSeek(int targetEpochSeconds) async {
+    try {
+      await _seekLivePosition(targetEpochSeconds);
+    } catch (e, st) {
+      appLogger.w('Live time-shift seek failed', error: e, stackTrace: st);
+      rethrow;
+    }
+  }
+
+  /// Seek the live stream to an absolute epoch (scrubber / jump-to-live). Drops
+  /// any pending relative-skip burst first so a queued seek can't override it.
+  Future<void> _seekLiveToEpoch(int targetEpochSeconds) async {
+    _liveSeek.cancel();
+    try {
+      await _runLiveSeek(targetEpochSeconds);
+    } catch (_) {
+      // Already logged; an absolute live seek is best-effort.
+    }
+  }
+
   /// Jump to the live edge of the capture buffer.
   Future<void> _jumpToLiveEdge() async {
     if (_captureBuffer == null) return;
-    await _seekLivePosition(_captureBuffer!.seekableEndEpoch);
+    await _seekLiveToEpoch(_captureBuffer!.seekableEndEpoch);
   }
 
   Future<void> _switchLiveChannel(int delta) async {
@@ -236,6 +292,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     if (newIndex < 0 || newIndex >= channels.length) return;
 
     _isSwitchingChannel = true;
+    _liveSeek.cancel();
 
     // Stop old session heartbeats and notify server
     _stopLiveTimelineUpdates();
@@ -254,7 +311,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
 
       if (serverInfo == null) return;
 
-      final genericClient = multiServer.getClientForServer(serverInfo.serverId);
+      final genericClient = multiServer.getClientForServer(ServerId(serverInfo.serverId));
       final resolution = await genericClient?.liveTv.resolveStreamUrl(channel.key, dvrKey: serverInfo.dvrKey);
       if (resolution != null) {
         // Jellyfin: pre-resolved negotiated URL.
@@ -283,7 +340,7 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       }
 
       // Plex-only: DVR tune flow (Jellyfin Live TV uses pre-resolved URLs).
-      final client = multiServer.getPlexClientForServer(serverInfo.serverId);
+      final client = multiServer.getPlexClientForServer(ServerId(serverInfo.serverId));
       if (client == null) return;
 
       final tuneResult = await client.tuneChannel(serverInfo.dvrKey, channel.key);

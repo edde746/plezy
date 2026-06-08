@@ -103,9 +103,12 @@ class PlayerAndroid extends PlayerBase {
     if (disposed) return;
     await _ensureInitialized();
     final startPosition = media.start ?? Duration.zero;
-    configureTimeline(offset: timelineOffset, duration: timelineDuration);
+    // ExoPlayer reports Plex copyts transcodes in source-time coordinates,
+    // unlike mpv which rebases them to zero. Do not add the timeline offset
+    // again on Android ExoPlayer or seeks/progress jump to roughly 2x (#1221).
+    configureTimeline(offset: Duration.zero, duration: timelineDuration);
     clearTracks();
-    resetPlaybackProgress(startPosition);
+    resetPlaybackProgress(media.start ?? timelineOffset);
     setSeekable(false);
 
     // Show the video layer
@@ -120,7 +123,16 @@ class PlayerAndroid extends PlayerBase {
       if (externalSubtitles != null && externalSubtitles.isNotEmpty)
         'externalSubtitles': externalSubtitles
             .where((s) => s.uri != null)
-            .map((s) => {'uri': s.uri, 'title': s.title, 'language': s.language})
+            .map(
+              (s) => {
+                'uri': s.uri,
+                'title': s.title,
+                'language': s.language,
+                'codec': s.codec,
+                'isDefault': s.isDefault,
+                'isForced': s.isForced,
+              },
+            )
             .toList(),
     });
   }
@@ -372,6 +384,12 @@ class PlayerAndroid extends PlayerBase {
     await invoke('setBoxFitMode', {'mode': mode});
   }
 
+  /// Apply custom zoom to the native ExoPlayer layer.
+  Future<void> setVideoZoom(double scale) async {
+    if (disposed || !initialized) return;
+    await invoke('setVideoZoom', {'scale': scale});
+  }
+
   @override
   Future<bool> setVideoFrameRate(double fps, int durationMs, {int extraDelayMs = 0}) async {
     if (disposed || !initialized) return false;
@@ -411,7 +429,6 @@ class PlayerAndroid extends PlayerBase {
   @override
   Future<void> setLogLevel(String level) async {
     if (disposed) return;
-    await _ensureInitialized();
     await invoke('setLogLevel', {'level': level});
   }
 }

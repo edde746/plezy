@@ -6,6 +6,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     if (_nextEpisode == null || _isLoadingNext) return;
 
     _autoPlayTimer?.cancel();
+    _unfocusPlayNextPrompt();
     _dismissStillWatching();
 
     _notifyWatchTogetherMediaChange(metadata: _nextEpisode);
@@ -40,6 +41,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     }
 
     _autoPlayTimer?.cancel();
+    _unfocusPlayNextPrompt();
     _dismissStillWatching();
 
     _setPlayerState(() {
@@ -81,7 +83,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
             context,
             metadata: episodeMetadata,
             usePushReplacement: true,
-            isOffline: _isOfflinePlayback,
+            isOffline: widget.isOffline,
           ),
         );
       }
@@ -97,7 +99,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
             context,
             metadata: episodeMetadata,
             usePushReplacement: true,
-            isOffline: _isOfflinePlayback,
+            isOffline: widget.isOffline,
           ),
         );
       }
@@ -123,7 +125,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           preferredSubtitleTrack: currentSubtitleTrack,
           preferredSecondarySubtitleTrack: currentSecondarySubtitleTrack,
           usePushReplacement: true,
-          isOffline: _isOfflinePlayback,
+          isOffline: widget.isOffline,
         ),
       );
     }
@@ -135,6 +137,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
   Future<void> _swapEpisodeInPip(MediaItem episodeMetadata) async {
     _isSwappingEpisode = true;
     final currentPlayer = player!;
+    final playbackGeneration = _beginPlaybackGeneration(isEpisodeSwap: true);
     final previousMetadata = _currentMetadata;
 
     final currentAudioTrack = currentPlayer.state.track.audio;
@@ -146,13 +149,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     // backend. We still narrow to [plexClient] for [TrackManager]'s
     // server-side track persistence, which is Plex-only — Jellyfin
     // sessions get a null `getPlexClient` and skip that path.
-    final mediaClient = _isOfflinePlayback ? null : _getMediaServerClient(context);
-    final plexClient = mediaClient is PlexClient ? mediaClient : null;
-    final streamHeaders = mediaClient?.streamHeaders ?? const <String, String>{};
     final offlineWatchService = context.read<OfflineWatchSyncService>();
     final userProfileProvider = context.read<UserProfileProvider>();
     final playbackState = context.read<PlaybackStateProvider>();
     final database = context.read<AppDatabase>();
+    final serverManager = context.read<MultiServerProvider>().serverManager;
 
     await _sendStoppedProgressOnce();
     _progressTracker?.stopTracking();
@@ -162,26 +163,34 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     unawaited(TraktScrobbleService.instance.stopPlayback());
     unawaited(TrackerCoordinator.instance.stopPlayback());
 
+    if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
+
+    final requestedMediaIndex = _effectiveSelectedMediaIndex;
     _currentMetadata = episodeMetadata;
     VideoPlayerScreenState._activeId = episodeMetadata.id;
+    VideoPlayerScreenState._activeMediaIndex = requestedMediaIndex;
+    _unfocusPlayNextPrompt();
     _showPlayNextDialog = false;
     _autoPlayTimer?.cancel();
     _hasFirstFrame.value = false;
 
     try {
-      // Same service shape works for both online (mediaClient non-null,
-      // bundled video URL + media info) and pure-offline (mediaClient null,
-      // local file + cached media info if available).
-      final playbackService = PlaybackInitializationService(client: mediaClient, database: database);
-      final result = await playbackService.getPlaybackData(
+      final playbackResolver = PlaybackSourceResolver(serverManager: serverManager, database: database);
+      final playbackContext = await playbackResolver.resolve(
         metadata: episodeMetadata,
-        selectedMediaIndex: widget.selectedMediaIndex,
-        preferOffline: _isOfflinePlayback || _selectedQualityPreset.isOriginal,
+        selectedMediaIndex: requestedMediaIndex,
+        selectedMediaSourceId: widget.selectedMediaSourceId,
+        offlineLibraryMode: widget.isOffline,
         qualityPreset: _selectedQualityPreset,
         selectedAudioStreamId: _selectedAudioStreamId,
         sessionIdentifier: _playbackSessionIdentifier,
         transcodeSessionId: _playbackTranscodeSessionId,
       );
+      if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
+      final result = playbackContext.result;
+      final mediaClient = playbackContext.reportingClient;
+      final plexClient = mediaClient is PlexClient ? mediaClient : null;
+      final streamHeaders = playbackContext.streamHeaders;
 
       if (result.videoUrl == null) {
         throw PlaybackException('No video URL available');
@@ -190,9 +199,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       Duration? resumePosition;
       _isTranscoding = result.isTranscoding;
       _effectiveIsOffline = result.isOffline;
+      _playbackContext = playbackContext;
+      _streamHeaders = streamHeaders;
       _playbackPlaySessionId = result.playSessionId;
       _playbackPlayMethod = result.playMethod;
       _selectedAudioStreamId = result.activeAudioStreamId;
+      _effectiveSelectedMediaIndex = result.selectedMediaIndex;
       if (result.fallbackReason != null && !_selectedQualityPreset.isOriginal) {
         if (mounted) {
           showErrorSnackBar(context, t.videoControls.transcodeUnavailableFallback);
@@ -202,6 +214,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
 
       if (_isOfflinePlayback) {
         final localOffset = await offlineWatchService.getLocalViewOffset(episodeMetadata.globalKey);
+        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
         if (localOffset != null && localOffset > 0) {
           resumePosition = Duration(milliseconds: localOffset);
         }
@@ -216,6 +229,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       await currentPlayer.setDisplayCriteria(
         !result.isTranscoding && displayCriteria?.canPrimeNativeDisplayCriteria == true ? displayCriteria : null,
       );
+      if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
       final openTiming = _playbackOpenTiming(
         backend: episodeMetadata.backend,
         isTranscoding: result.isTranscoding,
@@ -223,18 +237,18 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         durationMs: episodeMetadata.durationMs,
       );
       await currentPlayer.setProperty('force-seekable', result.isTranscoding ? 'yes' : 'no');
+      if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
       await currentPlayer.open(
-        Media(result.videoUrl!, start: openTiming.mediaStart, headers: streamHeaders),
+        Media(result.videoUrl!, start: openTiming.mediaStart, headers: result.usesLocalMedia ? null : streamHeaders),
         play: isExoPlayer || !hasExternalSubs,
         externalSubtitles: isExoPlayer && hasExternalSubs ? result.externalSubtitles : null,
         timelineOffset: openTiming.timelineOffset,
         timelineDuration: openTiming.timelineDuration,
       );
 
+      if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
       _completionTriggered = false;
       _isSwappingEpisode = false;
-
-      if (!mounted) return;
 
       _scrubPreviewSource?.dispose();
       _setPlayerState(() {
@@ -245,7 +259,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       });
 
       _trackManager?.dispose();
-      _trackManager = TrackManager(
+      final trackManager = TrackManager(
         player: currentPlayer,
         isActive: () => mounted && player != null,
         // Plex writes track changes immediately. Jellyfin persists selected
@@ -262,18 +276,21 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
           if (mounted) showAppSnackBar(context, message, duration: duration);
         },
       );
-      _trackManager!.cacheExternalSubtitles(result.externalSubtitles);
+      _trackManager = trackManager;
+      trackManager.cacheExternalSubtitles(result.externalSubtitles);
 
       if (player is! PlayerAndroid && hasExternalSubs) {
-        _trackManager!.waitingForExternalSubsTrackSelection = true;
+        trackManager.waitingForExternalSubsTrackSelection = true;
         try {
-          await _trackManager!.addExternalSubtitles(result.externalSubtitles);
+          await trackManager.addExternalSubtitles(result.externalSubtitles);
         } finally {
-          await _trackManager!.resumeAfterSubtitleLoad();
+          await trackManager.resumeAfterSubtitleLoad();
         }
+        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
       } else {
-        _trackManager!.applyTrackSelectionWhenReady();
+        trackManager.applyTrackSelectionWhenReady();
       }
+      if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
 
       // Same helper as the initial start flow, so any future change lands in
       // both paths together.
@@ -293,11 +310,13 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       }
 
       await _loadAdjacentEpisodes();
+      if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
 
       if (_autoPipEnabled) {
         unawaited(_videoPIPManager?.updateAutoPipState(isPlaying: currentPlayer.state.playing));
       }
     } catch (e) {
+      if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
       _isSwappingEpisode = false;
       _completionTriggered = false;
       _currentMetadata = previousMetadata;

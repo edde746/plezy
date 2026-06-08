@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:vibe_stream/media/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -165,6 +166,7 @@ void main() {
       hubs: [hub],
       density: LibraryDensity.max,
       episodePosterMode: settings.read(SettingsService.episodePosterMode),
+      fullCardLayout: settings.read(SettingsService.tvFullCardLayout),
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
     );
     final minimumSpotlightBottom = railHeight + (8 * scale);
@@ -224,7 +226,7 @@ class _FakeMediaServerClient implements MediaServerClient {
   _FakeMediaServerClient({required this.hubs});
 
   @override
-  String get serverId => 'server_1';
+  ServerId get serverId => ServerId('server_1');
 
   @override
   String? get serverName => 'Server';
@@ -239,7 +241,8 @@ class _FakeMediaServerClient implements MediaServerClient {
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20}) async => const [];
 
   @override
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10, bool includePlaybackHubs = true}) async => hubs;
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true}) async =>
+      hubs;
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

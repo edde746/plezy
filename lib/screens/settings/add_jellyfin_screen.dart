@@ -11,6 +11,7 @@ import '../../connection/connection.dart';
 import '../../exceptions/media_server_exceptions.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
+import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../profiles/active_profile_binder.dart';
@@ -19,6 +20,8 @@ import '../../profiles/profile.dart';
 import '../../profiles/profile_connection.dart';
 import '../../profiles/profile_registry.dart';
 import '../../services/jellyfin_auth_service.dart';
+import '../../services/jellyfin_endpoint_discovery.dart';
+import '../../services/jellyfin_lan_discovery_service.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
@@ -47,7 +50,7 @@ bool shouldPromptForJellyfinProfileSelection({
 }
 
 /// Three-step form to add a Jellyfin server:
-///   1. Probe URL (`/System/Info/Public`).
+///   1. Probe URL candidates (`/System/Info/Public`).
 ///   2. Username + password (`/Users/AuthenticateByName`) **or** Quick Connect
 ///      (`/QuickConnect/Initiate` → poll → `/Users/AuthenticateWithQuickConnect`).
 ///   3. Persist via [ConnectionRegistry] and create a [ProfileConnection]
@@ -60,8 +63,16 @@ class AddJellyfinScreen extends StatefulWidget {
   /// [ProfileConnection] row. When null, falls back to the currently active
   /// profile (typical for the global Connections screen entry point).
   final Profile? targetProfile;
+  final FutureOr<JellyfinConnectionAuthService> Function()? _authServiceFactory;
+  final FutureOr<List<DiscoveredJellyfinServer>> Function()? _localDiscoveryFactory;
 
-  const AddJellyfinScreen({super.key, this.targetProfile});
+  const AddJellyfinScreen({
+    super.key,
+    this.targetProfile,
+    @visibleForTesting FutureOr<JellyfinConnectionAuthService> Function()? authServiceFactory,
+    @visibleForTesting FutureOr<List<DiscoveredJellyfinServer>> Function()? localDiscoveryFactory,
+  }) : _authServiceFactory = authServiceFactory,
+       _localDiscoveryFactory = localDiscoveryFactory;
 
   @override
   State<AddJellyfinScreen> createState() => _AddJellyfinScreenState();
@@ -73,6 +84,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   late final _passwordController = createTextEditingController();
   final _urlFocus = FocusNode(debugLabel: 'AddJellyfin:Url');
   final _findServerFocus = FocusNode(debugLabel: 'AddJellyfin:FindServer');
+  final _changeServerFocus = FocusNode(debugLabel: 'AddJellyfin:ChangeServer');
   final _usernameFocus = FocusNode(debugLabel: 'AddJellyfin:Username');
   // Owned so the username field can advance focus on Enter; mobile keyboards
   // act on `textInputAction: next` automatically but TV remotes / hardware
@@ -81,13 +93,24 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   final _signInFocus = FocusNode(debugLabel: 'AddJellyfin:SignIn');
   final _quickConnectFocus = FocusNode(debugLabel: 'AddJellyfin:QuickConnect');
   final _cancelQuickConnectFocus = FocusNode(debugLabel: 'AddJellyfin:CancelQuickConnect');
+  final _discoveredServerFocusNodes = <String, FocusNode>{};
   final _formKey = GlobalKey<FormState>();
 
   JellyfinServerInfo? _serverInfo;
+  JellyfinEndpointRaceResult? _serverEndpoint;
+  List<DiscoveredJellyfinServer> _localServers = const [];
+  bool _isDiscoveringLocalServers = true;
   bool _quickConnectEnabled = false;
   JellyfinQuickConnectInitiation? _qcInitiation;
   bool _qcCancelled = false;
   int _qcAttemptId = 0;
+  int _localDiscoveryAttemptId = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_discoverLocalServers());
+  }
 
   @override
   void dispose() {
@@ -97,39 +120,96 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     _qcAttemptId++;
     _urlFocus.dispose();
     _findServerFocus.dispose();
+    _changeServerFocus.dispose();
     _usernameFocus.dispose();
     _passwordFocus.dispose();
     _signInFocus.dispose();
     _quickConnectFocus.dispose();
     _cancelQuickConnectFocus.dispose();
+    for (final node in _discoveredServerFocusNodes.values) {
+      node.dispose();
+    }
     super.dispose();
   }
 
+  Future<void> _discoverLocalServers() async {
+    final attemptId = ++_localDiscoveryAttemptId;
+    try {
+      final factory = widget._localDiscoveryFactory;
+      final servers = factory != null
+          ? await factory()
+          : await JellyfinLanDiscoveryService().discover(responseWindow: const Duration(milliseconds: 1300));
+      if (!mounted || attemptId != _localDiscoveryAttemptId) return;
+      setState(() {
+        _localServers = servers;
+        _isDiscoveringLocalServers = false;
+        _syncDiscoveredServerFocusNodes(servers);
+      });
+    } catch (e, st) {
+      appLogger.w('Add Jellyfin local discovery failed', error: e, stackTrace: st);
+      if (!mounted || attemptId != _localDiscoveryAttemptId) return;
+      setState(() => _isDiscoveringLocalServers = false);
+    }
+  }
+
+  void _syncDiscoveredServerFocusNodes(List<DiscoveredJellyfinServer> servers) {
+    final ids = servers.map((server) => server.id).toSet();
+    final removed = _discoveredServerFocusNodes.keys.where((id) => !ids.contains(id)).toList(growable: false);
+    for (final id in removed) {
+      _discoveredServerFocusNodes.remove(id)?.dispose();
+    }
+    for (final server in servers) {
+      _discoveredServerFocusNodes.putIfAbsent(
+        server.id,
+        () => FocusNode(debugLabel: 'AddJellyfin:Discovered:${server.id}'),
+      );
+    }
+  }
+
+  void _clearResolvedServer() {
+    _serverEndpoint = null;
+    _serverInfo = null;
+    _quickConnectEnabled = false;
+  }
+
+  Future<void> _useDiscoveredServer(DiscoveredJellyfinServer server) async {
+    if (busy) return;
+    setState(() {
+      _urlController.text = server.address;
+      _clearResolvedServer();
+    });
+    await _probe();
+  }
+
   Future<void> _probe() async {
-    final url = _urlController.text.trim();
-    if (url.isEmpty) {
+    final input = JellyfinEndpointDiscovery.buildUserInputCandidates(_enteredUrls());
+    if (input.probeBaseUrls.isEmpty) {
       setErrorText(t.addServer.enterJellyfinUrlError);
       return;
     }
     await runAsync<void>(
       () async {
         final auth = await _buildAuthService();
-        // Run the probe and the QC capability check in parallel — the latter
-        // is independent and just tells the UI whether to surface the button.
-        final probeFuture = auth.probe(url);
-        final qcFuture = auth.isQuickConnectEnabled(url);
-        final info = await probeFuture;
-        final qcEnabled = await qcFuture;
+        final endpoint = await auth.raceEndpoints(
+          input.probeBaseUrls,
+          baseUrlsToPersist: input.explicitBaseUrls,
+          baseUrlValidationGroups: input.validationBaseUrlGroups,
+        );
+        final qcEnabled = await auth.isQuickConnectEnabled(endpoint.activeBaseUrl);
         if (!mounted) return;
         setState(() {
-          _serverInfo = info;
+          _serverEndpoint = endpoint;
+          _serverInfo = endpoint.serverInfo;
           _quickConnectEnabled = qcEnabled;
+          _urlController.text = endpoint.baseUrls.join('\n');
         });
         // On TV, typing a username/password with a remote is misery — auto-jump
         // to Quick Connect when the server supports it. Mirrors the
         // PlatformDetector.isTV() default in add_plex_account_screen.dart.
         if (qcEnabled && PlatformDetector.isTV()) {
           unawaited(_startQuickConnect());
+        } else {
+          _requestFocusAfterFrame(_usernameFocus);
         }
       },
       errorMapper: (e) =>
@@ -140,7 +220,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   Future<void> _signIn() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final info = _serverInfo;
-    if (info == null) {
+    final endpoint = _serverEndpoint;
+    if (info == null || endpoint == null) {
       await _probe();
       return;
     }
@@ -151,7 +232,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         final deviceId = await storage.getOrCreateClientIdentifier();
 
         final connection = await auth.authenticateByName(
-          baseUrl: _urlController.text,
+          baseUrl: endpoint.activeBaseUrl,
+          baseUrls: endpoint.baseUrls,
           username: _usernameController.text,
           password: _passwordController.text,
           deviceId: deviceId,
@@ -171,7 +253,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
 
   Future<void> _startQuickConnect() async {
     final info = _serverInfo;
-    if (info == null) return;
+    final endpoint = _serverEndpoint;
+    if (info == null || endpoint == null) return;
     final attemptId = ++_qcAttemptId;
     setState(() => _qcCancelled = false);
     await runAsync<void>(
@@ -180,15 +263,17 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         final storage = await StorageService.getInstance();
         final deviceId = await storage.getOrCreateClientIdentifier();
 
-        final initiation = await auth.initiateQuickConnect(baseUrl: _urlController.text, deviceId: deviceId);
+        final initiation = await auth.initiateQuickConnect(baseUrl: endpoint.activeBaseUrl, deviceId: deviceId);
         if (!_isCurrentQuickConnectAttempt(attemptId)) return;
         // Show the waiting panel without a spinner — opt-out of busy mid-flow
         // so the user-visible state matches "we're polling, nothing for you to do".
         setState(() => _qcInitiation = initiation);
+        _requestFocusAfterFrame(_cancelQuickConnectFocus);
         setBusy(false);
 
         final connection = await auth.authenticateByQuickConnect(
-          baseUrl: _urlController.text,
+          baseUrl: endpoint.activeBaseUrl,
+          baseUrls: endpoint.baseUrls,
           secret: initiation.secret,
           deviceId: deviceId,
           serverInfo: info,
@@ -227,6 +312,37 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       _qcInitiation = null;
     });
     setBusy(false);
+  }
+
+  void _requestFocusAfterFrame(FocusNode node) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !node.canRequestFocus) return;
+      node.requestFocus();
+    });
+  }
+
+  void _focusFirstDiscoveredServerOrFind() {
+    if (_localServers.isEmpty) {
+      _findServerFocus.requestFocus();
+      return;
+    }
+    _discoveredServerFocusNodes[_localServers.first.id]?.requestFocus();
+  }
+
+  void _focusLastDiscoveredServerOrUrl() {
+    if (_localServers.isEmpty) {
+      _urlFocus.requestFocus();
+      return;
+    }
+    _discoveredServerFocusNodes[_localServers.last.id]?.requestFocus();
+  }
+
+  List<String> _enteredUrls() {
+    return _urlController.text
+        .split(RegExp(r'[\n,]+'))
+        .map((url) => url.trim())
+        .where((url) => url.isNotEmpty)
+        .toList(growable: false);
   }
 
   /// Shared persistence path for both username/password and Quick Connect:
@@ -305,6 +421,8 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
   }
 
   Future<JellyfinConnectionAuthService> _buildAuthService() async {
+    final authServiceFactory = widget._authServiceFactory;
+    if (authServiceFactory != null) return await authServiceFactory();
     final pkg = await PackageInfo.fromPlatform();
     final deviceName = await _resolveDeviceName();
     return JellyfinConnectionAuthService(clientName: 'Vibe', clientVersion: pkg.version, deviceName: deviceName);
@@ -324,11 +442,11 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       title: Text(t.addServer.addJellyfinTitle),
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          padding: const EdgeInsets.all(16),
           sliver: SliverToBoxAdapter(
             child: Form(
               key: _formKey,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: _buildBodyChildren(theme)),
+              child: Column(crossAxisAlignment: .stretch, children: _buildBodyChildren(theme)),
             ),
           ),
         ),
@@ -347,32 +465,44 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       ];
     }
     return [
-      Text(t.addServer.jellyfinUrlIntro, style: theme.textTheme.bodyMedium),
+      Text(t.addServer.jellyfinUrlsIntro, style: theme.textTheme.bodyMedium),
       const SizedBox(height: 16),
       FocusableTextFormField(
         controller: _urlController,
         focusNode: _urlFocus,
         autofocus: true,
+        tvKeyboardAutoOpenBehavior: TvKeyboardAutoOpenBehavior.afterFirstFocus,
         keyboardType: TextInputType.url,
+        minLines: 1,
+        maxLines: 4,
         autocorrect: false,
         enableSuggestions: false,
         enabled: !busy,
-        onNavigateDown: _serverInfo == null ? () => _findServerFocus.requestFocus() : null,
+        onChanged: (_) {
+          if (_serverInfo == null && _serverEndpoint == null && !_quickConnectEnabled) return;
+          setState(() {
+            _clearResolvedServer();
+          });
+        },
+        onNavigateDown: _serverInfo == null
+            ? _focusFirstDiscoveredServerOrFind
+            : () => _changeServerFocus.requestFocus(),
         textInputAction: TextInputAction.go,
         onFieldSubmitted: busy ? null : (_) => _probe(),
         decoration: InputDecoration(
-          labelText: t.addServer.serverUrl,
+          labelText: t.addServer.serverUrls,
           prefixIcon: const AppIcon(Symbols.link_rounded, fill: 1),
         ),
-        validator: (v) => v == null || v.trim().isEmpty ? t.addServer.required : null,
+        validator: (_) => _enteredUrls().isEmpty ? t.addServer.required : null,
       ),
       if (_serverInfo == null) ...[
+        ..._buildLocalDiscoverySection(theme),
         const SizedBox(height: 16),
         FocusableButton(
           focusNode: _findServerFocus,
           useBackgroundFocus: true,
+          onNavigateUp: _focusLastDiscoveredServerOrUrl,
           onPressed: busy ? null : _probe,
-          onNavigateUp: () => _urlFocus.requestFocus(),
           child: FilledButton.icon(
             onPressed: busy ? null : _probe,
             icon: busy ? const LoadingIndicatorBox() : const AppIcon(Symbols.travel_explore_rounded, fill: 1),
@@ -389,7 +519,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           autocorrect: false,
           enableSuggestions: false,
           enabled: !busy,
-          onNavigateDown: () => _passwordFocus.requestFocus(),
+          onNavigateUp: () => _changeServerFocus.requestFocus(),
           textInputAction: TextInputAction.next,
           onFieldSubmitted: busy ? null : (_) => _passwordFocus.requestFocus(),
           decoration: InputDecoration(
@@ -404,8 +534,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           focusNode: _passwordFocus,
           obscureText: true,
           enabled: !busy,
-          onNavigateUp: () => _usernameFocus.requestFocus(),
-          onNavigateDown: () => _signInFocus.requestFocus(),
           textInputAction: TextInputAction.done,
           onFieldSubmitted: busy ? null : (_) => _signIn(),
           decoration: InputDecoration(
@@ -420,8 +548,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           focusNode: _signInFocus,
           useBackgroundFocus: true,
           onPressed: busy ? null : _signIn,
-          onNavigateUp: () => _passwordFocus.requestFocus(),
-          onNavigateDown: _quickConnectEnabled ? () => _quickConnectFocus.requestFocus() : null,
           child: FilledButton.icon(
             onPressed: busy ? null : _signIn,
             icon: busy ? const LoadingIndicatorBox() : const AppIcon(Symbols.login_rounded, fill: 1),
@@ -434,7 +560,6 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
             focusNode: _quickConnectFocus,
             useBackgroundFocus: true,
             onPressed: busy ? null : _startQuickConnect,
-            onNavigateUp: () => _signInFocus.requestFocus(),
             child: OutlinedButton.icon(
               onPressed: busy ? null : _startQuickConnect,
               icon: const AppIcon(Symbols.tap_and_play_rounded, fill: 1),
@@ -463,7 +588,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Text(_serverInfo!.serverName, style: theme.textTheme.titleSmall),
                 Text(
@@ -473,18 +598,81 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
               ],
             ),
           ),
-          TextButton(
+          FocusableButton(
+            focusNode: _changeServerFocus,
+            useBackgroundFocus: true,
+            onNavigateUp: () => _urlFocus.requestFocus(),
+            onNavigateDown: () => _usernameFocus.requestFocus(),
             onPressed: busy
                 ? null
                 : () => setState(() {
-                    _serverInfo = null;
-                    _quickConnectEnabled = false;
+                    _clearResolvedServer();
                   }),
-            child: Text(t.addServer.change),
+            child: TextButton(
+              onPressed: busy
+                  ? null
+                  : () => setState(() {
+                      _clearResolvedServer();
+                    }),
+              child: Text(t.addServer.change),
+            ),
           ),
         ],
       ),
     );
+  }
+
+  List<Widget> _buildLocalDiscoverySection(ThemeData theme) {
+    if (_isDiscoveringLocalServers) {
+      return [
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Row(
+            children: [
+              const LoadingIndicatorBox(size: 20),
+              const SizedBox(width: 12),
+              Expanded(child: Text(t.addServer.searchingLocalServers, style: theme.textTheme.bodyMedium)),
+            ],
+          ),
+        ),
+      ];
+    }
+
+    if (_localServers.isEmpty) return const [];
+    return [
+      const SizedBox(height: 16),
+      Text(t.addServer.localServers, style: theme.textTheme.titleSmall),
+      const SizedBox(height: 8),
+      for (final server in _localServers) ...[
+        _DiscoveredJellyfinServerTile(
+          server: server,
+          focusNode: _discoveredServerFocusNodes[server.id],
+          onNavigateUp: () {
+            final index = _localServers.indexOf(server);
+            if (index <= 0) {
+              _urlFocus.requestFocus();
+              return;
+            }
+            _discoveredServerFocusNodes[_localServers[index - 1].id]?.requestFocus();
+          },
+          onNavigateDown: () {
+            final index = _localServers.indexOf(server);
+            if (index < 0 || index == _localServers.length - 1) {
+              _findServerFocus.requestFocus();
+              return;
+            }
+            _discoveredServerFocusNodes[_localServers[index + 1].id]?.requestFocus();
+          },
+          onTap: busy ? null : () => unawaited(_useDiscoveredServer(server)),
+        ),
+        const SizedBox(height: 8),
+      ],
+    ];
   }
 
   List<Widget> _buildQuickConnectPanel(ThemeData theme) {
@@ -508,7 +696,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
               textAlign: TextAlign.center,
               style: theme.textTheme.displayMedium?.copyWith(
                 fontFamily: 'monospace',
-                fontWeight: FontWeight.bold,
+                fontWeight: .bold,
                 letterSpacing: 8,
               ),
             ),
@@ -519,7 +707,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       Text(t.auth.quickConnectInstructions, style: theme.textTheme.bodyMedium),
       const SizedBox(height: 20),
       Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: .center,
         children: [
           const LoadingIndicatorBox(),
           const SizedBox(width: 12),
@@ -538,5 +726,73 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         ),
       ),
     ];
+  }
+}
+
+class _DiscoveredJellyfinServerTile extends StatelessWidget {
+  final DiscoveredJellyfinServer server;
+  final FocusNode? focusNode;
+  final VoidCallback? onNavigateUp;
+  final VoidCallback? onNavigateDown;
+  final VoidCallback? onTap;
+
+  const _DiscoveredJellyfinServerTile({
+    required this.server,
+    required this.focusNode,
+    required this.onNavigateUp,
+    required this.onNavigateDown,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FocusableWrapper(
+      focusNode: focusNode,
+      disableScale: true,
+      borderRadius: 12,
+      useForegroundFocusDecoration: true,
+      descendantsAreFocusable: false,
+      onSelect: onTap,
+      onNavigateUp: onNavigateUp,
+      onNavigateDown: onNavigateDown,
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                const AppIcon(Symbols.dns_rounded, fill: 1),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: .start,
+                    mainAxisSize: .min,
+                    children: [
+                      Text(server.name, style: theme.textTheme.titleSmall),
+                      const SizedBox(height: 2),
+                      Text(
+                        server.address,
+                        maxLines: 1,
+                        overflow: .ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

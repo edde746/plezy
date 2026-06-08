@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:vibe_stream/media/ids.dart';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -63,7 +64,7 @@ void main() {
   // `serverId:/Users/{userId}/Items/{itemId}` — mirror the shape exactly so
   // we exercise the same lookup pattern.
   Future<void> putItemRow({
-    required String serverId,
+    required ServerId serverId,
     required String userId,
     required String itemId,
     Map<String, dynamic>? data,
@@ -91,13 +92,13 @@ void main() {
       const userId = 'jf-user';
       await insertJellyfinConnection(machineId: machineId, userId: userId, serverName: 'My Jellyfin');
       await putItemRow(
-        serverId: machineId,
+        serverId: ServerId(machineId),
         userId: userId,
         itemId: 'item-1',
         data: jellyfinItem(id: 'item-1', name: 'A Movie'),
       );
 
-      final meta = await cache.getMetadata(machineId, 'item-1');
+      final meta = await cache.getMetadata(ServerId(machineId), 'item-1');
       expect(meta, isNotNull, reason: 'cache lookup must succeed despite id-format mismatch');
       expect(meta!.title, 'A Movie');
       expect(meta.serverId, machineId);
@@ -106,8 +107,8 @@ void main() {
 
     test('returns null when the connection row is missing', () async {
       // Cache row exists but no Connections row → lookup can't resolve serverName.
-      await putItemRow(serverId: 'orphan', userId: 'u', itemId: 'item-1');
-      expect(await cache.getMetadata('orphan', 'item-1'), isNull);
+      await putItemRow(serverId: ServerId('orphan'), userId: 'u', itemId: 'item-1');
+      expect(await cache.getMetadata(ServerId('orphan'), 'item-1'), isNull);
     });
 
     test('absolutizes image paths against the connection baseUrl + accessToken', () async {
@@ -118,7 +119,7 @@ void main() {
       const userId = 'jf-user';
       await insertJellyfinConnection(machineId: machineId, userId: userId, serverName: 'My Jellyfin');
       await putItemRow(
-        serverId: machineId,
+        serverId: ServerId(machineId),
         userId: userId,
         itemId: 'item-1',
         data: {
@@ -129,7 +130,7 @@ void main() {
         },
       );
 
-      final meta = await cache.getMetadata(machineId, 'item-1');
+      final meta = await cache.getMetadata(ServerId(machineId), 'item-1');
       expect(meta, isNotNull);
       expect(meta!.thumbPath, 'http://example.lan/Items/item-1/Images/Primary?tag=tag-abc&api_key=token');
       expect(meta.clearLogoPath, 'http://example.lan/Items/item-1/Images/Logo?tag=tag-logo&api_key=token');
@@ -145,7 +146,7 @@ void main() {
         accessToken: await CredentialVault.protect('secret-token'),
       );
       await putItemRow(
-        serverId: machineId,
+        serverId: ServerId(machineId),
         userId: userId,
         itemId: 'item-1',
         data: {
@@ -156,7 +157,7 @@ void main() {
         },
       );
 
-      final meta = await cache.getMetadata(machineId, 'item-1');
+      final meta = await cache.getMetadata(ServerId(machineId), 'item-1');
       expect(meta, isNotNull);
       expect(meta!.thumbPath, contains('api_key=secret-token'));
       expect(meta.thumbPath, isNot(contains('enc:v1:')));
@@ -167,7 +168,7 @@ void main() {
       await insertJellyfinConnection(machineId: machineId, userId: 'user-a', serverName: 'Shared JF');
       await insertJellyfinConnection(machineId: machineId, userId: 'user-b', serverName: 'Shared JF');
       await putItemRow(
-        serverId: '$machineId/user-a',
+        serverId: ServerId('$machineId/user-a'),
         userId: 'user-a',
         itemId: 'item-1',
         data: {
@@ -176,7 +177,7 @@ void main() {
         },
       );
       await putItemRow(
-        serverId: '$machineId/user-b',
+        serverId: ServerId('$machineId/user-b'),
         userId: 'user-b',
         itemId: 'item-1',
         data: {
@@ -185,8 +186,8 @@ void main() {
         },
       );
 
-      final a = await cache.getMetadata('$machineId/user-a', 'item-1');
-      final b = await cache.getMetadata('$machineId/user-b', 'item-1');
+      final a = await cache.getMetadata(ServerId('$machineId/user-a'), 'item-1');
+      final b = await cache.getMetadata(ServerId('$machineId/user-b'), 'item-1');
 
       expect(a, isNotNull);
       expect(b, isNotNull);
@@ -207,10 +208,10 @@ void main() {
       await insertJellyfinConnection(machineId: machineId, userId: 'user-a', serverName: 'Shared JF');
       await insertJellyfinConnection(machineId: machineId, userId: 'user-b', serverName: 'Shared JF');
 
-      await putItemRow(serverId: machineId, userId: 'user-a', itemId: 'item-1', pinned: true);
-      await putItemRow(serverId: machineId, userId: 'user-b', itemId: 'item-2', pinned: true);
+      await putItemRow(serverId: ServerId(machineId), userId: 'user-a', itemId: 'item-1', pinned: true);
+      await putItemRow(serverId: ServerId(machineId), userId: 'user-b', itemId: 'item-2', pinned: true);
       // Unpinned row is filtered out.
-      await putItemRow(serverId: machineId, userId: 'user-a', itemId: 'item-3');
+      await putItemRow(serverId: ServerId(machineId), userId: 'user-a', itemId: 'item-3');
 
       final pinned = await cache.getAllPinnedMetadata();
       expect(pinned.keys.toSet(), {'$machineId:item-1', '$machineId:item-2'});
@@ -218,7 +219,7 @@ void main() {
     });
 
     test('skips pinned rows whose serverId has no matching connection', () async {
-      await putItemRow(serverId: 'orphan-machine', userId: 'u', itemId: 'lost', pinned: true);
+      await putItemRow(serverId: ServerId('orphan-machine'), userId: 'u', itemId: 'lost', pinned: true);
       expect(await cache.getAllPinnedMetadata(), isEmpty);
     });
 
@@ -227,7 +228,7 @@ void main() {
       await insertJellyfinConnection(machineId: machineId, userId: 'user-a', serverName: 'Shared JF');
       await insertJellyfinConnection(machineId: machineId, userId: 'user-b', serverName: 'Shared JF');
       await putItemRow(
-        serverId: '$machineId/user-a',
+        serverId: ServerId('$machineId/user-a'),
         userId: 'user-a',
         itemId: 'item-1',
         data: {
@@ -237,7 +238,7 @@ void main() {
         pinned: true,
       );
       await putItemRow(
-        serverId: '$machineId/user-b',
+        serverId: ServerId('$machineId/user-b'),
         userId: 'user-b',
         itemId: 'item-1',
         data: {
@@ -259,11 +260,11 @@ void main() {
   group('pinForOffline', () {
     test('pins by user-segment wildcard so a single call covers any user', () async {
       const machineId = 'jf-machine';
-      await putItemRow(serverId: machineId, userId: 'user-a', itemId: 'item-1');
-      await putItemRow(serverId: machineId, userId: 'user-b', itemId: 'item-1');
-      await putItemRow(serverId: machineId, userId: 'user-a', itemId: 'item-2');
+      await putItemRow(serverId: ServerId(machineId), userId: 'user-a', itemId: 'item-1');
+      await putItemRow(serverId: ServerId(machineId), userId: 'user-b', itemId: 'item-1');
+      await putItemRow(serverId: ServerId(machineId), userId: 'user-a', itemId: 'item-2');
 
-      await cache.pinForOffline(machineId, 'item-1');
+      await cache.pinForOffline(ServerId(machineId), 'item-1');
 
       // Both per-user rows for item-1 get pinned, item-2 stays unpinned.
       final rows = await db.select(db.apiCache).get();
@@ -273,10 +274,10 @@ void main() {
 
     test('pins only the requested compound Jellyfin user scope', () async {
       const machineId = 'jf-machine';
-      await putItemRow(serverId: '$machineId/user-a', userId: 'user-a', itemId: 'item-1');
-      await putItemRow(serverId: '$machineId/user-b', userId: 'user-b', itemId: 'item-1');
+      await putItemRow(serverId: ServerId('$machineId/user-a'), userId: 'user-a', itemId: 'item-1');
+      await putItemRow(serverId: ServerId('$machineId/user-b'), userId: 'user-b', itemId: 'item-1');
 
-      await cache.pinForOffline('$machineId/user-a', 'item-1');
+      await cache.pinForOffline(ServerId('$machineId/user-a'), 'item-1');
 
       final rows = await db.select(db.apiCache).get();
       final pinnedKeys = rows.where((r) => r.pinned).map((r) => r.cacheKey).toSet();
@@ -288,7 +289,7 @@ void main() {
     test('mutates only the requested compound Jellyfin user scope', () async {
       const machineId = 'jf-machine';
       await putItemRow(
-        serverId: '$machineId/user-a',
+        serverId: ServerId('$machineId/user-a'),
         userId: 'user-a',
         itemId: 'item-1',
         data: {
@@ -297,7 +298,7 @@ void main() {
         },
       );
       await putItemRow(
-        serverId: '$machineId/user-b',
+        serverId: ServerId('$machineId/user-b'),
         userId: 'user-b',
         itemId: 'item-1',
         data: {
@@ -306,7 +307,7 @@ void main() {
         },
       );
 
-      await cache.applyWatchState(serverId: '$machineId/user-a', itemId: 'item-1', isWatched: true);
+      await cache.applyWatchState(serverId: ServerId('$machineId/user-a'), itemId: 'item-1', isWatched: true);
 
       final rows = await db.select(db.apiCache).get();
       final byKey = {for (final row in rows) row.cacheKey: jsonDecode(row.data) as Map<String, dynamic>};

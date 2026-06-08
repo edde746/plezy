@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:vibe_stream/media/ids.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -73,7 +74,7 @@ JellyfinClient _jellyfinClient(JellyfinConnection connection) {
   );
 }
 
-MediaItem _show(String serverId, String ratingKey, String title) {
+MediaItem _show(ServerId serverId, String ratingKey, String title) {
   return MediaItem(id: ratingKey, backend: MediaBackend.plex, kind: MediaKind.show, title: title, serverId: serverId);
 }
 
@@ -116,7 +117,7 @@ void main() {
     await db.close();
   });
 
-  Future<void> insertRule(String serverId, String ratingKey) {
+  Future<void> insertRule(ServerId serverId, String ratingKey) {
     return downloadProvider.createSyncRule(
       serverId: serverId,
       ratingKey: ratingKey,
@@ -128,10 +129,10 @@ void main() {
   Future<void> pumpScreen(WidgetTester tester, {bool keyboardMode = false}) async {
     downloadProvider.debugSeedState(
       metadata: {
-        'plex-srv:show-1': _show('plex-srv', 'show-1', 'Plex Show'),
-        'jf-machine:show-2': _show('jf-machine', 'show-2', 'Jellyfin Show'),
-        'auth-jf:show-3': _show('auth-jf', 'show-3', 'Auth Show'),
-        'unknown-srv:show-4': _show('unknown-srv', 'show-4', 'Unknown Show'),
+        'plex-srv:show-1': _show(ServerId('plex-srv'), 'show-1', 'Plex Show'),
+        'jf-machine:show-2': _show(ServerId('jf-machine'), 'show-2', 'Jellyfin Show'),
+        'auth-jf:show-3': _show(ServerId('auth-jf'), 'show-3', 'Auth Show'),
+        'unknown-srv:show-4': _show(ServerId('unknown-srv'), 'show-4', 'Unknown Show'),
       },
     );
 
@@ -196,13 +197,13 @@ void main() {
     final authClient = _jellyfinClient(authJellyfin);
     addTearDown(authClient.close);
     serverManager.debugRegisterJellyfinClientForTesting(authClient, online: false);
-    serverManager.debugMarkAuthErrorForTesting('auth-jf');
+    serverManager.debugMarkAuthErrorForTesting(ServerId('auth-jf'));
     multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
 
-    await insertRule('plex-srv', 'show-1');
-    await insertRule('jf-machine', 'show-2');
-    await insertRule('auth-jf', 'show-3');
-    await insertRule('unknown-srv', 'show-4');
+    await insertRule(ServerId('plex-srv'), 'show-1');
+    await insertRule(ServerId('jf-machine'), 'show-2');
+    await insertRule(ServerId('auth-jf'), 'show-3');
+    await insertRule(ServerId('unknown-srv'), 'show-4');
 
     await pumpScreen(tester);
 
@@ -218,7 +219,7 @@ void main() {
 
   testWidgets('removes orphaned sync rules from the sync rules screen', (tester) async {
     multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
-    await insertRule('orphan-srv', '76672');
+    await insertRule(ServerId('orphan-srv'), '76672');
 
     await pumpScreen(tester);
 
@@ -241,7 +242,7 @@ void main() {
 
   testWidgets('does not autofocus the first sync rule in pointer mode', (tester) async {
     multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
-    await insertRule('orphan-srv', '76672');
+    await insertRule(ServerId('orphan-srv'), '76672');
     FocusManager.instance.primaryFocus?.unfocus();
 
     await pumpScreen(tester);
@@ -252,7 +253,7 @@ void main() {
 
   testWidgets('keyboard navigation reaches and toggles the sync rule switch', (tester) async {
     multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
-    await insertRule('orphan-srv', '76672');
+    await insertRule(ServerId('orphan-srv'), '76672');
 
     await pumpScreen(tester, keyboardMode: true);
 
@@ -270,7 +271,7 @@ void main() {
 
   testWidgets('setting sync rule count to zero removes the rule', (tester) async {
     multiServerProvider = MultiServerProvider(serverManager, DataAggregationService(serverManager));
-    await insertRule('orphan-srv', '76672');
+    await insertRule(ServerId('orphan-srv'), '76672');
 
     await pumpScreen(tester, keyboardMode: true);
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);

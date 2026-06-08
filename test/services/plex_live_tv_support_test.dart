@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:vibe_stream/media/ids.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
@@ -39,7 +40,7 @@ void main() {
         version: '1',
         machineIdentifier: 'machine-1',
       ),
-      serverId: 'machine-1',
+      serverId: ServerId('machine-1'),
       httpClient: MockClient(handler),
       epgProviders: epgProviders,
     );

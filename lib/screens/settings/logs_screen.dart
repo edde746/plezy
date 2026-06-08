@@ -159,7 +159,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
                 Text('${t.messages.logId}: '),
                 SelectableText(
                   id,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontFamily: 'monospace', fontSize: 18),
+                  style: const TextStyle(fontWeight: .bold, fontFamily: 'monospace', fontSize: 18),
                 ),
                 const SizedBox(width: 8),
                 IconButton(
@@ -243,7 +243,7 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
       spans.add(
         TextSpan(
           text: '[${log.level.name.toUpperCase()}] ',
-          style: TextStyle(color: color, fontWeight: FontWeight.bold),
+          style: TextStyle(color: color, fontWeight: .bold),
         ),
       );
       spans.add(TextSpan(text: log.message));

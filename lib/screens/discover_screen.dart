@@ -1,7 +1,9 @@
 import 'dart:async';
+import '../media/ids.dart';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HardwareKeyboard, LogicalKeyboardKey;
 import 'package:vibe_stream/widgets/app_icon.dart';
 import '../widgets/server_activities_button.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -25,6 +27,7 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../widgets/hub_section.dart';
+import '../widgets/app_menu.dart';
 import '../widgets/clickable_cursor.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/profile_switching_overlay.dart';
@@ -59,10 +62,11 @@ import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
 import '../theme/mono_tokens.dart';
-import '../services/watch_next_service.dart';
+import '../services/system_shelf_service.dart';
 import 'auth_screen.dart';
 import 'libraries/content_state_builder.dart';
 import 'main_screen.dart';
+import 'settings/settings_screen.dart';
 import '../watch_together/watch_together.dart';
 import '../providers/companion_remote_provider.dart';
 import '../widgets/companion_remote/remote_session_dialog.dart';
@@ -99,7 +103,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     try {
       final serverId = _serverIdForItem(itemId);
       if (serverId == null) return;
-      final updated = await context.tryGetMediaClientForServer(serverId)?.fetchItem(itemId);
+      final updated = await context.tryGetMediaClientForServer(ServerId(serverId))?.fetchItem(itemId);
       if (updated == null || !mounted) return;
       setState(() {
         updateItemInLists(itemId, updated);
@@ -167,12 +171,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       final serverId = item.serverId;
       if (serverId == null) return null;
 
-      keys.add(buildGlobalKey(serverId, item.id));
+      keys.add(buildGlobalKey(ServerId(serverId), item.id));
       if (item.parentId != null) {
-        keys.add(buildGlobalKey(serverId, item.parentId!));
+        keys.add(buildGlobalKey(ServerId(serverId), item.parentId!));
       }
       if (item.grandparentId != null) {
-        keys.add(buildGlobalKey(serverId, item.grandparentId!));
+        keys.add(buildGlobalKey(ServerId(serverId), item.grandparentId!));
       }
     }
     return keys;
@@ -208,6 +212,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // Hero and app bar focus
   late FocusNode _heroFocusNode;
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
+  final _serverActivitiesButtonKey = GlobalKey<ServerActivitiesButtonState>();
+  final _userMenuKey = GlobalKey<AppMenuButtonState<String>>();
 
   /// Backend-neutral hero client lookup. Returns the actual
   /// [MediaServerClient] for the item's server (Plex or Jellyfin) so
@@ -217,7 +223,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (serverId == null) {
       return context.tryGetMediaClientForServer(null);
     }
-    return context.tryGetMediaClientForServer(serverId);
+    return context.tryGetMediaClientForServer(ServerId(serverId));
   }
 
   /// Update hub keys when hubs list changes — reuse existing keys to avoid
@@ -336,6 +342,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _focusTvBrowseRailWhenReady({bool immediate = false}) {
     if (!PlatformDetector.isTV()) return;
+    final suppressSelectUntilKeyUp = _isSelectKeyPressed;
     if (!_isTabVisible || !(ModalRoute.of(context)?.isCurrent ?? false)) {
       _pendingTvBrowseRailFocus = false;
       return;
@@ -347,6 +354,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       if (rail != null) {
         _pendingTvBrowseRailFocus = false;
         rail.requestFocus();
+        if (suppressSelectUntilKeyUp) rail.suppressSelectUntilKeyUp();
         return;
       }
     }
@@ -362,7 +370,19 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       if (rail == null) return;
       _pendingTvBrowseRailFocus = false;
       rail.requestFocus();
+      if (suppressSelectUntilKeyUp) rail.suppressSelectUntilKeyUp();
     });
+  }
+
+  bool get _isSelectKeyPressed {
+    return HardwareKeyboard.instance.logicalKeysPressed.any(
+      (key) =>
+          key == LogicalKeyboardKey.enter ||
+          key.keyId == 0x0d ||
+          key == LogicalKeyboardKey.numpadEnter ||
+          key == LogicalKeyboardKey.select ||
+          key == LogicalKeyboardKey.gameButtonA,
+    );
   }
 
   void _applyPendingTvBrowseRailFocus() {
@@ -753,10 +773,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
         _heroFocusNode.requestFocus();
       }
 
-      // Sync to Android TV Watch Next row
-      if (Platform.isAndroid) {
-        unawaited(_syncWatchNext(onDeck));
-      }
+      unawaited(_syncSystemShelf(onDeck));
 
       // Sync PageController to first page after OnDeck loads
       if (_heroController.hasClients && onDeck.isNotEmpty) {
@@ -817,7 +834,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       appLogger.e('Failed to load discover content', error: e);
       if (!mounted) return;
       setState(() {
-        _errorMessage = 'Failed to load content: $e';
+        _errorMessage = t.errors.failedToLoad(context: t.discover.title, error: e.toString());
         _isLoading = false;
         _areHubsLoading = false;
       });
@@ -859,10 +876,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           }
         });
 
-        // Sync to Android TV Watch Next row
-        if (Platform.isAndroid) {
-          unawaited(_syncWatchNext(onDeck));
-        }
+        unawaited(_syncSystemShelf(onDeck));
 
         appLogger.d('Continue Watching refreshed successfully');
       }
@@ -885,16 +899,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
-  /// Sync On Deck items to Android TV Watch Next row.
-  Future<void> _syncWatchNext(List<MediaItem> onDeck) async {
+  /// Sync Continue Watching items to the platform launcher shelf.
+  Future<void> _syncSystemShelf(List<MediaItem> onDeck) async {
     try {
-      await WatchNextService().syncFromOnDeck(
+      await SystemShelfService().syncFromContinueWatching(
         onDeck,
         (serverId) => context.getMediaClientWithFallback(serverId),
         hideSpoilers: context.settingsRead(SettingsService.hideSpoilers),
       );
     } catch (e) {
-      appLogger.w('Failed to sync Watch Next', error: e);
+      appLogger.w('Failed to sync system shelf', error: e);
     }
   }
 
@@ -1089,7 +1103,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfileSwitchScreen()));
   }
 
-  /// Build the [FocusableAction] wrapping the user-menu PopupMenuButton.
+  void _handleOpenSettings(BuildContext context) {
+    final mainScope = MainScreenFocusScope.of(context, listen: false);
+    if (mainScope != null) {
+      mainScope.openSettings?.call();
+      return;
+    }
+
+    Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+  }
+
+  /// Build the [FocusableAction] wrapping the user menu.
   /// Pulls live state from [ActiveProfileProvider]; the menu reuses
   /// [_userMenuItems] for the menu contents so d-pad and tap paths
   /// stay in sync.
@@ -1099,60 +1123,43 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final profiles = activeProvider.profiles;
 
     return FocusableAction(
-      onPressed: _switchingProfile ? null : () => _showUserMenu(context),
-      child: PopupMenuButton<String>(
+      onPressed: _switchingProfile ? null : () => _userMenuKey.currentState?.showButtonMenu(focusFirstItem: true),
+      child: AppMenuButton<String>(
+        key: _userMenuKey,
         enabled: !_switchingProfile,
         icon: active != null
             ? ProfileAvatar(profile: active, size: 32)
             : const AppIcon(Symbols.account_circle_rounded, fill: 1, size: 32, color: Colors.white),
-        itemBuilder: (context) => _userMenuItems(context, activeProfile: active, profiles: profiles),
+        tooltip: t.profiles.sectionTitle,
+        anchorAlignment: AppMenuAnchorAlignment.end,
+        onSelected: (value) => unawaited(_handleUserMenuAction(context, value)),
+        entriesBuilder: (context) => _userMenuItems(context, activeProfile: active, profiles: profiles),
       ),
     );
   }
 
-  List<PopupMenuEntry<String>> _userMenuItems(
+  List<AppMenuEntry<String>> _userMenuItems(
     BuildContext context, {
     required Profile? activeProfile,
     required List<Profile> profiles,
   }) {
     final theme = Theme.of(context);
     final switchable = profiles.where((p) => p.id != activeProfile?.id).toList();
-    void deferAction(String value) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (context.mounted) _handleUserMenuAction(context, value);
-      });
-    }
 
     return [
       for (final p in switchable)
-        PopupMenuItem<String>(
+        AppMenuItem<String>(
           value: 'profile:${p.id}',
-          onTap: () => deferAction('profile:${p.id}'),
-          child: Row(
-            children: [
-              ProfileAvatar(profile: p, size: 24),
-              const SizedBox(width: 12),
-              Expanded(child: Text(p.displayName, overflow: TextOverflow.ellipsis)),
-              if (p.isPinProtected) ...[
-                const SizedBox(width: 8),
-                AppIcon(Symbols.lock_rounded, fill: 1, size: 14, color: theme.colorScheme.onSurfaceVariant),
-              ],
-            ],
-          ),
+          leading: ProfileAvatar(profile: p, size: 24),
+          label: p.displayName,
+          trailing: p.isPinProtected
+              ? AppIcon(Symbols.lock_rounded, fill: 1, size: 14, color: theme.colorScheme.onSurfaceVariant)
+              : null,
         ),
-      if (switchable.isNotEmpty) const PopupMenuDivider(),
-      PopupMenuItem<String>(
-        value: 'manage_profiles',
-        onTap: () => deferAction('manage_profiles'),
-        child: const Row(children: [AppIcon(Symbols.group_rounded, fill: 1), SizedBox(width: 8), Text('Profiles')]),
-      ),
-      PopupMenuItem<String>(
-        value: 'logout',
-        onTap: () => deferAction('logout'),
-        child: Row(
-          children: [const AppIcon(Symbols.logout_rounded, fill: 1), const SizedBox(width: 8), Text(t.common.logout)],
-        ),
-      ),
+      if (switchable.isNotEmpty) const AppMenuDivider(),
+      AppMenuItem<String>(value: 'manage_profiles', icon: Symbols.group_rounded, label: t.profiles.sectionTitle),
+      AppMenuItem<String>(value: 'settings', icon: Symbols.settings_rounded, label: t.common.settings),
+      AppMenuItem<String>(value: 'logout', icon: Symbols.logout_rounded, label: t.common.logout),
     ];
   }
 
@@ -1164,6 +1171,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
     if (value == 'manage_profiles') {
       _handleSwitchProfile(context);
+      return;
+    }
+    if (value == 'settings') {
+      _handleOpenSettings(context);
       return;
     }
     if (value.startsWith('profile:')) {
@@ -1187,52 +1198,27 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     }
   }
 
-  /// Show user menu programmatically (for D-pad select)
-  void _showUserMenu(BuildContext context) {
-    if (_switchingProfile) return;
-    final actionBar = _actionBarKey.currentState;
-    if (actionBar == null) return;
-    final lastNode = actionBar.getFocusNode(actionBar.widget.actions.length - 1);
-    final RenderBox? button = lastNode?.context?.findRenderObject() as RenderBox?;
-    if (button == null) return;
-
-    final RenderBox overlay = Navigator.of(context).overlay!.context.findRenderObject() as RenderBox;
-    final position = RelativeRect.fromRect(
-      Rect.fromPoints(
-        button.localToGlobal(Offset.zero, ancestor: overlay),
-        button.localToGlobal(button.size.bottomRight(Offset.zero), ancestor: overlay),
-      ),
-      Offset.zero & overlay.size,
-    );
-
-    final activeProvider = context.read<ActiveProfileProvider>();
-    unawaited(
-      showMenu<String>(
-        context: context,
-        position: position,
-        items: _userMenuItems(context, activeProfile: activeProvider.active, profiles: activeProvider.profiles),
-      ),
-    );
-  }
-
   Widget _buildOverlaidAppBar() {
     final statusBarHeight = MediaQuery.paddingOf(context).top;
+    final colorScheme = Theme.of(context).colorScheme;
+    final overlayColor = colorScheme.brightness == Brightness.dark ? Colors.black : colorScheme.surface;
+    final foregroundColor = colorScheme.onSurface;
     return DecoratedBox(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.black.withValues(alpha: 0.7),
-            Colors.black.withValues(alpha: 0.5),
-            Colors.black.withValues(alpha: 0.3),
+            overlayColor.withValues(alpha: 0.7),
+            overlayColor.withValues(alpha: 0.5),
+            overlayColor.withValues(alpha: 0.3),
             Colors.transparent,
           ],
           stops: const [0.0, 0.3, 0.6, 1.0],
         ),
       ),
       child: Padding(
-        padding: EdgeInsets.only(top: statusBarHeight, left: 16, right: 16, bottom: 8),
+        padding: .only(top: statusBarHeight, left: 16, right: 16, bottom: 8),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
@@ -1240,22 +1226,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               if (!PlatformDetector.isTV())
                 Text(
                   t.discover.title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(color: foregroundColor, fontWeight: .bold),
                 ),
               const Spacer(),
               Consumer2<WatchTogetherProvider, CompanionRemoteProvider>(
                 builder: (context, watchTogether, companionRemote, _) {
                   final isDesktop = PlatformDetector.shouldActAsRemoteHost(context);
-                  final colorScheme = Theme.of(context).colorScheme;
 
                   return FocusableActionBar(
                     key: _actionBarKey,
                     onNavigateLeft: _navigateToSidebar,
                     onNavigateDown: _focusContentFromAppBar,
                     actions: [
-                      FocusableAction(icon: Symbols.refresh_rounded, iconColor: Colors.white, onPressed: _loadContent),
+                      FocusableAction(
+                        icon: Symbols.refresh_rounded,
+                        iconColor: foregroundColor,
+                        onPressed: _loadContent,
+                      ),
                       // Watch Together
                       FocusableAction(
                         onPressed: () =>
@@ -1266,13 +1253,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               icon: AppIcon(
                                 Symbols.group_rounded,
                                 fill: watchTogether.isInSession ? 1 : 0,
-                                color: watchTogether.isInSession ? colorScheme.primary : Colors.white,
+                                color: watchTogether.isInSession ? colorScheme.primary : foregroundColor,
                               ),
                               onPressed: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(builder: (_) => const WatchTogetherScreen()),
                               ),
-                              tooltip: 'Watch Together',
+                              tooltip: t.watchTogether.title,
                             ),
                             if (watchTogether.isInSession && watchTogether.participantCount > 1)
                               Positioned(
@@ -1286,11 +1273,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   ),
                                   child: Text(
                                     '${watchTogether.participantCount}',
-                                    style: TextStyle(
-                                      color: colorScheme.onPrimary,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                                    style: TextStyle(color: colorScheme.onPrimary, fontSize: 10, fontWeight: .bold),
                                   ),
                                 ),
                               ),
@@ -1315,7 +1298,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                               icon: AppIcon(
                                 Symbols.phone_android_rounded,
                                 fill: companionRemote.isConnected ? 1 : 0,
-                                color: companionRemote.isConnected ? colorScheme.primary : Colors.white,
+                                color: companionRemote.isConnected ? colorScheme.primary : foregroundColor,
                               ),
                               onPressed: () {
                                 if (isDesktop) {
@@ -1336,10 +1319,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 child: Container(
                                   width: 8,
                                   height: 8,
-                                  decoration: const BoxDecoration(
+                                  decoration: BoxDecoration(
                                     color: Colors.green,
                                     shape: BoxShape.circle,
-                                    border: Border.fromBorderSide(BorderSide(color: Colors.white, width: 1)),
+                                    border: Border.fromBorderSide(BorderSide(color: foregroundColor, width: 1)),
                                   ),
                                 ),
                               ),
@@ -1352,7 +1335,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       // a permanently empty popover.
                       if (PlatformDetector.isDesktop(context) &&
                           context.select<MultiServerProvider, bool>((p) => p.hasOnlinePlexServers))
-                        const FocusableAction(child: ServerActivitiesButton()),
+                        FocusableAction(
+                          onPressed: () => _serverActivitiesButtonKey.currentState?.togglePanel(),
+                          child: ServerActivitiesButton(key: _serverActivitiesButtonKey),
+                        ),
                       // User menu — profiles + sign out
                       _buildUserMenuAction(context),
                     ],
@@ -1381,7 +1367,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Widget _buildContent(BuildContext context) {
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
     final showHeroSection = svc.read(SettingsService.showHeroSection);
 
     if (PlatformDetector.isTV()) {
@@ -1463,7 +1449,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: .start,
                           children: [
                             Container(
                               width: 200,
@@ -1500,7 +1486,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   SliverFillRemaining(
                     child: Center(
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: .center,
                         children: [
                           const AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
                           const SizedBox(height: 16),
@@ -1530,7 +1516,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final size = MediaQuery.sizeOf(context);
     final theme = Theme.of(context);
     final spotlight = _effectiveSpotlightItem;
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
     final browseHubs = _tvBrowseHubs;
     final scale = TvLayoutConstants.scaleForSize(size);
@@ -1548,6 +1534,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             hubs: browseHubs,
             density: svc.read(SettingsService.libraryDensity),
             episodePosterMode: svc.read(SettingsService.episodePosterMode),
+            fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
             tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
           );
     final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
@@ -1585,7 +1572,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           if (_errorMessage != null)
             Center(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: .min,
                 children: [
                   const AppIcon(Symbols.error_outline_rounded, fill: 1, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
@@ -1598,7 +1585,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           if (!_isLoading && _errorMessage == null && browseHubs.isEmpty && !_areHubsLoading)
             Center(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: .center,
                 children: [
                   const AppIcon(Symbols.movie_rounded, fill: 1, size: 64, color: Colors.grey),
                   const SizedBox(height: 16),
@@ -1683,7 +1670,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   left: -26,
                   right: 0,
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: .center,
                     children: [
                       // Pause/Play button
                       ClickableCursor(
@@ -1729,7 +1716,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                         borderRadius: BorderRadius.circular(dotSize / 2),
                                       ),
                                       child: Align(
-                                        alignment: Alignment.centerLeft,
+                                        alignment: .centerLeft,
                                         child: Container(
                                           width: fillWidth,
                                           height: dotSize,
@@ -1780,7 +1767,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final heroLogoHeight = isTv ? TvLayoutConstants.heroLogoHeight : 120.0;
     final heroTitleStyle = theme.textTheme.displaySmall?.copyWith(
       color: colorScheme.onSurface,
-      fontWeight: FontWeight.bold,
+      fontWeight: .bold,
       fontSize: isTv ? 52 : null,
       shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 8)],
     );
@@ -1789,7 +1776,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final contentTypeLabel = heroItem.isMovie ? t.discover.movie : t.discover.tvShow;
 
     // Spoiler protection
-    final hideSpoilers = SettingsService.instanceOrNull!.read(SettingsService.hideSpoilers);
+    final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final shouldHideSpoiler = hideSpoilers && heroItem.shouldHideSpoiler;
 
     // Build semantic label for hero item
@@ -1913,7 +1900,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     ? 200
                     : 0,
                 child: Padding(
-                  padding: EdgeInsets.symmetric(
+                  padding: .symmetric(
                     horizontal: isTv
                         ? TvLayoutConstants.horizontalInset
                         : isLargeScreen
@@ -1928,7 +1915,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       ),
                       child: Column(
                         crossAxisAlignment: alignLeft ? CrossAxisAlignment.start : CrossAxisAlignment.center,
-                        mainAxisSize: MainAxisSize.min,
+                        mainAxisSize: .min,
                         children: [
                           // Show logo or name/title
                           if (heroItem.clearLogoPath != null)
@@ -1995,9 +1982,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                 if (heroItem.year != null) heroItem.year.toString(),
                               ].join(' • '),
                               style: TextStyle(
-                                color: Colors.white,
+                                color: colorScheme.onSurface,
                                 fontSize: isTv ? 18 : 14,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: .w600,
                               ),
                               textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                             ),
@@ -2011,13 +1998,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             const SizedBox(height: 12),
                             RichText(
                               maxLines: isTv ? 3 : 2,
-                              overflow: TextOverflow.ellipsis,
+                              overflow: .ellipsis,
                               textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                               text: TextSpan(
                                 style: TextStyle(
-                                  color: alignLeft
-                                      ? Colors.white.withValues(alpha: 0.7)
-                                      : colorScheme.onSurface.withValues(alpha: 0.7),
+                                  color: colorScheme.onSurface.withValues(alpha: 0.7),
                                   fontSize: isTv ? 18 : 14,
                                   height: isTv ? 1.45 : 1.4,
                                 ),
@@ -2025,10 +2010,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                                   if (isEpisode && heroItem.parentIndex != null && heroItem.index != null)
                                     TextSpan(
                                       text: 'S${heroItem.parentIndex}, E${heroItem.index}: ',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: alignLeft ? Colors.white : colorScheme.onSurface,
-                                      ),
+                                      style: TextStyle(fontWeight: .bold, color: colorScheme.onSurface),
                                     ),
                                   TextSpan(
                                     text: heroItem.summary?.isNotEmpty == true
@@ -2046,12 +2028,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                             Text(
                               'S${heroItem.parentIndex}, E${heroItem.index}: ${heroItem.title}',
                               maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
+                              overflow: .ellipsis,
                               textAlign: alignLeft ? TextAlign.left : TextAlign.center,
                               style: TextStyle(
-                                color: alignLeft
-                                    ? Colors.white.withValues(alpha: 0.7)
-                                    : colorScheme.onSurface.withValues(alpha: 0.7),
+                                color: colorScheme.onSurface.withValues(alpha: 0.7),
                                 fontSize: isTv ? 18 : 14,
                                 height: isTv ? 1.45 : 1.4,
                               ),
@@ -2077,7 +2057,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final hasProgress = heroItem.hasActiveProgress;
     final isTv = PlatformDetector.isTV();
 
-    final minutesLeft = hasProgress ? ((heroItem.durationMs! - heroItem.viewOffsetMs!) / 60000).round() : 0;
+    final minutesLeft = hasProgress ? ((heroItem.durationMs! - heroItem.viewOffsetMs!) / 60_000).round() : 0;
 
     final progress = hasProgress ? heroItem.viewOffsetMs! / heroItem.durationMs! : 0.0;
 
@@ -2097,7 +2077,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             curve: Curves.easeOutCubic,
-            padding: EdgeInsets.symmetric(horizontal: isTv ? 34 : 24, vertical: isTv ? 16 : 12),
+            padding: .symmetric(horizontal: isTv ? 34 : 24, vertical: isTv ? 16 : 12),
             decoration: BoxDecoration(
               color: backgroundColor,
               borderRadius: BorderRadius.all(Radius.circular(isTv ? 32 : 24)),
@@ -2106,7 +2086,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   : null,
             ),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 AppIcon(Symbols.play_arrow_rounded, fill: 1, size: isTv ? 28 : 20, color: foregroundColor),
                 SizedBox(width: isTv ? 12 : 8),
@@ -2120,7 +2100,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       borderRadius: BorderRadius.all(Radius.circular(isTv ? 4 : 3)),
                     ),
                     child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
+                      alignment: .centerLeft,
                       widthFactor: progress,
                       child: Container(
                         decoration: BoxDecoration(

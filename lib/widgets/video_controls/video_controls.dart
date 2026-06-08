@@ -1,7 +1,18 @@
 import 'dart:async' show StreamSubscription, Timer, unawaited;
 import 'dart:io' show Platform;
 
-import 'package:flutter/gestures.dart' show PointerSignalEvent, PointerScrollEvent;
+import '../../media/ids.dart';
+
+import 'package:flutter/gestures.dart'
+    show
+        PointerCancelEvent,
+        PointerDeviceKind,
+        PointerDownEvent,
+        PointerMoveEvent,
+        PointerScrollEvent,
+        PointerSignalEvent,
+        PointerUpEvent,
+        kDoubleTapTimeout;
 import 'package:flutter/material.dart';
 import 'package:vibe_stream/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -47,6 +58,7 @@ import '../../theme/mono_tokens.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import 'icons.dart';
+import 'player_chrome_controller.dart';
 import 'playback_extras_loader.dart';
 import 'widgets/player_toast_indicator.dart';
 import '../../utils/app_logger.dart';
@@ -54,6 +66,7 @@ import '../../i18n/strings.g.dart';
 import '../../focus/input_mode_tracker.dart';
 import 'models/track_controls_state.dart';
 import 'widgets/double_tap_feedback.dart';
+import 'helpers/two_finger_double_tap_tracker.dart';
 import 'widgets/linux_keep_alive.dart';
 import 'widgets/mobile_skip_zones.dart';
 import 'widgets/skip_marker_button.dart';
@@ -132,6 +145,17 @@ effectiveVersionQualityControls({
   );
 }
 
+@visibleForTesting
+bool shouldShowSkipMarkerButton({
+  required bool hasFirstFrame,
+  required bool hasMarker,
+  required bool hasPlayNextPrompt,
+  required bool skipButtonDismissed,
+  required bool controlsVisible,
+}) {
+  return hasFirstFrame && hasMarker && !hasPlayNextPrompt && (!skipButtonDismissed || controlsVisible);
+}
+
 class PlexVideoControls extends StatefulWidget {
   final Player player;
   final MediaItem metadata;
@@ -150,8 +174,13 @@ class PlexVideoControls extends StatefulWidget {
   final int? selectedSubtitleStreamId;
   final int? sourcePartId;
   final int boxFitMode;
+  final double videoZoomScale;
   final VoidCallback? onTogglePIPMode;
   final VoidCallback? onCycleBoxFitMode;
+  final ValueChanged<double>? onVideoZoomChanged;
+  final VoidCallback? onZoomIn;
+  final VoidCallback? onZoomOut;
+  final VoidCallback? onResetVideoZoom;
   final VoidCallback? onCycleAudioTrack;
   final VoidCallback? onCycleSubtitleTrack;
   final Function(AudioTrack)? onAudioTrackChanged;
@@ -182,8 +211,8 @@ class PlexVideoControls extends StatefulWidget {
   /// Optional focus node for Play Next dialog button (for TV navigation from timeline)
   final FocusNode? playNextFocusNode;
 
-  /// Notifier to report controls visibility to parent (for popup positioning)
-  final ValueNotifier<bool>? controlsVisible;
+  /// Shared controller for player chrome visibility, auto-hide, and layout state.
+  final PlayerChromeController chromeController;
 
   /// Optional shader service for MPV shader control
   final ShaderService? shaderService;
@@ -212,8 +241,13 @@ class PlexVideoControls extends StatefulWidget {
   /// Current playback position as absolute epoch seconds (for live TV)
   final int? currentPositionEpoch;
 
-  /// Seek callback for live TV time-shift (epoch seconds)
+  /// Seek callback for live TV time-shift (absolute epoch seconds; scrubber)
   final ValueChanged<int>? onLiveSeek;
+
+  /// Relative live-TV skip callback (delta seconds). The owning screen
+  /// accumulates rapid presses and debounces the transcode re-open, so skip
+  /// buttons/dpad/remote keys must use this rather than `onLiveSeek` (#1253).
+  final ValueChanged<int>? onLiveSeekBy;
 
   /// Jump to live edge callback
   final VoidCallback? onJumpToLive;
@@ -247,8 +281,13 @@ class PlexVideoControls extends StatefulWidget {
     this.selectedSubtitleStreamId,
     this.sourcePartId,
     this.boxFitMode = 0,
+    this.videoZoomScale = 1.0,
     this.onTogglePIPMode,
     this.onCycleBoxFitMode,
+    this.onVideoZoomChanged,
+    this.onZoomIn,
+    this.onZoomOut,
+    this.onResetVideoZoom,
     this.onCycleAudioTrack,
     this.onCycleSubtitleTrack,
     this.onAudioTrackChanged,
@@ -261,7 +300,7 @@ class PlexVideoControls extends StatefulWidget {
     this.canControl = true,
     this.hasFirstFrame,
     this.playNextFocusNode,
-    this.controlsVisible,
+    required this.chromeController,
     this.shaderService,
     this.onShaderChanged,
     this.thumbnailDataBuilder,
@@ -272,6 +311,7 @@ class PlexVideoControls extends StatefulWidget {
     this.streamStartEpoch = 0,
     this.currentPositionEpoch,
     this.onLiveSeek,
+    this.onLiveSeekBy,
     this.onJumpToLive,
     this.isAmbientLightingEnabled = false,
     this.onToggleAmbientLighting,
@@ -283,12 +323,13 @@ class PlexVideoControls extends StatefulWidget {
 
 class _PlexVideoControlsState extends State<PlexVideoControls>
     with WindowListener, SettingsEffectMixin, MountedSetStateMixin {
-  bool _showControls = true;
-  bool _forceShowControls = false;
+  bool get _showControls => widget.chromeController.controlsVisible;
+  bool get _hasRenderedFirstFrame => widget.hasFirstFrame?.value ?? true;
+
+  late bool _lastControlsVisible;
   bool _isLoadingExtras = false;
   List<MediaChapter> _chapters = [];
   bool _chaptersLoaded = false;
-  Timer? _hideTimer;
   bool _isFullscreen = false;
   bool _isAlwaysOnTop = false;
   late final FocusNode _focusNode;
@@ -296,7 +337,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Live settings — read through the service so a change anywhere in the app
   // reflects here without a manual reload. UI rebuilds are wired via
   // [bindRebuild] in [initState]; side effects (rotation, sync) via [bindEffect].
-  SettingsService get _settings => SettingsService.instanceOrNull!;
+  SettingsService get _settings => SettingsService.instance;
   int get _seekTimeSmall => _settings.read(SettingsService.seekTimeSmall);
   int get _rewindOnResume => _settings.read(SettingsService.rewindOnResume);
   int get _audioSyncOffset => _settings.read(SettingsService.audioSyncOffset);
@@ -307,7 +348,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   Timer? _lockIconTimer;
   bool get _clickVideoTogglesPlayback => _settings.read(SettingsService.clickVideoTogglesPlayback);
   bool get _showChapterMarkersOnTimeline => _settings.read(SettingsService.showChapterMarkersOnTimeline);
-  bool _isContentStripVisible = false; // Whether the swipe-up content strip is showing
   int _trafficLightVisibilityGeneration = 0;
 
   // GlobalKey to access DesktopVideoControls state for focus management
@@ -324,6 +364,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   bool _lastSkipTapWasForward = true;
   DateTime? _lastSkipActionTime; // Debounce: prevents double-tap counting as 2 skips
   Timer? _singleTapTimer; // Timer for delayed single-tap action (toggle controls)
+  final TwoFingerDoubleTapTracker _twoFingerDoubleTapTracker = TwoFingerDoubleTapTracker();
+  DateTime? _suppressTouchTapUntil;
   // Seek throttle
   late final Throttle _seekThrottle;
   // Current marker state
@@ -357,8 +399,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Skip marker button focus node (for TV D-pad navigation)
   late final FocusNode _skipMarkerFocusNode;
   final ValueNotifier<bool> _fallbackHasFirstFrame = ValueNotifier<bool>(true);
-  final Stopwatch _pointerActivityStopwatch = Stopwatch()..start();
-  int _lastPointerActivityMs = -1000;
   double? _rateBeforeLongPress;
   bool _showSpeedIndicator = false;
   StreamSubscription<double>? _rateSubscription;
@@ -374,6 +414,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   void initState() {
     super.initState();
+    _lastControlsVisible = widget.chromeController.controlsVisible;
     _focusNode = FocusNode();
     _skipMarkerFocusNode = FocusNode(debugLabel: 'SkipMarkerButton');
     _seekThrottle = throttle(
@@ -388,6 +429,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     // so init wiring (orientation, focus) lives in one place.
     bindEffect<bool>(SettingsService.rotationLocked, _applyRotationLock);
     bindEffect<bool>(SettingsService.videoPlayerNavigationEnabled, (enabled) {
+      _configureChromeController();
       if (enabled && _showControls) _focusPlayPauseIfKeyboardMode();
     }, fireImmediately: false);
     // Rebuild on any setting that affects build output (seek labels, skip
@@ -407,7 +449,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       SettingsService.clickVideoTogglesPlayback,
       SettingsService.showChapterMarkersOnTimeline,
     ]);
-    _startHideTimer();
+    widget.chromeController.addListener(_onChromeChanged);
+    _configureChromeController();
+    widget.chromeController.setPlaying(widget.player.state.playing);
     _initKeyboardService();
     _listenToPosition();
     _listenToPlayingState();
@@ -427,8 +471,6 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     HardwareKeyboard.instance.addHandler(_handleGlobalKeyEvent);
     // Listen for first frame to start auto-hide timer
     widget.hasFirstFrame?.addListener(_onFirstFrameReady);
-    // Listen for external requests to show controls (e.g. screen-level focus recovery)
-    widget.controlsVisible?.addListener(_onControlsVisibleExternal);
     // On macOS, show controls and disable auto-hide when PiP activates
     if (Platform.isMacOS) {
       _pipService.isPipActive.addListener(_onMacPipChanged);
@@ -448,12 +490,26 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
 
   void _setControlsState(VoidCallback fn) => setStateIfMounted(fn);
 
+  void _configureChromeController() {
+    widget.chromeController.configure(hideDelay: _hideDelay, hasFirstFrame: widget.hasFirstFrame?.value ?? true);
+  }
+
+  @override
+  void didUpdateWidget(PlexVideoControls oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.chromeController != widget.chromeController) {
+      oldWidget.chromeController.removeListener(_onChromeChanged);
+      _lastControlsVisible = widget.chromeController.controlsVisible;
+      widget.chromeController.addListener(_onChromeChanged);
+    }
+    _configureChromeController();
+  }
+
   @override
   void dispose() {
     HardwareKeyboard.instance.removeHandler(_handleGlobalKeyEvent);
-    widget.controlsVisible?.removeListener(_onControlsVisibleExternal);
+    widget.chromeController.removeListener(_onChromeChanged);
     widget.hasFirstFrame?.removeListener(_onFirstFrameReady);
-    _hideTimer?.cancel();
     _feedbackTimer?.cancel();
     _lockIconTimer?.cancel();
     _autoSkipTimer?.cancel();
@@ -553,11 +609,23 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
           onKeyEvent: (node, event) => _handleControlsKeyEvent(event, isMobile),
           child: Listener(
             behavior: HitTestBehavior.translucent,
+            // Any pointer input cancels an in-progress auto-skip countdown. This
+            // root Listener observes every pointer event over the player without
+            // consuming it, so it's the single cancel point for clicks, touches,
+            // mouse moves, scroll, and trackpad. Keys are handled the same way in
+            // _handleGlobalKeyEvent.
+            onPointerDown: (event) {
+              _cancelAutoSkipFromUserInteraction();
+              if (isMobile) _handleTouchPointerDown(event);
+            },
+            onPointerHover: (_) => _cancelAutoSkipFromUserInteraction(),
+            onPointerMove: isMobile ? _handleTouchPointerMove : null,
+            onPointerUp: isMobile ? _handleTouchPointerUp : null,
+            onPointerCancel: isMobile ? _handleTouchPointerCancel : null,
             onPointerSignal: _handlePointerSignal,
+            onPointerPanZoomStart: (_) => _cancelAutoSkipFromUserInteraction(),
             child: MouseRegion(
-              cursor: (_showControls || _forceShowControls) ? SystemMouseCursors.basic : SystemMouseCursors.none,
               onHover: (_) => _showControlsFromPointerActivity(),
-              onExit: (_) => _hideControlsFromPointerExit(),
               child: Stack(
                 children: [
                   // Keep-alive: 1px widget that continuously repaints to prevent
@@ -590,9 +658,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       ignoring: !_showControls,
                       child: FocusScope(
                         // Prevent focus from entering controls when hidden
-                        canRequestFocus: _showControls || _forceShowControls,
+                        canRequestFocus: _showControls,
                         child: AnimatedOpacity(
-                          opacity: (_showControls || _forceShowControls) ? 1.0 : 0.0,
+                          opacity: _showControls ? 1.0 : 0.0,
                           duration: const Duration(milliseconds: 200),
                           child: Builder(
                             builder: (context) {
@@ -630,7 +698,9 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                       ? Listener(
                                           behavior: HitTestBehavior.translucent,
                                           onPointerDown: (_) {
-                                            if (!_isContentStripVisible) _restartHideTimerIfPlaying();
+                                            if (!widget.chromeController.contentStripVisible) {
+                                              _restartHideTimerIfPlaying();
+                                            }
                                           },
                                           child: Builder(
                                             builder: (context) {
@@ -653,8 +723,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                 onSeekCompleted: widget.onSeekCompleted,
                                                 // ignore: no-empty-block - play/pause handled by parent VideoControlsState
                                                 onPlayPause: () {},
-                                                onCancelAutoHide: () => _hideTimer?.cancel(),
-                                                onStartAutoHide: _startHideTimer,
+                                                onCancelAutoHide: widget.chromeController.cancelAutoHide,
+                                                onStartAutoHide: widget.chromeController.startAutoHide,
                                                 onBack: widget.onBack,
                                                 onNext: widget.onNext,
                                                 onPrevious: widget.onPrevious,
@@ -672,13 +742,12 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                                 onQueueItemSelected: playbackState.isQueueActive
                                                     ? _onQueueItemSelected
                                                     : null,
-                                                controlsVisible: widget.controlsVisible,
+                                                chromeController: widget.chromeController,
                                                 onStripVisibilityChanged: (visible) {
-                                                  setState(() => _isContentStripVisible = visible);
                                                   if (visible) {
-                                                    _hideTimer?.cancel();
+                                                    widget.chromeController.setContentStripVisible(true);
                                                   } else {
-                                                    _restartHideTimerIfPlaying();
+                                                    widget.chromeController.setContentStripVisible(false);
                                                   }
                                                 },
                                               );
@@ -731,16 +800,20 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                     ),
                   ),
                   // Skip intro/credits button (auto-dismisses after 7s, then only shows with controls)
-                  if (_currentMarker != null &&
-                      widget.playNextFocusNode == null &&
-                      (!_skipButtonDismissed || _showControls))
+                  if (shouldShowSkipMarkerButton(
+                    hasFirstFrame: _hasRenderedFirstFrame,
+                    hasMarker: _currentMarker != null,
+                    hasPlayNextPrompt: widget.playNextFocusNode != null,
+                    skipButtonDismissed: _skipButtonDismissed,
+                    controlsVisible: _showControls,
+                  ))
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 200),
                       curve: Curves.easeInOut,
                       right: 24,
                       bottom: () {
                         if (!_showControls) return 24.0;
-                        if (_isContentStripVisible) return 180.0;
+                        if (widget.chromeController.contentStripVisible) return 180.0;
                         return isMobile ? 80.0 : 115.0;
                       }(),
                       child: AnimatedOpacity(
@@ -756,7 +829,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                       top: _showControls ? (isMobile ? 100.0 : 60.0) : 16.0,
                       left: 16,
                       child: AnimatedOpacity(
-                        opacity: (!_autoHidePerformanceOverlay || _showControls || _forceShowControls) ? 1.0 : 0.0,
+                        opacity: (!_autoHidePerformanceOverlay || _showControls) ? 1.0 : 0.0,
                         duration: const Duration(milliseconds: 200),
                         child: IgnorePointer(child: PlayerPerformanceOverlay(player: widget.player)),
                       ),
@@ -781,17 +854,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                                 borderRadius: const BorderRadius.all(Radius.circular(28)),
                               ),
                               child: Row(
-                                mainAxisSize: MainAxisSize.min,
+                                mainAxisSize: .min,
                                 children: [
                                   const AppIcon(Symbols.lock_rounded, fill: 1, color: Colors.white, size: 20),
                                   const SizedBox(width: 8),
                                   Text(
                                     t.videoControls.longPressToUnlock,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w500),
                                   ),
                                 ],
                               ),

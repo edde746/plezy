@@ -29,6 +29,8 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
   @override
   Widget build(BuildContext context) {
     return OverlaySheetHost(
+      // Close an open sheet on system back instead of popping the screen.
+      canPop: true,
       child: Scaffold(
         appBar: AppBar(
           title: Text(t.companionRemote.title),
@@ -64,7 +66,7 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
             if (provider.status == RemoteSessionStatus.reconnecting) {
               return Center(
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisAlignment: .center,
                   children: [
                     const CircularProgressIndicator(),
                     const SizedBox(height: 24),
@@ -76,7 +78,7 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
                     ),
                     const SizedBox(height: 32),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: .center,
                       children: [
                         OutlinedButton(onPressed: () => provider.cancelReconnect(), child: Text(t.common.cancel)),
                         const SizedBox(width: 16),
@@ -161,7 +163,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: .start,
                       children: [
                         Text(
                           device.name,
@@ -236,7 +238,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
       children: [
         const SizedBox(height: 16),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisAlignment: .spaceEvenly,
           children: [
             _RemoteButton(
               icon: Icons.home,
@@ -303,7 +305,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
       children: [
         const SizedBox(height: 16),
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: .center,
           children: [
             _RemoteButton(
               icon: Icons.skip_previous,
@@ -328,7 +330,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
         ),
         const SizedBox(height: 24),
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: .center,
           children: [
             _RemoteButton(
               icon: Icons.replay_10,
@@ -353,7 +355,7 @@ class _RemoteControlContentState extends State<_RemoteControlContent> {
         Text(t.companionRemote.remote.volume, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 16),
         Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: .center,
           children: [
             _RemoteButton(
               icon: Icons.volume_off,
@@ -611,7 +613,7 @@ class _RemoteButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         SizedBox(
           width: size,
@@ -621,7 +623,7 @@ class _RemoteButton extends StatelessWidget {
               HapticFeedback.lightImpact();
               onPressed();
             },
-            style: FilledButton.styleFrom(padding: EdgeInsets.zero, shape: const CircleBorder()),
+            style: FilledButton.styleFrom(padding: .zero, shape: const CircleBorder()),
             child: Icon(icon, size: iconSize),
           ),
         ),
@@ -675,9 +677,9 @@ class _SearchBottomSheetState extends State<_SearchBottomSheet> with ControllerD
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom, left: 16, right: 16, top: 16),
+      padding: .only(bottom: MediaQuery.viewInsetsOf(context).bottom, left: 16, right: 16, top: 16),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           FocusableTextField(
             controller: _controller,
@@ -717,7 +719,7 @@ class _RemoteCard extends StatelessWidget {
           },
           borderRadius: const BorderRadius.all(Radius.circular(12)),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisAlignment: .center,
             children: [
               Icon(icon, size: 32),
               const SizedBox(height: 8),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
@@ -72,7 +73,7 @@ Future<MediaNavigationResult> navigateToMediaItem(
   if (mi.isLibrarySection) {
     final sectionKey = mi.librarySectionKey;
     if (sectionKey != null && mi.serverId != null) {
-      final libraryGlobalKey = buildGlobalKey(mi.serverId!, sectionKey);
+      final libraryGlobalKey = buildGlobalKey(ServerId(mi.serverId!), sectionKey);
       MainScreenFocusScope.of(context, listen: false)?.selectLibrary?.call(libraryGlobalKey);
       return MediaNavigationResult.librarySelected;
     }

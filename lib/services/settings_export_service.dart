@@ -34,7 +34,7 @@ class NoUserSignedInException extends SettingsExportException {
   const NoUserSignedInException() : super('No user is signed in');
 }
 
-/// Thrown when the chosen file isn't a valid Plezy settings export.
+/// Thrown when the chosen file isn't a valid Vibe settings export.
 class InvalidExportFileException extends SettingsExportException {
   const InvalidExportFileException(super.message);
 }
@@ -306,14 +306,13 @@ class SettingsExportService {
     }
 
     try {
-      final savedPath = await FilePickerService.instance.saveFile(
+      return await FilePickerService.instance.saveFile(
         dialogTitle: 'Export Vibe settings',
         fileName: fileName,
         bytes: bytes,
         type: FileType.custom,
         allowedExtensions: const [fileExtension],
       );
-      return savedPath;
     } catch (e, st) {
       appLogger.e('Settings export failed', error: e, stackTrace: st);
       throw const SettingsExportException('Could not write export file');

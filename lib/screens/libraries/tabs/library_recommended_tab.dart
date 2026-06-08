@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -6,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/media_hub.dart';
 import '../../../media/media_item.dart';
+import '../../../media/media_server_client.dart';
 import '../../../mixins/item_updatable.dart';
 import '../../../mixins/watch_state_aware.dart';
 import '../../../services/settings_service.dart';
@@ -94,9 +96,9 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
       for (final item in hub.items) {
         final serverId = item.serverId ?? widget.library.serverId;
         if (serverId == null) return null;
-        keys.add(buildGlobalKey(serverId, item.id));
-        if (item.parentId != null) keys.add(buildGlobalKey(serverId, item.parentId!));
-        if (item.grandparentId != null) keys.add(buildGlobalKey(serverId, item.grandparentId!));
+        keys.add(buildGlobalKey(ServerId(serverId), item.id));
+        if (item.parentId != null) keys.add(buildGlobalKey(ServerId(serverId), item.parentId!));
+        if (item.grandparentId != null) keys.add(buildGlobalKey(ServerId(serverId), item.grandparentId!));
       }
     }
     return keys;
@@ -177,14 +179,14 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
 
     // Backend-aware fetch: Plex hits /hubs/sections, Jellyfin synthesises
     // Continue Watching + Next Up + Recently Added.
-    final client = context.tryGetMediaClientForServer(widget.library.serverId);
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(widget.library.serverId));
     final hubs = client == null
         ? <MediaHub>[]
         : List.of(
             await client.fetchLibraryHubs(
               widget.library.id,
               libraryName: widget.library.title,
-              limit: 12,
+              limit: defaultHubPreviewLimit,
               libraryKind: widget.library.kind,
             ),
           );
@@ -299,8 +301,8 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     final spotlight = _effectiveSpotlightItem;
     final size = MediaQuery.sizeOf(context);
     final theme = Theme.of(context);
-    final svc = SettingsService.instanceOrNull!;
-    final client = context.tryGetMediaClientForServer(spotlight?.serverId ?? widget.library.serverId);
+    final svc = SettingsService.instance;
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(spotlight?.serverId ?? widget.library.serverId));
     final scale = TvLayoutConstants.scaleForSize(size);
     final sidebarBleed = MainScreenFocusScope.sideNavigationBleedOf(
       context,
@@ -316,6 +318,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
             hubs: tvHubs,
             density: svc.read(SettingsService.libraryDensity),
             episodePosterMode: svc.read(SettingsService.episodePosterMode),
+            fullCardLayout: svc.read(SettingsService.tvFullCardLayout),
             tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
           );
     final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();

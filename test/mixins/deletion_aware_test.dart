@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vibe_stream/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vibe_stream/mixins/deletion_aware.dart';
 import 'package:vibe_stream/utils/deletion_notifier.dart';
@@ -50,7 +51,7 @@ class _ProbeState extends State<_Probe> with DeletionAware {
 }
 
 DeletionEvent _ev({
-  required String serverId,
+  required ServerId serverId,
   required String itemId,
   List<String> parentChain = const [],
   String mediaType = 'movie',
@@ -66,7 +67,7 @@ void main() {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s, itemIdsOverride: const {'42'}));
 
-      DeletionNotifier().notify(_ev(serverId: 's1', itemId: '42'));
+      DeletionNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '42'));
       await _settle(tester);
 
       expect(state.events, hasLength(1));
@@ -77,7 +78,7 @@ void main() {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s, itemIdsOverride: const {'42'}));
 
-      DeletionNotifier().notify(_ev(serverId: 's1', itemId: '999'));
+      DeletionNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '999'));
       await _settle(tester);
 
       expect(state.events, isEmpty);
@@ -88,7 +89,7 @@ void main() {
       await tester.pumpWidget(_Probe(onState: (s) => state = s, itemIdsOverride: const {'show123'}));
 
       DeletionNotifier().notify(
-        _ev(serverId: 's1', itemId: 'season789', parentChain: const ['show123'], mediaType: 'season'),
+        _ev(serverId: ServerId('s1'), itemId: 'season789', parentChain: const ['show123'], mediaType: 'season'),
       );
       await _settle(tester);
 
@@ -100,11 +101,11 @@ void main() {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s, serverIdOverride: 's1', itemIdsOverride: const {'42'}));
 
-      DeletionNotifier().notify(_ev(serverId: 's2', itemId: '42'));
+      DeletionNotifier().notify(_ev(serverId: ServerId('s2'), itemId: '42'));
       await _settle(tester);
       expect(state.events, isEmpty);
 
-      DeletionNotifier().notify(_ev(serverId: 's1', itemId: '42'));
+      DeletionNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '42'));
       await _settle(tester);
       expect(state.events, hasLength(1));
     });
@@ -115,11 +116,11 @@ void main() {
         _Probe(onState: (s) => state = s, globalKeysOverride: const {'s1:99'}, itemIdsOverride: const {'5'}),
       );
 
-      DeletionNotifier().notify(_ev(serverId: 's1', itemId: '5'));
+      DeletionNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '5'));
       await _settle(tester);
       expect(state.events, isEmpty);
 
-      DeletionNotifier().notify(_ev(serverId: 's1', itemId: '99'));
+      DeletionNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '99'));
       await _settle(tester);
       expect(state.events, hasLength(1));
       expect(state.events.first.itemId, '99');
@@ -129,7 +130,7 @@ void main() {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s, itemIdsOverride: const <String>{}));
 
-      DeletionNotifier().notify(_ev(serverId: 's1', itemId: '1'));
+      DeletionNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '1'));
       await _settle(tester);
 
       expect(state.events, isEmpty);
@@ -139,13 +140,13 @@ void main() {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(onState: (s) => state = s, itemIdsOverride: const {'42'}));
 
-      DeletionNotifier().notify(_ev(serverId: 's1', itemId: '42'));
+      DeletionNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '42'));
       await _settle(tester);
       expect(state.events, hasLength(1));
 
       await tester.pumpWidget(const SizedBox.shrink());
 
-      DeletionNotifier().notify(_ev(serverId: 's1', itemId: '42'));
+      DeletionNotifier().notify(_ev(serverId: ServerId('s1'), itemId: '42'));
       await tester.pump(Duration.zero);
 
       expect(state.events, hasLength(1));

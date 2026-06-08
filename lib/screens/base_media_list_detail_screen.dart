@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import 'package:vibe_stream/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -60,7 +61,7 @@ abstract class BaseMediaListDetailScreen<T extends StatefulWidget> extends State
     if (serverId == null) {
       throw Exception(t.errors.noClientAvailable);
     }
-    return context.getMediaClientWithFallback(serverId);
+    return context.getMediaClientWithFallback(ServerId(serverId));
   }
 
   @override

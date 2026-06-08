@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../media/library_query.dart';
 import '../media/media_backend.dart';
@@ -78,7 +79,7 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
     super.dispose();
   }
 
-  MediaServerClient get _mediaClient => context.getMediaClientForServer(widget.serverId);
+  MediaServerClient get _mediaClient => context.getMediaClientForServer(ServerId(widget.serverId));
 
   @override
   Future<LibraryPage<MediaItem>> fetchPage(int start, int size, AbortController? abort) {
@@ -132,7 +133,7 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
     final theme = Theme.of(context);
     return SliverToBoxAdapter(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           children: [
             ClipRRect(
@@ -150,13 +151,13 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
             const SizedBox(width: 16),
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: .start,
                 children: [
                   Text(
                     widget.actorName,
-                    style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+                    style: theme.textTheme.headlineSmall?.copyWith(fontWeight: .bold),
                     maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                    overflow: .ellipsis,
                   ),
                   if (widget.characterName != null) ...[
                     const SizedBox(height: 4),
@@ -164,7 +165,7 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
                       widget.characterName!,
                       style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      overflow: .ellipsis,
                     ),
                   ],
                   if (totalSize > 0) ...[

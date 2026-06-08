@@ -214,6 +214,8 @@ void main() {
       final sub = info.subtitleTracks.single;
       expect(sub.key, '/Videos/item-1/src-1/Subtitles/2/Stream.srt');
       expect(sub.isExternal, isTrue);
+      expect(sub.isExternalFile, isFalse);
+      expect(sub.usesExternalDelivery, isTrue);
     });
 
     test('preserves external Jellyfin audio streams', () {
@@ -247,6 +249,8 @@ void main() {
       final sub = info.subtitleTracks.single;
       expect(sub.key, isNull);
       expect(sub.isExternal, isTrue);
+      expect(sub.isExternalFile, isTrue);
+      expect(sub.usesExternalDelivery, isFalse);
     });
 
     test('captures mediaSourceId from source Id field', () {

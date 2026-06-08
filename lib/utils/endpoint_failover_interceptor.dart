@@ -30,12 +30,14 @@ class EndpointFailoverManager {
 
   /// Reset back to the first (preferred) endpoint. Called when all endpoints
   /// are exhausted so the next failure cycle starts from the best candidate.
-  void resetToFirst() {
+  String? resetToFirst() {
     if (_currentIndex != 0) {
       _currentIndex = 0;
       _generation++;
       appLogger.d('Failover endpoint list reset to first candidate');
+      return _endpoints[_currentIndex];
     }
+    return null;
   }
 
   /// Replace the endpoint list and optionally set the active endpoint.

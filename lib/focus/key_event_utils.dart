@@ -120,6 +120,13 @@ KeyEventResult handleOneShotSelect(KeyEvent event, VoidCallback onActivate) {
 /// (passed through to the framework). Directions mapped to a callback
 /// automatically return [KeyEventResult.handled].
 ///
+/// When [trapHorizontalEdges] is true, LEFT/RIGHT with no callback return
+/// [KeyEventResult.handled] (consumed) instead of being passed through. Use
+/// this for a self-contained horizontal group (e.g. a button row) so D-pad
+/// can't escape off the edge into an off-screen "black hole" (#1181); wire an
+/// explicit [onLeft]/[onRight] only where edge-escape into another region is
+/// intended. UP/DOWN are unaffected and always pass through when unmapped.
+///
 /// Directional keys repeat on [KeyRepeatEvent] (via [isActionable]).
 /// Select is one-shot: fires on [KeyDownEvent] only, consumes repeat and up.
 ///
@@ -140,6 +147,7 @@ FocusOnKeyEventCallback dpadKeyHandler({
   VoidCallback? onLeft,
   VoidCallback? onRight,
   VoidCallback? onSelect,
+  bool trapHorizontalEdges = false,
 }) {
   return (FocusNode _, KeyEvent event) {
     // Select: one-shot activation (no repeat), must run before isActionable
@@ -160,13 +168,19 @@ FocusOnKeyEventCallback dpadKeyHandler({
       onDown();
       return KeyEventResult.handled;
     }
-    if (key.isLeftKey && onLeft != null) {
-      onLeft();
-      return KeyEventResult.handled;
+    if (key.isLeftKey) {
+      if (onLeft != null) {
+        onLeft();
+        return KeyEventResult.handled;
+      }
+      if (trapHorizontalEdges) return KeyEventResult.handled;
     }
-    if (key.isRightKey && onRight != null) {
-      onRight();
-      return KeyEventResult.handled;
+    if (key.isRightKey) {
+      if (onRight != null) {
+        onRight();
+        return KeyEventResult.handled;
+      }
+      if (trapHorizontalEdges) return KeyEventResult.handled;
     }
 
     return KeyEventResult.ignored;

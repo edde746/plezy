@@ -107,7 +107,7 @@ class _FocusableFilterChipState extends State<FocusableFilterChip> with Focusabl
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       backgroundColor: backgroundColor,
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           AppIcon(icon, fill: 1, size: 16, color: foregroundColor),
           const SizedBox(width: 6),

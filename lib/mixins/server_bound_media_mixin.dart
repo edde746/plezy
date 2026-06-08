@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import '../media/ids.dart';
 
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
@@ -14,15 +15,20 @@ mixin ServerBoundMediaMixin<T extends StatefulWidget> on State<T> {
 
   String? get serverBoundServerId => serverBoundMetadata.serverId;
 
-  String toServerBoundGlobalKey(String ratingKey, {String? serverId}) =>
-      buildGlobalKey(serverId ?? serverBoundServerId ?? '', ratingKey);
+  String toServerBoundGlobalKey(String ratingKey, {ServerId? serverId}) {
+    final resolved = serverId ?? serverIdOrNull(serverBoundServerId);
+    if (resolved == null) {
+      throw StateError('Cannot build server-bound key without a serverId');
+    }
+    return buildGlobalKey(resolved, ratingKey);
+  }
 
   /// Returns the [PlexClient] for the bound server, or null when offline /
   /// the server is Jellyfin / not registered. Use [getServerBoundMediaClient]
   /// for backend-neutral flows.
   PlexClient? getServerBoundPlexClient(BuildContext context) {
     if (isServerBoundOffline) return null;
-    return context.tryGetPlexClientForServer(serverBoundMetadata.serverId);
+    return context.tryGetPlexClientForServer(serverIdOrNull(serverBoundMetadata.serverId));
   }
 
   /// Returns a backend-neutral [MediaServerClient] for the bound server, or

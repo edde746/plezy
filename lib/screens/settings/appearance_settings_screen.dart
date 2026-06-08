@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/theme_provider.dart';
 import '../../profiles/active_profile_provider.dart';
+import '../../navigation/navigation_tabs.dart';
 import '../../services/settings_service.dart' hide ThemeMode;
 import '../../services/settings_service.dart' as settings show ThemeMode;
 import '../../focus/focusable_slider.dart';
@@ -33,6 +34,13 @@ class AppearanceSettingsScreen extends StatelessWidget {
         _densitySelector(),
         _viewModeSelector(),
         _episodePosterModeSelector(),
+        if (PlatformDetector.isTV())
+          SettingSwitchTile(
+            pref: SettingsService.tvFullCardLayout,
+            icon: Symbols.image_rounded,
+            title: t.settings.tvFullCardLayout,
+            subtitle: t.settings.tvFullCardLayoutDescription,
+          ),
         SettingSwitchTile(
           pref: SettingsService.showEpisodeNumberOnCards,
           icon: Symbols.tag_rounded,
@@ -69,6 +77,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
         ),
 
         SettingsSectionHeader(t.settings.navigation),
+        _startupSectionSelector(),
         if (Platform.isAndroid)
           SettingSwitchTile(
             pref: SettingsService.forceTvMode,
@@ -108,13 +117,19 @@ class AppearanceSettingsScreen extends StatelessWidget {
           subtitle: t.settings.showUnwatchedCountDescription,
         ),
 
-        if (Platform.isWindows || Platform.isLinux) ...[
+        if (PlatformDetector.isDesktopOS()) ...[
           SettingsSectionHeader(t.settings.window),
           SettingSwitchTile(
             pref: SettingsService.startInFullscreen,
             icon: Symbols.fullscreen_rounded,
             title: t.settings.startInFullscreen,
             subtitle: t.settings.startInFullscreenDescription,
+          ),
+          SettingSwitchTile(
+            pref: SettingsService.exitFullscreenOnPlayerClose,
+            icon: Symbols.fullscreen_exit_rounded,
+            title: t.settings.exitFullscreenOnPlayerClose,
+            subtitle: t.settings.exitFullscreenOnPlayerCloseDescription,
           ),
         ],
 
@@ -178,7 +193,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
           currentValue: LocaleSettings.currentLocale,
         );
         if (value != null) {
-          await SettingsService.instanceOrNull!.write(SettingsService.appLocale, value);
+          await SettingsService.instance.write(SettingsService.appLocale, value);
           unawaited(LocaleSettings.setLocale(value));
           if (context.mounted) _restartApp(context);
         }
@@ -202,7 +217,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 min: 1,
                 max: 5,
                 divisions: 4,
-                onChanged: (v) => SettingsService.instanceOrNull!.write(SettingsService.libraryDensity, v.round()),
+                onChanged: (v) => SettingsService.instance.write(SettingsService.libraryDensity, v.round()),
               ),
             ),
             Text(t.settings.comfortable, style: const TextStyle(fontSize: 12, color: Colors.grey)),
@@ -233,6 +248,27 @@ class AppearanceSettingsScreen extends StatelessWidget {
       ButtonSegment(value: EpisodePosterMode.seasonPoster, label: Text(t.settings.seasonPoster)),
       ButtonSegment(value: EpisodePosterMode.episodeThumbnail, label: Text(t.settings.episodeThumbnail)),
     ],
+    decode: (v) => v,
+    encode: (v) => v,
+  );
+
+  // Sections offered as a startup destination, in display order. Live TV is
+  // always listed; if no server provides it, startup falls back to Home.
+  static const _startupSectionOptions = [
+    NavigationTabId.discover,
+    NavigationTabId.libraries,
+    NavigationTabId.liveTv,
+    NavigationTabId.search,
+  ];
+
+  String _startupSectionLabel(NavigationTabId id) => allNavigationTabs.firstWhere((t) => t.id == id).getLabel();
+
+  Widget _startupSectionSelector() => SettingSelectionTile<NavigationTabId, NavigationTabId>(
+    pref: SettingsService.startupSection,
+    icon: Symbols.start_rounded,
+    title: t.settings.startupSection,
+    subtitleBuilder: _startupSectionLabel,
+    options: _startupSectionOptions.map((id) => DialogOption(value: id, title: _startupSectionLabel(id))).toList(),
     decode: (v) => v,
     encode: (v) => v,
   );
@@ -283,6 +319,8 @@ class AppearanceSettingsScreen extends StatelessWidget {
         return 'Dansk';
       case AppLocale.nb:
         return 'Norsk bokmål';
+      case AppLocale.bg:
+        return 'Български';
     }
   }
 

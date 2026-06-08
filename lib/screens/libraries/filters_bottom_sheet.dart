@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../media/ids.dart';
 import 'package:vibe_stream/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_button.dart';
@@ -18,6 +19,7 @@ class FiltersBottomSheet extends StatefulWidget {
   final Function(Map<String, String>) onFiltersChanged;
   final String serverId;
   final String libraryKey;
+  final VoidCallback? onBack;
 
   /// Optional pre-fetched values per filter name. When non-null the sheet
   /// reads from this instead of calling `client.getFilterValues` — used
@@ -32,6 +34,7 @@ class FiltersBottomSheet extends StatefulWidget {
     required this.onFiltersChanged,
     required this.serverId,
     required this.libraryKey,
+    this.onBack,
     this.cachedValues,
   });
 
@@ -99,7 +102,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
       if (cached != null) {
         values = cached;
       } else {
-        final client = context.tryGetMediaClientForServer(widget.serverId);
+        final client = context.tryGetMediaClientForServer(ServerId(widget.serverId));
         if (client is PlexClient) {
           values = await client.getFilterValues(filter.key);
         } else {
@@ -181,7 +184,7 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
     return BottomSheetPageScaffold(
       title: currentFilter?.title ?? t.libraries.filters,
       icon: Symbols.filter_alt_rounded,
-      onBack: currentFilter != null ? _goBack : null,
+      onBack: currentFilter != null ? _goBack : widget.onBack,
       action: currentFilter == null && _tempSelectedFilters.isNotEmpty
           ? FocusableButton(
               onPressed: _clearFilters,
@@ -295,14 +298,14 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
           autofocus: index == 0 && autofocusFirst,
           title: Text(filter.title),
           trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+            mainAxisSize: .min,
             children: [
               if (displayValue != null)
                 Flexible(
                   child: Text(
                     displayValue,
-                    style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: .w500),
+                    overflow: .ellipsis,
                   ),
                 ),
               if (displayValue != null) const SizedBox(width: 8),

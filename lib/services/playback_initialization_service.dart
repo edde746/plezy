@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../media/ids.dart';
 
 import 'package:path/path.dart' as p;
 
@@ -45,7 +46,12 @@ class PlaybackInitializationService {
   ///
   /// Returns the local file path if the video is downloaded and completed.
   /// Returns null if not available offline or database is not provided.
-  Future<String?> getOfflineVideoPath(String serverId, String ratingKey, {int mediaIndex = 0}) async {
+  Future<String?> getOfflineVideoPath(
+    ServerId serverId,
+    String ratingKey, {
+    int mediaIndex = 0,
+    String? selectedMediaSourceId,
+  }) async {
     if (database == null) {
       return null;
     }
@@ -55,7 +61,7 @@ class PlaybackInitializationService {
       // makes this an O(log n) lookup. Filtering by (serverId, ratingKey)
       // would only use the serverId index and then linear-scan matching rows.
       final query = database!.select(database!.downloadedMedia)
-        ..where((tbl) => tbl.globalKey.equals(buildGlobalKey(serverId, ratingKey)));
+        ..where((tbl) => tbl.globalKey.equals(buildGlobalKey(ServerId(serverId), ratingKey)));
 
       final downloadedItem = await query.getSingleOrNull();
 
@@ -64,8 +70,23 @@ class PlaybackInitializationService {
         return null;
       }
 
-      // Skip offline file if a different version was requested
-      if (downloadedItem.mediaIndex != mediaIndex) {
+      final downloadedSourceId = downloadedItem.mediaSourceId;
+      final requestedSourceId = selectedMediaSourceId?.trim();
+      final comparedBySourceId =
+          requestedSourceId != null &&
+          requestedSourceId.isNotEmpty &&
+          downloadedSourceId != null &&
+          downloadedSourceId.isNotEmpty;
+      if (comparedBySourceId && downloadedSourceId != requestedSourceId) {
+        appLogger.d(
+          '[VersionTrace] Offline video source is $downloadedSourceId, '
+          'but requested source $requestedSourceId — skipping offline',
+        );
+        return null;
+      }
+
+      // Fall back to index when either side lacks a stable source id.
+      if (!comparedBySourceId && downloadedItem.mediaIndex != mediaIndex) {
         appLogger.d(
           '[VersionTrace] Offline video is version ${downloadedItem.mediaIndex}, '
           'but requested version $mediaIndex — skipping offline',
@@ -121,7 +142,12 @@ class PlaybackInitializationService {
 
     String? offlineVideoPath;
     if (serverId != null && (preferOffline || client == null) && database != null) {
-      offlineVideoPath = await getOfflineVideoPath(serverId, metadata.id, mediaIndex: selectedMediaIndex);
+      offlineVideoPath = await getOfflineVideoPath(
+        ServerId(serverId),
+        metadata.id,
+        mediaIndex: selectedMediaIndex,
+        selectedMediaSourceId: selectedMediaSourceId,
+      );
     }
 
     // Downloaded playback must not wait on a live server. Cached media info
@@ -191,6 +217,8 @@ class PlaybackInitializationService {
       mediaInfo: mediaInfo,
       externalSubtitles: sidecarSubtitles,
       isOffline: true,
+      playMethod: 'DirectPlay',
+      selectedMediaIndex: selectedMediaIndex,
     );
   }
 
@@ -206,7 +234,7 @@ class PlaybackInitializationService {
     try {
       final row = await (db.select(
         db.downloadedMedia,
-      )..where((tbl) => tbl.globalKey.equals(buildGlobalKey(serverId, metadata.id)))).getSingleOrNull();
+      )..where((tbl) => tbl.globalKey.equals(buildGlobalKey(ServerId(serverId), metadata.id)))).getSingleOrNull();
       return row?.clientScopeId ?? serverId;
     } catch (_) {
       return serverId;
@@ -244,6 +272,9 @@ class PlaybackInitializationService {
             'file://${entity.path}',
             title: cachedTrack?.displayTitle ?? cachedTrack?.language ?? 'Subtitle $fileName',
             language: cachedTrack?.languageCode,
+            codec: cachedTrack?.codec,
+            isDefault: cachedTrack?.selected ?? false,
+            isForced: cachedTrack?.forced ?? false,
           ),
         );
       }
@@ -270,7 +301,7 @@ class PlaybackInitializationService {
     } else if (metadata.isMovie && metadata.title != null) {
       dirs.add(await storage.getMovieSubtitlesDirectory(metadata));
     }
-    dirs.add(await storage.getSubtitlesDirectory(serverId, metadata.id));
+    dirs.add(await storage.getSubtitlesDirectory(ServerId(serverId), metadata.id));
     return dirs;
   }
 }

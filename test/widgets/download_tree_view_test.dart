@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vibe_stream/media/ids.dart';
 import 'package:vibe_stream/media/media_backend.dart';
 import 'package:vibe_stream/media/media_item.dart';
 import 'package:vibe_stream/media/media_kind.dart';
@@ -30,7 +31,7 @@ DownloadTreeNode _showNode({required String key, required List<DownloadTreeNode>
 
 MediaItem _episodeMeta({
   required String id,
-  required String? serverId,
+  required ServerId? serverId,
   required String? grandparentId,
   required String? parentId,
 }) => MediaItem(
@@ -49,7 +50,9 @@ void main() {
       final ep = _episodeNode('plex1:ep100');
       final season = _seasonNode(key: 'show42:season7', children: [ep]);
       final show = _showNode(key: 'show42', children: [season]);
-      final metadata = {'plex1:ep100': _episodeMeta(id: '100', serverId: 'plex1', grandparentId: '42', parentId: '7')};
+      final metadata = {
+        'plex1:ep100': _episodeMeta(id: '100', serverId: ServerId('plex1'), grandparentId: '42', parentId: '7'),
+      };
 
       expect(resolveDownloadContainerGlobalKey(show, metadata), 'plex1:42');
     });
@@ -57,7 +60,9 @@ void main() {
     test('season node: builds globalKey from leaf serverId + parentId', () {
       final ep = _episodeNode('plex1:ep100');
       final season = _seasonNode(key: 'show42:season7', children: [ep]);
-      final metadata = {'plex1:ep100': _episodeMeta(id: '100', serverId: 'plex1', grandparentId: '42', parentId: '7')};
+      final metadata = {
+        'plex1:ep100': _episodeMeta(id: '100', serverId: ServerId('plex1'), grandparentId: '42', parentId: '7'),
+      };
 
       expect(resolveDownloadContainerGlobalKey(season, metadata), 'plex1:7');
     });
@@ -70,7 +75,9 @@ void main() {
         type: DownloadNodeType.movie,
         status: DownloadStatus.completed,
       );
-      final metadata = {'plex1:ep100': _episodeMeta(id: '100', serverId: 'plex1', grandparentId: '42', parentId: '7')};
+      final metadata = {
+        'plex1:ep100': _episodeMeta(id: '100', serverId: ServerId('plex1'), grandparentId: '42', parentId: '7'),
+      };
 
       expect(resolveDownloadContainerGlobalKey(ep, metadata), isNull);
       expect(resolveDownloadContainerGlobalKey(movie, metadata), isNull);
@@ -97,14 +104,18 @@ void main() {
     test('show node with leaf missing grandparentId returns null', () {
       final ep = _episodeNode('plex1:ep100');
       final show = _showNode(key: 'show42', children: [ep]);
-      final metadata = {'plex1:ep100': _episodeMeta(id: '100', serverId: 'plex1', grandparentId: null, parentId: '7')};
+      final metadata = {
+        'plex1:ep100': _episodeMeta(id: '100', serverId: ServerId('plex1'), grandparentId: null, parentId: '7'),
+      };
       expect(resolveDownloadContainerGlobalKey(show, metadata), isNull);
     });
 
     test('season node with leaf missing parentId returns null', () {
       final ep = _episodeNode('plex1:ep100');
       final season = _seasonNode(key: 'show42:season7', children: [ep]);
-      final metadata = {'plex1:ep100': _episodeMeta(id: '100', serverId: 'plex1', grandparentId: '42', parentId: null)};
+      final metadata = {
+        'plex1:ep100': _episodeMeta(id: '100', serverId: ServerId('plex1'), grandparentId: '42', parentId: null),
+      };
       expect(resolveDownloadContainerGlobalKey(season, metadata), isNull);
     });
 
@@ -115,8 +126,8 @@ void main() {
       final s2 = _seasonNode(key: 'show42:season2', children: [ep2]);
       final show = _showNode(key: 'show42', children: [s1, s2]);
       final metadata = {
-        'plex1:ep100': _episodeMeta(id: '100', serverId: 'plex1', grandparentId: '42', parentId: '1'),
-        'plex1:ep200': _episodeMeta(id: '200', serverId: 'plex1', grandparentId: '42', parentId: '2'),
+        'plex1:ep100': _episodeMeta(id: '100', serverId: ServerId('plex1'), grandparentId: '42', parentId: '1'),
+        'plex1:ep200': _episodeMeta(id: '200', serverId: ServerId('plex1'), grandparentId: '42', parentId: '2'),
       };
 
       expect(resolveDownloadContainerGlobalKey(show, metadata), 'plex1:42');

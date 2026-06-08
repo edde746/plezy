@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:vibe_stream/media/ids.dart';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
@@ -46,7 +47,7 @@ void main() {
           product: 'Vibe',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
       );
@@ -81,7 +82,7 @@ void main() {
           product: 'Vibe',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],
@@ -93,6 +94,40 @@ void main() {
       expect(hubs, hasLength(1));
       expect(client.config.baseUrl, primary);
       expect(httpClient.requests.map((r) => r.url.origin), everyElement(primary));
+    });
+
+    test('resets live base URL after fallback endpoint is exhausted', () async {
+      const primary = 'http://primary:32400';
+      const fallback = 'http://fallback:32400';
+      final httpClient = _SequenceClient([
+        (_) async => throw TimeoutException('primary down'),
+        (_) async => throw TimeoutException('fallback down'),
+        (_) async => _jsonResponse({
+          'MediaContainer': {'machineIdentifier': 'server-id'},
+        }),
+      ]);
+      final client = PlexClient.forTesting(
+        config: PlexConfig(
+          baseUrl: primary,
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Vibe',
+          version: 'test',
+        ),
+        serverId: ServerId('server-id'),
+        serverName: 'Server',
+        httpClient: httpClient,
+        prioritizedEndpoints: const [primary, fallback],
+      );
+      addTearDown(client.close);
+
+      await expectLater(client.getServerIdentity(), throwsA(isA<Object>()));
+
+      expect(client.config.baseUrl, primary);
+      expect(httpClient.requests.map((r) => r.url.origin), [primary, fallback]);
+
+      await client.getServerIdentity();
+      expect(httpClient.requests.map((r) => r.url.origin), [primary, fallback, primary]);
     });
 
     test('fetchGlobalHubs uses promoted hub endpoint advertised by media providers', () async {
@@ -112,7 +147,7 @@ void main() {
           product: 'Vibe',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         seedTranscoderVideoSupport: true,
@@ -125,6 +160,40 @@ void main() {
       expect(hubs.single.title, 'Recently Added Movies');
       expect(httpClient.requests.map((r) => r.url.path), ['/media/providers', '/hubs/promoted']);
       expect(httpClient.requests.last.url.queryParameters['count'], '12');
+    });
+
+    test('fetchContinueWatching uses advertised provider feature endpoint', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(db);
+      addTearDown(db.close);
+
+      final httpClient = _SequenceClient([
+        (_) async => _jsonResponse(_mediaProvidersPayload()),
+        (_) async => _jsonResponse(_continueWatchingPayload()),
+      ]);
+      final client = await PlexClient.create(
+        PlexConfig(
+          baseUrl: 'http://server:32400',
+          token: 'token',
+          clientIdentifier: 'client-id',
+          product: 'Vibe',
+          version: 'test',
+        ),
+        serverId: ServerId('server-id'),
+        serverName: 'Server',
+        httpClient: httpClient,
+        seedTranscoderVideoSupport: true,
+      );
+      addTearDown(client.close);
+
+      final items = await client.fetchContinueWatching(count: 21);
+
+      expect(items, hasLength(1));
+      expect(items.single.title, 'Movie A');
+      expect(httpClient.requests.map((r) => r.url.path), ['/media/providers', '/hubs/continueWatching']);
+      expect(httpClient.requests.last.url.queryParameters['count'], '21');
+      expect(httpClient.requests.last.url.queryParameters['includeGuids'], '1');
+      expect(httpClient.requests.last.url.queryParameters.containsKey('identifier'), isFalse);
     });
 
     test('fetchContinueWatching omits count when uncapped', () async {
@@ -141,7 +210,7 @@ void main() {
           product: 'Vibe',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
       );
@@ -176,7 +245,7 @@ void main() {
           product: 'Vibe',
           version: 'test',
         ),
-        serverId: 'server-id',
+        serverId: ServerId('server-id'),
         serverName: 'Server',
         httpClient: httpClient,
         prioritizedEndpoints: const [primary, fallback],
@@ -260,6 +329,7 @@ Map<String, dynamic> _mediaProvidersPayload() => {
             ],
           },
           {'type': 'promoted', 'key': '/hubs/promoted'},
+          {'type': 'continuewatching', 'key': '/hubs/continueWatching'},
         ],
       },
     ],

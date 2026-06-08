@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:vibe_stream/media/ids.dart';
 
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -77,9 +78,9 @@ void main() {
       final m = MultiServerManager();
       addTearDown(m.dispose);
 
-      expect(m.getClient('nope'), isNull);
-      expect(m.getPlexServer('nope'), isNull);
-      expect(m.isServerOnline('nope'), isFalse);
+      expect(m.getClient(ServerId('nope')), isNull);
+      expect(m.getPlexServer(ServerId('nope')), isNull);
+      expect(m.isServerOnline(ServerId('nope')), isFalse);
     });
 
     test('plexServers map is unmodifiable', () {
@@ -106,9 +107,9 @@ void main() {
       addTearDown(sub.cancel);
 
       // Pre-seed status (mirrors what addServer would do post-connect).
-      m.updateServerStatus('srv-1', true);
-      m.updateServerStatus('srv-2', false);
-      m.updateServerStatus('srv-1', false); // change
+      m.updateServerStatus(ServerId('srv-1'), true);
+      m.updateServerStatus(ServerId('srv-2'), false);
+      m.updateServerStatus(ServerId('srv-1'), false); // change
 
       // Let the broadcast stream events drain.
       await Future<void>.delayed(Duration.zero);
@@ -127,9 +128,9 @@ void main() {
       final sub = m.statusStream.listen(emitted.add);
       addTearDown(sub.cancel);
 
-      m.updateServerStatus('srv-1', true);
-      m.updateServerStatus('srv-1', true); // same value: no-op
-      m.updateServerStatus('srv-1', true);
+      m.updateServerStatus(ServerId('srv-1'), true);
+      m.updateServerStatus(ServerId('srv-1'), true); // same value: no-op
+      m.updateServerStatus(ServerId('srv-1'), true);
 
       await Future<void>.delayed(Duration.zero);
       expect(emitted, hasLength(1));
@@ -140,14 +141,14 @@ void main() {
       final m = MultiServerManager();
       addTearDown(m.dispose);
 
-      m.updateServerStatus('a', true);
-      m.updateServerStatus('b', false);
-      m.updateServerStatus('c', true);
+      m.updateServerStatus(ServerId('a'), true);
+      m.updateServerStatus(ServerId('b'), false);
+      m.updateServerStatus(ServerId('c'), true);
 
       expect(m.onlineServerIds.toSet(), {'a', 'c'});
       expect(m.offlineServerIds.toSet(), {'b'});
-      expect(m.isServerOnline('a'), isTrue);
-      expect(m.isServerOnline('b'), isFalse);
+      expect(m.isServerOnline(ServerId('a')), isTrue);
+      expect(m.isServerOnline(ServerId('b')), isFalse);
     });
   });
 
@@ -168,12 +169,12 @@ void main() {
           product: 'Vibe',
           version: '1.0.0',
         ),
-        serverId: 'server-1',
+        serverId: ServerId('server-1'),
         serverName: 'Plex',
         httpClient: MockClient((_) async => http.Response('{}', 200)),
       );
       m.debugRegisterClientForTesting(client, online: true);
-      m.debugMarkAuthErrorForTesting('server-1');
+      m.debugMarkAuthErrorForTesting(ServerId('server-1'));
 
       final bound = await m.refreshTokensForProfile(
         PlexAccountConnection(
@@ -254,8 +255,8 @@ void main() {
 
       await m.checkServerHealth();
 
-      expect(m.isServerOnline('jf-machine'), isTrue);
-      expect(m.isOwnerOrAdmin('jf-machine'), isTrue);
+      expect(m.isServerOnline(ServerId('jf-machine')), isTrue);
+      expect(m.isOwnerOrAdmin(ServerId('jf-machine')), isTrue);
     });
 
     test('ignores stale admin-status persistence from a replaced Jellyfin client', () async {
@@ -315,8 +316,8 @@ void main() {
       allowResponse.complete();
       await healthFuture;
 
-      expect(m.getClient('jf-machine'), same(userB));
-      expect(m.isServerOnline('jf-machine'), isTrue);
+      expect(m.getClient(ServerId('jf-machine')), same(userB));
+      expect(m.isServerOnline(ServerId('jf-machine')), isTrue);
       expect(m.authErrorServerIds, isNot(contains('jf-machine')));
     });
   });
@@ -330,14 +331,14 @@ void main() {
       final m = MultiServerManager();
       addTearDown(m.dispose);
 
-      m.updateServerStatus('srv-1', true);
-      m.updateServerStatus('srv-2', true);
+      m.updateServerStatus(ServerId('srv-1'), true);
+      m.updateServerStatus(ServerId('srv-2'), true);
 
       final emitted = <Map<String, bool>>[];
       final sub = m.statusStream.listen(emitted.add);
       addTearDown(sub.cancel);
 
-      m.removeServer('srv-1');
+      m.removeServer(ServerId('srv-1'));
       await Future<void>.delayed(Duration.zero);
 
       expect(m.serverIds, isNot(contains('srv-1')));
@@ -353,7 +354,7 @@ void main() {
       final sub = m.statusStream.listen(emitted.add);
       addTearDown(sub.cancel);
 
-      m.removeServer('never-added');
+      m.removeServer(ServerId('never-added'));
       await Future<void>.delayed(Duration.zero);
 
       // Doesn't throw; state stays empty; one snapshot fires.
@@ -372,9 +373,9 @@ void main() {
       expect(m.getJellyfinClientByCompoundId('jf-machine/user-a'), isNotNull);
       expect(m.getJellyfinClientByCompoundId('jf-machine/user-b'), isNotNull);
 
-      m.removeServer('jf-machine');
+      m.removeServer(ServerId('jf-machine'));
 
-      expect(m.getClient('jf-machine'), isNull);
+      expect(m.getClient(ServerId('jf-machine')), isNull);
       expect(m.getJellyfinClientByCompoundId('jf-machine/user-a'), isNull);
       expect(m.getJellyfinClientByCompoundId('jf-machine/user-b'), isNull);
     });
@@ -389,8 +390,8 @@ void main() {
       final m = MultiServerManager();
       addTearDown(m.dispose);
 
-      m.updateServerStatus('a', true);
-      m.updateServerStatus('b', false);
+      m.updateServerStatus(ServerId('a'), true);
+      m.updateServerStatus(ServerId('b'), false);
 
       final emitted = <Map<String, bool>>[];
       final sub = m.statusStream.listen(emitted.add);
@@ -414,7 +415,7 @@ void main() {
 
       m.disconnectAll();
 
-      expect(m.getClient('jf-machine'), isNull);
+      expect(m.getClient(ServerId('jf-machine')), isNull);
       expect(m.getJellyfinClientByCompoundId('jf-machine/user-a'), isNull);
       expect(m.getJellyfinClientByCompoundId('jf-machine/user-b'), isNull);
     });

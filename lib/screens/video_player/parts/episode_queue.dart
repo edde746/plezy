@@ -5,8 +5,8 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
   Future<void> _ensurePlayQueue() async {
     if (!mounted) return;
 
-    // Skip play queue in offline mode (requires server connection)
-    if (_isOfflinePlayback) return;
+    // Download/offline library mode uses the local downloaded queue instead.
+    if (widget.isOffline) return;
 
     // Skip play queue for live TV (would interfere with tuner session)
     if (widget.isLive) return;
@@ -21,7 +21,7 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     if (_currentMetadata.backend != MediaBackend.plex) return;
 
     try {
-      final client = context.getPlexClientForServer(_currentMetadata.serverId!);
+      final client = context.getPlexClientForServer(ServerId(_currentMetadata.serverId!));
 
       final playbackState = context.read<PlaybackStateProvider>();
 
@@ -80,7 +80,7 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
   Future<void> _loadAdjacentEpisodes() async {
     if (!mounted || widget.isLive) return;
 
-    if (_isOfflinePlayback) {
+    if (widget.isOffline) {
       // Offline mode: find next/previous from downloaded episodes
       _loadAdjacentEpisodesOffline();
       return;

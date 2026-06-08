@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
@@ -15,7 +16,7 @@ class ServerActivitiesButton extends StatefulWidget {
   const ServerActivitiesButton({super.key});
 
   @override
-  State<ServerActivitiesButton> createState() => _ServerActivitiesButtonState();
+  State<ServerActivitiesButton> createState() => ServerActivitiesButtonState();
 }
 
 enum _FetchState { loading, loaded, error }
@@ -37,7 +38,7 @@ class _PanelData {
   static const loading = _PanelData(fetchState: _FetchState.loading, results: []);
 }
 
-class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
+class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
   final _buttonKey = GlobalKey();
   OverlayEntry? _overlayEntry;
   final _panelNotifier = ValueNotifier<_PanelData>(_PanelData.loading);
@@ -63,7 +64,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
     _overlayEntry = null;
   }
 
-  void _togglePanel() {
+  void togglePanel() {
     if (_overlayEntry != null) {
       _removeOverlay();
       return;
@@ -92,7 +93,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
 
     final futures = serverIds.map((serverId) async {
       // Plex-only: `/activities` API is Plex-specific.
-      final client = multiServer.getPlexClientForServer(serverId);
+      final client = multiServer.getPlexClientForServer(ServerId(serverId));
       if (client == null) return null;
       final activities = await client.getActivities();
       return _ServerResult(serverId: serverId, serverName: client.serverName ?? serverId, activities: activities);
@@ -130,7 +131,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
     } catch (_) {}
   }
 
-  Future<void> _cancelActivity(String serverId, String uuid) async {
+  Future<void> _cancelActivity(ServerId serverId, String uuid) async {
     final multiServer = Provider.of<MultiServerProvider>(context, listen: false);
     // Plex-only: `/activities` API is Plex-specific.
     final client = multiServer.getPlexClientForServer(serverId);
@@ -178,8 +179,8 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
       child: SizedBox(
         width: 320,
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: .min,
+          crossAxisAlignment: .stretch,
           children: [
             _buildPanelHeader(context),
             Divider(height: 1, color: theme.dividerColor),
@@ -196,12 +197,12 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
   Widget _buildPanelHeader(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         children: [
           AppIcon(Symbols.monitor_heart_rounded, size: 18, color: theme.colorScheme.onSurface),
           const SizedBox(width: 8),
-          Text(t.serverTasks.title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
+          Text(t.serverTasks.title, style: theme.textTheme.titleSmall?.copyWith(fontWeight: .bold)),
         ],
       ),
     );
@@ -226,7 +227,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
       return Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             Icon(Icons.error_outline, color: theme.colorScheme.error),
             const SizedBox(height: 8),
@@ -250,7 +251,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: .stretch,
       children: [
         for (final result in data.results)
           if (result.activities.isNotEmpty) ...[
@@ -274,36 +275,36 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: tokens(context).bg,
                         letterSpacing: 0,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: .bold,
                       ),
                     ),
                   ),
                 ],
               ),
             ),
-            for (final activity in result.activities) _buildActivityTile(context, result.serverId, activity),
+            for (final activity in result.activities) _buildActivityTile(context, ServerId(result.serverId), activity),
           ],
         const SizedBox(height: 8),
       ],
     );
   }
 
-  Widget _buildActivityTile(BuildContext context, String serverId, PlexActivity activity) {
+  Widget _buildActivityTile(BuildContext context, ServerId serverId, PlexActivity activity) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 4),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: .start,
               children: [
                 Text(
                   activity.title,
-                  style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+                  style: theme.textTheme.bodySmall?.copyWith(fontWeight: .w500),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 ),
                 if (activity.subtitle != null) ...[
                   const SizedBox(height: 2),
@@ -313,7 +314,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    overflow: .ellipsis,
                   ),
                 ],
                 const SizedBox(height: 6),
@@ -342,7 +343,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
     return IconButton(
       key: _buttonKey,
       icon: const AppIcon(Symbols.monitor_heart_rounded, color: Colors.white),
-      onPressed: _togglePanel,
+      onPressed: togglePanel,
       tooltip: t.serverTasks.title,
     );
   }

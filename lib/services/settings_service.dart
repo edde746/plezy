@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../media/ids.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
@@ -13,6 +14,7 @@ import 'base_shared_preferences_service.dart';
 export 'base_shared_preferences_service.dart'
     show Pref, BoolPref, IntPref, DoublePref, StringPref, NullableStringPref, StringListPref, EnumPref, JsonPref;
 import '../models/transcode_quality_preset.dart';
+import '../navigation/navigation_tabs.dart';
 import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
 
@@ -216,6 +218,9 @@ Map<String, String> _defaultKeyboardShortcuts() => {
   'speed_increase': 'Plus',
   'speed_decrease': 'Minus',
   'speed_reset': 'R',
+  'zoom_in': 'Alt+Plus',
+  'zoom_out': 'Alt+Minus',
+  'zoom_reset': 'Alt+Backspace',
   'sub_seek_next': 'Ctrl+Right',
   'sub_seek_prev': 'Ctrl+Left',
   'screenshot': 'Ctrl+S',
@@ -241,6 +246,9 @@ Map<String, HotKey> _defaultKeyboardHotkeys() => {
   'speed_increase': const HotKey(key: PhysicalKeyboardKey.equal),
   'speed_decrease': const HotKey(key: PhysicalKeyboardKey.minus),
   'speed_reset': const HotKey(key: PhysicalKeyboardKey.keyR),
+  'zoom_in': const HotKey(key: PhysicalKeyboardKey.equal, modifiers: [HotKeyModifier.alt]),
+  'zoom_out': const HotKey(key: PhysicalKeyboardKey.minus, modifiers: [HotKeyModifier.alt]),
+  'zoom_reset': const HotKey(key: PhysicalKeyboardKey.backspace, modifiers: [HotKeyModifier.alt]),
   'sub_seek_next': const HotKey(key: PhysicalKeyboardKey.arrowRight, modifiers: [HotKeyModifier.control]),
   'sub_seek_prev': const HotKey(key: PhysicalKeyboardKey.arrowLeft, modifiers: [HotKeyModifier.control]),
   'shader_toggle': const HotKey(key: PhysicalKeyboardKey.keyG),
@@ -278,6 +286,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const seekTimeLarge = IntPref('seek_time_large', defaultValue: 30);
   static const rewindOnResume = IntPref('rewind_on_resume');
   static const showHeroSection = BoolPref('show_hero_section', defaultValue: true);
+  static const tvFullCardLayout = BoolPref('tv_full_card_layout', defaultValue: false);
   static const useGlobalHubs = BoolPref('use_global_hubs', defaultValue: true);
   static const showServerNameOnHubs = BoolPref('show_server_name_on_hubs');
   static const groupLibrariesByServer = BoolPref('group_libraries_by_server', defaultValue: true);
@@ -336,6 +345,11 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const autoPlayNextEpisode = BoolPref('auto_play_next_episode', defaultValue: true);
   static const useExoPlayer = BoolPref('use_exoplayer', defaultValue: true);
+  static const startupSection = EnumPref<NavigationTabId>(
+    'startup_section',
+    values: NavigationTabId.values,
+    defaultValue: NavigationTabId.discover,
+  );
   static const alwaysKeepSidebarOpen = BoolPref('always_keep_sidebar_open');
   static const showUnwatchedCount = BoolPref('show_unwatched_count', defaultValue: true);
   static const showEpisodeNumberOnCards = BoolPref('show_episode_number_on_cards', defaultValue: true);
@@ -386,6 +400,7 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: PlatformDetector.isDesktopOS(),
   );
   static const startInFullscreen = BoolPref('start_in_fullscreen');
+  static const exitFullscreenOnPlayerClose = BoolPref('exit_fullscreen_on_player_close');
 
   static const bufferSize = _BufferSizePref();
   static const libraryDensity = _LibraryDensityPref();
@@ -435,7 +450,7 @@ class SettingsService extends BaseSharedPreferencesService {
     decode: _decodeMpvPresets,
   );
 
-  static IntPref watchedThresholdPref(String serverId) => IntPref('watched_threshold_$serverId', defaultValue: 90);
+  static IntPref watchedThresholdPref(ServerId serverId) => IntPref('watched_threshold_$serverId', defaultValue: 90);
 
   static EnumPref<TrackerLibraryFilterMode> trackerFilterModePref(TrackerService s) => EnumPref(
     'tracker_library_filter_mode_${s.name}',
@@ -457,6 +472,15 @@ class SettingsService extends BaseSharedPreferencesService {
 
   /// Synchronous access to the singleton, or null if not yet initialized.
   static SettingsService? get instanceOrNull => _cachedInstance;
+
+  /// Synchronous access to the bootstrapped singleton.
+  static SettingsService get instance {
+    final instance = _cachedInstance;
+    if (instance == null) {
+      throw StateError('SettingsService has not been initialized. Call SettingsService.getInstance() first.');
+    }
+    return instance;
+  }
 
   /// Drop the cached singleton so the next [getInstance] call rebuilds against
   /// the current SharedPreferences state. Test-only — pair with
@@ -711,6 +735,7 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultBoxFitMode,
     autoPlayNextEpisode,
     useExoPlayer,
+    startupSection,
     alwaysKeepSidebarOpen,
     showUnwatchedCount,
     showEpisodeNumberOnCards,

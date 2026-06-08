@@ -53,7 +53,7 @@ class _VolumeControlState extends State<VolumeControl> {
   /// Volume step size for keyboard adjustment.
   static const double _volumeStep = 5.0;
 
-  SettingsService get _settings => SettingsService.instanceOrNull!;
+  SettingsService get _settings => SettingsService.instance;
 
   void _enterAdjustMode() {
     setState(() {
@@ -156,7 +156,7 @@ class _VolumeControlState extends State<VolumeControl> {
             );
 
             return Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisSize: .min,
               children: [
                 if (widget.focusNode != null)
                   FocusableWrapper(
@@ -207,7 +207,7 @@ class _VolumeControlState extends State<VolumeControl> {
       child: SizedBox(
         width: 100,
         child: Stack(
-          alignment: Alignment.centerLeft,
+          alignment: .centerLeft,
           children: [
             if (showMarker)
               Positioned(
@@ -225,7 +225,7 @@ class _VolumeControlState extends State<VolumeControl> {
               data: SliderTheme.of(context).copyWith(
                 trackHeight: 8,
                 trackGap: 0,
-                padding: EdgeInsets.zero,
+                padding: .zero,
                 overlayShape: const RoundSliderOverlayShape(overlayRadius: 0),
                 tickMarkShape: SliderTickMarkShape.noTickMark,
               ),

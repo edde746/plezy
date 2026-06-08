@@ -19,7 +19,7 @@ class DoubleTapFeedback extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.6), shape: BoxShape.circle),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             AppIcon(
               isForward ? Symbols.forward_media_rounded : Symbols.replay_rounded,
@@ -30,7 +30,7 @@ class DoubleTapFeedback extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               '$seconds${t.settings.secondsShort}',
-              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+              style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .bold),
             ),
           ],
         ),

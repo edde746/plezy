@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vibe_stream/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vibe_stream/media/media_backend.dart';
 import 'package:vibe_stream/media/media_item.dart';
@@ -32,12 +33,12 @@ import 'package:provider/provider.dart';
 MediaItem _meta(String id, {String? title}) =>
     MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.episode, title: title ?? 'Episode $id');
 
-MediaItem _jfEpisode(String id, {required String seriesId, String serverId = 'srv-jf'}) => MediaItem(
+MediaItem _jfEpisode(String id, {required String seriesId, ServerId? serverId}) => MediaItem(
   id: id,
   backend: MediaBackend.jellyfin,
   kind: MediaKind.episode,
   title: 'Episode $id',
-  serverId: serverId,
+  serverId: serverId ?? ServerId('srv-jf'),
   grandparentId: seriesId,
 );
 

@@ -28,6 +28,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/provider_extensions.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/content_utils.dart';
+import '../../widgets/app_menu.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/overlay_sheet.dart';
@@ -71,8 +72,9 @@ class ContextMenuItem {
 
 class LibrariesScreen extends StatefulWidget {
   final VoidCallback? onLibraryOrderChanged;
+  final ValueChanged<String>? onLibrarySelected;
 
-  const LibrariesScreen({super.key, this.onLibraryOrderChanged});
+  const LibrariesScreen({super.key, this.onLibraryOrderChanged, this.onLibrarySelected});
 
   @override
   State<LibrariesScreen> createState() => _LibrariesScreenState();
@@ -103,8 +105,8 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   /// Track which tabs have loaded data (used to trigger focus after tab restore)
   final Set<int> _loadedTabs = {};
 
-  /// Key for the library dropdown popup menu button
-  final _libraryDropdownKey = GlobalKey<PopupMenuButtonState<String>>();
+  /// Key for the library dropdown menu button.
+  final _libraryDropdownKey = GlobalKey<AppMenuButtonState<String>>();
 
   // Dynamic visible tabs and their focus nodes
   List<LibraryTabType> _visibleTabs = LibraryTabType.values;
@@ -311,6 +313,15 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     };
   }
 
+  void _showBrowseOptionsForCurrentTab() {
+    if (_visibleTabs.isEmpty) return;
+    final index = tabController.index.clamp(0, _visibleTabs.length - 1).toInt();
+    if (_visibleTabs[index] != LibraryTabType.browse) return;
+    final tabState = _browseTabKey.currentState;
+    if (tabState == null) return;
+    (tabState as dynamic).showBrowseOptionsSheet();
+  }
+
   /// Handle when a tab's data has finished loading
   void _handleTabDataLoaded(int tabIndex) {
     // Track that this tab has loaded
@@ -469,6 +480,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       // Clear loaded tabs tracking for new library
       _loadedTabs.clear();
     });
+    widget.onLibrarySelected?.call(libraryGlobalKey);
 
     // The new TabBarView mounts with fresh inner positions at offset 0;
     // bring the floating header back too. Also covers the case where the
@@ -815,9 +827,9 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final serverName = library.serverName ?? fallbackServerName;
     if (serverName == null || serverName.isEmpty) return const SizedBox.shrink();
 
-    final text = Text(serverName, style: style, overflow: TextOverflow.ellipsis);
+    final text = Text(serverName, style: style, overflow: .ellipsis);
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisSize: .min,
       children: [
         BackendBadge(backend: library.backend, size: badgeSize, color: style?.color),
         const SizedBox(width: 4),
@@ -826,15 +838,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
   }
 
-  PopupMenuItem<String> _buildLibraryServerHeaderMenuItem(MediaLibrary library, String serverKey) {
+  AppMenuHeader<String> _buildLibraryServerHeaderMenuItem(MediaLibrary library, String serverKey) {
     final style = Theme.of(context).textTheme.labelSmall?.copyWith(
-      fontWeight: FontWeight.w600,
+      fontWeight: .w600,
       letterSpacing: 0.4,
       color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.65),
     );
-    return PopupMenuItem<String>(
-      enabled: false,
-      height: 32,
+    return AppMenuHeader<String>(
       child: _buildLibraryServerLabel(
         library,
         style,
@@ -845,51 +855,26 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     );
   }
 
-  PopupMenuItem<String> _buildLibraryMenuItem(MediaLibrary library, {required bool showServerName}) {
+  AppMenuItem<String> _buildLibraryMenuItem(MediaLibrary library, {required bool showServerName}) {
     final isSelected = library.globalKey == _selectedLibraryGlobalKey;
-    return PopupMenuItem<String>(
+    return AppMenuItem<String>(
       value: library.globalKey,
-      child: Row(
-        children: [
-          AppIcon(
-            ContentTypeHelper.getLibraryIcon(library.kind.id),
-            fill: 1,
-            size: 20,
-            color: isSelected ? Theme.of(context).colorScheme.primary : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  library.title,
-                  style: TextStyle(
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? Theme.of(context).colorScheme.primary : null,
-                  ),
-                ),
-                if (showServerName)
-                  _buildLibraryServerLabel(
-                    library,
-                    TextStyle(
-                      fontSize: 11,
-                      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                    ),
-                    badgeSize: 10,
-                    constrainText: true,
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
+      icon: ContentTypeHelper.getLibraryIcon(library.kind.id),
+      label: library.title,
+      selected: isSelected,
+      subtitleWidget: showServerName
+          ? _buildLibraryServerLabel(
+              library,
+              TextStyle(fontSize: 11, color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6)),
+              badgeSize: 10,
+              constrainText: true,
+            )
+          : null,
     );
   }
 
   /// Build dropdown menu items with server subtitle when needed for clarity.
-  List<PopupMenuEntry<String>> _buildGroupedLibraryMenuItems(
+  List<AppMenuEntry<String>> _buildGroupedLibraryMenuItems(
     List<MediaLibrary> visibleLibraries, {
     required bool showServerHeaders,
   }) {
@@ -902,7 +887,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
 
     final grouped = groupLibrariesByFirstAppearance(visibleLibraries);
-    final menuItems = <PopupMenuEntry<String>>[];
+    final menuItems = <AppMenuEntry<String>>[];
     for (final serverKey in grouped.serverOrder) {
       final bucket = grouped.byServer[serverKey]!;
       if (serverKey.isNotEmpty) {
@@ -929,7 +914,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     // On desktop/TV with side nav, show tabs in app bar (library name is in side nav)
     if (PlatformDetector.shouldUseSideNavigation(context)) {
       return Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisSize: .min,
         children: [
           for (int i = 0; i < _visibleTabs.length; i++) ...[
             if (i > 0) const SizedBox(width: 8),
@@ -938,7 +923,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               i,
               onSelectWhenActive: _focusCurrentTab,
               onNavigateDown: _focusCurrentTabFromTabBar,
-              onNavigateRightFromLast: () => _actionBarKey.currentState?.requestFocusOnFirst(),
+              onNavigateToActions: () => _actionBarKey.currentState?.requestFocusOnFirst(),
             ),
           ],
         ],
@@ -956,25 +941,25 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     if (selectedLibrary == null) return Text(t.libraries.title);
     final showServerHeaders = _hasMultipleServers(visibleLibraries) && groupByServer;
 
-    return PopupMenuButton<String>(
+    return AppMenuButton<String>(
       key: _libraryDropdownKey,
-      offset: const Offset(0, 48),
       tooltip: t.libraries.selectLibrary,
       onSelected: (libraryGlobalKey) {
         _loadLibraryContent(libraryGlobalKey);
       },
-      itemBuilder: (context) => _buildGroupedLibraryMenuItems(visibleLibraries, showServerHeaders: showServerHeaders),
+      entriesBuilder: (context) =>
+          _buildGroupedLibraryMenuItems(visibleLibraries, showServerHeaders: showServerHeaders),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             AppIcon(ContentTypeHelper.getLibraryIcon(selectedLibrary.kind.id), fill: 1, size: 20),
             const SizedBox(width: 8),
             if (_hasMultipleServers(visibleLibraries) && selectedLibrary.serverName != null)
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: .start,
+                mainAxisSize: .min,
                 children: [
                   Text(selectedLibrary.title, style: Theme.of(context).textTheme.titleMedium),
                   _buildLibraryServerLabel(
@@ -1027,6 +1012,24 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final currentTabIndex = _visibleTabs.isEmpty ? 0 : tabController.index.clamp(0, _visibleTabs.length - 1).toInt();
     final currentTabType = _visibleTabs.isEmpty ? null : _visibleTabs[currentTabIndex];
     final useTvRecommendedBackdrop = PlatformDetector.isTV() && currentTabType == LibraryTabType.recommended;
+    final showBrowseOptionsAction =
+        selectedLibrary != null && PlatformDetector.isMobile(context) && currentTabType == LibraryTabType.browse;
+
+    List<FocusableAction> appBarActions() => [
+      if (allLibraries.isNotEmpty)
+        FocusableAction(
+          icon: Symbols.edit_rounded,
+          tooltip: t.libraries.manageLibraries,
+          onPressed: _showLibraryManagementSheet,
+        ),
+      if (showBrowseOptionsAction)
+        FocusableAction(
+          icon: Symbols.tune_rounded,
+          tooltip: t.libraries.libraryOptions,
+          onPressed: _showBrowseOptionsForCurrentTab,
+        ),
+      FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: _refreshSelectedLibraryTabs),
+    ];
 
     Widget appBar({required bool floating}) => DesktopSliverAppBar(
       title: _buildAppBarTitle(visibleLibraries, selectedLibrary, groupByServer: groupByServerSetting),
@@ -1045,19 +1048,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
           key: _actionBarKey,
           onNavigateLeft: () => getTabChipFocusNode(_visibleTabs.length - 1).requestFocus(),
           onNavigateDown: _focusCurrentTab,
-          actions: [
-            if (allLibraries.isNotEmpty)
-              FocusableAction(
-                icon: Symbols.edit_rounded,
-                tooltip: t.libraries.manageLibraries,
-                onPressed: _showLibraryManagementSheet,
-              ),
-            FocusableAction(
-              icon: Symbols.refresh_rounded,
-              tooltip: t.common.refresh,
-              onPressed: _refreshSelectedLibraryTabs,
-            ),
-          ],
+          actions: appBarActions(),
         ),
       ],
     );
@@ -1088,19 +1079,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
               key: _actionBarKey,
               onNavigateLeft: () => getTabChipFocusNode(_visibleTabs.length - 1).requestFocus(),
               onNavigateDown: _focusCurrentTab,
-              actions: [
-                if (allLibraries.isNotEmpty)
-                  FocusableAction(
-                    icon: Symbols.edit_rounded,
-                    tooltip: t.libraries.manageLibraries,
-                    onPressed: _showLibraryManagementSheet,
-                  ),
-                FocusableAction(
-                  icon: Symbols.refresh_rounded,
-                  tooltip: t.common.refresh,
-                  onPressed: _refreshSelectedLibraryTabs,
-                ),
-              ],
+              actions: appBarActions(),
             ),
           ],
         ),
@@ -1202,7 +1181,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                             i,
                             onSelectWhenActive: _focusCurrentTab,
                             onNavigateDown: _focusCurrentTabFromTabBar,
-                            onNavigateRightFromLast: () => _actionBarKey.currentState?.requestFocusOnFirst(),
+                            onNavigateToActions: () => _actionBarKey.currentState?.requestFocusOnFirst(),
                           ),
                         ],
                       ],
@@ -1440,29 +1419,13 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
     final menuItems = widget.getLibraryMenuItems(library);
     OverlaySheetController.pushAdaptive<String>(
       outerContext,
-      builder: (context) => SafeArea(
-        top: false,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(library.title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            ),
-            ...menuItems.indexed.map(
-              (entry) => ListTile(
-                leading: AppIcon(entry.$2.icon, fill: 1),
-                title: Text(entry.$2.label),
-                onTap: () {
-                  // Close the entire overlay sheet, then let the parent handle
-                  // confirmation and execution (parent state is always mounted)
-                  OverlaySheetController.closeAdaptive(context);
-                  widget.onLibraryMenuAction(entry.$2.value, library);
-                },
-              ),
-            ),
-          ],
-        ),
+      builder: (context) => AppMenuSheet<String>(
+        title: library.title,
+        entries: [
+          for (final item in menuItems)
+            AppMenuItem<String>(value: item.value, icon: item.icon, label: item.label, destructive: item.isDestructive),
+        ],
+        onSelected: (value) => widget.onLibraryMenuAction(value, library),
       ),
     );
   }
@@ -1535,10 +1498,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
                   const AppIcon(Symbols.edit_rounded, fill: 1),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      t.libraries.manageLibraries,
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    ),
+                    child: Text(t.libraries.manageLibraries, style: const TextStyle(fontSize: 20, fontWeight: .bold)),
                   ),
                   IconButton(
                     icon: const AppIcon(Symbols.close_rounded, fill: 1),
@@ -1654,7 +1614,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
       child: ListTile(
         tileColor: tileColor,
         leading: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             ReorderableDragStartListener(
               index: index,
@@ -1679,7 +1639,7 @@ class _LibraryManagementSheetState extends State<_LibraryManagementSheet> {
               )
             : null,
         trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             Container(
               decoration: FocusTheme.focusBackgroundDecoration(isFocused: isVisibilityButtonFocused, borderRadius: 20),

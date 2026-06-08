@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -12,6 +12,7 @@ import '../../../utils/platform_detector.dart';
 import '../../../watch_together/providers/watch_together_provider.dart';
 import '../../../watch_together/widgets/watch_together_overlay.dart';
 import '../../../widgets/app_icon.dart';
+import '../../../widgets/video_controls/player_chrome_controller.dart';
 
 class VideoPlayerMacPipPlaceholder extends StatelessWidget {
   const VideoPlayerMacPipPlaceholder({super.key});
@@ -27,7 +28,7 @@ class VideoPlayerMacPipPlaceholder extends StatelessWidget {
             color: Colors.black,
             child: Center(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisSize: .min,
                 children: [
                   Icon(Symbols.picture_in_picture_alt_rounded, size: 48, color: Colors.white.withValues(alpha: 0.5)),
                   const SizedBox(height: 12),
@@ -115,7 +116,7 @@ class VideoPlayerWatchTogetherOverlays extends StatelessWidget {
                       borderRadius: BorderRadius.all(Radius.circular(20)),
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisSize: .min,
                       children: [
                         if (PlatformDetector.isTV())
                           const Icon(Symbols.sync_rounded, size: 14, color: Colors.white)
@@ -169,7 +170,7 @@ class VideoPlayerPlayNextOverlay extends StatelessWidget {
   final int autoPlayCountdown;
   final FocusNode cancelFocusNode;
   final FocusNode confirmFocusNode;
-  final ValueListenable<bool> controlsVisible;
+  final PlayerChromeController chromeController;
   final VoidCallback onCancel;
   final VoidCallback onPlayNext;
 
@@ -180,7 +181,7 @@ class VideoPlayerPlayNextOverlay extends StatelessWidget {
     required this.autoPlayCountdown,
     required this.cancelFocusNode,
     required this.confirmFocusNode,
-    required this.controlsVisible,
+    required this.chromeController,
     required this.onCancel,
     required this.onPlayNext,
   });
@@ -194,85 +195,75 @@ class VideoPlayerPlayNextOverlay extends StatelessWidget {
         if (isInPip || !visible || episode == null) {
           return const SizedBox.shrink();
         }
-        return ValueListenableBuilder<bool>(
-          valueListenable: controlsVisible,
-          builder: (context, controlsShown, child) {
-            return AnimatedPositioned(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              right: 24,
-              bottom: controlsShown ? 100 : 24,
-              child: Container(
-                width: 320,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.9),
-                  borderRadius: const BorderRadius.all(Radius.circular(12)),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _PlayNextEpisodeHeader(episode: episode),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FocusableButton(
-                            focusNode: cancelFocusNode,
+        return _VideoPlayerPromptPosition(
+          chromeController: chromeController,
+          child: _VideoPlayerPromptInteractionHold(
+            chromeController: chromeController,
+            focusNodes: [cancelFocusNode, confirmFocusNode],
+            child: _VideoPlayerPromptCard(
+              child: Column(
+                mainAxisSize: .min,
+                crossAxisAlignment: .start,
+                children: [
+                  _PlayNextEpisodeHeader(episode: episode),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FocusableButton(
+                          focusNode: cancelFocusNode,
+                          onPressed: onCancel,
+                          autoScroll: false,
+                          onNavigateRight: () => confirmFocusNode.requestFocus(),
+                          onNavigateUp: () {},
+                          onNavigateDown: () {},
+                          child: OutlinedButton(
                             onPressed: onCancel,
-                            autoScroll: false,
-                            onNavigateRight: () => confirmFocusNode.requestFocus(),
-                            onNavigateUp: () {},
-                            onNavigateDown: () {},
-                            child: OutlinedButton(
-                              onPressed: onCancel,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              child: Text(t.common.cancel),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
+                            child: Text(t.common.cancel),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: FocusableButton(
-                            focusNode: confirmFocusNode,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FocusableButton(
+                          focusNode: confirmFocusNode,
+                          onPressed: onPlayNext,
+                          autoScroll: false,
+                          onNavigateLeft: () => cancelFocusNode.requestFocus(),
+                          onNavigateUp: () {},
+                          onNavigateDown: () {},
+                          child: FilledButton(
                             onPressed: onPlayNext,
-                            autoScroll: false,
-                            onNavigateLeft: () => cancelFocusNode.requestFocus(),
-                            onNavigateUp: () {},
-                            onNavigateDown: () {},
-                            child: FilledButton(
-                              onPressed: onPlayNext,
-                              style: FilledButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  if (autoPlayCountdown > 0) ...[
-                                    Text('$autoPlayCountdown'),
-                                    const SizedBox(width: 4),
-                                    const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
-                                  ] else
-                                    Text(t.videoControls.playNext),
-                                ],
-                              ),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: .center,
+                              children: [
+                                if (autoPlayCountdown > 0) ...[
+                                  Text('$autoPlayCountdown'),
+                                  const SizedBox(width: 4),
+                                  const AppIcon(Symbols.play_arrow_rounded, fill: 1, size: 18),
+                                ] else
+                                  Text(t.videoControls.playNext),
+                              ],
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            );
-          },
+            ),
+          ),
         );
       },
     );
@@ -290,7 +281,7 @@ class _PlayNextEpisodeHeader extends StatelessWidget {
       children: [
         Expanded(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: .start,
             children: [
               Consumer<PlaybackStateProvider>(
                 builder: (context, playbackState, child) {
@@ -299,11 +290,7 @@ class _PlayNextEpisodeHeader extends StatelessWidget {
                     children: [
                       Text(
                         'Next Episode',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
                       ),
                       if (isShuffleActive) ...[
                         const SizedBox(width: 4),
@@ -317,16 +304,16 @@ class _PlayNextEpisodeHeader extends StatelessWidget {
               if (episode.parentIndex != null && episode.index != null)
                 Text(
                   'S${episode.parentIndex} E${episode.index} · ${episode.title}',
-                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w600),
                   maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 )
               else
                 Text(
                   episode.title!,
-                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w600),
                   maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 ),
             ],
           ),
@@ -341,7 +328,7 @@ class VideoPlayerStillWatchingOverlay extends StatelessWidget {
   final int countdown;
   final FocusNode pauseFocusNode;
   final FocusNode continueFocusNode;
-  final ValueListenable<bool> controlsVisible;
+  final PlayerChromeController chromeController;
   final VoidCallback onPause;
   final VoidCallback onContinue;
 
@@ -351,7 +338,7 @@ class VideoPlayerStillWatchingOverlay extends StatelessWidget {
     required this.countdown,
     required this.pauseFocusNode,
     required this.continueFocusNode,
-    required this.controlsVisible,
+    required this.chromeController,
     required this.onPause,
     required this.onContinue,
   });
@@ -364,96 +351,217 @@ class VideoPlayerStillWatchingOverlay extends StatelessWidget {
         if (isInPip || !visible) {
           return const SizedBox.shrink();
         }
-        return ValueListenableBuilder<bool>(
-          valueListenable: controlsVisible,
-          builder: (context, controlsShown, child) {
-            return AnimatedPositioned(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              right: 24,
-              bottom: controlsShown ? 100 : 24,
-              child: Container(
-                width: 320,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.9),
-                  borderRadius: const BorderRadius.all(Radius.circular(12)),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      t.videoControls.stillWatching,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      t.videoControls.pausingIn(seconds: '$countdown'),
-                      style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: FocusableButton(
-                            focusNode: pauseFocusNode,
+        return _VideoPlayerPromptPosition(
+          chromeController: chromeController,
+          child: _VideoPlayerPromptInteractionHold(
+            chromeController: chromeController,
+            focusNodes: [pauseFocusNode, continueFocusNode],
+            child: _VideoPlayerPromptCard(
+              child: Column(
+                mainAxisSize: .min,
+                crossAxisAlignment: .start,
+                children: [
+                  Text(
+                    t.videoControls.stillWatching,
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    t.videoControls.pausingIn(seconds: '$countdown'),
+                    style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w600),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FocusableButton(
+                          focusNode: pauseFocusNode,
+                          onPressed: onPause,
+                          autoScroll: false,
+                          onNavigateRight: () => continueFocusNode.requestFocus(),
+                          onNavigateUp: () {},
+                          onNavigateDown: () {},
+                          child: OutlinedButton(
                             onPressed: onPause,
-                            autoScroll: false,
-                            onNavigateRight: () => continueFocusNode.requestFocus(),
-                            onNavigateUp: () {},
-                            onNavigateDown: () {},
-                            child: OutlinedButton(
-                              onPressed: onPause,
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
-                                side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              child: Text(t.videoControls.pauseButton),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                              padding: const EdgeInsets.symmetric(vertical: 12),
                             ),
+                            child: Text(t.videoControls.pauseButton),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: FocusableButton(
-                            focusNode: continueFocusNode,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FocusableButton(
+                          focusNode: continueFocusNode,
+                          onPressed: onContinue,
+                          autoScroll: false,
+                          onNavigateLeft: () => pauseFocusNode.requestFocus(),
+                          onNavigateUp: () {},
+                          onNavigateDown: () {},
+                          child: FilledButton(
                             onPressed: onContinue,
-                            autoScroll: false,
-                            onNavigateLeft: () => pauseFocusNode.requestFocus(),
-                            onNavigateUp: () {},
-                            onNavigateDown: () {},
-                            child: FilledButton(
-                              onPressed: onContinue,
-                              style: FilledButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: Colors.black,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text('$countdown'),
-                                  const SizedBox(width: 4),
-                                  Text(t.videoControls.continueWatching),
-                                ],
-                              ),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: .center,
+                              children: [
+                                Text('$countdown'),
+                                const SizedBox(width: 4),
+                                Text(t.videoControls.continueWatching),
+                              ],
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            );
-          },
+            ),
+          ),
         );
       },
+    );
+  }
+}
+
+class _VideoPlayerPromptPosition extends StatelessWidget {
+  final PlayerChromeController chromeController;
+  final Widget child;
+
+  const _VideoPlayerPromptPosition({required this.chromeController, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: chromeController,
+      builder: (context, controlsShown, child) {
+        return AnimatedPositioned(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          right: 24,
+          bottom: controlsShown ? 100 : 24,
+          child: child!,
+        );
+      },
+      child: child,
+    );
+  }
+}
+
+class _VideoPlayerPromptCard extends StatelessWidget {
+  final Widget child;
+
+  const _VideoPlayerPromptCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 320,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.9),
+        borderRadius: const BorderRadius.all(Radius.circular(12)),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _VideoPlayerPromptInteractionHold extends StatefulWidget {
+  final PlayerChromeController chromeController;
+  final List<FocusNode> focusNodes;
+  final Widget child;
+
+  const _VideoPlayerPromptInteractionHold({
+    required this.chromeController,
+    required this.focusNodes,
+    required this.child,
+  });
+
+  @override
+  State<_VideoPlayerPromptInteractionHold> createState() => _VideoPlayerPromptInteractionHoldState();
+}
+
+class _VideoPlayerPromptInteractionHoldState extends State<_VideoPlayerPromptInteractionHold> {
+  bool _hovered = false;
+  bool _focused = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _addFocusListeners(widget.focusNodes);
+    _syncFocusState();
+  }
+
+  @override
+  void didUpdateWidget(_VideoPlayerPromptInteractionHold oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!listEquals(oldWidget.focusNodes, widget.focusNodes)) {
+      _removeFocusListeners(oldWidget.focusNodes);
+      _addFocusListeners(widget.focusNodes);
+      _syncFocusState();
+    }
+    if (oldWidget.chromeController != widget.chromeController) {
+      oldWidget.chromeController.release(PlayerChromeHold.promptInteraction);
+      _syncHold();
+    }
+  }
+
+  @override
+  void dispose() {
+    _removeFocusListeners(widget.focusNodes);
+    widget.chromeController.release(PlayerChromeHold.promptInteraction, notify: false, restartAutoHide: false);
+    super.dispose();
+  }
+
+  void _addFocusListeners(List<FocusNode> nodes) {
+    for (final node in nodes) {
+      node.addListener(_syncFocusState);
+    }
+  }
+
+  void _removeFocusListeners(List<FocusNode> nodes) {
+    for (final node in nodes) {
+      node.removeListener(_syncFocusState);
+    }
+  }
+
+  void _syncFocusState() {
+    final focused = widget.focusNodes.any((node) => node.hasFocus);
+    if (_focused == focused) return;
+    _focused = focused;
+    _syncHold();
+  }
+
+  void _setHovered(bool hovered) {
+    if (_hovered == hovered) return;
+    _hovered = hovered;
+    if (hovered) widget.chromeController.recordPointerActivity();
+    _syncHold();
+  }
+
+  void _syncHold() {
+    if (_hovered || _focused) {
+      widget.chromeController.hold(PlayerChromeHold.promptInteraction);
+    } else {
+      widget.chromeController.release(PlayerChromeHold.promptInteraction);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => _setHovered(true),
+      onHover: (_) => widget.chromeController.recordPointerActivity(),
+      onExit: (_) => _setHovered(false),
+      child: widget.child,
     );
   }
 }

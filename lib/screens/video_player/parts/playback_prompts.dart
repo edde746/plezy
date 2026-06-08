@@ -12,12 +12,26 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged
     // never fires false.  Normalize all playback-dependent state.
     unawaited(_setWakelock(false));
-    unawaited(_progressTracker?.sendProgress('paused'));
+    final duration = player?.state.duration;
+    unawaited(
+      duration != null && duration.inMilliseconds > 0
+          ? _sendStoppedProgressOnce(positionOverride: duration)
+          : _sendStoppedProgressOnce(),
+    );
     _updateMediaControlsPlaybackState();
     unawaited(DiscordRPCService.instance.pausePlayback());
     unawaited(TraktScrobbleService.instance.pausePlayback());
     if (_autoPipEnabled) {
       unawaited(_videoPIPManager?.updateAutoPipState(isPlaying: false));
+    }
+
+    // End-of-video sleep timer takes precedence over autoplay / next-episode
+    // dialogs: the user explicitly asked to stop after this item.
+    final sleepTimerService = SleepTimerService();
+    if (sleepTimerService.isEndOfVideoMode && !_completionTriggered) {
+      _completionTriggered = true;
+      sleepTimerService.notifyVideoCompleted();
+      return;
     }
 
     if (_nextEpisode != null && !_showPlayNextDialog && !_showStillWatchingPrompt && !_completionTriggered) {
@@ -83,10 +97,25 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _cancelAutoPlay() {
     _autoPlayTimer?.cancel();
-    _completionTriggered = false; // Reset so it can trigger again if user seeks near end
+    _unfocusPlayNextPrompt();
+    _progressTracker?.resumeAfterStoppedReport();
+    // Keep _completionTriggered set: playback is still parked inside the
+    // end-of-video window, so clearing it here would let the position listener
+    // re-fire this prompt on the next tick. It is re-armed once playback seeks
+    // back clear of the end region (see the position listener) or new media loads.
     _setPlayerState(() {
       _showPlayNextDialog = false;
     });
+  }
+
+  /// Re-arm the end-of-video latch so Play Next can fire again — but only when no
+  /// prompt is visible and no auto-play countdown is running, so we never clobber
+  /// an active dialog. Callers decide *when* it is safe to re-arm (media reloaded,
+  /// or playback moved back out of the end region).
+  void _rearmCompletionLatch() {
+    if (_completionTriggered && !_showPlayNextDialog && _autoPlayTimer?.isActive != true) {
+      _completionTriggered = false;
+    }
   }
 
   void _showStillWatchingDialog() {
@@ -123,6 +152,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   }
 
   void _onStillWatchingTimeout() {
+    _unfocusStillWatchingPrompt();
     player?.pause();
     _setPlayerState(() {
       _showStillWatchingPrompt = false;
@@ -131,6 +161,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _onStillWatchingContinue() {
     _stillWatchingTimer?.cancel();
+    _unfocusStillWatchingPrompt();
     SleepTimerService().restartTimer();
     _setPlayerState(() {
       _showStillWatchingPrompt = false;
@@ -139,6 +170,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _onStillWatchingPause() {
     _stillWatchingTimer?.cancel();
+    _unfocusStillWatchingPrompt();
     player?.pause();
     _setPlayerState(() {
       _showStillWatchingPrompt = false;
@@ -148,9 +180,20 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   void _dismissStillWatching() {
     _stillWatchingTimer?.cancel();
     if (_showStillWatchingPrompt) {
+      _unfocusStillWatchingPrompt();
       _setPlayerState(() {
         _showStillWatchingPrompt = false;
       });
     }
+  }
+
+  void _unfocusPlayNextPrompt() {
+    _playNextCancelFocusNode.unfocus();
+    _playNextConfirmFocusNode.unfocus();
+  }
+
+  void _unfocusStillWatchingPrompt() {
+    _stillWatchingPauseFocusNode.unfocus();
+    _stillWatchingContinueFocusNode.unfocus();
   }
 }

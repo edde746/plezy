@@ -1,4 +1,5 @@
 import '../media/media_item.dart';
+import '../media/ids.dart';
 import 'app_logger.dart';
 import 'base_notifier.dart';
 import 'global_key_utils.dart';
@@ -18,7 +19,7 @@ class WatchStateEvent with HierarchicalEventMixin {
 
   /// Server this item belongs to
   @override
-  final String serverId;
+  final ServerId serverId;
 
   /// Optional backend-private cache namespace for user-scoped servers.
   ///
@@ -60,12 +61,13 @@ class WatchStateEvent with HierarchicalEventMixin {
     this.viewOffset,
     this.isNowWatched,
     this.librarySectionID,
-  }) : globalKey = buildGlobalKey(serverId, itemId);
+  }) : globalKey = buildGlobalKey(ServerId(serverId), itemId);
 
   /// `serverId:librarySectionID`, matching [MediaLibrary.globalKey]. Null when
   /// the library section is unknown; tracker filters treat unknown as allowed
   /// only when no filter is configured.
-  String? get librarySectionGlobalKey => librarySectionID != null ? buildGlobalKey(serverId, librarySectionID!) : null;
+  String? get librarySectionGlobalKey =>
+      librarySectionID != null ? buildGlobalKey(ServerId(serverId), librarySectionID!) : null;
 
   @override
   String toString() => 'WatchStateEvent($changeType, $globalKey, parents: $parentChain)';
@@ -82,7 +84,7 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
 
   WatchStateNotifier._internal();
 
-  Stream<WatchStateEvent> forServer(String serverId) => stream.where((e) => e.serverId == serverId);
+  Stream<WatchStateEvent> forServer(ServerId serverId) => stream.where((e) => e.serverId == serverId);
 
   Stream<WatchStateEvent> forItem(String itemId) => stream.where((e) => e.affectsItem(itemId));
 
@@ -95,10 +97,15 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
 
   /// Helper to emit a watched/unwatched event from a [MediaItem].
   void notifyWatched({required MediaItem item, bool isNowWatched = true, String? cacheServerId}) {
+    final serverId = serverIdOrNull(item.serverId);
+    if (serverId == null) {
+      appLogger.w('WatchStateNotifier: missing serverId for ${item.id}, skipping watched event');
+      return;
+    }
     notify(
       WatchStateEvent(
         itemId: item.id,
-        serverId: item.serverId ?? '',
+        serverId: serverId,
         cacheServerId: cacheServerId,
         changeType: isNowWatched ? WatchStateChangeType.watched : WatchStateChangeType.unwatched,
         parentChain: item.parentChain,
@@ -118,12 +125,17 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
     required int duration,
     double watchedThreshold = 0.9,
   }) {
+    final serverId = serverIdOrNull(item.serverId);
+    if (serverId == null) {
+      appLogger.w('WatchStateNotifier: missing serverId for ${item.id}, skipping progress event');
+      return;
+    }
     final isNowWatched = duration > 0 && (viewOffset / duration) >= watchedThreshold;
 
     notify(
       WatchStateEvent(
         itemId: item.id,
-        serverId: item.serverId ?? '',
+        serverId: serverId,
         changeType: WatchStateChangeType.progressUpdate,
         parentChain: item.parentChain,
         mediaType: item.kind.id,
@@ -136,10 +148,15 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
 
   /// Helper to emit a Continue Watching removal event.
   void notifyRemovedFromContinueWatching({required MediaItem item}) {
+    final serverId = serverIdOrNull(item.serverId);
+    if (serverId == null) {
+      appLogger.w('WatchStateNotifier: missing serverId for ${item.id}, skipping continue-watching removal event');
+      return;
+    }
     notify(
       WatchStateEvent(
         itemId: item.id,
-        serverId: item.serverId ?? '',
+        serverId: serverId,
         changeType: WatchStateChangeType.removedFromContinueWatching,
         parentChain: item.parentChain,
         mediaType: item.kind.id,

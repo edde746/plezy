@@ -89,8 +89,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "4c965996210e408465e3c8b66e63ab4a659a62f9"
-      resolved-ref: "4c965996210e408465e3c8b66e63ab4a659a62f9"
+      ref: b4d36f88bb365faaf308ff26be7ade49bbaec859
+      resolved-ref: b4d36f88bb365faaf308ff26be7ade49bbaec859
       url: "https://github.com/edde746/background_downloader"
     source: git
     version: "9.5.4"
@@ -384,7 +384,7 @@ packages:
     source: hosted
     version: "4.0.3"
   fake_async:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: fake_async
       sha256: "5368f224a74523e8d2e7399ea1638b37aecfca824a3cc4dfdf77bf1fa905ac44"
@@ -768,11 +768,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "5ddd27c"
-      resolved-ref: "5ddd27c2acacca31060d288db1371a870602cf46"
-      url: "https://github.com/edde746/os-media-controls"
+      ref: f51c805ebc15bf7a2f49a74174aeb470d3c4c78e
+      resolved-ref: f51c805ebc15bf7a2f49a74174aeb470d3c4c78e
+      url: "https://github.com/edde746/media_controls"
     source: git
-    version: "0.2.1"
+    version: "0.2.4"
   package_config:
     dependency: transitive
     description:
@@ -1473,10 +1473,10 @@ packages:
     dependency: "direct main"
     description:
       name: win_http
-      sha256: efbfec044d43665e271b2c51d40864275d055b28eda1e9feddb42d884ae982df
+      sha256: a50a14f1bf32bc5c9b39add9baa01658b97146b21de25237810ca6b850a6704e
       url: "https://pub.dev"
     source: hosted
-    version: "0.2.0"
+    version: "0.2.1"
   window_manager:
     dependency: "direct main"
     description:

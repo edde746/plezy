@@ -120,6 +120,7 @@ Future<String?> showTextInputDialog(
   TextInputType? keyboardType,
   List<TextInputFormatter>? inputFormatters,
   String? Function(String)? validator,
+  bool allowEmpty = false,
 }) {
   return showDialog<String>(
     context: context,
@@ -132,6 +133,7 @@ Future<String?> showTextInputDialog(
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       validator: validator,
+      allowEmpty: allowEmpty,
     ),
   );
 }
@@ -214,7 +216,6 @@ class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog>
         DialogActionButton(
           focusNode: _cancelFocusNode,
           onPressed: () => Navigator.pop(context),
-          onNavigateUp: _fieldFocusNode.requestFocus,
           onNavigateRight: _saveFocusNode.requestFocus,
           label: t.common.cancel,
         ),
@@ -222,7 +223,6 @@ class _MultilineTextInputDialogState extends State<_MultilineTextInputDialog>
           onPressed: () => Navigator.pop(context, _controller.text),
           label: t.common.save,
           focusNode: _saveFocusNode,
-          onNavigateUp: _fieldFocusNode.requestFocus,
           onNavigateLeft: _cancelFocusNode.requestFocus,
         ),
       ],
@@ -239,6 +239,7 @@ class _TextInputDialog extends StatefulWidget {
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
   final String? Function(String)? validator;
+  final bool allowEmpty;
 
   const _TextInputDialog({
     required this.title,
@@ -249,6 +250,7 @@ class _TextInputDialog extends StatefulWidget {
     this.keyboardType,
     this.inputFormatters,
     this.validator,
+    this.allowEmpty = false,
   });
 
   @override
@@ -262,7 +264,7 @@ class _TextInputDialogState extends State<_TextInputDialog>
 
   void _submit() {
     final text = _controller.text;
-    if (text.isEmpty) return;
+    if (text.isEmpty && !widget.allowEmpty) return;
     if (widget.validator != null && widget.validator!(text) != null) return;
     Navigator.pop(context, text);
   }
@@ -286,7 +288,6 @@ class _TextInputDialogState extends State<_TextInputDialog>
         DialogActionButton(
           focusNode: _cancelFocusNode,
           onPressed: () => Navigator.pop(context),
-          onNavigateUp: _fieldFocusNode.requestFocus,
           onNavigateRight: _saveFocusNode.requestFocus,
           label: t.common.cancel,
         ),
@@ -294,7 +295,6 @@ class _TextInputDialogState extends State<_TextInputDialog>
           onPressed: _submit,
           label: widget.confirmText ?? t.common.save,
           focusNode: _saveFocusNode,
-          onNavigateUp: _fieldFocusNode.requestFocus,
           onNavigateLeft: _cancelFocusNode.requestFocus,
         ),
       ],

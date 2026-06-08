@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:vibe_stream/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vibe_stream/media/media_backend.dart';
 import 'package:vibe_stream/media/media_item.dart';
@@ -36,7 +37,7 @@ class _ProbeState extends State<_Probe> with ServerBoundMediaMixin<_Probe> {
   }
 }
 
-MediaItem _meta({String? serverId, String ratingKey = 'rk1'}) =>
+MediaItem _meta({ServerId? serverId, String ratingKey = 'rk1'}) =>
     MediaItem(id: ratingKey, backend: MediaBackend.plex, kind: MediaKind.movie, serverId: serverId);
 
 void main() {
@@ -47,7 +48,7 @@ void main() {
       late _ProbeState state;
       await tester.pumpWidget(
         _Probe(
-          metadata: _meta(serverId: 'srv-A'),
+          metadata: _meta(serverId: ServerId('srv-A')),
           offline: false,
           onState: (s, _) => state = s,
         ),
@@ -68,7 +69,7 @@ void main() {
       late _ProbeState offState;
       await tester.pumpWidget(
         _Probe(
-          metadata: _meta(serverId: 's1'),
+          metadata: _meta(serverId: ServerId('s1')),
           offline: false,
           onState: (s, _) => offState = s,
         ),
@@ -78,7 +79,7 @@ void main() {
 
       await tester.pumpWidget(
         _Probe(
-          metadata: _meta(serverId: 's1'),
+          metadata: _meta(serverId: ServerId('s1')),
           offline: true,
           onState: (s, _) => onState = s,
         ),
@@ -91,7 +92,7 @@ void main() {
       late _ProbeState state;
       await tester.pumpWidget(
         _Probe(
-          metadata: _meta(serverId: 'srv-A'),
+          metadata: _meta(serverId: ServerId('srv-A')),
           offline: false,
           onState: (s, _) => state = s,
         ),
@@ -106,7 +107,7 @@ void main() {
       late _ProbeState state;
       await tester.pumpWidget(
         _Probe(
-          metadata: _meta(serverId: 'srv-A'),
+          metadata: _meta(serverId: ServerId('srv-A')),
           offline: false,
           onState: (s, _) => state = s,
         ),
@@ -114,16 +115,15 @@ void main() {
       await tester.pump();
 
       // Explicit serverId takes precedence over the metadata-bound one.
-      expect(state.toServerBoundGlobalKey('rk-1', serverId: 'srv-B'), 'srv-B:rk-1');
+      expect(state.toServerBoundGlobalKey('rk-1', serverId: ServerId('srv-B')), 'srv-B:rk-1');
     });
 
-    testWidgets('toServerBoundGlobalKey falls back to empty serverId when metadata has none', (tester) async {
+    testWidgets('toServerBoundGlobalKey rejects metadata without a serverId', (tester) async {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(metadata: _meta(), offline: false, onState: (s, _) => state = s));
       await tester.pump();
 
-      // Empty server prefix is the documented fallback for server-less metadata.
-      expect(state.toServerBoundGlobalKey('rk-1'), ':rk-1');
+      expect(() => state.toServerBoundGlobalKey('rk-1'), throwsStateError);
     });
 
     testWidgets('getServerBoundPlexClient returns null in offline mode regardless of providers', (tester) async {
@@ -131,7 +131,7 @@ void main() {
       late BuildContext ctx;
       await tester.pumpWidget(
         _Probe(
-          metadata: _meta(serverId: 'srv-A'),
+          metadata: _meta(serverId: ServerId('srv-A')),
           offline: true,
           onState: (s, c) {
             state = s;

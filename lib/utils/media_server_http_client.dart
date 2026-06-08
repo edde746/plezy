@@ -399,7 +399,7 @@ class MediaServerHttpClient {
 
     void add(String key, Object? value) {
       if (value == null) return;
-      if (value is Iterable && value is! String) {
+      if (value is Iterable) {
         for (final item in value) {
           add(key, item);
         }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -60,7 +61,7 @@ class _PlexMatchScreenState extends State<PlexMatchScreen> with ControllerDispos
   @override
   void initState() {
     super.initState();
-    _client = context.getPlexClientWithFallback(widget.metadata.serverId);
+    _client = context.getPlexClientWithFallback(serverIdOrNull(widget.metadata.serverId));
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (InputModeTracker.isKeyboardMode(context)) {
@@ -143,7 +144,7 @@ class _PlexMatchScreenState extends State<PlexMatchScreen> with ControllerDispos
           )
         else
           SliverPadding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
+            padding: const EdgeInsets.only(left: 8, right: 8, bottom: 24),
             sliver: SliverList.builder(
               itemCount: _results!.length,
               itemBuilder: (context, index) => _buildResultTile(_results![index]),
@@ -155,7 +156,7 @@ class _PlexMatchScreenState extends State<PlexMatchScreen> with ControllerDispos
 
   Widget _buildSearchForm(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      crossAxisAlignment: .stretch,
       children: [
         Row(
           children: [
@@ -171,7 +172,6 @@ class _PlexMatchScreenState extends State<PlexMatchScreen> with ControllerDispos
                 textInputAction: TextInputAction.next,
                 onSubmitted: (_) => _yearFocus.requestFocus(),
                 onNavigateRight: _yearFocus.requestFocus,
-                onNavigateDown: _searchFocus.requestFocus,
               ),
             ),
             const SizedBox(width: 12),
@@ -186,7 +186,6 @@ class _PlexMatchScreenState extends State<PlexMatchScreen> with ControllerDispos
                 textInputAction: TextInputAction.search,
                 onSubmitted: (_) => _search(),
                 onNavigateLeft: _nameFocus.requestFocus,
-                onNavigateDown: _searchFocus.requestFocus,
               ),
             ),
           ],
@@ -233,9 +232,9 @@ class _PlexMatchScreenState extends State<PlexMatchScreen> with ControllerDispos
             ),
           ),
         ),
-        title: Text(titleText, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(titleText, style: const TextStyle(fontWeight: .w600)),
         subtitle: result.summary != null && result.summary!.isNotEmpty
-            ? Text(result.summary!, maxLines: 2, overflow: TextOverflow.ellipsis)
+            ? Text(result.summary!, maxLines: 2, overflow: .ellipsis)
             : null,
         trailing: isApplyingThis
             ? const LoadingIndicatorBox(size: 24)
@@ -259,7 +258,7 @@ class _ScoreChip extends StatelessWidget {
       decoration: BoxDecoration(color: colorScheme.secondaryContainer, borderRadius: BorderRadius.circular(100)),
       child: Text(
         '$score',
-        style: TextStyle(color: colorScheme.onSecondaryContainer, fontWeight: FontWeight.w600),
+        style: TextStyle(color: colorScheme.onSecondaryContainer, fontWeight: .w600),
       ),
     );
   }

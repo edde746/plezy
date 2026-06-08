@@ -62,6 +62,27 @@ void main() {
       expect(v.parts.single.accessible, isTrue);
     });
 
+    test('maps multiple parts and treats later playable parts as playable', () {
+      final v = PlexMappers.mediaVersionFromJson({
+        'id': 1,
+        'videoResolution': '1080',
+        'videoCodec': 'h264',
+        'container': 'mkv',
+        'Part': [
+          {'id': 101, 'key': '/library/parts/101/file.mkv', 'exists': 0, 'accessible': 1},
+          {'id': 102, 'key': '/library/parts/102/file.mkv', 'exists': 1, 'accessible': 1, 'size': '123'},
+        ],
+      });
+
+      expect(v.parts, hasLength(2));
+      expect(v.parts.first.streamPath, '/library/parts/101/file.mkv');
+      expect(v.parts.last.streamPath, '/library/parts/102/file.mkv');
+      expect(v.parts.last.sizeBytes, 123);
+      expect(v.parts.first.isPlayable, isFalse);
+      expect(v.parts.last.isPlayable, isTrue);
+      expect(v.isPlayable, isTrue);
+    });
+
     test('isPlayable truth table mirrors Plex web semantics', () {
       // Mirrors plex-web.js:28926: !1 !== e.exists && !1 !== e.accessible
       // Anything but explicit `false` for both fields → playable.

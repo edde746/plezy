@@ -65,22 +65,26 @@ class BottomSheetHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final usesBackButton = leading == null && onBack != null;
+
     // Determine the leading widget based on priority: leading > onBack > icon
     Widget? resolvedLeading;
     if (leading != null) {
       resolvedLeading = leading;
     } else if (onBack != null) {
-      resolvedLeading = ExcludeFocusTraversal(
-        child: IconButton(
-          icon: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: iconColor),
-          onPressed: onBack,
+      resolvedLeading = SizedBox(
+        width: 24,
+        height: kMinInteractiveDimension,
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: ExcludeSemantics(child: AppIcon(Symbols.arrow_back_rounded, fill: 1, color: iconColor)),
         ),
       );
     } else if (icon != null) {
       resolvedLeading = AppIcon(icon!, fill: 1, color: iconColor);
     }
 
-    final effectiveTitleStyle = titleStyle ?? TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: titleColor);
+    final effectiveTitleStyle = titleStyle ?? TextStyle(fontSize: 18, fontWeight: .bold, color: titleColor);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -89,18 +93,40 @@ class BottomSheetHeader extends StatelessWidget {
               border: Border(bottom: BorderSide(color: Theme.of(context).dividerColor)),
             )
           : null,
-      child: Row(
+      child: Stack(
         children: [
-          if (resolvedLeading != null) ...[resolvedLeading, const SizedBox(width: 8)],
-          Expanded(child: Text(title, style: effectiveTitleStyle)),
-          ?action,
-          ExcludeFocusTraversal(
-            child: IconButton(
-              focusNode: closeFocusNode,
-              icon: AppIcon(Symbols.close_rounded, fill: 1, color: iconColor),
-              onPressed: onClose ?? () => OverlaySheetController.closeAdaptive(context),
-            ),
+          Row(
+            children: [
+              if (resolvedLeading != null) ...[resolvedLeading, const SizedBox(width: 8)],
+              Expanded(child: Text(title, style: effectiveTitleStyle)),
+              ?action,
+              ExcludeFocusTraversal(
+                child: IconButton(
+                  focusNode: closeFocusNode,
+                  icon: AppIcon(Symbols.close_rounded, fill: 1, color: iconColor),
+                  onPressed: onClose ?? () => OverlaySheetController.closeAdaptive(context),
+                ),
+              ),
+            ],
           ),
+          if (usesBackButton)
+            PositionedDirectional(
+              start: 0,
+              top: 0,
+              bottom: 0,
+              width: kMinInteractiveDimension,
+              child: ExcludeFocusTraversal(
+                child: Semantics(
+                  label: MaterialLocalizations.of(context).backButtonTooltip,
+                  button: true,
+                  child: InkResponse(
+                    onTap: onBack,
+                    radius: kMinInteractiveDimension / 2,
+                    child: const SizedBox.expand(),
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );

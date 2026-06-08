@@ -132,7 +132,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     return KeyEventResult.ignored;
   }
 
-  settings.SettingsService get _settingsService => settings.SettingsService.instanceOrNull!;
+  settings.SettingsService get _settingsService => settings.SettingsService.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -255,7 +255,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
         : t.connections.addConnectionSubtitleScoped(displayName: active.displayName);
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         SettingsSectionHeader(t.connections.sectionTitle),
         // Connections are managed per-profile (via the Profiles section
@@ -304,7 +304,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     final isCustom = storageService.isUsingCustomPath();
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         SettingsSectionHeader(t.settings.downloads),
         if (!Platform.isIOS)
@@ -316,7 +316,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                 focusNode: _focusTracker.get(_kDownloadLocation),
                 leading: const AppIcon(Symbols.folder_rounded, fill: 1),
                 title: Text(isCustom ? t.settings.downloadLocationCustom : t.settings.downloadLocationDefault),
-                subtitle: Text(currentPath, maxLines: 2, overflow: TextOverflow.ellipsis),
+                subtitle: Text(currentPath, maxLines: 2, overflow: .ellipsis),
                 trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
                 onTap: () => _showDownloadLocationDialog(),
               );
@@ -344,7 +344,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     if (_keyboardService == null) return const SizedBox.shrink();
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         SettingsSectionHeader(t.settings.keyboardShortcuts),
         SettingNavigationTile(
@@ -372,7 +372,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   Widget _buildAdvancedSection() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         SettingsSectionHeader(t.settings.advanced),
         ListTile(
@@ -448,7 +448,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   Widget _buildBackupSection() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         SettingsSectionHeader(t.settings.backup),
         ListTile(
@@ -482,7 +482,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   Widget _buildUpdateSection() {
     if (UpdateService.useNativeUpdater) {
       return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           SettingsSectionHeader(t.settings.updates),
           ListTile(
@@ -500,7 +500,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     final hasUpdate = _updateInfo != null && _updateInfo!['hasUpdate'] == true;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         SettingsSectionHeader(t.settings.updates),
         ListTile(
@@ -539,8 +539,8 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
       builder: (dialogContext) => AlertDialog(
         title: Text(t.settings.downloads),
         content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: .min,
+          crossAxisAlignment: .start,
           children: [
             Text(t.settings.downloadLocationDescription),
             const SizedBox(height: 16),
@@ -644,52 +644,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   Future<void> _showRelayUrlDialog() async {
-    final controller = TextEditingController(
-      text: _settingsService.read(settings.SettingsService.customRelayUrl) ?? '',
+    await showDialog<void>(
+      context: context,
+      builder: (_) => _RelayUrlDialog(settingsService: _settingsService),
     );
-    final saveFocusNode = FocusNode();
-    // try/finally guarantees disposal on every dismissal path (button,
-    // back, tap-outside) without depending on `.then` chaining.
-    try {
-      await showDialog<void>(
-        context: context,
-        builder: (BuildContext dialogContext) {
-          return AlertDialog(
-            title: Text(t.settings.watchTogetherRelay),
-            content: FocusableTextField(
-              controller: controller,
-              decoration: InputDecoration(labelText: 'URL', hintText: t.settings.watchTogetherRelayHint),
-              autofocus: true,
-              textInputAction: TextInputAction.done,
-              onEditingComplete: () => saveFocusNode.requestFocus(),
-            ),
-            actions: [
-              DialogActionButton(
-                onPressed: () async {
-                  controller.clear();
-                  await _settingsService.write(settings.SettingsService.customRelayUrl, null);
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                },
-                label: t.settings.resetToDefault,
-              ),
-              DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
-              DialogActionButton(
-                focusNode: saveFocusNode,
-                onPressed: () async {
-                  final url = controller.text.trim().isEmpty ? null : controller.text.trim();
-                  await _settingsService.write(settings.SettingsService.customRelayUrl, url);
-                  if (dialogContext.mounted) Navigator.pop(dialogContext);
-                },
-                label: t.common.save,
-              ),
-            ],
-          );
-        },
-      );
-    } finally {
-      controller.dispose();
-      saveFocusNode.dispose();
-    }
   }
 
   Future<void> _showClearCacheDialog() async {
@@ -807,6 +765,66 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     if (updateInfo == null) return;
     unawaited(
       showUpdateAvailableDialog(context, updateInfo, title: t.settings.updateAvailable, dismissLabel: t.common.close),
+    );
+  }
+}
+
+class _RelayUrlDialog extends StatefulWidget {
+  final settings.SettingsService settingsService;
+
+  const _RelayUrlDialog({required this.settingsService});
+
+  @override
+  State<_RelayUrlDialog> createState() => _RelayUrlDialogState();
+}
+
+class _RelayUrlDialogState extends State<_RelayUrlDialog> {
+  late final TextEditingController _controller;
+  final _saveFocusNode = FocusNode(debugLabel: 'WatchTogetherRelaySave');
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.settingsService.read(settings.SettingsService.customRelayUrl) ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _saveFocusNode.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _reset() async {
+    _controller.clear();
+    await widget.settingsService.write(settings.SettingsService.customRelayUrl, null);
+    if (mounted) Navigator.pop(context);
+  }
+
+  Future<void> _save() async {
+    final trimmed = _controller.text.trim();
+    await widget.settingsService.write(settings.SettingsService.customRelayUrl, trimmed.isEmpty ? null : trimmed);
+    if (mounted) Navigator.pop(context);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(t.settings.watchTogetherRelay),
+      content: FocusableTextField(
+        controller: _controller,
+        decoration: InputDecoration(labelText: 'URL', hintText: t.settings.watchTogetherRelayHint),
+        autofocus: true,
+        textInputAction: TextInputAction.done,
+        onEditingComplete: () => _saveFocusNode.requestFocus(),
+      ),
+      actions: [
+        DialogActionButton(onPressed: _reset, label: t.settings.resetToDefault),
+        DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+        DialogActionButton(focusNode: _saveFocusNode, onPressed: _save, label: t.common.save),
+      ],
     );
   }
 }

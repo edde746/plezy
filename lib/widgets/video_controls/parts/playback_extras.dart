@@ -10,7 +10,7 @@ extension _PlexVideoControlsPlaybackExtrasMethods on _PlexVideoControlsState {
     final serverId = widget.metadata.serverId;
     // Read providers before any await — `context` after an async gap is
     // a lint trigger and can crash if the widget unmounts mid-load.
-    final client = serverId != null ? context.tryGetMediaClientForServer(serverId) : null;
+    final client = serverId != null ? context.tryGetMediaClientForServer(ServerId(serverId)) : null;
     final database = context.read<AppDatabase>();
 
     try {
@@ -33,5 +33,6 @@ extension _PlexVideoControlsPlaybackExtrasMethods on _PlexVideoControlsState {
       _chaptersLoaded = true;
       _markersLoaded = true;
     });
+    _syncCurrentMarkerForCurrentPosition();
   }
 }

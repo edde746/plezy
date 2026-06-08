@@ -19,14 +19,16 @@ class MediaStream {
 
   // Video
   final double? frameRate;
+  final bool hdr;
+  final bool dolbyVision;
+  final int? dolbyVisionProfile;
 
   // Subtitle
   final bool forced;
 
-  /// Backend-resolved location for sidecar subtitle download. For Plex this
-  /// is the Plex-specific `/library/streams/{id}` path; for Jellyfin this is
-  /// the `DeliveryUrl` returned by `/Items/{id}/PlaybackInfo`. Null for
-  /// embedded streams.
+  /// Backend-resolved location for true sidecar subtitle download. Null for
+  /// embedded streams, even when Jellyfin can expose them through temporary
+  /// external delivery URLs during playback negotiation.
   final String? sidecarPath;
 
   const MediaStream({
@@ -41,6 +43,9 @@ class MediaStream {
     this.selected = false,
     this.channels,
     this.frameRate,
+    this.hdr = false,
+    this.dolbyVision = false,
+    this.dolbyVisionProfile,
     this.forced = false,
     this.sidecarPath,
   });

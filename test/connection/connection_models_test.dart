@@ -29,6 +29,7 @@ void main() {
     final base = JellyfinConnection(
       id: 'srv-1/user-1',
       baseUrl: 'https://jellyfin.example.com',
+      baseUrls: const ['https://jellyfin.example.com', 'https://jellyfin.lan:8096'],
       serverName: 'Home',
       serverMachineId: 'srv-1',
       userId: 'user-1',
@@ -50,6 +51,7 @@ void main() {
       );
       expect(restored.id, base.id);
       expect(restored.baseUrl, base.baseUrl);
+      expect(restored.baseUrls, base.baseUrls);
       expect(restored.serverName, base.serverName);
       expect(restored.serverMachineId, base.serverMachineId);
       expect(restored.userId, base.userId);
@@ -69,8 +71,32 @@ void main() {
       );
       expect(restored.id, 'orphan');
       expect(restored.baseUrl, '');
+      expect(restored.baseUrls, isEmpty);
       expect(restored.serverName, 'Jellyfin');
       expect(restored.accessToken, '');
+    });
+
+    test('fromConfigJson backfills baseUrls from legacy baseUrl', () {
+      final restored = JellyfinConnection.fromConfigJson(
+        id: 'legacy',
+        json: const {
+          'baseUrl': 'https://jellyfin.example.com',
+          'serverName': 'Home',
+          'serverMachineId': 'srv-1',
+          'userId': 'user-1',
+        },
+        status: ConnectionStatus.unknown,
+        createdAt: DateTime.utc(2026),
+      );
+
+      expect(restored.baseUrl, 'https://jellyfin.example.com');
+      expect(restored.baseUrls, ['https://jellyfin.example.com']);
+    });
+
+    test('copyWith moves the active baseUrl to the front of baseUrls', () {
+      final updated = base.copyWith(baseUrl: 'https://jellyfin.lan:8096');
+      expect(updated.baseUrl, 'https://jellyfin.lan:8096');
+      expect(updated.baseUrls, ['https://jellyfin.lan:8096', 'https://jellyfin.example.com']);
     });
 
     test('kind and backend match Jellyfin', () {

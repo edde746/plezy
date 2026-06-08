@@ -43,21 +43,17 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         streamStartEpoch: widget.streamStartEpoch,
         currentPositionEpoch: widget.currentPositionEpoch,
         onLiveSeek: widget.onLiveSeek,
+        onLiveSeekBy: widget.onLiveSeekBy,
         onJumpToLive: widget.onJumpToLive,
         useDpadNavigation: useDpad,
         serverId: widget.metadata.serverId,
         showQueueTab: playbackState.isQueueActive,
         onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
-        onCancelAutoHide: () => _hideTimer?.cancel(),
+        onCancelAutoHide: widget.chromeController.cancelAutoHide,
         onStartAutoHide: _startHideTimer,
         onSeekCompleted: widget.onSeekCompleted,
         onContentStripVisibilityChanged: (visible) {
-          _setControlsState(() => _isContentStripVisible = visible);
-          if (visible) {
-            _hideTimer?.cancel();
-          } else {
-            _restartHideTimerIfPlaying();
-          }
+          widget.chromeController.setContentStripVisible(visible);
         },
       ),
     );
@@ -80,7 +76,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     if (serverId == null) return;
 
     try {
-      final client = context.getPlexClientForServer(serverId);
+      final client = context.getPlexClientForServer(ServerId(serverId));
       final token = client.config.token;
       if (token == null) return;
 
@@ -125,7 +121,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
 
       await widget.player.addSubtitleTrack(
         uri: newUrl,
-        title: newTrack.displayTitle ?? newTrack.language ?? 'Downloaded',
+        title: newTrack.displayTitle ?? newTrack.language ?? t.videoControls.downloadedSubtitle,
         language: newTrack.languageCode,
         select: true,
       );
@@ -187,7 +183,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         if (serverId == null || partId == null || effectiveSubtitleStreamId == null) {
           throw StateError('No Plex part available for subtitle stream selection');
         }
-        final client = context.getPlexClientForServer(serverId);
+        final client = context.getPlexClientForServer(ServerId(serverId));
         final saved = await client.selectStreams(partId, subtitleStreamID: effectiveSubtitleStreamId, allParts: true);
         if (!saved) {
           throw StateError('Failed to select subtitle stream');

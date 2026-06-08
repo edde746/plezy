@@ -1,5 +1,6 @@
 package com.amaze.vibestream
 
+import android.app.Activity
 import android.app.ActivityManager
 import android.app.AppOpsManager
 import android.app.PictureInPictureParams
@@ -13,6 +14,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.util.Rational
 import android.view.InputDevice
@@ -42,6 +44,31 @@ class MainActivity : FlutterActivity() {
   companion object {
     private const val TAG = "MainActivity"
     private const val TEXT_INPUT_DIAGNOSTICS_ENABLED = false
+    private const val EXTERNAL_PLAYER_REQUEST_CODE = 7461
+
+    // External player result APIs used by Jellyfin Android TV.
+    private const val API_MX_RETURN_RESULT = "return_result"
+    private const val API_MX_RESULT_ID = "com.mxtech.intent.result.VIEW"
+    private const val API_MX_RESULT_POSITION = "position"
+    private const val API_MX_RESULT_DURATION = "duration"
+    private const val API_MX_RESULT_END_BY = "end_by"
+    private const val API_MX_RESULT_END_BY_PLAYBACK_COMPLETION = "playback_completion"
+    private const val API_MX_TITLE = "title"
+    private const val API_MX_FILENAME = "filename"
+    private const val API_MX_SECURE_URI = "secure_uri"
+    private const val API_VLC_RESULT_POSITION = "extra_position"
+    private const val API_VLC_RESULT_DURATION = "extra_duration"
+
+    private const val API_VIMU_TITLE = "forcename"
+    private const val API_VIMU_SEEK_POSITION = "startfrom"
+    private const val API_VIMU_RESUME = "forceresume"
+    private const val API_VIMU_RESULT_ID = "net.gtvbox.videoplayer.result"
+    private const val API_VIMU_RESULT_ERROR = 4
+    private const val API_VIMU_RESULT_PLAYBACK_COMPLETED = 1
+
+    private val externalPlayerPositionExtras = arrayOf(API_MX_RESULT_POSITION, API_VLC_RESULT_POSITION)
+    private val externalPlayerDurationExtras = arrayOf(API_MX_RESULT_DURATION, API_VLC_RESULT_DURATION)
+
     var usingSkia = false
   }
 
@@ -54,6 +81,7 @@ class MainActivity : FlutterActivity() {
   private val APP_FOREGROUND_CHANNEL = "com.plezy/app_foreground"
   private var watchNextPlugin: WatchNextPlugin? = null
   private var nativeTextInputFocused = false
+  private var pendingExternalPlayerResult: MethodChannel.Result? = null
 
   private inline fun logTextInputDiag(message: () -> String) {
     if (TEXT_INPUT_DIAGNOSTICS_ENABLED) {
@@ -162,6 +190,17 @@ class MainActivity : FlutterActivity() {
     )
   }
 
+  /** User-assigned device name (Settings > About > Device name), or null. */
+  private fun getDeviceName(): String? {
+    // The name the user gave the device; also used by Cast/Nearby.
+    val name = Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
+    if (!name.isNullOrBlank()) return name
+    // Fallback: the Bluetooth name usually mirrors the device name. Reading the
+    // settings string needs no BLUETOOTH permission (unlike BluetoothAdapter).
+    val bt = Settings.Secure.getString(contentResolver, "bluetooth_name")
+    return if (!bt.isNullOrBlank()) bt else null
+  }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     // Apply persisted theme color to the window background before anything
     // else renders.  This prevents a white flash between the native splash
@@ -248,6 +287,67 @@ class MainActivity : FlutterActivity() {
       }
     }
     return handled
+  }
+
+  override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    if (requestCode == EXTERNAL_PLAYER_REQUEST_CODE) {
+      val pendingResult = pendingExternalPlayerResult
+      pendingExternalPlayerResult = null
+      if (pendingResult == null) {
+        Log.w(TAG, "External player result received without a pending channel result")
+      } else {
+        pendingResult.success(buildExternalPlayerResult(resultCode, data))
+      }
+      return
+    }
+
+    super.onActivityResult(requestCode, resultCode, data)
+  }
+
+  private fun buildExternalPlayerResult(resultCode: Int, data: Intent?): Map<String, Any?> {
+    val extras = data?.extras
+    val endPosition = firstNumberExtra(extras, externalPlayerPositionExtras)
+    val duration = firstNumberExtra(extras, externalPlayerDurationExtras)
+    val action = data?.action
+    val playbackCompleted = when (action) {
+      API_MX_RESULT_ID -> extras?.getString(API_MX_RESULT_END_BY) == API_MX_RESULT_END_BY_PLAYBACK_COMPLETION
+      API_VIMU_RESULT_ID -> resultCode == API_VIMU_RESULT_PLAYBACK_COMPLETED
+      else -> false
+    }
+    val playbackError = when (action) {
+      API_VIMU_RESULT_ID -> resultCode == API_VIMU_RESULT_ERROR
+      else -> false
+    }
+
+    return mapOf(
+      "launched" to true,
+      "resultCode" to resultCode,
+      "resultOk" to (resultCode == Activity.RESULT_OK),
+      "action" to action,
+      "positionMs" to endPosition,
+      "durationMs" to duration,
+      "playbackCompleted" to playbackCompleted,
+      "playbackError" to playbackError
+    )
+  }
+
+  private fun firstNumberExtra(extras: Bundle?, keys: Array<String>): Long? {
+    if (extras == null) return null
+    for (key in keys) {
+      @Suppress("DEPRECATION")
+      val value = extras.get(key)
+      when (value) {
+        is Number -> return value.toLong()
+        is String -> value.toLongOrNull()?.let { return it }
+      }
+    }
+    return null
+  }
+
+  override fun onDestroy() {
+    pendingExternalPlayerResult?.error("ACTIVITY_DESTROYED", "Activity was destroyed while external player was active", null)
+    pendingExternalPlayerResult = null
+    super.onDestroy()
   }
 
   private fun handleWatchNextIntent(intent: Intent?) {
@@ -339,6 +439,7 @@ class MainActivity : FlutterActivity() {
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "getTvDetection" -> result.success(getAndroidTvDetection())
+        "getDeviceName" -> result.success(getDeviceName())
         else -> result.notImplemented()
       }
     }
@@ -382,43 +483,68 @@ class MainActivity : FlutterActivity() {
         "openVideo" -> {
           val filePath = call.argument<String>("filePath")
           val packageName = call.argument<String>("package")
+          val title = call.argument<String>("title")?.trim()?.takeIf { it.isNotEmpty() }
+          val startPositionMs = call.argument<Number>("startPositionMs")?.toLong() ?: 0L
 
           if (filePath == null) {
             result.error("INVALID_ARGUMENT", "filePath is required", null)
             return@setMethodCallHandler
           }
 
+          if (pendingExternalPlayerResult != null) {
+            result.error("ALREADY_ACTIVE", "An external player is already active", null)
+            return@setMethodCallHandler
+          }
+
           try {
             val uri: Uri
             val grantRead: Boolean
+            val fileName: String?
 
             if (filePath.startsWith("http://") || filePath.startsWith("https://")) {
               uri = Uri.parse(filePath)
               grantRead = false
+              fileName = uri.lastPathSegment
             } else if (filePath.startsWith("content://")) {
               uri = Uri.parse(filePath)
               grantRead = true
+              fileName = uri.lastPathSegment
             } else {
               val path = if (filePath.startsWith("file://")) filePath.removePrefix("file://") else filePath
+              fileName = File(path).name
               uri = FileProvider.getUriForFile(this, "com.amaze.vibestream.fileprovider", File(path))
               grantRead = true
             }
 
             val intent = Intent(Intent.ACTION_VIEW).apply {
               setDataAndType(uri, "video/*")
-              addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
               if (grantRead) {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
               }
               if (packageName != null) {
                 setPackage(packageName)
               }
+              val startPosition = startPositionMs.coerceAtLeast(0).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+              if (startPosition > 0) {
+                putExtra(API_MX_RESULT_POSITION, startPosition)
+                putExtra(API_VIMU_SEEK_POSITION, startPosition)
+              }
+              putExtra(API_MX_RETURN_RESULT, true)
+              putExtra(API_MX_SECURE_URI, true)
+              putExtra(API_VIMU_RESUME, false)
+              title?.let {
+                putExtra(API_MX_TITLE, it)
+                putExtra(API_VIMU_TITLE, it)
+              }
+              fileName?.let { putExtra(API_MX_FILENAME, it) }
             }
-            startActivity(intent)
-            result.success(true)
+            pendingExternalPlayerResult = result
+            startActivityForResult(intent, EXTERNAL_PLAYER_REQUEST_CODE)
           } catch (e: android.content.ActivityNotFoundException) {
+            pendingExternalPlayerResult = null
             result.error("APP_NOT_FOUND", "No app found for package: $packageName", null)
           } catch (e: Exception) {
+            pendingExternalPlayerResult = null
             result.error("LAUNCH_FAILED", e.message ?: e.javaClass.simpleName, null)
           }
         }

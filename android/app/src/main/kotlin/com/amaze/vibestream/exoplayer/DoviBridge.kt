@@ -1,17 +1,62 @@
 package com.amaze.vibestream.exoplayer
 
+import android.content.Context
 import android.media.MediaCodecInfo
 import android.media.MediaCodecList
 import android.os.Build
 import android.util.Log
+import android.view.Display
+import android.view.WindowManager
 
 enum class DvConversionMode { DISABLED, DV81, HEVC_STRIP }
 
 object DoviBridge {
   private const val TAG = "DoviBridge"
 
+  data class DvAutoDecision(
+    val mode: DvConversionMode,
+    val reason: String,
+    val bridgeReady: Boolean,
+    val displayDv: Boolean,
+    val nativeDecoder: Boolean,
+    val advertisedP7: Boolean,
+    val advertisedP8: Boolean,
+    val decoders: String,
+    val displayHdr: String
+  ) {
+    fun logMessage(): String = "AUTO P7 DV decision: mode=$mode; reason=$reason; bridgeReady=$bridgeReady, " +
+      "displayDV=$displayDv, nativeDecoder=$nativeDecoder, advertisedP7=$advertisedP7, " +
+      "advertisedP8=$advertisedP8, decoders=$decoders, displayHdr=$displayHdr"
+  }
+
+  data class Dv7FallbackDecision(
+    val mode: DvConversionMode,
+    val reason: String,
+    val bridgeReady: Boolean,
+    val displayDv: Boolean,
+    val advertisedP8: Boolean,
+    val displayHdr: String
+  ) {
+    fun logMessage(): String = "DV7 fallback decision: mode=$mode; reason=$reason; bridgeReady=$bridgeReady, " +
+      "displayDV=$displayDv, advertisedP8=$advertisedP8, displayHdr=$displayHdr"
+  }
+
+  private val DOLBY_VISION_MIME_TYPES = setOf(
+    "video/dolby-vision",
+    "video/hevcdv",
+    "video/dv_hevc"
+  )
+
   const val CONVERT_FAILED = -1
   const val DESTINATION_TOO_SMALL = -2
+
+  private data class DvProfileLevel(val profile: Int, val level: Int)
+
+  private data class DvDecoderCapability(
+    val name: String,
+    val mimeType: String,
+    val profileLevels: List<DvProfileLevel>
+  )
 
   private val nativeLoaded: Boolean by lazy {
     try {
@@ -29,45 +74,252 @@ object DoviBridge {
 
   fun isAvailable(): Boolean = conversionPathReady
 
-  private fun deviceSupportsDvProfile(profile: Int, minApi: Int = 0): Boolean {
+  private val dolbyVisionDecoders: List<DvDecoderCapability> by lazy {
     try {
-      if (Build.VERSION.SDK_INT < minApi) return false
       val codecList = MediaCodecList(MediaCodecList.REGULAR_CODECS)
-      return codecList.codecInfos.any { info ->
-        !info.isEncoder &&
-          info.supportedTypes.any { type ->
-            type.equals("video/dolby-vision", ignoreCase = true) &&
-              info.getCapabilitiesForType(type).profileLevels.any { it.profile == profile }
+      codecList.codecInfos.flatMap { info ->
+        if (info.isEncoder) {
+          emptyList()
+        } else {
+          info.supportedTypes.mapNotNull { type ->
+            if (!DOLBY_VISION_MIME_TYPES.contains(type.lowercase())) return@mapNotNull null
+            val capabilities = runCatching { info.getCapabilitiesForType(type) }
+              .onFailure { Log.w(TAG, "Failed to query ${info.name} capabilities for $type", it) }
+              .getOrNull()
+              ?: return@mapNotNull null
+            DvDecoderCapability(
+              name = info.name,
+              mimeType = type,
+              profileLevels = capabilities.profileLevels.map { DvProfileLevel(it.profile, it.level) }
+            )
           }
+        }
       }
     } catch (e: Exception) {
-      Log.w(TAG, "Failed to query DV profile $profile support", e)
-      return false
+      Log.w(TAG, "Failed to query native Dolby Vision decoder support", e)
+      emptyList()
+    }
+  }
+
+  val hasNativeDolbyVisionDecoder: Boolean by lazy {
+    dolbyVisionDecoders.isNotEmpty().also {
+      Log.i(TAG, "Native Dolby Vision decoder available: $it; decoders=${describeDolbyVisionDecoders()}")
+    }
+  }
+
+  private fun deviceAdvertisesDvProfile(profile: Int, minApi: Int = 0): Boolean {
+    if (Build.VERSION.SDK_INT < minApi) return false
+    return dolbyVisionDecoders.any { decoder ->
+      decoder.profileLevels.any { it.profile == profile }
     }
   }
 
   val deviceSupportsDvProfile7: Boolean by lazy {
-    deviceSupportsDvProfile(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheDtr)
-      .also { Log.i(TAG, "Device DV Profile 7 support: $it") }
+    deviceAdvertisesDvProfile(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheDtb)
+      .also { Log.i(TAG, "Device advertises exact DV Profile 7 (DvheDtb): $it") }
   }
 
   val deviceSupportsDvProfile8: Boolean by lazy {
-    deviceSupportsDvProfile(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheSt, minApi = 27)
-      .also { Log.i(TAG, "Device DV Profile 8 support: $it") }
+    deviceAdvertisesDvProfile(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheSt, minApi = 27)
+      .also { Log.i(TAG, "Device advertises DV Profile 8 (DvheSt): $it") }
   }
 
-  fun getConversionMode(): DvConversionMode = when {
-    !isAvailable() -> DvConversionMode.DISABLED
-    deviceSupportsDvProfile7 -> DvConversionMode.DISABLED // try native first; ExoPlayerCore retries with conversion on failure
-    deviceSupportsDvProfile8 -> DvConversionMode.DV81
-    else -> DvConversionMode.HEVC_STRIP
+  fun displaySupportsDolbyVision(context: Context): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+      Log.i(TAG, "Display Dolby Vision support: false (HDR capabilities require API 24, device API=${Build.VERSION.SDK_INT})")
+      return false
+    }
+
+    val display = getCurrentDisplay(context)
+    if (display == null) {
+      Log.i(TAG, "Display Dolby Vision support: false (no active display)")
+      return false
+    }
+
+    val hdrTypes = runCatching { getDisplayHdrTypes(display) }.getOrElse { error ->
+      Log.w(TAG, "Display Dolby Vision support: false (failed to query HDR types)", error)
+      return false
+    }
+    val supported = hdrTypes.contains(Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION)
+    Log.i(TAG, "Display Dolby Vision support: $supported; ${describeDisplayHdrCapabilities(display)}")
+    return supported
   }
+
+  fun describeDisplayHdrCapabilities(context: Context): String {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return "HDR capabilities unavailable (API=${Build.VERSION.SDK_INT})"
+    val display = getCurrentDisplay(context) ?: return "HDR capabilities unavailable (no active display)"
+    return describeDisplayHdrCapabilities(display)
+  }
+
+  fun logSupportSummary(context: Context) {
+    Log.i(
+      TAG,
+      "DV support summary: bridgeReady=${isAvailable()}, displayDV=${displaySupportsDolbyVision(context)}, " +
+        "nativeDecoder=$hasNativeDolbyVisionDecoder, advertisedP7=$deviceSupportsDvProfile7, " +
+        "advertisedP8=$deviceSupportsDvProfile8, decoders=${describeDolbyVisionDecoders()}, " +
+        "displayHdr=${describeDisplayHdrCapabilities(context)}"
+    )
+  }
+
+  fun getConversionDecision(context: Context): DvAutoDecision {
+    val bridgeReady = isAvailable()
+    val displayDv = displaySupportsDolbyVision(context)
+    val nativeDecoder = hasNativeDolbyVisionDecoder
+    val advertisedP7 = deviceSupportsDvProfile7
+    val advertisedP8 = deviceSupportsDvProfile8
+
+    val mode = when {
+      !displayDv -> DvConversionMode.HEVC_STRIP
+      advertisedP7 -> DvConversionMode.DISABLED
+      advertisedP8 && bridgeReady -> DvConversionMode.DV81
+      else -> DvConversionMode.HEVC_STRIP
+    }
+    val reason = when {
+      !displayDv -> "active display does not support Dolby Vision; stripping DV metadata for HEVC fallback"
+      advertisedP7 -> "active display supports Dolby Vision and decoder advertises exact Profile 7; trying native DV first"
+      advertisedP8 && bridgeReady -> "active display supports Dolby Vision and decoder advertises Profile 8; converting to Profile 8.1"
+      !bridgeReady -> "conversion bridge unavailable; stripping DV metadata for HEVC fallback"
+      else -> "Dolby Vision output path is unavailable; stripping DV metadata for HEVC fallback"
+    }
+    val decision = DvAutoDecision(
+      mode = mode,
+      reason = reason,
+      bridgeReady = bridgeReady,
+      displayDv = displayDv,
+      nativeDecoder = nativeDecoder,
+      advertisedP7 = advertisedP7,
+      advertisedP8 = advertisedP8,
+      decoders = describeDolbyVisionDecoders(),
+      displayHdr = describeDisplayHdrCapabilities(context)
+    )
+    Log.i(TAG, decision.logMessage())
+    return decision
+  }
+
+  fun getConversionMode(context: Context): DvConversionMode = getConversionDecision(context).mode
 
   /** Get the fallback mode when native DV7 decoding fails. */
-  fun getDv7FallbackMode(): DvConversionMode = when {
-    deviceSupportsDvProfile8 -> DvConversionMode.DV81
-    else -> DvConversionMode.HEVC_STRIP
+  fun getDv7FallbackDecision(context: Context): Dv7FallbackDecision {
+    val bridgeReady = isAvailable()
+    val displayDv = displaySupportsDolbyVision(context)
+    val advertisedP8 = deviceSupportsDvProfile8
+    val mode = if (displayDv && advertisedP8 && bridgeReady) DvConversionMode.DV81 else DvConversionMode.HEVC_STRIP
+    val reason = when {
+      mode == DvConversionMode.DV81 -> "display supports Dolby Vision and decoder advertises Profile 8"
+      !bridgeReady -> "conversion bridge unavailable; stripping DV metadata for HEVC fallback"
+      else -> "Dolby Vision output or Profile 8 support is unavailable"
+    }
+    val decision = Dv7FallbackDecision(
+      mode = mode,
+      reason = reason,
+      bridgeReady = bridgeReady,
+      displayDv = displayDv,
+      advertisedP8 = advertisedP8,
+      displayHdr = describeDisplayHdrCapabilities(context)
+    )
+    Log.i(TAG, decision.logMessage())
+    return decision
   }
+
+  fun getDv7FallbackMode(context: Context): DvConversionMode = getDv7FallbackDecision(context).mode
+
+  private fun getCurrentDisplay(context: Context): Display? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+    context.display
+  } else {
+    @Suppress("DEPRECATION")
+    (context.getSystemService(Context.WINDOW_SERVICE) as? WindowManager)?.defaultDisplay
+  }
+
+  private fun describeDolbyVisionDecoders(): String {
+    if (dolbyVisionDecoders.isEmpty()) return "none"
+    return dolbyVisionDecoders.joinToString { decoder ->
+      val profiles = if (decoder.profileLevels.isEmpty()) {
+        "none"
+      } else {
+        decoder.profileLevels.joinToString(prefix = "[", postfix = "]") {
+          "${describeDvProfile(it.profile)}/${describeDvLevel(it.level)}"
+        }
+      }
+      "${decoder.name}(${decoder.mimeType}, profiles=$profiles)"
+    }
+  }
+
+  private fun describeHdrTypes(hdrTypes: IntArray): String {
+    if (hdrTypes.isEmpty()) return "none"
+    return hdrTypes.joinToString(prefix = "[", postfix = "]") { type ->
+      when (type) {
+        Display.HdrCapabilities.HDR_TYPE_DOLBY_VISION -> "DOLBY_VISION"
+        Display.HdrCapabilities.HDR_TYPE_HDR10 -> "HDR10"
+        Display.HdrCapabilities.HDR_TYPE_HLG -> "HLG"
+        Display.HdrCapabilities.HDR_TYPE_HDR10_PLUS -> "HDR10_PLUS"
+        else -> "unknown(${hex(type)})"
+      }
+    }
+  }
+
+  private fun describeDisplayHdrCapabilities(display: Display): String {
+    val hdrCapabilities = display.hdrCapabilities
+    val parts = mutableListOf(
+      "display=${display.displayId}:${display.name}",
+      "activeMode=${describeDisplayMode(display.mode)}",
+      "hdrCapabilities=${describeHdrTypes(hdrCapabilities.supportedHdrTypes)}",
+      "desiredLuminance=max=${formatLuminance(hdrCapabilities.desiredMaxLuminance)}, " +
+        "maxAvg=${formatLuminance(hdrCapabilities.desiredMaxAverageLuminance)}, " +
+        "min=${formatLuminance(hdrCapabilities.desiredMinLuminance)}"
+    )
+    parts += "supportedModes=${display.supportedModes.joinToString(prefix = "[", postfix = "]") { describeDisplayMode(it) }}"
+    return parts.joinToString(prefix = "{", postfix = "}")
+  }
+
+  private fun getDisplayHdrTypes(display: Display): IntArray = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+    display.mode.supportedHdrTypes
+  } else {
+    @Suppress("DEPRECATION")
+    display.hdrCapabilities.supportedHdrTypes
+  }
+
+  private fun describeDisplayMode(mode: Display.Mode): String {
+    val hdr = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+      ", hdr=${describeHdrTypes(mode.supportedHdrTypes)}"
+    } else {
+      ""
+    }
+    return "#${mode.modeId} ${mode.physicalWidth}x${mode.physicalHeight}@${mode.refreshRate}Hz$hdr"
+  }
+
+  private fun formatLuminance(value: Float): String = if (value.isNaN() || value <= 0f) "unknown" else "${value}nits"
+
+  private fun describeDvProfile(profile: Int): String = when (profile) {
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvavPer -> "P0/DvavPer"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvavPen -> "P1/DvavPen"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheDer -> "P2/DvheDer"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheDen -> "P3/DvheDen"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheDtr -> "P4/DvheDtr"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheStn -> "P5/DvheStn"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheDth -> "P6/DvheDth"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheDtb -> "P7/DvheDtb"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheSt -> "P8/DvheSt"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvavSe -> "P9/DvavSe"
+    else -> "unknown(${hex(profile)})"
+  }
+
+  private fun describeDvLevel(level: Int): String = when (level) {
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionLevelHd24 -> "L1/Hd24"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionLevelHd30 -> "L2/Hd30"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionLevelFhd24 -> "L3/Fhd24"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionLevelFhd30 -> "L4/Fhd30"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionLevelFhd60 -> "L5/Fhd60"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionLevelUhd24 -> "L6/Uhd24"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionLevelUhd30 -> "L7/Uhd30"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionLevelUhd48 -> "L8/Uhd48"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionLevelUhd60 -> "L9/Uhd60"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionLevelUhd120 -> "L10/Uhd120"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionLevel8k30 -> "L11/8k30"
+    MediaCodecInfo.CodecProfileLevel.DolbyVisionLevel8k60 -> "L12/8k60"
+    else -> "unknown(${hex(level)})"
+  }
+
+  private fun hex(value: Int): String = "0x${value.toString(16)}"
 
   fun convertRpuNalu(
     payload: ByteArray,

@@ -1,6 +1,8 @@
 import 'dart:async';
+import '../media/ids.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import '../i18n/strings.g.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
@@ -16,12 +18,12 @@ import '../services/download_artwork_service.dart';
 import '../services/download_storage_service.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_mode_source.dart';
-import '../services/storage_service.dart';
+import '../services/watch_state_resolver.dart';
 import '../media/media_server_client.dart';
 import '../services/sync_rule_executor.dart';
 import '../utils/app_logger.dart';
 import '../utils/deletion_notifier.dart';
-import '../utils/episode_collection.dart';
+import '../media/episode_collection.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/watch_state_notifier.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
@@ -39,7 +41,7 @@ class DownloadedArtwork {
   const DownloadedArtwork({this.thumbPath});
 
   /// Get the local file path for this artwork
-  String? getLocalPath(DownloadStorageService storage, String serverId) {
+  String? getLocalPath(DownloadStorageService storage, ServerId serverId) {
     if (thumbPath == null) return null;
     return DownloadArtworkService.localPathSync(storage, serverId, thumbPath);
   }
@@ -81,10 +83,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   // Track items currently being deleted with progress
   final Map<String, DeletionProgress> _deletionProgress = {};
 
-  // Track total episode counts for shows/seasons (for partial download detection)
-  // Key: globalKey (serverId:ratingKey), Value: total episode count
-  final Map<String, int> _totalEpisodeCounts = {};
-
   // Persistent sync rules keyed by profile-scoped globalKey
   // (profileId|serverId:ratingKey). Downloads remain public/shared.
   final Map<String, SyncRuleItem> _syncRules = {};
@@ -110,7 +108,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   /// Test-only constructor that skips the heavy initial load (artwork dir,
-  /// pinned-metadata bulk fetch, episode counts). Only sync rules are loaded
+  /// pinned-metadata bulk fetch). Only sync rules are loaded
   /// from the database. Use this in tests that exercise the provider's public
   /// database-backed API without mocking [DownloadStorageService],
   /// or path_provider.
@@ -127,12 +125,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   /// Inject the offline-mode source so queueing paths can short-circuit when
-  /// the device has no Plex connectivity. Propagates to the download manager
-  /// and the sync-rule executor so background paths see the same flag.
+  /// the device has no Plex connectivity. Sync-rule execution receives a
+  /// snapshot of this state when invoked, keeping this provider as the owner.
   void setOfflineSource(OfflineModeSource? source) {
     _offlineSource = source;
     _downloadManager.setOfflineSource(source);
-    _syncRuleExecutor.setOfflineSource(source);
   }
 
   /// Ensures persisted downloads have been loaded from disk.
@@ -224,7 +221,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _downloads.remove(globalKey);
       _metadata.remove(globalKey);
       _artworkPaths.remove(globalKey);
-      _totalEpisodeCounts.remove(globalKey);
       if (meta != null) {
         DeletionNotifier().notifyDeletedItem(item: meta, isDownloadOnly: true);
       }
@@ -247,7 +243,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     Map<String, DownloadProgress>? downloads,
     Map<String, MediaItem>? metadata,
     Map<String, DownloadedArtwork>? artwork,
-    Map<String, int>? episodeCounts,
     Set<String>? queueing,
     Map<String, DeletionProgress>? deletionProgress,
     Set<String>? ownedDownloadKeys,
@@ -255,7 +250,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (downloads != null) _downloads.addAll(downloads);
     if (metadata != null) _metadata.addAll(metadata);
     if (artwork != null) _artworkPaths.addAll(artwork);
-    if (episodeCounts != null) _totalEpisodeCounts.addAll(episodeCounts);
     if (queueing != null) _queueing.addAll(queueing);
     if (deletionProgress != null) _deletionProgress.addAll(deletionProgress);
     if (ownedDownloadKeys != null) {
@@ -264,10 +258,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _ownedDownloadKeys.addAll(downloads.keys);
     }
   }
-
-  /// Test-only inspector for `_totalEpisodeCounts` (no public getter today).
-  @visibleForTesting
-  int? totalEpisodeCountFor(String globalKey) => _totalEpisodeCounts[globalKey];
 
   /// Load all persisted downloads and metadata from the database/cache
   Future<void> _loadPersistedDownloads() async {
@@ -280,7 +270,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _downloads.clear();
       _artworkPaths.clear();
       _metadata.clear();
-      _totalEpisodeCounts.clear();
       _queueing.clear();
       _deletionProgress.clear();
       _ownedDownloadKeys.clear();
@@ -314,7 +303,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         // The fallback dispatches by backend.
         final cached =
             allMetadata[item.globalKey] ??
-            await _downloadManager.lookupMetadata(item.serverId, item.ratingKey, preferActiveScope: true);
+            await _downloadManager.lookupMetadata(ServerId(item.serverId), item.ratingKey, preferActiveScope: true);
         if (cached != null) {
           _metadata[item.globalKey] = cached;
 
@@ -323,14 +312,12 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
             _loadParentMetadataFromMap(
               cached,
               allMetadata,
-              clientScopeId: _downloadManager.activeClientScopeIdForServer(item.serverId) ?? item.clientScopeId,
+              clientScopeId:
+                  _downloadManager.activeClientScopeIdForServer(ServerId(item.serverId)) ?? item.clientScopeId,
             );
           }
         }
       }
-
-      // Load total episode counts from StorageService
-      await _loadTotalEpisodeCounts();
 
       // Load sync rules from database
       await _loadProfileScopedState();
@@ -342,7 +329,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
       appLogger.i(
         'Loaded ${_downloads.length} downloads, ${_metadata.length} metadata entries, '
-        '${_totalEpisodeCounts.length} episode counts, and ${_syncRules.length} sync rules',
+        'and ${_syncRules.length} sync rules',
       );
       safeNotifyListeners();
     } catch (e) {
@@ -361,7 +348,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         scopes[key] = await _offlineWatchScopeForGlobalKey(key);
       }
       final profileId = _activeProfileId;
-      final actions = await _database.getLatestWatchActionsForKeys(
+      final actions = await _database.getWatchActionsForKeys(
         keys,
         profileId: profileId,
         filterProfile: profileId != null,
@@ -371,21 +358,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       for (final entry in actions.entries) {
         final base = _metadata[entry.key];
         if (base == null) continue;
-        final action = entry.value;
-        bool? isWatched;
-        switch (action.actionType) {
-          case 'watched':
-            isWatched = true;
-          case 'unwatched':
-            isWatched = false;
-          case 'progress':
-            isWatched = action.shouldMarkWatched;
-        }
-        if (isWatched == null) continue;
-        _metadata[entry.key] = base.copyWith(
-          viewCount: isWatched ? 1 : 0,
-          viewOffsetMs: isWatched ? base.viewOffsetMs : 0,
-        );
+        final snapshot = WatchStateResolver.fromActions(entry.value);
+        if (snapshot.isEmpty) continue;
+        _metadata[entry.key] = snapshot.apply(base);
       }
     } catch (e) {
       appLogger.w('Failed to apply offline watch overlay', error: e);
@@ -402,30 +377,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return downloadedScope == null || downloadedScope.isEmpty ? null : downloadedScope;
   }
 
-  /// Load total episode counts from StorageService
-  Future<void> _loadTotalEpisodeCounts() async {
-    try {
-      final storage = await StorageService.getInstance();
-      final counts = storage.loadAllEpisodeCounts();
-      _totalEpisodeCounts.addAll(counts);
-
-      appLogger.i('Loaded ${_totalEpisodeCounts.length} episode counts from StorageService');
-    } catch (e) {
-      appLogger.w('Failed to load episode counts', error: e);
-    }
-  }
-
-  /// Persist total episode count to StorageService
-  Future<void> _persistTotalEpisodeCount(String globalKey, int count) async {
-    try {
-      final storage = await StorageService.getInstance();
-      await storage.saveTotalEpisodeCount(globalKey, count);
-      appLogger.d('Persisted episode count for $globalKey: $count');
-    } catch (e) {
-      appLogger.w('Failed to persist episode count for $globalKey', error: e);
-    }
-  }
-
   /// Load parent (show and season) metadata from a pre-loaded map (no DB I/O).
   /// Used during bulk initialization to avoid per-item DB queries.
   void _loadParentMetadataFromMap(MediaItem episode, Map<String, MediaItem> allMetadata, {String? clientScopeId}) {
@@ -434,16 +385,16 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
     MediaItem? lookupParent(String ratingKey) {
       if (clientScopeId != null && clientScopeId.isNotEmpty) {
-        final scoped = allMetadata[buildGlobalKey(clientScopeId, ratingKey)];
+        final scoped = allMetadata[buildGlobalKey(ServerId(clientScopeId), ratingKey)];
         if (scoped != null) return scoped;
       }
-      return allMetadata[buildGlobalKey(serverId, ratingKey)];
+      return allMetadata[buildGlobalKey(ServerId(serverId), ratingKey)];
     }
 
     // Load show metadata
     final showRatingKey = episode.grandparentId;
     if (showRatingKey != null) {
-      final showGlobalKey = buildGlobalKey(serverId, showRatingKey);
+      final showGlobalKey = buildGlobalKey(ServerId(serverId), showRatingKey);
       if (!_metadata.containsKey(showGlobalKey)) {
         final showMetadata = lookupParent(showRatingKey);
         if (showMetadata != null) {
@@ -458,7 +409,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // Load season metadata
     final seasonRatingKey = episode.parentId;
     if (seasonRatingKey != null) {
-      final seasonGlobalKey = buildGlobalKey(serverId, seasonRatingKey);
+      final seasonGlobalKey = buildGlobalKey(ServerId(serverId), seasonRatingKey);
       if (!_metadata.containsKey(seasonGlobalKey)) {
         final seasonMetadata = lookupParent(seasonRatingKey);
         if (seasonMetadata != null) {
@@ -494,26 +445,41 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   void _onWatchStateChanged(WatchStateEvent event) {
-    // Progress ticks fire continuously during playback; only react to discrete
-    // watched/unwatched flips so we don't churn listeners on every frame.
-    if (event.changeType == WatchStateChangeType.progressUpdate) return;
-    if (event.isNowWatched == null) return;
+    final snapshot = WatchStateResolver.fromEvent(event);
+    if (snapshot.isEmpty) return;
 
-    final globalKey = buildGlobalKey(event.serverId, event.itemId);
+    final globalKey = buildGlobalKey(ServerId(event.serverId), event.itemId);
     final base = _metadata[globalKey];
     if (base == null) return;
+    final eventScope = event.cacheServerId;
+    final activeScope = _downloadManager.activeClientScopeIdForServer(ServerId(event.serverId));
+    if (eventScope != null && eventScope.isNotEmpty && eventScope != event.serverId && eventScope != activeScope) {
+      return;
+    }
 
-    final isWatched = event.isNowWatched!;
-    _metadata[globalKey] = base.copyWith(viewCount: isWatched ? 1 : 0, viewOffsetMs: isWatched ? base.viewOffsetMs : 0);
+    _metadata[globalKey] = snapshot.apply(base);
+
+    final isWatched = snapshot.isWatched;
+    // Sub-threshold progress ticks are frequent; offline reloads re-apply them
+    // from queued watch actions, so only durable watch flips hit the cache here.
+    final shouldPersistToCache =
+        isWatched != null && (event.changeType != WatchStateChangeType.progressUpdate || event.isNowWatched == true);
+
     // Persist into the per-backend pinned cache so the patch survives reloads
     // (`_loadPersistedDownloads` rehydrates `_metadata` from the cache).
-    unawaited(
-      ApiCache.forBackend(base.backend)
-          .applyWatchState(serverId: event.cacheServerId ?? event.serverId, itemId: event.itemId, isWatched: isWatched)
-          .catchError((Object e) {
-            appLogger.w('Failed to apply watch state to cache for $globalKey', error: e);
-          }),
-    );
+    if (shouldPersistToCache) {
+      unawaited(
+        ApiCache.forBackend(base.backend)
+            .applyWatchState(
+              serverId: ServerId(event.cacheServerId ?? event.serverId),
+              itemId: event.itemId,
+              isWatched: isWatched,
+            )
+            .catchError((Object e) {
+              appLogger.w('Failed to apply watch state to cache for $globalKey', error: e);
+            }),
+      );
+    }
     safeNotifyListeners();
   }
 
@@ -543,7 +509,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         final showRatingKey = meta.grandparentId;
         if (showRatingKey != null && !shows.containsKey(showRatingKey)) {
           // Try to get stored show metadata first
-          final showGlobalKey = buildGlobalKey(meta.serverId!, showRatingKey);
+          final showGlobalKey = buildGlobalKey(ServerId(meta.serverId!), showRatingKey);
           final storedShow = _metadata[showGlobalKey];
 
           if (storedShow != null && storedShow.isShow) {
@@ -562,7 +528,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
               id: showRatingKey,
               backend: meta.backend,
               kind: MediaKind.show,
-              title: meta.grandparentTitle ?? 'Unknown Show',
+              title: meta.grandparentTitle ?? t.common.unknown,
               thumbPath: meta.grandparentThumbPath,
               artPath: meta.grandparentArtPath,
               serverId: meta.serverId,
@@ -596,7 +562,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Get local file path for any artwork type (thumb, art, clearLogo, etc.)
   /// Returns null if artwork directory isn't initialized or artworkPath is null
-  String? getArtworkLocalPath(String serverId, String? artworkPath) {
+  String? getArtworkLocalPath(ServerId serverId, String? artworkPath) {
     if (artworkPath == null) return null;
     return DownloadArtworkService.localPathSync(DownloadStorageService.instance, serverId, artworkPath);
   }
@@ -631,7 +597,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Calculate aggregate progress for a show (based on all its episodes)
   /// Returns synthetic DownloadProgress with aggregated values
-  DownloadProgress? getAggregateProgressForShow(String serverId, String showRatingKey) {
+  DownloadProgress? getAggregateProgressForShow(ServerId serverId, String showRatingKey) {
     return _calculateAggregateProgress(
       serverId: serverId,
       ratingKey: showRatingKey,
@@ -642,7 +608,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Calculate aggregate progress for a season (based on all its episodes)
   /// Returns synthetic DownloadProgress with aggregated values
-  DownloadProgress? getAggregateProgressForSeason(String serverId, String seasonRatingKey) {
+  DownloadProgress? getAggregateProgressForSeason(ServerId serverId, String seasonRatingKey) {
     return _calculateAggregateProgress(
       serverId: serverId,
       ratingKey: seasonRatingKey,
@@ -653,49 +619,22 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Shared helper to calculate aggregate download progress for shows/seasons
   DownloadProgress? _calculateAggregateProgress({
-    required String serverId,
+    required ServerId serverId,
     required String ratingKey,
     required List<DownloadProgress> episodes,
     required String entityType,
   }) {
-    final globalKey = buildGlobalKey(serverId, ratingKey);
+    final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
 
-    // DIAGNOSTIC: Check all sources of episode count
-    final meta = _metadata[globalKey];
-    final metadataLeafCount = meta?.leafCount;
-    final storedCount = _totalEpisodeCounts[globalKey];
-    final downloadedCount = episodes.length;
+    // The progress ring reflects only the episodes the user actually queued for
+    // this show/season — not the show's full episode count. _getEpisodeDownloads
+    // returns just the owned download records, so episodes.length IS the queued
+    // count. Downloading 5 of a 50-episode show therefore reaches 100% at 5/5.
+    //
+    final int totalEpisodes = episodes.length;
 
-    appLogger.d(
-      '📊 Episode count sources for $entityType $ratingKey:\n'
-      '  - Metadata leafCount: $metadataLeafCount\n'
-      '  - Stored count: $storedCount\n'
-      '  - Downloaded episodes: $downloadedCount\n'
-      '  - Metadata exists: ${meta != null}\n'
-      '  - Type: ${meta?.kind.id}\n'
-      '  - Title: ${meta?.title}',
-    );
-
-    // Get total episode count - Use metadata.leafCount as primary source
-    int totalEpisodes;
-    String countSource;
-
-    if (metadataLeafCount != null && metadataLeafCount > 0) {
-      totalEpisodes = metadataLeafCount;
-      countSource = 'metadata.leafCount';
-    } else if (storedCount != null && storedCount > 0) {
-      totalEpisodes = storedCount;
-      countSource = 'stored count (StorageService)';
-    } else {
-      totalEpisodes = downloadedCount;
-      countSource = 'downloaded episodes (fallback)';
-    }
-
-    appLogger.d('✅ Using totalEpisodes=$totalEpisodes from [$countSource] for $entityType $ratingKey');
-
-    // If we have stored count but no downloads, check if it's a valid partial state
-    if (totalEpisodes == 0 || (episodes.isEmpty && totalEpisodes > 0)) {
-      appLogger.d('⚠️  No valid downloads for $entityType $ratingKey, returning null');
+    if (totalEpisodes == 0) {
+      appLogger.d('⚠️  No queued downloads for $entityType $ratingKey, returning null');
       return null;
     }
 
@@ -704,8 +643,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     int downloadingCount = 0;
     int queuedCount = 0;
     int failedCount = 0;
+    int summedProgress = 0; // sum of per-episode progress (completed counts as 100)
 
     for (final ep in episodes) {
+      summedProgress += ep.status == DownloadStatus.completed ? 100 : ep.progress;
       switch (ep.status) {
         case DownloadStatus.completed:
           completedCount++;
@@ -736,8 +677,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       return null;
     }
 
-    // Calculate overall progress percentage based on TOTAL episodes
-    final int overallProgress = totalEpisodes > 0 ? ((completedCount * 100) / totalEpisodes).round() : 0;
+    // Smooth percentage across the queued episodes: an in-flight episode
+    // contributes its partial progress so the ring advances continuously,
+    // rather than jumping only when whole episodes complete. Cap below 100%
+    // until every episode is actually complete — otherwise rounding (e.g.
+    // 99.8 → 100) could fill the ring while a download is still finishing.
+    final int rawProgress = (summedProgress / totalEpisodes).round();
+    final int overallProgress = completedCount == totalEpisodes ? 100 : (rawProgress > 99 ? 99 : rawProgress);
 
     appLogger.d(
       'Aggregate progress for $entityType $ratingKey: $overallProgress% '
@@ -828,7 +774,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Get the local video file path for a downloaded item
   /// Returns null if not downloaded or file doesn't exist
-  Future<String?> getVideoFilePath(String globalKey) async {
+  Future<String?> getVideoFilePath(String globalKey, {int? mediaIndex, String? mediaSourceId}) async {
     appLogger.d('getVideoFilePath called with globalKey: $globalKey');
     if (!_ownsDownloadKey(globalKey)) {
       appLogger.w('Profile does not own downloaded item: $globalKey');
@@ -842,6 +788,25 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
     if (downloadedItem.status != DownloadStatus.completed.index) {
       appLogger.w('Download not complete. Status: ${downloadedItem.status}');
+      return null;
+    }
+    final expectedSourceId = mediaSourceId?.trim();
+    final downloadedSourceId = downloadedItem.mediaSourceId;
+    final comparedBySourceId =
+        expectedSourceId != null &&
+        expectedSourceId.isNotEmpty &&
+        downloadedSourceId != null &&
+        downloadedSourceId.isNotEmpty;
+    if (comparedBySourceId && expectedSourceId != downloadedSourceId) {
+      appLogger.w(
+        'Downloaded media source mismatch for $globalKey: have $downloadedSourceId, expected $expectedSourceId',
+      );
+      return null;
+    }
+    if (!comparedBySourceId && mediaIndex != null && downloadedItem.mediaIndex != mediaIndex) {
+      appLogger.w(
+        'Downloaded media index mismatch for $globalKey: have ${downloadedItem.mediaIndex}, expected $mediaIndex',
+      );
       return null;
     }
     if (downloadedItem.videoFilePath == null) {
@@ -1006,7 +971,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       final existing = _downloads[globalKey]!;
       if (existing.status == DownloadStatus.downloading ||
           existing.status == DownloadStatus.completed ||
-          existing.status == DownloadStatus.queued) {
+          existing.status == DownloadStatus.queued ||
+          existing.status == DownloadStatus.paused) {
         final claimed = await _claimDownloadForActiveProfile(globalKey);
         if (claimed) safeNotifyListeners();
         return claimed;
@@ -1091,13 +1057,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (serverId == null) return;
 
     await _fetchAndStoreRelatedMetadata(
-      serverId: serverId,
+      serverId: ServerId(serverId),
       ratingKey: episode.grandparentId,
       client: client,
       context: context,
     );
     await _fetchAndStoreRelatedMetadata(
-      serverId: serverId,
+      serverId: ServerId(serverId),
       ratingKey: episode.parentId,
       client: client,
       context: context,
@@ -1106,13 +1072,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Fetch, persist, and download artwork for a related metadata item (show or season).
   Future<void> _fetchAndStoreRelatedMetadata({
-    required String serverId,
+    required ServerId serverId,
     required String? ratingKey,
     required MediaServerClient client,
     required _RelatedMetadataDownloadContext context,
   }) async {
     if (ratingKey == null) return;
-    final globalKey = buildGlobalKey(serverId, ratingKey);
+    final globalKey = buildGlobalKey(ServerId(serverId), ratingKey);
 
     MediaItem? metadata = _metadata[globalKey];
     var fetchedFreshMetadata = false;
@@ -1147,14 +1113,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _artworkPaths[globalKey] = DownloadedArtwork(thumbPath: thumbPath);
   }
 
-  /// Store leafCount for a show or season so aggregate progress works.
-  Future<void> _storeLeafCount(String globalKey, MediaItem metadata) async {
-    if (metadata.leafCount != null && metadata.leafCount! > 0) {
-      _totalEpisodeCounts[globalKey] = metadata.leafCount!;
-      await _persistTotalEpisodeCount(globalKey, metadata.leafCount!);
-    }
-  }
-
   /// Queue all episodes from a TV show for download
   Future<int> _queueShowDownload(
     MediaItem show,
@@ -1163,7 +1121,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
   }) async {
-    await _storeLeafCount(show.globalKey, show);
     return _expandAndQueue(
       container: show,
       client: client,
@@ -1182,7 +1139,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
   }) async {
-    await _storeLeafCount(season.globalKey, season);
     return _expandAndQueue(
       container: season,
       client: client,
@@ -1319,7 +1275,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         _downloads.remove(globalKey);
         _metadata.remove(globalKey);
         _artworkPaths.remove(globalKey);
-        _totalEpisodeCounts.remove(globalKey);
       }
       if (removedMeta != null) {
         DeletionNotifier().notifyDeletedItem(item: removedMeta, isDownloadOnly: true);
@@ -1374,17 +1329,6 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   Future<void> _deleteOwnedContainerDownloads(String globalKey, MediaItem container) async {
-    final removedCount = _totalEpisodeCounts.remove(globalKey);
-    final storage = await StorageService.getInstance();
-    await storage.removeEpisodeCount(globalKey);
-    appLogger.i(
-      'Removed episode count for $globalKey\n'
-      '  - Removed count value: $removedCount\n'
-      '  - Metadata type: ${container.kind.id}\n'
-      '  - Metadata title: ${container.title}\n'
-      '  - Remaining stored counts: ${_totalEpisodeCounts.length}',
-    );
-
     final descendants = _ownedDescendantEntries(container).toList();
     for (final entry in descendants) {
       await deleteDownload(entry.key);
@@ -1435,7 +1379,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// Backend-aware metadata lookup for offline UI. Routes through
   /// [DownloadManagerService] which dispatches to [PlexApiCache] or
   /// [JellyfinApiCache] based on the connection's `kind`.
-  Future<MediaItem?> lookupOfflineMetadata(String serverId, String itemId) =>
+  Future<MediaItem?> lookupOfflineMetadata(ServerId serverId, String itemId) =>
       _downloadManager.lookupMetadata(serverId, itemId);
 
   /// Refresh only metadata from API cache (after watch state sync).
@@ -1553,10 +1497,10 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// All sync rules for the active profile (profile-scoped globalKey -> SyncRuleItem).
   Map<String, SyncRuleItem> get syncRules => Map.unmodifiable(_syncRules);
 
-  String syncRuleKeyFor(String serverId, String ratingKey, {String? profileId}) {
+  String syncRuleKeyFor(ServerId serverId, String ratingKey, {String? profileId}) {
     final owner = profileId ?? _activeProfileId;
-    if (owner == null || owner.isEmpty) return buildGlobalKey(serverId, ratingKey);
-    return buildProfileScopedGlobalKey(owner, serverId, ratingKey);
+    if (owner == null || owner.isEmpty) return buildGlobalKey(ServerId(serverId), ratingKey);
+    return buildProfileScopedGlobalKey(owner, ServerId(serverId), ratingKey);
   }
 
   String syncRuleKeyForGlobalKey(String globalKey) {
@@ -1569,7 +1513,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     return syncRuleKeyFor(parsed.serverId, parsed.ratingKey);
   }
 
-  String syncRuleKeyForClient(MediaServerClient client, String ratingKey, {String? serverId}) {
+  String syncRuleKeyForClient(MediaServerClient client, String ratingKey, {ServerId? serverId}) {
     return syncRuleKeyFor(serverId ?? client.serverId, ratingKey);
   }
 
@@ -1579,7 +1523,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (profileId == null || profileId.isEmpty) return const {};
     final keys = <String>{};
     void add(String ratingKey) {
-      keys.add(syncRuleKeyFor(event.serverId, ratingKey, profileId: profileId));
+      keys.add(syncRuleKeyFor(ServerId(event.serverId), ratingKey, profileId: profileId));
     }
 
     add(event.itemId);
@@ -1602,7 +1546,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   /// rating key — useful for collection/playlist rules where no underlying
   /// episode download would otherwise populate it.
   Future<void> createSyncRule({
-    required String serverId,
+    required ServerId serverId,
     required String ratingKey,
     required String targetType,
     required int episodeCount,
@@ -1611,8 +1555,8 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     MediaItem? targetMetadata,
   }) async {
     final profileId = _requireActiveProfileId();
-    final publicGlobalKey = buildGlobalKey(serverId, ratingKey);
-    final scopedGlobalKey = syncRuleKeyFor(serverId, ratingKey, profileId: profileId);
+    final publicGlobalKey = buildGlobalKey(ServerId(serverId), ratingKey);
+    final scopedGlobalKey = syncRuleKeyFor(ServerId(serverId), ratingKey, profileId: profileId);
     await _database.insertSyncRule(
       profileId: profileId,
       serverId: serverId,
@@ -1678,7 +1622,9 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   Future<void> deleteSyncRule(String globalKey) async {
     _requireActiveProfileId();
     final existing = _syncRules[globalKey] ?? await _database.getSyncRule(globalKey);
-    final publicGlobalKey = existing == null ? globalKey : buildGlobalKey(existing.serverId, existing.ratingKey);
+    final publicGlobalKey = existing == null
+        ? globalKey
+        : buildGlobalKey(ServerId(existing.serverId), existing.ratingKey);
     await _database.deleteSyncRule(globalKey);
     _syncRules.remove(globalKey);
     // createSyncRule may have stashed targetMetadata for collection/playlist
@@ -1712,6 +1658,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       metadata: Map.unmodifiable(_metadata),
       queueSingleDownload: (episode, client, {int mediaIndex = 0}) =>
           _queueSingleDownload(episode, client, mediaIndex: mediaIndex, relatedContext: relatedContext),
+      isOffline: _offlineSource?.isOffline ?? false,
       force: force,
     );
 
@@ -1739,6 +1686,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       metadata: Map.unmodifiable(_metadata),
       queueSingleDownload: (episode, client, {int mediaIndex = 0}) =>
           _queueSingleDownload(episode, client, mediaIndex: mediaIndex, relatedContext: relatedContext),
+      isOffline: _offlineSource?.isOffline ?? false,
     );
   }
 
@@ -1774,7 +1722,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
 /// Exception thrown when download is blocked due to cellular-only setting
 class CellularDownloadBlockedException implements Exception {
-  final String message = 'Downloads are disabled on cellular data';
+  String get message => t.settings.cellularDownloadBlocked;
 
   @override
   String toString() => message;

@@ -32,6 +32,59 @@ void main() {
     expect(events.map((event) => event.deviceType), everyElement(ui.KeyEventDeviceType.directionalPad));
   });
 
+  testWidgets('simulateKeyUp returns to the key-down focus when focus changes', (tester) async {
+    final firstNode = FocusNode(debugLabel: 'first');
+    final secondNode = FocusNode(debugLabel: 'second');
+    addTearDown(firstNode.dispose);
+    addTearDown(secondNode.dispose);
+
+    final firstEvents = <KeyEvent>[];
+    final secondEvents = <KeyEvent>[];
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Column(
+          children: [
+            Focus(
+              focusNode: firstNode,
+              onKeyEvent: (_, event) {
+                firstEvents.add(event);
+                return KeyEventResult.handled;
+              },
+              child: const SizedBox(width: 10, height: 10),
+            ),
+            Focus(
+              focusNode: secondNode,
+              onKeyEvent: (_, event) {
+                secondEvents.add(event);
+                return KeyEventResult.handled;
+              },
+              child: const SizedBox(width: 10, height: 10),
+            ),
+          ],
+        ),
+      ),
+    );
+    firstNode.requestFocus();
+    await tester.pump();
+
+    simulateKeyDown(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(firstEvents, hasLength(1));
+    expect(firstEvents.single, isA<KeyDownEvent>());
+
+    secondNode.requestFocus();
+    await tester.pump();
+    expect(secondNode.hasPrimaryFocus, isTrue);
+
+    simulateKeyUp(LogicalKeyboardKey.enter);
+    await tester.pump();
+
+    expect(firstEvents, hasLength(2));
+    expect(firstEvents.last, isA<KeyUpEvent>());
+    expect(secondEvents, isEmpty);
+  });
+
   testWidgets('simulateKeyPress stops at skipRemainingHandlers', (tester) async {
     final childEvents = <KeyEvent>[];
     final parentEvents = <KeyEvent>[];

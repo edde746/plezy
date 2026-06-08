@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -23,6 +24,7 @@ import '../../../utils/live_tv_matching.dart';
 import '../../../utils/media_image_helper.dart';
 import '../../../utils/live_tv_player_navigation.dart';
 import '../../../widgets/app_icon.dart';
+import '../../../widgets/app_menu.dart';
 import '../../../widgets/clickable_cursor.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../widgets/optimized_media_image.dart';
@@ -234,7 +236,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
       for (final serverInfo in liveTvServers) {
         if (!queriedServers.add(serverInfo.serverId)) continue;
         try {
-          final genericClient = multiServer.getClientForServer(serverInfo.serverId);
+          final genericClient = multiServer.getClientForServer(ServerId(serverInfo.serverId));
           if (genericClient == null) continue;
 
           final startEpoch = _gridStart.millisecondsSinceEpoch ~/ 1000;
@@ -246,7 +248,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
           allPrograms.addAll(programs);
           await _addScheduledRecordingKeysForServer(
             client: genericClient,
-            serverId: serverInfo.serverId,
+            serverId: ServerId(serverInfo.serverId),
             keys: scheduledRecordingKeys,
           );
         } catch (e) {
@@ -287,11 +289,11 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
     for (final serverInfo in multiServer.liveTvServers) {
       if (!queriedServers.add(serverInfo.serverId)) continue;
-      final client = multiServer.getClientForServer(serverInfo.serverId);
+      final client = multiServer.getClientForServer(ServerId(serverInfo.serverId));
       if (client == null) continue;
       await _addScheduledRecordingKeysForServer(
         client: client,
-        serverId: serverInfo.serverId,
+        serverId: ServerId(serverInfo.serverId),
         keys: scheduledRecordingKeys,
       );
     }
@@ -302,14 +304,14 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
   Future<void> _addScheduledRecordingKeysForServer({
     required MediaServerClient client,
-    required String serverId,
+    required ServerId serverId,
     required Set<String> keys,
   }) async {
     if (!client.capabilities.liveTvDvr) return;
     try {
       final grabs = await client.liveTv.fetchScheduledRecordings();
       for (final grab in grabs) {
-        _addRecordingKeysForGrab(grab, serverId: serverId, keys: keys);
+        _addRecordingKeysForGrab(grab, serverId: ServerId(serverId), keys: keys);
       }
     } catch (e) {
       appLogger.d('Failed to load scheduled recordings for $serverId', error: e);
@@ -319,7 +321,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
       final rules = await client.liveTv.fetchRecordingRules(includeGrabs: true, includeStorage: false);
       for (final rule in rules) {
         for (final grab in rule.grabOperations) {
-          _addRecordingKeysForGrab(grab, serverId: serverId, keys: keys);
+          _addRecordingKeysForGrab(grab, serverId: ServerId(serverId), keys: keys);
         }
       }
     } catch (e) {
@@ -327,7 +329,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     }
   }
 
-  void _addRecordingKeysForGrab(MediaGrabOperation grab, {required String serverId, required Set<String> keys}) {
+  void _addRecordingKeysForGrab(MediaGrabOperation grab, {required ServerId serverId, required Set<String> keys}) {
     if (!_isActiveScheduledGrab(grab)) return;
     final program = grab.program;
     if (program == null) return;
@@ -367,7 +369,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     final keys = <String>{};
     void addMediaId(String? value) {
       final normalized = _nonEmpty(value);
-      if (normalized != null) keys.add(_recordingKey(serverId, 'media', normalized));
+      if (normalized != null) keys.add(_recordingKey(ServerId(serverId), 'media', normalized));
     }
 
     addMediaId(program.ratingKey);
@@ -377,13 +379,13 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     final channelIdentifier = _nonEmpty(program.channelIdentifier);
     final beginsAt = program.beginsAt;
     if (channelIdentifier != null && beginsAt != null) {
-      keys.add(_recordingKey(serverId, 'slot', '$channelIdentifier|$beginsAt|${program.endsAt ?? ''}'));
+      keys.add(_recordingKey(ServerId(serverId), 'slot', '$channelIdentifier|$beginsAt|${program.endsAt ?? ''}'));
     }
 
     return keys;
   }
 
-  String _recordingKey(String serverId, String type, String value) => '$serverId\u0000$type\u0000$value';
+  String _recordingKey(ServerId serverId, String type, String value) => '$serverId\u0000$type\u0000$value';
 
   String? _nonEmpty(String? value) {
     final trimmed = value?.trim();
@@ -856,114 +858,90 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     (t.liveTv.lateNight, 22),
   ];
 
-  RelativeRect _menuPosition() {
+  Rect? _menuAnchorRect() {
     final renderBox = _dayPickerKey.currentContext?.findRenderObject() as RenderBox?;
-    final overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
-    if (renderBox == null || overlay == null) return RelativeRect.fill;
+    if (renderBox == null) return null;
 
     final buttonPos = renderBox.localToGlobal(Offset.zero);
     final buttonSize = renderBox.size;
-    return RelativeRect.fromRect(
-      Rect.fromLTWH(buttonPos.dx, buttonPos.dy + buttonSize.height, buttonSize.width, 0),
-      Offset.zero & overlay.size,
-    );
+    return Rect.fromLTWH(buttonPos.dx, buttonPos.dy, buttonSize.width, buttonSize.height);
   }
 
-  void _showDayPicker() {
+  Future<void> _showDayPicker() async {
+    final anchorRect = _menuAnchorRect();
+    if (anchorRect == null) return;
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final gridDay = DateTime(_gridStart.year, _gridStart.month, _gridStart.day);
-    final theme = Theme.of(context);
 
     final days = <DateTime>[];
     for (var i = 0; i < 8; i++) {
       days.add(today.add(Duration(days: i)));
     }
 
-    showMenu<Object>(
-      context: context,
-      position: _menuPosition(),
-      items: [
-        PopupMenuItem<String>(
-          value: 'now',
-          child: Text(t.liveTv.now, style: theme.textTheme.bodyMedium),
-        ),
+    final value = await showAppMenu<Object>(
+      context,
+      anchorRect: anchorRect,
+      focusFirstItem: InputModeTracker.isKeyboardMode(context),
+      entries: [
+        AppMenuItem<Object>(value: 'now', label: t.liveTv.now),
         ...days.map((day) {
           final isSelected = day == gridDay;
           final label = _dayLabel(day);
-          return PopupMenuItem<DateTime>(
-            value: day,
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    label,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: isSelected ? theme.colorScheme.primary : null),
-                  ),
-                ),
-                if (isSelected) AppIcon(Symbols.check_rounded, size: 18, color: theme.colorScheme.primary),
-              ],
-            ),
-          );
+          return AppMenuItem<Object>(value: day, label: label, selected: isSelected);
         }),
       ],
-    ).then((value) {
-      if (!mounted) return;
-      if (value == null) {
-        _guideFocusNode.requestFocus();
-        return;
-      }
-      if (value is String && value == 'now') {
-        _jumpToNow();
-        _guideFocusNode.requestFocus();
-      } else if (value is DateTime) {
-        _showTimeSlotPicker(value);
-      }
-    });
+    );
+    if (!mounted) return;
+    if (value == null) {
+      _guideFocusNode.requestFocus();
+      return;
+    }
+    if (value is String && value == 'now') {
+      _jumpToNow();
+      _guideFocusNode.requestFocus();
+    } else if (value is DateTime) {
+      await _showTimeSlotPicker(value);
+    }
   }
 
-  void _showTimeSlotPicker(DateTime day) {
-    final theme = Theme.of(context);
+  Future<void> _showTimeSlotPicker(DateTime day) async {
+    final anchorRect = _menuAnchorRect();
+    if (anchorRect == null) return;
+
     final label = _dayLabel(day).toUpperCase();
 
-    showMenu<int>(
-      context: context,
-      position: _menuPosition(),
-      items: [
-        PopupMenuItem<int>(
+    final value = await showAppMenu<int>(
+      context,
+      anchorRect: anchorRect,
+      focusFirstItem: InputModeTracker.isKeyboardMode(context),
+      entries: [
+        AppMenuItem<int>(
           value: -1,
-          child: Row(
-            children: [
-              AppIcon(Symbols.chevron_left_rounded, size: 20, color: theme.colorScheme.onSurface),
-              const SizedBox(width: 8),
-              Text(label, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
-            ],
-          ),
+          icon: Symbols.chevron_left_rounded,
+          child: Text(label, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: .bold)),
         ),
-        const PopupMenuDivider(),
+        const AppMenuDivider<int>(),
         ..._timeSlots.map((slot) {
-          return PopupMenuItem<int>(
-            value: slot.$2,
-            child: Text(slot.$1, style: theme.textTheme.bodyMedium),
-          );
+          return AppMenuItem<int>(value: slot.$2, label: slot.$1);
         }),
       ],
-    ).then((value) {
-      if (value == null) {
-        _guideFocusNode.requestFocus();
-        return;
-      }
-      if (value == -1) {
-        _showDayPicker();
-        return;
-      }
-      setState(() {
-        _gridStart = DateTime(day.year, day.month, day.day, value);
-        _gridEnd = _gridStart.add(const Duration(hours: 6));
-      });
-      _loadPrograms();
+    );
+    if (value == null) {
       _guideFocusNode.requestFocus();
+      return;
+    }
+    if (value == -1) {
+      await _showDayPicker();
+      return;
+    }
+    setState(() {
+      _gridStart = DateTime(day.year, day.month, day.day, value);
+      _gridEnd = _gridStart.add(const Duration(hours: 6));
     });
+    _loadPrograms();
+    _guideFocusNode.requestFocus();
   }
 
   Widget _timeNavFocusWrap({required Widget child, required int index, required ThemeData theme}) {
@@ -1001,7 +979,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
           ),
           Expanded(
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisAlignment: .center,
               children: [
                 _timeNavFocusWrap(
                   index: 1,
@@ -1013,7 +991,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisSize: .min,
                           children: [
                             Text(dayLabel, style: theme.textTheme.labelLarge),
                             const SizedBox(width: 2),
@@ -1057,7 +1035,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: Align(
-              alignment: Alignment.centerLeft,
+              alignment: .centerLeft,
               child: Text(
                 timeStr,
                 style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
@@ -1083,15 +1061,12 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
           right: BorderSide(color: theme.dividerColor.withValues(alpha: 0.3)),
         ),
       ),
-      alignment: Alignment.centerLeft,
+      alignment: .centerLeft,
       child: Text(
         label,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w700,
-        ),
+        style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant, fontWeight: .w700),
         maxLines: 2,
-        overflow: TextOverflow.ellipsis,
+        overflow: .ellipsis,
       ),
     );
   }
@@ -1111,18 +1086,18 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
             return Transform.translate(offset: Offset(scrollOffset, 0), child: child);
           },
           child: Align(
-            alignment: Alignment.centerLeft,
+            alignment: .centerLeft,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Text(
                 label,
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
-                  fontWeight: FontWeight.w700,
+                  fontWeight: .w700,
                   letterSpacing: 0.3,
                 ),
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                overflow: .ellipsis,
               ),
             ),
           ),
@@ -1133,7 +1108,8 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
   Widget _buildChannelCell(LiveTvChannel channel, ThemeData theme, {required int index}) {
     final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(channel.serverId ?? '');
+    final serverId = serverIdOrNull(channel.serverId);
+    final client = serverId == null ? null : multiServer.getClientForServer(serverId);
 
     final isFocused = _hasFocus && _focusZone == _GuideZone.grid && _gridColumn == 0 && _gridChannelIndex == index;
 
@@ -1154,7 +1130,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
   Widget _buildChannelNameFallback(LiveTvChannel channel, ThemeData theme) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: .center,
       children: [
         if (channel.number != null)
           Text(
@@ -1164,9 +1140,9 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
           ),
         Text(
           channel.displayName,
-          style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+          style: theme.textTheme.bodySmall?.copyWith(fontWeight: .w500),
           maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+          overflow: .ellipsis,
           textAlign: TextAlign.center,
         ),
       ],
@@ -1313,10 +1289,10 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
                 final leftInset = (scrollOffset - tileLeft).clamp(0.0, maxInset);
                 return Container(
                   color: isFocused ? null : materialColor,
-                  padding: EdgeInsets.fromLTRB(basePadding + leftInset, 4, basePadding, 4),
+                  padding: .fromLTRB(basePadding + leftInset, 4, basePadding, 4),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: .start,
+                    mainAxisAlignment: .center,
                     children: [
                       Row(
                         children: [
@@ -1327,12 +1303,9 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
                           Expanded(
                             child: Text(
                               program.grandparentTitle ?? program.title,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                                color: titleColor,
-                              ),
+                              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: .w600, color: titleColor),
                               maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                              overflow: .ellipsis,
                             ),
                           ),
                         ],
@@ -1342,14 +1315,14 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
                           '${program.parentIndex != null && program.index != null ? 'S${program.parentIndex}E${program.index} · ' : ''}${program.title}',
                           style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
                           maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          overflow: .ellipsis,
                         ),
                       if (program.startTime != null)
                         Text(
-                          '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} · ${formatDurationTextual(program.durationMinutes * 60000)}',
+                          '${formatClockTime(program.startTime!, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))} · ${formatDurationTextual(program.durationMinutes * 60_000)}',
                           style: theme.textTheme.labelSmall?.copyWith(color: subtitleColor),
                           maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          overflow: .ellipsis,
                         ),
                     ],
                   ),
@@ -1364,7 +1337,8 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
   void _showProgramDetails(LiveTvChannel channel, LiveTvProgram program) {
     final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(channel.serverId ?? '');
+    final serverId = serverIdOrNull(channel.serverId);
+    final client = serverId == null ? null : multiServer.getClientForServer(serverId);
     String? posterUrl;
     if (program.thumb != null && client != null) {
       posterUrl = MediaImageHelper.getOptimizedImageUrl(
@@ -1472,7 +1446,7 @@ class _ChannelCellState extends State<_ChannelCell> {
                 ),
               ),
               child: Stack(
-                alignment: Alignment.center,
+                alignment: .center,
                 children: [
                   AnimatedOpacity(
                     opacity: showAction ? 0.3 : 1.0,

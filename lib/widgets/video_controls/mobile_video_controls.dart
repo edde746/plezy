@@ -8,6 +8,7 @@ import '../../media/media_source_info.dart';
 import '../../services/scrub_preview_source.dart';
 import '../../utils/desktop_window_padding.dart';
 import '../../i18n/strings.g.dart';
+import 'player_chrome_controller.dart';
 import 'widgets/circular_control_button.dart';
 import 'widgets/content_strip.dart';
 import 'widgets/first_frame_guard.dart';
@@ -75,8 +76,8 @@ class MobileVideoControls extends StatefulWidget {
   /// Callback when a queue item is selected from the content strip
   final Function(MediaItem)? onQueueItemSelected;
 
-  /// Notifier for controls visibility (used to reset strip on hide)
-  final ValueNotifier<bool>? controlsVisible;
+  /// Shared controller for chrome visibility (used to reset strip on hide)
+  final PlayerChromeController? chromeController;
 
   /// Called when the content strip visibility changes
   final ValueChanged<bool>? onStripVisibilityChanged;
@@ -112,7 +113,7 @@ class MobileVideoControls extends StatefulWidget {
     this.serverId,
     this.showQueueTab = false,
     this.onQueueItemSelected,
-    this.controlsVisible,
+    this.chromeController,
     this.onStripVisibilityChanged,
   });
 
@@ -123,6 +124,7 @@ class MobileVideoControls extends StatefulWidget {
 class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTickerProviderStateMixin {
   late final AnimationController _stripAnim;
   bool _stripVisible = false;
+  late bool _lastControlsVisible;
 
   /// Drag distance (in pixels) required to fully reveal the strip.
   static const _dragExtent = 150.0;
@@ -135,21 +137,23 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
     super.initState();
     _stripAnim = AnimationController(vsync: this, duration: const Duration(milliseconds: 250));
     _stripAnim.addListener(_onStripAnimChanged);
-    widget.controlsVisible?.addListener(_onControlsVisibilityChanged);
+    _lastControlsVisible = widget.chromeController?.controlsVisible ?? true;
+    widget.chromeController?.addListener(_onChromeVisibilityChanged);
   }
 
   @override
   void didUpdateWidget(MobileVideoControls oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.controlsVisible != widget.controlsVisible) {
-      oldWidget.controlsVisible?.removeListener(_onControlsVisibilityChanged);
-      widget.controlsVisible?.addListener(_onControlsVisibilityChanged);
+    if (oldWidget.chromeController != widget.chromeController) {
+      oldWidget.chromeController?.removeListener(_onChromeVisibilityChanged);
+      _lastControlsVisible = widget.chromeController?.controlsVisible ?? true;
+      widget.chromeController?.addListener(_onChromeVisibilityChanged);
     }
   }
 
   @override
   void dispose() {
-    widget.controlsVisible?.removeListener(_onControlsVisibilityChanged);
+    widget.chromeController?.removeListener(_onChromeVisibilityChanged);
     _stripAnim.removeListener(_onStripAnimChanged);
     _stripAnim.dispose();
     super.dispose();
@@ -163,13 +167,17 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
     }
   }
 
-  void _onControlsVisibilityChanged() {
-    if (widget.controlsVisible?.value == false && _stripVisible) {
+  void _onChromeVisibilityChanged() {
+    final controlsVisible = widget.chromeController?.controlsVisible ?? true;
+    final wasControlsVisible = _lastControlsVisible;
+    _lastControlsVisible = controlsVisible;
+
+    if (!controlsVisible && wasControlsVisible && _stripVisible) {
       // Just notify parent that strip is no longer active — don't animate,
       // let the overlay fade out with the strip still showing.
       _stripVisible = false;
       widget.onStripVisibilityChanged?.call(false);
-    } else if (widget.controlsVisible?.value == true && _stripAnim.value > 0) {
+    } else if (controlsVisible && !wasControlsVisible && _stripAnim.value > 0) {
       // Reset strip when controls reappear so page 0 is shown.
       _stripAnim.value = 0;
     }
@@ -250,7 +258,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
                     ),
                     // Content strip — slides up from below the bottom edge
                     Align(
-                      alignment: Alignment.bottomCenter,
+                      alignment: .bottomCenter,
                       child: FractionalTranslation(
                         translation: Offset(0, 1 - t),
                         child: IgnorePointer(
@@ -272,7 +280,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
                                 ),
                               ),
                               child: Column(
-                                mainAxisSize: MainAxisSize.min,
+                                mainAxisSize: .min,
                                 children: [
                                   const Icon(Symbols.keyboard_arrow_down_rounded, color: Colors.white38, size: 20),
                                   const SizedBox(height: 4),
@@ -338,7 +346,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
       player: widget.player,
       builder: (context, isPlaying) {
         return Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: .center,
           children: [
             if (!widget.isLive) ...[
               // Previous episode button (greyed out when unavailable)
@@ -407,7 +415,7 @@ class _MobileVideoControlsState extends State<MobileVideoControls> with SingleTi
               decoration: const BoxDecoration(color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(4))),
               child: Text(
                 t.liveTv.live,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                style: const TextStyle(color: Colors.white, fontWeight: .bold, fontSize: 12),
               ),
             ),
           ],

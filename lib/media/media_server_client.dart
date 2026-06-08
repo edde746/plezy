@@ -6,6 +6,7 @@ import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController, MediaServerResponse;
 import '../utils/external_ids.dart';
 import 'download_resolution.dart';
+import 'ids.dart';
 import 'library_filter_result.dart';
 import 'library_first_character.dart';
 import 'library_query.dart';
@@ -18,7 +19,11 @@ import 'media_item.dart';
 import 'media_kind.dart';
 import 'media_library.dart';
 import 'media_playlist.dart';
+import 'playback_report_metadata.dart';
 import 'server_capabilities.dart';
+
+/// Default number of items requested for horizontal hub previews.
+const int defaultHubPreviewLimit = 20;
 
 /// Backend-neutral client for a single media server (Plex or Jellyfin).
 ///
@@ -30,9 +35,9 @@ import 'server_capabilities.dart';
 ///
 /// ## Naming
 ///
-/// Read methods use a `fetch*` prefix. Plex-only operations that have no
-/// Jellyfin equivalent (DVR tuning, metadata edit, match) live on
-/// [PlexClient] directly under their original `get*` / verb names.
+/// Read methods use a `fetch*` prefix. Backend-specific operations that do not
+/// fit the neutral browsing/playback surface (DVR tuning, match, rich metadata
+/// edit adapters) live on concrete clients or feature modules.
 ///
 /// ## Error contract (write methods)
 ///
@@ -66,7 +71,7 @@ abstract interface class GracefullyCloseable {
 }
 
 abstract class MediaServerClient {
-  String get serverId;
+  ServerId get serverId;
   String? get serverName;
   MediaBackend get backend;
   ServerCapabilities get capabilities;
@@ -167,9 +172,15 @@ abstract class MediaServerClient {
   /// show, tracks of an album, items of a collection.
   Future<List<MediaItem>> fetchChildren(String parentId);
 
-  /// Page through playable descendants of [parentId]. Used by large show /
-  /// season detail views so episodes can render before the full list has
-  /// loaded. [fetchPlayableDescendants] remains the complete-list helper for
+  /// Page through direct children of [parentId]. Unlike
+  /// [fetchPlayableDescendantsPage], this preserves container shape and is used
+  /// for large season episode lists where the children endpoint is the correct
+  /// backend primitive.
+  Future<LibraryPage<MediaItem>> fetchChildrenPage(String parentId, {int? start, int? size, AbortController? abort});
+
+  /// Page through playable descendants of [parentId]. Used by flattened show /
+  /// season detail views so episodes can render before the full list has loaded.
+  /// [fetchPlayableDescendants] remains the complete-list helper for
   /// playback/download/sync paths.
   Future<LibraryPage<MediaItem>> fetchPlayableDescendantsPage(
     String parentId, {
@@ -217,7 +228,7 @@ abstract class MediaServerClient {
 
   /// Curated home-screen hubs across all libraries (Plex Discover; Jellyfin
   /// synthesizes `Latest` plus optional `Resume` + `NextUp`).
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10, bool includePlaybackHubs = true});
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true});
 
   /// Hubs scoped to a single library section. [libraryName] is baked into
   /// the title of synthetic hubs (Jellyfin) so per-library "Recently Added"
@@ -228,13 +239,19 @@ abstract class MediaServerClient {
   Future<List<MediaHub>> fetchLibraryHubs(
     String libraryId, {
     required String libraryName,
-    int limit = 10,
+    int limit = defaultHubPreviewLimit,
     bool includePlaybackHubs = true,
     MediaKind? libraryKind,
   });
 
   /// "More like this" recommendations for [id].
   Future<List<MediaHub>> fetchRelatedHubs(String id, {int count = 10});
+
+  /// Playable extras attached to [id] (trailers, featurettes, deleted scenes,
+  /// behind-the-scenes clips). Backends return only items that can be opened by
+  /// the normal video playback flow; external/remote trailer URLs are out of
+  /// scope for this neutral surface.
+  Future<List<MediaItem>> fetchExtras(String id);
 
   /// Media featuring a specific person/actor.
   Future<List<MediaItem>> fetchPersonMedia(String personId);
@@ -493,20 +510,22 @@ abstract class MediaServerClient {
   });
 
   /// End-of-session signal. Plex sends `state=stopped`; Jellyfin closes
-  /// the session row.
+  /// the session row. [report] carries semantic metadata such as offline
+  /// replay timing without leaking backend-specific wire parameter names.
   Future<void> reportPlaybackStopped({
     required String itemId,
     required Duration position,
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   });
 
   /// Resolve the video URL, media info, and external subtitle list for
   /// playback. Backends own the per-backend particulars: Plex runs the
   /// transcode-decision flow when [PlaybackInitializationOptions.qualityPreset]
   /// is non-original; Jellyfin asks PlaybackInfo for a matching stream when a
-  /// non-original preset is explicitly selected. Throws
+  /// non-original preset is selected. Throws
   /// [PlaybackException] when the item can't be resolved (no MediaSources,
   /// no playable URL, transcode decision unavailable).
   ///
@@ -578,7 +597,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     bool cacheResponse = true,
   }) async {
     if (isOfflineMode) {
-      final cached = await cache.get(cacheServerId, cacheKey);
+      final cached = await cache.get(ServerId(cacheServerId), cacheKey);
       if (cached != null) return parseCache(cached);
       return null;
     }
@@ -594,7 +613,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
       return parseResponse(response);
     } catch (e) {
       appLogger.w('Network request failed for $cacheKey, trying cache', error: e);
-      final cached = await cache.get(cacheServerId, cacheKey);
+      final cached = await cache.get(ServerId(cacheServerId), cacheKey);
       if (cached != null) return parseCache(cached);
       rethrow;
     }
@@ -611,7 +630,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
     required T? Function(MediaServerResponse response) parseResponse,
     bool cacheResponse = true,
   }) async {
-    final cached = await cache.get(cacheServerId, cacheKey);
+    final cached = await cache.get(ServerId(cacheServerId), cacheKey);
     if (cached != null) return parseCache(cached);
     if (isOfflineMode) return null;
     final response = await networkCall();
@@ -627,7 +646,7 @@ mixin MediaServerCacheMixin implements MediaServerClient {
 
   Future<void> _putCacheResponse(String cacheKey, dynamic data) async {
     if (data is Map<String, dynamic>) {
-      await cache.put(cacheServerId, cacheKey, data);
+      await cache.put(ServerId(cacheServerId), cacheKey, data);
     } else if (data != null) {
       appLogger.w('Unexpected response type for $cacheKey: ${data.runtimeType}');
     }

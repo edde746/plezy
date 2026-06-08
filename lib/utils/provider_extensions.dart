@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import 'package:provider/provider.dart';
 import '../media/media_item.dart';
 import '../media/media_library.dart';
@@ -21,10 +22,10 @@ extension ProviderExtensions on BuildContext {
   /// Internal: resolve a [PlexClient] from a serverId or fall back to the
   /// first online server. Returns null if neither yields a Plex client.
   /// Non-Plex servers (Jellyfin) are skipped — these helpers exist for
-  /// Plex-only flows that have no neutral equivalent (DVR tuning, metadata
-  /// edit, match). Backend-agnostic flows use the [_resolveMediaClient]
+  /// Plex-only flows that have no neutral equivalent (DVR tuning, match).
+  /// Backend-agnostic flows use the [_resolveMediaClient]
   /// helpers below.
-  PlexClient? _resolveClient(String? serverId) {
+  PlexClient? _resolveClient(ServerId? serverId) {
     final provider = Provider.of<MultiServerProvider>(this, listen: false);
     return _resolvePrioritized(serverId, provider.onlineServerIds, provider.getPlexClientForServer);
   }
@@ -32,7 +33,7 @@ extension ProviderExtensions on BuildContext {
   /// Internal: like [_resolveClient] but throws a localized exception when
   /// no client is available. The thrown message is the canonical
   /// `t.errors.noClientAvailable` so callers can surface it directly.
-  PlexClient _requireClient(String? serverId, {bool fallback = true}) {
+  PlexClient _requireClient(ServerId? serverId, {bool fallback = true}) {
     final provider = Provider.of<MultiServerProvider>(this, listen: false);
     if (serverId != null) {
       final client = provider.getPlexClientForServer(serverId);
@@ -49,31 +50,31 @@ extension ProviderExtensions on BuildContext {
     return client;
   }
 
-  PlexClient getPlexClientForServer(String serverId) => _requireClient(serverId, fallback: false);
+  PlexClient getPlexClientForServer(ServerId serverId) => _requireClient(serverId, fallback: false);
 
-  PlexClient? tryGetPlexClientForServer(String? serverId) {
+  PlexClient? tryGetPlexClientForServer(ServerId? serverId) {
     if (serverId == null) return null;
     final provider = Provider.of<MultiServerProvider>(this, listen: false);
     return provider.getPlexClientForServer(serverId);
   }
 
-  PlexClient getPlexClientForLibrary(MediaLibrary library) => _requireClient(library.serverId);
+  PlexClient getPlexClientForLibrary(MediaLibrary library) => _requireClient(serverIdOrNull(library.serverId));
 
-  PlexClient getPlexClientWithFallback(String? serverId) => _requireClient(serverId);
+  PlexClient getPlexClientWithFallback(ServerId? serverId) => _requireClient(serverId);
 
   // ── Backend-neutral helpers ──────────────────────────────────────
   // These return [MediaServerClient] regardless of backend kind so callers
   // that consume only the [MediaServerClient] surface don't need to type-
   // check the result. Use [getPlexClientForServer] / [getPlexClientForLibrary]
-  // when you specifically need a [PlexClient] (Plex-only flows like Live TV,
-  // metadata editing, etc.).
+  // when you specifically need a [PlexClient] (Plex-only flows like Live TV or
+  // match/fix-match).
 
-  MediaServerClient? _resolveMediaClient(String? serverId) {
+  MediaServerClient? _resolveMediaClient(ServerId? serverId) {
     final provider = Provider.of<MultiServerProvider>(this, listen: false);
     return _resolvePrioritized(serverId, provider.onlineServerIds, provider.getClientForServer);
   }
 
-  MediaServerClient? tryGetMediaClientForServer(String? serverId) {
+  MediaServerClient? tryGetMediaClientForServer(ServerId? serverId) {
     if (serverId == null) return null;
     final provider = Provider.of<MultiServerProvider>(this, listen: false);
     return provider.getClientForServer(serverId);
@@ -82,14 +83,14 @@ extension ProviderExtensions on BuildContext {
   /// Get a [MediaServerClient] for the given serverId. Throws when the
   /// server isn't registered or is offline. Mirrors the throwing variant of
   /// the Plex-typed [getPlexClientForServer] helpers.
-  MediaServerClient getMediaClientForServer(String serverId) {
+  MediaServerClient getMediaClientForServer(ServerId serverId) {
     final c = tryGetMediaClientForServer(serverId);
     if (c == null) throw Exception(t.errors.noClientAvailable);
     return c;
   }
 
   MediaServerClient getMediaClientForLibrary(MediaLibrary library) {
-    final c = _resolveMediaClient(library.serverId);
+    final c = _resolveMediaClient(serverIdOrNull(library.serverId));
     if (c == null) throw Exception(t.errors.noClientAvailable);
     return c;
   }
@@ -98,12 +99,12 @@ extension ProviderExtensions on BuildContext {
   /// when the server isn't online.
   MediaServerClient? getMediaClientForItemOrNull(MediaItem item, {bool isOffline = false}) {
     if (isOffline) return null;
-    return tryGetMediaClientForServer(item.serverId);
+    return tryGetMediaClientForServer(serverIdOrNull(item.serverId));
   }
 
   /// Get a [MediaServerClient] for [serverId], falling back to the first
   /// online server when not found. Throws if no client is available.
-  MediaServerClient getMediaClientWithFallback(String? serverId) {
+  MediaServerClient getMediaClientWithFallback(ServerId? serverId) {
     final c = _resolveMediaClient(serverId);
     if (c == null) throw Exception(t.errors.noClientAvailable);
     return c;
@@ -113,19 +114,19 @@ extension ProviderExtensions on BuildContext {
   /// when no client is registered. Use this for non-critical surfaces (image
   /// loaders, list cards) that can render a fallback when the client isn't
   /// available — throwing during `build` would crash the widget instead.
-  MediaServerClient? tryGetMediaClientWithFallback(String? serverId) => _resolveMediaClient(serverId);
+  MediaServerClient? tryGetMediaClientWithFallback(ServerId? serverId) => _resolveMediaClient(serverId);
 }
 
 /// Try [preferred] first, then fall back through [fallbacks] in order. Returns
 /// the first non-null result from [resolve], or `null` if every candidate
 /// resolves to null.
-T? _resolvePrioritized<T>(String? preferred, Iterable<String> fallbacks, T? Function(String) resolve) {
+T? _resolvePrioritized<T>(String? preferred, Iterable<String> fallbacks, T? Function(ServerId) resolve) {
   if (preferred != null) {
-    final c = resolve(preferred);
+    final c = resolve(ServerId(preferred));
     if (c != null) return c;
   }
   for (final id in fallbacks) {
-    final c = resolve(id);
+    final c = resolve(ServerId(id));
     if (c != null) return c;
   }
   return null;

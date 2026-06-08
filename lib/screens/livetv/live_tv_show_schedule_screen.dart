@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../media/ids.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -51,7 +52,7 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
 
   Future<void> _loadSchedule() async {
     final multiServer = context.read<MultiServerProvider>();
-    final genericClient = multiServer.getClientForServer(widget.serverId);
+    final genericClient = multiServer.getClientForServer(ServerId(widget.serverId));
     if (genericClient == null) {
       setStateIfMounted(() => _isLoading = false);
       return;
@@ -88,12 +89,12 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
   /// schedule screen is opened with a single [serverId], so no per-program
   /// lookup is needed.
   bool get _canRecord {
-    final client = context.read<MultiServerProvider>().getClientForServer(widget.serverId);
+    final client = context.read<MultiServerProvider>().getClientForServer(ServerId(widget.serverId));
     return client != null && client.capabilities.liveTvDvr;
   }
 
   Future<void> _onRecordShow() async {
-    final client = context.read<MultiServerProvider>().getClientForServer(widget.serverId);
+    final client = context.read<MultiServerProvider>().getClientForServer(ServerId(widget.serverId));
     if (client == null) return;
     // Use the first program with a guid as the seed for `getSubscriptionTemplate`.
     // The template returned by Plex includes both episode-level and series-level
@@ -113,6 +114,8 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
   Widget build(BuildContext context) {
     final showRecord = _canRecord && _programs.any((p) => p.guid != null && p.guid!.isNotEmpty);
     return OverlaySheetHost(
+      // Close an open sheet on system back instead of popping the screen.
+      canPop: true,
       child: FocusedScrollScaffold(
         title: Text(widget.showTitle),
         actions: showRecord
@@ -231,16 +234,16 @@ class _ScheduleListTile extends StatelessWidget {
             : null,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: .start,
           children: [
             Row(
               children: [
                 Expanded(
                   child: Text(
                     titleText,
-                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w500),
+                    style: theme.textTheme.bodyLarge?.copyWith(fontWeight: .w500),
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    overflow: .ellipsis,
                   ),
                 ),
                 if (isLive) ...[
@@ -255,7 +258,7 @@ class _ScheduleListTile extends StatelessWidget {
                 subtitle,
                 style: theme.textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
                 maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                overflow: .ellipsis,
               ),
             ],
             if (channel != null) ...[

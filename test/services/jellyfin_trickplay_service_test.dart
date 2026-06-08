@@ -250,6 +250,24 @@ void main() {
       expect(frame.tileRow, 0);
       expect(frame.sourceTileSize, equals(const Size(320, 180)));
     });
+
+    test('uses manifest thumbnail dimensions for non-16:9 previews', () async {
+      final client = await JellyfinClient.create(_conn());
+      addTearDown(client.close);
+      final svc = JellyfinTrickplayService.create(
+        client: client,
+        itemId: 'item-1',
+        mediaSourceId: null,
+        manifest: {320: _info(width: 320, height: 240)},
+        sheetImageBuilder: _fakeSheet,
+      )!;
+
+      final frame = svc.getFrame(Duration.zero);
+
+      expect(frame, isA<SheetScrubFrame>());
+      expect(frame!.aspectRatio, closeTo(4 / 3, 0.0001));
+      expect((frame as SheetScrubFrame).sourceTileSize, equals(const Size(320, 240)));
+    });
   });
 }
 

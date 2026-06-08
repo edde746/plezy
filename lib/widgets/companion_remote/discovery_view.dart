@@ -201,7 +201,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment: .stretch,
         children: [
           Text(
             t.companionRemote.pairing.discoveryDescription,
@@ -301,7 +301,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         Text(t.companionRemote.pairing.availableDevices, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
@@ -322,7 +322,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
 
   Widget _buildManualEntrySection() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: .start,
       children: [
         FocusableWrapper(
           focusNode: _manualToggleFocusNode,
@@ -330,7 +330,6 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
           disableScale: true,
           borderRadius: 8,
           onSelect: () => setState(() => _showManualEntry = !_showManualEntry),
-          onNavigateDown: _showManualEntry ? _hostAddressFocusNode.requestFocus : null,
           child: InkWell(
             canRequestFocus: false,
             borderRadius: const BorderRadius.all(Radius.circular(8)),
@@ -360,7 +359,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
           Form(
             key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: .stretch,
               children: [
                 FocusableTextFormField(
                   controller: _hostAddressController,
@@ -382,13 +381,10 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
                     return null;
                   },
                   enabled: !_isConnecting,
-                  onNavigateUp: _manualToggleFocusNode.requestFocus,
-                  onNavigateDown: _connectFocusNode.requestFocus,
                 ),
                 const SizedBox(height: 16),
                 FocusableButton(
                   focusNode: _connectFocusNode,
-                  onNavigateUp: _hostAddressFocusNode.requestFocus,
                   onPressed: _isConnecting ? null : _submitManualHost,
                   child: FilledButton.icon(
                     onPressed: _isConnecting ? null : _submitManualHost,

@@ -1,7 +1,7 @@
 name: vibe_stream
 description: "A beautiful Plex and Jellyfin client for Flutter"
 publish_to: "none"
-version: 2.2.1+101
+version: 2.5.0+110
 
 environment:
   sdk: ">=3.12.0 <4.0.0"
@@ -34,8 +34,8 @@ dependencies:
       path: packages/connectivity_plus/connectivity_plus
   os_media_controls:
     git:
-      url: https://github.com/edde746/os-media-controls
-      ref: 5ddd27c
+      url: https://github.com/edde746/media_controls
+      ref: f51c805ebc15bf7a2f49a74174aeb470d3c4c78e
   rate_limiter: ^1.0.0
   wakelock_plus:
     git:
@@ -59,7 +59,7 @@ dependencies:
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: 4c965996210e408465e3c8b66e63ab4a659a62f9
+      ref: b4d36f88bb365faaf308ff26be7ade49bbaec859
   sentry_flutter:
     git:
       url: https://github.com/edde746/sentry-dart
@@ -72,7 +72,7 @@ dependencies:
       ref: 9e150f7
   cupertino_http: ^2.4.0
   cronet_http: ^1.6.0
-  win_http: ^0.2.0
+  win_http: ^0.2.1
   collection: ^1.18.0
   freezed_annotation: ^3.1.0
   xml: ^6.6.1
@@ -82,6 +82,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  fake_async: ^1.3.3
   build_runner: ^2.13.0
   json_serializable: ^6.7.1
   slang_build_runner: ^4.14.0

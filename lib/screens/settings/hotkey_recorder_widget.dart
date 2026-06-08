@@ -40,12 +40,12 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
         width: double.maxFinite,
         child: SingleChildScrollView(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: .min,
+            crossAxisAlignment: .start,
             children: [
               Text(
-                'Current shortcut:',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                t.hotkeys.currentShortcut,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: .bold),
               ),
               const SizedBox(height: 6),
               Container(
@@ -75,7 +75,7 @@ class _HotKeyRecorderWidgetState extends State<HotKeyRecorderWidget> {
                             _recordedHotKey = null;
                           });
                         },
-                        padding: EdgeInsets.zero,
+                        padding: .zero,
                         constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
                         tooltip: t.hotkeys.clearShortcut,
                       ),

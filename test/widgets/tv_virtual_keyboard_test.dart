@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vibe_stream/focus/dpad_navigator.dart';
 import 'package:vibe_stream/utils/platform_detector.dart';
 import 'package:vibe_stream/widgets/tv_virtual_keyboard.dart';
 
@@ -72,7 +73,115 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(controller.text, 'a\n');
+    expect(find.byType(Dialog), findsNothing);
+  });
+
+  testWidgets('physical keyboard character inserts text and hides keyboard', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyA, character: 'a');
+    await tester.pumpAndSettle();
+
+    expect(controller.text, 'a');
+    expect(find.byType(Dialog), findsNothing);
+  });
+
+  testWidgets('physical keyboard backspace deletes existing text from end and hides keyboard', (tester) async {
+    final controller = TextEditingController(text: 'query');
+    controller.selection = const TextSelection.collapsed(offset: 0);
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.backspace);
+    await tester.pumpAndSettle();
+
+    expect(controller.text, 'quer');
+    expect(find.byType(Dialog), findsNothing);
+  });
+
+  testWidgets('keyboard is compact and bottom aligned on TV', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    final panelRect = tester.getRect(find.byKey(const Key('tv_virtual_keyboard_panel')));
+    expect(panelRect.height, lessThanOrEqualTo(330));
+    expect(panelRect.width, lessThanOrEqualTo(650));
+    expect(panelRect.bottom, greaterThan(680));
+  });
+
+  testWidgets('keyboard keeps equals on main page and exposes symbols page', (tester) async {
+    final controller = TextEditingController();
+    addTearDown(controller.dispose);
+
+    await _pumpKeyboard(tester, controller: controller);
+
+    expect(find.text('='), findsOneWidget);
+    expect(find.byIcon(Icons.functions_rounded), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.functions_rounded));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ABC'), findsOneWidget);
+    expect(find.text('!'), findsOneWidget);
+    expect(find.text('='), findsOneWidget);
+  });
+
+  testWidgets('back key dismisses on key up without leaking to underlying route', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    await tester.binding.setSurfaceSize(const Size(1280, 720));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    final controller = TextEditingController();
+    final underlyingFocusNode = FocusNode(debugLabel: 'underlying_route');
+    var underlyingBackEvents = 0;
+    late BuildContext context;
+    addTearDown(controller.dispose);
+    addTearDown(underlyingFocusNode.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Focus(
+            focusNode: underlyingFocusNode,
+            autofocus: true,
+            onKeyEvent: (_, event) {
+              if (event.logicalKey.isBackKey) {
+                underlyingBackEvents++;
+                return KeyEventResult.handled;
+              }
+              return KeyEventResult.ignored;
+            },
+            child: Builder(
+              builder: (builderContext) {
+                context = builderContext;
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+
+    unawaited(showTvVirtualKeyboard(context: context, controller: controller));
+    await tester.pumpAndSettle();
     expect(find.byType(Dialog), findsOneWidget);
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.escape);
+    await tester.pump();
+
+    expect(find.byType(Dialog), findsOneWidget);
+    expect(underlyingBackEvents, 0);
+
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(Dialog), findsNothing);
+    expect(underlyingBackEvents, 0);
   });
 }
 

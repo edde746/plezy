@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'package:vibe_stream/media/ids.dart';
 import 'dart:io';
 
+import 'package:background_downloader/background_downloader.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -82,7 +84,7 @@ void main() {
           .into(db.downloadedMedia)
           .insert(
             DownloadedMediaCompanion.insert(
-              serverId: 'jf-machine',
+              serverId: ServerId('jf-machine'),
               clientScopeId: const Value('jf-machine/user-a'),
               ratingKey: 'item-1',
               globalKey: 'jf-machine:item-1',
@@ -102,10 +104,13 @@ void main() {
 
       final manager = DownloadManagerService(database: db, storageService: DownloadStorageService.instance)
         ..setClientResolver((serverId, {clientScopeId}) {
-          return _ScopedJellyfinClient(serverId: serverId, scopedServerId: clientScopeId ?? 'jf-machine/user-b');
+          return _ScopedJellyfinClient(
+            serverId: ServerId(serverId),
+            scopedServerId: clientScopeId ?? 'jf-machine/user-b',
+          );
         });
 
-      final item = await manager.lookupMetadata('jf-machine', 'item-1', preferActiveScope: true);
+      final item = await manager.lookupMetadata(ServerId('jf-machine'), 'item-1', preferActiveScope: true);
 
       expect(item?.title, 'Cached for User A');
       expect(item?.serverId, 'jf-machine');
@@ -117,7 +122,7 @@ void main() {
       JellyfinApiCache.initialize(db);
       addTearDown(db.close);
 
-      await PlexApiCache.instance.put('srv-1', '/library/metadata/show-1', {
+      await PlexApiCache.instance.put(ServerId('srv-1'), '/library/metadata/show-1', {
         'MediaContainer': {
           'Metadata': [
             {'ratingKey': 'show-1', 'type': 'show', 'title': 'The Show', 'year': 2008},
@@ -131,7 +136,7 @@ void main() {
           id: 'ep-1',
           backend: MediaBackend.plex,
           kind: MediaKind.episode,
-          serverId: 'srv-1',
+          serverId: ServerId('srv-1'),
           title: 'Episode from 2010',
           year: 2010,
           grandparentId: 'show-1',
@@ -150,25 +155,25 @@ void main() {
       JellyfinApiCache.initialize(db);
       addTearDown(db.close);
 
-      await JellyfinApiCache.instance.put('jf-machine/user-a', '/Users/user-a/Items/item-1', {
+      await JellyfinApiCache.instance.put(ServerId('jf-machine/user-a'), '/Users/user-a/Items/item-1', {
         'Id': 'item-1',
         'Type': 'Episode',
         'Name': 'Episode',
       });
-      await JellyfinApiCache.instance.put('jf-machine/user-a', '/MediaSegments/item-1', {
+      await JellyfinApiCache.instance.put(ServerId('jf-machine/user-a'), '/MediaSegments/item-1', {
         'Items': [
           {'Type': 'Intro', 'StartTicks': 10000000, 'EndTicks': 20000000},
         ],
       });
 
-      await JellyfinApiCache.instance.pinForOffline('jf-machine/user-a', 'item-1');
+      await JellyfinApiCache.instance.pinForOffline(ServerId('jf-machine/user-a'), 'item-1');
 
-      expect(await JellyfinApiCache.instance.isPinned('jf-machine/user-a', '/MediaSegments/item-1'), isTrue);
+      expect(await JellyfinApiCache.instance.isPinned(ServerId('jf-machine/user-a'), '/MediaSegments/item-1'), isTrue);
 
-      await JellyfinApiCache.instance.deleteForItem('jf-machine/user-a', 'item-1');
+      await JellyfinApiCache.instance.deleteForItem(ServerId('jf-machine/user-a'), 'item-1');
 
-      expect(await JellyfinApiCache.instance.get('jf-machine/user-a', '/Users/user-a/Items/item-1'), isNull);
-      expect(await JellyfinApiCache.instance.get('jf-machine/user-a', '/MediaSegments/item-1'), isNull);
+      expect(await JellyfinApiCache.instance.get(ServerId('jf-machine/user-a'), '/Users/user-a/Items/item-1'), isNull);
+      expect(await JellyfinApiCache.instance.get(ServerId('jf-machine/user-a'), '/MediaSegments/item-1'), isNull);
     });
 
     test('artwork repair fetches full parent metadata and backfills thumb path', () async {
@@ -195,7 +200,7 @@ void main() {
           .into(db.downloadedMedia)
           .insert(
             DownloadedMediaCompanion.insert(
-              serverId: 'srv',
+              serverId: ServerId('srv'),
               ratingKey: 'ep-1',
               globalKey: 'srv:ep-1',
               type: 'episode',
@@ -204,7 +209,7 @@ void main() {
               status: DownloadStatus.completed.index,
             ),
           );
-      await PlexApiCache.instance.put('srv', '/library/metadata/ep-1', {
+      await PlexApiCache.instance.put(ServerId('srv'), '/library/metadata/ep-1', {
         'MediaContainer': {
           'Metadata': [
             {
@@ -221,7 +226,7 @@ void main() {
           ],
         },
       });
-      await PlexApiCache.instance.put('srv', '/library/metadata/show-1', {
+      await PlexApiCache.instance.put(ServerId('srv'), '/library/metadata/show-1', {
         'MediaContainer': {
           'Metadata': [
             {'ratingKey': 'show-1', 'type': 'show', 'title': 'Show', 'thumb': '/show-thumb'},
@@ -230,13 +235,13 @@ void main() {
       });
 
       final client = _ArtworkRepairClient(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         items: {
           'show-1': MediaItem(
             id: 'show-1',
             backend: MediaBackend.plex,
             kind: MediaKind.show,
-            serverId: 'srv',
+            serverId: ServerId('srv'),
             title: 'Show',
             thumbPath: '/show-thumb',
             clearLogoPath: '/show-logo',
@@ -255,13 +260,186 @@ void main() {
 
       expect(client.fetchCounts['show-1'], isNotNull);
       expect(client.fetchCounts['show-1']!, greaterThan(0));
-      final logoPath = DownloadArtworkService.localPathSync(storage, 'srv', '/show-logo');
+      final logoPath = DownloadArtworkService.localPathSync(storage, ServerId('srv'), '/show-logo');
       expect(logoPath, isNotNull);
       expect(File(logoPath!).existsSync(), isTrue);
       final row = await db.getDownloadedMedia('srv:ep-1');
       expect(row?.thumbPath, artworkStorageKey('/ep-thumb'));
     });
   });
+
+  group('task session validation', () {
+    test('ignores progress from stale native task ids', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+      final events = <DownloadProgress>[];
+      final sub = manager.progressStream.listen(events.add);
+      addTearDown(sub.cancel);
+
+      await manager.debugHandleTaskProgress(TaskProgressUpdate(_downloadTask('stale-task', globalKey), 0.5, 1000));
+      await Future<void>.delayed(Duration.zero);
+      expect(events, isEmpty);
+
+      await manager.debugHandleTaskProgress(TaskProgressUpdate(_downloadTask('current-task', globalKey), 0.5, 1000));
+      await Future<void>.delayed(Duration.zero);
+
+      expect(events, hasLength(1));
+      expect(events.single.globalKey, globalKey);
+      expect(events.single.progress, 50);
+    });
+
+    test('ignores terminal status from stale native task ids', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      await manager.debugHandleTaskStatus(TaskStatusUpdate(_downloadTask('stale-task', globalKey), TaskStatus.failed));
+
+      final row = await db.getDownloadedMedia(globalKey);
+      expect(row?.status, DownloadStatus.downloading.index);
+      expect(row?.errorMessage, isNull);
+      expect(row?.bgTaskId, 'current-task');
+    });
+
+    test('requeues current system cancel without in-memory context', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.downloading.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      await manager.debugHandleTaskStatus(
+        TaskStatusUpdate(_downloadTask('current-task', globalKey), TaskStatus.canceled),
+      );
+
+      final row = await db.getDownloadedMedia(globalKey);
+      expect(row?.status, DownloadStatus.queued.index);
+      expect(row?.bgTaskId, isNull);
+      expect((await db.getNextQueueItem())?.mediaGlobalKey, globalKey);
+    });
+  });
+
+  group('resume handling', () {
+    test('failed native resume leaves paused row paused', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.paused.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      final resumed = await manager.debugTryResumeNativeTask(
+        globalKey,
+        'current-task',
+        taskForId: (_) async => _downloadTask('current-task', globalKey),
+        resumeTask: (_) async => false,
+      );
+
+      final row = await db.getDownloadedMedia(globalKey);
+      expect(resumed, isFalse);
+      expect(row?.status, DownloadStatus.paused.index);
+      expect(row?.bgTaskId, 'current-task');
+    });
+
+    test('successful native resume transitions to downloading', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      const globalKey = 'srv:item-1';
+      await db.insertDownload(
+        serverId: ServerId('srv'),
+        ratingKey: 'item-1',
+        globalKey: globalKey,
+        type: 'movie',
+        status: DownloadStatus.paused.index,
+      );
+      await db.updateBgTaskId(globalKey, 'current-task');
+
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        downloadsSupportedOverride: false,
+      );
+      addTearDown(manager.dispose);
+
+      final resumed = await manager.debugTryResumeNativeTask(
+        globalKey,
+        'current-task',
+        taskForId: (_) async => _downloadTask('current-task', globalKey),
+        resumeTask: (_) async => true,
+      );
+
+      final row = await db.getDownloadedMedia(globalKey);
+      expect(resumed, isTrue);
+      expect(row?.status, DownloadStatus.downloading.index);
+      expect(row?.bgTaskId, 'current-task');
+    });
+  });
+}
+
+DownloadTask _downloadTask(String taskId, String globalKey) {
+  return DownloadTask(
+    taskId: taskId,
+    url: 'https://example.test/video.mp4',
+    filename: 'video.mp4',
+    directory: 'downloads',
+    metaData: globalKey,
+  );
 }
 
 MediaItem _movie({String? thumbPath}) {
@@ -269,7 +447,7 @@ MediaItem _movie({String? thumbPath}) {
     id: 'item-1',
     backend: MediaBackend.jellyfin,
     kind: MediaKind.movie,
-    serverId: 'jf-machine',
+    serverId: ServerId('jf-machine'),
     thumbPath: thumbPath,
   );
 }
@@ -278,7 +456,7 @@ class _ScopedJellyfinClient implements MediaServerClient, ScopedMediaServerClien
   _ScopedJellyfinClient({required this.serverId, required this.scopedServerId});
 
   @override
-  final String serverId;
+  final ServerId serverId;
 
   @override
   final String scopedServerId;
@@ -330,7 +508,7 @@ class _ArtworkRepairClient implements MediaServerClient {
   _ArtworkRepairClient({required this.serverId, required this.items});
 
   @override
-  final String serverId;
+  final ServerId serverId;
 
   final Map<String, MediaItem> items;
   final fetchCounts = <String, int>{};

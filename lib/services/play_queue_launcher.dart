@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -26,9 +27,9 @@ export 'media_list_playback_launcher.dart' show PlayQueueResult, PlayQueueSucces
 /// 4. Handling errors with appropriate feedback
 ///
 /// Implements [MediaListPlaybackLauncher.launchFromCollectionOrPlaylist] for
-/// the backend-neutral entry point. Plex-only flows
-/// ([launchFromPlaylistItem], [launchShuffledShow], [launchFromFolder]) live
-/// directly on this class because they have no Jellyfin equivalent.
+/// the backend-neutral entry point. Plex-only flows such as
+/// [launchFromPlaylistItem] live directly on this class because they have no
+/// Jellyfin equivalent.
 class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
   final BuildContext context;
   final PlexClient client;
@@ -58,12 +59,12 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
     PlexClient? plexClient;
     if (itemServerId != null) {
       // Plex-only: server-side `/playQueues` resource has no Jellyfin equivalent.
-      plexClient = provider.getPlexClientForServer(itemServerId);
+      plexClient = provider.getPlexClientForServer(ServerId(itemServerId));
     }
     if (plexClient == null) {
       // Fall back to the first online Plex client.
       for (final id in provider.onlineServerIds) {
-        final c = provider.getPlexClientForServer(id);
+        final c = provider.getPlexClientForServer(ServerId(id));
         if (c != null) {
           plexClient = c;
           break;
@@ -157,7 +158,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
         return _launchFromQueue(
           playQueue: playQueue,
           ratingKey: ratingKey,
-          serverId: itemServerId,
+          serverId: serverIdOrNull(itemServerId),
           serverName: itemServerName,
           libraryId: sourceLibraryId,
           libraryTitle: sourceLibraryTitle,
@@ -193,7 +194,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
         return _launchFromQueue(
           playQueue: playQueue,
           ratingKey: playlist.id,
-          serverId: serverId,
+          serverId: serverIdOrNull(serverId),
           serverName: serverName,
           selectedItem: _resolveSelectedMediaItem(playQueue),
         );
@@ -240,7 +241,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
         return _launchFromQueue(
           playQueue: playQueue,
           ratingKey: showRatingKey,
-          serverId: metadata.serverId ?? serverId,
+          serverId: serverIdOrNull(metadata.serverId ?? serverId),
           serverName: metadata.serverName ?? serverName,
           libraryId: metadata.libraryId,
           libraryTitle: metadata.libraryTitle,
@@ -289,7 +290,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
         return _launchFromQueue(
           playQueue: playQueue,
           ratingKey: folderKey,
-          serverId: serverId,
+          serverId: serverIdOrNull(serverId),
           serverName: serverName,
           libraryId: libraryId,
           libraryTitle: libraryTitle,
@@ -302,7 +303,7 @@ class PlexPlayQueueLauncher extends MediaListPlaybackLauncher {
   Future<PlayQueueResult> _launchFromQueue({
     required PlayQueueResponse? playQueue,
     required String ratingKey,
-    String? serverId,
+    ServerId? serverId,
     String? serverName,
     String? libraryId,
     String? libraryTitle,

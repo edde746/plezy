@@ -170,6 +170,22 @@ void main() {
       p.dispose();
     });
 
+    test('getNextEpisode does not retry recursively when loaded window misses target', () async {
+      final p = PlaybackStateProvider();
+      addTearDown(p.dispose);
+      final items = [_item('a', 1001), _item('b', 1002)];
+      await p.setPlaybackFromPlayQueue(_queue(playQueueID: 1, selectedItemID: 1002, totalCount: 3, items: items), null);
+
+      var fetchCount = 0;
+      p.setPlayQueueWindowFetcher((playQueueId, {center, window = 50}) async {
+        fetchCount++;
+        return _queue(playQueueID: playQueueId, selectedItemID: 1002, totalCount: 3, items: items);
+      });
+
+      expect(await p.getNextEpisode('b'), isNull);
+      expect(fetchCount, 1);
+    });
+
     test('getNextEpisode with no queue returns null (sequential mode)', () async {
       final p = PlaybackStateProvider();
       final next = await p.getNextEpisode('any-key');

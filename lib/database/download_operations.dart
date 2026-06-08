@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart';
+import '../media/ids.dart';
 
 import 'app_database.dart';
 import '../models/download_models.dart';
@@ -76,7 +77,7 @@ extension DownloadDatabaseOperations on AppDatabase {
   }
 
   Future<void> insertDownload({
-    required String serverId,
+    required ServerId serverId,
     String? clientScopeId,
     required String ratingKey,
     required String globalKey,
@@ -85,6 +86,7 @@ extension DownloadDatabaseOperations on AppDatabase {
     String? grandparentRatingKey,
     required int status,
     int mediaIndex = 0,
+    String? mediaSourceId,
   }) async {
     await into(downloadedMedia).insert(
       DownloadedMediaCompanion.insert(
@@ -97,6 +99,7 @@ extension DownloadDatabaseOperations on AppDatabase {
         grandparentRatingKey: Value(grandparentRatingKey),
         status: status,
         mediaIndex: Value(mediaIndex),
+        mediaSourceId: Value(mediaSourceId),
       ),
       mode: InsertMode.insertOrReplace,
     );
@@ -143,6 +146,12 @@ extension DownloadDatabaseOperations on AppDatabase {
     await (update(
       downloadedMedia,
     )..where((t) => t.globalKey.equals(globalKey))).write(DownloadedMediaCompanion(status: Value(status)));
+  }
+
+  Future<void> updateDownloadMediaSource(String globalKey, String? mediaSourceId) async {
+    await (update(downloadedMedia)..where((t) => t.globalKey.equals(globalKey))).write(
+      DownloadedMediaCompanion(mediaSourceId: Value(mediaSourceId)),
+    );
   }
 
   Future<void> updateDownloadProgress(String globalKey, int progress, int downloadedBytes, int totalBytes) async {
@@ -201,14 +210,14 @@ extension DownloadDatabaseOperations on AppDatabase {
 
   Future<List<DownloadedMediaItem>> getEpisodesBySeason(
     String seasonKey, {
-    String? serverId,
+    ServerId? serverId,
     String? clientScopeId,
     bool filterClientScope = false,
   }) {
     return (select(downloadedMedia)..where(
           (t) =>
               t.parentRatingKey.equals(seasonKey) &
-              _optionalServerPredicate(t.serverId, serverId) &
+              _optionalServerPredicate(t.serverId, serverIdOrNull(serverId)) &
               _optionalClientScopePredicate(t.clientScopeId, clientScopeId, filterClientScope: filterClientScope),
         ))
         .get();
@@ -216,24 +225,24 @@ extension DownloadDatabaseOperations on AppDatabase {
 
   Future<List<DownloadedMediaItem>> getEpisodesByShow(
     String showKey, {
-    String? serverId,
+    ServerId? serverId,
     String? clientScopeId,
     bool filterClientScope = false,
   }) {
     return (select(downloadedMedia)..where(
           (t) =>
               t.grandparentRatingKey.equals(showKey) &
-              _optionalServerPredicate(t.serverId, serverId) &
+              _optionalServerPredicate(t.serverId, serverIdOrNull(serverId)) &
               _optionalClientScopePredicate(t.clientScopeId, clientScopeId, filterClientScope: filterClientScope),
         ))
         .get();
   }
 
-  Future<List<DownloadedMediaItem>> getDownloadsByServerId(String serverId) {
+  Future<List<DownloadedMediaItem>> getDownloadsByServerId(ServerId serverId) {
     return (select(downloadedMedia)..where((t) => t.serverId.equals(serverId))).get();
   }
 
-  Expression<bool> _optionalServerPredicate(GeneratedColumn<String> column, String? serverId) {
+  Expression<bool> _optionalServerPredicate(GeneratedColumn<String> column, ServerId? serverId) {
     return serverId == null ? const Constant(true) : column.equals(serverId);
   }
 

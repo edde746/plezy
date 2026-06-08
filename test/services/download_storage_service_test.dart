@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:vibe_stream/media/ids.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
@@ -234,14 +235,14 @@ void main() {
       final dss = DownloadStorageService.instance;
       // Before initialize() the sync getter is null.
       expect(dss.artworkDirectoryPath, isNull);
-      expect(dss.getArtworkPathSync('srv', '/library/metadata/1/thumb'), isNull);
+      expect(dss.getArtworkPathSync(ServerId('srv'), '/library/metadata/1/thumb'), isNull);
 
       final settings = await SettingsService.getInstance();
       await dss.initialize(settings);
 
-      final p1 = dss.getArtworkPathSync('srv', '/library/metadata/1/thumb');
-      final p2 = dss.getArtworkPathSync('srv', '/library/metadata/1/thumb');
-      final p3 = dss.getArtworkPathSync('srv', '/library/metadata/2/thumb');
+      final p1 = dss.getArtworkPathSync(ServerId('srv'), '/library/metadata/1/thumb');
+      final p2 = dss.getArtworkPathSync(ServerId('srv'), '/library/metadata/1/thumb');
+      final p3 = dss.getArtworkPathSync(ServerId('srv'), '/library/metadata/2/thumb');
       expect(p1, isNotNull);
       // Same input → same path (MD5 of `serverId:thumbPath`).
       expect(p1, p2);
@@ -254,8 +255,8 @@ void main() {
       final dss = DownloadStorageService.instance;
       await dss.initialize(settings);
 
-      final asyncPath = await dss.getArtworkPathFromThumb('srv', '/library/metadata/9/thumb');
-      final syncPath = dss.getArtworkPathSync('srv', '/library/metadata/9/thumb');
+      final asyncPath = await dss.getArtworkPathFromThumb(ServerId('srv'), '/library/metadata/9/thumb');
+      final syncPath = dss.getArtworkPathSync(ServerId('srv'), '/library/metadata/9/thumb');
       expect(asyncPath, syncPath);
     });
 
@@ -264,11 +265,11 @@ void main() {
       final dss = DownloadStorageService.instance;
       await dss.initialize(settings);
 
-      expect(await dss.artworkExists('srv', '/thumb/1'), isFalse);
+      expect(await dss.artworkExists(ServerId('srv'), '/thumb/1'), isFalse);
 
-      final filePath = await dss.getArtworkPathFromThumb('srv', '/thumb/1');
+      final filePath = await dss.getArtworkPathFromThumb(ServerId('srv'), '/thumb/1');
       await File(filePath).writeAsString('fake-artwork');
-      expect(await dss.artworkExists('srv', '/thumb/1'), isTrue);
+      expect(await dss.artworkExists(ServerId('srv'), '/thumb/1'), isTrue);
     });
   });
 
@@ -521,7 +522,7 @@ void main() {
       final dss = DownloadStorageService.instance;
       await dss.initialize(settings);
 
-      final dir = await dss.getMediaDirectory('srv-1', '42');
+      final dir = await dss.getMediaDirectory(ServerId('srv-1'), '42');
       expect(dir.existsSync(), isTrue);
       final downloads = await dss.getDownloadsDirectory();
       expect(dir.path, p.join(downloads.path, 'srv-1', '42'));

@@ -33,10 +33,7 @@ class AboutScreen extends StatelessWidget {
                         const SizedBox(height: 24),
                         Image.asset('assets/vibe_stream.png', width: 80, height: 80),
                         const SizedBox(height: 16),
-                        Text(
-                          appName,
-                          style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
-                        ),
+                        Text(appName, style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: .bold)),
                         const SizedBox(height: 8),
                         Text(
                           t.about.versionLabel(version: appVersion),

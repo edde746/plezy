@@ -89,6 +89,23 @@ void main() {
       p.dispose();
     });
 
+    test('setPreset restores current when saved preset id is unchanged', () async {
+      final p = ShaderProvider();
+      await Future.delayed(Duration.zero);
+      final saved = ShaderPreset.anime4kPreset(Anime4KQuality.fast, Anime4KMode.modeA);
+
+      await p.setPreset(saved);
+      p.setCurrentPreset(ShaderPreset.none);
+      expect(p.savedPreset, saved);
+      expect(p.currentPreset, ShaderPreset.none);
+
+      await p.setPreset(saved);
+      expect(p.savedPreset, saved);
+      expect(p.currentPreset, saved);
+
+      p.dispose();
+    });
+
     test('reset returns to the none preset', () async {
       final p = ShaderProvider();
       await Future.delayed(Duration.zero);

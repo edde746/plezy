@@ -221,6 +221,17 @@ class $DownloadedMediaTable extends DownloadedMedia
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _mediaSourceIdMeta = const VerificationMeta(
+    'mediaSourceId',
+  );
+  @override
+  late final GeneratedColumn<String> mediaSourceId = GeneratedColumn<String>(
+    'media_source_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -242,6 +253,7 @@ class $DownloadedMediaTable extends DownloadedMedia
     retryCount,
     bgTaskId,
     mediaIndex,
+    mediaSourceId,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -397,6 +409,15 @@ class $DownloadedMediaTable extends DownloadedMedia
         mediaIndex.isAcceptableOrUnknown(data['media_index']!, _mediaIndexMeta),
       );
     }
+    if (data.containsKey('media_source_id')) {
+      context.handle(
+        _mediaSourceIdMeta,
+        mediaSourceId.isAcceptableOrUnknown(
+          data['media_source_id']!,
+          _mediaSourceIdMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -482,6 +503,10 @@ class $DownloadedMediaTable extends DownloadedMedia
         DriftSqlType.int,
         data['${effectivePrefix}media_index'],
       )!,
+      mediaSourceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}media_source_id'],
+      ),
     );
   }
 
@@ -512,6 +537,7 @@ class DownloadedMediaItem extends DataClass
   final int retryCount;
   final String? bgTaskId;
   final int mediaIndex;
+  final String? mediaSourceId;
   const DownloadedMediaItem({
     required this.id,
     required this.serverId,
@@ -532,6 +558,7 @@ class DownloadedMediaItem extends DataClass
     required this.retryCount,
     this.bgTaskId,
     required this.mediaIndex,
+    this.mediaSourceId,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -573,6 +600,9 @@ class DownloadedMediaItem extends DataClass
       map['bg_task_id'] = Variable<String>(bgTaskId);
     }
     map['media_index'] = Variable<int>(mediaIndex);
+    if (!nullToAbsent || mediaSourceId != null) {
+      map['media_source_id'] = Variable<String>(mediaSourceId);
+    }
     return map;
   }
 
@@ -615,6 +645,9 @@ class DownloadedMediaItem extends DataClass
           ? const Value.absent()
           : Value(bgTaskId),
       mediaIndex: Value(mediaIndex),
+      mediaSourceId: mediaSourceId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mediaSourceId),
     );
   }
 
@@ -645,6 +678,7 @@ class DownloadedMediaItem extends DataClass
       retryCount: serializer.fromJson<int>(json['retryCount']),
       bgTaskId: serializer.fromJson<String?>(json['bgTaskId']),
       mediaIndex: serializer.fromJson<int>(json['mediaIndex']),
+      mediaSourceId: serializer.fromJson<String?>(json['mediaSourceId']),
     );
   }
   @override
@@ -670,6 +704,7 @@ class DownloadedMediaItem extends DataClass
       'retryCount': serializer.toJson<int>(retryCount),
       'bgTaskId': serializer.toJson<String?>(bgTaskId),
       'mediaIndex': serializer.toJson<int>(mediaIndex),
+      'mediaSourceId': serializer.toJson<String?>(mediaSourceId),
     };
   }
 
@@ -693,6 +728,7 @@ class DownloadedMediaItem extends DataClass
     int? retryCount,
     Value<String?> bgTaskId = const Value.absent(),
     int? mediaIndex,
+    Value<String?> mediaSourceId = const Value.absent(),
   }) => DownloadedMediaItem(
     id: id ?? this.id,
     serverId: serverId ?? this.serverId,
@@ -721,6 +757,9 @@ class DownloadedMediaItem extends DataClass
     retryCount: retryCount ?? this.retryCount,
     bgTaskId: bgTaskId.present ? bgTaskId.value : this.bgTaskId,
     mediaIndex: mediaIndex ?? this.mediaIndex,
+    mediaSourceId: mediaSourceId.present
+        ? mediaSourceId.value
+        : this.mediaSourceId,
   );
   DownloadedMediaItem copyWithCompanion(DownloadedMediaCompanion data) {
     return DownloadedMediaItem(
@@ -763,6 +802,9 @@ class DownloadedMediaItem extends DataClass
       mediaIndex: data.mediaIndex.present
           ? data.mediaIndex.value
           : this.mediaIndex,
+      mediaSourceId: data.mediaSourceId.present
+          ? data.mediaSourceId.value
+          : this.mediaSourceId,
     );
   }
 
@@ -787,7 +829,8 @@ class DownloadedMediaItem extends DataClass
           ..write('errorMessage: $errorMessage, ')
           ..write('retryCount: $retryCount, ')
           ..write('bgTaskId: $bgTaskId, ')
-          ..write('mediaIndex: $mediaIndex')
+          ..write('mediaIndex: $mediaIndex, ')
+          ..write('mediaSourceId: $mediaSourceId')
           ..write(')'))
         .toString();
   }
@@ -813,6 +856,7 @@ class DownloadedMediaItem extends DataClass
     retryCount,
     bgTaskId,
     mediaIndex,
+    mediaSourceId,
   );
   @override
   bool operator ==(Object other) =>
@@ -836,7 +880,8 @@ class DownloadedMediaItem extends DataClass
           other.errorMessage == this.errorMessage &&
           other.retryCount == this.retryCount &&
           other.bgTaskId == this.bgTaskId &&
-          other.mediaIndex == this.mediaIndex);
+          other.mediaIndex == this.mediaIndex &&
+          other.mediaSourceId == this.mediaSourceId);
 }
 
 class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
@@ -859,6 +904,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
   final Value<int> retryCount;
   final Value<String?> bgTaskId;
   final Value<int> mediaIndex;
+  final Value<String?> mediaSourceId;
   const DownloadedMediaCompanion({
     this.id = const Value.absent(),
     this.serverId = const Value.absent(),
@@ -879,6 +925,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.retryCount = const Value.absent(),
     this.bgTaskId = const Value.absent(),
     this.mediaIndex = const Value.absent(),
+    this.mediaSourceId = const Value.absent(),
   });
   DownloadedMediaCompanion.insert({
     this.id = const Value.absent(),
@@ -900,6 +947,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     this.retryCount = const Value.absent(),
     this.bgTaskId = const Value.absent(),
     this.mediaIndex = const Value.absent(),
+    this.mediaSourceId = const Value.absent(),
   }) : serverId = Value(serverId),
        ratingKey = Value(ratingKey),
        globalKey = Value(globalKey),
@@ -925,6 +973,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Expression<int>? retryCount,
     Expression<String>? bgTaskId,
     Expression<int>? mediaIndex,
+    Expression<String>? mediaSourceId,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
@@ -947,6 +996,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       if (retryCount != null) 'retry_count': retryCount,
       if (bgTaskId != null) 'bg_task_id': bgTaskId,
       if (mediaIndex != null) 'media_index': mediaIndex,
+      if (mediaSourceId != null) 'media_source_id': mediaSourceId,
     });
   }
 
@@ -970,6 +1020,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     Value<int>? retryCount,
     Value<String?>? bgTaskId,
     Value<int>? mediaIndex,
+    Value<String?>? mediaSourceId,
   }) {
     return DownloadedMediaCompanion(
       id: id ?? this.id,
@@ -991,6 +1042,7 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
       retryCount: retryCount ?? this.retryCount,
       bgTaskId: bgTaskId ?? this.bgTaskId,
       mediaIndex: mediaIndex ?? this.mediaIndex,
+      mediaSourceId: mediaSourceId ?? this.mediaSourceId,
     );
   }
 
@@ -1056,6 +1108,9 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
     if (mediaIndex.present) {
       map['media_index'] = Variable<int>(mediaIndex.value);
     }
+    if (mediaSourceId.present) {
+      map['media_source_id'] = Variable<String>(mediaSourceId.value);
+    }
     return map;
   }
 
@@ -1080,7 +1135,8 @@ class DownloadedMediaCompanion extends UpdateCompanion<DownloadedMediaItem> {
           ..write('errorMessage: $errorMessage, ')
           ..write('retryCount: $retryCount, ')
           ..write('bgTaskId: $bgTaskId, ')
-          ..write('mediaIndex: $mediaIndex')
+          ..write('mediaIndex: $mediaIndex, ')
+          ..write('mediaSourceId: $mediaSourceId')
           ..write(')'))
         .toString();
   }
@@ -5319,6 +5375,7 @@ typedef $$DownloadedMediaTableCreateCompanionBuilder =
       Value<int> retryCount,
       Value<String?> bgTaskId,
       Value<int> mediaIndex,
+      Value<String?> mediaSourceId,
     });
 typedef $$DownloadedMediaTableUpdateCompanionBuilder =
     DownloadedMediaCompanion Function({
@@ -5341,6 +5398,7 @@ typedef $$DownloadedMediaTableUpdateCompanionBuilder =
       Value<int> retryCount,
       Value<String?> bgTaskId,
       Value<int> mediaIndex,
+      Value<String?> mediaSourceId,
     });
 
 class $$DownloadedMediaTableFilterComposer
@@ -5444,6 +5502,11 @@ class $$DownloadedMediaTableFilterComposer
 
   ColumnFilters<int> get mediaIndex => $composableBuilder(
     column: $table.mediaIndex,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mediaSourceId => $composableBuilder(
+    column: $table.mediaSourceId,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5551,6 +5614,11 @@ class $$DownloadedMediaTableOrderingComposer
     column: $table.mediaIndex,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get mediaSourceId => $composableBuilder(
+    column: $table.mediaSourceId,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$DownloadedMediaTableAnnotationComposer
@@ -5638,6 +5706,11 @@ class $$DownloadedMediaTableAnnotationComposer
     column: $table.mediaIndex,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get mediaSourceId => $composableBuilder(
+    column: $table.mediaSourceId,
+    builder: (column) => column,
+  );
 }
 
 class $$DownloadedMediaTableTableManager
@@ -5696,6 +5769,7 @@ class $$DownloadedMediaTableTableManager
                 Value<int> retryCount = const Value.absent(),
                 Value<String?> bgTaskId = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
+                Value<String?> mediaSourceId = const Value.absent(),
               }) => DownloadedMediaCompanion(
                 id: id,
                 serverId: serverId,
@@ -5716,6 +5790,7 @@ class $$DownloadedMediaTableTableManager
                 retryCount: retryCount,
                 bgTaskId: bgTaskId,
                 mediaIndex: mediaIndex,
+                mediaSourceId: mediaSourceId,
               ),
           createCompanionCallback:
               ({
@@ -5738,6 +5813,7 @@ class $$DownloadedMediaTableTableManager
                 Value<int> retryCount = const Value.absent(),
                 Value<String?> bgTaskId = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
+                Value<String?> mediaSourceId = const Value.absent(),
               }) => DownloadedMediaCompanion.insert(
                 id: id,
                 serverId: serverId,
@@ -5758,6 +5834,7 @@ class $$DownloadedMediaTableTableManager
                 retryCount: retryCount,
                 bgTaskId: bgTaskId,
                 mediaIndex: mediaIndex,
+                mediaSourceId: mediaSourceId,
               ),
           withReferenceMapper: (p0) => p0
               .map((e) => (e.readTable(table), BaseReferences(db, table, e)))

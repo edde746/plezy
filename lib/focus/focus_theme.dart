@@ -5,8 +5,12 @@ class FocusTheme {
   FocusTheme._();
 
   static const double focusScale = 1.02;
+  static const double fullCardFocusScale = 1.03;
   static const double focusBorderWidth = 2.5;
   static const double defaultBorderRadius = 8.0;
+  static const double focusGlowInnerBlurRadius = 18;
+  static const double focusGlowOuterBlurRadius = 34;
+  static const double focusGlowSpreadRadius = 1.5;
 
   static Color getFocusBorderColor(BuildContext context) {
     return Theme.of(context).colorScheme.primary;
@@ -20,15 +24,40 @@ class FocusTheme {
     BuildContext context, {
     required bool isFocused,
     double borderRadius = defaultBorderRadius,
+    double borderStrokeAlign = BorderSide.strokeAlignInside,
     Color? color,
   }) {
     final focusColor = color ?? getFocusBorderColor(context);
 
     return BoxDecoration(
       borderRadius: BorderRadius.circular(borderRadius),
-      border: Border.all(color: isFocused ? focusColor : Colors.transparent, width: focusBorderWidth),
+      border: Border.all(
+        color: isFocused ? focusColor : Colors.transparent,
+        width: focusBorderWidth,
+        strokeAlign: borderStrokeAlign,
+      ),
     );
   }
+
+  /// The focus glow as a list of [BoxShadow]s.
+  ///
+  /// Rendered by [FocusGlowOverlay] in the root overlay so the glow paints
+  /// above sibling cards on all four sides (an in-tree background shadow is
+  /// occluded by later-painted neighbours, which produced the one-sided halo).
+  static List<BoxShadow> focusGlowShadows(Color color) {
+    return [
+      BoxShadow(
+        color: color.withValues(alpha: 0.34),
+        blurRadius: focusGlowInnerBlurRadius,
+        spreadRadius: focusGlowSpreadRadius,
+      ),
+      BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: focusGlowOuterBlurRadius),
+    ];
+  }
+
+  /// How far the focus glow visibly reaches beyond the card edge. Used to size
+  /// the overlay paint area so the blur is not clipped.
+  static double get focusGlowExtent => focusGlowOuterBlurRadius * 2 + focusGlowSpreadRadius;
 
   /// Build focus decoration with background color instead of border.
   /// Useful for video controls where it should match the native hover style.

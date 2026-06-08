@@ -1,10 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vibe_stream/media/ids.dart';
 import 'package:vibe_stream/models/livetv_channel.dart';
 import 'package:vibe_stream/utils/live_tv_grouping.dart';
 
 LiveTvChannel _channel({
   required String key,
-  required String serverId,
+  required ServerId serverId,
   required String serverName,
   required String dvrKey,
   required String favoriteSource,
@@ -24,7 +25,7 @@ void main() {
   test('groups channels by Live TV source while preserving first source appearance', () {
     final firstHome = _channel(
       key: '101',
-      serverId: 'home',
+      serverId: ServerId('home'),
       serverName: 'Home Plex',
       dvrKey: 'dvr-a',
       favoriteSource: 'server://home/provider-a',
@@ -32,7 +33,7 @@ void main() {
     );
     final cabin = _channel(
       key: '101',
-      serverId: 'cabin',
+      serverId: ServerId('cabin'),
       serverName: 'Cabin Plex',
       dvrKey: 'dvr-a',
       favoriteSource: 'server://cabin/provider-b',
@@ -40,7 +41,7 @@ void main() {
     );
     final secondHome = _channel(
       key: '102',
-      serverId: 'home',
+      serverId: ServerId('home'),
       serverName: 'Home Plex',
       dvrKey: 'dvr-a',
       favoriteSource: 'server://home/provider-a',
@@ -58,7 +59,7 @@ void main() {
     final channels = [
       _channel(
         key: '101',
-        serverId: 'home',
+        serverId: ServerId('home'),
         serverName: 'Home Plex',
         dvrKey: 'dvr-a',
         favoriteSource: 'server://home/provider-a',
@@ -66,7 +67,7 @@ void main() {
       ),
       _channel(
         key: '101',
-        serverId: 'home',
+        serverId: ServerId('home'),
         serverName: 'Home Plex',
         dvrKey: 'dvr-b',
         favoriteSource: 'server://home/provider-a',

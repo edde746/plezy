@@ -74,6 +74,14 @@ void main() {
     });
   });
 
+  group('SettingsService TV card defaults', () {
+    test('full card layout starts disabled', () async {
+      final settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.tvFullCardLayout), isFalse);
+    });
+  });
+
   group('SettingsService companion remote prefs', () {
     test('last manual host address trims whitespace and drops blanks', () async {
       final settings = await SettingsService.getInstance();

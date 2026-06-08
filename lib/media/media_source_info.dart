@@ -1,3 +1,4 @@
+import '../i18n/strings.g.dart';
 import '../utils/codec_utils.dart';
 import '../utils/track_label_builder.dart' show TrackLabelBuilder, buildTrackLabel;
 import 'media_display_criteria.dart';
@@ -25,6 +26,9 @@ class MediaSourceInfo {
   /// null here and uses [partId] + the BIF service instead.
   final Map<int, TrickplayInfo>? trickplayByWidth;
 
+  /// Display aspect ratio of the video stream (width / height).
+  final double? videoAspectRatio;
+
   MediaSourceInfo({
     required this.videoUrl,
     required this.audioTracks,
@@ -36,6 +40,7 @@ class MediaSourceInfo {
     this.defaultAudioStreamIndex,
     this.defaultSubtitleStreamIndex,
     this.trickplayByWidth,
+    this.videoAspectRatio,
   });
   int? getPartId() => partId;
 }
@@ -135,6 +140,7 @@ class MediaSubtitleTrack with _TrackLabelMixin {
   final bool forced;
   final String? key;
   final bool external;
+  final bool usesExternalDelivery;
 
   MediaSubtitleTrack({
     required this.id,
@@ -148,6 +154,7 @@ class MediaSubtitleTrack with _TrackLabelMixin {
     required this.forced,
     this.key,
     this.external = false,
+    this.usesExternalDelivery = false,
   });
 
   String get label {
@@ -178,7 +185,9 @@ class MediaSubtitleTrack with _TrackLabelMixin {
   /// Returns true if this subtitle track is an external file (sidecar subtitle).
   /// Some backends provide a direct key/URL, others require constructing one
   /// from stream metadata.
-  bool get isExternal => external || (key != null && key!.isNotEmpty);
+  bool get isExternalFile => external;
+
+  bool get isExternal => external || usesExternalDelivery || (key != null && key!.isNotEmpty);
 }
 
 class MediaChapter {
@@ -224,7 +233,7 @@ class MediaChapter {
     return chapters;
   }
 
-  String get label => title ?? 'Chapter ${(index ?? 0) + 1}';
+  String get label => title ?? t.common.chapterNumber(number: (index ?? 0) + 1);
 
   Duration get startTime => Duration(milliseconds: startTimeOffset ?? 0);
   Duration? get endTime => endTimeOffset != null ? Duration(milliseconds: endTimeOffset!) : null;

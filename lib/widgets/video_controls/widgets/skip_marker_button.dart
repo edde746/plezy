@@ -54,7 +54,8 @@ class SkipMarkerButton extends StatelessWidget {
         ? (autoSkipDelay - (autoSkipProgress * autoSkipDelay)).ceil().clamp(0, autoSkipDelay)
         : 0;
 
-    final buttonText = isAutoSkipActive && shouldShowAutoSkip && remainingSeconds > 0
+    final showAutoSkipCountdown = isAutoSkipActive && shouldShowAutoSkip;
+    final buttonText = showAutoSkipCountdown && remainingSeconds > 0
         ? '$baseButtonText ($remainingSeconds)'
         : baseButtonText;
     final buttonIcon = showNextEpisode ? Symbols.skip_next_rounded : Symbols.fast_forward_rounded;
@@ -89,11 +90,11 @@ class SkipMarkerButton extends StatelessWidget {
                   ],
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: .min,
                   children: [
                     Text(
                       buttonText,
-                      style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w600),
+                      style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: .w600),
                     ),
                     const SizedBox(width: 8),
                     AppIcon(buttonIcon, fill: 1, color: Colors.black, size: 20),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../focus/focus_theme.dart';
 import '../focus/focusable_wrapper.dart';
 import '../utils/platform_detector.dart';
 import 'media_card.dart';
@@ -29,6 +30,9 @@ class FocusableMediaCard extends StatefulWidget {
 
   /// True when in a hub with mixed content (movies + episodes)
   final bool mixedHubContext;
+
+  /// Render grid cards as image-only full-bleed cards.
+  final bool fullBleedImage;
 
   /// Show server name in list view (multi-server)
   final bool showServerName;
@@ -79,6 +83,7 @@ class FocusableMediaCard extends StatefulWidget {
     this.collectionId,
     this.isOffline = false,
     this.mixedHubContext = false,
+    this.fullBleedImage = false,
     this.showServerName = false,
     this.disableScale = false,
     this.focusNode,
@@ -111,6 +116,10 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
       onFocusChange: widget.onFocusChange,
       enableLongPress: true,
       disableScale: widget.disableScale,
+      focusScale: widget.fullBleedImage ? FocusTheme.fullCardFocusScale : FocusTheme.focusScale,
+      focusBorderStrokeAlign: widget.fullBleedImage ? BorderSide.strokeAlignOutside : BorderSide.strokeAlignInside,
+      useFocusGlow: widget.fullBleedImage,
+      useForegroundFocusDecoration: widget.fullBleedImage,
       useComfortableZone: !PlatformDetector.isTV(), // Always center on TV
       scrollAlignment: 0.5,
       child: MediaCard(
@@ -127,6 +136,7 @@ class _FocusableMediaCardState extends State<FocusableMediaCard> {
         collectionId: widget.collectionId,
         isOffline: widget.isOffline,
         mixedHubContext: widget.mixedHubContext,
+        fullBleedImage: widget.fullBleedImage,
         showServerName: widget.showServerName,
       ),
     );

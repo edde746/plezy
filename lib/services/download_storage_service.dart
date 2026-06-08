@@ -1,4 +1,5 @@
 import 'dart:convert';
+import '../media/ids.dart';
 import 'dart:io';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
@@ -160,7 +161,7 @@ class DownloadStorageService {
   /// `/Items/.../Images/Primary` paths both round-trip cleanly.
   /// Returns path to cached artwork file using hash of the thumb URL, or null if not initialized.
   /// Example: artwork/a1b2c3d4e5f6.jpg
-  String? getArtworkPathSync(String serverId, String thumbPath) {
+  String? getArtworkPathSync(ServerId serverId, String thumbPath) {
     if (_artworkDirectoryPath == null) return null;
     final hash = _hashArtworkPath(serverId, thumbPath);
     return path.join(_artworkDirectoryPath!, '$hash.jpg');
@@ -168,34 +169,34 @@ class DownloadStorageService {
 
   /// Get artwork file path from a server-side thumb path (async version).
   /// Backend-neutral — see [getArtworkPathSync] for details.
-  Future<String> getArtworkPathFromThumb(String serverId, String thumbPath) async {
+  Future<String> getArtworkPathFromThumb(ServerId serverId, String thumbPath) async {
     final artworkDir = await getArtworkDirectory();
     final hash = _hashArtworkPath(serverId, thumbPath);
     return path.join(artworkDir.path, '$hash.jpg');
   }
 
-  Future<bool> artworkExists(String serverId, String thumbPath) async {
+  Future<bool> artworkExists(ServerId serverId, String thumbPath) async {
     final artworkPath = await getArtworkPathFromThumb(serverId, thumbPath);
     return File(artworkPath).exists();
   }
 
   /// Hash artwork path for filename using MD5 for stability across app restarts
-  String _hashArtworkPath(String serverId, String thumbPath) {
+  String _hashArtworkPath(ServerId serverId, String thumbPath) {
     final combined = '$serverId:$thumbPath';
     return md5.convert(utf8.encode(combined)).toString();
   }
 
-  Future<Directory> getMediaDirectory(String serverId, String ratingKey) async {
+  Future<Directory> getMediaDirectory(ServerId serverId, String ratingKey) async {
     final baseDir = await getDownloadsDirectory();
     return _ensureDirectoryExists(Directory(path.join(baseDir.path, serverId, ratingKey)));
   }
 
-  Future<String> getVideoFilePath(String serverId, String ratingKey, String extension) async {
+  Future<String> getVideoFilePath(ServerId serverId, String ratingKey, String extension) async {
     final mediaDir = await getMediaDirectory(serverId, ratingKey);
     return path.join(mediaDir.path, 'video.$extension');
   }
 
-  Future<Directory> getSubtitlesDirectory(String serverId, String ratingKey) async {
+  Future<Directory> getSubtitlesDirectory(ServerId serverId, String ratingKey) async {
     final mediaDir = await getMediaDirectory(serverId, ratingKey);
     final subtitlesDir = Directory(path.join(mediaDir.path, 'subtitles'));
     if (!await subtitlesDir.exists()) {
@@ -204,7 +205,7 @@ class DownloadStorageService {
     return subtitlesDir;
   }
 
-  Future<String> getSubtitlePath(String serverId, String ratingKey, int trackId, String extension) async {
+  Future<String> getSubtitlePath(ServerId serverId, String ratingKey, int trackId, String extension) async {
     final subtitlesDir = await getSubtitlesDirectory(serverId, ratingKey);
     return path.join(subtitlesDir.path, '$trackId.$extension');
   }

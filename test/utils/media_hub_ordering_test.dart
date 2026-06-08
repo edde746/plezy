@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vibe_stream/media/ids.dart';
 import 'package:vibe_stream/media/media_backend.dart';
 import 'package:vibe_stream/media/media_hub.dart';
 import 'package:vibe_stream/media/media_item.dart';
@@ -6,22 +7,37 @@ import 'package:vibe_stream/media/media_kind.dart';
 import 'package:vibe_stream/media/media_library.dart';
 import 'package:vibe_stream/utils/media_hub_ordering.dart';
 
-MediaLibrary _library(String id, {String serverId = 'server'}) {
+const Object _defaultServerId = Object();
+
+MediaLibrary _library(String id, {ServerId? serverId}) {
   return MediaLibrary(
     id: id,
     backend: MediaBackend.plex,
     title: 'Library $id',
     kind: MediaKind.movie,
-    serverId: serverId,
+    serverId: serverId ?? ServerId('server'),
   );
 }
 
-MediaItem _item(String id, {String? libraryId, String? serverId = 'server'}) {
-  return MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.movie, libraryId: libraryId, serverId: serverId);
+MediaItem _item(String id, {String? libraryId, Object? serverId = _defaultServerId}) {
+  return MediaItem(
+    id: id,
+    backend: MediaBackend.plex,
+    kind: MediaKind.movie,
+    libraryId: libraryId,
+    serverId: identical(serverId, _defaultServerId) ? ServerId('server') : serverId as ServerId?,
+  );
 }
 
-MediaHub _hub(String id, {String? libraryId, String? serverId = 'server', List<MediaItem> items = const []}) {
-  return MediaHub(id: id, title: id, type: 'movie', libraryId: libraryId, serverId: serverId, items: items);
+MediaHub _hub(String id, {String? libraryId, Object? serverId = _defaultServerId, List<MediaItem> items = const []}) {
+  return MediaHub(
+    id: id,
+    title: id,
+    type: 'movie',
+    libraryId: libraryId,
+    serverId: identical(serverId, _defaultServerId) ? ServerId('server') : serverId as ServerId?,
+    items: items,
+  );
 }
 
 void main() {

@@ -789,7 +789,7 @@
 			repositoryURL = "https://github.com/MazeDev7/MPVKitAM";
 			requirement = {
 				kind = revision;
-				revision = 8da57fe1d3dd82524ea4b2ef6ef8b2d692ada395;
+				revision = 1b0134a2ea04a3b967f61a726b5864351280b420;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

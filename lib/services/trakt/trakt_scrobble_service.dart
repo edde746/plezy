@@ -180,7 +180,7 @@ class TraktScrobbleService {
 
   Map<String, dynamic> _ratingBody(TrackerRatingContext ctx, {int? rating}) {
     final ids = TraktIds.fromExternal(ctx.ids.external).toJson();
-    final item = {'ids': ids, if (rating != null) 'rating': rating};
+    final item = {'ids': ids, 'rating': ?rating};
 
     return switch (ctx.kind) {
       MediaKind.movie => {
@@ -194,7 +194,7 @@ class TraktScrobbleService {
           {
             'ids': ids,
             'seasons': [
-              {'number': ctx.season, if (rating != null) 'rating': rating},
+              {'number': ctx.season, 'rating': ?rating},
             ],
           },
         ],
@@ -207,7 +207,7 @@ class TraktScrobbleService {
               {
                 'number': ctx.season,
                 'episodes': [
-                  {'number': ctx.episodeNumber, if (rating != null) 'rating': rating},
+                  {'number': ctx.episodeNumber, 'rating': ?rating},
                 ],
               },
             ],

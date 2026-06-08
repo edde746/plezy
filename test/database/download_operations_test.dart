@@ -1,4 +1,5 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
+import 'package:vibe_stream/media/ids.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vibe_stream/database/app_database.dart';
@@ -23,7 +24,7 @@ void main() {
   group('insertDownload', () {
     test('inserts a movie row with defaults', () async {
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '100',
         globalKey: 'srv:100',
         type: 'movie',
@@ -45,7 +46,7 @@ void main() {
 
     test('inserts an episode with parent and grandparent keys', () async {
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: 'ep1',
         globalKey: 'srv:ep1',
         type: 'episode',
@@ -63,7 +64,7 @@ void main() {
 
     test('insertDownload uses InsertMode.insertOrReplace (re-insert overwrites)', () async {
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '100',
         globalKey: 'srv:100',
         type: 'movie',
@@ -74,7 +75,7 @@ void main() {
 
       // Re-insert with the same globalKey — should replace, resetting progress to default 0.
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '100',
         globalKey: 'srv:100',
         type: 'movie',
@@ -140,14 +141,14 @@ void main() {
     test('getNextQueueItem only returns items whose media is queued', () async {
       // Two items in queue; one's media is still queued, the other is downloading.
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '1',
         globalKey: 'srv:1',
         type: 'movie',
         status: DownloadStatus.queued.index,
       );
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '2',
         globalKey: 'srv:2',
         type: 'movie',
@@ -166,21 +167,21 @@ void main() {
     test('getNextQueueItem orders by priority desc, then addedAt asc', () async {
       // All have queued status
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '1',
         globalKey: 'srv:1',
         type: 'movie',
         status: DownloadStatus.queued.index,
       );
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '2',
         globalKey: 'srv:2',
         type: 'movie',
         status: DownloadStatus.queued.index,
       );
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '3',
         globalKey: 'srv:3',
         type: 'movie',
@@ -212,7 +213,7 @@ void main() {
   group('update helpers', () {
     Future<void> seed({String key = 'srv:100'}) async {
       await db.insertDownload(
-        serverId: key.split(':').first,
+        serverId: ServerId(key.split(':').first),
         ratingKey: key.split(':').last,
         globalKey: key,
         type: 'movie',
@@ -308,7 +309,7 @@ void main() {
   group('lookup helpers', () {
     Future<void> seedTree() async {
       await db.insertDownload(
-        serverId: 'srvA',
+        serverId: ServerId('srvA'),
         ratingKey: 'ep1',
         globalKey: 'srvA:ep1',
         type: 'episode',
@@ -317,7 +318,7 @@ void main() {
         status: DownloadStatus.completed.index,
       );
       await db.insertDownload(
-        serverId: 'srvA',
+        serverId: ServerId('srvA'),
         ratingKey: 'ep2',
         globalKey: 'srvA:ep2',
         type: 'episode',
@@ -326,7 +327,7 @@ void main() {
         status: DownloadStatus.completed.index,
       );
       await db.insertDownload(
-        serverId: 'srvA',
+        serverId: ServerId('srvA'),
         ratingKey: 'ep3',
         globalKey: 'srvA:ep3',
         type: 'episode',
@@ -335,7 +336,7 @@ void main() {
         status: DownloadStatus.completed.index,
       );
       await db.insertDownload(
-        serverId: 'srvB',
+        serverId: ServerId('srvB'),
         ratingKey: 'movie1',
         globalKey: 'srvB:movie1',
         type: 'movie',
@@ -367,7 +368,7 @@ void main() {
 
     test('getEpisodesBySeason can filter by server and client scope', () async {
       await db.insertDownload(
-        serverId: 'jf',
+        serverId: ServerId('jf'),
         clientScopeId: 'jf/user-a',
         ratingKey: 'ep-a',
         globalKey: 'jf:ep-a',
@@ -377,7 +378,7 @@ void main() {
         status: DownloadStatus.completed.index,
       );
       await db.insertDownload(
-        serverId: 'jf',
+        serverId: ServerId('jf'),
         clientScopeId: 'jf/user-b',
         ratingKey: 'ep-b',
         globalKey: 'jf:ep-b',
@@ -387,7 +388,7 @@ void main() {
         status: DownloadStatus.completed.index,
       );
       await db.insertDownload(
-        serverId: 'other',
+        serverId: ServerId('other'),
         ratingKey: 'ep-other',
         globalKey: 'other:ep-other',
         type: 'episode',
@@ -396,7 +397,7 @@ void main() {
         status: DownloadStatus.completed.index,
       );
       await db.insertDownload(
-        serverId: 'other',
+        serverId: ServerId('other'),
         clientScopeId: 'other/user-a',
         ratingKey: 'ep-other-scoped',
         globalKey: 'other:ep-other-scoped',
@@ -406,8 +407,8 @@ void main() {
         status: DownloadStatus.completed.index,
       );
 
-      final userA = await db.getEpisodesBySeason('season1', serverId: 'jf', clientScopeId: 'jf/user-a');
-      final unscoped = await db.getEpisodesBySeason('season1', serverId: 'other', filterClientScope: true);
+      final userA = await db.getEpisodesBySeason('season1', serverId: ServerId('jf'), clientScopeId: 'jf/user-a');
+      final unscoped = await db.getEpisodesBySeason('season1', serverId: ServerId('other'), filterClientScope: true);
 
       expect(userA.map((e) => e.ratingKey), ['ep-a']);
       expect(unscoped.map((e) => e.ratingKey), ['ep-other']);
@@ -424,7 +425,7 @@ void main() {
 
     test('getEpisodesByShow can filter by server and client scope', () async {
       await db.insertDownload(
-        serverId: 'jf',
+        serverId: ServerId('jf'),
         clientScopeId: 'jf/user-a',
         ratingKey: 'ep-a',
         globalKey: 'jf:ep-a',
@@ -434,7 +435,7 @@ void main() {
         status: DownloadStatus.completed.index,
       );
       await db.insertDownload(
-        serverId: 'jf',
+        serverId: ServerId('jf'),
         clientScopeId: 'jf/user-b',
         ratingKey: 'ep-b',
         globalKey: 'jf:ep-b',
@@ -444,7 +445,7 @@ void main() {
         status: DownloadStatus.completed.index,
       );
 
-      final userB = await db.getEpisodesByShow('show1', serverId: 'jf', clientScopeId: 'jf/user-b');
+      final userB = await db.getEpisodesByShow('show1', serverId: ServerId('jf'), clientScopeId: 'jf/user-b');
 
       expect(userB.map((e) => e.ratingKey), ['ep-b']);
     });
@@ -452,13 +453,13 @@ void main() {
     test('getDownloadsByServerId filters by serverId', () async {
       await seedTree();
 
-      final a = await db.getDownloadsByServerId('srvA');
+      final a = await db.getDownloadsByServerId(ServerId('srvA'));
       expect(a.map((e) => e.ratingKey).toSet(), {'ep1', 'ep2', 'ep3'});
 
-      final b = await db.getDownloadsByServerId('srvB');
+      final b = await db.getDownloadsByServerId(ServerId('srvB'));
       expect(b.map((e) => e.ratingKey).toSet(), {'movie1'});
 
-      expect(await db.getDownloadsByServerId('srvZ'), isEmpty);
+      expect(await db.getDownloadsByServerId(ServerId('srvZ')), isEmpty);
     });
   });
 
@@ -513,7 +514,7 @@ void main() {
   group('deleteDownload', () {
     test('removes the row from downloadedMedia AND its queue entry', () async {
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '100',
         globalKey: 'srv:100',
         type: 'movie',
@@ -521,7 +522,7 @@ void main() {
       );
       await db.addToQueue(mediaGlobalKey: 'srv:100');
       await db.insertDownload(
-        serverId: 'srv',
+        serverId: ServerId('srv'),
         ratingKey: '200',
         globalKey: 'srv:200',
         type: 'movie',

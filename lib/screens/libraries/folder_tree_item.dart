@@ -1,4 +1,5 @@
 import 'dart:ui';
+import '../../media/ids.dart';
 
 import 'package:flutter/material.dart';
 import 'package:vibe_stream/widgets/app_icon.dart';
@@ -65,6 +66,18 @@ class FolderTreeItem extends StatelessWidget {
     };
   }
 
+  String _rowTitle() {
+    final title = item.title?.trim();
+    if (title != null && title.isNotEmpty) return title;
+    return item.displayTitle;
+  }
+
+  String? _dedupeSubtitle(String? subtitle) {
+    final value = subtitle?.trim();
+    if (value == null || value.isEmpty || value == _rowTitle()) return null;
+    return value;
+  }
+
   void _handleTap() {
     if (isFolder) {
       onExpand?.call();
@@ -79,15 +92,12 @@ class FolderTreeItem extends StatelessWidget {
       if (item.parentIndex != null && item.index != null) {
         parts.add('S${item.parentIndex} E${item.index}');
       }
-      if (item.title != null && item.title!.isNotEmpty) {
-        parts.add(item.title!);
-      }
-      return parts.isNotEmpty ? parts.join(' · ') : null;
+      return parts.isNotEmpty ? parts.join(' · ') : _dedupeSubtitle(item.displaySubtitle);
     }
     if (item.isSeason) {
-      return item.displaySubtitle;
+      return _dedupeSubtitle(item.displaySubtitle);
     }
-    return item.displaySubtitle;
+    return _dedupeSubtitle(item.displaySubtitle);
   }
 
   String _buildMetadataLine() {
@@ -114,7 +124,7 @@ class FolderTreeItem extends StatelessWidget {
     final expandIcon = isExpanded ? Symbols.keyboard_arrow_down_rounded : Symbols.keyboard_arrow_right_rounded;
 
     return Container(
-      padding: EdgeInsets.only(left: 16.0 + indentation, right: 8.0, top: 8.0, bottom: 8.0),
+      padding: .only(left: 16.0 + indentation, right: 8.0, top: 8.0, bottom: 8.0),
       child: Row(
         children: [
           SizedBox(
@@ -126,10 +136,10 @@ class FolderTreeItem extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              item.displayTitle,
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              _rowTitle(),
+              style: const TextStyle(fontSize: 14, fontWeight: .w500),
               maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              overflow: .ellipsis,
             ),
           ),
         ],
@@ -139,7 +149,7 @@ class FolderTreeItem extends StatelessWidget {
 
   Widget _buildMediaRow(BuildContext context) {
     final indentation = depth * 24.0;
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
     final episodePosterMode = svc.read(SettingsService.episodePosterMode);
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
     final showUnwatchedCount = svc.read(SettingsService.showUnwatchedCount);
@@ -152,9 +162,9 @@ class FolderTreeItem extends StatelessWidget {
     final metadataLine = _buildMetadataLine();
 
     return Container(
-      padding: EdgeInsets.only(left: 16.0 + indentation, right: 16.0, top: 6.0, bottom: 6.0),
+      padding: .only(left: 16.0 + indentation, right: 16.0, top: 6.0, bottom: 6.0),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: .center,
         children: [
           // Thumbnail with progress overlay
           SizedBox(
@@ -177,14 +187,14 @@ class FolderTreeItem extends StatelessWidget {
           // Metadata column
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: .start,
+              mainAxisSize: .min,
               children: [
                 Text(
-                  item.displayTitle,
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, height: 1.2),
+                  _rowTitle(),
+                  style: const TextStyle(fontSize: 13, fontWeight: .w500, height: 1.2),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                  overflow: .ellipsis,
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
@@ -196,7 +206,7 @@ class FolderTreeItem extends StatelessWidget {
                       height: 1.2,
                     ),
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    overflow: .ellipsis,
                   ),
                 ],
                 if (metadataLine.isNotEmpty) ...[
@@ -209,7 +219,7 @@ class FolderTreeItem extends StatelessWidget {
                       height: 1.2,
                     ),
                     maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    overflow: .ellipsis,
                   ),
                 ],
               ],
@@ -229,7 +239,7 @@ class FolderTreeItem extends StatelessWidget {
   ) {
     final posterUrl = item.posterThumb(mode: episodePosterMode);
     // Backend-neutral so Jellyfin items render via Jellyfin's transcoder.
-    final client = context.tryGetMediaClientWithFallback(serverId);
+    final client = context.tryGetMediaClientWithFallback(serverIdOrNull(serverId));
     final shouldBlur =
         hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
 
@@ -296,10 +306,10 @@ class FolderTreeItem extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
               ),
-              alignment: Alignment.center,
+              alignment: .center,
               child: Text(
                 '${item.leafCount! - item.viewedLeafCount!}',
-                style: TextStyle(color: tokens(context).bg, fontSize: 10, fontWeight: FontWeight.bold),
+                style: TextStyle(color: tokens(context).bg, fontSize: 10, fontWeight: .bold),
               ),
             ),
           ),
@@ -336,6 +346,8 @@ class FolderTreeItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final playAll = onPlayAll;
+    final shuffle = onShuffle;
     final rowContent = isFolder
         ? _buildFolderRow(context)
         : SettingsBuilder(
@@ -362,13 +374,13 @@ class FolderTreeItem extends StatelessWidget {
           ),
         ),
 
-        // Play/Shuffle buttons for folders
-        if (isFolder) ...[
+        // Play/Shuffle buttons for folders when the backend supports them.
+        if (isFolder && playAll != null) ...[
           FocusableButton(
             useBackgroundFocus: true,
-            onPressed: onPlayAll,
+            onPressed: playAll,
             child: IconButton(
-              onPressed: onPlayAll,
+              onPressed: playAll,
               icon: AppIcon(
                 Symbols.play_arrow_rounded,
                 fill: 1,
@@ -378,15 +390,17 @@ class FolderTreeItem extends StatelessWidget {
               tooltip: t.common.play,
               iconSize: 18,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              padding: EdgeInsets.zero,
+              padding: .zero,
               visualDensity: VisualDensity.compact,
             ),
           ),
+        ],
+        if (isFolder && shuffle != null) ...[
           FocusableButton(
             useBackgroundFocus: true,
-            onPressed: onShuffle,
+            onPressed: shuffle,
             child: IconButton(
-              onPressed: onShuffle,
+              onPressed: shuffle,
               icon: AppIcon(
                 Symbols.shuffle_rounded,
                 fill: 1,
@@ -396,7 +410,7 @@ class FolderTreeItem extends StatelessWidget {
               tooltip: t.common.shuffle,
               iconSize: 18,
               constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              padding: EdgeInsets.zero,
+              padding: .zero,
               visualDensity: VisualDensity.compact,
             ),
           ),

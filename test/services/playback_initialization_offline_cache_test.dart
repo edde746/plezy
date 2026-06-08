@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:vibe_stream/media/ids.dart';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -78,11 +79,21 @@ void main() {
   });
 
   test('pure-offline playback loads cached Plex media source info without a client', () async {
-    await _insertDownloaded(db, serverId: 'srv-1', ratingKey: 'movie-1', videoFilePath: 'content://offline/movie-1');
-    await PlexApiCache.instance.put('srv-1', '/library/metadata/movie-1', _plexMetadataEnvelope());
+    await _insertDownloaded(
+      db,
+      serverId: ServerId('srv-1'),
+      ratingKey: 'movie-1',
+      videoFilePath: 'content://offline/movie-1',
+    );
+    await PlexApiCache.instance.put(ServerId('srv-1'), '/library/metadata/movie-1', _plexMetadataEnvelope());
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: MediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv-1'),
+      metadata: MediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        serverId: ServerId('srv-1'),
+      ),
       selectedMediaIndex: 0,
       preferOffline: true,
     );
@@ -93,12 +104,22 @@ void main() {
   });
 
   test('preferOffline uses cache without calling live client when local file exists', () async {
-    await _insertDownloaded(db, serverId: 'srv-1', ratingKey: 'movie-1', videoFilePath: 'content://offline/movie-1');
-    await PlexApiCache.instance.put('srv-1', '/library/metadata/movie-1', _plexMetadataEnvelope());
-    final client = _FailingPlaybackClient(serverId: 'srv-1');
+    await _insertDownloaded(
+      db,
+      serverId: ServerId('srv-1'),
+      ratingKey: 'movie-1',
+      videoFilePath: 'content://offline/movie-1',
+    );
+    await PlexApiCache.instance.put(ServerId('srv-1'), '/library/metadata/movie-1', _plexMetadataEnvelope());
+    final client = _FailingPlaybackClient(serverId: ServerId('srv-1'));
 
     final result = await PlaybackInitializationService(client: client, database: db).getPlaybackData(
-      metadata: MediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv-1'),
+      metadata: MediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        serverId: ServerId('srv-1'),
+      ),
       selectedMediaIndex: 0,
       preferOffline: true,
     );
@@ -113,19 +134,24 @@ void main() {
   test('pure-offline playback uses cached Plex media source for selected version', () async {
     await _insertDownloaded(
       db,
-      serverId: 'srv-1',
+      serverId: ServerId('srv-1'),
       ratingKey: 'movie-1',
       videoFilePath: 'content://offline/movie-1-v2',
       mediaIndex: 1,
     );
     await PlexApiCache.instance.put(
-      'srv-1',
+      ServerId('srv-1'),
       '/library/metadata/movie-1',
       _plexMetadataEnvelope(includeSecondVersion: true),
     );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: MediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv-1'),
+      metadata: MediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        serverId: ServerId('srv-1'),
+      ),
       selectedMediaIndex: 1,
       preferOffline: true,
     );
@@ -134,10 +160,29 @@ void main() {
     expect(result.mediaInfo?.audioTracks.single.languageCode, 'fre');
   });
 
+  test('offline path falls back to media index when caller has no source id', () async {
+    await _insertDownloaded(
+      db,
+      serverId: ServerId('srv-1'),
+      ratingKey: 'movie-1',
+      videoFilePath: 'content://offline/movie-1-v1',
+      mediaIndex: 0,
+      mediaSourceId: 'source-a',
+    );
+
+    final service = PlaybackInitializationService(database: db);
+
+    expect(await service.getOfflineVideoPath(ServerId('srv-1'), 'movie-1', mediaIndex: 1), null);
+    expect(
+      await service.getOfflineVideoPath(ServerId('srv-1'), 'movie-1', mediaIndex: 0),
+      'content://offline/movie-1-v1',
+    );
+  });
+
   test('pure-offline Jellyfin cache works without a connection row', () async {
     await _insertDownloaded(
       db,
-      serverId: 'jf-machine',
+      serverId: ServerId('jf-machine'),
       clientScopeId: 'jf-machine/user-a',
       ratingKey: 'item-1',
       videoFilePath: 'content://offline/jf-item-1',
@@ -153,7 +198,12 @@ void main() {
         );
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: MediaItem(id: 'item-1', backend: MediaBackend.jellyfin, kind: MediaKind.movie, serverId: 'jf-machine'),
+      metadata: MediaItem(
+        id: 'item-1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.movie,
+        serverId: ServerId('jf-machine'),
+      ),
       selectedMediaIndex: 0,
       preferOffline: true,
     );
@@ -164,14 +214,24 @@ void main() {
   });
 
   test('SAF offline playback discovers app-managed sidecar subtitles', () async {
-    await _insertDownloaded(db, serverId: 'srv-1', ratingKey: 'movie-1', videoFilePath: 'content://offline/movie-1');
-    final subtitlePath = await DownloadStorageService.instance.getSubtitlePath('srv-1', 'movie-1', 2, 'srt');
+    await _insertDownloaded(
+      db,
+      serverId: ServerId('srv-1'),
+      ratingKey: 'movie-1',
+      videoFilePath: 'content://offline/movie-1',
+    );
+    final subtitlePath = await DownloadStorageService.instance.getSubtitlePath(ServerId('srv-1'), 'movie-1', 2, 'srt');
     final subtitleFile = File(subtitlePath);
     await subtitleFile.parent.create(recursive: true);
     await subtitleFile.writeAsString('1\n00:00:00,000 --> 00:00:01,000\nHello');
 
     final result = await PlaybackInitializationService(database: db).getPlaybackData(
-      metadata: MediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv-1'),
+      metadata: MediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        serverId: ServerId('srv-1'),
+      ),
       selectedMediaIndex: 0,
       preferOffline: true,
     );
@@ -182,7 +242,7 @@ void main() {
   });
 
   test('cache-only playback extras fills missing Plex marker types from chapters', () async {
-    await PlexApiCache.instance.put('srv-1', '/library/metadata/movie-1', _plexMetadataEnvelope());
+    await PlexApiCache.instance.put(ServerId('srv-1'), '/library/metadata/movie-1', _plexMetadataEnvelope());
 
     final extras = await CachedPlaybackMetadataService.fetchPlaybackExtras(
       backend: MediaBackend.plex,
@@ -195,7 +255,11 @@ void main() {
   });
 
   test('Plex extras parser skips malformed entries and keeps valid ones', () async {
-    await PlexApiCache.instance.put('srv-1', '/library/metadata/movie-1', _plexMetadataEnvelope(malformedExtras: true));
+    await PlexApiCache.instance.put(
+      ServerId('srv-1'),
+      '/library/metadata/movie-1',
+      _plexMetadataEnvelope(malformedExtras: true),
+    );
 
     final extras = await CachedPlaybackMetadataService.fetchPlaybackExtras(
       backend: MediaBackend.plex,
@@ -239,7 +303,7 @@ void main() {
   });
 
   test('cache-only Jellyfin playback extras uses chapter fallback patterns', () async {
-    await JellyfinApiCache.instance.put('srv-1/user-1', '/Users/user-1/Items/item-1', {
+    await JellyfinApiCache.instance.put(ServerId('srv-1/user-1'), '/Users/user-1/Items/item-1', {
       'Id': 'item-1',
       'Type': 'Episode',
       'Name': 'Episode',
@@ -262,13 +326,13 @@ void main() {
   });
 
   test('cache-only Jellyfin playback extras uses cached native media segments', () async {
-    await JellyfinApiCache.instance.put('srv-1/user-1', '/Users/user-1/Items/item-1', {
+    await JellyfinApiCache.instance.put(ServerId('srv-1/user-1'), '/Users/user-1/Items/item-1', {
       'Id': 'item-1',
       'Type': 'Episode',
       'Name': 'Episode',
       'Chapters': [],
     });
-    await JellyfinApiCache.instance.put('srv-1/user-1', '/MediaSegments/item-1', {
+    await JellyfinApiCache.instance.put(ServerId('srv-1/user-1'), '/MediaSegments/item-1', {
       'Items': [
         {'Type': 'Intro', 'StartTicks': 50000000, 'EndTicks': 450000000},
         {'Type': 'Outro', 'StartTicks': 900000000, 'EndTicks': 1000000000},
@@ -291,7 +355,7 @@ class _FailingPlaybackClient implements MediaServerClient {
   _FailingPlaybackClient({required this.serverId});
 
   @override
-  final String serverId;
+  final ServerId serverId;
 
   int playbackInitializationCalls = 0;
 
@@ -307,11 +371,12 @@ class _FailingPlaybackClient implements MediaServerClient {
 
 Future<void> _insertDownloaded(
   AppDatabase db, {
-  required String serverId,
+  required ServerId serverId,
   String? clientScopeId,
   required String ratingKey,
   required String videoFilePath,
   int mediaIndex = 0,
+  String? mediaSourceId,
 }) async {
   await db
       .into(db.downloadedMedia)
@@ -325,6 +390,7 @@ Future<void> _insertDownloaded(
           status: DownloadStatus.completed.index,
           videoFilePath: Value(videoFilePath),
           mediaIndex: Value(mediaIndex),
+          mediaSourceId: Value(mediaSourceId),
         ),
       );
 }

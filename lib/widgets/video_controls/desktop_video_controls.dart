@@ -74,6 +74,9 @@ class DesktopVideoControls extends StatefulWidget {
   final double streamStartEpoch;
   final int? currentPositionEpoch;
   final ValueChanged<int>? onLiveSeek;
+
+  /// Relative live-TV skip callback (delta seconds); parent accumulates+debounces.
+  final ValueChanged<int>? onLiveSeekBy;
   final VoidCallback? onJumpToLive;
 
   /// Whether to use dpad navigation for content strip (TV or keyboard nav mode)
@@ -134,6 +137,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.streamStartEpoch = 0,
     this.currentPositionEpoch,
     this.onLiveSeek,
+    this.onLiveSeekBy,
     this.onJumpToLive,
     this.useDpadNavigation = false,
     this.serverId,
@@ -530,11 +534,13 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       final isForward = key == LogicalKeyboardKey.arrowRight;
       final effectiveMultiplier = event is KeyRepeatEvent ? _getSeekMultiplier() : 1.0;
 
-      // Live TV: epoch-based seeking via onLiveSeek
-      if (_isLive && widget.onLiveSeek != null && widget.currentPositionEpoch != null) {
+      // Live TV: relative epoch-based seeking via the parent accumulator, which
+      // coalesces a rapid/held burst into one transcode re-open (#1253). The
+      // acceleration multiplier still grows the per-press step; the accumulator
+      // sums them.
+      if (_isLive && widget.onLiveSeekBy != null) {
         final stepSeconds = (widget.seekTimeSmall * effectiveMultiplier).clamp(1, 300).round();
-        final targetEpoch = widget.currentPositionEpoch! + (isForward ? stepSeconds : -stepSeconds);
-        widget.onLiveSeek!(targetEpoch);
+        widget.onLiveSeekBy!(isForward ? stepSeconds : -stepSeconds);
         widget.onFocusActivity?.call();
         return KeyEventResult.handled;
       }
@@ -542,7 +548,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       if (duration.inMilliseconds <= 0) return KeyEventResult.handled;
 
       final baseStepMs = widget.seekTimeSmall * 1000;
-      final stepMs = (baseStepMs * effectiveMultiplier).clamp(500, 120000).toInt();
+      final stepMs = (baseStepMs * effectiveMultiplier).clamp(500, 120_000).toInt();
       final step = Duration(milliseconds: stepMs);
 
       final newPosition = isForward ? position + step : position - step;
@@ -604,7 +610,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
                       ),
                     ),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisSize: .min,
                       children: [
                         const Icon(Symbols.keyboard_arrow_up_rounded, color: Colors.white38, size: 20),
                         const SizedBox(height: 4),
@@ -655,7 +661,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
   Widget _buildTopBarContent(BuildContext _, double leftPadding) {
     final topBar = Padding(
-      padding: EdgeInsets.only(left: leftPadding, right: 16),
+      padding: .only(left: leftPadding, right: 16),
       child: Row(
         children: [
           Expanded(
@@ -672,7 +678,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
               decoration: const BoxDecoration(color: Colors.red, borderRadius: BorderRadius.all(Radius.circular(4))),
               child: Text(
                 t.liveTv.live,
-                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                style: const TextStyle(color: Colors.white, fontWeight: .bold, fontSize: 12),
               ),
             ),
           ],
@@ -890,13 +896,7 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
 
                                 return Padding(
                                   padding: const EdgeInsets.only(left: 8),
-                                  child: Text(
-                                    text,
-                                    style: style,
-                                    maxLines: 1,
-                                    softWrap: false,
-                                    overflow: TextOverflow.fade,
-                                  ),
+                                  child: Text(text, style: style, maxLines: 1, softWrap: false, overflow: .fade),
                                 );
                               },
                             );

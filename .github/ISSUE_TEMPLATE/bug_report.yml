@@ -82,6 +82,8 @@ body:
       options:
         - Jellyfin
         - Plex
+    validations:
+      required: true
 
   - type: input
     id: device
@@ -89,6 +91,8 @@ body:
       label: Device Information
       description: What device are you using?
       placeholder: e.g., iPhone 14 Pro, Pixel 7, Chrome on macOS
+    validations:
+      required: true
 
   - type: textarea
     id: logs

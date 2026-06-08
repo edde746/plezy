@@ -35,7 +35,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     String? creditsPattern,
     bool forceChapterFallback = false,
   }) async {
-    final item = await cache.getMetadata(cacheServerId, itemId);
+    final item = await cache.getMetadata(ServerId(cacheServerId), itemId);
     if (item == null) return null;
     final markers = await _fetchCachedMediaSegmentMarkers(itemId);
     return jellyfinPlaybackExtrasFromRaw(
@@ -50,7 +50,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
 
   @override
   Future<MediaSourceInfo?> fetchCachedMediaSourceInfo(String itemId) async {
-    final item = await cache.getMetadata(cacheServerId, itemId);
+    final item = await cache.getMetadata(ServerId(cacheServerId), itemId);
     final raw = item?.raw;
     if (raw is! Map<String, dynamic>) return null;
     final sources = raw['MediaSources'];
@@ -106,7 +106,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
 
   Future<List<MediaMarker>> _fetchCachedMediaSegmentMarkers(String itemId) async {
     try {
-      final data = await cache.get(cacheServerId, JellyfinApiCache.mediaSegmentsEndpoint(itemId));
+      final data = await cache.get(ServerId(cacheServerId), JellyfinApiCache.mediaSegmentsEndpoint(itemId));
       return jellyfinMediaSegmentsToMarkers(data);
     } catch (e) {
       appLogger.d('JellyfinClient.fetchPlaybackExtras cached media segments unavailable', error: e);
@@ -150,7 +150,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     );
     var effectiveSourceId = bundle.selectedSourceId;
     var effectiveContainer = bundle.container;
-    var externalSubtitles = _buildExternalSubtitles(metadata.id, effectiveSourceId, mediaInfo);
+    var includeExternalSubtitleDelivery = false;
 
     String? videoUrl;
     String? playSessionId;
@@ -160,7 +160,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
 
     final preset = options.qualityPreset;
     final requestedAudioStreamId = _validJellyfinAudioStreamId(options.selectedAudioStreamId, mediaInfo);
-    final int? maxStreamingBitrate = preset.isOriginal ? null : (preset.videoBitrateKbps ?? 100000) * 1000;
+    final int? maxStreamingBitrate = preset.isOriginal ? null : (preset.videoBitrateKbps ?? 100_000) * 1000;
     final resumeOffsetMs = metadata.viewOffsetMs;
     final int? transcodeStartTimeTicks = !preset.isOriginal && resumeOffsetMs != null && resumeOffsetMs > 0
         ? msToJellyfinTicks(resumeOffsetMs)
@@ -187,7 +187,6 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
             chapters: bundle.chapters,
             trickplay: bundle.trickplay,
           );
-          externalSubtitles = _buildExternalSubtitles(metadata.id, effectiveSourceId, mediaInfo);
         }
 
         final negotiatedPlaySessionId = negotiation['PlaySessionId'];
@@ -208,6 +207,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
           videoUrl = _withApiKey(transcodingUrl);
           playMethod = 'Transcode';
           isTranscoding = true;
+          includeExternalSubtitleDelivery = true;
         } else if (directStreamUrl is String && directStreamUrl.isNotEmpty) {
           capturePlaySessionId(directStreamUrl);
           videoUrl = _withApiKey(directStreamUrl);
@@ -224,6 +224,12 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
 
     final effectiveAudioStreamId = _resolveJellyfinAudioStreamId(requestedAudioStreamId, mediaInfo);
     mediaInfo = _withSelectedJellyfinAudioStream(mediaInfo, effectiveAudioStreamId);
+    final externalSubtitles = _buildExternalSubtitles(
+      metadata.id,
+      effectiveSourceId,
+      mediaInfo,
+      includeExternalDelivery: includeExternalSubtitleDelivery,
+    );
     final pinnedSourceId = bundle.pinnedSourceIdForItem(metadata.id);
     videoUrl ??= buildDirectStreamUrl(metadata.id, container: effectiveContainer, mediaSourceId: pinnedSourceId);
 
@@ -238,6 +244,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       activeAudioStreamId: requestedAudioStreamId,
       playSessionId: playSessionId,
       playMethod: playMethod,
+      selectedMediaIndex: bundle.selectedSourceIndex,
     );
   }
 
@@ -316,10 +323,15 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     return path.startsWith('/') ? path : '/$path';
   }
 
-  List<SubtitleTrack> _buildExternalSubtitles(String itemId, String? mediaSourceId, MediaSourceInfo mediaInfo) {
+  List<SubtitleTrack> _buildExternalSubtitles(
+    String itemId,
+    String? mediaSourceId,
+    MediaSourceInfo mediaInfo, {
+    bool includeExternalDelivery = false,
+  }) {
     final externalSubtitles = <SubtitleTrack>[];
     for (final track in mediaInfo.subtitleTracks) {
-      if (!track.isExternal) continue;
+      if (!track.isExternalFile && !(includeExternalDelivery && track.usesExternalDelivery)) continue;
       final path = track.key ?? _jellyfinSubtitleFallbackPath(itemId, mediaSourceId, track);
       if (path == null) continue;
       // Jellyfin's subtitle URL is a path relative to baseUrl; build the
@@ -332,6 +344,9 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
               cleanSubtitleTitle(track.displayTitle ?? track.title, codec: track.codec) ??
               cleanTrackMetadataValue(track.language),
           language: cleanTrackMetadataValue(track.languageCode),
+          codec: track.codec,
+          isDefault: track.selected,
+          isForced: track.forced,
         ),
       );
     }
@@ -370,6 +385,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
       chapters: chapters is List ? chapters : const [],
       container: source['Container'] as String?,
       selectedSourceId: source['Id'] as String?,
+      selectedSourceIndex: index,
       trickplay: raw['Trickplay'],
     );
   }
@@ -438,7 +454,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   /// when picking codec compatibility).
   Future<Map<String, dynamic>?> getPlaybackInfo(
     String itemId, {
-    int? maxStreamingBitrate = 100000000,
+    int? maxStreamingBitrate = 100_000_000,
     String? mediaSourceId,
     String? liveStreamId,
     int? startTimeTicks,
@@ -636,6 +652,7 @@ mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
     Duration? duration,
     String? playSessionId,
     String? mediaSourceId,
+    PlaybackReportMetadata report = const PlaybackReportMetadata.live(),
   }) async {
     final response = await _http.post(
       '/Sessions/Playing/Stopped',

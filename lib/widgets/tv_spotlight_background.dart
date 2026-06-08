@@ -84,14 +84,14 @@ class TvSpotlightBackground extends StatelessWidget {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     if (!constraints.hasBoundedHeight || constraints.maxHeight <= 0 || constraints.maxWidth <= 0) {
-                      return Align(alignment: Alignment.bottomLeft, child: _buildInfo(context, media));
+                      return Align(alignment: .bottomLeft, child: _buildInfo(context, media));
                     }
 
                     return Align(
-                      alignment: Alignment.bottomLeft,
+                      alignment: .bottomLeft,
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
-                        alignment: Alignment.bottomLeft,
+                        alignment: .bottomLeft,
                         child: SizedBox(width: constraints.maxWidth, child: _buildInfo(context, media)),
                       ),
                     );
@@ -182,13 +182,14 @@ class TvSpotlightBackground extends StatelessWidget {
 
   Widget _buildInfo(BuildContext context, MediaItem media) {
     final scale = _scale(context);
+    final colorScheme = Theme.of(context).colorScheme;
     final shouldHideSpoiler = hideSpoilers && media.shouldHideSpoiler;
     final summary = shouldHideSpoiler ? null : media.summary;
     final title = media.grandparentTitle ?? media.displayTitle;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: .start,
+      mainAxisSize: .min,
       children: [
         _buildLogoOrTitle(context, media, title),
         SizedBox(height: _sectionGap(scale)),
@@ -198,9 +199,9 @@ class TvSpotlightBackground extends StatelessWidget {
           Text(
             summary,
             maxLines: compact ? 3 : 4,
-            overflow: TextOverflow.ellipsis,
+            overflow: .ellipsis,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.white.withValues(alpha: 0.78),
+              color: colorScheme.onSurface.withValues(alpha: 0.78),
               fontSize: _summaryFontSize(scale),
               height: compact ? 1.34 : 1.45,
             ),
@@ -210,9 +211,9 @@ class TvSpotlightBackground extends StatelessWidget {
           Text(
             media.title ?? '',
             maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+            overflow: .ellipsis,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Colors.white.withValues(alpha: 0.72),
+              color: colorScheme.onSurface.withValues(alpha: 0.72),
               fontSize: _summaryFontSize(scale),
               height: compact ? 1.34 : 1.45,
             ),
@@ -244,7 +245,7 @@ class TvSpotlightBackground extends StatelessWidget {
           Image.file(
             File(localLogoPath),
             fit: BoxFit.contain,
-            alignment: Alignment.centerLeft,
+            alignment: .centerLeft,
             errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),
           ),
           sigma: 10,
@@ -272,7 +273,7 @@ class TvSpotlightBackground extends StatelessWidget {
           imageUrl: imageUrl,
           cacheManager: PlexImageCacheManager.instance,
           fit: BoxFit.contain,
-          alignment: Alignment.centerLeft,
+          alignment: .centerLeft,
           memCacheWidth: (logoWidth * dpr).clamp(200, 1000).round(),
           placeholder: (context, url) => const SizedBox.shrink(),
           errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),
@@ -285,19 +286,21 @@ class TvSpotlightBackground extends StatelessWidget {
 
   Widget _buildTitle(BuildContext context, String title) {
     final scale = _scale(context);
+    final colorScheme = Theme.of(context).colorScheme;
     return FittingTitleText(
       title,
       style: Theme.of(context).textTheme.displaySmall?.copyWith(
-        color: Colors.white,
+        color: colorScheme.onSurface,
         fontSize: _titleFontSize(scale),
-        fontWeight: FontWeight.w800,
-        shadows: [Shadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 12)],
+        fontWeight: .w800,
+        shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 12)],
       ),
     );
   }
 
   Widget _buildMetadataLine(BuildContext context, MediaItem media) {
     final scale = _scale(context);
+    final colorScheme = Theme.of(context).colorScheme;
     final episodeLabel = formatSeasonEpisodeLabel(media.parentIndex, media.index);
     final parts = [
       if (media.isEpisode && episodeLabel != null) episodeLabel,
@@ -313,11 +316,11 @@ class TvSpotlightBackground extends StatelessWidget {
     return Text(
       parts.join('  •  '),
       maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+      overflow: .ellipsis,
       style: TextStyle(
-        color: Colors.white,
+        color: colorScheme.onSurface,
         fontSize: _metadataFontSize(scale),
-        fontWeight: FontWeight.w700,
+        fontWeight: .w700,
         letterSpacing: 0.1,
       ),
     );
@@ -341,22 +344,22 @@ class TvSpotlightBackground extends StatelessWidget {
     final scale = _scale(context);
     final hasProgress = media.hasActiveProgress;
     final minutesLeft = hasProgress && media.durationMs != null && media.viewOffsetMs != null
-        ? ((media.durationMs! - media.viewOffsetMs!) / 60000).round()
+        ? ((media.durationMs! - media.viewOffsetMs!) / 60_000).round()
         : 0;
 
     return GestureDetector(
       onTap: onPrimaryAction,
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: (compact ? 24 : 30) * scale, vertical: (compact ? 12 : 15) * scale),
+        padding: .symmetric(horizontal: (compact ? 24 : 30) * scale, vertical: (compact ? 12 : 15) * scale),
         decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(32 * scale)),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisSize: .min,
           children: [
             AppIcon(Symbols.play_arrow_rounded, fill: 1, size: (compact ? 24 : 28) * scale, color: Colors.black),
             SizedBox(width: (compact ? 10 : 12) * scale),
             Text(
               hasProgress ? t.discover.minutesLeft(minutes: minutesLeft) : t.common.play,
-              style: TextStyle(color: Colors.black, fontSize: (compact ? 16 : 18) * scale, fontWeight: FontWeight.w800),
+              style: TextStyle(color: Colors.black, fontSize: (compact ? 16 : 18) * scale, fontWeight: .w800),
             ),
           ],
         ),

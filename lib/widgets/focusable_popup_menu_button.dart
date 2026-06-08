@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../focus/focusable_wrapper.dart';
+import 'app_menu.dart';
 
-/// A [PopupMenuButton] that can be focused and opened with D-pad select.
+/// An [AppMenuButton] that can be focused and opened with D-pad select.
 class FocusablePopupMenuButton<T> extends StatefulWidget {
   final Widget? icon;
   final String? tooltip;
-  final PopupMenuItemBuilder<T> itemBuilder;
-  final PopupMenuItemSelected<T>? onSelected;
-  final GlobalKey<PopupMenuButtonState<T>>? menuKey;
+  final AppMenuEntryBuilder<T> itemBuilder;
+  final ValueChanged<T>? onSelected;
+  final GlobalKey<AppMenuButtonState<T>>? menuKey;
   final FocusNode? focusNode;
   final VoidCallback? onNavigateUp;
   final VoidCallback? onNavigateDown;
@@ -42,11 +43,11 @@ class FocusablePopupMenuButton<T> extends StatefulWidget {
 }
 
 class _FocusablePopupMenuButtonState<T> extends State<FocusablePopupMenuButton<T>> {
-  final _ownedMenuKey = GlobalKey<PopupMenuButtonState<T>>();
+  final _ownedMenuKey = GlobalKey<AppMenuButtonState<T>>();
 
-  GlobalKey<PopupMenuButtonState<T>> get _menuKey => widget.menuKey ?? _ownedMenuKey;
+  GlobalKey<AppMenuButtonState<T>> get _menuKey => widget.menuKey ?? _ownedMenuKey;
 
-  void _showMenu() => _menuKey.currentState?.showButtonMenu();
+  void _showMenu() => _menuKey.currentState?.showButtonMenu(focusFirstItem: true);
 
   @override
   Widget build(BuildContext context) {
@@ -64,13 +65,12 @@ class _FocusablePopupMenuButtonState<T> extends State<FocusablePopupMenuButton<T
       onNavigateRight: widget.onNavigateRight,
       onSelect: _showMenu,
       onLongPress: widget.enableLongPress ? _showMenu : null,
-      child: PopupMenuButton<T>(
+      child: AppMenuButton<T>(
         key: _menuKey,
         icon: widget.icon,
         tooltip: widget.tooltip,
-        requestFocus: true,
         onSelected: widget.onSelected,
-        itemBuilder: widget.itemBuilder,
+        entriesBuilder: widget.itemBuilder,
       ),
     );
   }

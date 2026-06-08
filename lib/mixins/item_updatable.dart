@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../media/ids.dart';
 import '../media/media_item.dart';
 import '../utils/provider_extensions.dart';
 
@@ -26,7 +27,7 @@ mixin ItemUpdatable<T extends StatefulWidget> on State<T> {
     try {
       final serverId = itemServerId;
       if (serverId == null) return;
-      final updatedItem = await context.tryGetMediaClientForServer(serverId)?.fetchItem(itemId);
+      final updatedItem = await context.tryGetMediaClientForServer(ServerId(serverId))?.fetchItem(itemId);
       if (updatedItem != null) {
         if (!mounted) return;
         setState(() {

@@ -180,14 +180,14 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: .min,
+        crossAxisAlignment: .start,
         children: [
           Row(
             children: [
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     Text(
                       widget.isEdit ? t.liveTv.editRule : t.liveTv.recordOptions,
@@ -198,7 +198,7 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
                       widget.headerTitle,
                       style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      overflow: .ellipsis,
                     ),
                   ],
                 ),
@@ -237,7 +237,7 @@ class _RecordOptionsContentState extends State<_RecordOptionsContent> {
           ),
           const SizedBox(height: 12),
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: .end,
             children: [
               FocusableButton(
                 onPressed: _saving ? null : _close,
@@ -366,7 +366,7 @@ class _BoolSettingRow extends StatelessWidget {
             children: [
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     Text(setting.label ?? setting.id, style: theme.textTheme.bodyMedium),
                     if (setting.summary != null && setting.summary!.isNotEmpty)
@@ -433,7 +433,7 @@ class _EnumSettingRow extends StatelessWidget {
             children: [
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: .start,
                   children: [
                     Text(setting.label ?? setting.id, style: theme.textTheme.bodyMedium),
                     if (setting.summary != null && setting.summary!.isNotEmpty)
@@ -495,7 +495,7 @@ class _IntSettingRowState extends State<_IntSettingRow> with ControllerDisposerM
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           Text(widget.setting.label ?? widget.setting.id, style: theme.textTheme.bodyMedium),
           if (widget.setting.summary != null && widget.setting.summary!.isNotEmpty)
@@ -561,7 +561,7 @@ class _TextSettingRowState extends State<_TextSettingRow> with ControllerDispose
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: .start,
         children: [
           Text(widget.setting.label ?? widget.setting.id, style: theme.textTheme.bodyMedium),
           if (widget.setting.summary != null && widget.setting.summary!.isNotEmpty)

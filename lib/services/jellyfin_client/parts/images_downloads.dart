@@ -13,7 +13,7 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
   });
   Future<Map<String, dynamic>?> getPlaybackInfo(
     String itemId, {
-    int? maxStreamingBitrate = 100000000,
+    int? maxStreamingBitrate = 100_000_000,
     String? mediaSourceId,
     String? liveStreamId,
     int? startTimeTicks,
@@ -89,7 +89,7 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
               if (raw is! Map<String, dynamic>) continue;
               if (raw['Type'] != 'Subtitle') continue;
               final fields = parseJellyfinStreamFields(raw);
-              if (!fields.isExternal) continue;
+              if (!fields.isExternalFile) continue;
               final index = raw['Index'];
               if (index is! int) continue;
               final codec = fields.codec?.toLowerCase();
@@ -116,7 +116,7 @@ mixin _JellyfinImageDownloadMethods on MediaServerCacheMixin {
       }
     }
 
-    return DownloadResolution(videoUrl: videoUrl, externalSubtitles: subtitles);
+    return DownloadResolution(videoUrl: videoUrl, mediaSourceId: selectedSourceId, externalSubtitles: subtitles);
   }
 
   Map<String, dynamic>? _selectDownloadMediaSource(List<dynamic> sources, String? selectedSourceId, int mediaIndex) {

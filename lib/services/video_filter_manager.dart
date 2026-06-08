@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 
@@ -17,6 +19,10 @@ import 'ambient_lighting_service.dart';
 /// - Debounced video filter updates on resize events
 /// - Ambient-lighting-friendly reset to contain mode
 class VideoFilterManager {
+  static const double minZoomScale = 0.5;
+  static const double maxZoomScale = 2.0;
+  static const double zoomStep = 0.01;
+
   final Player player;
   final List<MediaVersion> availableVersions;
   final int selectedMediaIndex;
@@ -27,14 +33,17 @@ class VideoFilterManager {
   /// Store the boxFitMode before entering PiP so it can be restored
   int? _prePipBoxFitMode;
 
+  /// Store the zoom level before entering PiP so it can be restored
+  double? _prePipZoomScale;
+
   /// Store whether ambient lighting was active before entering PiP
   bool? _prePipAmbientLighting;
 
   /// Ambient lighting service reference - when active, video-aspect-override is managed by ambient lighting
   AmbientLightingService? ambientLightingService;
 
-  /// Track if a pinch gesture is occurring (public for gesture tracking)
-  bool isPinching = false;
+  /// Custom video zoom layered on top of the selected fit mode.
+  double _zoomScale = 1.0;
 
   /// Current player viewport size
   Size? _playerSize;
@@ -50,8 +59,10 @@ class VideoFilterManager {
     required this.availableVersions,
     required this.selectedMediaIndex,
     int initialBoxFitMode = 0,
+    Size? initialPlayerSize,
     this.onBoxFitModeChanged,
-  }) : _boxFitMode = initialBoxFitMode {
+  }) : _boxFitMode = initialBoxFitMode,
+       _playerSize = initialPlayerSize {
     _debouncedUpdateVideoFilter = debounce(
       updateVideoFilter,
       const Duration(milliseconds: 50),
@@ -63,7 +74,34 @@ class VideoFilterManager {
   /// Current BoxFit mode (0=contain, 1=cover, 2=fill)
   int get boxFitMode => _boxFitMode;
 
+  double get zoomScale => _zoomScale;
+
   Size? get playerSize => _playerSize;
+
+  static double normalizeZoomScale(double scale) {
+    final clamped = scale.clamp(minZoomScale, maxZoomScale).toDouble();
+    final percent = (clamped * 100).round();
+    if (percent == 100) return 1.0;
+    return percent / 100;
+  }
+
+  static double videoZoomPropertyForScale(double scale) {
+    final normalized = normalizeZoomScale(scale);
+    if (normalized == 1.0) return 0.0;
+    return math.log(normalized) / math.ln2;
+  }
+
+  double setZoomScale(double scale) {
+    final next = normalizeZoomScale(scale);
+    if (_zoomScale == next) return _zoomScale;
+    _zoomScale = next;
+    updateVideoFilter();
+    return _zoomScale;
+  }
+
+  double adjustZoom(double delta) => setZoomScale(_zoomScale + delta);
+
+  double resetZoom() => setZoomScale(1.0);
 
   /// Cycle through BoxFit modes: contain → cover → fill → contain (for button)
   void cycleBoxFitMode() {
@@ -74,17 +112,11 @@ class VideoFilterManager {
 
   /// Reset to contain mode (mode 0). Used when enabling ambient lighting.
   void resetToContain() {
-    if (_boxFitMode != 0) {
+    if (_boxFitMode != 0 || (_zoomScale - 1.0).abs() > 0.0001) {
       _boxFitMode = 0;
+      _zoomScale = 1.0;
       updateVideoFilter();
     }
-  }
-
-  /// Toggle between contain and cover modes only (for pinch gesture)
-  void toggleContainCover() {
-    _boxFitMode = _boxFitMode == 0 ? 1 : 0;
-    onBoxFitModeChanged?.call(_boxFitMode);
-    updateVideoFilter();
   }
 
   /// Force contain mode for PiP (no cropping/stretching)
@@ -97,17 +129,30 @@ class VideoFilterManager {
     if (_boxFitMode != 0) {
       _prePipBoxFitMode = _boxFitMode;
       _boxFitMode = 0; // Contain mode
+    }
+    if ((_zoomScale - 1.0).abs() > 0.0001) {
+      _prePipZoomScale = _zoomScale;
+      _zoomScale = 1.0;
+    }
+    if (_prePipBoxFitMode != null || _prePipZoomScale != null) {
       updateVideoFilter();
     }
   }
 
   /// Restore previous mode when exiting PiP
   void exitPipMode() {
+    var shouldUpdate = false;
     if (_prePipBoxFitMode != null) {
       _boxFitMode = _prePipBoxFitMode!;
       _prePipBoxFitMode = null;
-      updateVideoFilter();
+      shouldUpdate = true;
     }
+    if (_prePipZoomScale != null) {
+      _zoomScale = normalizeZoomScale(_prePipZoomScale!);
+      _prePipZoomScale = null;
+      shouldUpdate = true;
+    }
+    if (shouldUpdate) updateVideoFilter();
   }
 
   /// Whether ambient lighting was active before entering PiP
@@ -129,13 +174,14 @@ class VideoFilterManager {
 
   /// Update the video scaling and positioning based on current display mode.
   /// When ambient lighting is active, video-aspect-override is managed by ambient lighting.
-  void updateVideoFilter() async {
+  Future<void> updateVideoFilter() async {
     try {
       // ExoPlayer handles scaling via AspectRatioFrameLayout. The MPV properties
       // below still run — on PlayerAndroid they forward to setMpvProperty, which
       // queues them for any future fallback to MPV.
       if (player is PlayerAndroid) {
         await (player as PlayerAndroid).setBoxFitMode(_boxFitMode);
+        await (player as PlayerAndroid).setVideoZoom(_zoomScale);
       }
 
       if (ambientLightingService?.isEnabled != true) {
@@ -143,6 +189,7 @@ class VideoFilterManager {
       }
       await player.setProperty('sub-ass-force-margins', 'no');
       await player.setProperty('panscan', '0');
+      await player.setProperty('video-zoom', videoZoomPropertyForScale(_zoomScale).toString());
 
       if (_boxFitMode == 1) {
         // Cover mode - use panscan to fill screen while maintaining aspect ratio
@@ -150,11 +197,18 @@ class VideoFilterManager {
         await player.setProperty('sub-ass-force-margins', 'yes');
       } else if (_boxFitMode == 2) {
         // Fill/stretch mode - override aspect ratio to match player (stretches video)
-        if (_playerSize != null) {
-          final playerAspect = _playerSize!.width / _playerSize!.height;
-          await player.setProperty('video-aspect-override', playerAspect.toString());
-          appLogger.d('Stretch mode: aspect-override=$playerAspect (player: $_playerSize)');
+        final playerSize = _playerSize;
+        if (playerSize != null && playerSize.width > 0 && playerSize.height > 0) {
+          final playerAspect = playerSize.width / playerSize.height;
+          if (playerAspect.isFinite && playerAspect > 0) {
+            await player.setProperty('video-aspect-override', playerAspect.toString());
+            appLogger.d('Stretch mode: aspect-override=$playerAspect (player: $playerSize)');
+          }
         }
+      }
+
+      if (_zoomScale > 1.0001) {
+        await player.setProperty('sub-ass-force-margins', 'yes');
       }
     } catch (e) {
       appLogger.w('Failed to update video filter', error: e);

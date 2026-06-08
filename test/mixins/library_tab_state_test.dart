@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:vibe_stream/media/ids.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vibe_stream/media/media_backend.dart';
 import 'package:vibe_stream/media/media_kind.dart';
@@ -51,7 +52,7 @@ class _ProbeState extends State<_Probe> with LibraryTabStateMixin<_Probe> {
   }
 }
 
-MediaLibrary _lib({String? serverId, String key = '1'}) =>
+MediaLibrary _lib({ServerId? serverId, String key = '1'}) =>
     MediaLibrary(id: key, backend: MediaBackend.plex, title: 'Movies', kind: MediaKind.movie, serverId: serverId);
 
 void main() {
@@ -60,7 +61,7 @@ void main() {
   group('LibraryTabStateMixin', () {
     testWidgets('library getter returns the host state\'s library', (tester) async {
       late _ProbeState state;
-      final library = _lib(serverId: 'srv-A', key: 'lib-1');
+      final library = _lib(serverId: ServerId('srv-A'), key: 'lib-1');
 
       await tester.pumpWidget(_Probe(library: library, onState: (s, _) => state = s));
       await tester.pump();
@@ -85,7 +86,7 @@ void main() {
         ChangeNotifierProvider<MultiServerProvider>.value(
           value: provider,
           child: _Probe(
-            library: _lib(serverId: 'srv-missing'),
+            library: _lib(serverId: ServerId('srv-missing')),
             onState: (s, c) {
               state = s;
               ctx = c;

@@ -6,6 +6,7 @@ import 'dart:math';
 import 'package:web_socket_channel/io.dart';
 import '../../utils/future_extensions.dart';
 
+import '../../i18n/strings.g.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../models/companion_remote/remote_session.dart';
 import '../../utils/app_logger.dart';
@@ -97,7 +98,10 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
       final all = [...preferred, ...others];
       if (all.isEmpty) {
-        throw const RemotePeerError(type: RemotePeerErrorType.networkError, message: 'No network interface found');
+        throw RemotePeerError(
+          type: RemotePeerErrorType.networkError,
+          message: t.companionRemote.errors.noNetworkInterface,
+        );
       }
       return all;
     } catch (e) {
@@ -535,7 +539,10 @@ class CompanionRemotePeerService with KeepaliveMixin {
               } else if (json['type'] == 'authFailed') {
                 if (!completer.isCompleted) {
                   completer.completeError(
-                    const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'Authentication failed'),
+                    RemotePeerError(
+                      type: RemotePeerErrorType.authFailed,
+                      message: t.companionRemote.errors.authenticationFailed,
+                    ),
                   );
                 }
               }
@@ -636,11 +643,17 @@ class CompanionRemotePeerService with KeepaliveMixin {
                 appLogger.w('CompanionRemote: Authentication failed');
                 if (!completer.isCompleted) {
                   completer.completeError(
-                    const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'Authentication failed'),
+                    RemotePeerError(
+                      type: RemotePeerErrorType.authFailed,
+                      message: t.companionRemote.errors.authenticationFailed,
+                    ),
                   );
                 }
                 _errorController.add(
-                  const RemotePeerError(type: RemotePeerErrorType.authFailed, message: 'Authentication failed'),
+                  RemotePeerError(
+                    type: RemotePeerErrorType.authFailed,
+                    message: t.companionRemote.errors.authenticationFailed,
+                  ),
                 );
                 _connectionStateController.add(RemoteSessionStatus.error);
               }
@@ -699,7 +712,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
           }
           _channel = null;
         }
-        throw const RemotePeerError(type: RemotePeerErrorType.timeout, message: 'Timed out joining session');
+        throw RemotePeerError(type: RemotePeerErrorType.timeout, message: t.companionRemote.errors.joinTimedOut);
       },
     );
   }
@@ -809,9 +822,9 @@ class CompanionRemotePeerService with KeepaliveMixin {
     }
 
     if (channels.isEmpty) {
-      throw const RemotePeerError(
+      throw RemotePeerError(
         type: RemotePeerErrorType.connectionFailed,
-        message: 'Failed to connect to any address',
+        message: t.companionRemote.errors.failedToConnectAnyAddress,
       );
     }
 
