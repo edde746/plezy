@@ -212,6 +212,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // Hero and app bar focus
   late FocusNode _heroFocusNode;
   final _actionBarKey = GlobalKey<FocusableActionBarState>();
+  final _serverActivitiesButtonKey = GlobalKey<ServerActivitiesButtonState>();
   final _userMenuKey = GlobalKey<AppMenuButtonState<String>>();
 
   /// Backend-neutral hero client lookup. Returns the actual
@@ -1334,7 +1335,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                       // a permanently empty popover.
                       if (PlatformDetector.isDesktop(context) &&
                           context.select<MultiServerProvider, bool>((p) => p.hasOnlinePlexServers))
-                        const FocusableAction(child: ServerActivitiesButton()),
+                        FocusableAction(
+                          onPressed: () => _serverActivitiesButtonKey.currentState?.togglePanel(),
+                          child: ServerActivitiesButton(key: _serverActivitiesButtonKey),
+                        ),
                       // User menu — profiles + sign out
                       _buildUserMenuAction(context),
                     ],
