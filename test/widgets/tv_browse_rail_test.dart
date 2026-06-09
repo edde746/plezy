@@ -1694,6 +1694,158 @@ void main() {
     expect(activations, 1);
   });
 
+  testWidgets('without a gesture signal, suppression clears on the legacy safety timeout', (tester) async {
+    var activations = 0;
+    final person = MediaItem(id: 'person_1', backend: MediaBackend.plex, kind: MediaKind.unknown, title: 'Person');
+    final hub = MediaHub(id: 'people', title: 'People', type: 'person', items: [person], size: 1);
+    final serverManager = MultiServerManager();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                hubs: [hub],
+                iconForHub: (_, _) => Icons.person_rounded,
+                onActivateItem: (_, _) {
+                  activations++;
+                  return Future.value(true);
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
+    railState.requestFocus();
+    railState.suppressSelectUntilKeyUp();
+    await tester.pump();
+
+    // With no touch gesture, suppression must not outlive the short safety
+    // timeout — a select after it elapses activates normally.
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(activations, 1);
+  });
+
+  testWidgets('an active touch gesture holds select suppression past the legacy window', (tester) async {
+    var activations = 0;
+    final gesture = ValueNotifier<bool>(true);
+    addTearDown(gesture.dispose);
+    final person = MediaItem(id: 'person_1', backend: MediaBackend.plex, kind: MediaKind.unknown, title: 'Person');
+    final hub = MediaHub(id: 'people', title: 'People', type: 'person', items: [person], size: 1);
+    final serverManager = MultiServerManager();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                hubs: [hub],
+                iconForHub: (_, _) => Icons.person_rounded,
+                selectSuppressionGestureSignal: gesture,
+                onActivateItem: (_, _) {
+                  activations++;
+                  return Future.value(true);
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
+    railState.requestFocus();
+    railState.suppressSelectUntilKeyUp();
+    await tester.pump();
+
+    // Well past the legacy 220ms window, finger still down (gesture active): the
+    // stray same-gesture select (#1281) is still ignored.
+    await tester.pump(const Duration(milliseconds: 1000));
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(activations, 0);
+
+    // Once cleared, deliberate selects work again.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(activations, 1);
+  });
+
+  testWidgets('ending the gesture clears select suppression before the backstop', (tester) async {
+    var activations = 0;
+    final gesture = ValueNotifier<bool>(true);
+    addTearDown(gesture.dispose);
+    final person = MediaItem(id: 'person_1', backend: MediaBackend.plex, kind: MediaKind.unknown, title: 'Person');
+    final hub = MediaHub(id: 'people', title: 'People', type: 'person', items: [person], size: 1);
+    final serverManager = MultiServerManager();
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>(
+        create: (_) => MultiServerProvider(serverManager, DataAggregationService(serverManager)),
+        child: MaterialApp(
+          theme: monoTheme(dark: true),
+          home: Scaffold(
+            body: SizedBox(
+              width: 1280,
+              height: 720,
+              child: TvBrowseRail(
+                hubs: [hub],
+                iconForHub: (_, _) => Icons.person_rounded,
+                selectSuppressionGestureSignal: gesture,
+                onActivateItem: (_, _) {
+                  activations++;
+                  return Future.value(true);
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    final railState = tester.state<TvBrowseRailState>(find.byType(TvBrowseRail));
+    railState.requestFocus();
+    railState.suppressSelectUntilKeyUp();
+    await tester.pump();
+
+    // Suppression holds while the gesture is active, past the legacy window.
+    await tester.pump(const Duration(milliseconds: 1000));
+    // Finger lifts -> gesture ends -> suppression clears immediately, well before
+    // the safety backstop.
+    gesture.value = false;
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pump();
+    expect(activations, 1);
+  });
+
   testWidgets('does not autofocus unless requested', (tester) async {
     FocusManager.instance.primaryFocus?.unfocus();
 

@@ -14,6 +14,7 @@ import '../focus/key_event_utils.dart';
 import '../utils/global_key_utils.dart';
 import 'package:cached_network_image_ce/cached_network_image.dart';
 
+import '../services/apple_tv_remote_touch_service.dart';
 import '../services/image_cache_service.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
@@ -1615,6 +1616,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onNavigateToSidebar: _navigateToSidebar,
                 tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
                 backgroundBleedLeft: sidebarBleed,
+                selectSuppressionGestureSignal: PlatformDetector.isAppleTV()
+                    ? AppleTvRemoteTouchService.instance.touchActiveListenable
+                    : null,
               ),
             ),
           SideNavigationBleedBuilder(

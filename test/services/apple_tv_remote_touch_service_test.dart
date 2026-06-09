@@ -257,6 +257,32 @@ void main() {
 
       expect(harness.keys, isEmpty);
     });
+
+    test('isTouchActive and listenable track touch start and end', () async {
+      final harness = _Harness();
+      final seen = <bool>[];
+      harness.service.touchActiveListenable.addListener(() => seen.add(harness.service.isTouchActive));
+
+      expect(harness.service.isTouchActive, isFalse);
+
+      await harness.send('started', x: 500, y: 500);
+      expect(harness.service.isTouchActive, isTrue);
+
+      await harness.send('ended', x: 500, y: 500);
+      expect(harness.service.isTouchActive, isFalse);
+
+      expect(seen, [true, false]);
+    });
+
+    test('cancelled touch clears touch-active state', () async {
+      final harness = _Harness();
+
+      await harness.send('started', x: 500, y: 500);
+      expect(harness.service.isTouchActive, isTrue);
+
+      await harness.send('cancelled');
+      expect(harness.service.isTouchActive, isFalse);
+    });
   });
 }
 
