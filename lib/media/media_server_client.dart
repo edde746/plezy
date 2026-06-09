@@ -5,6 +5,7 @@ import '../services/playback_initialization_types.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController, MediaServerResponse;
 import '../utils/external_ids.dart';
+import '../utils/watch_state_notifier.dart';
 import 'download_resolution.dart';
 import 'ids.dart';
 import 'library_filter_result.dart';
@@ -475,6 +476,17 @@ abstract class MediaServerClient {
   /// one and returns a fixed 0.9.
   double get watchedThreshold;
 
+  /// Whether a playback-stopped report past [watchedThreshold] already marks
+  /// the item played server-side. When true, in-player auto-scrobble must NOT
+  /// also call [markWatched]: the server marks it played from the stop report,
+  /// and the extra `/UserPlayedItems` toggle double-scrobbles through
+  /// integrations that watch both the played-state change and the
+  /// playback-stop — e.g. Jellyfin's Trakt plugin fires once on `TogglePlayed`
+  /// and again on `PlayedToCompletion` (#1287). Plex returns false: its
+  /// timeline stop doesn't reliably mark watched without an active play
+  /// session, so the explicit call is still required.
+  bool get marksWatchedOnPlaybackStopped;
+
   /// First playback signal for [itemId]. Plex sends a `/:/timeline?state=playing`
   /// heartbeat; Jellyfin opens a `/Sessions/Playing` session row. Subsequent
   /// ticks must call [reportPlaybackProgress] (Jellyfin distinguishes session
@@ -573,6 +585,22 @@ extension MediaServerClientScope on MediaServerClient {
     ScopedMediaServerClient(:final scopedServerId) => scopedServerId,
     _ => serverId,
   };
+
+  /// Mark [item] watched because it crossed [watchedThreshold] during playback,
+  /// when a playback-stopped report is/was also sent for the same playback.
+  /// Backends that mark played from the stop report
+  /// ([marksWatchedOnPlaybackStopped]) only emit the local watch event —
+  /// issuing [markWatched] too would double-scrobble via the Jellyfin Trakt
+  /// plugin (#1287). The local event still keeps the UI and Plezy's own Trakt
+  /// sync (which key on `watched` events, not progress) in sync; the stop
+  /// report syncs the server.
+  Future<void> markWatchedFromPlaybackStop(MediaItem item) async {
+    if (marksWatchedOnPlaybackStopped) {
+      WatchStateNotifier().notifyWatched(item: item, isNowWatched: true, cacheServerId: cacheServerId);
+    } else {
+      await markWatched(item);
+    }
+  }
 }
 
 /// Cache-aware fetch helpers shared by both backends so the offline-first /

@@ -4058,6 +4058,12 @@ class PlexClient
   @override
   double get watchedThreshold => watchedThresholdPercent / 100.0;
 
+  /// Plex's `/:/timeline?state=stopped` doesn't reliably mark watched without
+  /// an active play session, so the in-player auto-scrobble still issues the
+  /// explicit `markWatched` (`/:/scrobble`). See [marksWatchedOnPlaybackStopped].
+  @override
+  bool get marksWatchedOnPlaybackStopped => false;
+
   @override
   Map<String, String> get streamHeaders => Map.unmodifiable(config.headers);
 

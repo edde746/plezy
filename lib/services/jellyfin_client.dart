@@ -242,6 +242,13 @@ class JellyfinClient
   @override
   double get watchedThreshold => 0.9;
 
+  /// Jellyfin marks an item played from `/Sessions/Playing/Stopped` itself
+  /// (server `MaxResumePct`, default 90%), so the in-player auto-scrobble must
+  /// not also `POST /UserPlayedItems` — that double-scrobbles via the Trakt
+  /// plugin (#1287). Manual mark-watched still hits `/UserPlayedItems`.
+  @override
+  bool get marksWatchedOnPlaybackStopped => true;
+
   @override
   void close() => _http.close();
 

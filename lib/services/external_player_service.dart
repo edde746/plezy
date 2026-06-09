@@ -208,7 +208,11 @@ class ExternalPlayerService {
 
     if (position.inMilliseconds / duration.inMilliseconds >= client.watchedThreshold) {
       try {
-        await client.markWatched(metadata);
+        // reportPlaybackStopped above marks the item played on backends that
+        // support it (Jellyfin); markWatchedFromPlaybackStop then only emits the
+        // local watch event there to avoid double-scrobbling via the Trakt
+        // plugin (#1287). Plex still issues the explicit server call.
+        await client.markWatchedFromPlaybackStop(metadata);
         unawaited(TrackerCoordinator.instance.markWatched(metadata, client));
       } catch (e) {
         appLogger.w('Failed to mark external playback watched for ${metadata.id}', error: e);

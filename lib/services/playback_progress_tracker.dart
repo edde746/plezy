@@ -328,9 +328,12 @@ class PlaybackProgressTracker {
       if (percent >= threshold) {
         _scrobbled = true;
         try {
-          // The neutral markWatched(MediaItem) call emits the watched event
-          // through WatchStateNotifier itself, so no extra notify here.
-          await c.markWatched(metadata);
+          // Backends that mark the item played from the playback-stopped report
+          // (Jellyfin) only emit the local watch event here — an explicit
+          // markWatched would double-scrobble via the Trakt plugin (#1287).
+          // Plex still issues the server call. Either path emits the watched
+          // event through WatchStateNotifier, so no extra notify is needed.
+          await c.markWatchedFromPlaybackStop(metadata);
           appLogger.d(
             'Scrobbled ${metadata.id} (${(percent * 100).toStringAsFixed(0)}% >= ${(threshold * 100).toStringAsFixed(0)}%)',
           );
