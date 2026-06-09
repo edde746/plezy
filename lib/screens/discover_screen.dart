@@ -148,6 +148,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   LibrariesProvider? _librariesProvider;
   Set<String> _lastSeenHiddenKeys = {};
   List<String> _lastSeenLibraryOrderKeys = const [];
+  Future<void>? _systemShelfSyncFuture;
+  List<MediaItem>? _pendingSystemShelfItems;
 
   // WatchStateAware: watch on-deck items and their parent shows/seasons
   @override
@@ -548,6 +550,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
     _indicatorTimer?.cancel();
+    _pendingSystemShelfItems = null;
     _indicatorProgress.dispose();
     _heroController.dispose();
     _scrollController.dispose();
@@ -902,14 +905,36 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   /// Sync Continue Watching items to the platform launcher shelf.
   Future<void> _syncSystemShelf(List<MediaItem> onDeck) async {
+    _pendingSystemShelfItems = List<MediaItem>.unmodifiable(onDeck);
+    if (_systemShelfSyncFuture != null) {
+      await _systemShelfSyncFuture;
+      return;
+    }
+
+    final syncFuture = _drainSystemShelfSyncQueue();
+    _systemShelfSyncFuture = syncFuture;
+    await syncFuture;
+  }
+
+  Future<void> _drainSystemShelfSyncQueue() async {
     try {
-      await SystemShelfService().syncFromContinueWatching(
-        onDeck,
-        (serverId) => context.getMediaClientWithFallback(serverId),
-        hideSpoilers: context.settingsRead(SettingsService.hideSpoilers),
-      );
-    } catch (e) {
-      appLogger.w('Failed to sync system shelf', error: e);
+      while (_pendingSystemShelfItems != null) {
+        final onDeck = _pendingSystemShelfItems!;
+        _pendingSystemShelfItems = null;
+        if (!mounted) return;
+
+        try {
+          await SystemShelfService().syncFromContinueWatching(
+            onDeck,
+            (serverId) => context.getMediaClientWithFallback(serverId),
+            hideSpoilers: context.settingsRead(SettingsService.hideSpoilers),
+          );
+        } catch (e) {
+          appLogger.w('Failed to sync system shelf', error: e);
+        }
+      }
+    } finally {
+      _systemShelfSyncFuture = null;
     }
   }
 

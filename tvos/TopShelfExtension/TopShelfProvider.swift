@@ -3,16 +3,10 @@ import TVServices
 
 private enum TopShelfShared {
   static let appGroupIdentifier = "group.com.edde746.plezy"
-  static let cacheFileName = "PlezySystemShelfCache.json"
+  static let cacheDataKey = "PlezySystemShelfCacheData"
 
-  static var cacheURL: URL? {
-    FileManager.default
-      .containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)?
-      .appendingPathComponent(cacheFileName, isDirectory: false)
-  }
-
-  static func log(_ message: String) {
-    NSLog("PlezyTopShelf: %@", message)
+  static var sharedDefaults: UserDefaults? {
+    UserDefaults(suiteName: appGroupIdentifier)
   }
 }
 
@@ -34,33 +28,72 @@ private struct TopShelfCachePayload: Decodable {
     let lastPlaybackPosition: Double?
     let seasonNumber: Int?
     let episodeNumber: Int?
+
+    private enum CodingKeys: String, CodingKey {
+      case contentId
+      case title
+      case episodeTitle
+      case description
+      case posterUri
+      case type
+      case duration
+      case lastPlaybackPosition
+      case seasonNumber
+      case episodeNumber
+    }
+
+    init(from decoder: Decoder) throws {
+      let container = try decoder.container(keyedBy: CodingKeys.self)
+      contentId = try container.decode(String.self, forKey: .contentId)
+      title = try container.decode(String.self, forKey: .title)
+      episodeTitle = try container.decodeIfPresent(String.self, forKey: .episodeTitle)
+      description = try container.decodeIfPresent(String.self, forKey: .description)
+      posterUri = try container.decodeIfPresent(String.self, forKey: .posterUri)
+      type = try container.decodeIfPresent(String.self, forKey: .type)
+      duration = container.decodeFlexibleDoubleIfPresent(.duration)
+      lastPlaybackPosition = container.decodeFlexibleDoubleIfPresent(.lastPlaybackPosition)
+      seasonNumber = container.decodeFlexibleIntIfPresent(.seasonNumber)
+      episodeNumber = container.decodeFlexibleIntIfPresent(.episodeNumber)
+    }
   }
 
   let sections: [Section]
 }
 
+private extension KeyedDecodingContainer {
+  func decodeFlexibleDoubleIfPresent(_ key: Key) -> Double? {
+    if let value = try? decodeIfPresent(Double.self, forKey: key) { return value }
+    if let value = try? decodeIfPresent(Int.self, forKey: key) { return Double(value) }
+    if let value = try? decodeIfPresent(String.self, forKey: key) { return Double(value) }
+    return nil
+  }
+
+  func decodeFlexibleIntIfPresent(_ key: Key) -> Int? {
+    if let value = try? decodeIfPresent(Int.self, forKey: key) { return value }
+    if let value = try? decodeIfPresent(Double.self, forKey: key) { return Int(value) }
+    if let value = try? decodeIfPresent(String.self, forKey: key) { return Int(value) }
+    return nil
+  }
+}
+
 final class TopShelfProvider: TVTopShelfContentProvider {
   override func loadTopShelfContent() async -> (any TVTopShelfContent)? {
-    buildContent()
+    return buildContent()
   }
 
   private func buildContent() -> TVTopShelfContent? {
-    guard let url = TopShelfShared.cacheURL else {
-      TopShelfShared.log("App Group container unavailable")
+    guard let defaults = TopShelfShared.sharedDefaults else {
       return nil
     }
 
-    guard FileManager.default.fileExists(atPath: url.path) else {
-      TopShelfShared.log("Cache file missing")
+    guard let data = defaults.data(forKey: TopShelfShared.cacheDataKey) else {
       return nil
     }
 
     let payload: TopShelfCachePayload
     do {
-      let data = try Data(contentsOf: url)
       payload = try JSONDecoder().decode(TopShelfCachePayload.self, from: data)
     } catch {
-      TopShelfShared.log("Failed to read cache: \(error)")
       return nil
     }
 
@@ -74,12 +107,9 @@ final class TopShelfProvider: TVTopShelfContentProvider {
     }
 
     guard !sections.isEmpty else {
-      TopShelfShared.log("Cache has no displayable items")
       return nil
     }
 
-    let itemCount = sections.reduce(0) { $0 + $1.items.count }
-    TopShelfShared.log("Loaded \(itemCount) items")
     return TVTopShelfSectionedContent(sections: sections)
   }
 
