@@ -23,6 +23,7 @@ import '../../../utils/live_tv_grouping.dart';
 import '../../../utils/live_tv_matching.dart';
 import '../../../utils/media_image_helper.dart';
 import '../../../utils/live_tv_player_navigation.dart';
+import '../../../utils/platform_detector.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/app_menu.dart';
 import '../../../widgets/clickable_cursor.dart';
@@ -76,6 +77,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
   static const _sourceHeaderRowHeight = 40.0;
   static const _timeHeaderHeight = 40.0;
   static const _minutesPerSlot = 30;
+  static const _longPressDuration = Duration(milliseconds: 500);
 
   List<LiveTvProgram> _programs = [];
   Set<String> _scheduledRecordingKeys = const {};
@@ -91,6 +93,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
   bool _syncingScroll = false;
 
   Timer? _timeIndicatorTimer;
+  Timer? _programSelectLongPressTimer;
   final _dayPickerKey = GlobalKey();
 
   // Focus state
@@ -103,6 +106,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
   final ValueNotifier<bool> _hasFocusNotifier = ValueNotifier(false);
   LiveTvProgram? _focusedProgram;
   bool _pendingFocus = false;
+  bool _isProgramSelectKeyDown = false;
 
   /// Focus into the guide content (called from tab bar navigation or initial load).
   void focusContent() {
@@ -163,6 +167,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
   @override
   void dispose() {
+    _programSelectLongPressTimer?.cancel();
     _guideFocusNode.dispose();
     _gridVerticalController.dispose();
     _gridHorizontalController.removeListener(_syncGridToHeader);
@@ -177,8 +182,14 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
 
   void _handleGuideFocusChange(bool hasFocus) {
     if (_hasFocus == hasFocus) return;
+    if (!hasFocus) _resetProgramSelectLongPressState();
     _hasFocus = hasFocus;
     _hasFocusNotifier.value = hasFocus;
+  }
+
+  void _resetProgramSelectLongPressState() {
+    _programSelectLongPressTimer?.cancel();
+    _isProgramSelectKeyDown = false;
   }
 
   void _syncGridToHeader() {
@@ -466,8 +477,79 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
     await tuneAndNavigateToLiveTv(context, multiServer: multiServer, channel: channel, channels: widget.channels);
   }
 
+  void _activateProgram(LiveTvChannel channel, LiveTvProgram program) {
+    if (PlatformDetector.isTV() && program.isCurrentlyAiring) {
+      _tuneChannel(channel);
+      return;
+    }
+
+    _showProgramDetails(channel, program);
+  }
+
+  ({LiveTvChannel channel, LiveTvProgram program})? _focusedProgramTarget() {
+    if (_focusZone != _GuideZone.grid || _gridColumn != 1) return null;
+    final program = _focusedProgram;
+    if (program == null) return null;
+    if (_gridChannelIndex < 0 || _gridChannelIndex >= widget.channels.length) return null;
+
+    return (channel: widget.channels[_gridChannelIndex], program: program);
+  }
+
+  KeyEventResult _handleFocusedProgramSelectKey(KeyEvent event) {
+    if (!event.logicalKey.isSelectKey) return KeyEventResult.ignored;
+    final target = _focusedProgramTarget();
+    if (target == null) return KeyEventResult.ignored;
+
+    if (event is KeyDownEvent) {
+      if (!_isProgramSelectKeyDown) {
+        _isProgramSelectKeyDown = true;
+        _programSelectLongPressTimer?.cancel();
+        _programSelectLongPressTimer = Timer(_longPressDuration, () {
+          if (!mounted || !_isProgramSelectKeyDown) return;
+          SelectKeyUpSuppressor.suppressSelectUntilKeyUp();
+          _resetProgramSelectLongPressState();
+          _showProgramDetails(target.channel, target.program);
+        });
+      }
+      return KeyEventResult.handled;
+    }
+
+    if (event is KeyRepeatEvent) {
+      return KeyEventResult.handled;
+    }
+
+    if (event is KeyUpEvent) {
+      final timerWasActive = _programSelectLongPressTimer?.isActive ?? false;
+      _programSelectLongPressTimer?.cancel();
+      if (timerWasActive && _isProgramSelectKeyDown) {
+        _activateProgram(target.channel, target.program);
+      }
+      _isProgramSelectKeyDown = false;
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
+  KeyEventResult _handleFocusedProgramContextMenuKey(KeyEvent event) {
+    if (!event.logicalKey.isContextMenuKey || !event.isActionable) return KeyEventResult.ignored;
+    final target = _focusedProgramTarget();
+    if (target == null) return KeyEventResult.ignored;
+
+    _resetProgramSelectLongPressState();
+    _showProgramDetails(target.channel, target.program);
+    return KeyEventResult.handled;
+  }
+
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
+
+    if (SelectKeyUpSuppressor.consumeIfSuppressed(event)) {
+      if (event is KeyUpEvent && key.isSelectKey) {
+        _resetProgramSelectLongPressState();
+      }
+      return KeyEventResult.handled;
+    }
 
     // Back key
     if (key.isBackKey) {
@@ -485,6 +567,14 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
       }
       return handleBackKeyAction(event, () => widget.onBack?.call());
     }
+
+    if (PlatformDetector.isTV()) {
+      final selectResult = _handleFocusedProgramSelectKey(event);
+      if (selectResult != KeyEventResult.ignored) return selectResult;
+    }
+
+    final contextMenuResult = _handleFocusedProgramContextMenuKey(event);
+    if (contextMenuResult != KeyEventResult.ignored) return contextMenuResult;
 
     if (!event.isActionable) return KeyEventResult.ignored;
 
@@ -595,7 +685,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
         if (_gridColumn == 0) {
           _tuneChannel(channel);
         } else if (_focusedProgram != null) {
-          _showProgramDetails(channel, _focusedProgram!);
+          _activateProgram(channel, _focusedProgram!);
         }
       }
       return KeyEventResult.handled;
@@ -1272,7 +1362,9 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin {
         child: InkWell(
           mouseCursor: SystemMouseCursors.click,
           canRequestFocus: false,
-          onTap: () => _showProgramDetails(channel, program),
+          onTap: () => _activateProgram(channel, program),
+          onLongPress: () => _showProgramDetails(channel, program),
+          onSecondaryTap: () => _showProgramDetails(channel, program),
           child: Container(
             decoration: BoxDecoration(
               border: Border(
