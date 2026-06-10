@@ -2085,86 +2085,90 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Widget _buildSmartPlayButton(MediaItem rawHeroItem) {
-    // The on-deck snapshot refetches shortly after a watch event; the store
-    // patch bridges the gap so "minutes left" never lags.
-    final heroItem = context.withFreshWatchState(rawHeroItem);
-    final hasProgress = heroItem.hasActiveProgress;
-    final isTv = PlatformDetector.isTV();
+    return Builder(
+      builder: (context) {
+        // The on-deck snapshot refetches shortly after a watch event; the store
+        // patch bridges the gap so "minutes left" never lags.
+        final heroItem = context.withFreshWatchState(rawHeroItem);
+        final hasProgress = heroItem.hasActiveProgress;
+        final isTv = PlatformDetector.isTV();
 
-    final minutesLeft = hasProgress ? ((heroItem.durationMs! - heroItem.viewOffsetMs!) / 60_000).round() : 0;
+        final minutesLeft = hasProgress ? ((heroItem.durationMs! - heroItem.viewOffsetMs!) / 60_000).round() : 0;
 
-    final progress = hasProgress ? heroItem.viewOffsetMs! / heroItem.durationMs! : 0.0;
+        final progress = hasProgress ? heroItem.viewOffsetMs! / heroItem.durationMs! : 0.0;
 
-    return ListenableBuilder(
-      listenable: _heroFocusNode,
-      builder: (context, _) {
-        final showFocus = isTv && _heroFocusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
-        final colorScheme = Theme.of(context).colorScheme;
-        final backgroundColor = showFocus ? colorScheme.primary : Colors.white;
-        final foregroundColor = showFocus ? colorScheme.onPrimary : Colors.black;
-        return InkWell(
-          onTap: () {
-            appLogger.d('Playing: ${heroItem.title}');
-            navigateToVideoPlayer(context, metadata: heroItem);
-          },
-          borderRadius: BorderRadius.all(Radius.circular(isTv ? 32 : 24)),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
-            curve: Curves.easeOutCubic,
-            padding: .symmetric(horizontal: isTv ? 34 : 24, vertical: isTv ? 16 : 12),
-            decoration: BoxDecoration(
-              color: backgroundColor,
+        return ListenableBuilder(
+          listenable: _heroFocusNode,
+          builder: (context, _) {
+            final showFocus = isTv && _heroFocusNode.hasFocus && InputModeTracker.isKeyboardMode(context);
+            final colorScheme = Theme.of(context).colorScheme;
+            final backgroundColor = showFocus ? colorScheme.primary : Colors.white;
+            final foregroundColor = showFocus ? colorScheme.onPrimary : Colors.black;
+            return InkWell(
+              onTap: () {
+                appLogger.d('Playing: ${heroItem.title}');
+                navigateToVideoPlayer(context, metadata: heroItem);
+              },
               borderRadius: BorderRadius.all(Radius.circular(isTv ? 32 : 24)),
-              boxShadow: showFocus
-                  ? [BoxShadow(color: colorScheme.primary.withValues(alpha: 0.35), blurRadius: 28, spreadRadius: 4)]
-                  : null,
-            ),
-            child: Row(
-              mainAxisSize: .min,
-              children: [
-                AppIcon(Symbols.play_arrow_rounded, fill: 1, size: isTv ? 28 : 20, color: foregroundColor),
-                SizedBox(width: isTv ? 12 : 8),
-                if (hasProgress) ...[
-                  // Progress bar
-                  Container(
-                    width: isTv ? 56 : 40,
-                    height: isTv ? 8 : 6,
-                    decoration: BoxDecoration(
-                      color: foregroundColor.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.all(Radius.circular(isTv ? 4 : 3)),
-                    ),
-                    child: FractionallySizedBox(
-                      alignment: .centerLeft,
-                      widthFactor: progress,
-                      child: Container(
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                curve: Curves.easeOutCubic,
+                padding: .symmetric(horizontal: isTv ? 34 : 24, vertical: isTv ? 16 : 12),
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.all(Radius.circular(isTv ? 32 : 24)),
+                  boxShadow: showFocus
+                      ? [BoxShadow(color: colorScheme.primary.withValues(alpha: 0.35), blurRadius: 28, spreadRadius: 4)]
+                      : null,
+                ),
+                child: Row(
+                  mainAxisSize: .min,
+                  children: [
+                    AppIcon(Symbols.play_arrow_rounded, fill: 1, size: isTv ? 28 : 20, color: foregroundColor),
+                    SizedBox(width: isTv ? 12 : 8),
+                    if (hasProgress) ...[
+                      // Progress bar
+                      Container(
+                        width: isTv ? 56 : 40,
+                        height: isTv ? 8 : 6,
                         decoration: BoxDecoration(
-                          color: foregroundColor,
-                          borderRadius: BorderRadius.all(Radius.circular(isTv ? 3 : 2)),
+                          color: foregroundColor.withValues(alpha: 0.25),
+                          borderRadius: BorderRadius.all(Radius.circular(isTv ? 4 : 3)),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: .centerLeft,
+                          widthFactor: progress,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: foregroundColor,
+                              borderRadius: BorderRadius.all(Radius.circular(isTv ? 3 : 2)),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  SizedBox(width: isTv ? 12 : 8),
-                  Text(
-                    t.discover.minutesLeft(minutes: minutesLeft),
-                    style: TextStyle(
-                      color: foregroundColor,
-                      fontSize: isTv ? 18 : 14,
-                      fontWeight: isTv ? FontWeight.w700 : FontWeight.w600,
-                    ),
-                  ),
-                ] else
-                  Text(
-                    t.common.play,
-                    style: TextStyle(
-                      color: foregroundColor,
-                      fontSize: isTv ? 18 : 14,
-                      fontWeight: isTv ? FontWeight.w700 : FontWeight.w600,
-                    ),
-                  ),
-              ],
-            ),
-          ),
+                      SizedBox(width: isTv ? 12 : 8),
+                      Text(
+                        t.discover.minutesLeft(minutes: minutesLeft),
+                        style: TextStyle(
+                          color: foregroundColor,
+                          fontSize: isTv ? 18 : 14,
+                          fontWeight: isTv ? FontWeight.w700 : FontWeight.w600,
+                        ),
+                      ),
+                    ] else
+                      Text(
+                        t.common.play,
+                        style: TextStyle(
+                          color: foregroundColor,
+                          fontSize: isTv ? 18 : 14,
+                          fontWeight: isTv ? FontWeight.w700 : FontWeight.w600,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
