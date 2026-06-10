@@ -63,6 +63,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
             title: t.settings.showHeroSection,
             subtitle: t.settings.showHeroSectionDescription,
           ),
+        _continueWatchingActionSelector(),
         SettingSwitchTile(
           pref: SettingsService.useGlobalHubs,
           icon: Symbols.home_rounded,
@@ -247,6 +248,18 @@ class AppearanceSettingsScreen extends StatelessWidget {
       ButtonSegment(value: EpisodePosterMode.seriesPoster, label: Text(t.settings.seriesPoster)),
       ButtonSegment(value: EpisodePosterMode.seasonPoster, label: Text(t.settings.seasonPoster)),
       ButtonSegment(value: EpisodePosterMode.episodeThumbnail, label: Text(t.settings.episodeThumbnail)),
+    ],
+    decode: (v) => v,
+    encode: (v) => v,
+  );
+
+  Widget _continueWatchingActionSelector() => SettingSegmentedTile<ContinueWatchingAction, ContinueWatchingAction>(
+    pref: SettingsService.continueWatchingAction,
+    icon: Symbols.play_circle_rounded,
+    title: t.settings.continueWatchingAction,
+    segments: [
+      ButtonSegment(value: ContinueWatchingAction.play, label: Text(t.settings.continueWatchingPlay)),
+      ButtonSegment(value: ContinueWatchingAction.details, label: Text(t.settings.continueWatchingDetails)),
     ],
     decode: (v) => v,
     encode: (v) => v,

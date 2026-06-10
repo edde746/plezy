@@ -245,6 +245,9 @@ class _TranslationsSettingsBg extends TranslationsSettingsEn {
 	@override String get gridView => 'Мрежа';
 	@override String get listView => 'Списък';
 	@override String get showHeroSection => 'Показвай водеща секция';
+	@override String get continueWatchingAction => 'Действие за продължаване на гледането';
+	@override String get continueWatchingPlay => 'Пусни';
+	@override String get continueWatchingDetails => 'Отвори подробности';
 	@override String get useGlobalHubs => 'Използвай начално оформление';
 	@override String get useGlobalHubsDescription => 'Показвай обединени начални хъбове. В противен случай използвай препоръките на библиотеката.';
 	@override String get showServerNameOnHubs => 'Показвай името на сървъра в хъбовете';
@@ -492,8 +495,8 @@ class _TranslationsMediaMenuBg extends TranslationsMediaMenuEn {
 	@override String get markAsWatched => 'Маркирай като гледано';
 	@override String get markAsUnwatched => 'Маркирай като негледано';
 	@override String get removeFromContinueWatching => 'Премахни от продължаване на гледането';
+	@override String get viewDetails => 'Виж подробности';
 	@override String get goToSeries => 'Към сериала';
-	@override String get goToSeason => 'Към сезона';
 	@override String get shufflePlay => 'Разбъркано възпроизвеждане';
 	@override String get shuffleNotAvailableOffline => 'Разбърканото възпроизвеждане не е налично офлайн';
 	@override String get fileInfo => 'Информация за файла';
@@ -673,7 +676,6 @@ class _TranslationsMessagesBg extends TranslationsMessagesEn {
 	@override String get fileInfoNotAvailable => 'Информацията за файла не е налична';
 	@override String errorLoadingFileInfo({required Object error}) => 'Грешка при зареждане на информация за файла: ${error}';
 	@override String get errorLoadingSeries => 'Грешка при зареждане на сериала';
-	@override String get errorLoadingSeason => 'Грешка при зареждане на сезона';
 	@override String get musicNotSupported => 'Възпроизвеждането на музика все още не се поддържа';
 	@override String get noDescriptionAvailable => 'Няма налично описание';
 	@override String get noProfilesAvailable => 'Няма налични профили';
@@ -2027,6 +2029,9 @@ extension on TranslationsBg {
 			'settings.gridView' => 'Мрежа',
 			'settings.listView' => 'Списък',
 			'settings.showHeroSection' => 'Показвай водеща секция',
+			'settings.continueWatchingAction' => 'Действие за продължаване на гледането',
+			'settings.continueWatchingPlay' => 'Пусни',
+			'settings.continueWatchingDetails' => 'Отвори подробности',
 			'settings.useGlobalHubs' => 'Използвай начално оформление',
 			'settings.useGlobalHubsDescription' => 'Показвай обединени начални хъбове. В противен случай използвай препоръките на библиотеката.',
 			'settings.showServerNameOnHubs' => 'Показвай името на сървъра в хъбовете',
@@ -2262,8 +2267,8 @@ extension on TranslationsBg {
 			'mediaMenu.markAsWatched' => 'Маркирай като гледано',
 			'mediaMenu.markAsUnwatched' => 'Маркирай като негледано',
 			'mediaMenu.removeFromContinueWatching' => 'Премахни от продължаване на гледането',
+			'mediaMenu.viewDetails' => 'Виж подробности',
 			'mediaMenu.goToSeries' => 'Към сериала',
-			'mediaMenu.goToSeason' => 'Към сезона',
 			'mediaMenu.shufflePlay' => 'Разбъркано възпроизвеждане',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Разбърканото възпроизвеждане не е налично офлайн',
 			'mediaMenu.fileInfo' => 'Информация за файла',
@@ -2395,7 +2400,6 @@ extension on TranslationsBg {
 			'messages.fileInfoNotAvailable' => 'Информацията за файла не е налична',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Грешка при зареждане на информация за файла: ${error}',
 			'messages.errorLoadingSeries' => 'Грешка при зареждане на сериала',
-			'messages.errorLoadingSeason' => 'Грешка при зареждане на сезона',
 			'messages.musicNotSupported' => 'Възпроизвеждането на музика все още не се поддържа',
 			'messages.noDescriptionAvailable' => 'Няма налично описание',
 			'messages.noProfilesAvailable' => 'Няма налични профили',
@@ -2431,10 +2435,10 @@ extension on TranslationsBg {
 			'subtitlingStyling.border' => 'Рамка',
 			'subtitlingStyling.background' => 'Фон',
 			'subtitlingStyling.fontSize' => 'Размер на шрифта',
-			'subtitlingStyling.textColor' => 'Цвят на текста',
-			'subtitlingStyling.borderSize' => 'Размер на рамката',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.textColor' => 'Цвят на текста',
+			'subtitlingStyling.borderSize' => 'Размер на рамката',
 			'subtitlingStyling.borderColor' => 'Цвят на рамката',
 			'subtitlingStyling.backgroundOpacity' => 'Прозрачност на фона',
 			'subtitlingStyling.backgroundColor' => 'Цвят на фона',
@@ -2945,10 +2949,10 @@ extension on TranslationsBg {
 			'companionRemote.remote.menu' => 'Меню',
 			'companionRemote.remote.tabNavigation' => 'Навигация с Tab',
 			'companionRemote.remote.tabDiscover' => 'Открий',
-			'companionRemote.remote.tabLibraries' => 'Библиотеки',
-			'companionRemote.remote.tabSearch' => 'Търсене',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabLibraries' => 'Библиотеки',
+			'companionRemote.remote.tabSearch' => 'Търсене',
 			'companionRemote.remote.tabDownloads' => 'Изтегляния',
 			'companionRemote.remote.tabSettings' => 'Настройки',
 			'companionRemote.remote.previous' => 'Предишен',

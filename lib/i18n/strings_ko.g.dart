@@ -245,6 +245,9 @@ class _TranslationsSettingsKo extends TranslationsSettingsEn {
 	@override String get gridView => '그리드 보기';
 	@override String get listView => '목록 보기';
 	@override String get showHeroSection => '주요 추천 영역 표시';
+	@override String get continueWatchingAction => '계속 보기 동작';
+	@override String get continueWatchingPlay => '재생';
+	@override String get continueWatchingDetails => '상세 정보 열기';
 	@override String get useGlobalHubs => '홈 레이아웃 사용';
 	@override String get useGlobalHubsDescription => '통합 홈 허브를 표시합니다. 끄면 라이브러리 추천을 사용합니다.';
 	@override String get showServerNameOnHubs => '허브에 서버 이름 표시';
@@ -492,8 +495,8 @@ class _TranslationsMediaMenuKo extends TranslationsMediaMenuEn {
 	@override String get markAsWatched => '시청 완료로 표시';
 	@override String get markAsUnwatched => '시청 안 함으로 표시';
 	@override String get removeFromContinueWatching => '계속 보기에서 제거';
+	@override String get viewDetails => '상세 정보 보기';
 	@override String get goToSeries => '시리즈로 이동';
-	@override String get goToSeason => '시즌으로 이동';
 	@override String get shufflePlay => '무작위 재생';
 	@override String get shuffleNotAvailableOffline => '오프라인에서는 셔플을 사용할 수 없습니다';
 	@override String get fileInfo => '파일 정보';
@@ -673,7 +676,6 @@ class _TranslationsMessagesKo extends TranslationsMessagesEn {
 	@override String get fileInfoNotAvailable => '파일 정보가 없습니다';
 	@override String errorLoadingFileInfo({required Object error}) => '파일 정보 로딩 중 오류: ${error}';
 	@override String get errorLoadingSeries => '시리즈 로딩 중 오류';
-	@override String get errorLoadingSeason => '시즌 로딩 중 오류';
 	@override String get musicNotSupported => '음악 재생 미지원';
 	@override String get noDescriptionAvailable => '설명이 없습니다';
 	@override String get noProfilesAvailable => '사용 가능한 프로필이 없습니다';
@@ -2027,6 +2029,9 @@ extension on TranslationsKo {
 			'settings.gridView' => '그리드 보기',
 			'settings.listView' => '목록 보기',
 			'settings.showHeroSection' => '주요 추천 영역 표시',
+			'settings.continueWatchingAction' => '계속 보기 동작',
+			'settings.continueWatchingPlay' => '재생',
+			'settings.continueWatchingDetails' => '상세 정보 열기',
 			'settings.useGlobalHubs' => '홈 레이아웃 사용',
 			'settings.useGlobalHubsDescription' => '통합 홈 허브를 표시합니다. 끄면 라이브러리 추천을 사용합니다.',
 			'settings.showServerNameOnHubs' => '허브에 서버 이름 표시',
@@ -2262,8 +2267,8 @@ extension on TranslationsKo {
 			'mediaMenu.markAsWatched' => '시청 완료로 표시',
 			'mediaMenu.markAsUnwatched' => '시청 안 함으로 표시',
 			'mediaMenu.removeFromContinueWatching' => '계속 보기에서 제거',
+			'mediaMenu.viewDetails' => '상세 정보 보기',
 			'mediaMenu.goToSeries' => '시리즈로 이동',
-			'mediaMenu.goToSeason' => '시즌으로 이동',
 			'mediaMenu.shufflePlay' => '무작위 재생',
 			'mediaMenu.shuffleNotAvailableOffline' => '오프라인에서는 셔플을 사용할 수 없습니다',
 			'mediaMenu.fileInfo' => '파일 정보',
@@ -2395,7 +2400,6 @@ extension on TranslationsKo {
 			'messages.fileInfoNotAvailable' => '파일 정보가 없습니다',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '파일 정보 로딩 중 오류: ${error}',
 			'messages.errorLoadingSeries' => '시리즈 로딩 중 오류',
-			'messages.errorLoadingSeason' => '시즌 로딩 중 오류',
 			'messages.musicNotSupported' => '음악 재생 미지원',
 			'messages.noDescriptionAvailable' => '설명이 없습니다',
 			'messages.noProfilesAvailable' => '사용 가능한 프로필이 없습니다',
@@ -2431,10 +2435,10 @@ extension on TranslationsKo {
 			'subtitlingStyling.border' => '테두리',
 			'subtitlingStyling.background' => '배경',
 			'subtitlingStyling.fontSize' => '글자 크기',
-			'subtitlingStyling.textColor' => '텍스트 색상',
-			'subtitlingStyling.borderSize' => '테두리 크기',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.textColor' => '텍스트 색상',
+			'subtitlingStyling.borderSize' => '테두리 크기',
 			'subtitlingStyling.borderColor' => '테두리 색상',
 			'subtitlingStyling.backgroundOpacity' => '배경 불투명도',
 			'subtitlingStyling.backgroundColor' => '배경색',
@@ -2945,10 +2949,10 @@ extension on TranslationsKo {
 			'companionRemote.remote.menu' => '메뉴',
 			'companionRemote.remote.tabNavigation' => '탭 탐색',
 			'companionRemote.remote.tabDiscover' => '발견',
-			'companionRemote.remote.tabLibraries' => '미디어 라이브러리',
-			'companionRemote.remote.tabSearch' => '검색',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabLibraries' => '미디어 라이브러리',
+			'companionRemote.remote.tabSearch' => '검색',
 			'companionRemote.remote.tabDownloads' => '다운로드',
 			'companionRemote.remote.tabSettings' => '설정',
 			'companionRemote.remote.previous' => '이전',

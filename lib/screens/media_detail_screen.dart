@@ -191,15 +191,36 @@ class MediaDetailScreen extends StatefulWidget {
   /// If provided, auto-selects this season index when the screen loads.
   /// Used when navigating to a show from a season context.
   final int? initialSeasonIndex;
+  final String? initialSeasonId;
+  final String? initialEpisodeId;
 
-  const MediaDetailScreen({super.key, required this.metadata, this.isOffline = false, this.initialSeasonIndex});
+  const MediaDetailScreen({
+    super.key,
+    required this.metadata,
+    this.isOffline = false,
+    this.initialSeasonIndex,
+    this.initialSeasonId,
+    this.initialEpisodeId,
+  });
 
   @override
   State<MediaDetailScreen> createState() => _MediaDetailScreenState();
 }
 
-PageRoute<bool> mediaDetailRoute({required MediaItem metadata, bool isOffline = false, int? initialSeasonIndex}) {
-  final page = MediaDetailScreen(metadata: metadata, isOffline: isOffline, initialSeasonIndex: initialSeasonIndex);
+PageRoute<bool> mediaDetailRoute({
+  required MediaItem metadata,
+  bool isOffline = false,
+  int? initialSeasonIndex,
+  String? initialSeasonId,
+  String? initialEpisodeId,
+}) {
+  final page = MediaDetailScreen(
+    metadata: metadata,
+    isOffline: isOffline,
+    initialSeasonIndex: initialSeasonIndex,
+    initialSeasonId: initialSeasonId,
+    initialEpisodeId: initialEpisodeId,
+  );
   if (!PlatformDetector.isTV()) return MaterialPageRoute<bool>(builder: (_) => page);
 
   return PageRouteBuilder<bool>(
@@ -285,8 +306,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   final ScrollController _seasonTabsScrollController = ScrollController();
   final FocusNode _firstEpisodeFocusNode = FocusNode(debugLabel: 'first_episode');
   final FocusNode _lastEpisodeFocusNode = FocusNode(debugLabel: 'last_episode');
+  final FocusNode _initialEpisodeFocusNode = FocusNode(debugLabel: 'initial_episode');
   String? _lastEpisodeFocusPinnedKey;
   bool _suppressNextLastEpisodeFocusLoad = false;
+  bool _initialDetailFocusApplied = false;
+  bool _initialEpisodePagingInFlight = false;
+  bool _initialEpisodePagingDone = false;
   static const int _episodesPageSize = 200;
   // Sentinel at the end of the inline episode list; its viewport position drives
   // lazy paging (the list is shrink-wrapped, so it can't self-detect near-end).
@@ -765,6 +790,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     _firstEpisodeFocusNode.dispose();
     _lastEpisodeFocusNode.removeListener(_onLastEpisodeFocusChanged);
     _lastEpisodeFocusNode.dispose();
+    _initialEpisodeFocusNode.dispose();
     super.dispose();
   }
 
@@ -1534,7 +1560,12 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Find the season index matching the initial selection or on-deck episode,
   /// then fall back to the same season the Play button would use.
   int _findOnDeckSeasonIndex(List<MediaItem> seasons) {
-    return preferredSeasonIndex(seasons, initialSeasonIndex: widget.initialSeasonIndex, onDeckEpisode: _onDeckEpisode);
+    return preferredSeasonIndex(
+      seasons,
+      initialSeasonId: widget.initialSeasonId,
+      initialSeasonIndex: widget.initialSeasonIndex,
+      onDeckEpisode: _onDeckEpisode,
+    );
   }
 
   /// Fetch episodes for a specific season by index, using cache when available
@@ -1915,6 +1946,93 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Scroll the main scroll view so the section with the given key is centered
   void _scrollSectionIntoView(GlobalKey key) {
     scrollContextToCenter(key.currentContext);
+  }
+
+  bool get _hasInitialDetailFocusTarget =>
+      widget.initialEpisodeId != null || widget.initialSeasonId != null || widget.initialSeasonIndex != null;
+
+  bool get _episodesContainInitialTarget {
+    final targetEpisodeId = widget.initialEpisodeId;
+    return targetEpisodeId != null && _episodes.any((episode) => episode.id == targetEpisodeId);
+  }
+
+  void _scheduleInitialMobileDetailFocus(MediaItem metadata) {
+    if (_initialDetailFocusApplied || PlatformDetector.isTV() || !_hasInitialDetailFocusTarget) return;
+
+    if (widget.initialEpisodeId != null) {
+      if (_episodesContainInitialTarget) {
+        _applyInitialMobileFocus(_initialTargetEpisodeFocusNode(), _seasonsSectionKey);
+        return;
+      }
+      _maybeLoadMoreForInitialEpisode();
+      // Target never materialized (stale/deleted id) — fall back to the
+      // season anchors below instead of retrying forever.
+      if (!_initialEpisodePagingDone) return;
+    }
+
+    if (metadata.isShow &&
+        !_showEpisodesDirectly &&
+        _seasons.isNotEmpty &&
+        _seasonTabFocusNodes.length > _selectedSeasonIndex) {
+      _applyInitialMobileFocus(_seasonTabFocusNodes[_selectedSeasonIndex], _seasonsSectionKey);
+      return;
+    }
+
+    if (((metadata.isShow && _showEpisodesDirectly) || metadata.isSeason) && _episodes.isNotEmpty) {
+      _applyInitialMobileFocus(_firstEpisodeFocusNode, _seasonsSectionKey);
+    }
+  }
+
+  void _applyInitialMobileFocus(FocusNode node, GlobalKey sectionKey) {
+    _initialDetailFocusApplied = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      node.requestFocus();
+      _scrollSectionIntoView(sectionKey);
+    });
+  }
+
+  void _maybeLoadMoreForInitialEpisode() {
+    if (_initialEpisodePagingDone || _initialEpisodePagingInFlight) return;
+    if (_episodesContainInitialTarget) {
+      _initialEpisodePagingDone = true;
+      return;
+    }
+
+    final hasMore = _isFlattenEpisodeList ? _allEpisodes.hasMore : _selectedSeasonHasMore;
+    final pageError = _isFlattenEpisodeList ? _allEpisodesPageError : _seasonEpisodesPageError;
+    if (!hasMore || pageError) {
+      // All pages loaded (or paging failed) without the target appearing.
+      _initialEpisodePagingDone = true;
+      return;
+    }
+    if (_isFlattenEpisodeList ? _isLoadingAllEpisodes : _isLoadingMoreSeasonEpisodes) return;
+
+    _initialEpisodePagingInFlight = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _episodesContainInitialTarget) {
+        _initialEpisodePagingInFlight = false;
+        return;
+      }
+
+      Future<void>? load;
+      if (_isFlattenEpisodeList) {
+        if (_allEpisodes.hasMore && !_isLoadingAllEpisodes && !_allEpisodesPageError) {
+          load = _loadMoreAllEpisodes();
+        }
+      } else if (_selectedSeasonHasMore && !_isLoadingMoreSeasonEpisodes && !_seasonEpisodesPageError) {
+        load = _loadMoreSeasonEpisodes();
+      }
+
+      if (load == null) {
+        _initialEpisodePagingInFlight = false;
+        return;
+      }
+
+      // The loaders setState on success and failure, so the resulting rebuild
+      // re-enters this method for the next page (or marks paging done).
+      unawaited(load.whenComplete(() => _initialEpisodePagingInFlight = false));
+    });
   }
 
   /// Focus the first available section above the primary action row.
@@ -2431,9 +2549,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Build episode list directly when the library hides seasons for single-season shows
   Widget _buildEpisodesList() {
     final client = _getMediaClientForMetadata(context);
-    final pinnedLastEpisodeKey = _lastEpisodeFocusPinnedKey;
-    final hasPinnedLastEpisode =
-        pinnedLastEpisodeKey != null && _episodes.any((episode) => episode.globalKey == pinnedLastEpisodeKey);
+    final hasPinnedLastEpisode = _hasPinnedLastEpisodeInList;
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -2454,15 +2570,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           client: client,
           isOffline: widget.isOffline,
           autofocus: false,
-          focusNode: index == 0
-              ? _firstEpisodeFocusNode
-              : _shouldUseLastEpisodeFocusNode(
-                  episode: episode,
-                  index: index,
-                  hasPinnedLastEpisode: hasPinnedLastEpisode,
-                )
-              ? _lastEpisodeFocusNode
-              : null,
+          focusNode: _episodeListFocusNode(episode: episode, index: index, hasPinnedLastEpisode: hasPinnedLastEpisode),
           onNavigateUp: index == 0
               ? () {
                   if (!_showEpisodesDirectly) {
@@ -2508,6 +2616,39 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     if (_episodes.length <= 1) return false;
     if (hasPinnedLastEpisode) return episode.globalKey == _lastEpisodeFocusPinnedKey;
     return index == _episodes.length - 1;
+  }
+
+  bool get _hasPinnedLastEpisodeInList {
+    final pinnedKey = _lastEpisodeFocusPinnedKey;
+    return pinnedKey != null && _episodes.any((episode) => episode.globalKey == pinnedKey);
+  }
+
+  /// Resolve the focus node for an inline episode list item. Role nodes
+  /// (first/last) take priority so their consumers always find them attached;
+  /// the initial navigation target only claims a node when no role applies.
+  FocusNode? _episodeListFocusNode({
+    required MediaItem episode,
+    required int index,
+    required bool hasPinnedLastEpisode,
+  }) {
+    if (index == 0) return _firstEpisodeFocusNode;
+    if (_shouldUseLastEpisodeFocusNode(episode: episode, index: index, hasPinnedLastEpisode: hasPinnedLastEpisode)) {
+      return _lastEpisodeFocusNode;
+    }
+    if (widget.initialEpisodeId == episode.id) return _initialEpisodeFocusNode;
+    return null;
+  }
+
+  /// The node the initial target episode's card actually holds.
+  FocusNode _initialTargetEpisodeFocusNode() {
+    final index = _episodes.indexWhere((episode) => episode.id == widget.initialEpisodeId);
+    if (index == -1) return _initialEpisodeFocusNode;
+    return _episodeListFocusNode(
+          episode: _episodes[index],
+          index: index,
+          hasPinnedLastEpisode: _hasPinnedLastEpisodeInList,
+        ) ??
+        _initialEpisodeFocusNode;
   }
 
   /// Tail of the inline episode list: a retry tile when a page failed, otherwise
@@ -2878,6 +3019,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return _buildTvDetailScreen(context, metadata, _handleMediaDetailBackKey);
     }
 
+    _scheduleInitialMobileDetailFocus(metadata);
+
     final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
     final content = PrimaryScrollController(
       controller: _scrollController,
@@ -3115,6 +3258,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   ) {
     final size = MediaQuery.sizeOf(context);
     final detailHubs = _tvDetailHubs(metadata);
+    if (widget.initialEpisodeId != null && !_initialEpisodePagingDone) {
+      _maybeLoadMoreForInitialEpisode();
+    }
     final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final detailScale = TvLayoutConstants.scaleForSize(size);
     final spotlightTop = (size.height * 0.08).clamp(44.0 * detailScale, 110.0 * detailScale).toDouble();
@@ -3601,6 +3747,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   String? _tvDetailInitialItemId(MediaItem metadata) {
+    if (widget.initialEpisodeId != null) return widget.initialEpisodeId;
     if (!metadata.isShow) return null;
     return _onDeckEpisode?.id;
   }

@@ -59,6 +59,7 @@ import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/formatters.dart';
 import '../utils/media_hub_ordering.dart';
+import '../utils/media_navigation_helper.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/layout_constants.dart';
@@ -538,7 +539,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       },
       onSelect: () {
         if (_onDeck.isNotEmpty && _currentHeroIndex < _onDeck.length) {
-          navigateToVideoPlayer(context, metadata: _onDeck[_currentHeroIndex]);
+          navigateToMediaItem(context, _onDeck[_currentHeroIndex], playDirectly: true);
         }
       },
     )(node, event);
@@ -1819,8 +1820,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       child: ClickableCursor(
         child: GestureDetector(
           onTap: () {
-            appLogger.d('Navigating to VideoPlayerScreen for: ${heroItem.title}');
-            navigateToVideoPlayer(context, metadata: heroItem);
+            appLogger.d('Activating hero item: ${heroItem.title}');
+            navigateToMediaItem(context, heroItem, playDirectly: true);
           },
           child: Stack(
             fit: StackFit.expand,

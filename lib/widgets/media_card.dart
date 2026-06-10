@@ -17,7 +17,6 @@ import '../providers/watch_state_store.dart';
 import '../services/download_storage_service.dart';
 import '../services/settings_service.dart';
 import 'settings_builder.dart';
-import '../screens/media_detail_screen.dart';
 import '../utils/content_utils.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/formatters.dart';
@@ -382,7 +381,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                 _ClickableText(
                   text: item.displayTitle,
                   style: const TextStyle(fontWeight: .w600, fontSize: 13, height: 1.1),
-                  onTap: () => _navigateToDetail(context, item, isOffline: widget.isOffline),
+                  onTap: () => _navigateToFocusedDetail(context, item, isOffline: widget.isOffline),
                 )
               else
                 Text(
@@ -566,7 +565,7 @@ class _MediaCardList extends StatelessWidget {
         _ClickableText(
           text: 'S${mi.parentIndex}',
           style: style,
-          onTap: () => _navigateToSeason(context, mi, isOffline: isOffline),
+          onTap: () => _navigateToFocusedDetail(context, mi, isOffline: isOffline),
         ),
         Text('$episodeNum · ', style: style),
         Expanded(
@@ -624,7 +623,7 @@ class _MediaCardList extends StatelessWidget {
                     _ClickableText(
                       text: (item as MediaItem).displayTitle,
                       style: TextStyle(fontWeight: .w600, fontSize: _titleFontSize, height: 1.2),
-                      onTap: () => _navigateToDetail(context, item as MediaItem, isOffline: isOffline),
+                      onTap: () => _navigateToFocusedDetail(context, item as MediaItem, isOffline: isOffline),
                     )
                   else
                     Text(
@@ -859,7 +858,7 @@ class _MediaCardHelpers {
             _ClickableText(
               text: 'S${mi.parentIndex}',
               style: subtitleStyle,
-              onTap: () => _navigateToSeason(context, mi, isOffline: isOffline),
+              onTap: () => _navigateToFocusedDetail(context, mi, isOffline: isOffline),
             ),
             Text('$episodeSuffix · ', style: subtitleStyle),
             Expanded(
@@ -981,83 +980,8 @@ bool _hasClickableTitle(MediaItem mi) {
   return false;
 }
 
-void _navigateToSeason(BuildContext context, MediaItem episode, {bool isOffline = false}) {
-  if (episode.grandparentId != null) {
-    final showStub = MediaItem(
-      id: episode.grandparentId!,
-      backend: episode.backend,
-      kind: MediaKind.show,
-      title: episode.grandparentTitle ?? episode.displayTitle,
-      thumbPath: episode.grandparentThumbPath,
-      artPath: episode.grandparentArtPath,
-      libraryId: episode.libraryId,
-      libraryTitle: episode.libraryTitle,
-      serverId: episode.serverId,
-      serverName: episode.serverName,
-    );
-    Navigator.push(
-      context,
-      mediaDetailRoute(metadata: showStub, isOffline: isOffline, initialSeasonIndex: episode.parentIndex),
-    );
-  } else if (episode.parentId != null) {
-    // Fallback: navigate to season directly if no grandparent
-    final seasonStub = MediaItem(
-      id: episode.parentId!,
-      backend: episode.backend,
-      kind: MediaKind.season,
-      title: episode.parentTitle ?? t.common.seasonNumber(number: episode.parentIndex ?? ''),
-      index: episode.parentIndex,
-      parentId: episode.grandparentId,
-      thumbPath: episode.parentThumbPath,
-      libraryId: episode.libraryId,
-      libraryTitle: episode.libraryTitle,
-      serverId: episode.serverId,
-      serverName: episode.serverName,
-    );
-    Navigator.push(context, mediaDetailRoute(metadata: seasonStub, isOffline: isOffline));
-  }
-}
-
-/// Navigate to the detail screen for a media item.
-/// For episodes/seasons: navigates to the parent show with season pre-selected.
-/// For movies and other types: navigates to the item's own detail page.
-void _navigateToDetail(BuildContext context, MediaItem mi, {bool isOffline = false}) {
-  MediaItem target = mi;
-  int? initialSeasonIndex;
-
-  if (mi.isEpisode && mi.grandparentId != null) {
-    target = MediaItem(
-      id: mi.grandparentId!,
-      backend: mi.backend,
-      kind: MediaKind.show,
-      title: mi.grandparentTitle ?? mi.displayTitle,
-      thumbPath: mi.grandparentThumbPath,
-      artPath: mi.grandparentArtPath,
-      libraryId: mi.libraryId,
-      libraryTitle: mi.libraryTitle,
-      serverId: mi.serverId,
-      serverName: mi.serverName,
-    );
-  } else if (mi.isSeason && mi.parentId != null) {
-    initialSeasonIndex = mi.index;
-    target = MediaItem(
-      id: mi.parentId!,
-      backend: mi.backend,
-      kind: MediaKind.show,
-      title: mi.grandparentTitle ?? mi.parentTitle ?? mi.displayTitle,
-      thumbPath: mi.grandparentThumbPath ?? mi.parentThumbPath,
-      artPath: mi.grandparentArtPath,
-      libraryId: mi.libraryId,
-      libraryTitle: mi.libraryTitle,
-      serverId: mi.serverId,
-      serverName: mi.serverName,
-    );
-  }
-
-  Navigator.push(
-    context,
-    mediaDetailRoute(metadata: target, isOffline: isOffline, initialSeasonIndex: initialSeasonIndex),
-  );
+void _navigateToFocusedDetail(BuildContext context, MediaItem item, {bool isOffline = false}) {
+  navigateToMediaItemDetails(context, item, isOffline: isOffline);
 }
 
 /// Text widget that shows hover underline + pointer cursor only in pointer mode.

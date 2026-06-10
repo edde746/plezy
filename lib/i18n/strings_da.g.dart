@@ -245,6 +245,9 @@ class _TranslationsSettingsDa extends TranslationsSettingsEn {
 	@override String get gridView => 'Gitter';
 	@override String get listView => 'Liste';
 	@override String get showHeroSection => 'Vis hero-sektion';
+	@override String get continueWatchingAction => 'Handling for Fortsæt med at se';
+	@override String get continueWatchingPlay => 'Afspil';
+	@override String get continueWatchingDetails => 'Åbn detaljer';
 	@override String get useGlobalHubs => 'Brug startlayout';
 	@override String get useGlobalHubsDescription => 'Vis samlet startsideindhold. Brug ellers biblioteksanbefalinger.';
 	@override String get showServerNameOnHubs => 'Vis servernavn på hubbe';
@@ -492,8 +495,8 @@ class _TranslationsMediaMenuDa extends TranslationsMediaMenuEn {
 	@override String get markAsWatched => 'Markér som set';
 	@override String get markAsUnwatched => 'Markér som uset';
 	@override String get removeFromContinueWatching => 'Fjern fra Fortsæt med at se';
+	@override String get viewDetails => 'Vis detaljer';
 	@override String get goToSeries => 'Gå til serie';
-	@override String get goToSeason => 'Gå til sæson';
 	@override String get shufflePlay => 'Afspil tilfældigt';
 	@override String get shuffleNotAvailableOffline => 'Bland afspilning er ikke tilgængelig offline';
 	@override String get fileInfo => 'Filinfo';
@@ -673,7 +676,6 @@ class _TranslationsMessagesDa extends TranslationsMessagesEn {
 	@override String get fileInfoNotAvailable => 'Filinfo ikke tilgængelig';
 	@override String errorLoadingFileInfo({required Object error}) => 'Fejl ved indlæsning af filinfo: ${error}';
 	@override String get errorLoadingSeries => 'Fejl ved indlæsning af serie';
-	@override String get errorLoadingSeason => 'Fejl ved indlæsning af sæson';
 	@override String get musicNotSupported => 'Musikafspilning understøttes endnu ikke';
 	@override String get noDescriptionAvailable => 'Ingen beskrivelse tilgængelig';
 	@override String get noProfilesAvailable => 'Ingen profiler tilgængelige';
@@ -2027,6 +2029,9 @@ extension on TranslationsDa {
 			'settings.gridView' => 'Gitter',
 			'settings.listView' => 'Liste',
 			'settings.showHeroSection' => 'Vis hero-sektion',
+			'settings.continueWatchingAction' => 'Handling for Fortsæt med at se',
+			'settings.continueWatchingPlay' => 'Afspil',
+			'settings.continueWatchingDetails' => 'Åbn detaljer',
 			'settings.useGlobalHubs' => 'Brug startlayout',
 			'settings.useGlobalHubsDescription' => 'Vis samlet startsideindhold. Brug ellers biblioteksanbefalinger.',
 			'settings.showServerNameOnHubs' => 'Vis servernavn på hubbe',
@@ -2262,8 +2267,8 @@ extension on TranslationsDa {
 			'mediaMenu.markAsWatched' => 'Markér som set',
 			'mediaMenu.markAsUnwatched' => 'Markér som uset',
 			'mediaMenu.removeFromContinueWatching' => 'Fjern fra Fortsæt med at se',
+			'mediaMenu.viewDetails' => 'Vis detaljer',
 			'mediaMenu.goToSeries' => 'Gå til serie',
-			'mediaMenu.goToSeason' => 'Gå til sæson',
 			'mediaMenu.shufflePlay' => 'Afspil tilfældigt',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Bland afspilning er ikke tilgængelig offline',
 			'mediaMenu.fileInfo' => 'Filinfo',
@@ -2395,7 +2400,6 @@ extension on TranslationsDa {
 			'messages.fileInfoNotAvailable' => 'Filinfo ikke tilgængelig',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fejl ved indlæsning af filinfo: ${error}',
 			'messages.errorLoadingSeries' => 'Fejl ved indlæsning af serie',
-			'messages.errorLoadingSeason' => 'Fejl ved indlæsning af sæson',
 			'messages.musicNotSupported' => 'Musikafspilning understøttes endnu ikke',
 			'messages.noDescriptionAvailable' => 'Ingen beskrivelse tilgængelig',
 			'messages.noProfilesAvailable' => 'Ingen profiler tilgængelige',
@@ -2431,10 +2435,10 @@ extension on TranslationsDa {
 			'subtitlingStyling.border' => 'Kant',
 			'subtitlingStyling.background' => 'Baggrund',
 			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
-			'subtitlingStyling.textColor' => 'Tekstfarve',
-			'subtitlingStyling.borderSize' => 'Kantstørrelse',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.textColor' => 'Tekstfarve',
+			'subtitlingStyling.borderSize' => 'Kantstørrelse',
 			'subtitlingStyling.borderColor' => 'Kantfarve',
 			'subtitlingStyling.backgroundOpacity' => 'Baggrundsgennemsigtighed',
 			'subtitlingStyling.backgroundColor' => 'Baggrundsfarve',
@@ -2945,10 +2949,10 @@ extension on TranslationsDa {
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Fanenavigation',
 			'companionRemote.remote.tabDiscover' => 'Opdag',
-			'companionRemote.remote.tabLibraries' => 'Biblioteker',
-			'companionRemote.remote.tabSearch' => 'Søg',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabLibraries' => 'Biblioteker',
+			'companionRemote.remote.tabSearch' => 'Søg',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Indstillinger',
 			'companionRemote.remote.previous' => 'Forrige',

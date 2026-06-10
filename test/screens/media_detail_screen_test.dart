@@ -566,7 +566,14 @@ void main() {
       serverName: show.serverName,
     );
 
-    Future<void> pumpPhoneDetail(WidgetTester tester, _FakeMediaServerClient client, MediaItem show) async {
+    Future<void> pumpPhoneDetail(
+      WidgetTester tester,
+      _FakeMediaServerClient client,
+      MediaItem show, {
+      String? initialSeasonId,
+      int? initialSeasonIndex,
+      String? initialEpisodeId,
+    }) async {
       TvDetectionService.debugSetAppleTVOverride(false);
       await SettingsService.getInstance();
       tester.view.physicalSize = const Size(1100, 2400);
@@ -604,7 +611,12 @@ void main() {
             ],
             child: MaterialApp(
               theme: monoTheme(dark: true),
-              home: MediaDetailScreen(metadata: show),
+              home: MediaDetailScreen(
+                metadata: show,
+                initialSeasonId: initialSeasonId,
+                initialSeasonIndex: initialSeasonIndex,
+                initialEpisodeId: initialEpisodeId,
+              ),
             ),
           ),
         ),
@@ -636,6 +648,87 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
     }
+
+    testWidgets('phone detail focuses requested season tab', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: [buildEpisode(show, season1, 1)],
+          season2.id: [buildEpisode(show, season2, 1)],
+        },
+      );
+
+      await pumpPhoneDetail(tester, client, show, initialSeasonId: season2.id);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Episode S2E1'), findsOneWidget);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'season_tab_1');
+    });
+
+    testWidgets('phone detail focuses requested episode row', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final episode2 = buildEpisode(show, season2, 2);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: [buildEpisode(show, season1, 1)],
+          season2.id: [buildEpisode(show, season2, 1), episode2, buildEpisode(show, season2, 3)],
+        },
+      );
+
+      await pumpPhoneDetail(
+        tester,
+        client,
+        show,
+        initialSeasonId: season2.id,
+        initialSeasonIndex: season2.index,
+        initialEpisodeId: episode2.id,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      expect(find.text('Episode S2E2'), findsOneWidget);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'initial_episode');
+    });
+
+    testWidgets('phone detail keeps the first-episode role node when it is the target', (tester) async {
+      final show = buildShow();
+      final season1 = buildSeason(show, 1);
+      final season2 = buildSeason(show, 2);
+      final episode1 = buildEpisode(show, season2, 1);
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season1, season2],
+          season1.id: [buildEpisode(show, season1, 1)],
+          season2.id: [episode1, buildEpisode(show, season2, 2), buildEpisode(show, season2, 3)],
+        },
+      );
+
+      await pumpPhoneDetail(
+        tester,
+        client,
+        show,
+        initialSeasonId: season2.id,
+        initialSeasonIndex: season2.index,
+        initialEpisodeId: episode1.id,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+
+      // The first row keeps _firstEpisodeFocusNode (so season-tab DOWN keeps
+      // working) and the initial focus lands on that node instead.
+      expect(find.text('Episode S2E1'), findsOneWidget);
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'first_episode');
+    });
 
     testWidgets('marking the show watched flips every visible episode row', (tester) async {
       final show = buildShow();

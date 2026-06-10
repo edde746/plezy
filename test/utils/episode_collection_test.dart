@@ -92,6 +92,7 @@ void main() {
     final season1 = _season('season-1');
     final season2 = _season('season-2', index: 2);
 
+    expect(preferredSeasonIndex([special, season1, season2], initialSeasonId: season2.id, initialSeasonIndex: 1), 2);
     expect(preferredSeasonIndex([special, season1, season2], initialSeasonIndex: 2), 2);
     expect(
       preferredSeasonIndex([special, season1, season2], onDeckEpisode: _episode('episode-2', parentId: season2.id)),

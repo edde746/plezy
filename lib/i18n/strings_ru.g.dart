@@ -245,6 +245,9 @@ class _TranslationsSettingsRu extends TranslationsSettingsEn {
 	@override String get gridView => 'Сетка';
 	@override String get listView => 'Список';
 	@override String get showHeroSection => 'Показать раздел избранного';
+	@override String get continueWatchingAction => 'Действие для «Продолжить просмотр»';
+	@override String get continueWatchingPlay => 'Воспроизвести';
+	@override String get continueWatchingDetails => 'Открыть сведения';
 	@override String get useGlobalHubs => 'Использовать макет главной';
 	@override String get useGlobalHubsDescription => 'Показывать единые разделы главной. Иначе использовать рекомендации библиотек.';
 	@override String get showServerNameOnHubs => 'Показывать имя сервера в хабах';
@@ -492,8 +495,8 @@ class _TranslationsMediaMenuRu extends TranslationsMediaMenuEn {
 	@override String get markAsWatched => 'Отметить как просмотренное';
 	@override String get markAsUnwatched => 'Отметить как непросмотренное';
 	@override String get removeFromContinueWatching => 'Удалить из «Продолжить просмотр»';
+	@override String get viewDetails => 'Показать сведения';
 	@override String get goToSeries => 'Перейти к сериалу';
-	@override String get goToSeason => 'Перейти к сезону';
 	@override String get shufflePlay => 'Случайное воспроизведение';
 	@override String get shuffleNotAvailableOffline => 'Перемешивание недоступно офлайн';
 	@override String get fileInfo => 'Информация о файле';
@@ -673,7 +676,6 @@ class _TranslationsMessagesRu extends TranslationsMessagesEn {
 	@override String get fileInfoNotAvailable => 'Информация о файле недоступна';
 	@override String errorLoadingFileInfo({required Object error}) => 'Ошибка загрузки информации о файле: ${error}';
 	@override String get errorLoadingSeries => 'Ошибка загрузки сериала';
-	@override String get errorLoadingSeason => 'Ошибка загрузки сезона';
 	@override String get musicNotSupported => 'Воспроизведение музыки пока не поддерживается';
 	@override String get noDescriptionAvailable => 'Описание недоступно';
 	@override String get noProfilesAvailable => 'Профили недоступны';
@@ -2027,6 +2029,9 @@ extension on TranslationsRu {
 			'settings.gridView' => 'Сетка',
 			'settings.listView' => 'Список',
 			'settings.showHeroSection' => 'Показать раздел избранного',
+			'settings.continueWatchingAction' => 'Действие для «Продолжить просмотр»',
+			'settings.continueWatchingPlay' => 'Воспроизвести',
+			'settings.continueWatchingDetails' => 'Открыть сведения',
 			'settings.useGlobalHubs' => 'Использовать макет главной',
 			'settings.useGlobalHubsDescription' => 'Показывать единые разделы главной. Иначе использовать рекомендации библиотек.',
 			'settings.showServerNameOnHubs' => 'Показывать имя сервера в хабах',
@@ -2262,8 +2267,8 @@ extension on TranslationsRu {
 			'mediaMenu.markAsWatched' => 'Отметить как просмотренное',
 			'mediaMenu.markAsUnwatched' => 'Отметить как непросмотренное',
 			'mediaMenu.removeFromContinueWatching' => 'Удалить из «Продолжить просмотр»',
+			'mediaMenu.viewDetails' => 'Показать сведения',
 			'mediaMenu.goToSeries' => 'Перейти к сериалу',
-			'mediaMenu.goToSeason' => 'Перейти к сезону',
 			'mediaMenu.shufflePlay' => 'Случайное воспроизведение',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Перемешивание недоступно офлайн',
 			'mediaMenu.fileInfo' => 'Информация о файле',
@@ -2395,7 +2400,6 @@ extension on TranslationsRu {
 			'messages.fileInfoNotAvailable' => 'Информация о файле недоступна',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Ошибка загрузки информации о файле: ${error}',
 			'messages.errorLoadingSeries' => 'Ошибка загрузки сериала',
-			'messages.errorLoadingSeason' => 'Ошибка загрузки сезона',
 			'messages.musicNotSupported' => 'Воспроизведение музыки пока не поддерживается',
 			'messages.noDescriptionAvailable' => 'Описание недоступно',
 			'messages.noProfilesAvailable' => 'Профили недоступны',
@@ -2431,10 +2435,10 @@ extension on TranslationsRu {
 			'subtitlingStyling.border' => 'Обводка',
 			'subtitlingStyling.background' => 'Фон',
 			'subtitlingStyling.fontSize' => 'Размер шрифта',
-			'subtitlingStyling.textColor' => 'Цвет текста',
-			'subtitlingStyling.borderSize' => 'Размер обводки',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.textColor' => 'Цвет текста',
+			'subtitlingStyling.borderSize' => 'Размер обводки',
 			'subtitlingStyling.borderColor' => 'Цвет обводки',
 			'subtitlingStyling.backgroundOpacity' => 'Прозрачность фона',
 			'subtitlingStyling.backgroundColor' => 'Цвет фона',
@@ -2945,10 +2949,10 @@ extension on TranslationsRu {
 			'companionRemote.remote.menu' => 'Меню',
 			'companionRemote.remote.tabNavigation' => 'Навигация',
 			'companionRemote.remote.tabDiscover' => 'Обзор',
-			'companionRemote.remote.tabLibraries' => 'Библиотеки',
-			'companionRemote.remote.tabSearch' => 'Поиск',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabLibraries' => 'Библиотеки',
+			'companionRemote.remote.tabSearch' => 'Поиск',
 			'companionRemote.remote.tabDownloads' => 'Загрузки',
 			'companionRemote.remote.tabSettings' => 'Настройки',
 			'companionRemote.remote.previous' => 'Предыдущий',

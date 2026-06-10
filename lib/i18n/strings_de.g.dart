@@ -245,6 +245,9 @@ class _TranslationsSettingsDe extends TranslationsSettingsEn {
 	@override String get gridView => 'Raster';
 	@override String get listView => 'Liste';
 	@override String get showHeroSection => 'Hero-Bereich anzeigen';
+	@override String get continueWatchingAction => 'Aktion für Weiterschauen';
+	@override String get continueWatchingPlay => 'Abspielen';
+	@override String get continueWatchingDetails => 'Details öffnen';
 	@override String get useGlobalHubs => 'Startlayout verwenden';
 	@override String get useGlobalHubsDescription => 'Einheitliche Start-Hubs anzeigen. Sonst Bibliotheksempfehlungen verwenden.';
 	@override String get showServerNameOnHubs => 'Servername bei Hubs anzeigen';
@@ -492,8 +495,8 @@ class _TranslationsMediaMenuDe extends TranslationsMediaMenuEn {
 	@override String get markAsWatched => 'Als gesehen markieren';
 	@override String get markAsUnwatched => 'Als ungesehen markieren';
 	@override String get removeFromContinueWatching => 'Aus ‚Weiterschauen‘ entfernen';
+	@override String get viewDetails => 'Details anzeigen';
 	@override String get goToSeries => 'Zur Serie';
-	@override String get goToSeason => 'Zur Staffel';
 	@override String get shufflePlay => 'Zufallswiedergabe';
 	@override String get shuffleNotAvailableOffline => 'Zufallswiedergabe ist offline nicht verfügbar';
 	@override String get fileInfo => 'Dateiinfo';
@@ -673,7 +676,6 @@ class _TranslationsMessagesDe extends TranslationsMessagesEn {
 	@override String get fileInfoNotAvailable => 'Dateiinfo nicht verfügbar';
 	@override String errorLoadingFileInfo({required Object error}) => 'Fehler beim Laden der Dateiinfo: ${error}';
 	@override String get errorLoadingSeries => 'Fehler beim Laden der Serie';
-	@override String get errorLoadingSeason => 'Fehler beim Laden der Staffel';
 	@override String get musicNotSupported => 'Musikwiedergabe wird noch nicht unterstützt';
 	@override String get noDescriptionAvailable => 'Keine Beschreibung verfügbar';
 	@override String get noProfilesAvailable => 'Keine Profile verfügbar';
@@ -2027,6 +2029,9 @@ extension on TranslationsDe {
 			'settings.gridView' => 'Raster',
 			'settings.listView' => 'Liste',
 			'settings.showHeroSection' => 'Hero-Bereich anzeigen',
+			'settings.continueWatchingAction' => 'Aktion für Weiterschauen',
+			'settings.continueWatchingPlay' => 'Abspielen',
+			'settings.continueWatchingDetails' => 'Details öffnen',
 			'settings.useGlobalHubs' => 'Startlayout verwenden',
 			'settings.useGlobalHubsDescription' => 'Einheitliche Start-Hubs anzeigen. Sonst Bibliotheksempfehlungen verwenden.',
 			'settings.showServerNameOnHubs' => 'Servername bei Hubs anzeigen',
@@ -2262,8 +2267,8 @@ extension on TranslationsDe {
 			'mediaMenu.markAsWatched' => 'Als gesehen markieren',
 			'mediaMenu.markAsUnwatched' => 'Als ungesehen markieren',
 			'mediaMenu.removeFromContinueWatching' => 'Aus ‚Weiterschauen‘ entfernen',
+			'mediaMenu.viewDetails' => 'Details anzeigen',
 			'mediaMenu.goToSeries' => 'Zur Serie',
-			'mediaMenu.goToSeason' => 'Zur Staffel',
 			'mediaMenu.shufflePlay' => 'Zufallswiedergabe',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Zufallswiedergabe ist offline nicht verfügbar',
 			'mediaMenu.fileInfo' => 'Dateiinfo',
@@ -2395,7 +2400,6 @@ extension on TranslationsDe {
 			'messages.fileInfoNotAvailable' => 'Dateiinfo nicht verfügbar',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fehler beim Laden der Dateiinfo: ${error}',
 			'messages.errorLoadingSeries' => 'Fehler beim Laden der Serie',
-			'messages.errorLoadingSeason' => 'Fehler beim Laden der Staffel',
 			'messages.musicNotSupported' => 'Musikwiedergabe wird noch nicht unterstützt',
 			'messages.noDescriptionAvailable' => 'Keine Beschreibung verfügbar',
 			'messages.noProfilesAvailable' => 'Keine Profile verfügbar',
@@ -2431,10 +2435,10 @@ extension on TranslationsDe {
 			'subtitlingStyling.border' => 'Rahmen',
 			'subtitlingStyling.background' => 'Hintergrund',
 			'subtitlingStyling.fontSize' => 'Schriftgröße',
-			'subtitlingStyling.textColor' => 'Textfarbe',
-			'subtitlingStyling.borderSize' => 'Rahmengröße',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.textColor' => 'Textfarbe',
+			'subtitlingStyling.borderSize' => 'Rahmengröße',
 			'subtitlingStyling.borderColor' => 'Rahmenfarbe',
 			'subtitlingStyling.backgroundOpacity' => 'Hintergrunddeckkraft',
 			'subtitlingStyling.backgroundColor' => 'Hintergrundfarbe',
@@ -2945,10 +2949,10 @@ extension on TranslationsDe {
 			'companionRemote.remote.menu' => 'Menü',
 			'companionRemote.remote.tabNavigation' => 'Tab-Navigation',
 			'companionRemote.remote.tabDiscover' => 'Entdecken',
-			'companionRemote.remote.tabLibraries' => 'Mediatheken',
-			'companionRemote.remote.tabSearch' => 'Suche',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabLibraries' => 'Mediatheken',
+			'companionRemote.remote.tabSearch' => 'Suche',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Einstellungen',
 			'companionRemote.remote.previous' => 'Zurück',

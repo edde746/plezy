@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../providers/watch_state_store.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
@@ -35,6 +36,7 @@ import '../profiles/profile.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/app_logger.dart';
 import '../utils/library_refresh_notifier.dart';
+import '../utils/media_navigation_helper.dart';
 import '../utils/media_server_http_client.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -311,10 +313,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
       }
 
-      if (mediaKind == MediaKind.movie ||
-          mediaKind == MediaKind.show ||
-          mediaKind == MediaKind.season ||
-          mediaKind == MediaKind.episode) {
+      final isVideoKind = mediaItem.isVideoContent;
+
+      if (widget.isInContinueWatching && isVideoKind) {
+        menuActions.add(_MenuAction(value: 'details', icon: Symbols.info_rounded, label: t.mediaMenu.viewDetails));
+      }
+
+      if (isVideoKind) {
         menuActions.add(_MenuAction(value: 'rate', icon: Symbols.star_rounded, label: t.mediaMenu.rate));
       }
 
@@ -363,17 +368,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       final itemSeriesKey = mediaKind == MediaKind.episode ? mediaItem.grandparentId : mediaItem.parentId;
       if ((mediaKind == MediaKind.episode || mediaKind == MediaKind.season) &&
           itemSeriesKey != null &&
+          !widget.isInContinueWatching &&
           ancestorSeriesKey != itemSeriesKey) {
         menuActions.add(_MenuAction(value: 'series', icon: Symbols.tv_rounded, label: t.mediaMenu.goToSeries));
-      }
-
-      // Go to Season (for episodes) — hide if already viewing that season's MediaDetailScreen
-      if (mediaKind == MediaKind.episode &&
-          mediaItem.parentTitle != null &&
-          !(ancestorMeta != null && ancestorMeta.kind == MediaKind.season && ancestorMeta.id == mediaItem.parentId)) {
-        menuActions.add(
-          _MenuAction(value: 'season', icon: Symbols.playlist_play_rounded, label: t.mediaMenu.goToSeason),
-        );
       }
 
       if (mediaKind == MediaKind.show || mediaKind == MediaKind.season) {
@@ -615,6 +612,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           }
           break;
 
+        case 'details':
+          didNavigate = true;
+          if (context.mounted) {
+            await navigateToMediaItemDetails(context, mediaItem!, onRefresh: _notifyRefresh);
+          }
+          break;
+
         case 'rate':
           if (context.mounted) {
             try {
@@ -659,21 +663,16 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           await _navigateToRelated(
             context,
             mediaItem!.kind == MediaKind.season ? mediaItem.parentId : mediaItem.grandparentId,
-            (item) => mediaDetailRoute(metadata: item),
+            (item) {
+              final target = mediaDetailNavigationTargetFor(mediaItem, metadataOverride: item);
+              return mediaDetailRoute(
+                metadata: target.metadata,
+                initialSeasonIndex: target.initialSeasonIndex,
+                initialSeasonId: target.initialSeasonId,
+                initialEpisodeId: target.initialEpisodeId,
+              );
+            },
             t.messages.errorLoadingSeries,
-          );
-          break;
-
-        case 'season':
-          didNavigate = true;
-          // Navigate to the show with the season tab pre-selected
-          final seasonParentKey = mediaItem!.kind == MediaKind.episode ? mediaItem.grandparentId : mediaItem.parentId;
-          final seasonIndex = mediaItem.parentIndex;
-          await _navigateToRelated(
-            context,
-            seasonParentKey,
-            (show) => mediaDetailRoute(metadata: show, initialSeasonIndex: seasonIndex),
-            t.messages.errorLoadingSeason,
           );
           break;
 

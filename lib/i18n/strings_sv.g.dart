@@ -245,6 +245,9 @@ class _TranslationsSettingsSv extends TranslationsSettingsEn {
 	@override String get gridView => 'Rutnät';
 	@override String get listView => 'Lista';
 	@override String get showHeroSection => 'Visa hjältesektion';
+	@override String get continueWatchingAction => 'Åtgärd för Fortsätt titta';
+	@override String get continueWatchingPlay => 'Spela';
+	@override String get continueWatchingDetails => 'Öppna detaljer';
 	@override String get useGlobalHubs => 'Använd startlayout';
 	@override String get useGlobalHubsDescription => 'Visa enhetliga startsideshubbar. Annars används biblioteksrekommendationer.';
 	@override String get showServerNameOnHubs => 'Visa servernamn på hubbar';
@@ -492,8 +495,8 @@ class _TranslationsMediaMenuSv extends TranslationsMediaMenuEn {
 	@override String get markAsWatched => 'Markera som sedd';
 	@override String get markAsUnwatched => 'Markera som osedd';
 	@override String get removeFromContinueWatching => 'Ta bort från Fortsätt titta';
+	@override String get viewDetails => 'Visa detaljer';
 	@override String get goToSeries => 'Gå till serie';
-	@override String get goToSeason => 'Gå till säsong';
 	@override String get shufflePlay => 'Blanda uppspelning';
 	@override String get shuffleNotAvailableOffline => 'Blandad uppspelning är inte tillgänglig offline';
 	@override String get fileInfo => 'Filinformation';
@@ -673,7 +676,6 @@ class _TranslationsMessagesSv extends TranslationsMessagesEn {
 	@override String get fileInfoNotAvailable => 'Filinformation inte tillgänglig';
 	@override String errorLoadingFileInfo({required Object error}) => 'Fel vid laddning av filinformation: ${error}';
 	@override String get errorLoadingSeries => 'Fel vid laddning av serie';
-	@override String get errorLoadingSeason => 'Fel vid laddning av säsong';
 	@override String get musicNotSupported => 'Musikuppspelning stöds inte ännu';
 	@override String get noDescriptionAvailable => 'Ingen beskrivning tillgänglig';
 	@override String get noProfilesAvailable => 'Inga profiler tillgängliga';
@@ -2027,6 +2029,9 @@ extension on TranslationsSv {
 			'settings.gridView' => 'Rutnät',
 			'settings.listView' => 'Lista',
 			'settings.showHeroSection' => 'Visa hjältesektion',
+			'settings.continueWatchingAction' => 'Åtgärd för Fortsätt titta',
+			'settings.continueWatchingPlay' => 'Spela',
+			'settings.continueWatchingDetails' => 'Öppna detaljer',
 			'settings.useGlobalHubs' => 'Använd startlayout',
 			'settings.useGlobalHubsDescription' => 'Visa enhetliga startsideshubbar. Annars används biblioteksrekommendationer.',
 			'settings.showServerNameOnHubs' => 'Visa servernamn på hubbar',
@@ -2262,8 +2267,8 @@ extension on TranslationsSv {
 			'mediaMenu.markAsWatched' => 'Markera som sedd',
 			'mediaMenu.markAsUnwatched' => 'Markera som osedd',
 			'mediaMenu.removeFromContinueWatching' => 'Ta bort från Fortsätt titta',
+			'mediaMenu.viewDetails' => 'Visa detaljer',
 			'mediaMenu.goToSeries' => 'Gå till serie',
-			'mediaMenu.goToSeason' => 'Gå till säsong',
 			'mediaMenu.shufflePlay' => 'Blanda uppspelning',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Blandad uppspelning är inte tillgänglig offline',
 			'mediaMenu.fileInfo' => 'Filinformation',
@@ -2395,7 +2400,6 @@ extension on TranslationsSv {
 			'messages.fileInfoNotAvailable' => 'Filinformation inte tillgänglig',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Fel vid laddning av filinformation: ${error}',
 			'messages.errorLoadingSeries' => 'Fel vid laddning av serie',
-			'messages.errorLoadingSeason' => 'Fel vid laddning av säsong',
 			'messages.musicNotSupported' => 'Musikuppspelning stöds inte ännu',
 			'messages.noDescriptionAvailable' => 'Ingen beskrivning tillgänglig',
 			'messages.noProfilesAvailable' => 'Inga profiler tillgängliga',
@@ -2431,10 +2435,10 @@ extension on TranslationsSv {
 			'subtitlingStyling.border' => 'Kantlinje',
 			'subtitlingStyling.background' => 'Bakgrund',
 			'subtitlingStyling.fontSize' => 'Teckenstorlek',
-			'subtitlingStyling.textColor' => 'Textfärg',
-			'subtitlingStyling.borderSize' => 'Kantstorlek',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.textColor' => 'Textfärg',
+			'subtitlingStyling.borderSize' => 'Kantstorlek',
 			'subtitlingStyling.borderColor' => 'Kantfärg',
 			'subtitlingStyling.backgroundOpacity' => 'Bakgrundsopacitet',
 			'subtitlingStyling.backgroundColor' => 'Bakgrundsfärg',
@@ -2945,10 +2949,10 @@ extension on TranslationsSv {
 			'companionRemote.remote.menu' => 'Meny',
 			'companionRemote.remote.tabNavigation' => 'Fliknavigering',
 			'companionRemote.remote.tabDiscover' => 'Upptäck',
-			'companionRemote.remote.tabLibraries' => 'Bibliotek',
-			'companionRemote.remote.tabSearch' => 'Sök',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabLibraries' => 'Bibliotek',
+			'companionRemote.remote.tabSearch' => 'Sök',
 			'companionRemote.remote.tabDownloads' => 'Nedladdningar',
 			'companionRemote.remote.tabSettings' => 'Inställningar',
 			'companionRemote.remote.previous' => 'Föregående',

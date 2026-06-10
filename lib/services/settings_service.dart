@@ -35,6 +35,8 @@ enum ViewMode { grid, list }
 
 enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
 
+enum ContinueWatchingAction { play, details }
+
 enum SubAssOverride { no, yes, scale, force, strip }
 
 enum DvConversionModePreference { auto, disabled, dv81, hevcStrip }
@@ -405,6 +407,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const bufferSize = _BufferSizePref();
   static const libraryDensity = _LibraryDensityPref();
   static const episodePosterMode = _EpisodePosterModePref();
+  static const continueWatchingAction = EnumPref<ContinueWatchingAction>(
+    'continue_watching_action',
+    values: ContinueWatchingAction.values,
+    defaultValue: ContinueWatchingAction.play,
+  );
   static const mpvConfigText = _MpvConfigTextPref();
 
   static final keyboardShortcuts = JsonPref<Map<String, String>>(
@@ -701,6 +708,7 @@ class SettingsService extends BaseSharedPreferencesService {
     preferredAudioCodec,
     viewMode,
     showHeroSection,
+    continueWatchingAction,
     seekTimeSmall,
     seekTimeLarge,
     sleepTimerDuration,

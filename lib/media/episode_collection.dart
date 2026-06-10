@@ -99,8 +99,18 @@ MediaItem? firstUnwatchedEpisode(List<MediaItem> episodes) {
 /// episode. With neither, fall back to the first season that still has
 /// unwatched episodes (so a partially-watched show removed from Continue
 /// Watching still opens on the right season), then [defaultPlaybackSeasonIndex].
-int preferredSeasonIndex(List<MediaItem> seasons, {int? initialSeasonIndex, MediaItem? onDeckEpisode}) {
+int preferredSeasonIndex(
+  List<MediaItem> seasons, {
+  String? initialSeasonId,
+  int? initialSeasonIndex,
+  MediaItem? onDeckEpisode,
+}) {
   if (seasons.isEmpty) return 0;
+  if (initialSeasonId != null) {
+    final idx = seasons.indexWhere((season) => season.kind == MediaKind.season && season.id == initialSeasonId);
+    if (idx != -1) return idx;
+  }
+
   if (initialSeasonIndex != null) {
     final idx = seasons.indexWhere((season) => season.kind == MediaKind.season && season.index == initialSeasonIndex);
     if (idx != -1) return idx;

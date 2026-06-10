@@ -459,6 +459,15 @@ class TranslationsSettingsEn {
 	/// en: 'Show Hero Section'
 	String get showHeroSection => 'Show Hero Section';
 
+	/// en: 'Continue Watching Action'
+	String get continueWatchingAction => 'Continue Watching Action';
+
+	/// en: 'Play'
+	String get continueWatchingPlay => 'Play';
+
+	/// en: 'Open Details'
+	String get continueWatchingDetails => 'Open Details';
+
 	/// en: 'Use Home Layout'
 	String get useGlobalHubs => 'Use Home Layout';
 
@@ -1127,11 +1136,11 @@ class TranslationsMediaMenuEn {
 	/// en: 'Remove from Continue Watching'
 	String get removeFromContinueWatching => 'Remove from Continue Watching';
 
+	/// en: 'View details'
+	String get viewDetails => 'View details';
+
 	/// en: 'Go to series'
 	String get goToSeries => 'Go to series';
-
-	/// en: 'Go to season'
-	String get goToSeason => 'Go to season';
 
 	/// en: 'Shuffle Play'
 	String get shufflePlay => 'Shuffle Play';
@@ -1560,9 +1569,6 @@ class TranslationsMessagesEn {
 
 	/// en: 'Error loading series'
 	String get errorLoadingSeries => 'Error loading series';
-
-	/// en: 'Error loading season'
-	String get errorLoadingSeason => 'Error loading season';
 
 	/// en: 'Music playback is not yet supported'
 	String get musicNotSupported => 'Music playback is not yet supported';
@@ -4577,6 +4583,9 @@ extension on Translations {
 			'settings.gridView' => 'Grid',
 			'settings.listView' => 'List',
 			'settings.showHeroSection' => 'Show Hero Section',
+			'settings.continueWatchingAction' => 'Continue Watching Action',
+			'settings.continueWatchingPlay' => 'Play',
+			'settings.continueWatchingDetails' => 'Open Details',
 			'settings.useGlobalHubs' => 'Use Home Layout',
 			'settings.useGlobalHubsDescription' => 'Show unified home hubs. Otherwise use library recommendations.',
 			'settings.showServerNameOnHubs' => 'Show Server Name on Hubs',
@@ -4812,8 +4821,8 @@ extension on Translations {
 			'mediaMenu.markAsWatched' => 'Mark as Watched',
 			'mediaMenu.markAsUnwatched' => 'Mark as Unwatched',
 			'mediaMenu.removeFromContinueWatching' => 'Remove from Continue Watching',
+			'mediaMenu.viewDetails' => 'View details',
 			'mediaMenu.goToSeries' => 'Go to series',
-			'mediaMenu.goToSeason' => 'Go to season',
 			'mediaMenu.shufflePlay' => 'Shuffle Play',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Shuffle not available offline',
 			'mediaMenu.fileInfo' => 'File Info',
@@ -4945,7 +4954,6 @@ extension on Translations {
 			'messages.fileInfoNotAvailable' => 'File information not available',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
 			'messages.errorLoadingSeries' => 'Error loading series',
-			'messages.errorLoadingSeason' => 'Error loading season',
 			'messages.musicNotSupported' => 'Music playback is not yet supported',
 			'messages.noDescriptionAvailable' => 'No description available',
 			'messages.noProfilesAvailable' => 'No profiles available',
@@ -4981,10 +4989,10 @@ extension on Translations {
 			'subtitlingStyling.border' => 'Border',
 			'subtitlingStyling.background' => 'Background',
 			'subtitlingStyling.fontSize' => 'Font Size',
-			'subtitlingStyling.textColor' => 'Text Color',
-			'subtitlingStyling.borderSize' => 'Border Size',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.textColor' => 'Text Color',
+			'subtitlingStyling.borderSize' => 'Border Size',
 			'subtitlingStyling.borderColor' => 'Border Color',
 			'subtitlingStyling.backgroundOpacity' => 'Background Opacity',
 			'subtitlingStyling.backgroundColor' => 'Background Color',
@@ -5495,10 +5503,10 @@ extension on Translations {
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Tab Navigation',
 			'companionRemote.remote.tabDiscover' => 'Discover',
-			'companionRemote.remote.tabLibraries' => 'Libraries',
-			'companionRemote.remote.tabSearch' => 'Search',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabLibraries' => 'Libraries',
+			'companionRemote.remote.tabSearch' => 'Search',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
 			'companionRemote.remote.tabSettings' => 'Settings',
 			'companionRemote.remote.previous' => 'Previous',

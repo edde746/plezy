@@ -245,6 +245,9 @@ class _TranslationsSettingsZh extends TranslationsSettingsEn {
 	@override String get gridView => '网格视图';
 	@override String get listView => '列表视图';
 	@override String get showHeroSection => '显示主要精选区';
+	@override String get continueWatchingAction => '继续观看操作';
+	@override String get continueWatchingPlay => '播放';
+	@override String get continueWatchingDetails => '打开详情';
 	@override String get useGlobalHubs => '使用主页布局';
 	@override String get useGlobalHubsDescription => '显示统一主页中心。否则使用资料库推荐。';
 	@override String get showServerNameOnHubs => '在推荐栏显示服务器名称';
@@ -492,8 +495,8 @@ class _TranslationsMediaMenuZh extends TranslationsMediaMenuEn {
 	@override String get markAsWatched => '标记为已观看';
 	@override String get markAsUnwatched => '标记为未观看';
 	@override String get removeFromContinueWatching => '从继续观看中移除';
+	@override String get viewDetails => '查看详情';
 	@override String get goToSeries => '转到系列';
-	@override String get goToSeason => '转到季';
 	@override String get shufflePlay => '随机播放';
 	@override String get shuffleNotAvailableOffline => '离线时无法随机播放';
 	@override String get fileInfo => '文件信息';
@@ -673,7 +676,6 @@ class _TranslationsMessagesZh extends TranslationsMessagesEn {
 	@override String get fileInfoNotAvailable => '文件信息不可用';
 	@override String errorLoadingFileInfo({required Object error}) => '加载文件信息时出错: ${error}';
 	@override String get errorLoadingSeries => '加载系列时出错';
-	@override String get errorLoadingSeason => '加载季时出错';
 	@override String get musicNotSupported => '尚不支持播放音乐';
 	@override String get noDescriptionAvailable => '暂无描述';
 	@override String get noProfilesAvailable => '没有可用的用户';
@@ -2027,6 +2029,9 @@ extension on TranslationsZh {
 			'settings.gridView' => '网格视图',
 			'settings.listView' => '列表视图',
 			'settings.showHeroSection' => '显示主要精选区',
+			'settings.continueWatchingAction' => '继续观看操作',
+			'settings.continueWatchingPlay' => '播放',
+			'settings.continueWatchingDetails' => '打开详情',
 			'settings.useGlobalHubs' => '使用主页布局',
 			'settings.useGlobalHubsDescription' => '显示统一主页中心。否则使用资料库推荐。',
 			'settings.showServerNameOnHubs' => '在推荐栏显示服务器名称',
@@ -2262,8 +2267,8 @@ extension on TranslationsZh {
 			'mediaMenu.markAsWatched' => '标记为已观看',
 			'mediaMenu.markAsUnwatched' => '标记为未观看',
 			'mediaMenu.removeFromContinueWatching' => '从继续观看中移除',
+			'mediaMenu.viewDetails' => '查看详情',
 			'mediaMenu.goToSeries' => '转到系列',
-			'mediaMenu.goToSeason' => '转到季',
 			'mediaMenu.shufflePlay' => '随机播放',
 			'mediaMenu.shuffleNotAvailableOffline' => '离线时无法随机播放',
 			'mediaMenu.fileInfo' => '文件信息',
@@ -2395,7 +2400,6 @@ extension on TranslationsZh {
 			'messages.fileInfoNotAvailable' => '文件信息不可用',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => '加载文件信息时出错: ${error}',
 			'messages.errorLoadingSeries' => '加载系列时出错',
-			'messages.errorLoadingSeason' => '加载季时出错',
 			'messages.musicNotSupported' => '尚不支持播放音乐',
 			'messages.noDescriptionAvailable' => '暂无描述',
 			'messages.noProfilesAvailable' => '没有可用的用户',
@@ -2431,10 +2435,10 @@ extension on TranslationsZh {
 			'subtitlingStyling.border' => '边框',
 			'subtitlingStyling.background' => '背景',
 			'subtitlingStyling.fontSize' => '字号',
-			'subtitlingStyling.textColor' => '文本颜色',
-			'subtitlingStyling.borderSize' => '边框大小',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.textColor' => '文本颜色',
+			'subtitlingStyling.borderSize' => '边框大小',
 			'subtitlingStyling.borderColor' => '边框颜色',
 			'subtitlingStyling.backgroundOpacity' => '背景不透明度',
 			'subtitlingStyling.backgroundColor' => '背景颜色',
@@ -2945,10 +2949,10 @@ extension on TranslationsZh {
 			'companionRemote.remote.menu' => '菜单',
 			'companionRemote.remote.tabNavigation' => '标签导航',
 			'companionRemote.remote.tabDiscover' => '发现',
-			'companionRemote.remote.tabLibraries' => '媒体库',
-			'companionRemote.remote.tabSearch' => '搜索',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabLibraries' => '媒体库',
+			'companionRemote.remote.tabSearch' => '搜索',
 			'companionRemote.remote.tabDownloads' => '下载',
 			'companionRemote.remote.tabSettings' => '设置',
 			'companionRemote.remote.previous' => '上一个',

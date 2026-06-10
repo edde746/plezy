@@ -245,6 +245,9 @@ class _TranslationsSettingsNb extends TranslationsSettingsEn {
 	@override String get gridView => 'Rutenett';
 	@override String get listView => 'Liste';
 	@override String get showHeroSection => 'Vis fremhevet seksjon';
+	@override String get continueWatchingAction => 'Handling for Fortsett å se';
+	@override String get continueWatchingPlay => 'Spill av';
+	@override String get continueWatchingDetails => 'Åpne detaljer';
 	@override String get useGlobalHubs => 'Bruk startoppsett';
 	@override String get useGlobalHubsDescription => 'Vis samlet startinnhold. Ellers brukes bibliotekanbefalinger.';
 	@override String get showServerNameOnHubs => 'Vis servernavn på huber';
@@ -492,8 +495,8 @@ class _TranslationsMediaMenuNb extends TranslationsMediaMenuEn {
 	@override String get markAsWatched => 'Merk som sett';
 	@override String get markAsUnwatched => 'Merk som usett';
 	@override String get removeFromContinueWatching => 'Fjern fra Fortsett å se';
+	@override String get viewDetails => 'Vis detaljer';
 	@override String get goToSeries => 'Gå til serie';
-	@override String get goToSeason => 'Gå til sesong';
 	@override String get shufflePlay => 'Tilfeldig avspilling';
 	@override String get shuffleNotAvailableOffline => 'Tilfeldig avspilling er ikke tilgjengelig offline';
 	@override String get fileInfo => 'Filinformasjon';
@@ -673,7 +676,6 @@ class _TranslationsMessagesNb extends TranslationsMessagesEn {
 	@override String get fileInfoNotAvailable => 'Filinformasjon ikke tilgjengelig';
 	@override String errorLoadingFileInfo({required Object error}) => 'Feil ved lasting av filinformasjon: ${error}';
 	@override String get errorLoadingSeries => 'Feil ved lasting av serie';
-	@override String get errorLoadingSeason => 'Feil ved lasting av sesong';
 	@override String get musicNotSupported => 'Musikkavspilling støttes ikke ennå';
 	@override String get noDescriptionAvailable => 'Ingen beskrivelse tilgjengelig';
 	@override String get noProfilesAvailable => 'Ingen profiler tilgjengelige';
@@ -2027,6 +2029,9 @@ extension on TranslationsNb {
 			'settings.gridView' => 'Rutenett',
 			'settings.listView' => 'Liste',
 			'settings.showHeroSection' => 'Vis fremhevet seksjon',
+			'settings.continueWatchingAction' => 'Handling for Fortsett å se',
+			'settings.continueWatchingPlay' => 'Spill av',
+			'settings.continueWatchingDetails' => 'Åpne detaljer',
 			'settings.useGlobalHubs' => 'Bruk startoppsett',
 			'settings.useGlobalHubsDescription' => 'Vis samlet startinnhold. Ellers brukes bibliotekanbefalinger.',
 			'settings.showServerNameOnHubs' => 'Vis servernavn på huber',
@@ -2262,8 +2267,8 @@ extension on TranslationsNb {
 			'mediaMenu.markAsWatched' => 'Merk som sett',
 			'mediaMenu.markAsUnwatched' => 'Merk som usett',
 			'mediaMenu.removeFromContinueWatching' => 'Fjern fra Fortsett å se',
+			'mediaMenu.viewDetails' => 'Vis detaljer',
 			'mediaMenu.goToSeries' => 'Gå til serie',
-			'mediaMenu.goToSeason' => 'Gå til sesong',
 			'mediaMenu.shufflePlay' => 'Tilfeldig avspilling',
 			'mediaMenu.shuffleNotAvailableOffline' => 'Tilfeldig avspilling er ikke tilgjengelig offline',
 			'mediaMenu.fileInfo' => 'Filinformasjon',
@@ -2395,7 +2400,6 @@ extension on TranslationsNb {
 			'messages.fileInfoNotAvailable' => 'Filinformasjon ikke tilgjengelig',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Feil ved lasting av filinformasjon: ${error}',
 			'messages.errorLoadingSeries' => 'Feil ved lasting av serie',
-			'messages.errorLoadingSeason' => 'Feil ved lasting av sesong',
 			'messages.musicNotSupported' => 'Musikkavspilling støttes ikke ennå',
 			'messages.noDescriptionAvailable' => 'Ingen beskrivelse tilgjengelig',
 			'messages.noProfilesAvailable' => 'Ingen profiler tilgjengelige',
@@ -2431,10 +2435,10 @@ extension on TranslationsNb {
 			'subtitlingStyling.border' => 'Kantlinje',
 			'subtitlingStyling.background' => 'Bakgrunn',
 			'subtitlingStyling.fontSize' => 'Skriftstørrelse',
-			'subtitlingStyling.textColor' => 'Tekstfarge',
-			'subtitlingStyling.borderSize' => 'Kantstørrelse',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.textColor' => 'Tekstfarge',
+			'subtitlingStyling.borderSize' => 'Kantstørrelse',
 			'subtitlingStyling.borderColor' => 'Kantfarge',
 			'subtitlingStyling.backgroundOpacity' => 'Bakgrunnsopasitet',
 			'subtitlingStyling.backgroundColor' => 'Bakgrunnsfarge',
@@ -2945,10 +2949,10 @@ extension on TranslationsNb {
 			'companionRemote.remote.menu' => 'Meny',
 			'companionRemote.remote.tabNavigation' => 'Fanenavigering',
 			'companionRemote.remote.tabDiscover' => 'Oppdag',
-			'companionRemote.remote.tabLibraries' => 'Biblioteker',
-			'companionRemote.remote.tabSearch' => 'Søk',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.remote.tabLibraries' => 'Biblioteker',
+			'companionRemote.remote.tabSearch' => 'Søk',
 			'companionRemote.remote.tabDownloads' => 'Nedlastinger',
 			'companionRemote.remote.tabSettings' => 'Innstillinger',
 			'companionRemote.remote.previous' => 'Forrige',
