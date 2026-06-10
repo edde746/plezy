@@ -188,4 +188,6 @@ dependencies {
 
   // libass-android for ASS/SSA subtitle rendering
   assAars.forEach { implementation(files(File(assDir, it))) }
+
+  testImplementation("junit:junit:4.13.2")
 }
