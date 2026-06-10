@@ -10,14 +10,14 @@ import '../utils/global_key_utils.dart';
 import '../utils/watch_state_notifier.dart';
 
 @immutable
-class WatchStateOverlayPatch {
+class WatchStatePatch {
   final bool? isWatched;
   final bool hasViewOffsetMs;
   final int? viewOffsetMs;
 
-  const WatchStateOverlayPatch({this.isWatched, this.hasViewOffsetMs = false, this.viewOffsetMs});
+  const WatchStatePatch({this.isWatched, this.hasViewOffsetMs = false, this.viewOffsetMs});
 
-  factory WatchStateOverlayPatch.fromSnapshot(WatchStateSnapshot snapshot) => WatchStateOverlayPatch(
+  factory WatchStatePatch.fromSnapshot(WatchStateSnapshot snapshot) => WatchStatePatch(
     isWatched: snapshot.isWatched,
     hasViewOffsetMs: snapshot.hasViewOffsetMs,
     viewOffsetMs: snapshot.viewOffsetMs,
@@ -26,7 +26,7 @@ class WatchStateOverlayPatch {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is WatchStateOverlayPatch &&
+      other is WatchStatePatch &&
           other.isWatched == isWatched &&
           other.hasViewOffsetMs == hasViewOffsetMs &&
           other.viewOffsetMs == viewOffsetMs;
@@ -35,30 +35,35 @@ class WatchStateOverlayPatch {
   int get hashCode => Object.hash(isWatched, hasViewOffsetMs, viewOffsetMs);
 }
 
-class _WatchStateOverlayEntry {
-  final WatchStateOverlayPatch patch;
+class _WatchStatePatchEntry {
+  final WatchStatePatch patch;
   final int sequence;
 
-  const _WatchStateOverlayEntry(this.patch, this.sequence);
+  const _WatchStatePatchEntry(this.patch, this.sequence);
 }
 
-/// Session-local watch-state overlay for immediate UI freshness.
+/// The single session-local layer for watch-state freshness.
 ///
-/// Server fetches remain the source of truth; this only patches stale
-/// [MediaItem] snapshots while a screen waits for its next refresh.
-class WatchStateOverlayProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  WatchStateOverlayProvider() {
+/// Server fetches remain the source of truth; [MediaItem] snapshots are never
+/// hand-mutated to reflect watch events. Instead, every watch event lands here
+/// as a patch, and consumers resolve items at point of use ([apply] /
+/// [patchForItem]). Resolution is hierarchy-aware: an item's effective patch
+/// is the newest among its own and its [MediaItem.parentChain] ancestors', so
+/// marking a show/season reaches every descendant, while a later per-item
+/// event still overrides an older container mark.
+class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin {
+  WatchStateStore() {
     _subscription = WatchStateNotifier().stream.listen(_onWatchStateEvent);
   }
 
   StreamSubscription<WatchStateEvent>? _subscription;
-  final Map<String, _WatchStateOverlayEntry> _patches = {};
+  final Map<String, _WatchStatePatchEntry> _patches = {};
   String? _activeProfileId;
   Map<String, String?> _activeClientScopesByServer = const {};
   int _sequence = 0;
 
-  WatchStateOverlayPatch? patchForGlobalKey(String globalKey) {
-    _WatchStateOverlayEntry? scopedEntry;
+  _WatchStatePatchEntry? _entryFor(String globalKey) {
+    _WatchStatePatchEntry? scopedEntry;
     final parsed = parseGlobalKey(globalKey);
     if (parsed != null) {
       final scoped = _activeClientScopesByServer[parsed.serverId];
@@ -67,18 +72,36 @@ class WatchStateOverlayProvider extends ChangeNotifier with DisposableChangeNoti
       }
     }
     final unscopedEntry = _patches[globalKey];
-    if (scopedEntry == null) return unscopedEntry?.patch;
-    if (unscopedEntry == null) return scopedEntry.patch;
-    return scopedEntry.sequence >= unscopedEntry.sequence ? scopedEntry.patch : unscopedEntry.patch;
+    if (scopedEntry == null) return unscopedEntry;
+    if (unscopedEntry == null) return scopedEntry;
+    return scopedEntry.sequence >= unscopedEntry.sequence ? scopedEntry : unscopedEntry;
   }
 
-  WatchStateOverlayPatch? patchForItem(MediaItem item) => patchForGlobalKey(item.globalKey);
+  WatchStatePatch? patchForGlobalKey(String globalKey) => _entryFor(globalKey)?.patch;
+
+  WatchStatePatch? patchForItem(MediaItem item) {
+    var best = _entryFor(item.globalKey);
+    if (item.parentChain.isNotEmpty) {
+      final serverId = serverIdOrNull(item.serverId);
+      for (final parentId in item.parentChain) {
+        // Mirror MediaItem.globalKey's bare-id fallback when serverId is missing.
+        final entry = _entryFor(serverId != null ? buildGlobalKey(serverId, parentId) : parentId);
+        if (entry != null && (best == null || entry.sequence > best.sequence)) best = entry;
+      }
+    }
+    return best?.patch;
+  }
 
   MediaItem apply(MediaItem item) {
     return applyPatch(item, patchForItem(item));
   }
 
-  static MediaItem applyPatch(MediaItem item, WatchStateOverlayPatch? patch) {
+  List<MediaItem> applyAll(List<MediaItem> items) {
+    if (_patches.isEmpty) return items;
+    return [for (final item in items) apply(item)];
+  }
+
+  static MediaItem applyPatch(MediaItem item, WatchStatePatch? patch) {
     if (patch == null) return item;
     return WatchStateSnapshot(
       isWatched: patch.isWatched,
@@ -108,13 +131,13 @@ class WatchStateOverlayProvider extends ChangeNotifier with DisposableChangeNoti
   void _onWatchStateEvent(WatchStateEvent event) {
     final snapshot = WatchStateResolver.fromEvent(event);
     if (snapshot.isEmpty) return;
-    final patch = WatchStateOverlayPatch.fromSnapshot(snapshot);
+    final patch = WatchStatePatch.fromSnapshot(snapshot);
 
     final cacheServerId = event.cacheServerId;
     final key = cacheServerId != null && cacheServerId.isNotEmpty && cacheServerId != event.serverId
         ? buildGlobalKey(ServerId(cacheServerId), event.itemId)
         : event.globalKey;
-    _patches[key] = _WatchStateOverlayEntry(patch, ++_sequence);
+    _patches[key] = _WatchStatePatchEntry(patch, ++_sequence);
     safeNotifyListeners();
   }
 

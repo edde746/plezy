@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../mixins/context_menu_tap_mixin.dart';
-import '../../providers/watch_state_overlay_provider.dart';
+import '../../providers/watch_state_store.dart';
 import '../../utils/formatters.dart';
 import '../../utils/provider_extensions.dart';
 import '../../i18n/strings.g.dart';
@@ -49,10 +49,10 @@ class PlaylistItemCard extends StatefulWidget {
 class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTapMixin<PlaylistItemCard> {
   MediaItem _effectiveItem(BuildContext context) {
     try {
-      final patch = context.select<WatchStateOverlayProvider, WatchStateOverlayPatch?>(
+      final patch = context.select<WatchStateStore, WatchStatePatch?>(
         (provider) => provider.patchForGlobalKey(widget.item.globalKey),
       );
-      return WatchStateOverlayProvider.applyPatch(widget.item, patch);
+      return WatchStateStore.applyPatch(widget.item, patch);
     } on ProviderNotFoundException {
       return widget.item;
     }

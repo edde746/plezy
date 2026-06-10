@@ -389,6 +389,16 @@ sealed class MediaItem with _$MediaItem {
     return viewCount != null && viewCount! > 0;
   }
 
+  /// Copy with the watched flag applied so [isWatched] reflects it for every
+  /// kind: containers need their leaf counts patched, not just [viewCount].
+  MediaItem withWatchedFlag(bool isWatched) {
+    var updated = copyWith(viewCount: isWatched ? 1 : 0);
+    if (leafCount != null || viewedLeafCount != null) {
+      updated = updated.copyWith(viewedLeafCount: isWatched ? (leafCount ?? viewedLeafCount ?? 1) : 0);
+    }
+    return updated;
+  }
+
   /// Display-friendly title that prefers the show name for episodes/seasons.
   String get displayTitle {
     if ((kind == MediaKind.episode || kind == MediaKind.season) && grandparentTitle != null) {

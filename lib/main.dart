@@ -51,7 +51,7 @@ import 'providers/playback_state_provider.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
 import 'providers/offline_watch_provider.dart';
-import 'providers/watch_state_overlay_provider.dart';
+import 'providers/watch_state_store.dart';
 import 'providers/companion_remote_provider.dart';
 import 'providers/shader_provider.dart';
 import 'utils/snackbar_helper.dart';
@@ -775,10 +775,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return provider;
           },
         ),
-        ChangeNotifierProxyProvider2<ActiveProfileProvider, MultiServerProvider, WatchStateOverlayProvider>(
-          create: (_) => WatchStateOverlayProvider(),
+        ChangeNotifierProxyProvider2<ActiveProfileProvider, MultiServerProvider, WatchStateStore>(
+          create: (_) => WatchStateStore(),
           update: (_, activeProfile, multiServer, previous) {
-            final provider = previous ?? WatchStateOverlayProvider();
+            final provider = previous ?? WatchStateStore();
             provider.setActiveProfileId(activeProfile.activeId);
             provider.setActiveClientScopesByServer({
               for (final serverId in multiServer.serverManager.serverIds)

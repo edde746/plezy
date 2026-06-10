@@ -13,7 +13,7 @@ import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../mixins/context_menu_tap_mixin.dart';
 import '../providers/download_provider.dart';
-import '../providers/watch_state_overlay_provider.dart';
+import '../providers/watch_state_store.dart';
 import '../services/download_storage_service.dart';
 import '../services/settings_service.dart';
 import 'settings_builder.dart';
@@ -97,10 +97,10 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     final item = widget.item;
     if (item is! MediaItem) return item;
     try {
-      final patch = context.select<WatchStateOverlayProvider, WatchStateOverlayPatch?>(
+      final patch = context.select<WatchStateStore, WatchStatePatch?>(
         (provider) => provider.patchForGlobalKey(item.globalKey),
       );
-      return WatchStateOverlayProvider.applyPatch(item, patch);
+      return WatchStateStore.applyPatch(item, patch);
     } on ProviderNotFoundException {
       return item;
     }
@@ -110,7 +110,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     final item = widget.item;
     if (item is! MediaItem) return item;
     try {
-      return context.read<WatchStateOverlayProvider>().apply(item);
+      return context.read<WatchStateStore>().apply(item);
     } on ProviderNotFoundException {
       return item;
     }
