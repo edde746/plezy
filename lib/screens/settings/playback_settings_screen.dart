@@ -284,6 +284,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     builder: (context) {
       final svc = SettingsService.instance;
       final shouldShow =
+          PlatformDetector.isAppleTV() ||
           (Platform.isWindows &&
               (svc.read(SettingsService.matchRefreshRate) || svc.read(SettingsService.matchDynamicRange))) ||
           (Platform.isAndroid && svc.read(SettingsService.matchContentFrameRate));

@@ -4,71 +4,71 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
   Future<void> _startPlayback() async {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return;
-    final playbackGeneration = _beginPlaybackGeneration();
+    final attempt = _beginPlaybackAttempt(currentPlayer);
 
     // Live TV mode: bypass standard playback initialization
     if (widget.isLive) {
       try {
         _hasFirstFrame.value = false;
         await currentPlayer.requestAudioFocus();
-        await _setLiveStreamOptions();
-        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
+        await _setLiveStreamOptions(currentPlayer);
+        if (!attempt.isCurrent) return;
 
         String streamUrl;
-        if (_liveStreamUrl != null) {
-          streamUrl = _liveStreamUrl!;
-          _streamStartEpoch = DateTime.now().millisecondsSinceEpoch / 1000.0;
-          _isAtLiveEdge = true;
+        if (_live.streamUrl != null) {
+          streamUrl = _live.streamUrl!;
+          _live.streamStartEpoch = DateTime.now().millisecondsSinceEpoch / 1000.0;
+          _live.atLiveEdge = true;
         } else {
           // Tune channel inside the player (shows loading spinner while tuning)
-          final channels = widget.liveChannels;
-          final channelIndex = _liveChannelIndex;
+          final channels = widget.live?.channels;
+          final channelIndex = _live.channelIndex;
           if (channels == null || channelIndex < 0 || channelIndex >= channels.length) {
             throw Exception('No channel to tune');
           }
           final channel = channels[channelIndex];
-          appLogger.d('Tune: dvrKey=$_liveDvrKey channelKey=${channel.key}');
-          final client = _liveClient;
+          appLogger.d('Tune: dvrKey=$_live.dvrKey channelKey=${channel.key}');
+          final client = _live.client;
           if (client is! PlexClient) {
             throw StateError(
               'In-player live tuning is Plex-only; got ${client?.runtimeType ?? 'null'}. '
               'Jellyfin live TV must pass a pre-resolved liveStreamUrl via LiveTvSupport.resolveStreamUrl.',
             );
           }
-          final dvrKey = _liveDvrKey;
+          final dvrKey = _live.dvrKey;
           if (dvrKey == null) throw Exception('No DVR to tune');
           final tuneResult = await client.tuneChannel(dvrKey, channel.key);
           if (tuneResult == null) throw Exception('Failed to tune channel');
 
-          _liveSessionIdentifier = tuneResult.sessionIdentifier;
-          _liveSessionPath = tuneResult.sessionPath;
-          _liveProgramId = tuneResult.metadata.ratingKey;
-          _liveDurationMs = tuneResult.metadata.duration;
-          _captureBuffer = tuneResult.captureBuffer;
-          _programBeginsAt = tuneResult.beginsAt;
-          _transcodeSessionId = generateSessionIdentifier();
+          _live.sessionIdentifier = tuneResult.sessionIdentifier;
+          _live.sessionPath = tuneResult.sessionPath;
+          _live.programId = tuneResult.metadata.ratingKey;
+          _live.durationMs = tuneResult.metadata.duration;
+          _live.captureBuffer = tuneResult.captureBuffer;
+          _live.programBeginsAt = tuneResult.beginsAt;
+          _live.transcodeSessionId = generateSessionIdentifier();
 
           // Show "Watch from Start" dialog when an existing capture session has >60s of history.
           // On a fresh tune (no active recording), the buffer is empty so this won't trigger.
           int? offsetSeconds;
-          if (_captureBuffer != null && _programBeginsAt != null) {
+          if (_live.captureBuffer != null && _live.programBeginsAt != null) {
             final nowEpoch = DateTime.now().millisecondsSinceEpoch ~/ 1000;
-            final offsetProgramStart = _programBeginsAt! - _captureBuffer!.startedAt.round();
+            final offsetProgramStart = _live.programBeginsAt! - _live.captureBuffer!.startedAt.round();
             // If a session recording started after current program start, offset of program start at will be negative.
             // If a session recording started before current program start, offset of program start will be positive.
             // If guide data is not available, program start will be equal to current time.
-            final useProgramStart = offsetProgramStart > 0 && nowEpoch - _programBeginsAt! > 60;
-            final effectiveStart = useProgramStart ? _programBeginsAt! : _captureBuffer!.seekableStartEpoch;
+            final useProgramStart = offsetProgramStart > 0 && nowEpoch - _live.programBeginsAt! > 60;
+            final effectiveStart = useProgramStart ? _live.programBeginsAt! : _live.captureBuffer!.seekableStartEpoch;
             final elapsed = nowEpoch - effectiveStart;
             appLogger.d(
-              'Time-shift: buffer=${_captureBuffer!.seekableDurationSeconds}s, '
-              'beginsAt=$_programBeginsAt, elapsed=${elapsed}s (need >60 for dialog)',
+              'Time-shift: buffer=${_live.captureBuffer!.seekableDurationSeconds}s, '
+              'beginsAt=$_live.programBeginsAt, elapsed=${elapsed}s (need >60 for dialog)',
             );
             if (elapsed > 60) {
               final watchFromStart = await _showWatchFromStartDialog(effectiveStart, nowEpoch);
               if (!mounted) return;
               if (watchFromStart == true) {
-                offsetSeconds = useProgramStart ? offsetProgramStart : _captureBuffer!.seekStartSeconds.round();
+                offsetSeconds = useProgramStart ? offsetProgramStart : _live.captureBuffer!.seekStartSeconds.round();
               }
             }
           }
@@ -77,28 +77,28 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           final streamPath = await client.buildLiveStreamPath(
             sessionPath: tuneResult.sessionPath,
             sessionIdentifier: tuneResult.sessionIdentifier,
-            transcodeSessionId: _transcodeSessionId!,
+            transcodeSessionId: _live.transcodeSessionId!,
             offsetSeconds: offsetSeconds,
           );
           if (streamPath == null || !mounted) throw Exception('Failed to build stream path');
 
           streamUrl = client.buildLiveStreamUrl(streamPath);
-          _liveStreamUrl = streamUrl;
+          _live.streamUrl = streamUrl;
 
           // Track stream start epoch for position calculations
           if (offsetSeconds != null) {
-            _streamStartEpoch = _captureBuffer!.startedAt + offsetSeconds;
-            _isAtLiveEdge = false;
+            _live.streamStartEpoch = _live.captureBuffer!.startedAt + offsetSeconds;
+            _live.atLiveEdge = false;
           } else {
-            _streamStartEpoch = DateTime.now().millisecondsSinceEpoch / 1000.0;
-            _isAtLiveEdge = true;
+            _live.streamStartEpoch = DateTime.now().millisecondsSinceEpoch / 1000.0;
+            _live.atLiveEdge = true;
           }
         }
 
-        _livePlaybackStartTime = DateTime.now();
+        _live.playbackStartTime = DateTime.now();
         await currentPlayer.setProperty('force-seekable', 'no');
         await currentPlayer.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
-        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
+        if (!attempt.isCurrent) return;
 
         _trackManager?.cacheExternalSubtitles(const []);
 
@@ -106,9 +106,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         if (!mounted || player != currentPlayer) return;
 
         if (mounted) {
+          // Live TV never commits a PlaybackSession, so the session-derived
+          // versions/mediaInfo getters already read empty here.
           _setPlayerState(() {
-            _availableVersions = [];
-            _currentMediaInfo = null;
             _isPlayerInitialized = true;
           });
           _trackManager?.mediaInfo = null;
@@ -128,91 +128,64 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     final offlineWatchService = context.read<OfflineWatchSyncService>();
 
     try {
-      PlaybackInitializationResult result;
       PlaybackContext playbackContext;
-      Map<String, String>? streamHeaders;
 
-      if (widget.isOffline) {
+      if (_offlineLibraryMode) {
         final playbackResolver = PlaybackSourceResolver(
           serverManager: context.read<MultiServerProvider>().serverManager,
           database: context.read<AppDatabase>(),
         );
         playbackContext = await playbackResolver.resolve(
           metadata: _currentMetadata,
-          selectedMediaIndex: widget.selectedMediaIndex,
-          selectedMediaSourceId: widget.selectedMediaSourceId,
+          selectedMediaIndex: _effectiveSelectedMediaIndex,
+          selectedMediaSourceId: _selectedMediaSourceId,
           offlineLibraryMode: true,
           qualityPreset: _selectedQualityPreset,
           selectedAudioStreamId: _selectedAudioStreamId,
           sessionIdentifier: _playbackSessionIdentifier,
           transcodeSessionId: _playbackTranscodeSessionId,
         );
-        result = playbackContext.result;
-        if (result.videoUrl == null) {
+        if (playbackContext.result.videoUrl == null) {
           throw PlaybackException(t.messages.fileInfoNotAvailable);
         }
-        streamHeaders = playbackContext.streamHeaders;
-        _isTranscoding = result.isTranscoding;
-        _effectiveIsOffline = result.isOffline;
-        _playbackPlaySessionId = result.playSessionId;
-        _playbackPlayMethod = result.playMethod;
-        _selectedAudioStreamId = result.activeAudioStreamId;
       } else {
         // Online path: `_playbackDataFuture` was kicked off in `_initializePlayer`
         // in parallel with MPV setup. Quality preset + server capabilities +
         // headers were resolved there too. Just await the result.
-        streamHeaders = _streamHeaders;
         final playbackDataFuture = _playbackDataFuture;
         if (playbackDataFuture == null) {
           throw StateError('Playback data was not prepared before playback start');
         }
         playbackContext = await playbackDataFuture;
-        result = playbackContext.result;
         if (!mounted || player != currentPlayer) return;
-        streamHeaders = playbackContext.streamHeaders;
 
-        _isTranscoding = result.isTranscoding;
-        _effectiveIsOffline = result.isOffline;
-        _playbackPlaySessionId = result.playSessionId;
-        _playbackPlayMethod = result.playMethod;
-        _selectedAudioStreamId = result.activeAudioStreamId;
-
-        if (result.fallbackReason != null && !_selectedQualityPreset.isOriginal) {
+        if (playbackContext.result.fallbackReason != null && !_selectedQualityPreset.isOriginal) {
           if (mounted) {
             showErrorSnackBar(context, t.videoControls.transcodeUnavailableFallback);
           }
-          // Reset the preset so the UI reflects what's actually playing.
-          _selectedQualityPreset = TranscodeQualityPreset.original;
         }
       }
-      _effectiveSelectedMediaIndex = result.selectedMediaIndex;
-      _playbackContext = playbackContext;
-      _streamHeaders = streamHeaders;
+      final result = playbackContext.result;
+      final streamHeaders = playbackContext.streamHeaders;
+      // Initial start has no previous session to protect, so commit as soon
+      // as the resolve lands (reload-style flows commit at the open
+      // boundary instead).
+      _commitPlaybackSession(
+        PlaybackSession.fromContext(
+          playbackContext,
+          requestedQualityPreset: _selectedQualityPreset,
+          requestedMediaSourceId: _selectedMediaSourceId,
+        ),
+      );
 
       // Primary refresh-rate path: when metadata provides FPS, Android players
       // can switch before creating decoders. MPV still needs a startup refresh
       // when MediaCodec has already produced its first paused frame.
       final settingsService = await SettingsService.getInstance();
-      if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
+      if (!attempt.isCurrent) return;
       final displayCriteria = result.mediaInfo?.displayCriteria;
-      final preKnownFps = displayCriteria?.fps;
-      final willAutoSwitch =
-          Platform.isAndroid &&
-          settingsService.read(SettingsService.matchContentFrameRate) &&
-          preKnownFps != null &&
-          preKnownFps > 0;
-      final isExoPlayer = currentPlayer is PlayerAndroid;
-      final isAndroidMpv = Platform.isAndroid && !isExoPlayer;
-      final needsExoPlayerFrameRateStartup = willAutoSwitch && isExoPlayer && result.videoUrl != null;
-      final needsAndroidMpvFrameRateStartup = willAutoSwitch && isAndroidMpv && result.videoUrl != null;
-      var didPreLoadFrameRateSwitch = false;
-      var didPreOpenExoFrameRateSwitch = false;
-      var preOpenExoFrameRateHandled = false;
-      var needsPostOpenFrameRateSwitch =
-          willAutoSwitch && !needsAndroidMpvFrameRateStartup && !needsExoPlayerFrameRateStartup;
-      var needsAndroidMpvStartupRefresh = false;
+      final attachesSubsAtOpen = currentPlayer.attachesExternalSubtitlesAtOpen;
       final hasExternalSubs = result.externalSubtitles.isNotEmpty;
-      Future<bool>? androidMpvStartupReady;
       var audioFocusReady = false;
 
       Future<void> ensureAudioFocus() async {
@@ -227,89 +200,23 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         audioFocusReady = true;
       }
 
-      // MPV on Android can decode and present its first paused frame before a
-      // post-open display switch settles. Switch first when metadata already
-      // gives us the FPS so MediaCodec starts after the display mode change.
-      if (needsAndroidMpvFrameRateStartup) {
-        final delaySec = settingsService.read(SettingsService.displaySwitchDelay);
-        final durationMs = _currentMetadata.durationMs ?? currentPlayer.state.duration.inMilliseconds;
-        _suppressMediaPauseDuringFrameRateSwitch = true;
-        Future.delayed(Duration(seconds: 2 + delaySec + 1), () {
-          _suppressMediaPauseDuringFrameRateSwitch = false;
-        });
-        try {
-          appLogger.d(
-            'Frame rate matching: pre-load MPV switch to ${preKnownFps}fps '
-            '(duration: ${durationMs}ms, delay=${delaySec}s)',
-          );
-          didPreLoadFrameRateSwitch = await currentPlayer.setVideoFrameRate(
-            preKnownFps,
-            durationMs,
-            extraDelayMs: delaySec * 1000,
-          );
-          if (!mounted || player != currentPlayer) return;
-          if (didPreLoadFrameRateSwitch) {
-            _frameRateMatchingApplied = true;
-            needsAndroidMpvStartupRefresh = true;
-          }
-          appLogger.d(
-            'Frame rate matching: pre-load MPV switch complete '
-            '(switched=$didPreLoadFrameRateSwitch, delay=${delaySec}s, '
-            'startupRefresh=$needsAndroidMpvStartupRefresh)',
-          );
-        } catch (e) {
-          appLogger.w('Failed to apply pre-load MPV frame rate matching', error: e);
-          needsPostOpenFrameRateSwitch = true;
-          needsAndroidMpvStartupRefresh = false;
-        }
-      }
-
-      // ExoPlayer prepares AudioTrack during open() even when opened paused.
-      // On Shield/AVR chains, switching HDMI refresh rate after that can break
-      // direct passthrough, so switch before ExoPlayer creates renderers.
-      if (needsExoPlayerFrameRateStartup) {
-        final delaySec = settingsService.read(SettingsService.displaySwitchDelay);
-        final durationMs = _currentMetadata.durationMs ?? currentPlayer.state.duration.inMilliseconds;
-        _suppressMediaPauseDuringFrameRateSwitch = true;
-        Future.delayed(Duration(seconds: 2 + delaySec + 1), () {
-          _suppressMediaPauseDuringFrameRateSwitch = false;
-        });
-        try {
-          await ensureAudioFocus();
-          if (!mounted || player != currentPlayer) return;
-          appLogger.d(
-            'Frame rate matching: pre-open ExoPlayer switch to ${preKnownFps}fps '
-            '(duration: ${durationMs}ms, delay=${delaySec}s)',
-          );
-          didPreOpenExoFrameRateSwitch = await currentPlayer.setVideoFrameRate(
-            preKnownFps,
-            durationMs,
-            extraDelayMs: delaySec * 1000,
-          );
-          if (!mounted || player != currentPlayer) return;
-          preOpenExoFrameRateHandled = true;
-          appLogger.d(
-            'Frame rate matching: pre-open ExoPlayer switch complete '
-            '(switched=$didPreOpenExoFrameRateSwitch, delay=${delaySec}s)',
-          );
-        } catch (e) {
-          appLogger.w('Failed to apply pre-open ExoPlayer frame rate matching', error: e);
-          needsPostOpenFrameRateSwitch = true;
-          preOpenExoFrameRateHandled = false;
-        }
-      }
-
-      final shouldHoldPlaybackStart = needsPostOpenFrameRateSwitch || needsAndroidMpvStartupRefresh;
-      Duration? resumePosition;
+      final frameRatePlan = await _prepareFrameRateForOpen(
+        currentPlayer: currentPlayer,
+        settingsService: settingsService,
+        preKnownFps: displayCriteria?.fps,
+        hasVideoUrl: result.videoUrl != null,
+        ensureAudioFocus: ensureAudioFocus,
+      );
+      if (frameRatePlan == null) return;
+      final shouldHoldPlaybackStart = frameRatePlan.holdPlaybackStart;
 
       // Open video through Player
       if (result.videoUrl != null) {
         // Reset first frame flag and frame rate retry counter for new video
         _hasFirstFrame.value = false;
-        _frameRateRetries = 0;
-        _frameRateMatchingApplied = false;
-        if (didPreLoadFrameRateSwitch || needsAndroidMpvFrameRateStartup || preOpenExoFrameRateHandled) {
-          _frameRateMatchingApplied = true;
+        _frameRate.resetForNewItem();
+        if (frameRatePlan.countsAsApplied) {
+          _frameRate.applied = true;
         }
 
         // Request audio focus before starting playback (Android)
@@ -317,23 +224,14 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         // Fired in parallel with MPV setup in `_initializePlayer`; we await
         // the in-flight future here (usually already resolved).
         await ensureAudioFocus();
-        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
+        if (!attempt.isCurrent) return;
 
-        // Pass resume position if available.
-        // In offline mode, prefer locally tracked progress over the cached server value
-        // since the user may have watched further since downloading.
-        if (_isOfflinePlayback) {
-          final globalKey = _currentMetadata.globalKey;
-          final localOffset = await offlineWatchService.getLocalViewOffset(globalKey);
-          if (!mounted || player != currentPlayer) return;
-          if (localOffset != null && localOffset > 0) {
-            resumePosition = Duration(milliseconds: localOffset);
-            appLogger.d('Resuming offline playback from local progress: ${localOffset}ms');
-          }
-        }
-        resumePosition ??= _currentMetadata.viewOffsetMs != null
-            ? Duration(milliseconds: _currentMetadata.viewOffsetMs!)
-            : null;
+        final resumePosition = await _resolveOpenResumePosition(
+          metadata: _currentMetadata,
+          isOffline: _isOfflinePlayback,
+          offlineWatchService: offlineWatchService,
+        );
+        if (!mounted || player != currentPlayer) return;
 
         // Enable FFmpeg auto-reconnect for VOD streams (covers network drops
         // up to 10 min). Forwarded to the Kotlin layer on Android so MPV
@@ -346,23 +244,15 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           );
         }
 
-        await currentPlayer.setDisplayCriteria(
-          !result.isTranscoding && displayCriteria?.canPrimeNativeDisplayCriteria == true ? displayCriteria : null,
+        await _primeDisplayCriteria(
+          player: currentPlayer,
+          settingsService: settingsService,
+          displayCriteria: displayCriteria,
+          isTranscoding: result.isTranscoding,
         );
 
-        final shouldAutoPlay = !shouldHoldPlaybackStart && (isExoPlayer || !hasExternalSubs);
-        if (needsAndroidMpvStartupRefresh) {
-          appLogger.d('Frame rate matching: opening Android MPV paused for startup decoder refresh');
-          androidMpvStartupReady = currentPlayer.streams.playbackRestart.first
-              .then((_) => true)
-              .timeout(
-                const Duration(seconds: 15),
-                onTimeout: () {
-                  appLogger.w('Timed out waiting for Android MPV startup frame before decoder refresh');
-                  return false;
-                },
-              );
-        }
+        final shouldAutoPlay = !shouldHoldPlaybackStart && (attachesSubsAtOpen || !hasExternalSubs);
+        frameRatePlan.armStartupRefreshGate(currentPlayer);
 
         // ExoPlayer: attach external subs at open time so it discovers
         // them in a single prepare() — no media reload needed for selection.
@@ -373,34 +263,18 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           resumePosition: resumePosition,
           durationMs: _currentMetadata.durationMs,
         );
-        // Transcode streams can be seekable even when MPV cannot prove it
-        // from response headers. Reset non-transcodes so live/direct/offline
-        // streams keep native seekability detection.
-        await currentPlayer.setProperty('force-seekable', result.isTranscoding ? 'yes' : 'no');
-        await currentPlayer.open(
-          Media(result.videoUrl!, start: openTiming.mediaStart, headers: streamHeaders),
+        final didOpen = await _openMediaOnPlayer(
+          player: currentPlayer,
+          settingsService: settingsService,
+          videoUrl: result.videoUrl!,
+          isTranscoding: result.isTranscoding,
+          timing: openTiming,
+          headers: streamHeaders,
           play: shouldAutoPlay,
-          externalSubtitles: isExoPlayer && hasExternalSubs ? result.externalSubtitles : null,
-          timelineOffset: openTiming.timelineOffset,
-          timelineDuration: openTiming.timelineDuration,
+          externalSubtitlesAtOpen: attachesSubsAtOpen && hasExternalSubs ? result.externalSubtitles : null,
+          shouldContinue: () => attempt.isCurrent,
         );
-        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
-
-        // Apply subtitle styling to ExoPlayer native layer (CaptionStyleCompat + libass font scale)
-        // Must be called after open() since that's when ExoPlayer initializes
-        if (currentPlayer is PlayerAndroid) {
-          await currentPlayer.setSubtitleStyle(
-            fontSize: settingsService.read(SettingsService.subtitleFontSize).toDouble(),
-            textColor: settingsService.read(SettingsService.subtitleTextColor),
-            borderSize: settingsService.read(SettingsService.subtitleBorderSize).toDouble(),
-            borderColor: settingsService.read(SettingsService.subtitleBorderColor),
-            bgColor: settingsService.read(SettingsService.subtitleBackgroundColor),
-            bgOpacity: settingsService.read(SettingsService.subtitleBackgroundOpacity),
-            subtitlePosition: settingsService.read(SettingsService.subtitlePosition),
-            bold: settingsService.read(SettingsService.subtitleBold),
-            italic: settingsService.read(SettingsService.subtitleItalic),
-          );
-        }
+        if (!didOpen || !attempt.isCurrent) return;
 
         // Attach player to Watch Together session for sync (if in session)
         if (mounted && !_isOfflinePlayback) {
@@ -409,41 +283,14 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         }
       }
 
-      // Update available versions from the playback data
+      // Versions/mediaInfo come from the committed session; rebuild so the
+      // controls pick them up.
       if (mounted) {
-        _setPlayerState(() {
-          _availableVersions = result.availableVersions;
-          _currentMediaInfo = result.mediaInfo;
-          _scrubPreviewSource?.dispose();
-          _scrubPreviewSource = null;
-        });
-
-        // Backend-neutral scrub-thumbnail load. The factory dispatches to
-        // BIF (Plex) or trickplay sprite sheets (Jellyfin) and returns null
-        // when the inputs aren't sufficient. Guard against media-change
-        // races during the async load.
         final mediaClient = context.tryGetMediaClientForServer(serverIdOrNull(_currentMetadata.serverId));
-        final mediaInfoAtStart = _currentMediaInfo;
-        if (mediaInfoAtStart != null && !_isOfflinePlayback && mediaClient != null) {
-          unawaited(
-            mediaClient
-                .createScrubPreviewSource(item: _currentMetadata, mediaSource: mediaInfoAtStart)
-                .then((service) {
-                  if (service == null) return;
-                  if (mounted && identical(_currentMediaInfo, mediaInfoAtStart)) {
-                    _setPlayerState(() => _scrubPreviewSource = service);
-                  } else {
-                    service.dispose();
-                  }
-                })
-                .catchError((e, st) {
-                  appLogger.w('Scrub preview load failed', error: e, stackTrace: st);
-                }),
-          );
-        }
+        _resetScrubPreviewForNewItem(metadata: _currentMetadata, mediaInfo: result.mediaInfo, mediaClient: mediaClient);
 
         await _initVideoFilterAndPip();
-        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
+        if (!attempt.isCurrent) return;
 
         if (player == currentPlayer) {
           // Auto-PiP: set up callback for API 26-30 path and initial state
@@ -474,122 +321,44 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             await _restoreAmbientLighting();
           }
         }
-        if (!_isCurrentPlaybackGeneration(playbackGeneration, currentPlayer)) return;
+        if (!attempt.isCurrent) return;
 
         // Track manager: owns track selection, external subtitle loading, and Plex
         // immediate stream writes. Jellyfin persists selected stream indexes through
         // playback progress reports instead.
-        final plexTrackClient = mediaClient is PlexClient ? mediaClient : null;
-        _trackManager = TrackManager(
-          player: currentPlayer,
-          isActive: () => mounted && player == currentPlayer,
-          persistTrackPreference: plexTrackClient != null ? _plexTrackPersister(() => plexTrackClient) : null,
-          getProfileSettings: () => context.read<UserProfileProvider>().profileSettings,
-          waitForProfileSettings: _waitForProfileSettingsIfNeeded,
+        _trackManager = _buildTrackManager(
+          forPlayer: currentPlayer,
           metadata: _currentMetadata,
-          mediaInfo: _currentMediaInfo,
-          preferredAudioTrack: widget.preferredAudioTrack,
-          preferredSubtitleTrack: widget.preferredSubtitleTrack,
-          preferredSecondarySubtitleTrack: widget.preferredSecondarySubtitleTrack,
-          showMessage: (message, {duration}) {
-            if (mounted) showAppSnackBar(context, message, duration: duration);
-          },
+          plexClient: mediaClient is PlexClient ? mediaClient : null,
+          getProfileSettings: () => context.read<UserProfileProvider>().profileSettings,
+          preferredAudioTrack: _preferredAudioTrack,
+          preferredSubtitleTrack: _preferredSubtitleTrack,
+          preferredSecondarySubtitleTrack: _preferredSecondarySubtitleTrack,
         );
 
         // Store external subtitles for re-use after backend fallback
         _trackManager!.cacheExternalSubtitles(result.externalSubtitles);
 
-        Future<void> resumeAfterStartupGate(String reason) async {
-          if (!mounted || player != currentPlayer) return;
-          final trackManager = _trackManager;
-          if (trackManager == null) return;
-          appLogger.d('Frame rate matching: resuming playback after $reason');
-          if (currentPlayer is! PlayerAndroid && hasExternalSubs) {
-            await trackManager.resumeAfterSubtitleLoad();
-          } else {
-            await currentPlayer.play();
-          }
-        }
+        await _applyTracksAfterOpen(
+          forPlayer: currentPlayer,
+          trackManager: _trackManager!,
+          externalSubtitles: result.externalSubtitles,
+          // When a startup gate below owns the resume, skip this one to
+          // avoid a double-play.
+          shouldResumeAfterSubtitleLoad: () => !shouldHoldPlaybackStart && mounted && player == currentPlayer,
+        );
 
-        // MPV with external subs: add after open via sub-add,
-        // opened paused to avoid race condition (issue #226)
-        if (currentPlayer is! PlayerAndroid && result.externalSubtitles.isNotEmpty) {
-          _hasFirstFrame.value = false;
-          _trackManager!.waitingForExternalSubsTrackSelection = true;
-
-          try {
-            await _trackManager!.addExternalSubtitles(result.externalSubtitles);
-          } finally {
-            // When a startup gate below owns the resume,
-            // skip this one to avoid a double-play.
-            if (!shouldHoldPlaybackStart && mounted && player == currentPlayer) {
-              await _trackManager!.resumeAfterSubtitleLoad();
-            }
-          }
-        } else {
-          // Android (subs attached at open time) or no external subs:
-          // apply once tracks are available
-          _trackManager!.applyTrackSelectionWhenReady();
-        }
-
-        // Fallback refresh-rate path. The player was opened paused;
-        // setVideoFrameRate awaits the real display-change event (+ settle +
-        // user delay) before returning, then we start playback.
-        if (needsPostOpenFrameRateSwitch && mounted && player == currentPlayer) {
-          _frameRateMatchingApplied = true;
-          final delaySec = settingsService.read(SettingsService.displaySwitchDelay);
-          final durationMs = _currentMetadata.durationMs ?? currentPlayer.state.duration.inMilliseconds;
-          _suppressMediaPauseDuringFrameRateSwitch = true;
-          Future.delayed(Duration(seconds: 2 + delaySec + 1), () {
-            _suppressMediaPauseDuringFrameRateSwitch = false;
-          });
-          bool didSwitch = false;
-          try {
-            didSwitch = await currentPlayer.setVideoFrameRate(preKnownFps!, durationMs, extraDelayMs: delaySec * 1000);
-            if (!mounted || player != currentPlayer) return;
-            if (didSwitch) {
-              await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'post-open frame rate switch');
-            }
-          } catch (e) {
-            appLogger.w('Failed to apply pre-playback frame rate matching', error: e);
-          }
-
-          // Always resume — either the switch completed and we want to play,
-          // or no switch was needed and we need to start playback now that the
-          // preparation gate has been cleared.
-          await resumeAfterStartupGate('post-open frame rate switch');
-
-          unawaited(
-            Sentry.addBreadcrumb(
-              Breadcrumb(
-                message: 'Pre-playback frame rate: ${preKnownFps}fps, switched=$didSwitch, delay=${delaySec}s',
-                category: 'player',
-              ),
-            ),
-          );
-        } else if (needsAndroidMpvStartupRefresh && mounted && player == currentPlayer) {
-          appLogger.d('Frame rate matching: waiting for Android MPV startup frame before decoder refresh');
-          final startupReady = androidMpvStartupReady == null ? false : await androidMpvStartupReady;
-          if (mounted && player == currentPlayer) {
-            if (startupReady) {
-              await Future<void>.delayed(const Duration(milliseconds: 100));
-              await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'pre-load frame rate startup');
-              await resumeAfterStartupGate('startup decoder refresh');
-            } else {
-              appLogger.w('Frame rate matching: skipping Android MPV decoder refresh because startup frame timed out');
-              await resumeAfterStartupGate('startup frame timeout');
-            }
-          }
-
-          unawaited(
-            Sentry.addBreadcrumb(
-              Breadcrumb(
-                message: 'Android MPV startup decoder refresh after pre-load frame-rate switch',
-                category: 'player',
-              ),
-            ),
-          );
-        }
+        await _releaseFrameRateStartupGate(
+          currentPlayer: currentPlayer,
+          settingsService: settingsService,
+          plan: frameRatePlan,
+          resumeAfterStartupGate: (reason) => _resumeAfterFrameRateStartupGate(
+            currentPlayer: currentPlayer,
+            attachesSubsAtOpen: attachesSubsAtOpen,
+            hasExternalSubs: hasExternalSubs,
+            reason: reason,
+          ),
+        );
       }
     } on PlaybackException catch (e, st) {
       appLogger.w('Playback initialization failed', error: e, stackTrace: st);

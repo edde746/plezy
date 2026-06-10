@@ -245,6 +245,74 @@ void main() {
       );
     });
 
+    test('MPV open(play: true) unpauses after loadfile even when previously paused', () async {
+      final calls = <MethodCall>[];
+
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            // Simulate the in-place reload: the old file is paused before the
+            // replacement opens. mpv's pause property survives loadfile.
+            await player.pause();
+            await player.open(Media('https://example.test/next.mkv'));
+
+            final loadIndex = _loadfileCallIndex(calls);
+            final unpauseIndex = _setPropertyValueIndex(calls, 'pause', 'no');
+            expect(loadIndex, greaterThanOrEqualTo(0));
+            expect(unpauseIndex, greaterThan(loadIndex), reason: 'open(play: true) must clear pause after loadfile');
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
+    test('MPV open(play: false) opens paused and never unpauses', () async {
+      final calls = <MethodCall>[];
+
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          switch (call.method) {
+            case 'initialize':
+              return Future.value(true);
+            default:
+              return Future.value(null);
+          }
+        },
+        testBody: () async {
+          final player = PlayerNative();
+          try {
+            await player.open(Media('https://example.test/next.mkv'), play: false);
+
+            final loadIndex = _loadfileCallIndex(calls);
+            final pauseIndex = _setPropertyCallIndex(calls, 'pause');
+            final unpauseIndex = _setPropertyValueIndex(calls, 'pause', 'no');
+            expect(pauseIndex, greaterThanOrEqualTo(0));
+            expect(pauseIndex, lessThan(loadIndex));
+            expect(_setPropertyValue(calls[pauseIndex]), 'yes');
+            expect(unpauseIndex, -1, reason: 'a paused open must stay paused');
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+
     test('MPV maps server-offset streams to absolute timeline positions', () async {
       final calls = <MethodCall>[];
 
@@ -327,6 +395,28 @@ void main() {
         },
       );
     });
+
+    test('MPV forwards preserve display mode flag on dispose', () async {
+      final calls = <MethodCall>[];
+
+      await _withMockChannels(
+        methodChannelName: 'com.plezy/mpv_player',
+        eventChannelName: 'com.plezy/mpv_player/events',
+        methodHandler: (call) {
+          calls.add(call);
+          return Future.value(null);
+        },
+        testBody: () async {
+          final player = PlayerNative();
+
+          await player.dispose(preserveDisplayMode: true);
+
+          final disposeCall = calls.singleWhere((call) => call.method == 'dispose');
+          final args = Map<Object?, Object?>.from(disposeCall.arguments as Map);
+          expect(args['preserveDisplayMode'], isTrue);
+        },
+      );
+    });
   });
 }
 
@@ -378,6 +468,12 @@ void _seedTracks(dynamic player) {
 
 int _setPropertyCallIndex(List<MethodCall> calls, String name) {
   return calls.indexWhere((call) => call.method == 'setProperty' && _setPropertyName(call) == name);
+}
+
+int _setPropertyValueIndex(List<MethodCall> calls, String name, String value) {
+  return calls.indexWhere(
+    (call) => call.method == 'setProperty' && _setPropertyName(call) == name && _setPropertyValue(call) == value,
+  );
 }
 
 String? _setPropertyName(MethodCall call) => Map<Object?, Object?>.from(call.arguments as Map)['name'] as String?;

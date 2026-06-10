@@ -13,9 +13,18 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private var mainBlankView: UIView?
   private var isVisible = false
   private var isDisposed = false
-  private var activeDisplayCriteriaKey: String?
+  private static var activeDisplayCriteriaKey: String?
+  private var lastDisplayCriteriaMutation: DisplayCriteriaMutation = .skipped
+  #if os(tvOS)
+    private var displayModeSwitchWaiter: DisplayModeSwitchWaiter?
+    private var displayModeSwitchWaiterGeneration = 0
+  #endif
 
   var isPipStarting = false
+
+  private static func log(_ message: String) {
+    NSLog("[MpvPlayerCore] %@", message)
+  }
 
   func initialize(in window: UIWindow) -> Bool {
     guard !isInitialized else {
@@ -245,6 +254,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     colorMatrix: String?
   ) -> Bool {
     #if os(tvOS)
+      lastDisplayCriteriaMutation = .skipped
       guard let window = containerView?.window ?? self.window else { return false }
       let displayManager = window.avDisplayManager
 
@@ -255,7 +265,9 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
       let refreshRate = Float(fps > 0 ? fps : 0)
       let sourceHasDolbyVision = doviProfile > 0
-      guard sourceHasDolbyVision || sigPeak > 0 || gamma != nil || primaries != nil || colorMatrix != nil else {
+      guard
+        refreshRate > 0 || sourceHasDolbyVision || sigPeak > 0 || gamma != nil || primaries != nil || colorMatrix != nil
+      else {
         clearDisplayCriteria(displayManager, reason: "no display metadata")
         return false
       }
@@ -315,20 +327,68 @@ class MpvPlayerCore: MpvPlayerCoreBase {
 
       let criteriaKey =
         "\(displayRange.rawValue)|\(refreshRate)|\(width)x\(height)|\(doviProfile)|\(doviLevel)|\(doviCompatibilityId ?? -1)"
-      if activeDisplayCriteriaKey == criteriaKey { return true }
+      if Self.activeDisplayCriteriaKey == criteriaKey && displayManager.preferredDisplayCriteria != nil {
+        lastDisplayCriteriaMutation = .unchanged
+        return true
+      }
 
-      displayManager.preferredDisplayCriteria = AVDisplayCriteria(
+      let displayCriteria = AVDisplayCriteria(
         refreshRate: refreshRate,
         formatDescription: formatDescription
       )
-      activeDisplayCriteriaKey = criteriaKey
-      print(
-        "[MpvPlayerCore] preferredDisplayCriteria set to \(displayRange.rawValue) (source: \(sourceRange.rawValue), fps: \(refreshRate), \(width)x\(height), DV profile: \(doviProfile), level: \(doviLevel), compat: \(doviCompatibilityId ?? -1))"
+      displayManager.preferredDisplayCriteria = displayCriteria
+      Self.activeDisplayCriteriaKey = criteriaKey
+      lastDisplayCriteriaMutation = .set
+      Self.log(
+        "preferredDisplayCriteria set to \(displayRange.rawValue) (source: \(sourceRange.rawValue), fps: \(refreshRate), \(width)x\(height), DV profile: \(doviProfile), level: \(doviLevel), compat: \(doviCompatibilityId ?? -1))"
       )
       return true
     #else
       return false
     #endif
+  }
+
+  func setServerDisplayCriteriaForPlayback(
+    _ criteria: ServerDisplayCriteria?,
+    extraDelayMs: Int,
+    completion: @escaping () -> Void
+  ) {
+    let apply = { [weak self] in
+      guard let self else {
+        completion()
+        return
+      }
+
+      self.setServerDisplayCriteria(criteria) { [weak self] applied in
+        guard let self else {
+          completion()
+          return
+        }
+
+        #if os(tvOS)
+          guard applied || self.lastDisplayCriteriaMutation == .cleared else {
+            completion()
+            return
+          }
+          self.waitForDisplayModeSwitchIfNeeded(extraDelayMs: extraDelayMs, completion: completion)
+        #else
+          completion()
+        #endif
+      }
+    }
+
+    if Thread.isMainThread {
+      apply()
+    } else {
+      DispatchQueue.main.async(execute: apply)
+    }
+  }
+
+  private enum DisplayCriteriaMutation {
+    case skipped
+    case unchanged
+    case set
+    case cleared
   }
 
   #if os(tvOS)
@@ -340,10 +400,197 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
 
     private func clearDisplayCriteria(_ displayManager: AVDisplayManager, reason: String) {
-      if activeDisplayCriteriaKey != nil || displayManager.preferredDisplayCriteria != nil {
+      if Self.activeDisplayCriteriaKey != nil || displayManager.preferredDisplayCriteria != nil {
         displayManager.preferredDisplayCriteria = nil
-        activeDisplayCriteriaKey = nil
-        print("[MpvPlayerCore] preferredDisplayCriteria cleared (\(reason))")
+        Self.activeDisplayCriteriaKey = nil
+        lastDisplayCriteriaMutation = .cleared
+        Self.log("preferredDisplayCriteria cleared (\(reason))")
+      } else {
+        lastDisplayCriteriaMutation = .unchanged
+      }
+    }
+
+    private func waitForDisplayModeSwitchIfNeeded(extraDelayMs: Int, completion: @escaping () -> Void) {
+      guard let window = containerView?.window ?? self.window else {
+        completion()
+        return
+      }
+
+      let displayManager = window.avDisplayManager
+      let mutation = lastDisplayCriteriaMutation
+      let shouldWaitForStart = mutation == .set || mutation == .cleared
+      if !shouldWaitForStart && !displayManager.isDisplayModeSwitchInProgress {
+        completion()
+        return
+      }
+
+      displayModeSwitchWaiter?.cancel(complete: true)
+      displayModeSwitchWaiterGeneration += 1
+      let waiterGeneration = displayModeSwitchWaiterGeneration
+      let waiter = DisplayModeSwitchWaiter(
+        displayManager: displayManager,
+        shouldWaitForStart: shouldWaitForStart,
+        extraDelayMs: extraDelayMs
+      ) { [weak self] in
+        if let self, self.displayModeSwitchWaiterGeneration == waiterGeneration {
+          self.displayModeSwitchWaiter = nil
+        }
+        completion()
+      }
+      displayModeSwitchWaiter = waiter
+      waiter.start()
+    }
+
+    private final class DisplayModeSwitchWaiter {
+      private weak var displayManager: AVDisplayManager?
+      private let shouldWaitForStart: Bool
+      private let extraDelayMs: Int
+      private let completion: () -> Void
+      private var startObserver: NSObjectProtocol?
+      private var endObserver: NSObjectProtocol?
+      private var startWatchdog: DispatchWorkItem?
+      private var endWatchdog: DispatchWorkItem?
+      private var settleWorkItem: DispatchWorkItem?
+      private var finished = false
+      private var completionDelivered = false
+
+      private static let startWindowMs = 500
+      private static let switchWatchdogMs = 8000
+      private static let settleMs = 200
+
+      init(
+        displayManager: AVDisplayManager,
+        shouldWaitForStart: Bool,
+        extraDelayMs: Int,
+        completion: @escaping () -> Void
+      ) {
+        self.displayManager = displayManager
+        self.shouldWaitForStart = shouldWaitForStart
+        self.extraDelayMs = max(0, min(extraDelayMs, 10_000))
+        self.completion = completion
+      }
+
+      func start() {
+        guard let displayManager else {
+          finish(waited: false, reason: "manager unavailable")
+          return
+        }
+
+        if displayManager.isDisplayModeSwitchInProgress {
+          beginWaitingForEnd(reason: "already in progress")
+          return
+        }
+
+        guard shouldWaitForStart else {
+          finish(waited: false, reason: "no switch in progress")
+          return
+        }
+
+        let center = NotificationCenter.default
+        startObserver = center.addObserver(
+          forName: .AVDisplayManagerModeSwitchStart,
+          object: nil,
+          queue: .main
+        ) { [weak self] _ in
+          self?.beginWaitingForEnd(reason: "start notification")
+        }
+
+        let watchdog = DispatchWorkItem { [weak self] in
+          guard let self else { return }
+          if self.displayManager?.isDisplayModeSwitchInProgress == true {
+            self.beginWaitingForEnd(reason: "progress poll")
+          } else {
+            self.finish(waited: false, reason: "start watchdog")
+          }
+        }
+        startWatchdog = watchdog
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(Self.startWindowMs), execute: watchdog)
+      }
+
+      func cancel(complete: Bool = false) {
+        finished = true
+        cleanup()
+        if complete { completeOnce() }
+      }
+
+      private func beginWaitingForEnd(reason: String) {
+        guard !finished else { return }
+        startWatchdog?.cancel()
+        startWatchdog = nil
+        if let startObserver {
+          NotificationCenter.default.removeObserver(startObserver)
+          self.startObserver = nil
+        }
+
+        guard displayManager?.isDisplayModeSwitchInProgress == true else {
+          finish(waited: true, reason: "ended before wait (\(reason))")
+          return
+        }
+
+        let center = NotificationCenter.default
+        endObserver = center.addObserver(
+          forName: .AVDisplayManagerModeSwitchEnd,
+          object: nil,
+          queue: .main
+        ) { [weak self] _ in
+          self?.finish(waited: true, reason: "end notification")
+        }
+
+        let watchdog = DispatchWorkItem { [weak self] in
+          self?.finish(waited: true, reason: "end watchdog")
+        }
+        endWatchdog = watchdog
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(Self.switchWatchdogMs), execute: watchdog)
+      }
+
+      private func finish(waited: Bool, reason: String) {
+        guard !finished else { return }
+        finished = true
+        cleanup()
+
+        let delayMs = waited ? Self.settleMs + extraDelayMs : 0
+        MpvPlayerCore.log(
+          "display mode switch wait complete "
+            + "(\(reason), waited: \(waited), extraDelayMs: \(extraDelayMs))"
+        )
+        guard delayMs > 0 else {
+          completeOnce()
+          return
+        }
+        let workItem = DispatchWorkItem { [weak self] in
+          self?.completeOnce()
+        }
+        settleWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(delayMs), execute: workItem)
+      }
+
+      private func completeOnce() {
+        guard !completionDelivered else { return }
+        completionDelivered = true
+        settleWorkItem?.cancel()
+        settleWorkItem = nil
+        completion()
+      }
+
+      private func cleanup() {
+        startWatchdog?.cancel()
+        endWatchdog?.cancel()
+        settleWorkItem?.cancel()
+        startWatchdog = nil
+        endWatchdog = nil
+        settleWorkItem = nil
+        if let startObserver {
+          NotificationCenter.default.removeObserver(startObserver)
+          self.startObserver = nil
+        }
+        if let endObserver {
+          NotificationCenter.default.removeObserver(endObserver)
+          self.endObserver = nil
+        }
+      }
+
+      deinit {
+        cancel()
       }
     }
 
@@ -529,21 +776,37 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     }
   #endif
 
-  func dispose() {
+  func dispose(preserveDisplayCriteria: Bool = false) {
     // Guard double-dispose: the plugin calls dispose() then drops the
     // strong ref, which fires deinit → dispose() again. The second call
     // would re-enter and crash on weak-ref formation during dealloc.
     guard !isDisposed else { return }
     isDisposed = true
 
+    #if os(tvOS)
+      if preserveDisplayCriteria {
+        Self.log("dispose preserving display criteria (key: \(Self.activeDisplayCriteriaKey ?? "nil"))")
+      }
+    #endif
+
     // Reset the HDMI mode hint synchronously while self is still alive
     // and on main. An async-to-main dispatch here would be drained after
     // dealloc (the plugin sets playerCore = nil right after this call
     // returns), leaving the link stuck at the last clip's refresh rate.
-    updateDisplayCriteria(
-      doviProfile: 0, doviLevel: 0, doviCompatibilityId: nil,
-      fps: 0, width: 0, height: 0, sigPeak: 0,
-      gamma: nil, primaries: nil, colorMatrix: nil)
+    // During video-to-video replacement, keep the hint so tvOS doesn't
+    // renegotiate back to default before the replacement route can set its
+    // next criteria.
+    if !preserveDisplayCriteria {
+      updateDisplayCriteria(
+        doviProfile: 0, doviLevel: 0, doviCompatibilityId: nil,
+        fps: 0, width: 0, height: 0, sigPeak: 0,
+        gamma: nil, primaries: nil, colorMatrix: nil)
+    }
+
+    #if os(tvOS)
+      displayModeSwitchWaiter?.cancel(complete: true)
+      displayModeSwitchWaiter = nil
+    #endif
 
     NotificationCenter.default.removeObserver(self)
     #if os(iOS)
@@ -558,7 +821,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     mainBlankView?.removeFromSuperview()
     mainBlankView = nil
     isInitialized = false
-    print("[MpvPlayerCore] Disposed")
+
+    Self.log("Disposed")
   }
 
   deinit {

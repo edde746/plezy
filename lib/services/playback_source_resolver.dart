@@ -14,6 +14,9 @@ class PlaybackSourceResolver {
 
   const PlaybackSourceResolver({required this.serverManager, required this.database});
 
+  /// [preferOffline] overrides the default downloaded-copy preference
+  /// (`offlineLibraryMode || qualityPreset.isOriginal`). Pass false for
+  /// flows that must stay on the server stream, e.g. a transcode restart.
   Future<PlaybackContext> resolve({
     required MediaItem metadata,
     required int selectedMediaIndex,
@@ -23,6 +26,7 @@ class PlaybackSourceResolver {
     int? selectedAudioStreamId,
     String? sessionIdentifier,
     String? transcodeSessionId,
+    bool? preferOffline,
   }) async {
     final reportingClient = _playbackClient(serverIdOrNull(metadata.serverId), offlineLibraryMode: offlineLibraryMode);
     final service = PlaybackInitializationService(client: reportingClient, database: database);
@@ -30,7 +34,7 @@ class PlaybackSourceResolver {
       metadata: metadata,
       selectedMediaIndex: selectedMediaIndex,
       selectedMediaSourceId: selectedMediaSourceId,
-      preferOffline: offlineLibraryMode || qualityPreset.isOriginal,
+      preferOffline: preferOffline ?? (offlineLibraryMode || qualityPreset.isOriginal),
       qualityPreset: qualityPreset,
       selectedAudioStreamId: selectedAudioStreamId,
       sessionIdentifier: sessionIdentifier,

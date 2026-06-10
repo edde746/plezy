@@ -85,6 +85,31 @@ class WatchTogetherPlaybackNavigationException implements Exception {
   String toString() => message;
 }
 
+/// Series (keyed by grandparent) or standalone-item key under
+/// [SettingsService.mediaVersionPreferences].
+String _mediaVersionPreferenceKey(MediaItem metadata) => metadata.grandparentId ?? metadata.id;
+
+/// Saved media-version preference for [metadata], or null when none is
+/// stored. Shared by launch navigation and in-player version switching so
+/// reads and writes can't drift onto different keys.
+Future<int?> savedMediaVersionIndexFor(MediaItem metadata) async {
+  try {
+    final settingsService = await SettingsService.getInstance();
+    return settingsService.read(SettingsService.mediaVersionPreferences)[_mediaVersionPreferenceKey(metadata)];
+  } catch (_) {
+    return null;
+  }
+}
+
+/// Persist [index] as the preferred media version for [metadata]'s series/movie.
+Future<void> saveMediaVersionIndexFor(MediaItem metadata, int index) async {
+  final settingsService = await SettingsService.getInstance();
+  await settingsService.write(SettingsService.mediaVersionPreferences, {
+    ...settingsService.read(SettingsService.mediaVersionPreferences),
+    _mediaVersionPreferenceKey(metadata): index,
+  });
+}
+
 /// Navigates to the VideoPlayerScreen with instant transitions to prevent white flash.
 ///
 /// This utility function provides a consistent way to navigate to the video player
@@ -128,17 +153,7 @@ Future<bool?> navigateToVideoPlayer(
       ? manager.getClient(serverId)
       : null;
 
-  int mediaIndex = selectedMediaIndex ?? 0;
-  if (selectedMediaIndex == null) {
-    try {
-      final settingsService = await SettingsService.getInstance();
-      final seriesKey = metadata.grandparentId ?? metadata.id;
-      final savedPreference = settingsService.read(SettingsService.mediaVersionPreferences)[seriesKey];
-      if (savedPreference != null) {
-        mediaIndex = savedPreference;
-      }
-    } catch (_) {}
-  }
+  final mediaIndex = selectedMediaIndex ?? await savedMediaVersionIndexFor(metadata) ?? 0;
 
   var markedInFlight = false;
   if (!usePushReplacement) {

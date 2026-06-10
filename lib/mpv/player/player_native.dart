@@ -112,17 +112,7 @@ class PlayerNative extends PlayerBase {
       // Subscribe to MPV properties before flipping `initialized` so partial
       // failures don't leave us in a half-initialized state that the memoized
       // future would falsely treat as ready.
-      await observeProperty('time-pos', 'double');
-      await observeProperty('duration', 'double');
-      await observeProperty('seekable', 'flag');
-      await observeProperty('pause', 'flag');
-      await observeProperty('paused-for-cache', 'flag');
-      await observeProperty('track-list', _nodeFormat);
-      await observeProperty('eof-reached', 'flag');
-      await observeProperty('volume', 'double');
-      await observeProperty('speed', 'double');
-      await observeProperty('aid', 'string');
-      await observeProperty('sid', 'string');
+      await observeCoreProperties(trackListFormat: _nodeFormat);
       await observeProperty('secondary-sid', 'string');
       await observeProperty('demuxer-cache-state', _nodeFormat);
       await observeProperty('audio-device-list', _nodeFormat);
@@ -195,6 +185,14 @@ class PlayerNative extends PlayerBase {
     }
 
     await command(['loadfile', uri, 'replace']);
+
+    // mpv's pause property survives loadfile; in-place reloads pause the old
+    // file before resolving, so explicitly unpause for the replacement. Set
+    // after loadfile so the paused old file never audibly unpauses
+    // pre-replace.
+    if (play) {
+      await setProperty('pause', 'no');
+    }
   }
 
   @override
@@ -295,10 +293,16 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria) async {
+  bool get needsDecoderRefreshAfterDisplaySwitch => Platform.isAndroid;
+
+  @override
+  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {
     if (disposed || !Platform.isIOS) return;
     await _ensureInitialized();
-    await invoke('setDisplayCriteria', {'criteria': _effectiveDisplayCriteria(criteria)?.toJson()});
+    await invoke('setDisplayCriteria', {
+      'criteria': _effectiveDisplayCriteria(criteria)?.toJson(),
+      'extraDelayMs': extraDelayMs,
+    });
   }
 
   @override
