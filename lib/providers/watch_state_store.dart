@@ -2,6 +2,8 @@ import 'dart:async';
 import '../media/ids.dart';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
+import 'package:provider/provider.dart';
 
 import '../media/media_item.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
@@ -146,5 +148,38 @@ class WatchStateStore extends ChangeNotifier with DisposableChangeNotifierMixin 
     _subscription?.cancel();
     _subscription = null;
     super.dispose();
+  }
+}
+
+/// Point-of-use watch-state resolution. All fall back to the item as-is when
+/// no [WatchStateStore] is in the tree (tests, isolated subtrees).
+extension WatchStateResolution on BuildContext {
+  /// Build-time resolution: subscribes this context to the item's effective
+  /// patch, so the widget rebuilds when a newer event lands for it (or an
+  /// ancestor). Use in `build`.
+  MediaItem withFreshWatchState(MediaItem item) {
+    try {
+      final patch = select<WatchStateStore, WatchStatePatch?>((store) => store.patchForItem(item));
+      return WatchStateStore.applyPatch(item, patch);
+    } on ProviderNotFoundException {
+      return item;
+    }
+  }
+
+  /// Point-in-time resolution for handlers and non-build code paths.
+  MediaItem readFreshWatchState(MediaItem item) {
+    try {
+      return read<WatchStateStore>().apply(item);
+    } on ProviderNotFoundException {
+      return item;
+    }
+  }
+
+  List<MediaItem> readFreshWatchStateAll(List<MediaItem> items) {
+    try {
+      return read<WatchStateStore>().applyAll(items);
+    } on ProviderNotFoundException {
+      return items;
+    }
   }
 }

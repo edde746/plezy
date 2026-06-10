@@ -27,6 +27,7 @@ import '../providers/multi_server_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
+import '../providers/watch_state_store.dart';
 import '../widgets/hub_section.dart';
 import '../widgets/app_menu.dart';
 import '../widgets/clickable_cursor.dart';
@@ -2082,7 +2083,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     );
   }
 
-  Widget _buildSmartPlayButton(MediaItem heroItem) {
+  Widget _buildSmartPlayButton(MediaItem rawHeroItem) {
+    // The on-deck snapshot refetches shortly after a watch event; the store
+    // patch bridges the gap so "minutes left" never lags.
+    final heroItem = context.withFreshWatchState(rawHeroItem);
     final hasProgress = heroItem.hasActiveProgress;
     final isTv = PlatformDetector.isTV();
 

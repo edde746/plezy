@@ -58,14 +58,7 @@ class EpisodeCard extends StatefulWidget {
 }
 
 class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<EpisodeCard> {
-  MediaItem _effectiveEpisode(BuildContext context) {
-    try {
-      final patch = context.select<WatchStateStore, WatchStatePatch?>((store) => store.patchForItem(widget.episode));
-      return WatchStateStore.applyPatch(widget.episode, patch);
-    } on ProviderNotFoundException {
-      return widget.episode;
-    }
-  }
+  MediaItem _effectiveEpisode(BuildContext context) => context.withFreshWatchState(widget.episode);
 
   Widget _buildEpisodeMetaRow(BuildContext context, MediaItem episode, List<String> qualityLabels) {
     final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12);

@@ -148,11 +148,7 @@ Future<bool?> navigateToVideoPlayer(
   bool resolveWatchState = true,
 }) async {
   if (resolveWatchState) {
-    try {
-      metadata = context.read<WatchStateStore>().apply(metadata);
-    } on ProviderNotFoundException {
-      // Tests or trees without the store play the snapshot as-is.
-    }
+    metadata = context.readFreshWatchState(metadata);
   }
   final navigator = Navigator.of(context);
   final downloadProvider = context.read<DownloadProvider>();

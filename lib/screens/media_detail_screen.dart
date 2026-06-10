@@ -386,21 +386,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   /// Session-fresh view of [item]: server snapshot + newest watch-state patch.
-  MediaItem _fresh(MediaItem item) {
-    try {
-      return context.read<WatchStateStore>().apply(item);
-    } on ProviderNotFoundException {
-      return item;
-    }
-  }
+  MediaItem _fresh(MediaItem item) => context.readFreshWatchState(item);
 
-  List<MediaItem> _freshAll(List<MediaItem> items) {
-    try {
-      return context.read<WatchStateStore>().applyAll(items);
-    } on ProviderNotFoundException {
-      return items;
-    }
-  }
+  List<MediaItem> _freshAll(List<MediaItem> items) => context.readFreshWatchStateAll(items);
 
   MediaItem _normalizeRefreshedItem(MediaItem item, MediaItem fallback) {
     return _withFallbackLibrary(

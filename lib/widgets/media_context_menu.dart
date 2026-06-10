@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+
+import '../providers/watch_state_store.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
@@ -130,8 +132,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     widget.onListRefresh?.call();
   }
 
-  /// The widget's [item] cast as a [MediaItem]. Returns `null` for playlists.
-  MediaItem? get _mediaItem => widget.item is MediaItem ? widget.item as MediaItem : null;
+  /// The widget's [item] cast as a [MediaItem], resolved against the session
+  /// watch-state store so the offered actions match what the card shows.
+  /// Returns `null` for playlists.
+  MediaItem? get _mediaItem {
+    final item = widget.item;
+    return item is MediaItem ? context.readFreshWatchState(item) : null;
+  }
 
   /// The widget's [item] cast as a [MediaPlaylist]. Returns `null` for media items.
   MediaPlaylist? get _playlist => widget.item is MediaPlaylist ? widget.item as MediaPlaylist : null;

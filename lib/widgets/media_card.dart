@@ -95,23 +95,12 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
   Object _effectiveItem(BuildContext context) {
     final item = widget.item;
-    if (item is! MediaItem) return item;
-    try {
-      final patch = context.select<WatchStateStore, WatchStatePatch?>((store) => store.patchForItem(item));
-      return WatchStateStore.applyPatch(item, patch);
-    } on ProviderNotFoundException {
-      return item;
-    }
+    return item is MediaItem ? context.withFreshWatchState(item) : item;
   }
 
   Object _effectiveItemForAction(BuildContext context) {
     final item = widget.item;
-    if (item is! MediaItem) return item;
-    try {
-      return context.read<WatchStateStore>().apply(item);
-    } on ProviderNotFoundException {
-      return item;
-    }
+    return item is MediaItem ? context.readFreshWatchState(item) : item;
   }
 
   String _buildSemanticLabel(Object item) {

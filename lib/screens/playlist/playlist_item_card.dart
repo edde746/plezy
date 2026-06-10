@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../media/ids.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:provider/provider.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../mixins/context_menu_tap_mixin.dart';
@@ -47,14 +46,7 @@ class PlaylistItemCard extends StatefulWidget {
 }
 
 class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTapMixin<PlaylistItemCard> {
-  MediaItem _effectiveItem(BuildContext context) {
-    try {
-      final patch = context.select<WatchStateStore, WatchStatePatch?>((store) => store.patchForItem(widget.item));
-      return WatchStateStore.applyPatch(widget.item, patch);
-    } on ProviderNotFoundException {
-      return widget.item;
-    }
-  }
+  MediaItem _effectiveItem(BuildContext context) => context.withFreshWatchState(widget.item);
 
   @override
   Widget build(BuildContext context) {
