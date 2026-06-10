@@ -158,7 +158,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     if (PlatformDetector.isMobile(context)) return;
 
     final now = DateTime.now();
-    if (_lastSkipTapTime != null && now.difference(_lastSkipTapTime!).inMilliseconds < 250) {
+    if (_lastSkipTapTime != null && now.difference(_lastSkipTapTime!) < kDoubleTapTimeout) {
       _lastSkipTapTime = null;
       _toggleFullscreen();
       return;
@@ -170,39 +170,36 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   void _handleTapInSkipZone({required bool isForward}) {
     if (_isTouchTapSuppressed) return;
 
-    final now = DateTime.now();
-
     // Cancel any pending single-tap action
     _singleTapTimer?.cancel();
     _singleTapTimer = null;
 
-    // Debounce: ignore taps within 200ms of last skip action
-    // This prevents double-taps from counting as two separate skips
-    if (_lastSkipActionTime != null && now.difference(_lastSkipActionTime!).inMilliseconds < 200) {
+    // While the skip pill is visible, every tap in the same-direction zone
+    // stacks another skip immediately — repeat skips cost one tap, not a
+    // fresh double-tap. A tap in the opposite zone falls through to pairing.
+    if (_showDoubleTapFeedback && _lastDoubleTapWasForward == isForward) {
+      _handleStackingSkip(isForward: isForward);
       return;
     }
 
+    final now = DateTime.now();
     final isDoubleTap =
         _lastSkipTapTime != null &&
-        now.difference(_lastSkipTapTime!).inMilliseconds < 250 &&
+        now.difference(_lastSkipTapTime!) < kDoubleTapTimeout &&
         _lastSkipTapWasForward == isForward;
 
     // Skip ONLY on detected double-tap (no single-tap-to-add behavior)
     if (isDoubleTap) {
-      _lastSkipTapTime = null; // Reset to prevent triple-tap chaining
-
-      if (_showDoubleTapFeedback && _lastDoubleTapWasForward == isForward) {
-        unawaited(_handleStackingSkip(isForward: isForward));
-      } else {
-        unawaited(_handleDoubleTapSkip(isForward: isForward));
-      }
+      _lastSkipTapTime = null;
+      _handleDoubleTapSkip(isForward: isForward);
     } else {
       // First tap - record timestamp and start timer for single-tap action
       _lastSkipTapTime = now;
       _lastSkipTapWasForward = isForward;
 
-      // If no second tap within 250ms, treat as single tap to toggle controls
-      _singleTapTimer = Timer(const Duration(milliseconds: 250), () {
+      // If no second tap within the double-tap window, treat as single tap
+      // to toggle controls
+      _singleTapTimer = Timer(kDoubleTapTimeout, () {
         if (mounted) {
           _toggleControls();
         }
@@ -215,39 +212,37 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
     return renderObject is RenderBox ? renderObject.size : Size.zero;
   }
 
-  /// Handle stacking skip - add to accumulated skip when feedback is active
-  Future<void> _handleStackingSkip({required bool isForward}) async {
+  /// Handle stacking skip - add to accumulated skip when feedback is active.
+  /// Feedback refreshes before the seek is issued: the seek can be slow (a
+  /// transcode restart does a server round-trip) and the pill must react to
+  /// the tap, not to seek completion.
+  void _handleStackingSkip({required bool isForward}) {
     if (!widget.canControl) return;
 
     _accumulatedSkipSeconds += _seekTimeSmall;
-
-    final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
-    await _seekByOffset(delta);
-    if (!mounted) return;
-
-    // Refresh feedback (extends timer, updates display)
     _showSkipFeedback(isForward: isForward);
 
-    _lastSkipActionTime = DateTime.now();
+    final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
+    unawaited(_seekByOffset(delta));
   }
 
-  Future<void> _handleDoubleTapSkip({required bool isForward}) async {
+  void _handleDoubleTapSkip({required bool isForward}) {
     if (!widget.canControl) return;
 
     _accumulatedSkipSeconds = _seekTimeSmall;
-
-    final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
-    await _seekByOffset(delta);
-    if (!mounted) return;
-
     _showSkipFeedback(isForward: isForward);
 
-    _lastSkipActionTime = DateTime.now();
+    final delta = Duration(seconds: isForward ? _seekTimeSmall : -_seekTimeSmall);
+    unawaited(_seekByOffset(delta));
   }
 
   /// Show animated visual feedback for skip gesture
   void _showSkipFeedback({required bool isForward}) {
+    // Cancel BOTH timers: a skip landing during the fade-out window must not
+    // leave the old hide timer pending, or it kills the fresh pill and zeroes
+    // the accumulated count mid-display.
     _feedbackTimer?.cancel();
+    _feedbackHideTimer?.cancel();
 
     _setControlsState(() {
       _lastDoubleTapWasForward = isForward;
@@ -265,7 +260,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
           _doubleTapFeedbackOpacity = 0.0;
         });
 
-        Timer(slowDuration, () {
+        _feedbackHideTimer = Timer(slowDuration, () {
           if (mounted) {
             _setControlsState(() {
               _showDoubleTapFeedback = false;
@@ -291,7 +286,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
         _toggleControls();
       }
 
-      final bool isDoubleClick = _lastSkipTapTime != null && now.difference(_lastSkipTapTime!).inMilliseconds < 250;
+      final bool isDoubleClick = _lastSkipTapTime != null && now.difference(_lastSkipTapTime!) < kDoubleTapTimeout;
 
       if (isDoubleClick) {
         _lastSkipTapTime = null;

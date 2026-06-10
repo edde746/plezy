@@ -374,7 +374,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Custom tap detection state (more reliable than Flutter's onDoubleTap)
   DateTime? _lastSkipTapTime;
   bool _lastSkipTapWasForward = true;
-  DateTime? _lastSkipActionTime; // Debounce: prevents double-tap counting as 2 skips
+  Timer? _feedbackHideTimer; // Removes the skip pill after its fade-out completes
   Timer? _singleTapTimer; // Timer for delayed single-tap action (toggle controls)
   final TwoFingerDoubleTapTracker _twoFingerDoubleTapTracker = TwoFingerDoubleTapTracker();
   DateTime? _suppressTouchTapUntil;
@@ -536,6 +536,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     widget.chromeController.removeListener(_onChromeChanged);
     widget.hasFirstFrame?.removeListener(_onFirstFrameReady);
     _feedbackTimer?.cancel();
+    _feedbackHideTimer?.cancel();
     _lockIconTimer?.cancel();
     _autoSkipTimer?.cancel();
     _skipButtonDismissTimer?.cancel();
