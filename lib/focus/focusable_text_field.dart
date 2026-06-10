@@ -585,24 +585,6 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     return null;
   }
 
-  Future<void> _showTvKeyboard(BuildContext context) {
-    if (!enabled) return Future.value();
-    return showTvVirtualKeyboard(
-      context: context,
-      controller: controller,
-      hintText: _keyboardHint(decoration),
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      inputFormatters: inputFormatters,
-      obscureText: obscureText,
-      maxLength: maxLength,
-      maxLines: maxLines,
-      onChanged: onChanged,
-      onSubmitted: onSubmitted,
-      onAction: _handleTvKeyboardAction,
-    );
-  }
-
   void _handleTvKeyboardAction() {
     if (onEditingComplete != null) {
       onEditingComplete!();
@@ -776,8 +758,36 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     _suppressTvKeyboardForCurrentFocus = false;
     _suppressTvKeyboardAutoOpen = true;
     _logTvTextInput('Host.openTvKeyboard node=${_installedFocusNode?.debugLabel}');
+    // The dialog outlives input rebuilds (e.g. a search field whose
+    // onNavigateDown appears once results arrive while the keyboard is up),
+    // so only static configuration may be snapshotted here — the callbacks
+    // must resolve against widget.input at invoke time.
+    final input = widget.input;
     unawaited(
-      widget.input._showTvKeyboard(context).whenComplete(() {
+      showTvVirtualKeyboard(
+        context: context,
+        controller: input.controller,
+        hintText: _keyboardHint(input.decoration),
+        keyboardType: input.keyboardType,
+        textInputAction: input.textInputAction,
+        inputFormatters: input.inputFormatters,
+        obscureText: input.obscureText,
+        maxLength: input.maxLength,
+        maxLines: input.maxLines,
+        onChanged: (text) {
+          if (!mounted) return;
+          widget.input.onChanged?.call(text);
+        },
+        onSubmitted: (text) {
+          if (!mounted) return;
+          final current = widget.input;
+          if (current.onSubmitted != null) {
+            current.onSubmitted!(text);
+          } else {
+            current._handleTvKeyboardAction();
+          }
+        },
+      ).whenComplete(() {
         if (!mounted) return;
         _tvKeyboardOpen = false;
         WidgetsBinding.instance.addPostFrameCallback((_) {
