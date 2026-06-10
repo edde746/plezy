@@ -418,6 +418,167 @@ void main() {
       expect(slider.value, 0.0);
       expect(slider.max, 0.0);
     });
+
+    Future<void> pumpScrubSlider(
+      WidgetTester tester, {
+      required List<Duration> seeks,
+      required List<Duration> seekEnds,
+      Duration duration = const Duration(minutes: 10),
+      bool enabled = true,
+      Widget Function(Widget child)? wrap,
+    }) async {
+      Widget slider = SizedBox(
+        width: 400,
+        child: TimelineSlider(
+          position: const Duration(minutes: 1),
+          duration: duration,
+          chapters: const [],
+          chaptersLoaded: true,
+          enabled: enabled,
+          onSeek: seeks.add,
+          onSeekEnd: seekEnds.add,
+        ),
+      );
+      if (wrap != null) slider = wrap(slider);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: Center(child: slider)),
+        ),
+      );
+    }
+
+    testWidgets('touch drag survives tooltip appearance and finalizes once', (tester) async {
+      final seeks = <Duration>[];
+      final seekEnds = <Duration>[];
+      await pumpScrubSlider(tester, seeks: seeks, seekEnds: seekEnds);
+
+      // Down at the center (200/400 → 5min), drag +100px (→ 7.5min). The
+      // first scrub event makes the tooltip appear; the drag must keep
+      // tracking through that rebuild and finalize exactly once.
+      final gesture = await tester.startGesture(tester.getCenter(find.byType(TimelineSlider)));
+      await tester.pump();
+      await gesture.moveBy(const Offset(50, 0));
+      await tester.pump();
+      await gesture.moveBy(const Offset(50, 0));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(seeks, isNotEmpty);
+      expect(seekEnds, hasLength(1));
+      expect(seekEnds.single.inMilliseconds, closeTo(const Duration(minutes: 7, seconds: 30).inMilliseconds, 2000));
+    });
+
+    testWidgets('tap seeks to the tapped position', (tester) async {
+      final seeks = <Duration>[];
+      final seekEnds = <Duration>[];
+      await pumpScrubSlider(tester, seeks: seeks, seekEnds: seekEnds);
+
+      final topLeft = tester.getTopLeft(find.byType(TimelineSlider));
+      final size = tester.getSize(find.byType(TimelineSlider));
+      final gesture = await tester.startGesture(Offset(topLeft.dx + size.width * 0.75, topLeft.dy + size.height / 2));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(seekEnds, hasLength(1));
+      expect(seekEnds.single.inMilliseconds, closeTo(const Duration(minutes: 7, seconds: 30).inMilliseconds, 2000));
+    });
+
+    testWidgets('drag starting on the slider is never stolen by ancestor recognizers', (tester) async {
+      final seeks = <Duration>[];
+      final seekEnds = <Duration>[];
+      var verticalDragUpdates = 0;
+      var longPresses = 0;
+      await pumpScrubSlider(
+        tester,
+        seeks: seeks,
+        seekEnds: seekEnds,
+        wrap: (child) => GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onVerticalDragUpdate: (_) => verticalDragUpdates++,
+          onLongPressStart: (_) => longPresses++,
+          child: child,
+        ),
+      );
+
+      // Press-aim-drag: hold past the long-press deadline, then drag with a
+      // vertical-dominant start. Without the eager claim, the long-press or
+      // the vertical recognizer wins and the scrub is eaten.
+      final gesture = await tester.startGesture(tester.getCenter(find.byType(TimelineSlider)));
+      await tester.pump(const Duration(milliseconds: 600));
+      for (var i = 0; i < 4; i++) {
+        await gesture.moveBy(const Offset(8, 12));
+        await tester.pump();
+      }
+      await gesture.moveBy(const Offset(50, 0));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(seekEnds, hasLength(1));
+      expect(verticalDragUpdates, 0);
+      expect(longPresses, 0);
+    });
+
+    testWidgets('ignores input when disabled', (tester) async {
+      final seeks = <Duration>[];
+      final seekEnds = <Duration>[];
+      await pumpScrubSlider(tester, seeks: seeks, seekEnds: seekEnds, enabled: false);
+
+      final gesture = await tester.startGesture(tester.getCenter(find.byType(TimelineSlider)));
+      await tester.pump();
+      await gesture.moveBy(const Offset(50, 0));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(seeks, isEmpty);
+      expect(seekEnds, isEmpty);
+    });
+
+    testWidgets('ignores input when duration is unknown', (tester) async {
+      final seeks = <Duration>[];
+      final seekEnds = <Duration>[];
+      await pumpScrubSlider(tester, seeks: seeks, seekEnds: seekEnds, duration: Duration.zero);
+
+      final gesture = await tester.startGesture(tester.getCenter(find.byType(TimelineSlider)));
+      await tester.pump();
+      await gesture.moveBy(const Offset(50, 0));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(seeks, isEmpty);
+      expect(seekEnds, isEmpty);
+    });
+
+    testWidgets('second finger is ignored mid-drag', (tester) async {
+      final seeks = <Duration>[];
+      final seekEnds = <Duration>[];
+      await pumpScrubSlider(tester, seeks: seeks, seekEnds: seekEnds);
+
+      final center = tester.getCenter(find.byType(TimelineSlider));
+      final first = await tester.startGesture(center);
+      await tester.pump();
+      final seeksAfterDown = seeks.length;
+
+      final second = await tester.startGesture(center + const Offset(100, 0));
+      await tester.pump();
+      await second.moveBy(const Offset(-80, 0));
+      await tester.pump();
+      expect(seeks.length, seeksAfterDown, reason: 'second pointer must not drive the scrub');
+
+      await first.moveBy(const Offset(40, 0));
+      await tester.pump();
+      await first.up();
+      await second.up();
+      await tester.pump();
+
+      // 240/400 of 10min → 6min: follows the first pointer only.
+      expect(seekEnds, hasLength(1));
+      expect(seekEnds.single.inMilliseconds, closeTo(const Duration(minutes: 6).inMilliseconds, 2000));
+    });
   });
 
   group('SyncOffsetControl', () {

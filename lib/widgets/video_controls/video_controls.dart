@@ -541,6 +541,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     _skipButtonDismissTimer?.cancel();
     _singleTapTimer?.cancel();
     _seekThrottle.cancel();
+    // A player exit mid-scrub must not leak the hold into the route teardown.
+    widget.chromeController.release(PlayerChromeHold.scrub, notify: false, restartAutoHide: false);
     _playingSubscription?.cancel();
     _completedSubscription?.cancel();
     _positionSubscription?.cancel();

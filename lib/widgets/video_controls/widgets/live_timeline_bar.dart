@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show DragStartBehavior;
 import 'package:flutter/material.dart';
 
 import '../../../models/livetv_capture_buffer.dart';
@@ -5,6 +6,7 @@ import '../../../mpv/mpv.dart';
 import '../../../focus/focusable_wrapper.dart';
 import '../../../utils/formatters.dart';
 import '../../clickable_cursor.dart';
+import '../helpers/eager_horizontal_drag_recognizer.dart';
 
 /// Timeline bar for live TV time-shift.
 ///
@@ -137,11 +139,28 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
         builder: (context) {
           return ClickableCursor(
             enabled: widget.enabled,
-            child: GestureDetector(
-              onHorizontalDragStart: widget.enabled ? (_) => _onDragStart() : null,
-              onHorizontalDragUpdate: widget.enabled ? (details) => _onDragUpdate(details, _widthOf(context)) : null,
-              onHorizontalDragEnd: widget.enabled ? (_) => _onDragEnd() : null,
-              onTapUp: widget.enabled ? (details) => _onTap(details, _widthOf(context)) : null,
+            // Eager claim: a touch that lands on the scrubber belongs to it
+            // from pointer-down, so ancestor recognizers can't steal the drag
+            // (#1302). A plain tap is onStart+onEnd, which seeks to the
+            // tapped position.
+            child: RawGestureDetector(
+              behavior: HitTestBehavior.opaque,
+              gestures: widget.enabled
+                  ? <Type, GestureRecognizerFactory>{
+                      EagerHorizontalDragGestureRecognizer:
+                          GestureRecognizerFactoryWithHandlers<EagerHorizontalDragGestureRecognizer>(
+                            () =>
+                                EagerHorizontalDragGestureRecognizer(debugOwner: this)
+                                  ..dragStartBehavior = DragStartBehavior.down,
+                            (instance) {
+                              instance.onStart = (details) => _onDragStart(details, _widthOf(context));
+                              instance.onUpdate = (details) => _onDragUpdate(details, _widthOf(context));
+                              instance.onEnd = (_) => _onDragEnd();
+                              instance.onCancel = _onDragEnd;
+                            },
+                          ),
+                    }
+                  : const <Type, GestureRecognizerFactory>{},
               child: SizedBox(
                 width: double.infinity,
                 height: 24,
@@ -154,31 +173,32 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
     );
   }
 
-  void _onDragStart() {
+  void _onDragStart(DragStartDetails details, double width) {
     setState(() {
       _isDragging = true;
       _dragPositionEpoch = _currentEpoch(widget.player.state.position);
     });
+    _applyDrag(details.localPosition.dx, width);
   }
 
   void _onDragUpdate(DragUpdateDetails details, double width) {
+    if (!_isDragging) return;
+    _applyDrag(details.localPosition.dx, width);
+  }
+
+  void _applyDrag(double dx, double width) {
     if (width <= 0) return;
-    final fraction = (details.localPosition.dx / width).clamp(0.0, 1.0);
+    final fraction = (dx / width).clamp(0.0, 1.0);
     setState(() {
       _dragPositionEpoch = _fractionToEpoch(fraction);
     });
   }
 
+  /// Shared by onEnd and onCancel so an interrupted drag still finalizes.
   void _onDragEnd() {
+    if (!_isDragging) return;
     final target = _dragPositionEpoch;
     setState(() => _isDragging = false);
-    widget.onSeekEnd?.call(target);
-  }
-
-  void _onTap(TapUpDetails details, double width) {
-    if (width <= 0) return;
-    final fraction = (details.localPosition.dx / width).clamp(0.0, 1.0);
-    final target = _fractionToEpoch(fraction);
     widget.onSeekEnd?.call(target);
   }
 }

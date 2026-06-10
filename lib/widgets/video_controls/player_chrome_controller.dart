@@ -5,7 +5,7 @@ import 'package:flutter/material.dart'
     show BuildContext, ListenableBuilder, MouseRegion, StatelessWidget, SystemMouseCursors, Widget;
 
 /// Reasons that keep the video-player chrome visible and suppress auto-hide.
-enum PlayerChromeHold { pip, contentStrip, promptInteraction }
+enum PlayerChromeHold { pip, contentStrip, promptInteraction, scrub }
 
 /// Focus target to request after chrome has rebuilt visible controls.
 enum PlayerChromeFocusTarget { playPause, timeline }

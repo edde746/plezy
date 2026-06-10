@@ -89,6 +89,9 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
 
   /// Throttled seek for timeline slider - executes immediately then throttles to 200ms
   void _throttledSeek(Duration position) {
+    // Hold before the transcoding early-return so a slow scrub never loses
+    // the controls to auto-hide mid-drag (idempotent while held).
+    widget.chromeController.hold(PlayerChromeHold.scrub);
     if (widget.isTranscoding) return;
     _seekThrottle([position]);
   }
@@ -97,6 +100,7 @@ extension _PlexVideoControlsPlaybackInputMethods on _PlexVideoControlsState {
   void _finalizeSeek(Duration position) {
     _seekThrottle.cancel();
     unawaited(_seekToPosition(position));
+    widget.chromeController.release(PlayerChromeHold.scrub);
   }
 
   bool get _isTouchTapSuppressed {
