@@ -60,9 +60,7 @@ class EpisodeCard extends StatefulWidget {
 class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<EpisodeCard> {
   MediaItem _effectiveEpisode(BuildContext context) {
     try {
-      final patch = context.select<WatchStateStore, WatchStatePatch?>(
-        (provider) => provider.patchForGlobalKey(widget.episode.globalKey),
-      );
+      final patch = context.select<WatchStateStore, WatchStatePatch?>((store) => store.patchForItem(widget.episode));
       return WatchStateStore.applyPatch(widget.episode, patch);
     } on ProviderNotFoundException {
       return widget.episode;

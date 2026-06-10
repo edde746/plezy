@@ -10,6 +10,7 @@ import '../mpv/mpv.dart';
 import '../models/transcode_quality_preset.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/watch_state_store.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
 import '../services/offline_watch_sync_service.dart';
@@ -127,6 +128,9 @@ Future<void> saveMediaVersionIndexFor(MediaItem metadata, int index) async {
 /// - [usePushReplacement]: If true, replaces current route instead of pushing;
 ///   useful for episode-to-episode navigation. Defaults to false.
 /// - [isOffline]: If true, plays from downloaded content without requiring server connection.
+/// - [resolveWatchState]: Resolve [metadata] through [WatchStateStore] so the
+///   resume offset/watched flag are session-fresh even when the caller holds a
+///   stale list snapshot. Pass false for explicit intents like play-from-start.
 ///
 /// Returns a Future that completes with a boolean indicating whether the content
 /// was watched, or null if navigation was cancelled.
@@ -141,7 +145,15 @@ Future<bool?> navigateToVideoPlayer(
   TranscodeQualityPreset? selectedQualityPreset,
   bool usePushReplacement = false,
   bool isOffline = false,
+  bool resolveWatchState = true,
 }) async {
+  if (resolveWatchState) {
+    try {
+      metadata = context.read<WatchStateStore>().apply(metadata);
+    } on ProviderNotFoundException {
+      // Tests or trees without the store play the snapshot as-is.
+    }
+  }
   final navigator = Navigator.of(context);
   final downloadProvider = context.read<DownloadProvider>();
   // Use the manager-routed lookup so Jellyfin items don't trip the

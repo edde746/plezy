@@ -49,9 +49,7 @@ class PlaylistItemCard extends StatefulWidget {
 class _PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTapMixin<PlaylistItemCard> {
   MediaItem _effectiveItem(BuildContext context) {
     try {
-      final patch = context.select<WatchStateStore, WatchStatePatch?>(
-        (provider) => provider.patchForGlobalKey(widget.item.globalKey),
-      );
+      final patch = context.select<WatchStateStore, WatchStatePatch?>((store) => store.patchForItem(widget.item));
       return WatchStateStore.applyPatch(widget.item, patch);
     } on ProviderNotFoundException {
       return widget.item;

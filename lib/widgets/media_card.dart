@@ -97,9 +97,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     final item = widget.item;
     if (item is! MediaItem) return item;
     try {
-      final patch = context.select<WatchStateStore, WatchStatePatch?>(
-        (provider) => provider.patchForGlobalKey(item.globalKey),
-      );
+      final patch = context.select<WatchStateStore, WatchStatePatch?>((store) => store.patchForItem(item));
       return WatchStateStore.applyPatch(item, patch);
     } on ProviderNotFoundException {
       return item;

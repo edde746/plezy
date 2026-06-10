@@ -526,7 +526,11 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         case 'play_from_beginning':
           didNavigate = true;
           if (context.mounted) {
-            await navigateToVideoPlayer(context, metadata: mediaItem!.copyWith(viewOffsetMs: 0));
+            await navigateToVideoPlayer(
+              context,
+              metadata: mediaItem!.copyWith(viewOffsetMs: 0),
+              resolveWatchState: false,
+            );
           }
           break;
 
