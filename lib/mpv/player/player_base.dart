@@ -31,6 +31,12 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   @override
   PlayerState get state => _state;
 
+  @override
+  Duration get currentPosition => Duration(milliseconds: _positionMs);
+
+  @override
+  bool get audioPassthroughActive => false;
+
   late final PlayerStreams _streams;
 
   @override

@@ -249,7 +249,16 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> setRate(double rate) async {
+    // mpv cannot scaletempo compressed (spdif) audio and silently keeps
+    // playing at 1x, so suspend passthrough while the rate is not 1.0.
+    _currentRate = rate;
+    if (_passthroughActive && rate != 1.0) {
+      await _applyPassthrough(false);
+    }
     await setProperty('speed', rate.toString());
+    if (_passthroughRequested && !_passthroughActive && rate == 1.0) {
+      await _applyPassthrough(true);
+    }
   }
 
   @override
@@ -312,14 +321,34 @@ class PlayerNative extends PlayerBase {
     await invoke('setLogLevel', {'level': level});
   }
 
+  bool _passthroughRequested = false;
+  bool _passthroughActive = false;
+  double _currentRate = 1.0;
+
+  @override
+  bool get audioPassthroughActive => _passthroughActive;
+
+  /// Codecs the platform can take as a bitstream. On iOS/tvOS compressed
+  /// audio goes through the system renderer, which only handles Dolby
+  /// Digital (Plus); desktop does real device passthrough for the full list.
+  static final String _passthroughCodecs = Platform.isIOS ? 'ac3,eac3' : 'ac3,eac3,dts,dts-hd,truehd';
+
   @override
   Future<void> setAudioPassthrough(bool enabled) async {
-    if (enabled) {
-      await setProperty('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd');
-      await setProperty('audio-exclusive', 'yes');
-    } else {
-      await setProperty('audio-spdif', '');
-      await setProperty('audio-exclusive', 'no');
+    _passthroughRequested = enabled;
+    // Deferred until the rate returns to 1.0 (see setRate).
+    if (enabled && _currentRate != 1.0) return;
+    await _applyPassthrough(enabled);
+  }
+
+  Future<void> _applyPassthrough(bool enabled) async {
+    _passthroughActive = enabled;
+    await setProperty('audio-spdif', enabled ? _passthroughCodecs : '');
+    // audio-exclusive redirects coreaudio to coreaudio_exclusive on macOS
+    // (and exclusive WASAPI on Windows); on iOS/tvOS it is set once at
+    // playback start and must not be clobbered here.
+    if (!Platform.isIOS) {
+      await setProperty('audio-exclusive', enabled ? 'yes' : 'no');
     }
   }
 

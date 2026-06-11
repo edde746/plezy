@@ -45,6 +45,20 @@ abstract class Player {
   /// Use these for reactive UI updates.
   PlayerStreams get streams;
 
+  /// Fresh playback position, stored on every native position tick.
+  ///
+  /// [PlayerState.position] is only refreshed at ~4Hz alongside the position
+  /// stream; use this for time-sensitive reads (sync anchors, drift math).
+  /// ExoPlayer's native tick is itself 250ms, which bounds freshness there.
+  Duration get currentPosition;
+
+  /// Whether audio passthrough (bitstream output) is currently active.
+  ///
+  /// [setRate] with a non-1.0 rate tears passthrough down, so callers that
+  /// adjust the rate transiently (e.g. sync micro-corrections) must check
+  /// this first.
+  bool get audioPassthroughActive;
+
   /// Texture ID for Flutter's Texture widget (video rendering).
   ///
   /// This is set by the platform implementation when video
