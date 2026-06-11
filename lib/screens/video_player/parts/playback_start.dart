@@ -210,6 +210,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       if (frameRatePlan == null) return;
       final shouldHoldPlaybackStart = frameRatePlan.holdPlaybackStart;
 
+      // When a Watch Together session is active the sync layer owns the
+      // start: open paused everywhere and let the host coordinate one
+      // simultaneous group start.
+      final wtOwnsStart = _watchTogetherOwnsPlaybackStart();
+      Completer<void>? wtStartupHold;
+
       // Open video through Player
       if (result.videoUrl != null) {
         // Reset first frame flag and frame rate retry counter for new video
@@ -251,7 +257,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           isTranscoding: result.isTranscoding,
         );
 
-        final shouldAutoPlay = !shouldHoldPlaybackStart && (attachesSubsAtOpen || !hasExternalSubs);
+        final shouldAutoPlay = !shouldHoldPlaybackStart && !wtOwnsStart && (attachesSubsAtOpen || !hasExternalSubs);
         frameRatePlan.armStartupRefreshGate(currentPlayer);
 
         // ExoPlayer: attach external subs at open time so it discovers
@@ -276,9 +282,14 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         );
         if (!didOpen || !attempt.isCurrent) return;
 
-        // Attach player to Watch Together session for sync (if in session)
+        // Attach player to Watch Together session for sync (if in session).
+        // With a frame-rate startup gate pending, sync readiness waits for
+        // its release so the group start can't fire mid display switch.
         if (mounted && !_isOfflinePlayback) {
-          _attachToWatchTogetherSession();
+          if (wtOwnsStart && shouldHoldPlaybackStart) {
+            wtStartupHold = Completer<void>();
+          }
+          _attachToWatchTogetherSession(startupHold: wtStartupHold?.future);
           _notifyWatchTogetherMediaChange();
         }
       }
@@ -344,21 +355,31 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           trackManager: _trackManager!,
           externalSubtitles: result.externalSubtitles,
           // When a startup gate below owns the resume, skip this one to
-          // avoid a double-play.
-          shouldResumeAfterSubtitleLoad: () => !shouldHoldPlaybackStart && mounted && player == currentPlayer,
+          // avoid a double-play. Watch Together stays paused for the group
+          // start, so selection is armed through the resume-skipped branch.
+          shouldResumeAfterSubtitleLoad: () =>
+              !shouldHoldPlaybackStart && !wtOwnsStart && mounted && player == currentPlayer,
+          applySelectionWhenResumeSkipped: wtOwnsStart && !shouldHoldPlaybackStart,
         );
 
         await _releaseFrameRateStartupGate(
           currentPlayer: currentPlayer,
           settingsService: settingsService,
           plan: frameRatePlan,
-          resumeAfterStartupGate: (reason) => _resumeAfterFrameRateStartupGate(
+          resumeAfterStartupGate: (reason) => _resumeAfterStartupGateOrYieldToWatchTogether(
             currentPlayer: currentPlayer,
             attachesSubsAtOpen: attachesSubsAtOpen,
             hasExternalSubs: hasExternalSubs,
             reason: reason,
+            wtOwnsStart: wtOwnsStart,
+            wtStartupHold: wtStartupHold,
           ),
         );
+        // Backstop: if the gate never ran its resume path (unmounted race),
+        // don't leave Watch Together readiness held forever.
+        if (wtStartupHold != null && !wtStartupHold.isCompleted) {
+          wtStartupHold.complete();
+        }
       }
     } on PlaybackException catch (e, st) {
       appLogger.w('Playback initialization failed', error: e, stackTrace: st);

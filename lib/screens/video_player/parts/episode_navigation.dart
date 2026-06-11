@@ -253,13 +253,15 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
     final playbackState = context.read<PlaybackStateProvider>();
     final database = context.read<AppDatabase>();
     final serverManager = context.read<MultiServerProvider>().serverManager;
-    // Sync readiness (playerReady/deferredPlay/firstPlay handshake) is
-    // per-item: cycle the Watch Together attachment across item changes, the
-    // same reset the old screen-swap flow got from dispose + re-attach.
-    // Same-item source switches keep the attachment (and readiness) intact.
+    // Cycle the Watch Together attachment across every reload: the reload's
+    // internal pause/open churn must not leak into the sync layer as user
+    // intents. Readiness re-handshakes on re-attach (item changes start a
+    // new media epoch; same-item source switches group-wait while we
+    // reload).
     final watchTogether = _activeWatchTogetherSession();
-    final watchTogetherWasAttached = watchTogether?.syncManager?.hasPlayer ?? false;
-    final cycleWatchTogetherAttachment = watchTogetherWasAttached && isItemChange;
+    final watchTogetherWasAttached = watchTogether?.hasAttachedPlayer ?? false;
+    final cycleWatchTogetherAttachment = watchTogetherWasAttached;
+    final wtOwnsStart = _watchTogetherOwnsPlaybackStart();
 
     if (!isCurrentReload()) return true;
 
@@ -387,7 +389,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         isTranscoding: result.isTranscoding,
         timing: openTiming,
         headers: result.usesLocalMedia ? null : streamHeaders,
-        play: !frameRatePlan.holdPlaybackStart && (attachesSubsAtOpen || !hasExternalSubs),
+        play: !frameRatePlan.holdPlaybackStart && !wtOwnsStart && (attachesSubsAtOpen || !hasExternalSubs),
         externalSubtitlesAtOpen: attachesSubsAtOpen && hasExternalSubs ? result.externalSubtitles : null,
         shouldContinue: isCurrentReload,
         onOpened: () {
@@ -434,8 +436,11 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         trackManager: trackManager,
         externalSubtitles: result.externalSubtitles,
         // Same guard as the start path: don't resume a player a newer flow
-        // owns, and let a pending startup gate own the resume instead.
-        shouldResumeAfterSubtitleLoad: () => !frameRatePlan.holdPlaybackStart && mounted && player == currentPlayer,
+        // owns, and let a pending startup gate (or Watch Together's group
+        // start) own the resume instead.
+        shouldResumeAfterSubtitleLoad: () =>
+            !frameRatePlan.holdPlaybackStart && !wtOwnsStart && mounted && player == currentPlayer,
+        applySelectionWhenResumeSkipped: wtOwnsStart && !frameRatePlan.holdPlaybackStart,
       );
       if (!isCurrentReload()) return true;
 
@@ -443,11 +448,12 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         currentPlayer: currentPlayer,
         settingsService: settingsService,
         plan: frameRatePlan,
-        resumeAfterStartupGate: (reason) => _resumeAfterFrameRateStartupGate(
+        resumeAfterStartupGate: (reason) => _resumeAfterStartupGateOrYieldToWatchTogether(
           currentPlayer: currentPlayer,
           attachesSubsAtOpen: attachesSubsAtOpen,
           hasExternalSubs: hasExternalSubs,
           reason: reason,
+          wtOwnsStart: wtOwnsStart,
         ),
       );
       if (!isCurrentReload()) return true;
@@ -529,14 +535,25 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
       // Restore Watch Together sync on every exit: after a successful item
       // change (readiness re-handshakes for the new item), after a failed
       // reload (the still-playing old item must stay synced), and when the
-      // manager auto-detached itself on a mid-reload remote-action failure.
+      // controller auto-detached itself on a mid-reload player failure.
+      // _currentMetadata is correct on both the success and rollback paths
+      // by the time we get here.
+      final reattachServerId = _currentMetadata.serverId;
       if (watchTogetherWasAttached &&
           watchTogether != null &&
           watchTogether.isInSession &&
           mounted &&
           player == currentPlayer &&
-          !(watchTogether.syncManager?.hasPlayer ?? true)) {
-        watchTogether.attachPlayer(currentPlayer);
+          reattachServerId != null &&
+          !watchTogether.hasAttachedPlayer) {
+        watchTogether.attachPlayer(
+          currentPlayer,
+          ratingKey: _currentMetadata.id,
+          serverId: reattachServerId,
+          mediaTitle: _currentMetadata.displayTitle,
+          hasFirstFrame: _hasFirstFrame.value,
+          remoteSeek: _seekPlayback,
+        );
       }
     }
   }

@@ -1,13 +1,34 @@
 part of '../../video_player_screen.dart';
 
 extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
-  /// Attach player to Watch Together session for playback sync
-  void _attachToWatchTogetherSession() {
+  /// Whether an active Watch Together session owns playback starts: media is
+  /// opened paused and the sync layer coordinates the (group) start.
+  bool _watchTogetherOwnsPlaybackStart() {
+    if (_isOfflinePlayback || widget.isLive) return false;
+    return _activeWatchTogetherSession() != null;
+  }
+
+  /// Attach player to Watch Together session for playback sync.
+  ///
+  /// [startupHold] delays sync readiness until platform startup gates (e.g.
+  /// the Android frame-rate switch) release.
+  void _attachToWatchTogetherSession({Future<void>? startupHold}) {
     try {
       final watchTogether = context.read<WatchTogetherProvider>();
       _watchTogetherProvider = watchTogether; // Store reference for use in dispose
-      if (watchTogether.isInSession && player != null) {
-        watchTogether.attachPlayer(player!);
+      final serverId = _currentMetadata.serverId;
+      if (watchTogether.isInSession && player != null && serverId != null) {
+        watchTogether.attachPlayer(
+          player!,
+          ratingKey: _currentMetadata.id,
+          serverId: serverId,
+          mediaTitle: _currentMetadata.displayTitle,
+          hasFirstFrame: _hasFirstFrame.value,
+          startupHold: startupHold,
+          // Sync-issued seeks ride the screen's seek path so Plex transcode
+          // restarts keep working for out-of-buffer targets.
+          remoteSeek: _seekPlayback,
+        );
         appLogger.d('WatchTogether: Player attached for sync');
 
         // If guest, handle mediaSwitch internally for proper navigation context
@@ -21,12 +42,13 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Detach player from Watch Together session
+  /// Detach player from Watch Together session (the user is leaving the
+  /// player, which ends the shared media epoch).
   void _detachFromWatchTogetherSession() {
     try {
       final watchTogether = _watchTogetherProvider ?? context.read<WatchTogetherProvider>();
       if (watchTogether.isInSession) {
-        watchTogether.detachPlayer();
+        watchTogether.detachPlayer(exiting: true);
         appLogger.d('WatchTogether: Player detached');
       }
       watchTogether.onPlayerMediaSwitched = null; // Always clear player callback

@@ -338,6 +338,8 @@ class _ParticipantNotificationOverlayState extends State<ParticipantNotification
               ParticipantEventType.resumed => t.watchTogether.participantResumed(name: n.event.displayName),
               ParticipantEventType.seeked => t.watchTogether.participantSeeked(name: n.event.displayName),
               ParticipantEventType.buffering => t.watchTogether.participantBuffering(name: n.event.displayName),
+              ParticipantEventType.needsUpdate => t.watchTogether.participantNeedsUpdate(name: n.event.displayName),
+              ParticipantEventType.resumedWithout => t.watchTogether.resumingWithout(name: n.event.displayName),
             };
             return Container(
               key: ValueKey(n.id),
@@ -380,13 +382,20 @@ class SyncingIndicator extends StatelessWidget {
 class WaitingForParticipantsIndicator extends StatelessWidget {
   const WaitingForParticipantsIndicator({super.key});
 
+  static String _label(List<String> names) {
+    if (names.isEmpty) return t.watchTogether.waitingForParticipants;
+    final shown = names.length <= 2 ? names.join(', ') : '${names.take(2).join(', ')} +${names.length - 2}';
+    return t.watchTogether.waitingForName(name: shown);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Selector<WatchTogetherProvider, bool>(
-      selector: (_, provider) => provider.isDeferredPlay,
-      builder: (context, isDeferredPlay, child) {
-        if (!isDeferredPlay) return const SizedBox.shrink();
-        return _StatusPill(tvIcon: Symbols.hourglass_empty_rounded, label: t.watchTogether.waitingForParticipants);
+    return Selector<WatchTogetherProvider, (bool, List<String>)>(
+      selector: (_, provider) => (provider.isWaitingForPeers, provider.waitingOnNames),
+      builder: (context, value, child) {
+        final (isWaiting, names) = value;
+        if (!isWaiting) return const SizedBox.shrink();
+        return _StatusPill(tvIcon: Symbols.hourglass_empty_rounded, label: _label(names));
       },
     );
   }

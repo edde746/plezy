@@ -2895,8 +2895,17 @@ class TranslationsWatchTogetherEn {
 	/// en: '${name} is buffering'
 	String participantBuffering({required Object name}) => '${name} is buffering';
 
+	/// en: '${name} is on an older app version — sync unavailable'
+	String participantNeedsUpdate({required Object name}) => '${name} is on an older app version — sync unavailable';
+
+	/// en: 'Resuming without ${name}'
+	String resumingWithout({required Object name}) => 'Resuming without ${name}';
+
 	/// en: 'Waiting for others to load...'
 	String get waitingForParticipants => 'Waiting for others to load...';
+
+	/// en: 'Waiting for ${name}...'
+	String waitingForName({required Object name}) => 'Waiting for ${name}...';
 
 	/// en: 'Recent Rooms'
 	String get recentRooms => 'Recent Rooms';
@@ -5378,7 +5387,10 @@ extension on Translations {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} seeked',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is buffering',
+			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} is on an older app version — sync unavailable',
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Resuming without ${name}',
 			'watchTogether.waitingForParticipants' => 'Waiting for others to load...',
+			'watchTogether.waitingForName' => ({required Object name}) => 'Waiting for ${name}...',
 			'watchTogether.recentRooms' => 'Recent Rooms',
 			'watchTogether.renameRoom' => 'Rename Room',
 			'watchTogether.removeRoom' => 'Remove',
@@ -5500,11 +5512,11 @@ extension on Translations {
 			'companionRemote.remote.tabRemote' => 'Remote',
 			'companionRemote.remote.tabPlay' => 'Play',
 			'companionRemote.remote.tabMore' => 'More',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Tab Navigation',
 			'companionRemote.remote.tabDiscover' => 'Discover',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabLibraries' => 'Libraries',
 			'companionRemote.remote.tabSearch' => 'Search',
 			'companionRemote.remote.tabDownloads' => 'Downloads',
