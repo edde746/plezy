@@ -622,6 +622,9 @@ class ExoPlayerPlugin :
       when (name) {
         "audio-delay" -> playerCore?.setAudioDelay(value.toDoubleOrNull() ?: 0.0)
         "sub-delay" -> playerCore?.setSubtitleDelay(value.toDoubleOrNull() ?: 0.0)
+        // mpv semantics mirrored on the libass overlay: anchor non-positioned ASS
+        // events to the visible screen (Dart sets 'yes' for cover mode / zoom > 1)
+        "sub-ass-force-margins" -> playerCore?.setAssForceMargins(value == "yes")
       }
     }
 

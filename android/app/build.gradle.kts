@@ -23,24 +23,6 @@ val downloadLibmpv by tasks.registering {
   }
 }
 
-val assVersion = "fp-3"
-val assDir = layout.buildDirectory.dir("libass").get().asFile
-val assAars = listOf("lib_ass-release.aar", "lib_ass_kt-release.aar", "lib_ass_media-release.aar")
-
-val downloadLibass by tasks.registering {
-  val stamp = File(assDir, ".version")
-  outputs.upToDateWhen { stamp.exists() && stamp.readText().trim() == assVersion }
-  doLast {
-    assDir.mkdirs()
-    val baseUrl = "https://github.com/edde746/libass-android/releases/download/$assVersion"
-    assAars.forEach { name ->
-      val dest = File(assDir, name)
-      exec { commandLine("curl", "-sfL", "$baseUrl/$name", "-o", dest.absolutePath) }
-    }
-    stamp.writeText(assVersion)
-  }
-}
-
 val doviVersion = "2.3.1"
 val doviDir = layout.buildDirectory.dir("libdovi").get().asFile
 val doviAbis = mapOf(
@@ -160,10 +142,9 @@ tasks.matching { it.name.contains("CMake") || it.name.contains("externalNative")
   dependsOn(downloadLibdovi)
 }
 
-// Download libmpv and libass AARs before compilation
+// Download the libmpv AAR before compilation
 tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.configureEach {
   dependsOn(downloadLibmpv)
-  dependsOn(downloadLibass)
 }
 
 dependencies {
@@ -186,8 +167,13 @@ dependencies {
   // FFmpeg audio decoder for unsupported codecs (ALAC, DTS, TrueHD, etc.)
   implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
 
-  // libass-android for ASS/SSA subtitle rendering
-  assAars.forEach { implementation(files(File(assDir, it))) }
+  // libass ASS/SSA subtitle rendering: optimized native core (libass.so +
+  // prefab headers) from the edde746/libass-android fork's releases; Kotlin/JNI
+  // bindings + Media3 glue live in the android/libass module. -PlocalAssCore
+  // swaps in a mavenLocal()-published core (0.4.0-local) for native A/B tests.
+  val assCoreVersion = if (project.hasProperty("localAssCore")) "0.4.0-local" else "0.4.1-plezy.1"
+  implementation("io.github.peerless2012:ass:$assCoreVersion@aar")
+  implementation(project(":libass"))
 
   testImplementation("junit:junit:4.13.2")
 }
