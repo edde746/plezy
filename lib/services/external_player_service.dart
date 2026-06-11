@@ -131,11 +131,12 @@ class ExternalPlayerService {
     MediaItem? metadata,
   }) async {
     try {
+      final packages = player.id == 'system_default' ? const <String>[] : KnownPlayers.androidPackageCandidates(player);
       final result = await _externalPlayerChannel.invokeMapMethod<String, Object?>('openVideo', {
         'filePath': url,
         if (metadata?.title?.trim().isNotEmpty == true) 'title': metadata!.title!.trim(),
         if ((metadata?.viewOffsetMs ?? 0) > 0) 'startPositionMs': metadata!.viewOffsetMs,
-        if (player.id != 'system_default') 'package': _getAndroidPackage(player),
+        if (packages.isNotEmpty) 'packages': packages,
       });
       return _ExternalPlayerLaunchResult.fromMap(result);
     } on PlatformException catch (e) {
@@ -265,19 +266,4 @@ class ExternalPlayerService {
   }
 
   static int? _positive(int? value) => value != null && value > 0 ? value : null;
-
-  /// Map known player IDs to their Android package names.
-  static String? _getAndroidPackage(ExternalPlayer player) {
-    const packageMap = {
-      'vlc': 'org.videolan.vlc',
-      'mpv': 'is.xyz.mpv',
-      'mx_player': 'com.mxtech.videoplayer.ad',
-      'just_player': 'com.brouken.player',
-    };
-    // Known players
-    if (packageMap.containsKey(player.id)) return packageMap[player.id];
-    // Custom command-type players use the value as package name on Android
-    if (player.isCustom && player.customType == CustomPlayerType.command) return player.customValue;
-    return null;
-  }
 }
