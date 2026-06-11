@@ -23,6 +23,24 @@ val downloadLibmpv by tasks.registering {
   }
 }
 
+// Extract libc++_shared.so from the libmpv AAR so the app source set can package
+// it with top merge priority (see packaging { jniLibs } and sourceSets below).
+val extractMpvLibcxx by tasks.registering {
+  dependsOn(downloadLibmpv)
+  val aar = File(mpvDir, mpvAar)
+  val outDir = File(mpvDir, "libcxx")
+  inputs.file(aar)
+  outputs.dir(outDir)
+  doLast {
+    outDir.deleteRecursively() // drop stale ABIs from a previous AAR version
+    outDir.mkdirs()
+    exec {
+      commandLine("unzip", "-q", "-o", aar.absolutePath,
+        "jni/*/libc++_shared.so", "-d", outDir.absolutePath)
+    }
+  }
+}
+
 val doviVersion = "2.3.1"
 val doviDir = layout.buildDirectory.dir("libdovi").get().asFile
 val doviAbis = mapOf(
@@ -127,8 +145,27 @@ android {
 
   packaging {
     jniLibs {
-      // Resolve conflict between libass-android and libmpv native libraries
+      // Three copies of libc++_shared.so reach the merge: the libmpv AAR's
+      // (NDK r29 — exports std::from_chars<float> that libmpv.so needs), the
+      // :libass module's CMake-contributed copy (NDK 28.2 — lacks it), and
+      // peerless2012:ass's bundled copy (also old). pickFirst keeps the merge
+      // from erroring on the duplicates; WHICH copy wins is pinned by the
+      // sourceSets block below: extractMpvLibcxx unpacks the libmpv AAR's copy
+      // into an app jniLibs dir, and PROJECT-scope sources beat sub-projects
+      // and external AARs. libc++ is backward ABI-compatible, so the older-NDK
+      // consumers (libass.so, libasskt.so, ffmpeg decoder, cronet) run fine
+      // against the newer copy.
       pickFirsts.add("lib/*/libc++_shared.so")
+    }
+  }
+
+  sourceSets {
+    getByName("main") {
+      // libc++_shared.so extracted from the libmpv AAR by extractMpvLibcxx.
+      // App source-set jniLibs sit in the PROJECT scope, merged ahead of
+      // subprojects (:libass) and external AARs, so with the pickFirst rule
+      // above this copy deterministically wins regardless of dependency order.
+      jniLibs.srcDir(File(mpvDir, "libcxx/jni"))
     }
   }
 }
@@ -144,7 +181,12 @@ tasks.matching { it.name.contains("CMake") || it.name.contains("externalNative")
 
 // Download the libmpv AAR before compilation
 tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.configureEach {
-  dependsOn(downloadLibmpv)
+  dependsOn(downloadLibmpv, extractMpvLibcxx)
+}
+// merge{Debug,Profile,Release}JniLibFolders snapshot jniLibs source dirs as inputs;
+// Gradle 8 requires an explicit dependency on the producing task.
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders") }.configureEach {
+  dependsOn(extractMpvLibcxx)
 }
 
 dependencies {

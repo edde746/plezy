@@ -10,7 +10,12 @@ plugins {
 android {
   namespace = "com.edde746.plezy.libass"
   compileSdk = 36
-  ndkVersion = "28.2.13676358" // matches flutter.ndkVersion so only one NDK is provisioned
+  // Matches flutter.ndkVersion so only one NDK is provisioned. This module's
+  // CMake build (-DANDROID_STL=c++_shared) contributes NDK 28.2's
+  // libc++_shared.so to packaging, but that copy is NOT what ships: the app
+  // packages the libmpv AAR's newer copy with top merge priority (see
+  // app/build.gradle.kts packaging { jniLibs } + sourceSets).
+  ndkVersion = "28.2.13676358"
 
   defaultConfig {
     minSdk = 21
