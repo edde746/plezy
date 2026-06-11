@@ -1672,6 +1672,12 @@ void main() {
       expect(captured!.queryParameters['SortBy'], 'IsFolder,SortName');
       expect(captured!.queryParameters['SortOrder'], 'Ascending');
       expect(captured!.queryParameters['Fields'], isNot(contains('MediaSources')));
+      // Folder listings use the slim field set: the per-item count fields are
+      // expensive server-side and Overview is never rendered in the tree.
+      expect(captured!.queryParameters['Fields'], isNot(contains('RecursiveItemCount')));
+      expect(captured!.queryParameters['Fields'], isNot(contains('ChildCount')));
+      expect(captured!.queryParameters['Fields'], isNot(contains('Overview')));
+      expect(captured!.queryParameters['Fields'], contains('UserData'));
       expect(items.map((item) => item.id), ['folder-z', 'series-a', 'movie-m', 'track-z']);
       expect(items.first.kind, MediaKind.unknown);
       expect(items.first.raw?['IsFolder'], isTrue);
@@ -1680,6 +1686,7 @@ void main() {
 
     test('fetchFolderChildren pages direct folder contents', () async {
       final starts = <String?>[];
+      final pages = <List<MediaItem>>[];
       final scoped = JellyfinClient.forTesting(
         connection: _conn(),
         httpClient: MockClient((req) async {
@@ -1702,10 +1709,15 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final items = await scoped.fetchFolderChildren('folder-1');
+      final items = await scoped.fetchFolderChildren('folder-1', onPage: pages.add);
 
       expect(starts, ['0', '500']);
       expect(items, hasLength(501));
+      // onPage surfaces accumulated items after intermediate pages only; the
+      // final page is covered by the returned list.
+      expect(pages, hasLength(1));
+      expect(pages.single, hasLength(500));
+      expect(pages.single.first.id, 'child-0');
     });
 
     test('fetchClientSideEpisodeQueue pages past the first 200 episodes', () async {

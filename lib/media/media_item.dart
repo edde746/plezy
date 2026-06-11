@@ -389,6 +389,15 @@ sealed class MediaItem with _$MediaItem {
     return viewCount != null && viewCount! > 0;
   }
 
+  /// Unwatched leaf count for container badges. Falls back to Jellyfin's
+  /// `UserData.UnplayedItemCount` when leaf totals weren't requested
+  /// (e.g. the folder tree's slim field set).
+  int? get unwatchedCount {
+    if (leafCount != null && viewedLeafCount != null) return leafCount! - viewedLeafCount!;
+    final userData = raw?['UserData'];
+    return userData is Map<String, dynamic> ? userData['UnplayedItemCount'] as int? : null;
+  }
+
   /// Copy with the watched flag applied so [isWatched] reflects it for every
   /// kind: containers need their leaf counts patched, not just [viewCount].
   MediaItem withWatchedFlag(bool isWatched) {

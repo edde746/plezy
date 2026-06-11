@@ -33,6 +33,15 @@ const _browseFields = 'RecursiveItemCount,ChildCount,UserData,PremiereDate,Origi
 /// queries because it is the heaviest item field Jellyfin returns.
 const _episodeRowFields = '$_browseFields,MediaSources';
 
+/// Folder-tree field set. The tree renders title/thumb/watch state plus
+/// default dto fields (year, runtime, ratings); it deliberately skips
+/// `RecursiveItemCount`/`ChildCount` — per-item COUNT queries the server
+/// runs for every folder/series row, which made large folder listings very
+/// slow — and `Overview`, which the tree never shows. Jellyfin web's folder
+/// view requests none of them either. The unwatched badge survives via
+/// `UserData.UnplayedItemCount` ([MediaItem.unwatchedCount] fallback).
+const _folderBrowseFields = 'UserData,PremiereDate,OriginalTitle,SortName';
+
 /// Even slimmer set used by [fetchClientSideEpisodeQueue]. Queue rows
 /// only need title, thumbnail (`ImageTags['Primary']`), season/episode
 /// index, and watched state. Title + indices come back without any
@@ -609,13 +618,23 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// direct children of the library/folder with `Recursive=false`. This is
   /// distinct from [fetchLibraryContent], which intentionally recurses through
   /// a library to show metadata groupings like albums, artists, shows, etc.
-  Future<List<MediaItem>> fetchLibraryFolders(String libraryId) => _fetchFolderChildren(libraryId);
+  Future<List<MediaItem>> fetchLibraryFolders(String libraryId, {void Function(List<MediaItem> itemsSoFar)? onPage}) =>
+      _fetchFolderChildren(libraryId, onPage: onPage);
 
   /// Contents of a Jellyfin folder. Kept separate from [fetchChildren] so the
   /// folder tree can use direct-child semantics even for music libraries.
-  Future<List<MediaItem>> fetchFolderChildren(String folderId) => _fetchFolderChildren(folderId);
+  ///
+  /// [onPage] surfaces the accumulated items (server order) after each
+  /// intermediate page so callers can render while pagination continues; it is
+  /// never called for single-page listings or the final page (the returned
+  /// list covers those).
+  Future<List<MediaItem>> fetchFolderChildren(String folderId, {void Function(List<MediaItem> itemsSoFar)? onPage}) =>
+      _fetchFolderChildren(folderId, onPage: onPage);
 
-  Future<List<MediaItem>> _fetchFolderChildren(String parentId) async {
+  Future<List<MediaItem>> _fetchFolderChildren(
+    String parentId, {
+    void Function(List<MediaItem> itemsSoFar)? onPage,
+  }) async {
     final cacheKey = '/Items?ParentId=$parentId&Recursive=false&userId=${connection.userId}';
     if (isOfflineMode) {
       final cached = await cache.get(ServerId(cacheServerId), cacheKey);
@@ -623,6 +642,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     }
 
     final allRaw = <Map<String, dynamic>>[];
+    final mappedSoFar = onPage == null ? null : <MediaItem>[];
     var startIndex = 0;
     int? totalRecordCount;
     while (totalRecordCount == null || startIndex < totalRecordCount) {
@@ -637,7 +657,7 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
           'EnableTotalRecordCount': 'true',
           'SortBy': 'IsFolder,SortName',
           'SortOrder': 'Ascending',
-          'Fields': _browseFields,
+          'Fields': _folderBrowseFields,
           ...jellyfinImageQueryParameters,
         },
       );
@@ -645,12 +665,16 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       final data = response.data;
       final page = _itemsArray(data);
       allRaw.addAll(page);
+      mappedSoFar?.addAll(_mapItems(page));
       if (data is Map<String, dynamic>) {
         final rawTotal = data['TotalRecordCount'];
         if (rawTotal is int) totalRecordCount = rawTotal;
       }
       if (page.isEmpty || page.length < _childrenPageSize) break;
       startIndex += page.length;
+      if (mappedSoFar != null && (totalRecordCount == null || startIndex < totalRecordCount)) {
+        onPage!(List<MediaItem>.unmodifiable(mappedSoFar));
+      }
     }
 
     allRaw.sort((a, b) {

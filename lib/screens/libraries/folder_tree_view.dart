@@ -27,6 +27,7 @@ class FolderTreeView extends StatefulWidget {
   final void Function(String)? onRefresh;
   final FocusNode? firstItemFocusNode;
   final VoidCallback? onNavigateUp;
+  final VoidCallback? onNavigateLeft;
 
   const FolderTreeView({
     super.key,
@@ -36,6 +37,7 @@ class FolderTreeView extends StatefulWidget {
     this.onRefresh,
     this.firstItemFocusNode,
     this.onNavigateUp,
+    this.onNavigateLeft,
   });
 
   @override
@@ -57,6 +59,11 @@ class FolderTreeViewState extends State<FolderTreeView> {
   bool _isLoadingRoot = false;
   String? _errorMessage;
 
+  /// Generation counter for in-flight loads. Jellyfin folder fetches render
+  /// page-by-page via `onPage`; a root reload or deletion refresh bumps the
+  /// epoch so superseded pagination callbacks are dropped.
+  int _loadEpoch = 0;
+
   /// Resolve the Plex folder key from a [MediaItem]'s `raw` map. The key is
   /// a relative URL (e.g. `/library/sections/1/folder?parent=...`) used to
   /// recursively fetch children from [PlexClient.fetchFolderChildren].
@@ -76,7 +83,20 @@ class FolderTreeViewState extends State<FolderTreeView> {
     _loadRootFolders();
   }
 
+  /// Invalidate in-flight loads (epoch bump) and drop their partial results
+  /// so superseded pagination can't leave truncated listings behind.
+  int _supersedeInFlightLoads() {
+    final epoch = ++_loadEpoch;
+    for (final id in _loadingFolders) {
+      _childrenCache.remove(id);
+      _expandedFolders.remove(id);
+    }
+    _loadingFolders.clear();
+    return epoch;
+  }
+
   Future<void> _loadRootFolders() async {
+    final epoch = _supersedeInFlightLoads();
     setState(() {
       _isLoadingRoot = true;
       _errorMessage = null;
@@ -84,9 +104,18 @@ class FolderTreeViewState extends State<FolderTreeView> {
 
     try {
       final client = context.getMediaClientForServer(ServerId(widget.serverId!));
-      final folders = await _fetchRootFolders(client);
+      final folders = await _fetchRootFolders(
+        client,
+        onPage: (items) {
+          if (!mounted || epoch != _loadEpoch) return;
+          setState(() {
+            _rootFolders = items;
+            _isLoadingRoot = false;
+          });
+        },
+      );
 
-      if (!mounted) return;
+      if (!mounted || epoch != _loadEpoch) return;
 
       setState(() {
         _rootFolders = folders;
@@ -95,7 +124,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
 
       appLogger.d('Loaded ${folders.length} root folders');
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || epoch != _loadEpoch) return;
 
       setState(() {
         _errorMessage = mapUnexpectedErrorToMessage(e, context: t.libraries.folders);
@@ -108,8 +137,16 @@ class FolderTreeViewState extends State<FolderTreeView> {
     final folderIdentity = _folderIdentity(folder);
     if (folderIdentity == null) return;
 
-    // Already loading this folder
-    if (_loadingFolders.contains(folderIdentity)) return;
+    // Already loading this folder — re-expand if partial pages are showing
+    // (the user collapsed and re-expanded mid-pagination).
+    if (_loadingFolders.contains(folderIdentity)) {
+      if (_childrenCache.containsKey(folderIdentity)) {
+        setState(() {
+          _expandedFolders.add(folderIdentity);
+        });
+      }
+      return;
+    }
 
     // Already loaded and cached
     if (_childrenCache.containsKey(folderIdentity)) {
@@ -119,29 +156,47 @@ class FolderTreeViewState extends State<FolderTreeView> {
       return;
     }
 
+    final epoch = _loadEpoch;
+    var pageDelivered = false;
     setState(() {
       _loadingFolders.add(folderIdentity);
     });
 
     try {
       final client = context.getMediaClientForServer(ServerId(widget.serverId!));
-      final children = await _fetchFolderChildren(client, folder);
+      final children = await _fetchFolderChildren(
+        client,
+        folder,
+        onPage: (items) {
+          if (!mounted || epoch != _loadEpoch) return;
+          pageDelivered = true;
+          setState(() {
+            _childrenCache[folderIdentity] = items;
+            _expandedFolders.add(folderIdentity);
+          });
+        },
+      );
 
-      if (!mounted) return;
+      if (!mounted || epoch != _loadEpoch) return;
 
       setState(() {
         _childrenCache[folderIdentity] = children;
-        _expandedFolders.add(folderIdentity);
+        // Pages already expanded the folder; don't override a mid-load collapse.
+        if (!pageDelivered) _expandedFolders.add(folderIdentity);
         _loadingFolders.remove(folderIdentity);
       });
 
       appLogger.d('Loaded ${children.length} children for folder: ${folder.title}');
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || epoch != _loadEpoch) return;
 
       final message = mapUnexpectedErrorToMessage(e, context: t.libraries.folders);
       setState(() {
         _loadingFolders.remove(folderIdentity);
+        // Drop partial pages so a retry refetches instead of leaving a
+        // truncated listing that looks complete.
+        _childrenCache.remove(folderIdentity);
+        _expandedFolders.remove(folderIdentity);
       });
 
       if (mounted) {
@@ -160,6 +215,23 @@ class FolderTreeViewState extends State<FolderTreeView> {
     } else {
       _loadFolderChildren(folder);
     }
+  }
+
+  /// Refetch the listing containing a deleted item: the whole tree for root
+  /// items, otherwise just the enclosing folder.
+  void _refreshAfterDeletion(MediaItem? parent) {
+    if (parent == null) {
+      _loadRootFolders();
+      return;
+    }
+    _supersedeInFlightLoads();
+    final folderIdentity = _folderIdentity(parent);
+    if (folderIdentity != null) {
+      setState(() {
+        _childrenCache.remove(folderIdentity);
+      });
+    }
+    _loadFolderChildren(parent);
   }
 
   Future<void> _handleItemTap(MediaItem item) async {
@@ -239,13 +311,20 @@ class FolderTreeViewState extends State<FolderTreeView> {
     return false;
   }
 
-  Future<List<MediaItem>> _fetchRootFolders(MediaServerClient client) {
+  Future<List<MediaItem>> _fetchRootFolders(
+    MediaServerClient client, {
+    void Function(List<MediaItem> itemsSoFar)? onPage,
+  }) {
     if (client is PlexClient) return client.fetchLibraryFolders(widget.libraryKey);
-    if (client is JellyfinClient) return client.fetchLibraryFolders(widget.libraryKey);
+    if (client is JellyfinClient) return client.fetchLibraryFolders(widget.libraryKey, onPage: onPage);
     throw UnsupportedError('Folder browsing is not supported for ${client.backend.id}');
   }
 
-  Future<List<MediaItem>> _fetchFolderChildren(MediaServerClient client, MediaItem folder) {
+  Future<List<MediaItem>> _fetchFolderChildren(
+    MediaServerClient client,
+    MediaItem folder, {
+    void Function(List<MediaItem> itemsSoFar)? onPage,
+  }) {
     if (client is PlexClient) {
       final folderKey = _folderKey(folder);
       if (folderKey == null) return Future.value(const <MediaItem>[]);
@@ -253,30 +332,32 @@ class FolderTreeViewState extends State<FolderTreeView> {
     }
     if (client is JellyfinClient) {
       if (_isJellyfinMediaContainer(folder)) return client.fetchChildren(folder.id);
-      return client.fetchFolderChildren(folder.id);
+      return client.fetchFolderChildren(folder.id, onPage: onPage);
     }
     throw UnsupportedError('Folder browsing is not supported for ${client.backend.id}');
   }
 
-  /// Flatten the visible tree into a list of (item, depth, path) tuples so
-  /// `ListView.builder` can lazy-build only the rows currently on screen.
+  /// Flatten the visible tree into a list of (item, depth, path, parent)
+  /// tuples so `ListView.builder` can lazy-build only the rows currently on
+  /// screen. [parent] is the enclosing folder (null for root items).
   void _flattenTreeItems(
     List<MediaItem> items,
     int depth,
     String parentPath,
-    List<({MediaItem item, int depth, String path})> out,
+    MediaItem? parent,
+    List<({MediaItem item, int depth, String path, MediaItem? parent})> out,
   ) {
     for (int i = 0; i < items.length; i++) {
       final item = items[i];
       final itemPath = parentPath.isEmpty ? '$i' : '$parentPath-$i';
-      out.add((item: item, depth: depth, path: itemPath));
+      out.add((item: item, depth: depth, path: itemPath, parent: parent));
 
       final folderKey = _folderIdentity(item);
       if (_isFolder(item) &&
           folderKey != null &&
           _expandedFolders.contains(folderKey) &&
           _childrenCache.containsKey(folderKey)) {
-        _flattenTreeItems(_childrenCache[folderKey]!, depth + 1, itemPath, out);
+        _flattenTreeItems(_childrenCache[folderKey]!, depth + 1, itemPath, item, out);
       }
     }
   }
@@ -306,8 +387,8 @@ class FolderTreeViewState extends State<FolderTreeView> {
       );
     }
 
-    final flattened = <({MediaItem item, int depth, String path})>[];
-    _flattenTreeItems(_rootFolders, 0, '', flattened);
+    final flattened = <({MediaItem item, int depth, String path, MediaItem? parent})>[];
+    _flattenTreeItems(_rootFolders, 0, '', null, flattened);
 
     return SliverPadding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -324,7 +405,9 @@ class FolderTreeViewState extends State<FolderTreeView> {
           final canPlayFolder = isFolder && _canPlayFolder(item);
 
           return FolderTreeItem(
-            key: ValueKey(entry.path),
+            // Path alone isn't unique enough as identity (the same Plex item
+            // can appear under two folders), so combine it with the item id.
+            key: ValueKey('${entry.path}:${item.id}'),
             item: item,
             depth: entry.depth,
             isFolder: isFolder,
@@ -337,6 +420,9 @@ class FolderTreeViewState extends State<FolderTreeView> {
             onShuffle: canPlayFolder ? () => _handleFolderShuffle(item) : null,
             focusNode: isFirstRootItem ? widget.firstItemFocusNode : null,
             onNavigateUp: isFirstRootItem ? widget.onNavigateUp : null,
+            onNavigateLeft: widget.onNavigateLeft,
+            onRefresh: widget.onRefresh,
+            onListRefresh: () => _refreshAfterDeletion(entry.parent),
           );
         },
       ),

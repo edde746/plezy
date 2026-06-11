@@ -1610,6 +1610,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
           onRefresh: updateItem,
           firstItemFocusNode: firstItemFocusNode,
           onNavigateUp: _navigateToChips,
+          onNavigateLeft: _navigateToSidebar,
         ),
       ];
     }
