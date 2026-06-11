@@ -344,8 +344,17 @@ internal class DvSanitizingVideoRenderer(
   private val log: ((String, String, String) -> Unit)?
 ) : MediaCodecVideoRenderer(builder) {
 
+  private val sanitizer = DvBitstreamSanitizer()
+
   private var stripHdr10PlusSei = false
   private var stripDvRpu = false
+
+  // Sanitize diagnostics — playback-thread only, cumulative for the renderer's lifetime.
+  private var sanitizedSampleCount = 0L
+  private var totalSanitizeTimeUs = 0L
+  private var maxSanitizeTimeUs = 0L
+  private var totalStrippedNals = 0L
+  private var totalStrippedBytes = 0L
 
   override fun onCodecInitialized(
     name: String,
@@ -378,7 +387,25 @@ internal class DvSanitizingVideoRenderer(
     if (stripHdr10PlusSei || stripDvRpu) {
       val data = buffer.data
       if (data != null && data.hasRemaining() && !buffer.isEncrypted) {
-        DvBitstreamSanitizer.sanitize(data, stripHdr10PlusSei, stripDvRpu)
+        val sizeBefore = data.remaining()
+        val startNs = System.nanoTime()
+        val stripped = sanitizer.sanitize(data, stripHdr10PlusSei, stripDvRpu)
+        val elapsedUs = (System.nanoTime() - startNs) / 1_000
+        sanitizedSampleCount++
+        totalSanitizeTimeUs += elapsedUs
+        if (elapsedUs > maxSanitizeTimeUs) maxSanitizeTimeUs = elapsedUs
+        totalStrippedNals += stripped
+        totalStrippedBytes += sizeBefore - data.remaining()
+        if (sanitizedSampleCount <= 3 || sanitizedSampleCount % 500 == 0L) {
+          log?.invoke(
+            "debug",
+            "dv-sanitize",
+            "Sample #$sanitizedSampleCount: ${sizeBefore}B -> ${data.remaining()}B, " +
+              "stripped=$stripped, took=${elapsedUs}us " +
+              "(avg=${totalSanitizeTimeUs / sanitizedSampleCount}us, max=${maxSanitizeTimeUs}us, " +
+              "totalNals=$totalStrippedNals, totalBytes=${totalStrippedBytes}B)"
+          )
+        }
       }
     }
     super.onQueueInputBuffer(buffer)
