@@ -270,7 +270,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
                     focusNode: _titleFocusNode,
                     decoration: pillInputDecoration(
                       context,
-                      hintText: widget.mediaTitle ?? 'Title',
+                      hintText: widget.mediaTitle ?? t.metadataEdit.title,
                       prefixIcon: const Icon(Symbols.search_rounded, size: 20),
                     ),
                     onChanged: _onTitleChanged,
@@ -347,7 +347,7 @@ class _SubtitleSearchSheetState extends State<SubtitleSearchSheet> with Controll
 
         return FocusableListTile(
           focusNode: index == 0 ? _firstResultFocusNode : null,
-          title: Text(result.title ?? result.displayTitle ?? 'Unknown', maxLines: 1, overflow: .ellipsis),
+          title: Text(result.title ?? result.displayTitle ?? t.common.unknown, maxLines: 1, overflow: .ellipsis),
           subtitle: Text(
             result.displayTitle ?? '',
             maxLines: 1,

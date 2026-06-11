@@ -66,6 +66,11 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     if (!mounted) return false;
     if (ModalRoute.of(context)?.isCurrent != true) return false;
 
+    // Any actionable key (keyboard / dpad / controller) cancels an in-progress
+    // auto-skip countdown. Non-consuming — we fall through so the key still
+    // performs its normal action. Single cancel point for keys.
+    if (event.isActionable) _cancelAutoSkipFromUserInteraction();
+
     // When an overlay sheet is open (e.g. subtitle search with text fields),
     // don't consume key events — let text input work normally.
     if (OverlaySheetController.maybeOf(context)?.isOpen ?? false) {
@@ -89,9 +94,9 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         final backResult = handleBackKeyAction(event, () {
           if (PlatformDetector.isTV()) {
             if (_showControls) {
-              if (_isContentStripVisible) {
+              if (widget.chromeController.contentStripVisible) {
                 _desktopControlsKey.currentState?.dismissContentStrip();
-                _setControlsState(() => _isContentStripVisible = false);
+                widget.chromeController.setContentStripVisible(false);
                 _restartHideTimerIfPlaying();
                 return;
               }
@@ -162,6 +167,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
         onZoomReset: widget.onResetVideoZoom,
         currentPositionEpoch: widget.currentPositionEpoch,
         onLiveSeek: widget.onLiveSeek,
+        onLiveSeekBy: widget.onLiveSeekBy,
       );
       if (result == KeyEventResult.handled) {
         _focusNode.requestFocus(); // self-heal focus
@@ -190,9 +196,9 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     final backResult = handleBackKeyAction(event, () {
       if (PlatformDetector.isTV()) {
         if (_showControls) {
-          if (_isContentStripVisible) {
+          if (widget.chromeController.contentStripVisible) {
             _desktopControlsKey.currentState?.dismissContentStrip();
-            _setControlsState(() => _isContentStripVisible = false);
+            widget.chromeController.setContentStripVisible(false);
             _restartHideTimerIfPlaying();
             return;
           }
@@ -315,6 +321,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       onZoomReset: widget.onResetVideoZoom,
       currentPositionEpoch: widget.currentPositionEpoch,
       onLiveSeek: widget.onLiveSeek,
+      onLiveSeekBy: widget.onLiveSeekBy,
       onSeekRequested: widget.onSeekRequested,
     );
     if (!event.logicalKey.isNavigationKey) return result;

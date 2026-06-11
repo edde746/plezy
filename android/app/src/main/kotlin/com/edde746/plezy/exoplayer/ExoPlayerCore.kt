@@ -466,6 +466,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       // Use DefaultRenderersFactory with FFmpeg fallback for unsupported or blocked audio codecs.
       val renderersFactory = PlezyRenderersFactory(activity).apply {
         audioDiagnosticsLogger = { level, prefix, message -> emitLog(level, prefix, message) }
+        videoDiagnosticsLogger = { level, prefix, message -> emitLog(level, prefix, message) }
         shouldBlockDirectAudioOutput = { format -> this@ExoPlayerCore.shouldBlockDirectAudioOutput(format, "sink support") }
         onAudioCapabilitiesChanged = { updateAudioDecoderPolicy("audio capabilities changed") }
         setEnableDecoderFallback(true)

@@ -6,7 +6,7 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     if (!mounted) return;
 
     // Download/offline library mode uses the local downloaded queue instead.
-    if (widget.isOffline) return;
+    if (_offlineLibraryMode) return;
 
     // Skip play queue for live TV (would interfere with tuner session)
     if (widget.isLive) return;
@@ -77,10 +77,12 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     }
   }
 
-  Future<void> _loadAdjacentEpisodes() async {
+  Future<void> _loadAdjacentEpisodes({MediaItem? metadata, _PlaybackAttempt? attempt}) async {
     if (!mounted || widget.isLive) return;
 
-    if (widget.isOffline) {
+    final targetMetadata = metadata ?? _currentMetadata;
+
+    if (_offlineLibraryMode) {
       // Offline mode: find next/previous from downloaded episodes
       _loadAdjacentEpisodesOffline();
       return;
@@ -89,10 +91,10 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
     try {
       final adjacentEpisodes = await _episodeNavigation.loadAdjacentEpisodes(
         context: context,
-        metadata: _currentMetadata,
+        metadata: targetMetadata,
       );
 
-      if (mounted) {
+      if (mounted && _currentMetadata.globalKey == targetMetadata.globalKey && (attempt == null || attempt.isCurrent)) {
         _setPlayerState(() {
           _nextEpisode = adjacentEpisodes.next;
           _previousEpisode = adjacentEpisodes.previous;

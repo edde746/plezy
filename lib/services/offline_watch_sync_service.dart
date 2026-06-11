@@ -583,9 +583,12 @@ class OfflineWatchSyncService extends ChangeNotifier {
           );
         }
 
-        // If progress exceeded threshold, also mark as watched.
+        // If progress exceeded threshold, also mark as watched. On backends
+        // that mark played from the stopped report above (Jellyfin) this only
+        // emits the local watch event — an explicit markWatched would
+        // double-scrobble via the Trakt plugin (#1287).
         if (action.shouldMarkWatched) {
-          await client.markWatched(item);
+          await client.markWatchedFromPlaybackStop(item);
           await TrackerCoordinator.instance.markWatched(item, client);
         }
         break;

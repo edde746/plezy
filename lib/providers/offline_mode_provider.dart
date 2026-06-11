@@ -6,6 +6,15 @@ import 'multi_server_provider.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_mode_source.dart';
 
+enum OfflineModeReason {
+  online,
+  noNetworkConnection,
+  waitingForServerStatus,
+  noKnownVisibleServers,
+  onlyAuthErrorServers,
+  noServerConnection,
+}
+
 /// Tracks offline mode status based on network connectivity and server reachability.
 class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMixin implements OfflineModeSource {
   final MultiServerManager _serverManager;
@@ -41,12 +50,16 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// Whether the app is currently in offline mode
   /// Offline = no network OR (we know servers are unreachable)
   @override
-  bool get isOffline {
-    if (!_hasNetworkConnection) return true;
-    if (!_hasReceivedServerStatus) return false;
-    if (!_hasKnownVisibleServers) return false;
-    if (_hasOnlyAuthErrorServers) return false;
-    return !_hasServerConnection;
+  bool get isOffline =>
+      offlineReason == OfflineModeReason.noNetworkConnection || offlineReason == OfflineModeReason.noServerConnection;
+
+  OfflineModeReason get offlineReason {
+    if (!_hasNetworkConnection) return OfflineModeReason.noNetworkConnection;
+    if (!_hasReceivedServerStatus) return OfflineModeReason.waitingForServerStatus;
+    if (!_hasKnownVisibleServers) return OfflineModeReason.noKnownVisibleServers;
+    if (_hasOnlyAuthErrorServers) return OfflineModeReason.onlyAuthErrorServers;
+    if (!_hasServerConnection) return OfflineModeReason.noServerConnection;
+    return OfflineModeReason.online;
   }
 
   /// Whether there is network connectivity (WiFi, mobile data, etc.)

@@ -16,7 +16,7 @@ mixin SettingsEffectMixin<T extends StatefulWidget> on State<T> {
 
   /// Subscribe to changes of [pref] and run [effect]. Auto-disposed in [dispose].
   void bindEffect<V>(Pref<V> pref, void Function(V value) effect, {bool fireImmediately = true}) {
-    final notifier = SettingsService.instanceOrNull!.listenable(pref);
+    final notifier = SettingsService.instance.listenable(pref);
     void listener() => effect(notifier.value);
     notifier.addListener(listener);
     _settingsEffectDisposers.add(() => notifier.removeListener(listener));
@@ -28,7 +28,7 @@ mixin SettingsEffectMixin<T extends StatefulWidget> on State<T> {
   /// build to refresh on any change. Equivalent to wrapping the widget tree
   /// in a [SettingsBuilder], but lets you keep raw `setState`-style state too.
   void bindRebuild(List<Pref<Object?>> prefs) {
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
     final merged = Listenable.merge(prefs.map(svc.listenableOf).toList(growable: false));
     void listener() {
       if (mounted) setState(() {});

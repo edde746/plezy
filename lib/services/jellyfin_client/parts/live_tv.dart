@@ -86,7 +86,7 @@ mixin _JellyfinLiveTvMethods on MediaServerCacheMixin {
       key: id,
       ratingKey: id,
       guid: null,
-      title: json['Name'] as String? ?? 'Unknown Program',
+      title: json['Name'] as String? ?? t.liveTv.unknownProgram,
       summary: json['Overview'] as String?,
       type: 'episode',
       year: (json['ProductionYear'] as num?)?.toInt(),

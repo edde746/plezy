@@ -118,13 +118,12 @@ void main() {
       expect(state.toServerBoundGlobalKey('rk-1', serverId: ServerId('srv-B')), 'srv-B:rk-1');
     });
 
-    testWidgets('toServerBoundGlobalKey falls back to empty serverId when metadata has none', (tester) async {
+    testWidgets('toServerBoundGlobalKey rejects metadata without a serverId', (tester) async {
       late _ProbeState state;
       await tester.pumpWidget(_Probe(metadata: _meta(), offline: false, onState: (s, _) => state = s));
       await tester.pump();
 
-      // Empty server prefix is the documented fallback for server-less metadata.
-      expect(state.toServerBoundGlobalKey('rk-1'), ':rk-1');
+      expect(() => state.toServerBoundGlobalKey('rk-1'), throwsStateError);
     });
 
     testWidgets('getServerBoundPlexClient returns null in offline mode regardless of providers', (tester) async {

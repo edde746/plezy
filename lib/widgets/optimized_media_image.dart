@@ -353,8 +353,11 @@ class OptimizedMediaImage extends StatelessWidget {
     return _surfacePlaceholder(context, icon: fallbackIcon, iconColor: Colors.white54);
   }
 
-  Widget _buildErrorWidget(BuildContext context, dynamic _) =>
-      _surfacePlaceholder(context, icon: fallbackIcon ?? Symbols.broken_image_rounded, fillParent: true);
+  Widget _buildErrorWidget(BuildContext context, dynamic _) => _surfacePlaceholder(
+    context,
+    icon: fallbackIcon ?? Symbols.broken_image_rounded,
+    fillParent: !_hasKnownDimensions,
+  );
 
   Widget _buildFallback(BuildContext context) =>
       _surfacePlaceholder(context, icon: fallbackIcon ?? Symbols.image_not_supported_rounded);

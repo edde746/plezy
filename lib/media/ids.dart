@@ -11,8 +11,20 @@ library;
 /// Identifies a media server: a Plex `machineIdentifier` or a Jellyfin server
 /// machine id. This is the key under which a [MediaServerClient] is registered
 /// and the left half of a `serverId:ratingKey` global key.
-extension type const ServerId(String value) implements String {}
+extension type const ServerId._(String value) implements String {
+  factory ServerId(String value) {
+    if (value.trim().isEmpty) {
+      throw ArgumentError.value(value, 'value', 'ServerId cannot be empty or blank');
+    }
+    return ServerId._(value);
+  }
+
+  static ServerId? tryParse(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    return ServerId(value);
+  }
+}
 
 /// Wraps a nullable raw id, preserving `null`. Use at boundaries where a
 /// `String?` from a model/storage row crosses into [ServerId]-typed code.
-ServerId? serverIdOrNull(String? value) => value == null ? null : ServerId(value);
+ServerId? serverIdOrNull(String? value) => ServerId.tryParse(value);

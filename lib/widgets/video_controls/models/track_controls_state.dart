@@ -6,6 +6,7 @@ import '../../../media/media_source_info.dart';
 import '../../../models/transcode_quality_preset.dart';
 import '../../../mpv/mpv.dart';
 import '../../../services/shader_service.dart';
+import '../helpers/track_filter_helper.dart';
 
 /// Immutable configuration for track/chapter control widgets.
 class TrackControlsState {
@@ -50,7 +51,7 @@ class TrackControlsState {
   final VoidCallback? onCancelAutoHide;
   final VoidCallback? onStartAutoHide;
   final void Function(String propertyName, int offset)? onSyncOffsetChanged;
-  final String serverId;
+  final String? serverId;
   final ShaderService? shaderService;
   final VoidCallback? onShaderChanged;
   final bool isAmbientLightingEnabled;
@@ -109,7 +110,7 @@ class TrackControlsState {
     this.onCancelAutoHide,
     this.onStartAutoHide,
     this.onSyncOffsetChanged,
-    this.serverId = '',
+    this.serverId,
     this.shaderService,
     this.onShaderChanged,
     this.isAmbientLightingEnabled = false,
@@ -124,4 +125,21 @@ class TrackControlsState {
     this.onSubtitleDownloaded,
     this.subtitleSearchSupported = true,
   });
+
+  /// Source subtitles can only be selected when playback can be re-opened with
+  /// a Plex source subtitle stream id.
+  bool get canUseSourceSubtitles =>
+      isTranscoding && sourceSubtitleTracks.isNotEmpty && onSwitchSubtitleStreamId != null;
+
+  /// External subtitle search needs both a searchable media item and a server
+  /// that can proxy the OpenSubtitles request.
+  bool get canSearchSubtitles =>
+      ratingKey.isNotEmpty && serverId != null && serverId!.isNotEmpty && subtitleSearchSupported;
+
+  /// Whether the track sheet should expose subtitle controls at all. This is
+  /// the single source of truth shared by the toolbar icon and the sheet layout.
+  bool hasSubtitleControls(Tracks? tracks) {
+    final playerSubtitles = tracks?.subtitle ?? const <SubtitleTrack>[];
+    return canUseSourceSubtitles || TrackFilterHelper.hasTracks<SubtitleTrack>(playerSubtitles) || canSearchSubtitles;
+  }
 }

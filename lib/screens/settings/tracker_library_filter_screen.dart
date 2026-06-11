@@ -47,7 +47,7 @@ class TrackerLibraryFilterScreen extends StatelessWidget {
     return SettingsBuilder(
       prefs: [modePref, idsPref],
       builder: (context) {
-        final settings = SettingsService.instanceOrNull!;
+        final settings = SettingsService.instance;
         final mode = settings.read(modePref);
         final selectedIds = settings.read(idsPref).toSet();
         final theme = Theme.of(context);

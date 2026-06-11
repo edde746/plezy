@@ -14,6 +14,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.util.Log
 import android.util.Rational
 import android.view.InputDevice
@@ -187,6 +188,17 @@ class MainActivity : FlutterActivity() {
       "manufacturer" to Build.MANUFACTURER,
       "model" to Build.MODEL
     )
+  }
+
+  /** User-assigned device name (Settings > About > Device name), or null. */
+  private fun getDeviceName(): String? {
+    // The name the user gave the device; also used by Cast/Nearby.
+    val name = Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
+    if (!name.isNullOrBlank()) return name
+    // Fallback: the Bluetooth name usually mirrors the device name. Reading the
+    // settings string needs no BLUETOOTH permission (unlike BluetoothAdapter).
+    val bt = Settings.Secure.getString(contentResolver, "bluetooth_name")
+    return if (!bt.isNullOrBlank()) bt else null
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -427,6 +439,7 @@ class MainActivity : FlutterActivity() {
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "getTvDetection" -> result.success(getAndroidTvDetection())
+        "getDeviceName" -> result.success(getDeviceName())
         else -> result.notImplemented()
       }
     }

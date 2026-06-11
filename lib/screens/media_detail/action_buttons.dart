@@ -383,7 +383,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       final client = _getMediaClientForMetadata(context);
       if (client == null) return;
       await downloadProvider.resumeDownload(globalKey, client);
-      if (mounted) showAppSnackBar(context, 'Download resumed');
+      if (mounted) showAppSnackBar(context, t.downloads.downloadResumed);
       return;
     }
 
@@ -407,10 +407,10 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
     if (progress?.status == DownloadStatus.cancelled) {
       final retry = await showConfirmDialog(
         context,
-        title: 'Cancelled Download',
-        message: 'This download was cancelled. What would you like to do?',
+        title: t.downloads.cancelledDownloadTitle,
+        message: t.downloads.cancelledDownloadMessage,
         cancelText: t.common.delete,
-        confirmText: 'Retry',
+        confirmText: t.common.retry,
       );
 
       if (!retry && mounted) {
@@ -448,7 +448,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
 
       final count = await downloadProvider.queueMissingEpisodes(metadata, client, versionConfig: versionConfig);
       if (mounted) {
-        final message = count > 0 ? t.downloads.episodesQueued(count: count) : 'All episodes already downloaded';
+        final message = count > 0 ? t.downloads.episodesQueued(count: count) : t.downloads.allEpisodesAlreadyDownloaded;
         showAppSnackBar(context, message);
       }
       return;
@@ -582,7 +582,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           return IconButton.filledTonal(
             onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
             icon: const AppIcon(Symbols.pause_circle_outline_rounded, fill: 1),
-            tooltip: 'Resume download',
+            tooltip: t.downloads.resumeDownload,
             iconSize: iconSize,
             style: actionButtonStyle(foregroundColor: Colors.amber, showFocus: showFocus),
           );
@@ -593,7 +593,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           return IconButton.filledTonal(
             onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
             icon: const AppIcon(Symbols.error_outline_rounded, fill: 1),
-            tooltip: 'Retry download',
+            tooltip: t.downloads.retryDownload,
             iconSize: iconSize,
             style: actionButtonStyle(foregroundColor: Colors.red, showFocus: showFocus),
           );
@@ -604,7 +604,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           return IconButton.filledTonal(
             onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),
             icon: const AppIcon(Symbols.cancel_rounded, fill: 1),
-            tooltip: 'Cancelled download',
+            tooltip: t.downloads.cancelledDownload,
             iconSize: iconSize,
             style: actionButtonStyle(foregroundColor: Colors.grey, showFocus: showFocus),
           );
@@ -620,7 +620,10 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             final syncRule = downloadProvider.getSyncRule(ruleKey);
             final isEnabled = syncRule?.enabled ?? true;
             final tooltip = currentFile != null
-                ? '$currentFile (syncing ${t.downloads.keepNUnwatched(count: syncRule?.episodeCount.toString() ?? '?')})'
+                ? t.downloads.syncingFile(
+                    file: currentFile,
+                    status: t.downloads.keepNUnwatched(count: syncRule?.episodeCount.toString() ?? '?'),
+                  )
                 : t.downloads.keepSynced;
 
             return IconButton.filledTonal(
@@ -633,8 +636,8 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
           }
 
           final tooltip = currentFile != null
-              ? 'Downloaded $currentFile - Click to complete'
-              : 'Partially downloaded - Click to complete';
+              ? t.downloads.downloadedFileClickToComplete(file: currentFile)
+              : t.downloads.partialDownloadClickToComplete;
 
           return IconButton.filledTonal(
             onPressed: () => unawaited(_handleDownloadButtonPressed(metadata)),

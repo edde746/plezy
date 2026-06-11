@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/focusable_button.dart';
+import '../../providers/watch_state_store.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../media/media_item.dart';
 import '../../media/media_item_types.dart';
@@ -71,6 +72,8 @@ class FolderTreeItem extends StatelessWidget {
     if (title != null && title.isNotEmpty) return title;
     return item.displayTitle;
   }
+
+  MediaItem _effectiveItem(BuildContext context) => context.withFreshWatchState(item);
 
   String? _dedupeSubtitle(String? subtitle) {
     final value = subtitle?.trim();
@@ -149,7 +152,7 @@ class FolderTreeItem extends StatelessWidget {
 
   Widget _buildMediaRow(BuildContext context) {
     final indentation = depth * 24.0;
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
     final episodePosterMode = svc.read(SettingsService.episodePosterMode);
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
     final showUnwatchedCount = svc.read(SettingsService.showUnwatchedCount);
@@ -271,6 +274,8 @@ class FolderTreeItem extends StatelessWidget {
   }
 
   Widget _buildWatchOverlay(BuildContext context, bool showUnwatchedCount) {
+    // Shadows the field with the session-fresh view; everything below reads it.
+    final item = _effectiveItem(context);
     final hasActiveProgress = item.hasActiveProgress;
 
     return Stack(

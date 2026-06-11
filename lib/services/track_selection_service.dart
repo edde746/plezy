@@ -330,6 +330,8 @@ bool _titlesMatch(String? mpvTitle, String? plexTitle, String? plexDisplayTitle)
   return _titleScore(mpvTitle, plexTitle, plexDisplayTitle) > 0;
 }
 
+int _mediaTrackStreamIndex(int id, int? index) => index ?? id;
+
 /// Priority levels for track selection
 enum TrackSelectionPriority {
   navigation, // Priority 1: User's manual selection from previous episode
@@ -624,7 +626,7 @@ class TrackSelectionService {
 
   /// Select the best audio track based on priority:
   /// Priority 1: Preferred track from navigation
-  /// Priority 2: Plex-selected track from media info
+  /// Priority 2: Server-selected track from media info
   /// Priority 3: Per-media language preference
   /// Priority 4: User profile preferences
   /// Priority 5: Default or first track
@@ -644,19 +646,39 @@ class TrackSelectionService {
       }
     }
 
-    // Priority 2: Check Plex-selected track from media info
-    if (plexMediaInfo != null && availableTracks.isNotEmpty) {
-      final plexSelectedTrack = plexMediaInfo!.audioTracks.where((t) => t.selected).firstOrNull;
+    // Priority 2: Check server-selected track from media info
+    final info = plexMediaInfo;
+    if (info != null && availableTracks.isNotEmpty) {
+      final serverSelectedTrack = info.audioTracks.where((t) => t.selected).firstOrNull;
 
-      if (plexSelectedTrack != null) {
+      if (serverSelectedTrack != null) {
         final matchedMpvTrack = findMpvTrackForPlexAudio(
-          plexSelectedTrack,
+          serverSelectedTrack,
           availableTracks,
-          allPlexTracks: plexMediaInfo!.audioTracks,
+          allPlexTracks: info.audioTracks,
         );
 
         if (matchedMpvTrack != null) {
           return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
+        }
+      } else if (metadata.backend == MediaBackend.jellyfin) {
+        final defaultStreamIndex = info.defaultAudioStreamIndex;
+        final defaultTrack = defaultStreamIndex != null
+            ? info.audioTracks
+                  .where((track) => _mediaTrackStreamIndex(track.id, track.index) == defaultStreamIndex)
+                  .firstOrNull
+            : null;
+
+        if (defaultTrack != null) {
+          final matchedMpvTrack = findMpvTrackForPlexAudio(
+            defaultTrack,
+            availableTracks,
+            allPlexTracks: info.audioTracks,
+          );
+
+          if (matchedMpvTrack != null) {
+            return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
+          }
         }
       }
     }
@@ -726,8 +748,29 @@ class TrackSelectionService {
         if (matchedMpvTrack != null) {
           return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
         }
-      } else if (metadata.backend == MediaBackend.jellyfin && info.defaultSubtitleStreamIndex == -1) {
-        return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
+      } else if (metadata.backend == MediaBackend.jellyfin) {
+        final defaultStreamIndex = info.defaultSubtitleStreamIndex;
+        if (defaultStreamIndex == -1) {
+          return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
+        }
+
+        final defaultTrack = defaultStreamIndex != null && availableTracks.isNotEmpty
+            ? info.subtitleTracks
+                  .where((track) => _mediaTrackStreamIndex(track.id, track.index) == defaultStreamIndex)
+                  .firstOrNull
+            : null;
+
+        if (defaultTrack != null) {
+          final matchedMpvTrack = findMpvTrackForPlexSubtitle(
+            defaultTrack,
+            availableTracks,
+            allPlexTracks: info.subtitleTracks,
+          );
+
+          if (matchedMpvTrack != null) {
+            return TrackSelectionResult(matchedMpvTrack, TrackSelectionPriority.serverSelected);
+          }
+        }
       } else if (metadata.backend == MediaBackend.plex && info.subtitleTracks.isNotEmpty) {
         // Server has subtitle tracks but none selected — trust that decision
         return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);

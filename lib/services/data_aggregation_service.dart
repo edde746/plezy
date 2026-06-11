@@ -84,12 +84,10 @@ class DataAggregationService {
       }).toList();
     }
 
-    // Sort by most recently viewed, falling back to addedAt for unwatched items
-    filteredOnDeck.sort((a, b) {
-      final aTime = a.lastViewedAt ?? a.addedAt ?? 0;
-      final bTime = b.lastViewedAt ?? b.addedAt ?? 0;
-      return bTime.compareTo(aTime); // Descending (most recent first)
-    });
+    // Sort by most recently viewed, falling back to addedAt for unwatched items.
+    // Same key as JellyfinClient's continue-watching merge (MediaItem.recencySortKey)
+    // so per-server and cross-server ordering can't drift apart.
+    filteredOnDeck.sort((a, b) => b.recencySortKey.compareTo(a.recencySortKey));
 
     filteredOnDeck = await _deduplicateContinueWatching(filteredOnDeck);
 
@@ -265,11 +263,12 @@ class DataAggregationService {
       try {
         final serverLibraries = libraries?[serverId];
         final shouldUseGlobalHubs = useGlobalHubs && client.capabilities.richHubs;
+        final hubItemLimit = limit ?? defaultHubPreviewLimit;
         final hubs = shouldUseGlobalHubs
-            ? await client.fetchGlobalHubs(limit: limit ?? 10, includePlaybackHubs: includePlaybackHubs)
+            ? await client.fetchGlobalHubs(limit: hubItemLimit, includePlaybackHubs: includePlaybackHubs)
             : await _fetchLibraryHubsForClient(
                 client,
-                limit: limit ?? 10,
+                limit: hubItemLimit,
                 hiddenLibraryKeys: hiddenLibraryKeys,
                 includePlaybackHubs: includePlaybackHubs,
                 libraries: useGlobalHubs ? serverLibraries : null,

@@ -313,6 +313,73 @@ void main() {
       expect(subtitle.isExternal, isTrue);
       expect(subtitle.sidecarPath, '/Videos/movie-1/movie-1/Subtitles/2/Stream.srt');
     });
+
+    test('media streams map Jellyfin Dolby Vision, HDR, and source default audio', () {
+      final json = {
+        'Id': 'movie-1',
+        'Name': 'Movie',
+        'Type': 'Movie',
+        'MediaSources': [
+          {
+            'Id': 'src-1',
+            'DefaultAudioStreamIndex': 2,
+            'MediaStreams': [
+              {
+                'Index': 0,
+                'Type': 'Video',
+                'Codec': 'hevc',
+                'Width': 3840,
+                'Height': 2160,
+                'VideoRangeType': 'DOVI',
+                'VideoRange': 'HDR',
+                'VideoDoViTitle': 'Dolby Vision Profile 8',
+                'DvProfile': 8,
+                'DvLevel': 6,
+                'DvBlSignalCompatibilityId': 1,
+              },
+              {'Index': 1, 'Type': 'Audio', 'Codec': 'eac3', 'Channels': 6, 'IsDefault': true},
+              {'Index': 2, 'Type': 'Audio', 'Codec': 'aac', 'Channels': 2},
+            ],
+          },
+        ],
+      };
+
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
+      final streams = item.mediaVersions!.single.parts.single.streams;
+      final video = streams.firstWhere((stream) => stream.kind == MediaStreamKind.video);
+      final firstAudio = streams.firstWhere((stream) => stream.index == 1);
+      final selectedAudio = streams.firstWhere((stream) => stream.index == 2);
+
+      expect(video.codec, 'hevc');
+      expect(video.hdr, isTrue);
+      expect(video.dolbyVision, isTrue);
+      expect(video.dolbyVisionProfile, 8);
+      expect(firstAudio.selected, isFalse);
+      expect(selectedAudio.selected, isTrue);
+    });
+
+    test('media streams map Jellyfin HDR without Dolby Vision', () {
+      final json = {
+        'Id': 'movie-1',
+        'Name': 'Movie',
+        'Type': 'Movie',
+        'MediaSources': [
+          {
+            'Id': 'src-1',
+            'MediaStreams': [
+              {'Index': 0, 'Type': 'Video', 'Codec': 'hevc', 'VideoRangeType': 'HDR10', 'VideoRange': 'HDR'},
+            ],
+          },
+        ],
+      };
+
+      final item = JellyfinMappers.mediaItem(json, serverId: ServerId(_serverId), absolutizer: null)!;
+      final video = item.mediaVersions!.single.parts.single.streams.single;
+
+      expect(video.hdr, isTrue);
+      expect(video.dolbyVision, isFalse);
+      expect(video.dolbyVisionProfile, isNull);
+    });
   });
 
   group('JellyfinMappers.library', () {

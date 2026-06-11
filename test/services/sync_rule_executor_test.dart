@@ -110,6 +110,7 @@ void main() {
         queued.add((item: item, client: client));
         return true;
       },
+      isOffline: false,
       force: true,
     );
 
@@ -180,6 +181,7 @@ void main() {
         queued.add(item);
         return true;
       },
+      isOffline: false,
       force: true,
     );
 
@@ -224,6 +226,7 @@ void main() {
       downloads: const {},
       metadata: const {},
       queueSingleDownload: (item, client, {int mediaIndex = 0}) async => true,
+      isOffline: false,
       force: true,
     );
 
@@ -287,6 +290,7 @@ void main() {
         queued.add(item);
         return true;
       },
+      isOffline: false,
       force: true,
     );
 
@@ -336,6 +340,7 @@ void main() {
         queued.add(item);
         return true;
       },
+      isOffline: false,
       force: true,
     );
 

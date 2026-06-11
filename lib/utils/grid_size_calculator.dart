@@ -47,8 +47,12 @@ class GridSizeCalculator {
 
   /// Calculates the number of columns for a given available width.
   ///
-  /// Uses the same formula as Flutter's SliverGridDelegateWithMaxCrossAxisExtent:
-  /// `((crossAxisExtent + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil()`
+  /// Matches Flutter's SliverGridDelegateWithMaxCrossAxisExtent exactly (see
+  /// rendering/sliver_grid.dart), so this navigation column count equals the
+  /// number of columns the grid actually renders. A mismatch makes dpad "down"
+  /// (`index + columnCount`) land diagonally — see issue #1288. Note the spacing
+  /// is added to the denominator only, not the numerator:
+  /// `(crossAxisExtent / (maxCrossAxisExtent + crossAxisSpacing)).ceil()`
   ///
   /// [crossAxisExtent] should come from layout constraints (e.g. `SliverLayoutBuilder`
   /// or `LayoutBuilder`), not from `MediaQuery`, to account for sidebars or other
@@ -58,7 +62,7 @@ class GridSizeCalculator {
     double maxCrossAxisExtent, {
     double crossAxisSpacing = GridLayoutConstants.crossAxisSpacing,
   }) {
-    return ((crossAxisExtent + crossAxisSpacing) / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
+    return (crossAxisExtent / (maxCrossAxisExtent + crossAxisSpacing)).ceil().clamp(1, 100);
   }
 
   static double getCellWidthForColumnCount(

@@ -376,9 +376,12 @@ class MediaServerHttpClient {
   Uri _buildUri(String path, Map<String, dynamic>? queryParameters) {
     final base = baseUrl.endsWith('/') ? baseUrl : '$baseUrl/';
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    final query = MediaServerHttpClient.encodeQueryParameters(queryParameters);
-    final full = query.isEmpty ? '$base$cleanPath' : '$base$cleanPath?$query';
-    return Uri.parse(full);
+    // [path] may already carry a query string (e.g. Plex home hub keys like
+    // `/hubs/home/recentlyAdded?type=2&sectionID=2`). Merge via [_appendQuery] —
+    // the same path used for absolute URLs in [_send] — so extra params join with
+    // `&` instead of producing a malformed double-`?` URL that corrupts the
+    // existing params (e.g. sectionID).
+    return _appendQuery(Uri.parse('$base$cleanPath'), queryParameters);
   }
 
   /// Append query parameters to an already-parsed URI.

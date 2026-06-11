@@ -16,7 +16,7 @@ class ServerActivitiesButton extends StatefulWidget {
   const ServerActivitiesButton({super.key});
 
   @override
-  State<ServerActivitiesButton> createState() => _ServerActivitiesButtonState();
+  State<ServerActivitiesButton> createState() => ServerActivitiesButtonState();
 }
 
 enum _FetchState { loading, loaded, error }
@@ -38,7 +38,7 @@ class _PanelData {
   static const loading = _PanelData(fetchState: _FetchState.loading, results: []);
 }
 
-class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
+class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
   final _buttonKey = GlobalKey();
   OverlayEntry? _overlayEntry;
   final _panelNotifier = ValueNotifier<_PanelData>(_PanelData.loading);
@@ -64,7 +64,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
     _overlayEntry = null;
   }
 
-  void _togglePanel() {
+  void togglePanel() {
     if (_overlayEntry != null) {
       _removeOverlay();
       return;
@@ -343,7 +343,7 @@ class _ServerActivitiesButtonState extends State<ServerActivitiesButton> {
     return IconButton(
       key: _buttonKey,
       icon: const AppIcon(Symbols.monitor_heart_rounded, color: Colors.white),
-      onPressed: _togglePanel,
+      onPressed: togglePanel,
       tooltip: t.serverTasks.title,
     );
   }

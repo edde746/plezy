@@ -116,6 +116,20 @@ class TvDetectionService {
     }
   }
 
+  /// User-assigned Android device name (Settings > About > Device name), or
+  /// null if unavailable. Android only.
+  static Future<String?> getAndroidDeviceName() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      final name = (await _deviceChannel.invokeMethod<String>('getDeviceName'))?.trim();
+      return (name == null || name.isEmpty) ? null : name;
+    } on MissingPluginException {
+      return null;
+    } on PlatformException {
+      return null;
+    }
+  }
+
   /// Update the user force-TV override and recompute the effective flag.
   void setForceTv(bool value) {
     _forceTv = value;

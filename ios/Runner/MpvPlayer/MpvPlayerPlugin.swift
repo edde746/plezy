@@ -72,7 +72,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     case "initialize":
       handleInitialize(result: result)
     case "dispose":
-      handleDispose(result: result)
+      handleDispose(call: call, result: result)
     case "setProperty":
       handleSetProperty(call: call, result: result)
     case "getProperty":
@@ -326,45 +326,27 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
-  private func handleDispose(result: @escaping FlutterResult) {
+  private func handleDispose(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    let args = call.arguments as? [String: Any]
+    let preserveDisplayMode = args?["preserveDisplayMode"] as? Bool ?? false
     DispatchQueue.main.async { [weak self] in
       guard let self = self else { result(nil); return }
+      NSLog("[MpvPlayerPlugin] dispose preserveDisplayMode=%@", preserveDisplayMode.description)
       self.pipController?.teardown()
       self.pipController = nil
       self.autoPipEnabled = false
       self.pendingInlineRestoreAfterPip = false
       self.unregisterSceneActivationObserver()
       self.stopPipTimebaseSync()
-      self.playerCore?.dispose()
+      self.playerCore?.dispose(preserveDisplayCriteria: preserveDisplayMode)
       self.playerCore = nil
       result(nil)
     }
   }
 
-  private func handleSetProperty(call: FlutterMethodCall, result: @escaping FlutterResult) {
-    guard let args = call.arguments as? [String: Any],
-      let name = args["name"] as? String,
-      let value = args["value"] as? String
-    else {
-      result(
-        FlutterError(
-          code: "INVALID_ARGS", message: "Missing 'name' or 'value' argument",
-          details: nil))
-      return
-    }
-
-    guard let core = playerCore else {
-      result(nil)
-      return
-    }
-
-    core.setPropertyAsync(name, value: value) { [weak self] _ in
-      if name == "pause" {
-        self?.pipController?.invalidatePlaybackState()
-        if core.isPipActive == true { self?.syncPipTimebase() }
-      }
-      result(nil)
-    }
+  func didSetPauseProperty(value: String) {
+    pipController?.invalidatePlaybackState()
+    if playerCore?.isPipActive == true { syncPipTimebase() }
   }
 
   private func handleSetDisplayCriteria(call: FlutterMethodCall, result: @escaping FlutterResult) {
@@ -378,10 +360,12 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       return
     }
 
+    let extraDelayMs = int64Value(args["extraDelayMs"]).map { Int(clamping: $0) } ?? 0
     guard let raw = args["criteria"] as? [String: Any] else {
       DispatchQueue.main.async {
-        core.setServerDisplayCriteria(nil)
-        result(nil)
+        core.setServerDisplayCriteriaForPlayback(nil, extraDelayMs: extraDelayMs) {
+          result(nil)
+        }
       }
       return
     }
@@ -398,8 +382,9 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       colorMatrix: stringValue(raw["matrix"])
     )
     DispatchQueue.main.async {
-      core.setServerDisplayCriteria(criteria)
-      result(nil)
+      core.setServerDisplayCriteriaForPlayback(criteria, extraDelayMs: extraDelayMs) {
+        result(nil)
+      }
     }
   }
 

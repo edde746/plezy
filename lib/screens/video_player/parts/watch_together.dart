@@ -36,6 +36,17 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     }
   }
 
+  /// The active Watch Together session, or null when not in one (or the
+  /// provider is unavailable).
+  WatchTogetherProvider? _activeWatchTogetherSession() {
+    try {
+      final watchTogether = _watchTogetherProvider ?? context.read<WatchTogetherProvider>();
+      return watchTogether.isInSession ? watchTogether : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Check if episode navigation controls should be enabled
   /// Returns true if not in Watch Together session, or if user is the host
   bool _canNavigateEpisodes() {
@@ -75,8 +86,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     }
   }
 
-  /// Handle media switch from host (guest only)
-  /// Uses VideoPlayerScreen's context for proper navigation (pushReplacement)
+  /// Handle media switch from host (guest only) using the in-place reload path.
   Future<void> _handlePlayerMediaSwitch(String ratingKey, ServerId serverId, String title) async {
     if (!mounted) return;
 
@@ -102,12 +112,22 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
       return;
     }
 
-    // Detach and dispose current player before switching to avoid sync calls on a disposed instance
-    _isReplacingWithVideo = true;
-    await disposePlayerForNavigation();
-    if (!mounted) return;
+    if (player == null || widget.isLive) {
+      unawaited(_replaceScreenWithPlayer(metadata));
+      return;
+    }
 
-    // Use same navigation as local episode change (pushReplacement from player context)
-    unawaited(navigateToVideoPlayer(context, metadata: metadata, usePushReplacement: true));
+    final handled = await _reloadMediaInPlace(
+      metadata: metadata,
+      selectedMediaIndex: await savedMediaVersionIndexFor(metadata) ?? 0,
+      selectedMediaSourceId: null,
+      qualityPreset: _selectedQualityPreset,
+      preserveCurrentTrackSelection: false,
+      useCurrentAudioStreamSelection: false,
+      reason: 'watch together media switch',
+    );
+    if (!handled && mounted && player == null) {
+      unawaited(_replaceScreenWithPlayer(metadata));
+    }
   }
 }

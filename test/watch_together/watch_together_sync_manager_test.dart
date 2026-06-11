@@ -144,6 +144,54 @@ void main() {
       await player.dispose();
       await peerService.close();
     });
+
+    test('media-switch attachment cycle re-announces readiness and re-arms the initial-play gate', () async {
+      final peerService = _FakeWatchTogetherPeerService(peerId: 'host');
+      final player = _FakePlayer(playing: false, position: const Duration(minutes: 3));
+      final manager = _hostManager(peerService);
+      final deferredStates = <bool>[];
+      manager.onDeferredPlayChanged = deferredStates.add;
+
+      manager.initializeParticipants(['host', 'guest']);
+      manager.attachPlayer(player);
+      peerService.emit(SyncMessage.playerReady(peerId: 'guest', ready: true));
+      await _settle();
+
+      await player.emitPlaying(true);
+      expect(deferredStates, isNot(contains(true)));
+      await player.emitPlaying(false);
+      peerService.broadcasts.clear();
+
+      // In-place media switch: the reload cycles the attachment exactly like
+      // the provider does (re-initialize participants, then re-attach).
+      manager.detachPlayer();
+      expect(
+        peerService.broadcasts.where(
+          (m) => m.type == SyncMessageType.playerReady && m.peerId == 'host' && m.bufferingState == false,
+        ),
+        isNotEmpty,
+      );
+      manager.initializeParticipants(['host', 'guest']);
+      manager.attachPlayer(player);
+
+      // The already-loaded (non-buffering) player re-announces ready for the
+      // new item on attach.
+      expect(
+        peerService.broadcasts.where(
+          (m) => m.type == SyncMessageType.playerReady && m.peerId == 'host' && m.bufferingState == true,
+        ),
+        isNotEmpty,
+      );
+
+      // First play after the switch defers again until the guest is ready.
+      await player.emitPlaying(true);
+      expect(deferredStates, contains(true));
+      expect(player.state.playing, isFalse);
+
+      manager.dispose();
+      await player.dispose();
+      await peerService.close();
+    });
   });
 }
 
@@ -278,7 +326,7 @@ class _FakePlayer implements Player {
   bool get disposed => _disposed;
 
   @override
-  Future<void> dispose() async {
+  Future<void> dispose({bool preserveDisplayMode = false}) async {
     _disposed = true;
     await _playingController.close();
     await _bufferingController.close();

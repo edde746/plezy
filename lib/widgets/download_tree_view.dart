@@ -6,6 +6,7 @@ import '../focus/focusable_wrapper.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
+import '../media/season_title.dart';
 import '../models/download_models.dart';
 import '../utils/dialogs.dart';
 import '../utils/global_key_utils.dart';
@@ -201,7 +202,9 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           if (meta == null) continue;
 
           final episodeNumber = meta.index;
-          final episodeTitle = episodeNumber != null ? 'Episode $episodeNumber - ${meta.title!}' : meta.title!;
+          final episodeTitle = episodeNumber != null
+              ? t.common.episodeNumberTitle(number: episodeNumber, title: meta.title!)
+              : meta.title!;
 
           episodeNodes.add(
             DownloadTreeNode(
@@ -229,7 +232,11 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
             : episodeNodes.map((e) => e.progress).reduce((a, b) => a + b) / episodeNodes.length;
         final seasonStatus = _determineAggregateStatus(episodeNodes.map((e) => e.status).toList());
 
-        final displayTitle = seasonNumber != null ? 'Season $seasonNumber' : seasonTitle;
+        final displayTitle = localizedSeasonLabel(
+          title: firstEpisode?.parentTitle,
+          index: seasonNumber,
+          fallback: seasonTitle,
+        );
 
         seasons.add(
           DownloadTreeNode(

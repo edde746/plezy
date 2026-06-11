@@ -226,13 +226,15 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
   Widget _externalPlayerTile() => SettingsBuilder(
     prefs: [SettingsService.useExternalPlayer, SettingsService.selectedExternalPlayer],
     builder: (context) {
-      final svc = SettingsService.instanceOrNull!;
+      final svc = SettingsService.instance;
       final useExt = svc.read(SettingsService.useExternalPlayer);
       final player = svc.read(SettingsService.selectedExternalPlayer);
       return SettingNavigationTile(
         icon: Symbols.open_in_new_rounded,
         title: t.externalPlayer.title,
-        subtitle: useExt ? player.name : t.externalPlayer.off,
+        subtitle: useExt
+            ? (player.id == 'system_default' ? t.externalPlayer.systemDefault : player.name)
+            : t.externalPlayer.off,
         destinationBuilder: (_) => const ExternalPlayerScreen(),
       );
     },
@@ -280,8 +282,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
       SettingsService.matchContentFrameRate,
     ],
     builder: (context) {
-      final svc = SettingsService.instanceOrNull!;
+      final svc = SettingsService.instance;
       final shouldShow =
+          PlatformDetector.isAppleTV() ||
           (Platform.isWindows &&
               (svc.read(SettingsService.matchRefreshRate) || svc.read(SettingsService.matchDynamicRange))) ||
           (Platform.isAndroid && svc.read(SettingsService.matchContentFrameRate));

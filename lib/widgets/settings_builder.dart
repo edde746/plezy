@@ -7,8 +7,8 @@ import '../services/settings_service.dart';
 /// need to rebuild on change. For reactive reads in build methods, prefer
 /// [SettingValueBuilder] / [SettingsBuilder] so only the dependent subtree rebuilds.
 extension SettingsContextRead on BuildContext {
-  T settingsRead<T>(Pref<T> pref) => SettingsService.instanceOrNull!.read(pref);
-  Future<void> settingsWrite<T>(Pref<T> pref, T value) => SettingsService.instanceOrNull!.write(pref, value);
+  T settingsRead<T>(Pref<T> pref) => SettingsService.instance.read(pref);
+  Future<void> settingsWrite<T>(Pref<T> pref, T value) => SettingsService.instance.write(pref, value);
 }
 
 /// Rebuild [builder] when any of [prefs] changes. Use when a widget's output
@@ -23,7 +23,7 @@ class SettingsBuilder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final svc = SettingsService.instanceOrNull!;
+    final svc = SettingsService.instance;
     return ListenableBuilder(
       listenable: Listenable.merge(prefs.map(svc.listenableOf).toList(growable: false)),
       builder: (context, _) => builder(context),
@@ -44,7 +44,7 @@ class SettingValueBuilder<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<T>(
-      valueListenable: SettingsService.instanceOrNull!.listenable(pref),
+      valueListenable: SettingsService.instance.listenable(pref),
       builder: builder,
       child: child,
     );

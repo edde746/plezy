@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../../i18n/strings.g.dart';
 import '../../../mpv/mpv.dart';
 import '../../../widgets/focusable_list_tile.dart';
 
@@ -8,11 +9,11 @@ class TrackSelectionHelper {
   /// Get the appropriate empty message based on track type
   static String getEmptyMessage<T>() {
     if (T == SubtitleTrack) {
-      return 'No subtitles available';
+      return t.videoControls.noSubtitlesAvailable;
     } else if (T == AudioTrack) {
-      return 'No audio tracks available';
+      return t.videoControls.noAudioTracksAvailable;
     }
-    return 'No tracks available';
+    return t.videoControls.noTracksAvailable;
   }
 
   static Widget buildEmptyState<T>() {
@@ -46,7 +47,7 @@ class TrackSelectionHelper {
     return _buildSelectableTile(
       context: context,
       key: key,
-      label: 'Off',
+      label: t.common.off,
       isSelected: isSelected,
       onTap: onTap,
       focusNode: focusNode,

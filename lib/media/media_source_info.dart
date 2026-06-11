@@ -1,3 +1,4 @@
+import '../i18n/strings.g.dart';
 import '../utils/codec_utils.dart';
 import '../utils/track_label_builder.dart' show TrackLabelBuilder, buildTrackLabel;
 import 'media_display_criteria.dart';
@@ -232,7 +233,7 @@ class MediaChapter {
     return chapters;
   }
 
-  String get label => title ?? 'Chapter ${(index ?? 0) + 1}';
+  String get label => title ?? t.common.chapterNumber(number: (index ?? 0) + 1);
 
   Duration get startTime => Duration(milliseconds: startTimeOffset ?? 0);
   Duration? get endTime => endTimeOffset != null ? Duration(milliseconds: endTimeOffset!) : null;

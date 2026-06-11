@@ -6,7 +6,7 @@ import 'package:plezy/services/video_filter_manager.dart';
 void main() {
   test('zoom scale snaps to whole percentages', () {
     final player = _RecordingPlayer();
-    final manager = VideoFilterManager(player: player, availableVersions: const [], selectedMediaIndex: 0);
+    final manager = VideoFilterManager(player: player);
     addTearDown(manager.dispose);
 
     expect(manager.setZoomScale(1.234), 1.23);
@@ -18,7 +18,7 @@ void main() {
 
   test('zoom scale snaps near 100 percent to exact default', () {
     final player = _RecordingPlayer();
-    final manager = VideoFilterManager(player: player, availableVersions: const [], selectedMediaIndex: 0);
+    final manager = VideoFilterManager(player: player);
     addTearDown(manager.dispose);
 
     manager.setZoomScale(1.5);
@@ -30,7 +30,7 @@ void main() {
 
   test('video zoom property is exact zero at normalized default', () async {
     final player = _RecordingPlayer();
-    final manager = VideoFilterManager(player: player, availableVersions: const [], selectedMediaIndex: 0);
+    final manager = VideoFilterManager(player: player);
     addTearDown(manager.dispose);
 
     expect(VideoFilterManager.videoZoomPropertyForScale(1.00008), 0.0);
@@ -48,13 +48,7 @@ void main() {
 
   test('stretch mode applies the initial player size before a resize event', () async {
     final player = _RecordingPlayer();
-    final manager = VideoFilterManager(
-      player: player,
-      availableVersions: const [],
-      selectedMediaIndex: 0,
-      initialBoxFitMode: 2,
-      initialPlayerSize: const Size(1920, 1080),
-    );
+    final manager = VideoFilterManager(player: player, initialBoxFitMode: 2, initialPlayerSize: const Size(1920, 1080));
     addTearDown(manager.dispose);
 
     await manager.updateVideoFilter();
@@ -72,6 +66,14 @@ class _RecordingPlayer implements Player {
   Future<void> setProperty(String name, String value) async {
     writes.add(MapEntry(name, value));
   }
+
+  @override
+  // ignore: no-empty-block - native-layer call, irrelevant to property recording
+  Future<void> setBoxFitMode(int mode) async {}
+
+  @override
+  // ignore: no-empty-block - native-layer call, irrelevant to property recording
+  Future<void> setVideoZoom(double scale) async {}
 
   @override
   PlayerState get state => const PlayerState();

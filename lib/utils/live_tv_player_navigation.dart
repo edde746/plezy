@@ -9,6 +9,7 @@ import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../models/livetv_channel.dart';
 import '../providers/multi_server_provider.dart';
+import '../screens/video_player/live_tv_session_args.dart';
 import '../screens/video_player_screen.dart';
 import '../services/plex_client.dart';
 import '../utils/app_logger.dart';
@@ -63,16 +64,15 @@ Future<void> navigateToLiveTv(
     settings: const RouteSettings(name: kVideoPlayerRouteName),
     pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
       metadata: placeholder,
-      isLive: true,
-      liveChannelName: channel.displayName,
-      liveStreamUrl: liveStreamUrl,
-      liveChannels: channels,
-      liveCurrentChannelIndex: channels?.indexWhere(
-        (ch) => liveTvChannelScopeKey(ch) == liveTvChannelScopeKey(channel),
+      live: LiveTvSessionArgs(
+        channelName: channel.displayName,
+        streamUrl: liveStreamUrl,
+        channels: channels,
+        currentChannelIndex: channels?.indexWhere((ch) => liveTvChannelScopeKey(ch) == liveTvChannelScopeKey(channel)),
+        dvrKey: dvrKey,
+        client: liveClient,
+        sessionIdentifier: liveSessionIdentifier,
       ),
-      liveDvrKey: dvrKey,
-      liveClient: liveClient,
-      liveSessionIdentifier: liveSessionIdentifier,
     ),
     transitionDuration: Duration.zero,
     reverseTransitionDuration: Duration.zero,

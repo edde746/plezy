@@ -8,7 +8,7 @@ import '../focus/focusable_wrapper.dart';
 import '../mixins/context_menu_tap_mixin.dart';
 import '../models/download_models.dart';
 import '../providers/download_provider.dart';
-import '../providers/watch_state_overlay_provider.dart';
+import '../providers/watch_state_store.dart';
 import 'package:provider/provider.dart';
 
 import '../services/settings_service.dart';
@@ -20,6 +20,7 @@ import '../widgets/download_status_icon.dart';
 import '../widgets/optimized_media_image.dart';
 import '../utils/platform_detector.dart';
 import '../utils/formatters.dart';
+import '../utils/media_quality_labels.dart';
 import '../widgets/media_context_menu.dart';
 import '../widgets/placeholder_container.dart';
 import '../theme/mono_tokens.dart';
@@ -57,47 +58,59 @@ class EpisodeCard extends StatefulWidget {
 }
 
 class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<EpisodeCard> {
-  MediaItem _effectiveEpisode(BuildContext context) {
-    try {
-      final patch = context.select<WatchStateOverlayProvider, WatchStateOverlayPatch?>(
-        (provider) => provider.patchForGlobalKey(widget.episode.globalKey),
-      );
-      return WatchStateOverlayProvider.applyPatch(widget.episode, patch);
-    } on ProviderNotFoundException {
-      return widget.episode;
-    }
-  }
+  MediaItem _effectiveEpisode(BuildContext context) => context.withFreshWatchState(widget.episode);
 
-  Widget _buildEpisodeMetaRow(BuildContext context, MediaItem episode) {
+  Widget _buildEpisodeMetaRow(BuildContext context, MediaItem episode, List<String> qualityLabels) {
     final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 12);
-    final dot = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Text('•', style: mutedStyle),
-    );
-    return Row(
-      children: [
-        if (episode.durationMs != null)
-          Text(formatDurationTimestamp(Duration(milliseconds: episode.durationMs!)), style: mutedStyle),
-        if (episode.originallyAvailableAt != null) ...[
-          dot,
-          Text(formatFullDate(episode.originallyAvailableAt!), style: mutedStyle),
-        ],
-        if (episode.userRating != null && episode.userRating! > 0) ...[
-          dot,
-          const Padding(
-            padding: .only(top: 2),
-            child: Icon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber),
-          ),
-          const SizedBox(width: 2),
-          Text(
-            (episode.userRating! / 2) == (episode.userRating! / 2).truncateToDouble()
-                ? '${(episode.userRating! / 2).toInt()}'
-                : formatRating(episode.userRating! / 2),
-            style: mutedStyle,
-          ),
-        ],
-      ],
-    );
+    final children = <Widget>[];
+
+    void addSeparator() {
+      if (children.isEmpty) return;
+      children.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Text('•', style: mutedStyle),
+        ),
+      );
+    }
+
+    if (episode.durationMs != null) {
+      children.add(Text(formatDurationTimestamp(Duration(milliseconds: episode.durationMs!)), style: mutedStyle));
+    }
+
+    if (episode.originallyAvailableAt != null) {
+      addSeparator();
+      children.add(Text(formatFullDate(episode.originallyAvailableAt!), style: mutedStyle));
+    }
+
+    if (episode.userRating != null && episode.userRating! > 0) {
+      addSeparator();
+      children.add(
+        Row(
+          mainAxisSize: .min,
+          children: [
+            const Padding(
+              padding: .only(top: 2),
+              child: Icon(Symbols.star_rounded, size: 12, fill: 1, color: Colors.amber),
+            ),
+            const SizedBox(width: 2),
+            Text(
+              (episode.userRating! / 2) == (episode.userRating! / 2).truncateToDouble()
+                  ? '${(episode.userRating! / 2).toInt()}'
+                  : formatRating(episode.userRating! / 2),
+              style: mutedStyle,
+            ),
+          ],
+        ),
+      );
+    }
+
+    for (final label in qualityLabels) {
+      addSeparator();
+      children.add(Text(label, style: mutedStyle));
+    }
+
+    return Wrap(crossAxisAlignment: .center, runSpacing: 4, children: children);
   }
 
   @override
@@ -111,6 +124,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
   Widget _buildContent(BuildContext context, {required bool hideSpoilers}) {
     final episode = _effectiveEpisode(context);
     final shouldBlur = hideSpoilers && episode.shouldHideSpoiler;
+    final qualityLabels = buildMediaQualityLabels(episode);
 
     // Hide progress when offline (not tracked)
     final hasProgress =
@@ -326,7 +340,7 @@ class _EpisodeCardState extends State<EpisodeCard> with ContextMenuTapMixin<Epis
                         ],
 
                         const SizedBox(height: 8),
-                        _buildEpisodeMetaRow(context, episode),
+                        _buildEpisodeMetaRow(context, episode, qualityLabels),
                       ],
                     ),
                   ),

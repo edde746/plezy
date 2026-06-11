@@ -3,36 +3,69 @@ part of '../video_controls.dart';
 extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
   void _listenToPosition() {
     _positionSubscription = widget.player.streams.position.listen((position) {
-      if (_markers.isEmpty || !_markersLoaded) {
-        return;
-      }
-
-      MediaMarker? foundMarker;
-      for (final marker in _markers) {
-        if (marker.containsPosition(position)) {
-          foundMarker = marker;
-          break;
-        }
-      }
-
-      if (foundMarker != _currentMarker && mounted) {
-        _updateCurrentMarker(foundMarker);
-      }
+      _syncCurrentMarkerForPosition(position);
     });
+  }
+
+  void _syncCurrentMarkerForCurrentPosition() {
+    _syncCurrentMarkerForPosition(widget.player.state.position);
+  }
+
+  void _syncCurrentMarkerForPosition(Duration position) {
+    if (!_hasRenderedFirstFrame || _markers.isEmpty || !_markersLoaded) {
+      _clearCurrentMarker();
+      return;
+    }
+
+    MediaMarker? foundMarker;
+    for (final marker in _markers) {
+      if (marker.containsPosition(position)) {
+        foundMarker = marker;
+        break;
+      }
+    }
+
+    if (foundMarker != _currentMarker && mounted) {
+      _updateCurrentMarker(foundMarker);
+    }
+  }
+
+  void _clearCurrentMarker() {
+    final hasMarkerState =
+        _currentMarker != null ||
+        _skipButtonDismissed ||
+        _autoSkipTimer != null ||
+        _autoSkipProgress != 0.0 ||
+        _skipButtonDismissTimer != null;
+    if (!hasMarkerState) return;
+
+    if (_currentMarker != null || _skipButtonDismissed) {
+      _setControlsState(() {
+        _currentMarker = null;
+        _skipButtonDismissed = false;
+      });
+    }
+    if (_skipMarkerFocusNode.hasFocus) _skipMarkerFocusNode.unfocus();
+    _cancelAutoSkipTimer();
+    _cancelSkipButtonDismissTimer();
   }
 
   /// Updates the current marker and manages auto-skip/focus behavior.
   void _updateCurrentMarker(MediaMarker? foundMarker) {
+    if (!_hasRenderedFirstFrame) {
+      _clearCurrentMarker();
+      return;
+    }
+
+    if (foundMarker == null) {
+      _clearCurrentMarker();
+      return;
+    }
+
     _setControlsState(() {
       _currentMarker = foundMarker;
       _skipButtonDismissed = false;
     });
-
-    if (foundMarker == null) {
-      _cancelAutoSkipTimer();
-      _cancelSkipButtonDismissTimer();
-      return;
-    }
 
     _startAutoSkipTimer(foundMarker);
 
@@ -53,7 +86,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
   }
 
   Future<void> _skipMarker({bool skipAutoPlayCountdown = false}) async {
-    if (_currentMarker == null) return;
+    if (_currentMarker == null || !_hasRenderedFirstFrame) return;
 
     final marker = _currentMarker!;
     final endTime = marker.endTime;
@@ -83,6 +116,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
 
   void _startAutoSkipTimer(MediaMarker marker) {
     _cancelAutoSkipTimer();
+    if (!_hasRenderedFirstFrame) return;
 
     final shouldAutoSkip = (marker.isCredits && _autoSkipCredits) || (!marker.isCredits && _autoSkipIntro);
 
@@ -112,19 +146,32 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
   }
 
   void _cancelAutoSkipTimer() {
+    final hadTimer = _autoSkipTimer != null;
     _autoSkipTimer?.cancel();
     _autoSkipTimer = null;
-    if (mounted) {
+    if (mounted && (hadTimer || _autoSkipProgress != 0.0)) {
       _setControlsState(() {
         _autoSkipProgress = 0.0;
       });
     }
   }
 
+  bool _cancelAutoSkipFromUserInteraction() {
+    final hadActiveTimer = _autoSkipTimer?.isActive ?? false;
+    if (!hadActiveTimer) return false;
+
+    _cancelAutoSkipTimer();
+    if (_currentMarker != null && !_skipButtonDismissed) {
+      _startSkipButtonDismissTimer();
+    }
+    return true;
+  }
+
   /// Starts/restarts the skip button dismiss timer. When it fires, hides the
   /// button and cancels any active auto-skip countdown.
   void _startSkipButtonDismissTimer() {
     _skipButtonDismissTimer?.cancel();
+    if (!_hasRenderedFirstFrame) return;
     _skipButtonDismissTimer = Timer(const Duration(seconds: 7), () {
       if (!mounted || _currentMarker == null) return;
       _setControlsState(() {
@@ -141,7 +188,7 @@ extension _PlexVideoControlsMarkerMethods on _PlexVideoControlsState {
 
   /// Perform the appropriate skip action based on marker type and next episode availability
   void _performAutoSkip({bool skipAutoPlayCountdown = false}) {
-    if (_currentMarker == null) return;
+    if (_currentMarker == null || !_hasRenderedFirstFrame) return;
     unawaited(_skipMarker(skipAutoPlayCountdown: skipAutoPlayCountdown));
   }
 

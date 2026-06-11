@@ -4,9 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:rate_limiter/rate_limiter.dart';
 
 import '../mpv/mpv.dart';
-import '../mpv/player/platform/player_android.dart';
 
-import '../media/media_version.dart';
 import '../utils/app_logger.dart';
 import 'ambient_lighting_service.dart';
 
@@ -24,8 +22,6 @@ class VideoFilterManager {
   static const double zoomStep = 0.01;
 
   final Player player;
-  final List<MediaVersion> availableVersions;
-  final int selectedMediaIndex;
 
   /// BoxFit mode state: 0=contain (letterbox), 1=cover (fill screen), 2=fill (stretch)
   int _boxFitMode;
@@ -56,8 +52,6 @@ class VideoFilterManager {
 
   VideoFilterManager({
     required this.player,
-    required this.availableVersions,
-    required this.selectedMediaIndex,
     int initialBoxFitMode = 0,
     Size? initialPlayerSize,
     this.onBoxFitModeChanged,
@@ -176,13 +170,11 @@ class VideoFilterManager {
   /// When ambient lighting is active, video-aspect-override is managed by ambient lighting.
   Future<void> updateVideoFilter() async {
     try {
-      // ExoPlayer handles scaling via AspectRatioFrameLayout. The MPV properties
-      // below still run — on PlayerAndroid they forward to setMpvProperty, which
-      // queues them for any future fallback to MPV.
-      if (player is PlayerAndroid) {
-        await (player as PlayerAndroid).setBoxFitMode(_boxFitMode);
-        await (player as PlayerAndroid).setVideoZoom(_zoomScale);
-      }
+      // ExoPlayer handles scaling via AspectRatioFrameLayout (no-op on mpv
+      // backends). The MPV properties below still run — on ExoPlayer they
+      // forward to setMpvProperty, which queues them for any future fallback.
+      await player.setBoxFitMode(_boxFitMode);
+      await player.setVideoZoom(_zoomScale);
 
       if (ambientLightingService?.isEnabled != true) {
         await player.setProperty('video-aspect-override', 'no');

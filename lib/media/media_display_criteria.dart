@@ -56,7 +56,7 @@ class MediaDisplayCriteria {
   bool get hasDisplayMetadata =>
       (doviProfile ?? 0) > 0 || _hasValue(transfer) || _hasValue(primaries) || _hasValue(matrix);
 
-  bool get canPrimeNativeDisplayCriteria => hasDimensions && hasDisplayMetadata;
+  bool get canPrimeNativeDisplayCriteria => hasDimensions && (hasDisplayMetadata || hasFrameRate);
 
   bool get isHdr {
     if ((doviProfile ?? 0) > 0 && doviCompatibilityId != 2) return true;

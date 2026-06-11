@@ -114,6 +114,8 @@ class _LiveTvShowScheduleScreenState extends State<LiveTvShowScheduleScreen>
   Widget build(BuildContext context) {
     final showRecord = _canRecord && _programs.any((p) => p.guid != null && p.guid!.isNotEmpty);
     return OverlaySheetHost(
+      // Close an open sheet on system back instead of popping the screen.
+      canPop: true,
       child: FocusedScrollScaffold(
         title: Text(widget.showTitle),
         actions: showRecord

@@ -10,6 +10,7 @@ import 'media_backend.dart';
 import 'media_kind.dart';
 import 'media_role.dart';
 import 'media_version.dart';
+import 'season_title.dart';
 
 part 'media_item.freezed.dart';
 part 'media_item.g.dart';
@@ -364,6 +365,11 @@ sealed class MediaItem with _$MediaItem {
   /// `[seasonId, showId]`. For a season: `[showId]`. For a movie: `[]`.
   List<String> get parentChain => [?parentId, ?grandparentId];
 
+  /// Recency used to order the Continue Watching / On Deck shelf: when the item
+  /// was last watched, falling back to when it was added for never-watched rows.
+  /// Shared by the per-client merge and the cross-server sort so they agree.
+  int get recencySortKey => lastViewedAt ?? addedAt ?? 0;
+
   /// Whether this item has started but not finished playback.
   bool get hasActiveProgress {
     if (durationMs == null || viewOffsetMs == null) return false;
@@ -383,6 +389,16 @@ sealed class MediaItem with _$MediaItem {
     return viewCount != null && viewCount! > 0;
   }
 
+  /// Copy with the watched flag applied so [isWatched] reflects it for every
+  /// kind: containers need their leaf counts patched, not just [viewCount].
+  MediaItem withWatchedFlag(bool isWatched) {
+    var updated = copyWith(viewCount: isWatched ? 1 : 0);
+    if (leafCount != null || viewedLeafCount != null) {
+      updated = updated.copyWith(viewedLeafCount: isWatched ? (leafCount ?? viewedLeafCount ?? 1) : 0);
+    }
+    return updated;
+  }
+
   /// Display-friendly title that prefers the show name for episodes/seasons.
   String get displayTitle {
     if ((kind == MediaKind.episode || kind == MediaKind.season) && grandparentTitle != null) {
@@ -396,8 +412,14 @@ sealed class MediaItem with _$MediaItem {
 
   /// Subtitle line shown below [displayTitle] for episodes/seasons.
   String? get displaySubtitle {
-    if (kind == MediaKind.episode || kind == MediaKind.season) {
-      if (grandparentTitle != null || (kind == MediaKind.season && parentTitle != null)) {
+    if (kind == MediaKind.season) {
+      if (grandparentTitle != null || parentTitle != null) {
+        // Re-localize a server's generic English "Season N" (see #1271).
+        final label = localizedSeasonLabel(title: title, index: index);
+        return label.isNotEmpty ? label : title;
+      }
+    } else if (kind == MediaKind.episode) {
+      if (grandparentTitle != null) {
         return title;
       }
     }

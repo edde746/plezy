@@ -36,11 +36,11 @@ class _FakeMediaServerClient implements MediaServerClient {
   final double watchedThreshold;
 
   _FakeMediaServerClient({
-    this.serverId = const ServerId('server-1'),
+    ServerId? serverId,
     required this.externalIdsByItem,
     required this.descendantsByParent,
     this.watchedThreshold = 0.9,
-  });
+  }) : serverId = serverId ?? ServerId('server-1');
 
   @override
   MediaBackend get backend => MediaBackend.plex;

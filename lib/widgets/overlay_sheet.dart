@@ -187,13 +187,37 @@ class OverlaySheetController {
 /// Android TV and providing centralized focus management for keyboard/dpad
 /// navigation on all platforms.
 ///
-/// Screens that contain a [PopScope] should check [OverlaySheetController.isOpen]
-/// and skip their own back handling when a sheet is open.
+/// ## Back handling
+///
+/// The host already owns the dpad/key back path (its sheet [FocusScope] closes
+/// the sheet on BACK when focus is inside it). For the system/route back path
+/// (Android gesture, iOS swipe, predictive back), opt in via [canPop]: the host
+/// then renders its own [PopScope] that closes an open sheet instead of popping
+/// the screen, so callers don't have to hand-roll it. When [canPop] is null
+/// (the default) the host adds no [PopScope] and behaves exactly as before.
 class OverlaySheetHost extends StatefulWidget {
   final Widget child;
   final ValueChanged<bool>? onOpenChanged;
 
-  const OverlaySheetHost({super.key, required this.child, this.onOpenChanged});
+  /// Whether the enclosing route may pop when no sheet is open (the screen's own
+  /// business rule, mirroring [PopScope.canPop]).
+  ///
+  /// When non-null the host installs a [PopScope]:
+  /// - a system back with a sheet open closes the sheet (never pops the screen);
+  /// - otherwise, if `canPop` is true the route pops natively (preserving the
+  ///   iOS interactive swipe-back), and if false [onSystemBack] runs instead.
+  ///
+  /// When null (default) the host installs no [PopScope] — today's behavior.
+  final bool? canPop;
+
+  /// Called for a system/route back when no sheet is open and [canPop] is false.
+  /// Not called when a sheet is open (the sheet is closed instead) or when
+  /// [canPop] allows a native pop. Implementations that also have a dpad key
+  /// handler should start with `if (BackKeyCoordinator.consumeIfHandled()) return;`
+  /// so the system path dedups against the key path.
+  final VoidCallback? onSystemBack;
+
+  const OverlaySheetHost({super.key, required this.child, this.onOpenChanged, this.canPop, this.onSystemBack});
 
   @override
   State<OverlaySheetHost> createState() => _OverlaySheetHostState();
@@ -473,38 +497,55 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
   @override
   Widget build(BuildContext context) {
-    // No PopScope here — the parent screen's PopScope should check
-    // OverlaySheetController.isOpen and delegate to us. This avoids
-    // the double-callback problem with nested PopScopes in one route.
-
-    return _OverlaySheetScope(
-      controller: _controller,
-      child: Listener(
-        behavior: HitTestBehavior.translucent,
-        onPointerDown: _rememberPointerPosition,
-        onPointerHover: _rememberPointerPosition,
-        child: Stack(
-          children: [
-            widget.child,
-            // Barrier + sheet only when open
-            if (_isOpen) ...[
-              Positioned.fill(
-                child: AnimatedBuilder(
-                  animation: _barrierAnimation,
-                  builder: (context, child) {
-                    return GestureDetector(
-                      onTap: _barrierDismissible ? () => _close() : null,
-                      child: ColoredBox(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
-                    );
-                  },
-                ),
+    Widget content = Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: _rememberPointerPosition,
+      onPointerHover: _rememberPointerPosition,
+      child: Stack(
+        children: [
+          widget.child,
+          // Barrier + sheet only when open
+          if (_isOpen) ...[
+            Positioned.fill(
+              child: AnimatedBuilder(
+                animation: _barrierAnimation,
+                builder: (context, child) {
+                  return GestureDetector(
+                    onTap: _barrierDismissible ? () => _close() : null,
+                    child: ColoredBox(color: Colors.black.withValues(alpha: _barrierAnimation.value)),
+                  );
+                },
               ),
-              _buildSheet(context),
-            ],
+            ),
+            _buildSheet(context),
           ],
-        ),
+        ],
       ),
     );
+
+    // When a screen opts in via [canPop], the host owns the system/route back
+    // path so callers don't hand-roll it: a back with a sheet open closes the
+    // sheet (sub-page aware, matching the dpad path) instead of popping the
+    // screen; otherwise the route pops natively (canPop true) or [onSystemBack]
+    // runs (canPop false). `!_isClosing` lets a press during the ~250ms close
+    // animation fall through instead of being swallowed.
+    final canPop = widget.canPop;
+    if (canPop != null) {
+      content = PopScope(
+        canPop: canPop && !_isOpen,
+        onPopInvokedWithResult: (didPop, result) {
+          if (didPop) return;
+          if (_isOpen && !_isClosing) {
+            _handleBack();
+            return;
+          }
+          widget.onSystemBack?.call();
+        },
+        child: content,
+      );
+    }
+
+    return _OverlaySheetScope(controller: _controller, child: content);
   }
 
   double _getSheetHeight() {

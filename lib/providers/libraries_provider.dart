@@ -14,6 +14,9 @@ enum LibrariesLoadState { initial, loading, loaded, error }
 /// Both SideNavigationRail and LibrariesScreen consume this provider
 /// instead of independently fetching library data.
 class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
+  LibrariesProvider({StorageService? storageService}) : _storageService = storageService;
+
+  StorageService? _storageService;
   DataAggregationService? _aggregationService;
   List<MediaLibrary> _libraries = [];
   LibrariesLoadState _loadState = LibrariesLoadState.initial;
@@ -134,7 +137,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
       final filteredLibraries = result.libraries.where((lib) => !ContentTypeHelper.isMusicLibrary(lib)).toList();
 
       // Apply saved library order
-      final storage = await StorageService.getInstance();
+      final storage = _storageService ??= await StorageService.getInstance();
       final savedOrder = storage.getLibraryOrder();
       final orderedLibraries = _applyLibraryOrder(filteredLibraries, savedOrder);
 
@@ -179,7 +182,7 @@ class LibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixi
     safeNotifyListeners();
 
     // Save the new order
-    final storage = await StorageService.getInstance();
+    final storage = _storageService ??= await StorageService.getInstance();
     final libraryKeys = orderedLibraries.map((lib) => lib.globalKey).toList();
     await storage.saveLibraryOrder(libraryKeys);
 

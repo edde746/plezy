@@ -101,7 +101,7 @@ class _SettingsToggleItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final settings = SettingsService.instanceOrNull!;
+    final settings = SettingsService.instance;
     return ValueListenableBuilder<bool>(
       valueListenable: settings.listenable(pref),
       builder: (context, value, _) {
@@ -288,7 +288,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             initialOffset: initialOffset,
             sliderFocusNode: sliderFocusNode,
             onOffsetChanged: (offset) async {
-              final settings = SettingsService.instanceOrNull!;
+              final settings = SettingsService.instance;
               if (isSubtitle) {
                 await settings.write(SettingsService.subtitleSyncOffset, offset);
               } else {
@@ -376,10 +376,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
 
   String _formatDvConversionMode(String mode) {
     return switch (_normalizeDvConversionMode(mode)) {
-      'disabled' => 'Native / Disabled',
-      'dv81' => 'P7 → P8.1',
-      'hevc_strip' => 'P7 → HEVC',
-      _ => 'Auto',
+      'disabled' => t.settings.dvConversionNative,
+      'dv81' => t.settings.dvConversionDv81,
+      'hevc_strip' => t.settings.dvConversionHevcStrip,
+      _ => t.settings.dvConversionAuto,
     };
   }
 
@@ -570,7 +570,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           _SettingsMenuItem(
             icon: Symbols.auto_fix_high_rounded,
             title: t.shaders.title,
-            valueText: widget.shaderService!.currentPreset.name,
+            valueText: widget.shaderService!.currentPreset.id == ShaderPreset.none.id
+                ? t.common.off
+                : widget.shaderService!.currentPreset.name,
             isHighlighted: widget.shaderService!.currentPreset.isEnabled,
             onTap: () => _navigateTo(_SettingsView.shader),
           ),
@@ -608,7 +610,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         if (_showDebugDvConversionMode)
           _SettingsMenuItem(
             icon: Symbols.hdr_strong_rounded,
-            title: 'DV Conversion Mode',
+            title: t.settings.dvConversionMode,
             valueText: _formatDvConversionMode(_dvConversionMode),
             isHighlighted: _dvConversionMode != 'auto',
             onTap: () => _navigateTo(_SettingsView.dvConversion),
@@ -642,11 +644,15 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   }
 
   Widget _buildDvConversionView() {
-    const modes = [
-      (value: 'auto', title: 'Auto', subtitle: 'Use device capability detection and normal fallback behavior'),
-      (value: 'disabled', title: 'Native / Disabled', subtitle: 'Force native DV7 and suppress DV conversion retry'),
-      (value: 'dv81', title: 'P7 → P8.1', subtitle: 'Force inline RPU conversion to Dolby Vision profile 8.1'),
-      (value: 'hevc_strip', title: 'P7 → HEVC', subtitle: 'Strip Dolby Vision RPU/EL layers and present plain HEVC'),
+    final modes = [
+      (value: 'auto', title: t.settings.dvConversionAuto, subtitle: t.settings.dvConversionAutoDescription),
+      (value: 'disabled', title: t.settings.dvConversionNative, subtitle: t.settings.dvConversionNativeDescription),
+      (value: 'dv81', title: t.settings.dvConversionDv81, subtitle: t.settings.dvConversionDv81Description),
+      (
+        value: 'hevc_strip',
+        title: t.settings.dvConversionHevcStrip,
+        subtitle: t.settings.dvConversionHevcStripDescription,
+      ),
     ];
     final primary = Theme.of(context).colorScheme.primary;
 
@@ -685,7 +691,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               onTap: () async {
                 await widget.player.setRate(speed);
                 // Save as default playback speed
-                await SettingsService.instanceOrNull!.write(SettingsService.defaultPlaybackSpeed, speed);
+                await SettingsService.instance.write(SettingsService.defaultPlaybackSpeed, speed);
                 if (context.mounted) {
                   OverlaySheetController.of(context).close(); // Close sheet after selection
                 }
@@ -868,9 +874,10 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             final preset = presets[index];
             final isSelected = preset.id == currentPreset.id;
             final isCustom = preset.type == ShaderPresetType.custom;
+            final presetName = preset.id == ShaderPreset.none.id ? t.common.off : preset.name;
 
             return FocusableListTile(
-              title: Text(preset.name, style: TextStyle(color: isSelected ? Colors.amber : null)),
+              title: Text(presetName, style: TextStyle(color: isSelected ? Colors.amber : null)),
               subtitle: _getShaderSubtitle(preset) != null
                   ? Text(_getShaderSubtitle(preset)!, style: TextStyle(color: tokens(context).textMuted, fontSize: 12))
                   : null,

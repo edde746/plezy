@@ -238,6 +238,9 @@ class MpvPlayerCore(private val activity: Activity) : SurfaceHolder.Callback {
             setOption("opengl-es", "yes")
             setOption("vd-lavc-film-grain", "cpu")
             setOption("ao", "audiotrack,opensles")
+            // Pause on the last frame at EOF instead of unloading the file, so a
+            // seek after the video ends still works (matches Linux/Windows).
+            setOption("keep-open", "yes")
             if (displayFpsOverride != null) {
               setOption("display-fps-override", displayFpsOverride)
             }

@@ -3,20 +3,16 @@ part of '../video_controls.dart';
 extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   /// Called when hasFirstFrame changes - start auto-hide timer when first frame is ready
   void _onFirstFrameReady() {
-    if (widget.hasFirstFrame?.value == true) {
-      _startHideTimer();
+    final hasFrame = widget.hasFirstFrame?.value ?? true;
+    widget.chromeController.setHasFirstFrame(hasFrame);
+    if (hasFrame) {
       // Retry with network-first if initial cache-first returned empty
       if (_chapters.isEmpty && _markers.isEmpty) {
         _loadPlaybackExtras(forceRefresh: true);
       }
-    }
-  }
-
-  /// Called when controlsVisible is set externally (e.g. screen-level focus recovery
-  /// after controls auto-hide ejects focus on Android TV).
-  void _onControlsVisibleExternal() {
-    if (widget.controlsVisible?.value == true && !_showControls && mounted) {
-      _showControlsWithFocus();
+      _syncCurrentMarkerForCurrentPosition();
+    } else {
+      _clearCurrentMarker();
     }
   }
 
@@ -33,11 +29,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   /// Listen to playback state changes to manage auto-hide timer
   void _listenToPlayingState() {
     _playingSubscription = widget.player.streams.playing.listen((isPlaying) {
-      if (isPlaying && _showControls) {
-        _startHideTimer();
-      } else if (!isPlaying && _showControls) {
-        _startPausedHideTimer();
-      }
+      widget.chromeController.setPlaying(isPlaying);
     });
   }
 
@@ -48,12 +40,8 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
         if (_isLongPressing) {
           _handleLongPressCancel();
         }
-        _setControlsState(() {
-          _showControls = true;
-        });
-        // Notify parent of visibility change (for popup positioning)
-        widget.controlsVisible?.value = true;
-        _hideTimer?.cancel();
+        widget.chromeController.show(restartAutoHide: false);
+        widget.chromeController.cancelAutoHide();
       }
     });
   }
@@ -69,88 +57,18 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
   /// Shared hide logic: hides controls, notifies parent, updates traffic lights, restores focus.
   void _hideControls() {
-    if (!mounted || !_showControls || _forceShowControls) return;
-    _setControlsState(() {
-      _showControls = false;
-      _isContentStripVisible = false;
-      // Dismiss skip button with controls — after this it only re-appears with controls
-      if (_currentMarker != null) {
-        _skipButtonDismissed = true;
-      }
-    });
-    _desktopControlsKey.currentState?.hideContentStrip();
-    _cancelSkipButtonDismissTimer();
-    widget.controlsVisible?.value = false;
-    if (Platform.isMacOS) {
-      _updateTrafficLightVisibility();
-    }
-    // Reclaim focus so the global key handler stays active for TV dpad,
-    // but skip if an overlay sheet owns focus — stealing it would break
-    // sheet navigation (e.g. the compact sync bar).
-    final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
-    if (!sheetOpen) {
-      // Always request primary focus on _focusNode — not just when hasFocus is
-      // false. hasFocus is true when a descendant (e.g. play/pause) has focus,
-      // but we need _focusNode itself to hold primary focus so its onKeyEvent
-      // fires for the next d-pad press (otherwise focus escapes to the screen-
-      // level self-heal handler which shows controls with play/pause focus).
-      _focusNode.requestFocus();
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted && !_focusNode.hasPrimaryFocus) {
-          _focusNode.requestFocus();
-        }
-      });
-    }
+    if (!mounted) return;
+    widget.chromeController.hide();
   }
 
-  void _startHideTimer() {
-    _hideTimer?.cancel();
-
-    // Don't auto-hide while loading first frame (user needs to see spinner and back button)
-    final hasFrame = widget.hasFirstFrame?.value ?? true;
-    if (!hasFrame) return;
-
-    if (_forceShowControls) return;
-
-    // Only auto-hide while playing; keep controls visible while paused.
-    if (widget.player.state.playing) {
-      _hideTimer = Timer(_hideDelay, () {
-        // Also check hasFirstFrame in callback (in case it changed)
-        final stillLoading = !(widget.hasFirstFrame?.value ?? true);
-        if (mounted && widget.player.state.playing && !stillLoading) {
-          _hideControls();
-        }
-      });
-    }
-  }
-
-  /// Auto-hide controls after pause (does not check playing state in callback).
-  void _startPausedHideTimer() {
-    _hideTimer?.cancel();
-    if (_forceShowControls) return;
-    _hideTimer = Timer(_hideDelay, () {
-      _hideControls();
-    });
-  }
+  void _startHideTimer() => widget.chromeController.startAutoHide();
 
   /// Restart the hide timer on user interaction (if video is playing)
-  void _restartHideTimerIfPlaying() {
-    if (widget.player.state.playing) {
-      _startHideTimer();
-    }
-  }
-
-  /// Hide controls immediately when the mouse leaves the player area (desktop only).
-  void _hideControlsFromPointerExit() {
-    final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
-    if (isMobile) return;
-
-    _hideTimer?.cancel();
-    _hideControls();
-  }
+  void _restartHideTimerIfPlaying() => widget.chromeController.restartAutoHideIfPlaying();
 
   void _handlePointerSignal(PointerSignalEvent event) {
     if (event is PointerScrollEvent && _keyboardService != null) {
+      _cancelAutoSkipFromUserInteraction();
       final delta = event.scrollDelta.dy;
       final volume = widget.player.state.volume;
       final maxVol = _keyboardService!.maxVolume.toDouble();
@@ -163,45 +81,11 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
   /// Show controls in response to pointer activity (mouse/trackpad movement).
   void _showControlsFromPointerActivity() {
-    final nowMs = _pointerActivityStopwatch.elapsedMilliseconds;
-    final shouldThrottle = _showControls && nowMs - _lastPointerActivityMs < 120;
-    if (shouldThrottle) return;
-    _lastPointerActivityMs = nowMs;
-
-    if (!_showControls) {
-      _setControlsState(() {
-        _showControls = true;
-      });
-      // Notify parent of visibility change (for popup positioning)
-      widget.controlsVisible?.value = true;
-      // On macOS, keep window controls in sync with the overlay
-      if (Platform.isMacOS) {
-        _updateTrafficLightVisibility();
-      }
-    }
-
-    // Keep the overlay visible while the user is moving the pointer
-    _restartHideTimerIfPlaying();
-
-    // Cancel auto-skip when user moves pointer over the player
-    _cancelAutoSkipTimer();
+    widget.chromeController.recordPointerActivity();
   }
 
   void _toggleControls() {
-    if (_showControls) {
-      _hideControls();
-    } else {
-      _setControlsState(() {
-        _showControls = true;
-      });
-      widget.controlsVisible?.value = true;
-      _startHideTimer();
-      if (Platform.isMacOS) {
-        _updateTrafficLightVisibility();
-      }
-    }
-    // Cancel auto-skip on any tap
-    _cancelAutoSkipTimer();
+    widget.chromeController.toggle();
   }
 
   /// Apply preferred orientations for the given lock state. Wired to
@@ -228,7 +112,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
       }
     });
     if (locking) {
-      _hideControls();
+      widget.chromeController.hide(ignoreHolds: true);
       _startLockIconHideTimer();
     }
   }
@@ -244,11 +128,9 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     _setControlsState(() {
       _isScreenLocked = false;
       _showLockIcon = false;
-      _showControls = true;
     });
     _lockIconTimer?.cancel();
-    widget.controlsVisible?.value = true;
-    _startHideTimer();
+    widget.chromeController.show();
   }
 
   void _updateTrafficLightVisibility() async {
@@ -258,7 +140,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     // In normal windowed mode, toggle with controls as before.
     final isMaximizedOrFullscreen = await windowManager.isMaximized() || await MacOSWindowService.isFullscreen();
     if (!mounted || generation != _trafficLightVisibilityGeneration) return;
-    final visible = isMaximizedOrFullscreen || _forceShowControls ? true : _showControls;
+    final visible = isMaximizedOrFullscreen || _showControls;
     await MacOSWindowService.setTrafficLightsVisible(visible);
   }
 
@@ -283,12 +165,10 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
   void _onMacPipChanged() {
     if (!mounted) return;
     final inPip = _pipService.isPipActive.value;
-    _setControlsState(() => _forceShowControls = inPip);
     if (inPip) {
-      _hideTimer?.cancel();
-      widget.controlsVisible?.value = true;
+      widget.chromeController.hold(PlayerChromeHold.pip);
     } else {
-      _startHideTimer();
+      widget.chromeController.release(PlayerChromeHold.pip);
     }
   }
 
@@ -330,17 +210,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
   /// Show controls and optionally focus play/pause on keyboard input (desktop only)
   void _showControlsWithFocus({bool requestFocus = true}) {
-    if (!_showControls) {
-      _setControlsState(() {
-        _showControls = true;
-      });
-      // Notify parent of visibility change (for popup positioning)
-      widget.controlsVisible?.value = true;
-      if (Platform.isMacOS) {
-        _updateTrafficLightVisibility();
-      }
-    }
-    _startHideTimer();
+    widget.chromeController.show();
 
     if (requestFocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -360,17 +230,7 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
 
   /// Show controls and focus timeline on LEFT/RIGHT input (TV/desktop)
   void _showControlsWithTimelineFocus() {
-    if (!_showControls) {
-      _setControlsState(() {
-        _showControls = true;
-      });
-      // Notify parent of visibility change (for popup positioning)
-      widget.controlsVisible?.value = true;
-      if (Platform.isMacOS) {
-        _updateTrafficLightVisibility();
-      }
-    }
-    _startHideTimer();
+    widget.chromeController.show();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -394,5 +254,58 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     if (_showControls) {
       _hideControls();
     }
+  }
+
+  void _onChromeChanged() {
+    if (!mounted) return;
+    final controlsVisible = widget.chromeController.controlsVisible;
+    final visibilityChanged = controlsVisible != _lastControlsVisible;
+    final focusTarget = widget.chromeController.takeFocusTarget();
+    _lastControlsVisible = controlsVisible;
+
+    if (visibilityChanged && !controlsVisible) {
+      _desktopControlsKey.currentState?.hideContentStrip();
+      _cancelSkipButtonDismissTimer();
+      _setControlsState(() {
+        if (_currentMarker != null) _skipButtonDismissed = true;
+      });
+      _reclaimFocusAfterControlsHide();
+    } else {
+      _setControlsState(() {});
+    }
+
+    if (visibilityChanged && Platform.isMacOS) {
+      _updateTrafficLightVisibility();
+    }
+
+    if (focusTarget != null) {
+      _requestFocusTarget(focusTarget);
+    }
+  }
+
+  void _reclaimFocusAfterControlsHide() {
+    final sheetOpen = OverlaySheetController.maybeOf(context)?.isOpen ?? false;
+    if (sheetOpen) return;
+    _focusNode.requestFocus();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_focusNode.hasPrimaryFocus) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
+  void _requestFocusTarget(PlayerChromeFocusTarget target) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !widget.chromeController.controlsVisible) return;
+      // Never steal focus from an open sheet (same rule as
+      // _reclaimFocusAfterControlsHide).
+      if (OverlaySheetController.maybeOf(context)?.isOpen ?? false) return;
+      switch (target) {
+        case PlayerChromeFocusTarget.playPause:
+          _desktopControlsKey.currentState?.requestPlayPauseFocus();
+        case PlayerChromeFocusTarget.timeline:
+          _desktopControlsKey.currentState?.requestTimelineFocus();
+      }
+    });
   }
 }

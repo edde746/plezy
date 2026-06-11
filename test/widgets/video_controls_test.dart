@@ -10,6 +10,7 @@ import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
 import 'package:plezy/widgets/video_controls/painters/buffer_range_painter.dart';
 import 'package:plezy/widgets/video_controls/widgets/mobile_skip_zones.dart';
+import 'package:plezy/widgets/video_controls/widgets/skip_marker_button.dart';
 import 'package:plezy/widgets/video_controls/widgets/sync_offset_control.dart';
 import 'package:plezy/widgets/video_controls/widgets/timeline_slider.dart';
 
@@ -115,6 +116,169 @@ void main() {
       expect(result.selectedAudioStreamId, 1);
       expect(result.sourceSubtitleTracks, [subtitle]);
       expect(result.selectedSubtitleStreamId, 2);
+    });
+  });
+
+  group('shouldShowSkipMarkerButton', () {
+    test('does not show before the first frame is rendered', () {
+      expect(
+        shouldShowSkipMarkerButton(
+          hasFirstFrame: false,
+          hasMarker: true,
+          hasPlayNextPrompt: false,
+          skipButtonDismissed: false,
+          controlsVisible: true,
+        ),
+        isFalse,
+      );
+    });
+
+    test('shows after first frame when marker is active and not dismissed', () {
+      expect(
+        shouldShowSkipMarkerButton(
+          hasFirstFrame: true,
+          hasMarker: true,
+          hasPlayNextPrompt: false,
+          skipButtonDismissed: false,
+          controlsVisible: false,
+        ),
+        isTrue,
+      );
+    });
+
+    test('does not show when dismissed until controls are visible again', () {
+      expect(
+        shouldShowSkipMarkerButton(
+          hasFirstFrame: true,
+          hasMarker: true,
+          hasPlayNextPrompt: false,
+          skipButtonDismissed: true,
+          controlsVisible: false,
+        ),
+        isFalse,
+      );
+      expect(
+        shouldShowSkipMarkerButton(
+          hasFirstFrame: true,
+          hasMarker: true,
+          hasPlayNextPrompt: false,
+          skipButtonDismissed: true,
+          controlsVisible: true,
+        ),
+        isTrue,
+      );
+    });
+
+    test('does not show while play next prompt is active', () {
+      expect(
+        shouldShowSkipMarkerButton(
+          hasFirstFrame: true,
+          hasMarker: true,
+          hasPlayNextPrompt: true,
+          skipButtonDismissed: false,
+          controlsVisible: true,
+        ),
+        isFalse,
+      );
+    });
+  });
+
+  group('SkipMarkerButton', () {
+    testWidgets('tap cancels active auto-skip and performs skip', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      var cancelCount = 0;
+      var skipCount = 0;
+
+      await _pumpSkipMarkerButton(
+        tester,
+        focusNode: focusNode,
+        isAutoSkipActive: true,
+        onCancelAutoSkip: () => cancelCount++,
+        onPerformAutoSkip: () => skipCount++,
+      );
+
+      expect(find.text('Skip Intro (3)'), findsOneWidget);
+
+      await tester.tap(find.byType(InkWell));
+      await tester.pump();
+
+      expect(cancelCount, 1);
+      expect(skipCount, 1);
+    });
+
+    testWidgets('select cancels active auto-skip and performs skip', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      var cancelCount = 0;
+      var skipCount = 0;
+
+      await _pumpSkipMarkerButton(
+        tester,
+        focusNode: focusNode,
+        isAutoSkipActive: true,
+        onCancelAutoSkip: () => cancelCount++,
+        onPerformAutoSkip: () => skipCount++,
+      );
+
+      focusNode.requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.select);
+      await tester.pump();
+
+      expect(cancelCount, 1);
+      expect(skipCount, 1);
+    });
+
+    testWidgets('d-pad down moves focus; auto-skip cancellation is handled centrally', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      var cancelCount = 0;
+      var skipCount = 0;
+      var focusDownCount = 0;
+
+      await _pumpSkipMarkerButton(
+        tester,
+        focusNode: focusNode,
+        isAutoSkipActive: true,
+        onCancelAutoSkip: () => cancelCount++,
+        onPerformAutoSkip: () => skipCount++,
+        onFocusDown: () => focusDownCount++,
+      );
+
+      focusNode.requestFocus();
+      await tester.pump();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pump();
+
+      // The button no longer cancels auto-skip itself — the player's central
+      // input handler cancels on any key. Arrow-down only moves focus.
+      expect(cancelCount, 0);
+      expect(skipCount, 0);
+      expect(focusDownCount, 1);
+    });
+
+    testWidgets('tap performs manual skip when auto-skip is inactive', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+      var cancelCount = 0;
+      var skipCount = 0;
+
+      await _pumpSkipMarkerButton(
+        tester,
+        focusNode: focusNode,
+        isAutoSkipActive: false,
+        onCancelAutoSkip: () => cancelCount++,
+        onPerformAutoSkip: () => skipCount++,
+      );
+
+      expect(find.text('Skip Intro'), findsOneWidget);
+
+      await tester.tap(find.byType(InkWell));
+      await tester.pump();
+
+      expect(cancelCount, 0);
+      expect(skipCount, 1);
     });
   });
 
@@ -254,6 +418,167 @@ void main() {
       expect(slider.value, 0.0);
       expect(slider.max, 0.0);
     });
+
+    Future<void> pumpScrubSlider(
+      WidgetTester tester, {
+      required List<Duration> seeks,
+      required List<Duration> seekEnds,
+      Duration duration = const Duration(minutes: 10),
+      bool enabled = true,
+      Widget Function(Widget child)? wrap,
+    }) async {
+      Widget slider = SizedBox(
+        width: 400,
+        child: TimelineSlider(
+          position: const Duration(minutes: 1),
+          duration: duration,
+          chapters: const [],
+          chaptersLoaded: true,
+          enabled: enabled,
+          onSeek: seeks.add,
+          onSeekEnd: seekEnds.add,
+        ),
+      );
+      if (wrap != null) slider = wrap(slider);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(body: Center(child: slider)),
+        ),
+      );
+    }
+
+    testWidgets('touch drag survives tooltip appearance and finalizes once', (tester) async {
+      final seeks = <Duration>[];
+      final seekEnds = <Duration>[];
+      await pumpScrubSlider(tester, seeks: seeks, seekEnds: seekEnds);
+
+      // Down at the center (200/400 → 5min), drag +100px (→ 7.5min). The
+      // first scrub event makes the tooltip appear; the drag must keep
+      // tracking through that rebuild and finalize exactly once.
+      final gesture = await tester.startGesture(tester.getCenter(find.byType(TimelineSlider)));
+      await tester.pump();
+      await gesture.moveBy(const Offset(50, 0));
+      await tester.pump();
+      await gesture.moveBy(const Offset(50, 0));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(seeks, isNotEmpty);
+      expect(seekEnds, hasLength(1));
+      expect(seekEnds.single.inMilliseconds, closeTo(const Duration(minutes: 7, seconds: 30).inMilliseconds, 2000));
+    });
+
+    testWidgets('tap seeks to the tapped position', (tester) async {
+      final seeks = <Duration>[];
+      final seekEnds = <Duration>[];
+      await pumpScrubSlider(tester, seeks: seeks, seekEnds: seekEnds);
+
+      final topLeft = tester.getTopLeft(find.byType(TimelineSlider));
+      final size = tester.getSize(find.byType(TimelineSlider));
+      final gesture = await tester.startGesture(Offset(topLeft.dx + size.width * 0.75, topLeft.dy + size.height / 2));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(seekEnds, hasLength(1));
+      expect(seekEnds.single.inMilliseconds, closeTo(const Duration(minutes: 7, seconds: 30).inMilliseconds, 2000));
+    });
+
+    testWidgets('drag starting on the slider is never stolen by ancestor recognizers', (tester) async {
+      final seeks = <Duration>[];
+      final seekEnds = <Duration>[];
+      var verticalDragUpdates = 0;
+      var longPresses = 0;
+      await pumpScrubSlider(
+        tester,
+        seeks: seeks,
+        seekEnds: seekEnds,
+        wrap: (child) => GestureDetector(
+          behavior: HitTestBehavior.translucent,
+          onVerticalDragUpdate: (_) => verticalDragUpdates++,
+          onLongPressStart: (_) => longPresses++,
+          child: child,
+        ),
+      );
+
+      // Press-aim-drag: hold past the long-press deadline, then drag with a
+      // vertical-dominant start. Without the eager claim, the long-press or
+      // the vertical recognizer wins and the scrub is eaten.
+      final gesture = await tester.startGesture(tester.getCenter(find.byType(TimelineSlider)));
+      await tester.pump(const Duration(milliseconds: 600));
+      for (var i = 0; i < 4; i++) {
+        await gesture.moveBy(const Offset(8, 12));
+        await tester.pump();
+      }
+      await gesture.moveBy(const Offset(50, 0));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(seekEnds, hasLength(1));
+      expect(verticalDragUpdates, 0);
+      expect(longPresses, 0);
+    });
+
+    testWidgets('ignores input when disabled', (tester) async {
+      final seeks = <Duration>[];
+      final seekEnds = <Duration>[];
+      await pumpScrubSlider(tester, seeks: seeks, seekEnds: seekEnds, enabled: false);
+
+      final gesture = await tester.startGesture(tester.getCenter(find.byType(TimelineSlider)));
+      await tester.pump();
+      await gesture.moveBy(const Offset(50, 0));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(seeks, isEmpty);
+      expect(seekEnds, isEmpty);
+    });
+
+    testWidgets('ignores input when duration is unknown', (tester) async {
+      final seeks = <Duration>[];
+      final seekEnds = <Duration>[];
+      await pumpScrubSlider(tester, seeks: seeks, seekEnds: seekEnds, duration: Duration.zero);
+
+      final gesture = await tester.startGesture(tester.getCenter(find.byType(TimelineSlider)));
+      await tester.pump();
+      await gesture.moveBy(const Offset(50, 0));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
+
+      expect(seeks, isEmpty);
+      expect(seekEnds, isEmpty);
+    });
+
+    testWidgets('second finger is ignored mid-drag', (tester) async {
+      final seeks = <Duration>[];
+      final seekEnds = <Duration>[];
+      await pumpScrubSlider(tester, seeks: seeks, seekEnds: seekEnds);
+
+      final center = tester.getCenter(find.byType(TimelineSlider));
+      final first = await tester.startGesture(center);
+      await tester.pump();
+      final seeksAfterDown = seeks.length;
+
+      final second = await tester.startGesture(center + const Offset(100, 0));
+      await tester.pump();
+      await second.moveBy(const Offset(-80, 0));
+      await tester.pump();
+      expect(seeks.length, seeksAfterDown, reason: 'second pointer must not drive the scrub');
+
+      await first.moveBy(const Offset(40, 0));
+      await tester.pump();
+      await first.up();
+      await second.up();
+      await tester.pump();
+
+      // 240/400 of 10min → 6min: follows the first pointer only.
+      expect(seekEnds, hasLength(1));
+      expect(seekEnds.single.inMilliseconds, closeTo(const Duration(minutes: 6).inMilliseconds, 2000));
+    });
   });
 
   group('SyncOffsetControl', () {
@@ -291,6 +616,38 @@ void main() {
       expect(sliderTheme.data.tickMarkShape, same(SliderTickMarkShape.noTickMark));
     });
   });
+}
+
+Future<void> _pumpSkipMarkerButton(
+  WidgetTester tester, {
+  required FocusNode focusNode,
+  required bool isAutoSkipActive,
+  required VoidCallback onCancelAutoSkip,
+  required VoidCallback onPerformAutoSkip,
+  VoidCallback? onFocusDown,
+}) {
+  return tester.pumpWidget(
+    MaterialApp(
+      theme: ThemeData(extensions: const [_testTokens]),
+      home: Scaffold(
+        body: Center(
+          child: SkipMarkerButton(
+            marker: MediaMarker(id: 1, type: 'intro', startTimeOffset: 10000, endTimeOffset: 45000),
+            playerDuration: const Duration(minutes: 20),
+            hasNextEpisode: false,
+            isAutoSkipActive: isAutoSkipActive,
+            shouldShowAutoSkip: true,
+            autoSkipDelay: 5,
+            autoSkipProgress: 0.4,
+            focusNode: focusNode,
+            onCancelAutoSkip: onCancelAutoSkip,
+            onPerformAutoSkip: onPerformAutoSkip,
+            onFocusDown: onFocusDown ?? () {},
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class _FakeSyncPlayer implements Player {

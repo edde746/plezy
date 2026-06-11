@@ -955,8 +955,13 @@ class PlexClient
     AbortController? abort,
     int? librarySectionID,
     String? librarySectionTitle,
+    Map<String, dynamic>? queryParameters,
   }) async {
-    final response = await _getWithFailover(path, queryParameters: _buildPaginationParams(start, size), abort: abort);
+    final response = await _getWithFailover(
+      path,
+      queryParameters: {...?queryParameters, ..._buildPaginationParams(start, size)},
+      abort: abort,
+    );
     return _extractLibraryContentResult(
       response,
       librarySectionID: librarySectionID,
@@ -1037,7 +1042,13 @@ class PlexClient
           cacheKey: cacheKey,
           networkCall: () => _http.get(
             '/library/metadata/$ratingKey',
-            queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'includeOnDeck': 1},
+            queryParameters: {
+              'includeChapters': 1,
+              'includeMarkers': 1,
+              'includeOnDeck': 1,
+              'checkFiles': 1,
+              'includeStreams': 1,
+            },
           ),
           parseCache: (cachedData) {
             final metadata = _parseMetadataWithImagesFromCachedResponse(cachedData);
@@ -1092,8 +1103,10 @@ class PlexClient
 
     return fetchWithCacheFallback<PlexMetadataDto>(
       cacheKey: cacheKey,
-      networkCall: () =>
-          _http.get('/library/metadata/$ratingKey', queryParameters: {'includeChapters': 1, 'includeMarkers': 1}),
+      networkCall: () => _http.get(
+        '/library/metadata/$ratingKey',
+        queryParameters: {'includeChapters': 1, 'includeMarkers': 1, 'checkFiles': 1, 'includeStreams': 1},
+      ),
       parseCache: (cachedData) => _parseMetadataWithImagesFromCachedResponse(cachedData),
       parseResponse: (response) {
         final container = _getMediaContainer(response);
@@ -1191,6 +1204,56 @@ class PlexClient
       if (start >= page.totalSize) break;
     }
     return all;
+  }
+
+  /// Walk every page of [path] and return a single synthesized response whose
+  /// `MediaContainer.Metadata` concatenates all pages. Lets a caller (and its
+  /// cache layer) treat a large, server-paginated collection as one complete
+  /// response while each network request stays small. Raw-response analog of
+  /// [_fetchAllPages]; errors propagate.
+  Future<MediaServerResponse> _getAllPagesResponse(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    AbortController? abort,
+  }) async {
+    MediaServerResponse? firstResponse;
+    Map<String, dynamic>? firstContainer;
+    final allMetadata = <dynamic>[];
+    var start = 0;
+    while (true) {
+      final response = await _getWithFailover(
+        path,
+        queryParameters: {...?queryParameters, ..._buildPaginationParams(start, _fetchAllPageSize)},
+        abort: abort,
+      );
+      final container = _getMediaContainer(response);
+      final metadata = container?['Metadata'];
+      final pageItems = metadata is List ? metadata : const [];
+      firstResponse ??= response;
+      firstContainer ??= container;
+      allMetadata.addAll(pageItems);
+      final total = _responseTotalSize(
+        response,
+        itemCount: pageItems.length,
+        start: start,
+        requestedSize: _fetchAllPageSize,
+      );
+      start += pageItems.length;
+      if (pageItems.isEmpty || start >= total) break;
+    }
+    return MediaServerResponse(
+      statusCode: firstResponse.statusCode,
+      data: {
+        'MediaContainer': {
+          ...?firstContainer,
+          'Metadata': allMetadata,
+          'size': allMetadata.length,
+          'totalSize': allMetadata.length,
+        },
+      },
+      headers: firstResponse.headers,
+      requestUri: firstResponse.requestUri,
+    );
   }
 
   /// Set per-media language preferences (audio and subtitle)
@@ -1399,19 +1462,34 @@ class PlexClient
     return result;
   }
 
-  /// Get children of a metadata item (e.g., seasons for a show, episodes for a season)
-  /// Uses cache when offline or as fallback on network error
+  /// Get children of a metadata item (e.g., seasons for a show, episodes for a season).
+  /// Walks every page so large shows (many seasons) aren't truncated by a
+  /// server-forced container limit; uses cache when offline or as fallback on
+  /// network error. (Large *episode* lists load lazily via [fetchChildrenPage];
+  /// this full-fetch is for the seasons list and other complete-list callers.)
   Future<List<PlexMetadataDto>> _getChildren(String ratingKey) async {
     final endpoint = '/library/metadata/$ratingKey/children';
 
     return await fetchWithCacheFallback<List<PlexMetadataDto>>(
           cacheKey: endpoint,
-          networkCall: () => _http.get(endpoint),
+          networkCall: () => _getAllPagesResponse(endpoint, queryParameters: {'includeStreams': 1}),
           parseCache: (cachedData) => _parseMetadataListFromCachedResponse(cachedData),
           parseResponse: (response) => _extractMetadataList(response),
         ) ??
         [];
   }
+
+  /// Page through direct children of a metadata item (e.g. episodes of a
+  /// season). This uses `/children`; playable descendant paging uses
+  /// `/grandchildren` and intentionally has different semantics.
+  Future<_LibraryContentResult> _getChildrenPage(String ratingKey, {int? start, int? size, AbortController? abort}) =>
+      _fetchPaginatedList(
+        '/library/metadata/$ratingKey/children',
+        start: start,
+        size: size,
+        abort: abort,
+        queryParameters: {'includeStreams': 1},
+      );
 
   /// Page through playable episodes beneath a show or season. Uses
   /// `/grandchildren` rather than `/allLeaves` because the live server returns
@@ -1421,7 +1499,13 @@ class PlexClient
     int? start,
     int? size,
     AbortController? abort,
-  }) => _fetchPaginatedList('/library/metadata/$ratingKey/grandchildren', start: start, size: size, abort: abort);
+  }) => _fetchPaginatedList(
+    '/library/metadata/$ratingKey/grandchildren',
+    start: start,
+    size: size,
+    abort: abort,
+    queryParameters: {'includeStreams': 1},
+  );
 
   /// Get extras for a metadata item (trailers, behind-the-scenes, etc.)
   /// Uses cache when offline or as fallback on network error
@@ -1750,17 +1834,44 @@ class PlexClient
       final response = await _getWithFailover('/library/sections/$sectionId/sorts');
       final sorts = _extractDirectoryList(response, MediaSort.fromJson);
 
-      if (sorts.isNotEmpty) {
-        return sorts;
-      }
-
       // Fallback: return common sort options if API doesn't provide them
-      return _getFallbackSorts(libraryType);
+      final base = sorts.isNotEmpty ? sorts : _getFallbackSorts(libraryType);
+      return _withExtraSorts(base, libraryType);
     } catch (e) {
       appLogger.e('Failed to get library sorts: $e');
       // Return fallback sort options on error
-      return _getFallbackSorts(libraryType);
+      return _withExtraSorts(_getFallbackSorts(libraryType), libraryType);
     }
+  }
+
+  /// Append sort options that Plex honors via the `sort=` parameter but does not
+  /// advertise in `/library/sections/{id}/sorts`.
+  ///
+  /// Plays (`viewCount`) and the signed-in user's rating (`userRating`) both
+  /// sort correctly on movie/show libraries, so we surface them client-side
+  /// (mirroring how the Jellyfin sort list is built). De-duped by key so we
+  /// never double up if a future Plex version starts advertising them.
+  List<MediaSort> _withExtraSorts(List<MediaSort> base, String? libraryType) {
+    final type = libraryType?.toLowerCase();
+    if (type != 'movie' && type != 'show') return base;
+
+    final keys = base.map((s) => s.key).toSet();
+    final extras = [
+      MediaSort(
+        key: 'viewCount',
+        descKey: 'viewCount:desc',
+        title: t.libraries.sortLabels.playCount,
+        defaultDirection: 'desc',
+      ),
+      MediaSort(
+        key: 'userRating',
+        descKey: 'userRating:desc',
+        title: t.libraries.sortLabels.userRating,
+        defaultDirection: 'desc',
+      ),
+    ].where((s) => !keys.contains(s.key));
+
+    return [...base, ...extras];
   }
 
   /// Build fallback sort options based on library type.
@@ -1804,7 +1915,11 @@ class PlexClient
 
   /// Get library hubs (recommendations for a specific library section)
   /// Returns a list of recommendation hubs like "Trending Movies", "Top in Genre", etc.
-  Future<List<PlexHubDto>> _getLibraryHubs(String sectionId, {int limit = 10, String? libraryName}) async {
+  Future<List<PlexHubDto>> _getLibraryHubs(
+    String sectionId, {
+    int limit = defaultHubPreviewLimit,
+    String? libraryName,
+  }) async {
     try {
       final response = await retryTransientMediaServerCall(
         operation: 'Plex library hubs',
@@ -1838,7 +1953,7 @@ class PlexClient
   /// Get global hubs (home page recommendations)
   /// Returns actual home page hubs like "Recently Added Movies", "Recently Added TV", etc.
   /// This matches the official Plex client's home page layout.
-  Future<List<PlexHubDto>> _getGlobalHubs({int limit = 10}) async {
+  Future<List<PlexHubDto>> _getGlobalHubs({int limit = defaultHubPreviewLimit}) async {
     try {
       final hubKey = _providerPromotedHubKey ?? _providerHomeHubKey ?? '/hubs';
       final response = await retryTransientMediaServerCall(
@@ -3246,6 +3361,21 @@ class PlexClient
   }
 
   @override
+  Future<LibraryPage<MediaItem>> fetchChildrenPage(
+    String parentId, {
+    int? start,
+    int? size,
+    AbortController? abort,
+  }) async {
+    final result = await _getChildrenPage(parentId, start: start, size: size, abort: abort);
+    return LibraryPage<MediaItem>(
+      items: result.items.map((m) => PlexMappers.mediaItem(m)).toList(),
+      totalCount: result.totalSize,
+      offset: start ?? 0,
+    );
+  }
+
+  @override
   Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async {
     final leaves = await _fetchAllPages(
       (start, size, abort) => _getGrandchildrenPage(parentId, start: start, size: size, abort: abort),
@@ -3615,7 +3745,7 @@ class PlexClient
   }
 
   @override
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10, bool includePlaybackHubs = true}) async {
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true}) async {
     final hubs = await _getGlobalHubs(limit: limit);
     return hubs.map((h) => PlexMappers.mediaHub(h)).toList();
   }
@@ -3624,7 +3754,7 @@ class PlexClient
   Future<List<MediaHub>> fetchLibraryHubs(
     String libraryId, {
     required String libraryName,
-    int limit = 10,
+    int limit = defaultHubPreviewLimit,
     bool includePlaybackHubs = true,
     MediaKind? libraryKind,
   }) async {
@@ -3927,6 +4057,12 @@ class PlexClient
 
   @override
   double get watchedThreshold => watchedThresholdPercent / 100.0;
+
+  /// Plex's `/:/timeline?state=stopped` doesn't reliably mark watched without
+  /// an active play session, so the in-player auto-scrobble still issues the
+  /// explicit `markWatched` (`/:/scrobble`). See [marksWatchedOnPlaybackStopped].
+  @override
+  bool get marksWatchedOnPlaybackStopped => false;
 
   @override
   Map<String, String> get streamHeaders => Map.unmodifiable(config.headers);

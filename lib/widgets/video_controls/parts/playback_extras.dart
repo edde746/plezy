@@ -4,10 +4,15 @@ extension _PlexVideoControlsPlaybackExtrasMethods on _PlexVideoControlsState {
   Future<void> _loadPlaybackExtras({bool forceRefresh = false}) async {
     // Live TV metadata uses EPG rating keys, not library items
     if (widget.isLive) return;
-    if (_isLoadingExtras) return;
+    final loadKey = widget.metadata.globalKey;
+    // Re-entrancy guard is per item: an in-place episode swap may start the
+    // new item's load while the old item's is still in flight.
+    if (_isLoadingExtras && _extrasLoadKey == loadKey) return;
     _isLoadingExtras = true;
+    _extrasLoadKey = loadKey;
 
-    final serverId = widget.metadata.serverId;
+    final metadata = widget.metadata;
+    final serverId = metadata.serverId;
     // Read providers before any await — `context` after an async gap is
     // a lint trigger and can crash if the widget unmounts mid-load.
     final client = serverId != null ? context.tryGetMediaClientForServer(ServerId(serverId)) : null;
@@ -15,13 +20,16 @@ extension _PlexVideoControlsPlaybackExtrasMethods on _PlexVideoControlsState {
 
     try {
       final extras = await VideoControlsPlaybackExtrasLoader(
-        metadata: widget.metadata,
+        metadata: metadata,
         database: database,
         client: client,
       ).load(forceRefresh: forceRefresh);
-      if (extras != null) _applyPlaybackExtras(extras);
+      // Discard stale responses — the item may have swapped mid-flight.
+      if (extras != null && mounted && widget.metadata.globalKey == loadKey) {
+        _applyPlaybackExtras(extras);
+      }
     } finally {
-      _isLoadingExtras = false;
+      if (_extrasLoadKey == loadKey) _isLoadingExtras = false;
     }
   }
 
@@ -33,5 +41,6 @@ extension _PlexVideoControlsPlaybackExtrasMethods on _PlexVideoControlsState {
       _chaptersLoaded = true;
       _markersLoaded = true;
     });
+    _syncCurrentMarkerForCurrentPosition();
   }
 }

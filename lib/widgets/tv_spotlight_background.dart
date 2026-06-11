@@ -8,6 +8,7 @@ import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
+import '../providers/watch_state_store.dart';
 import '../services/image_cache_service.dart';
 import '../utils/content_utils.dart';
 import '../utils/formatters.dart';
@@ -342,6 +343,7 @@ class TvSpotlightBackground extends StatelessWidget {
 
   Widget _buildPrimaryAction(BuildContext context, MediaItem media) {
     final scale = _scale(context);
+    media = context.withFreshWatchState(media);
     final hasProgress = media.hasActiveProgress;
     final minutesLeft = hasProgress && media.durationMs != null && media.viewOffsetMs != null
         ? ((media.durationMs! - media.viewOffsetMs!) / 60_000).round()

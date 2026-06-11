@@ -99,6 +99,28 @@ abstract class Player {
   /// Whether this player backend supports secondary subtitle tracks.
   bool get supportsSecondarySubtitles;
 
+  /// Whether this backend ingests external subtitles in [open] (single
+  /// prepare(), safe to auto-play immediately). Backends returning false
+  /// need external subtitles added after open via [addSubtitleTrack] while
+  /// paused, and the caller resumes once the tracks are selected.
+  bool get attachesExternalSubtitlesAtOpen;
+
+  /// Whether the backend detects container fps from rendered frame
+  /// timestamps, so `container-fps` only becomes available a few frames
+  /// after playback starts (retry the property read instead of giving up).
+  bool get detectsFpsAfterRender;
+
+  /// Whether the video decoder must be refreshed (seek-in-place or
+  /// drop-buffers) after a display mode switch. True for mpv on Android,
+  /// where MediaCodec can stall against the reconfigured surface.
+  bool get needsDecoderRefreshAfterDisplaySwitch;
+
+  /// Whether [getStats] aggregates performance stats natively for the
+  /// active backend (the Android plugin covers both ExoPlayer and its mpv
+  /// fallback). Backends returning false are sampled via mpv property
+  /// reads instead.
+  bool get providesNativeStats;
+
   /// Add an external subtitle track.
   ///
   /// [uri] - URL or path to the subtitle file.
@@ -156,7 +178,10 @@ abstract class Player {
 
   /// Prime native display matching from server metadata before the decoder
   /// emits stream properties. Unsupported platforms ignore this.
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria);
+  ///
+  /// [extraDelayMs] is added after a native display-switch completion event,
+  /// for TVs or AVRs that need extra HDMI settle time.
+  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0});
 
   /// Configure subtitle fonts for libass rendering.
   ///
@@ -215,6 +240,46 @@ abstract class Player {
   /// On other platforms, this is a no-op.
   Future<void> clearVideoFrameRate();
 
+  /// Apply subtitle styling to the native rendering layer.
+  ///
+  /// ExoPlayer renders subtitles natively (CaptionStyleCompat for text subs,
+  /// libass font scale for ASS), so styling must be pushed after [open].
+  /// No-op on mpv backends, which style subtitles via `sub-*` properties.
+  Future<void> setSubtitleStyle({
+    required double fontSize,
+    required String textColor,
+    required double borderSize,
+    required String borderColor,
+    required String bgColor,
+    required int bgOpacity,
+    int subtitlePosition = 100,
+    bool bold = false,
+    bool italic = false,
+  });
+
+  /// Apply the box-fit mode to the native video layer
+  /// (0=FIT, 1=ZOOM/cover, 2=FILL/stretch).
+  ///
+  /// ExoPlayer scales via AspectRatioFrameLayout; mpv backends are a no-op
+  /// here and scale via `panscan`/`video-aspect-override` properties instead.
+  Future<void> setBoxFitMode(int mode);
+
+  /// Apply custom zoom to the native video layer. No-op on mpv backends,
+  /// which zoom via the `video-zoom` property.
+  Future<void> setVideoZoom(double scale);
+
+  /// Aggregated native playback stats (codecs, dimensions, dropped frames…).
+  ///
+  /// Returns an empty map on backends without native stats aggregation;
+  /// query mpv properties directly there instead.
+  Future<Map<String, dynamic>> getStats();
+
+  /// The backend actually playing right now, resolved from the native side.
+  ///
+  /// Unlike [playerType] (the configured backend), this reflects runtime
+  /// fallbacks — e.g. 'mpv' after ExoPlayer hit an unsupported format.
+  Future<String> runtimePlayerType();
+
   /// Request audio focus before starting playback.
   ///
   /// On Android, this notifies the system that the app wants to play audio,
@@ -237,8 +302,11 @@ abstract class Player {
 
   /// Dispose of the player and release resources.
   ///
+  /// [preserveDisplayMode] keeps any native display-mode hint active while a
+  /// replacement video route is being opened. Use false when leaving playback.
+  ///
   /// After calling this, the player instance should not be used.
-  Future<void> dispose();
+  Future<void> dispose({bool preserveDisplayMode = false});
 
   /// Creates a new player instance.
   ///

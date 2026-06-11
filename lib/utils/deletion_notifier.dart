@@ -73,10 +73,15 @@ class DeletionNotifier extends BaseNotifier<DeletionEvent> {
   }
 
   void notifyDeletedItem({required MediaItem item, bool isDownloadOnly = false}) {
+    final serverId = serverIdOrNull(item.serverId);
+    if (serverId == null) {
+      appLogger.w('DeletionNotifier: missing serverId for ${item.id}, skipping deletion event');
+      return;
+    }
     notify(
       DeletionEvent(
         itemId: item.id,
-        serverId: ServerId(item.serverId ?? ''),
+        serverId: serverId,
         parentChain: item.parentChain,
         mediaType: item.kind.id,
         leafCount: item.leafCount ?? 1,

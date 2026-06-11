@@ -4,6 +4,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_server_client.dart';
 import '../media/media_version.dart';
+import '../media/episode_collection.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/media_version_resolver.dart';
@@ -97,18 +98,13 @@ Future<List<MediaVersion>?> fetchRepresentativeVersions(MediaServerClient client
     String? episodeRatingKey;
 
     if (metadata.kind == MediaKind.season) {
-      final episodes = await client.fetchChildren(metadata.id);
-      final firstEpisode = episodes.where((e) => e.kind == MediaKind.episode).firstOrNull;
+      final firstEpisode = await fetchFirstEpisodeForSeason(client, metadata.id);
       episodeRatingKey = firstEpisode?.id;
     } else if (metadata.kind == MediaKind.show) {
       final seasons = await client.fetchChildren(metadata.id);
-      // Skip Season 0 (Specials) as it may have different encoding
-      final firstSeason =
-          seasons.where((s) => s.kind == MediaKind.season && (s.index ?? 0) > 0).firstOrNull ??
-          seasons.where((s) => s.kind == MediaKind.season).firstOrNull;
+      final firstSeason = defaultPlaybackSeason(seasons);
       if (firstSeason != null) {
-        final episodes = await client.fetchChildren(firstSeason.id);
-        final firstEpisode = episodes.where((e) => e.kind == MediaKind.episode).firstOrNull;
+        final firstEpisode = await fetchFirstEpisodeForSeason(client, firstSeason.id);
         episodeRatingKey = firstEpisode?.id;
       }
     }

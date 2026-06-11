@@ -535,7 +535,7 @@ class _LiveTvScreenState extends State<LiveTvScreen>
           i,
           onSelectWhenActive: _focusCurrentTab,
           onNavigateDown: _focusCurrentTab,
-          onNavigateRightFromLast: () => _actionBarKey.currentState?.requestFocusOnFirst(),
+          onNavigateToActions: () => _actionBarKey.currentState?.requestFocusOnFirst(),
         ),
       ],
     ];

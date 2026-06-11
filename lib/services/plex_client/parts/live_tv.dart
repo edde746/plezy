@@ -638,7 +638,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
 
       if (entries.isEmpty) return null;
       return LiveTvHubResult(
-        title: hubJson['title'] as String? ?? 'Unknown',
+        title: hubJson['title'] as String? ?? t.liveTv.unknownHub,
         hubKey: hubJson['key'] as String? ?? '',
         entries: entries,
       );
@@ -825,7 +825,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
           ? int.tryParse(containerStatus)
           : null;
       if (statusInt != null && statusInt != 0 && statusInt != 200) {
-        final msg = container['message'] ?? 'Unknown error';
+        final msg = container['message'] ?? t.liveTv.unknownError;
         appLogger.w('Tune channel error: $msg (status: $containerStatus)');
         throw Exception(msg);
       }
