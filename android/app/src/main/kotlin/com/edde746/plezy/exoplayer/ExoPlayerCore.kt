@@ -1290,10 +1290,20 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
 
     activity.runOnUiThread {
+      // Skip when already at the target size: setLayoutParams always schedules a
+      // layout pass, and this runs from the global-layout listener — re-applying
+      // equal params would keep the UI thread laying out every frame (#1261).
+      val current = subtitle.layoutParams as? FrameLayout.LayoutParams
+      if (current != null &&
+        current.width == subWidth &&
+        current.height == subHeight &&
+        current.gravity == Gravity.CENTER
+      ) {
+        return@runOnUiThread
+      }
       subtitle.layoutParams = FrameLayout.LayoutParams(subWidth, subHeight).apply {
         gravity = Gravity.CENTER
       }
-      subtitle.requestLayout()
     }
   }
 
@@ -1305,8 +1315,11 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
   fun setBoxFitMode(mode: Int) {
     if (disposing) return
+    val resizeMode = boxFitModeToResizeMode(mode.coerceIn(0, 2))
     activity.runOnUiThread {
-      videoAspectContainer?.resizeMode = boxFitModeToResizeMode(mode.coerceIn(0, 2))
+      val container = videoAspectContainer ?: return@runOnUiThread
+      if (container.resizeMode == resizeMode) return@runOnUiThread
+      container.resizeMode = resizeMode
       lastVideoSize?.let { vs ->
         if (vs.width > 0 && vs.height > 0) {
           updateSubtitleViewSize(vs.width, vs.height, vs.pixelWidthHeightRatio)
@@ -1319,6 +1332,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (disposing) return
     val clamped = scale.coerceIn(0.5, 2.0).toFloat()
     activity.runOnUiThread {
+      if (clamped == videoZoomScale) return@runOnUiThread
       videoZoomScale = clamped
       videoAspectContainer?.scaleX = clamped
       videoAspectContainer?.scaleY = clamped

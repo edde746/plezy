@@ -47,6 +47,16 @@ class VideoFilterManager {
   /// Debounced video filter update with leading edge execution
   late final Debounce _debouncedUpdateVideoFilter;
 
+  /// Last values actually written to the player. A missing key means unknown,
+  /// so the next run rewrites it.
+  final Map<String, String> _appliedProps = {};
+  int? _appliedBoxFitMode;
+  double? _appliedVideoZoom;
+
+  /// In-progress update loop; concurrent callers mark it dirty and share it.
+  Future<void>? _updateLoop;
+  bool _updateDirty = false;
+
   /// Callback invoked when boxFitMode changes, for external persistence
   final void Function(int mode)? onBoxFitModeChanged;
 
@@ -167,44 +177,90 @@ class VideoFilterManager {
   }
 
   /// Update the video scaling and positioning based on current display mode.
+  /// Writes are diffed against the last applied values and serialized: while a
+  /// run is in flight, further calls coalesce into one trailing re-run instead
+  /// of interleaving stale writes (pinch zoom calls this per gesture tick).
   /// When ambient lighting is active, video-aspect-override is managed by ambient lighting.
-  Future<void> updateVideoFilter() async {
+  Future<void> updateVideoFilter() {
+    final running = _updateLoop;
+    if (running != null) {
+      _updateDirty = true;
+      return running;
+    }
+    final loop = _runUpdateLoop();
+    _updateLoop = loop;
+    return loop;
+  }
+
+  Future<void> _runUpdateLoop() async {
     try {
+      do {
+        _updateDirty = false;
+        await _applyVideoFilter();
+      } while (_updateDirty);
+    } finally {
+      _updateLoop = null;
+    }
+  }
+
+  Future<void> _applyVideoFilter() async {
+    try {
+      final boxFitMode = _boxFitMode;
+      final zoomScale = _zoomScale;
+      final playerSize = _playerSize;
+      final ambientActive = ambientLightingService?.isEnabled == true;
+      final coverMode = boxFitMode == 1;
+
       // ExoPlayer handles scaling via AspectRatioFrameLayout (no-op on mpv
       // backends). The MPV properties below still run — on ExoPlayer they
       // forward to setMpvProperty, which queues them for any future fallback.
-      await player.setBoxFitMode(_boxFitMode);
-      await player.setVideoZoom(_zoomScale);
-
-      if (ambientLightingService?.isEnabled != true) {
-        await player.setProperty('video-aspect-override', 'no');
+      if (_appliedBoxFitMode != boxFitMode) {
+        _appliedBoxFitMode = null;
+        await player.setBoxFitMode(boxFitMode);
+        _appliedBoxFitMode = boxFitMode;
       }
-      await player.setProperty('sub-ass-force-margins', 'no');
-      await player.setProperty('panscan', '0');
-      await player.setProperty('video-zoom', videoZoomPropertyForScale(_zoomScale).toString());
+      if (_appliedVideoZoom != zoomScale) {
+        _appliedVideoZoom = null;
+        await player.setVideoZoom(zoomScale);
+        _appliedVideoZoom = zoomScale;
+      }
 
-      if (_boxFitMode == 1) {
-        // Cover mode - use panscan to fill screen while maintaining aspect ratio
-        await player.setProperty('panscan', '1.0');
-        await player.setProperty('sub-ass-force-margins', 'yes');
-      } else if (_boxFitMode == 2) {
+      // Compute final target values up-front: each mpv write takes effect
+      // immediately, so transient intermediate values would flash on screen.
+      String? aspectOverride = ambientActive ? null : 'no';
+      if (boxFitMode == 2) {
         // Fill/stretch mode - override aspect ratio to match player (stretches video)
-        final playerSize = _playerSize;
         if (playerSize != null && playerSize.width > 0 && playerSize.height > 0) {
           final playerAspect = playerSize.width / playerSize.height;
           if (playerAspect.isFinite && playerAspect > 0) {
-            await player.setProperty('video-aspect-override', playerAspect.toString());
+            aspectOverride = playerAspect.toString();
             appLogger.d('Stretch mode: aspect-override=$playerAspect (player: $playerSize)');
           }
         }
       }
 
-      if (_zoomScale > 1.0001) {
-        await player.setProperty('sub-ass-force-margins', 'yes');
+      if (aspectOverride != null) {
+        await _applyProperty('video-aspect-override', aspectOverride);
       }
+      if (ambientActive) {
+        // Ambient lighting writes video-aspect-override out-of-band, so any
+        // cached value is unreliable; forget it so the next run rewrites it.
+        _appliedProps.remove('video-aspect-override');
+      }
+      await _applyProperty('sub-ass-force-margins', coverMode || zoomScale > 1.0001 ? 'yes' : 'no');
+      await _applyProperty('panscan', coverMode ? '1.0' : '0');
+      await _applyProperty('video-zoom', videoZoomPropertyForScale(zoomScale).toString());
     } catch (e) {
       appLogger.w('Failed to update video filter', error: e);
     }
+  }
+
+  Future<void> _applyProperty(String name, String value) async {
+    if (_appliedProps[name] == value) return;
+    // Uncache while in flight so a failed write is retried on the next run.
+    _appliedProps.remove(name);
+    await player.setProperty(name, value);
+    _appliedProps[name] = value;
   }
 
   /// Debounced version of updateVideoFilter for resize events.
