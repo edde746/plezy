@@ -4,7 +4,6 @@ import android.app.Activity
 import android.app.ActivityManager
 import android.content.Context
 import android.graphics.Color
-import android.graphics.PixelFormat
 import android.graphics.Typeface
 import android.media.AudioDeviceInfo
 import android.media.AudioFormat
@@ -17,7 +16,6 @@ import android.os.Looper
 import android.util.Log
 import android.view.Gravity
 import android.view.SurfaceView
-import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
@@ -298,23 +296,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     }
   }
 
-  private fun configureSubtitleOverlaySurface() {
-    subtitleView?.post {
-      val count = subtitleView?.childCount ?: 0
-      for (i in 0 until count) {
-        val child = subtitleView?.getChildAt(i)
-        if (child is SurfaceView) {
-          child.setZOrderOnTop(false)
-          child.setZOrderMediaOverlay(true)
-          child.holder.setFormat(PixelFormat.TRANSLUCENT)
-          FlutterOverlayHelper.applyCompositionOrder(child, -1)
-        } else if (child is TextureView) {
-          child.isOpaque = false
-        }
-      }
-    }
-  }
-
   // DV conversion state
   private var dvMode: DvConversionMode = DvConversionMode.DISABLED
   private var debugDvModeOverride: DvConversionMode? = null
@@ -406,9 +387,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       videoAspectContainer!!.addView(surfaceView)
       surfaceContainer!!.addView(videoAspectContainer)
 
-      // Create SubtitleView - added to surfaceContainer above video
-      // With OVERLAY_OPEN_GL mode, libass-android adds AssSubtitleTextureView as a child
-      // which renders ASS subtitles with full styling using GPU texture composition
+      // Create SubtitleView - added to surfaceContainer above video. Hosts only
+      // the built-in CanvasSubtitleOutput for non-ASS text cues; the ASS overlay
+      // lives inside videoAspectContainer so it tracks the video rect.
       subtitleView = SubtitleView(activity).apply {
         layoutParams = FrameLayout.LayoutParams(
           FrameLayout.LayoutParams.MATCH_PARENT,
@@ -497,10 +478,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         .setTsExtractorTimestampSearchBytes(TS_TIMESTAMP_SEARCH_PACKETS * TsExtractor.TS_PACKET_SIZE)
 
       // Inline buildWithAssSupport to retain AssHandler reference for font scale control.
-      // OVERLAY_OPEN_GL uses TextureView which follows normal View hierarchy z-ordering,
-      // preventing hardware overlay promotion issues on devices like Nvidia Shield.
-      Log.d(TAG, "SubtitleView childCount before ASS setup: ${subtitleView?.childCount}")
-
       val renderType = AssRenderType.OVERLAY_OPEN_GL
       val handler = AssHandler(renderType)
       assHandler = handler
@@ -590,22 +567,26 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         .setRenderersFactory(wrappedRenderersFactory)
         .build()
 
-      // Add ASS overlay view to SubtitleView for OVERLAY modes.
+      // Add ASS overlay view inside videoAspectContainer, sibling of the video
+      // SurfaceView, so it inherits the video's resize-mode measurement, zoom
+      // transform, and crop: the libass frame (= surface size) maps 1:1 onto the
+      // displayed video rect at any fit mode or zoom level. Parenting it outside
+      // the container desyncs ASS positioning whenever the video rect exceeds the
+      // screen (cover mode, zoom > 100%).
       // We use AssSubtitleSurfaceView directly (not AssSubtitleView) so we get a
       // SurfaceFlinger-layer-backed overlay that eglPresentationTimeANDROID can
       // vsync-pin. Z-order: video SurfaceView (-2) < this MediaOverlay-flagged
       // SurfaceView (-1) < parent canvas < Flutter SurfaceView (+1) in the window.
-      //
-      // Inserted at child index 0 so the SurfaceView's transparent punch runs BEFORE
-      // SubtitleView's built-in CanvasSubtitleOutput child renders non-ASS cues.
-      // Appending would punch away already-drawn SRT/VTT text.
+      // Both punches run while this subtree draws, BEFORE the later subtitleView
+      // sibling renders non-ASS cues on the parent canvas.
       var assSubtitleSurfaceView: AssSubtitleSurfaceView? = null
-      subtitleView?.let { sv ->
-        val assView = AssSubtitleSurfaceView(sv.context, handler)
+      videoAspectContainer?.let { container ->
+        val assView = AssSubtitleSurfaceView(container.context, handler)
         assSubtitleSurfaceView = assView
-        sv.addView(
+        // Pre-36 sublayer is already set by the view's own setZOrderMediaOverlay(true).
+        FlutterOverlayHelper.applyCompositionOrder(assView, -1)
+        container.addView(
           assView,
-          0,
           FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
@@ -654,9 +635,6 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         }
       }
       surfaceView?.let { exoPlayer!!.setVideoSurfaceView(it) }
-
-      Log.d(TAG, "SubtitleView childCount after ASS setup: ${subtitleView?.childCount}")
-      configureSubtitleOverlaySurface()
 
       // Debug: Log SubtitleView child hierarchy
       subtitleView?.post {
@@ -1265,7 +1243,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val containerHeight = contentView.height
     if (containerWidth == 0 || containerHeight == 0) return
 
-    // In cover/stretch/zoomed-in modes subtitles stay at container size so they
+    // Sizes the non-ASS SubtitleView only (the ASS overlay lives inside
+    // videoAspectContainer and tracks the video rect automatically).
+    // In cover/stretch/zoomed-in modes text cues stay at container size so they
     // never get cropped. In letterbox mode they follow the visible video rect.
     val isLetterbox = videoAspectContainer?.resizeMode == AspectRatioFrameLayout.RESIZE_MODE_FIT
     val (subWidth, subHeight) = if (isLetterbox) {
