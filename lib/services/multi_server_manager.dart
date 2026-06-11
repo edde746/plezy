@@ -43,6 +43,15 @@ class MultiServerManager {
 
   Stream<Map<String, bool>> get statusStream => _statusController.stream;
 
+  /// Per-server connect progress during a bind. Unlike [statusStream] — whose
+  /// first emission means "the binder's first connect pass finished" and which
+  /// triggers libraries/live-tv work per emission — this fires as each
+  /// individual server lands so the startup splash can flip its checkmarks
+  /// incrementally without disturbing those contracts.
+  final _connectProgressController = StreamController<({String serverId, bool online})>.broadcast();
+
+  Stream<({String serverId, bool online})> get connectProgressStream => _connectProgressController.stream;
+
   /// Servers whose authentication has failed (token rejected). A re-auth flow
   /// should be offered for these — they will remain "offline" until the user
   /// signs in again. Cleared once a probe succeeds.
@@ -213,6 +222,7 @@ class MultiServerManager {
   /// creating config, and building client with failover support.
   Future<PlexClient> _createClientForServer({required PlexServer server, required String clientIdentifier}) async {
     final serverId = server.clientIdentifier;
+    final stopwatch = Stopwatch()..start();
 
     // Get storage and load cached endpoint for this server
     final storage = await StorageService.getInstance();
@@ -238,6 +248,7 @@ class MultiServerManager {
 
     final workingConnection = streamIterator.current;
     final baseUrl = workingConnection.uri;
+    final firstConnectionMs = stopwatch.elapsedMilliseconds;
 
     // Create PlexClient with failover support
     final prioritizedEndpoints = server.prioritizedEndpointUrls(preferredFirst: baseUrl);
@@ -262,6 +273,16 @@ class MultiServerManager {
 
     // Save the initial endpoint
     await storage.saveServerEndpoint(ServerId(serverId), baseUrl);
+
+    appLogger.i(
+      'Connected ${server.name}',
+      error: {
+        'uri': baseUrl,
+        'hadCachedEndpoint': cachedEndpoint != null,
+        'firstConnectionMs': firstConnectionMs,
+        'totalMs': stopwatch.elapsedMilliseconds,
+      },
+    );
 
     // Drain remaining stream values in background to apply better connections
     _drainOptimizationStream(streamIterator, client: client, server: server, storage: storage);
@@ -442,6 +463,7 @@ class MultiServerManager {
         _authErrorServers.remove(serverId);
         _serverStatus[serverId] = true;
         bound.add(serverId);
+        _connectProgressController.add((serverId: serverId, online: true));
         return;
       }
       try {
@@ -455,9 +477,11 @@ class MultiServerManager {
         _serverStatus[serverId] = true;
         _authErrorServers.remove(serverId);
         bound.add(serverId);
+        _connectProgressController.add((serverId: serverId, online: true));
       } catch (e, stackTrace) {
         appLogger.e('refreshTokensForProfile: failed to connect ${server.name}', error: e, stackTrace: stackTrace);
         _serverStatus[serverId] = false;
+        _connectProgressController.add((serverId: serverId, online: false));
       }
     });
     await Future.wait(futures);
@@ -1024,6 +1048,9 @@ class MultiServerManager {
     disconnectAll();
     if (!_statusController.isClosed) {
       _statusController.close();
+    }
+    if (!_connectProgressController.isClosed) {
+      _connectProgressController.close();
     }
   }
 }

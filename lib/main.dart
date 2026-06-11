@@ -1308,13 +1308,26 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
 
   /// Wire per-server status updates from [MultiServerManager] into the
   /// splash list so the user sees check/cross marks land as the binder
-  /// brings each client online. Best-effort: stops listening when the
-  /// state goes away.
+  /// brings each client online. [MultiServerManager.connectProgressStream]
+  /// fires as each individual server settles; [MultiServerManager.statusStream]
+  /// emits once per connect pass and back-fills anything the progress stream
+  /// missed (e.g. servers torn down by the binder's visibility sweep).
+  /// Best-effort: stops listening when the state goes away.
   StreamSubscription<Map<String, bool>>? _statusSub;
+  StreamSubscription<({String serverId, bool online})>? _connectProgressSub;
 
   void _bindServerStatusListener(ActiveProfileProvider _, MultiServerManager Function() resolveManager) {
     _statusSub?.cancel();
+    _connectProgressSub?.cancel();
     final manager = resolveManager();
+    _connectProgressSub = manager.connectProgressStream.listen((progress) {
+      if (!mounted) return;
+      final existing = _serverStatus[progress.serverId];
+      if (existing == null) return;
+      setState(() {
+        _serverStatus[progress.serverId] = (existing.$1, progress.online);
+      });
+    });
     _statusSub = manager.statusStream.listen((status) {
       if (!mounted) return;
       setState(() {
@@ -1333,6 +1346,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
   @override
   void dispose() {
     _statusSub?.cancel();
+    _connectProgressSub?.cancel();
     super.dispose();
   }
 

@@ -15,17 +15,26 @@ class MediaServerTimeouts {
   /// can be slower than the top-level home hub call on remote Plex servers.
   static const libraryHubAttemptTimeouts = [Duration(seconds: 10), Duration(seconds: 8), Duration(seconds: 5)];
 
-  /// Timeout for probing a cached/preferred endpoint before falling back to
-  /// the full candidate race (used in [PlexServer.findBestWorkingConnection]).
+  /// Timeout for probing a cached/preferred endpoint (used in
+  /// [PlexServer.findBestWorkingConnection]).
   static const preferredEndpointProbe = Duration(milliseconds: 1500);
+
+  /// How long the cached/preferred endpoint probe gets to answer before the
+  /// full candidate race starts alongside it. A healthy cached endpoint
+  /// answers well inside this window and wins deterministically; a stale one
+  /// (e.g. a cached LAN address probed from outside the LAN) only delays
+  /// discovery by this much instead of the full [preferredEndpointProbe].
+  static const preferredEndpointHeadStart = Duration(milliseconds: 300);
 
   /// Timeout for the connection race where all candidates are tested in
   /// parallel (used in [PlexServer.findBestWorkingConnection]).
   static const connectionRace = Duration(seconds: 2);
 
-  /// Per-server connection budget: preferred probe + race + HTTPS upgrade
-  /// attempt + 1s buffer.
-  static const perServerConnect = Duration(milliseconds: 1500 + 2000 + 2000 + 1000);
+  /// Per-server connection watchdog ceiling. The discovery path is no longer
+  /// strictly serial (cached probe overlaps the race; the HTTPS upgrade runs
+  /// off the critical path), so this is a generous upper bound rather than a
+  /// sum of phases.
+  static const perServerConnect = Duration(milliseconds: 6500);
 
   /// HTTP timeout for the live-TV tune POST. Matches Plex web's value — the
   /// default 10s connect budget is too tight on Fire-TV cold starts.
