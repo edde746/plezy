@@ -3,8 +3,24 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
+import 'package:plezy/theme/mono_tokens.dart';
 import 'package:plezy/widgets/video_controls/models/track_controls_state.dart';
 import 'package:plezy/widgets/video_controls/sheets/track_sheet.dart';
+
+const _testTokens = MonoTokens(
+  radiusSm: 8,
+  radiusMd: 12,
+  space: 8,
+  fast: Duration(milliseconds: 1),
+  normal: Duration(milliseconds: 1),
+  slow: Duration(milliseconds: 1),
+  bg: Colors.black,
+  surface: Colors.black,
+  outline: Colors.white24,
+  text: Colors.white,
+  textMuted: Colors.white70,
+  splashFactory: NoSplash.splashFactory,
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -69,6 +85,40 @@ void main() {
     });
   });
 
+  group('TrackSheet two-line labels', () {
+    testWidgets('renders language as the primary line and tech detail below', (tester) async {
+      final player = _FakeTrackSheetPlayer(
+        tracks: const Tracks(
+          audio: [
+            AudioTrack(id: 'a1', language: 'eng', codec: 'aac', channels: 2),
+            AudioTrack(
+              id: 'a2',
+              title: 'Dolby Digital Plus 5.1 with Atmos',
+              language: 'ta',
+              codec: 'eac3',
+              channels: 6,
+            ),
+          ],
+        ),
+        track: const TrackSelection(
+          audio: AudioTrack(id: 'a1', language: 'eng', codec: 'aac', channels: 2),
+          subtitle: SubtitleTrack.off,
+        ),
+      );
+
+      await _pumpTrackSheet(
+        tester,
+        player: player,
+        trackControlsState: const TrackControlsState(subtitleSearchSupported: false),
+      );
+
+      expect(find.text('English'), findsOneWidget);
+      expect(find.text('AAC · Stereo'), findsOneWidget);
+      expect(find.text('Tamil'), findsOneWidget);
+      expect(find.text('Dolby Digital Plus 5.1 with Atmos · E-AC3 · 5.1'), findsOneWidget);
+    });
+  });
+
   group('TrackControlsState.hasSubtitleControls', () {
     test('counts source subtitles only when source switching is available', () {
       final sourceSubtitle = MediaSubtitleTrack(id: 1, selected: false, forced: false);
@@ -106,6 +156,7 @@ Future<void> _pumpTrackSheet(
 }) async {
   await tester.pumpWidget(
     MaterialApp(
+      theme: ThemeData(extensions: const [_testTokens]),
       home: Scaffold(
         body: SizedBox(
           width: 700,
