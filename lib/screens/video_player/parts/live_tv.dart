@@ -56,6 +56,19 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     }
   }
 
+  /// Fire-and-forget a stopped heartbeat for a session that started but was
+  /// never adopted (unmount or superseded mid-start) so the backend tears
+  /// down its tuner/transcode resources instead of waiting for a timeout.
+  void _abandonLiveSession(LiveTvPlaybackSession session) {
+    unawaited(() async {
+      try {
+        await session.reportTimeline(state: 'stopped', positionMs: 0, durationMs: session.program.durationMs ?? 0);
+      } catch (e) {
+        appLogger.d('Failed to stop abandoned live session', error: e);
+      }
+    }());
+  }
+
   /// Resolve the owning live-TV server for [channel] and start a playback
   /// session on it — the shared resolution path for initial launch and
   /// channel zapping (Plex tunes a DVR, Jellyfin negotiates a direct URL).
@@ -245,13 +258,21 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
     if (!mounted) return;
     _setPlayerState(() => _hasFirstFrame.value = false);
 
+    LiveTvPlaybackSession? session;
     try {
       // Channel switch IS a fresh start: same resolution path as launch.
-      final session = await _startLiveSession(channel);
-      if (session == null || !mounted || player != currentPlayer) return;
+      session = await _startLiveSession(channel);
+      if (session == null) return;
+      if (!mounted || player != currentPlayer) {
+        _abandonLiveSession(session);
+        return;
+      }
 
       final streamUrl = await session.streamUrlAt();
-      if (streamUrl == null || !mounted || player != currentPlayer) return;
+      if (streamUrl == null || !mounted || player != currentPlayer) {
+        _abandonLiveSession(session);
+        return;
+      }
 
       await _setLiveStreamOptions(currentPlayer);
       await currentPlayer.open(Media(streamUrl, headers: const {'Accept-Language': 'en'}), play: true, isLive: true);
@@ -269,6 +290,10 @@ extension _VideoPlayerLiveTvMethods on VideoPlayerScreenState {
       // Restart timeline heartbeats for the new session
       _startLiveTimelineUpdates();
     } catch (e) {
+      // A session that tuned but was never adopted (streamUrlAt/open threw)
+      // would otherwise hold its server-side tuner until the backend times out.
+      final orphan = session;
+      if (orphan != null && _live.session != orphan) _abandonLiveSession(orphan);
       appLogger.e('Failed to switch channel', error: e);
       if (mounted) showErrorSnackBar(context, e.toString());
     } finally {

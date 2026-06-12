@@ -19,7 +19,10 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         final channel = widget.live!.channel;
         final session = await _startLiveSession(channel);
         if (session == null) throw Exception('Failed to start live channel');
-        if (!mounted || !attempt.isCurrent) return;
+        if (!mounted || !attempt.isCurrent) {
+          _abandonLiveSession(session);
+          return;
+        }
         _live.adoptSession(session);
 
         // Show "Watch from Start" dialog when an existing capture session has >60s of history.
