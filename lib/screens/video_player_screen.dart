@@ -819,7 +819,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
       }
 
       if (settingsService.read(SettingsService.audioNormalization)) {
-        await currentPlayer.setProperty('af', 'loudnorm=I=-14:TP=-3:LRA=4');
+        await currentPlayer.setAudioNormalization(true);
       }
 
       if (PlatformDetector.isDesktopOS()) {

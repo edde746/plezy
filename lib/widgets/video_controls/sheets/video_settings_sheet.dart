@@ -556,14 +556,13 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             onAfterWrite: widget.player.setAudioPassthrough,
           ),
 
-        // Audio Normalization (MPV only)
-        if (widget.player.playerType == 'mpv')
-          _SettingsToggleItem(
-            pref: SettingsService.audioNormalization,
-            icon: Symbols.graphic_eq_rounded,
-            title: t.videoSettings.audioNormalization,
-            onAfterWrite: (value) => widget.player.setProperty('af', value ? 'loudnorm=I=-14:TP=-3:LRA=4' : ''),
-          ),
+        // Audio Normalization
+        _SettingsToggleItem(
+          pref: SettingsService.audioNormalization,
+          icon: Symbols.graphic_eq_rounded,
+          title: t.videoSettings.audioNormalization,
+          onAfterWrite: widget.player.setAudioNormalization,
+        ),
 
         // Shader Preset (MPV only)
         if (widget.shaderService != null && widget.shaderService!.isSupported)

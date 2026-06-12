@@ -209,6 +209,14 @@ abstract class Player {
   /// passed through to the audio device without decoding.
   Future<void> setAudioPassthrough(bool enabled);
 
+  /// Enable or disable loudness normalization.
+  ///
+  /// mpv backends insert/remove the `loudnorm` audio filter. Android
+  /// ExoPlayer attaches platform audio effects (DynamicsProcessing on
+  /// API 28+, LoudnessEnhancer otherwise) and forces decoded non-tunneled
+  /// PCM output while enabled so the effects can process the stream.
+  Future<void> setAudioNormalization(bool enabled);
+
   /// Show or hide the video rendering layer.
   ///
   /// On macOS, this controls the Metal layer visibility.

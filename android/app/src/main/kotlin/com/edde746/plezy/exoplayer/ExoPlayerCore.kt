@@ -96,6 +96,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     private const val DECODER_HANG_TIMEOUT_MS = 5000L
     private const val MAX_AUDIO_RECOVERY_ATTEMPTS = 2
     private const val FPS_SAMPLE_COUNT = 8
+    private const val AUDIO_BOUNCE_TIMEOUT_MS = 1000L
 
     /** Per-frame "video is at X" logcat stream (tag AssFrameCb) for diagnosing
      *  ASS subtitle lag against the libass pipeline's render/swap lines. */
@@ -153,6 +154,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   private val tunnelingDisabledForCodec: Boolean
     get() = tunnelingDisabledForAudioCodec || tunnelingDisabledForVideoCodec || tunnelingDisabledForDecodedTrueHdPcm || tunnelingDisabledForAudioRecovery
   private var currentTunneledPlayback: Boolean = false
+
+  // Loudness normalization (#1289): audiofx effects only process non-tunneled
+  // PCM mixer streams, so while enabled we block direct/bitstream output and
+  // disable tunneling.
+  private var audioNormalizationEnabled: Boolean = false
+  private val audioNormalization = AudioNormalizationEffect(::emitLog)
+  private var pendingAudioRendererBounce: Boolean = false
+  private val audioBounceTimeout = Runnable { completeAudioRendererBounce("audio-normalization bounce timeout") }
   private var lastSeekable: Boolean? = null
 
   @Volatile private var disposing: Boolean = false
@@ -913,6 +922,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
         errorMessage = "Video track present but no decoder available"
       )
       return
+    }
+
+    // Audio renderer bounce (loudness normalization): the playback thread has
+    // observed the disabled audio renderer — re-enable so selection re-queries
+    // the sink's direct-output verdict.
+    if (pendingAudioRendererBounce && tracks.groups.none { it.type == C.TRACK_TYPE_AUDIO && it.isSelected }) {
+      completeAudioRendererBounce("audio-normalization (audio renderer back on)")
+      return // skip processing the intermediate no-audio track list
     }
 
     if (restorePendingDvTrackSelection(tracks)) return
@@ -1770,6 +1787,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
 
   private fun shouldBlockDirectAudioOutput(format: Format, reason: String): Boolean {
     val mimeType = format.sampleMimeType ?: return false
+    // Loudness normalization needs decoded PCM for the audiofx chain to act on.
+    if (audioNormalizationEnabled && isEncodedAudioMimeType(mimeType)) return true
     if (directAudioOutputBlockedAfterFailure.contains(mimeType)) {
       if (loggedDirectAudioRecoveryBlocks.add("$mimeType|$reason")) {
         emitLog(
@@ -2153,7 +2172,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     val player = exoPlayer ?: return null
     val audioDelayActive = (renderersFactory?.audioDelayUs?.get() ?: 0L) != 0L
     return tunnelingUserEnabled && (player.playbackParameters.speed == 1f) && !tunnelingDisabledForCodec &&
-      !tunnelingDisabledForAssSubtitles && !audioDelayActive
+      !tunnelingDisabledForAssSubtitles && !audioDelayActive && !audioNormalizationEnabled
   }
 
   private fun updateCurrentTunnelingState(reason: String, shouldTunnel: Boolean): Boolean {
@@ -2161,7 +2180,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     currentTunneledPlayback = shouldTunnel
     val speed = exoPlayer?.playbackParameters?.speed ?: 1f
     val audioDelayActive = (renderersFactory?.audioDelayUs?.get() ?: 0L) != 0L
-    emitLog("info", "tunneling", "Toggling tunneling=$shouldTunnel (reason=$reason, user=$tunnelingUserEnabled, speed=$speed, audioCodecDisabled=$tunnelingDisabledForAudioCodec, videoCodecDisabled=$tunnelingDisabledForVideoCodec, decodedTrueHdPcmDisabled=$tunnelingDisabledForDecodedTrueHdPcm, audioRecoveryDisabled=$tunnelingDisabledForAudioRecovery, assSubtitlesDisabled=$tunnelingDisabledForAssSubtitles, audioDelay=$audioDelayActive)")
+    emitLog("info", "tunneling", "Toggling tunneling=$shouldTunnel (reason=$reason, user=$tunnelingUserEnabled, speed=$speed, audioCodecDisabled=$tunnelingDisabledForAudioCodec, videoCodecDisabled=$tunnelingDisabledForVideoCodec, decodedTrueHdPcmDisabled=$tunnelingDisabledForDecodedTrueHdPcm, audioRecoveryDisabled=$tunnelingDisabledForAudioRecovery, assSubtitlesDisabled=$tunnelingDisabledForAssSubtitles, audioDelay=$audioDelayActive, audioNormalization=$audioNormalizationEnabled)")
     return true
   }
 
@@ -2327,6 +2346,14 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
           updateTunnelingState("encoded TrueHD output initialized", forceSelector = true)
         }
       }
+      // Re-key the normalization effect to the actual output channel count
+      // (DynamicsProcessing parameters are per-channel).
+      if (audioNormalizationEnabled) attachNormalizationEffect()
+    }
+
+    override fun onAudioSessionIdChanged(eventTime: AnalyticsListener.EventTime, audioSessionId: Int) {
+      emitLog("debug", "audio", "Audio session id: $audioSessionId")
+      if (audioNormalizationEnabled) attachNormalizationEffect()
     }
 
     override fun onAudioTrackReleased(
@@ -2556,6 +2583,10 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     tunnelingDisabledForAudioRecovery = false
     tunnelingDisabledForAssSubtitles = false
     currentTunneledPlayback = false
+    // audioNormalizationEnabled persists across opens (user-level state, like
+    // tunnelingUserEnabled); only the in-flight bounce is abandoned.
+    pendingAudioRendererBounce = false
+    handler.removeCallbacks(audioBounceTimeout)
     pendingStartPositionMs = startPositionMs
     pendingPlayWhenReady = autoPlay
     applyTrackSelectorPolicy(
@@ -2603,6 +2634,59 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
   fun setAudioDelay(seconds: Double) {
     renderersFactory?.audioDelayUs?.set((seconds * 1_000_000).toLong())
     updateTunnelingState("audio-delay")
+  }
+
+  fun setAudioNormalization(enabled: Boolean) {
+    if (audioNormalizationEnabled == enabled) return
+    audioNormalizationEnabled = enabled
+    emitLog("info", "audio-normalization", "Loudness normalization ${if (enabled) "enabled" else "disabled"}")
+    if (enabled) attachNormalizationEffect() else audioNormalization.release()
+
+    if (exoPlayer == null) return
+    // A selector-parameter change only re-inits the audio renderer when the
+    // parameters actually differ (the tunneling flag flipping). Otherwise the
+    // renderer keeps its bypass/decode path and the sink's new direct-output
+    // verdict is never consulted — bounce the renderer in that case.
+    val tunnelingWillFlip = calculateTunnelingEnabled() != currentTunneledPlayback
+    val outputEncoding = lastAudioTrackConfig?.encoding
+    val selectedMime = selectedAudioFormat()?.sampleMimeType
+    val needsBounce = !tunnelingWillFlip && outputEncoding != null && selectedMime != null &&
+      isEncodedAudioMimeType(selectedMime) &&
+      (if (enabled) !isPcmEncoding(outputEncoding) else isPcmEncoding(outputEncoding))
+    if (needsBounce) {
+      startAudioRendererBounce("audio-normalization")
+    } else {
+      updateTunnelingState("audio-normalization")
+    }
+  }
+
+  private fun attachNormalizationEffect() {
+    val sessionId = exoPlayer?.audioSessionId ?: C.AUDIO_SESSION_ID_UNSET
+    if (sessionId == C.AUDIO_SESSION_ID_UNSET) {
+      emitLog("debug", "audio-normalization", "Audio session id not ready; attach deferred")
+      return // onAudioSessionIdChanged re-attaches
+    }
+    val channels = lastAudioTrackConfig?.channelConfig?.let { Integer.bitCount(it) }
+    audioNormalization.attach(sessionId, channels)
+  }
+
+  // Two-phase audio renderer bounce: disable, wait for the playback thread to
+  // observe it (onTracksChanged with no selected audio), then re-enable so track
+  // selection re-queries the sink's format support. A synchronous flip-back
+  // would be coalesced: the invalidation message reads the latest parameters.
+  private fun startAudioRendererBounce(reason: String) {
+    if (pendingAudioRendererBounce) return
+    pendingAudioRendererBounce = true
+    emitLog("info", "audio-normalization", "Bouncing audio renderer to re-evaluate output path (reason=$reason)")
+    applyTrackSelectorPolicy(reason = "$reason (audio renderer off)", audioDisabled = true)
+    handler.postDelayed(audioBounceTimeout, AUDIO_BOUNCE_TIMEOUT_MS)
+  }
+
+  private fun completeAudioRendererBounce(reason: String) {
+    if (!pendingAudioRendererBounce) return
+    pendingAudioRendererBounce = false
+    handler.removeCallbacks(audioBounceTimeout)
+    applyTrackSelectorPolicy(reason = reason, audioDisabled = false)
   }
 
   fun setSubtitleDelay(seconds: Double) {
@@ -3072,6 +3156,8 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
       "audioOutputTunneling" to audioTrackConfig?.tunneling,
       "audioOutputOffload" to audioTrackConfig?.offload,
       "audioOutputBufferSize" to audioTrackConfig?.bufferSize,
+      "audioNormalization" to audioNormalizationEnabled,
+      "audioNormalizationEffect" to audioNormalization.describe,
       "audioLastSinkError" to lastAudioSinkError,
       "audioRecoveryAttempts" to audioRecoveryAttempts,
       "audioRecoveryLastAction" to lastAudioRecoveryAction,
@@ -3144,6 +3230,7 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     if (currentTunneledPlayback) return "Active"
     if (!tunnelingUserEnabled) return "Disabled by user"
     if (player.playbackParameters.speed != 1f) return "Off (speed ≠ 1×)"
+    if (audioNormalizationEnabled) return "Off (loudness normalization)"
     if (tunnelingDisabledForAudioRecovery) return "Off (audio recovery)"
     if (tunnelingDisabledForDecodedTrueHdPcm) return "Off (decoded TrueHD PCM)"
     if (tunnelingDisabledForVideoCodec) return "Off (video codec unsupported)"
@@ -3179,6 +3266,9 @@ class ExoPlayerCore(private val activity: Activity) : Player.Listener {
     frameRateManager = null
     audioFocusManager?.release()
     audioFocusManager = null
+
+    audioNormalization.release()
+    pendingAudioRendererBounce = false
 
     decoderInitName = null
     audioDecoderInitName = null

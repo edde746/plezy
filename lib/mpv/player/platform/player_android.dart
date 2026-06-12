@@ -12,6 +12,7 @@ class PlayerAndroid extends PlayerBase {
   int? _bufferSizeBytes;
   bool _tunnelingEnabled = true;
   String _dvConversionMode = 'auto';
+  bool _audioNormalizationEnabled = false;
 
   /// The native plugin switched from ExoPlayer to its mpv fallback for this
   /// session. Sticky for the instance lifetime, mirroring the native flag
@@ -257,6 +258,24 @@ class PlayerAndroid extends PlayerBase {
       default:
         await invoke('setMpvProperty', {'name': name, 'value': value});
     }
+  }
+
+  @override
+  Future<void> setAudioNormalization(bool enabled) async {
+    if (disposed) return;
+    _audioNormalizationEnabled = enabled;
+    final initFuture = _initFuture;
+    if (initialized) {
+      await invoke('setAudioNormalization', {'enabled': enabled});
+    } else if (initFuture != null) {
+      await initFuture;
+      if (!disposed && initialized && _audioNormalizationEnabled == enabled) {
+        await invoke('setAudioNormalization', {'enabled': enabled});
+      }
+    }
+    // Keep the mpv af property flowing through setMpvProperty so the plugin's
+    // pendingMpvProperties replay applies loudnorm if exo falls back to mpv.
+    await super.setAudioNormalization(enabled);
   }
 
   @override

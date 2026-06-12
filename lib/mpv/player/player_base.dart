@@ -668,6 +668,15 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> setAudioPassthrough(bool enabled) async {}
 
+  /// mpv loudnorm targeting streaming-style loudness; mirrored by the
+  /// Android ExoPlayer effect parameters in AudioNormalizationEffect.kt.
+  static const _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4';
+
+  @override
+  Future<void> setAudioNormalization(bool enabled) async {
+    await setProperty('af', enabled ? _loudnormFilter : '');
+  }
+
   @override
   // ignore: no-empty-block - base no-op, overridden by platform subclasses
   Future<void> setLogLevel(String level) async {}
