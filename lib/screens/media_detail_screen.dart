@@ -2999,7 +2999,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           body: const Center(child: CircularProgressIndicator()),
         ),
       );
-      final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
+      final blockSystemBack = InputModeTracker.shouldBlockSystemBack(context);
       if (!blockSystemBack) {
         return loading;
       }
@@ -3021,7 +3021,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
 
     _scheduleInitialMobileDetailFocus(metadata);
 
-    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
+    final blockSystemBack = InputModeTracker.shouldBlockSystemBack(context);
     final content = PrimaryScrollController(
       controller: _scrollController,
       child: IosStatusBarTapScrollToTop(
@@ -3322,7 +3322,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       ],
     );
 
-    final blockSystemBack = Platform.isAndroid && InputModeTracker.isKeyboardMode(context);
+    final blockSystemBack = InputModeTracker.shouldBlockSystemBack(context);
     final content = OverlaySheetHost(
       // blockSystemBack keeps the route from double-popping on Android keyboard/
       // TV (the key handler owns dpad back); the host also closes an open sheet.
