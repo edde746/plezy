@@ -29,6 +29,8 @@ class _MobileRemoteScreenState extends State<MobileRemoteScreen> {
   @override
   Widget build(BuildContext context) {
     return OverlaySheetHost(
+      // Close an open sheet on system back instead of popping the screen.
+      canPop: true,
       child: Scaffold(
         appBar: AppBar(
           title: Text(t.companionRemote.title),

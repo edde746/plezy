@@ -135,7 +135,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
   }
 
   String formatHotkey(HotKey? hotKey) {
-    if (hotKey == null) return 'No shortcut set';
+    if (hotKey == null) return t.hotkeys.noShortcutSet;
 
     final isMac = Platform.isMacOS;
 
@@ -190,6 +190,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onZoomReset,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
+    ValueChanged<int>? onLiveSeekBy,
     Future<void> Function(Duration position)? onSeekRequested,
   }) {
     final isRepeat = event is KeyRepeatEvent;
@@ -276,6 +277,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
           onZoomReset: onZoomReset,
           currentPositionEpoch: currentPositionEpoch,
           onLiveSeek: onLiveSeek,
+          onLiveSeekBy: onLiveSeekBy,
           onSeekRequested: onSeekRequested,
         );
         return KeyEventResult.handled;
@@ -304,11 +306,14 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onZoomReset,
     int? currentPositionEpoch,
     ValueChanged<int>? onLiveSeek,
+    ValueChanged<int>? onLiveSeekBy,
     Future<void> Function(Duration position)? onSeekRequested,
   }) {
     void performSeek(int offsetSeconds) {
-      if (onLiveSeek != null && currentPositionEpoch != null) {
-        onLiveSeek(currentPositionEpoch + offsetSeconds);
+      // Relative live-TV skip: route through the parent accumulator, which
+      // coalesces a rapid burst into one transcode re-open (#1253).
+      if (onLiveSeekBy != null) {
+        onLiveSeekBy(offsetSeconds);
       } else {
         final target = clampSeekPosition(player, player.state.position + Duration(seconds: offsetSeconds));
         unawaited((onSeekRequested ?? player.seek)(target));

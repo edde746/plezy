@@ -1,5 +1,6 @@
 import '../media/media_item.dart';
 import '../media/ids.dart';
+import '../media/watch_progress.dart';
 import 'app_logger.dart';
 import 'base_notifier.dart';
 import 'global_key_utils.dart';
@@ -97,10 +98,15 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
 
   /// Helper to emit a watched/unwatched event from a [MediaItem].
   void notifyWatched({required MediaItem item, bool isNowWatched = true, String? cacheServerId}) {
+    final serverId = serverIdOrNull(item.serverId);
+    if (serverId == null) {
+      appLogger.w('WatchStateNotifier: missing serverId for ${item.id}, skipping watched event');
+      return;
+    }
     notify(
       WatchStateEvent(
         itemId: item.id,
-        serverId: ServerId(item.serverId ?? ''),
+        serverId: serverId,
         cacheServerId: cacheServerId,
         changeType: isNowWatched ? WatchStateChangeType.watched : WatchStateChangeType.unwatched,
         parentChain: item.parentChain,
@@ -120,12 +126,17 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
     required int duration,
     double watchedThreshold = 0.9,
   }) {
-    final isNowWatched = duration > 0 && (viewOffset / duration) >= watchedThreshold;
+    final serverId = serverIdOrNull(item.serverId);
+    if (serverId == null) {
+      appLogger.w('WatchStateNotifier: missing serverId for ${item.id}, skipping progress event');
+      return;
+    }
+    final isNowWatched = isWatchedProgress(positionMs: viewOffset, durationMs: duration, threshold: watchedThreshold);
 
     notify(
       WatchStateEvent(
         itemId: item.id,
-        serverId: ServerId(item.serverId ?? ''),
+        serverId: serverId,
         changeType: WatchStateChangeType.progressUpdate,
         parentChain: item.parentChain,
         mediaType: item.kind.id,
@@ -138,10 +149,15 @@ class WatchStateNotifier extends BaseNotifier<WatchStateEvent> {
 
   /// Helper to emit a Continue Watching removal event.
   void notifyRemovedFromContinueWatching({required MediaItem item}) {
+    final serverId = serverIdOrNull(item.serverId);
+    if (serverId == null) {
+      appLogger.w('WatchStateNotifier: missing serverId for ${item.id}, skipping continue-watching removal event');
+      return;
+    }
     notify(
       WatchStateEvent(
         itemId: item.id,
-        serverId: ServerId(item.serverId ?? ''),
+        serverId: serverId,
         changeType: WatchStateChangeType.removedFromContinueWatching,
         parentChain: item.parentChain,
         mediaType: item.kind.id,

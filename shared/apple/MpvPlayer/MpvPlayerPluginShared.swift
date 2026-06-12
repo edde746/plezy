@@ -14,9 +14,39 @@ protocol MpvPluginShared: AnyObject, MpvPlayerDelegate {
 
   func setPlayerVisible(_ visible: Bool, restoreOnWindowVisible: Bool)
   func updatePlayerFrame()
+
+  /// Invoked after the `pause` property is applied via setProperty so each
+  /// platform can sync its PiP/idle bookkeeping (iOS: invalidate the PiP
+  /// playback state + timebase; macOS: setPlaying/setPaused).
+  func didSetPauseProperty(value: String)
 }
 
 extension MpvPluginShared {
+
+  func handleSetProperty(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let args = call.arguments as? [String: Any],
+      let name = args["name"] as? String,
+      let value = args["value"] as? String
+    else {
+      result(
+        FlutterError(
+          code: "INVALID_ARGS", message: "Missing 'name' or 'value' argument",
+          details: nil))
+      return
+    }
+
+    guard let core = coreBase else {
+      result(nil)
+      return
+    }
+
+    core.setPropertyAsync(name, value: value) { [weak self] _ in
+      if name == "pause" {
+        self?.didSetPauseProperty(value: value)
+      }
+      result(nil)
+    }
+  }
 
   func handleGetProperty(call: FlutterMethodCall, result: @escaping FlutterResult) {
     guard let args = call.arguments as? [String: Any],

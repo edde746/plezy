@@ -29,7 +29,6 @@ class AddConnectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final scoped = targetProfile != null;
     final options = <_BackendOption>[
       _BackendOption(
@@ -58,11 +57,6 @@ class AddConnectionScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
-              Text(
-                scoped ? t.addServer.addConnectionIntroScoped : t.addServer.addConnectionIntroGlobal,
-                style: theme.textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 16),
               for (var i = 0; i < options.length; i++) ...[
                 if (i > 0) const SizedBox(height: 12),
                 _BackendCard(

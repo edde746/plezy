@@ -110,7 +110,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
   /// Returns an updated [CaptureBuffer] if the response contains a
   /// `TranscodeSession` with seek-range data (used to expand the seekable
   /// window over time).
-  Future<CaptureBuffer?> updateLiveTimeline({
+  Future<CaptureBuffer?> _updateLiveTimeline({
     required String ratingKey,
     required String sessionPath,
     required String sessionIdentifier,
@@ -638,7 +638,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
 
       if (entries.isEmpty) return null;
       return LiveTvHubResult(
-        title: hubJson['title'] as String? ?? 'Unknown',
+        title: hubJson['title'] as String? ?? t.liveTv.unknownHub,
         hubKey: hubJson['key'] as String? ?? '',
         entries: entries,
       );
@@ -790,7 +790,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
   /// Tune to a live TV channel.
   ///
   /// POSTs to the tune endpoint and extracts metadata, session info, and
-  /// capture buffer data from the response. Call [buildLiveStreamPath] after
+  /// capture buffer data from the response. Call [_buildLiveStreamPath] after
   /// to build the actual stream URL (with optional offset for time-shift).
   Future<
     ({
@@ -801,7 +801,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
       int? beginsAt,
     })?
   >
-  tuneChannel(String dvrKey, String channelIdentifier) async {
+  _tuneChannel(String dvrKey, String channelIdentifier) async {
     try {
       final sessionIdentifier = PlexClient.generateSessionIdentifier();
 
@@ -825,7 +825,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
           ? int.tryParse(containerStatus)
           : null;
       if (statusInt != null && statusInt != 0 && statusInt != 200) {
-        final msg = container['message'] ?? 'Unknown error';
+        final msg = container['message'] ?? t.liveTv.unknownError;
         appLogger.w('Tune channel error: $msg (status: $containerStatus)');
         throw Exception(msg);
       }
@@ -951,12 +951,12 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
 
   /// Build a live TV stream URL (decision + start path).
   ///
-  /// [sessionPath] and [sessionIdentifier] come from [tuneChannel].
+  /// [sessionPath] and [sessionIdentifier] come from [_tuneChannel].
   /// [transcodeSessionId] should be reused across seeks within the same
   /// viewing session so the server reuses its capture buffer.
   /// [offsetSeconds] positions the stream at that many seconds from the
   /// capture buffer origin (for time-shift / watch-from-start).
-  Future<String?> buildLiveStreamPath({
+  Future<String?> _buildLiveStreamPath({
     required String sessionPath,
     required String sessionIdentifier,
     required String transcodeSessionId,
@@ -1003,40 +1003,39 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
           .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
           .join('&');
 
-      // Decision — separate client so no default X-Plex-* HTTP headers leak through.
+      // Decision — wrapper around the same transport so no default X-Plex-*
+      // HTTP headers leak through (everything travels in the query string).
+      // Not closed: the underlying client is owned by `_http`.
       final decisionClient = MediaServerHttpClient(
+        client: _http.inner,
         connectTimeout: MediaServerTimeouts.connect,
         receiveTimeout: MediaServerTimeouts.receive,
         defaultHeaders: {'Accept-Language': 'en'},
       );
-      try {
-        final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$queryString';
-        final decisionResponse = await decisionClient.get(decisionUrl);
+      final decisionUrl = '${config.baseUrl}/video/:/transcode/universal/decision?$queryString';
+      final decisionResponse = await decisionClient.get(decisionUrl);
 
-        if (decisionResponse.statusCode != 200) {
-          appLogger.w('Decision returned ${decisionResponse.statusCode}');
-          return null;
-        }
-
-        // Log decision response for diagnostics (the web client parses this XML
-        // to extract generalDecisionCode, mdeDecisionCode, transcodeDecisionCode).
-        final decisionBody = decisionResponse.data?.toString() ?? '';
-        if (decisionBody.isNotEmpty) {
-          appLogger.d(
-            'Decision response: ${decisionBody.length > 500 ? '${decisionBody.substring(0, 500)}...' : decisionBody}',
-          );
-        }
-
-        // Token is added by the caller via .withPlexToken()
-        final startParams = Map<String, String>.from(allParams)..remove('X-Plex-Token');
-        final startQuery = startParams.entries
-            .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-            .join('&');
-
-        return '/video/:/transcode/universal/start?$startQuery';
-      } finally {
-        decisionClient.close();
+      if (decisionResponse.statusCode != 200) {
+        appLogger.w('Decision returned ${decisionResponse.statusCode}');
+        return null;
       }
+
+      // Log decision response for diagnostics (the web client parses this XML
+      // to extract generalDecisionCode, mdeDecisionCode, transcodeDecisionCode).
+      final decisionBody = decisionResponse.data?.toString() ?? '';
+      if (decisionBody.isNotEmpty) {
+        appLogger.d(
+          'Decision response: ${decisionBody.length > 500 ? '${decisionBody.substring(0, 500)}...' : decisionBody}',
+        );
+      }
+
+      // Token is added by the caller via .withPlexToken()
+      final startParams = Map<String, String>.from(allParams)..remove('X-Plex-Token');
+      final startQuery = startParams.entries
+          .map((e) => '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
+          .join('&');
+
+      return '/video/:/transcode/universal/start?$startQuery';
     } catch (e, st) {
       appLogger.e('Failed to build live stream path', error: e, stackTrace: st);
       return null;
@@ -1044,11 +1043,11 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
   }
 
   /// Compose a fully-qualified live stream URL from a relative
-  /// [streamPath] (returned by [buildLiveStreamPath]) by prefixing the
+  /// [streamPath] (returned by [_buildLiveStreamPath]) by prefixing the
   /// configured base URL and appending the Plex token. Centralizes the
   /// `'${config.baseUrl}$streamPath'.withPlexToken(config.token)` pattern
   /// so token placement / base-URL handling lives in one place.
-  String buildLiveStreamUrl(String streamPath) {
+  String _buildLiveStreamUrl(String streamPath) {
     return '${config.baseUrl}$streamPath'.withPlexToken(config.token);
   }
 
@@ -1153,10 +1152,10 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
 }
 
 /// Plex implementation of [LiveTvSupport] — wraps the existing per-DVR
-/// methods. The legacy `tuneChannel` / `buildLiveStreamPath` flow remains on
-/// [PlexClient] itself because the player consumes those rich session
-/// outputs directly; [resolveStreamUrl] returns `null` so callers route
-/// through `client + dvrKey`.
+/// methods. The tune / stream-path protocol flow lives privately on
+/// [PlexClient]; [startPlayback] packages it behind the backend-neutral
+/// [LiveTvPlaybackSession], and [resolveStreamUrl] returns `null` because a
+/// Plex stream URL is only valid inside a tuned session.
 class _PlexLiveTvSupport implements LiveTvSupport {
   final PlexClient _client;
   _PlexLiveTvSupport(this._client);
@@ -1178,6 +1177,15 @@ class _PlexLiveTvSupport implements LiveTvSupport {
 
   @override
   Future<LiveTvStreamResolution?> resolveStreamUrl(String channelKey, {String? dvrKey}) async => null;
+
+  @override
+  Future<LiveTvPlaybackSession?> startPlayback(String channelKey, {String? dvrKey}) {
+    if (dvrKey == null) {
+      appLogger.w('Plex live playback requires a dvrKey to tune $channelKey');
+      return Future.value(null);
+    }
+    return _PlexLiveTvPlaybackSession.start(_client, dvrKey: dvrKey, channelKey: channelKey);
+  }
 
   @override
   Future<String> buildFavoriteChannelSource({String? lineup}) => _client.buildFavoriteChannelSource(lineup: lineup);
@@ -1389,4 +1397,118 @@ class _PlexLiveTvSupport implements LiveTvSupport {
   @override
   Uri buildNotificationEventSourceUri({List<String>? filters}) =>
       _client.buildNotificationEventSourceUri(filters: filters);
+}
+
+/// A tuned Plex DVR transcode session. Holds the tune outputs
+/// (`sessionPath` / `sessionIdentifier`) plus the `transcodeSessionId` that
+/// must be reused across time-shift rebuilds so the server reuses its
+/// capture buffer.
+class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
+  final PlexClient _client;
+  final String _dvrKey;
+  final String _channelKey;
+  final String _sessionPath;
+  final String _sessionIdentifier;
+  final String _transcodeSessionId;
+
+  /// Degradation flags are session state (a recovered session keeps its
+  /// degraded profile for every URL it builds), not per-call options.
+  final bool _directStream;
+  final bool _directStreamAudio;
+
+  @override
+  final LiveProgramInfo program;
+
+  @override
+  final CaptureBuffer? captureBuffer;
+
+  _PlexLiveTvPlaybackSession._(
+    this._client,
+    this._dvrKey,
+    this._channelKey,
+    this._sessionPath,
+    this._sessionIdentifier,
+    this._transcodeSessionId,
+    this._directStream,
+    this._directStreamAudio, {
+    required this.program,
+    required this.captureBuffer,
+  });
+
+  /// Tune [channelKey] on [dvrKey]. The stream URL is built lazily via
+  /// [streamUrlAt] so a watch-from-start decision between tune and first
+  /// open doesn't cost an extra transcode-decision round-trip.
+  static Future<_PlexLiveTvPlaybackSession?> start(
+    PlexClient client, {
+    required String dvrKey,
+    required String channelKey,
+    bool directStream = true,
+    bool directStreamAudio = true,
+  }) async {
+    final tuneResult = await client._tuneChannel(dvrKey, channelKey);
+    if (tuneResult == null) return null;
+
+    return _PlexLiveTvPlaybackSession._(
+      client,
+      dvrKey,
+      channelKey,
+      tuneResult.sessionPath,
+      tuneResult.sessionIdentifier,
+      PlexClient.generateSessionIdentifier(),
+      directStream,
+      directStreamAudio,
+      program: LiveProgramInfo(
+        id: tuneResult.metadata.ratingKey,
+        durationMs: tuneResult.metadata.duration,
+        beginsAt: tuneResult.beginsAt,
+      ),
+      captureBuffer: tuneResult.captureBuffer,
+    );
+  }
+
+  @override
+  bool get canTimeShift => captureBuffer != null;
+
+  @override
+  Future<String?> streamUrlAt({int? offsetSeconds}) async {
+    final streamPath = await _client._buildLiveStreamPath(
+      sessionPath: _sessionPath,
+      sessionIdentifier: _sessionIdentifier,
+      transcodeSessionId: _transcodeSessionId,
+      offsetSeconds: offsetSeconds,
+      directStream: _directStream,
+      directStreamAudio: _directStreamAudio,
+    );
+    return streamPath == null ? null : _client._buildLiveStreamUrl(streamPath);
+  }
+
+  @override
+  Future<CaptureBuffer?> reportTimeline({required String state, required int positionMs, required int durationMs}) {
+    // Plex rejects timeline pings where time > duration; grow duration to
+    // match — otherwise Tunarr-style short synthetic programs 400 mid-stream.
+    final duration = durationMs >= positionMs ? durationMs : positionMs;
+    return _client._updateLiveTimeline(
+      // The program ratingKey from tune metadata, not the channel key.
+      ratingKey: program.id ?? _channelKey,
+      sessionPath: _sessionPath,
+      sessionIdentifier: _sessionIdentifier,
+      state: state,
+      time: positionMs,
+      duration: duration,
+      playbackTime: positionMs,
+    );
+  }
+
+  @override
+  Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio}) {
+    // Re-tune for a fresh capture session — the previous one expires while
+    // the player exhausts its reconnect attempts.
+    return start(
+      _client,
+      dvrKey: _dvrKey,
+      channelKey: _channelKey,
+      directStream: directStream,
+      directStreamAudio: directStreamAudio,
+    );
+  }
 }

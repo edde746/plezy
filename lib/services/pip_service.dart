@@ -75,7 +75,7 @@ class PipService {
       'not_supported' => t.videoControls.pipErrors.notSupported,
       'vo_switch_failed' => t.videoControls.pipErrors.voSwitchFailed,
       'failed' => t.videoControls.pipErrors.failed,
-      _ => t.videoControls.pipErrors.unknown(error: errorMessage ?? 'Unknown error'),
+      _ => t.videoControls.pipErrors.unknown(error: errorMessage ?? t.common.unknown),
     };
   }
 }

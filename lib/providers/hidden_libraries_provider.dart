@@ -6,12 +6,12 @@ import '../services/storage_service.dart';
 /// This ensures that when a library is hidden/unhidden in one screen,
 /// all other screens are automatically updated.
 class HiddenLibrariesProvider extends ChangeNotifier with DisposableChangeNotifierMixin {
-  late StorageService _storageService;
+  StorageService? _storageService;
   Set<String> _hiddenLibraryKeys = {};
   bool _isInitialized = false;
   Future<void>? _initFuture;
 
-  HiddenLibrariesProvider() {
+  HiddenLibrariesProvider({StorageService? storageService}) : _storageService = storageService {
     // Start initialization eagerly to reduce race conditions
     _initFuture = _initialize();
   }
@@ -29,8 +29,8 @@ class HiddenLibrariesProvider extends ChangeNotifier with DisposableChangeNotifi
   /// Initialize the provider by loading hidden libraries from storage
   Future<void> _initialize() async {
     if (_isInitialized) return;
-    _storageService = await StorageService.getInstance();
-    _hiddenLibraryKeys = _storageService.getHiddenLibraries();
+    final storage = _storageService ??= await StorageService.getInstance();
+    _hiddenLibraryKeys = storage.getHiddenLibraries();
     _isInitialized = true;
     safeNotifyListeners();
   }
@@ -41,7 +41,7 @@ class HiddenLibrariesProvider extends ChangeNotifier with DisposableChangeNotifi
     if (!_isInitialized) await _initialize();
     if (!_hiddenLibraryKeys.contains(libraryKey)) {
       _hiddenLibraryKeys = Set.from(_hiddenLibraryKeys)..add(libraryKey);
-      await _storageService.saveHiddenLibraries(_hiddenLibraryKeys);
+      await _storageService!.saveHiddenLibraries(_hiddenLibraryKeys);
       safeNotifyListeners();
     }
   }
@@ -52,7 +52,7 @@ class HiddenLibrariesProvider extends ChangeNotifier with DisposableChangeNotifi
     if (!_isInitialized) await _initialize();
     if (_hiddenLibraryKeys.contains(libraryKey)) {
       _hiddenLibraryKeys = Set.from(_hiddenLibraryKeys)..remove(libraryKey);
-      await _storageService.saveHiddenLibraries(_hiddenLibraryKeys);
+      await _storageService!.saveHiddenLibraries(_hiddenLibraryKeys);
       safeNotifyListeners();
     }
   }
@@ -63,7 +63,8 @@ class HiddenLibrariesProvider extends ChangeNotifier with DisposableChangeNotifi
   /// Refresh hidden libraries from storage
   /// Useful if storage was modified outside the provider
   Future<void> refresh() async {
-    _hiddenLibraryKeys = _storageService.getHiddenLibraries();
+    final storage = _storageService ??= await StorageService.getInstance();
+    _hiddenLibraryKeys = storage.getHiddenLibraries();
     safeNotifyListeners();
   }
 }

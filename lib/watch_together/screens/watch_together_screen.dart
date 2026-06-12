@@ -20,6 +20,7 @@ import '../../utils/snackbar_helper.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../utils/video_player_navigation.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../../widgets/app_menu.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../models/watch_session.dart';
 import '../providers/watch_together_provider.dart';
@@ -36,7 +37,11 @@ class WatchTogetherScreen extends StatelessWidget {
     return Consumer<WatchTogetherProvider>(
       builder: (context, watchTogether, child) {
         final canGoBack = watchTogether.isHost || !watchTogether.isInSession;
-        return PopScope(
+        // The host owns sheet + system back: a back with the actions sheet open
+        // closes it; otherwise the route pops only when [canGoBack] (a guest in
+        // an active session can't leave). canGoBack==true also preserves the iOS
+        // interactive swipe-back.
+        return OverlaySheetHost(
           canPop: canGoBack,
           child: FocusedScrollScaffold(
             title: Text(t.watchTogether.title),
@@ -405,6 +410,11 @@ class _RecentRoomTile extends StatelessWidget {
       child: FocusableWrapper(
         useBackgroundFocus: true,
         borderRadius: 12,
+        // Hold SELECT/OK to open the rename/remove menu on TV/dpad (matches media cards).
+        enableLongPress: true,
+        // The wrapper owns key handling; the ListTile's InkWell and the trailing
+        // more_vert IconButton must not steal focus from the long-press handler.
+        descendantsAreFocusable: false,
         onSelect: isBusy ? null : onTap,
         onLongPress: () => _showActions(context),
         child: Material(
@@ -430,28 +440,23 @@ class _RecentRoomTile extends StatelessWidget {
   void _showActions(BuildContext context) {
     OverlaySheetController.showAdaptive(
       context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: .min,
-          children: [
-            ListTile(
-              leading: const Icon(Symbols.edit_rounded),
-              title: Text(t.watchTogether.renameRoom),
-              onTap: () {
-                OverlaySheetController.closeAdaptive(context);
-                onRename();
-              },
-            ),
-            ListTile(
-              leading: Icon(Symbols.delete_rounded, color: Theme.of(context).colorScheme.error),
-              title: Text(t.watchTogether.removeRoom, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-              onTap: () {
-                OverlaySheetController.closeAdaptive(context);
-                onRemove();
-              },
-            ),
-          ],
-        ),
+      builder: (context) => AppMenuSheet<String>(
+        entries: [
+          AppMenuItem(value: 'rename', icon: Symbols.edit_rounded, label: t.watchTogether.renameRoom),
+          AppMenuItem(
+            value: 'remove',
+            icon: Symbols.delete_rounded,
+            label: t.watchTogether.removeRoom,
+            destructive: true,
+          ),
+        ],
+        onSelected: (value) {
+          if (value == 'rename') {
+            onRename();
+          } else if (value == 'remove') {
+            onRemove();
+          }
+        },
       ),
     );
   }

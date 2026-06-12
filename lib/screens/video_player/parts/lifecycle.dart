@@ -59,14 +59,14 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   }
 
   void _suspendLiveTimelineForBackground() {
-    _resumeLiveTimelineOnResume = _liveTimelineTimer != null;
+    _live.resumeTimelineOnResume = _live.timelineTimer != null;
     _stopLiveTimelineUpdates();
   }
 
   void _resumeLiveTimelineAfterBackgroundIfNeeded() {
-    final shouldResume = _resumeLiveTimelineOnResume;
-    _resumeLiveTimelineOnResume = false;
-    if (shouldResume && _liveSessionIdentifier != null) {
+    final shouldResume = _live.resumeTimelineOnResume;
+    _live.resumeTimelineOnResume = false;
+    if (shouldResume && _live.session != null) {
       _startLiveTimelineUpdates();
     }
   }

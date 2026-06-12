@@ -2,9 +2,14 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinLiveTvMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  MediaServerHttpClient get _http;
+  FailoverHttpClient get _http;
   String? _absolutizeImagePath(String? path);
-  Future<List<Map<String, dynamic>>> _safeFetchItemsArray(String path, Map<String, dynamic> queryParameters);
+  Future<List<Map<String, dynamic>>> _safeFetchItemsArray(
+    String path,
+    Map<String, dynamic> queryParameters, {
+    // ignore: unused_element_parameter
+    _HubRetryPolicy? retry,
+  });
 
   /// Returns `true` when this server has Live TV configured (channels
   /// available). Probes `/LiveTv/Channels?limit=1`. Used by [MultiServerProvider]
@@ -86,7 +91,7 @@ mixin _JellyfinLiveTvMethods on MediaServerCacheMixin {
       key: id,
       ratingKey: id,
       guid: null,
-      title: json['Name'] as String? ?? 'Unknown Program',
+      title: json['Name'] as String? ?? t.liveTv.unknownProgram,
       summary: json['Overview'] as String?,
       type: 'episode',
       year: (json['ProductionYear'] as num?)?.toInt(),
@@ -204,6 +209,13 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
           );
     playSessionId ??= Uri.tryParse(url)?.queryParameters['PlaySessionId'];
     return LiveTvStreamResolution(url: url, playSessionId: playSessionId);
+  }
+
+  @override
+  Future<LiveTvPlaybackSession?> startPlayback(String channelKey, {String? dvrKey}) async {
+    final resolution = await resolveStreamUrl(channelKey, dvrKey: dvrKey);
+    if (resolution == null) return null;
+    return _JellyfinLiveTvPlaybackSession(_client, channelKey, resolution);
   }
 
   /// SharedPreferences key for the locally-persisted favorite-channel list.
@@ -442,4 +454,46 @@ class _JellyfinLiveTvSupport implements LiveTvSupport {
 
   @override
   Uri buildNotificationEventSourceUri({List<String>? filters}) => _unsupportedSync();
+}
+
+/// A Jellyfin live playback session: one negotiated direct-stream URL plus
+/// `/Sessions/Playing*` heartbeats via [JellyfinLiveSessionTracker]. No
+/// program-scoped session and no time-shift — [recover] re-opens the same
+/// session-less URL.
+class _JellyfinLiveTvPlaybackSession implements LiveTvPlaybackSession {
+  final JellyfinClient _client;
+  final String _channelKey;
+  final String _url;
+  final JellyfinLiveSessionTracker _tracker;
+
+  _JellyfinLiveTvPlaybackSession(this._client, this._channelKey, LiveTvStreamResolution resolution)
+    : _url = resolution.url,
+      _tracker = JellyfinLiveSessionTracker(playSessionId: resolution.playSessionId);
+
+  @override
+  LiveProgramInfo get program => LiveProgramInfo.none;
+
+  @override
+  CaptureBuffer? get captureBuffer => null;
+
+  @override
+  bool get canTimeShift => false;
+
+  @override
+  Future<String?> streamUrlAt({int? offsetSeconds}) async => offsetSeconds == null ? _url : null;
+
+  @override
+  Future<CaptureBuffer?> reportTimeline({required String state, required int positionMs, required int durationMs}) async {
+    await _tracker.report(
+      client: _client,
+      itemId: _channelKey,
+      state: state,
+      position: Duration(milliseconds: positionMs),
+      duration: Duration(milliseconds: durationMs),
+    );
+    return null;
+  }
+
+  @override
+  Future<LiveTvPlaybackSession?> recover({required bool directStream, required bool directStreamAudio}) async => this;
 }

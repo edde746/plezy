@@ -13,6 +13,7 @@ import '../utils/grid_size_calculator.dart';
 import '../widgets/focusable_media_card.dart';
 import '../widgets/media_grid_delegate.dart';
 import '../widgets/skeleton_media_card.dart';
+import '../widgets/sliver_cross_axis_layout_builder.dart';
 
 /// Extract the stable id from a [MediaItem]/[MediaPlaylist] for use as a
 /// Flutter widget Key.
@@ -171,7 +172,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     return SettingsBuilder(
       prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
       builder: (context) {
-        final svc = SettingsService.instanceOrNull!;
+        final svc = SettingsService.instance;
         final isListMode = svc.read(SettingsService.viewMode) == ViewMode.list;
         final libraryDensity = svc.read(SettingsService.libraryDensity);
         final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
@@ -202,27 +203,22 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
           );
         }
 
-        final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, libraryDensity);
         return SliverPadding(
           padding: const EdgeInsets.all(8),
-          sliver: SliverLayoutBuilder(
-            builder: (context, constraints) {
-              final gridSpacing = MediaGridDelegate.spacingFor(context: context, fullBleedImage: fullCardLayout);
-              final columnCount = GridSizeCalculator.getColumnCount(
-                constraints.crossAxisExtent,
-                maxExtent,
-                crossAxisSpacing: gridSpacing,
+          sliver: SliverCrossAxisLayoutBuilder(
+            builder: (context, crossAxisExtent) {
+              final geometry = MediaGridGeometry.resolve(
+                context: context,
+                crossAxisExtent: crossAxisExtent,
+                density: libraryDensity,
+                fullBleedImage: fullCardLayout,
               );
               return SliverGrid.builder(
-                gridDelegate: MediaGridDelegate.createDelegate(
-                  context: context,
-                  density: libraryDensity,
-                  fullBleedImage: fullCardLayout,
-                ),
+                gridDelegate: geometry.delegate,
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   final item = items[index];
-                  final inFirstRow = GridSizeCalculator.isFirstRow(index, columnCount);
+                  final inFirstRow = GridSizeCalculator.isFirstRow(index, geometry.columnCount);
                   final focusNode = _focusNodeForIndex(index);
 
                   return FocusableMediaCard(
@@ -261,7 +257,7 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     return SettingsBuilder(
       prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
       builder: (context) {
-        final svc = SettingsService.instanceOrNull!;
+        final svc = SettingsService.instance;
         final isListMode = svc.read(SettingsService.viewMode) == ViewMode.list;
         final libraryDensity = svc.read(SettingsService.libraryDensity);
         final fullCardLayout = PlatformDetector.isTV() && svc.read(SettingsService.tvFullCardLayout);
@@ -298,27 +294,22 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
           );
         }
 
-        final maxExtent = GridSizeCalculator.getMaxCrossAxisExtent(context, libraryDensity);
         return SliverPadding(
           padding: const EdgeInsets.all(8),
-          sliver: SliverLayoutBuilder(
-            builder: (context, constraints) {
-              final gridSpacing = MediaGridDelegate.spacingFor(context: context, fullBleedImage: fullCardLayout);
-              final columnCount = GridSizeCalculator.getColumnCount(
-                constraints.crossAxisExtent,
-                maxExtent,
-                crossAxisSpacing: gridSpacing,
+          sliver: SliverCrossAxisLayoutBuilder(
+            builder: (context, crossAxisExtent) {
+              final geometry = MediaGridGeometry.resolve(
+                context: context,
+                crossAxisExtent: crossAxisExtent,
+                density: libraryDensity,
+                fullBleedImage: fullCardLayout,
               );
               return SliverGrid.builder(
-                gridDelegate: MediaGridDelegate.createDelegate(
-                  context: context,
-                  density: libraryDensity,
-                  fullBleedImage: fullCardLayout,
-                ),
+                gridDelegate: geometry.delegate,
                 itemCount: totalItems,
                 itemBuilder: (context, index) => buildTile(
                   index,
-                  inFirstRow: GridSizeCalculator.isFirstRow(index, columnCount),
+                  inFirstRow: GridSizeCalculator.isFirstRow(index, geometry.columnCount),
                   disableScale: false,
                 ),
               );

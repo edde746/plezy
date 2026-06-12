@@ -4,6 +4,7 @@ import android.app.Activity
 import android.app.ActivityManager
 import android.app.AppOpsManager
 import android.app.PictureInPictureParams
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -14,6 +15,8 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Process
+import android.provider.Settings
 import android.util.Log
 import android.util.Rational
 import android.view.InputDevice
@@ -187,6 +190,30 @@ class MainActivity : FlutterActivity() {
       "manufacturer" to Build.MANUFACTURER,
       "model" to Build.MODEL
     )
+  }
+
+  /** Hardware capability signals used by Dart to pick the visual-effects tier. */
+  private fun getPerformanceSignals(): Map<String, Any> {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val memoryInfo = ActivityManager.MemoryInfo()
+    activityManager.getMemoryInfo(memoryInfo)
+    return mapOf(
+      // Actual process bitness: low-end TV boxes often run 32-bit userspace.
+      "is64Bit" to Process.is64Bit(),
+      "isLowRamDevice" to activityManager.isLowRamDevice,
+      "totalMemBytes" to memoryInfo.totalMem,
+    )
+  }
+
+  /** User-assigned device name (Settings > About > Device name), or null. */
+  private fun getDeviceName(): String? {
+    // The name the user gave the device; also used by Cast/Nearby.
+    val name = Settings.Global.getString(contentResolver, Settings.Global.DEVICE_NAME)
+    if (!name.isNullOrBlank()) return name
+    // Fallback: the Bluetooth name usually mirrors the device name. Reading the
+    // settings string needs no BLUETOOTH permission (unlike BluetoothAdapter).
+    val bt = Settings.Secure.getString(contentResolver, "bluetooth_name")
+    return if (!bt.isNullOrBlank()) bt else null
   }
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -427,6 +454,8 @@ class MainActivity : FlutterActivity() {
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
         "getTvDetection" -> result.success(getAndroidTvDetection())
+        "getDeviceName" -> result.success(getDeviceName())
+        "getPerformanceSignals" -> result.success(getPerformanceSignals())
         else -> result.notImplemented()
       }
     }
@@ -469,7 +498,9 @@ class MainActivity : FlutterActivity() {
       when (call.method) {
         "openVideo" -> {
           val filePath = call.argument<String>("filePath")
-          val packageName = call.argument<String>("package")
+          val packageNames = call.argument<List<Any?>>("packages")
+            ?.mapNotNull { (it as? String)?.trim()?.takeIf { value -> value.isNotEmpty() } }
+            ?: emptyList()
           val title = call.argument<String>("title")?.trim()?.takeIf { it.isNotEmpty() }
           val startPositionMs = call.argument<Number>("startPositionMs")?.toLong() ?: 0L
 
@@ -503,14 +534,12 @@ class MainActivity : FlutterActivity() {
               grantRead = true
             }
 
-            val intent = Intent(Intent.ACTION_VIEW).apply {
+            fun buildIntent(packageName: String?): Intent = Intent(Intent.ACTION_VIEW).apply {
               setDataAndType(uri, "video/*")
               if (grantRead) {
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
               }
-              if (packageName != null) {
-                setPackage(packageName)
-              }
+              packageName?.let { setPackage(it) }
               val startPosition = startPositionMs.coerceAtLeast(0).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
               if (startPosition > 0) {
                 putExtra(API_MX_RESULT_POSITION, startPosition)
@@ -525,11 +554,25 @@ class MainActivity : FlutterActivity() {
               }
               fileName?.let { putExtra(API_MX_FILENAME, it) }
             }
-            pendingExternalPlayerResult = result
-            startActivityForResult(intent, EXTERNAL_PLAYER_REQUEST_CODE)
-          } catch (e: android.content.ActivityNotFoundException) {
+
+            val targetPackages = if (packageNames.isEmpty()) listOf<String?>(null) else packageNames
+            for (packageName in targetPackages) {
+              try {
+                pendingExternalPlayerResult = result
+                startActivityForResult(buildIntent(packageName), EXTERNAL_PLAYER_REQUEST_CODE)
+                return@setMethodCallHandler
+              } catch (e: ActivityNotFoundException) {
+                pendingExternalPlayerResult = null
+              }
+            }
+
             pendingExternalPlayerResult = null
-            result.error("APP_NOT_FOUND", "No app found for package: $packageName", null)
+            val message = if (packageNames.isEmpty()) {
+              "No app found for video"
+            } else {
+              "No app found for packages: ${packageNames.joinToString(", ")}"
+            }
+            result.error("APP_NOT_FOUND", message, null)
           } catch (e: Exception) {
             pendingExternalPlayerResult = null
             result.error("LAUNCH_FAILED", e.message ?: e.javaClass.simpleName, null)

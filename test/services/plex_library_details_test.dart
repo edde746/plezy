@@ -71,7 +71,67 @@ void main() {
       'episode.addedAt',
       'lastViewedAt',
       'random',
+      // Plex doesn't advertise these in /sorts; we append them for movie/show.
+      'viewCount',
+      'userRating',
     ]);
+  });
+
+  test('appends Plays and User Rating sorts only for movie/show libraries', () async {
+    PlexClient clientReturning() => makeClient((request) async {
+      if (request.url.path == '/library/sections/1/sorts') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'Directory': [
+                {'key': 'titleSort', 'title': 'Title', 'defaultDirection': 'asc'},
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+
+    for (final type in ['movie', 'show']) {
+      final client = clientReturning();
+      addTearDown(client.close);
+      final sorts = await client.fetchSortOptions('1', libraryType: type);
+      expect(sorts.map((s) => s.key), ['titleSort', 'viewCount', 'userRating'], reason: type);
+    }
+
+    // Other library types (e.g. music) are left as the server returned them.
+    final musicClient = clientReturning();
+    addTearDown(musicClient.close);
+    final musicSorts = await musicClient.fetchSortOptions('1', libraryType: 'artist');
+    expect(musicSorts.map((s) => s.key), ['titleSort']);
+  });
+
+  test('does not duplicate Plays/User Rating when the server already advertises them', () async {
+    final client = makeClient((request) async {
+      if (request.url.path == '/library/sections/1/sorts') {
+        return http.Response(
+          jsonEncode({
+            'MediaContainer': {
+              'Directory': [
+                {'key': 'titleSort', 'title': 'Title', 'defaultDirection': 'asc'},
+                {'key': 'viewCount', 'title': 'Plays', 'defaultDirection': 'desc'},
+              ],
+            },
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('not found', 404);
+    });
+    addTearDown(client.close);
+
+    final sorts = await client.fetchSortOptions('1', libraryType: 'movie');
+    // viewCount already advertised -> not duplicated; userRating still appended.
+    expect(sorts.map((s) => s.key), ['titleSort', 'viewCount', 'userRating']);
   });
 
   test('library content stamps known section when Plex omits librarySectionID on rows', () async {

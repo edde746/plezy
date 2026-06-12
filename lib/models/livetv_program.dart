@@ -1,3 +1,4 @@
+import '../i18n/strings.g.dart';
 import '../utils/json_utils.dart';
 import '../media/ids.dart';
 
@@ -78,7 +79,7 @@ class LiveTvProgram {
       key: json['key'] as String?,
       ratingKey: json['ratingKey'] as String?,
       guid: json['guid'] as String?,
-      title: json['title'] as String? ?? 'Unknown Program',
+      title: json['title'] as String? ?? t.liveTv.unknownProgram,
       summary: json['summary'] as String?,
       type: json['type'] as String?,
       year: flexibleInt(json['year']),

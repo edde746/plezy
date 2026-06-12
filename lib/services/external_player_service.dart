@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
+import '../media/watch_progress.dart';
 import '../models/external_player_models.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
@@ -131,11 +132,12 @@ class ExternalPlayerService {
     MediaItem? metadata,
   }) async {
     try {
+      final packages = player.id == 'system_default' ? const <String>[] : KnownPlayers.androidPackageCandidates(player);
       final result = await _externalPlayerChannel.invokeMapMethod<String, Object?>('openVideo', {
         'filePath': url,
         if (metadata?.title?.trim().isNotEmpty == true) 'title': metadata!.title!.trim(),
         if ((metadata?.viewOffsetMs ?? 0) > 0) 'startPositionMs': metadata!.viewOffsetMs,
-        if (player.id != 'system_default') 'package': _getAndroidPackage(player),
+        if (packages.isNotEmpty) 'packages': packages,
       });
       return _ExternalPlayerLaunchResult.fromMap(result);
     } on PlatformException catch (e) {
@@ -206,9 +208,17 @@ class ExternalPlayerService {
       watchedThreshold: client.watchedThreshold,
     );
 
-    if (position.inMilliseconds / duration.inMilliseconds >= client.watchedThreshold) {
+    if (isWatchedProgress(
+      positionMs: position.inMilliseconds,
+      durationMs: duration.inMilliseconds,
+      threshold: client.watchedThreshold,
+    )) {
       try {
-        await client.markWatched(metadata);
+        // reportPlaybackStopped above marks the item played on backends that
+        // support it (Jellyfin); markWatchedFromPlaybackStop then only emits the
+        // local watch event there to avoid double-scrobbling via the Trakt
+        // plugin (#1287). Plex still issues the explicit server call.
+        await client.markWatchedFromPlaybackStop(metadata);
         unawaited(TrackerCoordinator.instance.markWatched(metadata, client));
       } catch (e) {
         appLogger.w('Failed to mark external playback watched for ${metadata.id}', error: e);
@@ -261,19 +271,4 @@ class ExternalPlayerService {
   }
 
   static int? _positive(int? value) => value != null && value > 0 ? value : null;
-
-  /// Map known player IDs to their Android package names.
-  static String? _getAndroidPackage(ExternalPlayer player) {
-    const packageMap = {
-      'vlc': 'org.videolan.vlc',
-      'mpv': 'is.xyz.mpv',
-      'mx_player': 'com.mxtech.videoplayer.ad',
-      'just_player': 'com.brouken.player',
-    };
-    // Known players
-    if (packageMap.containsKey(player.id)) return packageMap[player.id];
-    // Custom command-type players use the value as package name on Android
-    if (player.isCustom && player.customType == CustomPlayerType.command) return player.customValue;
-    return null;
-  }
 }

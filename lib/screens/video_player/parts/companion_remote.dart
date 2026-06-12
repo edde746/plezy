@@ -16,8 +16,8 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
       final seekSeconds = settings.read(SettingsService.seekTimeSmall);
-      if (widget.isLive && _captureBuffer != null) {
-        await _seekLivePosition(_currentPositionEpoch + seekSeconds);
+      if (widget.isLive && _live.captureBuffer != null) {
+        _liveSeek.seekBy(seekSeconds);
         return;
       }
       final target = clampSeekPosition(player!, player!.state.position + Duration(seconds: seekSeconds));
@@ -27,8 +27,8 @@ extension _VideoPlayerCompanionRemoteMethods on VideoPlayerScreenState {
       if (player == null) return;
       final settings = await SettingsService.getInstance();
       final seekSeconds = settings.read(SettingsService.seekTimeSmall);
-      if (widget.isLive && _captureBuffer != null) {
-        await _seekLivePosition(_currentPositionEpoch - seekSeconds);
+      if (widget.isLive && _live.captureBuffer != null) {
+        _liveSeek.seekBy(-seekSeconds);
         return;
       }
       final target = clampSeekPosition(player!, player!.state.position - Duration(seconds: seekSeconds));

@@ -6,6 +6,15 @@ import 'multi_server_provider.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_mode_source.dart';
 
+enum OfflineModeReason {
+  online,
+  noNetworkConnection,
+  waitingForServerStatus,
+  noKnownVisibleServers,
+  onlyAuthErrorServers,
+  noServerConnection,
+}
+
 /// Tracks offline mode status based on network connectivity and server reachability.
 class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMixin implements OfflineModeSource {
   final MultiServerManager _serverManager;
@@ -18,6 +27,18 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
   late bool _hasServerConnection;
   bool _lastOfflineState = false;
   bool _isInitialized = false;
+
+  /// Latest raw connectivity results. This provider owns the app's single
+  /// `Connectivity()` subscription; consumers needing the connection *type*
+  /// (e.g. the WiFi-reconnect sync trigger in main.dart) read it from here
+  /// instead of subscribing themselves.
+  List<ConnectivityResult> _lastConnectivityResults = const [];
+  bool _lastWifiOrEthernetState = false;
+
+  /// Whether the current connection is WiFi or Ethernet (unmetered-ish).
+  bool get hasWifiOrEthernet =>
+      _lastConnectivityResults.contains(ConnectivityResult.wifi) ||
+      _lastConnectivityResults.contains(ConnectivityResult.ethernet);
 
   /// True once [MultiServerManager] has emitted its first server-status
   /// snapshot. Until then we don't actually know whether any server is
@@ -41,12 +62,16 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// Whether the app is currently in offline mode
   /// Offline = no network OR (we know servers are unreachable)
   @override
-  bool get isOffline {
-    if (!_hasNetworkConnection) return true;
-    if (!_hasReceivedServerStatus) return false;
-    if (!_hasKnownVisibleServers) return false;
-    if (_hasOnlyAuthErrorServers) return false;
-    return !_hasServerConnection;
+  bool get isOffline =>
+      offlineReason == OfflineModeReason.noNetworkConnection || offlineReason == OfflineModeReason.noServerConnection;
+
+  OfflineModeReason get offlineReason {
+    if (!_hasNetworkConnection) return OfflineModeReason.noNetworkConnection;
+    if (!_hasReceivedServerStatus) return OfflineModeReason.waitingForServerStatus;
+    if (!_hasKnownVisibleServers) return OfflineModeReason.noKnownVisibleServers;
+    if (_hasOnlyAuthErrorServers) return OfflineModeReason.onlyAuthErrorServers;
+    if (!_hasServerConnection) return OfflineModeReason.noServerConnection;
+    return OfflineModeReason.online;
   }
 
   /// Whether there is network connectivity (WiFi, mobile data, etc.)
@@ -85,6 +110,8 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
         const Duration(seconds: 3),
         onTimeout: () => [ConnectivityResult.other],
       );
+      _lastConnectivityResults = connectivityResult;
+      _lastWifiOrEthernetState = hasWifiOrEthernet;
       _hasNetworkConnection = !connectivityResult.contains(ConnectivityResult.none);
     } catch (e) {
       // connectivity_plus can throw PlatformException on Windows (NetworkManager::StartListen)
@@ -126,8 +153,18 @@ class OfflineModeProvider extends ChangeNotifier with DisposableChangeNotifierMi
       () {
         _connectivitySubscription = Connectivity().onConnectivityChanged.listen(
           (results) {
+            _lastConnectivityResults = results;
             _hasNetworkConnection = !results.contains(ConnectivityResult.none);
-            _notifyIfOfflineChanged();
+            // Notify on connection-type changes too (WiFi <-> cellular), not
+            // just offline flips — type consumers listen through this provider.
+            final wifiNow = hasWifiOrEthernet;
+            if (wifiNow != _lastWifiOrEthernetState) {
+              _lastWifiOrEthernetState = wifiNow;
+              _lastOfflineState = isOffline;
+              safeNotifyListeners();
+            } else {
+              _notifyIfOfflineChanged();
+            }
           },
           onError: (e) {
             _hasNetworkConnection = true;

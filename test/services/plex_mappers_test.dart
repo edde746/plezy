@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_stream.dart';
 import 'package:plezy/services/plex_mappers.dart';
 
 const _serverId = 'plex-machine-1';
@@ -280,7 +281,24 @@ void main() {
             'height': 1080,
             'container': 'mkv',
             'Part': [
-              {'key': '/library/parts/1/file.mkv'},
+              {
+                'key': '/library/parts/1/file.mkv',
+                'Stream': [
+                  {
+                    'id': 10,
+                    'streamType': 1,
+                    'codec': 'hevc',
+                    'frameRate': 23.976,
+                    'DOVIProfile': 8,
+                    'DOVIPresent': 1,
+                    'DOVIBLCompatID': 1,
+                    'colorTrc': 'smpte2084',
+                    'colorPrimaries': 'bt2020',
+                    'colorSpace': 'bt2020nc',
+                  },
+                  {'id': 11, 'streamType': 2, 'codec': 'eac3', 'channels': 6, 'languageCode': 'eng', 'selected': true},
+                ],
+              },
             ],
           },
         ],
@@ -297,6 +315,56 @@ void main() {
       expect(v.height, 1080);
       expect(v.container, 'mkv');
       expect(v.parts.single.streamPath, '/library/parts/1/file.mkv');
+      final video = v.parts.single.streams.firstWhere((stream) => stream.kind == MediaStreamKind.video);
+      expect(video.codec, 'hevc');
+      expect(video.frameRate, closeTo(23.976, 0.001));
+      expect(video.hdr, isTrue);
+      expect(video.dolbyVision, isTrue);
+      expect(video.dolbyVisionProfile, 8);
+      final audio = v.parts.single.streams.firstWhere((stream) => stream.kind == MediaStreamKind.audio);
+      expect(audio.codec, 'eac3');
+      expect(audio.channels, 6);
+      expect(audio.selected, isTrue);
+    });
+
+    test('Media-level audio and file hints backfill streams when Part.Stream is absent', () {
+      final json = {
+        'ratingKey': '6048',
+        'type': 'episode',
+        'title': 'Hello, Ms. Cobel',
+        'Media': [
+          {
+            'id': '6136',
+            'videoResolution': '4k',
+            'videoCodec': 'hevc',
+            'audioCodec': 'eac3',
+            'audioChannels': '6',
+            'width': '3840',
+            'height': '1606',
+            'container': 'mkv',
+            'Part': [
+              {
+                'id': '6154',
+                'key': '/library/parts/6154/file.mkv',
+                'file': '/tv/Severance.S02.Hybrid.MULTI.2160p.WEB-DL.DV.HDR.H265-AOC/S02/S02E01.mkv',
+              },
+            ],
+          },
+        ],
+      };
+
+      final item = PlexMappers.mediaItemFromJson(json, serverId: ServerId(_serverId));
+      final part = item.mediaVersions!.single.parts.single;
+      final video = part.streams.firstWhere((stream) => stream.kind == MediaStreamKind.video);
+      final audio = part.streams.firstWhere((stream) => stream.kind == MediaStreamKind.audio);
+
+      expect(video.codec, 'hevc');
+      expect(video.hdr, isTrue);
+      expect(video.dolbyVision, isTrue);
+      expect(video.dolbyVisionProfile, isNull);
+      expect(audio.codec, 'eac3');
+      expect(audio.channels, 6);
+      expect(audio.selected, isTrue);
     });
 
     test('Image array (clearLogo, backgroundSquare) is hoisted onto top-level fields', () {
@@ -440,7 +508,7 @@ void main() {
       final hub = PlexMappers.mediaHubFromJson(json, serverId: ServerId(_serverId));
       expect(hub.items.length, 2);
       expect(hub.items[0].kind, MediaKind.show);
-      expect(hub.items[1].kind, MediaKind.unknown);
+      expect(hub.items[1].kind, MediaKind.folder);
     });
 
     test('parses Metadata + Directory together', () {

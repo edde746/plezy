@@ -3,7 +3,7 @@ part of '../../video_player_screen.dart';
 extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
   Future<void> _applyFrameRateMatching() async {
     if (player == null || !Platform.isAndroid) return;
-    if (_frameRateMatchingApplied) return;
+    if (_frameRate.applied) return;
 
     try {
       final fpsStr = await player!.getProperty('container-fps');
@@ -11,8 +11,8 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
       if (fps == null || fps <= 0) {
         // ExoPlayer detects FPS from frame timestamps after ~8 rendered frames.
         // STATE_READY fires before frames render, so retry until detection completes.
-        if (player is PlayerAndroid && _frameRateRetries < 10) {
-          _frameRateRetries++;
+        if (player!.detectsFpsAfterRender && _frameRate.retries < 10) {
+          _frameRate.retries++;
           Future.delayed(const Duration(milliseconds: 500), () {
             if (mounted && player != null) _applyFrameRateMatching();
           });
@@ -22,19 +22,10 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
         return;
       }
 
-      _frameRateRetries = 0;
-      _frameRateMatchingApplied = true;
+      _frameRate.retries = 0;
+      _frameRate.applied = true;
       final durationMs = player!.state.duration.inMilliseconds;
       final settingsService = await SettingsService.getInstance();
-      final delaySec = settingsService.read(SettingsService.displaySwitchDelay);
-
-      // Suppress spurious PauseEvent from MediaSession during HDMI renegotiation.
-      // Fire Stick (and similar Android TV devices) send onPause() through the
-      // MediaSession callback when the display mode changes for frame rate matching.
-      _suppressMediaPauseDuringFrameRateSwitch = true;
-      Future.delayed(Duration(seconds: 2 + delaySec + 1), () {
-        _suppressMediaPauseDuringFrameRateSwitch = false;
-      });
 
       // Pause so the playback clock doesn't advance while the TV renegotiates
       // HDMI. The native setVideoFrameRate call below awaits the real display
@@ -46,7 +37,12 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
         appLogger.w('Failed to pause before frame rate switch', error: e);
       }
 
-      final didSwitch = await player!.setVideoFrameRate(fps, durationMs, extraDelayMs: delaySec * 1000);
+      final didSwitch = await _switchDisplayFrameRateForOpen(
+        player: player!,
+        settingsService: settingsService,
+        fps: fps,
+        durationMs: durationMs,
+      );
       if (didSwitch) {
         await _refreshAndroidMpvDecoderAfterFrameRateSwitch(reason: 'post-first-frame display switch');
       }
@@ -57,10 +53,7 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
 
       unawaited(
         Sentry.addBreadcrumb(
-          Breadcrumb(
-            message: 'Frame rate matching: ${fps}fps, switched=$didSwitch, delay=${delaySec}s',
-            category: 'player',
-          ),
+          Breadcrumb(message: 'Frame rate matching: ${fps}fps, switched=$didSwitch', category: 'player'),
         ),
       );
       appLogger.d('Frame rate matching: Set display to ${fps}fps (duration: ${durationMs}ms, switched=$didSwitch)');
@@ -71,7 +64,7 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
 
   Future<void> _refreshAndroidMpvDecoderAfterFrameRateSwitch({required String reason}) async {
     final p = player;
-    if (!mounted || !Platform.isAndroid || p == null || p is PlayerAndroid) return;
+    if (!mounted || p == null || !p.needsDecoderRefreshAfterDisplaySwitch) return;
 
     final isLive = widget.isLive;
     final targetPosition = p.state.position;
@@ -105,19 +98,6 @@ extension _VideoPlayerDisplayMatchingMethods on VideoPlayerScreenState {
       );
     } catch (e) {
       appLogger.w('Failed to refresh Android MPV decoder after frame rate switch ($reason)', error: e);
-    }
-  }
-
-  /// Clear frame rate matching and restore default display mode
-  Future<void> _clearFrameRateMatching() async {
-    if (player == null || !Platform.isAndroid) return;
-
-    try {
-      await player!.clearVideoFrameRate();
-      unawaited(Sentry.addBreadcrumb(Breadcrumb(message: 'Frame rate matching cleared', category: 'player')));
-      appLogger.d('Frame rate matching: Cleared, restored default display mode');
-    } catch (e) {
-      appLogger.d('Failed to clear frame rate matching', error: e);
     }
   }
 

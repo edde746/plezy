@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/widgets.dart';
 import '../media/media_server_client.dart';
+import '../services/device_performance.dart';
 import 'platform_detector.dart';
 
 /// Image types for different transcoding strategies
@@ -41,6 +42,13 @@ class MediaImageHelper {
   /// Minimum DPR for TV to ensure sharp artwork on large screens
   static const double _tvMinDpr = 2.0;
 
+  /// Reduced tier caps: tiles at 1.5× DPR, backdrops at ~720p. Smaller
+  /// transcodes mean fewer bytes fetched AND cheaper decodes on weak 32-bit
+  /// hardware; the art cap is masked by the gradient scrims drawn over it.
+  static const double _reducedMaxDpr = 1.5;
+  static const int _reducedMaxArtWidth = 1280;
+  static const int _reducedMaxArtHeight = 720;
+
   /// Rounds a value up to the next multiple of [factor]. Shared between the
   /// URL dimension rounding (transcode bucket) and the mem-cache dimension
   /// rounding (decode bucket) so both snap to the same grid.
@@ -68,6 +76,7 @@ class MediaImageHelper {
     } catch (_) {
       dpr = reportedDpr;
     }
+    if (DevicePerformance.isReduced) return min(dpr, _reducedMaxDpr);
     if (PlatformDetector.isTV()) dpr = max(dpr, _tvMinDpr);
     return dpr;
   }
@@ -84,6 +93,13 @@ class MediaImageHelper {
 
     switch (imageType) {
       case ImageType.art:
+        if (DevicePerformance.isReduced) {
+          // No 1.1× cover overshoot, capped at ~720p.
+          return roundDimensions(
+            min(targetWidth, _reducedMaxArtWidth.toDouble()),
+            min(targetHeight, _reducedMaxArtHeight.toDouble()),
+          );
+        }
         final coverWidth = targetWidth * 1.1;
         final coverHeight = targetHeight * 1.1;
 
@@ -218,6 +234,9 @@ class MediaImageHelper {
     final (int maxW, int maxH) = switch (imageType) {
       ImageType.poster => (720, 1080),
       ImageType.thumb => (960, 540),
+      // Match the reduced-tier fetch cap so oversized originals (failed
+      // transcodes, external images) can't decode past the art budget.
+      ImageType.art when DevicePerformance.isReduced => (_reducedMaxArtWidth, _reducedMaxArtHeight),
       ImageType.art => (1920, 1080),
       ImageType.logo => (600, 300),
       ImageType.avatar => (300, 300),

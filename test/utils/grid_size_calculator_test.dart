@@ -1,8 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/settings_service.dart' show LibraryDensity;
 import 'package:plezy/utils/grid_size_calculator.dart';
 import 'package:plezy/utils/layout_constants.dart';
+
+/// Column count the stock [SliverGridDelegateWithMaxCrossAxisExtent] renders for
+/// [crossAxisExtent]. This is the source of truth that the navigation column
+/// count ([GridSizeCalculator.getColumnCount]) must match — a disagreement makes
+/// dpad "down" (`index + columnCount`) land diagonally (issue #1288).
+int _renderedColumnCount(double crossAxisExtent, double maxCrossAxisExtent, double spacing) {
+  final delegate = SliverGridDelegateWithMaxCrossAxisExtent(
+    maxCrossAxisExtent: maxCrossAxisExtent,
+    crossAxisSpacing: spacing,
+    mainAxisSpacing: spacing,
+    childAspectRatio: 2 / 3,
+  );
+  final layout = delegate.getLayout(
+    SliverConstraints(
+      axisDirection: AxisDirection.down,
+      growthDirection: GrowthDirection.forward,
+      userScrollDirection: ScrollDirection.idle,
+      scrollOffset: 0,
+      precedingScrollExtent: 0,
+      overlap: 0,
+      remainingPaintExtent: 10000,
+      crossAxisExtent: crossAxisExtent,
+      crossAxisDirection: AxisDirection.right,
+      viewportMainAxisExtent: 10000,
+      remainingCacheExtent: 10000,
+      cacheOrigin: 0,
+    ),
+  );
+  return (layout as SliverGridRegularTileLayout).crossAxisCount;
+}
 
 void main() {
   group('GridSizeCalculator.getColumnCount', () {
@@ -34,11 +65,40 @@ void main() {
     });
 
     test('uses GridLayoutConstants.crossAxisSpacing in the formula', () {
-      // The formula adds crossAxisSpacing to both sides, and that constant is
-      // currently 0. If it ever becomes non-zero, this test forces a rethink.
+      // The formula adds crossAxisSpacing to the denominator only (matching the
+      // stock grid delegate), and that constant is currently 0. If it ever
+      // becomes non-zero, this test forces a rethink.
       expect(GridLayoutConstants.crossAxisSpacing, 0);
       // Identity-ish: extent = max -> 1 column.
       expect(GridSizeCalculator.getColumnCount(200, 200), 1);
+    });
+  });
+
+  group('GridSizeCalculator.getColumnCount matches the rendered grid', () {
+    // The grid is laid out by the stock SliverGridDelegateWithMaxCrossAxisExtent;
+    // navigation uses getColumnCount. When they disagree the dpad "down" target
+    // (index + columnCount) lands one column to the right — the diagonal scroll
+    // of issue #1288. Grid spacing is only non-zero in TV full-card layouts,
+    // which is why the bug is TV-only; sweep the non-zero spacings here.
+    for (final spacing in <double>[8, 12, 16]) {
+      test('equals the stock delegate column count across widths (spacing=$spacing)', () {
+        for (final maxExtent in <double>[120, 175, 200, 240]) {
+          for (var w = maxExtent; w <= 3000; w += 1) {
+            expect(
+              GridSizeCalculator.getColumnCount(w, maxExtent, crossAxisSpacing: spacing),
+              _renderedColumnCount(w, maxExtent, spacing),
+              reason: 'width=$w maxExtent=$maxExtent spacing=$spacing would scroll diagonally',
+            );
+          }
+        }
+      });
+    }
+
+    test('regression: #1288 diagonal case (200px cells, 8px spacing, 1040px wide)', () {
+      // The old formula gave ceil((1040 + 8) / 208) = 6, but the grid renders
+      // ceil(1040 / 208) = 5, so "down" jumped a column right. Must be 5.
+      expect(GridSizeCalculator.getColumnCount(1040, 200, crossAxisSpacing: 8), 5);
+      expect(_renderedColumnCount(1040, 200, 8), 5);
     });
   });
 

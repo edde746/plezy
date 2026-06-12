@@ -43,21 +43,17 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
         streamStartEpoch: widget.streamStartEpoch,
         currentPositionEpoch: widget.currentPositionEpoch,
         onLiveSeek: widget.onLiveSeek,
+        onLiveSeekBy: widget.onLiveSeekBy,
         onJumpToLive: widget.onJumpToLive,
         useDpadNavigation: useDpad,
         serverId: widget.metadata.serverId,
         showQueueTab: playbackState.isQueueActive,
         onQueueItemSelected: playbackState.isQueueActive ? _onQueueItemSelected : null,
-        onCancelAutoHide: () => _hideTimer?.cancel(),
+        onCancelAutoHide: widget.chromeController.cancelAutoHide,
         onStartAutoHide: _startHideTimer,
         onSeekCompleted: widget.onSeekCompleted,
         onContentStripVisibilityChanged: (visible) {
-          _setControlsState(() => _isContentStripVisible = visible);
-          if (visible) {
-            _hideTimer?.cancel();
-          } else {
-            _restartHideTimerIfPlaying();
-          }
+          widget.chromeController.setContentStripVisible(visible);
         },
       ),
     );
@@ -125,7 +121,7 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
 
       await widget.player.addSubtitleTrack(
         uri: newUrl,
-        title: newTrack.displayTitle ?? newTrack.language ?? 'Downloaded',
+        title: newTrack.displayTitle ?? newTrack.language ?? t.videoControls.downloadedSubtitle,
         language: newTrack.languageCode,
         select: true,
       );
@@ -139,93 +135,24 @@ extension _PlexVideoControlsNavigationMethods on _PlexVideoControlsState {
     }
   }
 
-  /// Switch version, quality preset, or audio stream ID. Any combination may
-  /// change in one invocation; unspecified values retain their current value.
-  /// Always routes through pushReplacement, preserving playback position and
-  /// the transcode session identifiers.
+  /// Request a version, quality preset, audio stream, or source subtitle reload.
+  /// The owning player screen decides how to apply it so controls do not own
+  /// player lifecycle/navigation policy.
   Future<void> _switchVersionAndQuality({
     int? newMediaIndex,
     TranscodeQualityPreset? newPreset,
     int? newAudioStreamId,
     int? newSubtitleStreamId,
   }) async {
-    final effectiveMediaIndex = newMediaIndex ?? widget.selectedMediaIndex;
-    final effectivePreset = newPreset ?? widget.selectedQualityPreset;
-    final effectiveAudioStreamId = newAudioStreamId ?? widget.selectedAudioStreamId;
-    final effectiveSubtitleStreamId = newSubtitleStreamId ?? widget.selectedSubtitleStreamId;
-    final effectiveMediaSourceId = effectiveMediaIndex >= 0 && effectiveMediaIndex < widget.availableVersions.length
-        ? widget.availableVersions[effectiveMediaIndex].id
-        : widget.selectedMediaSourceId;
-
-    final isVersionChange = effectiveMediaIndex != widget.selectedMediaIndex;
-    final isPresetChange = effectivePreset != widget.selectedQualityPreset;
-    final isAudioChange = effectiveAudioStreamId != widget.selectedAudioStreamId;
-    final isSubtitleChange =
-        newSubtitleStreamId != null && effectiveSubtitleStreamId != widget.selectedSubtitleStreamId;
-    if (!isVersionChange && !isPresetChange && !isAudioChange && !isSubtitleChange) {
-      return;
-    }
-
+    final onPlaybackSourceChanged = widget.onPlaybackSourceChanged;
+    if (onPlaybackSourceChanged == null) return;
     try {
-      final currentPosition = widget.player.state.position;
-
-      // Get state reference before async operations
-      final videoPlayerState = context.findAncestorStateOfType<VideoPlayerScreenState>();
-
-      if (isVersionChange) {
-        final settingsService = await SettingsService.getInstance();
-        final seriesKey = widget.metadata.grandparentId ?? widget.metadata.id;
-        await settingsService.write(SettingsService.mediaVersionPreferences, {
-          ...settingsService.read(SettingsService.mediaVersionPreferences),
-          seriesKey: effectiveMediaIndex,
-        });
-      }
-
-      if (isSubtitleChange) {
-        final serverId = widget.metadata.serverId;
-        final partId = widget.sourcePartId;
-        if (serverId == null || partId == null || effectiveSubtitleStreamId == null) {
-          throw StateError('No Plex part available for subtitle stream selection');
-        }
-        final client = context.getPlexClientForServer(ServerId(serverId));
-        final saved = await client.selectStreams(partId, subtitleStreamID: effectiveSubtitleStreamId, allParts: true);
-        if (!saved) {
-          throw StateError('Failed to select subtitle stream');
-        }
-      }
-
-      // Preserve session identifiers across the reload so Plex reuses the
-      // transcode session rather than spinning up a new one.
-      final sessionId = videoPlayerState?.playbackSessionIdentifier;
-      final transcodeSessionId = videoPlayerState?.playbackTranscodeSessionId;
-
-      // Set flag on parent VideoPlayerScreen to skip orientation restoration
-      videoPlayerState?.setReplacingWithVideo();
-      // Dispose the existing player before spinning up the replacement to avoid race conditions
-      await videoPlayerState?.disposePlayerForNavigation();
-
-      // Navigate to new player screen with the updated selection
-      // Use PageRouteBuilder with zero-duration transitions to prevent orientation reset
-      if (mounted) {
-        unawaited(
-          Navigator.pushReplacement(
-            context,
-            PageRouteBuilder<bool>(
-              pageBuilder: (context, animation, secondaryAnimation) => VideoPlayerScreen(
-                metadata: widget.metadata.copyWith(viewOffsetMs: currentPosition.inMilliseconds),
-                selectedMediaIndex: effectiveMediaIndex,
-                selectedMediaSourceId: effectiveMediaSourceId,
-                selectedQualityPreset: effectivePreset,
-                selectedAudioStreamId: effectiveAudioStreamId,
-                reusedSessionIdentifier: sessionId,
-                reusedTranscodeSessionId: transcodeSessionId,
-              ),
-              transitionDuration: Duration.zero,
-              reverseTransitionDuration: Duration.zero,
-            ),
-          ),
-        );
-      }
+      await onPlaybackSourceChanged(
+        newMediaIndex: newMediaIndex,
+        newPreset: newPreset,
+        newAudioStreamId: newAudioStreamId,
+        newSubtitleStreamId: newSubtitleStreamId,
+      );
     } catch (e) {
       if (mounted) {
         showErrorSnackBar(context, t.messages.errorLoading(error: e.toString()));

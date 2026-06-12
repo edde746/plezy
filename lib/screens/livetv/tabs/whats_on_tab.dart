@@ -146,13 +146,13 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
     if (entry.program.isCurrentlyAiring && channel != null) {
       // Live → play directly
       tuneChannel(channel);
-    } else if (entry.metadata.isShow) {
+    } else if (entry.metadata.isShow && serverIdOrNull(entry.metadata.serverId) != null) {
       // Show with upcoming episodes → show full schedule
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => LiveTvShowScheduleScreen(
             showTitle: entry.metadata.displayTitle,
-            serverId: entry.metadata.serverId ?? '',
+            serverId: entry.metadata.serverId!,
             channels: widget.channels,
           ),
         ),
@@ -163,7 +163,7 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
         program: entry.program,
         channel: channel,
         posterThumb: entry.metadata.grandparentThumbPath ?? entry.metadata.thumbPath,
-        posterServerId: entry.metadata.serverId ?? '',
+        posterServerId: entry.metadata.serverId,
       );
     }
   }
@@ -192,7 +192,7 @@ class WhatsOnTabState extends State<WhatsOnTab> with LiveTvActionsMixin<WhatsOnT
               program: entry.program,
               channel: findChannelForProgram(entry.program),
               posterThumb: entry.metadata.grandparentThumbPath ?? entry.metadata.thumbPath,
-              posterServerId: entry.metadata.serverId ?? '',
+              posterServerId: entry.metadata.serverId,
             ),
             onVerticalNavigation: (isUp) => _handleVerticalNavigation(index, isUp),
             onBack: widget.onBack,

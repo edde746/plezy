@@ -5,6 +5,7 @@ import '../services/playback_initialization_types.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_http_client.dart' show AbortController, MediaServerResponse;
 import '../utils/external_ids.dart';
+import '../utils/watch_state_notifier.dart';
 import 'download_resolution.dart';
 import 'ids.dart';
 import 'library_filter_result.dart';
@@ -21,6 +22,9 @@ import 'media_library.dart';
 import 'media_playlist.dart';
 import 'playback_report_metadata.dart';
 import 'server_capabilities.dart';
+
+/// Default number of items requested for horizontal hub previews.
+const int defaultHubPreviewLimit = 20;
 
 /// Backend-neutral client for a single media server (Plex or Jellyfin).
 ///
@@ -169,9 +173,33 @@ abstract class MediaServerClient {
   /// show, tracks of an album, items of a collection.
   Future<List<MediaItem>> fetchChildren(String parentId);
 
-  /// Page through playable descendants of [parentId]. Used by large show /
-  /// season detail views so episodes can render before the full list has
-  /// loaded. [fetchPlayableDescendants] remains the complete-list helper for
+  /// Top-level rows of a library in folder-browsing mode. Directory rows come
+  /// back as [MediaKind.folder] (Plex additionally stamps
+  /// [MediaItem.backendFolderKey]). [onPage] surfaces accumulated items after
+  /// each intermediate page on backends that paginate (Jellyfin); single-shot
+  /// backends (Plex) never call it.
+  Future<List<MediaItem>> fetchLibraryFolders(String libraryId, {void Function(List<MediaItem> itemsSoFar)? onPage});
+
+  /// Children of a [MediaKind.folder] row from [fetchLibraryFolders] /
+  /// [fetchFolderChildren] — or, on Jellyfin, of a show/season row, which act
+  /// as expandable folders in folder browsing. Same [onPage] semantics as
+  /// [fetchLibraryFolders].
+  Future<List<MediaItem>> fetchFolderChildren(
+    MediaItem folder, {
+    String? libraryId,
+    String? libraryTitle,
+    void Function(List<MediaItem> itemsSoFar)? onPage,
+  });
+
+  /// Page through direct children of [parentId]. Unlike
+  /// [fetchPlayableDescendantsPage], this preserves container shape and is used
+  /// for large season episode lists where the children endpoint is the correct
+  /// backend primitive.
+  Future<LibraryPage<MediaItem>> fetchChildrenPage(String parentId, {int? start, int? size, AbortController? abort});
+
+  /// Page through playable descendants of [parentId]. Used by flattened show /
+  /// season detail views so episodes can render before the full list has loaded.
+  /// [fetchPlayableDescendants] remains the complete-list helper for
   /// playback/download/sync paths.
   Future<LibraryPage<MediaItem>> fetchPlayableDescendantsPage(
     String parentId, {
@@ -219,7 +247,7 @@ abstract class MediaServerClient {
 
   /// Curated home-screen hubs across all libraries (Plex Discover; Jellyfin
   /// synthesizes `Latest` plus optional `Resume` + `NextUp`).
-  Future<List<MediaHub>> fetchGlobalHubs({int limit = 10, bool includePlaybackHubs = true});
+  Future<List<MediaHub>> fetchGlobalHubs({int limit = defaultHubPreviewLimit, bool includePlaybackHubs = true});
 
   /// Hubs scoped to a single library section. [libraryName] is baked into
   /// the title of synthetic hubs (Jellyfin) so per-library "Recently Added"
@@ -230,7 +258,7 @@ abstract class MediaServerClient {
   Future<List<MediaHub>> fetchLibraryHubs(
     String libraryId, {
     required String libraryName,
-    int limit = 10,
+    int limit = defaultHubPreviewLimit,
     bool includePlaybackHubs = true,
     MediaKind? libraryKind,
   });
@@ -260,11 +288,14 @@ abstract class MediaServerClient {
   /// endpoint. Backends without true hub pagination may return a single page.
   Future<LibraryPage<MediaItem>> fetchMoreHubItemsPage(String hubId, {int? start, int? size, AbortController? abort});
 
-  /// Mark [item] as watched. The full item is passed (not just an id) so
-  /// implementations can fire a [WatchStateEvent] on [WatchStateNotifier]
-  /// for UI invalidation — episode/season/show parent chain, library
-  /// section etc. live on the item.
+  /// Mark [item] as watched. Transport only: no [WatchStateEvent] is emitted
+  /// here — UI surfaces go through `WatchActions`, which owns the single
+  /// emission (and tracker fan-out); the offline sync replay calls this
+  /// directly precisely because the event already fired when the action was
+  /// queued.
   Future<void> markWatched(MediaItem item);
+
+  /// Mark [item] as unwatched. Transport only — see [markWatched].
   Future<void> markUnwatched(MediaItem item);
 
   /// Hide an item from Continue Watching without changing watched status or
@@ -466,6 +497,17 @@ abstract class MediaServerClient {
   /// one and returns a fixed 0.9.
   double get watchedThreshold;
 
+  /// Whether a playback-stopped report past [watchedThreshold] already marks
+  /// the item played server-side. When true, in-player auto-scrobble must NOT
+  /// also call [markWatched]: the server marks it played from the stop report,
+  /// and the extra `/UserPlayedItems` toggle double-scrobbles through
+  /// integrations that watch both the played-state change and the
+  /// playback-stop — e.g. Jellyfin's Trakt plugin fires once on `TogglePlayed`
+  /// and again on `PlayedToCompletion` (#1287). Plex returns false: its
+  /// timeline stop doesn't reliably mark watched without an active play
+  /// session, so the explicit call is still required.
+  bool get marksWatchedOnPlaybackStopped;
+
   /// First playback signal for [itemId]. Plex sends a `/:/timeline?state=playing`
   /// heartbeat; Jellyfin opens a `/Sessions/Playing` session row. Subsequent
   /// ticks must call [reportPlaybackProgress] (Jellyfin distinguishes session
@@ -547,6 +589,14 @@ abstract class MediaServerClient {
   /// media version's part path; Jellyfin returns its `/Videos/{id}/stream`
   /// endpoint with `Static=true` so transcoding is bypassed. Returns null
   /// when the backend can't resolve a playable URL for the item.
+  ///
+  /// Deliberately separate from the in-app playback funnel
+  /// (`PlaybackSourceResolver`): external players can't send custom headers,
+  /// so the URL must be self-contained (token in the query string), and
+  /// there's no session/transcode negotiation to carry. Likewise their
+  /// progress reporting is a one-shot started/stopped pair in
+  /// `ExternalPlayerService` — an external app exposes no live position
+  /// stream for the in-player tracker to follow.
   Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
 }
 
@@ -564,6 +614,21 @@ extension MediaServerClientScope on MediaServerClient {
     ScopedMediaServerClient(:final scopedServerId) => scopedServerId,
     _ => serverId,
   };
+
+  /// Mark [item] watched because it crossed [watchedThreshold] during playback,
+  /// when a playback-stopped report is/was also sent for the same playback.
+  /// Backends that mark played from the stop report
+  /// ([marksWatchedOnPlaybackStopped]) skip the server call — issuing
+  /// [markWatched] too would double-scrobble via the Jellyfin Trakt plugin
+  /// (#1287). The single local event emitted here keeps the UI and Plezy's
+  /// own Trakt sync (which key on `watched` events, not progress) in sync;
+  /// the stop report syncs the server.
+  Future<void> markWatchedFromPlaybackStop(MediaItem item) async {
+    if (!marksWatchedOnPlaybackStopped) {
+      await markWatched(item);
+    }
+    WatchStateNotifier().notifyWatched(item: item, isNowWatched: true, cacheServerId: cacheServerId);
+  }
 }
 
 /// Cache-aware fetch helpers shared by both backends so the offline-first /

@@ -64,7 +64,8 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
               _buildSectionHeader(t.fileInfo.audio),
               const SizedBox(height: 8),
               if (info.audioTracks.isNotEmpty)
-                for (int i = 0; i < info.audioTracks.length; i++) _buildInfoRow('${i + 1}', info.audioTracks[i].label),
+                for (int i = 0; i < info.audioTracks.length; i++)
+                  _buildInfoRow('${i + 1}', info.audioTracks[i].label.joined),
               if (info.audioTracks.isEmpty) ...[
                 if (info.audioCodec != null) _buildInfoRow(t.fileInfo.codec, info.audioCodec!),
                 if (info.audioChannelsFormatted != null)
@@ -77,7 +78,7 @@ class _FileInfoBottomSheetState extends State<FileInfoBottomSheet> {
                 _buildSectionHeader(t.fileInfo.subtitles),
                 const SizedBox(height: 8),
                 for (int i = 0; i < info.subtitleTracks.length; i++)
-                  _buildInfoRow('${i + 1}', info.subtitleTracks[i].label),
+                  _buildInfoRow('${i + 1}', info.subtitleTracks[i].label.joined),
                 const SizedBox(height: 20),
               ],
 

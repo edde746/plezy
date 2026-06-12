@@ -3,11 +3,14 @@ package com.edde746.plezy.exoplayer
 import android.content.Context
 import android.media.AudioDeviceInfo
 import android.os.Build
+import android.os.Handler
 import androidx.annotation.OptIn
 import androidx.media3.common.Format
+import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.util.Clock
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.decoder.DecoderInputBuffer
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.analytics.PlayerId
@@ -18,6 +21,10 @@ import androidx.media3.exoplayer.audio.AudioTrackAudioOutputProvider
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioTrackBufferSizeProvider
 import androidx.media3.exoplayer.audio.ForwardingAudioSink
+import androidx.media3.exoplayer.mediacodec.MediaCodecAdapter
+import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
+import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
+import androidx.media3.exoplayer.video.VideoRendererEventListener
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.abs
@@ -35,6 +42,46 @@ class PlezyRenderersFactory(context: Context) : DefaultRenderersFactory(context)
   var onAudioCapabilitiesChanged: (() -> Unit)? = null
 
   var audioDiagnosticsLogger: ((String, String, String) -> Unit)? = null
+
+  var videoDiagnosticsLogger: ((String, String, String) -> Unit)? = null
+
+  override fun buildVideoRenderers(
+    context: Context,
+    extensionRendererMode: Int,
+    mediaCodecSelector: MediaCodecSelector,
+    enableDecoderFallback: Boolean,
+    eventHandler: Handler,
+    eventListener: VideoRendererEventListener,
+    allowedVideoJoiningTimeMs: Long,
+    out: ArrayList<Renderer>
+  ) {
+    // Let super build the full list (it also appends extension renderers reflectively,
+    // e.g. the jellyfin ffmpeg artifact's video renderer), then swap the stock
+    // MediaCodecVideoRenderer for the DV-sanitizing variant at the same index.
+    super.buildVideoRenderers(
+      context,
+      extensionRendererMode,
+      mediaCodecSelector,
+      enableDecoderFallback,
+      eventHandler,
+      eventListener,
+      allowedVideoJoiningTimeMs,
+      out
+    )
+    val index = out.indexOfFirst { it.javaClass == MediaCodecVideoRenderer::class.java }
+    if (index < 0) return
+    out[index] = DvSanitizingVideoRenderer(
+      MediaCodecVideoRenderer.Builder(context)
+        .setCodecAdapterFactory(codecAdapterFactory)
+        .setMediaCodecSelector(mediaCodecSelector)
+        .setAllowedJoiningTimeMs(allowedVideoJoiningTimeMs)
+        .setEnableDecoderFallback(enableDecoderFallback)
+        .setEventHandler(eventHandler)
+        .setEventListener(eventListener)
+        .setMaxDroppedFramesToNotify(MAX_DROPPED_VIDEO_FRAME_COUNT_TO_NOTIFY),
+      videoDiagnosticsLogger
+    )
+  }
 
   override fun buildAudioSink(
     context: Context,
@@ -278,6 +325,96 @@ internal class SubtitleDelayRenderer(
   override fun render(positionUs: Long, elapsedRealtimeUs: Long) {
     delegate.render(positionUs - delayUs.get(), elapsedRealtimeUs)
   }
+}
+
+/**
+ * MediaCodecVideoRenderer that resolves the DV / HDR10+ dual-dynamic-metadata conflict
+ * per decode path (#1296, generalizes androidx/media#3085):
+ * - native DV codec selected (media3 only selects one when decoder AND display support DV):
+ *   strip in-band HDR10+ SEI — conflicting dynamic metadata crashes Fire TV-class chipsets
+ * - HEVC fallback for an HEVC-based DV format: strip DV RPU/EL NALs (profiles 7/8, where the
+ *   base layer remains valid HDR10/HLG), keeping HDR10+ for the display
+ *
+ * Flags are reassigned on every codec init: tunneling toggles and DV retries re-init the
+ * codec without recreating renderers, and decoder fallback can switch the codec MIME.
+ */
+@OptIn(UnstableApi::class)
+internal class DvSanitizingVideoRenderer(
+  builder: Builder,
+  private val log: ((String, String, String) -> Unit)?
+) : MediaCodecVideoRenderer(builder) {
+
+  private val sanitizer = DvBitstreamSanitizer()
+
+  private var stripHdr10PlusSei = false
+  private var stripDvRpu = false
+
+  // Sanitize diagnostics — playback-thread only, cumulative for the renderer's lifetime.
+  private var sanitizedSampleCount = 0L
+  private var totalSanitizeTimeUs = 0L
+  private var maxSanitizeTimeUs = 0L
+  private var totalStrippedNals = 0L
+  private var totalStrippedBytes = 0L
+
+  override fun onCodecInitialized(
+    name: String,
+    configuration: MediaCodecAdapter.Configuration,
+    initializedTimestampMs: Long,
+    initializationDurationMs: Long
+  ) {
+    super.onCodecInitialized(name, configuration, initializedTimestampMs, initializationDurationMs)
+    val codecs = configuration.format.codecs?.lowercase() ?: ""
+    val dvHevcFormat = configuration.format.sampleMimeType == MimeTypes.VIDEO_DOLBY_VISION &&
+      (codecs.startsWith("dvhe.") || codecs.startsWith("dvh1."))
+    val codecMimeType = configuration.codecInfo.codecMimeType
+    val newStripHdr10PlusSei = dvHevcFormat && codecMimeType == MimeTypes.VIDEO_DOLBY_VISION
+    val newStripDvRpu = dvHevcFormat &&
+      codecMimeType == MimeTypes.VIDEO_H265 &&
+      isBlCompatibleDvProfile(codecs)
+    if (newStripHdr10PlusSei != stripHdr10PlusSei || newStripDvRpu != stripDvRpu) {
+      log?.invoke(
+        "info",
+        "video",
+        "DV bitstream sanitizing: stripHdr10PlusSei=$newStripHdr10PlusSei, " +
+          "stripDvRpu=$newStripDvRpu (codec=$name, codecs=${configuration.format.codecs})"
+      )
+    }
+    stripHdr10PlusSei = newStripHdr10PlusSei
+    stripDvRpu = newStripDvRpu
+  }
+
+  override fun onQueueInputBuffer(buffer: DecoderInputBuffer) {
+    if (stripHdr10PlusSei || stripDvRpu) {
+      val data = buffer.data
+      if (data != null && data.hasRemaining() && !buffer.isEncrypted) {
+        val sizeBefore = data.remaining()
+        val startNs = System.nanoTime()
+        val stripped = sanitizer.sanitize(data, stripHdr10PlusSei, stripDvRpu)
+        val elapsedUs = (System.nanoTime() - startNs) / 1_000
+        sanitizedSampleCount++
+        totalSanitizeTimeUs += elapsedUs
+        if (elapsedUs > maxSanitizeTimeUs) maxSanitizeTimeUs = elapsedUs
+        totalStrippedNals += stripped
+        totalStrippedBytes += sizeBefore - data.remaining()
+        if (sanitizedSampleCount <= 3 || sanitizedSampleCount % 500 == 0L) {
+          log?.invoke(
+            "debug",
+            "dv-sanitize",
+            "Sample #$sanitizedSampleCount: ${sizeBefore}B -> ${data.remaining()}B, " +
+              "stripped=$stripped, took=${elapsedUs}us " +
+              "(avg=${totalSanitizeTimeUs / sanitizedSampleCount}us, max=${maxSanitizeTimeUs}us, " +
+              "totalNals=$totalStrippedNals, totalBytes=${totalStrippedBytes}B)"
+          )
+        }
+      }
+    }
+    super.onQueueInputBuffer(buffer)
+  }
+
+  private fun isBlCompatibleDvProfile(codecs: String): Boolean = codecs.startsWith("dvhe.07") ||
+    codecs.startsWith("dvh1.07") ||
+    codecs.startsWith("dvhe.08") ||
+    codecs.startsWith("dvh1.08")
 }
 
 // --- AudioOutput wrapping: shares raw position with PositionFixAudioSink ---

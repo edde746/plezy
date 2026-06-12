@@ -74,6 +74,9 @@ class DesktopVideoControls extends StatefulWidget {
   final double streamStartEpoch;
   final int? currentPositionEpoch;
   final ValueChanged<int>? onLiveSeek;
+
+  /// Relative live-TV skip callback (delta seconds); parent accumulates+debounces.
+  final ValueChanged<int>? onLiveSeekBy;
   final VoidCallback? onJumpToLive;
 
   /// Whether to use dpad navigation for content strip (TV or keyboard nav mode)
@@ -134,6 +137,7 @@ class DesktopVideoControls extends StatefulWidget {
     this.streamStartEpoch = 0,
     this.currentPositionEpoch,
     this.onLiveSeek,
+    this.onLiveSeekBy,
     this.onJumpToLive,
     this.useDpadNavigation = false,
     this.serverId,
@@ -530,11 +534,13 @@ class DesktopVideoControlsState extends State<DesktopVideoControls> {
       final isForward = key == LogicalKeyboardKey.arrowRight;
       final effectiveMultiplier = event is KeyRepeatEvent ? _getSeekMultiplier() : 1.0;
 
-      // Live TV: epoch-based seeking via onLiveSeek
-      if (_isLive && widget.onLiveSeek != null && widget.currentPositionEpoch != null) {
+      // Live TV: relative epoch-based seeking via the parent accumulator, which
+      // coalesces a rapid/held burst into one transcode re-open (#1253). The
+      // acceleration multiplier still grows the per-press step; the accumulator
+      // sums them.
+      if (_isLive && widget.onLiveSeekBy != null) {
         final stepSeconds = (widget.seekTimeSmall * effectiveMultiplier).clamp(1, 300).round();
-        final targetEpoch = widget.currentPositionEpoch! + (isForward ? stepSeconds : -stepSeconds);
-        widget.onLiveSeek!(targetEpoch);
+        widget.onLiveSeekBy!(isForward ? stepSeconds : -stepSeconds);
         widget.onFocusActivity?.call();
         return KeyEventResult.handled;
       }

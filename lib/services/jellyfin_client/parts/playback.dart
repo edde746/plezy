@@ -2,7 +2,7 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinPlaybackMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  MediaServerHttpClient get _http;
+  FailoverHttpClient get _http;
 
   /// Backend-neutral [PlaybackExtras] for [itemId]. Jellyfin exposes chapters
   /// at the item level (`raw['Chapters']`) and native skip segments through a

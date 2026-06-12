@@ -194,6 +194,34 @@ void main() {
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'left-target');
     });
 
+    testWidgets('invokes custom child action on select', (tester) async {
+      final key = GlobalKey<FocusableActionBarState>();
+      var activations = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FocusableActionBar(
+              key: key,
+              actions: [FocusableAction(onPressed: () => activations++, child: const SizedBox(width: 48, height: 48))],
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      key.currentState!.requestFocusOnFirst();
+      await tester.pump();
+      expect(FocusManager.instance.primaryFocus?.debugLabel, 'ActionBar[0]');
+
+      await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
+      await tester.pump();
+      await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+      await tester.pump();
+
+      expect(activations, 1);
+    });
+
     testWidgets('moves through detail actions when trailer is inserted before shuffle', (tester) async {
       final play = FocusNode(debugLabel: 'detail_play');
       final outside = FocusNode(debugLabel: 'outside');

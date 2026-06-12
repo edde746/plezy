@@ -2,7 +2,7 @@ part of '../../jellyfin_client.dart';
 
 mixin _JellyfinCollectionMethods on MediaServerCacheMixin {
   JellyfinConnection get connection;
-  MediaServerHttpClient get _http;
+  FailoverHttpClient get _http;
   List<MediaItem> _mapItems(Iterable<Map<String, dynamic>> items);
 
   static const int _collectionsPageSize = 36;

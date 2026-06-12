@@ -54,6 +54,8 @@ void main() {
 
   late AppDatabase db;
   late DownloadManagerService downloadManager;
+  // Swappable per-test resolver behind the constructor-injected closure.
+  MediaClientResolver? testClientResolver;
 
   setUp(() {
     db = AppDatabase.forTesting(NativeDatabase.memory());
@@ -61,7 +63,12 @@ void main() {
     // constructor; reinitialize per test so each test sees the fresh in-memory DB.
     PlexApiCache.initialize(db);
     JellyfinApiCache.initialize(db);
-    downloadManager = DownloadManagerService(database: db, storageService: DownloadStorageService.instance);
+    testClientResolver = null;
+    downloadManager = DownloadManagerService(
+      database: db,
+      storageService: DownloadStorageService.instance,
+      clientResolver: (serverId, {clientScopeId}) => testClientResolver?.call(serverId, clientScopeId: clientScopeId),
+    );
     // recoveryFuture is `late final` and would otherwise be unset; we never
     // exercise the recovery path in these tests but the field must be safe
     // to await. Set to a completed future.
@@ -83,6 +90,7 @@ void main() {
       final unsupportedManager = DownloadManagerService(
         database: db,
         storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
         downloadsSupportedOverride: false,
       );
 
@@ -379,6 +387,7 @@ void main() {
       final unsupportedManager = DownloadManagerService(
         database: db,
         storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
         downloadsSupportedOverride: false,
       )..recoveryFuture = Future<void>.value();
       final p = DownloadProvider.forTesting(downloadManager: unsupportedManager, database: db);
@@ -676,12 +685,12 @@ void main() {
         status: DownloadStatus.completed.index,
       );
       await db.addDownloadOwner(profileId: 'test-profile', globalKey: 'jf-machine:ep-1');
-      downloadManager.setClientResolver((serverId, {clientScopeId}) {
+      testClientResolver = (serverId, {clientScopeId}) {
         if (serverId == 'jf-machine') {
           return _ScopedTestClient(serverId: ServerId('jf-machine'), scopedServerId: 'jf-machine/user-b');
         }
         return null;
-      });
+      };
 
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
@@ -727,12 +736,12 @@ void main() {
         ratingKey: 'ep-1',
         actionType: 'watched',
       );
-      downloadManager.setClientResolver((serverId, {clientScopeId}) {
+      testClientResolver = (serverId, {clientScopeId}) {
         if (serverId == 'jf-machine') {
           return _ScopedTestClient(serverId: ServerId('jf-machine'), scopedServerId: 'jf-machine/user-b');
         }
         return null;
-      });
+      };
 
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
@@ -821,7 +830,7 @@ void main() {
   });
 
   group('DownloadProvider — cancelDownload map symmetry', () {
-    test('cancelDownload removes download, metadata, artwork, and episode count', () async {
+    test('cancelDownload removes download, metadata, and artwork', () async {
       final p = DownloadProvider.forTesting(downloadManager: downloadManager, database: db);
       await p.ensureInitialized();
 
@@ -838,7 +847,6 @@ void main() {
           ),
         },
         artwork: {key: const DownloadedArtwork(thumbPath: '/art/42.jpg')},
-        episodeCounts: {key: 7},
       );
 
       await p.cancelDownload(key);
@@ -846,7 +854,6 @@ void main() {
       expect(p.getProgress(key), isNull);
       expect(p.getMetadata(key), isNull);
       expect(p.getArtworkPaths(key), isNull, reason: 'artwork path must not orphan after cancel');
-      expect(p.totalEpisodeCountFor(key), isNull, reason: 'episode count must not orphan after cancel');
 
       p.dispose();
     });

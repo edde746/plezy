@@ -72,6 +72,12 @@ struct ServerDisplayCriteria {
   let gamma: String?
   let primaries: String?
   let colorMatrix: String?
+
+  /// Whether the server metadata carried actual color/DoVi information —
+  /// only then may the prime lock out mpv-derived color updates.
+  var hasColorInfo: Bool {
+    doviProfile > 0 || gamma != nil || primaries != nil || colorMatrix != nil
+  }
 }
 
 class MpvPlayerCoreBase: NSObject {
@@ -97,6 +103,8 @@ class MpvPlayerCoreBase: NSObject {
   private var cachedVideoPrimaries: String?
   private var cachedVideoColorMatrix: String?
   private var serverDisplayCriteriaActive = false
+  private var serverCriteriaLocksColor = false
+  private var lastServerCriteria: ServerDisplayCriteria?
   private var cachedDvConversionMode = "auto"
   private var cachedDvConversionLogEnabled = false
   var hdrEnabled: Bool {
@@ -195,11 +203,41 @@ class MpvPlayerCoreBase: NSObject {
     colorMatrix: String?
   ) -> Bool { false }
 
+  /// Whether the mpv-derived caches indicate an HDR/DV source — mirrors the
+  /// Dart-side MediaDisplayCriteria.isHdr tag check. Call under cacheLock.
+  private static func looksHdr(
+    doviProfile: Int64, sigPeak: Double, gamma: String?, primaries: String?, colorMatrix: String?
+  ) -> Bool {
+    if doviProfile > 0 || sigPeak > 1 { return true }
+    let tags = [gamma, primaries, colorMatrix]
+      .compactMap { $0?.lowercased() }
+      .joined(separator: " ")
+      .replacingOccurrences(of: "[^a-z0-9]", with: "", options: .regularExpression)
+    return ["hlg", "arib", "pq", "smpte2084", "st2084", "bt2020"].contains { tags.contains($0) }
+  }
+
   func scheduleDisplayCriteriaUpdate() {
     cacheLock.lock()
     if serverDisplayCriteriaActive {
-      cacheLock.unlock()
-      return
+      // A color-bearing server prime owns the display mode for the item. An
+      // fps-only prime is just an early hint: demote it once the decoded
+      // stream proves HDR/DV so the real color tags reach the display,
+      // otherwise keep suppressing redundant SDR re-applies.
+      if serverCriteriaLocksColor
+        || !Self.looksHdr(
+          doviProfile: cachedDoviProfile,
+          sigPeak: cachedLastSigPeak,
+          gamma: cachedVideoGamma,
+          primaries: cachedVideoPrimaries,
+          colorMatrix: cachedVideoColorMatrix
+        )
+      {
+        cacheLock.unlock()
+        return
+      }
+      serverDisplayCriteriaActive = false
+      serverCriteriaLocksColor = false
+      lastServerCriteria = nil
     }
     let profile = cachedDoviProfile
     let level = cachedDoviLevel
@@ -228,15 +266,17 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
-  func setServerDisplayCriteria(_ criteria: ServerDisplayCriteria?) {
+  func setServerDisplayCriteria(_ criteria: ServerDisplayCriteria?, completion: ((Bool) -> Void)? = nil) {
     cacheLock.lock()
     serverDisplayCriteriaActive = criteria != nil
+    serverCriteriaLocksColor = criteria?.hasColorInfo ?? false
+    lastServerCriteria = criteria
     cacheLock.unlock()
 
     let apply = { [weak self] in
       guard let self else { return }
       guard let criteria else {
-        _ = self.updateDisplayCriteria(
+        let applied = self.updateDisplayCriteria(
           doviProfile: 0,
           doviLevel: 0,
           doviCompatibilityId: nil,
@@ -248,6 +288,7 @@ class MpvPlayerCoreBase: NSObject {
           primaries: nil,
           colorMatrix: nil
         )
+        completion?(applied)
         return
       }
 
@@ -266,15 +307,32 @@ class MpvPlayerCoreBase: NSObject {
       if !applied {
         self.cacheLock.lock()
         self.serverDisplayCriteriaActive = false
+        self.serverCriteriaLocksColor = false
         self.cacheLock.unlock()
         self.scheduleDisplayCriteriaUpdate()
       }
+      completion?(applied)
     }
 
     if Thread.isMainThread {
       apply()
     } else {
       DispatchQueue.main.async(execute: apply)
+    }
+  }
+
+  /// Re-evaluate the tvOS HDMI display mode using the most recent criteria.
+  /// On tvOS the HDR toggle only reaches the display through this path, so the
+  /// runtime toggle calls this to switch DV/HDR ⇄ SDR without reloading.
+  func reapplyDisplayCriteria() {
+    cacheLock.lock()
+    let criteria = lastServerCriteria
+    cacheLock.unlock()
+
+    if let criteria {
+      setServerDisplayCriteria(criteria)
+    } else {
+      scheduleDisplayCriteriaUpdate()
     }
   }
 
@@ -509,6 +567,15 @@ class MpvPlayerCoreBase: NSObject {
     DispatchQueue.main.async {
       self.updateEDRMode(sigPeak: sigPeak)
     }
+
+    // On tvOS the toggle only takes effect through the HDMI display-mode path
+    // (target-colorspace-hint is inert in the avfoundation VO and EDR is
+    // iOS-only), so re-evaluate the display criteria with the new flag.
+    #if os(tvOS)
+      DispatchQueue.main.async {
+        self.reapplyDisplayCriteria()
+      }
+    #endif
   }
 
   /// PiP presents the AVSampleBufferDisplayLayer directly, so subtitles must
@@ -708,6 +775,9 @@ class MpvPlayerCoreBase: NSObject {
     checkError(mpv_set_option_string(mpv, "hwdec-codecs", "all"))
     checkError(mpv_set_option_string(mpv, "hwdec-software-fallback", "yes"))
     checkError(mpv_set_option_string(mpv, "target-colorspace-hint", "auto"))
+    // Pause on the last frame at EOF instead of unloading the file, so seeking
+    // back after the video ends still works (matches Linux/Windows).
+    checkError(mpv_set_option_string(mpv, "keep-open", "yes"))
   }
 
   #if os(macOS)

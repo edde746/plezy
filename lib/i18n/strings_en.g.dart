@@ -78,6 +78,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final TranslationsShadersEn shaders = TranslationsShadersEn.internal(_root);
 	late final TranslationsCompanionRemoteEn companionRemote = TranslationsCompanionRemoteEn.internal(_root);
 	late final TranslationsVideoSettingsEn videoSettings = TranslationsVideoSettingsEn.internal(_root);
+	late final TranslationsPerformanceOverlayEn performanceOverlay = TranslationsPerformanceOverlayEn.internal(_root);
 	late final TranslationsExternalPlayerEn externalPlayer = TranslationsExternalPlayerEn.internal(_root);
 	late final TranslationsMetadataEditEn metadataEdit = TranslationsMetadataEditEn.internal(_root);
 	late final TranslationsMatchScreenEn matchScreen = TranslationsMatchScreenEn.internal(_root);
@@ -139,9 +140,6 @@ class TranslationsAuthEn {
 
 	/// en: 'Use Quick Connect'
 	String get useQuickConnect => 'Use Quick Connect';
-
-	/// en: 'Quick Connect code'
-	String get quickConnectCode => 'Quick Connect code';
 
 	/// en: 'Open Quick Connect in Jellyfin and enter this code.'
 	String get quickConnectInstructions => 'Open Quick Connect in Jellyfin and enter this code.';
@@ -256,6 +254,18 @@ class TranslationsCommonEn {
 
 	/// en: 'OK'
 	String get ok => 'OK';
+
+	/// en: 'Off'
+	String get off => 'Off';
+
+	/// en: 'Season ${number}'
+	String seasonNumber({required Object number}) => 'Season ${number}';
+
+	/// en: 'Episode ${number} - ${title}'
+	String episodeNumberTitle({required Object number, required Object title}) => 'Episode ${number} - ${title}';
+
+	/// en: 'Chapter ${number}'
+	String chapterNumber({required Object number}) => 'Chapter ${number}';
 
 	/// en: 'Reconnect'
 	String get reconnect => 'Reconnect';
@@ -446,6 +456,15 @@ class TranslationsSettingsEn {
 	/// en: 'Show Hero Section'
 	String get showHeroSection => 'Show Hero Section';
 
+	/// en: 'Continue Watching Action'
+	String get continueWatchingAction => 'Continue Watching Action';
+
+	/// en: 'Play'
+	String get continueWatchingPlay => 'Play';
+
+	/// en: 'Open Details'
+	String get continueWatchingDetails => 'Open Details';
+
 	/// en: 'Use Home Layout'
 	String get useGlobalHubs => 'Use Home Layout';
 
@@ -493,6 +512,30 @@ class TranslationsSettingsEn {
 
 	/// en: 'Use image-only TV cards with actor names overlaid'
 	String get tvFullCardLayoutDescription => 'Use image-only TV cards with actor names overlaid';
+
+	/// en: 'Focus Glow'
+	String get focusGlow => 'Focus Glow';
+
+	/// en: 'Draw a soft glow around the focused card'
+	String get focusGlowDescription => 'Draw a soft glow around the focused card';
+
+	/// en: 'Visual Effects'
+	String get visualEffects => 'Visual Effects';
+
+	/// en: 'Auto'
+	String get visualEffectsAuto => 'Auto';
+
+	/// en: 'Reduce effects automatically on low-power devices'
+	String get visualEffectsAutoDescription => 'Reduce effects automatically on low-power devices';
+
+	/// en: 'Full'
+	String get visualEffectsFull => 'Full';
+
+	/// en: 'Reduced'
+	String get visualEffectsReduced => 'Reduced';
+
+	/// en: 'Fewer animations and lower-resolution artwork'
+	String get visualEffectsReducedDescription => 'Fewer animations and lower-resolution artwork';
 
 	/// en: 'Hide Spoilers for Unwatched Episodes'
 	String get hideSpoilers => 'Hide Spoilers for Unwatched Episodes';
@@ -881,6 +924,18 @@ class TranslationsSettingsEn {
 	/// en: 'P7 → HEVC'
 	String get dvConversionHevcStrip => 'P7 → HEVC';
 
+	/// en: 'Use device capability detection and normal fallback behavior'
+	String get dvConversionAutoDescription => 'Use device capability detection and normal fallback behavior';
+
+	/// en: 'Force native DV7 and suppress DV conversion retry'
+	String get dvConversionNativeDescription => 'Force native DV7 and suppress DV conversion retry';
+
+	/// en: 'Force inline RPU conversion to Dolby Vision profile 8.1'
+	String get dvConversionDv81Description => 'Force inline RPU conversion to Dolby Vision profile 8.1';
+
+	/// en: 'Strip Dolby Vision RPU/EL layers and present plain HEVC'
+	String get dvConversionHevcStripDescription => 'Strip Dolby Vision RPU/EL layers and present plain HEVC';
+
 	/// en: 'Ask for profile on app open'
 	String get requireProfileSelectionOnOpen => 'Ask for profile on app open';
 
@@ -916,6 +971,12 @@ class TranslationsSettingsEn {
 
 	/// en: 'Display text labels under navigation bar icons'
 	String get showNavBarLabelsDescription => 'Display text labels under navigation bar icons';
+
+	/// en: 'Startup Section'
+	String get startupSection => 'Startup Section';
+
+	/// en: 'Choose which section Plezy opens to when it starts'
+	String get startupSectionDescription => 'Choose which section Plezy opens to when it starts';
 
 	/// en: 'Default to Favorite Channels'
 	String get liveTvDefaultFavorites => 'Default to Favorite Channels';
@@ -985,6 +1046,12 @@ class TranslationsHotkeysEn {
 
 	/// en: 'Clear shortcut'
 	String get clearShortcut => 'Clear shortcut';
+
+	/// en: 'No shortcut set'
+	String get noShortcutSet => 'No shortcut set';
+
+	/// en: 'Current shortcut:'
+	String get currentShortcut => 'Current shortcut:';
 
 	late final TranslationsHotkeysActionsEn actions = TranslationsHotkeysActionsEn.internal(_root);
 }
@@ -1090,14 +1157,17 @@ class TranslationsMediaMenuEn {
 	/// en: 'Remove from Continue Watching'
 	String get removeFromContinueWatching => 'Remove from Continue Watching';
 
+	/// en: 'View details'
+	String get viewDetails => 'View details';
+
 	/// en: 'Go to series'
 	String get goToSeries => 'Go to series';
 
-	/// en: 'Go to season'
-	String get goToSeason => 'Go to season';
-
 	/// en: 'Shuffle Play'
 	String get shufflePlay => 'Shuffle Play';
+
+	/// en: 'Shuffle not available offline'
+	String get shuffleNotAvailableOffline => 'Shuffle not available offline';
 
 	/// en: 'File Info'
 	String get fileInfo => 'File Info';
@@ -1440,6 +1510,18 @@ class TranslationsVideoControlsEn {
 	/// en: 'No subtitles found'
 	String get noSubtitlesFound => 'No subtitles found';
 
+	/// en: 'Downloaded'
+	String get downloadedSubtitle => 'Downloaded';
+
+	/// en: 'No subtitles available'
+	String get noSubtitlesAvailable => 'No subtitles available';
+
+	/// en: 'No audio tracks available'
+	String get noAudioTracksAvailable => 'No audio tracks available';
+
+	/// en: 'No tracks available'
+	String get noTracksAvailable => 'No tracks available';
+
 	/// en: 'Subtitle downloaded'
 	String get subtitleDownloaded => 'Subtitle downloaded';
 
@@ -1509,9 +1591,6 @@ class TranslationsMessagesEn {
 	/// en: 'Error loading series'
 	String get errorLoadingSeries => 'Error loading series';
 
-	/// en: 'Error loading season'
-	String get errorLoadingSeason => 'Error loading season';
-
 	/// en: 'Music playback is not yet supported'
 	String get musicNotSupported => 'Music playback is not yet supported';
 
@@ -1560,11 +1639,17 @@ class TranslationsMessagesEn {
 	/// en: 'No seasons found'
 	String get noSeasonsFound => 'No seasons found';
 
+	/// en: 'Couldn't load seasons'
+	String get seasonsLoadFailed => 'Couldn\'t load seasons';
+
 	/// en: 'No episodes found in first season'
 	String get noEpisodesFound => 'No episodes found in first season';
 
 	/// en: 'No episodes found'
 	String get noEpisodesFoundGeneral => 'No episodes found';
+
+	/// en: 'Couldn't load episodes'
+	String get episodesLoadFailed => 'Couldn\'t load episodes';
 
 	/// en: 'No results found'
 	String get noResultsFound => 'No results found';
@@ -1889,6 +1974,9 @@ class TranslationsProfilesEn {
 
 	/// en: 'PINs don't match'
 	String get pinsDontMatch => 'PINs don\'t match';
+
+	/// en: 'Failed to initialize profile services'
+	String get initializeServicesFailed => 'Failed to initialize profile services';
 }
 
 // Path: connections
@@ -1991,6 +2079,9 @@ class TranslationsDiscoverEn {
 
 	/// en: '${minutes} min left'
 	String minutesLeft({required Object minutes}) => '${minutes} min left';
+
+	/// en: 'More Like This'
+	String get moreLikeThis => 'More Like This';
 }
 
 // Path: errors
@@ -2051,6 +2142,9 @@ class TranslationsLibrariesEn {
 
 	/// en: 'Libraries'
 	String get title => 'Libraries';
+
+	/// en: 'Library'
+	String get fallbackTitle => 'Library';
 
 	/// en: 'Scan Library Files'
 	String get scanLibraryFiles => 'Scan Library Files';
@@ -2314,6 +2408,24 @@ class TranslationsLiveTvEn {
 
 	/// en: 'No program data available'
 	String get noPrograms => 'No program data available';
+
+	/// en: 'Live stream failed'
+	String get liveStreamFailed => 'Live stream failed';
+
+	/// en: 'Unknown Program'
+	String get unknownProgram => 'Unknown Program';
+
+	/// en: 'Unknown'
+	String get unknownHub => 'Unknown';
+
+	/// en: 'Unknown error'
+	String get unknownError => 'Unknown error';
+
+	/// en: 'Channel ${number}'
+	String channelNumber({required Object number}) => 'Channel ${number}';
+
+	/// en: 'Unknown channel'
+	String get unknownChannel => 'Unknown channel';
 
 	/// en: 'LIVE'
 	String get live => 'LIVE';
@@ -2804,8 +2916,17 @@ class TranslationsWatchTogetherEn {
 	/// en: '${name} is buffering'
 	String participantBuffering({required Object name}) => '${name} is buffering';
 
+	/// en: '${name} is on an older app version — sync unavailable'
+	String participantNeedsUpdate({required Object name}) => '${name} is on an older app version — sync unavailable';
+
+	/// en: 'Resuming without ${name}'
+	String resumingWithout({required Object name}) => 'Resuming without ${name}';
+
 	/// en: 'Waiting for others to load...'
 	String get waitingForParticipants => 'Waiting for others to load...';
+
+	/// en: 'Waiting for ${name}...'
+	String waitingForName({required Object name}) => 'Waiting for ${name}...';
 
 	/// en: 'Recent Rooms'
 	String get recentRooms => 'Recent Rooms';
@@ -2861,6 +2982,9 @@ class TranslationsDownloadsEn {
 	/// en: 'Download queued'
 	String get downloadQueued => 'Download queued';
 
+	/// en: 'Download resumed'
+	String get downloadResumed => 'Download resumed';
+
 	/// en: 'Server error: file may exceed the remote bitrate limit'
 	String get serverErrorBitrate => 'Server error: file may exceed the remote bitrate limit';
 
@@ -2872,6 +2996,30 @@ class TranslationsDownloadsEn {
 
 	/// en: 'Delete "${title}" from this device?'
 	String deleteConfirm({required Object title}) => 'Delete "${title}" from this device?';
+
+	/// en: 'Cancelled Download'
+	String get cancelledDownloadTitle => 'Cancelled Download';
+
+	/// en: 'This download was cancelled. What would you like to do?'
+	String get cancelledDownloadMessage => 'This download was cancelled. What would you like to do?';
+
+	/// en: 'All episodes already downloaded'
+	String get allEpisodesAlreadyDownloaded => 'All episodes already downloaded';
+
+	/// en: 'Resume download'
+	String get resumeDownload => 'Resume download';
+
+	/// en: 'Cancelled download'
+	String get cancelledDownload => 'Cancelled download';
+
+	/// en: '${file} (syncing ${status})'
+	String syncingFile({required Object file, required Object status}) => '${file} (syncing ${status})';
+
+	/// en: 'Downloaded ${file} - Click to complete'
+	String downloadedFileClickToComplete({required Object file}) => 'Downloaded ${file} - Click to complete';
+
+	/// en: 'Partially downloaded - Click to complete'
+	String get partialDownloadClickToComplete => 'Partially downloaded - Click to complete';
 
 	/// en: 'Deleting...'
 	String get deleting => 'Deleting...';
@@ -3074,9 +3222,13 @@ class TranslationsCompanionRemoteEn {
 	/// en: 'Connected to ${name}'
 	String connectedTo({required Object name}) => 'Connected to ${name}';
 
+	/// en: 'Unknown Device'
+	String get unknownDevice => 'Unknown Device';
+
 	late final TranslationsCompanionRemoteSessionEn session = TranslationsCompanionRemoteSessionEn.internal(_root);
 	late final TranslationsCompanionRemotePairingEn pairing = TranslationsCompanionRemotePairingEn.internal(_root);
 	late final TranslationsCompanionRemoteRemoteEn remote = TranslationsCompanionRemoteRemoteEn.internal(_root);
+	late final TranslationsCompanionRemoteErrorsEn errors = TranslationsCompanionRemoteErrorsEn.internal(_root);
 }
 
 // Path: videoSettings
@@ -3118,6 +3270,117 @@ class TranslationsVideoSettingsEn {
 	String get audioNormalization => 'Normalize Loudness';
 }
 
+// Path: performanceOverlay
+class TranslationsPerformanceOverlayEn {
+	TranslationsPerformanceOverlayEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Color'
+	String get color => 'Color';
+
+	/// en: 'Performance'
+	String get performance => 'Performance';
+
+	/// en: 'Buffer'
+	String get buffer => 'Buffer';
+
+	/// en: 'App'
+	String get app => 'App';
+
+	/// en: 'Decoder'
+	String get decoder => 'Decoder';
+
+	/// en: 'Raw Decoder'
+	String get rawDecoder => 'Raw Decoder';
+
+	/// en: 'Tunneling'
+	String get tunneling => 'Tunneling';
+
+	/// en: 'Aspect'
+	String get aspect => 'Aspect';
+
+	/// en: 'Rotation'
+	String get rotation => 'Rotation';
+
+	/// en: 'DV Source'
+	String get dvSource => 'DV Source';
+
+	/// en: 'DV Path'
+	String get dvPath => 'DV Path';
+
+	/// en: 'P7 Conv'
+	String get p7Conversion => 'P7 Conv';
+
+	/// en: 'Sample Rate'
+	String get sampleRate => 'Sample Rate';
+
+	/// en: 'Pixel Fmt'
+	String get pixelFormat => 'Pixel Fmt';
+
+	/// en: 'HW Fmt'
+	String get hwFormat => 'HW Fmt';
+
+	/// en: 'Matrix'
+	String get matrix => 'Matrix';
+
+	/// en: 'Primaries'
+	String get primaries => 'Primaries';
+
+	/// en: 'Transfer'
+	String get transfer => 'Transfer';
+
+	/// en: 'Render FPS'
+	String get renderFps => 'Render FPS';
+
+	/// en: 'Display FPS'
+	String get displayFps => 'Display FPS';
+
+	/// en: 'A/V Sync'
+	String get avSync => 'A/V Sync';
+
+	/// en: 'Dropped'
+	String get dropped => 'Dropped';
+
+	/// en: 'DV RPUs'
+	String get dvRpus => 'DV RPUs';
+
+	/// en: 'DV RPU Avg'
+	String get dvRpuAverage => 'DV RPU Avg';
+
+	/// en: 'DV Sample Avg'
+	String get dvSampleAverage => 'DV Sample Avg';
+
+	/// en: 'Max Luma'
+	String get maxLuma => 'Max Luma';
+
+	/// en: 'Min Luma'
+	String get minLuma => 'Min Luma';
+
+	/// en: 'MaxCLL'
+	String get maxCll => 'MaxCLL';
+
+	/// en: 'MaxFALL'
+	String get maxFall => 'MaxFALL';
+
+	/// en: 'Cache Used'
+	String get cacheUsed => 'Cache Used';
+
+	/// en: 'Speed'
+	String get speed => 'Speed';
+
+	/// en: 'Player'
+	String get player => 'Player';
+
+	/// en: 'Memory'
+	String get memory => 'Memory';
+
+	/// en: 'UI FPS'
+	String get uiFps => 'UI FPS';
+}
+
 // Path: externalPlayer
 class TranslationsExternalPlayerEn {
 	TranslationsExternalPlayerEn.internal(this._root);
@@ -3149,6 +3412,9 @@ class TranslationsExternalPlayerEn {
 
 	/// en: 'Player Name'
 	String get playerName => 'Player Name';
+
+	/// en: 'My Player'
+	String get playerNameHint => 'My Player';
 
 	/// en: 'Command'
 	String get playerCommand => 'Command';
@@ -3554,17 +3820,11 @@ class TranslationsAddServerEn {
 	/// en: 'Add Jellyfin server'
 	String get addJellyfinTitle => 'Add Jellyfin server';
 
-	/// en: 'Enter the server URL, e.g. `https://jellyfin.example.com`.'
-	String get jellyfinUrlIntro => 'Enter the server URL, e.g. `https://jellyfin.example.com`.';
-
-	/// en: 'Enter one or more server URLs, separated by commas. Plezy will use the reachable URL with the lowest latency.'
-	String get jellyfinUrlsIntro => 'Enter one or more server URLs, separated by commas. Plezy will use the reachable URL with the lowest latency.';
-
-	/// en: 'Server URL'
-	String get serverUrl => 'Server URL';
-
 	/// en: 'Server URLs'
 	String get serverUrls => 'Server URLs';
+
+	/// en: 'Multiple URLs allowed, separated by commas.'
+	String get serverUrlsHelper => 'Multiple URLs allowed, separated by commas.';
 
 	/// en: 'Find server'
 	String get findServer => 'Find server';
@@ -3602,15 +3862,6 @@ class TranslationsAddServerEn {
 	/// en: 'Sign in with Plex'
 	String get addPlexTitle => 'Sign in with Plex';
 
-	/// en: 'Sign in with a browser or QR code.'
-	String get plexAuthIntro => 'Sign in with a browser or QR code.';
-
-	/// en: 'Scan this QR code to sign in.'
-	String get plexQRPrompt => 'Scan this QR code to sign in.';
-
-	/// en: 'Waiting for plex.tv to confirm your sign-in…'
-	String get waitingForPlexConfirmation => 'Waiting for plex.tv to confirm your sign-in…';
-
 	/// en: 'PIN expired before sign-in. Please try again.'
 	String get pinExpired => 'PIN expired before sign-in. Please try again.';
 
@@ -3628,12 +3879,6 @@ class TranslationsAddServerEn {
 
 	/// en: 'Add to ${name}'
 	String addConnectionTitleScoped({required Object name}) => 'Add to ${name}';
-
-	/// en: 'Add another media server. Plex and Jellyfin appear together on Home.'
-	String get addConnectionIntroGlobal => 'Add another media server. Plex and Jellyfin appear together on Home.';
-
-	/// en: 'Add a new server, or borrow one from another profile.'
-	String get addConnectionIntroScoped => 'Add a new server, or borrow one from another profile.';
 
 	/// en: 'Sign in with Plex'
 	String get signInWithPlexCard => 'Sign in with Plex';
@@ -3875,6 +4120,9 @@ class TranslationsLibrariesSortLabelsEn {
 	/// en: 'Critic Rating'
 	String get criticRating => 'Critic Rating';
 
+	/// en: 'User Rating'
+	String get userRating => 'User Rating';
+
 	/// en: 'Last Played'
 	String get lastPlayed => 'Last Played';
 
@@ -4104,6 +4352,33 @@ class TranslationsCompanionRemoteRemoteEn {
 	String get searchHint => 'Search on desktop...';
 }
 
+// Path: companionRemote.errors
+class TranslationsCompanionRemoteErrorsEn {
+	TranslationsCompanionRemoteErrorsEn.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'No network interface found'
+	String get noNetworkInterface => 'No network interface found';
+
+	/// en: 'Authentication failed'
+	String get authenticationFailed => 'Authentication failed';
+
+	/// en: 'Timed out joining session'
+	String get joinTimedOut => 'Timed out joining session';
+
+	/// en: 'Failed to connect to any address'
+	String get failedToConnectAnyAddress => 'Failed to connect to any address';
+
+	/// en: 'Connection lost after ${attempts} attempts'
+	String connectionLostAfterAttempts({required Object attempts}) => 'Connection lost after ${attempts} attempts';
+
+	/// en: 'Connection lost'
+	String get connectionLost => 'Connection lost';
+}
+
 // Path: trackers.services
 class TranslationsTrackersServicesEn {
 	TranslationsTrackersServicesEn.internal(this._root);
@@ -4232,7 +4507,6 @@ extension on Translations {
 			'auth.or' => 'or',
 			'auth.connectToJellyfin' => 'Connect to Jellyfin',
 			'auth.useQuickConnect' => 'Use Quick Connect',
-			'auth.quickConnectCode' => 'Quick Connect code',
 			'auth.quickConnectInstructions' => 'Open Quick Connect in Jellyfin and enter this code.',
 			'auth.quickConnectWaiting' => 'Waiting for approval…',
 			'auth.quickConnectCancel' => 'Cancel',
@@ -4268,6 +4542,10 @@ extension on Translations {
 			'common.settings' => 'Settings',
 			'common.mute' => 'Mute',
 			'common.ok' => 'OK',
+			'common.off' => 'Off',
+			'common.seasonNumber' => ({required Object number}) => 'Season ${number}',
+			'common.episodeNumberTitle' => ({required Object number, required Object title}) => 'Episode ${number} - ${title}',
+			'common.chapterNumber' => ({required Object number}) => 'Chapter ${number}',
 			'common.reconnect' => 'Reconnect',
 			'common.exit' => 'Exit',
 			'common.viewAll' => 'View All',
@@ -4322,6 +4600,9 @@ extension on Translations {
 			'settings.gridView' => 'Grid',
 			'settings.listView' => 'List',
 			'settings.showHeroSection' => 'Show Hero Section',
+			'settings.continueWatchingAction' => 'Continue Watching Action',
+			'settings.continueWatchingPlay' => 'Play',
+			'settings.continueWatchingDetails' => 'Open Details',
 			'settings.useGlobalHubs' => 'Use Home Layout',
 			'settings.useGlobalHubsDescription' => 'Show unified home hubs. Otherwise use library recommendations.',
 			'settings.showServerNameOnHubs' => 'Show Server Name on Hubs',
@@ -4338,6 +4619,14 @@ extension on Translations {
 			'settings.showSeasonPostersOnTabsDescription' => 'Show each season\'s poster above its tab',
 			'settings.tvFullCardLayout' => 'Full TV Cards',
 			'settings.tvFullCardLayoutDescription' => 'Use image-only TV cards with actor names overlaid',
+			'settings.focusGlow' => 'Focus Glow',
+			'settings.focusGlowDescription' => 'Draw a soft glow around the focused card',
+			'settings.visualEffects' => 'Visual Effects',
+			'settings.visualEffectsAuto' => 'Auto',
+			'settings.visualEffectsAutoDescription' => 'Reduce effects automatically on low-power devices',
+			'settings.visualEffectsFull' => 'Full',
+			'settings.visualEffectsReduced' => 'Reduced',
+			'settings.visualEffectsReducedDescription' => 'Fewer animations and lower-resolution artwork',
 			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
 			'settings.hideSpoilersDescription' => 'Blur thumbnails and descriptions for unwatched episodes',
 			'settings.playerBackend' => 'Player Backend',
@@ -4467,6 +4756,10 @@ extension on Translations {
 			'settings.dvConversionNative' => 'Native / Disabled',
 			'settings.dvConversionDv81' => 'P7 → P8.1',
 			'settings.dvConversionHevcStrip' => 'P7 → HEVC',
+			'settings.dvConversionAutoDescription' => 'Use device capability detection and normal fallback behavior',
+			'settings.dvConversionNativeDescription' => 'Force native DV7 and suppress DV conversion retry',
+			'settings.dvConversionDv81Description' => 'Force inline RPU conversion to Dolby Vision profile 8.1',
+			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL layers and present plain HEVC',
 			'settings.requireProfileSelectionOnOpen' => 'Ask for profile on app open',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'settings.forceTvMode' => 'Force TV mode',
@@ -4479,6 +4772,8 @@ extension on Translations {
 			'settings.autoHidePerformanceOverlayDescription' => 'Fade the performance overlay with the playback controls',
 			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
 			'settings.showNavBarLabelsDescription' => 'Display text labels under navigation bar icons',
+			'settings.startupSection' => 'Startup Section',
+			'settings.startupSectionDescription' => 'Choose which section Plezy opens to when it starts',
 			'settings.liveTvDefaultFavorites' => 'Default to Favorite Channels',
 			'settings.liveTvDefaultFavoritesDescription' => 'Show only favorite channels when opening Live TV',
 			'settings.display' => 'Display',
@@ -4496,6 +4791,8 @@ extension on Translations {
 			'search.enterTitleActorOrKeyword' => 'Enter a title, actor, or keyword',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Set Shortcut for ${actionName}',
 			'hotkeys.clearShortcut' => 'Clear shortcut',
+			'hotkeys.noShortcutSet' => 'No shortcut set',
+			'hotkeys.currentShortcut' => 'Current shortcut:',
 			'hotkeys.actions.playPause' => 'Play/Pause',
 			'hotkeys.actions.volumeUp' => 'Volume Up',
 			'hotkeys.actions.volumeDown' => 'Volume Down',
@@ -4549,9 +4846,10 @@ extension on Translations {
 			'mediaMenu.markAsWatched' => 'Mark as Watched',
 			'mediaMenu.markAsUnwatched' => 'Mark as Unwatched',
 			'mediaMenu.removeFromContinueWatching' => 'Remove from Continue Watching',
+			'mediaMenu.viewDetails' => 'View details',
 			'mediaMenu.goToSeries' => 'Go to series',
-			'mediaMenu.goToSeason' => 'Go to season',
 			'mediaMenu.shufflePlay' => 'Shuffle Play',
+			'mediaMenu.shuffleNotAvailableOffline' => 'Shuffle not available offline',
 			'mediaMenu.fileInfo' => 'File Info',
 			'mediaMenu.deleteFromServer' => 'Delete from server',
 			'mediaMenu.confirmDelete' => 'Delete this media and its files from your server?',
@@ -4660,6 +4958,10 @@ extension on Translations {
 			'videoControls.searchSubtitles' => 'Search Subtitles',
 			'videoControls.language' => 'Language',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
+			'videoControls.downloadedSubtitle' => 'Downloaded',
+			'videoControls.noSubtitlesAvailable' => 'No subtitles available',
+			'videoControls.noAudioTracksAvailable' => 'No audio tracks available',
+			'videoControls.noTracksAvailable' => 'No tracks available',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
 			'videoControls.subtitleDownloadFailed' => 'Failed to download subtitle',
 			'videoControls.searchLanguages' => 'Search languages...',
@@ -4677,7 +4979,6 @@ extension on Translations {
 			'messages.fileInfoNotAvailable' => 'File information not available',
 			'messages.errorLoadingFileInfo' => ({required Object error}) => 'Error loading file info: ${error}',
 			'messages.errorLoadingSeries' => 'Error loading series',
-			'messages.errorLoadingSeason' => 'Error loading season',
 			'messages.musicNotSupported' => 'Music playback is not yet supported',
 			'messages.noDescriptionAvailable' => 'No description available',
 			'messages.noProfilesAvailable' => 'No profiles available',
@@ -4694,8 +4995,10 @@ extension on Translations {
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Failed to refresh metadata: ${error}',
 			'messages.logoutConfirm' => 'Are you sure you want to logout?',
 			'messages.noSeasonsFound' => 'No seasons found',
+			'messages.seasonsLoadFailed' => 'Couldn\'t load seasons',
 			'messages.noEpisodesFound' => 'No episodes found in first season',
 			'messages.noEpisodesFoundGeneral' => 'No episodes found',
+			'messages.episodesLoadFailed' => 'Couldn\'t load episodes',
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
 			'messages.noItemsAvailable' => 'No items available',
@@ -4704,6 +5007,8 @@ extension on Translations {
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
+			_ => null,
+		} ?? switch (path) {
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
@@ -4732,8 +5037,6 @@ extension on Translations {
 			'mpvConfig.presetSaved' => 'Preset saved',
 			'mpvConfig.presetLoaded' => 'Preset loaded',
 			'mpvConfig.presetDeleted' => 'Preset deleted',
-			_ => null,
-		} ?? switch (path) {
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
 			'dialog.confirmAction' => 'Confirm Action',
@@ -4794,6 +5097,7 @@ extension on Translations {
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
+			'profiles.initializeServicesFailed' => 'Failed to initialize profile services',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin server',
@@ -4822,6 +5126,7 @@ extension on Translations {
 			'discover.movie' => 'Movie',
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
+			'discover.moreLikeThis' => 'More Like This',
 			'errors.searchFailed' => ({required Object error}) => 'Search failed: ${error}',
 			'errors.connectionTimeout' => ({required Object context}) => 'Connection timeout while loading ${context}',
 			'errors.connectionFailed' => 'Unable to connect to media server',
@@ -4836,6 +5141,7 @@ extension on Translations {
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
 			'errors.failedToRate' => 'Couldn\'t update rating',
 			'libraries.title' => 'Libraries',
+			'libraries.fallbackTitle' => 'Library',
 			'libraries.scanLibraryFiles' => 'Scan Library Files',
 			'libraries.scanLibrary' => 'Scan Library',
 			'libraries.analyze' => 'Analyze',
@@ -4895,6 +5201,7 @@ extension on Translations {
 			'libraries.sortLabels.rating' => 'Rating',
 			'libraries.sortLabels.communityRating' => 'Community Rating',
 			'libraries.sortLabels.criticRating' => 'Critic Rating',
+			'libraries.sortLabels.userRating' => 'User Rating',
 			'libraries.sortLabels.lastPlayed' => 'Last Played',
 			'libraries.sortLabels.datePlayed' => 'Date Played',
 			'libraries.sortLabels.playCount' => 'Play Count',
@@ -4936,6 +5243,12 @@ extension on Translations {
 			'liveTv.noChannels' => 'No channels available',
 			'liveTv.noDvr' => 'No DVR configured on any server',
 			'liveTv.noPrograms' => 'No program data available',
+			'liveTv.liveStreamFailed' => 'Live stream failed',
+			'liveTv.unknownProgram' => 'Unknown Program',
+			'liveTv.unknownHub' => 'Unknown',
+			'liveTv.unknownError' => 'Unknown error',
+			'liveTv.channelNumber' => ({required Object number}) => 'Channel ${number}',
+			'liveTv.unknownChannel' => 'Unknown channel',
 			'liveTv.live' => 'LIVE',
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.now' => 'Now',
@@ -5090,7 +5403,10 @@ extension on Translations {
 			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
 			'watchTogether.participantSeeked' => ({required Object name}) => '${name} seeked',
 			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is buffering',
+			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} is on an older app version — sync unavailable',
+			'watchTogether.resumingWithout' => ({required Object name}) => 'Resuming without ${name}',
 			'watchTogether.waitingForParticipants' => 'Waiting for others to load...',
+			'watchTogether.waitingForName' => ({required Object name}) => 'Waiting for ${name}...',
 			'watchTogether.recentRooms' => 'Recent Rooms',
 			'watchTogether.renameRoom' => 'Rename Room',
 			'watchTogether.removeRoom' => 'Remove',
@@ -5106,10 +5422,19 @@ extension on Translations {
 			'downloads.deleteDownload' => 'Delete download',
 			'downloads.retryDownload' => 'Retry download',
 			'downloads.downloadQueued' => 'Download queued',
+			'downloads.downloadResumed' => 'Download resumed',
 			'downloads.serverErrorBitrate' => 'Server error: file may exceed the remote bitrate limit',
 			'downloads.episodesQueued' => ({required Object count}) => '${count} episodes queued for download',
 			'downloads.downloadDeleted' => 'Download deleted',
 			'downloads.deleteConfirm' => ({required Object title}) => 'Delete "${title}" from this device?',
+			'downloads.cancelledDownloadTitle' => 'Cancelled Download',
+			'downloads.cancelledDownloadMessage' => 'This download was cancelled. What would you like to do?',
+			'downloads.allEpisodesAlreadyDownloaded' => 'All episodes already downloaded',
+			'downloads.resumeDownload' => 'Resume download',
+			'downloads.cancelledDownload' => 'Cancelled download',
+			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
+			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
+			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
 			'downloads.deleting' => 'Deleting...',
 			'downloads.deletingWithProgress' => ({required Object title, required Object current, required Object total}) => 'Deleting ${title}... (${current} of ${total})',
 			'downloads.queuedTooltip' => 'Queued',
@@ -5171,6 +5496,7 @@ extension on Translations {
 			'shaders.deleteShaderConfirm' => ({required Object name}) => 'Delete "${name}"?',
 			'companionRemote.title' => 'Companion Remote',
 			'companionRemote.connectedTo' => ({required Object name}) => 'Connected to ${name}',
+			'companionRemote.unknownDevice' => 'Unknown Device',
 			'companionRemote.session.startingServer' => 'Starting remote server...',
 			'companionRemote.session.failedToCreate' => 'Failed to start remote server:',
 			'companionRemote.session.hostAddress' => 'Host Address',
@@ -5195,6 +5521,8 @@ extension on Translations {
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure Plezy is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Plex account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
@@ -5225,6 +5553,12 @@ extension on Translations {
 			'companionRemote.remote.subtitles' => 'Subtitles',
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Search on desktop...',
+			'companionRemote.errors.noNetworkInterface' => 'No network interface found',
+			'companionRemote.errors.authenticationFailed' => 'Authentication failed',
+			'companionRemote.errors.joinTimedOut' => 'Timed out joining session',
+			'companionRemote.errors.failedToConnectAnyAddress' => 'Failed to connect to any address',
+			'companionRemote.errors.connectionLostAfterAttempts' => ({required Object attempts}) => 'Connection lost after ${attempts} attempts',
+			'companionRemote.errors.connectionLost' => 'Connection lost',
 			'videoSettings.playbackSpeed' => 'Playback Speed',
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
@@ -5235,6 +5569,40 @@ extension on Translations {
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioPassthrough' => 'Audio Passthrough',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
+			'performanceOverlay.color' => 'Color',
+			'performanceOverlay.performance' => 'Performance',
+			'performanceOverlay.buffer' => 'Buffer',
+			'performanceOverlay.app' => 'App',
+			'performanceOverlay.decoder' => 'Decoder',
+			'performanceOverlay.rawDecoder' => 'Raw Decoder',
+			'performanceOverlay.tunneling' => 'Tunneling',
+			'performanceOverlay.aspect' => 'Aspect',
+			'performanceOverlay.rotation' => 'Rotation',
+			'performanceOverlay.dvSource' => 'DV Source',
+			'performanceOverlay.dvPath' => 'DV Path',
+			'performanceOverlay.p7Conversion' => 'P7 Conv',
+			'performanceOverlay.sampleRate' => 'Sample Rate',
+			'performanceOverlay.pixelFormat' => 'Pixel Fmt',
+			'performanceOverlay.hwFormat' => 'HW Fmt',
+			'performanceOverlay.matrix' => 'Matrix',
+			'performanceOverlay.primaries' => 'Primaries',
+			'performanceOverlay.transfer' => 'Transfer',
+			'performanceOverlay.renderFps' => 'Render FPS',
+			'performanceOverlay.displayFps' => 'Display FPS',
+			'performanceOverlay.avSync' => 'A/V Sync',
+			'performanceOverlay.dropped' => 'Dropped',
+			'performanceOverlay.dvRpus' => 'DV RPUs',
+			'performanceOverlay.dvRpuAverage' => 'DV RPU Avg',
+			'performanceOverlay.dvSampleAverage' => 'DV Sample Avg',
+			'performanceOverlay.maxLuma' => 'Max Luma',
+			'performanceOverlay.minLuma' => 'Min Luma',
+			'performanceOverlay.maxCll' => 'MaxCLL',
+			'performanceOverlay.maxFall' => 'MaxFALL',
+			'performanceOverlay.cacheUsed' => 'Cache Used',
+			'performanceOverlay.speed' => 'Speed',
+			'performanceOverlay.player' => 'Player',
+			'performanceOverlay.memory' => 'Memory',
+			'performanceOverlay.uiFps' => 'UI FPS',
 			'externalPlayer.title' => 'External Player',
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in another app',
@@ -5243,11 +5611,10 @@ extension on Translations {
 			'externalPlayer.systemDefault' => 'System Default',
 			'externalPlayer.addCustomPlayer' => 'Add Custom Player',
 			'externalPlayer.playerName' => 'Player Name',
+			'externalPlayer.playerNameHint' => 'My Player',
 			'externalPlayer.playerCommand' => 'Command',
 			'externalPlayer.playerPackage' => 'Package Name',
 			'externalPlayer.playerUrlScheme' => 'URL Scheme',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.off' => 'Off',
 			'externalPlayer.launchFailed' => 'Failed to open external player',
 			'externalPlayer.appNotInstalled' => ({required Object name}) => '${name} is not installed',
@@ -5384,10 +5751,8 @@ extension on Translations {
 			'trackers.libraryFilter.libraries' => 'Libraries',
 			'trackers.libraryFilter.noLibraries' => 'No libraries available',
 			'addServer.addJellyfinTitle' => 'Add Jellyfin server',
-			'addServer.jellyfinUrlIntro' => 'Enter the server URL, e.g. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Enter one or more server URLs, separated by commas. Plezy will use the reachable URL with the lowest latency.',
-			'addServer.serverUrl' => 'Server URL',
 			'addServer.serverUrls' => 'Server URLs',
+			'addServer.serverUrlsHelper' => 'Multiple URLs allowed, separated by commas.',
 			'addServer.findServer' => 'Find server',
 			'addServer.searchingLocalServers' => 'Looking for local Jellyfin servers...',
 			'addServer.localServers' => 'Local Jellyfin servers',
@@ -5400,17 +5765,12 @@ extension on Translations {
 			'addServer.signInFailed' => ({required Object error}) => 'Sign-in failed: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect failed: ${error}',
 			'addServer.addPlexTitle' => 'Sign in with Plex',
-			'addServer.plexAuthIntro' => 'Sign in with a browser or QR code.',
-			'addServer.plexQRPrompt' => 'Scan this QR code to sign in.',
-			'addServer.waitingForPlexConfirmation' => 'Waiting for plex.tv to confirm your sign-in…',
 			'addServer.pinExpired' => 'PIN expired before sign-in. Please try again.',
 			'addServer.duplicatePlexAccount' => 'Already signed in to Plex. Sign out to switch accounts.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Failed to register account: ${error}',
 			'addServer.enterJellyfinUrlError' => 'Enter your Jellyfin server URL',
 			'addServer.addConnectionTitle' => 'Add connection',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Add to ${name}',
-			'addServer.addConnectionIntroGlobal' => 'Add another media server. Plex and Jellyfin appear together on Home.',
-			'addServer.addConnectionIntroScoped' => 'Add a new server, or borrow one from another profile.',
 			'addServer.signInWithPlexCard' => 'Sign in with Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Authorize this device. Shared servers are added.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Authorize a Plex account. Home users become profiles.',

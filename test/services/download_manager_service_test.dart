@@ -102,13 +102,16 @@ void main() {
             ),
           );
 
-      final manager = DownloadManagerService(database: db, storageService: DownloadStorageService.instance)
-        ..setClientResolver((serverId, {clientScopeId}) {
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) {
           return _ScopedJellyfinClient(
             serverId: ServerId(serverId),
             scopedServerId: clientScopeId ?? 'jf-machine/user-b',
           );
-        });
+        },
+      );
 
       final item = await manager.lookupMetadata(ServerId('jf-machine'), 'item-1', preferActiveScope: true);
 
@@ -130,7 +133,11 @@ void main() {
         },
       });
 
-      final manager = DownloadManagerService(database: db, storageService: DownloadStorageService.instance);
+      final manager = DownloadManagerService(
+        database: db,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+      );
       final year = await manager.debugResolveSafRecoveryShowYear(
         MediaItem(
           id: 'ep-1',
@@ -253,8 +260,9 @@ void main() {
       final manager = DownloadManagerService(
         database: db,
         storageService: storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
         http: MediaServerHttpClient(client: _FakeHttpClient(200, utf8.encode('image bytes'))),
-      )..setClientResolver((serverId, {clientScopeId}) => client);
+      );
 
       await manager.repairMissingArtworkForDownloads();
 
@@ -285,6 +293,7 @@ void main() {
       final manager = DownloadManagerService(
         database: db,
         storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
         downloadsSupportedOverride: false,
       );
       addTearDown(manager.dispose);
@@ -320,6 +329,7 @@ void main() {
       final manager = DownloadManagerService(
         database: db,
         storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
         downloadsSupportedOverride: false,
       );
       addTearDown(manager.dispose);
@@ -348,6 +358,7 @@ void main() {
       final manager = DownloadManagerService(
         database: db,
         storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
         downloadsSupportedOverride: false,
       );
       addTearDown(manager.dispose);
@@ -380,6 +391,7 @@ void main() {
       final manager = DownloadManagerService(
         database: db,
         storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
         downloadsSupportedOverride: false,
       );
       addTearDown(manager.dispose);
@@ -413,6 +425,7 @@ void main() {
       final manager = DownloadManagerService(
         database: db,
         storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
         downloadsSupportedOverride: false,
       );
       addTearDown(manager.dispose);

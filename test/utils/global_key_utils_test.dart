@@ -8,10 +8,12 @@ void main() {
       expect(buildGlobalKey(ServerId('server'), '123'), 'server:123');
     });
 
-    test('passes through empty components', () {
-      expect(buildGlobalKey(ServerId(''), '123'), ':123');
+    test('allows empty ratingKey', () {
       expect(buildGlobalKey(ServerId('server'), ''), 'server:');
-      expect(buildGlobalKey(ServerId(''), ''), ':');
+    });
+
+    test('rejects empty serverId', () {
+      expect(() => ServerId(''), throwsArgumentError);
     });
   });
 
@@ -35,11 +37,8 @@ void main() {
       expect(result.ratingKey, 'path:with:colons');
     });
 
-    test('allows empty serverId', () {
-      final result = parseGlobalKey(':42');
-      expect(result, isNotNull);
-      expect(result!.serverId, '');
-      expect(result.ratingKey, '42');
+    test('rejects empty serverId', () {
+      expect(parseGlobalKey(':42'), isNull);
     });
 
     test('allows empty ratingKey', () {
@@ -51,7 +50,7 @@ void main() {
   });
 
   test('round-trip build → parse returns original components', () {
-    for (final pair in const [('s1', '42'), ('serverXYZ', '/library/metadata/123'), ('', 'abc'), ('s', '')]) {
+    for (final pair in const [('s1', '42'), ('serverXYZ', '/library/metadata/123'), ('s', '')]) {
       final built = buildGlobalKey(ServerId(pair.$1), pair.$2);
       final parsed = parseGlobalKey(built);
       expect(parsed, isNotNull);

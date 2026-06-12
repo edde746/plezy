@@ -33,12 +33,12 @@ import 'package:provider/provider.dart';
 MediaItem _meta(String id, {String? title}) =>
     MediaItem(id: id, backend: MediaBackend.plex, kind: MediaKind.episode, title: title ?? 'Episode $id');
 
-MediaItem _jfEpisode(String id, {required String seriesId, ServerId serverId = const ServerId('srv-jf')}) => MediaItem(
+MediaItem _jfEpisode(String id, {required String seriesId, ServerId? serverId}) => MediaItem(
   id: id,
   backend: MediaBackend.jellyfin,
   kind: MediaKind.episode,
   title: 'Episode $id',
-  serverId: serverId,
+  serverId: serverId ?? ServerId('srv-jf'),
   grandparentId: seriesId,
 );
 

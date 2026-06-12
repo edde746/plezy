@@ -15,8 +15,13 @@ mixin ServerBoundMediaMixin<T extends StatefulWidget> on State<T> {
 
   String? get serverBoundServerId => serverBoundMetadata.serverId;
 
-  String toServerBoundGlobalKey(String ratingKey, {ServerId? serverId}) =>
-      buildGlobalKey(ServerId(serverId ?? serverBoundServerId ?? ''), ratingKey);
+  String toServerBoundGlobalKey(String ratingKey, {ServerId? serverId}) {
+    final resolved = serverId ?? serverIdOrNull(serverBoundServerId);
+    if (resolved == null) {
+      throw StateError('Cannot build server-bound key without a serverId');
+    }
+    return buildGlobalKey(resolved, ratingKey);
+  }
 
   /// Returns the [PlexClient] for the bound server, or null when offline /
   /// the server is Jellyfin / not registered. Use [getServerBoundMediaClient]

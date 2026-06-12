@@ -21,6 +21,9 @@ else
 fi
 
 ReadPubspecVersion() {
+  local fallback_build_name="${FLUTTER_BUILD_NAME:-}"
+  local fallback_build_number="${FLUTTER_BUILD_NUMBER:-}"
+
   local app_path="${FLUTTER_APPLICATION_PATH:-}"
   if [[ -z "$app_path" ]]; then
     if [[ -n "${PROJECT_DIR:-}" ]]; then
@@ -59,8 +62,8 @@ ReadPubspecVersion() {
       FLUTTER_BUILD_NUMBER="1"
     fi
   else
-    FLUTTER_BUILD_NAME="${FLUTTER_BUILD_NAME:-1.0.0}"
-    FLUTTER_BUILD_NUMBER="${FLUTTER_BUILD_NUMBER:-1}"
+    FLUTTER_BUILD_NAME="${fallback_build_name:-1.0.0}"
+    FLUTTER_BUILD_NUMBER="${fallback_build_number:-1}"
   fi
 
   export FLUTTER_BUILD_NAME
@@ -72,10 +75,28 @@ SetPlistString() {
   local key="$2"
   local value="$3"
 
-  if /usr/libexec/PlistBuddy -c "Print :$key" "$plist" >/dev/null 2>&1; then
-    /usr/libexec/PlistBuddy -c "Set :$key $value" "$plist"
+  local current=""
+  if current="$(/usr/libexec/PlistBuddy -c "Print :$key" "$plist" 2>/dev/null)"; then
+    if [[ "$current" != "$value" ]]; then
+      /usr/libexec/PlistBuddy -c "Set :$key $value" "$plist"
+    fi
   else
     /usr/libexec/PlistBuddy -c "Add :$key string $value" "$plist"
+  fi
+}
+
+ValidatePlistVersion() {
+  local plist="$1"
+  local label="$2"
+  local build_name=""
+  local build_number=""
+
+  build_name="$(/usr/libexec/PlistBuddy -c "Print :CFBundleShortVersionString" "$plist" 2>/dev/null || true)"
+  build_number="$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$plist" 2>/dev/null || true)"
+
+  if [[ "$build_name" != "$FLUTTER_BUILD_NAME" || "$build_number" != "$FLUTTER_BUILD_NUMBER" ]]; then
+    echo " └─ERROR: $label Info.plist version is $build_name ($build_number), expected $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
+    return 1
   fi
 }
 
@@ -95,9 +116,38 @@ SyncRunnerVersion() {
     return 1
   fi
 
-  echo " └─Syncing Runner version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
+  local bundle_label="${TARGET_NAME:-Runner}"
+  echo " └─Syncing $bundle_label version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
   SetPlistString "$plist" CFBundleShortVersionString "$FLUTTER_BUILD_NAME"
   SetPlistString "$plist" CFBundleVersion "$FLUTTER_BUILD_NUMBER"
+  ValidatePlistVersion "$plist" "$bundle_label"
+
+  local top_shelf_plist="$TARGET_BUILD_DIR/$WRAPPER_NAME/PlugIns/TopShelfExtension.appex/Info.plist"
+  if [[ -f "$top_shelf_plist" ]]; then
+    echo " └─Syncing TopShelfExtension version $FLUTTER_BUILD_NAME ($FLUTTER_BUILD_NUMBER)"
+    SetPlistString "$top_shelf_plist" CFBundleShortVersionString "$FLUTTER_BUILD_NAME"
+    SetPlistString "$top_shelf_plist" CFBundleVersion "$FLUTTER_BUILD_NUMBER"
+    ValidatePlistVersion "$top_shelf_plist" "TopShelfExtension"
+  fi
+}
+
+EngineOutputExists() {
+  local variant="$1"
+  [[ -d "$FLUTTER_LOCAL_ENGINE/out/$variant" ]]
+}
+
+ResolveEngineOutput() {
+  local variant
+  for variant in "$@"; do
+    local candidate="$FLUTTER_LOCAL_ENGINE/out/$variant"
+    if [[ -d "$candidate" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  echo " └─ERROR: none of these Flutter engine outputs exist: $*" >&2
+  return 1
 }
 
 BuildAppDebug() {
@@ -106,10 +156,10 @@ BuildAppDebug() {
   # compiles debug kernels regardless of the host build flavor.
   HOST_TOOLS=$FLUTTER_LOCAL_ENGINE/out/host_release
   if [[ "$debug_sim" == "true" ]]; then
-    DEVICE_TOOLS=$FLUTTER_LOCAL_ENGINE/out/tvos_debug_sim_unopt$TARGET_POSTFIX
+    DEVICE_TOOLS=$(ResolveEngineOutput "tvos_debug_sim_unopt$TARGET_POSTFIX" "tvos_debug_sim_unopt_arm64" "tvos_debug_sim_unopt") || return 1
   else
     # Device build is always arm64; gn outputs `tvos_debug_unopt` without suffix.
-    DEVICE_TOOLS=$FLUTTER_LOCAL_ENGINE/out/tvos_debug_unopt
+    DEVICE_TOOLS=$(ResolveEngineOutput "tvos_debug_unopt") || return 1
   fi
 
   ROOTDIR=$(dirname "$PROJECT_DIR")
@@ -420,11 +470,19 @@ BuildApp() {
   echo " └─engine $FLUTTER_LOCAL_ENGINE"
 
 
-  if [[ "$PLATFORM_NAME" == "appletvsimulator" && "$build_mode" =~ "debug" ]]; then
+  if [[ "$PLATFORM_NAME" == "appletvsimulator" ]]; then
     debug_sim="true"
+    if [[ ! "$build_mode" =~ "debug" ]]; then
+      echo " └─simulator builds use the debug simulator engine"
+    fi
     BuildAppDebug
   elif [[ "$build_mode" =~ "debug" ]]; then
-    BuildAppDebug
+    if EngineOutputExists "tvos_debug_unopt"; then
+      BuildAppDebug
+    else
+      echo " └─debug tvOS device engine not found; building release Flutter app"
+      BuildAppRelease
+    fi
   elif [[ "$build_mode" =~ "release" ]]; then
     # release/archive   (archive: build mode == "release" && ${ACTION} == "install")
     BuildAppRelease

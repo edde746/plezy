@@ -8,6 +8,8 @@ import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
+import '../providers/watch_state_store.dart';
+import '../services/device_performance.dart';
 import '../services/image_cache_service.dart';
 import '../utils/content_utils.dart';
 import '../utils/formatters.dart';
@@ -55,7 +57,9 @@ class TvSpotlightBackground extends StatelessWidget {
     final bgColor = Theme.of(context).scaffoldBackgroundColor;
 
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 280),
+      // Reduced tier swaps instantly: the cross-fade keeps two full-screen
+      // stacks (backdrop + two full-screen gradients each) blending per frame.
+      duration: DevicePerformance.reducedDuration(const Duration(milliseconds: 280)),
       switchInCurve: Curves.easeOutCubic,
       switchOutCurve: Curves.easeOutCubic,
       child: SizedBox.expand(
@@ -160,6 +164,10 @@ class TvSpotlightBackground extends StatelessWidget {
         cacheManager: PlexImageCacheManager.instance,
         fit: BoxFit.cover,
         memCacheHeight: memHeight,
+        // Explicit fades: the package defaults (500ms in / 1000ms out) double
+        // up with the AnimatedSwitcher cross-fade above on every swap.
+        fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
+        fadeOutDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
         placeholder: (context, url) => ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
         errorBuilder: (context, error, stackTrace) =>
             ColoredBox(color: Theme.of(context).colorScheme.surfaceContainerHighest),
@@ -275,6 +283,8 @@ class TvSpotlightBackground extends StatelessWidget {
           fit: BoxFit.contain,
           alignment: .centerLeft,
           memCacheWidth: (logoWidth * dpr).clamp(200, 1000).round(),
+          fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
+          fadeOutDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
           placeholder: (context, url) => const SizedBox.shrink(),
           errorBuilder: (context, error, stackTrace) => _buildTitle(context, title),
         ),
@@ -342,6 +352,7 @@ class TvSpotlightBackground extends StatelessWidget {
 
   Widget _buildPrimaryAction(BuildContext context, MediaItem media) {
     final scale = _scale(context);
+    media = context.withFreshWatchState(media);
     final hasProgress = media.hasActiveProgress;
     final minutesLeft = hasProgress && media.durationMs != null && media.viewOffsetMs != null
         ? ((media.durationMs! - media.viewOffsetMs!) / 60_000).round()

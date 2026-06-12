@@ -112,17 +112,7 @@ class PlayerNative extends PlayerBase {
       // Subscribe to MPV properties before flipping `initialized` so partial
       // failures don't leave us in a half-initialized state that the memoized
       // future would falsely treat as ready.
-      await observeProperty('time-pos', 'double');
-      await observeProperty('duration', 'double');
-      await observeProperty('seekable', 'flag');
-      await observeProperty('pause', 'flag');
-      await observeProperty('paused-for-cache', 'flag');
-      await observeProperty('track-list', _nodeFormat);
-      await observeProperty('eof-reached', 'flag');
-      await observeProperty('volume', 'double');
-      await observeProperty('speed', 'double');
-      await observeProperty('aid', 'string');
-      await observeProperty('sid', 'string');
+      await observeCoreProperties(trackListFormat: _nodeFormat);
       await observeProperty('secondary-sid', 'string');
       await observeProperty('demuxer-cache-state', _nodeFormat);
       await observeProperty('audio-device-list', _nodeFormat);
@@ -195,6 +185,14 @@ class PlayerNative extends PlayerBase {
     }
 
     await command(['loadfile', uri, 'replace']);
+
+    // mpv's pause property survives loadfile; in-place reloads pause the old
+    // file before resolving, so explicitly unpause for the replacement. Set
+    // after loadfile so the paused old file never audibly unpauses
+    // pre-replace.
+    if (play) {
+      await setProperty('pause', 'no');
+    }
   }
 
   @override
@@ -251,7 +249,16 @@ class PlayerNative extends PlayerBase {
 
   @override
   Future<void> setRate(double rate) async {
+    // mpv cannot scaletempo compressed (spdif) audio and silently keeps
+    // playing at 1x, so suspend passthrough while the rate is not 1.0.
+    _currentRate = rate;
+    if (_passthroughActive && rate != 1.0) {
+      await _applyPassthrough(false);
+    }
     await setProperty('speed', rate.toString());
+    if (_passthroughRequested && !_passthroughActive && rate == 1.0) {
+      await _applyPassthrough(true);
+    }
   }
 
   @override
@@ -295,10 +302,16 @@ class PlayerNative extends PlayerBase {
   }
 
   @override
-  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria) async {
+  bool get needsDecoderRefreshAfterDisplaySwitch => Platform.isAndroid;
+
+  @override
+  Future<void> setDisplayCriteria(MediaDisplayCriteria? criteria, {int extraDelayMs = 0}) async {
     if (disposed || !Platform.isIOS) return;
     await _ensureInitialized();
-    await invoke('setDisplayCriteria', {'criteria': _effectiveDisplayCriteria(criteria)?.toJson()});
+    await invoke('setDisplayCriteria', {
+      'criteria': _effectiveDisplayCriteria(criteria)?.toJson(),
+      'extraDelayMs': extraDelayMs,
+    });
   }
 
   @override
@@ -308,14 +321,34 @@ class PlayerNative extends PlayerBase {
     await invoke('setLogLevel', {'level': level});
   }
 
+  bool _passthroughRequested = false;
+  bool _passthroughActive = false;
+  double _currentRate = 1.0;
+
+  @override
+  bool get audioPassthroughActive => _passthroughActive;
+
+  /// Codecs the platform can take as a bitstream. On iOS/tvOS compressed
+  /// audio goes through the system renderer, which only handles Dolby
+  /// Digital (Plus); desktop does real device passthrough for the full list.
+  static final String _passthroughCodecs = Platform.isIOS ? 'ac3,eac3' : 'ac3,eac3,dts,dts-hd,truehd';
+
   @override
   Future<void> setAudioPassthrough(bool enabled) async {
-    if (enabled) {
-      await setProperty('audio-spdif', 'ac3,eac3,dts,dts-hd,truehd');
-      await setProperty('audio-exclusive', 'yes');
-    } else {
-      await setProperty('audio-spdif', '');
-      await setProperty('audio-exclusive', 'no');
+    _passthroughRequested = enabled;
+    // Deferred until the rate returns to 1.0 (see setRate).
+    if (enabled && _currentRate != 1.0) return;
+    await _applyPassthrough(enabled);
+  }
+
+  Future<void> _applyPassthrough(bool enabled) async {
+    _passthroughActive = enabled;
+    await setProperty('audio-spdif', enabled ? _passthroughCodecs : '');
+    // audio-exclusive redirects coreaudio to coreaudio_exclusive on macOS
+    // (and exclusive WASAPI on Windows); on iOS/tvOS it is set once at
+    // playback start and must not be clobbered here.
+    if (!Platform.isIOS) {
+      await setProperty('audio-exclusive', enabled ? 'yes' : 'no');
     }
   }
 

@@ -113,8 +113,18 @@ class _FakePlexClient implements PlexClient {
   @override
   int get watchedThresholdPercent => thresholdPercent;
 
+  /// markWatchedFromPlaybackStop resolves the event's cacheServerId from
+  /// [serverId] after the transport call.
+  @override
+  ServerId get serverId => ServerId('scrobbler');
+
   @override
   double get watchedThreshold => thresholdPercent / 100.0;
+
+  /// Plex relies on the explicit markWatched call (no auto-mark from the stop
+  /// report), so the scrobble path hits [markWatched].
+  @override
+  bool get marksWatchedOnPlaybackStopped => false;
 
   /// (ratingKey, time, state, duration) tuples for every updateProgress call.
   final List<({String ratingKey, int time, String state, int? duration})> updateProgressCalls = [];
@@ -208,6 +218,8 @@ class _FakePlexClient implements PlexClient {
     return updateProgress(itemId, time: position.inMilliseconds, state: 'stopped', duration: duration?.inMilliseconds);
   }
 
+  // Transport-only, like production: the single watch event for the stop
+  // flow is emitted by markWatchedFromPlaybackStop after this returns.
   @override
   Future<void> markWatched(MediaItem item) async {
     if (throwOnNextCall != null) {
@@ -216,20 +228,16 @@ class _FakePlexClient implements PlexClient {
       throw err;
     }
     markWatchedCalls.add(item.id);
-    WatchStateNotifier().notifyWatched(item: item, isNowWatched: true);
   }
 
   @override
-  Future<void> markAsWatched(String ratingKey, {MediaItem? item}) async {
+  Future<void> markAsWatched(String ratingKey) async {
     if (throwOnNextCall != null) {
       final err = throwOnNextCall!;
       throwOnNextCall = null;
       throw err;
     }
     markWatchedCalls.add(ratingKey);
-    if (item != null) {
-      WatchStateNotifier().notifyWatched(item: item, isNowWatched: true);
-    }
   }
 
   @override
@@ -264,14 +272,26 @@ class _DelayedStartClient extends _FakePlexClient {
   }
 }
 
-MediaItem _meta({String ratingKey = '42', ServerId? serverId = const ServerId('srv'), String? type = 'movie'}) =>
-    MediaItem(
-      id: ratingKey,
-      backend: MediaBackend.plex,
-      kind: MediaKind.fromString(type),
-      title: 'Test Item',
-      serverId: serverId,
-    );
+/// Jellyfin-style backend: the playback-stopped report marks the item played
+/// server-side, so the in-player scrobble path must emit only the local watch
+/// event and skip the explicit server mark (#1287).
+class _StopMarksWatchedClient extends _FakePlexClient {
+  @override
+  bool get marksWatchedOnPlaybackStopped => true;
+
+  @override
+  ServerId get serverId => ServerId('srv');
+}
+
+const Object _defaultServerId = Object();
+
+MediaItem _meta({String ratingKey = '42', Object? serverId = _defaultServerId, String? type = 'movie'}) => MediaItem(
+  id: ratingKey,
+  backend: MediaBackend.plex,
+  kind: MediaKind.fromString(type),
+  title: 'Test Item',
+  serverId: identical(serverId, _defaultServerId) ? ServerId('srv') : serverId as ServerId?,
+);
 
 void main() {
   setUp(resetSharedPreferencesForTest);
@@ -658,6 +678,35 @@ void main() {
       expect(client.markWatchedCalls, ['42']);
     });
 
+    test('backend that marks watched on stop skips the explicit server mark (#1287)', () async {
+      // Jellyfin: /Sessions/Playing/Stopped marks the item played server-side,
+      // so an explicit markWatched here would double-scrobble via the Trakt
+      // plugin. The local watch event must still fire (UI + Plezy's own Trakt
+      // sync, which key on `watched` events, not progress).
+      final client = _StopMarksWatchedClient();
+      final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));
+      final tracker = PlaybackProgressTracker(
+        client: client,
+        metadata: _meta(ratingKey: '42'),
+        player: player,
+        isOffline: false,
+      );
+      addTearDown(tracker.dispose);
+
+      final watched = <WatchStateEvent>[];
+      final sub = WatchStateNotifier()
+          .forItem('42')
+          .where((e) => e.changeType == WatchStateChangeType.watched)
+          .listen(watched.add);
+      addTearDown(sub.cancel);
+
+      await tracker.sendProgress('stopped');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(client.markWatchedCalls, isEmpty);
+      expect(watched, hasLength(1));
+    });
+
     test('respects a custom server threshold (e.g. 80%)', () async {
       // 81% >= 80%, but < 90% default.
       final client = _FakePlexClient(thresholdPercent: 80);
@@ -962,6 +1011,9 @@ class _ScrobblePreciseClient implements PlexClient {
 
   @override
   double get watchedThreshold => thresholdPercent / 100.0;
+
+  @override
+  bool get marksWatchedOnPlaybackStopped => false;
 
   bool failScrobbleFirstTime;
   int markWatchedAttempts = 0;

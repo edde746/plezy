@@ -28,6 +28,9 @@ PlexMediaVersionDto _$PlexMediaVersionDtoFromJson(Map<String, dynamic> json) =>
       partKey: _readPartKey(json, 'partKey') as String,
       accessible: _readPartAccessible(json, 'accessible') as bool?,
       exists: _readPartExists(json, 'exists') as bool?,
+      parts: _readMediaParts(json, 'parts') == null
+          ? const []
+          : _mediaPartsFromReadValue(_readMediaParts(json, 'parts')),
     );
 
 PlexLibraryDto _$PlexLibraryDtoFromJson(Map<String, dynamic> json) =>

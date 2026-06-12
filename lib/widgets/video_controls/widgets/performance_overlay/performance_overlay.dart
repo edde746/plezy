@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../../../i18n/strings.g.dart';
 import '../../../../mpv/mpv.dart';
 import '../../../../widgets/app_icon.dart';
 import 'performance_stats.dart';
@@ -48,61 +49,64 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
     final isMpv = _stats.playerType == 'mpv';
 
     final sections = <Widget>[
-      _buildSection(Symbols.videocam_rounded, 'Video', [
-        _metric('Codec', _stats.videoCodec ?? 'N/A'),
-        _metric('Resolution', _stats.resolution),
+      _buildSection(Symbols.videocam_rounded, t.fileInfo.video, [
+        _metric(t.fileInfo.codec, _stats.videoCodec ?? 'N/A'),
+        _metric(t.fileInfo.resolution, _stats.resolution),
         if (_stats.hasValidVideoFps) _metric('FPS', _stats.videoFpsFormatted),
-        if (_stats.hasValidVideoBitrate) _metric('Bitrate', _stats.videoBitrateFormatted),
-        _metric('Decoder', _stats.hwdecFormatted),
-        if (!isMpv && _stats.videoDecoderName != null) _metric('Raw Decoder', _stats.videoDecoderRaw),
-        if (!isMpv) _metric('Tunneling', _stats.tunneledPlaybackFormatted),
-        if (_stats.aspectName != null && _stats.aspectName!.isNotEmpty) _metric('Aspect', _stats.aspectName!),
-        if (_stats.rotate != null && _stats.rotate != 0) _metric('Rotation', _stats.rotateFormatted),
-        if (_stats.dvSourceProfile != null) _metric('DV Source', _stats.dvSourceProfileFormatted),
-        if (_stats.dvPlaybackPath != null) _metric('DV Path', _stats.dvPlaybackPathFormatted),
-        if (_stats.dvConversionActive) _metric('P7 Conv', _stats.dvConversionFormatted),
+        if (_stats.hasValidVideoBitrate) _metric(t.fileInfo.bitrate, _stats.videoBitrateFormatted),
+        _metric(t.performanceOverlay.decoder, _stats.hwdecFormatted),
+        if (!isMpv && _stats.videoDecoderName != null) _metric(t.performanceOverlay.rawDecoder, _stats.videoDecoderRaw),
+        if (!isMpv) _metric(t.performanceOverlay.tunneling, _stats.tunneledPlaybackFormatted),
+        if (_stats.aspectName != null && _stats.aspectName!.isNotEmpty)
+          _metric(t.performanceOverlay.aspect, _stats.aspectName!),
+        if (_stats.rotate != null && _stats.rotate != 0) _metric(t.performanceOverlay.rotation, _stats.rotateFormatted),
+        if (_stats.dvSourceProfile != null) _metric(t.performanceOverlay.dvSource, _stats.dvSourceProfileFormatted),
+        if (_stats.dvPlaybackPath != null) _metric(t.performanceOverlay.dvPath, _stats.dvPlaybackPathFormatted),
+        if (_stats.dvConversionActive) _metric(t.performanceOverlay.p7Conversion, _stats.dvConversionFormatted),
       ]),
-      _buildSection(Symbols.volume_up_rounded, 'Audio', [
-        if (_stats.audioCodec != null) _metric('Codec', _stats.audioCodec!),
-        _metric('Sample Rate', _stats.sampleRateFormatted),
-        _metric('Channels', _stats.audioChannels ?? 'N/A'),
-        if (_stats.hasValidAudioBitrate) _metric('Bitrate', _stats.audioBitrateFormatted),
-        if (!isMpv && _stats.audioDecoderName != null) _metric('Decoder', _stats.audioDecoderFormatted),
+      _buildSection(Symbols.volume_up_rounded, t.fileInfo.audio, [
+        if (_stats.audioCodec != null) _metric(t.fileInfo.codec, _stats.audioCodec!),
+        _metric(t.performanceOverlay.sampleRate, _stats.sampleRateFormatted),
+        _metric(t.fileInfo.channels, _stats.audioChannels ?? 'N/A'),
+        if (_stats.hasValidAudioBitrate) _metric(t.fileInfo.bitrate, _stats.audioBitrateFormatted),
+        if (!isMpv && _stats.audioDecoderName != null)
+          _metric(t.performanceOverlay.decoder, _stats.audioDecoderFormatted),
       ]),
       if (isMpv)
-        _buildSection(Symbols.palette_rounded, 'Color', [
-          _metric('Pixel Fmt', _stats.pixelformat ?? 'N/A'),
+        _buildSection(Symbols.palette_rounded, t.performanceOverlay.color, [
+          _metric(t.performanceOverlay.pixelFormat, _stats.pixelformat ?? 'N/A'),
           if (_stats.hwPixelformat != null && _stats.hwPixelformat != _stats.pixelformat)
-            _metric('HW Fmt', _stats.hwPixelformat!),
-          _metric('Matrix', _stats.colormatrix ?? 'N/A'),
-          _metric('Primaries', _stats.primaries ?? 'N/A'),
-          _metric('Transfer', _stats.gamma ?? 'N/A'),
+            _metric(t.performanceOverlay.hwFormat, _stats.hwPixelformat!),
+          _metric(t.performanceOverlay.matrix, _stats.colormatrix ?? 'N/A'),
+          _metric(t.performanceOverlay.primaries, _stats.primaries ?? 'N/A'),
+          _metric(t.performanceOverlay.transfer, _stats.gamma ?? 'N/A'),
         ]),
-      _buildSection(Symbols.speed_rounded, 'Performance', [
-        if (isMpv) _metric('Render FPS', _stats.actualFpsFormatted),
-        if (isMpv) _metric('Display FPS', _stats.displayFpsFormatted),
-        if (isMpv) _metric('A/V Sync', _stats.avsyncFormatted),
-        _metric('Dropped', _stats.droppedFramesFormatted),
-        if (_stats.dvConversionActive) _metric('DV RPUs', _stats.dvRpuCountFormatted),
-        if (_stats.dvConversionActive) _metric('DV RPU Avg', _stats.dvAvgRpuConversionFormatted),
-        if (_stats.dvConversionActive) _metric('DV Sample Avg', _stats.dvAvgSampleProcessingFormatted),
+      _buildSection(Symbols.speed_rounded, t.performanceOverlay.performance, [
+        if (isMpv) _metric(t.performanceOverlay.renderFps, _stats.actualFpsFormatted),
+        if (isMpv) _metric(t.performanceOverlay.displayFps, _stats.displayFpsFormatted),
+        if (isMpv) _metric(t.performanceOverlay.avSync, _stats.avsyncFormatted),
+        _metric(t.performanceOverlay.dropped, _stats.droppedFramesFormatted),
+        if (_stats.dvConversionActive) _metric(t.performanceOverlay.dvRpus, _stats.dvRpuCountFormatted),
+        if (_stats.dvConversionActive) _metric(t.performanceOverlay.dvRpuAverage, _stats.dvAvgRpuConversionFormatted),
+        if (_stats.dvConversionActive)
+          _metric(t.performanceOverlay.dvSampleAverage, _stats.dvAvgSampleProcessingFormatted),
       ]),
       if (_stats.hasHdrMetadata)
         _buildSection(Symbols.hdr_on_rounded, 'HDR', [
-          if (_stats.maxLuma != null) _metric('Max Luma', _stats.maxLumaFormatted),
-          if (_stats.minLuma != null) _metric('Min Luma', _stats.minLumaFormatted),
-          if (_stats.maxCll != null) _metric('MaxCLL', _stats.maxCllFormatted),
-          if (_stats.maxFall != null) _metric('MaxFALL', _stats.maxFallFormatted),
+          if (_stats.maxLuma != null) _metric(t.performanceOverlay.maxLuma, _stats.maxLumaFormatted),
+          if (_stats.minLuma != null) _metric(t.performanceOverlay.minLuma, _stats.minLumaFormatted),
+          if (_stats.maxCll != null) _metric(t.performanceOverlay.maxCll, _stats.maxCllFormatted),
+          if (_stats.maxFall != null) _metric(t.performanceOverlay.maxFall, _stats.maxFallFormatted),
         ]),
-      _buildSection(Symbols.memory_rounded, 'Buffer', [
-        _metric('Duration', _stats.cacheDurationFormatted),
-        if (isMpv) _metric('Cache Used', _stats.cacheUsedFormatted),
-        if (isMpv) _metric('Speed', _stats.cacheSpeedFormatted),
+      _buildSection(Symbols.memory_rounded, t.performanceOverlay.buffer, [
+        _metric(t.fileInfo.duration, _stats.cacheDurationFormatted),
+        if (isMpv) _metric(t.performanceOverlay.cacheUsed, _stats.cacheUsedFormatted),
+        if (isMpv) _metric(t.performanceOverlay.speed, _stats.cacheSpeedFormatted),
       ]),
-      _buildSection(Symbols.apps_rounded, 'App', [
-        _metric('Player', _stats.playerTypeFormatted),
-        _metric('Memory', _stats.appMemoryFormatted),
-        _metric('UI FPS', _stats.uiFpsFormatted),
+      _buildSection(Symbols.apps_rounded, t.performanceOverlay.app, [
+        _metric(t.performanceOverlay.player, _stats.playerTypeFormatted),
+        _metric(t.performanceOverlay.memory, _stats.appMemoryFormatted),
+        _metric(t.performanceOverlay.uiFps, _stats.uiFpsFormatted),
       ]),
     ];
 

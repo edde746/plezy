@@ -27,6 +27,18 @@ import 'package:plezy/utils/media_server_timeouts.dart';
 
 import '../test_helpers/prefs.dart';
 
+/// Poll [condition] until it holds, failing after [timeout]. Used to observe
+/// the binder's unawaited background reconcile settling.
+Future<void> pumpUntil(Future<bool> Function() condition, {Duration timeout = const Duration(seconds: 2)}) async {
+  final deadline = DateTime.now().add(timeout);
+  while (!await condition()) {
+    if (DateTime.now().isAfter(deadline)) {
+      fail('condition not met within $timeout');
+    }
+    await Future<void>.delayed(const Duration(milliseconds: 10));
+  }
+}
+
 void main() {
   late AppDatabase db;
   late ConnectionRegistry connections;
@@ -123,6 +135,33 @@ void main() {
     expect(notifications, lessThan(8));
   });
 
+  test('start() marks binding synchronously so first-frame readers see it', () async {
+    await createActiveLocalProfile('local-sync-start');
+
+    binder.start();
+
+    // Read with no await in between — mirrors DiscoverScreen's no-servers
+    // gate running during the first build right after a fresh login.
+    expect(activeProfile.isBinding, isTrue);
+
+    final succeeded = await activeProfile.awaitBindingSettle();
+    expect(succeeded, isTrue);
+    expect(activeProfile.isBinding, isFalse);
+    expect(binder.debugLastBoundProfileId, 'local-sync-start');
+  });
+
+  test('disposing before the initial rebind microtask clears the binding flag', () async {
+    await createActiveLocalProfile('local-dispose-early');
+
+    binder.start();
+    expect(activeProfile.isBinding, isTrue);
+    binder.dispose();
+
+    // Let the scheduled microtask observe the disposal.
+    await Future<void>.delayed(Duration.zero);
+    expect(activeProfile.isBinding, isFalse);
+  });
+
   test('initial bind can be deferred until profile selection', () async {
     final profile = await createActiveLocalProfile('local-deferred');
     shouldDeferInitialBind = true;
@@ -195,7 +234,9 @@ void main() {
     await binder.rebindActive();
 
     expect(activeProfile.lastBindingSucceeded, isFalse);
-    expect(failingManager.refreshCalls, 1);
+    // Two connect passes: the optimistic cached-metadata pass binds nothing,
+    // so the bind falls back to the freshly fetched resource list.
+    expect(failingManager.refreshCalls, 2);
     expect(multiServerProvider.serverIds, isEmpty);
     expect(multiServerProvider.expectedServerIds, ['srv-1']);
   });
@@ -375,7 +416,7 @@ void main() {
       expect(prepared.manager.lastConnection?.servers.single.clientIdentifier, 'srv-1');
     });
 
-    test('does not use cached server metadata after cached token auth failure', () async {
+    test('binds from cache when plex.tv rejects the token, then flags re-auth from the reconcile', () async {
       final prepared = await preparePlexHomeBind(
         protected: true,
         httpClient: MockClient((request) async {
@@ -385,10 +426,89 @@ void main() {
 
       await binder.rebindActive();
 
-      expect(activeProfile.lastBindingSucceeded, isFalse);
-      expect(prepared.manager.refreshCalls, 0);
-      final pc = await profileConnections.get(prepared.profileId, 'plex.account');
-      expect(pc?.userToken, isNull);
+      // The optimistic cached bind settles first — content stays available
+      // (mirrors the cold-start cache policy: the cached token was valid
+      // when minted; the splash must not block on plex.tv's verdict).
+      expect(activeProfile.lastBindingSucceeded, isTrue);
+      expect(prepared.manager.refreshCalls, 1);
+      expect(prepared.manager.lastConnection?.servers.single.accessToken, 'home-user-token');
+
+      // The background reconcile sees the 401: wipes the cached token and
+      // flags the account for re-auth — no silent /switch re-mint that
+      // could pop a PIN prompt from a background task.
+      await pumpUntil(() async {
+        final pc = await profileConnections.get(prepared.profileId, 'plex.account');
+        return pc?.userToken == null;
+      });
+      await pumpUntil(() async => manager.authErrorServerIds.contains('srv-1'));
+      // No second connect pass was attempted with the rejected token.
+      expect(prepared.manager.refreshCalls, 1);
+    });
+
+    test('optimistic cached bind settles without waiting for the resource refresh, then reconciles', () async {
+      final fetchGate = Completer<void>();
+      final prepared = await preparePlexHomeBind(
+        protected: false,
+        httpClient: MockClient((request) async {
+          await fetchGate.future;
+          return http.Response(jsonEncode([_serverJson()]), 200, headers: {'content-type': 'application/json'});
+        }),
+      );
+
+      // Settles while plex.tv still hasn't answered.
+      await binder.rebindActive().timeout(const Duration(seconds: 2));
+
+      expect(activeProfile.lastBindingSucceeded, isTrue);
+      expect(binder.debugLastBoundProfileId, prepared.profileId);
+      expect(prepared.manager.refreshCalls, 1);
+      expect(prepared.manager.lastConnection?.servers.single.accessToken, 'home-user-token');
+
+      fetchGate.complete();
+
+      // Same membership → the reconcile rotates in the freshly fetched
+      // per-server tokens in place.
+      await pumpUntil(() async => prepared.manager.refreshCalls == 2);
+      expect(prepared.manager.lastConnection?.servers.single.accessToken, 'server-token');
+
+      // And the refreshed metadata was persisted onto the stored account row.
+      final account = await connections.getPlexAccount('plex.account');
+      expect(account?.servers.single.accessToken, 'server-token');
+    });
+
+    test('membership change in the background refresh triggers a full rebind', () async {
+      final fetchGate = Completer<void>();
+      final prepared = await preparePlexHomeBind(
+        protected: false,
+        httpClient: MockClient((request) async {
+          await fetchGate.future;
+          return http.Response(
+            jsonEncode([_serverJson(clientIdentifier: 'srv-2')]),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+
+      await binder.rebindActive().timeout(const Duration(seconds: 2));
+      expect(prepared.manager.refreshCalls, 1);
+      expect(prepared.manager.lastConnection?.servers.single.clientIdentifier, 'srv-1');
+
+      fetchGate.complete();
+
+      // Fresh membership {srv-2} ≠ cached {srv-1}: the reconcile persists the
+      // new resource list and triggers a full rebind, which reuses the
+      // just-validated cached token (pre-verified — no /switch round-trip)
+      // and binds the new membership.
+      await pumpUntil(() async => prepared.manager.lastConnection?.servers.single.clientIdentifier == 'srv-2');
+      final account = await connections.getPlexAccount('plex.account');
+      expect(account?.servers.single.clientIdentifier, 'srv-2');
+      expect(binder.debugLastBoundProfileId, prepared.profileId);
+
+      // The rebind's own reconcile sees identical membership and converges
+      // with one final in-place token pass — no rebind loop.
+      await pumpUntil(() async => prepared.manager.refreshCalls >= 3);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(prepared.manager.refreshCalls, 3);
     });
   });
 }
@@ -414,9 +534,9 @@ PlexServer _server({required String accessToken}) {
   );
 }
 
-Map<String, dynamic> _serverJson() => {
+Map<String, dynamic> _serverJson({String clientIdentifier = 'srv-1'}) => {
   'name': 'Home Server',
-  'clientIdentifier': 'srv-1',
+  'clientIdentifier': clientIdentifier,
   'accessToken': 'server-token',
   'owned': true,
   'provides': 'server',

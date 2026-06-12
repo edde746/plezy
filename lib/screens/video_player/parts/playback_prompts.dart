@@ -6,8 +6,9 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     // inter-segment gaps in the chunked MKV transcode stream.
     if (widget.isLive) return;
     if (!completed) return;
-    // Ignore spurious EOF from the old file during in-place episode swap
-    if (_isSwappingEpisode) return;
+    // Ignore spurious EOF from the old file during an in-place media-source
+    // transition (episode swap, transcode restart, channel switch).
+    if (_playbackTransition != _PlaybackTransition.idle) return;
 
     // mpv does not flip the `pause` property on EOF, so _onPlayingStateChanged
     // never fires false.  Normalize all playback-dependent state.
@@ -28,14 +29,14 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     // End-of-video sleep timer takes precedence over autoplay / next-episode
     // dialogs: the user explicitly asked to stop after this item.
     final sleepTimerService = SleepTimerService();
-    if (sleepTimerService.isEndOfVideoMode && !_completionTriggered) {
-      _completionTriggered = true;
+    if (sleepTimerService.isEndOfVideoMode && !_completionLatch.triggered) {
+      _completionLatch.latch();
       sleepTimerService.notifyVideoCompleted();
       return;
     }
 
-    if (_nextEpisode != null && !_showPlayNextDialog && !_showStillWatchingPrompt && !_completionTriggered) {
-      _completionTriggered = true;
+    if (_nextEpisode != null && !_showPlayNextDialog && !_showStillWatchingPrompt && !_completionLatch.triggered) {
+      _completionLatch.latch();
 
       // PiP: skip dialog (user can't interact), auto-play immediately
       if (PipService().isPipActive.value) {
@@ -72,8 +73,8 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
       if (autoPlayEnabled) {
         _startAutoPlayTimer();
       }
-    } else if (_nextEpisode == null && !_completionTriggered) {
-      _completionTriggered = true;
+    } else if (_nextEpisode == null && !_completionLatch.triggered) {
+      _completionLatch.latch();
       unawaited(_handleBackButton());
     }
   }
@@ -97,11 +98,26 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _cancelAutoPlay() {
     _autoPlayTimer?.cancel();
+    _unfocusPlayNextPrompt();
     _progressTracker?.resumeAfterStoppedReport();
-    _completionTriggered = false; // Reset so it can trigger again if user seeks near end
+    // Keep _completionTriggered set: playback is still parked inside the
+    // end-of-video window, so clearing it here would let the position listener
+    // re-fire this prompt on the next tick. It is re-armed once playback seeks
+    // back clear of the end region (see the position listener) or new media loads.
     _setPlayerState(() {
       _showPlayNextDialog = false;
     });
+  }
+
+  /// Re-arm the end-of-video latch so Play Next can fire again. Callers
+  /// decide *when* it is safe to re-arm (media reloaded, or playback moved
+  /// back out of the end region); the latch itself refuses while a prompt
+  /// or countdown is active.
+  void _rearmCompletionLatch() {
+    _completionLatch.rearmIfClear(
+      promptVisible: _showPlayNextDialog,
+      countdownActive: _autoPlayTimer?.isActive == true,
+    );
   }
 
   void _showStillWatchingDialog() {
@@ -138,6 +154,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   }
 
   void _onStillWatchingTimeout() {
+    _unfocusStillWatchingPrompt();
     player?.pause();
     _setPlayerState(() {
       _showStillWatchingPrompt = false;
@@ -146,6 +163,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _onStillWatchingContinue() {
     _stillWatchingTimer?.cancel();
+    _unfocusStillWatchingPrompt();
     SleepTimerService().restartTimer();
     _setPlayerState(() {
       _showStillWatchingPrompt = false;
@@ -154,6 +172,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
 
   void _onStillWatchingPause() {
     _stillWatchingTimer?.cancel();
+    _unfocusStillWatchingPrompt();
     player?.pause();
     _setPlayerState(() {
       _showStillWatchingPrompt = false;
@@ -163,9 +182,20 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   void _dismissStillWatching() {
     _stillWatchingTimer?.cancel();
     if (_showStillWatchingPrompt) {
+      _unfocusStillWatchingPrompt();
       _setPlayerState(() {
         _showStillWatchingPrompt = false;
       });
     }
+  }
+
+  void _unfocusPlayNextPrompt() {
+    _playNextCancelFocusNode.unfocus();
+    _playNextConfirmFocusNode.unfocus();
+  }
+
+  void _unfocusStillWatchingPrompt() {
+    _stillWatchingPauseFocusNode.unfocus();
+    _stillWatchingContinueFocusNode.unfocus();
   }
 }

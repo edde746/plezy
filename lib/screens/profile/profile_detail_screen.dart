@@ -21,6 +21,7 @@ import '../../providers/download_provider.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../focus/focusable_button.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/app_menu.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
@@ -338,10 +339,9 @@ class _ConnectionsList extends StatelessWidget {
                                 }
                               },
                               itemBuilder: (_) => [
-                                if (!pc.isDefault) PopupMenuItem(value: 'default', child: Text(t.profiles.makeDefault)),
-                                if (conn is JellyfinConnection)
-                                  PopupMenuItem(value: 'edit', child: Text(t.common.edit)),
-                                PopupMenuItem(value: 'remove', child: Text(t.profiles.removeConnection)),
+                                if (!pc.isDefault) AppMenuItem(value: 'default', label: t.profiles.makeDefault),
+                                if (conn is JellyfinConnection) AppMenuItem(value: 'edit', label: t.common.edit),
+                                AppMenuItem(value: 'remove', label: t.profiles.removeConnection),
                               ],
                             ),
                           ),

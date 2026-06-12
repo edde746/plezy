@@ -23,21 +23,21 @@ val downloadLibmpv by tasks.registering {
   }
 }
 
-val assVersion = "fp-3"
-val assDir = layout.buildDirectory.dir("libass").get().asFile
-val assAars = listOf("lib_ass-release.aar", "lib_ass_kt-release.aar", "lib_ass_media-release.aar")
-
-val downloadLibass by tasks.registering {
-  val stamp = File(assDir, ".version")
-  outputs.upToDateWhen { stamp.exists() && stamp.readText().trim() == assVersion }
+// Extract libc++_shared.so from the libmpv AAR so the app source set can package
+// it with top merge priority (see packaging { jniLibs } and sourceSets below).
+val extractMpvLibcxx by tasks.registering {
+  dependsOn(downloadLibmpv)
+  val aar = File(mpvDir, mpvAar)
+  val outDir = File(mpvDir, "libcxx")
+  inputs.file(aar)
+  outputs.dir(outDir)
   doLast {
-    assDir.mkdirs()
-    val baseUrl = "https://github.com/edde746/libass-android/releases/download/$assVersion"
-    assAars.forEach { name ->
-      val dest = File(assDir, name)
-      exec { commandLine("curl", "-sfL", "$baseUrl/$name", "-o", dest.absolutePath) }
+    outDir.deleteRecursively() // drop stale ABIs from a previous AAR version
+    outDir.mkdirs()
+    exec {
+      commandLine("unzip", "-q", "-o", aar.absolutePath,
+        "jni/*/libc++_shared.so", "-d", outDir.absolutePath)
     }
-    stamp.writeText(assVersion)
   }
 }
 
@@ -145,8 +145,27 @@ android {
 
   packaging {
     jniLibs {
-      // Resolve conflict between libass-android and libmpv native libraries
+      // Three copies of libc++_shared.so reach the merge: the libmpv AAR's
+      // (NDK r29 — exports std::from_chars<float> that libmpv.so needs), the
+      // :libass module's CMake-contributed copy (NDK 28.2 — lacks it), and
+      // peerless2012:ass's bundled copy (also old). pickFirst keeps the merge
+      // from erroring on the duplicates; WHICH copy wins is pinned by the
+      // sourceSets block below: extractMpvLibcxx unpacks the libmpv AAR's copy
+      // into an app jniLibs dir, and PROJECT-scope sources beat sub-projects
+      // and external AARs. libc++ is backward ABI-compatible, so the older-NDK
+      // consumers (libass.so, libasskt.so, ffmpeg decoder, cronet) run fine
+      // against the newer copy.
       pickFirsts.add("lib/*/libc++_shared.so")
+    }
+  }
+
+  sourceSets {
+    getByName("main") {
+      // libc++_shared.so extracted from the libmpv AAR by extractMpvLibcxx.
+      // App source-set jniLibs sit in the PROJECT scope, merged ahead of
+      // subprojects (:libass) and external AARs, so with the pickFirst rule
+      // above this copy deterministically wins regardless of dependency order.
+      jniLibs.srcDir(File(mpvDir, "libcxx/jni"))
     }
   }
 }
@@ -160,10 +179,14 @@ tasks.matching { it.name.contains("CMake") || it.name.contains("externalNative")
   dependsOn(downloadLibdovi)
 }
 
-// Download libmpv and libass AARs before compilation
+// Download the libmpv AAR before compilation
 tasks.matching { it.name.startsWith("pre") && it.name.endsWith("Build") }.configureEach {
-  dependsOn(downloadLibmpv)
-  dependsOn(downloadLibass)
+  dependsOn(downloadLibmpv, extractMpvLibcxx)
+}
+// merge{Debug,Profile,Release}JniLibFolders snapshot jniLibs source dirs as inputs;
+// Gradle 8 requires an explicit dependency on the producing task.
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders") }.configureEach {
+  dependsOn(extractMpvLibcxx)
 }
 
 dependencies {
@@ -186,6 +209,13 @@ dependencies {
   // FFmpeg audio decoder for unsupported codecs (ALAC, DTS, TrueHD, etc.)
   implementation("org.jellyfin.media3:media3-ffmpeg-decoder:1.9.0+1")
 
-  // libass-android for ASS/SSA subtitle rendering
-  assAars.forEach { implementation(files(File(assDir, it))) }
+  // libass ASS/SSA subtitle rendering: optimized native core (libass.so +
+  // prefab headers) from the edde746/libass-android fork's releases; Kotlin/JNI
+  // bindings + Media3 glue live in the android/libass module. -PlocalAssCore
+  // swaps in a mavenLocal()-published core (0.4.0-local) for native A/B tests.
+  val assCoreVersion = if (project.hasProperty("localAssCore")) "0.4.0-local" else "0.4.1-plezy.1"
+  implementation("io.github.peerless2012:ass:$assCoreVersion@aar")
+  implementation(project(":libass"))
+
+  testImplementation("junit:junit:4.13.2")
 }

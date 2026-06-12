@@ -53,7 +53,7 @@ class _VolumeControlState extends State<VolumeControl> {
   /// Volume step size for keyboard adjustment.
   static const double _volumeStep = 5.0;
 
-  SettingsService get _settings => SettingsService.instanceOrNull!;
+  SettingsService get _settings => SettingsService.instance;
 
   void _enterAdjustMode() {
     setState(() {

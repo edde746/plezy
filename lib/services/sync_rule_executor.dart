@@ -8,11 +8,10 @@ import '../media/media_server_client.dart';
 import '../models/download_models.dart';
 import '../utils/app_logger.dart';
 import '../utils/content_utils.dart';
-import '../utils/episode_collection.dart';
+import '../media/episode_collection.dart';
 import '../utils/global_key_utils.dart';
 import 'download_manager_service.dart';
 import 'multi_server_manager.dart';
-import 'offline_mode_source.dart';
 import 'playlist_items_loader.dart';
 
 /// Sync-rule filter values stored in `SyncRules.downloadFilter`.
@@ -45,17 +44,9 @@ class SyncRuleExecutor {
   static const Duration _cooldownWifi = Duration(minutes: 30);
   static const Duration _cooldownCellular = Duration(hours: 3);
 
-  OfflineModeSource? _offlineSource;
-
   SyncRuleExecutor({required this._database});
 
   bool get isExecuting => _isExecuting;
-
-  /// Inject the offline-mode source so we can skip running rules when the
-  /// device has no Plex connectivity (every `getChildren` call would fail).
-  void setOfflineSource(OfflineModeSource? source) {
-    _offlineSource = source;
-  }
 
   /// Execute every enabled sync rule.
   ///
@@ -74,6 +65,7 @@ class SyncRuleExecutor {
     required Map<String, DownloadProgress> downloads,
     required Map<String, MediaItem> metadata,
     required Future<bool> Function(MediaItem episode, MediaServerClient client, {int mediaIndex}) queueSingleDownload,
+    required bool isOffline,
     bool force = false,
   }) async {
     if (_isExecuting) {
@@ -81,7 +73,7 @@ class SyncRuleExecutor {
       return [];
     }
 
-    if (_offlineSource?.isOffline ?? false) {
+    if (isOffline) {
       appLogger.d('Skipping sync rules — offline');
       return [];
     }
@@ -148,13 +140,14 @@ class SyncRuleExecutor {
     required Map<String, DownloadProgress> downloads,
     required Map<String, MediaItem> metadata,
     required Future<bool> Function(MediaItem episode, MediaServerClient client, {int mediaIndex}) queueSingleDownload,
+    required bool isOffline,
   }) async {
     if (_isExecuting) {
       appLogger.d('Sync rule execution already in progress, skipping single-rule run for $globalKey');
       return null;
     }
 
-    if (_offlineSource?.isOffline ?? false) {
+    if (isOffline) {
       appLogger.d('Skipping single sync rule $globalKey — offline');
       return null;
     }

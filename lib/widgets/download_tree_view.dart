@@ -188,8 +188,12 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
 
         // Get season metadata from first episode
         final firstEpisode = widget.metadata[seasonEpisodes.first.key];
-        final seasonTitle = firstEpisode?.parentTitle ?? 'Unknown Season';
         final seasonNumber = firstEpisode?.parentIndex;
+        final seasonTitle = firstEpisode?.parentTitle?.isNotEmpty == true
+            ? firstEpisode!.parentTitle!
+            : seasonNumber != null
+            ? t.common.seasonNumber(number: seasonNumber)
+            : 'Unknown Season';
 
         // Build episode nodes
         final List<DownloadTreeNode> episodeNodes = [];
@@ -201,7 +205,9 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
           if (meta == null) continue;
 
           final episodeNumber = meta.index;
-          final episodeTitle = episodeNumber != null ? 'Episode $episodeNumber - ${meta.title!}' : meta.title!;
+          final episodeTitle = episodeNumber != null
+              ? t.common.episodeNumberTitle(number: episodeNumber, title: meta.title!)
+              : meta.title!;
 
           episodeNodes.add(
             DownloadTreeNode(
@@ -229,12 +235,10 @@ class _DownloadTreeViewState extends State<DownloadTreeView> {
             : episodeNodes.map((e) => e.progress).reduce((a, b) => a + b) / episodeNodes.length;
         final seasonStatus = _determineAggregateStatus(episodeNodes.map((e) => e.status).toList());
 
-        final displayTitle = seasonNumber != null ? 'Season $seasonNumber' : seasonTitle;
-
         seasons.add(
           DownloadTreeNode(
             key: '$showKey:$seasonKey',
-            title: displayTitle,
+            title: seasonTitle,
             type: DownloadNodeType.season,
             progress: seasonProgress,
             status: seasonStatus,

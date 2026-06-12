@@ -585,24 +585,6 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     return null;
   }
 
-  Future<void> _showTvKeyboard(BuildContext context) {
-    if (!enabled) return Future.value();
-    return showTvVirtualKeyboard(
-      context: context,
-      controller: controller,
-      hintText: _keyboardHint(decoration),
-      keyboardType: keyboardType,
-      textInputAction: textInputAction,
-      inputFormatters: inputFormatters,
-      obscureText: obscureText,
-      maxLength: maxLength,
-      maxLines: maxLines,
-      onChanged: onChanged,
-      onSubmitted: onSubmitted,
-      onAction: _handleTvKeyboardAction,
-    );
-  }
-
   void _handleTvKeyboardAction() {
     if (onEditingComplete != null) {
       onEditingComplete!();
@@ -666,6 +648,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
   late final VoidCallback _focusListener = _handleFocusChanged;
   final Object _nativeFocusToken = Object();
   bool _reportedNativeTextInputFocused = false;
+  TvVirtualKeyboardHandle? _tvKeyboardHandle;
   bool _tvKeyboardOpen = false;
   bool _tvKeyboardOpenScheduled = false;
   bool _suppressTvKeyboardAutoOpen = false;
@@ -679,6 +662,8 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
   void didUpdateWidget(_FocusableTextInputHost oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.input.focusNode != widget.input.focusNode) {
+      // An open keyboard dialog intentionally survives rebuilds and focusNode
+      // swaps; it is closed only when this host unmounts — see dispose.
       _restoreInstalledHandler();
       _suppressTvKeyboardAutoOpen = false;
       _tvKeyboardOpenScheduled = false;
@@ -691,6 +676,13 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
   @override
   void dispose() {
     _restoreInstalledHandler();
+    // The keyboard is a navigator route — it must not outlive the field that
+    // opened it (e.g. a form section swapped out while the keyboard is up).
+    // Navigator mutation is unsafe during tree finalization; defer a frame.
+    final keyboard = _tvKeyboardHandle;
+    if (keyboard != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => keyboard.close());
+    }
     _ownedFocusNode?.dispose();
     super.dispose();
   }
@@ -776,8 +768,43 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> {
     _suppressTvKeyboardForCurrentFocus = false;
     _suppressTvKeyboardAutoOpen = true;
     _logTvTextInput('Host.openTvKeyboard node=${_installedFocusNode?.debugLabel}');
+    // The dialog outlives input rebuilds (e.g. a search field whose
+    // onNavigateDown appears once results arrive while the keyboard is up),
+    // so only static configuration may be snapshotted here — the callbacks
+    // must resolve against widget.input at invoke time.
+    final input = widget.input;
+    final keyboard = showTvVirtualKeyboard(
+      context: context,
+      controller: input.controller,
+      hintText: _keyboardHint(input.decoration),
+      keyboardType: input.keyboardType,
+      textInputAction: input.textInputAction,
+      inputFormatters: input.inputFormatters,
+      obscureText: input.obscureText,
+      maxLength: input.maxLength,
+      maxLines: input.maxLines,
+      onChanged: (text) {
+        if (!mounted) return;
+        widget.input.onChanged?.call(text);
+      },
+      onSubmitted: (text) {
+        if (!mounted) return;
+        final current = widget.input;
+        if (current.onSubmitted != null) {
+          current.onSubmitted!(text);
+        } else {
+          current._handleTvKeyboardAction();
+        }
+      },
+    );
+    if (keyboard == null) {
+      _tvKeyboardOpen = false;
+      return;
+    }
+    _tvKeyboardHandle = keyboard;
     unawaited(
-      widget.input._showTvKeyboard(context).whenComplete(() {
+      keyboard.closed.whenComplete(() {
+        _tvKeyboardHandle = null;
         if (!mounted) return;
         _tvKeyboardOpen = false;
         WidgetsBinding.instance.addPostFrameCallback((_) {

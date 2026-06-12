@@ -130,13 +130,13 @@ extension _PlexVideoControlsTrackMethods on _PlexVideoControlsState {
       onSubtitleTrackChanged: _onSubtitleTrackChanged,
       onSecondarySubtitleTrackChanged: widget.onSecondarySubtitleTrackChanged,
       onLoadSeekTimes: null,
-      onCancelAutoHide: () => _hideTimer?.cancel(),
+      onCancelAutoHide: widget.chromeController.cancelAutoHide,
       onStartAutoHide: _startHideTimer,
       // Sync offsets are now driven by listenable rebuilds — the sheet writes
       // to SettingsService and the parent re-reads via `_audioSyncOffset` /
       // `_subtitleSyncOffset` getters. Callback kept for sheet API compat.
       onSyncOffsetChanged: null,
-      serverId: widget.metadata.serverId ?? '',
+      serverId: widget.metadata.serverId,
       shaderService: widget.shaderService,
       onShaderChanged: widget.onShaderChanged,
       isAmbientLightingEnabled: widget.isAmbientLightingEnabled,
