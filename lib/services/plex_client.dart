@@ -1691,13 +1691,15 @@ class PlexClient
       _serverPrefs = _parseSettingsMap(response);
       // Mirror the watched threshold to settings: offline paths resolve it
       // synchronously with no client bound — see
-      // OfflineWatchSyncService.getWatchedThreshold.
-      unawaited(
-        SettingsService.instanceOrNull?.write(
-          SettingsService.watchedThresholdPref(ServerId(serverId)),
-          watchedThresholdPercent,
-        ),
-      );
+      // OfflineWatchSyncService.getWatchedThreshold. Skipped when unchanged
+      // (this runs on every connect).
+      final settings = SettingsService.instanceOrNull;
+      if (settings != null) {
+        final pref = SettingsService.watchedThresholdPref(ServerId(serverId));
+        if (settings.read(pref) != watchedThresholdPercent) {
+          unawaited(settings.write(pref, watchedThresholdPercent));
+        }
+      }
     } catch (e) {
       appLogger.d('Failed to fetch server prefs: $e');
     }
@@ -1921,10 +1923,16 @@ class PlexClient
   /// Get related hubs for a specific metadata item (collections, similar, "more from" director/actor)
   Future<List<PlexHubDto>> _getRelatedHubs(String ratingKey, {int count = 10}) async {
     try {
-      final response = await _getWithFailover(
-        '/hubs/metadata/$ratingKey/related',
-        queryParameters: {'count': count},
-        allowEndpointFailover: false,
+      final response = await retryTransientMediaServerCall(
+        operation: 'Plex related hubs',
+        attemptTimeouts: MediaServerTimeouts.libraryHubAttemptTimeouts,
+        call: (timeout, abort) => _getWithFailover(
+          '/hubs/metadata/$ratingKey/related',
+          queryParameters: {'count': count},
+          timeout: timeout,
+          abort: abort,
+          allowEndpointFailover: false,
+        ),
       );
       final sid = serverId;
       final sname = serverName;
