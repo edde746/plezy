@@ -15,6 +15,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.Process
 import android.provider.Settings
 import android.util.Log
 import android.util.Rational
@@ -188,6 +189,19 @@ class MainActivity : FlutterActivity() {
       "hasFakeTouch" to hasFakeTouch,
       "manufacturer" to Build.MANUFACTURER,
       "model" to Build.MODEL
+    )
+  }
+
+  /** Hardware capability signals used by Dart to pick the visual-effects tier. */
+  private fun getPerformanceSignals(): Map<String, Any> {
+    val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val memoryInfo = ActivityManager.MemoryInfo()
+    activityManager.getMemoryInfo(memoryInfo)
+    return mapOf(
+      // Actual process bitness: low-end TV boxes often run 32-bit userspace.
+      "is64Bit" to Process.is64Bit(),
+      "isLowRamDevice" to activityManager.isLowRamDevice,
+      "totalMemBytes" to memoryInfo.totalMem,
     )
   }
 
@@ -441,6 +455,7 @@ class MainActivity : FlutterActivity() {
       when (call.method) {
         "getTvDetection" -> result.success(getAndroidTvDetection())
         "getDeviceName" -> result.success(getDeviceName())
+        "getPerformanceSignals" -> result.success(getPerformanceSignals())
         else -> result.notImplemented()
       }
     }

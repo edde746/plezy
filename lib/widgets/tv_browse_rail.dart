@@ -12,6 +12,7 @@ import '../focus/focus_theme.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/locked_hub_controller.dart';
 import '../i18n/strings.g.dart';
+import '../navigation/main_screen_scope.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../screens/hub_detail_screen.dart';
@@ -25,6 +26,7 @@ import 'app_icon.dart';
 import 'clickable_cursor.dart';
 import 'focus_builders.dart';
 import 'horizontal_scroll_with_arrows.dart';
+import 'listenable_selector.dart';
 import 'media_card.dart';
 import 'optimized_media_image.dart';
 import 'settings_builder.dart';
@@ -319,7 +321,11 @@ class TvBrowseRail extends StatefulWidget {
   final bool autofocus;
   final EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub;
   final double Function(MediaHub hub)? widePosterScaleForHub;
-  final double backgroundBleedLeft;
+
+  /// Explicit background bleed override. When null, the bleed target is read
+  /// from [MainScreenFocusScope] (offset aspect) inside the bleed widget
+  /// itself, so sidebar flips never rebuild the rail — only the bleed layer.
+  final double? backgroundBleedLeft;
 
   /// Optional signal that is `true` while an input gesture (e.g. a Siri-remote
   /// touch) is in progress. When select-suppression is armed during an active
@@ -352,7 +358,7 @@ class TvBrowseRail extends StatefulWidget {
     this.autofocus = false,
     this.episodePosterModeForHub,
     this.widePosterScaleForHub,
-    this.backgroundBleedLeft = 0,
+    this.backgroundBleedLeft,
     this.selectSuppressionGestureSignal,
   });
 
@@ -386,6 +392,11 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
   int _hubIndex = 0;
   int _itemIndex = 0;
+
+  /// Mirrors (_hubIndex, _itemIndex) for the per-card focus selectors, so
+  /// plain left/right moves repaint only the two affected cards instead of
+  /// setState-rebuilding every visible row (expensive on low-end TVs).
+  final _RailFocusPosition _focusPosition = _RailFocusPosition();
   List<double> _sectionOffsets = const [];
   double _sectionMaxScrollExtent = 0;
   Timer? _longPressTimer;
@@ -440,6 +451,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     _focusNode.addListener(_handleFocusChange);
     _selectInitialHubIfPossible();
     final selectedInitialItem = _selectInitialItemIfPossible();
+    _focusPosition.set(_hubIndex, _itemIndex, notify: false);
     _rememberTrailingStates();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || widget.hubs.isEmpty) return;
@@ -476,6 +488,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     if (widget.hubs.isEmpty) {
       _hubIndex = 0;
       _itemIndex = 0;
+      _focusPosition.set(_hubIndex, _itemIndex, notify: false);
       _rememberTrailingStates();
       return;
     }
@@ -496,6 +509,9 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     if (hub == null) return;
     _itemIndex = _itemIndex.clamp(0, _totalItemCount(hub) == 0 ? 0 : _totalItemCount(hub) - 1);
     final selectedInitialItem = _selectInitialItemIfPossible();
+    // notify:false — this runs during the build phase and the enclosing
+    // rebuild already refreshes every selector.
+    _focusPosition.set(_hubIndex, _itemIndex, notify: false);
     final activeHubChanged = oldActiveHubId != _activeHub?.id;
     final activeHubStateChanged =
         _hubStateChanged(oldWidget.hubs, widget.hubs, _hubIndex) ||
@@ -564,6 +580,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
     _detachGestureSignalListener();
     _focusNode.removeListener(_handleFocusChange);
     _focusNode.dispose();
+    _focusPosition.dispose();
     for (final controller in _scrollControllers.values) {
       controller.dispose();
     }
@@ -689,10 +706,11 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
     if (key.isLeftKey) {
       if (_itemIndex > 0) {
-        setState(() {
-          _itemIndex--;
-          _hasUserChangedItem = true;
-        });
+        // No setState: the per-card focus selectors repaint the two affected
+        // cards via _focusPosition; nothing else in the rail depends on it.
+        _itemIndex--;
+        _hasUserChangedItem = true;
+        _focusPosition.set(_hubIndex, _itemIndex);
         _rememberFocus(hub);
         _notifyFocusedItem();
         _scrollToItem(duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
@@ -704,10 +722,9 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
     if (key.isRightKey) {
       if (_itemIndex < _totalItemCount(hub) - 1) {
-        setState(() {
-          _itemIndex++;
-          _hasUserChangedItem = true;
-        });
+        _itemIndex++;
+        _hasUserChangedItem = true;
+        _focusPosition.set(_hubIndex, _itemIndex);
         _rememberFocus(hub);
         _notifyFocusedItem();
         _scrollToItem(duration: event is KeyRepeatEvent ? _repeatNavigationScrollDuration : _navigationScrollDuration);
@@ -749,6 +766,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       _hubIndex = next;
       _itemIndex = remembered.clamp(0, _totalItemCount(nextHub) == 0 ? 0 : _totalItemCount(nextHub) - 1);
       _hasUserChangedHub = true;
+      _focusPosition.set(_hubIndex, _itemIndex, notify: false);
     });
     _notifyFocusedItem();
     _notifyActiveHubChanged();
@@ -792,10 +810,9 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
   void _setHoveredItem(MediaHub hub, int index) {
     if (_activeHub?.id != hub.id || index >= hub.items.length || _itemIndex == index) return;
-    setState(() {
-      _itemIndex = index;
-      _hasUserChangedItem = true;
-    });
+    _itemIndex = index;
+    _hasUserChangedItem = true;
+    _focusPosition.set(_hubIndex, _itemIndex);
     _rememberFocus(hub);
     _notifyFocusedItem();
   }
@@ -813,6 +830,7 @@ class TvBrowseRailState extends State<TvBrowseRail> {
       _itemIndex = clampedItemIndex;
       _hasUserChangedHub = true;
       _hasUserChangedItem = true;
+      _focusPosition.set(_hubIndex, _itemIndex, notify: false);
     });
     _rememberFocus(hub);
     _notifyFocusedItem();
@@ -1228,45 +1246,66 @@ class TvBrowseRailState extends State<TvBrowseRail> {
               ),
               itemCount: totalCount,
               itemBuilder: (context, itemIndex) {
-                final isFocused = hasFocus && isActiveHub && itemIndex == _itemIndex;
+                // Focus is observed through _focusPosition so a d-pad move
+                // rebuilds only the cheap wrapper of the two affected cards;
+                // the card content below is passed through as a stable child.
+                bool isItemFocused() => hasFocus && _focusPosition.value == (hubIndex, itemIndex);
+
                 if (itemIndex == hub.items.length) {
                   return Padding(
                     padding: .only(right: metrics.itemGap),
                     child: Align(
                       alignment: .centerLeft,
-                      child: _buildTrailingSlot(context, hub, hubIndex, itemIndex, isFocused: isFocused, scale: scale),
+                      child: ListenableSelector<bool>(
+                        listenable: _focusPosition,
+                        selector: isItemFocused,
+                        builder: (context, isFocused, _) =>
+                            _buildTrailingSlot(context, hub, hubIndex, itemIndex, isFocused: isFocused, scale: scale),
+                      ),
                     ),
                   );
                 }
 
                 final item = hub.items[itemIndex];
-                final focusableCard = FocusBuilders.buildLockedFocusWrapper(
-                  context: context,
-                  isFocused: isFocused,
-                  borderRadius: tokens(context).radiusSm,
-                  focusScale: fullCardLayout ? TvBrowseRailLayout.fullCardFocusScale : FocusTheme.focusScale,
-                  focusBorderStrokeAlign: fullCardLayout ? BorderSide.strokeAlignOutside : BorderSide.strokeAlignInside,
-                  useFocusGlow: fullCardLayout,
-                  useForegroundFocusDecoration: fullCardLayout,
-                  glowSize: fullCardLayout ? Size(metrics.cardWidth, metrics.posterHeight) : null,
-                  onTap: () {
-                    _selectHubItem(hub, hubIndex, itemIndex);
-                    unawaited(_activateCurrentItem());
-                  },
-                  onLongPress: metrics.isPersonHub
-                      ? null
-                      : () {
-                          _selectHubItem(hub, hubIndex, itemIndex);
-                          _cardKeyFor(hub, itemIndex).currentState?.showContextMenu();
-                        },
+                final focusableCard = ListenableSelector<bool>(
+                  listenable: _focusPosition,
+                  selector: isItemFocused,
+                  builder: (context, isFocused, child) => FocusBuilders.buildLockedFocusWrapper(
+                    context: context,
+                    isFocused: isFocused,
+                    borderRadius: tokens(context).radiusSm,
+                    focusScale: fullCardLayout ? TvBrowseRailLayout.fullCardFocusScale : FocusTheme.focusScale,
+                    focusBorderStrokeAlign: fullCardLayout
+                        ? BorderSide.strokeAlignOutside
+                        : BorderSide.strokeAlignInside,
+                    useFocusGlow: fullCardLayout,
+                    useForegroundFocusDecoration: fullCardLayout,
+                    glowSize: fullCardLayout ? Size(metrics.cardWidth, metrics.posterHeight) : null,
+                    onTap: () {
+                      _selectHubItem(hub, hubIndex, itemIndex);
+                      unawaited(_activateCurrentItem());
+                    },
+                    onLongPress: metrics.isPersonHub
+                        ? null
+                        : () {
+                            _selectHubItem(hub, hubIndex, itemIndex);
+                            _cardKeyFor(hub, itemIndex).currentState?.showContextMenu();
+                          },
+                    child: child!,
+                  ),
+                  // MergeSemantics: one node per card (MediaCard merges
+                  // internally) — the per-frame semantics pass scales with
+                  // node count on TV boxes with an accessibility service.
                   child: metrics.isPersonHub
-                      ? _buildPersonCard(
-                          context,
-                          item,
-                          cardWidth: metrics.cardWidth,
-                          imageSize: metrics.posterHeight,
-                          scale: scale,
-                          fullCardLayout: fullCardLayout,
+                      ? MergeSemantics(
+                          child: _buildPersonCard(
+                            context,
+                            item,
+                            cardWidth: metrics.cardWidth,
+                            imageSize: metrics.posterHeight,
+                            scale: scale,
+                            fullCardLayout: fullCardLayout,
+                          ),
                         )
                       : MediaCard(
                           key: _cardKeyFor(hub, itemIndex),
@@ -1572,15 +1611,19 @@ class TvBrowseRailState extends State<TvBrowseRail> {
 
 class _RailBackgroundBleed extends StatelessWidget {
   final double width;
-  final double targetBleedLeft;
+
+  /// Explicit target; when null the value comes from [MainScreenFocusScope]
+  /// (offset aspect) so sidebar flips rebuild only this widget, not the rail.
+  final double? targetBleedLeft;
   final Color backgroundColor;
 
   const _RailBackgroundBleed({required this.width, required this.targetBleedLeft, required this.backgroundColor});
 
   @override
   Widget build(BuildContext context) {
+    final target = targetBleedLeft ?? MainScreenFocusScope.sideNavigationBleedOf(context);
     return TweenAnimationBuilder<double>(
-      tween: Tween(end: targetBleedLeft),
+      tween: Tween(end: target),
       duration: FocusTheme.getAnimationDuration(context),
       curve: Curves.easeOutCubic,
       child: DecoratedBox(
@@ -1625,5 +1668,23 @@ class _RailClipper extends CustomClipper<Rect> {
         oldClipper.rightOverflow != rightOverflow ||
         oldClipper.topOverflow != topOverflow ||
         oldClipper.bottomOverflow != bottomOverflow;
+  }
+}
+
+/// (hubIndex, itemIndex) focus position observed by the per-card
+/// [ListenableSelector]s. `notify: false` covers build-phase syncs
+/// (initState/didUpdateWidget/setState), where notifying would call setState
+/// on descendants mid-build and the enclosing rebuild refreshes the selectors
+/// anyway.
+class _RailFocusPosition extends ChangeNotifier {
+  (int, int) _value = (0, 0);
+
+  (int, int) get value => _value;
+
+  void set(int hubIndex, int itemIndex, {bool notify = true}) {
+    final next = (hubIndex, itemIndex);
+    if (next == _value) return;
+    _value = next;
+    if (notify) notifyListeners();
   }
 }

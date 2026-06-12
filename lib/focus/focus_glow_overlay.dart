@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../services/device_performance.dart';
 import 'focus_theme.dart';
 
 /// Renders the focus glow for a focused card in the root [Overlay] so it paints
@@ -58,7 +59,7 @@ class _FocusGlowOverlayState extends State<FocusGlowOverlay> {
   @override
   void initState() {
     super.initState();
-    if (widget.isFocused) {
+    if (widget.isFocused && !DevicePerformance.isReduced) {
       _visible = true;
       _controller.show();
     }
@@ -67,6 +68,7 @@ class _FocusGlowOverlayState extends State<FocusGlowOverlay> {
   @override
   void didUpdateWidget(FocusGlowOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (DevicePerformance.isReduced) return;
     if (widget.isFocused == oldWidget.isFocused) return;
     if (widget.isFocused) {
       _controller.show();
@@ -90,6 +92,10 @@ class _FocusGlowOverlayState extends State<FocusGlowOverlay> {
 
   @override
   Widget build(BuildContext context) {
+    // Reduced tier: no glow at all — the blurred shadows + fade saveLayer are
+    // too expensive on weak GPUs. The crisp in-card focus border remains.
+    if (DevicePerformance.isReduced) return widget.child;
+
     // Gate the LeaderLayer to the focused card only: when not focused and not
     // mid-fade, return the bare child (no OverlayPortal, no leader).
     if (!widget.isFocused && !_controller.isShowing) {

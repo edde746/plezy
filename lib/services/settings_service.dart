@@ -11,6 +11,7 @@ import '../i18n/strings.g.dart';
 import '../models/mpv_config_models.dart';
 import '../models/external_player_models.dart';
 import 'base_shared_preferences_service.dart';
+import 'device_performance.dart';
 export 'base_shared_preferences_service.dart'
     show Pref, BoolPref, IntPref, DoublePref, StringPref, NullableStringPref, StringListPref, EnumPref, JsonPref;
 import '../models/transcode_quality_preset.dart';
@@ -362,6 +363,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const requireProfileSelectionOnOpen = BoolPref('require_profile_selection_on_open');
   static const useExternalPlayer = BoolPref('use_external_player');
   static const forceTvMode = BoolPref('force_tv_mode');
+  static const visualEffects = EnumPref<VisualEffectsSetting>(
+    'visual_effects',
+    values: VisualEffectsSetting.values,
+    defaultValue: VisualEffectsSetting.auto,
+  );
   static const ambientLighting = BoolPref('ambient_lighting');
   static const audioPassthrough = BoolPref('audio_passthrough');
   static const audioNormalization = BoolPref('audio_normalization');
@@ -754,6 +760,7 @@ class SettingsService extends BaseSharedPreferencesService {
     requireProfileSelectionOnOpen,
     useExternalPlayer,
     forceTvMode,
+    visualEffects,
     ambientLighting,
     audioPassthrough,
     audioNormalization,

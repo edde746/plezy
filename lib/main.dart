@@ -27,6 +27,7 @@ import 'screens/auth_screen.dart';
 import 'screens/profile/pin_entry_dialog.dart';
 import 'screens/profile/profile_switch_screen.dart';
 import 'services/storage_service.dart';
+import 'services/device_performance.dart';
 import 'services/macos_window_service.dart';
 import 'services/native_window_service.dart';
 import 'services/fullscreen_state_manager.dart';
@@ -176,15 +177,6 @@ Future<void> _bootstrapApp() async {
     await settings.write(SettingsService.cleanedOldImageCache, true);
   }
 
-  // Configure image cache — keep budget modest to leave headroom for Skia decode buffers
-  if (PlatformDetector.isDesktopOS()) {
-    PaintingBinding.instance.imageCache.maximumSize = 1000;
-    PaintingBinding.instance.imageCache.maximumSizeBytes = 150 << 20; // 150MB
-  } else {
-    PaintingBinding.instance.imageCache.maximumSize = 800;
-    PaintingBinding.instance.imageCache.maximumSizeBytes = 100 << 20; // 100MB
-  }
-
   final futures = <Future<void>>[];
 
   if (PlatformDetector.isDesktopOS()) {
@@ -199,6 +191,8 @@ Future<void> _bootstrapApp() async {
   if (Platform.isAndroid || Platform.isIOS) {
     futures.add(TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode)));
   }
+  // Visual-effects tier (auto-detects low-end Android; full elsewhere).
+  futures.add(DevicePerformance.getInstance(override: settings.read(SettingsService.visualEffects)));
   if (Platform.isAndroid) {
     PipService();
   }
@@ -211,6 +205,10 @@ Future<void> _bootstrapApp() async {
 
   await Future.wait(futures);
   final storage = await storageFuture;
+
+  // Configure image cache — keep budget modest to leave headroom for Skia
+  // decode buffers. Runs after the futures so the effects tier is resolved.
+  DevicePerformance.applyImageCacheBudget();
 
   // The PLEX_TOKEN dart-define (screenshot automation) is consumed by
   // [ConnectionBootstrap.seedFromDevTokenDefine] later, when the registry
@@ -225,7 +223,10 @@ Future<void> _bootstrapApp() async {
   if (Platform.isAndroid) {
     renderer = ' [${await const MethodChannel('com.plezy/theme').invokeMethod<String>('getRenderer')}]';
   }
-  appLogger.i('Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer');
+  appLogger.i(
+    'Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer'
+    ' [effects: ${DevicePerformance.describeSync()}]',
+  );
 
   await DownloadStorageService.instance.initialize(settings);
 

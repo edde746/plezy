@@ -8,6 +8,39 @@ import '../mixins/mounted_set_state_mixin.dart';
 import '../utils/platform_detector.dart';
 import 'clickable_cursor.dart';
 
+bool _keyboardTextWarmedUp = false;
+
+/// One-shot warm-up of the keyboard's text layout caches.
+///
+/// The first keyboard open lays out ~60 key labels in one frame; on low-end
+/// TVs the first paragraph alone measured 130ms+ (cold font/shaping caches)
+/// and the full first open ~315ms. Laying the keyboard's glyph set out once
+/// during startup idle moves that cost off the first real open. Subsequent
+/// calls are no-ops.
+void warmUpTvVirtualKeyboardText(BuildContext context) {
+  if (_keyboardTextWarmedUp || !PlatformDetector.isTV()) return;
+  _keyboardTextWarmedUp = true;
+  // Matches the key cap style (titleLarge w800, see _buildKey) at the sizes
+  // the metrics clamp to; shaping caches are per font/size.
+  final baseStyle = Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800);
+  const samples = [
+    'abcdefghijklmnopqrstuvwxyz',
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+    '0123456789 @#_/:=&-+()[]{}<>!?\'".,;*%\\^~|',
+    'Space Del Line Shift Symbols Done Cancel Clear Search Next Go',
+  ];
+  for (final fontSize in const [18.0, 22.0]) {
+    final style = baseStyle?.copyWith(fontSize: fontSize);
+    for (final sample in samples) {
+      final painter = TextPainter(
+        text: TextSpan(text: sample, style: style),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      painter.dispose();
+    }
+  }
+}
+
 Future<void> showTvVirtualKeyboard({
   required BuildContext context,
   required TextEditingController controller,

@@ -513,6 +513,24 @@ class TranslationsSettingsEn {
 	/// en: 'Use image-only TV cards with actor names overlaid'
 	String get tvFullCardLayoutDescription => 'Use image-only TV cards with actor names overlaid';
 
+	/// en: 'Visual Effects'
+	String get visualEffects => 'Visual Effects';
+
+	/// en: 'Auto'
+	String get visualEffectsAuto => 'Auto';
+
+	/// en: 'Reduce effects automatically on low-power devices'
+	String get visualEffectsAutoDescription => 'Reduce effects automatically on low-power devices';
+
+	/// en: 'Full'
+	String get visualEffectsFull => 'Full';
+
+	/// en: 'Reduced'
+	String get visualEffectsReduced => 'Reduced';
+
+	/// en: 'Fewer animations and lower-resolution artwork'
+	String get visualEffectsReducedDescription => 'Fewer animations and lower-resolution artwork';
+
 	/// en: 'Hide Spoilers for Unwatched Episodes'
 	String get hideSpoilers => 'Hide Spoilers for Unwatched Episodes';
 
@@ -4586,6 +4604,12 @@ extension on Translations {
 			'settings.showSeasonPostersOnTabsDescription' => 'Show each season\'s poster above its tab',
 			'settings.tvFullCardLayout' => 'Full TV Cards',
 			'settings.tvFullCardLayoutDescription' => 'Use image-only TV cards with actor names overlaid',
+			'settings.visualEffects' => 'Visual Effects',
+			'settings.visualEffectsAuto' => 'Auto',
+			'settings.visualEffectsAutoDescription' => 'Reduce effects automatically on low-power devices',
+			'settings.visualEffectsFull' => 'Full',
+			'settings.visualEffectsReduced' => 'Reduced',
+			'settings.visualEffectsReducedDescription' => 'Fewer animations and lower-resolution artwork',
 			'settings.hideSpoilers' => 'Hide Spoilers for Unwatched Episodes',
 			'settings.hideSpoilersDescription' => 'Blur thumbnails and descriptions for unwatched episodes',
 			'settings.playerBackend' => 'Player Backend',
@@ -4968,14 +4992,14 @@ extension on Translations {
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
+			_ => null,
+		} ?? switch (path) {
 			'messages.logId' => 'Log ID',
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Border',
 			'subtitlingStyling.background' => 'Background',
 			'subtitlingStyling.fontSize' => 'Font Size',
 			'subtitlingStyling.textColor' => 'Text Color',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.borderSize' => 'Border Size',
 			'subtitlingStyling.borderColor' => 'Border Color',
 			'subtitlingStyling.backgroundOpacity' => 'Background Opacity',
@@ -5482,14 +5506,14 @@ extension on Translations {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',
 			'companionRemote.remote.retryNow' => 'Retry Now',
 			'companionRemote.remote.tabRemote' => 'Remote',
 			'companionRemote.remote.tabPlay' => 'Play',
 			'companionRemote.remote.tabMore' => 'More',
 			'companionRemote.remote.menu' => 'Menu',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.tabNavigation' => 'Tab Navigation',
 			'companionRemote.remote.tabDiscover' => 'Discover',
 			'companionRemote.remote.tabLibraries' => 'Libraries',

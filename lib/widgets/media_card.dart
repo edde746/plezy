@@ -253,19 +253,28 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
   /// Grid layout — inlined from former _MediaCardGrid, _PosterOverlay, and
   /// flattened Column. Semantics removed (InkWell provides button semantics).
+  ///
+  /// MergeSemantics collapses the card (texts, progress, button) into ONE
+  /// semantics node. Browse rails/grids show dozens of cards and the
+  /// platform-driven semantics pass runs every frame on TV boxes with an
+  /// accessibility service active — node count is the cost driver. The card
+  /// has a single action (tap; long-press menu), so merging is safe and gives
+  /// screen readers one coherent announcement per card.
   Widget _buildGridCard(BuildContext context, Object item, String? localPosterPath) {
     if (widget.fullBleedImage) {
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final cardWidth = widget.width ?? (constraints.hasBoundedWidth ? constraints.maxWidth : null);
-          final cardHeight = widget.height ?? (constraints.hasBoundedHeight ? constraints.maxHeight : null);
-          if (cardHeight == null) return _buildStandardGridCard(context, item, localPosterPath);
-          return _buildFullBleedGridCard(context, item, localPosterPath, width: cardWidth, height: cardHeight);
-        },
+      return MergeSemantics(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final cardWidth = widget.width ?? (constraints.hasBoundedWidth ? constraints.maxWidth : null);
+            final cardHeight = widget.height ?? (constraints.hasBoundedHeight ? constraints.maxHeight : null);
+            if (cardHeight == null) return _buildStandardGridCard(context, item, localPosterPath);
+            return _buildFullBleedGridCard(context, item, localPosterPath, width: cardWidth, height: cardHeight);
+          },
+        ),
       );
     }
 
-    return _buildStandardGridCard(context, item, localPosterPath);
+    return MergeSemantics(child: _buildStandardGridCard(context, item, localPosterPath));
   }
 
   Widget _buildFullBleedGridCard(

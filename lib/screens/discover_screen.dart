@@ -56,6 +56,7 @@ import '../mixins/item_updatable.dart';
 import '../mixins/watch_state_aware.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/app_logger.dart';
+import '../utils/debouncer.dart';
 import '../utils/dialogs.dart';
 import '../utils/formatters.dart';
 import '../utils/media_hub_ordering.dart';
@@ -144,7 +145,12 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   final ValueNotifier<double> _indicatorProgress = ValueNotifier(0.0);
   bool _isAutoScrollPaused = false;
   bool _heroFocusPausedAutoScroll = false;
-  MediaItem? _spotlightItem;
+  // ValueNotifier (not setState) so a spotlight swap rebuilds only the
+  // TvSpotlightBackground subtree, never the rail/rows.
+  final ValueNotifier<MediaItem?> _spotlightItem = ValueNotifier(null);
+  // Settle delay so d-pad scrubbing across a row doesn't fetch/decode a
+  // full-screen backdrop for every intermediate item.
+  final Debouncer _spotlightDebouncer = Debouncer(const Duration(milliseconds: 150));
   bool _isTabVisible = true;
   HiddenLibrariesProvider? _hiddenLibrariesProvider;
   LibrariesProvider? _librariesProvider;
@@ -283,7 +289,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   MediaItem? get _effectiveSpotlightItem {
-    final current = _spotlightItem;
+    final current = _spotlightItem.value;
     if (current == null) return _defaultSpotlightItem;
     if (_onDeck.any((item) => item.globalKey == current.globalKey)) return current;
     for (final hub in _hubs) {
@@ -293,8 +299,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   void _setSpotlightItem(MediaItem item) {
-    if (_spotlightItem?.globalKey == item.globalKey) return;
-    setState(() => _spotlightItem = item);
+    // Same-key check lives inside the callback: an A→B→A scrub must cancel
+    // the pending B, not early-return and let it fire.
+    _spotlightDebouncer.run(() {
+      if (!mounted) return;
+      if (_spotlightItem.value?.globalKey == item.globalKey) return;
+      _spotlightItem.value = item;
+    });
   }
 
   void _scrollToTop() {
@@ -552,6 +563,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     WidgetsBinding.instance.removeObserver(this);
     _autoScrollTimer?.cancel();
     _indicatorTimer?.cancel();
+    _spotlightDebouncer.dispose();
+    _spotlightItem.dispose();
     _pendingSystemShelfItems = null;
     _indicatorProgress.dispose();
     _heroController.dispose();
@@ -1543,18 +1556,16 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   Widget _buildTvContent(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final theme = Theme.of(context);
-    final spotlight = _effectiveSpotlightItem;
     final svc = SettingsService.instance;
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
     final browseHubs = _tvBrowseHubs;
     final scale = TvLayoutConstants.scaleForSize(size);
-    final sidebarBleed = MainScreenFocusScope.sideNavigationBleedOf(
-      context,
-      alwaysKeepSidebarOpen: svc.read(SettingsService.alwaysKeepSidebarOpen),
-    );
+    // Only layout-aspect (flip-stable) scope values may be read here: an
+    // offset-aspect read at this level would rebuild the whole screen on
+    // every sidebar focus flip. Offset values are read in small Builders
+    // around the widgets that position against them.
     final railSize = MainScreenFocusScope.foregroundSizeOf(context);
     final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
-    final foregroundLeft = MainScreenFocusScope.foregroundLeftOf(context);
     final railHeight = browseHubs.isEmpty
         ? 0.0
         : TvBrowseRailLayout.estimateHeight(
@@ -1580,21 +1591,35 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned(
-            top: 0,
-            bottom: 0,
-            left: -foregroundLeft,
-            width: fullBleedWidth,
-            child: TvSpotlightBackground(
-              item: spotlight,
-              client: _getMediaClientForItem(spotlight),
-              hideSpoilers: hideSpoilers,
-              contentTop: spotlightTop,
-              contentBottom: spotlightBottom,
-              contentLeft: spotlightLeft + foregroundLeft,
-              compact: true,
-              showPrimaryAction: false,
-            ),
+          // The animated -bleed mirrors the content-slide tween in MainScreen,
+          // keeping the full-bleed background viewport-pinned while the
+          // content box slides during sidebar expansion. The Builder scopes
+          // the offset-aspect dependency to just this subtree.
+          Builder(
+            builder: (context) {
+              final foregroundLeft = MainScreenFocusScope.foregroundLeftOf(context);
+              return SideNavigationBleedBuilder(
+                targetBleed: foregroundLeft,
+                child: ValueListenableBuilder<MediaItem?>(
+                  valueListenable: _spotlightItem,
+                  builder: (context, _, _) {
+                    final spotlight = _effectiveSpotlightItem;
+                    return TvSpotlightBackground(
+                      item: spotlight,
+                      client: _getMediaClientForItem(spotlight),
+                      hideSpoilers: hideSpoilers,
+                      contentTop: spotlightTop,
+                      contentBottom: spotlightBottom,
+                      contentLeft: spotlightLeft + foregroundLeft,
+                      compact: true,
+                      showPrimaryAction: false,
+                    );
+                  },
+                ),
+                builder: (context, animatedBleed, child) =>
+                    Positioned(top: 0, bottom: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
+              );
+            },
           ),
           if (_isLoading || (_areHubsLoading && browseHubs.isEmpty)) const Center(child: CircularProgressIndicator()),
           if (_errorMessage != null)
@@ -1642,17 +1667,18 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onNavigateUp: _focusTopActions,
                 onNavigateToSidebar: _navigateToSidebar,
                 tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
-                backgroundBleedLeft: sidebarBleed,
                 selectSuppressionGestureSignal: PlatformDetector.isAppleTV()
                     ? AppleTvRemoteTouchService.instance.touchActiveListenable
                     : null,
               ),
             ),
-          SideNavigationBleedBuilder(
-            targetBleed: sidebarBleed,
-            child: ExcludeFocusTraversal(child: _buildOverlaidAppBar()),
-            builder: (context, animatedBleed, child) =>
-                Positioned(top: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
+          Builder(
+            builder: (context) => SideNavigationBleedBuilder(
+              targetBleed: MainScreenFocusScope.sideNavigationBleedOf(context),
+              child: ExcludeFocusTraversal(child: _buildOverlaidAppBar()),
+              builder: (context, animatedBleed, child) =>
+                  Positioned(top: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
+            ),
           ),
           if (_switchingProfile) const ProfileSwitchingOverlay(),
         ],

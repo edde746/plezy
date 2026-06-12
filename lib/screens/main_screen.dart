@@ -1,6 +1,10 @@
 import 'dart:async';
 import '../media/ids.dart';
+import '../navigation/main_screen_scope.dart';
 import 'dart:io' show Platform, exit;
+
+export '../navigation/main_screen_scope.dart'
+    show MainScreenFocusScope, MainScreenScopeAspect, SideNavigationBleedBuilder;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
@@ -34,6 +38,7 @@ import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../widgets/settings_builder.dart';
+import '../widgets/tv_virtual_keyboard.dart';
 import '../services/api_cache.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_watch_sync_service.dart';
@@ -59,96 +64,9 @@ import '../services/system_shelf_service.dart';
 import '../watch_together/watch_together.dart';
 
 /// Provides access to the main screen's focus control.
-class MainScreenFocusScope extends InheritedWidget {
-  final VoidCallback focusSidebar;
-  final VoidCallback focusContent;
-  final bool isSidebarFocused;
-  final double sideNavigationWidth;
-  final double? reservedSideNavigationWidth;
-  final double? foregroundLeft;
-  final double? foregroundWidth;
-  final double? viewportWidth;
-  final void Function(String libraryGlobalKey)? selectLibrary;
-  final VoidCallback? openSettings;
-
-  const MainScreenFocusScope({
-    super.key,
-    required this.focusSidebar,
-    required this.focusContent,
-    required this.isSidebarFocused,
-    required this.sideNavigationWidth,
-    this.reservedSideNavigationWidth,
-    this.foregroundLeft,
-    this.foregroundWidth,
-    this.viewportWidth,
-    this.selectLibrary,
-    this.openSettings,
-    required super.child,
-  });
-
-  static MainScreenFocusScope? of(BuildContext context, {bool listen = true}) {
-    if (listen) return context.dependOnInheritedWidgetOfExactType<MainScreenFocusScope>();
-    return context.getElementForInheritedWidgetOfExactType<MainScreenFocusScope>()?.widget as MainScreenFocusScope?;
-  }
-
-  static double sideNavigationBleedOf(BuildContext context, {required bool alwaysKeepSidebarOpen}) {
-    final width = of(context)?.sideNavigationWidth;
-    if (width != null) return width;
-    return 0.0;
-  }
-
-  static double foregroundWidthOf(BuildContext context) {
-    final width = of(context)?.foregroundWidth;
-    if (width != null && width > 0) return width;
-    return MediaQuery.sizeOf(context).width;
-  }
-
-  static double foregroundLeftOf(BuildContext context) {
-    final left = of(context)?.foregroundLeft;
-    if (left != null) return left;
-    return 0.0;
-  }
-
-  static Size foregroundSizeOf(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    return Size(foregroundWidthOf(context), size.height);
-  }
-
-  static double fullBleedWidthOf(BuildContext context) {
-    final width = of(context)?.viewportWidth;
-    if (width != null && width > 0) return width;
-    return MediaQuery.sizeOf(context).width;
-  }
-
-  @override
-  bool updateShouldNotify(MainScreenFocusScope oldWidget) {
-    return isSidebarFocused != oldWidget.isSidebarFocused ||
-        sideNavigationWidth != oldWidget.sideNavigationWidth ||
-        reservedSideNavigationWidth != oldWidget.reservedSideNavigationWidth ||
-        foregroundLeft != oldWidget.foregroundLeft ||
-        foregroundWidth != oldWidget.foregroundWidth ||
-        viewportWidth != oldWidget.viewportWidth;
-  }
-}
-
-class SideNavigationBleedBuilder extends StatelessWidget {
-  final double targetBleed;
-  final Widget? child;
-  final Widget Function(BuildContext context, double bleed, Widget? child) builder;
-
-  const SideNavigationBleedBuilder({super.key, required this.targetBleed, this.child, required this.builder});
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<double>(
-      tween: Tween(end: targetBleed),
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOutCubic,
-      builder: builder,
-      child: child,
-    );
-  }
-}
+// MainScreenFocusScope and SideNavigationBleedBuilder live in
+// navigation/main_screen_scope.dart (re-exported above) so widgets like the
+// browse rail can import the scope without an import cycle through this file.
 
 @visibleForTesting
 ({double left, double width}) mainScreenSideNavigationContentLayout({
@@ -343,6 +261,17 @@ class _MainScreenState extends State<MainScreen>
         ? preferredStartup
         : null;
     _screens = _buildScreens(_isOffline);
+
+    // Warm the TV keyboard's text-layout caches off the first real open
+    // (measured ~315ms first-open frame on low-end boxes, mostly cold font
+    // shaping). Delayed past the startup burst; no-op off TV.
+    if (PlatformDetector.isTV()) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) warmUpTvVirtualKeyboardText(context);
+        });
+      });
+    }
 
     // Set up Watch Together callbacks immediately (must be synchronous to catch early messages)
     if (!_isOffline) {
@@ -1616,9 +1545,14 @@ class _MainScreenState extends State<MainScreen>
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       final viewportWidth = constraints.maxWidth;
+                      // Layout from the tween END value: deriving it from the
+                      // animated value changed MainScreenFocusScope every tick
+                      // of the sidebar expansion, rebuilding every dependent
+                      // (the whole TV content tree) per frame. The slide is a
+                      // paint-only translate on the content below instead.
                       final contentLayout = mainScreenSideNavigationContentLayout(
                         viewportWidth: viewportWidth,
-                        currentSideNavigationWidth: contentLeftPadding,
+                        currentSideNavigationWidth: targetContentOffset,
                         reservedSideNavigationWidth: reservedContentOffset,
                       );
                       return MainScreenFocusScope(
@@ -1641,7 +1575,13 @@ class _MainScreenState extends State<MainScreen>
                                 bottom: 0,
                                 left: contentLayout.left,
                                 width: contentLayout.width,
-                                child: contentChild!,
+                                // Duration/curve of this tween must stay in
+                                // sync with SideNavigationBleedBuilder, which
+                                // counter-animates viewport-pinned overlays.
+                                child: Transform.translate(
+                                  offset: Offset(contentLeftPadding - targetContentOffset, 0),
+                                  child: contentChild!,
+                                ),
                               ),
                               Positioned(
                                 top: 0,
