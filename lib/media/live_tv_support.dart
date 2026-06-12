@@ -107,10 +107,9 @@ class LiveTvStreamResolution {
 /// [lineup] (Plex provider identifier) to [fetchChannels].
 ///
 /// Stream URL resolution differs sharply by backend: Plex's DVR allocates a
-/// transcode session and returns a session-scoped path that requires
-/// follow-up calls (`tuneChannel` + `buildLiveStreamPath`). Jellyfin returns a
-/// direct-play URL. [resolveStreamUrl] returns the Jellyfin URL directly;
-/// Plex callers use the existing `client + dvrKey` plumbing inside the player.
+/// transcode session and returns a session-scoped path; Jellyfin negotiates
+/// a direct-play URL. [startPlayback] owns that difference behind
+/// [LiveTvPlaybackSession] — it is the only entry playback callers use.
 abstract class LiveTvSupport {
   /// Fast probe — `true` when this server has live-TV configured. Plex calls
   /// `/livetv/dvrs` and returns true when any DVR exists; Jellyfin probes

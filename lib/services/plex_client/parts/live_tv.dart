@@ -110,7 +110,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
   /// Returns an updated [CaptureBuffer] if the response contains a
   /// `TranscodeSession` with seek-range data (used to expand the seekable
   /// window over time).
-  Future<CaptureBuffer?> updateLiveTimeline({
+  Future<CaptureBuffer?> _updateLiveTimeline({
     required String ratingKey,
     required String sessionPath,
     required String sessionIdentifier,
@@ -790,7 +790,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
   /// Tune to a live TV channel.
   ///
   /// POSTs to the tune endpoint and extracts metadata, session info, and
-  /// capture buffer data from the response. Call [buildLiveStreamPath] after
+  /// capture buffer data from the response. Call [_buildLiveStreamPath] after
   /// to build the actual stream URL (with optional offset for time-shift).
   Future<
     ({
@@ -801,7 +801,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
       int? beginsAt,
     })?
   >
-  tuneChannel(String dvrKey, String channelIdentifier) async {
+  _tuneChannel(String dvrKey, String channelIdentifier) async {
     try {
       final sessionIdentifier = PlexClient.generateSessionIdentifier();
 
@@ -951,12 +951,12 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
 
   /// Build a live TV stream URL (decision + start path).
   ///
-  /// [sessionPath] and [sessionIdentifier] come from [tuneChannel].
+  /// [sessionPath] and [sessionIdentifier] come from [_tuneChannel].
   /// [transcodeSessionId] should be reused across seeks within the same
   /// viewing session so the server reuses its capture buffer.
   /// [offsetSeconds] positions the stream at that many seconds from the
   /// capture buffer origin (for time-shift / watch-from-start).
-  Future<String?> buildLiveStreamPath({
+  Future<String?> _buildLiveStreamPath({
     required String sessionPath,
     required String sessionIdentifier,
     required String transcodeSessionId,
@@ -1043,11 +1043,11 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
   }
 
   /// Compose a fully-qualified live stream URL from a relative
-  /// [streamPath] (returned by [buildLiveStreamPath]) by prefixing the
+  /// [streamPath] (returned by [_buildLiveStreamPath]) by prefixing the
   /// configured base URL and appending the Plex token. Centralizes the
   /// `'${config.baseUrl}$streamPath'.withPlexToken(config.token)` pattern
   /// so token placement / base-URL handling lives in one place.
-  String buildLiveStreamUrl(String streamPath) {
+  String _buildLiveStreamUrl(String streamPath) {
     return '${config.baseUrl}$streamPath'.withPlexToken(config.token);
   }
 
@@ -1152,7 +1152,7 @@ mixin _PlexLiveTvClientMethods on MediaServerCacheMixin {
 }
 
 /// Plex implementation of [LiveTvSupport] — wraps the existing per-DVR
-/// methods. The `tuneChannel` / `buildLiveStreamPath` protocol flow lives on
+/// methods. The tune / stream-path protocol flow lives privately on
 /// [PlexClient]; [startPlayback] packages it behind the backend-neutral
 /// [LiveTvPlaybackSession], and [resolveStreamUrl] returns `null` because a
 /// Plex stream URL is only valid inside a tuned session.
@@ -1445,7 +1445,7 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
     bool directStream = true,
     bool directStreamAudio = true,
   }) async {
-    final tuneResult = await client.tuneChannel(dvrKey, channelKey);
+    final tuneResult = await client._tuneChannel(dvrKey, channelKey);
     if (tuneResult == null) return null;
 
     return _PlexLiveTvPlaybackSession._(
@@ -1471,7 +1471,7 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
 
   @override
   Future<String?> streamUrlAt({int? offsetSeconds}) async {
-    final streamPath = await _client.buildLiveStreamPath(
+    final streamPath = await _client._buildLiveStreamPath(
       sessionPath: _sessionPath,
       sessionIdentifier: _sessionIdentifier,
       transcodeSessionId: _transcodeSessionId,
@@ -1479,7 +1479,7 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
       directStream: _directStream,
       directStreamAudio: _directStreamAudio,
     );
-    return streamPath == null ? null : _client.buildLiveStreamUrl(streamPath);
+    return streamPath == null ? null : _client._buildLiveStreamUrl(streamPath);
   }
 
   @override
@@ -1487,7 +1487,7 @@ class _PlexLiveTvPlaybackSession implements LiveTvPlaybackSession {
     // Plex rejects timeline pings where time > duration; grow duration to
     // match — otherwise Tunarr-style short synthetic programs 400 mid-stream.
     final duration = durationMs >= positionMs ? durationMs : positionMs;
-    return _client.updateLiveTimeline(
+    return _client._updateLiveTimeline(
       // The program ratingKey from tune metadata, not the channel key.
       ratingKey: program.id ?? _channelKey,
       sessionPath: _sessionPath,

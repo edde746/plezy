@@ -2956,7 +2956,7 @@ class PlexClient
 
   /// Build a VOD transcode stream URL (decision + start path).
   ///
-  /// Mirrors [buildLiveStreamPath] but for on-demand video with a quality
+  /// Mirrors the live tune's _buildLiveStreamPath but for on-demand video with a quality
   /// preset, selected audio stream, and Plex Desktop-style HTTP/MKV output.
   /// Text subtitles selected on the Plex part are embedded in the MKV stream;
   /// real external sidecars are still attached separately by callers.
