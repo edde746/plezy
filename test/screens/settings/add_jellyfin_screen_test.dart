@@ -17,7 +17,7 @@ import '../../test_helpers/prefs.dart';
 Profile _profile(String id) =>
     Profile.local(id: id, displayName: id, sortOrder: 0, createdAt: DateTime.fromMillisecondsSinceEpoch(0));
 
-JellyfinConnectionAuthService _jellyfinAuthService({bool quickConnectEnabled = false}) {
+JellyfinConnectionAuthService _jellyfinAuthService({bool quickConnectEnabled = false, Duration? initiateDelay}) {
   return JellyfinConnectionAuthService(
     clientName: 'Plezy',
     clientVersion: 'test',
@@ -33,6 +33,7 @@ JellyfinConnectionAuthService _jellyfinAuthService({bool quickConnectEnabled = f
         case '/QuickConnect/Enabled':
           return http.Response(jsonEncode(quickConnectEnabled), 200, headers: {'content-type': 'application/json'});
         case '/QuickConnect/Initiate':
+          if (initiateDelay != null) await Future<void>.delayed(initiateDelay);
           return http.Response(
             jsonEncode({'Code': '123456', 'Secret': 'qc-secret'}),
             200,
@@ -262,6 +263,67 @@ void main() {
 
     expect(find.text('123456'), findsNothing);
     expect(find.byType(TextField), findsWidgets);
+
+    // Let the cancelled poll's backoff timer fire so the test ends clean.
+    await tester.pump(const Duration(seconds: 6));
+  });
+
+  testWidgets('TV auto Quick Connect never opens the keyboard across the panel swap', (tester) async {
+    resetSharedPreferencesForTest();
+    TvDetectionService.debugSetAppleTVOverride(null);
+    await TvDetectionService.getInstance(forceTv: true);
+    TvDetectionService.setForceTVSync(true);
+
+    await tester.pumpWidget(
+      InputModeTracker(
+        child: MaterialApp(
+          home: AddJellyfinScreen(
+            // Hold /QuickConnect/Initiate open so the frames between probe
+            // success and the panel swap are observable — that window is
+            // where the focus fallback used to auto-open the keyboard.
+            authServiceFactory: () =>
+                _jellyfinAuthService(quickConnectEnabled: true, initiateDelay: const Duration(milliseconds: 50)),
+            localDiscoveryFactory: () async => [
+              DiscoveredJellyfinServer(address: 'http://192.168.1.20:8096', id: 'srv-1', name: 'Home'),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+
+    // D-pad to the discovered server and select it — on TV the probe
+    // auto-starts Quick Connect.
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Discovered:srv-1');
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    await tester.pump();
+
+    // Pre-swap frames: probe done, initiate in flight — no keyboard.
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+
+    await tester.pump(const Duration(milliseconds: 60));
+    await tester.pump();
+
+    // Quick Connect panel swapped in: code shown, Cancel focused, no keyboard.
+    expect(find.text('123456'), findsOneWidget);
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:CancelQuickConnect');
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+    await tester.pump();
+
+    // Form returns; the URL field's autofocus re-fires on a fresh host whose
+    // first-focus suppression keeps the keyboard closed.
+    expect(find.text('123456'), findsNothing);
+    expect(FocusManager.instance.primaryFocus?.debugLabel, 'AddJellyfin:Url');
+    expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
 
     // Let the cancelled poll's backoff timer fire so the test ends clean.
     await tester.pump(const Duration(seconds: 6));

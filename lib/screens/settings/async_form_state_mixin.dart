@@ -9,9 +9,17 @@ import 'package:flutter/widgets.dart';
 /// Mid-flow state changes (e.g. clearing busy *before* the body finishes so
 /// the UI can swap into a "waiting" panel) are still possible via [setBusy]
 /// from inside the [runAsync] body — the `finally` clears busy idempotently.
+///
+/// [runAsync] calls must be sequenced, never overlapped: there is a single
+/// busy flag, so the first call to finish clears it while the other is still
+/// running. Don't start a second runAsync (or fire one with `unawaited`)
+/// while another that can still apply state is in flight — debug-asserted.
+/// Overlapping a *stale* run whose [runAsync]'s `shouldApplyState` has gone
+/// false (e.g. a cancelled poll unwinding) is fine; it no longer touches busy.
 mixin AsyncFormStateMixin<T extends StatefulWidget> on State<T> {
   bool _busy = false;
   String? _errorText;
+  final List<bool Function()> _activeRunAsyncGuards = [];
 
   bool get busy => _busy;
   String? get errorText => _errorText;
@@ -39,6 +47,16 @@ mixin AsyncFormStateMixin<T extends StatefulWidget> on State<T> {
   }) async {
     bool canApplyState() => mounted && (shouldApplyState?.call() ?? true);
     if (!canApplyState()) return null;
+    assert(
+      !_activeRunAsyncGuards.any((stillApplies) => stillApplies()),
+      'runAsync overlapped with another runAsync that can still apply state: '
+      'the first to finish clears busy out from under the other. Sequence the '
+      'calls (await the first) instead of nesting or unawaiting them.',
+    );
+    assert(() {
+      _activeRunAsyncGuards.add(canApplyState);
+      return true;
+    }());
     setState(() {
       _busy = true;
       _errorText = null;
@@ -51,6 +69,10 @@ mixin AsyncFormStateMixin<T extends StatefulWidget> on State<T> {
       }
       return null;
     } finally {
+      assert(() {
+        _activeRunAsyncGuards.remove(canApplyState);
+        return true;
+      }());
       if (canApplyState()) setState(() => _busy = false);
     }
   }

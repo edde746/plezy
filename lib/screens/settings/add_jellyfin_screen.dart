@@ -188,7 +188,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
       setErrorText(t.addServer.enterJellyfinUrlError);
       return;
     }
-    await runAsync<void>(
+    final autoStartQuickConnect = await runAsync<bool>(
       () async {
         final auth = await _buildAuthService();
         final endpoint = await auth.raceEndpoints(
@@ -197,7 +197,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
           baseUrlValidationGroups: input.validationBaseUrlGroups,
         );
         final qcEnabled = await auth.isQuickConnectEnabled(endpoint.activeBaseUrl);
-        if (!mounted) return;
+        if (!mounted) return false;
         setState(() {
           _serverEndpoint = endpoint;
           _serverInfo = endpoint.serverInfo;
@@ -207,15 +207,19 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         // On TV, typing a username/password with a remote is misery — auto-jump
         // to Quick Connect when the server supports it. Mirrors the
         // PlatformDetector.isTV() default in add_plex_account_screen.dart.
-        if (qcEnabled && PlatformDetector.isTV()) {
-          unawaited(_startQuickConnect());
-        } else {
-          _requestFocusAfterFrame(_usernameFocus);
-        }
+        final autoStart = qcEnabled && PlatformDetector.isTV();
+        if (!autoStart) _requestFocusAfterFrame(_usernameFocus);
+        return autoStart;
       },
       errorMapper: (e) =>
           e is MediaServerUrlException ? e.message : t.addServer.couldNotReachServer(error: e.toString()),
     );
+    // Sequenced after the probe's runAsync so busy stays set straight through
+    // /QuickConnect/Initiate. Started from inside the probe body, the probe's
+    // `finally` cleared busy mid-initiate, re-enabling the form — the focus
+    // fallback from the removed tile/button then landed on the URL field and
+    // auto-opened the TV keyboard over the Quick Connect panel.
+    if (autoStartQuickConnect == true && mounted) await _startQuickConnect();
   }
 
   Future<void> _signIn() async {
