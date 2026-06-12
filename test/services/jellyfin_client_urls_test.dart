@@ -1743,6 +1743,48 @@ void main() {
       expect(pages.single.first.id, 'child-0');
     });
 
+    test('fetchFolderChildren pages show/season children through onPage', () async {
+      final starts = <String?>[];
+      final pages = <List<MediaItem>>[];
+      final scoped = JellyfinClient.forTesting(
+        connection: _conn(),
+        httpClient: MockClient((req) async {
+          if (req.url.path.contains('/Shows/')) {
+            // A season id is not a series — falls through to the ParentId query.
+            return http.Response('Not Found', 404);
+          }
+          starts.add(req.url.queryParameters['StartIndex']);
+          final start = int.parse(req.url.queryParameters['StartIndex'] ?? '0');
+          const total = 501;
+          final end = start == 0 ? 500 : total;
+          return http.Response(
+            jsonEncode({
+              'Items': [
+                for (var i = start; i < end; i++) {'Id': 'ep-$i', 'Type': 'Episode', 'Name': 'Episode $i'},
+              ],
+              'TotalRecordCount': total,
+            }),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(scoped.close);
+
+      final items = await scoped.fetchFolderChildren(
+        MediaItem(id: 'season-1', backend: MediaBackend.jellyfin, kind: MediaKind.season),
+        onPage: pages.add,
+      );
+
+      expect(starts, ['0', '500']);
+      expect(items, hasLength(501));
+      // Large seasons render incrementally in the folder tree too: the
+      // metadata-hierarchy path must not sever the onPage chain.
+      expect(pages, hasLength(1));
+      expect(pages.single, hasLength(500));
+      expect(pages.single.first.id, 'ep-0');
+    });
+
     test('fetchClientSideEpisodeQueue pages past the first 200 episodes', () async {
       final starts = <String?>[];
       final pagedClient = JellyfinClient.forTesting(

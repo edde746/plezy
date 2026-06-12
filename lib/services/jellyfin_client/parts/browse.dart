@@ -488,7 +488,16 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   }
 
   @override
-  Future<List<MediaItem>> fetchChildren(String parentId) async {
+  Future<List<MediaItem>> fetchChildren(String parentId) => _fetchChildrenInternal(parentId);
+
+  /// [fetchChildren] plus incremental delivery: [onPage] receives the
+  /// accumulated items after each intermediate page of the generic
+  /// direct-children query — never for single-page listings, the final page,
+  /// or the single-shot seasons response.
+  Future<List<MediaItem>> _fetchChildrenInternal(
+    String parentId, {
+    void Function(List<MediaItem> itemsSoFar)? onPage,
+  }) async {
     // Cache keys include userId so two users on the same server don't share
     // per-user UserData (watched state) baked into the response.
     final seasonsKey = '/Shows/$parentId/Seasons?userId=${connection.userId}';
@@ -555,6 +564,9 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
       }
       if (page.isEmpty || page.length < _childrenPageSize) break;
       startIndex += page.length;
+      if (onPage != null && (totalRecordCount == null || startIndex < totalRecordCount)) {
+        onPage(_mapItems(allRaw));
+      }
     }
     try {
       await cache.put(ServerId(cacheServerId), childrenKey, {'Items': allRaw, 'TotalRecordCount': allRaw.length});
@@ -664,7 +676,9 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
     String? libraryTitle,
     void Function(List<MediaItem> itemsSoFar)? onPage,
   }) {
-    if (folder.kind == MediaKind.show || folder.kind == MediaKind.season) return fetchChildren(folder.id);
+    if (folder.kind == MediaKind.show || folder.kind == MediaKind.season) {
+      return _fetchChildrenInternal(folder.id, onPage: onPage);
+    }
     return _fetchFolderChildren(folder.id, onPage: onPage);
   }
 
