@@ -52,7 +52,7 @@ import '../utils/content_utils.dart';
 import '../media/media_sort.dart';
 import '../models/plex/plex_video_playback_data.dart';
 import '../models/transcode_quality_preset.dart';
-import '../utils/endpoint_failover_interceptor.dart';
+import '../utils/failover_http_client.dart';
 import '../utils/app_logger.dart';
 import '../utils/media_server_retry.dart';
 import '../utils/media_server_timeouts.dart';
@@ -208,8 +208,7 @@ class PlexClient
   PlexConfig config;
 
   @override
-  late final MediaServerHttpClient _http;
-  final EndpointFailoverManager? _endpointManager;
+  late final FailoverHttpClient _http;
   final Future<void> Function(String newBaseUrl)? _onEndpointChanged;
   final VoidCallback? _onAllEndpointsExhausted;
 
@@ -323,18 +322,20 @@ class PlexClient
     this._onEndpointChanged,
     this._onAllEndpointsExhausted,
     http.Client? httpClient,
-  }) : _endpointManager = (prioritizedEndpoints != null && prioritizedEndpoints.isNotEmpty)
-           ? EndpointFailoverManager(prioritizedEndpoints)
-           : null {
+  }) {
     LogRedactionManager.registerServer(config.baseUrl, config.token);
 
-    _http = MediaServerHttpClient(
+    _http = FailoverHttpClient(
       baseUrl: config.baseUrl,
       defaultHeaders: config.headers,
       connectTimeout: MediaServerTimeouts.connect,
       receiveTimeout: MediaServerTimeouts.receive,
       usePlexApiClient: true,
       client: httpClient,
+      logLabel: 'Plex',
+      prioritizedEndpoints: prioritizedEndpoints ?? const [],
+      onEndpointSwitch: (newBaseUrl, {required persist}) => _handleEndpointSwitch(newBaseUrl, persist: persist),
+      onAllEndpointsExhausted: _onAllEndpointsExhausted,
     );
   }
 
@@ -380,10 +381,9 @@ class PlexClient
     return _http.closeGracefully(drainTimeout: drainTimeout);
   }
 
-  bool _failoverSwitching = false;
-
-  /// Execute a GET request with endpoint failover retry. On timeout/connection
-  /// errors the next endpoint is tried (once). Non-GET methods are not retried.
+  /// Execute a GET request with endpoint failover (see [FailoverHttpClient]
+  /// for the shared semantics) and Plex's status-code policy: non-2xx
+  /// responses throw so callers don't blindly cast error bodies.
   /// Optional hub surfaces disable endpoint failover so a slow row does not
   /// move the whole client away from an otherwise working endpoint.
   @override
@@ -395,74 +395,16 @@ class PlexClient
     AbortController? abort,
     bool allowEndpointFailover = true,
   }) async {
-    final gen = _endpointManager?.generation;
-    try {
-      final response = await _http.get(
-        path,
-        queryParameters: queryParameters,
-        headers: headers,
-        timeout: timeout,
-        abort: abort,
-      );
-      throwIfHttpError(response);
-      return response;
-    } on MediaServerHttpException catch (e) {
-      if (!allowEndpointFailover ||
-          !_shouldAttemptFailover(e) ||
-          _failoverSwitching ||
-          _endpointManager == null ||
-          gen != _endpointManager.generation) {
-        rethrow;
-      }
-
-      if (!_endpointManager.hasFallback) {
-        final resetBaseUrl = _endpointManager.resetToFirst();
-        if (resetBaseUrl != null) {
-          await _handleEndpointSwitch(resetBaseUrl, persist: false);
-        }
-        _onAllEndpointsExhausted?.call();
-        rethrow;
-      }
-
-      final failedEndpoint = _endpointManager.current;
-      final nextBaseUrl = _endpointManager.moveToNext();
-      if (nextBaseUrl == null) rethrow;
-
-      _failoverSwitching = true;
-      try {
-        appLogger.i(
-          'Switching Plex endpoint after GET failure',
-          error: {'from': failedEndpoint, 'to': nextBaseUrl, 'path': path},
-        );
-        await _handleEndpointSwitch(nextBaseUrl, persist: false);
-        final response = await _http.get(
-          path,
-          queryParameters: queryParameters,
-          headers: headers,
-          timeout: timeout,
-          abort: abort,
-        );
-        throwIfHttpError(response);
-        appLogger.i('Endpoint failover retry succeeded', error: {'newEndpoint': nextBaseUrl});
-        await _onEndpointChanged?.call(nextBaseUrl);
-        return response;
-      } catch (_) {
-        final resetBaseUrl = _endpointManager.resetToFirst();
-        if (resetBaseUrl != null) {
-          await _handleEndpointSwitch(resetBaseUrl, persist: false);
-        }
-        _onAllEndpointsExhausted?.call();
-        rethrow;
-      } finally {
-        _failoverSwitching = false;
-      }
-    }
-  }
-
-  bool _shouldAttemptFailover(MediaServerHttpException e) {
-    if (e.isTransient) return true;
-    final sc = e.statusCode;
-    return sc != null && sc >= 500 && sc <= 599;
+    final response = await _http.get(
+      path,
+      queryParameters: queryParameters,
+      headers: headers,
+      timeout: timeout,
+      abort: abort,
+      allowEndpointFailover: allowEndpointFailover,
+    );
+    throwIfHttpError(response);
+    return response;
   }
 
   /// Fetch /media/providers and parse libraries + EPG providers from the response.
@@ -590,12 +532,12 @@ class PlexClient
 
   /// Update endpoint priority list and optionally hop to the new best endpoint.
   Future<void> updateEndpointPreferences(List<String> prioritizedEndpoints, {bool switchToFirst = false}) async {
-    if (_endpointManager == null || prioritizedEndpoints.isEmpty) {
+    if (_http.endpoints.isEmpty || prioritizedEndpoints.isEmpty) {
       return;
     }
 
     final targetBaseUrl = switchToFirst ? prioritizedEndpoints.first : config.baseUrl;
-    _endpointManager.reset(prioritizedEndpoints, currentBaseUrl: targetBaseUrl);
+    _http.resetEndpoints(prioritizedEndpoints, currentBaseUrl: targetBaseUrl);
 
     if (switchToFirst && targetBaseUrl != config.baseUrl) {
       await _handleEndpointSwitch(targetBaseUrl);
@@ -3276,15 +3218,17 @@ class PlexClient
     }
   }
 
+  /// The persist branch is deliberately outside the changed-guard: the
+  /// failover client's two-phase protocol applies the switch with
+  /// `persist: false` first, then re-calls with `persist: true` after the
+  /// retry succeeds — by which point the URL is already current.
   Future<void> _handleEndpointSwitch(String newBaseUrl, {bool persist = true}) async {
-    if (config.baseUrl == newBaseUrl) {
-      return;
+    if (config.baseUrl != newBaseUrl) {
+      appLogger.i('Applying Plex endpoint switch', error: newBaseUrl);
+      _http.baseUrl = newBaseUrl;
+      config = config.copyWith(baseUrl: newBaseUrl);
+      LogRedactionManager.registerServerUrl(newBaseUrl);
     }
-
-    appLogger.i('Applying Plex endpoint switch', error: newBaseUrl);
-    _http.baseUrl = newBaseUrl;
-    config = config.copyWith(baseUrl: newBaseUrl);
-    LogRedactionManager.registerServerUrl(newBaseUrl);
 
     if (persist && _onEndpointChanged != null) {
       await _onEndpointChanged(newBaseUrl);
