@@ -3102,6 +3102,15 @@ class TranslationsDownloadsEn {
 	/// en: 'Synced ${count} new episodes for ${title}'
 	String syncedNewEpisodes({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}';
 
+	/// en: 'Sync now'
+	String get syncNow => 'Sync now';
+
+	/// en: 'Downloads are up to date'
+	String get downloadsUpToDate => 'Downloads are up to date';
+
+	/// en: 'Sync complete · ${queued} queued, ${removed} removed'
+	String syncComplete({required Object queued, required Object removed}) => 'Sync complete · ${queued} queued, ${removed} removed';
+
 	/// en: 'Sync rules'
 	String get activeSyncRules => 'Sync rules';
 
@@ -5453,6 +5462,9 @@ extension on Translations {
 			'downloads.syncRuleUpdated' => 'Sync rule updated',
 			'downloads.syncRuleRemoved' => 'Sync rule removed',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}',
+			'downloads.syncNow' => 'Sync now',
+			'downloads.downloadsUpToDate' => 'Downloads are up to date',
+			'downloads.syncComplete' => ({required Object queued, required Object removed}) => 'Sync complete · ${queued} queued, ${removed} removed',
 			'downloads.activeSyncRules' => 'Sync rules',
 			'downloads.noSyncRules' => 'No sync rules',
 			'downloads.manageSyncRule' => 'Manage sync',
@@ -5509,11 +5521,11 @@ extension on Translations {
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure Plezy is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Plex account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',
