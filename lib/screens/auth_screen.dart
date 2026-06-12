@@ -287,7 +287,9 @@ class _AuthScreenState extends State<AuthScreen> {
           Text(
             t.auth.waitingForAuth,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.grey),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7)),
           ),
         ],
       );
@@ -372,26 +374,15 @@ class _AuthScreenState extends State<AuthScreen> {
           ],
         ),
         const SizedBox(height: 12),
-        if (isTV)
-          FocusableButton(
+        FocusableButton(
+          onPressed: _connectToJellyfin,
+          child: OutlinedButton.icon(
             onPressed: _connectToJellyfin,
-            child: OutlinedButton.icon(
-              onPressed: _connectToJellyfin,
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-              icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 18),
-              label: Text(t.auth.connectToJellyfin),
-            ),
-          )
-        else
-          FocusableButton(
-            onPressed: _connectToJellyfin,
-            child: OutlinedButton.icon(
-              onPressed: _connectToJellyfin,
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-              icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 18),
-              label: Text(t.auth.connectToJellyfin),
-            ),
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+            icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 18),
+            label: Text(t.auth.connectToJellyfin),
           ),
+        ),
         if (kDebugMode) ...[
           const SizedBox(height: 12),
           FocusableButton(

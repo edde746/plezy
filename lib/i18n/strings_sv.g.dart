@@ -115,7 +115,6 @@ class _TranslationsAuthSv extends TranslationsAuthEn {
 	@override String get or => 'eller';
 	@override String get connectToJellyfin => 'Anslut till Jellyfin';
 	@override String get useQuickConnect => 'Använd Quick Connect';
-	@override String get quickConnectCode => 'Quick Connect-kod';
 	@override String get quickConnectInstructions => 'Öppna Quick Connect i Jellyfin och ange den här koden.';
 	@override String get quickConnectWaiting => 'Väntar på godkännande…';
 	@override String get quickConnectCancel => 'Avbryt';
@@ -1600,10 +1599,8 @@ class _TranslationsAddServerSv extends TranslationsAddServerEn {
 
 	// Translations
 	@override String get addJellyfinTitle => 'Lägg till Jellyfin-server';
-	@override String get jellyfinUrlIntro => 'Ange server-URL, t.ex. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Ange en eller flera server-URL:er, separerade med kommatecken. Plezy använder den nåbara URL:en med lägst latens.';
-	@override String get serverUrl => 'Server-URL';
 	@override String get serverUrls => 'Server-URL:er';
+	@override String get serverUrlsHelper => 'Flera URL:er tillåtna, separerade med kommatecken.';
 	@override String get findServer => 'Hitta server';
 	@override String get searchingLocalServers => 'Söker efter lokala Jellyfin-servrar...';
 	@override String get localServers => 'Lokala Jellyfin-servrar';
@@ -1616,17 +1613,12 @@ class _TranslationsAddServerSv extends TranslationsAddServerEn {
 	@override String signInFailed({required Object error}) => 'Inloggning misslyckades: ${error}';
 	@override String quickConnectFailed({required Object error}) => 'Quick Connect misslyckades: ${error}';
 	@override String get addPlexTitle => 'Logga in med Plex';
-	@override String get plexAuthIntro => 'Logga in med en webbläsare eller QR-kod.';
-	@override String get plexQRPrompt => 'Skanna denna QR-kod för att logga in.';
-	@override String get waitingForPlexConfirmation => 'Väntar på att plex.tv ska bekräfta inloggningen…';
 	@override String get pinExpired => 'PIN-koden gick ut innan inloggning. Försök igen.';
 	@override String get duplicatePlexAccount => 'Redan inloggad på Plex. Logga ut för att byta konto.';
 	@override String failedToRegisterAccount({required Object error}) => 'Kunde inte registrera kontot: ${error}';
 	@override String get enterJellyfinUrlError => 'Ange URL till din Jellyfin-server';
 	@override String get addConnectionTitle => 'Lägg till anslutning';
 	@override String addConnectionTitleScoped({required Object name}) => 'Lägg till i ${name}';
-	@override String get addConnectionIntroGlobal => 'Lägg till en annan medieserver. Plex och Jellyfin visas tillsammans på Hem.';
-	@override String get addConnectionIntroScoped => 'Lägg till en ny server, eller låna en från en annan profil.';
 	@override String get signInWithPlexCard => 'Logga in med Plex';
 	@override String get signInWithPlexCardSubtitle => 'Auktorisera den här enheten. Delade servrar läggs till.';
 	@override String get signInWithPlexCardSubtitleScoped => 'Auktorisera ett Plex-konto. Home-användare blir profiler.';
@@ -1935,7 +1927,6 @@ extension on TranslationsSv {
 			'auth.or' => 'eller',
 			'auth.connectToJellyfin' => 'Anslut till Jellyfin',
 			'auth.useQuickConnect' => 'Använd Quick Connect',
-			'auth.quickConnectCode' => 'Quick Connect-kod',
 			'auth.quickConnectInstructions' => 'Öppna Quick Connect i Jellyfin och ange den här koden.',
 			'auth.quickConnectWaiting' => 'Väntar på godkännande…',
 			'auth.quickConnectCancel' => 'Avbryt',
@@ -2435,9 +2426,9 @@ extension on TranslationsSv {
 			'subtitlingStyling.border' => 'Kantlinje',
 			'subtitlingStyling.background' => 'Bakgrund',
 			'subtitlingStyling.fontSize' => 'Teckenstorlek',
+			'subtitlingStyling.textColor' => 'Textfärg',
 			_ => null,
 		} ?? switch (path) {
-			'subtitlingStyling.textColor' => 'Textfärg',
 			'subtitlingStyling.borderSize' => 'Kantstorlek',
 			'subtitlingStyling.borderColor' => 'Kantfärg',
 			'subtitlingStyling.backgroundOpacity' => 'Bakgrundsopacitet',
@@ -2949,9 +2940,9 @@ extension on TranslationsSv {
 			'companionRemote.remote.menu' => 'Meny',
 			'companionRemote.remote.tabNavigation' => 'Fliknavigering',
 			'companionRemote.remote.tabDiscover' => 'Upptäck',
+			'companionRemote.remote.tabLibraries' => 'Bibliotek',
 			_ => null,
 		} ?? switch (path) {
-			'companionRemote.remote.tabLibraries' => 'Bibliotek',
 			'companionRemote.remote.tabSearch' => 'Sök',
 			'companionRemote.remote.tabDownloads' => 'Nedladdningar',
 			'companionRemote.remote.tabSettings' => 'Inställningar',
@@ -3166,10 +3157,8 @@ extension on TranslationsSv {
 			'trackers.libraryFilter.libraries' => 'Bibliotek',
 			'trackers.libraryFilter.noLibraries' => 'Inga bibliotek tillgängliga',
 			'addServer.addJellyfinTitle' => 'Lägg till Jellyfin-server',
-			'addServer.jellyfinUrlIntro' => 'Ange server-URL, t.ex. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Ange en eller flera server-URL:er, separerade med kommatecken. Plezy använder den nåbara URL:en med lägst latens.',
-			'addServer.serverUrl' => 'Server-URL',
 			'addServer.serverUrls' => 'Server-URL:er',
+			'addServer.serverUrlsHelper' => 'Flera URL:er tillåtna, separerade med kommatecken.',
 			'addServer.findServer' => 'Hitta server',
 			'addServer.searchingLocalServers' => 'Söker efter lokala Jellyfin-servrar...',
 			'addServer.localServers' => 'Lokala Jellyfin-servrar',
@@ -3182,17 +3171,12 @@ extension on TranslationsSv {
 			'addServer.signInFailed' => ({required Object error}) => 'Inloggning misslyckades: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect misslyckades: ${error}',
 			'addServer.addPlexTitle' => 'Logga in med Plex',
-			'addServer.plexAuthIntro' => 'Logga in med en webbläsare eller QR-kod.',
-			'addServer.plexQRPrompt' => 'Skanna denna QR-kod för att logga in.',
-			'addServer.waitingForPlexConfirmation' => 'Väntar på att plex.tv ska bekräfta inloggningen…',
 			'addServer.pinExpired' => 'PIN-koden gick ut innan inloggning. Försök igen.',
 			'addServer.duplicatePlexAccount' => 'Redan inloggad på Plex. Logga ut för att byta konto.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kunde inte registrera kontot: ${error}',
 			'addServer.enterJellyfinUrlError' => 'Ange URL till din Jellyfin-server',
 			'addServer.addConnectionTitle' => 'Lägg till anslutning',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Lägg till i ${name}',
-			'addServer.addConnectionIntroGlobal' => 'Lägg till en annan medieserver. Plex och Jellyfin visas tillsammans på Hem.',
-			'addServer.addConnectionIntroScoped' => 'Lägg till en ny server, eller låna en från en annan profil.',
 			'addServer.signInWithPlexCard' => 'Logga in med Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Auktorisera den här enheten. Delade servrar läggs till.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Auktorisera ett Plex-konto. Home-användare blir profiler.',

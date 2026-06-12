@@ -115,7 +115,6 @@ class _TranslationsAuthIt extends TranslationsAuthEn {
 	@override String get or => 'o';
 	@override String get connectToJellyfin => 'Connetti a Jellyfin';
 	@override String get useQuickConnect => 'Usa Quick Connect';
-	@override String get quickConnectCode => 'Codice Quick Connect';
 	@override String get quickConnectInstructions => 'Apri Quick Connect in Jellyfin e inserisci questo codice.';
 	@override String get quickConnectWaiting => 'In attesa di approvazione…';
 	@override String get quickConnectCancel => 'Annulla';
@@ -1600,10 +1599,8 @@ class _TranslationsAddServerIt extends TranslationsAddServerEn {
 
 	// Translations
 	@override String get addJellyfinTitle => 'Aggiungi server Jellyfin';
-	@override String get jellyfinUrlIntro => 'Inserisci l\'URL del server, es. `https://jellyfin.example.com`.';
-	@override String get jellyfinUrlsIntro => 'Inserisci uno o più URL del server, separati da virgole. Plezy userà l\'URL raggiungibile con la latenza più bassa.';
-	@override String get serverUrl => 'URL del server';
 	@override String get serverUrls => 'URL del server';
+	@override String get serverUrlsHelper => 'Sono consentiti più URL, separati da virgole.';
 	@override String get findServer => 'Trova server';
 	@override String get searchingLocalServers => 'Ricerca server Jellyfin locali...';
 	@override String get localServers => 'Server Jellyfin locali';
@@ -1616,17 +1613,12 @@ class _TranslationsAddServerIt extends TranslationsAddServerEn {
 	@override String signInFailed({required Object error}) => 'Accesso non riuscito: ${error}';
 	@override String quickConnectFailed({required Object error}) => 'Quick Connect non riuscito: ${error}';
 	@override String get addPlexTitle => 'Accedi con Plex';
-	@override String get plexAuthIntro => 'Accedi con un browser o un codice QR.';
-	@override String get plexQRPrompt => 'Scansiona questo QR code per accedere.';
-	@override String get waitingForPlexConfirmation => 'In attesa della conferma da plex.tv…';
 	@override String get pinExpired => 'PIN scaduto prima dell\'accesso. Riprova.';
 	@override String get duplicatePlexAccount => 'Accesso a Plex già effettuato. Esci per cambiare account.';
 	@override String failedToRegisterAccount({required Object error}) => 'Registrazione account non riuscita: ${error}';
 	@override String get enterJellyfinUrlError => 'Inserisci l\'URL del tuo server Jellyfin';
 	@override String get addConnectionTitle => 'Aggiungi connessione';
 	@override String addConnectionTitleScoped({required Object name}) => 'Aggiungi a ${name}';
-	@override String get addConnectionIntroGlobal => 'Aggiungi un altro server multimediale. Plex e Jellyfin appaiono insieme in Home.';
-	@override String get addConnectionIntroScoped => 'Aggiungi un nuovo server, o prendine in prestito uno da un altro profilo.';
 	@override String get signInWithPlexCard => 'Accedi con Plex';
 	@override String get signInWithPlexCardSubtitle => 'Autorizza questo dispositivo. I server condivisi vengono aggiunti.';
 	@override String get signInWithPlexCardSubtitleScoped => 'Autorizza un account Plex. Gli utenti Home diventano profili.';
@@ -1935,7 +1927,6 @@ extension on TranslationsIt {
 			'auth.or' => 'o',
 			'auth.connectToJellyfin' => 'Connetti a Jellyfin',
 			'auth.useQuickConnect' => 'Usa Quick Connect',
-			'auth.quickConnectCode' => 'Codice Quick Connect',
 			'auth.quickConnectInstructions' => 'Apri Quick Connect in Jellyfin e inserisci questo codice.',
 			'auth.quickConnectWaiting' => 'In attesa di approvazione…',
 			'auth.quickConnectCancel' => 'Annulla',
@@ -2435,9 +2426,9 @@ extension on TranslationsIt {
 			'subtitlingStyling.border' => 'Bordo',
 			'subtitlingStyling.background' => 'Sfondo',
 			'subtitlingStyling.fontSize' => 'Dimensione',
+			'subtitlingStyling.textColor' => 'Colore testo',
 			_ => null,
 		} ?? switch (path) {
-			'subtitlingStyling.textColor' => 'Colore testo',
 			'subtitlingStyling.borderSize' => 'Dimensione bordo',
 			'subtitlingStyling.borderColor' => 'Colore bordo',
 			'subtitlingStyling.backgroundOpacity' => 'Opacità sfondo',
@@ -2949,9 +2940,9 @@ extension on TranslationsIt {
 			'companionRemote.remote.menu' => 'Menu',
 			'companionRemote.remote.tabNavigation' => 'Navigazione schede',
 			'companionRemote.remote.tabDiscover' => 'Esplora',
+			'companionRemote.remote.tabLibraries' => 'Librerie',
 			_ => null,
 		} ?? switch (path) {
-			'companionRemote.remote.tabLibraries' => 'Librerie',
 			'companionRemote.remote.tabSearch' => 'Cerca',
 			'companionRemote.remote.tabDownloads' => 'Download',
 			'companionRemote.remote.tabSettings' => 'Impostazioni',
@@ -3166,10 +3157,8 @@ extension on TranslationsIt {
 			'trackers.libraryFilter.libraries' => 'Librerie',
 			'trackers.libraryFilter.noLibraries' => 'Nessuna libreria disponibile',
 			'addServer.addJellyfinTitle' => 'Aggiungi server Jellyfin',
-			'addServer.jellyfinUrlIntro' => 'Inserisci l\'URL del server, es. `https://jellyfin.example.com`.',
-			'addServer.jellyfinUrlsIntro' => 'Inserisci uno o più URL del server, separati da virgole. Plezy userà l\'URL raggiungibile con la latenza più bassa.',
-			'addServer.serverUrl' => 'URL del server',
 			'addServer.serverUrls' => 'URL del server',
+			'addServer.serverUrlsHelper' => 'Sono consentiti più URL, separati da virgole.',
 			'addServer.findServer' => 'Trova server',
 			'addServer.searchingLocalServers' => 'Ricerca server Jellyfin locali...',
 			'addServer.localServers' => 'Server Jellyfin locali',
@@ -3182,17 +3171,12 @@ extension on TranslationsIt {
 			'addServer.signInFailed' => ({required Object error}) => 'Accesso non riuscito: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect non riuscito: ${error}',
 			'addServer.addPlexTitle' => 'Accedi con Plex',
-			'addServer.plexAuthIntro' => 'Accedi con un browser o un codice QR.',
-			'addServer.plexQRPrompt' => 'Scansiona questo QR code per accedere.',
-			'addServer.waitingForPlexConfirmation' => 'In attesa della conferma da plex.tv…',
 			'addServer.pinExpired' => 'PIN scaduto prima dell\'accesso. Riprova.',
 			'addServer.duplicatePlexAccount' => 'Accesso a Plex già effettuato. Esci per cambiare account.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Registrazione account non riuscita: ${error}',
 			'addServer.enterJellyfinUrlError' => 'Inserisci l\'URL del tuo server Jellyfin',
 			'addServer.addConnectionTitle' => 'Aggiungi connessione',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => 'Aggiungi a ${name}',
-			'addServer.addConnectionIntroGlobal' => 'Aggiungi un altro server multimediale. Plex e Jellyfin appaiono insieme in Home.',
-			'addServer.addConnectionIntroScoped' => 'Aggiungi un nuovo server, o prendine in prestito uno da un altro profilo.',
 			'addServer.signInWithPlexCard' => 'Accedi con Plex',
 			'addServer.signInWithPlexCardSubtitle' => 'Autorizza questo dispositivo. I server condivisi vengono aggiunti.',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Autorizza un account Plex. Gli utenti Home diventano profili.',

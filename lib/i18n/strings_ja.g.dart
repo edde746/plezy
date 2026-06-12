@@ -115,7 +115,6 @@ class _TranslationsAuthJa extends TranslationsAuthEn {
 	@override String get or => 'または';
 	@override String get connectToJellyfin => 'Jellyfinに接続';
 	@override String get useQuickConnect => 'Quick Connect を使う';
-	@override String get quickConnectCode => 'Quick Connect コード';
 	@override String get quickConnectInstructions => 'JellyfinでQuick Connectを開き、このコードを入力してください。';
 	@override String get quickConnectWaiting => '承認を待っています…';
 	@override String get quickConnectCancel => 'キャンセル';
@@ -1600,10 +1599,8 @@ class _TranslationsAddServerJa extends TranslationsAddServerEn {
 
 	// Translations
 	@override String get addJellyfinTitle => 'Jellyfinサーバーを追加';
-	@override String get jellyfinUrlIntro => 'サーバーURLを入力してください。例: `https://jellyfin.example.com`。';
-	@override String get jellyfinUrlsIntro => 'サーバーURLを1つ以上、カンマで区切って入力してください。Plezyは到達可能なURLのうち最も低遅延のものを使用します。';
-	@override String get serverUrl => 'サーバーURL';
 	@override String get serverUrls => 'サーバーURL';
+	@override String get serverUrlsHelper => '複数のURLをカンマ区切りで入力できます。';
 	@override String get findServer => 'サーバーを検索';
 	@override String get searchingLocalServers => 'ローカル Jellyfin サーバーを検索中...';
 	@override String get localServers => 'ローカル Jellyfin サーバー';
@@ -1616,17 +1613,12 @@ class _TranslationsAddServerJa extends TranslationsAddServerEn {
 	@override String signInFailed({required Object error}) => 'サインインに失敗しました: ${error}';
 	@override String quickConnectFailed({required Object error}) => 'Quick Connectに失敗しました: ${error}';
 	@override String get addPlexTitle => 'Plexでサインイン';
-	@override String get plexAuthIntro => 'ブラウザまたはQRコードでサインインします。';
-	@override String get plexQRPrompt => 'このQRコードをスキャンしてサインインしてください。';
-	@override String get waitingForPlexConfirmation => 'plex.tvがサインインを確認するのを待っています…';
 	@override String get pinExpired => 'サインイン前にPINの有効期限が切れました。もう一度お試しください。';
 	@override String get duplicatePlexAccount => 'すでにPlexにサインインしています。アカウントを切り替えるにはサインアウトしてください。';
 	@override String failedToRegisterAccount({required Object error}) => 'アカウントの登録に失敗しました: ${error}';
 	@override String get enterJellyfinUrlError => 'JellyfinサーバーのURLを入力してください';
 	@override String get addConnectionTitle => '接続を追加';
 	@override String addConnectionTitleScoped({required Object name}) => '${name}に追加';
-	@override String get addConnectionIntroGlobal => '別のメディアサーバーを追加します。PlexとJellyfinはホームに一緒に表示されます。';
-	@override String get addConnectionIntroScoped => '新しいサーバーを追加するか、別のプロファイルから借りてください。';
 	@override String get signInWithPlexCard => 'Plexでサインイン';
 	@override String get signInWithPlexCardSubtitle => 'このデバイスを承認します。共有サーバーが追加されます。';
 	@override String get signInWithPlexCardSubtitleScoped => 'Plexアカウントを承認します。Homeユーザーはプロフィールになります。';
@@ -1935,7 +1927,6 @@ extension on TranslationsJa {
 			'auth.or' => 'または',
 			'auth.connectToJellyfin' => 'Jellyfinに接続',
 			'auth.useQuickConnect' => 'Quick Connect を使う',
-			'auth.quickConnectCode' => 'Quick Connect コード',
 			'auth.quickConnectInstructions' => 'JellyfinでQuick Connectを開き、このコードを入力してください。',
 			'auth.quickConnectWaiting' => '承認を待っています…',
 			'auth.quickConnectCancel' => 'キャンセル',
@@ -2435,9 +2426,9 @@ extension on TranslationsJa {
 			'subtitlingStyling.border' => '枠線',
 			'subtitlingStyling.background' => '背景',
 			'subtitlingStyling.fontSize' => 'フォントサイズ',
+			'subtitlingStyling.textColor' => 'テキストの色',
 			_ => null,
 		} ?? switch (path) {
-			'subtitlingStyling.textColor' => 'テキストの色',
 			'subtitlingStyling.borderSize' => '枠線サイズ',
 			'subtitlingStyling.borderColor' => '枠線の色',
 			'subtitlingStyling.backgroundOpacity' => '背景の不透明度',
@@ -2949,9 +2940,9 @@ extension on TranslationsJa {
 			'companionRemote.remote.menu' => 'メニュー',
 			'companionRemote.remote.tabNavigation' => 'タブナビゲーション',
 			'companionRemote.remote.tabDiscover' => '探す',
+			'companionRemote.remote.tabLibraries' => 'ライブラリ',
 			_ => null,
 		} ?? switch (path) {
-			'companionRemote.remote.tabLibraries' => 'ライブラリ',
 			'companionRemote.remote.tabSearch' => '検索',
 			'companionRemote.remote.tabDownloads' => 'ダウンロード',
 			'companionRemote.remote.tabSettings' => '設定',
@@ -3166,10 +3157,8 @@ extension on TranslationsJa {
 			'trackers.libraryFilter.libraries' => 'ライブラリ',
 			'trackers.libraryFilter.noLibraries' => '利用できるライブラリがありません',
 			'addServer.addJellyfinTitle' => 'Jellyfinサーバーを追加',
-			'addServer.jellyfinUrlIntro' => 'サーバーURLを入力してください。例: `https://jellyfin.example.com`。',
-			'addServer.jellyfinUrlsIntro' => 'サーバーURLを1つ以上、カンマで区切って入力してください。Plezyは到達可能なURLのうち最も低遅延のものを使用します。',
-			'addServer.serverUrl' => 'サーバーURL',
 			'addServer.serverUrls' => 'サーバーURL',
+			'addServer.serverUrlsHelper' => '複数のURLをカンマ区切りで入力できます。',
 			'addServer.findServer' => 'サーバーを検索',
 			'addServer.searchingLocalServers' => 'ローカル Jellyfin サーバーを検索中...',
 			'addServer.localServers' => 'ローカル Jellyfin サーバー',
@@ -3182,17 +3171,12 @@ extension on TranslationsJa {
 			'addServer.signInFailed' => ({required Object error}) => 'サインインに失敗しました: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connectに失敗しました: ${error}',
 			'addServer.addPlexTitle' => 'Plexでサインイン',
-			'addServer.plexAuthIntro' => 'ブラウザまたはQRコードでサインインします。',
-			'addServer.plexQRPrompt' => 'このQRコードをスキャンしてサインインしてください。',
-			'addServer.waitingForPlexConfirmation' => 'plex.tvがサインインを確認するのを待っています…',
 			'addServer.pinExpired' => 'サインイン前にPINの有効期限が切れました。もう一度お試しください。',
 			'addServer.duplicatePlexAccount' => 'すでにPlexにサインインしています。アカウントを切り替えるにはサインアウトしてください。',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'アカウントの登録に失敗しました: ${error}',
 			'addServer.enterJellyfinUrlError' => 'JellyfinサーバーのURLを入力してください',
 			'addServer.addConnectionTitle' => '接続を追加',
 			'addServer.addConnectionTitleScoped' => ({required Object name}) => '${name}に追加',
-			'addServer.addConnectionIntroGlobal' => '別のメディアサーバーを追加します。PlexとJellyfinはホームに一緒に表示されます。',
-			'addServer.addConnectionIntroScoped' => '新しいサーバーを追加するか、別のプロファイルから借りてください。',
 			'addServer.signInWithPlexCard' => 'Plexでサインイン',
 			'addServer.signInWithPlexCardSubtitle' => 'このデバイスを承認します。共有サーバーが追加されます。',
 			'addServer.signInWithPlexCardSubtitleScoped' => 'Plexアカウントを承認します。Homeユーザーはプロフィールになります。',

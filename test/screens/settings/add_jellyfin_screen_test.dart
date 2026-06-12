@@ -12,6 +12,8 @@ import 'package:plezy/services/jellyfin_auth_service.dart';
 import 'package:plezy/services/jellyfin_lan_discovery_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 
+import '../../test_helpers/prefs.dart';
+
 Profile _profile(String id) =>
     Profile.local(id: id, displayName: id, sortOrder: 0, createdAt: DateTime.fromMillisecondsSinceEpoch(0));
 
@@ -30,6 +32,19 @@ JellyfinConnectionAuthService _jellyfinAuthService({bool quickConnectEnabled = f
           );
         case '/QuickConnect/Enabled':
           return http.Response(jsonEncode(quickConnectEnabled), 200, headers: {'content-type': 'application/json'});
+        case '/QuickConnect/Initiate':
+          return http.Response(
+            jsonEncode({'Code': '123456', 'Secret': 'qc-secret'}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        case '/QuickConnect/Connect':
+          // Never approved — the panel stays in its waiting state.
+          return http.Response(
+            jsonEncode({'Authenticated': false}),
+            200,
+            headers: {'content-type': 'application/json'},
+          );
       }
       return http.Response('', 404);
     }),
@@ -211,6 +226,45 @@ void main() {
     final field = tester.widget<TextField>(find.byType(TextField).first);
     expect(field.controller?.text, 'http://jf.example.com:8096');
     expect(find.text('Home'), findsOneWidget);
+  });
+
+  testWidgets('Quick Connect shows the code prominently and cancel returns to the form', (tester) async {
+    resetSharedPreferencesForTest();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: AddJellyfinScreen(
+          authServiceFactory: () => _jellyfinAuthService(quickConnectEnabled: true),
+          localDiscoveryFactory: _noLocalServers,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.enterText(find.byType(TextField).first, 'https://jf.example.com');
+    await tester.testTextInput.receiveAction(TextInputAction.go);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Use Quick Connect'));
+    // The waiting panel hosts a perpetual spinner, so pumpAndSettle would
+    // never settle — pump a few bounded frames instead.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // Code replaces the form as the centered hero element.
+    expect(find.text('123456'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    final codeStyle = tester.widget<Text>(find.text('123456')).style;
+    expect(codeStyle?.fontSize, Theme.of(tester.element(find.text('123456'))).textTheme.displayLarge?.fontSize);
+
+    await tester.tap(find.text('Cancel'));
+    await tester.pump();
+
+    expect(find.text('123456'), findsNothing);
+    expect(find.byType(TextField), findsWidgets);
+
+    // Let the cancelled poll's backoff timer fire so the test ends clean.
+    await tester.pump(const Duration(seconds: 6));
   });
 
   testWidgets('selecting a discovered Jellyfin server probes that address', (tester) async {

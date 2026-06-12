@@ -441,32 +441,30 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     return FocusedScrollScaffold(
       title: Text(t.addServer.addJellyfinTitle),
       slivers: [
-        SliverPadding(
-          padding: const EdgeInsets.all(16),
-          sliver: SliverToBoxAdapter(
-            child: Form(
-              key: _formKey,
-              child: Column(crossAxisAlignment: .stretch, children: _buildBodyChildren(theme)),
+        if (_qcInitiation != null)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(child: _buildQuickConnectPanel(theme)),
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverToBoxAdapter(
+              child: Form(
+                key: _formKey,
+                child: Column(crossAxisAlignment: .stretch, children: _buildBodyChildren(theme)),
+              ),
             ),
           ),
-        ),
       ],
     );
   }
 
   List<Widget> _buildBodyChildren(ThemeData theme) {
-    if (_qcInitiation != null) {
-      return [
-        ..._buildQuickConnectPanel(theme),
-        if (errorText != null) ...[
-          const SizedBox(height: 12),
-          Text(errorText!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error)),
-        ],
-      ];
-    }
     return [
-      Text(t.addServer.jellyfinUrlsIntro, style: theme.textTheme.bodyMedium),
-      const SizedBox(height: 16),
       FocusableTextFormField(
         controller: _urlController,
         focusNode: _urlFocus,
@@ -491,6 +489,9 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
         onFieldSubmitted: busy ? null : (_) => _probe(),
         decoration: InputDecoration(
           labelText: t.addServer.serverUrls,
+          // URL example — intentionally not localized.
+          hintText: 'https://jellyfin.example.com',
+          helperText: _serverInfo == null ? t.addServer.serverUrlsHelper : null,
           prefixIcon: const AppIcon(Symbols.link_rounded, fill: 1),
         ),
         validator: (_) => _enteredUrls().isEmpty ? t.addServer.required : null,
@@ -626,19 +627,17 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     if (_isDiscoveringLocalServers) {
       return [
         const SizedBox(height: 16),
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            children: [
-              const LoadingIndicatorBox(size: 20),
-              const SizedBox(width: 12),
-              Expanded(child: Text(t.addServer.searchingLocalServers, style: theme.textTheme.bodyMedium)),
-            ],
-          ),
+        Row(
+          children: [
+            const LoadingIndicatorBox(size: 16),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                t.addServer.searchingLocalServers,
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+              ),
+            ),
+          ],
         ),
       ];
     }
@@ -675,57 +674,67 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen> with AsyncFormSta
     ];
   }
 
-  List<Widget> _buildQuickConnectPanel(ThemeData theme) {
+  Widget _buildQuickConnectPanel(ThemeData theme) {
     final code = _qcInitiation!.code;
-    return [
-      Container(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        decoration: BoxDecoration(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Column(
-          children: [
-            Text(
-              t.auth.quickConnectCode,
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              code,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.displayMedium?.copyWith(
-                fontFamily: 'monospace',
-                fontWeight: .bold,
-                letterSpacing: 8,
+    final muted = theme.colorScheme.onSurface.withValues(alpha: 0.7);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420),
+      child: Column(
+        mainAxisSize: .min,
+        children: [
+          Text(
+            t.auth.quickConnectInstructions,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyLarge?.copyWith(color: muted),
+          ),
+          const SizedBox(height: 32),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Padding(
+              // letterSpacing adds a trailing gap after the last glyph;
+              // matching left padding keeps the code optically centered.
+              padding: const EdgeInsets.only(left: 12),
+              child: Text(
+                code,
+                style: theme.textTheme.displayLarge?.copyWith(
+                  fontFamily: 'monospace',
+                  fontWeight: .bold,
+                  letterSpacing: 12,
+                ),
               ),
             ),
+          ),
+          const SizedBox(height: 32),
+          Row(
+            mainAxisSize: .min,
+            children: [
+              const LoadingIndicatorBox(size: 16),
+              const SizedBox(width: 10),
+              Text(t.auth.quickConnectWaiting, style: theme.textTheme.bodyMedium?.copyWith(color: muted)),
+            ],
+          ),
+          const SizedBox(height: 32),
+          FocusableButton(
+            focusNode: _cancelQuickConnectFocus,
+            useBackgroundFocus: true,
+            onPressed: _cancelQuickConnect,
+            child: OutlinedButton.icon(
+              onPressed: _cancelQuickConnect,
+              icon: const AppIcon(Symbols.close_rounded, fill: 1),
+              label: Text(t.auth.quickConnectCancel),
+            ),
+          ),
+          if (errorText != null) ...[
+            const SizedBox(height: 16),
+            Text(
+              errorText!,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+            ),
           ],
-        ),
-      ),
-      const SizedBox(height: 16),
-      Text(t.auth.quickConnectInstructions, style: theme.textTheme.bodyMedium),
-      const SizedBox(height: 20),
-      Row(
-        mainAxisAlignment: .center,
-        children: [
-          const LoadingIndicatorBox(),
-          const SizedBox(width: 12),
-          Text(t.auth.quickConnectWaiting, style: theme.textTheme.bodyMedium),
         ],
       ),
-      const SizedBox(height: 20),
-      FocusableButton(
-        focusNode: _cancelQuickConnectFocus,
-        useBackgroundFocus: true,
-        onPressed: _cancelQuickConnect,
-        child: OutlinedButton.icon(
-          onPressed: _cancelQuickConnect,
-          icon: const AppIcon(Symbols.close_rounded, fill: 1),
-          label: Text(t.auth.quickConnectCancel),
-        ),
-      ),
-    ];
+    );
   }
 }
 
