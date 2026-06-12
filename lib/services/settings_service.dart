@@ -395,18 +395,19 @@ class SettingsService extends BaseSharedPreferencesService {
   static final defaultBoxFitMode = IntPref('default_box_fit_mode', transform: (v) => v.clamp(0, 2));
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
 
-  static final themeMode = EnumPref<ThemeMode>(
+  static ThemeMode _tvAwareThemeModeDefault() => TvDetectionService.isTVSync() ? ThemeMode.oled : ThemeMode.system;
+  static const themeMode = EnumPref<ThemeMode>(
     'theme_mode',
     values: ThemeMode.values,
-    defaultValue: TvDetectionService.isTVSync() ? ThemeMode.oled : ThemeMode.system,
+    defaultValueProvider: _tvAwareThemeModeDefault,
   );
-  static final videoPlayerNavigationEnabled = BoolPref(
+  static const videoPlayerNavigationEnabled = BoolPref(
     'video_player_navigation_enabled',
-    defaultValue: TvDetectionService.isTVSync(),
+    defaultValueProvider: TvDetectionService.isTVSync,
   );
-  static final enableCompanionRemoteServer = BoolPref(
+  static const enableCompanionRemoteServer = BoolPref(
     'enable_companion_remote_server',
-    defaultValue: PlatformDetector.isDesktopOS(),
+    defaultValueProvider: PlatformDetector.isDesktopOS,
   );
   static const startInFullscreen = BoolPref('start_in_fullscreen');
   static const exitFullscreenOnPlayerClose = BoolPref('exit_fullscreen_on_player_close');
