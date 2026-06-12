@@ -480,13 +480,11 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     PlexApiCache.initialize(_appDatabase);
     JellyfinApiCache.initialize(_appDatabase);
 
-    _downloadManager = DownloadManagerService(database: _appDatabase, storageService: DownloadStorageService.instance);
-    _downloadManager.setClientResolver((serverId, {clientScopeId}) {
-      if (clientScopeId != null && clientScopeId.isNotEmpty) {
-        return _serverManager.getJellyfinClientByCompoundId(clientScopeId) ?? _serverManager.getClient(serverId);
-      }
-      return _serverManager.getClient(serverId);
-    });
+    _downloadManager = DownloadManagerService(
+      database: _appDatabase,
+      storageService: DownloadStorageService.instance,
+      clientResolver: _serverManager.resolveDownloadClient,
+    );
     _downloadManager.recoveryFuture = _downloadManager.recoverInterruptedDownloads();
 
     _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);

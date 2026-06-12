@@ -52,7 +52,9 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// Visibility filter applied by the active app profile. `null` means
   /// "all servers visible" (no profile restriction); otherwise only server
   /// ids in the set surface through [serverIds] / [onlineServerIds].
-  Set<String>? _visibleServerIds;
+  /// State lives on [MultiServerManager] so the download client resolver
+  /// applies the same filter; this provider owns mutation + notification.
+  Set<String>? get _visibleServerIds => _serverManager.visibleServerIds;
 
   /// True once the active profile has explicitly resolved visibility. An empty
   /// set is meaningful: the profile has servers, but none are currently visible.
@@ -75,7 +77,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
         _visibleServerIds!.containsAll(ids)) {
       return;
     }
-    _visibleServerIds = ids;
+    _serverManager.setVisibleServerIds(ids);
     _pruneLiveTvServersForVisibility();
     safeNotifyListeners();
     _refreshLiveTvAvailabilitySoon();
@@ -102,14 +104,14 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   void addToVisibleServerIds(ServerId serverId) {
     final current = _visibleServerIds;
     if (current == null) {
-      _visibleServerIds = {serverId};
+      _serverManager.setVisibleServerIds({serverId});
       _expectedVisibleServerIds = {...?_expectedVisibleServerIds, serverId};
       safeNotifyListeners();
       _refreshLiveTvAvailabilitySoon();
       return;
     }
     if (current.contains(serverId)) return;
-    _visibleServerIds = {...current, serverId};
+    _serverManager.setVisibleServerIds({...current, serverId});
     _expectedVisibleServerIds = {...?_expectedVisibleServerIds, serverId};
     safeNotifyListeners();
     _refreshLiveTvAvailabilitySoon();
@@ -167,7 +169,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
     final onlineExpected = _serverManager.onlineServerIds.where(expected.contains).where((id) => !visible.contains(id));
     if (onlineExpected.isEmpty) return;
 
-    _visibleServerIds = {...visible, ...onlineExpected};
+    _serverManager.setVisibleServerIds({...visible, ...onlineExpected});
   }
 
   /// Get the multi-server manager
@@ -257,7 +259,7 @@ class MultiServerProvider extends ChangeNotifier with DisposableChangeNotifierMi
   /// Clear all server connections
   void clearAllConnections() {
     _serverManager.disconnectAll();
-    _visibleServerIds = null;
+    _serverManager.setVisibleServerIds(null);
     _expectedVisibleServerIds = null;
     appLogger.d('MultiServerProvider: All connections cleared');
     safeNotifyListeners();

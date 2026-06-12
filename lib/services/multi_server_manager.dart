@@ -112,6 +112,30 @@ class MultiServerManager {
   /// Get client for specific server.
   MediaServerClient? getClient(ServerId serverId) => _clients[serverId];
 
+  /// Server ids visible to the active profile; `null` means no restriction.
+  /// Owned here rather than on `MultiServerProvider` so non-UI consumers
+  /// (the download client resolver) apply the same filter the UI does —
+  /// the provider delegates its filter state to this field.
+  Set<String>? _visibleServerIds;
+
+  Set<String>? get visibleServerIds => _visibleServerIds;
+
+  void setVisibleServerIds(Set<String>? ids) => _visibleServerIds = ids;
+
+  bool isServerVisible(ServerId serverId) => _visibleServerIds?.contains(serverId) ?? true;
+
+  /// Resolve the client for a queued download: scope-aware (Jellyfin compound
+  /// connection ids) and restricted to servers visible to the active profile,
+  /// so background downloads never run against another profile's server
+  /// during or after a profile switch.
+  MediaServerClient? resolveDownloadClient(ServerId serverId, {String? clientScopeId}) {
+    if (!isServerVisible(serverId)) return null;
+    if (clientScopeId != null && clientScopeId.isNotEmpty) {
+      return getJellyfinClientByCompoundId(clientScopeId) ?? getClient(serverId);
+    }
+    return getClient(serverId);
+  }
+
   /// Get the [PlexClient] for a server, or `null` if the server is Jellyfin
   /// (or not registered). Use for Plex-only flows (Live TV, server prefs,
   /// endpoint optimization) that don't yet have a backend-neutral
