@@ -28,6 +28,7 @@ import 'media_context_menu.dart';
 import 'media_progress_bar.dart';
 import 'media_card_list_layout.dart';
 import 'backend_badge.dart';
+import 'unwatched_count_badge.dart';
 import 'optimized_media_image.dart';
 
 const _failedPosterUrlCacheLimit = 512;
@@ -904,6 +905,7 @@ class _MediaCardHelpers {
   /// Builds watch progress overlay (checkmark for watched, progress bar for in-progress)
   static Widget buildWatchProgress(BuildContext context, MediaItem mi) {
     final showUnwatchedCount = SettingsService.instance.read(SettingsService.showUnwatchedCount);
+    final unwatched = mi.unwatchedCount;
 
     final hasActiveProgress =
         mi.viewOffsetMs != null && mi.durationMs != null && mi.viewOffsetMs! > 0 && mi.viewOffsetMs! < mi.durationMs!;
@@ -928,25 +930,9 @@ class _MediaCardHelpers {
         if (showUnwatchedCount &&
             !mi.isWatched &&
             (mi.kind == MediaKind.show || mi.kind == MediaKind.season) &&
-            (mi.leafCount != null && mi.leafCount! > 0 && mi.viewedLeafCount != null))
-          Positioned(
-            top: 4,
-            right: 4,
-            child: Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: tokens(context).text,
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
-              ),
-              alignment: .center,
-              child: Text(
-                '${mi.leafCount! - mi.viewedLeafCount!}',
-                style: TextStyle(color: tokens(context).bg, fontSize: 12, fontWeight: .bold),
-              ),
-            ),
-          ),
+            unwatched != null &&
+            unwatched > 0)
+          Positioned(top: 4, right: 4, child: UnwatchedCountBadge(count: unwatched)),
         // Progress bar for partially watched content (episodes/movies)
         if (hasActiveProgress)
           Positioned(

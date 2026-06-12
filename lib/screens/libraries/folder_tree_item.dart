@@ -21,6 +21,7 @@ import '../../widgets/media_context_menu.dart';
 import '../../widgets/media_progress_bar.dart';
 import '../../widgets/optimized_media_image.dart';
 import '../../widgets/overlay_sheet.dart';
+import '../../widgets/unwatched_count_badge.dart';
 import '../../theme/mono_tokens.dart';
 import '../../i18n/strings.g.dart';
 import '../../widgets/loading_indicator_box.dart';
@@ -406,24 +407,7 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
             (item.kind == MediaKind.show || item.kind == MediaKind.season) &&
             unwatchedCount != null &&
             unwatchedCount > 0)
-          Positioned(
-            top: 3,
-            right: 3,
-            child: Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                color: tokens(context).text,
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
-              ),
-              alignment: .center,
-              child: Text(
-                '$unwatchedCount',
-                style: TextStyle(color: tokens(context).bg, fontSize: 10, fontWeight: .bold),
-              ),
-            ),
-          ),
+          Positioned(top: 3, right: 3, child: UnwatchedCountBadge(count: unwatchedCount, size: 20, fontSize: 10)),
         // Progress bar
         if (hasActiveProgress)
           Positioned(
