@@ -555,7 +555,7 @@ class GuideTabState extends State<GuideTab> with MountedSetStateMixin, WidgetsBi
 
   Future<void> _tuneChannel(LiveTvChannel channel) async {
     final multiServer = context.read<MultiServerProvider>();
-    await tuneAndNavigateToLiveTv(context, multiServer: multiServer, channel: channel, channels: widget.channels);
+    await navigateToLiveTv(context, multiServer: multiServer, channel: channel, channels: widget.channels);
   }
 
   void _activateProgram(LiveTvChannel channel, LiveTvProgram program) {

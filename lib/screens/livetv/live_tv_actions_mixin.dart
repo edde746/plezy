@@ -34,13 +34,12 @@ mixin LiveTvActionsMixin<T extends StatefulWidget> on State<T> {
   ///
   /// Both backends route through the live-TV navigator so the player
   /// inherits the live-only branches (no Trakt scrobble, no progress
-  /// scrobble, channel up/down nav, no resume bookmark). Plex passes a
-  /// `client + dvrKey` and tunes inside the player; Jellyfin pre-resolves
-  /// the channel's `/Videos/{id}/stream` URL and lets the engine play it
-  /// directly.
+  /// scrobble, channel up/down nav, no resume bookmark). The player starts
+  /// the backend-neutral session itself (Plex tune / Jellyfin stream
+  /// negotiation under its loading spinner).
   Future<void> tuneChannel(LiveTvChannel channel) async {
     final multiServer = context.read<MultiServerProvider>();
-    await tuneAndNavigateToLiveTv(context, multiServer: multiServer, channel: channel, channels: liveTvChannels);
+    await navigateToLiveTv(context, multiServer: multiServer, channel: channel, channels: liveTvChannels);
   }
 
   /// Open the program-details bottom sheet. The poster is resolved from

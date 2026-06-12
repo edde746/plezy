@@ -589,6 +589,14 @@ abstract class MediaServerClient {
   /// media version's part path; Jellyfin returns its `/Videos/{id}/stream`
   /// endpoint with `Static=true` so transcoding is bypassed. Returns null
   /// when the backend can't resolve a playable URL for the item.
+  ///
+  /// Deliberately separate from the in-app playback funnel
+  /// (`PlaybackSourceResolver`): external players can't send custom headers,
+  /// so the URL must be self-contained (token in the query string), and
+  /// there's no session/transcode negotiation to carry. Likewise their
+  /// progress reporting is a one-shot started/stopped pair in
+  /// `ExternalPlayerService` — an external app exposes no live position
+  /// stream for the in-player tracker to follow.
   Future<String?> resolveExternalPlaybackUrl(MediaItem item, {int mediaIndex = 0, String? mediaSourceId});
 }
 

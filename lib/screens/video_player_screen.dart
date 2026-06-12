@@ -22,9 +22,9 @@ import '../media/media_server_user_profile.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
-import '../services/jellyfin_client.dart';
+import '../media/live_tv_support.dart';
+import '../models/livetv_channel.dart';
 import '../services/live_seek_accumulator.dart';
-import '../services/live_session_tracker.dart';
 import '../services/plex_client.dart';
 import '../utils/session_identifier.dart';
 import '../database/app_database.dart';
@@ -332,7 +332,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen> with WidgetsBindin
 
   /// Live TV session state (tune identity, heartbeats, capture buffer,
   /// retry ladder) — inert for VOD screens. See [LiveTvSessionState].
-  late final LiveTvSessionState _live = LiveTvSessionState(widget.live, itemId: widget.metadata.id);
+  late final LiveTvSessionState _live = LiveTvSessionState(widget.live);
 
   /// Coalesces rapid relative live-TV skips into a single transcode re-open so
   /// mashing skip-forward can't compound into an overshoot to live (#1253).
