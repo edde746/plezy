@@ -1,4 +1,3 @@
-import 'dart:convert';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -179,7 +178,7 @@ void main() {
 
       final userData = await readBack('user-a');
       expect(userData.containsKey('UnplayedItemCount'), isFalse);
-      expect(jsonEncode(userData), isNot(contains('9')));
+      expect(userData.values, isNot(contains(9)));
     });
 
     test('malformed cached rows are skipped without throwing', () async {

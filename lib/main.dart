@@ -496,6 +496,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     // Trakt sync service (subscribes to WatchStateNotifier, requires serverManager
     // to resolve PlexClients for GUID lookups).
     TraktSyncService.instance.initialize(serverManager: _serverManager);
+    // Tracker singletons init once per app; per-profile hydration happens in
+    // the profile-scoped provider subtree's create callbacks.
+    unawaited(TrackerCoordinator.instance.initialize());
 
     _appLifecycleListener = AppLifecycleListener(
       onExitRequested: () async {
@@ -772,18 +775,6 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             return provider;
           },
         ),
-        ChangeNotifierProxyProvider2<ActiveProfileProvider, MultiServerProvider, WatchStateStore>(
-          create: (_) => WatchStateStore(),
-          update: (_, activeProfile, multiServer, previous) {
-            final provider = previous ?? WatchStateStore();
-            provider.setActiveProfileId(activeProfile.activeId);
-            provider.setActiveClientScopesByServer({
-              for (final serverId in multiServer.serverManager.serverIds)
-                serverId: multiServer.serverManager.getClient(ServerId(serverId))?.cacheServerId,
-            });
-            return provider;
-          },
-        ),
         ChangeNotifierProxyProvider<ActiveProfileProvider, OfflineWatchSyncService>(
           create: (context) {
             final offlineModeProvider = context.read<OfflineModeProvider>();
@@ -856,41 +847,104 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           },
         ),
         ChangeNotifierProvider(create: (context) => ThemeProvider()),
-        // Tracker accounts — depend on UserProfileProvider for per-profile
-        // session scoping. Hydrated and rebound by `_TrackerProfileBootstrap`.
-        ChangeNotifierProvider(create: (context) => TraktAccountProvider()),
-        ChangeNotifierProvider(create: (context) => TrackersProvider()),
-        ChangeNotifierProvider(
-          create: (context) => HiddenLibrariesProvider(storageService: context.read<StorageService>()),
-          lazy: true,
-        ),
-        ChangeNotifierProvider(
-          create: (context) {
-            final provider = LibrariesProvider(storageService: context.read<StorageService>());
-            // Reload libraries when a new server comes online. Servers bind in
-            // waves on sign-in / profile switch and slow ones reconnect after
-            // the initial load; without this they stay missing from the sidebar
-            // until a profile re-switch or restart.
-            context.read<MultiServerProvider>().onOnlineServersChanged = provider.syncToOnlineServers;
-            return provider;
-          },
-        ),
-        ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
-        ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
-        ChangeNotifierProvider(create: (context) => CompanionRemoteProvider()),
+        // Shader presets are app-global — deliberately outside the
+        // profile-scoped subtree below.
         ChangeNotifierProvider(create: (context) => ShaderProvider()),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          return TranslationProvider(
-            child: Builder(
-              builder: (context) {
-                final trakt = context.read<TraktAccountProvider>();
-                final trackers = context.read<TrackersProvider>();
-                return _TrackerProfileBootstrap(
-                  onProfileChanged: [trakt.onActiveProfileChanged, trackers.onActiveProfileChanged],
-                  onFirstMount: TrackerCoordinator.instance.initialize,
-                  child: Listener(
+      // Profile boundary: everything below is profile-scoped BY TREE
+      // POSITION. Switching the active profile changes the KeyedSubtree key,
+      // which disposes and recreates the inner providers and the whole app
+      // shell — including navigation, so routes showing the previous
+      // profile's content cannot survive into the next. A provider belongs in
+      // the inner list when its state is per-profile; app-global state
+      // (theme, shader presets, downloads, server manager) stays above.
+      // Shared singletons that span profiles (DownloadProvider's sync rules,
+      // OfflineWatchSyncService) keep their explicit setActiveProfileId
+      // wiring instead.
+      child: Consumer<ActiveProfileProvider>(
+        builder: (context, activeProfile, _) {
+          final activeId = activeProfile.activeId;
+          return KeyedSubtree(
+            key: ValueKey<String?>(activeId),
+            child: MultiProvider(
+              providers: [
+                ChangeNotifierProxyProvider<MultiServerProvider, WatchStateStore>(
+                  create: (_) => WatchStateStore(),
+                  update: (_, multiServer, previous) {
+                    final provider = previous ?? WatchStateStore();
+                    provider.setActiveProfileId(activeId);
+                    provider.setActiveClientScopesByServer({
+                      for (final serverId in multiServer.serverManager.serverIds)
+                        serverId: multiServer.serverManager.getClient(ServerId(serverId))?.cacheServerId,
+                    });
+                    return provider;
+                  },
+                ),
+                // Tracker accounts hydrate for the active profile on create —
+                // the subtree remount on profile switch is the rebind.
+                ChangeNotifierProvider(
+                  create: (context) {
+                    final provider = TraktAccountProvider();
+                    unawaited(
+                      provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
+                        appLogger.w('Trakt profile hydrate failed', error: e, stackTrace: s);
+                      }),
+                    );
+                    return provider;
+                  },
+                ),
+                ChangeNotifierProvider(
+                  create: (context) {
+                    final provider = TrackersProvider();
+                    unawaited(
+                      provider.onActiveProfileChanged(activeId).catchError((Object e, StackTrace s) {
+                        appLogger.w('Trackers profile hydrate failed', error: e, stackTrace: s);
+                      }),
+                    );
+                    return provider;
+                  },
+                ),
+                ChangeNotifierProvider(
+                  create: (context) => HiddenLibrariesProvider(storageService: context.read<StorageService>()),
+                  lazy: true,
+                ),
+                ChangeNotifierProvider(
+                  create: (context) {
+                    final provider = LibrariesProvider(storageService: context.read<StorageService>());
+                    // Reload libraries when a new server comes online. Servers
+                    // bind in waves on sign-in / profile switch and slow ones
+                    // reconnect after the initial load; without this they stay
+                    // missing from the sidebar until a re-switch or restart.
+                    context.read<MultiServerProvider>().onOnlineServersChanged = provider.syncToOnlineServers;
+                    return provider;
+                  },
+                ),
+                ChangeNotifierProvider(create: (context) => PlaybackStateProvider()),
+                ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
+                ChangeNotifierProvider(create: (context) => CompanionRemoteProvider()),
+              ],
+              child: const _AppShell(),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// The app shell below the profile boundary: theme consumer, translations,
+/// global input handling, and the MaterialApp.
+class _AppShell extends StatelessWidget {
+  const _AppShell();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return TranslationProvider(
+          child: Builder(
+            builder: (context) {
+              return Listener(
                     onPointerDown: (event) {
                       if ((event.buttons & kBackMouseButton) != 0) {
                         rootNavigatorKey.currentState?.maybePop();
@@ -930,14 +984,12 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-          );
-        },
-      ),
-    );
+                  );
+                },
+              ),
+            );
+          },
+        );
   }
 }
 
@@ -988,69 +1040,6 @@ class _AppleTvScale extends StatelessWidget {
       },
     );
   }
-}
-
-/// Hydrates Trakt and MAL/AniList/Simkl providers with the active profile's
-/// sessions and rebinds their services whenever the user switches profiles.
-///
-/// Lives high in the widget tree (above MaterialApp) so the listener survives
-/// route changes. [onFirstMount] runs exactly once after the first
-/// `didChangeDependencies`.
-class _TrackerProfileBootstrap extends StatefulWidget {
-  final Widget child;
-  final List<Future<void> Function(String? profileId)> onProfileChanged;
-  final VoidCallback? onFirstMount;
-
-  const _TrackerProfileBootstrap({required this.child, required this.onProfileChanged, this.onFirstMount});
-
-  @override
-  State<_TrackerProfileBootstrap> createState() => _TrackerProfileBootstrapState();
-}
-
-class _TrackerProfileBootstrapState extends State<_TrackerProfileBootstrap> {
-  ActiveProfileProvider? _provider;
-  String? _lastId;
-  bool _initialized = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final provider = context.read<ActiveProfileProvider>();
-
-    if (!identical(_provider, provider)) {
-      _provider?.removeListener(_onProfileChanged);
-      _provider = provider;
-      _provider!.addListener(_onProfileChanged);
-    }
-
-    if (!_initialized) {
-      _initialized = true;
-      widget.onFirstMount?.call();
-      _onProfileChanged();
-    }
-  }
-
-  void _onProfileChanged() {
-    final id = _provider?.activeId;
-    if (id == _lastId) return;
-    _lastId = id;
-    for (final fn in widget.onProfileChanged) {
-      unawaited(
-        fn(id).catchError((Object e, StackTrace s) {
-          appLogger.w('Tracker profile bootstrap failed', error: e, stackTrace: s);
-        }),
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _provider?.removeListener(_onProfileChanged);
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) => widget.child;
 }
 
 class OrientationAwareSetup extends StatefulWidget {
