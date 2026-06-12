@@ -16,6 +16,12 @@ enum MediaKind {
   playlist,
   clip,
   photo,
+
+  /// Filesystem-style directory row in folder browsing (Plex `/folder`
+  /// listings, Jellyfin `Folder`/`CollectionFolder` items). Not playable
+  /// media itself — children are fetched via
+  /// `MediaServerClient.fetchFolderChildren`.
+  folder,
   unknown;
 
   bool get isVideo => this == movie || this == episode || this == clip;
@@ -40,6 +46,7 @@ enum MediaKind {
     MediaKind.playlist => 'playlist',
     MediaKind.clip => 'clip',
     MediaKind.photo => 'photo',
+    MediaKind.folder => 'folder',
     MediaKind.unknown => 'unknown',
   };
 
@@ -57,6 +64,7 @@ enum MediaKind {
       'playlist' => MediaKind.playlist,
       'clip' || 'trailer' || 'video' || 'musicvideo' => MediaKind.clip,
       'photo' => MediaKind.photo,
+      'folder' || 'collectionfolder' => MediaKind.folder,
       _ => MediaKind.unknown,
     };
   }

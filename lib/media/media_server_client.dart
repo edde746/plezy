@@ -173,6 +173,24 @@ abstract class MediaServerClient {
   /// show, tracks of an album, items of a collection.
   Future<List<MediaItem>> fetchChildren(String parentId);
 
+  /// Top-level rows of a library in folder-browsing mode. Directory rows come
+  /// back as [MediaKind.folder] (Plex additionally stamps
+  /// [MediaItem.backendFolderKey]). [onPage] surfaces accumulated items after
+  /// each intermediate page on backends that paginate (Jellyfin); single-shot
+  /// backends (Plex) never call it.
+  Future<List<MediaItem>> fetchLibraryFolders(String libraryId, {void Function(List<MediaItem> itemsSoFar)? onPage});
+
+  /// Children of a [MediaKind.folder] row from [fetchLibraryFolders] /
+  /// [fetchFolderChildren] — or, on Jellyfin, of a show/season row, which act
+  /// as expandable folders in folder browsing. Same [onPage] semantics as
+  /// [fetchLibraryFolders].
+  Future<List<MediaItem>> fetchFolderChildren(
+    MediaItem folder, {
+    String? libraryId,
+    String? libraryTitle,
+    void Function(List<MediaItem> itemsSoFar)? onPage,
+  });
+
   /// Page through direct children of [parentId]. Unlike
   /// [fetchPlayableDescendantsPage], this preserves container shape and is used
   /// for large season episode lists where the children endpoint is the correct

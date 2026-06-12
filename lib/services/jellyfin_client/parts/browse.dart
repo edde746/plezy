@@ -625,18 +625,29 @@ mixin _JellyfinBrowseMethods on MediaServerCacheMixin {
   /// direct children of the library/folder with `Recursive=false`. This is
   /// distinct from [fetchLibraryContent], which intentionally recurses through
   /// a library to show metadata groupings like albums, artists, shows, etc.
+  @override
   Future<List<MediaItem>> fetchLibraryFolders(String libraryId, {void Function(List<MediaItem> itemsSoFar)? onPage}) =>
       _fetchFolderChildren(libraryId, onPage: onPage);
 
   /// Contents of a Jellyfin folder. Kept separate from [fetchChildren] so the
-  /// folder tree can use direct-child semantics even for music libraries.
+  /// folder tree can use direct-child semantics even for music libraries —
+  /// except for show/season rows, which surface as expandable folders in the
+  /// tree but whose children come from the metadata hierarchy.
   ///
   /// [onPage] surfaces the accumulated items (server order) after each
   /// intermediate page so callers can render while pagination continues; it is
   /// never called for single-page listings or the final page (the returned
   /// list covers those).
-  Future<List<MediaItem>> fetchFolderChildren(String folderId, {void Function(List<MediaItem> itemsSoFar)? onPage}) =>
-      _fetchFolderChildren(folderId, onPage: onPage);
+  @override
+  Future<List<MediaItem>> fetchFolderChildren(
+    MediaItem folder, {
+    String? libraryId,
+    String? libraryTitle,
+    void Function(List<MediaItem> itemsSoFar)? onPage,
+  }) {
+    if (folder.kind == MediaKind.show || folder.kind == MediaKind.season) return fetchChildren(folder.id);
+    return _fetchFolderChildren(folder.id, onPage: onPage);
+  }
 
   /// Page through `/Items?ParentId=...&Recursive=false` with the given type
   /// filter. [onRawPage] receives the accumulated rows after each intermediate

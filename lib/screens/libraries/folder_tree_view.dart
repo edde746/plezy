@@ -5,10 +5,8 @@ import '../../media/media_backend.dart';
 import '../../media/media_item.dart';
 import '../../media/media_kind.dart';
 import '../../media/media_server_client.dart';
-import '../../services/jellyfin_client.dart';
 import '../../services/jellyfin_sequential_launcher.dart';
 import '../../services/play_queue_launcher.dart';
-import '../../services/plex_client.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/error_message_utils.dart';
 import '../../utils/media_navigation_helper.dart';
@@ -64,17 +62,11 @@ class FolderTreeViewState extends State<FolderTreeView> {
   /// epoch so superseded pagination callbacks are dropped.
   int _loadEpoch = 0;
 
-  /// Resolve the Plex folder key from a [MediaItem]'s `raw` map. The key is
-  /// a relative URL (e.g. `/library/sections/1/folder?parent=...`) used to
-  /// recursively fetch children from [PlexClient.fetchFolderChildren].
-  String? _folderKey(MediaItem item) => item.raw?['key'] as String?;
-
-  String? _itemType(MediaItem item) => (item.raw?['Type'] as String? ?? item.raw?['type'] as String?)?.toLowerCase();
-
+  /// Stable expand/cache key for an expandable row: the backend folder key
+  /// where one exists (Plex `/folder` rows), the item id otherwise.
   String? _folderIdentity(MediaItem item) {
-    if (item.backend == MediaBackend.plex) return _folderKey(item);
-    if (_isFolder(item)) return item.id;
-    return null;
+    if (!_isFolder(item)) return null;
+    return item.backendFolderKey ?? item.id;
   }
 
   @override
@@ -255,7 +247,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
       return;
     }
 
-    final folderKey = _folderKey(folder);
+    final folderKey = folder.backendFolderKey;
     if (folderKey == null) return;
     final client = context.getPlexClientForServer(ServerId(widget.serverId!));
     final launcher = PlexPlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
@@ -274,7 +266,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
       return;
     }
 
-    final folderKey = _folderKey(folder);
+    final folderKey = folder.backendFolderKey;
     if (folderKey == null) return;
     final client = context.getPlexClientForServer(ServerId(widget.serverId!));
     final launcher = PlexPlayQueueLauncher(context: context, client: client, serverId: widget.serverId);
@@ -286,21 +278,11 @@ class FolderTreeViewState extends State<FolderTreeView> {
     );
   }
 
+  /// Expandable rows: directory rows (classified as [MediaKind.folder] by the
+  /// backend's folder fetchers) plus Jellyfin shows/seasons, which surface as
+  /// expandable media containers in folder browsing.
   bool _isFolder(MediaItem item) {
-    if (item.backend == MediaBackend.jellyfin) {
-      return _isJellyfinFilesystemFolder(item) || _isJellyfinMediaContainer(item);
-    }
-
-    // Plex folders typically have no media kind (mapped to [MediaKind.unknown])
-    // or expose `/folder` in their key.
-    final folderKey = _folderKey(item);
-    final type = _itemType(item);
-    return folderKey?.contains('/folder') == true || type == 'folder' || item.kind == MediaKind.unknown;
-  }
-
-  bool _isJellyfinFilesystemFolder(MediaItem item) {
-    final type = _itemType(item);
-    return type == 'folder' || type == 'collectionfolder' || (type == null && item.raw?['IsFolder'] == true);
+    return item.kind == MediaKind.folder || (item.backend == MediaBackend.jellyfin && _isJellyfinMediaContainer(item));
   }
 
   bool _isJellyfinMediaContainer(MediaItem item) => item.kind == MediaKind.show || item.kind == MediaKind.season;
@@ -315,9 +297,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
     MediaServerClient client, {
     void Function(List<MediaItem> itemsSoFar)? onPage,
   }) {
-    if (client is PlexClient) return client.fetchLibraryFolders(widget.libraryKey);
-    if (client is JellyfinClient) return client.fetchLibraryFolders(widget.libraryKey, onPage: onPage);
-    throw UnsupportedError('Folder browsing is not supported for ${client.backend.id}');
+    return client.fetchLibraryFolders(widget.libraryKey, onPage: onPage);
   }
 
   Future<List<MediaItem>> _fetchFolderChildren(
@@ -325,16 +305,7 @@ class FolderTreeViewState extends State<FolderTreeView> {
     MediaItem folder, {
     void Function(List<MediaItem> itemsSoFar)? onPage,
   }) {
-    if (client is PlexClient) {
-      final folderKey = _folderKey(folder);
-      if (folderKey == null) return Future.value(const <MediaItem>[]);
-      return client.fetchFolderChildren(folderKey, libraryId: folder.libraryId, libraryTitle: folder.libraryTitle);
-    }
-    if (client is JellyfinClient) {
-      if (_isJellyfinMediaContainer(folder)) return client.fetchChildren(folder.id);
-      return client.fetchFolderChildren(folder.id, onPage: onPage);
-    }
-    throw UnsupportedError('Folder browsing is not supported for ${client.backend.id}');
+    return client.fetchFolderChildren(folder, onPage: onPage);
   }
 
   /// Flatten the visible tree into a list of (item, depth, path, parent)

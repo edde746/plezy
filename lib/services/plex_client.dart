@@ -3968,16 +3968,46 @@ class PlexClient
     );
   }
 
-  /// Plex-specific: top-level folders in a library.
-  Future<List<MediaItem>> fetchLibraryFolders(String sectionId) async {
-    final raw = await _getLibraryFolders(sectionId);
-    return raw.map((m) => PlexMappers.mediaItem(m)).toList();
+  /// Plex folder listings are Directory rows with no usable `type` (mapped to
+  /// [MediaKind.unknown]) or an explicit `folder` type, identified by their
+  /// relative `/folder` key. Classify them as [MediaKind.folder] and stamp
+  /// [MediaItem.backendFolderKey] so the tree and the children fetch stay
+  /// free of raw-map reads.
+  MediaItem _classifyFolderRow(MediaItem item) {
+    final key = item.raw?['key'] as String?;
+    final isFolder =
+        item.kind == MediaKind.folder || item.kind == MediaKind.unknown || (key?.contains('/folder') ?? false);
+    if (!isFolder) return item;
+    return item.copyWith(kind: MediaKind.folder, backendFolderKey: key);
   }
 
-  /// Plex-specific: contents of a folder (files and subfolders).
-  Future<List<MediaItem>> fetchFolderChildren(String folderKey, {String? libraryId, String? libraryTitle}) async {
-    final raw = await _getFolderChildren(folderKey, librarySectionID: libraryId, librarySectionTitle: libraryTitle);
-    return raw.map((m) => PlexMappers.mediaItem(m)).toList();
+  /// Top-level folders in a library. Single response — [onPage] never fires.
+  @override
+  Future<List<MediaItem>> fetchLibraryFolders(
+    String libraryId, {
+    void Function(List<MediaItem> itemsSoFar)? onPage,
+  }) async {
+    final raw = await _getLibraryFolders(libraryId);
+    return raw.map((m) => _classifyFolderRow(PlexMappers.mediaItem(m))).toList();
+  }
+
+  /// Contents of a folder (files and subfolders), via the folder row's
+  /// [MediaItem.backendFolderKey]. Single response — [onPage] never fires.
+  @override
+  Future<List<MediaItem>> fetchFolderChildren(
+    MediaItem folder, {
+    String? libraryId,
+    String? libraryTitle,
+    void Function(List<MediaItem> itemsSoFar)? onPage,
+  }) async {
+    final folderKey = folder.backendFolderKey;
+    if (folderKey == null) return const [];
+    final raw = await _getFolderChildren(
+      folderKey,
+      librarySectionID: libraryId ?? folder.libraryId,
+      librarySectionTitle: libraryTitle ?? folder.libraryTitle,
+    );
+    return raw.map((m) => _classifyFolderRow(PlexMappers.mediaItem(m))).toList();
   }
 
   /// Plex-specific: extras (trailers, behind-the-scenes) for a media item.

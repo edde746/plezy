@@ -1690,7 +1690,8 @@ void main() {
       expect(mediaQuery.queryParameters['ExcludeItemTypes'], 'Folder,CollectionFolder');
       expect(mediaQuery.queryParameters['Fields'], contains('UserData'));
       expect(items.map((item) => item.id), ['folder-z', 'series-a', 'movie-m', 'track-z']);
-      expect(items.first.kind, MediaKind.unknown);
+      // Folder rows classify as MediaKind.folder so the tree never reads raw.
+      expect(items.first.kind, MediaKind.folder);
       expect(items.first.raw?['IsFolder'], isTrue);
       expect(items[1].kind, MediaKind.show);
     });
@@ -1728,7 +1729,10 @@ void main() {
       );
       addTearDown(scoped.close);
 
-      final items = await scoped.fetchFolderChildren('folder-1', onPage: pages.add);
+      final items = await scoped.fetchFolderChildren(
+        MediaItem(id: 'folder-1', backend: MediaBackend.jellyfin, kind: MediaKind.folder),
+        onPage: pages.add,
+      );
 
       expect(mediaStarts, ['0', '500']);
       expect(items, hasLength(501));

@@ -71,6 +71,7 @@ PlexMediaItem _$PlexMediaItemFromJson(Map<String, dynamic> json) =>
       extraType: flexibleInt(json['extraType']),
       serverId: json['serverId'] as String?,
       serverName: json['serverName'] as String?,
+      backendFolderKey: json['backendFolderKey'] as String?,
       raw: _mediaItemRawFromJson(json['raw']),
     );
 
@@ -139,6 +140,7 @@ Map<String, dynamic> _$PlexMediaItemToJson(PlexMediaItem instance) =>
       'extraType': ?instance.extraType,
       'serverId': ?instance.serverId,
       'serverName': ?instance.serverName,
+      'backendFolderKey': ?instance.backendFolderKey,
       'raw': ?instance.raw,
     };
 
@@ -197,6 +199,7 @@ JellyfinMediaItem _$JellyfinMediaItemFromJson(Map<String, dynamic> json) =>
       playlistItemId: json['playlistItemId'] as String?,
       serverId: json['serverId'] as String?,
       serverName: json['serverName'] as String?,
+      backendFolderKey: json['backendFolderKey'] as String?,
       raw: _mediaItemRawFromJson(json['raw']),
     );
 
@@ -255,5 +258,6 @@ Map<String, dynamic> _$JellyfinMediaItemToJson(JellyfinMediaItem instance) =>
       'playlistItemId': ?instance.playlistItemId,
       'serverId': ?instance.serverId,
       'serverName': ?instance.serverName,
+      'backendFolderKey': ?instance.backendFolderKey,
       'raw': ?instance.raw,
     };

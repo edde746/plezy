@@ -151,7 +151,10 @@ class JellyfinMappers {
     final id = item['Id'] as String?;
     if (id == null || id.isEmpty) return null;
     final type = item['Type'] as String?;
-    final kind = MediaKind.fromString(type);
+    // Untyped rows that Jellyfin still flags as folders (defensive — typed
+    // Folder/CollectionFolder rows resolve via fromString) classify as
+    // folders so folder browsing never falls back to raw-map sniffing.
+    final kind = type == null && item['IsFolder'] == true ? MediaKind.folder : MediaKind.fromString(type);
 
     final mapped = JellyfinMediaItem(
       id: id,

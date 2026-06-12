@@ -78,6 +78,7 @@ sealed class MediaItem with _$MediaItem {
     int? subtitleMode,
     String? serverId,
     String? serverName,
+    String? backendFolderKey,
     Map<String, Object?>? raw,
   }) {
     return switch (backend) {
@@ -136,6 +137,7 @@ sealed class MediaItem with _$MediaItem {
         subtitleMode: subtitleMode,
         serverId: serverId,
         serverName: serverName,
+        backendFolderKey: backendFolderKey,
         raw: raw,
       ),
       MediaBackend.jellyfin => JellyfinMediaItem(
@@ -191,6 +193,7 @@ sealed class MediaItem with _$MediaItem {
         audioLanguage: audioLanguage,
         serverId: serverId,
         serverName: serverName,
+        backendFolderKey: backendFolderKey,
         raw: raw,
       ),
     };
@@ -265,6 +268,11 @@ sealed class MediaItem with _$MediaItem {
     @JsonKey(fromJson: flexibleInt) int? extraType,
     String? serverId,
     String? serverName,
+
+    /// Relative folder key (`/library/sections/{id}/folder?parent=…`) for
+    /// [MediaKind.folder] rows — what [MediaServerClient.fetchFolderChildren]
+    /// tunes into. Stamped by the folder fetchers, null elsewhere.
+    String? backendFolderKey,
     @JsonKey(fromJson: _mediaItemRawFromJson) Map<String, Object?>? raw,
   }) = PlexMediaItem;
 
@@ -327,6 +335,10 @@ sealed class MediaItem with _$MediaItem {
     String? playlistItemId,
     String? serverId,
     String? serverName,
+
+    /// Always null on Jellyfin — folder children are fetched by [id]. Exists
+    /// on both variants so the union exposes one neutral getter.
+    String? backendFolderKey,
     @JsonKey(fromJson: _mediaItemRawFromJson) Map<String, Object?>? raw,
   }) = JellyfinMediaItem;
 
